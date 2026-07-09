@@ -64,12 +64,8 @@ Vercel
 
 ## Documentation
 
-Domain_Model.md
-
-Architecture.md
-
-Database.md
-
-Tasks.md
-
-CLAUDE.md
+- ARCHITECTURE.md
+- DATABASE.md
+- TASKS.md
+- UI_MAP.md
+- CLAUDE.md
