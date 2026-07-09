@@ -162,7 +162,7 @@ Note conseiller.
 
 Résultat
 
-Présentation prête.
+Meeting Script généré.
 
 ---
 
@@ -188,7 +188,7 @@ La note conseiller.
 
 Il peut modifier chaque élément.
 
-Aucune présentation ne peut être générée sans validation.
+Aucun Meeting Script ne peut être utilisé sans validation du conseiller.
 
 ---
 
