@@ -34,11 +34,11 @@ Visualiser immédiatement les dossiers prioritaires.
 
 # Hiérarchie visuelle
 
-------------------------------------------------------
+---
 
 Header
 
-------------------------------------------------------
+---
 
 Logo agence
 
@@ -48,13 +48,13 @@ Notifications
 
 Profil
 
-------------------------------------------------------
+---
 
 Actions rapides
 
-------------------------------------------------------
+---
 
-+ Nouveau dossier ACM
+- Nouveau dossier ACM
 
 Importer un PDF
 
@@ -62,11 +62,11 @@ Importer un lien
 
 Importer des captures
 
-------------------------------------------------------
+---
 
 Statistiques
 
-------------------------------------------------------
+---
 
 Dossiers actifs
 
@@ -76,11 +76,11 @@ Présentations prêtes
 
 Mandats signés
 
-------------------------------------------------------
+---
 
 Liste des dossiers
 
-------------------------------------------------------
+---
 
 Carte 1
 
@@ -90,7 +90,7 @@ Carte 3
 
 ...
 
-------------------------------------------------------
+---
 
 ---
 
