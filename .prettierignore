@@ -1,0 +1,16 @@
+# build output & dependencies
+.next
+node_modules
+package-lock.json
+
+# product documentation — must not be reformatted (see mission interdictions)
+docs
+missions
+
+# initial scaffold files outside this mission's allowed-modification scope
+next.config.ts
+postcss.config.mjs
+eslint.config.mjs
+src/app/globals.css
+src/app/page.tsx
+src/app/layout.tsx
