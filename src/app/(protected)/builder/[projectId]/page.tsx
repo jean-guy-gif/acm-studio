@@ -35,6 +35,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           Compléter la fiche
         </Link>
       </div>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-medium">Biens concurrents</h2>
+        <Link href={`/builder/${projectId}/comparables`} className="underline">
+          Gérer les biens concurrents
+        </Link>
+      </div>
     </div>
   );
 }

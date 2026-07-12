@@ -813,6 +813,14 @@ export type Database = {
         }[]
       }
       get_current_agency_id: { Args: never; Returns: string }
+      move_comparable: {
+        Args: {
+          move_direction: string
+          target_comparable_id: string
+          target_project_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
