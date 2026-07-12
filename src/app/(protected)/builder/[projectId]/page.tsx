@@ -29,7 +29,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <p>Statut : {statusLabel(project.status)}</p>
         <p>Date de création : {new Date(project.created_at).toLocaleDateString('fr-FR')}</p>
       </div>
-      <p className="text-zinc-500">La préparation du bien sera ajoutée dans une prochaine étape.</p>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-medium">Bien vendeur</h2>
+        <Link href={`/builder/${projectId}/property`} className="underline">
+          Compléter la fiche
+        </Link>
+      </div>
     </div>
   );
 }
