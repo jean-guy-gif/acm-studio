@@ -1,2 +1,5 @@
 .next
 node_modules
+
+# Supabase generated types — never edited by hand, do not reformat
+src/lib/supabase/database.types.ts
