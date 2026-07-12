@@ -805,6 +805,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_agency_owner: {
+        Args: { agency_name: string; first_name: string; last_name: string }
+        Returns: {
+          agency_id: string
+          profile_id: string
+        }[]
+      }
       get_current_agency_id: { Args: never; Returns: string }
     }
     Enums: {
