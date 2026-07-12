@@ -18,7 +18,7 @@ export async function login(formData: FormData): Promise<void> {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/protected');
+  redirect('/builder');
 }
 
 export async function signOut(): Promise<void> {

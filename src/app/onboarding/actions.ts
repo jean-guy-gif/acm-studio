@@ -22,5 +22,5 @@ export async function bootstrapAgencyOwner(formData: FormData): Promise<void> {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/protected');
+  redirect('/builder');
 }

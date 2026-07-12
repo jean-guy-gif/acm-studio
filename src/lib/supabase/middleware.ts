@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/lib/env';
 
 // Routes that never require authentication.
-const PUBLIC_PATHS = ['/', '/login'];
+const PUBLIC_PATHS = ['/login'];
 
 // Official Supabase @supabase/ssr session handler for Next.js.
 // Restores the session, refreshes the auth tokens, and guards private routes.

@@ -11,7 +11,7 @@ type OnboardingPageProps = {
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
   const profile = await getProfile();
   if (profile) {
-    redirect('/protected');
+    redirect('/builder');
   }
 
   const { error } = await searchParams;
