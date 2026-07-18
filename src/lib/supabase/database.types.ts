@@ -102,15 +102,23 @@ export type Database = {
           bathrooms_count: number | null
           bedrooms_count: number | null
           city: string | null
+          construction_year: number | null
           created_at: string
           days_on_market: number | null
           display_order: number
+          district: string | null
           energy_rating: string | null
+          energy_source: string | null
+          ges_rating: string | null
+          heating_type: string | null
           id: string
           is_selected: boolean
           land_area: number | null
+          listing_description: string | null
+          listing_features: Json
           listing_url: string | null
-          photo_urls: Json | null
+          photo_urls: Json
+          portal_price_per_square_meter: number | null
           postal_code: string | null
           price: number
           price_drop_amount: number | null
@@ -129,15 +137,23 @@ export type Database = {
           bathrooms_count?: number | null
           bedrooms_count?: number | null
           city?: string | null
+          construction_year?: number | null
           created_at?: string
           days_on_market?: number | null
           display_order: number
+          district?: string | null
           energy_rating?: string | null
+          energy_source?: string | null
+          ges_rating?: string | null
+          heating_type?: string | null
           id?: string
           is_selected?: boolean
           land_area?: number | null
+          listing_description?: string | null
+          listing_features?: Json
           listing_url?: string | null
-          photo_urls?: Json | null
+          photo_urls?: Json
+          portal_price_per_square_meter?: number | null
           postal_code?: string | null
           price: number
           price_drop_amount?: number | null
@@ -156,15 +172,23 @@ export type Database = {
           bathrooms_count?: number | null
           bedrooms_count?: number | null
           city?: string | null
+          construction_year?: number | null
           created_at?: string
           days_on_market?: number | null
           display_order?: number
+          district?: string | null
           energy_rating?: string | null
+          energy_source?: string | null
+          ges_rating?: string | null
+          heating_type?: string | null
           id?: string
           is_selected?: boolean
           land_area?: number | null
+          listing_description?: string | null
+          listing_features?: Json
           listing_url?: string | null
-          photo_urls?: Json | null
+          photo_urls?: Json
+          portal_price_per_square_meter?: number | null
           postal_code?: string | null
           price?: number
           price_drop_amount?: number | null
