@@ -81,12 +81,18 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
         </>
       )}
 
-      <div>
+      <div className="flex flex-wrap gap-2">
         <Link
           href={`/builder/${projectId}/comparables/new`}
           className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           Ajouter un bien concurrent
+        </Link>
+        <Link
+          href={`/builder/${projectId}/comparables/analysis`}
+          className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Voir l’analyse
         </Link>
       </div>
     </div>
