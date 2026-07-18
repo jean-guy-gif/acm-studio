@@ -44,7 +44,9 @@ function toAnalyzed(comparable: Comparable): AnalyzedComparable {
   };
 }
 
-function spreadPercent(values: number[], medianValue: number | null): number | null {
+// Exported so the price-positioning engine (Mission 17) reuses the exact same
+// dispersion definition on its official calculation set — no competing method.
+export function spreadPercent(values: number[], medianValue: number | null): number | null {
   if (values.length === 0 || medianValue == null || medianValue <= 0) {
     return null;
   }
@@ -53,7 +55,7 @@ function spreadPercent(values: number[], medianValue: number | null): number | n
   return round1(((maximum - minimum) / medianValue) * 100);
 }
 
-function dispersionLevel(percent: number | null): DispersionLevel | null {
+export function dispersionLevel(percent: number | null): DispersionLevel | null {
   if (percent == null) {
     return null;
   }

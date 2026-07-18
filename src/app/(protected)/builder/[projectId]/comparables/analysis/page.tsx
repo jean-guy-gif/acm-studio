@@ -42,6 +42,15 @@ export default async function ComparablesAnalysisPage({ params }: AnalysisPagePr
         <h1 className="mt-2 text-2xl font-semibold">Analyse des comparables</h1>
       </div>
 
+      <div>
+        <Link
+          href={`/builder/${projectId}/comparables/positioning`}
+          className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Voir le positionnement
+        </Link>
+      </div>
+
       {analysis.statistics.count === 0 ? (
         <p className="text-zinc-500">
           Aucun comparable retenu avec un prix et une surface : l’analyse ne peut pas être produite.

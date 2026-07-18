@@ -1,0 +1,52 @@
+import type {
+  ConfidenceLevel,
+  PositioningConfidence,
+} from '@/features/price-positioning/types/price-positioning';
+
+const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
+  very_high: 'Très forte',
+  high: 'Forte',
+  medium: 'Moyenne',
+  low: 'Faible',
+};
+
+export function ConfidenceCard({ confidence }: { confidence: PositioningConfidence }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-medium">Indice de confiance</h2>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Niveau : <span className="font-medium">{LEVEL_LABEL[confidence.level]}</span> · Score :{' '}
+        {confidence.score} / 100
+      </p>
+      <p className="text-xs text-zinc-500">
+        Grille métier indicative sur la qualité des données — jamais une garantie.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <h3 className="text-sm font-medium">Facteurs positifs</h3>
+          {confidence.positiveFactors.length === 0 ? (
+            <p className="text-sm text-zinc-500">Aucun.</p>
+          ) : (
+            <ul className="text-sm text-zinc-600 dark:text-zinc-400">
+              {confidence.positiveFactors.map((factor) => (
+                <li key={factor}>{factor}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <h3 className="text-sm font-medium">Points de vigilance</h3>
+          {confidence.warningFactors.length === 0 ? (
+            <p className="text-sm text-zinc-500">Aucun.</p>
+          ) : (
+            <ul className="text-sm text-amber-700 dark:text-amber-300">
+              {confidence.warningFactors.map((factor) => (
+                <li key={factor}>{factor}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
