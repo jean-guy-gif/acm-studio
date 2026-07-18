@@ -90,6 +90,12 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
           Retour à l’analyse
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">Positionnement du prix</h1>
+        <Link
+          href={`/builder/${projectId}/presentation`}
+          className="mt-2 inline-block rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Préparer la présentation vendeur
+        </Link>
       </div>
 
       {positioning.status === 'ready' && positioning.recommendedRange ? (
