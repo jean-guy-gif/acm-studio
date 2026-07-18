@@ -845,6 +845,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      move_selected_comparable: {
+        Args: { p_comparable_id: string; p_direction: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
