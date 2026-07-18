@@ -543,6 +543,85 @@ export type Database = {
           },
         ]
       }
+      project_price_positionings: {
+        Row: {
+          advisor_price: number
+          agency_id: string
+          calculation_snapshot: Json
+          confidence_level: string
+          confidence_score: number
+          created_at: string
+          id: string
+          justification: string | null
+          project_id: string
+          range_central: number
+          range_high: number
+          range_low: number
+          seller_price: number | null
+          updated_at: string
+          validated_at: string
+          validated_by: string
+        }
+        Insert: {
+          advisor_price: number
+          agency_id: string
+          calculation_snapshot: Json
+          confidence_level: string
+          confidence_score: number
+          created_at?: string
+          id?: string
+          justification?: string | null
+          project_id: string
+          range_central: number
+          range_high: number
+          range_low: number
+          seller_price?: number | null
+          updated_at?: string
+          validated_at?: string
+          validated_by: string
+        }
+        Update: {
+          advisor_price?: number
+          agency_id?: string
+          calculation_snapshot?: Json
+          confidence_level?: string
+          confidence_score?: number
+          created_at?: string
+          id?: string
+          justification?: string | null
+          project_id?: string
+          range_central?: number
+          range_high?: number
+          range_low?: number
+          seller_price?: number | null
+          updated_at?: string
+          validated_at?: string
+          validated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_price_positionings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_price_positionings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_price_positionings_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           advisor_id: string
