@@ -11,6 +11,20 @@ const LIVE_WARNING_CODES = new Set<string>([
   'decision_outdated',
   'outliers_reintroduced',
   'seller_price_missing',
+  // Diagnostics / condominium business alerts (Mission 22).
+  'dpe_not_done',
+  'electricity_anomaly',
+  'gas_anomaly',
+  'asbestos_positive',
+  'lead_positive',
+  'termites_positive',
+  'erp_unknown',
+  'diagnostics_in_progress',
+  'diagnostics_validity_near',
+  'condo_ongoing_procedures',
+  'condo_voted_works',
+  'condo_unpaid_charges',
+  'condo_missing_annual_charges',
 ]);
 
 // Deterministic filter: keeps only the allow-listed business codes, preserves the

@@ -2,6 +2,8 @@ import type { ComparableAnalysis } from '@/features/comparable-analysis/types/co
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
 import type { PricePositioning } from '@/features/price-positioning/types/price-positioning';
 import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
+import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
+import type { SubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/types';
 
 // Bumped whenever the presentation contract changes, so Live and future exports
 // can guarantee compatibility.
@@ -97,6 +99,8 @@ export type SellerPresentation = {
 
   project: SellerPresentationProject;
   property: SellerPresentationProperty | null;
+  diagnostics: SubjectPropertyDiagnostics | null;
+  condominium: SubjectPropertyCondominium | null;
 
   comparables: SellerPresentationComparable[];
   comparableSummary: ComparableSelectionSummary | null;

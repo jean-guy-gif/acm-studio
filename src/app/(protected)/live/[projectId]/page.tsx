@@ -5,6 +5,8 @@ import { LivePresentationShell } from '@/features/live-presentation/components/l
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
+import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
+import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 
 type LivePageProps = {
@@ -21,16 +23,20 @@ export default async function LiveProjectPage({ params }: LivePageProps) {
     notFound();
   }
 
-  const [property, comparables, savedPositioning] = await Promise.all([
+  const [property, comparables, savedPositioning, diagnostics, condominium] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
     getSavedPricePositioning(projectId),
+    getSubjectPropertyDiagnostics(projectId),
+    getSubjectPropertyCondominium(projectId),
   ]);
 
   // Same business entry point as the Builder — Live never rebuilds the content.
   const presentation = buildSellerPresentation({
     project,
     property,
+    diagnostics,
+    condominium,
     comparables,
     savedPositioning,
     generatedAt: new Date().toISOString(),

@@ -18,6 +18,22 @@ export type PresentationWarningContext = {
   outliersReintroduced: boolean;
   lowConfidence: boolean;
   highDispersion: boolean;
+  // Diagnostics (Mission 22).
+  dpeNotDone: boolean;
+  electricityAnomaly: boolean;
+  gasAnomaly: boolean;
+  asbestosPositive: boolean;
+  leadPositive: boolean;
+  termitesPositive: boolean;
+  erpUnknown: boolean;
+  diagnosticsInProgress: boolean;
+  diagnosticsValidityNear: boolean;
+  // Condominium (Mission 22).
+  condoOngoingProcedures: boolean;
+  condoVotedWorks: boolean;
+  condoUnpaidCharges: boolean;
+  condoMissingAnnualCharges: boolean;
+  condoIncomplete: boolean;
 };
 
 // Deterministic preparation alerts. Factual, non-judgemental messages. Ordered
@@ -95,7 +111,93 @@ export function buildPresentationWarnings(
       severity: 'warning',
       message: 'Aucun visuel n’est disponible pour les comparables retenus.',
     },
+    // Vigilance — diagnostics.
+    {
+      include: context.dpeNotDone,
+      code: 'dpe_not_done',
+      severity: 'warning',
+      message: 'Le DPE n’est pas encore réalisé.',
+    },
+    {
+      include: context.electricityAnomaly,
+      code: 'electricity_anomaly',
+      severity: 'warning',
+      message: 'Une anomalie électrique est signalée.',
+    },
+    {
+      include: context.gasAnomaly,
+      code: 'gas_anomaly',
+      severity: 'warning',
+      message: 'Une anomalie gaz est signalée.',
+    },
+    {
+      include: context.asbestosPositive,
+      code: 'asbestos_positive',
+      severity: 'warning',
+      message: 'Le diagnostic amiante est positif.',
+    },
+    {
+      include: context.leadPositive,
+      code: 'lead_positive',
+      severity: 'warning',
+      message: 'Le diagnostic plomb est positif.',
+    },
+    {
+      include: context.termitesPositive,
+      code: 'termites_positive',
+      severity: 'warning',
+      message: 'Le diagnostic termites est positif.',
+    },
+    {
+      include: context.erpUnknown,
+      code: 'erp_unknown',
+      severity: 'warning',
+      message: 'L’état des risques et pollutions est inconnu.',
+    },
+    // Vigilance — condominium.
+    {
+      include: context.condoOngoingProcedures,
+      code: 'condo_ongoing_procedures',
+      severity: 'warning',
+      message: 'Une procédure de copropriété est en cours.',
+    },
+    {
+      include: context.condoVotedWorks,
+      code: 'condo_voted_works',
+      severity: 'warning',
+      message: 'Des travaux ont été votés en copropriété.',
+    },
+    {
+      include: context.condoUnpaidCharges,
+      code: 'condo_unpaid_charges',
+      severity: 'warning',
+      message: 'Des impayés de charges sont connus.',
+    },
+    {
+      include: context.condoMissingAnnualCharges,
+      code: 'condo_missing_annual_charges',
+      severity: 'warning',
+      message: 'Les charges annuelles ne sont pas renseignées sur ce bien en copropriété.',
+    },
     // Informative.
+    {
+      include: context.diagnosticsInProgress,
+      code: 'diagnostics_in_progress',
+      severity: 'info',
+      message: 'Certains diagnostics sont en cours de réalisation.',
+    },
+    {
+      include: context.condoIncomplete,
+      code: 'condo_incomplete',
+      severity: 'info',
+      message: 'Les données de copropriété sont incomplètes.',
+    },
+    {
+      include: context.diagnosticsValidityNear,
+      code: 'diagnostics_validity_near',
+      severity: 'info',
+      message: 'La date de validité des diagnostics approche.',
+    },
     {
       include: context.excludedOutlierCount > 0,
       code: 'outliers_excluded',

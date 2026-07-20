@@ -26,17 +26,32 @@ import {
   type SellerPresentationComparable,
   type SellerPresentationProperty,
 } from '@/features/seller-presentation/types/seller-presentation';
+import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
+import type { SubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/types';
 import type { SubjectProperty } from '@/features/subject-property/types';
 
 export type BuildSellerPresentationInput = {
   project: Project;
   property: SubjectProperty | null;
+  diagnostics: SubjectPropertyDiagnostics | null;
+  condominium: SubjectPropertyCondominium | null;
   comparables: Comparable[];
   savedPositioning: SavedPricePositioning | null;
   generatedAt: string;
 };
 
 const MIN_READY_COMPARABLES = 3;
+const VALIDITY_NEAR_DAYS = 180;
+
+// Whole days between two YYYY-MM-DD dates (b - a), or null if unparseable.
+function daysBetween(a: string, b: string): number | null {
+  const from = new Date(`${a}T00:00:00Z`).getTime();
+  const to = new Date(`${b}T00:00:00Z`).getTime();
+  if (Number.isNaN(from) || Number.isNaN(to)) {
+    return null;
+  }
+  return Math.round((to - from) / 86400000);
+}
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -113,7 +128,16 @@ function mapComparable(
 // reusing the Missions 15–18 engines. Pure: it never mutates its inputs, never
 // persists, never recomputes a rule defined elsewhere.
 export function buildSellerPresentation(input: BuildSellerPresentationInput): SellerPresentation {
-  const { project, property, comparables, savedPositioning, generatedAt } = input;
+  const {
+    project,
+    property,
+    diagnostics,
+    condominium,
+    comparables,
+    savedPositioning,
+    generatedAt,
+  } = input;
+  const today = generatedAt.slice(0, 10);
   const sellerSurface = property?.surface_area ?? null;
 
   // Retained comparables only, in display_order (copy — inputs are never mutated).
@@ -181,6 +205,24 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
   };
   const sections = buildPresentationSections(availability);
 
+  // Diagnostics / condominium alert flags (never invented — computed only from
+  // the stored rows).
+  const diagnosticStatuses = diagnostics
+    ? [
+        diagnostics.asbestos_status,
+        diagnostics.lead_status,
+        diagnostics.electricity_status,
+        diagnostics.gas_status,
+        diagnostics.termites_status,
+        diagnostics.erp_status,
+      ]
+    : [];
+  const validityDays =
+    diagnostics?.diagnostics_valid_until != null
+      ? daysBetween(today, diagnostics.diagnostics_valid_until)
+      : null;
+  const isCondo = condominium?.is_condominium === true;
+
   const warnings = buildPresentationWarnings({
     hasProperty: property != null,
     hasValidSellerSurface,
@@ -196,6 +238,22 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     outliersReintroduced: currentPositioning.dataset.outliersReintroduced,
     lowConfidence: positioningReady && currentPositioning.confidence.level === 'low',
     highDispersion: positioningReady && currentPositioning.recommendedRange?.dispersion === 'high',
+    dpeNotDone: diagnostics != null && diagnostics.dpe_date == null,
+    electricityAnomaly: diagnostics?.electricity_status === 'anomaly',
+    gasAnomaly: diagnostics?.gas_status === 'anomaly',
+    asbestosPositive: diagnostics?.asbestos_status === 'positive',
+    leadPositive: diagnostics?.lead_status === 'positive',
+    termitesPositive: diagnostics?.termites_status === 'positive',
+    erpUnknown: diagnostics?.erp_status === 'unknown',
+    diagnosticsInProgress: diagnosticStatuses.includes('in_progress'),
+    diagnosticsValidityNear:
+      validityDays != null && validityDays >= 0 && validityDays <= VALIDITY_NEAR_DAYS,
+    condoOngoingProcedures: isCondo && condominium?.ongoing_procedures === true,
+    condoVotedWorks: isCondo && condominium?.voted_works === true,
+    condoUnpaidCharges: isCondo && condominium?.known_unpaid_charges === true,
+    condoMissingAnnualCharges: isCondo && condominium?.annual_charges == null,
+    condoIncomplete:
+      isCondo && (condominium?.total_lots == null || condominium?.annual_charges == null),
   });
 
   const status: SellerPresentation['status'] =
@@ -218,6 +276,8 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       updatedAt: project.updated_at,
     },
     property: property ? mapProperty(property) : null,
+    diagnostics,
+    condominium,
     comparables: presentationComparables,
     comparableSummary: retained.length > 0 ? summary : null,
     marketAnalysis: analysis.statistics.count >= 1 ? analysis : null,

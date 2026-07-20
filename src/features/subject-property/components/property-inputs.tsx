@@ -70,6 +70,59 @@ export function NumberField({
   );
 }
 
+export function DateField({
+  label,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      {label}
+      <input
+        type="date"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={inputClass}
+      />
+      <FieldError error={error} />
+    </label>
+  );
+}
+
+export function TextareaField({
+  label,
+  value,
+  onChange,
+  error,
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  maxLength?: number;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      {label}
+      <textarea
+        rows={3}
+        value={value}
+        maxLength={maxLength}
+        onChange={(event) => onChange(event.target.value)}
+        className={inputClass}
+      />
+      <FieldError error={error} />
+    </label>
+  );
+}
+
 export function SelectField({
   label,
   value,

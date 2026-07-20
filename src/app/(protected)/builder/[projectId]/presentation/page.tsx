@@ -12,6 +12,8 @@ import { PresentationReadiness } from '@/features/seller-presentation/components
 import { PresentationSectionCard } from '@/features/seller-presentation/components/presentation-section-card';
 import { PresentationWarnings } from '@/features/seller-presentation/components/presentation-warnings';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
+import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
+import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 
 type PresentationPageProps = {
@@ -28,16 +30,20 @@ export default async function SellerPresentationPage({ params }: PresentationPag
     notFound();
   }
 
-  const [property, comparables, savedPositioning] = await Promise.all([
+  const [property, comparables, savedPositioning, diagnostics, condominium] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
     getSavedPricePositioning(projectId),
+    getSubjectPropertyDiagnostics(projectId),
+    getSubjectPropertyCondominium(projectId),
   ]);
 
   // Single business entry point — generated on the fly, nothing persisted.
   const presentation = buildSellerPresentation({
     project,
     property,
+    diagnostics,
+    condominium,
     comparables,
     savedPositioning,
     generatedAt: new Date().toISOString(),

@@ -139,6 +139,8 @@ function input(
   return {
     project: makeProject(),
     property: makeProperty(),
+    diagnostics: null,
+    condominium: null,
     comparables: threeComps(),
     savedPositioning: null,
     generatedAt: AT,
@@ -456,5 +458,118 @@ describe('buildSellerPresentation — warnings', () => {
     const rank = { blocking: 0, warning: 1, info: 2 } as const;
     const ranks = severities.map((s) => rank[s]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  });
+});
+
+function makeDiagnostics(
+  overrides: Partial<
+    import('@/features/subject-property-diagnostics/types').SubjectPropertyDiagnostics
+  > = {},
+): import('@/features/subject-property-diagnostics/types').SubjectPropertyDiagnostics {
+  return {
+    id: 'diag',
+    subject_property_id: 'sp',
+    agency_id: 'ag',
+    dpe_date: '2025-01-15',
+    energy_consumption: 180,
+    ges_emissions: 25,
+    asbestos_status: null,
+    lead_status: null,
+    electricity_status: null,
+    gas_status: null,
+    termites_status: null,
+    erp_status: null,
+    diagnostics_completed_at: '2025-01-15',
+    diagnostics_valid_until: null,
+    notes: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
+function makeCondominium(
+  overrides: Partial<
+    import('@/features/subject-property-condominium/types').SubjectPropertyCondominium
+  > = {},
+): import('@/features/subject-property-condominium/types').SubjectPropertyCondominium {
+  return {
+    id: 'condo',
+    subject_property_id: 'sp',
+    agency_id: 'ag',
+    is_condominium: true,
+    total_lots: 20,
+    residential_lots: 15,
+    annual_charges: 1200,
+    works_fund: 5000,
+    syndic_name: 'Cabinet X',
+    ongoing_procedures: null,
+    procedures_details: null,
+    voted_works: null,
+    voted_works_details: null,
+    planned_works: null,
+    planned_works_details: null,
+    known_unpaid_charges: null,
+    known_unpaid_charges_amount: null,
+    last_general_assembly_date: null,
+    notes: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
+describe('buildSellerPresentation — diagnostics and condominium (Mission 22)', () => {
+  it('exposes diagnostics and condominium when present', () => {
+    const diagnostics = makeDiagnostics();
+    const condominium = makeCondominium();
+    const result = buildSellerPresentation(input({ diagnostics, condominium }));
+    expect(result.diagnostics).toBe(diagnostics);
+    expect(result.condominium).toBe(condominium);
+  });
+
+  it('keeps diagnostics and condominium null when absent (never invented)', () => {
+    const result = buildSellerPresentation(input({ diagnostics: null, condominium: null }));
+    expect(result.diagnostics).toBeNull();
+    expect(result.condominium).toBeNull();
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes).not.toContain('electricity_anomaly');
+    expect(codes).not.toContain('condo_ongoing_procedures');
+  });
+
+  it('generates diagnostics vigilance alerts', () => {
+    const result = buildSellerPresentation(
+      input({
+        diagnostics: makeDiagnostics({
+          dpe_date: null,
+          electricity_status: 'anomaly',
+          erp_status: 'unknown',
+        }),
+      }),
+    );
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes).toEqual(
+      expect.arrayContaining(['dpe_not_done', 'electricity_anomaly', 'erp_unknown']),
+    );
+  });
+
+  it('generates condominium vigilance alerts', () => {
+    const result = buildSellerPresentation(
+      input({
+        condominium: makeCondominium({
+          ongoing_procedures: true,
+          known_unpaid_charges: true,
+          annual_charges: null,
+        }),
+      }),
+    );
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        'condo_ongoing_procedures',
+        'condo_unpaid_charges',
+        'condo_missing_annual_charges',
+      ]),
+    );
   });
 });

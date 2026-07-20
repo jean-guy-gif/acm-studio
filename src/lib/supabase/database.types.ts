@@ -942,6 +942,168 @@ export type Database = {
           },
         ]
       }
+      subject_property_condominiums: {
+        Row: {
+          agency_id: string
+          annual_charges: number | null
+          created_at: string
+          id: string
+          is_condominium: boolean
+          known_unpaid_charges: boolean | null
+          known_unpaid_charges_amount: number | null
+          last_general_assembly_date: string | null
+          notes: string | null
+          ongoing_procedures: boolean | null
+          planned_works: boolean | null
+          planned_works_details: string | null
+          procedures_details: string | null
+          residential_lots: number | null
+          subject_property_id: string
+          syndic_name: string | null
+          total_lots: number | null
+          updated_at: string
+          voted_works: boolean | null
+          voted_works_details: string | null
+          works_fund: number | null
+        }
+        Insert: {
+          agency_id: string
+          annual_charges?: number | null
+          created_at?: string
+          id?: string
+          is_condominium?: boolean
+          known_unpaid_charges?: boolean | null
+          known_unpaid_charges_amount?: number | null
+          last_general_assembly_date?: string | null
+          notes?: string | null
+          ongoing_procedures?: boolean | null
+          planned_works?: boolean | null
+          planned_works_details?: string | null
+          procedures_details?: string | null
+          residential_lots?: number | null
+          subject_property_id: string
+          syndic_name?: string | null
+          total_lots?: number | null
+          updated_at?: string
+          voted_works?: boolean | null
+          voted_works_details?: string | null
+          works_fund?: number | null
+        }
+        Update: {
+          agency_id?: string
+          annual_charges?: number | null
+          created_at?: string
+          id?: string
+          is_condominium?: boolean
+          known_unpaid_charges?: boolean | null
+          known_unpaid_charges_amount?: number | null
+          last_general_assembly_date?: string | null
+          notes?: string | null
+          ongoing_procedures?: boolean | null
+          planned_works?: boolean | null
+          planned_works_details?: string | null
+          procedures_details?: string | null
+          residential_lots?: number | null
+          subject_property_id?: string
+          syndic_name?: string | null
+          total_lots?: number | null
+          updated_at?: string
+          voted_works?: boolean | null
+          voted_works_details?: string | null
+          works_fund?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_property_condominiums_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_property_condominiums_subject_property_id_fkey"
+            columns: ["subject_property_id"]
+            isOneToOne: true
+            referencedRelation: "subject_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subject_property_diagnostics: {
+        Row: {
+          agency_id: string
+          asbestos_status: string | null
+          created_at: string
+          diagnostics_completed_at: string | null
+          diagnostics_valid_until: string | null
+          dpe_date: string | null
+          electricity_status: string | null
+          energy_consumption: number | null
+          erp_status: string | null
+          gas_status: string | null
+          ges_emissions: number | null
+          id: string
+          lead_status: string | null
+          notes: string | null
+          subject_property_id: string
+          termites_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          asbestos_status?: string | null
+          created_at?: string
+          diagnostics_completed_at?: string | null
+          diagnostics_valid_until?: string | null
+          dpe_date?: string | null
+          electricity_status?: string | null
+          energy_consumption?: number | null
+          erp_status?: string | null
+          gas_status?: string | null
+          ges_emissions?: number | null
+          id?: string
+          lead_status?: string | null
+          notes?: string | null
+          subject_property_id: string
+          termites_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          asbestos_status?: string | null
+          created_at?: string
+          diagnostics_completed_at?: string | null
+          diagnostics_valid_until?: string | null
+          dpe_date?: string | null
+          electricity_status?: string | null
+          energy_consumption?: number | null
+          erp_status?: string | null
+          gas_status?: string | null
+          ges_emissions?: number | null
+          id?: string
+          lead_status?: string | null
+          notes?: string | null
+          subject_property_id?: string
+          termites_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_property_diagnostics_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_property_diagnostics_subject_property_id_fkey"
+            columns: ["subject_property_id"]
+            isOneToOne: true
+            referencedRelation: "subject_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

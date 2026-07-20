@@ -164,7 +164,11 @@ export function LivePresentationShell({
             {activeSection.status !== 'available' ? (
               <LiveUnavailableSection section={activeSection} />
             ) : activeSection.key === 'property' ? (
-              <LivePropertySection property={presentation.property} />
+              <LivePropertySection
+                property={presentation.property}
+                diagnostics={presentation.diagnostics}
+                condominium={presentation.condominium}
+              />
             ) : activeSection.key === 'comparables' ? (
               <LiveComparablesSection comparables={presentation.comparables} />
             ) : activeSection.key === 'market_analysis' ? (
