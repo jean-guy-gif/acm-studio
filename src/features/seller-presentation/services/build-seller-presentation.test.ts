@@ -55,6 +55,19 @@ function makeProperty(overrides: Partial<SubjectProperty> = {}): SubjectProperty
     strengths: ['Calme', 'Lumineux'],
     weaknesses: null,
     photo_urls: ['https://x/p1.jpg'],
+    district: null,
+    floor: null,
+    building_floors: null,
+    ges_rating: null,
+    heating_type: null,
+    exposure: null,
+    construction_year: null,
+    general_condition: null,
+    outdoor_spaces: [],
+    parking_types: [],
+    monthly_charges: null,
+    property_tax: null,
+    watch_points: [],
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-02T00:00:00Z',
     ...overrides,
@@ -187,17 +200,59 @@ describe('buildSellerPresentation — contract', () => {
 });
 
 describe('buildSellerPresentation — property', () => {
-  it('maps a complete property and keeps absent fields null', () => {
+  it('maps a complete property and keeps absent fields null / empty', () => {
     const result = buildSellerPresentation(input());
     expect(result.property).not.toBeNull();
     expect(result.property?.city).toBe('Antibes');
     expect(result.property?.surfaceArea).toBe(52);
     expect(result.property?.energyRating).toBe('C');
     expect(result.property?.features).toEqual(['Calme', 'Lumineux']);
-    // Columns that do not exist on subject_properties are never invented.
+    // Absent structured data is kept null / empty, never invented.
     expect(result.property?.district).toBeNull();
     expect(result.property?.gesRating).toBeNull();
     expect(result.property?.floor).toBeNull();
+    expect(result.property?.outdoorSpaces).toEqual([]);
+    expect(result.property?.parkingTypes).toEqual([]);
+    expect(result.property?.watchPoints).toEqual([]);
+  });
+
+  it('exposes the new structured seller-property data when present', () => {
+    const result = buildSellerPresentation(
+      input({
+        property: makeProperty({
+          district: 'Estagnol',
+          floor: 1,
+          building_floors: 3,
+          ges_rating: 'C',
+          heating_type: 'individual_gas',
+          exposure: 'south',
+          construction_year: 1985,
+          general_condition: 'good',
+          outdoor_spaces: ['balcony', 'garden'],
+          parking_types: ['garage'],
+          monthly_charges: 120,
+          property_tax: 1400,
+          strengths: ['Calme'],
+          watch_points: ['Étage sans ascenseur'],
+        }),
+      }),
+    );
+    expect(result.property).toMatchObject({
+      district: 'Estagnol',
+      floor: 1,
+      buildingFloors: 3,
+      gesRating: 'C',
+      heatingType: 'individual_gas',
+      exposure: 'south',
+      constructionYear: 1985,
+      generalCondition: 'good',
+      outdoorSpaces: ['balcony', 'garden'],
+      parkingTypes: ['garage'],
+      monthlyCharges: 120,
+      propertyTax: 1400,
+      features: ['Calme'],
+      watchPoints: ['Étage sans ascenseur'],
+    });
   });
 
   it('returns a null property when none exists', () => {

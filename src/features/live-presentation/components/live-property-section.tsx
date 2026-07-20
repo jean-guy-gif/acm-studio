@@ -1,4 +1,21 @@
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
+import {
+  EXPOSURE_LABELS,
+  GENERAL_CONDITION_LABELS,
+  HEATING_TYPE_LABELS,
+  OUTDOOR_SPACE_LABELS,
+  PARKING_TYPE_LABELS,
+  type Exposure,
+  type GeneralCondition,
+  type HeatingType,
+  type OutdoorSpace,
+  type ParkingType,
+} from '@/features/subject-property/constants/property-options';
+
+function labelList<T extends string>(codes: string[], labels: Record<T, string>): string | null {
+  const mapped = codes.map((code) => labels[code as T] ?? code);
+  return mapped.length > 0 ? mapped.join(' · ') : null;
+}
 
 // Read-only. Only present values are rendered — no repeated dashes, nothing
 // invented.
@@ -59,12 +76,64 @@ export function LivePropertySection({ property }: { property: SellerPresentation
         <Fact label="Chambres" value={property.bedroomsCount} />
         <Fact label="DPE" value={property.energyRating} />
         <Fact label="GES" value={property.gesRating} />
+        <Fact
+          label="Étage"
+          value={
+            property.floor != null
+              ? property.buildingFloors != null
+                ? `${property.floor} / ${property.buildingFloors}`
+                : property.floor
+              : null
+          }
+        />
+        <Fact
+          label="Exposition"
+          value={property.exposure ? EXPOSURE_LABELS[property.exposure as Exposure] : null}
+        />
+        <Fact label="Année de construction" value={property.constructionYear} />
+        <Fact
+          label="État général"
+          value={
+            property.generalCondition
+              ? GENERAL_CONDITION_LABELS[property.generalCondition as GeneralCondition]
+              : null
+          }
+        />
+        <Fact
+          label="Chauffage"
+          value={
+            property.heatingType ? HEATING_TYPE_LABELS[property.heatingType as HeatingType] : null
+          }
+        />
+        <Fact
+          label="Charges"
+          value={property.monthlyCharges != null ? `${property.monthlyCharges} €/mois` : null}
+        />
+        <Fact
+          label="Taxe foncière"
+          value={property.propertyTax != null ? `${property.propertyTax} €/an` : null}
+        />
+        <Fact
+          label="Extérieurs"
+          value={labelList<OutdoorSpace>(property.outdoorSpaces, OUTDOOR_SPACE_LABELS)}
+        />
+        <Fact
+          label="Stationnements"
+          value={labelList<ParkingType>(property.parkingTypes, PARKING_TYPE_LABELS)}
+        />
       </div>
 
       {property.features.length > 0 ? (
         <div>
-          <div className="text-sm text-zinc-500">Caractéristiques principales</div>
+          <div className="text-sm text-zinc-500">Points forts</div>
           <div className="text-lg">{property.features.join(' · ')}</div>
+        </div>
+      ) : null}
+
+      {property.watchPoints.length > 0 ? (
+        <div>
+          <div className="text-sm text-zinc-500">Points de vigilance</div>
+          <div className="text-lg">{property.watchPoints.join(' · ')}</div>
         </div>
       ) : null}
     </div>

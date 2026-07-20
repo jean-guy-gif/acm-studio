@@ -828,20 +828,33 @@ export type Database = {
           agency_id: string
           bathrooms_count: number | null
           bedrooms_count: number | null
+          building_floors: number | null
           city: string | null
+          construction_year: number | null
           created_at: string
           description: string | null
+          district: string | null
           energy_rating: string | null
+          exposure: string | null
+          floor: number | null
+          general_condition: string | null
+          ges_rating: string | null
+          heating_type: string | null
           id: string
           land_area: number | null
+          monthly_charges: number | null
+          outdoor_spaces: string[]
+          parking_types: string[]
           photo_urls: Json | null
           postal_code: string | null
           project_id: string
+          property_tax: number | null
           property_type: string | null
           rooms_count: number | null
-          strengths: Json | null
+          strengths: string[]
           surface_area: number | null
           updated_at: string
+          watch_points: string[]
           weaknesses: Json | null
         }
         Insert: {
@@ -849,20 +862,33 @@ export type Database = {
           agency_id: string
           bathrooms_count?: number | null
           bedrooms_count?: number | null
+          building_floors?: number | null
           city?: string | null
+          construction_year?: number | null
           created_at?: string
           description?: string | null
+          district?: string | null
           energy_rating?: string | null
+          exposure?: string | null
+          floor?: number | null
+          general_condition?: string | null
+          ges_rating?: string | null
+          heating_type?: string | null
           id?: string
           land_area?: number | null
+          monthly_charges?: number | null
+          outdoor_spaces?: string[]
+          parking_types?: string[]
           photo_urls?: Json | null
           postal_code?: string | null
           project_id: string
+          property_tax?: number | null
           property_type?: string | null
           rooms_count?: number | null
-          strengths?: Json | null
+          strengths?: string[]
           surface_area?: number | null
           updated_at?: string
+          watch_points?: string[]
           weaknesses?: Json | null
         }
         Update: {
@@ -870,20 +896,33 @@ export type Database = {
           agency_id?: string
           bathrooms_count?: number | null
           bedrooms_count?: number | null
+          building_floors?: number | null
           city?: string | null
+          construction_year?: number | null
           created_at?: string
           description?: string | null
+          district?: string | null
           energy_rating?: string | null
+          exposure?: string | null
+          floor?: number | null
+          general_condition?: string | null
+          ges_rating?: string | null
+          heating_type?: string | null
           id?: string
           land_area?: number | null
+          monthly_charges?: number | null
+          outdoor_spaces?: string[]
+          parking_types?: string[]
           photo_urls?: Json | null
           postal_code?: string | null
           project_id?: string
+          property_tax?: number | null
           property_type?: string | null
           rooms_count?: number | null
-          strengths?: Json | null
+          strengths?: string[]
           surface_area?: number | null
           updated_at?: string
+          watch_points?: string[]
           weaknesses?: Json | null
         }
         Relationships: [

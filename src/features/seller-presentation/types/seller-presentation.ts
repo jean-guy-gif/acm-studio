@@ -53,12 +53,20 @@ export type SellerPresentationProperty = {
   surfaceArea: number | null;
   roomsCount: number | null;
   bedroomsCount: number | null;
-  floor: string | null;
-  exterior: string | null;
-  parking: string | null;
+  floor: number | null;
+  buildingFloors: number | null;
+  exposure: string | null;
+  constructionYear: number | null;
+  generalCondition: string | null;
+  outdoorSpaces: string[];
+  parkingTypes: string[];
+  monthlyCharges: number | null;
+  propertyTax: number | null;
   energyRating: string | null;
   gesRating: string | null;
+  heatingType: string | null;
   features: string[];
+  watchPoints: string[];
   photoUrls: string[];
 };
 
