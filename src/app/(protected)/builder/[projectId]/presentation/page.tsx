@@ -54,6 +54,12 @@ export default async function SellerPresentationPage({ params }: PresentationPag
           Aperçu de préparation (version {presentation.version}). Cette page vérifie la matière
           préparée ; elle ne remplace pas encore le mode Live.
         </p>
+        <Link
+          href={`/live/${projectId}`}
+          className="mt-2 inline-block rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Ouvrir dans Live
+        </Link>
       </div>
 
       {/* 1. Readiness */}
