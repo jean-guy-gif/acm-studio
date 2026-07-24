@@ -136,7 +136,9 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
             Données insuffisantes pour calculer un positionnement fiable.
           </p>
           <PositioningReasons reasons={positioning.reasons} />
-          {saved ? <SavedPositioningCard saved={saved} freshness="up_to_date" /> : null}
+          {/* Current calc can't be produced, so the saved decision can't be confirmed
+              up to date: flag it "À actualiser" rather than a misleading "À jour". */}
+          {saved ? <SavedPositioningCard saved={saved} freshness="outdated" /> : null}
         </section>
       )}
     </div>

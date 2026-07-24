@@ -11,6 +11,16 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+// Keys under which real listing / gallery nodes are commonly nested.
+const NESTED_NODE_KEYS = [
+  '@graph',
+  'itemListElement',
+  'item',
+  'hasPart',
+  'mainEntity',
+  'associatedMedia',
+];
+
 function collectNodes(root: unknown, out: Record<string, unknown>[]): void {
   if (Array.isArray(root)) {
     for (const item of root) {
@@ -20,8 +30,10 @@ function collectNodes(root: unknown, out: Record<string, unknown>[]): void {
   }
   if (isRecord(root)) {
     out.push(root);
-    if ('@graph' in root) {
-      collectNodes(root['@graph'], out);
+    for (const key of NESTED_NODE_KEYS) {
+      if (key in root) {
+        collectNodes(root[key], out);
+      }
     }
   }
 }
@@ -169,7 +181,26 @@ export function extractJsonLd(html: string): PartialListingData {
         }
       }
     }
-    collectImages(node.image, photos);
+    // Images can live under several keys depending on the schema. A bare `url` is
+    // only treated as an image on an ImageObject node (never the listing page URL).
+    const type = node['@type'];
+    const isImageObject =
+      type === 'ImageObject' || (Array.isArray(type) && type.includes('ImageObject'));
+    const imageKeys = [
+      'image',
+      'photo',
+      'photos',
+      'images',
+      'gallery',
+      'thumbnailUrl',
+      'contentUrl',
+    ];
+    if (isImageObject) {
+      imageKeys.push('url');
+    }
+    for (const key of imageKeys) {
+      collectImages(node[key], photos);
+    }
   }
 
   if (photos.length > 0) {

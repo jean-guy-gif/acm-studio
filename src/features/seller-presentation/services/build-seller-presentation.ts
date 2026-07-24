@@ -6,6 +6,15 @@ import {
   getComparablePhotoUrls,
   getMainPhotoUrl,
 } from '@/features/comparables/utils/comparable-photos';
+import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
+import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
+import { calculateLivePriceGaps } from '@/features/live-seller/services/calculate-live-price-gaps';
+import { storedFieldsPriceHistoryProvider } from '@/features/live-seller/services/price-history-provider';
+import type {
+  FeatureBundle,
+  LiveComparableResponse,
+  LiveSellerSummary,
+} from '@/features/live-seller/types';
 import { calculatePricePositioning } from '@/features/price-positioning/services/calculate-price-positioning';
 import {
   comparePositioningFreshness,
@@ -21,6 +30,8 @@ import {
 import { buildPresentationWarnings } from '@/features/seller-presentation/services/build-presentation-warnings';
 import {
   SELLER_PRESENTATION_VERSION,
+  type LiveComparableEntry,
+  type LiveComparativeData,
   type PositioningStatus,
   type SellerPresentation,
   type SellerPresentationComparable,
@@ -38,6 +49,9 @@ export type BuildSellerPresentationInput = {
   comparables: Comparable[];
   savedPositioning: SavedPricePositioning | null;
   generatedAt: string;
+  // Mission 24 — Live seller answers (optional; Builder omits them).
+  sellerResponses?: LiveComparableResponse[];
+  sellerSummary?: LiveSellerSummary | null;
 };
 
 const MIN_READY_COMPARABLES = 3;
@@ -136,6 +150,8 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     comparables,
     savedPositioning,
     generatedAt,
+    sellerResponses = [],
+    sellerSummary = null,
   } = input;
   const today = generatedAt.slice(0, 10);
   const sellerSurface = property?.surface_area ?? null;
@@ -264,6 +280,123 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       ? 'ready'
       : 'incomplete';
 
+  // ---- Mission 24 — Live comparative core (derived only; nothing invented) ----
+  const responseByComparable = new Map(
+    sellerResponses
+      .filter((response) => response.comparable_id != null)
+      .map((response) => [response.comparable_id as string, response]),
+  );
+  const retainedPricesPerSquareMeter = retained
+    .map((comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area))
+    .filter((value): value is number => value != null);
+  const emptyBundle: FeatureBundle = {
+    surfaceArea: null,
+    roomsCount: null,
+    bedroomsCount: null,
+    generalCondition: null,
+    energyRating: null,
+    gesRating: null,
+    outdoorSpaces: null,
+    parkingTypes: null,
+    exposure: null,
+  };
+  const subjectFeatures: FeatureBundle | null = property
+    ? {
+        surfaceArea: property.surface_area,
+        roomsCount: property.rooms_count,
+        bedroomsCount: property.bedrooms_count,
+        generalCondition: property.general_condition,
+        energyRating: property.energy_rating,
+        gesRating: property.ges_rating,
+        outdoorSpaces: asStringArray(property.outdoor_spaces),
+        parkingTypes: asStringArray(property.parking_types),
+        exposure: property.exposure,
+      }
+    : null;
+  const competitiveMarketCentral = currentPositioning.recommendedRange?.central ?? null;
+
+  const liveComparables: LiveComparableEntry[] = retained.map((comparable, index) => {
+    const ppsm = pricePerSquareMeter(comparable.price, comparable.surface_area);
+    const response = responseByComparable.get(comparable.id) ?? null;
+    const comparableFeatures: FeatureBundle = {
+      surfaceArea: comparable.surface_area,
+      roomsCount: comparable.rooms_count,
+      bedroomsCount: comparable.bedrooms_count,
+      generalCondition: comparable.general_condition,
+      energyRating: comparable.energy_rating,
+      gesRating: comparable.ges_rating,
+      outdoorSpaces: asStringArray(comparable.outdoor_spaces),
+      parkingTypes: asStringArray(comparable.parking_types),
+      exposure: comparable.exposure,
+    };
+    const historySource = {
+      currentPrice: comparable.price,
+      priceDropAmount: comparable.price_drop_amount,
+      priceDropPercentage: comparable.price_drop_percentage,
+      source: comparable.source,
+      daysOnMarket: comparable.days_on_market,
+    };
+    const photoUrls = getComparablePhotoUrls(comparable);
+    const listingUrl = comparable.listing_url?.trim() ? comparable.listing_url : null;
+    return {
+      id: comparable.id,
+      position: index + 1,
+      title: comparable.title,
+      city: comparable.city,
+      district: comparable.district,
+      price: comparable.price,
+      surfaceArea: comparable.surface_area,
+      pricePerSquareMeter: ppsm,
+      roomsCount: comparable.rooms_count,
+      bedroomsCount: comparable.bedrooms_count,
+      energyRating: comparable.energy_rating,
+      gesRating: comparable.ges_rating,
+      photoUrl: photoUrls[0] ?? null,
+      photoUrls,
+      source: listingUrl ? 'url' : 'manual',
+      listingUrl,
+      isOutlier: outlierIds.has(comparable.id),
+      featureComparison: buildComparableFeatureComparison(
+        subjectFeatures ?? emptyBundle,
+        comparableFeatures,
+      ),
+      priceReveal: buildPriceReveal({
+        price: comparable.price,
+        surfaceArea: comparable.surface_area,
+        sellerEstimate: response?.seller_estimated_listing_price ?? null,
+        retainedPricesPerSquareMeter,
+        thisPricePerSquareMeter: ppsm,
+      }),
+      priceHistory: storedFieldsPriceHistoryProvider.getPriceHistory(historySource),
+      marketDuration: storedFieldsPriceHistoryProvider.getMarketDuration(
+        historySource,
+        generatedAt,
+      ),
+      response,
+    };
+  });
+
+  const live: LiveComparativeData | null =
+    property != null && retained.length >= 1
+      ? {
+          comparables: liveComparables,
+          sellerSummary,
+          competitiveMarketCentral,
+          advisorDecision: savedPositioning
+            ? {
+                advisorPrice: savedPositioning.advisorPrice,
+                sellerPrice: savedPositioning.sellerPrice,
+                justification: savedPositioning.justification,
+              }
+            : null,
+          priceGaps: calculateLivePriceGaps({
+            sellerPerceivedPrice: sellerSummary?.seller_perceived_property_price ?? null,
+            competitiveMarketCentral,
+            advisorComparativePrice: sellerSummary?.advisor_comparative_market_price ?? null,
+          }),
+        }
+      : null;
+
   return {
     version: SELLER_PRESENTATION_VERSION,
     status,
@@ -286,5 +419,6 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     positioningStatus,
     sections,
     warnings,
+    live,
   };
 }

@@ -3,12 +3,22 @@ import type {
   ImportedComparableData,
   PartialListingData,
 } from '@/features/comparable-import/types';
+import { mapComparableCharacteristics } from '@/features/comparable-import/services/map-comparable-characteristics';
 import { deduplicatePhotoUrls } from '@/features/comparable-import/utils/deduplicate-photo-urls';
 import { isGenericImageUrl, isGenericTitle } from '@/features/comparable-import/utils/is-generic';
 
 type ScalarField = Exclude<
   keyof ImportedComparableData,
-  'listingUrl' | 'photoUrls' | 'listingFeatures' | 'source' | 'title'
+  | 'listingUrl'
+  | 'photoUrls'
+  | 'listingFeatures'
+  | 'source'
+  | 'title'
+  // Mission 24 structured fields are derived by mapping, not picked from extractors.
+  | 'generalCondition'
+  | 'exposure'
+  | 'outdoorSpaces'
+  | 'parkingTypes'
 >;
 
 const SCALAR_FIELDS: ScalarField[] = [
@@ -133,6 +143,10 @@ export function normalizeListingData(
     listingDescription: str(merged.listingDescription),
     listingFeatures: [],
     photoUrls,
+    generalCondition: null,
+    exposure: null,
+    outdoorSpaces: [],
+    parkingTypes: [],
   };
   // A description that is just the portal's generic slogan is not usable.
   if (data.listingDescription && isGenericTitle(data.listingDescription, source)) {
@@ -140,6 +154,17 @@ export function normalizeListingData(
   }
 
   data.listingFeatures = buildFeatures(ordered);
+
+  // Deterministic mapping of structured characteristics from the accessible text.
+  const mapped = mapComparableCharacteristics({
+    features: data.listingFeatures,
+    description: data.listingDescription,
+    title: data.title,
+  });
+  data.generalCondition = mapped.generalCondition;
+  data.exposure = mapped.exposure;
+  data.outdoorSpaces = mapped.outdoorSpaces;
+  data.parkingTypes = mapped.parkingTypes;
 
   const foundFields: string[] = [];
   const missingFields: string[] = [];

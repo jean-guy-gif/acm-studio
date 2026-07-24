@@ -1,11 +1,16 @@
 import Link from 'next/link';
 
+import { SubmitButton } from '@/components/submit-button';
 import { deleteProject } from '@/features/projects/actions/delete-project';
 import { getProjects } from '@/features/projects/queries/get-projects';
 import { statusLabel } from '@/features/projects/status-label';
 
-export default async function BuilderPage() {
-  const projects = await getProjects();
+type BuilderPageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
+
+export default async function BuilderPage({ searchParams }: BuilderPageProps) {
+  const [projects, { error }] = await Promise.all([getProjects(), searchParams]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -21,6 +26,8 @@ export default async function BuilderPage() {
           Nouveau dossier vendeur
         </Link>
       </div>
+
+      {error ? <p role="alert">{error}</p> : null}
 
       {projects.length === 0 ? (
         <div className="flex flex-col gap-1 text-zinc-500">
@@ -50,12 +57,12 @@ export default async function BuilderPage() {
                 </Link>
                 <form action={deleteProject}>
                   <input type="hidden" name="projectId" value={project.id} />
-                  <button
-                    type="submit"
-                    className="rounded border border-zinc-300 px-2 py-1 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  <SubmitButton
+                    pendingLabel="Suppression…"
+                    className="rounded border border-zinc-300 px-2 py-1 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   >
                     Supprimer
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             </li>

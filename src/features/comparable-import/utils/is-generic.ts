@@ -1,6 +1,25 @@
 // Conservative filters: a wrong value is worse than an empty one.
 
-const GENERIC_IMAGE_HINTS = ['placeholder', 'share', 'logo', 'default', 'favicon'];
+const GENERIC_IMAGE_HINTS = [
+  'placeholder',
+  'share',
+  'logo',
+  'default',
+  'favicon',
+  'sprite',
+  'icon',
+  'pixel',
+  'blank',
+  'spacer',
+  'loader',
+  'loading',
+  'transparent',
+  '1x1',
+  'watermark',
+  'no-photo',
+  'no_photo',
+  'nophoto',
+];
 
 // True for share/placeholder/logo/default/favicon assets that are not the
 // property's own photos.

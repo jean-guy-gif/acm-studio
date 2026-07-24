@@ -82,4 +82,46 @@ describe('extractJsonLd', () => {
     expect(data.title).toBe('Only title');
     expect(data.price).toBeUndefined();
   });
+
+  it('collects five images from an array and an object list', () => {
+    const data = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          name: 'Bien',
+          image: [
+            'https://x/1.jpg',
+            'https://x/2.jpg',
+            { url: 'https://x/3.jpg' },
+            { contentUrl: 'https://x/4.jpg' },
+            'https://x/5.jpg',
+          ],
+        }),
+      ),
+    );
+    expect(data.photoUrls).toEqual([
+      'https://x/1.jpg',
+      'https://x/2.jpg',
+      'https://x/3.jpg',
+      'https://x/4.jpg',
+      'https://x/5.jpg',
+    ]);
+  });
+
+  it('collects images nested in itemListElement / gallery', () => {
+    const data = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          '@type': 'ItemList',
+          itemListElement: [
+            { '@type': 'ListItem', item: { '@type': 'ImageObject', url: 'https://x/g1.jpg' } },
+            {
+              '@type': 'ListItem',
+              item: { '@type': 'ImageObject', contentUrl: 'https://x/g2.jpg' },
+            },
+          ],
+        }),
+      ),
+    );
+    expect(data.photoUrls).toEqual(['https://x/g1.jpg', 'https://x/g2.jpg']);
+  });
 });

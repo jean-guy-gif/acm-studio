@@ -47,7 +47,12 @@ export function extractOpenGraph(html: string): PartialListingData {
 
   const photos: string[] = [];
   for (const meta of metas) {
-    if (meta.key === 'og:image' || meta.key === 'og:image:url') {
+    // Some portals expose the image only via og:image:secure_url.
+    if (
+      meta.key === 'og:image' ||
+      meta.key === 'og:image:url' ||
+      meta.key === 'og:image:secure_url'
+    ) {
       if (meta.content.trim() !== '') {
         photos.push(meta.content.trim());
       }

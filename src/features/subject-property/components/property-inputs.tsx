@@ -61,7 +61,7 @@ export function NumberField({
           step={step}
           min={min}
           onChange={(event) => onChange(event.target.value)}
-          className={`${inputClass} flex-1`}
+          className={`${inputClass} w-full min-w-0 flex-1`}
         />
         {suffix ? <span className="text-sm text-zinc-500">{suffix}</span> : null}
       </span>

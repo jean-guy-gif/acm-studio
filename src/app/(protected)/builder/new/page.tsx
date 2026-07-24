@@ -1,3 +1,4 @@
+import { SubmitButton } from '@/components/submit-button';
 import { createProject } from '@/features/projects/actions/create-project';
 
 type NewProjectPageProps = {
@@ -24,12 +25,7 @@ export default async function NewProjectPage({ searchParams }: NewProjectPagePro
           Téléphone
           <input type="tel" name="sellerPhone" className="rounded border px-2 py-1" />
         </label>
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Créer le dossier
-        </button>
+        <SubmitButton pendingLabel="Création…">Créer le dossier</SubmitButton>
       </form>
     </div>
   );

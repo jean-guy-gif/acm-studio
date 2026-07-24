@@ -1,4 +1,5 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
+import { extractImageUrls } from '@/features/comparable-import/utils/extract-image-urls';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
@@ -85,6 +86,13 @@ export function extractHtml(html: string): PartialListingData {
   );
   if (ges) {
     result.gesRating = ges.toUpperCase();
+  }
+
+  // Gallery images from <img>/<source> (src, data-src, data-lazy-src, srcset).
+  // Generic assets + relative-URL resolution + dedup are handled downstream.
+  const images = extractImageUrls(html);
+  if (images.length > 0) {
+    result.photoUrls = images;
   }
 
   return result;

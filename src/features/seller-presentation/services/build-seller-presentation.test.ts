@@ -152,7 +152,7 @@ describe('buildSellerPresentation — contract', () => {
   it('exposes the versioned contract and the generation date', () => {
     const result = buildSellerPresentation(input());
     expect(result.version).toBe(SELLER_PRESENTATION_VERSION);
-    expect(result.version).toBe(1);
+    expect(result.version).toBe(2);
     expect(result.generatedAt).toBe(AT);
   });
 
@@ -571,5 +571,87 @@ describe('buildSellerPresentation — diagnostics and condominium (Mission 22)',
         'condo_missing_annual_charges',
       ]),
     );
+  });
+});
+
+describe('buildSellerPresentation — Mission 24 live comparative core', () => {
+  function response(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'r1',
+      project_id: 'proj',
+      comparable_id: 'a',
+      agency_id: 'ag',
+      seller_serious_competitor: 'yes',
+      seller_serious_competitor_comment: null,
+      seller_estimated_listing_price: 240000,
+      seller_market_duration_reason: 'price_too_high',
+      seller_market_duration_comment: null,
+      created_at: AT,
+      updated_at: AT,
+      ...overrides,
+    } as never;
+  }
+
+  it('exposes a live block with one entry per retained comparable', () => {
+    const result = buildSellerPresentation(input());
+    expect(result.live).not.toBeNull();
+    expect(result.live?.comparables).toHaveLength(3);
+    const first = result.live!.comparables[0];
+    expect(first.featureComparison).toHaveLength(9);
+    expect(first.priceReveal.currentPrice).toBe(250000); // 5000 * 50
+    expect(first.marketDuration).toBeDefined();
+    expect(first.priceHistory).toBeDefined();
+  });
+
+  it('attaches the seller response and computes the price gap from the estimate', () => {
+    const result = buildSellerPresentation(input({ sellerResponses: [response()] }));
+    const entry = result.live!.comparables.find((c) => c.id === 'a')!;
+    expect(entry.response?.seller_serious_competitor).toBe('yes');
+    expect(entry.priceReveal.sellerEstimate).toBe(240000);
+    expect(entry.priceReveal.gapAmount).toBe(10000); // 250000 - 240000
+    expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 3 });
+  });
+
+  it('computes final price gaps from the seller summary and observed market', () => {
+    const comparables = threeComps();
+    const result = buildSellerPresentation(
+      input({
+        comparables,
+        savedPositioning: savedMatching(comparables, 52),
+        sellerSummary: {
+          id: 's1',
+          project_id: 'proj',
+          agency_id: 'ag',
+          seller_most_dangerous_comparable_id: 'c',
+          seller_most_dangerous_reason: 'more_attractive_price',
+          seller_most_dangerous_comment: null,
+          seller_perceived_property_price: 320000,
+          advisor_comparative_market_price: 300000,
+          created_at: AT,
+          updated_at: AT,
+        } as never,
+      }),
+    );
+    const gaps = result.live!.priceGaps;
+    expect(gaps.sellerPerceivedPrice).toBe(320000);
+    expect(gaps.advisorComparativePrice).toBe(300000);
+    expect(gaps.sellerVsAdvisor.amount).toBe(20000);
+    expect(result.live!.advisorDecision?.advisorPrice).toBe(300000);
+  });
+
+  it('returns null live when there is no property', () => {
+    expect(buildSellerPresentation(input({ property: null })).live).toBeNull();
+  });
+
+  it('exposes every photo of a comparable to Live (SellerPresentation carries all)', () => {
+    const photos = Array.from({ length: 8 }, (_value, i) => `https://x/${i}.jpg`);
+    const result = buildSellerPresentation(
+      input({
+        comparables: [comp('a', 5000, { photo_urls: photos }), comp('b', 6000), comp('c', 7000)],
+      }),
+    );
+    const entry = result.live!.comparables.find((c) => c.id === 'a')!;
+    expect(entry.photoUrls).toEqual(photos);
+    expect(entry.photoUrl).toBe('https://x/0.jpg');
   });
 });

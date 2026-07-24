@@ -37,4 +37,17 @@ describe('isGenericImageUrl', () => {
       false,
     );
   });
+
+  it('filters logos, placeholders, sprites, icons and pixels', () => {
+    for (const url of [
+      'https://x/logo.png',
+      'https://x/placeholder.jpg',
+      'https://x/sprite.svg',
+      'https://x/icon-24.png',
+      'https://x/pixel.gif',
+      'https://x/favicon.ico',
+    ]) {
+      expect(isGenericImageUrl(url)).toBe(true);
+    }
+  });
 });

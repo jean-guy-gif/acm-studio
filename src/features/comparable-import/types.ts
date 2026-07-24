@@ -23,6 +23,11 @@ export type ImportedComparableData = {
   listingDescription: string | null;
   listingFeatures: string[];
   photoUrls: string[];
+  // Mission 24 — structured characteristics mapped deterministically from text.
+  generalCondition: string | null;
+  exposure: string | null;
+  outdoorSpaces: string[];
+  parkingTypes: string[];
 };
 
 // Partial data produced by a single extractor before the priority merge.

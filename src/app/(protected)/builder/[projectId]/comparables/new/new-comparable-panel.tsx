@@ -1,7 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useActionState, useRef, useState, useTransition } from 'react';
 
+import { SubmitButton } from '@/components/submit-button';
+import {
+  initialCreateComparableState,
+  type CreateComparableState,
+} from '@/features/comparables/actions/create-comparable-state';
 import type {
   ComparableImportResult,
   ImportedComparableData,
@@ -58,6 +63,10 @@ function toDefaults(data: ImportedComparableData): ComparableFieldDefaults {
     photo_urls: data.photoUrls,
     listing_description: data.listingDescription,
     listing_features: data.listingFeatures,
+    general_condition: data.generalCondition,
+    exposure: data.exposure,
+    outdoor_spaces: data.outdoorSpaces,
+    parking_types: data.parkingTypes,
   };
 }
 
@@ -70,7 +79,10 @@ function acmPricePerSquareMeter(data: ImportedComparableData): number | null {
 }
 
 type Props = {
-  createAction: (formData: FormData) => Promise<void>;
+  createAction: (
+    state: CreateComparableState,
+    formData: FormData,
+  ) => Promise<CreateComparableState>;
   importAction: (formData: FormData) => Promise<ComparableImportResult>;
 };
 
@@ -84,15 +96,39 @@ export function NewComparablePanel({ createAction, importAction }: Props) {
     missing: string[];
   } | null>(null);
   const [importKey, setImportKey] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [createState, createFormAction] = useActionState(
+    createAction,
+    initialCreateComparableState,
+  );
 
   function handleImport() {
     setError(null);
     const formData = new FormData();
     formData.set('url', url);
+    // Photos already present in the form (manual or a previous import). An import
+    // must never erase or reduce this gallery: the imported photos are UNIONED
+    // with the existing ones, so an empty / smaller import is harmless.
+    const existingPhotos =
+      formRef.current
+        ?.querySelector<HTMLInputElement>('input[name="photo_urls"]')
+        ?.value.split('\n')
+        .map((value) => value.trim())
+        .filter(Boolean) ?? [];
     startTransition(async () => {
       const res = await importAction(formData);
       if (res.ok) {
-        setResult({ data: res.data, found: res.foundFields, missing: res.missingFields });
+        const mergedPhotos = [...existingPhotos];
+        for (const photo of res.data.photoUrls) {
+          if (!mergedPhotos.includes(photo)) {
+            mergedPhotos.push(photo);
+          }
+        }
+        setResult({
+          data: { ...res.data, photoUrls: mergedPhotos.slice(0, 20) },
+          found: res.foundFields,
+          missing: res.missingFields,
+        });
         setImportKey((value) => value + 1);
       } else {
         setError(res.error);
@@ -102,6 +138,12 @@ export function NewComparablePanel({ createAction, importAction }: Props) {
   }
 
   const initial = result ? toDefaults(result.data) : undefined;
+  // Repopulate the manual form with the rejected submission's values only when no
+  // fresh import has happened since (matching generation). A newer import wins.
+  const echoValues =
+    createState.values && createState.importGen === String(importKey)
+      ? createState.values
+      : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -171,15 +213,21 @@ export function NewComparablePanel({ createAction, importAction }: Props) {
         </p>
       </section>
 
-      <form key={importKey} action={createAction} className="flex max-w-xl flex-col gap-3">
+      <form
+        key={importKey}
+        ref={formRef}
+        action={createFormAction}
+        className="flex max-w-xl flex-col gap-3"
+      >
         <h2 className="text-lg font-medium">Saisir manuellement</h2>
-        <ComparableFormFields initial={initial} />
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Enregistrer
-        </button>
+        {createState.error ? <p role="alert">{createState.error}</p> : null}
+        <input type="hidden" name="__importGen" value={String(importKey)} />
+        <ComparableFormFields
+          initial={initial}
+          values={echoValues}
+          errors={createState.fieldErrors}
+        />
+        <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
       </form>
     </div>
   );

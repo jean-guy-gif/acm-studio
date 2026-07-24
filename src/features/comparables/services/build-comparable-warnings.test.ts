@@ -39,6 +39,10 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     price_drop_amount: null,
     price_drop_percentage: null,
     advisor_notes: null,
+    general_condition: null,
+    exposure: null,
+    outdoor_spaces: [],
+    parking_types: [],
     ...overrides,
   };
 }

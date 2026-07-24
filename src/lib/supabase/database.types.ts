@@ -109,6 +109,8 @@ export type Database = {
           district: string | null
           energy_rating: string | null
           energy_source: string | null
+          exposure: string | null
+          general_condition: string | null
           ges_rating: string | null
           heating_type: string | null
           id: string
@@ -117,6 +119,8 @@ export type Database = {
           listing_description: string | null
           listing_features: Json
           listing_url: string | null
+          outdoor_spaces: string[]
+          parking_types: string[]
           photo_urls: Json
           portal_price_per_square_meter: number | null
           postal_code: string | null
@@ -144,6 +148,8 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          exposure?: string | null
+          general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
           id?: string
@@ -152,6 +158,8 @@ export type Database = {
           listing_description?: string | null
           listing_features?: Json
           listing_url?: string | null
+          outdoor_spaces?: string[]
+          parking_types?: string[]
           photo_urls?: Json
           portal_price_per_square_meter?: number | null
           postal_code?: string | null
@@ -179,6 +187,8 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          exposure?: string | null
+          general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
           id?: string
@@ -187,6 +197,8 @@ export type Database = {
           listing_description?: string | null
           listing_features?: Json
           listing_url?: string | null
+          outdoor_spaces?: string[]
+          parking_types?: string[]
           photo_urls?: Json
           portal_price_per_square_meter?: number | null
           postal_code?: string | null
@@ -278,6 +290,131 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_seller_responses: {
+        Row: {
+          agency_id: string
+          comparable_id: string | null
+          created_at: string
+          id: string
+          project_id: string
+          seller_estimated_listing_price: number | null
+          seller_market_duration_comment: string | null
+          seller_market_duration_reason: string | null
+          seller_serious_competitor: string | null
+          seller_serious_competitor_comment: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          comparable_id?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          seller_estimated_listing_price?: number | null
+          seller_market_duration_comment?: string | null
+          seller_market_duration_reason?: string | null
+          seller_serious_competitor?: string | null
+          seller_serious_competitor_comment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          comparable_id?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          seller_estimated_listing_price?: number | null
+          seller_market_duration_comment?: string | null
+          seller_market_duration_reason?: string | null
+          seller_serious_competitor?: string | null
+          seller_serious_competitor_comment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_seller_responses_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_seller_responses_comparable_id_fkey"
+            columns: ["comparable_id"]
+            isOneToOne: false
+            referencedRelation: "comparables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_seller_responses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_seller_summary: {
+        Row: {
+          advisor_comparative_market_price: number | null
+          agency_id: string
+          created_at: string
+          id: string
+          project_id: string
+          seller_most_dangerous_comment: string | null
+          seller_most_dangerous_comparable_id: string | null
+          seller_most_dangerous_reason: string | null
+          seller_perceived_property_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          advisor_comparative_market_price?: number | null
+          agency_id: string
+          created_at?: string
+          id?: string
+          project_id: string
+          seller_most_dangerous_comment?: string | null
+          seller_most_dangerous_comparable_id?: string | null
+          seller_most_dangerous_reason?: string | null
+          seller_perceived_property_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          advisor_comparative_market_price?: number | null
+          agency_id?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          seller_most_dangerous_comment?: string | null
+          seller_most_dangerous_comparable_id?: string | null
+          seller_most_dangerous_reason?: string | null
+          seller_perceived_property_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_seller_summary_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_seller_summary_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_seller_summary_seller_most_dangerous_comparable_id_fkey"
+            columns: ["seller_most_dangerous_comparable_id"]
+            isOneToOne: false
+            referencedRelation: "comparables"
             referencedColumns: ["id"]
           },
         ]

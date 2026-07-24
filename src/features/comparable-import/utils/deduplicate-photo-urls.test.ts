@@ -37,4 +37,24 @@ describe('deduplicatePhotoUrls', () => {
     const many = Array.from({ length: 30 }, (_, index) => `https://x.com/${index}.jpg`);
     expect(deduplicatePhotoUrls(many)).toHaveLength(20);
   });
+
+  it('dedupes size variants (query string + dimension tokens) keeping the first', () => {
+    const result = deduplicatePhotoUrls([
+      'https://x.com/photo.jpg?w=1280',
+      'https://x.com/photo.jpg?w=320',
+      'https://x.com/img-640x480.jpg',
+      'https://x.com/img-1024x768.jpg',
+    ]);
+    expect(result).toEqual(['https://x.com/photo.jpg?w=1280', 'https://x.com/img-640x480.jpg']);
+  });
+
+  it('resolves relative URLs against the base and preserves order', () => {
+    const result = deduplicatePhotoUrls(['/media/1.jpg', '/media/2.jpg'], 'https://x.com/annonce');
+    expect(result).toEqual(['https://x.com/media/1.jpg', 'https://x.com/media/2.jpg']);
+  });
+
+  it('does not merge genuinely different index-named photos', () => {
+    const result = deduplicatePhotoUrls(['https://x.com/p-1.jpg', 'https://x.com/p-2.jpg']);
+    expect(result).toHaveLength(2);
+  });
 });

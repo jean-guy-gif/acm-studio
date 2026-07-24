@@ -1,7 +1,11 @@
 import { notFound } from 'next/navigation';
 
 import { getComparables } from '@/features/comparables/queries/get-comparables';
-import { LivePresentationShell } from '@/features/live-presentation/components/live-presentation-shell';
+import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import {
+  getLiveComparableResponses,
+  getLiveSellerSummary,
+} from '@/features/live-seller/queries/get-live-seller-data';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
@@ -23,12 +27,22 @@ export default async function LiveProjectPage({ params }: LivePageProps) {
     notFound();
   }
 
-  const [property, comparables, savedPositioning, diagnostics, condominium] = await Promise.all([
+  const [
+    property,
+    comparables,
+    savedPositioning,
+    diagnostics,
+    condominium,
+    sellerResponses,
+    sellerSummary,
+  ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
     getSavedPricePositioning(projectId),
     getSubjectPropertyDiagnostics(projectId),
     getSubjectPropertyCondominium(projectId),
+    getLiveComparableResponses(projectId),
+    getLiveSellerSummary(projectId),
   ]);
 
   // Same business entry point as the Builder — Live never rebuilds the content.
@@ -39,8 +53,10 @@ export default async function LiveProjectPage({ params }: LivePageProps) {
     condominium,
     comparables,
     savedPositioning,
+    sellerResponses,
+    sellerSummary,
     generatedAt: new Date().toISOString(),
   });
 
-  return <LivePresentationShell projectId={projectId} presentation={presentation} />;
+  return <LiveComparativeShell projectId={projectId} presentation={presentation} />;
 }

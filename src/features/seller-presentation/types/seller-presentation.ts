@@ -1,5 +1,14 @@
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
+import type {
+  FeatureComparison,
+  LiveComparableResponse,
+  LivePriceGaps,
+  LiveSellerSummary,
+  MarketDuration,
+  PriceHistory,
+  PriceReveal,
+} from '@/features/live-seller/types';
 import type { PricePositioning } from '@/features/price-positioning/types/price-positioning';
 import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
 import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
@@ -7,7 +16,50 @@ import type { SubjectPropertyDiagnostics } from '@/features/subject-property-dia
 
 // Bumped whenever the presentation contract changes, so Live and future exports
 // can guarantee compatibility.
-export const SELLER_PRESENTATION_VERSION = 1;
+export const SELLER_PRESENTATION_VERSION = 2;
+
+// Mission 24 — per-comparable Live comparative bundle. Nothing invented: every
+// field is derived from stored data (or null / unavailable).
+export type LiveComparableEntry = {
+  id: string;
+  position: number;
+  title: string | null;
+  city: string | null;
+  district: string | null;
+  price: number;
+  surfaceArea: number | null;
+  pricePerSquareMeter: number | null;
+  roomsCount: number | null;
+  bedroomsCount: number | null;
+  energyRating: string | null;
+  gesRating: string | null;
+  photoUrl: string | null;
+  photoUrls: string[];
+  source: 'manual' | 'url';
+  listingUrl: string | null;
+  isOutlier: boolean;
+  featureComparison: FeatureComparison[];
+  priceReveal: PriceReveal;
+  priceHistory: PriceHistory;
+  marketDuration: MarketDuration;
+  response: LiveComparableResponse | null;
+};
+
+export type LiveAdvisorDecision = {
+  advisorPrice: number;
+  sellerPrice: number | null;
+  justification: string | null;
+};
+
+export type LiveComparativeData = {
+  comparables: LiveComparableEntry[];
+  sellerSummary: LiveSellerSummary | null;
+  // "Positionnement observé sur le marché concurrentiel" — the existing engine's
+  // central value. Never labelled "vraie valeur du marché".
+  competitiveMarketCentral: number | null;
+  advisorDecision: LiveAdvisorDecision | null;
+  priceGaps: LivePriceGaps;
+};
 
 export type SellerPresentationStatus = 'ready' | 'incomplete';
 
@@ -112,4 +164,8 @@ export type SellerPresentation = {
 
   sections: SellerPresentationSection[];
   warnings: SellerPresentationWarning[];
+
+  // Mission 24 — Live comparative core. Null when there is no property or no
+  // retained comparable to run the narrative on.
+  live: LiveComparativeData | null;
 };

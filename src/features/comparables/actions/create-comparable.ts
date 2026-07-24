@@ -3,12 +3,42 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
 import { parseComparableForm } from '@/features/comparables/utils/comparable-input';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
+// useActionState-compatible action. On a validation or business error it RETURNS
+// its state (no redirect, no URL params) so the form keeps every value the user
+// typed and can surface errors next to their fields. A successful creation
+// redirects to the comparables list instead of returning. The state type and its
+// initial value live in ./create-comparable-state (a 'use server' file may only
+// export async functions).
+
+// Collect the raw string fields so the form can repopulate exactly what was
+// typed — including values a validation rejected, so they can be corrected.
+function collectValues(formData: FormData): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const key of new Set(formData.keys())) {
+    if (key === '__importGen') {
+      continue;
+    }
+    const all = formData.getAll(key).filter((v): v is string => typeof v === 'string');
+    // Repeated fields (checkbox groups) are joined with newlines so the form can
+    // re-check exactly what the user selected.
+    values[key] = all.length > 1 ? all.join('\n') : (all[0] ?? '');
+  }
+  return values;
+}
+
 // projectId is bound server-side from the route; never taken from the client.
-export async function createComparable(projectId: string, formData: FormData): Promise<void> {
+export async function createComparable(
+  projectId: string,
+  _prevState: CreateComparableState,
+  formData: FormData,
+): Promise<CreateComparableState> {
+  const importGen = String(formData.get('__importGen') ?? '') || null;
+
   const profile = await getProfile();
   if (!profile) {
     redirect('/onboarding');
@@ -29,12 +59,20 @@ export async function createComparable(projectId: string, formData: FormData): P
 
   const parsed = parseComparableForm(formData);
   if (!parsed.ok) {
-    redirect(`/builder/${projectId}/comparables/new?error=${encodeURIComponent(parsed.error)}`);
+    return {
+      error: parsed.error,
+      fieldErrors: parsed.fieldErrors,
+      values: collectValues(formData),
+      importGen,
+    };
   }
 
-  const failureRedirect = `/builder/${projectId}/comparables/new?error=${encodeURIComponent(
-    'La création du bien concurrent a échoué.',
-  )}`;
+  const failureState: CreateComparableState = {
+    error: 'La création du bien concurrent a échoué.',
+    fieldErrors: {},
+    values: collectValues(formData),
+    importGen,
+  };
 
   // display_order = max + 1, recomputed on every attempt. A concurrent creation
   // can win the same order; the DEFERRABLE unique constraint then raises 23505,
@@ -64,12 +102,12 @@ export async function createComparable(projectId: string, formData: FormData): P
       break;
     }
     if (error.code !== '23505') {
-      redirect(failureRedirect);
+      return failureState;
     }
   }
 
   if (!inserted) {
-    redirect(failureRedirect);
+    return failureState;
   }
 
   revalidatePath(`/builder/${projectId}/comparables`);

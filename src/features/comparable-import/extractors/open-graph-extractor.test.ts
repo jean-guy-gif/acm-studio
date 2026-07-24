@@ -18,10 +18,32 @@ describe('extractOpenGraph', () => {
     expect(data.photoUrls).toEqual(['https://cdn.x/a.jpg', 'https://cdn.x/b.jpg']);
   });
 
+  it('also collects og:image:secure_url (some portals expose only this)', () => {
+    const data = extractOpenGraph(
+      '<meta property="og:image:secure_url" content="https://cdn.x/secure.jpg" />',
+    );
+    expect(data.photoUrls).toEqual(['https://cdn.x/secure.jpg']);
+  });
+
   it('returns partial data when tags are missing', () => {
     const data = extractOpenGraph('<meta property="og:title" content="Just a title" />');
     expect(data.title).toBe('Just a title');
     expect(data.price).toBeUndefined();
     expect(data.photoUrls).toBeUndefined();
+  });
+
+  it('collects multiple og:image and multiple og:image:secure_url', () => {
+    const html = [
+      '<meta property="og:image" content="https://x/a.jpg" />',
+      '<meta property="og:image" content="https://x/b.jpg" />',
+      '<meta property="og:image:secure_url" content="https://x/c.jpg" />',
+      '<meta property="og:image:secure_url" content="https://x/d.jpg" />',
+    ].join('');
+    expect(extractOpenGraph(html).photoUrls).toEqual([
+      'https://x/a.jpg',
+      'https://x/b.jpg',
+      'https://x/c.jpg',
+      'https://x/d.jpg',
+    ]);
   });
 });
