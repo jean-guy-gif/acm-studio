@@ -218,3 +218,83 @@ describe('buildComparableFeatureComparison', () => {
     expect(subject.surfaceArea).toBe(80);
   });
 });
+
+// Anti-régression : les cartes comparatives Live doivent afficher les valeurs
+// techniques traduites en français (jamais l'enum interne brut « good », « south »,
+// « balcony »…), en réutilisant les mêmes dictionnaires que le Builder.
+function valueOf(criterion: string, over: Partial<FeatureBundle>) {
+  return buildComparableFeatureComparison(bundle(), bundle(over)).find(
+    (f) => f.criterion === criterion,
+  )?.comparableValue;
+}
+
+describe('francisation des valeurs affichées (Live)', () => {
+  it('reproduit les cas de bug signalés : good→Bon, south→Sud, balcony→Balcon', () => {
+    expect(valueOf('condition', { generalCondition: 'good' })).toBe('Bon');
+    expect(valueOf('exposure', { exposure: 'south' })).toBe('Sud');
+    expect(valueOf('outdoor', { outdoorSpaces: ['balcony'] })).toBe('Balcon');
+  });
+
+  it('general_condition : mapping complet', () => {
+    expect(valueOf('condition', { generalCondition: 'new' })).toBe('Neuf');
+    expect(valueOf('condition', { generalCondition: 'excellent' })).toBe('Excellent');
+    expect(valueOf('condition', { generalCondition: 'good' })).toBe('Bon');
+    expect(valueOf('condition', { generalCondition: 'to_refresh' })).toBe('À rafraîchir');
+    expect(valueOf('condition', { generalCondition: 'to_renovate' })).toBe('À rénover');
+    expect(valueOf('condition', { generalCondition: 'major_renovation' })).toBe('Gros travaux');
+  });
+
+  it('exposure : mapping complet', () => {
+    expect(valueOf('exposure', { exposure: 'north' })).toBe('Nord');
+    expect(valueOf('exposure', { exposure: 'north_east' })).toBe('Nord-Est');
+    expect(valueOf('exposure', { exposure: 'east' })).toBe('Est');
+    expect(valueOf('exposure', { exposure: 'south_east' })).toBe('Sud-Est');
+    expect(valueOf('exposure', { exposure: 'south' })).toBe('Sud');
+    expect(valueOf('exposure', { exposure: 'south_west' })).toBe('Sud-Ouest');
+    expect(valueOf('exposure', { exposure: 'west' })).toBe('Ouest');
+    expect(valueOf('exposure', { exposure: 'north_west' })).toBe('Nord-Ouest');
+    expect(valueOf('exposure', { exposure: 'dual_aspect' })).toBe('Traversant');
+    expect(valueOf('exposure', { exposure: 'multiple' })).toBe('Multiple');
+    expect(valueOf('exposure', { exposure: 'unknown' })).toBe('Non renseignée');
+  });
+
+  it('outdoor_spaces : mapping complet + jointure multi-valeurs + Aucun', () => {
+    expect(valueOf('outdoor', { outdoorSpaces: ['balcony'] })).toBe('Balcon');
+    expect(valueOf('outdoor', { outdoorSpaces: ['terrace'] })).toBe('Terrasse');
+    expect(valueOf('outdoor', { outdoorSpaces: ['garden'] })).toBe('Jardin');
+    expect(valueOf('outdoor', { outdoorSpaces: ['loggia'] })).toBe('Loggia');
+    expect(valueOf('outdoor', { outdoorSpaces: ['veranda'] })).toBe('Véranda');
+    expect(valueOf('outdoor', { outdoorSpaces: ['roof_terrace'] })).toBe('Toit-terrasse');
+    expect(valueOf('outdoor', { outdoorSpaces: ['balcony', 'terrace'] })).toBe('Balcon, Terrasse');
+    expect(valueOf('outdoor', { outdoorSpaces: ['none'] })).toBe('Aucun');
+    expect(valueOf('outdoor', { outdoorSpaces: [] })).toBe('Aucun');
+  });
+
+  it('parking_types : mapping complet + Aucun', () => {
+    expect(valueOf('parking', { parkingTypes: ['garage'] })).toBe('Garage');
+    expect(valueOf('parking', { parkingTypes: ['closed_box'] })).toBe('Box fermé');
+    expect(valueOf('parking', { parkingTypes: ['indoor_parking'] })).toBe('Parking couvert');
+    expect(valueOf('parking', { parkingTypes: ['outdoor_parking'] })).toBe('Parking extérieur');
+    expect(valueOf('parking', { parkingTypes: ['carport'] })).toBe('Carport');
+    expect(valueOf('parking', { parkingTypes: ['none'] })).toBe('Aucun');
+  });
+
+  it('DPE/GES : les lettres A–G restent inchangées (déjà correctes)', () => {
+    expect(valueOf('energy_rating', { energyRating: 'D' })).toBe('D');
+    expect(valueOf('ges_rating', { gesRating: 'B' })).toBe('B');
+  });
+
+  it('aucun jeton anglais interne ne fuit dans l’affichage', () => {
+    const raws = ['good', 'south', 'balcony', 'garage', 'to_renovate'];
+    const shown = [
+      valueOf('condition', { generalCondition: 'good' }),
+      valueOf('exposure', { exposure: 'south' }),
+      valueOf('outdoor', { outdoorSpaces: ['balcony'] }),
+      valueOf('parking', { parkingTypes: ['garage'] }),
+      valueOf('condition', { generalCondition: 'to_renovate' }),
+    ];
+    for (const value of shown) {
+      expect(raws).not.toContain(value);
+    }
+  });
+});

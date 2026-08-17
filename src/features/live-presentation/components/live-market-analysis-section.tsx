@@ -6,7 +6,7 @@ function euro(value: number | null): string {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="text-sm text-zinc-500">{label}</div>
       <div className="text-xl font-medium">{value}</div>
     </div>

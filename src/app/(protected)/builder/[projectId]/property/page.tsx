@@ -36,7 +36,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <Link href={`/builder/${projectId}`} className="underline">
+        <Link
+          href={`/builder/${projectId}`}
+          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
+        >
           Retour au dossier
         </Link>
         <h1 className="text-2xl font-semibold">Bien vendeur</h1>

@@ -3,7 +3,8 @@
 // Small shared presentational input primitives for the seller-property form.
 // Errors are rendered near their field.
 
-const inputClass = 'rounded border px-2 py-1';
+const inputClass =
+  'rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900';
 
 function FieldError({ error }: { error?: string }) {
   return error ? <span className="text-sm text-red-600">{error}</span> : null;

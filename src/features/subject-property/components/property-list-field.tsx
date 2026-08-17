@@ -40,7 +40,7 @@ export function PropertyListField({
             value={item}
             maxLength={MAX_LIST_ITEM_LENGTH}
             onChange={(event) => updateAt(index, event.target.value)}
-            className="flex-1 rounded border px-2 py-1"
+            className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
           />
           <button
             type="button"

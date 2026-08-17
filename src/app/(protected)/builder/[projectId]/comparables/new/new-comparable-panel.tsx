@@ -197,13 +197,13 @@ export function NewComparablePanel({
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://…"
-            className="flex-1 rounded border px-2 py-1"
+            className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
           />
           <button
             type="button"
             onClick={handleImport}
             disabled={pending || url.trim() === ''}
-            className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
             {pending ? 'Analyse de l’annonce…' : 'Importer l’annonce'}
           </button>

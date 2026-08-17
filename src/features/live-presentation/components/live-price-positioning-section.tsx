@@ -46,15 +46,15 @@ export function LivePricePositioningSection({
       <p className="text-sm text-zinc-500">Positionnement de marché observé</p>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="text-sm text-zinc-500">Borne basse</div>
           <div className="text-2xl font-medium">{euro(range.low)}</div>
         </div>
-        <div className="rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="rounded-card border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="text-sm text-zinc-500">Valeur centrale observée</div>
           <div className="text-2xl font-semibold">{euro(range.central)}</div>
         </div>
-        <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="text-sm text-zinc-500">Borne haute</div>
           <div className="text-2xl font-medium">{euro(range.high)}</div>
         </div>

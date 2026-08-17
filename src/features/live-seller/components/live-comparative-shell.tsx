@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { btnGhost, btnSecondary } from '@/components/ui/styles';
 import { saveLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
 import { saveLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
@@ -107,36 +108,46 @@ export function LiveComparativeShell({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Présentation vendeur</h1>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
+          <button type="button" onClick={toggleFullscreen} className={btnSecondary}>
             {isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
           </button>
-          <Link
-            href={`/builder/${projectId}/presentation`}
-            className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            Quitter Live
+          <Link href={`/builder/${projectId}/presentation`} className={btnSecondary}>
+            Quitter
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-zinc-500">
-        <div>
-          {page.comparableIndex != null && live
-            ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur 3`
-            : page.title}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="font-medium text-brand-deep dark:text-brand">
+            {page.comparableIndex != null && live
+              ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur 3`
+              : page.title}
+          </span>
+          <span className="text-zinc-500">
+            Page {index + 1} / {pages.length}
+          </span>
         </div>
-        <div>
-          Page {index + 1} / {pages.length}
+        <div className="h-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div
+            className="h-full rounded-full bg-brand transition-all"
+            style={{ width: `${((index + 1) / pages.length) * 100}%` }}
+          />
         </div>
       </div>
 
       <div className="min-h-[40vh]">
         {page.type === 'intro' ? (
-          <LivePageIntro live={live} sellerName={presentation.project.name} />
+          <LivePageIntro
+            live={live}
+            sellerName={presentation.project.name}
+            address={
+              [presentation.property?.address, presentation.property?.city]
+                .filter(Boolean)
+                .join(', ') || null
+            }
+            onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
+          />
         ) : page.type === 'comparable_competition' && entry && saveResponse ? (
           <LivePageCompetition entry={entry} saveAction={saveResponse} />
         ) : page.type === 'comparable_price' && entry && saveResponse ? (
@@ -157,7 +168,8 @@ export function LiveComparativeShell({
           <LivePageConclusion live={live} />
         ) : (
           <p className="text-zinc-500">
-            Contenu indisponible : préparez le dossier vendeur et ses concurrents dans le Builder.
+            Contenu indisponible : préparez le dossier vendeur et ses concurrents dans la
+            Préparation.
           </p>
         )}
       </div>
@@ -167,22 +179,18 @@ export function LiveComparativeShell({
           type="button"
           onClick={() => go(-1)}
           disabled={index === 0}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className={btnSecondary}
         >
           Précédent
         </button>
-        <button
-          type="button"
-          onClick={() => setIndex(0)}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
+        <button type="button" onClick={() => setIndex(0)} className={btnGhost}>
           Sommaire
         </button>
         <button
           type="button"
           onClick={() => go(1)}
           disabled={index >= pages.length - 1 || !canAdvance}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className={btnSecondary}
         >
           Suivant
         </button>

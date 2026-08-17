@@ -28,7 +28,7 @@ export function LiveOverview({
   return (
     <div className="flex flex-col gap-6">
       {status === 'incomplete' ? (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <div className="rounded-card border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           Préparation incomplète : certaines sections ne sont pas encore disponibles. Le rendez-vous
           reste possible avec les sections prêtes.
         </div>
@@ -44,7 +44,7 @@ export function LiveOverview({
                 <button
                   type="button"
                   onClick={() => onOpenSection(section.key)}
-                  className="flex w-full items-start justify-between gap-4 rounded-lg border border-zinc-200 p-4 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                  className="flex w-full items-start justify-between gap-4 rounded-card border border-zinc-200 p-4 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
                 >
                   <span>
                     <span className="text-xs text-zinc-500">Section {section.order}</span>

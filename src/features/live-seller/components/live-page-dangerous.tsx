@@ -53,7 +53,7 @@ export function LivePageDangerous({
           {eligibleComparables.map((entry) => (
             <label
               key={entry.id}
-              className={`flex cursor-pointer flex-col gap-2 rounded-lg border p-3 ${
+              className={`flex cursor-pointer flex-col gap-2 rounded-card border p-3 ${
                 selected === entry.id
                   ? 'border-emerald-400 ring-1 ring-emerald-400'
                   : 'border-zinc-200 dark:border-zinc-800'
@@ -133,7 +133,7 @@ export function LivePageDangerous({
           <select
             name="seller_most_dangerous_reason"
             defaultValue={reason}
-            className="max-w-sm rounded border px-2 py-1 font-normal"
+            className="max-w-sm rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           >
             <option value="">— Choisir —</option>
             {DANGEROUS_REASONS.map((value) => (
@@ -149,7 +149,7 @@ export function LivePageDangerous({
             name="seller_most_dangerous_comment"
             rows={2}
             defaultValue={comment}
-            className="max-w-xl rounded border px-2 py-1 font-normal"
+            className="max-w-xl rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           />
         </label>
         {state.error ? (

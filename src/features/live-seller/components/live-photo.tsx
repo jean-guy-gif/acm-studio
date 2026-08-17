@@ -12,7 +12,7 @@ export function LivePhoto({
 }) {
   if (!photoUrl) {
     return (
-      <div className="flex h-56 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 text-sm text-zinc-500 sm:h-72 dark:border-zinc-700">
+      <div className="flex h-56 w-full items-center justify-center rounded-card border border-dashed border-zinc-300 text-sm text-zinc-500 sm:h-72 dark:border-zinc-700">
         Photos indisponibles pour cette annonce
       </div>
     );

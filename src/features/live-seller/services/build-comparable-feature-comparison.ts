@@ -9,6 +9,24 @@ import {
   type ComparisonStatus,
 } from '@/features/live-seller/constants';
 import type { FeatureBundle, FeatureComparison } from '@/features/live-seller/types';
+// Réutilise les dictionnaires de libellés français du Builder — aucune
+// traduction dupliquée. Seul l'AFFICHAGE est traduit ; les valeurs techniques
+// internes (enums) restent inchangées.
+import {
+  EXPOSURE_LABELS,
+  GENERAL_CONDITION_LABELS,
+  OUTDOOR_SPACE_LABELS,
+  PARKING_TYPE_LABELS,
+} from '@/features/subject-property/constants/property-options';
+
+// Traduit une valeur d'enum via un dictionnaire, en conservant la valeur brute
+// en repli si (cas théorique, borné par les CHECK) elle n'est pas répertoriée.
+function translate(labels: Record<string, string>, value: string | null): string | null {
+  if (value == null) {
+    return null;
+  }
+  return labels[value] ?? value;
+}
 
 // Pure, deterministic comparison engine (Page 1). No AI, no invented conclusions.
 // The status colour ALWAYS describes the competitor relative to the subject:
@@ -73,12 +91,12 @@ function amenityStatus(subject: string[] | null, comparable: string[] | null): C
   return c > s ? 'competitor_advantage' : 'competitor_weakness';
 }
 
-function amenityLabel(list: string[] | null): string | null {
+function amenityLabel(list: string[] | null, labels: Record<string, string>): string | null {
   if (list == null) {
     return null;
   }
   const kept = list.filter((item) => item && item !== 'none');
-  return kept.length > 0 ? kept.join(', ') : 'Aucun';
+  return kept.length > 0 ? kept.map((item) => labels[item] ?? item).join(', ') : 'Aucun';
 }
 
 function statusFor(
@@ -129,17 +147,17 @@ function rawValue(criterion: ComparisonCriterion, bundle: FeatureBundle): string
     case 'bedrooms':
       return bundle.bedroomsCount == null ? null : String(bundle.bedroomsCount);
     case 'condition':
-      return bundle.generalCondition;
+      return translate(GENERAL_CONDITION_LABELS, bundle.generalCondition);
     case 'energy_rating':
-      return bundle.energyRating;
+      return bundle.energyRating; // lettre DPE (A–G) : déjà correcte, non traduisible
     case 'ges_rating':
-      return bundle.gesRating;
+      return bundle.gesRating; // lettre GES (A–G) : déjà correcte, non traduisible
     case 'outdoor':
-      return amenityLabel(bundle.outdoorSpaces);
+      return amenityLabel(bundle.outdoorSpaces, OUTDOOR_SPACE_LABELS);
     case 'parking':
-      return amenityLabel(bundle.parkingTypes);
+      return amenityLabel(bundle.parkingTypes, PARKING_TYPE_LABELS);
     case 'exposure':
-      return bundle.exposure;
+      return translate(EXPOSURE_LABELS, bundle.exposure);
   }
 }
 

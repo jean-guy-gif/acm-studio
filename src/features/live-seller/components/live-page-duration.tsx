@@ -87,7 +87,7 @@ export function LivePageDuration({
         <p className="text-sm text-zinc-500">Historique de prix non disponible.</p>
       )}
 
-      <div className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+      <div className="rounded-card border border-zinc-200 p-3 text-sm dark:border-zinc-800">
         <p>
           Sérieux concurrent :{' '}
           <span className="font-medium">
@@ -103,7 +103,7 @@ export function LivePageDuration({
 
       <form
         action={formAction}
-        className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+        className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
       >
         <label className="flex flex-col gap-1 text-sm font-medium">
           Depuis combien de jours pensez-vous que ce bien est sur le marché ?
@@ -126,7 +126,7 @@ export function LivePageDuration({
           <select
             name="seller_market_duration_reason"
             defaultValue={currentReason}
-            className="rounded border px-2 py-1 font-normal"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           >
             <option value="">— Choisir —</option>
             {MARKET_DURATION_REASONS.map((reason) => (
@@ -142,7 +142,7 @@ export function LivePageDuration({
             name="seller_market_duration_comment"
             rows={2}
             defaultValue={currentComment}
-            className="rounded border px-2 py-1 font-normal"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           />
         </label>
         {state.error ? (

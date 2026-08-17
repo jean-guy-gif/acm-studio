@@ -34,7 +34,7 @@ export function LivePagePerceived({
         À quel prix positionneriez-vous aujourd’hui votre bien ?
       </h2>
 
-      <div className="rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-800">
+      <div className="rounded-card border border-zinc-200 p-4 text-sm dark:border-zinc-800">
         <div className="text-xs text-zinc-500">
           Positionnement observé sur le marché concurrentiel
         </div>
@@ -43,28 +43,8 @@ export function LivePagePerceived({
 
       <form
         action={formAction}
-        className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+        className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        <input
-          type="hidden"
-          name="seller_most_dangerous_comparable_id"
-          value={summary?.seller_most_dangerous_comparable_id ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_most_dangerous_reason"
-          value={summary?.seller_most_dangerous_reason ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_most_dangerous_comment"
-          value={summary?.seller_most_dangerous_comment ?? ''}
-        />
-        <input
-          type="hidden"
-          name="advisor_comparative_market_price"
-          value={summary?.advisor_comparative_market_price ?? ''}
-        />
         <label className="flex flex-col gap-1 text-sm font-medium">
           Valeur perçue par le vendeur (€)
           <input
@@ -73,7 +53,7 @@ export function LivePagePerceived({
             min={0}
             step="any"
             defaultValue={perceived}
-            className="max-w-xs rounded border px-2 py-1 font-normal"
+            className="max-w-xs rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           />
           {state.fieldErrors.seller_perceived_property_price ? (
             <span role="alert" className="text-sm text-red-600">

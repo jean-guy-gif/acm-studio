@@ -51,17 +51,17 @@ export function LivePageAnalysis({
       <h2 className="text-2xl font-semibold">Analyse des prix</h2>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+        <div className="rounded-card border border-zinc-200 p-3 text-sm dark:border-zinc-800">
           <div className="text-xs text-zinc-500">Valeur perçue par le vendeur</div>
           <div className="font-medium">{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
-        <div className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+        <div className="rounded-card border border-zinc-200 p-3 text-sm dark:border-zinc-800">
           <div className="text-xs text-zinc-500">
             Positionnement observé sur le marché concurrentiel
           </div>
           <div className="font-medium">{euro(gaps.competitiveMarketCentral)}</div>
         </div>
-        <div className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+        <div className="rounded-card border border-zinc-200 p-3 text-sm dark:border-zinc-800">
           <div className="text-xs text-zinc-500">Analyse comparative de marché du conseiller</div>
           <div className="font-medium">{euro(gaps.advisorComparativePrice)}</div>
         </div>
@@ -69,28 +69,8 @@ export function LivePageAnalysis({
 
       <form
         action={formAction}
-        className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+        className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        <input
-          type="hidden"
-          name="seller_most_dangerous_comparable_id"
-          value={summary?.seller_most_dangerous_comparable_id ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_most_dangerous_reason"
-          value={summary?.seller_most_dangerous_reason ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_most_dangerous_comment"
-          value={summary?.seller_most_dangerous_comment ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_perceived_property_price"
-          value={summary?.seller_perceived_property_price ?? ''}
-        />
         <label className="flex flex-col gap-1 text-sm font-medium">
           Analyse comparative de marché du conseiller (€) — saisie manuelle
           <input
@@ -99,7 +79,7 @@ export function LivePageAnalysis({
             min={0}
             step="any"
             defaultValue={advisor}
-            className="max-w-xs rounded border px-2 py-1 font-normal"
+            className="max-w-xs rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           />
           {state.fieldErrors.advisor_comparative_market_price ? (
             <span role="alert" className="text-sm text-red-600">
@@ -116,7 +96,7 @@ export function LivePageAnalysis({
         <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
       </form>
 
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-2 text-sm font-medium">Écarts observés</div>
         <GapRow label="Vendeur vs marché concurrentiel" gap={gaps.sellerVsMarket} />
         <GapRow label="Vendeur vs analyse conseiller" gap={gaps.sellerVsAdvisor} />

@@ -19,7 +19,7 @@ export function LiveComparablesSection({
       {comparables.map((comparable) => (
         <article
           key={comparable.id}
-          className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+          className="flex flex-col gap-2 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
         >
           <div className="h-40 w-full overflow-hidden rounded bg-zinc-100 dark:bg-zinc-800">
             {comparable.photoUrl ? (

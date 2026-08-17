@@ -28,7 +28,10 @@ export default async function NewComparablePage({ params, searchParams }: NewCom
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href={`/builder/${projectId}/comparables`} className="underline">
+      <Link
+        href={`/builder/${projectId}/comparables`}
+        className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
+      >
         Retour aux biens concurrents
       </Link>
       <h1 className="text-2xl font-semibold">Ajouter un bien concurrent</h1>

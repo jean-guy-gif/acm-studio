@@ -15,15 +15,28 @@ export default async function NewProjectPage({ searchParams }: NewProjectPagePro
       <form action={createProject} className="flex max-w-md flex-col gap-3">
         <label className="flex flex-col gap-1">
           Nom du vendeur
-          <input type="text" name="sellerName" required className="rounded border px-2 py-1" />
+          <input
+            type="text"
+            name="sellerName"
+            required
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+          />
         </label>
         <label className="flex flex-col gap-1">
-          Email
-          <input type="email" name="sellerEmail" className="rounded border px-2 py-1" />
+          E-mail
+          <input
+            type="email"
+            name="sellerEmail"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+          />
         </label>
         <label className="flex flex-col gap-1">
           Téléphone
-          <input type="tel" name="sellerPhone" className="rounded border px-2 py-1" />
+          <input
+            type="tel"
+            name="sellerPhone"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+          />
         </label>
         <SubmitButton pendingLabel="Création…">Créer le dossier</SubmitButton>
       </form>

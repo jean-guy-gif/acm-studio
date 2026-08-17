@@ -20,7 +20,8 @@ export function formatDeviation(deviation: PriceDeviation | null): string {
   return `${absolute} (${deviation.percentage > 0 ? '+' : ''}${deviation.percentage} %)`;
 }
 
-const inputClass = 'rounded border px-2 py-1';
+const inputClass =
+  'rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900';
 
 export function AdvisorPrice({
   price,

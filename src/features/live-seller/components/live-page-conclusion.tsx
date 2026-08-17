@@ -23,7 +23,7 @@ export function LivePageConclusion({ live }: { live: LiveComparativeData }) {
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-2xl font-semibold">Conclusion</h2>
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
         <Line
           label="Valeur perçue par le vendeur"
           value={euro(summary?.seller_perceived_property_price ?? null)}
@@ -37,7 +37,10 @@ export function LivePageConclusion({ live }: { live: LiveComparativeData }) {
           value={euro(summary?.advisor_comparative_market_price ?? null)}
         />
         <Line label="Prix conseillé (validé)" value={euro(decision?.advisorPrice ?? null)} />
-        <Line label="Prix vendeur (enregistré)" value={euro(decision?.sellerPrice ?? null)} />
+        <Line
+          label="Prix souhaité par le vendeur (enregistré)"
+          value={euro(decision?.sellerPrice ?? null)}
+        />
         <Line
           label="Concurrent le plus dangereux"
           value={

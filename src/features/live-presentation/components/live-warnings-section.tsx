@@ -11,7 +11,7 @@ export function LiveWarningsSection({ warnings }: { warnings: SellerPresentation
       {warnings.map((warning) => (
         <li
           key={warning.code}
-          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-lg text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-card border border-amber-300 bg-amber-50 px-4 py-3 text-lg text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
         >
           {warning.message}
         </li>

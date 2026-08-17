@@ -52,7 +52,10 @@ export default async function SellerPresentationPage({ params }: PresentationPag
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Link href={`/builder/${projectId}/comparables/positioning`} className="underline">
+        <Link
+          href={`/builder/${projectId}/comparables/positioning`}
+          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
+        >
           Retour au positionnement
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">Présentation vendeur</h1>
@@ -62,7 +65,7 @@ export default async function SellerPresentationPage({ params }: PresentationPag
         </p>
         <Link
           href={`/live/${projectId}`}
-          className="mt-2 inline-block rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className="mt-2 inline-block rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           Ouvrir dans Live
         </Link>

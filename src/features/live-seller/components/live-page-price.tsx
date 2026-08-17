@@ -66,7 +66,7 @@ export function LivePagePrice({
 
       <form
         action={formAction}
-        className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+        className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
       >
         <label className="flex flex-col gap-1 text-sm font-medium">
           Prix imaginé par le vendeur (€)
@@ -76,7 +76,7 @@ export function LivePagePrice({
             min={0}
             step="any"
             defaultValue={state.values?.seller_estimated_listing_price ?? savedEstimate ?? ''}
-            className="rounded border px-2 py-1 font-normal"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
           />
           {state.fieldErrors.seller_estimated_listing_price ? (
             <span role="alert" className="text-sm text-red-600">
@@ -95,7 +95,7 @@ export function LivePagePrice({
       </form>
 
       {revealed ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
             <div>
               <div className="text-xs text-zinc-500">Prix imaginé</div>

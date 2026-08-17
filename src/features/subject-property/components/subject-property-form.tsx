@@ -200,7 +200,7 @@ export function SubjectPropertyForm({
             rows={4}
             value={scalars.description}
             onChange={(event) => setField('description', event.target.value)}
-            className="rounded border px-2 py-1"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
       </section>
@@ -256,7 +256,7 @@ export function SubjectPropertyForm({
         type="button"
         onClick={submit}
         disabled={pending}
-        className="self-start rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
       >
         {pending ? 'Enregistrement…' : 'Enregistrer'}
       </button>

@@ -124,12 +124,12 @@ export function PhotoUrlsField({
           onChange={(event) => setDraft(event.target.value)}
           rows={2}
           placeholder="https://…/photo.jpg (une URL par ligne)"
-          className="flex-1 rounded border px-2 py-1 font-normal"
+          className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
         />
         <button
           type="button"
           onClick={add}
-          className="shrink-0 self-start rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className="shrink-0 self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           Ajouter
         </button>

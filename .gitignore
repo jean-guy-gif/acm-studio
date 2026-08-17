@@ -24,6 +24,11 @@
 .DS_Store
 *.pem
 
+# Source assets de la charte Start Academy (fichiers bureautiques/PDF/HD non
+# publiés : ne doivent jamais être servis via /public ni committés). Seules les
+# deux copies web officielles vivent dans public/brand/.
+/brand-source
+
 # debug
 npm-debug.log*
 yarn-debug.log*
