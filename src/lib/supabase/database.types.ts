@@ -301,6 +301,7 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          seller_estimated_days_on_market: number | null
           seller_estimated_listing_price: number | null
           seller_market_duration_comment: string | null
           seller_market_duration_reason: string | null
@@ -314,6 +315,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id: string
+          seller_estimated_days_on_market?: number | null
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
           seller_market_duration_reason?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string
+          seller_estimated_days_on_market?: number | null
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
           seller_market_duration_reason?: string | null
@@ -1398,4 +1401,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

@@ -64,6 +64,7 @@ export const DANGEROUS_REASON_LABELS: Record<DangerousReason, string> = {
 
 export const MAX_LIVE_COMMENT_LENGTH = 2000;
 export const MAX_LIVE_PRICE = 1_000_000_000;
+export const MAX_ESTIMATED_DAYS_ON_MARKET = 36_500;
 
 // ---------------------------------------------------------------------------
 // Deterministic feature-comparison ordering (higher rank = better)

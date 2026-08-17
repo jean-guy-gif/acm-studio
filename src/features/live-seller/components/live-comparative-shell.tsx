@@ -14,6 +14,7 @@ import { LivePageIntro } from '@/features/live-seller/components/live-page-intro
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
 import type { SellerPresentation } from '@/features/seller-presentation/types/seller-presentation';
 
 // Live comparative reader. Client-only navigation state (current page + fullscreen).
@@ -33,9 +34,24 @@ export function LiveComparativeShell({
   const live = presentation.live;
   const pages = useMemo(() => buildLivePages(live), [live]);
   const page = pages[Math.min(index, pages.length - 1)];
+  const entry =
+    page.comparableId != null
+      ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
+      : null;
+  const canAdvance = canAdvanceLivePage(page.type, entry);
+  // Garde de progression : on lit la valeur courante via une ref pour que `go`
+  // reste référentiellement stable (react-hooks/preserve-manual-memoization) tout
+  // en respectant la dernière valeur de `canAdvance` au moment de l'appel.
+  const canAdvanceRef = useRef(canAdvance);
+  useEffect(() => {
+    canAdvanceRef.current = canAdvance;
+  }, [canAdvance]);
 
   const go = useCallback(
-    (delta: number) => setIndex((i) => Math.max(0, Math.min(pages.length - 1, i + delta))),
+    (delta: number) => {
+      if (delta > 0 && !canAdvanceRef.current) return;
+      setIndex((i) => Math.max(0, Math.min(pages.length - 1, i + delta)));
+    },
     [pages.length],
   );
 
@@ -79,11 +95,6 @@ export function LiveComparativeShell({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [go, toggleFullscreen]);
-
-  const entry =
-    page.comparableId != null
-      ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
-      : null;
 
   const saveResponse = entry ? saveLiveComparableResponse.bind(null, projectId, entry.id) : null;
   const saveSummary = saveLiveSellerSummary.bind(null, projectId);
@@ -170,7 +181,7 @@ export function LiveComparativeShell({
         <button
           type="button"
           onClick={() => go(1)}
-          disabled={index >= pages.length - 1}
+          disabled={index >= pages.length - 1 || !canAdvance}
           className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           Suivant

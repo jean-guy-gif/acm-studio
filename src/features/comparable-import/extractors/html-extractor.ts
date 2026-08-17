@@ -39,11 +39,11 @@ export function extractHtml(html: string): PartialListingData {
   }
 
   // Conservative: only accept a surface explicitly tied to a "surface" label,
-  // never a bare number followed by m².
-  const surfaceText = firstMatch(
-    html,
-    /surface(?:\s+habitable)?\D{0,20}?([\d][\d\s.,]*)\s*m(?:²|2)(?![a-z])/i,
-  );
+  // never a bare number followed by m². "Surface habitable" wins over a generic
+  // "surface" label (which can be a plot / total surface on some portals).
+  const surfaceText =
+    firstMatch(html, /surface\s+habitable\D{0,20}?([\d][\d\s.,]*)\s*m(?:²|2)(?![a-z])/i) ??
+    firstMatch(html, /surface(?:\s+habitable)?\D{0,20}?([\d][\d\s.,]*)\s*m(?:²|2)(?![a-z])/i);
   const surface = normalizeArea(surfaceText);
   if (surface != null) {
     result.surfaceArea = surface;

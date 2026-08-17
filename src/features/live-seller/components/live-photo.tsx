@@ -25,6 +25,7 @@ export function LivePhoto({
         alt={alt}
         className="h-56 w-full rounded-lg object-cover sm:h-80"
         loading="lazy"
+        referrerPolicy="no-referrer"
       />
       {gallery.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto">
@@ -35,6 +36,7 @@ export function LivePhoto({
               alt={alt}
               className="h-16 w-24 shrink-0 rounded object-cover sm:h-20 sm:w-28"
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
           ))}
         </div>

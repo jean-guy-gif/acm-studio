@@ -21,6 +21,39 @@ const NESTED_NODE_KEYS = [
   'associatedMedia',
 ];
 
+// Nodes that describe the PORTAL / page chrome, never the property itself.
+// A node whose every @type is in this set must not contribute any field or
+// image: e.g. an Organization carries the AGENCY's address ("Paris") and logo,
+// which must never become the listing's city or photo.
+const NON_LISTING_TYPES = new Set([
+  'Organization',
+  'NewsMediaOrganization',
+  'WebSite',
+  'BreadcrumbList',
+  'ListItem',
+  'SearchAction',
+  'ContactPoint',
+  'Person',
+  'RealEstateAgent',
+  'LocalBusiness',
+  'Review',
+  'AggregateRating',
+  'FAQPage',
+  'Question',
+  'Answer',
+]);
+
+// True when the node is portal chrome (all of its declared types are
+// non-listing types). A node without @type is kept: many portals omit it.
+function isNonListingNode(node: Record<string, unknown>): boolean {
+  const type = node['@type'];
+  const types = Array.isArray(type) ? type : typeof type === 'string' ? [type] : [];
+  if (types.length === 0) {
+    return false;
+  }
+  return types.every((t) => typeof t === 'string' && NON_LISTING_TYPES.has(t));
+}
+
 function collectNodes(root: unknown, out: Record<string, unknown>[]): void {
   if (Array.isArray(root)) {
     for (const item of root) {
@@ -81,6 +114,9 @@ export function extractJsonLd(html: string): PartialListingData {
   }
 
   for (const node of nodes) {
+    if (isNonListingNode(node)) {
+      continue;
+    }
     if (result.title == null) {
       const title = asString(node.name) ?? asString(node.title);
       if (title) {

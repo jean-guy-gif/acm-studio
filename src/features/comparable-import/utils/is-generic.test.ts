@@ -38,6 +38,11 @@ describe('isGenericImageUrl', () => {
     );
   });
 
+  it('filters Google-hosted assets (agency logos, reviews), never listing photos', () => {
+    expect(isGenericImageUrl('https://lh3.googleusercontent.com/p/AF1Qip.jpg')).toBe(true);
+    expect(isGenericImageUrl('https://cdn.immobilier.lefigaro.fr/media/1/photo-1.jpg')).toBe(false);
+  });
+
   it('filters logos, placeholders, sprites, icons and pixels', () => {
     for (const url of [
       'https://x/logo.png',

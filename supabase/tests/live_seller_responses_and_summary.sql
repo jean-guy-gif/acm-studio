@@ -66,6 +66,12 @@ begin
   if not failed then raise exception 'CHK2: negative estimate accepted'; end if;
 
   failed := false;
+  begin insert into public.live_seller_responses (project_id, comparable_id, agency_id, seller_estimated_days_on_market)
+    values (proj_a, comp_a, ag_a, -1);
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'CHK2B: negative estimated duration accepted'; end if;
+
+  failed := false;
   begin insert into public.live_seller_summary (project_id, agency_id, seller_most_dangerous_reason)
     values (proj_a, ag_a, 'because');
   exception when check_violation then failed := true; end;

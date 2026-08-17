@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useActionState, useEffect } from 'react';
 
 import { SubmitButton } from '@/components/submit-button';
 import type { LiveActionState } from '@/features/live-seller/actions/live-action-state';
@@ -24,6 +25,7 @@ export function LivePageCompetition({
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
   const [state, formAction] = useActionState(saveAction, initialLiveActionState);
+  const router = useRouter();
   const response = entry.response;
   const currentAnswer =
     state.values?.seller_serious_competitor ?? response?.seller_serious_competitor ?? '';
@@ -31,6 +33,12 @@ export function LivePageCompetition({
     state.values?.seller_serious_competitor_comment ??
     response?.seller_serious_competitor_comment ??
     '';
+
+  useEffect(() => {
+    if (state.ok) {
+      router.refresh();
+    }
+  }, [router, state]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,23 +51,6 @@ export function LivePageCompetition({
         action={formAction}
         className="flex flex-col gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        {/* Preserve the other persisted answers on this comparable. */}
-        <input
-          type="hidden"
-          name="seller_estimated_listing_price"
-          value={response?.seller_estimated_listing_price ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_market_duration_reason"
-          value={response?.seller_market_duration_reason ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_market_duration_comment"
-          value={response?.seller_market_duration_comment ?? ''}
-        />
-
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-medium">Votre réponse</legend>
           <div className="flex flex-wrap gap-2">

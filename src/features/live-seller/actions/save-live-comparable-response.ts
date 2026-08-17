@@ -60,13 +60,28 @@ export async function saveLiveComparableResponse(
   }
 
   const normalized = normalizeLiveComparableResponse({
-    seller_serious_competitor: textOrNull(formData.get('seller_serious_competitor')),
-    seller_serious_competitor_comment: textOrNull(
-      formData.get('seller_serious_competitor_comment'),
-    ),
-    seller_estimated_listing_price: numberOrNull(formData.get('seller_estimated_listing_price')),
-    seller_market_duration_reason: textOrNull(formData.get('seller_market_duration_reason')),
-    seller_market_duration_comment: textOrNull(formData.get('seller_market_duration_comment')),
+    ...(formData.has('seller_serious_competitor') && {
+      seller_serious_competitor: textOrNull(formData.get('seller_serious_competitor')),
+    }),
+    ...(formData.has('seller_serious_competitor_comment') && {
+      seller_serious_competitor_comment: textOrNull(
+        formData.get('seller_serious_competitor_comment'),
+      ),
+    }),
+    ...(formData.has('seller_estimated_listing_price') && {
+      seller_estimated_listing_price: numberOrNull(formData.get('seller_estimated_listing_price')),
+    }),
+    ...(formData.has('seller_estimated_days_on_market') && {
+      seller_estimated_days_on_market: numberOrNull(
+        formData.get('seller_estimated_days_on_market'),
+      ),
+    }),
+    ...(formData.has('seller_market_duration_reason') && {
+      seller_market_duration_reason: textOrNull(formData.get('seller_market_duration_reason')),
+    }),
+    ...(formData.has('seller_market_duration_comment') && {
+      seller_market_duration_comment: textOrNull(formData.get('seller_market_duration_comment')),
+    }),
   });
   const validation = validateLiveComparableResponse(normalized);
   if (!validation.ok) {
@@ -78,17 +93,42 @@ export async function saveLiveComparableResponse(
     };
   }
 
-  const { error } = await supabase.from('live_seller_responses').upsert(
-    {
-      ...validation.value,
+  const responsePatch = { ...validation.value, updated_at: new Date().toISOString() };
+  const { data: updatedResponse, error: updateError } = await supabase
+    .from('live_seller_responses')
+    .update(responsePatch)
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('comparable_id', comparableId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  if (updateError) {
+    return { ok: false, error: 'L’enregistrement a échoué.', fieldErrors: {}, values };
+  }
+
+  let writeError = null;
+  if (!updatedResponse) {
+    const { error: insertError } = await supabase.from('live_seller_responses').insert({
+      ...responsePatch,
       project_id: projectId,
       comparable_id: comparableId,
       agency_id: profile.agency_id,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'project_id,comparable_id' },
-  );
-  if (error) {
+    });
+    if (insertError?.code === '23505') {
+      // Another request inserted the first row concurrently: retry the same
+      // field-level patch, never a stale full-row replacement.
+      const { error: retryError } = await supabase
+        .from('live_seller_responses')
+        .update(responsePatch)
+        .eq('project_id', projectId)
+        .eq('comparable_id', comparableId)
+        .eq('agency_id', profile.agency_id);
+      writeError = retryError;
+    } else {
+      writeError = insertError;
+    }
+  }
+  if (writeError) {
     return { ok: false, error: 'L’enregistrement a échoué.', fieldErrors: {}, values };
   }
 

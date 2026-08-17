@@ -19,6 +19,9 @@ const GENERIC_IMAGE_HINTS = [
   'no-photo',
   'no_photo',
   'nophoto',
+  // Google-hosted assets (business logos, reviews, maps) are never a French
+  // portal's own listing photos — seen polluting Figaro imports.
+  'googleusercontent',
 ];
 
 // True for share/placeholder/logo/default/favicon assets that are not the

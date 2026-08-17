@@ -89,6 +89,12 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           Ajouter un bien concurrent
         </Link>
         <Link
+          href={`/builder/${projectId}/comparables/find`}
+          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Trouver des concurrents
+        </Link>
+        <Link
           href={`/builder/${projectId}/comparables/analysis`}
           className="rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >

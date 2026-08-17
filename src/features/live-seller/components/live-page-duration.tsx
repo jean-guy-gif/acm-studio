@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useActionState, useEffect } from 'react';
 
 import { SubmitButton } from '@/components/submit-button';
 import {
@@ -31,11 +32,22 @@ export function LivePageDuration({
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
   const [state, formAction] = useActionState(saveAction, initialLiveActionState);
+  const router = useRouter();
   const response = entry.response;
   const currentReason =
     state.values?.seller_market_duration_reason ?? response?.seller_market_duration_reason ?? '';
   const currentComment =
     state.values?.seller_market_duration_comment ?? response?.seller_market_duration_comment ?? '';
+  const savedEstimatedDays = response?.seller_estimated_days_on_market ?? null;
+  const currentEstimatedDays =
+    state.values?.seller_estimated_days_on_market ?? savedEstimatedDays ?? '';
+  const durationRevealed = savedEstimatedDays != null;
+
+  useEffect(() => {
+    if (state.ok) {
+      router.refresh();
+    }
+  }, [router, state]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,12 +68,14 @@ export function LivePageDuration({
               : '—'}
           </div>
         </div>
-        <div>
-          <div className="text-xs text-zinc-500">Durée observée</div>
-          <div className="font-medium">
-            {entry.marketDuration.available ? entry.marketDuration.label : '—'}
+        {durationRevealed ? (
+          <div>
+            <div className="text-xs text-zinc-500">Durée observée</div>
+            <div className="font-medium">
+              {entry.marketDuration.available ? entry.marketDuration.label : 'Non disponible'}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {entry.priceHistory.available ? (
@@ -91,21 +105,22 @@ export function LivePageDuration({
         action={formAction}
         className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        <input
-          type="hidden"
-          name="seller_serious_competitor"
-          value={response?.seller_serious_competitor ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_serious_competitor_comment"
-          value={response?.seller_serious_competitor_comment ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_estimated_listing_price"
-          value={response?.seller_estimated_listing_price ?? ''}
-        />
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Depuis combien de jours pensez-vous que ce bien est sur le marché ?
+          <input
+            type="number"
+            name="seller_estimated_days_on_market"
+            min={0}
+            step={1}
+            defaultValue={currentEstimatedDays}
+            className="max-w-xs rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
+          />
+          {state.fieldErrors.seller_estimated_days_on_market ? (
+            <span role="alert" className="text-sm text-red-600">
+              {state.fieldErrors.seller_estimated_days_on_market}
+            </span>
+          ) : null}
+        </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
           Selon vous, pourquoi ?
           <select
@@ -136,8 +151,15 @@ export function LivePageDuration({
           </p>
         ) : null}
         {state.ok ? <p className="text-sm text-emerald-600">Réponse enregistrée.</p> : null}
-        <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
+        <SubmitButton pendingLabel="Enregistrement…">
+          {durationRevealed ? 'Mettre à jour' : 'Valider et révéler la durée observée'}
+        </SubmitButton>
       </form>
+      {!durationRevealed ? (
+        <p className="text-sm text-zinc-500">
+          Donnez d’abord votre estimation : la durée réellement observée s’affichera ensuite.
+        </p>
+      ) : null}
     </div>
   );
 }

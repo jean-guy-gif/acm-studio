@@ -584,6 +584,7 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
       seller_serious_competitor: 'yes',
       seller_serious_competitor_comment: null,
       seller_estimated_listing_price: 240000,
+      seller_estimated_days_on_market: 30,
       seller_market_duration_reason: 'price_too_high',
       seller_market_duration_comment: null,
       created_at: AT,
@@ -609,6 +610,7 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(entry.response?.seller_serious_competitor).toBe('yes');
     expect(entry.priceReveal.sellerEstimate).toBe(240000);
     expect(entry.priceReveal.gapAmount).toBe(10000); // 250000 - 240000
+    expect(entry.response?.seller_estimated_days_on_market).toBe(30);
     expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 3 });
   });
 

@@ -84,12 +84,22 @@ type Props = {
     formData: FormData,
   ) => Promise<CreateComparableState>;
   importAction: (formData: FormData) => Promise<ComparableImportResult>;
+  importHtmlAction: (formData: FormData) => Promise<ComparableImportResult>;
+  // URL pré-remplie (arrivée depuis « Trouver des concurrents »).
+  initialUrl?: string;
 };
 
-export function NewComparablePanel({ createAction, importAction }: Props) {
-  const [url, setUrl] = useState('');
+export function NewComparablePanel({
+  createAction,
+  importAction,
+  importHtmlAction,
+  initialUrl,
+}: Props) {
+  const [url, setUrl] = useState(initialUrl ?? '');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [pastedHtml, setPastedHtml] = useState('');
+  const [showPaste, setShowPaste] = useState(false);
   const [result, setResult] = useState<{
     data: ImportedComparableData;
     found: string[];
@@ -102,37 +112,69 @@ export function NewComparablePanel({ createAction, importAction }: Props) {
     initialCreateComparableState,
   );
 
-  function handleImport() {
-    setError(null);
-    const formData = new FormData();
-    formData.set('url', url);
-    // Photos already present in the form (manual or a previous import). An import
-    // must never erase or reduce this gallery: the imported photos are UNIONED
-    // with the existing ones, so an empty / smaller import is harmless.
-    const existingPhotos =
+  // Photos already present in the form (manual or a previous import). An import
+  // must never erase or reduce this gallery: the imported photos are UNIONED
+  // with the existing ones, so an empty / smaller import is harmless.
+  function readExistingPhotos(): string[] {
+    return (
       formRef.current
         ?.querySelector<HTMLInputElement>('input[name="photo_urls"]')
         ?.value.split('\n')
         .map((value) => value.trim())
-        .filter(Boolean) ?? [];
+        .filter(Boolean) ?? []
+    );
+  }
+
+  function applyImportResult(
+    res: ComparableImportResult,
+    existingPhotos: string[],
+    onRefused?: () => void,
+  ) {
+    if (res.ok) {
+      const mergedPhotos = [...existingPhotos];
+      for (const photo of res.data.photoUrls) {
+        if (!mergedPhotos.includes(photo)) {
+          mergedPhotos.push(photo);
+        }
+      }
+      setResult({
+        data: { ...res.data, photoUrls: mergedPhotos.slice(0, 20) },
+        found: res.foundFields,
+        missing: res.missingFields,
+      });
+      setImportKey((value) => value + 1);
+      setError(null);
+    } else {
+      setError(res.error);
+      setResult(null);
+      onRefused?.();
+    }
+  }
+
+  function handleImport() {
+    setError(null);
+    const formData = new FormData();
+    formData.set('url', url);
+    const existingPhotos = readExistingPhotos();
     startTransition(async () => {
       const res = await importAction(formData);
+      // A refused / failed fetch is exactly the case the paste fallback solves:
+      // open it so the advisor can copy the page from his own browser.
+      applyImportResult(res, existingPhotos, () => setShowPaste(true));
+    });
+  }
+
+  function handleImportHtml() {
+    setError(null);
+    const formData = new FormData();
+    formData.set('url', url);
+    formData.set('html', pastedHtml);
+    const existingPhotos = readExistingPhotos();
+    startTransition(async () => {
+      const res = await importHtmlAction(formData);
+      applyImportResult(res, existingPhotos);
       if (res.ok) {
-        const mergedPhotos = [...existingPhotos];
-        for (const photo of res.data.photoUrls) {
-          if (!mergedPhotos.includes(photo)) {
-            mergedPhotos.push(photo);
-          }
-        }
-        setResult({
-          data: { ...res.data, photoUrls: mergedPhotos.slice(0, 20) },
-          found: res.foundFields,
-          missing: res.missingFields,
-        });
-        setImportKey((value) => value + 1);
-      } else {
-        setError(res.error);
-        setResult(null);
+        setPastedHtml('');
       }
     });
   }
@@ -167,6 +209,42 @@ export function NewComparablePanel({ createAction, importAction }: Props) {
           </button>
         </div>
         {error ? <p role="alert">{error}</p> : null}
+
+        <button
+          type="button"
+          onClick={() => setShowPaste((value) => !value)}
+          className="self-start text-sm text-brand underline-offset-2 hover:underline"
+        >
+          {showPaste
+            ? 'Masquer le collage de code'
+            : 'Le site bloque l’import ? Collez le code de la page'}
+        </button>
+        {showPaste ? (
+          <div className="flex flex-col gap-2 rounded border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              Certains portails (SeLoger, Bien’ici, Leboncoin…) refusent l’analyse à distance.
+              Ouvrez l’annonce dans votre navigateur, affichez le code de la page (clic droit → «
+              Afficher le code source de la page », ou Cmd/Ctrl+U), sélectionnez tout (Cmd/Ctrl+A),
+              copiez, puis collez ci-dessous. Gardez l’adresse de l’annonce renseignée au-dessus.
+            </p>
+            <textarea
+              value={pastedHtml}
+              onChange={(event) => setPastedHtml(event.target.value)}
+              rows={5}
+              placeholder="<html>…"
+              className="rounded-md border border-zinc-300 px-3 py-1.5 font-mono text-xs outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={handleImportHtml}
+              disabled={pending || url.trim() === '' || pastedHtml.trim() === ''}
+              className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              {pending ? 'Analyse du code collé…' : 'Analyser le code collé'}
+            </button>
+          </div>
+        ) : null}
+
         {result ? (
           <div className="flex flex-col gap-2 text-sm">
             <div>

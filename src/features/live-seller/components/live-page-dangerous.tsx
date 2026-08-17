@@ -40,25 +40,17 @@ export function LivePageDangerous({
     state.values?.seller_most_dangerous_reason ?? summary?.seller_most_dangerous_reason ?? '';
   const comment =
     state.values?.seller_most_dangerous_comment ?? summary?.seller_most_dangerous_comment ?? '';
+  const eligibleComparables = comparables.filter((entry) => {
+    const answer = entry.response?.seller_serious_competitor;
+    return answer === 'yes' || answer === 'unsure';
+  });
 
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-2xl font-semibold">Quel concurrent vous paraît le plus dangereux ?</h2>
       <form action={formAction} className="flex flex-col gap-4">
-        {/* Preserve the summary's price fields. */}
-        <input
-          type="hidden"
-          name="seller_perceived_property_price"
-          value={summary?.seller_perceived_property_price ?? ''}
-        />
-        <input
-          type="hidden"
-          name="advisor_comparative_market_price"
-          value={summary?.advisor_comparative_market_price ?? ''}
-        />
-
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {comparables.map((entry) => (
+          {eligibleComparables.map((entry) => (
             <label
               key={entry.id}
               className={`flex cursor-pointer flex-col gap-2 rounded-lg border p-3 ${
@@ -92,6 +84,32 @@ export function LivePageDangerous({
                 Prix : <span className="font-medium">{euro(entry.price)}</span>
                 {entry.marketDuration.available ? ` · ${entry.marketDuration.label}` : ''}
               </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-md bg-zinc-50 p-2 text-xs dark:bg-zinc-900">
+                <span className="text-zinc-500">Prix estimé</span>
+                <span className="text-right font-medium">
+                  {euro(entry.response?.seller_estimated_listing_price ?? null)}
+                </span>
+                <span className="text-zinc-500">Prix réel</span>
+                <span className="text-right font-medium">{euro(entry.price)}</span>
+                <span className="text-zinc-500">Écart</span>
+                <span className="text-right font-medium">
+                  {entry.priceReveal.gapAmount != null
+                    ? `${entry.priceReveal.gapAmount >= 0 ? '+' : ''}${euro(entry.priceReveal.gapAmount)}`
+                    : '—'}
+                </span>
+                <span className="text-zinc-500">Durée estimée</span>
+                <span className="text-right font-medium">
+                  {entry.response?.seller_estimated_days_on_market != null
+                    ? `${entry.response.seller_estimated_days_on_market} jours`
+                    : '—'}
+                </span>
+                <span className="text-zinc-500">Durée réelle observée</span>
+                <span className="text-right font-medium">
+                  {entry.marketDuration.available && entry.marketDuration.days != null
+                    ? `${entry.marketDuration.days} jours`
+                    : '—'}
+                </span>
+              </div>
               <div className="text-xs text-zinc-500">
                 Sérieux concurrent :{' '}
                 {entry.response?.seller_serious_competitor
@@ -103,6 +121,12 @@ export function LivePageDangerous({
             </label>
           ))}
         </div>
+
+        {eligibleComparables.length === 0 ? (
+          <p className="text-sm text-zinc-500">
+            Aucun bien n’a été retenu comme concurrent sérieux ou incertain.
+          </p>
+        ) : null}
 
         <label className="flex flex-col gap-1 text-sm font-medium">
           Pourquoi ?
@@ -136,6 +160,14 @@ export function LivePageDangerous({
         {state.ok ? <p className="text-sm text-emerald-600">Choix enregistré.</p> : null}
         <SubmitButton pendingLabel="Enregistrement…">Enregistrer le choix</SubmitButton>
       </form>
+      <div className="rounded-card border border-brand/30 bg-brand/5 p-4">
+        <h3 className="font-semibold">Quelle stratégie adopter face à cette concurrence ?</h3>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+          Échangez avec le vendeur sur le prix de lancement, la présentation du bien et les atouts à
+          mettre en avant pour se différencier du concurrent choisi. ACM Studio structure cette
+          discussion ; le conseiller définit et explique la stratégie.
+        </p>
+      </div>
     </div>
   );
 }

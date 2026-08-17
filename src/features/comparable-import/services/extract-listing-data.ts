@@ -2,6 +2,7 @@ import {
   extractBienIci,
   isBienIci,
 } from '@/features/comparable-import/extractors/bienici-extractor';
+import { extractFigaro, isFigaro } from '@/features/comparable-import/extractors/figaro-extractor';
 import {
   extractGreenAcres,
   isGreenAcres,
@@ -40,6 +41,8 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     portal = extractSeLoger(html, originalUrl);
   } else if (isBienIci(hostname)) {
     portal = extractBienIci(html);
+  } else if (isFigaro(hostname)) {
+    portal = extractFigaro(html);
   }
 
   return {

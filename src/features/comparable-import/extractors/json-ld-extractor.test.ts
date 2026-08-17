@@ -107,6 +107,41 @@ describe('extractJsonLd', () => {
     ]);
   });
 
+  it('never takes the agency Organization address, name or logo as listing data', () => {
+    // Real-world @graph shape (Figaro): the portal's Organization (Paris HQ,
+    // Google-hosted logo) precedes the listing Offer.
+    const data = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          '@graph': [
+            {
+              '@type': 'Organization',
+              name: 'Propriétés Le Figaro',
+              address: { '@type': 'PostalAddress', addressLocality: 'Paris', postalCode: '75009' },
+              image: 'https://lh3.googleusercontent.com/logo.jpg',
+            },
+            { '@type': 'WebSite', name: 'Propriétés Le Figaro' },
+            {
+              '@type': 'Offer',
+              name: 'Appartement avec terrasse',
+              price: '990000',
+              image: ['https://cdn.portail.fr/photo-1.jpg'],
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [{ '@type': 'ListItem', name: 'Accueil', position: 1 }],
+            },
+          ],
+        }),
+      ),
+    );
+    expect(data.title).toBe('Appartement avec terrasse');
+    expect(data.price).toBe(990000);
+    expect(data.city).toBeUndefined();
+    expect(data.postalCode).toBeUndefined();
+    expect(data.photoUrls).toEqual(['https://cdn.portail.fr/photo-1.jpg']);
+  });
+
   it('collects images nested in itemListElement / gallery', () => {
     const data = extractJsonLd(
       wrap(

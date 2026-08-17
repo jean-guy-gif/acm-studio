@@ -52,7 +52,7 @@ export function LivePagePrice({
     if (state.ok) {
       router.refresh();
     }
-  }, [state.ok, router]);
+  }, [state, router]);
 
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const revealed = savedEstimate != null;
@@ -68,26 +68,6 @@ export function LivePagePrice({
         action={formAction}
         className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
       >
-        <input
-          type="hidden"
-          name="seller_serious_competitor"
-          value={response?.seller_serious_competitor ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_serious_competitor_comment"
-          value={response?.seller_serious_competitor_comment ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_market_duration_reason"
-          value={response?.seller_market_duration_reason ?? ''}
-        />
-        <input
-          type="hidden"
-          name="seller_market_duration_comment"
-          value={response?.seller_market_duration_comment ?? ''}
-        />
         <label className="flex flex-col gap-1 text-sm font-medium">
           Prix imaginé par le vendeur (€)
           <input

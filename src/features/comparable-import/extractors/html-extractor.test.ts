@@ -74,4 +74,13 @@ describe('extractHtml', () => {
     const data = extractHtml('<div>Prix au m² : 5 827 €/m²</div>');
     expect(data.portalPricePerSquareMeter).toBe(5827);
   });
+
+  it('prefers "surface habitable" over an earlier generic surface label', () => {
+    // Figaro regression: a "Surface totale 110,7 m²" line preceded the real
+    // "Surface habitable 98 m²" and used to win.
+    const data = extractHtml(
+      '<div>Surface totale : 110,7 m²</div><div>Surface habitable : 98 m²</div>',
+    );
+    expect(data.surfaceArea).toBe(98);
+  });
 });

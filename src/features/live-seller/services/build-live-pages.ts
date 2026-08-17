@@ -43,7 +43,11 @@ export function buildLivePages(live: LiveComparativeData | null): LivePage[] {
 
   const comparables = live?.comparables ?? [];
   comparables.forEach((comparable, index) => {
-    for (const stepDef of COMPARABLE_STEPS) {
+    const steps =
+      comparable.response?.seller_serious_competitor === 'no'
+        ? COMPARABLE_STEPS.filter((step) => step.step === 1)
+        : COMPARABLE_STEPS;
+    for (const stepDef of steps) {
       pages.push({
         key: `${stepDef.type}:${comparable.id}`,
         type: stepDef.type,

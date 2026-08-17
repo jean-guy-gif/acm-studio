@@ -38,6 +38,14 @@ describe('normalizeLiveSellerSummary', () => {
     expect(result.seller_most_dangerous_reason).toBe('better_value');
     expect(result.seller_most_dangerous_comment).toBe('agressif');
   });
+
+  it('preserves field absence for a partial action patch', () => {
+    const result = normalizeLiveSellerSummary({ seller_perceived_property_price: 435000 });
+
+    expect(result).toEqual({ seller_perceived_property_price: 435000 });
+    expect(result).not.toHaveProperty('advisor_comparative_market_price');
+    expect(result).not.toHaveProperty('seller_most_dangerous_comparable_id');
+  });
 });
 
 describe('validateLiveSellerSummary', () => {
@@ -72,6 +80,14 @@ describe('validateLiveSellerSummary', () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_most_dangerous_reason');
+  });
+
+  it('rejects a dangerous reason or comment without a selected comparable', () => {
+    const reason = validate({ seller_most_dangerous_reason: 'better_value' });
+    const comment = validate({ seller_most_dangerous_comment: 'Très proche' });
+
+    expect(reason.ok).toBe(false);
+    expect(comment.ok).toBe(false);
   });
 
   it('rejects negative prices', () => {

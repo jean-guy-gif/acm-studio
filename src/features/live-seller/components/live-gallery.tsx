@@ -67,7 +67,13 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
         className="block w-full overflow-hidden rounded-lg"
         aria-label={`Agrandir les photos (${photos.length})`}
       >
-        <img src={main} alt={alt} className="h-56 w-full object-cover sm:h-80" loading="lazy" />
+        <img
+          src={main}
+          alt={alt}
+          className="h-56 w-full object-cover sm:h-80"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
       </button>
       {thumbs.length > 0 ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -86,6 +92,7 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
                   alt={alt}
                   className="h-16 w-full object-cover sm:h-20"
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                 />
                 {isLast ? (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-medium text-white">
@@ -133,6 +140,7 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
             <img
               src={photos[openIndex]}
               alt={alt}
+              referrerPolicy="no-referrer"
               className="max-h-[80vh] max-w-[85vw] rounded object-contain"
             />
             <button

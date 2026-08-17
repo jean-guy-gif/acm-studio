@@ -98,9 +98,14 @@ export type LiveComparableResponseInput = {
   seller_serious_competitor: SeriousCompetitor | null;
   seller_serious_competitor_comment: string | null;
   seller_estimated_listing_price: number | null;
+  seller_estimated_days_on_market: number | null;
   seller_market_duration_reason: MarketDurationReason | null;
   seller_market_duration_comment: string | null;
 };
+
+// Server actions deliberately persist only the fields posted by the current
+// screen. This prevents a stale form from overwriting answers saved elsewhere.
+export type LiveComparableResponsePatch = Partial<LiveComparableResponseInput>;
 
 export type LiveSellerSummaryInput = {
   seller_most_dangerous_comparable_id: string | null;
@@ -109,3 +114,5 @@ export type LiveSellerSummaryInput = {
   seller_perceived_property_price: number | null;
   advisor_comparative_market_price: number | null;
 };
+
+export type LiveSellerSummaryPatch = Partial<LiveSellerSummaryInput>;

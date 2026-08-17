@@ -32,6 +32,18 @@ describe('buildLivePages', () => {
     expect(perComparable.map((p) => p.step)).toEqual([1, 2, 3]);
   });
 
+  it('skips price and duration when the seller rejects a comparable', () => {
+    const scenario = live(2);
+    scenario.comparables[0].response = {
+      seller_serious_competitor: 'no',
+    } as LiveComparativeData['comparables'][number]['response'];
+
+    const pages = buildLivePages(scenario);
+    const rejectedPages = pages.filter((page) => page.comparableId === scenario.comparables[0].id);
+
+    expect(rejectedPages.map((page) => page.type)).toEqual(['comparable_competition']);
+  });
+
   it('orders the whole flow: intro, loop, dangerous, perceived, analysis, conclusion', () => {
     const pages = buildLivePages(live(2));
     expect(pages[0].type).toBe('intro');

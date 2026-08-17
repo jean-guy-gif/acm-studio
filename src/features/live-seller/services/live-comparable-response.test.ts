@@ -34,6 +34,16 @@ describe('normalizeLiveComparableResponse', () => {
         .seller_estimated_listing_price,
     ).toBeNull();
   });
+
+  it('preserves field absence for a partial action patch', () => {
+    const result = normalizeLiveComparableResponse({
+      seller_estimated_listing_price: 430000,
+    });
+
+    expect(result).toEqual({ seller_estimated_listing_price: 430000 });
+    expect(result).not.toHaveProperty('seller_serious_competitor');
+    expect(result).not.toHaveProperty('seller_market_duration_reason');
+  });
 });
 
 describe('validateLiveComparableResponse', () => {
@@ -71,6 +81,13 @@ describe('validateLiveComparableResponse', () => {
     const result = validate({ ...EMPTY, seller_market_duration_reason: 'nope' });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_market_duration_reason');
+  });
+
+  it('accepts whole estimated days and rejects negative or fractional durations', () => {
+    expect(validate({ ...EMPTY, seller_estimated_days_on_market: 45 }).ok).toBe(true);
+    expect(validate({ ...EMPTY, seller_estimated_days_on_market: null }).ok).toBe(false);
+    expect(validate({ ...EMPTY, seller_estimated_days_on_market: -1 }).ok).toBe(false);
+    expect(validate({ ...EMPTY, seller_estimated_days_on_market: 1.5 }).ok).toBe(false);
   });
 
   it('rejects an over-long comment', () => {
