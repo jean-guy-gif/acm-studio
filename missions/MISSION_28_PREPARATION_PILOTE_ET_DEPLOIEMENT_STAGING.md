@@ -2,7 +2,7 @@ MISSION 28 — PRÉPARATION PILOTE ET DÉPLOIEMENT STAGING
 
 Statut
 
-À réaliser.
+Réalisée — validée CTO.
 
 Classification
 
@@ -695,3 +695,33 @@ git diff --stat ;
 git status --short.
 
 Aucun commit.Aucun push sans validation CTO.
+
+---
+
+## Rapport de smoke test staging — 18/08/2026
+
+Environnement : https://acm-studio-henna.vercel.app
+Frontend : Vercel (dépôt GitHub, branche main) · Backend/DB/Auth : Supabase hébergé · Schéma issu uniquement des migrations versionnées (M1 → M27).
+
+Verdict : **GO PILOTE.**
+
+Le produit est réellement accessible et utilisable à distance, hors du poste de développement. Le parcours Builder → Live fonctionne de bout en bout sur l'URL de staging, avec persistance des données.
+
+### Sécurité — vérifiée manuellement par le CTO
+
+- déconnexion effective ;
+- accès direct à `/builder` sans session → redirection vers la page de connexion (route protégée) ;
+- reconnexion opérationnelle après redirection.
+
+### Thème Clair/Sombre
+
+Persistance du thème Clair/Sombre vérifiée en production (le choix est conservé après navigation et rechargement).
+
+## Backlog V2 — bugs mineurs relevés (non bloquants pour le pilote)
+
+1. Photos parasites lors d'un import bloqué (des images non pertinentes peuvent apparaître quand le portail refuse la lecture).
+2. Prix non lu dans le second schéma JSON-LD (le prix n'est pas extrait lorsqu'il est porté par un deuxième nœud JSON-LD).
+3. Photo cassée en carte / dans le Live alors qu'elle s'affiche correctement dans le formulaire (incohérence d'affichage selon le contexte).
+4. Le Live repart à l'intro après un rechargement (l'étape courante n'est pas restaurée au refresh).
+
+Ces quatre points sont mineurs, n'empêchent pas le pilote, et sont reportés en V2.
