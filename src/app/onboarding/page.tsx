@@ -1,8 +1,19 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { Logo } from '@/components/brand/logo';
 import { SubmitButton } from '@/components/submit-button';
-import { card, inputBase } from '@/components/ui/styles';
+import { AppLogo } from '@/components/theme/app-logo';
+import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
+import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
+import {
+  alertError,
+  btnPrimary,
+  card,
+  fieldLabel,
+  inputBase,
+  kickerLabel,
+  pageSubtitle,
+} from '@/components/ui/styles';
 import { getProfile } from '@/lib/auth/get-profile';
 
 import { bootstrapAgencyOwner } from './actions';
@@ -17,42 +28,55 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     redirect('/builder');
   }
 
-  const { error } = await searchParams;
+  const [{ error }, cookieStore] = await Promise.all([searchParams, cookies()]);
+  const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-brand-soft/60 to-white p-4">
-      <div className={`flex w-full max-w-sm flex-col gap-6 p-6 ${card}`}>
-        <Logo priority className="h-10" />
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Bienvenue dans ACM Studio</h1>
-          <p className="text-sm text-zinc-500">
-            Configuration initiale : créez votre agence pour commencer.
-          </p>
+    <AppStage initialTheme={theme}>
+      <div className="relative isolate flex flex-1 items-center justify-center bg-gradient-to-b from-brand-soft/60 to-white p-4 transition-colors duration-300 stage:bg-none stage:bg-[#051826]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-40 right-[-10%] -z-10 hidden h-[26rem] w-[26rem] rounded-full bg-brand/15 blur-3xl stage:block"
+        />
+        <div className="absolute top-4 right-4">
+          <AppThemeToggle />
         </div>
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-          >
-            {error}
-          </p>
-        ) : null}
-        <form action={bootstrapAgencyOwner} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Nom de l&apos;agence
-            <input type="text" name="agencyName" required className={`${inputBase} font-normal`} />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Prénom
-            <input type="text" name="firstName" required className={`${inputBase} font-normal`} />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Nom
-            <input type="text" name="lastName" required className={`${inputBase} font-normal`} />
-          </label>
-          <SubmitButton pendingLabel="Création…">Créer mon agence</SubmitButton>
-        </form>
+
+        <div className={`${card} flex w-full max-w-sm flex-col gap-6 p-6 sm:p-8`}>
+          <AppLogo priority className="h-10" />
+          <div className="flex flex-col gap-1.5">
+            <span className={kickerLabel}>Première connexion</span>
+            <h1 className="font-title text-3xl font-bold tracking-tight text-brand-deep stage:text-white">
+              Bienvenue dans ACM Studio
+            </h1>
+            <p className={pageSubtitle}>
+              Configuration initiale : créez votre agence pour commencer.
+            </p>
+          </div>
+          {error ? (
+            <p role="alert" className={alertError}>
+              {error}
+            </p>
+          ) : null}
+          <form action={bootstrapAgencyOwner} className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Nom de l&apos;agence</span>
+              <input type="text" name="agencyName" required className={inputBase} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Prénom</span>
+              <input type="text" name="firstName" required className={inputBase} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Nom</span>
+              <input type="text" name="lastName" required className={inputBase} />
+            </label>
+            <SubmitButton pendingLabel="Création…" className={`${btnPrimary} mt-1 w-full py-2.5`}>
+              Créer mon agence
+            </SubmitButton>
+          </form>
+        </div>
       </div>
-    </div>
+    </AppStage>
   );
 }

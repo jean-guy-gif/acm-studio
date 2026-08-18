@@ -1,3 +1,4 @@
+import { card, hintText, sectionTitle, softPanel } from '@/components/ui/styles';
 import type {
   ConfidenceLevel,
   PricePositioning,
@@ -32,15 +33,17 @@ export function PresentationPositioning({
   positioningStatus: PositioningStatus;
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-medium">Positionnement prix</h2>
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Positionnement prix</h2>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Current calculation */}
-        <div className="flex flex-col gap-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
-          <h3 className="text-sm font-medium">Calcul courant</h3>
+        <div className={`${softPanel} flex flex-col gap-2 p-3.5`}>
+          <h3 className="text-sm font-semibold text-zinc-700 stage:text-white/80">
+            Calcul courant
+          </h3>
           {current && current.status === 'ready' && current.recommendedRange ? (
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="text-sm text-zinc-600 stage:text-white/65">
               <p>
                 Fourchette : {euro(current.recommendedRange.low)} ·{' '}
                 {euro(current.recommendedRange.central)} · {euro(current.recommendedRange.high)}
@@ -50,20 +53,22 @@ export function PresentationPositioning({
               </p>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">
-              Positionnement indisponible (données insuffisantes).
-            </p>
+            <p className={hintText}>Positionnement indisponible (données insuffisantes).</p>
           )}
         </div>
 
         {/* Saved decision — separate, never replaced by the current calc */}
-        <div className="flex flex-col gap-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className={`${softPanel} flex flex-col gap-2 p-3.5`}>
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-medium">Décision enregistrée</h3>
-            <span className="text-xs text-zinc-500">{STATUS_LABEL[positioningStatus]}</span>
+            <h3 className="text-sm font-semibold text-zinc-700 stage:text-white/80">
+              Décision enregistrée
+            </h3>
+            <span className="text-xs font-medium text-zinc-400 stage:text-white/45">
+              {STATUS_LABEL[positioningStatus]}
+            </span>
           </div>
           {saved ? (
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="text-sm text-zinc-600 stage:text-white/65">
               <p>Prix conseillé validé : {euro(saved.advisorPrice)}</p>
               <p>Prix vendeur : {euro(saved.sellerPrice)}</p>
               <p>
@@ -75,13 +80,13 @@ export function PresentationPositioning({
                 Moteur v{saved.snapshot.engineVersion}
               </p>
               {saved.justification ? <p>Justification : {saved.justification}</p> : null}
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-400 stage:text-white/40">
                 Validé le {new Date(saved.validatedAt).toLocaleString('fr-FR')}
                 {saved.validatedByName ? ` par ${saved.validatedByName}` : ''}.
               </p>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">Aucune décision enregistrée.</p>
+            <p className={hintText}>Aucune décision enregistrée.</p>
           )}
         </div>
       </div>

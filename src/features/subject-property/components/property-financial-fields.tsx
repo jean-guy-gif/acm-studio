@@ -1,5 +1,6 @@
 'use client';
 
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import { NumberField } from '@/features/subject-property/components/property-inputs';
 
 export function PropertyFinancialFields({
@@ -14,8 +15,8 @@ export function PropertyFinancialFields({
   errors: Record<string, string>;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">4. Données financières</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Données financières</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         <NumberField
           label="Charges mensuelles"

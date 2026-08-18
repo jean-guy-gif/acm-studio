@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { backLink, kickerLabel, link, pageTitle, softPanel } from '@/components/ui/styles';
 import { importSearchResultsHtml } from '@/features/competitor-search/actions/import-search-results-html';
 import { searchCompetitors } from '@/features/competitor-search/actions/search-competitors';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
@@ -30,14 +31,14 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
     : '—';
 
   return (
-    <div className="flex flex-col gap-4">
-      <Link
-        href={`/builder/${projectId}/comparables`}
-        className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-      >
-        Retour aux biens concurrents
-      </Link>
-      <h1 className="text-2xl font-semibold">Trouver des concurrents</h1>
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-2">
+        <Link href={`/builder/${projectId}/comparables`} className={backLink}>
+          ← Retour aux biens concurrents
+        </Link>
+        <span className={kickerLabel}>Dossier · {project.seller_name}</span>
+        <h1 className={pageTitle}>Trouver des concurrents</h1>
+      </div>
 
       {hasCity ? (
         <CompetitorSearchPanel
@@ -47,12 +48,11 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           importResultsHtmlAction={importResultsHtmlAction}
         />
       ) : (
-        <div className="flex flex-col gap-2 rounded border border-zinc-200 p-4 text-sm dark:border-zinc-800">
+        <div
+          className={`${softPanel} flex flex-col gap-2 p-4 text-sm text-zinc-600 stage:text-white/70`}
+        >
           <p>La recherche se base sur la localisation du bien vendeur, qui n’est pas renseignée.</p>
-          <Link
-            href={`/builder/${projectId}/property`}
-            className="font-medium text-brand underline-offset-2 hover:underline"
-          >
+          <Link href={`/builder/${projectId}/property`} className={`${link} hover:underline`}>
             Renseigner le bien vendeur
           </Link>
         </div>

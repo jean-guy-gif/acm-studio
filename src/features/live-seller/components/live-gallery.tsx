@@ -50,7 +50,7 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
 
   if (photos.length === 0) {
     return (
-      <div className="flex h-56 w-full items-center justify-center rounded-card border border-dashed border-zinc-300 text-sm text-zinc-500 sm:h-72 dark:border-zinc-700">
+      <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-300 text-sm text-zinc-500 sm:h-72 stage:border-white/20 stage:text-white/40">
         Photos indisponibles pour cette annonce
       </div>
     );
@@ -64,13 +64,13 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
       <button
         type="button"
         onClick={() => setOpenIndex(0)}
-        className="block w-full overflow-hidden rounded-lg"
+        className="group block w-full overflow-hidden rounded-2xl shadow-card stage:shadow-none"
         aria-label={`Agrandir les photos (${photos.length})`}
       >
         <img
           src={main}
           alt={alt}
-          className="h-56 w-full object-cover sm:h-80"
+          className="h-60 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:h-88"
           loading="lazy"
           referrerPolicy="no-referrer"
         />
@@ -84,7 +84,7 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
                 key={url}
                 type="button"
                 onClick={() => setOpenIndex(i + 1)}
-                className="relative overflow-hidden rounded"
+                className="relative overflow-hidden rounded-lg transition-opacity hover:opacity-85"
                 aria-label={`Photo ${i + 2} sur ${photos.length}`}
               >
                 <img

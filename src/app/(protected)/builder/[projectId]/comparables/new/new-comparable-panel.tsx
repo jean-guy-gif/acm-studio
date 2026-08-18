@@ -4,6 +4,16 @@ import { useActionState, useRef, useState, useTransition } from 'react';
 
 import { SubmitButton } from '@/components/submit-button';
 import {
+  alertError,
+  btnPrimary,
+  btnSecondary,
+  card,
+  formSectionTitle,
+  hintText,
+  inputBase,
+  link,
+} from '@/components/ui/styles';
+import {
   initialCreateComparableState,
   type CreateComparableState,
 } from '@/features/comparables/actions/create-comparable-state';
@@ -189,39 +199,47 @@ export function NewComparablePanel({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3 rounded border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="text-lg font-medium">Importer depuis une annonce</h2>
+      <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+        <h2 className={formSectionTitle}>Importer depuis une annonce</h2>
+        <p className={hintText}>
+          Collez le lien SeLoger, Bien’ici, Figaro Immo, Green-Acres… — photos, texte et
+          caractéristiques sont aspirés pour vous.
+        </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="url"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://…"
-            className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+            className={`${inputBase} flex-1`}
           />
           <button
             type="button"
             onClick={handleImport}
             disabled={pending || url.trim() === ''}
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className={btnPrimary}
           >
             {pending ? 'Analyse de l’annonce…' : 'Importer l’annonce'}
           </button>
         </div>
-        {error ? <p role="alert">{error}</p> : null}
+        {error ? (
+          <p role="alert" className={alertError}>
+            {error}
+          </p>
+        ) : null}
 
         <button
           type="button"
           onClick={() => setShowPaste((value) => !value)}
-          className="self-start text-sm text-brand underline-offset-2 hover:underline"
+          className={`${link} self-start text-sm hover:underline`}
         >
           {showPaste
             ? 'Masquer le collage de code'
             : 'Le site bloque l’import ? Collez le code de la page'}
         </button>
         {showPaste ? (
-          <div className="flex flex-col gap-2 rounded border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-zinc-300 p-3.5 stage:border-white/20">
+            <p className="text-sm text-zinc-600 stage:text-white/70">
               Certains portails (SeLoger, Bien’ici, Leboncoin…) refusent l’analyse à distance.
               Ouvrez l’annonce dans votre navigateur, affichez le code de la page (clic droit → «
               Afficher le code source de la page », ou Cmd/Ctrl+U), sélectionnez tout (Cmd/Ctrl+A),
@@ -232,13 +250,13 @@ export function NewComparablePanel({
               onChange={(event) => setPastedHtml(event.target.value)}
               rows={5}
               placeholder="<html>…"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 font-mono text-xs outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+              className={`${inputBase} font-mono text-xs`}
             />
             <button
               type="button"
               onClick={handleImportHtml}
               disabled={pending || url.trim() === '' || pastedHtml.trim() === ''}
-              className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className={`${btnSecondary} self-start`}
             >
               {pending ? 'Analyse du code collé…' : 'Analyser le code collé'}
             </button>
@@ -246,16 +264,20 @@ export function NewComparablePanel({
         ) : null}
 
         {result ? (
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="flex flex-col gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 text-sm stage:border-emerald-400/25 stage:bg-emerald-500/[0.07]">
             <div>
-              <p className="font-medium">Informations détectées</p>
-              <p className="text-zinc-500">
+              <p className="font-semibold text-emerald-800 stage:text-emerald-300">
+                Informations détectées
+              </p>
+              <p className="text-zinc-600 stage:text-white/65">
                 {result.found.length > 0 ? result.found.map(label).join(', ') : 'Aucune'}
               </p>
             </div>
             <div>
-              <p className="font-medium">Informations à compléter</p>
-              <p className="text-zinc-500">
+              <p className="font-semibold text-zinc-700 stage:text-white/85">
+                Informations à compléter
+              </p>
+              <p className="text-zinc-600 stage:text-white/65">
                 {result.missing.length > 0 ? result.missing.map(label).join(', ') : 'Aucune'}
               </p>
             </div>
@@ -269,13 +291,13 @@ export function NewComparablePanel({
               const overThreshold = gap != null && gap > 0.01;
               return (
                 <div>
-                  <p className="font-medium">Prix au m²</p>
-                  <p className="text-zinc-500">
+                  <p className="font-semibold text-zinc-700 stage:text-white/85">Prix au m²</p>
+                  <p className="text-zinc-600 stage:text-white/65">
                     Portail : {portal != null ? `${portal.toLocaleString('fr-FR')} €/m²` : '—'} ·
                     Calculé ACM : {acm != null ? `${acm.toLocaleString('fr-FR')} €/m²` : '—'}
                   </p>
                   {overThreshold ? (
-                    <p role="alert" className="text-amber-600">
+                    <p role="alert" className="font-medium text-amber-600 stage:text-amber-300">
                       Écart supérieur à 1 % entre le prix/m² du portail et celui calculé par ACM —
                       vérifiez le prix et la surface.
                     </p>
@@ -285,7 +307,7 @@ export function NewComparablePanel({
             })()}
           </div>
         ) : null}
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-400 stage:text-white/40">
           L’import est une aide à la saisie. Vérifiez et complétez le formulaire avant
           d’enregistrer.
         </p>
@@ -295,17 +317,26 @@ export function NewComparablePanel({
         key={importKey}
         ref={formRef}
         action={createFormAction}
-        className="flex max-w-xl flex-col gap-3"
+        className={`${card} grid w-full max-w-3xl grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6`}
       >
-        <h2 className="text-lg font-medium">Saisir manuellement</h2>
-        {createState.error ? <p role="alert">{createState.error}</p> : null}
+        <h2 className={`${formSectionTitle} sm:col-span-2`}>Saisir ou vérifier la fiche</h2>
+        {createState.error ? (
+          <p role="alert" className={`${alertError} sm:col-span-2`}>
+            {createState.error}
+          </p>
+        ) : null}
         <input type="hidden" name="__importGen" value={String(importKey)} />
         <ComparableFormFields
           initial={initial}
           values={echoValues}
           errors={createState.fieldErrors}
         />
-        <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
+        <SubmitButton
+          pendingLabel="Enregistrement…"
+          className={`${btnPrimary} mt-2 self-start justify-self-start sm:col-span-2`}
+        >
+          Enregistrer le bien concurrent
+        </SubmitButton>
       </form>
     </div>
   );

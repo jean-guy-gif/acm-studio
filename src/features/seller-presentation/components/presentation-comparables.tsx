@@ -1,3 +1,4 @@
+import { card, hintText, sectionTitle, softPanel } from '@/components/ui/styles';
 import type { SellerPresentationComparable } from '@/features/seller-presentation/types/seller-presentation';
 
 function euro(value: number | null): string {
@@ -10,18 +11,15 @@ export function PresentationComparables({
   comparables: SellerPresentationComparable[];
 }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-medium">Comparables retenus ({comparables.length})</h2>
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Comparables retenus ({comparables.length})</h2>
       {comparables.length === 0 ? (
-        <p className="text-zinc-500">Aucun comparable retenu.</p>
+        <p className={hintText}>Aucun comparable retenu.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable) => (
-            <li
-              key={comparable.id}
-              className="flex flex-col gap-2 rounded border border-zinc-200 p-3 sm:flex-row dark:border-zinc-800"
-            >
-              <div className="h-20 w-full shrink-0 overflow-hidden rounded bg-zinc-100 sm:w-28 dark:bg-zinc-800">
+            <li key={comparable.id} className={`${softPanel} flex flex-col gap-3 p-3 sm:flex-row`}>
+              <div className="h-20 w-full shrink-0 overflow-hidden rounded-lg bg-zinc-100 sm:w-28 stage:bg-white/10">
                 {comparable.photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -30,16 +28,16 @@ export function PresentationComparables({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400 stage:text-white/40">
                     Pas de photo
                   </div>
                 )}
               </div>
-              <div className="flex flex-1 flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
-                <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              <div className="flex flex-1 flex-col gap-1 text-sm text-zinc-600 stage:text-white/65">
+                <span className="font-title text-base font-semibold text-zinc-900 stage:text-white">
                   {comparable.position}. {comparable.title?.trim() || 'Bien concurrent'}
                   {comparable.isOutlier ? (
-                    <span className="ml-2 rounded border border-amber-300 px-1 text-xs text-amber-700 dark:border-amber-800 dark:text-amber-300">
+                    <span className="ml-2 rounded-full border border-amber-300 px-1.5 text-xs font-medium text-amber-700 stage:border-amber-400/40 stage:text-amber-300">
                       ATYPIQUE
                     </span>
                   ) : null}

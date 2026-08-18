@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { backLink, kickerLabel, pageTitle } from '@/components/ui/styles';
 import { importComparableHtml } from '@/features/comparable-import/actions/import-comparable-html';
 import { importComparableUrl } from '@/features/comparable-import/actions/import-comparable-url';
 import { createComparable } from '@/features/comparables/actions/create-comparable';
@@ -27,14 +28,14 @@ export default async function NewComparablePage({ params, searchParams }: NewCom
   const importHtmlAction = importComparableHtml.bind(null, projectId);
 
   return (
-    <div className="flex flex-col gap-4">
-      <Link
-        href={`/builder/${projectId}/comparables`}
-        className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-      >
-        Retour aux biens concurrents
-      </Link>
-      <h1 className="text-2xl font-semibold">Ajouter un bien concurrent</h1>
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-2">
+        <Link href={`/builder/${projectId}/comparables`} className={backLink}>
+          ← Retour aux biens concurrents
+        </Link>
+        <span className={kickerLabel}>Dossier · {project.seller_name}</span>
+        <h1 className={pageTitle}>Ajouter un bien concurrent</h1>
+      </div>
       <NewComparablePanel
         createAction={create}
         importAction={importAction}

@@ -3,6 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import {
+  alertError,
+  alertOk,
+  btnPrimary,
+  fieldLabel,
+  formSection,
+  formSectionTitle,
+  inputBase,
+} from '@/components/ui/styles';
 import { PropertyCharacteristicsFields } from '@/features/subject-property/components/property-characteristics-fields';
 import { PropertyEnergyFields } from '@/features/subject-property/components/property-energy-fields';
 import { PropertyFinancialFields } from '@/features/subject-property/components/property-financial-fields';
@@ -116,16 +125,16 @@ export function SubjectPropertyForm({
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex max-w-3xl flex-col gap-5">
       {banner ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={alertError}>
           {banner}
         </p>
       ) : null}
-      {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
+      {message ? <p className={alertOk}>{message}</p> : null}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Informations générales</h2>
+      <section className={formSection}>
+        <h2 className={formSectionTitle}>Informations générales</h2>
         <TextField
           label="Type de bien"
           value={scalars.property_type}
@@ -194,13 +203,13 @@ export function SubjectPropertyForm({
             error={errors.city}
           />
         </div>
-        <label className="flex flex-col gap-1">
-          Description
+        <label className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>Description</span>
           <textarea
             rows={4}
             value={scalars.description}
             onChange={(event) => setField('description', event.target.value)}
-            className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+            className={inputBase}
           />
         </label>
       </section>
@@ -236,8 +245,8 @@ export function SubjectPropertyForm({
         errors={errors}
       />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-medium">5. Argumentaire</h2>
+      <section className={formSection}>
+        <h2 className={formSectionTitle}>Argumentaire</h2>
         <PropertyListField
           label="Points forts"
           items={strengths}
@@ -256,9 +265,9 @@ export function SubjectPropertyForm({
         type="button"
         onClick={submit}
         disabled={pending}
-        className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className={`${btnPrimary} self-start`}
       >
-        {pending ? 'Enregistrement…' : 'Enregistrer'}
+        {pending ? 'Enregistrement…' : 'Enregistrer le bien vendeur'}
       </button>
     </div>
   );

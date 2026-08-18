@@ -31,11 +31,71 @@
   --font-title: var(--font-rajdhani), var(--font-montserrat), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===========================================================================
+   Thème « scène » : variante pilotée par data-stage="dark" — au CHOIX de
+   l'utilisateur (bouton Clair/Sombre), jamais par le dark mode système.
+   Deux racines indépendantes qui ne s'imbriquent jamais :
+     - le shell applicatif (Préparation, Live index, Administration),
+       persistance par cookie `acm-theme` ;
+     - la présentation Live vendeur (sa propre bascule, sombre par défaut).
+   =========================================================================== */
+@custom-variant stage (&:where([data-stage='dark'], [data-stage='dark'] *));
+
+/* Contrôles natifs (selects, scrollbars, cases à cocher) accordés au thème. */
+[data-stage='dark'] {
+  color-scheme: dark;
+}
+
+/* Animations sobres du Live (respect de prefers-reduced-motion). */
+@keyframes live-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes live-reveal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.live-fade-up {
+  animation: live-fade-up 0.45s ease-out both;
+}
+
+.live-reveal-pop {
+  animation: live-reveal-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-fade-up,
+  .live-reveal-pop {
+    animation: none;
+  }
+}
+
+/* Champs numériques du Live : grands chiffres sans les flèches natives. */
+.live-number-input::-webkit-outer-spin-button,
+.live-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.live-number-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 @layer base {

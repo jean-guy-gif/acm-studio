@@ -1,3 +1,4 @@
+import { hintText, sectionTitle } from '@/components/ui/styles';
 import { ComparableCard } from '@/features/comparables/components/comparable-card';
 import type { Comparable } from '@/features/comparables/types';
 
@@ -19,10 +20,10 @@ export function RejectedComparablesList({
   deleteAction: ServerAction;
 }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-medium">Biens écartés ({comparables.length})</h2>
+    <section className="flex flex-col gap-3">
+      <h2 className={sectionTitle}>Biens écartés ({comparables.length})</h2>
       {comparables.length === 0 ? (
-        <p className="text-zinc-500">Aucun bien écarté.</p>
+        <p className={hintText}>Aucun bien écarté.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable) => (

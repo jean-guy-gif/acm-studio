@@ -1,5 +1,6 @@
 'use client';
 
+import { btnGhost, btnSecondary, errorText, fieldLabel, inputBase } from '@/components/ui/styles';
 import {
   MAX_LIST_ITEM_LENGTH,
   MAX_LIST_ITEMS,
@@ -32,7 +33,7 @@ export function PropertyListField({
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium">{label}</legend>
+      <legend className={`${fieldLabel} mb-1.5`}>{label}</legend>
       {items.map((item, index) => (
         <div key={index} className="flex items-center gap-2">
           <input
@@ -40,13 +41,9 @@ export function PropertyListField({
             value={item}
             maxLength={MAX_LIST_ITEM_LENGTH}
             onChange={(event) => updateAt(index, event.target.value)}
-            className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+            className={`${inputBase} flex-1`}
           />
-          <button
-            type="button"
-            onClick={() => removeAt(index)}
-            className="rounded border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
+          <button type="button" onClick={() => removeAt(index)} className={btnGhost}>
             Retirer
           </button>
         </div>
@@ -55,14 +52,14 @@ export function PropertyListField({
         type="button"
         onClick={add}
         disabled={items.length >= MAX_LIST_ITEMS}
-        className="self-start rounded border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className={`${btnSecondary} self-start`}
       >
-        Ajouter un élément
+        + Ajouter un élément
       </button>
-      <span className="text-xs text-zinc-500">
+      <span className="text-xs text-zinc-400 stage:text-white/40">
         {items.length} / {MAX_LIST_ITEMS} éléments · {MAX_LIST_ITEM_LENGTH} caractères max.
       </span>
-      {error ? <span className="text-sm text-red-600">{error}</span> : null}
+      {error ? <span className={errorText}>{error}</span> : null}
     </fieldset>
   );
 }

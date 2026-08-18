@@ -1,18 +1,16 @@
+import {
+  comparisonBadgeClass,
+  comparisonValueClass,
+  statLabel,
+} from '@/features/live-seller/components/live-stage';
 import type { ComparisonStatus } from '@/features/live-seller/constants';
 import type { FeatureComparison } from '@/features/live-seller/types';
 
 // Colour convention (always the COMPETITOR relative to the seller's property):
-//   same                 -> black / bold  (équivalent)
-//   competitor_advantage -> green         (avantage du concurrent)
-//   competitor_weakness  -> orange        (faiblesse du concurrent)
-//   unknown              -> neutral grey  (donnée absente)
-const STATUS_CLASS: Record<ComparisonStatus, string> = {
-  same: 'font-bold text-zinc-900 dark:text-zinc-100',
-  competitor_advantage: 'font-medium text-emerald-600 dark:text-emerald-400',
-  competitor_weakness: 'font-medium text-amber-600 dark:text-amber-400',
-  unknown: 'text-zinc-400 dark:text-zinc-500',
-};
-
+//   same                 -> black / bold (white on stage)  (équivalent)
+//   competitor_advantage -> green                          (avantage du concurrent)
+//   competitor_weakness  -> orange                         (faiblesse du concurrent)
+//   unknown              -> neutral grey                   (donnée absente)
 const STATUS_HINT: Record<ComparisonStatus, string> = {
   same: 'Équivalent',
   competitor_advantage: 'Avantage concurrent',
@@ -22,21 +20,38 @@ const STATUS_HINT: Record<ComparisonStatus, string> = {
 
 export function LiveFeatureComparison({ items }: { items: FeatureComparison[] }) {
   return (
-    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {items.map((item) => (
-        <div
-          key={item.criterion}
-          className="flex items-baseline justify-between gap-3 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
-        >
-          <dt className="text-sm text-zinc-500">{item.displayLabel}</dt>
-          <dd className="flex flex-col items-end text-right">
-            <span className={STATUS_CLASS[item.comparisonStatus]}>
-              {item.comparableValue ?? '—'}
-            </span>
-            <span className="text-xs text-zinc-400">{STATUS_HINT[item.comparisonStatus]}</span>
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className={statLabel}>Face à votre bien, critère par critère</span>
+        <span className="text-xs text-zinc-400 stage:text-white/40">
+          <span className="font-semibold text-emerald-600 stage:text-emerald-300">vert</span> =
+          avantage du concurrent ·{' '}
+          <span className="font-semibold text-amber-600 stage:text-amber-300">orange</span> =
+          faiblesse · <span className="font-bold">gras</span> = équivalent
+        </span>
+      </div>
+      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+        {items.map((item) => (
+          <div
+            key={item.criterion}
+            className={`flex flex-col gap-1 rounded-xl border px-3.5 py-2.5 ${comparisonBadgeClass[item.comparisonStatus]}`}
+          >
+            <dt className="text-[0.68rem] font-semibold tracking-[0.12em] uppercase opacity-70">
+              {item.displayLabel}
+            </dt>
+            <dd className="flex flex-col">
+              <span
+                className={`font-title text-lg leading-tight ${comparisonValueClass[item.comparisonStatus]}`}
+              >
+                {item.comparableValue ?? '—'}
+              </span>
+              <span className="text-[0.68rem] opacity-70">
+                {STATUS_HINT[item.comparisonStatus]}
+              </span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }

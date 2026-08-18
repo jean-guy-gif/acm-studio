@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { backLink, btnSecondary, hintText, kickerLabel, pageTitle } from '@/components/ui/styles';
+
 import { ComparableAnalysisEnergy } from '@/features/comparable-analysis/components/comparable-analysis-energy';
 import { ComparableAnalysisFeatures } from '@/features/comparable-analysis/components/comparable-analysis-features';
 import { ComparableAnalysisLocation } from '@/features/comparable-analysis/components/comparable-analysis-location';
@@ -34,28 +36,22 @@ export default async function ComparablesAnalysisPage({ params }: AnalysisPagePr
   const analysis = calculateComparableAnalysis(comparables, subjectProperty?.surface_area ?? null);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href={`/builder/${projectId}/comparables`}
-          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-        >
-          Retour aux biens concurrents
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Analyse des comparables</h1>
-      </div>
-
-      <div>
-        <Link
-          href={`/builder/${projectId}/comparables/positioning`}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Voir le positionnement
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Link href={`/builder/${projectId}/comparables`} className={backLink}>
+            ← Retour aux biens concurrents
+          </Link>
+          <span className={kickerLabel}>Dossier · {project.seller_name}</span>
+          <h1 className={pageTitle}>Analyse des comparables</h1>
+        </div>
+        <Link href={`/builder/${projectId}/comparables/positioning`} className={btnSecondary}>
+          Voir le positionnement →
         </Link>
       </div>
 
       {analysis.statistics.count === 0 ? (
-        <p className="text-zinc-500">
+        <p className={hintText}>
           Aucun comparable retenu avec un prix et une surface : l’analyse ne peut pas être produite.
         </p>
       ) : (

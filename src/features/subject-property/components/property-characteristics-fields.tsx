@@ -1,5 +1,6 @@
 'use client';
 
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import {
   MultiCheckField,
   NumberField,
@@ -36,8 +37,8 @@ export function PropertyCharacteristicsFields({
   errors: Record<string, string>;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">3. Caractéristiques du bien</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Caractéristiques du bien</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         <SelectField
           label="Exposition"

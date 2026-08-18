@@ -1,19 +1,20 @@
+import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import type { ComparableOutlier } from '@/features/comparable-analysis/types/comparable-analysis';
 
 export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableOutlier[] }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-medium">Comparables atypiques</h2>
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Comparables atypiques</h2>
       {outliers.length === 0 ? (
-        <p className="text-zinc-500">
+        <p className={hintText}>
           Aucun comparable atypique : tous les prix au m² sont proches de la médiane.
         </p>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col gap-1.5">
           {outliers.map((outlier) => (
             <li
               key={outlier.id}
-              className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+              className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm font-medium text-amber-800 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-300"
             >
               <span className="font-medium">ATYPIQUE</span> —{' '}
               {outlier.title?.trim() || 'Bien concurrent'} :{' '}

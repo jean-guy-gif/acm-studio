@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import {
+  backLink,
+  btnPrimary,
+  kickerLabel,
+  pageSubtitle,
+  pageTitle,
+  sectionTitle,
+} from '@/components/ui/styles';
+
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -50,24 +59,21 @@ export default async function SellerPresentationPage({ params }: PresentationPag
   });
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <Link
-          href={`/builder/${projectId}/comparables/positioning`}
-          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-        >
-          Retour au positionnement
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Présentation vendeur</h1>
-        <p className="text-xs text-zinc-500">
-          Aperçu de préparation (version {presentation.version}). Cette page vérifie la matière
-          préparée ; elle ne remplace pas encore le mode Live.
-        </p>
-        <Link
-          href={`/live/${projectId}`}
-          className="mt-2 inline-block rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Ouvrir dans Live
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Link href={`/builder/${projectId}/comparables/positioning`} className={backLink}>
+            ← Retour au positionnement
+          </Link>
+          <span className={kickerLabel}>Dossier · {presentation.project.name}</span>
+          <h1 className={pageTitle}>Présentation vendeur</h1>
+          <p className={pageSubtitle}>
+            Aperçu de préparation (version {presentation.version}) : vérifiez la matière avant le
+            rendez-vous.
+          </p>
+        </div>
+        <Link href={`/live/${projectId}`} className={btnPrimary}>
+          Lancer le Live →
         </Link>
       </div>
 
@@ -79,8 +85,8 @@ export default async function SellerPresentationPage({ params }: PresentationPag
       />
 
       {/* 2. Sections overview */}
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xl font-semibold">Aperçu des sections</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className={sectionTitle}>Aperçu des sections</h2>
         <div className="flex flex-col gap-2">
           {presentation.sections.map((section) => (
             <PresentationSectionCard key={section.key} section={section} />

@@ -1,3 +1,4 @@
+import { checkChip, errorText, inputBase } from '@/components/ui/styles';
 import { PhotoUrlsField } from '@/features/comparables/components/photo-urls-field';
 import type { Comparable } from '@/features/comparables/types';
 import {
@@ -65,9 +66,9 @@ export function ComparableFormFields({
   values?: Record<string, string>;
   errors?: Record<string, string>;
 }) {
-  const inputClass =
-    'rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900';
-  const labelClass = 'flex flex-col gap-1';
+  const inputClass = inputBase;
+  const labelClass = 'flex flex-col gap-1.5 text-sm font-medium text-zinc-600 stage:text-white/70';
+  const labelWide = `${labelClass} sm:col-span-2`;
 
   // Submitted raw value wins; otherwise the typed default (existing row or import).
   const dv = (name: string, typed: string | number | null | undefined): string =>
@@ -75,7 +76,7 @@ export function ComparableFormFields({
 
   const fieldError = (name: string) =>
     errors?.[name] ? (
-      <span role="alert" className="text-sm text-red-600 dark:text-red-400">
+      <span role="alert" className={errorText}>
         {errors[name]}
       </span>
     ) : null;
@@ -116,14 +117,15 @@ export function ComparableFormFields({
     labels: Record<string, string>,
     selected: string[],
   ) => (
-    <div className="flex flex-wrap gap-x-4 gap-y-1">
+    <div className="flex flex-wrap gap-2">
       {options.map((option) => (
-        <label key={option} className="flex items-center gap-1.5 text-sm font-normal">
+        <label key={option} className={checkChip}>
           <input
             type="checkbox"
             name={name}
             value={option}
             defaultChecked={selected.includes(option)}
+            className="accent-brand"
           />
           {labels[option]}
         </label>
@@ -133,7 +135,7 @@ export function ComparableFormFields({
 
   return (
     <>
-      <div className={labelClass}>
+      <div className={labelWide}>
         <span>Photos</span>
         <PhotoUrlsField
           name="photo_urls"
@@ -142,7 +144,7 @@ export function ComparableFormFields({
           }
         />
       </div>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Titre ou référence
         <input
           type="text"
@@ -151,7 +153,7 @@ export function ComparableFormFields({
           className={inputClass}
         />
       </label>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Lien de l’annonce
         <input
           type="url"
@@ -169,7 +171,7 @@ export function ComparableFormFields({
           className={inputClass}
         />
       </label>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Adresse
         <input
           type="text"
@@ -321,7 +323,7 @@ export function ComparableFormFields({
         </select>
         {fieldError('exposure')}
       </label>
-      <fieldset className={labelClass}>
+      <fieldset className={labelWide}>
         <legend>Extérieurs</legend>
         {checkboxGroup(
           'outdoor_spaces',
@@ -331,7 +333,7 @@ export function ComparableFormFields({
         )}
         {fieldError('outdoor_spaces')}
       </fieldset>
-      <fieldset className={labelClass}>
+      <fieldset className={labelWide}>
         <legend>Stationnements</legend>
         {checkboxGroup(
           'parking_types',
@@ -438,7 +440,7 @@ export function ComparableFormFields({
         />
         {fieldError('price_drop_percentage')}
       </label>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Description de l’annonce
         <textarea
           name="listing_description"
@@ -450,7 +452,7 @@ export function ComparableFormFields({
           className={inputClass}
         />
       </label>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Caractéristiques (une par ligne)
         <textarea
           name="listing_features"
@@ -459,7 +461,7 @@ export function ComparableFormFields({
           className={inputClass}
         />
       </label>
-      <label className={labelClass}>
+      <label className={labelWide}>
         Notes conseiller
         <textarea
           name="advisor_notes"

@@ -6,8 +6,8 @@ export function PositioningStatus({ freshness }: { freshness: PositioningFreshne
     <span
       className={
         isUpToDate
-          ? 'inline-block rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-          : 'inline-block rounded border border-amber-300 bg-amber-50 px-2 py-1 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200'
+          ? 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-700 stage:border-emerald-400/30 stage:bg-emerald-500/10 stage:text-emerald-300'
+          : 'inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-300'
       }
     >
       {isUpToDate ? 'À jour' : 'À actualiser'}

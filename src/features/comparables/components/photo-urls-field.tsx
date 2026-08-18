@@ -3,6 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 
+import { btnSecondary, hintText, inputBase, softPanel } from '@/components/ui/styles';
+
 // Manual photo-URL editor: one URL per row with a thumbnail preview, per-photo
 // removal and reordering. Accepts pasting several URLs (newline / comma). Only
 // http(s) URLs are kept and duplicates are dropped. The current list is mirrored
@@ -66,28 +68,27 @@ export function PhotoUrlsField({
     <div className="flex flex-col gap-2">
       <input type="hidden" name={name} value={urls.join('\n')} />
       {importedCount != null && importedCount > 0 ? (
-        <span className="text-sm text-zinc-500">{importedCount} photo(s) importée(s)</span>
+        <span className={hintText}>{importedCount} photo(s) importée(s)</span>
       ) : null}
 
       {urls.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {urls.map((url, index) => (
-            <li
-              key={url}
-              className="flex items-center gap-2 rounded border border-zinc-200 p-1.5 dark:border-zinc-800"
-            >
+            <li key={url} className={`${softPanel} flex items-center gap-2 p-2`}>
               <img
                 src={url}
                 alt=""
-                className="h-12 w-16 shrink-0 rounded object-cover"
+                className="h-12 w-16 shrink-0 rounded-lg object-cover"
                 loading="lazy"
               />
-              <span className="min-w-0 flex-1 truncate text-xs text-zinc-500">{url}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-zinc-500 stage:text-white/50">
+                {url}
+              </span>
               <button
                 type="button"
                 onClick={() => move(index, -1)}
                 disabled={index === 0}
-                className="rounded border border-zinc-300 px-1.5 text-sm disabled:opacity-40 dark:border-zinc-700"
+                className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-600 transition-colors hover:border-brand disabled:opacity-40 stage:border-white/15 stage:bg-white/5 stage:text-white/70 stage:hover:border-brand"
                 aria-label="Monter"
               >
                 ↑
@@ -96,7 +97,7 @@ export function PhotoUrlsField({
                 type="button"
                 onClick={() => move(index, 1)}
                 disabled={index === urls.length - 1}
-                className="rounded border border-zinc-300 px-1.5 text-sm disabled:opacity-40 dark:border-zinc-700"
+                className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-600 transition-colors hover:border-brand disabled:opacity-40 stage:border-white/15 stage:bg-white/5 stage:text-white/70 stage:hover:border-brand"
                 aria-label="Descendre"
               >
                 ↓
@@ -104,7 +105,7 @@ export function PhotoUrlsField({
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="rounded border border-zinc-300 px-1.5 text-sm text-red-600 dark:border-zinc-700"
+                className="rounded-lg border border-red-200 bg-white px-2 py-1 text-sm text-red-600 transition-colors hover:border-red-400 stage:border-red-400/30 stage:bg-transparent stage:text-red-300"
                 aria-label="Supprimer"
               >
                 ✕
@@ -113,9 +114,7 @@ export function PhotoUrlsField({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500">
-          Aucune photo. Collez une ou plusieurs URLs ci-dessous.
-        </p>
+        <p className={hintText}>Aucune photo. Collez une ou plusieurs URLs ci-dessous.</p>
       )}
 
       <div className="flex gap-2">
@@ -124,13 +123,9 @@ export function PhotoUrlsField({
           onChange={(event) => setDraft(event.target.value)}
           rows={2}
           placeholder="https://…/photo.jpg (une URL par ligne)"
-          className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
+          className={`${inputBase} flex-1 font-normal`}
         />
-        <button
-          type="button"
-          onClick={add}
-          className="shrink-0 self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
+        <button type="button" onClick={add} className={`${btnSecondary} shrink-0 self-start`}>
           Ajouter
         </button>
       </div>

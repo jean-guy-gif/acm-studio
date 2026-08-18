@@ -1,5 +1,6 @@
 'use client';
 
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import { SelectField, TextField } from '@/features/subject-property/components/property-inputs';
 import {
   GES_RATINGS,
@@ -21,8 +22,8 @@ export function PropertyEnergyFields({
   errors: Record<string, string>;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">2. Énergie et chauffage</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Énergie et chauffage</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         <TextField
           label="Classe DPE"

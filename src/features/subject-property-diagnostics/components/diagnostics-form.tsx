@@ -3,6 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import {
+  alertError,
+  alertOk,
+  btnPrimary,
+  formSection,
+  formSectionTitle,
+} from '@/components/ui/styles';
 import type { SaveDiagnosticsResult } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
 import {
   DIAGNOSTIC_STATUS_LABELS,
@@ -85,14 +92,14 @@ export function DiagnosticsForm({
   );
 
   return (
-    <section className="flex max-w-2xl flex-col gap-4">
-      <h2 className="text-lg font-medium">Diagnostics</h2>
+    <section className={`${formSection} max-w-3xl`}>
+      <h2 className={formSectionTitle}>Diagnostics</h2>
       {banner ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={alertError}>
           {banner}
         </p>
       ) : null}
-      {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
+      {message ? <p className={alertOk}>{message}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <DateField
@@ -157,7 +164,7 @@ export function DiagnosticsForm({
         type="button"
         onClick={submit}
         disabled={pending}
-        className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className={`${btnPrimary} self-start`}
       >
         {pending ? 'Enregistrement…' : 'Enregistrer les diagnostics'}
       </button>

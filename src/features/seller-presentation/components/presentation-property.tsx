@@ -1,3 +1,4 @@
+import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 
 function line(label: string, value: string | number | null): string {
@@ -10,13 +11,13 @@ export function PresentationProperty({
   property: SellerPresentationProperty | null;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">Bien vendeur</h2>
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Bien vendeur</h2>
       {property == null ? (
-        <p className="text-zinc-500">Aucun bien vendeur renseigné.</p>
+        <p className={hintText}>Aucun bien vendeur renseigné.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2 text-sm text-zinc-600 sm:grid-cols-3 dark:text-zinc-400">
+          <div className="grid grid-cols-2 gap-2 text-sm text-zinc-600 sm:grid-cols-3 stage:text-white/65">
             <span>{line('Type', property.propertyType)}</span>
             <span>{line('Ville', property.city)}</span>
             <span>{line('Quartier', property.district)}</span>
@@ -31,7 +32,7 @@ export function PresentationProperty({
           </div>
 
           {property.features.length > 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm text-zinc-600 stage:text-white/65">
               Caractéristiques : {property.features.join(', ')}
             </p>
           ) : null}
@@ -44,12 +45,12 @@ export function PresentationProperty({
                   key={url}
                   src={url}
                   alt="Bien vendeur"
-                  className="h-24 w-32 rounded object-cover"
+                  className="h-24 w-32 rounded-xl object-cover"
                 />
               ))}
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">Aucun visuel disponible.</p>
+            <p className={hintText}>Aucun visuel disponible.</p>
           )}
         </>
       )}

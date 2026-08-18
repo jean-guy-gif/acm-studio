@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import {
+  backLink,
+  btnSecondary,
+  hintText,
+  kickerLabel,
+  pageTitle,
+  sectionTitle,
+} from '@/components/ui/styles';
+
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { deletePricePositioning } from '@/features/price-positioning/actions/delete-price-positioning';
 import { savePricePositioning } from '@/features/price-positioning/actions/save-price-positioning';
@@ -84,28 +93,25 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
   const deleteAction = deletePricePositioning.bind(null, projectId);
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <Link
-          href={`/builder/${projectId}/comparables/analysis`}
-          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-        >
-          Retour à l’analyse
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Positionnement du prix</h1>
-        <Link
-          href={`/builder/${projectId}/presentation`}
-          className="mt-2 inline-block rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Préparer la présentation vendeur
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Link href={`/builder/${projectId}/comparables/analysis`} className={backLink}>
+            ← Retour à l’analyse
+          </Link>
+          <span className={kickerLabel}>Dossier · {project.seller_name}</span>
+          <h1 className={pageTitle}>Positionnement du prix</h1>
+        </div>
+        <Link href={`/builder/${projectId}/presentation`} className={btnSecondary}>
+          Préparer la présentation vendeur →
         </Link>
       </div>
 
       {positioning.status === 'ready' && positioning.recommendedRange ? (
         <>
           {/* 1. Current calculation */}
-          <div className="flex flex-col gap-6">
-            <h2 className="text-xl font-semibold">Calcul courant</h2>
+          <div className="flex flex-col gap-4">
+            <h2 className={sectionTitle}>Calcul courant</h2>
             <RecommendedRangeView
               range={positioning.recommendedRange}
               usedCount={positioning.dataset.usedCount}
@@ -135,9 +141,7 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
         </>
       ) : (
         <section className="flex flex-col gap-2">
-          <p className="text-zinc-500">
-            Données insuffisantes pour calculer un positionnement fiable.
-          </p>
+          <p className={hintText}>Données insuffisantes pour calculer un positionnement fiable.</p>
           <PositioningReasons reasons={positioning.reasons} />
           {/* Current calc can't be produced, so the saved decision can't be confirmed
               up to date: flag it "À actualiser" rather than a misleading "À jour". */}

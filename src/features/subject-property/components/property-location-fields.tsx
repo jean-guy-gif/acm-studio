@@ -1,5 +1,6 @@
 'use client';
 
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import { NumberField, TextField } from '@/features/subject-property/components/property-inputs';
 
 export function PropertyLocationFields({
@@ -16,8 +17,8 @@ export function PropertyLocationFields({
   errors: Record<string, string>;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">1. Localisation</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Localisation</h2>
       <TextField
         label="Quartier"
         value={district}

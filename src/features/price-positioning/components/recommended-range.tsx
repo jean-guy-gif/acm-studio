@@ -1,3 +1,4 @@
+import { card, metaLabel, sectionTitle, softPanel } from '@/components/ui/styles';
 import type {
   DispersionLevel,
   RecommendedRange,
@@ -21,23 +22,31 @@ export function RecommendedRangeView({
   usedCount: number;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">Fourchette recommandée</h2>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col rounded border border-zinc-200 p-3 dark:border-zinc-800">
-          <span className="text-xs text-zinc-500">Borne basse</span>
-          <span className="text-lg font-medium">{euro(range.low)}</span>
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Fourchette recommandée</h2>
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div className={`${softPanel} flex flex-col gap-0.5 p-3.5`}>
+          <span className={metaLabel}>Borne basse</span>
+          <span className="font-title text-xl font-semibold whitespace-nowrap text-zinc-900 stage:text-white">
+            {euro(range.low)}
+          </span>
         </div>
-        <div className="flex flex-col rounded border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
-          <span className="text-xs text-zinc-500">Valeur centrale</span>
-          <span className="text-lg font-semibold">{euro(range.central)}</span>
+        <div className="flex flex-col gap-0.5 rounded-xl border border-brand/30 bg-brand-soft p-3.5 stage:border-brand/40 stage:bg-brand/15">
+          <span className="text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-brand-deep/70 stage:text-brand">
+            Valeur centrale
+          </span>
+          <span className="font-title text-2xl font-bold whitespace-nowrap text-brand-deep stage:text-white">
+            {euro(range.central)}
+          </span>
         </div>
-        <div className="flex flex-col rounded border border-zinc-200 p-3 dark:border-zinc-800">
-          <span className="text-xs text-zinc-500">Borne haute</span>
-          <span className="text-lg font-medium">{euro(range.high)}</span>
+        <div className={`${softPanel} flex flex-col gap-0.5 p-3.5`}>
+          <span className={metaLabel}>Borne haute</span>
+          <span className="font-title text-xl font-semibold whitespace-nowrap text-zinc-900 stage:text-white">
+            {euro(range.high)}
+          </span>
         </div>
       </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-zinc-600 stage:text-white/65">
         Dispersion : {DISPERSION_LABEL[range.dispersion]} (±{range.widthPercentage} %) · {usedCount}{' '}
         comparable{usedCount > 1 ? 's' : ''} utilisé{usedCount > 1 ? 's' : ''}
       </p>

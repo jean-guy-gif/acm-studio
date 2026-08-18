@@ -3,6 +3,17 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
+import {
+  alertError,
+  alertOk,
+  btnDanger,
+  btnPrimary,
+  btnSecondary,
+  card,
+  fieldLabel,
+  inputBase,
+  sectionTitle,
+} from '@/components/ui/styles';
 import { AdvisorPrice } from '@/features/price-positioning/components/advisor-price';
 import { SellerPrice } from '@/features/price-positioning/components/seller-price';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
@@ -25,9 +36,6 @@ type Props = {
   saveAction: (formData: FormData) => Promise<SavePositioningResult>;
   deleteAction: () => Promise<DeletePositioningResult>;
 };
-
-const buttonClass =
-  'rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800';
 
 export function PositioningDecisionForm({
   range,
@@ -107,7 +115,7 @@ export function PositioningDecisionForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-medium">Décision du conseiller</h2>
+      <h2 className={sectionTitle}>Décision du conseiller</h2>
 
       <AdvisorPrice
         price={advisorPrice}
@@ -123,49 +131,56 @@ export function PositioningDecisionForm({
         position={derived.sellerPosition}
       />
 
-      <label className="flex flex-col gap-1">
-        Justification (facultative)
-        <textarea
-          name="justification"
-          rows={3}
-          maxLength={MAX_JUSTIFICATION_LENGTH}
-          value={justification}
-          onChange={(event) => setJustification(event.target.value)}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
-        />
-        <span className="text-xs text-zinc-500">
-          {justification.length} / {MAX_JUSTIFICATION_LENGTH}
-        </span>
-      </label>
+      <div className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
+        <label className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>Justification (facultative)</span>
+          <textarea
+            name="justification"
+            rows={3}
+            maxLength={MAX_JUSTIFICATION_LENGTH}
+            value={justification}
+            onChange={(event) => setJustification(event.target.value)}
+            className={inputBase}
+          />
+          <span className="text-xs text-zinc-400 stage:text-white/40">
+            {justification.length} / {MAX_JUSTIFICATION_LENGTH}
+          </span>
+        </label>
 
-      {error ? (
-        <p role="alert" className="text-sm text-red-600">
-          {error}
-        </p>
-      ) : null}
-      {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={buttonClass}
-          disabled={pending}
-          onClick={() => submit({ advisor: advisorPrice, seller: sellerPrice, justification })}
-        >
-          {hasSaved ? 'Mettre à jour la décision' : 'Enregistrer la décision'}
-        </button>
-
-        {hasSaved && isOutdated ? (
-          <button type="button" className={buttonClass} disabled={pending} onClick={handleReplace}>
-            Remplacer par le calcul courant
-          </button>
+        {error ? (
+          <p role="alert" className={alertError}>
+            {error}
+          </p>
         ) : null}
+        {message ? <p className={alertOk}>{message}</p> : null}
 
-        {hasSaved ? (
-          <button type="button" className={buttonClass} disabled={pending} onClick={handleDelete}>
-            Supprimer la décision
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={btnPrimary}
+            disabled={pending}
+            onClick={() => submit({ advisor: advisorPrice, seller: sellerPrice, justification })}
+          >
+            {hasSaved ? 'Mettre à jour la décision' : 'Enregistrer la décision'}
           </button>
-        ) : null}
+
+          {hasSaved && isOutdated ? (
+            <button
+              type="button"
+              className={btnSecondary}
+              disabled={pending}
+              onClick={handleReplace}
+            >
+              Remplacer par le calcul courant
+            </button>
+          ) : null}
+
+          {hasSaved ? (
+            <button type="button" className={btnDanger} disabled={pending} onClick={handleDelete}>
+              Supprimer la décision
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

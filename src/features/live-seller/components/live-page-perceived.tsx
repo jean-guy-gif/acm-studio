@@ -7,11 +7,24 @@ import {
   initialLiveActionState,
   type LiveActionState,
 } from '@/features/live-seller/actions/live-action-state';
+import {
+  bigInput,
+  bigInputUnit,
+  ctaPrimary,
+  errorText,
+  okText,
+  panel,
+  panelSoft,
+  question,
+  questionHint,
+  statLabel,
+  statValue,
+} from '@/features/live-seller/components/live-stage';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
 
 const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
 
 // "1. Valeur perçue par le vendeur" — a manual seller input. The observed market
 // positioning is shown for context (never as "vraie valeur du marché").
@@ -29,46 +42,50 @@ export function LivePagePerceived({
     state.values?.seller_perceived_property_price ?? summary?.seller_perceived_property_price ?? '';
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-semibold">
-        À quel prix positionneriez-vous aujourd’hui votre bien ?
-      </h2>
-
-      <div className="rounded-card border border-zinc-200 p-4 text-sm dark:border-zinc-800">
-        <div className="text-xs text-zinc-500">
-          Positionnement observé sur le marché concurrentiel
-        </div>
-        <div className="font-medium">{euro(live.competitiveMarketCentral)}</div>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
+      <div className="flex flex-col gap-3">
+        <h2 className={question}>À quel prix positionneriez-vous aujourd’hui votre bien ?</h2>
+        <p className={questionHint}>
+          Après avoir observé le marché, votre intuition compte : c’est elle que nous notons ici.
+        </p>
       </div>
 
-      <form
-        action={formAction}
-        className="flex flex-col gap-3 rounded-card border border-zinc-200 p-4 dark:border-zinc-800"
-      >
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Valeur perçue par le vendeur (€)
-          <input
-            type="number"
-            name="seller_perceived_property_price"
-            min={0}
-            step="any"
-            defaultValue={perceived}
-            className="max-w-xs rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 font-normal"
-          />
+      <form action={formAction} className={`${panel} flex flex-col gap-4`}>
+        <label className="flex flex-col gap-2">
+          <span className={statLabel}>Valeur perçue par le vendeur</span>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              name="seller_perceived_property_price"
+              min={0}
+              step="any"
+              placeholder="0"
+              defaultValue={perceived}
+              className={bigInput}
+            />
+            <span className={bigInputUnit}>€</span>
+          </div>
           {state.fieldErrors.seller_perceived_property_price ? (
-            <span role="alert" className="text-sm text-red-600">
+            <span role="alert" className={errorText}>
               {state.fieldErrors.seller_perceived_property_price}
             </span>
           ) : null}
         </label>
         {state.error ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className={errorText}>
             {state.error}
           </p>
         ) : null}
-        {state.ok ? <p className="text-sm text-emerald-600">Enregistré.</p> : null}
-        <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
+        {state.ok ? <p className={okText}>Enregistré.</p> : null}
+        <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
+          Enregistrer
+        </SubmitButton>
       </form>
+
+      <div className={panelSoft}>
+        <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
+        <div className={statValue}>{euro(live.competitiveMarketCentral)}</div>
+      </div>
     </div>
   );
 }

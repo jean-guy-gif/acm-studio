@@ -1,3 +1,4 @@
+import { card, metaLabel, sectionTitle } from '@/components/ui/styles';
 import { PositioningStatus } from '@/features/price-positioning/components/positioning-status';
 import type { ConfidenceLevel } from '@/features/price-positioning/types/price-positioning';
 import type {
@@ -24,30 +25,34 @@ export function SavedPositioningCard({
   freshness: PositioningFreshness;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded border border-zinc-200 p-4 dark:border-zinc-800">
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-medium">Positionnement enregistré</h2>
+        <h2 className={sectionTitle}>Positionnement enregistré</h2>
         <PositioningStatus freshness={freshness} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
         <div>
-          <div className="text-xs text-zinc-500">Prix conseillé validé</div>
-          <div className="font-medium">{euro(saved.advisorPrice)}</div>
+          <div className={metaLabel}>Prix conseillé validé</div>
+          <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
+            {euro(saved.advisorPrice)}
+          </div>
         </div>
         <div>
-          <div className="text-xs text-zinc-500">Prix vendeur</div>
-          <div className="font-medium">{euro(saved.sellerPrice)}</div>
+          <div className={metaLabel}>Prix vendeur</div>
+          <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
+            {euro(saved.sellerPrice)}
+          </div>
         </div>
         <div>
-          <div className="text-xs text-zinc-500">Confiance</div>
-          <div className="font-medium">
+          <div className={metaLabel}>Confiance</div>
+          <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
             {LEVEL_LABEL[saved.confidenceLevel]} ({saved.confidenceScore}/100)
           </div>
         </div>
         <div className="col-span-2 sm:col-span-3">
-          <div className="text-xs text-zinc-500">Fourchette enregistrée</div>
-          <div className="font-medium">
+          <div className={metaLabel}>Fourchette enregistrée</div>
+          <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
             {euro(saved.rangeLow)} · {euro(saved.rangeCentral)} · {euro(saved.rangeHigh)}
           </div>
         </div>
@@ -55,14 +60,14 @@ export function SavedPositioningCard({
 
       {saved.justification ? (
         <div className="text-sm">
-          <div className="text-xs text-zinc-500">Justification</div>
-          <p className="whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
+          <div className={metaLabel}>Justification</div>
+          <p className="whitespace-pre-wrap text-zinc-700 stage:text-white/75">
             {saved.justification}
           </p>
         </div>
       ) : null}
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-400 stage:text-white/40">
         Validé le {new Date(saved.validatedAt).toLocaleString('fr-FR')}
         {saved.validatedByName ? ` par ${saved.validatedByName}` : ''}.
       </p>

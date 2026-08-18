@@ -4,6 +4,17 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
+import {
+  alertError,
+  btnPrimary,
+  btnSecondary,
+  card,
+  formSectionTitle,
+  hintText,
+  inputBase,
+  link as linkCls,
+} from '@/components/ui/styles';
+
 import type {
   CompetitorCandidate,
   CompetitorSearchResult,
@@ -31,48 +42,56 @@ function CandidateCard({
   onDiscard: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-card border border-zinc-200 p-3 dark:border-zinc-800">
+    <div
+      className={`${card} group flex flex-col gap-2.5 overflow-hidden transition-colors hover:border-brand/60 stage:hover:border-brand/60`}
+    >
       {candidate.photoUrl ? (
         <img
           src={candidate.photoUrl}
           alt={candidate.title ?? 'Bien concurrent'}
           referrerPolicy="no-referrer"
           loading="lazy"
-          className="h-32 w-full rounded object-cover"
+          className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
         />
       ) : (
-        <div className="flex h-32 w-full items-center justify-center rounded border border-dashed border-zinc-300 text-xs text-zinc-500 dark:border-zinc-700">
+        <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
           Photo indisponible
         </div>
       )}
-      <div className="text-sm font-medium capitalize">{candidate.title ?? 'Annonce détectée'}</div>
-      <div className="text-sm text-zinc-600 dark:text-zinc-300">
-        {euro(candidate.price)}
-        {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
-        {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
-      </div>
-      <div className="mt-auto flex flex-wrap gap-2 text-sm">
-        <Link
-          href={`/builder/${projectId}/comparables/new?importUrl=${encodeURIComponent(candidate.url)}`}
-          className="rounded-md bg-brand px-3 py-1.5 font-medium text-white transition-colors hover:bg-brand-deep"
-        >
-          Retenir et importer
-        </Link>
-        <a
-          href={candidate.url}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-        >
-          Voir l’annonce
-        </a>
-        <button
-          type="button"
-          onClick={onDiscard}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Écarter
-        </button>
+      <div className="flex flex-1 flex-col gap-1.5 px-3.5 pb-3.5">
+        <div className="font-title text-base leading-snug font-semibold capitalize text-zinc-900 stage:text-white">
+          {candidate.title ?? 'Annonce détectée'}
+        </div>
+        <div className="text-sm text-zinc-500 stage:text-white/60">
+          <span className="font-semibold text-brand-deep stage:text-white">
+            {euro(candidate.price)}
+          </span>
+          {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
+          {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
+        </div>
+        <div className="mt-auto flex flex-wrap gap-2 pt-2 text-sm">
+          <Link
+            href={`/builder/${projectId}/comparables/new?importUrl=${encodeURIComponent(candidate.url)}`}
+            className={`${btnPrimary} px-3 py-1.5 text-xs`}
+          >
+            Retenir et importer
+          </Link>
+          <a
+            href={candidate.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={`${btnSecondary} px-3 py-1.5 text-xs`}
+          >
+            Voir l’annonce
+          </a>
+          <button
+            type="button"
+            onClick={onDiscard}
+            className={`${btnSecondary} px-3 py-1.5 text-xs`}
+          >
+            Écarter
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -95,14 +114,14 @@ function PortalBlock({
   const visible = portal.candidates.filter((candidate) => !discarded.has(candidate.url));
 
   return (
-    <section className="flex flex-col gap-3 rounded border border-zinc-200 p-4 dark:border-zinc-800">
+    <section className={`${card} flex flex-col gap-3 p-5`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-medium">{portal.label}</h2>
+        <h2 className={formSectionTitle}>{portal.label}</h2>
         <a
           href={portal.searchUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className="text-sm text-brand underline-offset-2 hover:underline"
+          className={`${linkCls} text-sm hover:underline`}
         >
           Ouvrir la recherche {portal.label}
         </a>
@@ -110,7 +129,7 @@ function PortalBlock({
 
       {portal.status === 'ok' ? (
         <>
-          <p className="text-sm text-zinc-500">
+          <p className={hintText}>
             {visible.length} annonce{visible.length > 1 ? 's' : ''} détectée
             {visible.length > 1 ? 's' : ''} — retenez ou écartez chaque suggestion.
           </p>
@@ -133,19 +152,21 @@ function PortalBlock({
         </>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-amber-700 dark:text-amber-400">{portal.message}</p>
+          <p className="text-sm font-medium text-amber-700 stage:text-amber-300">
+            {portal.message}
+          </p>
           <textarea
             value={pasted}
             onChange={(event) => setPasted(event.target.value)}
             rows={4}
             placeholder="Collez ici le code de la page de résultats (Cmd/Ctrl+U → tout copier)…"
-            className="rounded-md border border-zinc-300 px-3 py-1.5 font-mono text-xs outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900"
+            className={`${inputBase} font-mono text-xs`}
           />
           <button
             type="button"
             disabled={pending || pasted.trim() === ''}
             onClick={() => onPaste(portal.searchUrl, pasted)}
-            className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className={`${btnSecondary} self-start`}
           >
             {pending ? 'Analyse…' : 'Analyser le code collé'}
           </button>
@@ -200,24 +221,19 @@ export function CompetitorSearchPanel({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={runSearch}
-          disabled={pending}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-deep disabled:opacity-50"
-        >
+        <button type="button" onClick={runSearch} disabled={pending} className={btnPrimary}>
           {pending && portals == null ? 'Recherche en cours…' : 'Lancer la recherche'}
         </button>
-        <p className="text-sm text-zinc-500">Critères : {criteriaLabel}</p>
+        <p className={hintText}>Critères : {criteriaLabel}</p>
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-400 stage:text-white/40">
         La recherche interroge Green Acres, SeLoger, Bien’ici et Figaro Immobilier. Un portail qui
         refuse la lecture automatique reste accessible : ouvrez sa recherche, copiez le code de la
         page de résultats et collez-le. Chaque suggestion reste à retenir ou à écarter — rien n’est
         enregistré sans votre validation.
       </p>
       {error ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={alertError}>
           {error}
         </p>
       ) : null}

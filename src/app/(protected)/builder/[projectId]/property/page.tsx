@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { backLink, hintText, kickerLabel, pageTitle } from '@/components/ui/styles';
 import { getProject } from '@/features/projects/queries/get-project';
 import { saveSubjectPropertyCondominium } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
 import { CondominiumForm } from '@/features/subject-property-condominium/components/condominium-form';
@@ -34,17 +35,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const saveCondominium = saveSubjectPropertyCondominium.bind(null, projectId);
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        <Link
-          href={`/builder/${projectId}`}
-          className="text-sm font-medium text-brand underline-offset-2 transition-colors hover:text-brand-deep"
-        >
-          Retour au dossier
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-2">
+        <Link href={`/builder/${projectId}`} className={backLink}>
+          ← Retour au dossier
         </Link>
-        <h1 className="text-2xl font-semibold">Bien vendeur</h1>
-        <SubjectPropertyForm property={property} saveAction={save} />
+        <span className={kickerLabel}>Dossier · {project.seller_name}</span>
+        <h1 className={pageTitle}>Bien vendeur</h1>
       </div>
+
+      <SubjectPropertyForm property={property} saveAction={save} />
 
       {property ? (
         <>
@@ -52,7 +52,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           <CondominiumForm condominium={condominium} saveAction={saveCondominium} />
         </>
       ) : (
-        <p className="text-sm text-zinc-500">
+        <p className={hintText}>
           Enregistrez d’abord le bien vendeur pour renseigner les diagnostics et la copropriété.
         </p>
       )}

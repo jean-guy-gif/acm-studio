@@ -1,13 +1,12 @@
 'use client';
 
+import { checkChip, errorText, fieldLabel, inputBase } from '@/components/ui/styles';
+
 // Small shared presentational input primitives for the seller-property form.
 // Errors are rendered near their field.
 
-const inputClass =
-  'rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900';
-
 function FieldError({ error }: { error?: string }) {
-  return error ? <span className="text-sm text-red-600">{error}</span> : null;
+  return error ? <span className={errorText}>{error}</span> : null;
 }
 
 export function TextField({
@@ -22,13 +21,13 @@ export function TextField({
   error?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       <input
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={inputClass}
+        className={inputBase}
       />
       <FieldError error={error} />
     </label>
@@ -53,8 +52,8 @@ export function NumberField({
   suffix?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       <span className="flex items-center gap-2">
         <input
           type="number"
@@ -62,9 +61,11 @@ export function NumberField({
           step={step}
           min={min}
           onChange={(event) => onChange(event.target.value)}
-          className={`${inputClass} w-full min-w-0 flex-1`}
+          className={`${inputBase} w-full min-w-0 flex-1`}
         />
-        {suffix ? <span className="text-sm text-zinc-500">{suffix}</span> : null}
+        {suffix ? (
+          <span className="shrink-0 text-sm text-zinc-400 stage:text-white/50">{suffix}</span>
+        ) : null}
       </span>
       <FieldError error={error} />
     </label>
@@ -83,13 +84,13 @@ export function DateField({
   error?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={inputClass}
+        className={inputBase}
       />
       <FieldError error={error} />
     </label>
@@ -110,14 +111,14 @@ export function TextareaField({
   maxLength?: number;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       <textarea
         rows={3}
         value={value}
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
-        className={inputClass}
+        className={inputBase}
       />
       <FieldError error={error} />
     </label>
@@ -138,12 +139,12 @@ export function SelectField({
   error?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={inputClass}
+        className={inputBase}
       >
         <option value="">— Non renseigné —</option>
         {options.map((option) => (
@@ -175,14 +176,15 @@ export function MultiCheckField({
   };
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium">{label}</legend>
-      <div className="flex flex-wrap gap-3">
+      <legend className={`${fieldLabel} mb-1.5`}>{label}</legend>
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => (
-          <label key={option.value} className="flex items-center gap-1 text-sm">
+          <label key={option.value} className={checkChip}>
             <input
               type="checkbox"
               checked={values.includes(option.value)}
               onChange={() => toggle(option.value)}
+              className="accent-brand"
             />
             {option.label}
           </label>

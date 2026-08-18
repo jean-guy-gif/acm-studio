@@ -1,3 +1,4 @@
+import { card, fieldLabel, inputBase, sectionTitle } from '@/components/ui/styles';
 import type {
   MarketPosition,
   PriceDeviation,
@@ -20,8 +21,7 @@ export function formatDeviation(deviation: PriceDeviation | null): string {
   return `${absolute} (${deviation.percentage > 0 ? '+' : ''}${deviation.percentage} %)`;
 }
 
-const inputClass =
-  'rounded-md border border-zinc-300 px-3 py-1.5 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900';
+const inputClass = inputBase;
 
 export function AdvisorPrice({
   price,
@@ -35,10 +35,10 @@ export function AdvisorPrice({
   position: MarketPosition | null;
 }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-medium">Prix conseillé</h2>
-      <label className="flex flex-col gap-1">
-        Montant conseillé
+    <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+      <h2 className={sectionTitle}>Prix conseillé</h2>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Montant conseillé</span>
         <input
           type="number"
           min={0}
@@ -51,7 +51,7 @@ export function AdvisorPrice({
           className={inputClass}
         />
       </label>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-zinc-600 stage:text-white/65">
         Écart avec la valeur centrale : {formatDeviation(deviationFromCentral)} · Position :{' '}
         {position ? POSITION_LABEL[position] : '—'}
       </p>
