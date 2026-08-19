@@ -42,6 +42,8 @@ type ScalarState = {
   construction_year: string;
   general_condition: string;
   monthly_charges: string;
+  advisor_price_min: string;
+  advisor_price_max: string;
   property_tax: string;
 };
 
@@ -70,6 +72,8 @@ function initialScalars(property: SubjectProperty | null): ScalarState {
     construction_year: str(property?.construction_year),
     general_condition: str(property?.general_condition),
     monthly_charges: str(property?.monthly_charges),
+    advisor_price_min: str(property?.advisor_price_min),
+    advisor_price_max: str(property?.advisor_price_max),
     property_tax: str(property?.property_tax),
   };
 }
@@ -241,6 +245,8 @@ export function SubjectPropertyForm({
       <PropertyFinancialFields
         monthlyCharges={scalars.monthly_charges}
         propertyTax={scalars.property_tax}
+        advisorPriceMin={scalars.advisor_price_min}
+        advisorPriceMax={scalars.advisor_price_max}
         onField={setField}
         errors={errors}
       />

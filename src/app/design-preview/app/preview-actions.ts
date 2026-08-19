@@ -4,10 +4,12 @@
 // RIEN et répondent toujours par un refus explicite. Uniquement référencées par
 // /design-preview/app (gardé hors production) — jamais par l'application réelle.
 
+import type { EnrichCandidateResult } from '@/features/competitor-search/actions/enrich-candidate';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
 import type {
   CompetitorSearchResult,
+  RecordDecisionResult,
   SearchResultsHtmlImport,
 } from '@/features/competitor-search/types';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
@@ -46,6 +48,14 @@ export async function previewSearchCompetitors(): Promise<CompetitorSearchResult
 
 export async function previewImportSearchResults(): Promise<SearchResultsHtmlImport> {
   return { ok: false, error: REFUSAL };
+}
+
+export async function previewRecordDecision(): Promise<RecordDecisionResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewEnrichCandidate(url: string): Promise<EnrichCandidateResult> {
+  return { ok: false, url, error: REFUSAL };
 }
 
 export async function previewSavePositioning(): Promise<SavePositioningResult> {

@@ -4,10 +4,18 @@ import type {
   CompetitorSearchCriteria,
   CompetitorSearchResult,
   PortalSearchResult,
+  RankedCandidate,
 } from '@/features/competitor-search/types';
 import { buildPortalSearchUrls } from '@/features/competitor-search/services/build-portal-search-urls';
 import { extractSearchResults } from '@/features/competitor-search/services/extract-search-results';
 import { fetchListingPage } from '@/features/comparable-import/services/fetch-listing-page';
+import {
+  applyLearning,
+  learnFromDecisions,
+  type CompetitorDecisionRecord,
+  type DecisionReason,
+} from '@/features/competitor-search/services/learn-from-decisions';
+import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -51,6 +59,11 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
     city: property.city.trim(),
     postalCode: property.postal_code,
     propertyType: property.property_type,
+    district: property.district,
+    surfaceArea: property.surface_area,
+    roomsCount: property.rooms_count,
+    advisorPriceMin: property.advisor_price_min,
+    advisorPriceMax: property.advisor_price_max,
   };
 
   const links = buildPortalSearchUrls(criteria);
@@ -91,5 +104,83 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
     }),
   );
 
-  return { ok: true, criteria, portals };
+  // Décisions déjà prises DANS L'AGENCE : c'est la mémoire de l'outil. On lit
+  // large (toute l'agence) pour que les conseillers s'entraident, comme demandé.
+  const { data: rows } = await supabase
+    .from('competitor_decisions')
+    .select(
+      'listing_url, listing_host, decision, reason, price, surface_area, district, property_type',
+    )
+    .eq('agency_id', profile.agency_id)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  const decisions: CompetitorDecisionRecord[] = (rows ?? []).map((row) => ({
+    listingUrl: row.listing_url,
+    listingHost: row.listing_host,
+    decision: row.decision === 'accepted' ? 'accepted' : 'rejected',
+    reason: (row.reason as DecisionReason | null) ?? null,
+    price: row.price,
+    surfaceArea: row.surface_area,
+    district: row.district,
+    propertyType: row.property_type,
+  }));
+  const preferences = learnFromDecisions(decisions);
+
+  // Classement : on rassemble les annonces de tous les portails, on les note, on
+  // trie. Aucune n'est retirée — une annonce éloignée descend, elle ne disparaît
+  // pas : un concurrent atypique existe, et c'est le conseiller qui tranche.
+  const ranked: RankedCandidate[] = [];
+  const seen = new Set<string>();
+  for (const portal of portals) {
+    for (const candidate of portal.candidates) {
+      if (seen.has(candidate.url)) {
+        continue;
+      }
+      seen.add(candidate.url);
+      let host = '';
+      try {
+        host = new URL(candidate.url).hostname.toLowerCase();
+      } catch {
+        continue;
+      }
+      const facts = {
+        price: candidate.price,
+        surfaceArea: candidate.surfaceArea,
+        roomsCount: candidate.roomsCount,
+        // Les pages de résultats ne portent ni quartier ni type fiable : ces
+        // critères entreront en jeu après l'enrichissement de la fiche.
+        city: criteria.city,
+        district: null,
+        propertyType: null,
+      };
+      const base = scoreCandidate(criteria, facts);
+      const adjusted = applyLearning(
+        base,
+        { ...facts, listingUrl: candidate.url, listingHost: host },
+        preferences,
+      );
+      ranked.push({
+        candidate,
+        portal: portal.portal,
+        portalLabel: portal.label,
+        host,
+        score: adjusted.score,
+        strengths: base.strengths,
+        weaknesses: base.weaknesses,
+        learnedPenalties: adjusted.penalties,
+        alreadyJudged: adjusted.alreadyJudged,
+      });
+    }
+  }
+
+  // Les annonces déjà tranchées passent derrière : le conseiller les voit, mais
+  // après celles sur lesquelles il n'a pas encore d'avis.
+  ranked.sort((a, b) => {
+    const judgedA = a.alreadyJudged == null ? 0 : 1;
+    const judgedB = b.alreadyJudged == null ? 0 : 1;
+    return judgedA !== judgedB ? judgedA - judgedB : b.score - a.score;
+  });
+
+  return { ok: true, criteria, portals, ranked, learnedNotes: preferences.notes };
 }

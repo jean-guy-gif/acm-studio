@@ -72,6 +72,8 @@ import {
   previewDeletePositioning,
   previewImport,
   previewImportSearchResults,
+  previewEnrichCandidate,
+  previewRecordDecision,
   previewSaveCondominium,
   previewSaveDiagnostics,
   previewSaveProperty,
@@ -329,6 +331,8 @@ function FindScreen() {
         criteriaLabel="Nice 06000"
         searchAction={previewSearchCompetitors}
         importResultsHtmlAction={previewImportSearchResults}
+        recordDecisionAction={previewRecordDecision}
+        enrichAction={previewEnrichCandidate}
       />
     </div>
   );

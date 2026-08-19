@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { backLink, kickerLabel, link, pageTitle, softPanel } from '@/components/ui/styles';
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { importSearchResultsHtml } from '@/features/competitor-search/actions/import-search-results-html';
+import { enrichCandidate } from '@/features/competitor-search/actions/enrich-candidate';
+import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
 import { searchCompetitors } from '@/features/competitor-search/actions/search-competitors';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -26,6 +28,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
 
   const searchAction = searchCompetitors.bind(null, projectId);
   const importResultsHtmlAction = importSearchResultsHtml.bind(null, projectId);
+  const recordDecisionAction = recordCompetitorDecision.bind(null, projectId);
+  const enrichAction = enrichCandidate.bind(null, projectId);
 
   const criteriaLabel = hasCity
     ? [property?.city, property?.postal_code].filter(Boolean).join(' ')
@@ -48,6 +52,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
             criteriaLabel={criteriaLabel}
             searchAction={searchAction}
             importResultsHtmlAction={importResultsHtmlAction}
+            recordDecisionAction={recordDecisionAction}
+            enrichAction={enrichAction}
           />
           <ImportBookmarklet />
         </>

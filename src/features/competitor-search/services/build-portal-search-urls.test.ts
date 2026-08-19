@@ -4,6 +4,23 @@ import {
   buildPortalSearchUrls,
   slugifyCity,
 } from '@/features/competitor-search/services/build-portal-search-urls';
+import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
+
+// Les critères de recherche portent aussi surface, quartier et fourchette de
+// prix (MISSION 36) ; ces tests ne s'intéressent qu'à la construction d'URL.
+function criteria(overrides: Partial<CompetitorSearchCriteria> = {}): CompetitorSearchCriteria {
+  return {
+    city: 'Nice',
+    postalCode: '06000',
+    propertyType: 'apartment',
+    district: null,
+    surfaceArea: null,
+    roomsCount: null,
+    advisorPriceMin: null,
+    advisorPriceMax: null,
+    ...overrides,
+  };
+}
 
 describe('slugifyCity', () => {
   it('normalises accents, apostrophes and spaces', () => {
@@ -20,6 +37,11 @@ describe('buildPortalSearchUrls', () => {
       city: 'Nice',
       postalCode: '06000',
       propertyType: 'apartment',
+      district: null,
+      surfaceArea: null,
+      roomsCount: null,
+      advisorPriceMin: null,
+      advisorPriceMax: null,
     });
     const byPortal = Object.fromEntries(links.map((link) => [link.portal, link.url]));
     expect(byPortal.green_acres).toBe('https://www.green-acres.fr/immobilier/nice');
@@ -31,7 +53,9 @@ describe('buildPortalSearchUrls', () => {
   });
 
   it('degrades gracefully without a postal code', () => {
-    const links = buildPortalSearchUrls({ city: 'Nice', postalCode: null, propertyType: 'house' });
+    const links = buildPortalSearchUrls(
+      criteria({ city: 'Nice', postalCode: null, propertyType: 'house' }),
+    );
     const byPortal = Object.fromEntries(links.map((link) => [link.portal, link.url]));
     expect(byPortal.seloger).toBe('https://www.seloger.com/immobilier/achat/immo-nice/');
     expect(byPortal.bienici).toBe('https://www.bienici.com/recherche/achat/nice');
@@ -41,7 +65,9 @@ describe('buildPortalSearchUrls', () => {
   });
 
   it('always returns the five portals', () => {
-    const links = buildPortalSearchUrls({ city: 'Lyon', postalCode: '69006', propertyType: null });
+    const links = buildPortalSearchUrls(
+      criteria({ city: 'Lyon', postalCode: '69006', propertyType: null }),
+    );
     expect(links.map((link) => link.portal).sort()).toEqual([
       'bienici',
       'figaro',

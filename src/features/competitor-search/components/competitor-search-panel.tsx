@@ -16,9 +16,19 @@ import {
 } from '@/components/ui/styles';
 
 import type {
+  EnrichCandidateResult,
+  EnrichedCandidate,
+} from '@/features/competitor-search/actions/enrich-candidate';
+import {
+  RankedCandidateCard,
+  type DecisionPayload,
+} from '@/features/competitor-search/components/ranked-candidate-card';
+import type {
   CompetitorCandidate,
   CompetitorSearchResult,
   PortalSearchResult,
+  RankedCandidate,
+  RecordDecisionResult,
   SearchResultsHtmlImport,
 } from '@/features/competitor-search/types';
 
@@ -30,7 +40,16 @@ type Props = {
   criteriaLabel: string;
   searchAction: () => Promise<CompetitorSearchResult>;
   importResultsHtmlAction: (formData: FormData) => Promise<SearchResultsHtmlImport>;
+  recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
+  enrichAction: (url: string) => Promise<EnrichCandidateResult>;
 };
+
+// Nombre de fiches complétées automatiquement après une recherche. Au-delà, le
+// conseiller a déjà de quoi trancher, et chaque fiche coûte un appel au portail.
+const ENRICHED_COUNT = 12;
+// Quelques appels en parallèle : assez pour que l'écran se remplisse vite, assez
+// peu pour rester un visiteur poli.
+const ENRICH_CONCURRENCY = 3;
 
 function CandidateCard({
   candidate,
@@ -180,10 +199,41 @@ export function CompetitorSearchPanel({
   criteriaLabel,
   searchAction,
   importResultsHtmlAction,
+  recordDecisionAction,
+  enrichAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [portals, setPortals] = useState<PortalSearchResult[] | null>(null);
+  const [ranked, setRanked] = useState<RankedCandidate[]>([]);
+  const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
+  const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
+  const [enriched, setEnriched] = useState<Record<string, EnrichedCandidate>>({});
+  const [enriching, setEnriching] = useState(0);
+
+  // Complète les premières fiches en tâche de fond : le conseiller voit les
+  // photos et les caractéristiques arriver au lieu d'attendre devant un écran
+  // figé. Une fiche qui échoue est simplement laissée en l'état.
+  async function enrichTop(entries: RankedCandidate[]) {
+    const queue = entries.slice(0, ENRICHED_COUNT).map((entry) => entry.candidate.url);
+    setEnriching(queue.length);
+    let index = 0;
+    const worker = async () => {
+      for (;;) {
+        const current = index;
+        index += 1;
+        if (current >= queue.length) {
+          return;
+        }
+        const result = await enrichAction(queue[current]);
+        if (result.ok) {
+          setEnriched((state) => ({ ...state, [result.data.url]: result.data }));
+        }
+        setEnriching((count) => Math.max(0, count - 1));
+      }
+    };
+    await Promise.all(Array.from({ length: ENRICH_CONCURRENCY }, worker));
+  }
 
   function runSearch() {
     setError(null);
@@ -191,9 +241,16 @@ export function CompetitorSearchPanel({
       const result = await searchAction();
       if (result.ok) {
         setPortals(result.portals);
+        setRanked(result.ranked);
+        setLearnedNotes(result.learnedNotes);
+        setDecided({});
+        setEnriched({});
+        void enrichTop(result.ranked);
       } else {
         setError(result.error);
         setPortals(null);
+        setRanked([]);
+        setLearnedNotes([]);
       }
     });
   }
@@ -217,6 +274,36 @@ export function CompetitorSearchPanel({
     });
   }
 
+  // « Oui, c'est un concurrent » / « Non, et voici pourquoi ». C'est cette trace
+  // qui rend la recherche suivante meilleure.
+  function handleDecision(entry: RankedCandidate, payload: DecisionPayload) {
+    setDecided((current) => ({ ...current, [entry.candidate.url]: payload.decision }));
+    const formData = new FormData();
+    formData.set('listing_url', entry.candidate.url);
+    formData.set('decision', payload.decision);
+    if (payload.reason) {
+      formData.set('reason', payload.reason);
+    }
+    formData.set('comment', payload.comment);
+    if (entry.candidate.price != null) {
+      formData.set('price', String(entry.candidate.price));
+    }
+    if (entry.candidate.surfaceArea != null) {
+      formData.set('surface_area', String(entry.candidate.surfaceArea));
+    }
+    if (entry.candidate.roomsCount != null) {
+      formData.set('rooms_count', String(entry.candidate.roomsCount));
+    }
+    startTransition(async () => {
+      const result = await recordDecisionAction(formData);
+      if (!result.ok) {
+        setError(result.error);
+      }
+    });
+  }
+
+  const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -236,6 +323,49 @@ export function CompetitorSearchPanel({
           {error}
         </p>
       ) : null}
+      {learnedNotes.length > 0 ? (
+        <div className={`${card} flex flex-col gap-1 p-3.5`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            Ce que l’outil a retenu de vos choix
+          </span>
+          {learnedNotes.map((note) => (
+            <p key={note} className={hintText}>
+              {note}
+            </p>
+          ))}
+        </div>
+      ) : null}
+
+      {undecided.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <h3 className={formSectionTitle}>
+            Concurrents proposés, du plus au moins ressemblant ({undecided.length})
+          </h3>
+          <p className={hintText}>
+            Le pourcentage mesure la ressemblance avec le bien de votre client. Rien n’est masqué :
+            une annonce éloignée descend dans la liste, elle ne disparaît pas.
+          </p>
+          {enriching > 0 ? (
+            <p className={hintText}>
+              Récupération des photos et des caractéristiques… ({enriching} fiche
+              {enriching > 1 ? 's' : ''} restante{enriching > 1 ? 's' : ''})
+            </p>
+          ) : null}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {undecided.map((entry) => (
+              <RankedCandidateCard
+                key={entry.candidate.url}
+                ranked={entry}
+                enriched={enriched[entry.candidate.url] ?? null}
+                projectId={projectId}
+                pending={pending}
+                onDecision={(payload) => handleDecision(entry, payload)}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {portals
         ? portals.map((portal) => (
             <PortalBlock

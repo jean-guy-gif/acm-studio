@@ -94,6 +94,63 @@ export type Database = {
           },
         ]
       }
+      competitor_decisions: {
+        Row: {
+          agency_id: string
+          city: string | null
+          comment: string | null
+          created_at: string
+          decision: string
+          district: string | null
+          id: string
+          listing_host: string
+          listing_url: string
+          price: number | null
+          project_id: string
+          property_type: string | null
+          reason: string | null
+          rooms_count: number | null
+          surface_area: number | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          city?: string | null
+          comment?: string | null
+          created_at?: string
+          decision: string
+          district?: string | null
+          id?: string
+          listing_host: string
+          listing_url: string
+          price?: number | null
+          project_id: string
+          property_type?: string | null
+          reason?: string | null
+          rooms_count?: number | null
+          surface_area?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          city?: string | null
+          comment?: string | null
+          created_at?: string
+          decision?: string
+          district?: string | null
+          id?: string
+          listing_host?: string
+          listing_url?: string
+          price?: number | null
+          project_id?: string
+          property_type?: string | null
+          reason?: string | null
+          rooms_count?: number | null
+          surface_area?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comparables: {
         Row: {
           address: string | null
@@ -968,6 +1025,8 @@ export type Database = {
       subject_properties: {
         Row: {
           address: string | null
+          advisor_price_max: number | null
+          advisor_price_min: number | null
           agency_id: string
           bathrooms_count: number | null
           bedrooms_count: number | null
@@ -1002,6 +1061,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          advisor_price_max?: number | null
+          advisor_price_min?: number | null
           agency_id: string
           bathrooms_count?: number | null
           bedrooms_count?: number | null
@@ -1036,6 +1097,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          advisor_price_max?: number | null
+          advisor_price_min?: number | null
           agency_id?: string
           bathrooms_count?: number | null
           bedrooms_count?: number | null

@@ -37,6 +37,11 @@ export type RawSubjectPropertyInput = {
   parking_types: string[];
   monthly_charges: number | null;
   property_tax: number | null;
+  // MISSION 36 — fourchette de prix estimée par le CONSEILLER. Ce n'est pas une
+  // estimation de l'outil (le protocole l'interdit) et elle n'est jamais montrée
+  // au vendeur : elle ne sert qu'à cibler la recherche de concurrents.
+  advisor_price_min: number | null;
+  advisor_price_max: number | null;
   strengths: string[];
   watch_points: string[];
 };
@@ -127,6 +132,18 @@ export function validateSubjectProperty(
   checkNonNegative(input.bathrooms_count, 'bathrooms_count', errors);
   checkNonNegative(input.monthly_charges, 'monthly_charges', errors);
   checkNonNegative(input.property_tax, 'property_tax', errors);
+  checkNonNegative(input.advisor_price_min, 'advisor_price_min', errors);
+  checkNonNegative(input.advisor_price_max, 'advisor_price_max', errors);
+  // Une fourchette à l'envers est une faute de saisie, pas une opinion.
+  if (
+    input.advisor_price_min != null &&
+    input.advisor_price_max != null &&
+    errors.advisor_price_min == null &&
+    errors.advisor_price_max == null &&
+    input.advisor_price_min > input.advisor_price_max
+  ) {
+    errors.advisor_price_max = 'Le haut de la fourchette doit être supérieur au bas.';
+  }
 
   checkInteger(input.floor, 'floor', -1, 200, errors);
   checkInteger(input.building_floors, 'building_floors', 0, 200, errors);

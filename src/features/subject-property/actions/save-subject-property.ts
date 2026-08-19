@@ -82,6 +82,8 @@ export async function saveSubjectProperty(
     parking_types: stringArray(formData, 'parking_types'),
     monthly_charges: numberOrNull(formData.get('monthly_charges')),
     property_tax: numberOrNull(formData.get('property_tax')),
+    advisor_price_min: numberOrNull(formData.get('advisor_price_min')),
+    advisor_price_max: numberOrNull(formData.get('advisor_price_max')),
     strengths: stringArray(formData, 'strengths'),
     watch_points: stringArray(formData, 'watch_points'),
   };

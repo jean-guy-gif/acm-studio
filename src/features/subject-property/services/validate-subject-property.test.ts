@@ -7,6 +7,8 @@ import {
 
 function input(overrides: Partial<RawSubjectPropertyInput> = {}): RawSubjectPropertyInput {
   return {
+    advisor_price_min: null,
+    advisor_price_max: null,
     property_type: 'appartement',
     surface_area: 52,
     land_area: null,
@@ -188,5 +190,35 @@ describe('validateSubjectProperty — valid full payload', () => {
       YEAR,
     );
     expect(result.ok).toBe(true);
+  });
+});
+
+// MISSION 36 — fourchette de prix du conseiller, qui cible la recherche de
+// concurrents. Ce n'est jamais une estimation de l'outil.
+describe('validateSubjectProperty — fourchette du conseiller', () => {
+  it('accepte une fourchette cohérente', () => {
+    const result = validateSubjectProperty(
+      input({ advisor_price_min: 280_000, advisor_price_max: 320_000 }),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepte une fourchette laissée vide', () => {
+    expect(validateSubjectProperty(input()).ok).toBe(true);
+  });
+
+  it('refuse une fourchette à l’envers', () => {
+    const result = validateSubjectProperty(
+      input({ advisor_price_min: 400_000, advisor_price_max: 300_000 }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.fieldErrors.advisor_price_max).toBeTruthy();
+    }
+  });
+
+  it('refuse un montant négatif', () => {
+    const result = validateSubjectProperty(input({ advisor_price_min: -1 }));
+    expect(result.ok).toBe(false);
   });
 });
