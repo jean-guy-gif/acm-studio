@@ -6,6 +6,7 @@ import type {
 import { mapComparableCharacteristics } from '@/features/comparable-import/services/map-comparable-characteristics';
 import { deduplicatePhotoUrls } from '@/features/comparable-import/utils/deduplicate-photo-urls';
 import { isGenericImageUrl, isGenericTitle } from '@/features/comparable-import/utils/is-generic';
+import { keepListingPhotos } from '@/features/comparable-import/utils/listing-photo-scope';
 import { isDedicatedColumnLine } from '@/features/comparable-import/utils/extract-visible-features';
 import { daysOnMarketSince } from '@/features/comparable-import/utils/extract-listing-published-at';
 
@@ -216,7 +217,12 @@ export function normalizeListingData(
     referencePhotos,
     listingUrl,
   );
-  const candidatePhotos = deduplicatePhotoUrls(combinedPhotos, listingUrl);
+  // Recette du 19/08 : la page contient aussi les photos des « biens
+  // similaires » et l'habillage du site. On les écarte AVANT la déduplication.
+  const candidatePhotos = deduplicatePhotoUrls(
+    keepListingPhotos(combinedPhotos, listingUrl),
+    listingUrl,
+  );
 
   const data: ImportedComparableData = {
     title: pickTitle(ordered, source),
