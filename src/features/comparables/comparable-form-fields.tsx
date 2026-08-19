@@ -1,5 +1,6 @@
 import { checkChip, errorText, hintText, inputBase } from '@/components/ui/styles';
 import { PhotoUrlsField } from '@/features/comparables/components/photo-urls-field';
+import { ListingAgeShortcut } from '@/features/comparables/components/listing-age-shortcut';
 import type { Comparable } from '@/features/comparables/types';
 import {
   EXPOSURES,
@@ -77,6 +78,10 @@ export function ComparableFormFields({
   // Submitted raw value wins; otherwise the typed default (existing row or import).
   const dv = (name: string, typed: string | number | null | undefined): string =>
     values?.[name] ?? (typed == null ? '' : String(typed));
+
+  // Mission 33 — adresse de l'annonce, pour le raccourci de vérification.
+  const listingUrlValue =
+    values?.listing_url ?? comparable?.listing_url ?? initial?.listing_url ?? null;
 
   // Mission 33 — date de mise en ligne publiée par le portail (jamais saisie).
   const listingPublishedAt =
@@ -441,7 +446,12 @@ export function ComparableFormFields({
             portail — le délai est recalculé le jour du rendez-vous. Une correction manuelle a
             priorité.
           </span>
-        ) : null}
+        ) : (
+          /* Le portail ne publie pas de date (Belles Demeures, Green Acres,
+             Maisons et Appartements) : on ouvre le service pour le conseiller
+             plutôt que de le laisser chercher. */
+          <ListingAgeShortcut listingUrl={listingUrlValue} />
+        )}
         {fieldError('days_on_market')}
       </label>
       <label className={labelClass}>

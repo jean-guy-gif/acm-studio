@@ -149,14 +149,14 @@ révélée après l'estimation du vendeur.
 
 ## 4. Mesure sur les six pages réelles fournies (19/08)
 
-| Portail | Poids de la page | Date de mise en ligne |
-|---|---|---|
-| SeLoger — Fontmerle/Estagnol | 657 Ko | **10/04/2026 → 131 jours** |
-| Le Figaro — page d'agence Avenir Immobilier | 995 Ko | présente (31 annonces) → écartée volontairement |
-| Belles Demeures — villa 3 300 000 € | 494 Ko | aucune |
-| Green Acres — La Muette | 872 Ko | aucune (seul `foundingDate` 2004 de l'agence) |
-| Maisons et Appartements — Jjc | 195 Ko | aucune |
-| Bien'ici — 57 m² 279 900 € | 15 Ko | page vide (capture `Cmd+S`) — non concluant |
+| Portail                                     | Poids de la page | Date de mise en ligne                           |
+| ------------------------------------------- | ---------------- | ----------------------------------------------- |
+| SeLoger — Fontmerle/Estagnol                | 657 Ko           | **10/04/2026 → 131 jours**                      |
+| Le Figaro — page d'agence Avenir Immobilier | 995 Ko           | présente (31 annonces) → écartée volontairement |
+| Belles Demeures — villa 3 300 000 €         | 494 Ko           | aucune                                          |
+| Green Acres — La Muette                     | 872 Ko           | aucune (seul `foundingDate` 2004 de l'agence)   |
+| Maisons et Appartements — Jjc               | 195 Ko           | aucune                                          |
+| Bien'ici — 57 m² 279 900 €                  | 15 Ko            | page vide (capture `Cmd+S`) — non concluant     |
 
 Les trois « aucune » ne sont pas des captures ratées : les pages sont complètes
 (872 Ko, 494 Ko, 195 Ko) et ne contiennent aucune date d'annonce. **Ces portails ne
@@ -176,9 +176,33 @@ publient pas l'ancienneté de leurs annonces.**
 
 ---
 
-## 6. Barrières
+## 6. Raccourci « Vérifier l'ancienneté » (ajout du 19/08)
 
-487 tests (dont 15 nouveaux) · `tsc --noEmit` · `eslint` · `prettier --check` ·
+Sur les trois portails qui ne publient aucune date, le délai se saisit à la main.
+Pour que ce ne soit pas une corvée, un bouton apparaît **sous le champ, et
+seulement quand le portail n'a rien publié** :
+
+1. il copie l'adresse de l'annonce dans le presse-papiers ;
+2. il ouvre L'Acquéreur dans un nouvel onglet ;
+3. le conseiller colle (Cmd+V) et reporte le nombre de jours.
+
+Ce que ce raccourci n'est pas : un appel automatisé. C'est le conseiller qui
+consulte le service, dans son navigateur, avec son adresse IP, comme n'importe
+quel visiteur. Nos serveurs n'interrogent rien — un appel en série depuis le
+nôtre serait interdit par leurs conditions (voir §1.2) et bloqué en quelques
+jours, ce qui ferait tomber la fonction en plein rendez-vous.
+
+L'adresse de l'annonce n'est **pas** passée en paramètre d'URL : le format
+attendu par le service n'est pas connu, et une adresse de travail n'a rien à
+faire dans la barre d'adresse d'un tiers. Un test verrouille cette propriété.
+Le jour où le format de lien direct sera connu, seule `listingAgeLookupUrl()`
+changera.
+
+---
+
+## 7. Barrières
+
+490 tests (dont 18 nouveaux) · `tsc --noEmit` · `eslint` · `prettier --check` ·
 build de production.
 
 Aucune requête sortante ajoutée. Aucune donnée inventée : sans date publiée,
