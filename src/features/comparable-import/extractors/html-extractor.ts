@@ -32,7 +32,7 @@ export function extractHtml(html: string): PartialListingData {
 
   // Conservative: only accept a price explicitly tied to a "prix" label, never
   // the first monetary fragment in the page.
-  const priceText = firstMatch(html, /prix\D{0,40}?([\d][\d\s.,]*)\s*(?:€|eur\b)/i);
+  const priceText = firstMatch(html, /prix\D{0,40}?([\d][\d\s.,]{0,14})(?:€|eur\b)/i);
   const price = normalizePrice(priceText);
   if (price != null) {
     result.price = price;
@@ -42,8 +42,8 @@ export function extractHtml(html: string): PartialListingData {
   // never a bare number followed by m². "Surface habitable" wins over a generic
   // "surface" label (which can be a plot / total surface on some portals).
   const surfaceText =
-    firstMatch(html, /surface\s+habitable\D{0,20}?([\d][\d\s.,]*)\s*m(?:²|2)(?![a-z])/i) ??
-    firstMatch(html, /surface(?:\s+habitable)?\D{0,20}?([\d][\d\s.,]*)\s*m(?:²|2)(?![a-z])/i);
+    firstMatch(html, /surface\s{0,4}habitable\D{0,20}?([\d][\d\s.,]{0,14})m(?:²|2)(?![a-z])/i) ??
+    firstMatch(html, /surface(?:\s{0,4}habitable)?\D{0,20}?([\d][\d\s.,]{0,14})m(?:²|2)(?![a-z])/i);
   const surface = normalizeArea(surfaceText);
   if (surface != null) {
     result.surfaceArea = surface;
@@ -61,8 +61,8 @@ export function extractHtml(html: string): PartialListingData {
 
   // Portal's own price/m², tied to an explicit €/m² (or "prix au m²") label.
   const ppsm = normalizePrice(
-    firstMatch(html, /([\d][\d\s.,]*)\s*(?:€|eur)\s*\/\s*m(?:²|2)/i) ??
-      firstMatch(html, /prix\s*au\s*m(?:²|2)\D{0,20}?([\d][\d\s.,]*)/i),
+    firstMatch(html, /([\d][\d\s.,]{0,14})(?:€|eur)\s{0,4}\/\s{0,4}m(?:²|2)/i) ??
+      firstMatch(html, /prix\s{0,4}au\s{0,4}m(?:²|2)\D{0,20}?([\d][\d\s.,]{0,14})/i),
   );
   if (ppsm != null) {
     result.portalPricePerSquareMeter = ppsm;

@@ -4,11 +4,11 @@ import { useActionState, useEffect, useRef, useState, useTransition } from 'reac
 
 import { SubmitButton } from '@/components/submit-button';
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
+import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import { takeTransfer } from '@/features/comparable-import/components/import-transfer';
 import {
   alertError,
   btnPrimary,
-  btnSecondary,
   card,
   formSectionTitle,
   hintText,
@@ -119,7 +119,6 @@ export function NewComparablePanel({
   const [url, setUrl] = useState(initialUrl ?? '');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [pastedHtml, setPastedHtml] = useState('');
   const [showPaste, setShowPaste] = useState(false);
   const [result, setResult] = useState<{
     data: ImportedComparableData;
@@ -172,10 +171,10 @@ export function NewComparablePanel({
     }
   }
 
-  function handleImport() {
+  function handleImport(targetUrl: string = url) {
     setError(null);
     const formData = new FormData();
-    formData.set('url', url);
+    formData.set('url', targetUrl);
     const existingPhotos = readExistingPhotos();
     startTransition(async () => {
       const res = await importAction(formData);
@@ -194,14 +193,24 @@ export function NewComparablePanel({
     startTransition(async () => {
       const res = await importHtmlAction(formData);
       applyImportResult(res, existingPhotos);
-      if (res.ok) {
-        setPastedHtml('');
-      }
     });
   }
 
-  function handleImportHtml() {
-    runHtmlImport(url, pastedHtml);
+  // Collage dans la zone dédiée. Deux cas : le conseiller a copié l'ADRESSE de
+  // l'annonce (on relance l'import à distance, c'est le chemin le plus simple),
+  // ou il a copié la PAGE (on l'analyse telle qu'il la voit).
+  function handleZonePaste({ html, text }: { html: string; text: string }) {
+    const trimmed = text.trim();
+    if (html.trim() === '' && /^https?:\/\/\S+$/i.test(trimmed)) {
+      setUrl(trimmed);
+      handleImport(trimmed);
+      return;
+    }
+    if (url.trim() === '') {
+      setError('Collez d’abord l’adresse de l’annonce dans le champ ci-dessus.');
+      return;
+    }
+    runHtmlImport(url, html.trim() !== '' ? html : text);
   }
 
   // Arrivée depuis l'assistant : la page de l'annonce nous attend dans le
@@ -259,7 +268,7 @@ export function NewComparablePanel({
           />
           <button
             type="button"
-            onClick={handleImport}
+            onClick={() => handleImport()}
             disabled={pending || url.trim() === ''}
             className={btnPrimary}
           >
@@ -277,34 +286,23 @@ export function NewComparablePanel({
           onClick={() => setShowPaste((value) => !value)}
           className={`${link} self-start text-sm hover:underline`}
         >
-          {showPaste
-            ? 'Masquer le collage de code'
-            : 'Le site bloque l’import ? Collez le code de la page'}
+          {showPaste ? 'Masquer' : 'Le site refuse ? Copiez-collez la page en 3 gestes'}
         </button>
         {showPaste ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-zinc-300 p-3.5 stage:border-white/20">
+          <div className="flex flex-col gap-3 rounded-xl border border-dashed border-zinc-300 p-3.5 stage:border-white/20">
             <p className="text-sm text-zinc-600 stage:text-white/70">
-              Certains portails (SeLoger, Bien’ici, Leboncoin…) refusent l’analyse à distance.
-              Ouvrez l’annonce dans votre navigateur, affichez le code de la page (clic droit → «
-              Afficher le code source de la page », ou Cmd/Ctrl+U), sélectionnez tout (Cmd/Ctrl+A),
-              copiez, puis collez ci-dessous. Gardez l’adresse de l’annonce renseignée au-dessus.
+              Ce portail refuse l’analyse à distance. Rien de grave : copiez la page comme vous
+              copieriez un texte, l’outil se charge du reste.
             </p>
-            <textarea
-              value={pastedHtml}
-              onChange={(event) => setPastedHtml(event.target.value)}
-              rows={5}
-              placeholder="<html>…"
-              className={`${inputBase} font-mono text-xs`}
-            />
-            <button
-              type="button"
-              onClick={handleImportHtml}
-              disabled={pending || url.trim() === '' || pastedHtml.trim() === ''}
-              className={`${btnSecondary} self-start`}
-            >
-              {pending ? 'Analyse du code collé…' : 'Analyser le code collé'}
-            </button>
-            <ImportBookmarklet />
+            <ListingPasteZone onPaste={handleZonePaste} disabled={pending} />
+            <details className="text-sm">
+              <summary className="cursor-pointer text-zinc-500 hover:underline stage:text-white/50">
+                Vous importez souvent depuis ce portail ? Un bouton à installer une fois
+              </summary>
+              <div className="pt-2">
+                <ImportBookmarklet />
+              </div>
+            </details>
           </div>
         ) : null}
 

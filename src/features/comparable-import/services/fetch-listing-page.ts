@@ -1,16 +1,33 @@
 import dns from 'node:dns';
 
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import {
+  ALLOW_ALL,
+  parseRobots,
+  type RobotsPolicy,
+} from '@/features/comparable-import/utils/robots-policy';
 import { isBlockedIp, validateUrlForSsrf } from '@/features/comparable-import/utils/ssrf-guard';
 
 export const FETCH_LIMITS = {
-  timeoutMs: 8000,
+  // Terrain (19/08) : les pages d'annonces pèsent 195 Ko à 995 Ko et mettent
+  // plusieurs secondes à répondre. Huit secondes et 2 Mo étaient trop justes.
+  timeoutMs: 15_000,
   maxRedirects: 3,
-  maxBytes: 2 * 1024 * 1024,
+  maxBytes: 6 * 1024 * 1024,
+  robotsTimeoutMs: 5_000,
+  robotsCacheMs: 15 * 60 * 1000,
 } as const;
 
 const ACCEPTED_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'];
-const USER_AGENT = 'ACMStudioImporter/1.0 (+listing-import; no-cookies)';
+
+// Carte d'identité du robot. Le préfixe « Mozilla/5.0 (compatible; … ) » est la
+// convention des moteurs (Googlebot, Bingbot) : ce n'est pas un déguisement en
+// navigateur, c'est le format que les portails savent lire. Le nom du robot et
+// une adresse de contact y figurent en clair — nous ne prétendons jamais être
+// autre chose que ce que nous sommes.
+export const BOT_TOKEN = 'acmstudiobot';
+const CONTACT_URL = process.env.ACM_BOT_CONTACT_URL ?? 'https://start-academy.fr';
+const USER_AGENT = `Mozilla/5.0 (compatible; ACMStudioBot/1.0; +${CONTACT_URL})`;
 
 // User-facing messages (already safe to display; no internal detail leaked).
 export const FETCH_MESSAGES = {
@@ -22,11 +39,15 @@ export const FETCH_MESSAGES = {
   tooLarge: 'La réponse reçue est trop volumineuse.',
   notHtml: 'Le contenu reçu n’est pas une page HTML.',
   unavailable: 'L’annonce semble indisponible ou supprimée.',
+  robots:
+    'Ce portail interdit l’analyse automatique de cette page. Utilisez le copier-coller ci-dessous.',
 } as const;
 
 export type FetchDeps = {
   fetchImpl?: typeof fetch;
   resolveHost?: (hostname: string) => Promise<string[]>;
+  // Permet aux tests de fournir la politique sans appel réseau.
+  robotsFor?: (url: URL) => Promise<RobotsPolicy>;
 };
 
 export type FetchPageResult =
@@ -57,6 +78,45 @@ async function isHostAllowed(
     return false;
   }
   return addresses.every((address) => !isBlockedIp(address));
+}
+
+// Politique robots.txt par hôte, gardée en mémoire le temps de quelques imports.
+const robotsCache = new Map<string, { policy: RobotsPolicy; at: number }>();
+
+// Récupère et interprète le robots.txt de l'hôte.
+//
+// En cas d'absence (404) ou d'échec, on autorise : c'est le comportement prévu
+// par le protocole, et refuser sur une panne réseau bloquerait l'outil sans
+// raison. L'appel est court et mis en cache : un import n'ajoute pas une
+// requête à chaque fois.
+async function fetchRobotsPolicy(url: URL, fetchImpl: typeof fetch): Promise<RobotsPolicy> {
+  const key = url.origin;
+  const cached = robotsCache.get(key);
+  if (cached && Date.now() - cached.at < FETCH_LIMITS.robotsCacheMs) {
+    return cached.policy;
+  }
+
+  let policy: RobotsPolicy = ALLOW_ALL;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_LIMITS.robotsTimeoutMs);
+  try {
+    const response = await fetchImpl(new URL('/robots.txt', url.origin).toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'user-agent': USER_AGENT, accept: 'text/plain' },
+    });
+    if (response.ok) {
+      policy = parseRobots(await response.text(), BOT_TOKEN);
+    }
+  } catch {
+    policy = ALLOW_ALL;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  robotsCache.set(key, { policy, at: Date.now() });
+  return policy;
 }
 
 async function readLimited(response: Response, maxBytes: number): Promise<string | null> {
@@ -94,6 +154,7 @@ export async function fetchListingPage(
 ): Promise<FetchPageResult> {
   const fetchImpl = deps.fetchImpl ?? fetch;
   const resolveHost = deps.resolveHost ?? defaultResolveHost;
+  const robotsFor = deps.robotsFor ?? ((url: URL) => fetchRobotsPolicy(url, fetchImpl));
 
   let current = normalizeUrl(rawUrl);
   if (!current || !isAllowedProtocol(current)) {
@@ -105,6 +166,13 @@ export async function fetchListingPage(
       return { ok: false, error: FETCH_MESSAGES.forbidden };
     }
 
+    // Le portail publie ses règles : on les lit et on s'y tient, y compris
+    // après une redirection.
+    const robots = await robotsFor(current);
+    if (!robots.isAllowed(current.pathname + current.search)) {
+      return { ok: false, error: FETCH_MESSAGES.robots };
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), FETCH_LIMITS.timeoutMs);
     let response: Response;
@@ -113,7 +181,11 @@ export async function fetchListingPage(
         method: 'GET',
         redirect: 'manual',
         signal: controller.signal,
-        headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/xhtml+xml' },
+        headers: {
+          'user-agent': USER_AGENT,
+          accept: 'text/html,application/xhtml+xml',
+          'accept-language': 'fr-FR,fr;q=0.9',
+        },
       });
     } catch (error) {
       clearTimeout(timer);

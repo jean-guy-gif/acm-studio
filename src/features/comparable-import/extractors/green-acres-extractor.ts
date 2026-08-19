@@ -146,8 +146,8 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
 
   // Surface: "57 m² de surface habitable" or "Surface : 57 m²".
   const surfaceRaw =
-    firstMatch(html, /([\d][\d\s .,&#x;]*?)m(?:²|&#xB2;|2)\s*de\s*surface\s*habitable/i) ??
-    firstMatch(html, /surface\s*(?:habitable)?\s*:?\s*([\d][\d\s .,&#x;]*?)\s*m(?:²|&#xB2;|2)/i);
+    firstMatch(html, /([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)\s*de\s*surface\s*habitable/i) ??
+    firstMatch(html, /surface\s*(?:habitable)?\s*:?\s*([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)/i);
   const surface = surfaceRaw ? normalizeArea(decodeHtmlEntities(surfaceRaw)) : null;
   if (surface != null) {
     result.surfaceArea = surface;

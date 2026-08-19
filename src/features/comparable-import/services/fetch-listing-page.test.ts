@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  FETCH_LIMITS,
   FETCH_MESSAGES,
   fetchListingPage,
 } from '@/features/comparable-import/services/fetch-listing-page';
@@ -136,7 +137,7 @@ describe('fetchListingPage — network', () => {
   });
 
   it('rejects a response over the size limit', async () => {
-    const big = 'x'.repeat(2 * 1024 * 1024 + 1);
+    const big = 'x'.repeat(FETCH_LIMITS.maxBytes + 1);
     const fetchImpl = vi.fn(async () => htmlResponse(big));
     const result = await fetchListingPage('https://example.com/a', {
       fetchImpl,
@@ -158,5 +159,48 @@ describe('fetchListingPage — network', () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(FETCH_MESSAGES.timeout);
+  });
+});
+
+// Terrain (19/08) : SeLoger et Green Acres autorisent les pages d'annonces,
+// Belles Demeures les interdit. L'outil se présente honnêtement ; il doit donc
+// aussi obéir aux règles que le portail publie.
+describe('fetchListingPage — robots.txt', () => {
+  it('refuse une page interdite par le portail', async () => {
+    const fetchImpl = vi.fn(async () => htmlResponse('<html></html>'));
+    const result = await fetchListingPage('https://exemple.fr/annonces/1', {
+      fetchImpl,
+      resolveHost: publicResolve,
+      robotsFor: async () => ({ isAllowed: () => false }),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBe(FETCH_MESSAGES.robots);
+    // La page elle-même n'a jamais été demandée.
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('procède quand le portail autorise la page', async () => {
+    const fetchImpl = vi.fn(async () => htmlResponse('<html>annonce</html>'));
+    const result = await fetchListingPage('https://exemple.fr/annonces/1', {
+      fetchImpl,
+      resolveHost: publicResolve,
+      robotsFor: async () => ({ isAllowed: () => true }),
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('se présente sous une identité de robot nommée et contactable', async () => {
+    let sent: Record<string, string> = {};
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      sent = (init?.headers ?? {}) as Record<string, string>;
+      return htmlResponse('<html></html>');
+    });
+    await fetchListingPage('https://exemple.fr/annonces/1', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      resolveHost: publicResolve,
+      robotsFor: async () => ({ isAllowed: () => true }),
+    });
+    expect(sent['user-agent']).toContain('ACMStudioBot');
+    expect(sent['user-agent']).toContain('+http');
   });
 });
