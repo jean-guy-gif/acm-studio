@@ -11,7 +11,6 @@ import {
   card,
   formSectionTitle,
   hintText,
-  inputBase,
   link as linkCls,
 } from '@/components/ui/styles';
 
@@ -19,6 +18,7 @@ import type {
   EnrichCandidateResult,
   EnrichedCandidate,
 } from '@/features/competitor-search/actions/enrich-candidate';
+import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import {
   RankedCandidateCard,
   type DecisionPayload,
@@ -126,7 +126,6 @@ function PortalBlock({
   onPaste: (searchUrl: string, html: string) => void;
   pending: boolean;
 }) {
-  const [pasted, setPasted] = useState('');
   const [discarded, setDiscarded] = useState<Set<string>>(new Set());
 
   const visible = portal.candidates.filter((candidate) => !discarded.has(candidate.url));
@@ -173,21 +172,16 @@ function PortalBlock({
           <p className="text-sm font-medium text-amber-700 stage:text-amber-300">
             {portal.message}
           </p>
-          <textarea
-            value={pasted}
-            onChange={(event) => setPasted(event.target.value)}
-            rows={4}
-            placeholder="Collez ici le code de la page de résultats (Cmd/Ctrl+U → tout copier)…"
-            className={`${inputBase} font-mono text-xs`}
+          {/* Recette du 19/08 : cet écran demandait encore « Cmd/Ctrl+U → code
+              source », alors que l'écran d'ajout d'un concurrent avait déjà
+              basculé sur le geste simple. Deux écrans du même outil ne peuvent
+              pas exiger deux gestes différents — surtout pas celui-là. */}
+          <ListingPasteZone
+            onPaste={({ html, text }) =>
+              onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
+            }
+            disabled={pending}
           />
-          <button
-            type="button"
-            disabled={pending || pasted.trim() === ''}
-            onClick={() => onPaste(portal.searchUrl, pasted)}
-            className={`${btnSecondary} self-start`}
-          >
-            {pending ? 'Analyse…' : 'Analyser le code collé'}
-          </button>
         </div>
       )}
     </section>
