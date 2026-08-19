@@ -55,3 +55,25 @@ describe('extractSeLoger', () => {
     expect(data.surfaceArea).toBeUndefined();
   });
 });
+
+// Terrain (19/08) — extrait RÉEL d'une annonce SeLoger (Antibes, 52,82 m²) :
+// les classes DPE/GES ne sont pas écrites en clair, elles vivent dans un bloc de
+// données doublement échappé où le libellé SUIT la note.
+describe('extractSeLoger — classes énergétiques (page réelle)', () => {
+  const REAL_EXCERPT = String.raw`<script>window.x="{\"efficiencyClass\":{\"index\":1,\"rating\":\"B\"},\"values\":[{\"value\":\"84 kWh/m².an\",\"label\":\"Consommation (énergie primaire)\"}],\"name\":\"Diagnostic de performance énergétique (DPE)\"},{\"efficiencyClass\":{\"index\":0,\"rating\":\"A\"},\"values\":[{\"value\":\"3 kg CO₂/m².an\",\"label\":\"Émissions\"}],\"name\":\"Indice d'émission de gaz à effet de serre (GES)\"}"</script>`;
+
+  it('lit le DPE et le GES en distinguant les deux par leur libellé', () => {
+    const data = extractSeLoger(REAL_EXCERPT, 'https://www.seloger.com/annonces/achat/1.htm');
+    expect(data.energyRating).toBe('B');
+    expect(data.gesRating).toBe('A');
+  });
+
+  it('ne devine aucune note quand aucun libellé reconnu n’accompagne la valeur', () => {
+    const data = extractSeLoger(
+      String.raw`<script>window.x="{\"rating\":\"D\"},{\"autre\":1}"</script>`,
+      'https://www.seloger.com/annonces/achat/1.htm',
+    );
+    expect(data.energyRating).toBeUndefined();
+    expect(data.gesRating).toBeUndefined();
+  });
+});

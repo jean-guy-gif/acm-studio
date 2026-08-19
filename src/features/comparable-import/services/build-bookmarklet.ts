@@ -3,16 +3,25 @@
 //
 // Ce que le raccourci fait, exécuté dans l'onglet du portail :
 //   1. ouvre (ou réutilise) la fenêtre ACM Studio « /import-assistant » ;
-//   2. attend son signal « acm-ready » ;
-//   3. lui envoie l'adresse et le code de la page TELLE QUE LE CONSEILLER LA VOIT.
+//   2. lui envoie l'adresse et le code de la page TELLE QUE LE CONSEILLER LA VOIT,
+//      en plusieurs tentatives espacées — la fenêtre met un instant à être prête,
+//      et les envois surnuméraires sont ignorés par l'assistant.
 //
-// Ce qu'il ne fait pas : aucune requête vers le portail, aucun contournement de
-// protection, aucune donnée envoyée ailleurs qu'à l'adresse ACM Studio passée
-// ici (l'envoi est ciblé sur cette origine exacte, jamais sur « * »).
+// RÈGLE ABSOLUE : ne JAMAIS rien envoyer à la page du portail, et ne JAMAIS y
+// installer d'écouteur. Terrain (19/08) : une première version faisait dire
+// « je suis prêt » à l'assistant vers l'onglet du portail, en boucle. Bien'ici a
+// affiché sa page d'erreur — un de leurs écouteurs `message` ne supporte pas un
+// format inattendu. On ne touche donc plus du tout à leur page : on lit son
+// contenu, un point c'est tout. Les envois sont dirigés vers l'origine ACM
+// Studio exacte (jamais « * »).
 
 export const ASSISTANT_PATH = '/import-assistant';
-export const READY_SIGNAL = 'acm-ready';
 export const LISTING_MESSAGE_TYPE = 'acm-listing';
+
+// Tentatives d'envoi, en millisecondes après le clic. Couvre une fenêtre lente
+// à s'ouvrir sans harceler quoi que ce soit : tout est dirigé vers notre propre
+// fenêtre, et l'assistant ne retient que le premier message reçu.
+export const SEND_ATTEMPTS_MS = [0, 600, 1400, 2600, 4200, 6500, 9500, 13000];
 
 // Le code est volontairement compact et sans dépendance : un favori doit tenir
 // sur une ligne et fonctionner sur tous les navigateurs des conseillers.
@@ -23,9 +32,7 @@ export function buildBookmarkletSource(origin: string): string {
     `var w=window.open(o+${JSON.stringify(ASSISTANT_PATH)},'acmstudio');`,
     "if(!w){alert('Autorisez les fenetres pour ACM Studio, puis reessayez.');return;}",
     `var p={type:${JSON.stringify(LISTING_MESSAGE_TYPE)},url:location.href,html:document.documentElement.outerHTML};`,
-    `function s(e){if(e.source===w&&e.data===${JSON.stringify(READY_SIGNAL)}){w.postMessage(p,o);}}`,
-    "window.addEventListener('message',s);",
-    "setTimeout(function(){window.removeEventListener('message',s);},60000);",
+    `${JSON.stringify(SEND_ATTEMPTS_MS)}.forEach(function(ms){setTimeout(function(){try{w.postMessage(p,o);}catch(e){}},ms);});`,
     '})()',
   ].join('');
 }

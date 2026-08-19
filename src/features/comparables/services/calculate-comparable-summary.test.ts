@@ -35,6 +35,7 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     heating_type: null,
     energy_source: null,
     source: null,
+    listing_published_at: null,
     listing_url: null,
     listing_description: null,
     listing_features: [],

@@ -1,3 +1,4 @@
+import { daysOnMarketSince } from '@/features/comparable-import/utils/extract-listing-published-at';
 import { parseOptionalNonNegative } from '@/features/comparables/utils/parse-number';
 import {
   EXCLUSIVE_NONE,
@@ -30,6 +31,9 @@ export type ComparableInput = {
   source: string | null;
   price: number;
   days_on_market: number | null;
+  // Mission 33 — date de mise en ligne publiée par le portail. Elle sert à
+  // recalculer le délai le jour du Live, au lieu de figer un nombre à l'import.
+  listing_published_at: string | null;
   price_drop_amount: number | null;
   price_drop_percentage: number | null;
   advisor_notes: string | null;
@@ -204,6 +208,29 @@ export function parseComparableForm(formData: FormData): ComparableFormResult {
     fieldErrors.parking_types = '« Aucun » ne peut pas être combiné avec un autre choix.';
   }
 
+  // Mission 33 — date de mise en ligne. Champ caché : elle vient de l'annonce
+  // (import), jamais d'une saisie. Une valeur illisible est simplement ignorée
+  // plutôt que refusée — elle n'est qu'une aide, le formulaire reste valable.
+  const rawPublishedAt = text('listing_published_at');
+  const publishedAtDate = rawPublishedAt == null ? null : new Date(rawPublishedAt);
+  let publishedAt =
+    publishedAtDate == null || Number.isNaN(publishedAtDate.getTime())
+      ? null
+      : publishedAtDate.toISOString();
+
+  const daysOnMarket = num('days_on_market');
+
+  // Le conseiller a le dernier mot. S'il corrige le délai à une valeur que la
+  // date du portail ne produit pas, c'est qu'il sait quelque chose que la page
+  // ignore (remise en ligne, changement de mandat) : on oublie alors la date,
+  // sinon elle reprendrait la main au moment du Live et effacerait sa correction.
+  if (publishedAt != null && daysOnMarket != null) {
+    const impliedDays = daysOnMarketSince(publishedAt);
+    if (impliedDays != null && Math.abs(impliedDays - daysOnMarket) > 1) {
+      publishedAt = null;
+    }
+  }
+
   if (Object.keys(fieldErrors).length > 0) {
     const summary = fieldErrors.price ?? Object.values(fieldErrors)[0];
     return { ok: false, error: summary, fieldErrors };
@@ -240,7 +267,8 @@ export function parseComparableForm(formData: FormData): ComparableFormResult {
       listing_url: text('listing_url'),
       source: text('source'),
       price,
-      days_on_market: num('days_on_market'),
+      days_on_market: daysOnMarket,
+      listing_published_at: publishedAt,
       price_drop_amount: num('price_drop_amount'),
       price_drop_percentage: num('price_drop_percentage'),
       advisor_notes: text('advisor_notes'),

@@ -74,5 +74,16 @@ export function buildPortalSearchUrls(criteria: CompetitorSearchCriteria): Porta
       : `https://immobilier.lefigaro.fr/annonces/immobilier-vente-${figaroType(criteria.propertyType)}-${slug}.html`,
   });
 
+  // Maisons et Appartements :
+  // https://www.maisonsetappartements.fr/fr/06/annonce-vente-appartement-nice-...
+  // La recherche publique accepte ville + département sous forme de requête.
+  links.push({
+    portal: 'maisons_appartements',
+    label: SEARCH_PORTAL_LABELS.maisons_appartements,
+    url: department
+      ? `https://www.maisonsetappartements.fr/fr/${department}/vente/${slug}/`
+      : `https://www.maisonsetappartements.fr/fr/vente/${slug}/`,
+  });
+
   return links;
 }

@@ -38,6 +38,58 @@ function locationFromUrl(rawUrl: string | undefined): { city?: string; district?
   return { city: toLabel(match[1]), district: toLabel(match[2]) };
 }
 
+// Classes DPE / GES.
+//
+// Terrain (19/08) : SeLoger ne les écrit pas en clair dans le HTML lisible, mais
+// dans un bloc de données doublement échappé, sous la forme
+//   \"efficiencyClass\":{\"index\":1,\"rating\":\"B\"} … \"name\":\"Diagnostic de
+//   performance énergétique (DPE)\"
+// Le libellé suit la note : on lit donc la note, puis on regarde le texte qui
+// suit pour savoir s'il s'agit du DPE ou du GES. Aucune note n'est devinée : en
+// l'absence de libellé reconnu, on ne renseigne rien.
+function extractEnergyRatings(html: string): { energyRating?: string; gesRating?: string } {
+  const result: { energyRating?: string; gesRating?: string } = {};
+  const pattern = /rating\\?"\s*:\s*\\?"([A-G])\\?"/gi;
+  const WINDOW = 600;
+
+  for (const match of html.matchAll(pattern)) {
+    const rating = match[1].toUpperCase();
+    const from = (match.index ?? 0) + match[0].length;
+    const following = stripAccents(html.slice(from, from + WINDOW)).toLowerCase();
+
+    // On retient le libellé le PLUS PROCHE, pas le premier trouvé au hasard :
+    // les deux blocs (DPE puis GES) se suivent dans la page, et une fenêtre
+    // large voit les deux.
+    const gesAt = firstIndexOf(following, ['gaz a effet de serre', 'ges']);
+    const dpeAt = firstIndexOf(following, ['performance energetique', 'dpe']);
+    if (gesAt == null && dpeAt == null) {
+      continue;
+    }
+    if (dpeAt == null || (gesAt != null && gesAt < dpeAt)) {
+      result.gesRating ??= rating;
+    } else {
+      result.energyRating ??= rating;
+    }
+  }
+  return result;
+}
+
+// Position du premier marqueur trouvé, ou null si aucun.
+function firstIndexOf(haystack: string, needles: readonly string[]): number | null {
+  let best: number | null = null;
+  for (const needle of needles) {
+    const at = haystack.indexOf(needle);
+    if (at !== -1 && (best == null || at < best)) {
+      best = at;
+    }
+  }
+  return best;
+}
+
+function stripAccents(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // SeLoger exposes the key data in og:title ("... T3/F3 52 m² 303000 € ...").
 // City/district come from the ORIGINAL advisor URL (not the redirected canonical
 // one). DPE/GES are handled by the strict generic extractors, never here.
@@ -74,6 +126,14 @@ export function extractSeLoger(html: string, originalUrl?: string): PartialListi
   }
   if (location.district) {
     result.district = location.district;
+  }
+
+  const energy = extractEnergyRatings(html);
+  if (energy.energyRating) {
+    result.energyRating = energy.energyRating;
+  }
+  if (energy.gesRating) {
+    result.gesRating = energy.gesRating;
   }
 
   return result;

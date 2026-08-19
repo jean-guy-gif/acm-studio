@@ -118,6 +118,7 @@ export type Database = {
           land_area: number | null
           listing_description: string | null
           listing_features: Json
+          listing_published_at: string | null
           listing_url: string | null
           outdoor_spaces: string[]
           parking_types: string[]
@@ -157,6 +158,7 @@ export type Database = {
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
+          listing_published_at?: string | null
           listing_url?: string | null
           outdoor_spaces?: string[]
           parking_types?: string[]
@@ -196,6 +198,7 @@ export type Database = {
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
+          listing_published_at?: string | null
           listing_url?: string | null
           outdoor_spaces?: string[]
           parking_types?: string[]

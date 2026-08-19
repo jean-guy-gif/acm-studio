@@ -150,3 +150,44 @@ describe('parseComparableForm', () => {
     expect(result.ok).toBe(true);
   });
 });
+
+// Mission 33 — la date de mise en ligne vient de l'annonce, jamais d'une saisie.
+describe('parseComparableForm — délai de commercialisation', () => {
+  // Un délai daté du jour de l'import serait périmé le jour du rendez-vous :
+  // c'est la date qu'on conserve, et le nombre de jours s'en déduit à l'affichage.
+  it('conserve la date quand le délai affiché en découle', () => {
+    const publishedAt = new Date(Date.now() - 131 * 86_400_000).toISOString();
+    const result = parseComparableForm(
+      form({ price: '303000', listing_published_at: publishedAt, days_on_market: '131' }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.input.listing_published_at).toBe(publishedAt);
+      expect(result.input.days_on_market).toBe(131);
+    }
+  });
+
+  // Le conseiller a le dernier mot : s'il corrige le délai, la date du portail
+  // ne doit pas reprendre la main au moment du Live et effacer sa correction.
+  it('écarte la date quand le conseiller corrige le délai', () => {
+    const publishedAt = new Date(Date.now() - 131 * 86_400_000).toISOString();
+    const result = parseComparableForm(
+      form({ price: '303000', listing_published_at: publishedAt, days_on_market: '45' }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.input.listing_published_at).toBeNull();
+      expect(result.input.days_on_market).toBe(45);
+    }
+  });
+
+  it('ignore une date illisible sans rejeter le formulaire', () => {
+    const result = parseComparableForm(
+      form({ price: '303000', listing_published_at: 'avant-hier' }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.input.listing_published_at).toBeNull();
+    }
+  });
+});

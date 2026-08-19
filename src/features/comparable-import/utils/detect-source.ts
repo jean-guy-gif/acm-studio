@@ -8,6 +8,7 @@ const KNOWN_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['bellesdemeures.com', 'Belles Demeures'],
   ['proprietes.lefigaro.fr', 'Propriétés Le Figaro'],
   ['immobilier.lefigaro.fr', 'Figaro Immobilier'],
+  ['maisonsetappartements.fr', 'Maisons et Appartements'],
 ];
 
 export function detectSource(hostname: string): string {

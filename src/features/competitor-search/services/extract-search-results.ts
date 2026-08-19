@@ -23,6 +23,9 @@ const LISTING_URL_PATTERNS: Record<SearchPortal, RegExp> = {
     /(?:https?:\/\/[a-z0-9.-]*bienici\.com)?\/annonce\/(?:vente|achat|location)\/[a-z0-9'’-]+\/[a-z0-9'’-]+\/[a-z0-9]+\/[a-z0-9-]+/gi,
   figaro:
     /(?:https?:\/\/[a-z0-9.-]*lefigaro\.fr)?\/annonces\/(?:[a-z0-9-]+\/\d{5,}\/?|annonce-\d{5,}\.html)/gi,
+  // Maisons et Appartements : /fr/<dept>/annonce-vente-<type>-<ville>-<ref>.html
+  maisons_appartements:
+    /(?:https?:\/\/[a-z0-9.-]*maisonsetappartements\.fr)?\/[a-z]{2}\/[a-z0-9-]+\/annonce-[a-z0-9-]+-\d+\.html/gi,
 };
 
 export function detectSearchPortal(hostname: string): SearchPortal | null {
@@ -38,6 +41,9 @@ export function detectSearchPortal(hostname: string): SearchPortal | null {
   }
   if (host.endsWith('lefigaro.fr')) {
     return 'figaro';
+  }
+  if (host === 'maisonsetappartements.fr' || host.endsWith('.maisonsetappartements.fr')) {
+    return 'maisons_appartements';
   }
   return null;
 }

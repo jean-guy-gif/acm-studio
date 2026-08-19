@@ -20,10 +20,7 @@ import {
   storeTransfer,
   transferSize,
 } from '@/features/comparable-import/components/import-transfer';
-import {
-  LISTING_MESSAGE_TYPE,
-  READY_SIGNAL,
-} from '@/features/comparable-import/services/build-bookmarklet';
+import { LISTING_MESSAGE_TYPE } from '@/features/comparable-import/services/build-bookmarklet';
 
 type ProjectChoice = { id: string; sellerName: string; statusLabel: string };
 
@@ -43,11 +40,21 @@ export function ImportAssistantPanel({ projects }: { projects: ProjectChoice[] }
   const receivedRef = useRef(false);
 
   useEffect(() => {
-    const opener = window.opener as Window | null;
-
+    // Le raccourci envoie la page plusieurs fois, en tentatives espacées : on se
+    // contente d'écouter et de ne retenir que la première reçue. On n'envoie
+    // RIEN vers l'onglet du portail — terrain (19/08) : une version précédente y
+    // répétait un signal « prêt », et Bien'ici affichait sa page d'erreur.
     function onMessage(event: MessageEvent) {
-      // On n'accepte que ce qui vient de la fenêtre qui nous a ouverts.
-      if (!opener || event.source !== opener || receivedRef.current) {
+      if (receivedRef.current) {
+        return;
+      }
+      // Cas normal : le message vient de la fenêtre qui nous a ouverts. Certains
+      // navigateurs coupent ce lien (window.opener nul) ; on accepte alors un
+      // message bien formé, ce qui reste sans danger : ce contenu n'est jamais
+      // exécuté, il alimente une fiche que le conseiller relit avant
+      // d'enregistrer.
+      const opener = window.opener as Window | null;
+      if (opener && event.source !== opener) {
         return;
       }
       const payload = event.data as { type?: unknown; url?: unknown; html?: unknown } | null;
@@ -69,32 +76,7 @@ export function ImportAssistantPanel({ projects }: { projects: ProjectChoice[] }
     }
 
     window.addEventListener('message', onMessage);
-
-    // L'onglet du portail attend notre signal pour envoyer la page. On le
-    // répète : selon la vitesse de chargement, son écouteur peut ne pas être
-    // encore en place au premier envoi.
-    let attempts = 0;
-    const ping = () => {
-      if (receivedRef.current || !opener) {
-        return;
-      }
-      attempts += 1;
-      try {
-        opener.postMessage(READY_SIGNAL, '*');
-      } catch {
-        // Fenêtre d'origine fermée entre-temps : le compte à rebours s'arrête.
-      }
-      if (attempts > 60) {
-        window.clearInterval(timer);
-      }
-    };
-    const timer = window.setInterval(ping, 400);
-    ping();
-
-    return () => {
-      window.removeEventListener('message', onMessage);
-      window.clearInterval(timer);
-    };
+    return () => window.removeEventListener('message', onMessage);
   }, []);
 
   function choose(projectId: string) {

@@ -28,6 +28,11 @@ export type ImportedComparableData = {
   exposure: string | null;
   outdoorSpaces: string[];
   parkingTypes: string[];
+  // Mission 33 — délai de commercialisation. La date vient de l'annonce
+  // elle-même (le portail la publie) ; les jours en sont déduits à l'import.
+  // Aucun tiers, aucun compte : voir utils/extract-listing-published-at.
+  listingPublishedAt: string | null;
+  daysOnMarket: number | null;
 };
 
 // Partial data produced by a single extractor before the priority merge.
@@ -54,6 +59,7 @@ export type PartialListingData = {
   listingDescription?: string | null;
   listingFeatures?: string[];
   photoUrls?: string[];
+  listingPublishedAt?: string | null;
 };
 
 export type ComparableImportResult =

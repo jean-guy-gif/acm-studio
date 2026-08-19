@@ -1,4 +1,4 @@
-import { checkChip, errorText, inputBase } from '@/components/ui/styles';
+import { checkChip, errorText, hintText, inputBase } from '@/components/ui/styles';
 import { PhotoUrlsField } from '@/features/comparables/components/photo-urls-field';
 import type { Comparable } from '@/features/comparables/types';
 import {
@@ -45,6 +45,10 @@ export type ComparableFieldDefaults = {
   photo_urls?: string[];
   listing_description?: string | null;
   listing_features?: string[];
+  // Mission 33 — prérempli depuis la date de mise en ligne publiée par le
+  // portail. Reste modifiable : le conseiller a le dernier mot.
+  days_on_market?: number | null;
+  listing_published_at?: string | null;
 };
 
 // Shared input fields for the create/edit comparable forms. Feature-specific
@@ -73,6 +77,13 @@ export function ComparableFormFields({
   // Submitted raw value wins; otherwise the typed default (existing row or import).
   const dv = (name: string, typed: string | number | null | undefined): string =>
     values?.[name] ?? (typed == null ? '' : String(typed));
+
+  // Mission 33 — date de mise en ligne publiée par le portail (jamais saisie).
+  const listingPublishedAt =
+    values?.listing_published_at ??
+    comparable?.listing_published_at ??
+    initial?.listing_published_at ??
+    null;
 
   const fieldError = (name: string) =>
     errors?.[name] ? (
@@ -411,9 +422,26 @@ export function ComparableFormFields({
           name="days_on_market"
           min={0}
           step={1}
-          defaultValue={dv('days_on_market', comparable?.days_on_market)}
+          defaultValue={dv('days_on_market', comparable?.days_on_market ?? initial?.days_on_market)}
           className={inputClass}
         />
+        {/* Mission 33 — la date vient de l'annonce, jamais d'une saisie : champ
+            caché. Elle permet de recalculer le délai le jour du Live plutôt que
+            de figer le nombre du jour de l'import. Corriger le délai à la main
+            l'écarte (voir comparable-input). */}
+        <input
+          type="hidden"
+          name="listing_published_at"
+          value={listingPublishedAt ?? ''}
+          readOnly
+        />
+        {listingPublishedAt ? (
+          <span className={hintText}>
+            Mise en ligne le {new Date(listingPublishedAt).toLocaleDateString('fr-FR')} d’après le
+            portail — le délai est recalculé le jour du rendez-vous. Une correction manuelle a
+            priorité.
+          </span>
+        ) : null}
         {fieldError('days_on_market')}
       </label>
       <label className={labelClass}>

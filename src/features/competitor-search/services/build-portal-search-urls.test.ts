@@ -40,12 +40,13 @@ describe('buildPortalSearchUrls', () => {
     );
   });
 
-  it('always returns the four portals', () => {
+  it('always returns the five portals', () => {
     const links = buildPortalSearchUrls({ city: 'Lyon', postalCode: '69006', propertyType: null });
     expect(links.map((link) => link.portal).sort()).toEqual([
       'bienici',
       'figaro',
       'green_acres',
+      'maisons_appartements',
       'seloger',
     ]);
   });

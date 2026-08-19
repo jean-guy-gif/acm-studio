@@ -2,7 +2,13 @@
 // Suggestions éphémères : rien n'est persisté tant que le conseiller n'a pas
 // importé puis enregistré un bien via la création existante.
 
-export const SEARCH_PORTALS = ['green_acres', 'seloger', 'bienici', 'figaro'] as const;
+export const SEARCH_PORTALS = [
+  'green_acres',
+  'seloger',
+  'bienici',
+  'figaro',
+  'maisons_appartements',
+] as const;
 export type SearchPortal = (typeof SEARCH_PORTALS)[number];
 
 export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
@@ -10,6 +16,7 @@ export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
   seloger: 'SeLoger',
   bienici: 'Bien’ici',
   figaro: 'Figaro Immobilier',
+  maisons_appartements: 'Maisons et Appartements',
 };
 
 // Critères dérivés du bien vendeur, côté serveur uniquement.

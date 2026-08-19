@@ -335,6 +335,10 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       priceDropPercentage: comparable.price_drop_percentage,
       source: comparable.source,
       daysOnMarket: comparable.days_on_market,
+      // Mission 33 — date de mise en ligne publiée par le portail. Le délai est
+      // ainsi recalculé le jour du rendez-vous : un import fait trois semaines
+      // plus tôt n'affiche plus un délai périmé. Absente → repli sur la saisie.
+      firstSeenAt: comparable.listing_published_at,
     };
     const photoUrls = getComparablePhotoUrls(comparable);
     const listingUrl = comparable.listing_url?.trim() ? comparable.listing_url : null;

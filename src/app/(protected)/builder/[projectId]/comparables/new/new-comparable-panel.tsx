@@ -45,6 +45,7 @@ const FIELD_LABELS: Record<string, string> = {
   portalPricePerSquareMeter: 'Prix/m² portail',
   listingDescription: 'Description',
   photoUrls: 'Photos',
+  daysOnMarket: 'Délai de commercialisation',
 };
 
 const label = (key: string): string => FIELD_LABELS[key] ?? key;
@@ -79,6 +80,10 @@ function toDefaults(data: ImportedComparableData): ComparableFieldDefaults {
     exposure: data.exposure,
     outdoor_spaces: data.outdoorSpaces,
     parking_types: data.parkingTypes,
+    // Mission 33 — délai déduit de la date de mise en ligne publiée par le
+    // portail. Le conseiller peut toujours corriger.
+    days_on_market: data.daysOnMarket,
+    listing_published_at: data.listingPublishedAt,
   };
 }
 
@@ -342,6 +347,27 @@ export function NewComparablePanel({
                       vérifiez le prix et la surface.
                     </p>
                   ) : null}
+                </div>
+              );
+            })()}
+            {(() => {
+              // Mission 33 — la date de mise en ligne vient de l'annonce
+              // elle-même (le portail la publie). On l'affiche telle quelle :
+              // le conseiller voit d'où sort le délai et peut le corriger.
+              const publishedAt = result.data.listingPublishedAt;
+              const days = result.data.daysOnMarket;
+              if (publishedAt == null || days == null) {
+                return null;
+              }
+              return (
+                <div>
+                  <p className="font-semibold text-zinc-700 stage:text-white/85">
+                    Délai de commercialisation
+                  </p>
+                  <p className="text-zinc-600 stage:text-white/65">
+                    Mise en ligne le {new Date(publishedAt).toLocaleDateString('fr-FR')} · {days}{' '}
+                    {days > 1 ? 'jours' : 'jour'} — d’après la date publiée par le portail.
+                  </p>
                 </div>
               );
             })()}
