@@ -62,3 +62,43 @@ describe('mapComparableCharacteristics', () => {
     });
   });
 });
+
+// Terrain (19/08) — cas relevés sur les pages réelles envoyées par Laurent.
+describe('mapComparableCharacteristics — relevés de terrain', () => {
+  it('reconnaît un stationnement dit fermé comme un box', () => {
+    // Green Acres : « emplacement de parking fermé » ne cochait rien.
+    expect(
+      mapComparableCharacteristics({ description: 'un emplacement de parking fermé au sous-sol' })
+        .parkingTypes,
+    ).toEqual(['closed_box']);
+    expect(
+      mapComparableCharacteristics({ features: ['Place de stationnement fermée'] }).parkingTypes,
+    ).toEqual(['closed_box']);
+  });
+
+  it('reconnaît « entièrement rénové » sans le confondre avec « à rénover »', () => {
+    // SeLoger affiche « État : Entièrement rénové » et la case restait vide.
+    expect(
+      mapComparableCharacteristics({ features: ['État Entièrement rénové'] }).generalCondition,
+    ).toBe('excellent');
+    expect(
+      mapComparableCharacteristics({ description: 'appartement à rénover' }).generalCondition,
+    ).toBe('to_renovate');
+    // Les deux mentions dans la même annonce : on ne tranche pas.
+    expect(
+      mapComparableCharacteristics({
+        description: 'séjour entièrement rénové, cuisine à rénover',
+      }).generalCondition,
+    ).toBeNull();
+  });
+
+  it('laisse vide un stationnement dont la nature n’est pas dite', () => {
+    // « deux espaces de stationnement » (Green Acres) : couvert ou extérieur ?
+    // La page ne le dit pas — on ne coche rien plutôt que de supposer.
+    expect(
+      mapComparableCharacteristics({
+        description: 'deux espaces de stationnement accompagnent le bien',
+      }).parkingTypes,
+    ).toEqual([]);
+  });
+});

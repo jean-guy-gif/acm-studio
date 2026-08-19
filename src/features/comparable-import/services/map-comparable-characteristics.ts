@@ -33,7 +33,10 @@ const CONDITION_PATTERNS: [RegExp, string][] = [
   [/a renover|a rehabiliter|renovation complete/, 'to_renovate'],
   [/a rafraichir|travaux de rafraichissement/, 'to_refresh'],
   [/\bneuf\b|\bneuve\b|programme neuf/, 'new'],
-  [/excellent etat|parfait etat/, 'excellent'],
+  // Terrain (19/08, SeLoger) : le portail affiche « État : Entièrement rénové »
+  // et la case restait vide. À ne pas confondre avec « à rénover », traité
+  // au-dessus — ce sont deux états opposés.
+  [/excellent etat|parfait etat|entierement renove|entierement refait|refait a neuf/, 'excellent'],
   [/bon etat|tres bon etat/, 'good'],
 ];
 
@@ -88,7 +91,10 @@ const OUTDOOR_PATTERNS: [RegExp, string][] = [
 ];
 
 const PARKING_PATTERNS: [RegExp, string][] = [
+  // Terrain (19/08, Green Acres) : « emplacement de parking fermé » ne cochait
+  // rien. Un stationnement dit fermé est un box — ce n'est pas une supposition.
   [/box(\s|$|ferme)/, 'closed_box'],
+  [/(?:parking|stationnement|emplacement|place)[a-z' ]{0,14}\bferme/, 'closed_box'],
   [/garage/, 'garage'],
   [
     /parking souterrain|parking couvert|parking sous[\s-]?sol|stationnement couvert/,

@@ -6,6 +6,7 @@ import type {
 import { mapComparableCharacteristics } from '@/features/comparable-import/services/map-comparable-characteristics';
 import { deduplicatePhotoUrls } from '@/features/comparable-import/utils/deduplicate-photo-urls';
 import { isGenericImageUrl, isGenericTitle } from '@/features/comparable-import/utils/is-generic';
+import { isDedicatedColumnLine } from '@/features/comparable-import/utils/extract-visible-features';
 import { daysOnMarketSince } from '@/features/comparable-import/utils/extract-listing-published-at';
 
 type ScalarField = Exclude<
@@ -95,9 +96,9 @@ function str(value: string | number | null): string | null {
 // là où la vraie description en fait plus de mille.
 function pickLongestDescription(
   sources: readonly PartialListingData[],
-  embedded: string | null,
+  ...extra: Array<string | null>
 ): string | null {
-  const candidates = [...sources.map((source) => source.listingDescription), embedded].filter(
+  const candidates = [...sources.map((source) => source.listingDescription), ...extra].filter(
     (value): value is string => typeof value === 'string' && value.trim() !== '',
   );
   if (candidates.length === 0) {
@@ -237,7 +238,11 @@ export function normalizeListingData(
     energySource: str(merged.energySource),
     price: num(merged.price),
     portalPricePerSquareMeter: num(merged.portalPricePerSquareMeter),
-    listingDescription: pickLongestDescription(ordered, parts.embeddedDescription ?? null),
+    listingDescription: pickLongestDescription(
+      ordered,
+      parts.embeddedDescription ?? null,
+      parts.visibleDescription ?? null,
+    ),
     listingFeatures: [],
     photoUrls: [],
     generalCondition: null,
@@ -260,11 +265,20 @@ export function normalizeListingData(
   // Photos are only kept when the page really looks like a listing (see above).
   data.photoUrls = hasListingSignal(data) ? candidatePhotos : [];
 
-  data.listingFeatures = buildFeatures(ordered);
+  // Caractéristiques affichées par le portail. Celles qui répètent une colonne
+  // dédiée (année de construction, énergie…) sont retirées de la liste libre,
+  // conformément à la règle ci-dessus — mais elles restent lues plus bas, car
+  // elles renseignent l'état ou les équipements.
+  const visibleFeatures = parts.visibleFeatures ?? [];
+  data.listingFeatures = [
+    ...buildFeatures(ordered),
+    ...visibleFeatures.filter((feature) => !isDedicatedColumnLine(feature)),
+  ];
+  data.listingFeatures = [...new Set(data.listingFeatures)];
 
   // Deterministic mapping of structured characteristics from the accessible text.
   const mapped = mapComparableCharacteristics({
-    features: data.listingFeatures,
+    features: [...data.listingFeatures, ...visibleFeatures],
     description: data.listingDescription,
     title: data.title,
   });

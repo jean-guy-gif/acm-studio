@@ -18,6 +18,8 @@ import type { PartialListingData } from '@/features/comparable-import/types';
 import { extractEmbeddedDescription } from '@/features/comparable-import/utils/extract-embedded-description';
 import { extractEmbeddedImageUrls } from '@/features/comparable-import/utils/extract-embedded-image-urls';
 import { extractListingPublishedAt } from '@/features/comparable-import/utils/extract-listing-published-at';
+import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
+import { extractVisibleFeatures } from '@/features/comparable-import/utils/extract-visible-features';
 
 export type ExtractedParts = {
   portal: PartialListingData;
@@ -37,6 +39,14 @@ export type ExtractedParts = {
   // (`datePosted` schema.org, `creationDate`…). C'est la source du délai de
   // commercialisation : aucun service tiers n'est interrogé.
   listingPublishedAt: string | null;
+  // Texte de l'annonce tel qu'il s'affiche dans la page. Mesuré le 19/08 : la
+  // description lue jusqu'ici venait de la balise `meta` et faisait 38
+  // caractères sur Green Acres — d'où les caractéristiques jamais cochées.
+  visibleDescription: string | null;
+  // Liste des caractéristiques telle que le portail l'affiche (« Terrasse »,
+  // « Box de stationnement », « Ascenseur »). Elle sortait vide sur les CINQ
+  // portails testés : personne ne la lisait.
+  visibleFeatures: string[];
 };
 
 // Runs the domain-specific extractor (if any) plus the generic ones. The portal
@@ -69,5 +79,7 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     embeddedPhotoUrls: extractEmbeddedImageUrls(html),
     embeddedDescription: extractEmbeddedDescription(html),
     listingPublishedAt: extractListingPublishedAt(html),
+    visibleDescription: extractVisibleDescription(html),
+    visibleFeatures: extractVisibleFeatures(html),
   };
 }

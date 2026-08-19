@@ -26,6 +26,26 @@ function toLabel(slug: string): string {
     .replace(/(['’])([a-zà-ÿ])/g, (_, apostrophe, char) => apostrophe + char.toUpperCase());
 }
 
+// Les données de la page sont des chaînes JSON imbriquées : les guillemets y
+// arrivent échappés (`\\"city\\":\\"Antibes\\"`). On aplatit avant de lire, sinon
+// aucun motif ne correspond.
+function flattenQuotes(html: string): string {
+  return html.replace(/\\+"/g, '"');
+}
+
+// Valeur unique d'un motif, ou null s'il y en a zéro ou plusieurs. Sert à ne
+// retenir une donnée que lorsqu'elle n'est pas ambiguë.
+function onlyValue(html: string, pattern: RegExp): string | null {
+  const values = new Set<string>();
+  for (const match of html.matchAll(pattern)) {
+    const value = match[1].trim();
+    if (value !== '') {
+      values.add(value);
+    }
+  }
+  return values.size === 1 ? [...values][0] : null;
+}
+
 // Parses city/district from a SeLoger listing path like ".../antibes-06/l-estagnol/...".
 function locationFromUrl(rawUrl: string | undefined): { city?: string; district?: string } {
   if (!rawUrl) {
@@ -126,6 +146,25 @@ export function extractSeLoger(html: string, originalUrl?: string): PartialListi
   }
   if (location.district) {
     result.district = location.district;
+  }
+
+  // Terrain (19/08) : l'adresse déduite du chemin de l'URL ne sort que si le
+  // conseiller a collé l'URL longue. La page, elle, porte toujours la commune et
+  // le code postal dans ses données. On ne les retient que s'il n'y en a QU'UN
+  // de chaque : une page contient aussi l'adresse de l'agence, et confondre les
+  // deux placerait le bien dans la mauvaise ville.
+  const flat = flattenQuotes(html);
+  if (result.city == null) {
+    const city = onlyValue(flat, /"city"\s*:\s*"([^"]{2,60})"/gi);
+    if (city != null) {
+      result.city = city;
+    }
+  }
+  if (result.postalCode == null) {
+    const zip = onlyValue(flat, /"(?:zipCode|postalCode)"\s*:\s*"(\d{5})"/gi);
+    if (zip != null) {
+      result.postalCode = zip;
+    }
   }
 
   const energy = extractEnergyRatings(html);

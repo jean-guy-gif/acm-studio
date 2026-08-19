@@ -77,3 +77,23 @@ describe('extractSeLoger — classes énergétiques (page réelle)', () => {
     expect(data.gesRating).toBeUndefined();
   });
 });
+
+// Terrain (19/08) : la ville et le code postal sortaient nuls alors que la page
+// les porte — mais avec les guillemets échappés.
+describe('extractSeLoger — commune et code postal', () => {
+  it('lit la commune et le code postal dans les données échappées de la page', () => {
+    const html = String.raw`<script>JSON.parse("{\"city\":\"Antibes\",\"zipCode\":\"06600\"}")</script>`;
+    const result = extractSeLoger(html, 'https://www.seloger.com/annonces/achat/appartement/1.htm');
+    expect(result.city).toBe('Antibes');
+    expect(result.postalCode).toBe('06600');
+  });
+
+  it('ne tranche pas quand la page porte deux communes différentes', () => {
+    // Une page contient aussi l'adresse de l'agence : confondre les deux
+    // placerait le bien dans la mauvaise ville.
+    const html = '{"city":"Antibes","other":1,"city":"Paris","zipCode":"06600"}';
+    const result = extractSeLoger(html, 'https://www.seloger.com/annonces/achat/appartement/1.htm');
+    expect(result.city).toBeUndefined();
+    expect(result.postalCode).toBe('06600');
+  });
+});
