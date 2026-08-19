@@ -29,7 +29,10 @@ import { buildSellerPresentation } from '@/features/seller-presentation/services
 // L'aperçu du shell applicatif (hors Live) vit sous /design-preview/app.
 // ---------------------------------------------------------------------------
 
-type PreviewSearchParams = { page?: string; state?: string; theme?: string };
+// `fiche` est le paramètre écrit par la présentation elle-même (reprise après
+// rechargement, comme en Live réel) ; `page` reste accepté pour les liens
+// d'aperçu déjà partagés.
+type PreviewSearchParams = { page?: string; fiche?: string; state?: string; theme?: string };
 
 export default async function DesignPreviewPage({
   searchParams,
@@ -42,9 +45,9 @@ export default async function DesignPreviewPage({
     notFound();
   }
 
-  const { page, state, theme } = await searchParams;
+  const { page, fiche, state, theme } = await searchParams;
   const answered = state !== 'fresh';
-  const initialIndex = Number.parseInt(page ?? '0', 10) || 0;
+  const initialIndex = Number.parseInt(fiche ?? page ?? '0', 10) || 0;
   const initialStage: LiveStageTheme = theme === 'light' ? 'light' : 'dark';
 
   const presentation = buildSellerPresentation({

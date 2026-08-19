@@ -1,9 +1,9 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
+import { RemoteImage } from '@/components/ui/remote-image';
 import {
   alertError,
   btnPrimary,
@@ -46,12 +46,11 @@ function CandidateCard({
       className={`${card} group flex flex-col gap-2.5 overflow-hidden transition-colors hover:border-brand/60 stage:hover:border-brand/60`}
     >
       {candidate.photoUrl ? (
-        <img
+        <RemoteImage
           src={candidate.photoUrl}
           alt={candidate.title ?? 'Bien concurrent'}
-          referrerPolicy="no-referrer"
-          loading="lazy"
           className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          fallbackClassName="h-36 w-full"
         />
       ) : (
         <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">

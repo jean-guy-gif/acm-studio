@@ -1,8 +1,10 @@
 'use client';
 
-import { useActionState, useRef, useState, useTransition } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 
 import { SubmitButton } from '@/components/submit-button';
+import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
+import { takeTransfer } from '@/features/comparable-import/components/import-transfer';
 import {
   alertError,
   btnPrimary,
@@ -95,8 +97,11 @@ type Props = {
   ) => Promise<CreateComparableState>;
   importAction: (formData: FormData) => Promise<ComparableImportResult>;
   importHtmlAction: (formData: FormData) => Promise<ComparableImportResult>;
-  // URL pré-remplie (arrivée depuis « Trouver des concurrents »).
+  // URL pré-remplie (arrivée depuis « Trouver des concurrents » ou l'assistant).
   initialUrl?: string;
+  // Arrivée depuis l'assistant d'import : la page de l'annonce attend dans le
+  // stockage de session et doit être analysée sans rien demander au conseiller.
+  fromAssistant?: boolean;
 };
 
 export function NewComparablePanel({
@@ -104,6 +109,7 @@ export function NewComparablePanel({
   importAction,
   importHtmlAction,
   initialUrl,
+  fromAssistant = false,
 }: Props) {
   const [url, setUrl] = useState(initialUrl ?? '');
   const [pending, startTransition] = useTransition();
@@ -174,11 +180,11 @@ export function NewComparablePanel({
     });
   }
 
-  function handleImportHtml() {
+  function runHtmlImport(sourceUrl: string, html: string) {
     setError(null);
     const formData = new FormData();
-    formData.set('url', url);
-    formData.set('html', pastedHtml);
+    formData.set('url', sourceUrl);
+    formData.set('html', html);
     const existingPhotos = readExistingPhotos();
     startTransition(async () => {
       const res = await importHtmlAction(formData);
@@ -188,6 +194,39 @@ export function NewComparablePanel({
       }
     });
   }
+
+  function handleImportHtml() {
+    runHtmlImport(url, pastedHtml);
+  }
+
+  // Arrivée depuis l'assistant : la page de l'annonce nous attend dans le
+  // stockage de session (système externe), on la reprend et on lance l'analyse
+  // sans rien demander au conseiller. La lecture se fait dans une micro-tâche :
+  // aucun changement d'état synchrone dans le corps de l'effet. `takeTransfer`
+  // vide le stockage au passage — un rechargement ne rejoue donc pas l'import —
+  // et la garde protège du double montage en développement.
+  const assistantHandled = useRef(false);
+  useEffect(() => {
+    if (!fromAssistant || assistantHandled.current) {
+      return;
+    }
+    assistantHandled.current = true;
+    queueMicrotask(() => {
+      const transfer = takeTransfer();
+      if (!transfer) {
+        setError(
+          'La page envoyée depuis votre navigateur n’a pas pu être récupérée. Collez le code de la page ci-dessous.',
+        );
+        setShowPaste(true);
+        return;
+      }
+      setUrl(transfer.url);
+      runHtmlImport(transfer.url, transfer.html);
+    });
+    // `runHtmlImport` est stable pour ce montage : la relancer sur changement
+    // d'identité rejouerait un import déjà consommé.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromAssistant]);
 
   const initial = result ? toDefaults(result.data) : undefined;
   // Repopulate the manual form with the rejected submission's values only when no
@@ -260,6 +299,7 @@ export function NewComparablePanel({
             >
               {pending ? 'Analyse du code collé…' : 'Analyser le code collé'}
             </button>
+            <ImportBookmarklet />
           </div>
         ) : null}
 

@@ -1,3 +1,4 @@
+import { RemoteImage } from '@/components/ui/remote-image';
 import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 
@@ -40,12 +41,12 @@ export function PresentationProperty({
           {property.photoUrls.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {property.photoUrls.slice(0, 6).map((url) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <RemoteImage
                   key={url}
                   src={url}
                   alt="Bien vendeur"
                   className="h-24 w-32 rounded-xl object-cover"
+                  fallbackClassName="h-24 w-32 rounded-xl"
                 />
               ))}
             </div>

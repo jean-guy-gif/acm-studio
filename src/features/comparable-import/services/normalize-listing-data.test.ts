@@ -56,6 +56,49 @@ describe('normalizeListingData priority (JSON-LD > Open Graph > HTML)', () => {
     expect(foundFields).not.toContain('photoUrls');
   });
 
+  // Terrain (staging, 18/08) : depuis une IP de datacenter, Bien’ici sert une page
+  // de blocage. Aucun champ métier n’en sort, mais elle porte des pixels de suivi
+  // et des icônes que rien n’identifiait comme génériques : ils étaient proposés
+  // comme « photos détectées ». Une photo fausse est pire qu’aucune photo.
+  it('drops every photo when no hard business field could be extracted', () => {
+    const openGraph: PartialListingData = {
+      listingDescription: 'Une page qui n’est pas une annonce',
+      photoUrls: ['https://tracker.example.com/t.gif?id=42', 'https://cdn.example.com/ui-42.png'],
+    };
+    const { data, foundFields, missingFields } = normalizeListingData(
+      { portal: {}, jsonLd: {}, openGraph, html: {} },
+      'https://www.bienici.com/annonce/bloquee',
+      "Bien'ici",
+    );
+    expect(data.price).toBeNull();
+    expect(data.surfaceArea).toBeNull();
+    expect(data.roomsCount).toBeNull();
+    expect(data.title).toBeNull();
+    expect(data.photoUrls).toEqual([]);
+    expect(missingFields).toContain('photoUrls');
+    expect(foundFields).not.toContain('photoUrls');
+  });
+
+  it.each([
+    ['price', { price: 320000 } as PartialListingData],
+    ['surfaceArea', { surfaceArea: 74 } as PartialListingData],
+    ['roomsCount', { roomsCount: 3 } as PartialListingData],
+    ['title', { title: 'Appartement 3 pièces avec balcon' } as PartialListingData],
+  ])('keeps the photos as soon as %s is extracted', (_field, jsonLd) => {
+    const { data, foundFields } = normalizeListingData(
+      {
+        portal: {},
+        jsonLd: { ...jsonLd, photoUrls: ['https://cdn.example.com/photo-1.jpg'] },
+        openGraph: {},
+        html: {},
+      },
+      'https://www.bienici.com/annonce/1',
+      "Bien'ici",
+    );
+    expect(data.photoUrls).toEqual(['https://cdn.example.com/photo-1.jpg']);
+    expect(foundFields).toContain('photoUrls');
+  });
+
   it('maps structured values to dedicated fields, never into listing_features', () => {
     const portal: PartialListingData = {
       portalPricePerSquareMeter: 5827,

@@ -42,6 +42,8 @@ import { SelectedComparablesList } from '@/features/comparables/components/selec
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
 import { pricePerSquareMeter } from '@/features/comparables/services/calculate-comparable-summary';
 import { getMainPhotoUrl } from '@/features/comparables/utils/comparable-photos';
+import { ImportAssistantPanel } from '@/features/comparable-import/components/import-assistant-panel';
+import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { ConfidenceCard } from '@/features/price-positioning/components/confidence-card';
 import { InfluentialComparablesView } from '@/features/price-positioning/components/influential-comparables';
@@ -85,7 +87,8 @@ import {
 //
 //   /design-preview/app?screen=dashboard&theme=dark
 //     screen : dashboard | hub | property | comparables | new | find | edit |
-//              analysis | positioning | presentation | live-index | admin
+//              analysis | positioning | presentation | live-index | admin |
+//              assistant
 //     theme  : light (défaut) | dark
 //
 // Les en-têtes de page sont volontairement re-déclarés ici (mêmes jetons de
@@ -526,6 +529,26 @@ function LiveIndexScreen() {
   );
 }
 
+function AssistantScreen() {
+  return (
+    <div className="flex flex-col gap-6 md:gap-8">
+      <Header
+        kicker="Import assisté"
+        title="Annonce envoyée depuis votre navigateur"
+        subtitle="La page de l’annonce est analysée telle que vous la voyez : prix, prix au m², surface, pièces, quartier, ville, caractéristiques et photos sont repris automatiquement."
+      />
+      <ImportAssistantPanel
+        projects={demoProjects.map((project) => ({
+          id: project.id,
+          sellerName: project.seller_name,
+          statusLabel: statusLabel(project.status),
+        }))}
+      />
+      <ImportBookmarklet />
+    </div>
+  );
+}
+
 function AdminScreen() {
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -583,6 +606,8 @@ export default async function AppDesignPreviewPage({
         return <PresentationScreen />;
       case 'live-index':
         return <LiveIndexScreen />;
+      case 'assistant':
+        return <AssistantScreen />;
       case 'admin':
         return <AdminScreen />;
       default:

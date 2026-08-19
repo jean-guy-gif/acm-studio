@@ -15,10 +15,23 @@ import { getSubjectProperty } from '@/features/subject-property/queries/get-subj
 
 type LivePageProps = {
   params: Promise<{ projectId: string }>;
+  // « fiche » : index de la fiche courante, écrit par la présentation elle-même
+  // pour permettre de reprendre au bon endroit après un rechargement en plein
+  // rendez-vous. Valeur invalide ou absente = on ouvre à l'introduction.
+  searchParams: Promise<{ fiche?: string }>;
 };
 
-export default async function LiveProjectPage({ params }: LivePageProps) {
+// Index d'ouverture demandé par l'URL. Volontairement tolérant : jamais d'erreur
+// affichée au vendeur pour un paramètre douteux, on retombe sur l'introduction.
+// Le borne haute est appliquée par la présentation (nombre réel de fiches).
+function parseInitialIndex(raw: string | undefined): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+}
+
+export default async function LiveProjectPage({ params, searchParams }: LivePageProps) {
   const { projectId } = await params;
+  const { fiche } = await searchParams;
 
   // Access control: getProject is scoped to the caller's agency (via getProfile)
   // and returns null for a foreign or missing project → 404 (repo convention).
@@ -58,5 +71,11 @@ export default async function LiveProjectPage({ params }: LivePageProps) {
     generatedAt: new Date().toISOString(),
   });
 
-  return <LiveComparativeShell projectId={projectId} presentation={presentation} />;
+  return (
+    <LiveComparativeShell
+      projectId={projectId}
+      presentation={presentation}
+      initialIndex={parseInitialIndex(fiche)}
+    />
+  );
 }

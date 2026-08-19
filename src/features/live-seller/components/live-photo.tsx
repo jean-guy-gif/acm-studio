@@ -1,4 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
+import { RemoteImage } from '@/components/ui/remote-image';
+
 // Read-only photo display for a comparable. Large main photo + optional gallery,
 // with a clean fallback when no accessible photo exists. No upload, no scraping.
 // `compact` = vignette de carte (synthèse, conclusion) : hauteur réduite, pas de
@@ -30,25 +31,26 @@ export function LivePhoto({
   const gallery = compact ? [] : photoUrls.filter((url) => url !== photoUrl).slice(0, 6);
   return (
     <div className="flex flex-col gap-3">
-      <img
+      <RemoteImage
         src={photoUrl}
         alt={alt}
         className={
           compact ? 'h-40 w-full object-cover' : 'h-56 w-full rounded-lg object-cover sm:h-80'
         }
-        loading="lazy"
-        referrerPolicy="no-referrer"
+        fallbackClassName={compact ? 'h-40 w-full' : 'h-56 w-full rounded-lg sm:h-80'}
+        fallbackLabel="Photo indisponible pour cette annonce"
+        eager
       />
       {gallery.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto">
           {gallery.map((url) => (
-            <img
+            <RemoteImage
               key={url}
               src={url}
               alt={alt}
               className="h-16 w-24 shrink-0 rounded object-cover sm:h-20 sm:w-28"
-              loading="lazy"
-              referrerPolicy="no-referrer"
+              fallbackClassName="h-16 w-24 shrink-0 rounded sm:h-20 sm:w-28"
+              fallbackLabel="Indispo."
             />
           ))}
         </div>

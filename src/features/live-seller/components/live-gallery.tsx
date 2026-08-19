@@ -1,8 +1,8 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useState } from 'react';
 
+import { RemoteImage } from '@/components/ui/remote-image';
 import { buildMosaic, wrapIndex } from '@/features/live-seller/services/gallery-model';
 
 // Read-only photo gallery for a comparable: a responsive mosaic (main photo +
@@ -67,12 +67,13 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
         className="group block w-full overflow-hidden rounded-2xl shadow-card stage:shadow-none"
         aria-label={`Agrandir les photos (${photos.length})`}
       >
-        <img
+        <RemoteImage
           src={main}
           alt={alt}
           className="h-60 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:h-88"
-          loading="lazy"
-          referrerPolicy="no-referrer"
+          fallbackClassName="h-60 w-full sm:h-88"
+          fallbackLabel="Photo indisponible pour cette annonce"
+          eager
         />
       </button>
       {thumbs.length > 0 ? (
@@ -87,12 +88,12 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
                 className="relative overflow-hidden rounded-lg transition-opacity hover:opacity-85"
                 aria-label={`Photo ${i + 2} sur ${photos.length}`}
               >
-                <img
+                <RemoteImage
                   src={url}
                   alt={alt}
                   className="h-16 w-full object-cover sm:h-20"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
+                  fallbackClassName="h-16 w-full sm:h-20"
+                  fallbackLabel="Indispo."
                 />
                 {isLast ? (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-medium text-white">
@@ -137,11 +138,13 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
             >
               ‹
             </button>
-            <img
+            <RemoteImage
               src={photos[openIndex]}
               alt={alt}
-              referrerPolicy="no-referrer"
               className="max-h-[80vh] max-w-[85vw] rounded object-contain"
+              fallbackClassName="h-64 w-80 rounded"
+              fallbackLabel="Photo indisponible pour cette annonce"
+              eager
             />
             <button
               type="button"

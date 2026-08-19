@@ -48,6 +48,58 @@ describe('extractJsonLd', () => {
     expect(graph.price).toBe(200000);
   });
 
+  // Terrain (staging, 18/08) : Bien’ici publie DEUX blocs — le bien dans un nœud
+  // « Accommodation » sans prix, le prix dans un nœud « Product » dont l’offre le
+  // loge sous « priceSpecification ». Le prix ne remontait pas.
+  it('reads the price from a second block whose offer nests it in priceSpecification', () => {
+    const data = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          '@type': 'Accommodation',
+          name: 'Appartement 3 pièces',
+          floorSize: { value: 74, unitCode: 'MTK' },
+          numberOfRooms: 3,
+        }),
+      ) +
+        wrap(
+          JSON.stringify({
+            '@type': 'Product',
+            name: 'Appartement 3 pièces',
+            offers: {
+              '@type': 'Offer',
+              priceCurrency: 'EUR',
+              priceSpecification: { '@type': 'PriceSpecification', price: '349000' },
+            },
+          }),
+        ),
+    );
+    expect(data.surfaceArea).toBe(74);
+    expect(data.roomsCount).toBe(3);
+    expect(data.price).toBe(349000);
+  });
+
+  it('reads the price from an AggregateOffer and from a bare priceSpecification', () => {
+    const aggregate = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          '@type': 'Product',
+          offers: { '@type': 'AggregateOffer', offers: [{ '@type': 'Offer', price: 412000 }] },
+        }),
+      ),
+    );
+    expect(aggregate.price).toBe(412000);
+
+    const bare = extractJsonLd(
+      wrap(
+        JSON.stringify({
+          '@type': 'Apartment',
+          priceSpecification: { '@type': 'PriceSpecification', price: '275 000' },
+        }),
+      ),
+    );
+    expect(bare.price).toBe(275000);
+  });
+
   it('extracts construction year and amenity features when present', () => {
     const data = extractJsonLd(
       wrap(

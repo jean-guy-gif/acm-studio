@@ -1,3 +1,4 @@
+import { RemoteImage } from '@/components/ui/remote-image';
 import { card, hintText, sectionTitle, softPanel } from '@/components/ui/styles';
 
 export type InfluentialComparableDisplay = {
@@ -36,11 +37,11 @@ export function InfluentialComparablesView({
             >
               <div className="h-24 w-full shrink-0 overflow-hidden rounded-lg bg-zinc-100 sm:w-32 stage:bg-white/10">
                 {comparable.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <RemoteImage
                     src={comparable.photoUrl}
                     alt={comparable.title ?? 'Bien concurrent'}
                     className="h-full w-full object-cover"
+                    fallbackClassName="h-full w-full"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400 stage:text-white/40">

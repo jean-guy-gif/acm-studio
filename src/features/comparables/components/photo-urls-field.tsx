@@ -1,8 +1,8 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 
+import { RemoteImage } from '@/components/ui/remote-image';
 import { btnSecondary, hintText, inputBase, softPanel } from '@/components/ui/styles';
 
 // Manual photo-URL editor: one URL per row with a thumbnail preview, per-photo
@@ -75,11 +75,12 @@ export function PhotoUrlsField({
         <ul className="flex flex-col gap-2">
           {urls.map((url, index) => (
             <li key={url} className={`${softPanel} flex items-center gap-2 p-2`}>
-              <img
+              <RemoteImage
                 src={url}
-                alt=""
+                alt="Photo de l’annonce"
                 className="h-12 w-16 shrink-0 rounded-lg object-cover"
-                loading="lazy"
+                fallbackClassName="h-12 w-16 shrink-0 rounded-lg"
+                fallbackLabel="Indispo."
               />
               <span className="min-w-0 flex-1 truncate text-xs text-zinc-500 stage:text-white/50">
                 {url}

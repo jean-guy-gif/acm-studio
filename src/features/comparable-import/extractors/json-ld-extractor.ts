@@ -71,6 +71,59 @@ function collectNodes(root: unknown, out: Record<string, unknown>[]): void {
   }
 }
 
+// Resolves the price of ONE node, across the shapes portals actually publish.
+// Terrain (staging, 18/08) : Bien’ici décrit le bien dans un nœud
+// « Accommodation » SANS prix, et le prix dans un second nœud « Product » dont
+// l’offre porte la valeur sous « priceSpecification ». On lit donc, dans
+// l’ordre : offers.price, offers.lowPrice, offers.priceSpecification.(price |
+// minPrice), puis, à défaut d’offre, les mêmes clés sur le nœud lui-même.
+function resolveNodePrice(node: Record<string, unknown>): number | null {
+  const offers = node.offers;
+  const offerNodes: Record<string, unknown>[] = [];
+  if (Array.isArray(offers)) {
+    offerNodes.push(...offers.filter(isRecord));
+  } else if (isRecord(offers)) {
+    offerNodes.push(offers);
+    // AggregateOffer wrapping individual Offer nodes.
+    const nested = offers.offers;
+    if (Array.isArray(nested)) {
+      offerNodes.push(...nested.filter(isRecord));
+    } else if (isRecord(nested)) {
+      offerNodes.push(nested);
+    }
+  }
+
+  const candidates: unknown[] = [];
+  for (const offer of offerNodes) {
+    candidates.push(offer.price, offer.lowPrice);
+    const specification = offer.priceSpecification;
+    const specifications = Array.isArray(specification)
+      ? specification.filter(isRecord)
+      : isRecord(specification)
+        ? [specification]
+        : [];
+    for (const spec of specifications) {
+      candidates.push(spec.price, spec.minPrice);
+    }
+  }
+  // No offer node at all: the price may sit directly on the node.
+  if (offerNodes.length === 0) {
+    candidates.push(node.price);
+    const specification = node.priceSpecification;
+    if (isRecord(specification)) {
+      candidates.push(specification.price, specification.minPrice);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const price = normalizePrice(candidate);
+    if (price != null) {
+      return price;
+    }
+  }
+  return null;
+}
+
 function collectImages(image: unknown, out: string[]): void {
   if (typeof image === 'string') {
     if (image.trim() !== '') {
@@ -130,14 +183,7 @@ export function extractJsonLd(html: string): PartialListingData {
       }
     }
     if (result.price == null) {
-      const offers = node.offers;
-      const offerNode = Array.isArray(offers)
-        ? offers.find(isRecord)
-        : isRecord(offers)
-          ? offers
-          : null;
-      const priceRaw = offerNode ? (offerNode.price ?? offerNode.lowPrice) : node.price;
-      const price = normalizePrice(priceRaw);
+      const price = resolveNodePrice(node);
       if (price != null) {
         result.price = price;
       }

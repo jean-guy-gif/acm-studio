@@ -39,8 +39,10 @@ export function LiveComparativeShell({
 }: {
   projectId: string;
   presentation: SellerPresentation;
-  // Réservés à l'aperçu design (« /design-preview ») : jamais fournis en Live réel.
+  // Fiche d'ouverture : reprise après un rechargement en plein rendez-vous
+  // (paramètre « fiche » de l'URL, écrit ci-dessous), ou choix de l'aperçu design.
   initialIndex?: number;
+  // Thème d'ouverture de la scène : sombre en Live réel, au choix dans l'aperçu.
   initialStage?: LiveStageTheme;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -50,7 +52,8 @@ export function LiveComparativeShell({
 
   const live = presentation.live;
   const pages = useMemo(() => buildLivePages(live), [live]);
-  const page = pages[Math.min(index, pages.length - 1)];
+  const currentIndex = Math.min(index, pages.length - 1);
+  const page = pages[currentIndex];
   const entry =
     page.comparableId != null
       ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
@@ -90,6 +93,26 @@ export function LiveComparativeShell({
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
+
+  // Reprise après rechargement : la fiche courante est reflétée dans l'URL
+  // (« ?fiche=N »), que la page serveur relit pour rouvrir au bon endroit. On
+  // utilise replaceState — pas la navigation Next — pour ne provoquer aucun
+  // aller-retour serveur ni saut de défilement pendant la présentation, et pour
+  // que le bouton Précédent du navigateur ne sorte pas du Live fiche par fiche.
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const url = new URL(window.location.href);
+    if (currentIndex === 0) {
+      url.searchParams.delete('fiche');
+    } else {
+      url.searchParams.set('fiche', String(currentIndex));
+    }
+    if (url.toString() !== window.location.href) {
+      window.history.replaceState(window.history.state, '', url.toString());
+    }
+  }, [currentIndex]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -84,6 +84,17 @@ function str(value: string | number | null): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+// A page only counts as a real listing when at least one HARD business field was
+// extracted. When a portal serves a block / captcha / search page instead of the
+// listing, every one of these stays null — and whatever images that page carries
+// (tracking pixels, browser icons, banners) must NOT be offered as the
+// property's photos. A wrong photo is worse than no photo.
+function hasListingSignal(data: ImportedComparableData): boolean {
+  return (
+    data.price != null || data.surfaceArea != null || data.roomsCount != null || data.title != null
+  );
+}
+
 // Builds the editable feature lines from the genuine portal characteristics
 // only. Structured values (price/m², GES, year, heating, energy, district) live
 // in their own dedicated columns and must NOT be duplicated here.
@@ -118,7 +129,7 @@ export function normalizeListingData(
     ...(parts.openGraph.photoUrls ?? []),
     ...(parts.html.photoUrls ?? []),
   ].filter((url) => !isGenericImageUrl(url));
-  const photoUrls = deduplicatePhotoUrls(combinedPhotos, listingUrl);
+  const candidatePhotos = deduplicatePhotoUrls(combinedPhotos, listingUrl);
 
   const data: ImportedComparableData = {
     title: pickTitle(ordered, source),
@@ -142,7 +153,7 @@ export function normalizeListingData(
     portalPricePerSquareMeter: num(merged.portalPricePerSquareMeter),
     listingDescription: str(merged.listingDescription),
     listingFeatures: [],
-    photoUrls,
+    photoUrls: [],
     generalCondition: null,
     exposure: null,
     outdoorSpaces: [],
@@ -152,6 +163,9 @@ export function normalizeListingData(
   if (data.listingDescription && isGenericTitle(data.listingDescription, source)) {
     data.listingDescription = null;
   }
+
+  // Photos are only kept when the page really looks like a listing (see above).
+  data.photoUrls = hasListingSignal(data) ? candidatePhotos : [];
 
   data.listingFeatures = buildFeatures(ordered);
 
@@ -175,7 +189,7 @@ export function normalizeListingData(
       missingFields.push(field);
     }
   }
-  if (photoUrls.length > 0) {
+  if (data.photoUrls.length > 0) {
     foundFields.push('photoUrls');
   } else {
     missingFields.push('photoUrls');

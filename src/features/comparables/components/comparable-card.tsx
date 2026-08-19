@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { RemoteImage } from '@/components/ui/remote-image';
 import {
   badgeNeutral,
   badgeSelected,
@@ -58,11 +59,11 @@ export function ComparableCard({
     >
       <div className="h-32 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-44 stage:bg-white/10">
         {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <RemoteImage
             src={photo}
             alt={comparable.title ?? 'Bien concurrent'}
             className="h-full w-full object-cover"
+            fallbackClassName="h-full w-full"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400 stage:text-white/40">
