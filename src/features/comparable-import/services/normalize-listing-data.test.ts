@@ -299,3 +299,62 @@ describe('normalizeListingData — délai de commercialisation', () => {
     expect(missingFields).toContain('daysOnMarket');
   });
 });
+
+// Recette du 19/08 — le prix lu n'était pas celui de l'annonce (Green Acres :
+// 6 490 000 € au lieu de 5 490 000 €, pris dans « Nos annonces similaires »).
+describe('normalizeListingData — cohérence du prix', () => {
+  const parts = (portal: Record<string, unknown>) => ({
+    portal,
+    jsonLd: {},
+    openGraph: {},
+    html: {},
+    embeddedPhotoUrls: [],
+    embeddedDescription: null,
+    listingPublishedAt: null,
+    visibleDescription: null,
+    visibleFeatures: [],
+  });
+
+  it('retient le prix qui retombe sur le prix au m² du portail', () => {
+    const { data } = normalizeListingData(
+      parts({ price: 5_490_000, surfaceArea: 367, portalPricePerSquareMeter: 14_959 }),
+      'https://www.green-acres.fr/a.htm',
+      'green_acres',
+    );
+    expect(data.price).toBe(5_490_000);
+  });
+
+  // 6 490 000 / 367 = 17 684 €/m², le portail en affiche 14 959 : ce prix n'est
+  // pas celui de l'annonce. Mieux vaut un champ vide qu'un chiffre faux qui
+  // remonte jusqu'à la fourchette recommandée au conseiller.
+  it('refuse un prix incompatible plutôt que de le laisser passer', () => {
+    const { data, missingFields } = normalizeListingData(
+      parts({ price: 6_490_000, surfaceArea: 367, portalPricePerSquareMeter: 14_959 }),
+      'https://www.green-acres.fr/a.htm',
+      'green_acres',
+    );
+    expect(data.price).toBeNull();
+    expect(missingFields).toContain('price');
+    // Le prix au m² du portail reste affiché : le conseiller retrouve le bon prix.
+    expect(data.portalPricePerSquareMeter).toBe(14_959);
+  });
+
+  it('ne juge rien quand le portail ne publie pas de prix au m²', () => {
+    const { data } = normalizeListingData(
+      parts({ price: 303_000, surfaceArea: 52.82 }),
+      'https://www.seloger.com/a.htm',
+      'seloger',
+    );
+    expect(data.price).toBe(303_000);
+  });
+
+  it('tolère les arrondis d’affichage', () => {
+    // 14 959 × 367 = 5 489 953 : l'écart avec 5 490 000 est de 0,001 %.
+    const { data } = normalizeListingData(
+      parts({ price: 5_490_000, surfaceArea: 367, portalPricePerSquareMeter: 14_959 }),
+      'https://www.green-acres.fr/a.htm',
+      'green_acres',
+    );
+    expect(data.price).toBe(5_490_000);
+  });
+});

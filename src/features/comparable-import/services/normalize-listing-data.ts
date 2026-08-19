@@ -74,6 +74,63 @@ function pickScalar(field: ScalarField, sources: PartialListingData[]): string |
   return null;
 }
 
+// Recette du 19/08 — le prix lu n'était pas celui de l'annonce.
+//
+// Green Acres : 6 490 000 € au lieu de 5 490 000 €. Belles Demeures collé : 30 €
+// au lieu de 3 300 000 €. Même cause dans les deux cas : la page affiche aussi
+// « Nos annonces similaires », et nos lecteurs y puisaient.
+//
+// La parade ne devine rien : le portail publie LUI-MÊME son prix au m². Le bon
+// prix est celui qui, divisé par la surface, retombe sur ce prix au m². Sur la
+// page Green Acres, 5 490 000 / 367 = 14 959 €/m² — exactement ce que le portail
+// affiche ; 6 490 000 en donnerait 17 684, soit le chiffre erroné qui remontait
+// jusqu'à la fourchette recommandée au conseiller.
+//
+// Écart toléré : 8 %, pour absorber les arrondis d'affichage. Si AUCUN candidat
+// ne concorde, on garde l'ordre de priorité habituel — mieux vaut un prix
+// discutable, que le conseiller voit et peut corriger, qu'aucun prix.
+const PRICE_COHERENCE_TOLERANCE = 0.08;
+
+function pickCoherentPrice(
+  sources: readonly PartialListingData[],
+  pricePerSquareMeter: number | null,
+  surfaceArea: number | null,
+): number | null {
+  const candidates = sources
+    .map((source) => source.price)
+    .filter((value): value is number => typeof value === 'number' && value > 0);
+  if (candidates.length === 0) {
+    return null;
+  }
+  if (
+    pricePerSquareMeter == null ||
+    pricePerSquareMeter <= 0 ||
+    surfaceArea == null ||
+    surfaceArea <= 0
+  ) {
+    return candidates[0];
+  }
+
+  const expected = pricePerSquareMeter * surfaceArea;
+  let best: number | null = null;
+  let bestGap = Number.POSITIVE_INFINITY;
+  for (const candidate of candidates) {
+    const gap = Math.abs(candidate - expected) / expected;
+    if (gap <= PRICE_COHERENCE_TOLERANCE && gap < bestGap) {
+      best = candidate;
+      bestGap = gap;
+    }
+  }
+
+  // Aucun candidat ne concorde : le prix trouvé n'est pas celui de l'annonce.
+  // On préfère NE RIEN pré-remplir plutôt que de laisser un chiffre faux couler
+  // jusqu'à la fourchette recommandée. Le champ apparaît alors dans « à
+  // compléter », et le prix au m² du portail reste affiché pour le retrouver.
+  // C'est le cas relevé le 19/08 : 6 490 000 € donnait 17 684 €/m² quand le
+  // portail affichait 14 959 €/m².
+  return best;
+}
+
 function pickTitle(sources: PartialListingData[], source: string): string | null {
   for (const candidate of sources) {
     const value = candidate.title;
@@ -191,6 +248,14 @@ export function normalizeListingData(
   for (const field of SCALAR_FIELDS) {
     merged[field] = pickScalar(field, ordered);
   }
+
+  // Le prix est le seul champ que l'on ne prend pas « au premier trouvé » : il
+  // est recoupé avec le prix au m² publié par le portail (voir ci-dessus).
+  merged.price = pickCoherentPrice(
+    ordered,
+    num(merged.portalPricePerSquareMeter),
+    num(merged.surfaceArea),
+  );
 
   // Par source, dans l'ordre de priorité : la première source qui fournit des
   // photos donne l'hébergeur de référence (voir galleryFromSameHosts).
