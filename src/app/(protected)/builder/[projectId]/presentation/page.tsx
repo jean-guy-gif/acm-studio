@@ -24,6 +24,7 @@ import { buildSellerPresentation } from '@/features/seller-presentation/services
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 
 type PresentationPageProps = {
   params: Promise<{ projectId: string }>;
@@ -39,13 +40,22 @@ export default async function SellerPresentationPage({ params }: PresentationPag
     notFound();
   }
 
-  const [property, comparables, savedPositioning, diagnostics, condominium] = await Promise.all([
-    getSubjectProperty(projectId),
-    getComparables(projectId),
-    getSavedPricePositioning(projectId),
-    getSubjectPropertyDiagnostics(projectId),
-    getSubjectPropertyCondominium(projectId),
-  ]);
+  const [property, comparables, savedPositioning, diagnostics, condominium, propertyPhotos] =
+    await Promise.all([
+      getSubjectProperty(projectId),
+      getComparables(projectId),
+      getSavedPricePositioning(projectId),
+      getSubjectPropertyDiagnostics(projectId),
+      getSubjectPropertyCondominium(projectId),
+      getPropertyPhotos(projectId),
+    ]);
+
+  // The subject property's photo_urls are PRIVATE storage paths (Mission 37):
+  // sign them here (getPropertyPhotos reuses signPropertyPhotos) so the pure,
+  // synchronous builder receives ready-to-display URLs.
+  const propertyPhotoUrls = propertyPhotos
+    .map((photo) => photo.url)
+    .filter((url): url is string => url !== null);
 
   // Single business entry point — generated on the fly, nothing persisted.
   const presentation = buildSellerPresentation({
@@ -56,6 +66,7 @@ export default async function SellerPresentationPage({ params }: PresentationPag
     comparables,
     savedPositioning,
     generatedAt: new Date().toISOString(),
+    propertyPhotoUrls,
   });
 
   return (

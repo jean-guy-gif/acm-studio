@@ -12,6 +12,7 @@ import { buildSellerPresentation } from '@/features/seller-presentation/services
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 
 type LivePageProps = {
   params: Promise<{ projectId: string }>;
@@ -48,6 +49,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     condominium,
     sellerResponses,
     sellerSummary,
+    propertyPhotos,
   ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
@@ -56,7 +58,15 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     getSubjectPropertyCondominium(projectId),
     getLiveComparableResponses(projectId),
     getLiveSellerSummary(projectId),
+    getPropertyPhotos(projectId),
   ]);
+
+  // The subject property's photo_urls are PRIVATE storage paths (Mission 37):
+  // sign them here (getPropertyPhotos reuses signPropertyPhotos) so the pure,
+  // synchronous builder receives ready-to-display URLs.
+  const propertyPhotoUrls = propertyPhotos
+    .map((photo) => photo.url)
+    .filter((url): url is string => url !== null);
 
   // Same business entry point as the Builder — Live never rebuilds the content.
   const presentation = buildSellerPresentation({
@@ -69,6 +79,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     sellerResponses,
     sellerSummary,
     generatedAt: new Date().toISOString(),
+    propertyPhotoUrls,
   });
 
   return (

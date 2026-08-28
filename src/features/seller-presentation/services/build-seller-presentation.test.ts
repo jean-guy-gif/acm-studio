@@ -135,18 +135,32 @@ function savedMatching(comparables: Comparable[], surface: number): SavedPricePo
   });
 }
 
+// Mirrors what the real callers do: the subject property's storage paths are
+// signed upstream. In tests photo_urls already hold URLs, so resolving = keeping
+// the non-empty strings.
+function resolvePropertyPhotoUrls(property: SubjectProperty | null): string[] {
+  if (property == null || !Array.isArray(property.photo_urls)) {
+    return [];
+  }
+  return property.photo_urls.filter(
+    (url): url is string => typeof url === 'string' && url.trim() !== '',
+  );
+}
+
 function input(
   overrides: Partial<BuildSellerPresentationInput> = {},
 ): BuildSellerPresentationInput {
+  const property = overrides.property !== undefined ? overrides.property : makeProperty();
   return {
     project: makeProject(),
-    property: makeProperty(),
+    property,
     diagnostics: null,
     condominium: null,
     comparables: threeComps(),
     savedPositioning: null,
     generatedAt: AT,
     ...overrides,
+    propertyPhotoUrls: overrides.propertyPhotoUrls ?? resolvePropertyPhotoUrls(property),
   };
 }
 

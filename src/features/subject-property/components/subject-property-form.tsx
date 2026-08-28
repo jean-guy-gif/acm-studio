@@ -20,6 +20,10 @@ import { PropertyLocationFields } from '@/features/subject-property/components/p
 import { NumberField, TextField } from '@/features/subject-property/components/property-inputs';
 import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
 import type { SubjectProperty } from '@/features/subject-property/types';
+import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
+import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
+import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
+import type { SignedPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
 
 type ScalarState = {
   property_type: string;
@@ -81,9 +85,15 @@ function initialScalars(property: SubjectProperty | null): ScalarState {
 export function SubjectPropertyForm({
   property,
   saveAction,
+  photos,
+  uploadPhotosAction,
+  updatePhotosAction,
 }: {
   property: SubjectProperty | null;
   saveAction: (formData: FormData) => Promise<SaveSubjectPropertyResult>;
+  photos: SignedPhoto[];
+  uploadPhotosAction: (formData: FormData) => Promise<UploadPropertyPhotosResult>;
+  updatePhotosAction: (desiredPaths: string[]) => Promise<UpdatePropertyPhotosResult>;
 }) {
   const router = useRouter();
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property));
@@ -216,6 +226,15 @@ export function SubjectPropertyForm({
             className={inputBase}
           />
         </label>
+      </section>
+
+      <section className={formSection}>
+        <h2 className={formSectionTitle}>Photos du bien vendeur</h2>
+        <SubjectPropertyPhotosField
+          photos={photos}
+          uploadAction={uploadPhotosAction}
+          updateAction={updatePhotosAction}
+        />
       </section>
 
       <PropertyLocationFields

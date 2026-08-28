@@ -77,6 +77,8 @@ import {
   previewSaveCondominium,
   previewSaveDiagnostics,
   previewSaveProperty,
+  previewUploadPropertyPhotos,
+  previewUpdatePropertyPhotos,
   previewSavePositioning,
   previewSearchCompetitors,
   previewVoid,
@@ -255,7 +257,13 @@ function PropertyScreen() {
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       <Header back="Retour au dossier" kicker="Dossier · M. et Mme Démo" title="Bien vendeur" />
-      <SubjectPropertyForm property={demoProperty} saveAction={previewSaveProperty} />
+      <SubjectPropertyForm
+        property={demoProperty}
+        saveAction={previewSaveProperty}
+        photos={[]}
+        uploadPhotosAction={previewUploadPropertyPhotos}
+        updatePhotosAction={previewUpdatePropertyPhotos}
+      />
       <DiagnosticsForm diagnostics={null} saveAction={previewSaveDiagnostics} />
       <CondominiumForm condominium={null} saveAction={previewSaveCondominium} />
     </div>
@@ -462,6 +470,7 @@ function PresentationScreen() {
     comparables: demoComparables,
     savedPositioning: demoSavedPositioning,
     generatedAt: DEMO_AT,
+    propertyPhotoUrls: [], // demo subject property has no photos
   });
   return (
     <div className="flex flex-col gap-6 md:gap-8">

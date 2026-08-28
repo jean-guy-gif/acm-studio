@@ -12,6 +12,9 @@ import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagn
 import { saveSubjectProperty } from '@/features/subject-property/actions/save-subject-property';
 import { SubjectPropertyForm } from '@/features/subject-property/components/subject-property-form';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import { updatePropertyPhotos } from '@/features/subject-property-photos/actions/update-property-photos';
+import { uploadPropertyPhotos } from '@/features/subject-property-photos/actions/upload-property-photos';
+import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
@@ -25,14 +28,17 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     notFound();
   }
 
-  const [property, diagnostics, condominium] = await Promise.all([
+  const [property, diagnostics, condominium, photos] = await Promise.all([
     getSubjectProperty(projectId),
     getSubjectPropertyDiagnostics(projectId),
     getSubjectPropertyCondominium(projectId),
+    getPropertyPhotos(projectId),
   ]);
   const save = saveSubjectProperty.bind(null, projectId);
   const saveDiagnostics = saveSubjectPropertyDiagnostics.bind(null, projectId);
   const saveCondominium = saveSubjectPropertyCondominium.bind(null, projectId);
+  const uploadPhotos = uploadPropertyPhotos.bind(null, projectId);
+  const updatePhotos = updatePropertyPhotos.bind(null, projectId);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -44,7 +50,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <h1 className={pageTitle}>Bien vendeur</h1>
       </div>
 
-      <SubjectPropertyForm property={property} saveAction={save} />
+      <SubjectPropertyForm
+        property={property}
+        saveAction={save}
+        photos={photos}
+        uploadPhotosAction={uploadPhotos}
+        updatePhotosAction={updatePhotos}
+      />
 
       {property ? (
         <>

@@ -52,6 +52,13 @@ export type BuildSellerPresentationInput = {
   // Mission 24 — Live seller answers (optional; Builder omits them).
   sellerResponses?: LiveComparableResponse[];
   sellerSummary?: LiveSellerSummary | null;
+  // Two kinds of value live in `photo_urls`: a COMPETITOR's are already public
+  // portal URLs (used as-is), a SUBJECT PROPERTY's are PRIVATE storage PATHS
+  // (Mission 37). Paths are never displayable directly: every caller signs them
+  // with signPropertyPhotos UPSTREAM (page/query) and passes the resolved,
+  // ready-to-display URLs here — so this builder stays pure and synchronous.
+  // Required on purpose: a caller that forgets does not compile.
+  propertyPhotoUrls: string[];
 };
 
 const MIN_READY_COMPARABLES = 3;
@@ -82,7 +89,9 @@ function isExploitable(comparable: Comparable): boolean {
   );
 }
 
-function mapProperty(property: SubjectProperty): SellerPresentationProperty {
+// `photoUrls` is resolved by the caller: signed URLs for a subject property whose
+// photo_urls are storage paths, or the raw URL list otherwise.
+function mapProperty(property: SubjectProperty, photoUrls: string[]): SellerPresentationProperty {
   return {
     propertyType: property.property_type,
     address: property.address,
@@ -106,7 +115,7 @@ function mapProperty(property: SubjectProperty): SellerPresentationProperty {
     heatingType: property.heating_type,
     features: asStringArray(property.strengths),
     watchPoints: asStringArray(property.watch_points),
-    photoUrls: getComparablePhotoUrls({ photo_urls: property.photo_urls }),
+    photoUrls,
   };
 }
 
@@ -205,8 +214,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       property.surface_area == null ||
       property.surface_area <= 0 ||
       property.rooms_count == null);
-  const propertyHasPhoto =
-    property != null && getComparablePhotoUrls({ photo_urls: property.photo_urls }).length > 0;
+  const propertyHasPhoto = property != null && input.propertyPhotoUrls.length > 0;
   const anyComparablePhoto = presentationComparables.some(
     (comparable) => comparable.photoUrl != null,
   );
@@ -412,7 +420,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       createdAt: project.created_at,
       updatedAt: project.updated_at,
     },
-    property: property ? mapProperty(property) : null,
+    property: property ? mapProperty(property, input.propertyPhotoUrls) : null,
     diagnostics,
     condominium,
     comparables: presentationComparables,

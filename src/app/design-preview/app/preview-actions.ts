@@ -17,10 +17,20 @@ import type { SavePositioningResult } from '@/features/price-positioning/actions
 import type { SaveCondominiumResult } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
 import type { SaveDiagnosticsResult } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
 import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
+import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
+import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
 
 const REFUSAL = 'Aperçu design : aucune donnée n’est enregistrée ici.';
 
 export async function previewSaveProperty(): Promise<SaveSubjectPropertyResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewUploadPropertyPhotos(): Promise<UploadPropertyPhotosResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewUpdatePropertyPhotos(): Promise<UpdatePropertyPhotosResult> {
   return { ok: false, error: REFUSAL };
 }
 

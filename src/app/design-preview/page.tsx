@@ -60,6 +60,7 @@ export default async function DesignPreviewPage({
     sellerResponses: answered ? demoAnsweredResponses : [],
     sellerSummary: answered ? demoAnsweredSummary : null,
     generatedAt: DEMO_AT,
+    propertyPhotoUrls: [], // demo subject property has no photos
   });
 
   return (
