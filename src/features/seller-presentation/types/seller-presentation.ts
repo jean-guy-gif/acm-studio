@@ -104,6 +104,7 @@ export type SellerPresentationProperty = {
   city: string | null;
   district: string | null;
   postalCode: string | null;
+  description: string | null;
   surfaceArea: number | null;
   roomsCount: number | null;
   bedroomsCount: number | null;

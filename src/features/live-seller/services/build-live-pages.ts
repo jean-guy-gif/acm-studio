@@ -1,10 +1,11 @@
 import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
-// intro → [competition, price, duration] per comparable → dangerous competitor →
-// seller perceived price → price analysis → conclusion.
+// intro → [Votre bien] → [competition, price, duration] per comparable →
+// dangerous competitor → seller perceived price → price analysis → conclusion.
 export type LivePageType =
   | 'intro'
+  | 'subject_property'
   | 'comparable_competition'
   | 'comparable_price'
   | 'comparable_duration'
@@ -29,7 +30,13 @@ const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3; title: string }[]
   { type: 'comparable_duration', step: 3, title: 'Pourquoi toujours en vente ?' },
 ];
 
-export function buildLivePages(live: LiveComparativeData | null): LivePage[] {
+// `hasSubjectProperty` decides whether the "Votre bien" recognition slide (Act 1)
+// is inserted — absent when the dossier has no subject property, same logic as the
+// dangerous-competitor page when there is no competitor.
+export function buildLivePages(
+  live: LiveComparativeData | null,
+  hasSubjectProperty: boolean,
+): LivePage[] {
   const pages: LivePage[] = [
     {
       key: 'intro',
@@ -40,6 +47,17 @@ export function buildLivePages(live: LiveComparativeData | null): LivePage[] {
       step: null,
     },
   ];
+
+  if (hasSubjectProperty) {
+    pages.push({
+      key: 'subject_property',
+      type: 'subject_property',
+      title: 'Votre bien',
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+    });
+  }
 
   const comparables = live?.comparables ?? [];
   comparables.forEach((comparable, index) => {

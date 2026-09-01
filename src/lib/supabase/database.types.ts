@@ -94,63 +94,6 @@ export type Database = {
           },
         ]
       }
-      competitor_decisions: {
-        Row: {
-          agency_id: string
-          city: string | null
-          comment: string | null
-          created_at: string
-          decision: string
-          district: string | null
-          id: string
-          listing_host: string
-          listing_url: string
-          price: number | null
-          project_id: string
-          property_type: string | null
-          reason: string | null
-          rooms_count: number | null
-          surface_area: number | null
-          updated_at: string
-        }
-        Insert: {
-          agency_id: string
-          city?: string | null
-          comment?: string | null
-          created_at?: string
-          decision: string
-          district?: string | null
-          id?: string
-          listing_host: string
-          listing_url: string
-          price?: number | null
-          project_id: string
-          property_type?: string | null
-          reason?: string | null
-          rooms_count?: number | null
-          surface_area?: number | null
-          updated_at?: string
-        }
-        Update: {
-          agency_id?: string
-          city?: string | null
-          comment?: string | null
-          created_at?: string
-          decision?: string
-          district?: string | null
-          id?: string
-          listing_host?: string
-          listing_url?: string
-          price?: number | null
-          project_id?: string
-          property_type?: string | null
-          reason?: string | null
-          rooms_count?: number | null
-          surface_area?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       comparables: {
         Row: {
           address: string | null
@@ -282,6 +225,78 @@ export type Database = {
           },
           {
             foreignKeyName: "comparables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitor_decisions: {
+        Row: {
+          agency_id: string
+          city: string | null
+          comment: string | null
+          created_at: string
+          decision: string
+          district: string | null
+          id: string
+          listing_host: string
+          listing_url: string
+          price: number | null
+          project_id: string
+          property_type: string | null
+          reason: string | null
+          rooms_count: number | null
+          surface_area: number | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          city?: string | null
+          comment?: string | null
+          created_at?: string
+          decision: string
+          district?: string | null
+          id?: string
+          listing_host: string
+          listing_url: string
+          price?: number | null
+          project_id: string
+          property_type?: string | null
+          reason?: string | null
+          rooms_count?: number | null
+          surface_area?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          city?: string | null
+          comment?: string | null
+          created_at?: string
+          decision?: string
+          district?: string | null
+          id?: string
+          listing_host?: string
+          listing_url?: string
+          price?: number | null
+          project_id?: string
+          property_type?: string | null
+          reason?: string | null
+          rooms_count?: number | null
+          surface_area?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_decisions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_decisions_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -432,6 +447,8 @@ export type Database = {
           seller_most_dangerous_comparable_id: string | null
           seller_most_dangerous_reason: string | null
           seller_perceived_property_price: number | null
+          seller_property_comment: string | null
+          seller_property_confirmed: string | null
           updated_at: string
         }
         Insert: {
@@ -444,6 +461,8 @@ export type Database = {
           seller_most_dangerous_comparable_id?: string | null
           seller_most_dangerous_reason?: string | null
           seller_perceived_property_price?: number | null
+          seller_property_comment?: string | null
+          seller_property_confirmed?: string | null
           updated_at?: string
         }
         Update: {
@@ -456,6 +475,8 @@ export type Database = {
           seller_most_dangerous_comparable_id?: string | null
           seller_most_dangerous_reason?: string | null
           seller_perceived_property_price?: number | null
+          seller_property_comment?: string | null
+          seller_property_confirmed?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1322,6 +1343,7 @@ export type Database = {
           profile_id: string
         }[]
       }
+      current_agency_id_text: { Args: never; Returns: string }
       get_current_agency_id: { Args: never; Returns: string }
       move_comparable: {
         Args: {
@@ -1467,3 +1489,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

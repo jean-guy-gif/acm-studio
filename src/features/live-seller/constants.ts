@@ -14,6 +14,15 @@ export const SERIOUS_COMPETITOR_LABELS: Record<SeriousCompetitor, string> = {
   unsure: 'Incertain',
 };
 
+// Mission 39 — Act 1 "Votre bien": the seller recognises the property.
+export const PROPERTY_CONFIRMED_VALUES = ['yes', 'no'] as const;
+export type PropertyConfirmed = (typeof PROPERTY_CONFIRMED_VALUES)[number];
+
+export const PROPERTY_CONFIRMED_LABELS: Record<PropertyConfirmed, string> = {
+  yes: 'Oui, c’est bien mon bien',
+  no: 'Non, il y a des choses à corriger',
+};
+
 export const MARKET_DURATION_REASONS = [
   'price_too_high',
   'condition',

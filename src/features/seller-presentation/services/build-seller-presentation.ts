@@ -98,6 +98,7 @@ function mapProperty(property: SubjectProperty, photoUrls: string[]): SellerPres
     city: property.city,
     district: property.district,
     postalCode: property.postal_code,
+    description: property.description,
     surfaceArea: property.surface_area,
     roomsCount: property.rooms_count,
     bedroomsCount: property.bedrooms_count,

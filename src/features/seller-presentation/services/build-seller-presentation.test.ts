@@ -672,4 +672,19 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(entry.photoUrls).toEqual(photos);
     expect(entry.photoUrl).toBe('https://x/0.jpg');
   });
+
+  // Mission 39 — Act 1 "Votre bien": the advisor price range (fourchette) guides
+  // competitor search only and must NEVER reach the seller-facing Live.
+  it('never exposes the advisor price range in the Live property data', () => {
+    const result = buildSellerPresentation(
+      input({ property: makeProperty({ advisor_price_min: 333111, advisor_price_max: 355222 }) }),
+    );
+    const propertyKeys = Object.keys(result.property ?? {});
+    expect(propertyKeys).not.toContain('advisor_price_min');
+    expect(propertyKeys).not.toContain('advisor_price_max');
+    const serialized = JSON.stringify({ property: result.property, live: result.live });
+    expect(serialized).not.toContain('advisor_price');
+    expect(serialized).not.toContain('333111');
+    expect(serialized).not.toContain('355222');
+  });
 });

@@ -2,7 +2,9 @@ import {
   DANGEROUS_REASONS,
   MAX_LIVE_COMMENT_LENGTH,
   MAX_LIVE_PRICE,
+  PROPERTY_CONFIRMED_VALUES,
   type DangerousReason,
+  type PropertyConfirmed,
 } from '@/features/live-seller/constants';
 import type { LiveSellerSummaryPatch } from '@/features/live-seller/types';
 
@@ -65,6 +67,19 @@ export function validateLiveSellerSummary(
 
   checkPrice(input.seller_perceived_property_price, 'seller_perceived_property_price', errors);
   checkPrice(input.advisor_comparative_market_price, 'advisor_comparative_market_price', errors);
+
+  if (
+    input.seller_property_confirmed != null &&
+    !PROPERTY_CONFIRMED_VALUES.includes(input.seller_property_confirmed as PropertyConfirmed)
+  ) {
+    errors.seller_property_confirmed = 'Réponse invalide.';
+  }
+  if (
+    input.seller_property_comment != null &&
+    input.seller_property_comment.length > MAX_LIVE_COMMENT_LENGTH
+  ) {
+    errors.seller_property_comment = `Limité à ${MAX_LIVE_COMMENT_LENGTH} caractères.`;
+  }
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, fieldErrors: errors };

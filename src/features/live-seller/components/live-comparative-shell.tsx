@@ -13,6 +13,7 @@ import { LivePageDangerous } from '@/features/live-seller/components/live-page-d
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
+import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
 import {
   chromeBtn,
@@ -51,14 +52,15 @@ export function LiveComparativeShell({
   const [stage, setStage] = useState<LiveStageTheme>(initialStage);
 
   const live = presentation.live;
-  const pages = useMemo(() => buildLivePages(live), [live]);
+  const hasSubjectProperty = presentation.property != null;
+  const pages = useMemo(() => buildLivePages(live, hasSubjectProperty), [live, hasSubjectProperty]);
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
   const entry =
     page.comparableId != null
       ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
       : null;
-  const canAdvance = canAdvanceLivePage(page.type, entry);
+  const canAdvance = canAdvanceLivePage(page.type, entry, live?.sellerSummary ?? null);
   // Garde de progression : on lit la valeur courante via une ref pour que `go`
   // reste référentiellement stable (react-hooks/preserve-manual-memoization) tout
   // en respectant la dernière valeur de `canAdvance` au moment de l'appel.
@@ -210,6 +212,12 @@ export function LiveComparativeShell({
                 .join(', ') || null
             }
             onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
+          />
+        ) : page.type === 'subject_property' && presentation.property ? (
+          <LivePageProperty
+            property={presentation.property}
+            summary={live?.sellerSummary ?? null}
+            saveAction={saveSummary}
           />
         ) : page.type === 'comparable_competition' && entry && saveResponse ? (
           <LivePageCompetition entry={entry} saveAction={saveResponse} />

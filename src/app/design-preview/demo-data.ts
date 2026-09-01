@@ -209,6 +209,8 @@ export const demoAnsweredSummary: LiveSellerSummary = {
   seller_most_dangerous_comment: null,
   seller_perceived_property_price: 398000,
   advisor_comparative_market_price: 372000,
+  seller_property_confirmed: 'yes',
+  seller_property_comment: null,
   created_at: DEMO_AT,
   updated_at: DEMO_AT,
 };

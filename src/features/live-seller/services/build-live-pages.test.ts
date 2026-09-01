@@ -22,7 +22,7 @@ function live(comparableCount: number): LiveComparativeData {
 
 describe('buildLivePages', () => {
   it('produces exactly 3 pages per comparable, in the competition→price→duration order', () => {
-    const pages = buildLivePages(live(2));
+    const pages = buildLivePages(live(2), false);
     const perComparable = pages.filter((p) => p.comparableId === 'c0');
     expect(perComparable.map((p) => p.type)).toEqual([
       'comparable_competition',
@@ -38,14 +38,14 @@ describe('buildLivePages', () => {
       seller_serious_competitor: 'no',
     } as LiveComparativeData['comparables'][number]['response'];
 
-    const pages = buildLivePages(scenario);
+    const pages = buildLivePages(scenario, false);
     const rejectedPages = pages.filter((page) => page.comparableId === scenario.comparables[0].id);
 
     expect(rejectedPages.map((page) => page.type)).toEqual(['comparable_competition']);
   });
 
   it('orders the whole flow: intro, loop, dangerous, perceived, analysis, conclusion', () => {
-    const pages = buildLivePages(live(2));
+    const pages = buildLivePages(live(2), false);
     expect(pages[0].type).toBe('intro');
     expect(pages.map((p) => p.type).slice(-4)).toEqual([
       'dangerous_competitor',
@@ -58,7 +58,7 @@ describe('buildLivePages', () => {
   });
 
   it('skips the per-comparable loop and the dangerous page when there are none', () => {
-    const pages = buildLivePages(live(0));
+    const pages = buildLivePages(live(0), false);
     expect(pages.map((p) => p.type)).toEqual([
       'intro',
       'seller_perceived_price',
@@ -68,7 +68,22 @@ describe('buildLivePages', () => {
   });
 
   it('assigns a 1-based comparable index', () => {
-    const pages = buildLivePages(live(2));
+    const pages = buildLivePages(live(2), false);
     expect(pages.find((p) => p.comparableId === 'c1')?.comparableIndex).toBe(2);
+  });
+
+  it('inserts the "Votre bien" recognition slide right after intro when a subject property exists', () => {
+    const pages = buildLivePages(live(2), true);
+    expect(pages[0].type).toBe('intro');
+    expect(pages[1].type).toBe('subject_property');
+    expect(pages[1].title).toBe('Votre bien');
+    // intro + subject_property + 2*3 + 4 tail
+    expect(pages).toHaveLength(1 + 1 + 6 + 4);
+  });
+
+  it('omits the "Votre bien" slide when the dossier has no subject property', () => {
+    expect(buildLivePages(live(2), false).some((p) => p.type === 'subject_property')).toBe(false);
+    // even with no comparables at all
+    expect(buildLivePages(live(0), false).some((p) => p.type === 'subject_property')).toBe(false);
   });
 });

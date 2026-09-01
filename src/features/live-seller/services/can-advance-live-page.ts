@@ -1,3 +1,4 @@
+import type { LiveSellerSummary } from '@/features/live-seller/types';
 import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
 
@@ -6,7 +7,11 @@ import type { LiveComparableEntry } from '@/features/seller-presentation/types/s
 export function canAdvanceLivePage(
   pageType: LivePageType,
   entry: LiveComparableEntry | null,
+  summary: LiveSellerSummary | null,
 ): boolean {
+  if (pageType === 'subject_property') {
+    return summary?.seller_property_confirmed != null;
+  }
   if (pageType === 'comparable_competition') {
     return entry?.response?.seller_serious_competitor != null;
   }

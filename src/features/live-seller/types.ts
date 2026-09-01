@@ -3,6 +3,7 @@ import type {
   ComparisonStatus,
   DangerousReason,
   MarketDurationReason,
+  PropertyConfirmed,
   SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { Database } from '@/lib/supabase/database.types';
@@ -113,6 +114,9 @@ export type LiveSellerSummaryInput = {
   seller_most_dangerous_comment: string | null;
   seller_perceived_property_price: number | null;
   advisor_comparative_market_price: number | null;
+  // Mission 39 — Act 1 "Votre bien": does the presentation match the seller's bien?
+  seller_property_confirmed: PropertyConfirmed | null;
+  seller_property_comment: string | null;
 };
 
 export type LiveSellerSummaryPatch = Partial<LiveSellerSummaryInput>;

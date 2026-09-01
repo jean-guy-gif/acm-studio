@@ -63,6 +63,12 @@ export async function saveLiveSellerSummary(
         formData.get('advisor_comparative_market_price'),
       ),
     }),
+    ...(formData.has('seller_property_confirmed') && {
+      seller_property_confirmed: textOrNull(formData.get('seller_property_confirmed')),
+    }),
+    ...(formData.has('seller_property_comment') && {
+      seller_property_comment: textOrNull(formData.get('seller_property_comment')),
+    }),
   });
   const validation = validateLiveSellerSummary(normalized);
   if (!validation.ok) {
