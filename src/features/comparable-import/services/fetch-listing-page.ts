@@ -89,7 +89,11 @@ const robotsCache = new Map<string, { policy: RobotsPolicy; at: number }>();
 // par le protocole, et refuser sur une panne réseau bloquerait l'outil sans
 // raison. L'appel est court et mis en cache : un import n'ajoute pas une
 // requête à chaque fois.
-async function fetchRobotsPolicy(url: URL, fetchImpl: typeof fetch): Promise<RobotsPolicy> {
+async function fetchRobotsPolicy(
+  url: URL,
+  fetchImpl: typeof fetch,
+  resolveHost: (hostname: string) => Promise<string[]>,
+): Promise<RobotsPolicy> {
   const key = url.origin;
   const cached = robotsCache.get(key);
   if (cached && Date.now() - cached.at < FETCH_LIMITS.robotsCacheMs) {
@@ -100,14 +104,42 @@ async function fetchRobotsPolicy(url: URL, fetchImpl: typeof fetch): Promise<Rob
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_LIMITS.robotsTimeoutMs);
   try {
-    const response = await fetchImpl(new URL('/robots.txt', url.origin).toString(), {
-      method: 'GET',
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: { 'user-agent': USER_AGENT, accept: 'text/plain' },
-    });
-    if (response.ok) {
-      policy = parseRobots(await response.text(), BOT_TOKEN);
+    // Redirections suivies à la main, comme la page : un robots.txt qui redirige
+    // vers une adresse interne ne doit pas être suivi (SSRF aveugle). On rejoue
+    // isHostAllowed à chaque saut et on plafonne la chaîne. En cas de blocage ou
+    // d'échec, on retombe sur ALLOW_ALL (comportement prévu par le protocole).
+    let current = new URL('/robots.txt', url.origin);
+    for (let redirect = 0; redirect <= FETCH_LIMITS.maxRedirects; redirect += 1) {
+      if (!(await isHostAllowed(current, resolveHost))) {
+        break;
+      }
+      const response = await fetchImpl(current.toString(), {
+        method: 'GET',
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: { 'user-agent': USER_AGENT, accept: 'text/plain' },
+      });
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location || redirect >= FETCH_LIMITS.maxRedirects) {
+          break;
+        }
+        let next: URL;
+        try {
+          next = new URL(location, current);
+        } catch {
+          break;
+        }
+        if (!isAllowedProtocol(next)) {
+          break;
+        }
+        current = next;
+        continue;
+      }
+      if (response.ok) {
+        policy = parseRobots(await response.text(), BOT_TOKEN);
+      }
+      break;
     }
   } catch {
     policy = ALLOW_ALL;
@@ -154,7 +186,8 @@ export async function fetchListingPage(
 ): Promise<FetchPageResult> {
   const fetchImpl = deps.fetchImpl ?? fetch;
   const resolveHost = deps.resolveHost ?? defaultResolveHost;
-  const robotsFor = deps.robotsFor ?? ((url: URL) => fetchRobotsPolicy(url, fetchImpl));
+  const robotsFor =
+    deps.robotsFor ?? ((url: URL) => fetchRobotsPolicy(url, fetchImpl, resolveHost));
 
   let current = normalizeUrl(rawUrl);
   if (!current || !isAllowedProtocol(current)) {

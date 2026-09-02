@@ -189,6 +189,38 @@ describe('fetchListingPage — robots.txt', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('ne suit pas une redirection de robots.txt vers une IP bloquée', async () => {
+    // Hôte unique : évite toute collision avec le cache robots.txt d'autres tests.
+    const base = 'https://robots-ssrf.example';
+    const internalHost = 'internal.robots-ssrf.example';
+    const calledUrls: string[] = [];
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      const target = typeof input === 'string' ? input : input.toString();
+      calledUrls.push(target);
+      const parsed = new URL(target);
+      // Le robots.txt de l'hôte public redirige vers un robots.txt interne.
+      if (parsed.hostname === 'robots-ssrf.example' && parsed.pathname === '/robots.txt') {
+        return new Response(null, {
+          status: 302,
+          headers: { location: `https://${internalHost}/robots.txt` },
+        });
+      }
+      return htmlResponse('<html>annonce</html>');
+    });
+    const resolveHost = async (hostname: string) =>
+      hostname === internalHost ? ['10.0.0.5'] : ['93.184.216.34'];
+
+    const result = await fetchListingPage(`${base}/annonces/1`, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      resolveHost,
+    });
+
+    // robots.txt retombe sur ALLOW_ALL, la page est récupérée normalement…
+    expect(result.ok).toBe(true);
+    // …mais la cible interne de la redirection n'a jamais été contactée.
+    expect(calledUrls.some((url) => url.includes(internalHost))).toBe(false);
+  });
+
   it('se présente sous une identité de robot nommée et contactable', async () => {
     let sent: Record<string, string> = {};
     const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
