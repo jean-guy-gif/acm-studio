@@ -10,6 +10,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve('src'),
+      // Server modules guard themselves with `server-only`, which throws outside
+      // a React Server context. Resolve it to the package's own empty stub so
+      // those modules can be unit-tested under Node (vitest).
+      'server-only': path.resolve('node_modules/server-only/empty.js'),
     },
   },
 });

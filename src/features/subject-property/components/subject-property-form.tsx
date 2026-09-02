@@ -17,9 +17,11 @@ import { PropertyEnergyFields } from '@/features/subject-property/components/pro
 import { PropertyFinancialFields } from '@/features/subject-property/components/property-financial-fields';
 import { PropertyListField } from '@/features/subject-property/components/property-list-field';
 import { PropertyLocationFields } from '@/features/subject-property/components/property-location-fields';
+import { PropertyPriceRangeStep } from '@/features/subject-property/components/property-price-range-step';
 import { NumberField, TextField } from '@/features/subject-property/components/property-inputs';
 import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
 import type { SubjectProperty } from '@/features/subject-property/types';
+import type { SubjectPropertyImportPrefill } from '@/features/subject-property-import/types';
 import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
 import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
@@ -54,32 +56,54 @@ type ScalarState = {
 const str = (value: string | number | null | undefined): string =>
   value == null ? '' : String(value);
 
-function initialScalars(property: SubjectProperty | null): ScalarState {
+// An imported value (when present) pre-fills the field; otherwise the saved
+// property value is kept. GUARDRAIL: the advisor range, the financials and the
+// property type are NEVER seeded from an import — the range is the advisor's
+// opinion, and a read price writes no field.
+function initialScalars(
+  property: SubjectProperty | null,
+  imported?: SubjectPropertyImportPrefill,
+): ScalarState {
+  const pick = (
+    importedValue: string | number | null | undefined,
+    propertyValue: string | number | null | undefined,
+  ): string => (imported && importedValue != null ? String(importedValue) : str(propertyValue));
+
   return {
     property_type: str(property?.property_type),
-    surface_area: str(property?.surface_area),
-    land_area: str(property?.land_area),
-    rooms_count: str(property?.rooms_count),
-    bedrooms_count: str(property?.bedrooms_count),
-    bathrooms_count: str(property?.bathrooms_count),
-    address: str(property?.address),
-    postal_code: str(property?.postal_code),
-    city: str(property?.city),
-    description: str(property?.description),
-    district: str(property?.district),
+    surface_area: pick(imported?.surface_area, property?.surface_area),
+    land_area: pick(imported?.land_area, property?.land_area),
+    rooms_count: pick(imported?.rooms_count, property?.rooms_count),
+    bedrooms_count: pick(imported?.bedrooms_count, property?.bedrooms_count),
+    bathrooms_count: pick(imported?.bathrooms_count, property?.bathrooms_count),
+    address: pick(imported?.address, property?.address),
+    postal_code: pick(imported?.postal_code, property?.postal_code),
+    city: pick(imported?.city, property?.city),
+    description: pick(imported?.description, property?.description),
+    district: pick(imported?.district, property?.district),
     floor: str(property?.floor),
     building_floors: str(property?.building_floors),
-    energy_rating: str(property?.energy_rating),
-    ges_rating: str(property?.ges_rating),
-    heating_type: str(property?.heating_type),
-    exposure: str(property?.exposure),
-    construction_year: str(property?.construction_year),
-    general_condition: str(property?.general_condition),
+    energy_rating: pick(imported?.energy_rating, property?.energy_rating),
+    ges_rating: pick(imported?.ges_rating, property?.ges_rating),
+    heating_type: pick(imported?.heating_type, property?.heating_type),
+    exposure: pick(imported?.exposure, property?.exposure),
+    construction_year: pick(imported?.construction_year, property?.construction_year),
+    general_condition: pick(imported?.general_condition, property?.general_condition),
     monthly_charges: str(property?.monthly_charges),
     advisor_price_min: str(property?.advisor_price_min),
     advisor_price_max: str(property?.advisor_price_max),
     property_tax: str(property?.property_tax),
   };
+}
+
+function initialArray(
+  importedValue: string[] | undefined,
+  propertyValue: string[] | null | undefined,
+): string[] {
+  if (importedValue && importedValue.length > 0) {
+    return importedValue;
+  }
+  return propertyValue ?? [];
 }
 
 export function SubjectPropertyForm({
@@ -88,17 +112,27 @@ export function SubjectPropertyForm({
   photos,
   uploadPhotosAction,
   updatePhotosAction,
+  imported,
+  findHref,
 }: {
   property: SubjectProperty | null;
   saveAction: (formData: FormData) => Promise<SaveSubjectPropertyResult>;
   photos: SignedPhoto[];
   uploadPhotosAction: (formData: FormData) => Promise<UploadPropertyPhotosResult>;
   updatePhotosAction: (desiredPaths: string[]) => Promise<UpdatePropertyPhotosResult>;
+  // Pre-fill coming from an online-listing import (Mission 38). Optional: absent
+  // for a purely manual sheet and for the design preview.
+  imported?: SubjectPropertyImportPrefill;
+  findHref?: string;
 }) {
   const router = useRouter();
-  const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property));
-  const [outdoorSpaces, setOutdoorSpaces] = useState<string[]>(property?.outdoor_spaces ?? []);
-  const [parkingTypes, setParkingTypes] = useState<string[]>(property?.parking_types ?? []);
+  const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
+  const [outdoorSpaces, setOutdoorSpaces] = useState<string[]>(() =>
+    initialArray(imported?.outdoor_spaces, property?.outdoor_spaces),
+  );
+  const [parkingTypes, setParkingTypes] = useState<string[]>(() =>
+    initialArray(imported?.parking_types, property?.parking_types),
+  );
   const [strengths, setStrengths] = useState<string[]>(property?.strengths ?? []);
   const [watchPoints, setWatchPoints] = useState<string[]>(property?.watch_points ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -264,8 +298,6 @@ export function SubjectPropertyForm({
       <PropertyFinancialFields
         monthlyCharges={scalars.monthly_charges}
         propertyTax={scalars.property_tax}
-        advisorPriceMin={scalars.advisor_price_min}
-        advisorPriceMax={scalars.advisor_price_max}
         onField={setField}
         errors={errors}
       />
@@ -285,6 +317,14 @@ export function SubjectPropertyForm({
           error={errors.watch_points}
         />
       </section>
+
+      <PropertyPriceRangeStep
+        advisorPriceMin={scalars.advisor_price_min}
+        advisorPriceMax={scalars.advisor_price_max}
+        onField={setField}
+        errors={errors}
+        findHref={findHref}
+      />
 
       <button
         type="button"

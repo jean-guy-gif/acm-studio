@@ -9,9 +9,12 @@ import { getSubjectPropertyCondominium } from '@/features/subject-property-condo
 import { saveSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
 import { DiagnosticsForm } from '@/features/subject-property-diagnostics/components/diagnostics-form';
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
+import { importComparableHtml } from '@/features/comparable-import/actions/import-comparable-html';
+import { importComparableUrl } from '@/features/comparable-import/actions/import-comparable-url';
 import { saveSubjectProperty } from '@/features/subject-property/actions/save-subject-property';
-import { SubjectPropertyForm } from '@/features/subject-property/components/subject-property-form';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import { recoverPropertyPhoto } from '@/features/subject-property-import/actions/recover-property-photos';
+import { SubjectPropertyImportForm } from '@/features/subject-property-import/components/subject-property-import-form';
 import { updatePropertyPhotos } from '@/features/subject-property-photos/actions/update-property-photos';
 import { uploadPropertyPhotos } from '@/features/subject-property-photos/actions/upload-property-photos';
 import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
@@ -39,6 +42,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const saveCondominium = saveSubjectPropertyCondominium.bind(null, projectId);
   const uploadPhotos = uploadPropertyPhotos.bind(null, projectId);
   const updatePhotos = updatePropertyPhotos.bind(null, projectId);
+  const importFromUrl = importComparableUrl.bind(null, projectId);
+  const importFromHtml = importComparableHtml.bind(null, projectId);
+  const recoverPhoto = recoverPropertyPhoto.bind(null, projectId);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -50,12 +56,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <h1 className={pageTitle}>Bien vendeur</h1>
       </div>
 
-      <SubjectPropertyForm
+      <SubjectPropertyImportForm
         property={property}
         saveAction={save}
         photos={photos}
         uploadPhotosAction={uploadPhotos}
         updatePhotosAction={updatePhotos}
+        importAction={importFromUrl}
+        importHtmlAction={importFromHtml}
+        recoverAction={recoverPhoto}
+        findHref={`/builder/${projectId}/comparables/find`}
       />
 
       {property ? (
