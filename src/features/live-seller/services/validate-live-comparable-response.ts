@@ -3,8 +3,10 @@ import {
   MAX_ESTIMATED_DAYS_ON_MARKET,
   MAX_LIVE_COMMENT_LENGTH,
   MAX_LIVE_PRICE,
+  PRICE_COHERENCE_VALUES,
   SERIOUS_COMPETITOR_VALUES,
   type MarketDurationReason,
+  type PriceCoherence,
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { LiveComparableResponsePatch } from '@/features/live-seller/types';
@@ -39,6 +41,20 @@ export function validateLiveComparableResponse(
     if (!Number.isFinite(price) || price < 0 || price > MAX_LIVE_PRICE) {
       errors.seller_estimated_listing_price = 'Le prix doit être un montant positif.';
     }
+  }
+
+  if (
+    input.seller_price_coherence != null &&
+    !PRICE_COHERENCE_VALUES.includes(input.seller_price_coherence as PriceCoherence)
+  ) {
+    errors.seller_price_coherence = 'Réponse invalide.';
+  }
+
+  if (
+    input.seller_price_coherence_comment != null &&
+    input.seller_price_coherence_comment.length > MAX_LIVE_COMMENT_LENGTH
+  ) {
+    errors.seller_price_coherence_comment = `Limité à ${MAX_LIVE_COMMENT_LENGTH} caractères.`;
   }
 
   if ('seller_estimated_days_on_market' in input && input.seller_estimated_days_on_market == null) {

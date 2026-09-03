@@ -167,6 +167,8 @@ function demoResponse(overrides: Partial<LiveComparableResponse>): LiveComparabl
     seller_serious_competitor: null,
     seller_serious_competitor_comment: null,
     seller_estimated_listing_price: null,
+    seller_price_coherence: null,
+    seller_price_coherence_comment: null,
     seller_estimated_days_on_market: null,
     seller_market_duration_reason: null,
     seller_market_duration_comment: null,

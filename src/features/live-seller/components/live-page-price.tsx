@@ -13,58 +13,21 @@ import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
   bigInput,
   bigInputUnit,
-  bigValue,
   ctaPrimary,
   errorText,
   okText,
   panel,
-  panelSoft,
   question,
   questionHint,
-  revealValue,
   statLabel,
-  statValue,
 } from '@/features/live-seller/components/live-stage';
 import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
-
-function PriceHistoryBlock({ entry }: { entry: LiveComparableEntry }) {
-  const history = entry.priceHistory;
-  if (!history.available) {
-    return (
-      <p className="text-sm text-zinc-400 stage:text-white/50">
-        Historique de prix non disponible.
-      </p>
-    );
-  }
-  return (
-    <div className={`${panelSoft} flex flex-wrap items-baseline gap-x-6 gap-y-2`}>
-      <div>
-        <div className={statLabel}>Prix initial</div>
-        <div className={statValue}>{euro(history.initialPrice)}</div>
-      </div>
-      <div>
-        <div className={statLabel}>Prix actuel</div>
-        <div className={statValue}>{euro(history.currentPrice)}</div>
-      </div>
-      <div>
-        <div className={statLabel}>Baisse</div>
-        <div className={statValue}>
-          {euro(history.totalDropAmount)}
-          {history.totalDropPercentage != null ? ` (${history.totalDropPercentage} %)` : ''}
-        </div>
-      </div>
-      {history.source ? (
-        <div className="text-xs text-zinc-400 stage:text-white/40">Source : {history.source}</div>
-      ) : null}
-    </div>
-  );
-}
-
-// Page 2 — "À quel prix est-il sur le marché ?" The seller must estimate a price
-// BEFORE the real one is revealed.
+// Screen 2 — "À quel prix ?" The seller commits a guess. The real price stays
+// MASKED here: it is revealed only on the next screen ("Ce prix vous paraît-il
+// cohérent ?"). Splitting the guess from the reveal (Mission 41) preserves the
+// beat between the two — the moment the seller corrects himself. The reveal lock
+// lives in navigation (canAdvanceLivePage gates this screen on the saved guess).
 export function LivePagePrice({
   entry,
   saveAction,
@@ -76,8 +39,8 @@ export function LivePagePrice({
   const [state, formAction] = useActionState(saveAction, initialLiveActionState);
   const response = entry.response;
 
-  // Refresh server data once after a save so the reveal reflects the persisted
-  // estimate (and recomputed gap / position).
+  // Refresh server data once after a save so the persisted estimate unlocks
+  // navigation to the reveal screen (and the recomputed gap it will show).
   useEffect(() => {
     if (state.ok) {
       router.refresh();
@@ -85,18 +48,15 @@ export function LivePagePrice({
   }, [state.ok, router]);
 
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
-  const revealed = savedEstimate != null;
-  const reveal = entry.priceReveal;
+  const saved = savedEstimate != null;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>À quel prix pensez-vous que ce bien est proposé ?</h2>
-        {!revealed ? (
-          <p className={questionHint}>
-            Donnez votre estimation : le prix réel s’affichera ensuite.
-          </p>
-        ) : null}
+        <p className={questionHint}>
+          Donnez votre estimation : le prix réel s’affichera à l’écran suivant.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
@@ -134,55 +94,12 @@ export function LivePagePrice({
             ) : null}
             {state.ok ? <p className={okText}>Estimation enregistrée.</p> : null}
             <SubmitButton pendingLabel="Validation…" className={ctaPrimary}>
-              {revealed ? 'Mettre à jour l’estimation' : 'Valider et révéler le prix'}
+              {saved ? 'Mettre à jour l’estimation' : 'Valider mon estimation'}
             </SubmitButton>
+            <p className="text-sm text-zinc-400 stage:text-white/50">
+              Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.
+            </p>
           </form>
-
-          {revealed ? (
-            <div className={`${panel} live-reveal-pop flex flex-col gap-5`}>
-              <div>
-                <div className={statLabel}>Prix affiché sur le marché</div>
-                <div className={revealValue}>{euro(reveal.currentPrice)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className={statLabel}>Prix imaginé</div>
-                  <div className={bigValue}>{euro(savedEstimate)}</div>
-                </div>
-                <div>
-                  <div className={statLabel}>Écart</div>
-                  <div className={bigValue}>
-                    {reveal.gapAmount != null
-                      ? `${reveal.gapAmount >= 0 ? '+' : ''}${reveal.gapAmount.toLocaleString('fr-FR')}\u00A0€`
-                      : '—'}
-                  </div>
-                  {reveal.gapPercentage != null ? (
-                    <div className="text-sm text-zinc-500 stage:text-white/60">
-                      {reveal.gapPercentage >= 0 ? '+' : ''}
-                      {reveal.gapPercentage} %
-                    </div>
-                  ) : null}
-                </div>
-                <div>
-                  <div className={statLabel}>Prix au m²</div>
-                  <div className={statValue}>
-                    {reveal.pricePerSquareMeter != null
-                      ? `${reveal.pricePerSquareMeter.toLocaleString('fr-FR')}\u00A0€/m²`
-                      : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className={statLabel}>Position (prix/m²)</div>
-                  <div className={statValue}>
-                    {reveal.relativePosition
-                      ? `${reveal.relativePosition.rank} / ${reveal.relativePosition.total}`
-                      : '—'}
-                  </div>
-                </div>
-              </div>
-              <PriceHistoryBlock entry={entry} />
-            </div>
-          ) : null}
         </div>
       </div>
     </div>

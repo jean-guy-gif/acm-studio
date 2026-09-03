@@ -380,6 +380,8 @@ export type Database = {
           seller_estimated_listing_price: number | null
           seller_market_duration_comment: string | null
           seller_market_duration_reason: string | null
+          seller_price_coherence: string | null
+          seller_price_coherence_comment: string | null
           seller_serious_competitor: string | null
           seller_serious_competitor_comment: string | null
           updated_at: string
@@ -394,6 +396,8 @@ export type Database = {
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
           seller_market_duration_reason?: string | null
+          seller_price_coherence?: string | null
+          seller_price_coherence_comment?: string | null
           seller_serious_competitor?: string | null
           seller_serious_competitor_comment?: string | null
           updated_at?: string
@@ -408,6 +412,8 @@ export type Database = {
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
           seller_market_duration_reason?: string | null
+          seller_price_coherence?: string | null
+          seller_price_coherence_comment?: string | null
           seller_serious_competitor?: string | null
           seller_serious_competitor_comment?: string | null
           updated_at?: string

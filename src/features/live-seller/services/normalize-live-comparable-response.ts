@@ -9,6 +9,8 @@ export type RawLiveComparableResponse = {
   seller_serious_competitor?: string | null;
   seller_serious_competitor_comment?: string | null;
   seller_estimated_listing_price?: number | null;
+  seller_price_coherence?: string | null;
+  seller_price_coherence_comment?: string | null;
   seller_estimated_days_on_market?: number | null;
   seller_market_duration_reason?: string | null;
   seller_market_duration_comment?: string | null;
@@ -44,6 +46,14 @@ export function normalizeLiveComparableResponse(
   }
   if ('seller_estimated_listing_price' in raw) {
     result.seller_estimated_listing_price = finiteOrNull(raw.seller_estimated_listing_price);
+  }
+  if ('seller_price_coherence' in raw) {
+    result.seller_price_coherence = enumValue(
+      raw.seller_price_coherence ?? null,
+    ) as LiveComparableResponseInput['seller_price_coherence'];
+  }
+  if ('seller_price_coherence_comment' in raw) {
+    result.seller_price_coherence_comment = trimToNull(raw.seller_price_coherence_comment ?? null);
   }
   if ('seller_estimated_days_on_market' in raw) {
     result.seller_estimated_days_on_market = finiteOrNull(raw.seller_estimated_days_on_market);

@@ -15,9 +15,16 @@ export function canAdvanceLivePage(
   if (pageType === 'comparable_competition') {
     return entry?.response?.seller_serious_competitor != null;
   }
+  // THE REVEAL LOCK (Mission 41). "À quel prix ?" is the guess screen; the price
+  // is revealed only on the NEXT screen ("comparable_price_reveal"). Gating the
+  // guess screen on the persisted estimate is what keeps the reveal unreachable
+  // until the seller has committed a guess — the core ACM invariant. Do not relax.
   if (pageType === 'comparable_price') {
     return entry?.response?.seller_estimated_listing_price != null;
   }
+  // The reveal screen itself carries no mandatory pre-reveal input (the seller's
+  // reaction/coherence is captured but optional, like the duration reason), so it
+  // is not re-gated here — reaching it already required the guess above.
   if (pageType === 'comparable_duration') {
     return entry?.response?.seller_estimated_days_on_market != null;
   }

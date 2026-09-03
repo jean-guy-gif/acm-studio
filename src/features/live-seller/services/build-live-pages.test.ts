@@ -21,18 +21,19 @@ function live(comparableCount: number): LiveComparativeData {
 }
 
 describe('buildLivePages', () => {
-  it('produces exactly 3 pages per comparable, in the competition→price→duration order', () => {
+  it('produces exactly 4 pages per retained comparable, competition→price→reveal→duration', () => {
     const pages = buildLivePages(live(2), false);
     const perComparable = pages.filter((p) => p.comparableId === 'c0');
     expect(perComparable.map((p) => p.type)).toEqual([
       'comparable_competition',
       'comparable_price',
+      'comparable_price_reveal',
       'comparable_duration',
     ]);
-    expect(perComparable.map((p) => p.step)).toEqual([1, 2, 3]);
+    expect(perComparable.map((p) => p.step)).toEqual([1, 2, 3, 4]);
   });
 
-  it('skips price and duration when the seller rejects a comparable', () => {
+  it('reduces a rejected comparable to a single page (competition only)', () => {
     const scenario = live(2);
     scenario.comparables[0].response = {
       seller_serious_competitor: 'no',
@@ -41,6 +42,7 @@ describe('buildLivePages', () => {
     const pages = buildLivePages(scenario, false);
     const rejectedPages = pages.filter((page) => page.comparableId === scenario.comparables[0].id);
 
+    // The seller's "not a competitor" skips the guess, the reveal AND the duration.
     expect(rejectedPages.map((page) => page.type)).toEqual(['comparable_competition']);
   });
 
@@ -53,8 +55,8 @@ describe('buildLivePages', () => {
       'price_analysis',
       'conclusion',
     ]);
-    // intro + 2*3 + 4 tail
-    expect(pages).toHaveLength(1 + 6 + 4);
+    // intro + 2*4 + 4 tail
+    expect(pages).toHaveLength(1 + 8 + 4);
   });
 
   it('skips the per-comparable loop and the dangerous page when there are none', () => {
@@ -77,8 +79,8 @@ describe('buildLivePages', () => {
     expect(pages[0].type).toBe('intro');
     expect(pages[1].type).toBe('subject_property');
     expect(pages[1].title).toBe('Votre bien');
-    // intro + subject_property + 2*3 + 4 tail
-    expect(pages).toHaveLength(1 + 1 + 6 + 4);
+    // intro + subject_property + 2*4 + 4 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 4);
   });
 
   it('omits the "Votre bien" slide when the dossier has no subject property', () => {

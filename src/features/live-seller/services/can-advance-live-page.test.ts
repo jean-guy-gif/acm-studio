@@ -35,6 +35,39 @@ describe('canAdvanceLivePage', () => {
     ).toBe(true);
   });
 
+  // Mission 41 — REVEAL-LOCK NON-REGRESSION. The single price screen is split in
+  // two: "À quel prix ?" (guess, price masked) then "Ce prix vous paraît-il
+  // cohérent ?" (reveal). The protocol's core rule — never reveal a price before
+  // the seller has guessed it — becomes: the reveal screen is a SEPARATE page,
+  // reachable only by advancing past the guess, and that advance stays gated on
+  // the persisted estimate. Removing this gate would silently break the method.
+  it('keeps the price reveal locked behind the persisted guess (4-screen split)', () => {
+    // Screen 2 "À quel prix ?" : no persisted guess → navigation cannot reach the
+    // reveal screen that follows.
+    expect(canAdvanceLivePage('comparable_price', entry({}), null)).toBe(false);
+    expect(
+      canAdvanceLivePage('comparable_price', entry({ seller_estimated_listing_price: null }), null),
+    ).toBe(false);
+    // Guess persisted → the reveal screen becomes reachable.
+    expect(
+      canAdvanceLivePage(
+        'comparable_price',
+        entry({ seller_estimated_listing_price: 500000 }),
+        null,
+      ),
+    ).toBe(true);
+    // The reveal screen itself is not re-gated on the coherence reaction (optional,
+    // like the duration reason): reaching it already required the guess.
+    expect(canAdvanceLivePage('comparable_price_reveal', entry({}), null)).toBe(true);
+    expect(
+      canAdvanceLivePage(
+        'comparable_price_reveal',
+        entry({ seller_price_coherence: 'too_high' }),
+        null,
+      ),
+    ).toBe(true);
+  });
+
   it('requires persisted estimated days before leaving duration', () => {
     expect(canAdvanceLivePage('comparable_duration', entry({}), null)).toBe(false);
     expect(

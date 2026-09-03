@@ -28,6 +28,15 @@ describe('normalizeLiveComparableResponse', () => {
     expect(result.seller_market_duration_reason).toBe('price_too_high');
   });
 
+  it('lower-cases and trims the price-coherence reaction and its comment', () => {
+    const result = normalizeLiveComparableResponse({
+      seller_price_coherence: '  TOO_HIGH ',
+      seller_price_coherence_comment: '   trop cher   ',
+    });
+    expect(result.seller_price_coherence).toBe('too_high');
+    expect(result.seller_price_coherence_comment).toBe('trop cher');
+  });
+
   it('nulls a non-finite price', () => {
     expect(
       normalizeLiveComparableResponse({ ...EMPTY, seller_estimated_listing_price: Number.NaN })
@@ -75,6 +84,21 @@ describe('validateLiveComparableResponse', () => {
     const result = validate({ ...EMPTY, seller_estimated_listing_price: -1 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_estimated_listing_price');
+  });
+
+  it('accepts every price-coherence reaction and rejects an out-of-domain one', () => {
+    for (const value of ['coherent', 'too_high', 'too_low', 'unsure']) {
+      expect(validate({ ...EMPTY, seller_price_coherence: value }).ok).toBe(true);
+    }
+    const result = validate({ ...EMPTY, seller_price_coherence: 'maybe' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_price_coherence');
+  });
+
+  it('rejects an over-long price-coherence comment', () => {
+    const result = validate({ ...EMPTY, seller_price_coherence_comment: 'x'.repeat(2001) });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_price_coherence_comment');
   });
 
   it('rejects an invalid duration reason', () => {

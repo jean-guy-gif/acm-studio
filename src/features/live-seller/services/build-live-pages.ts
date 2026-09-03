@@ -1,13 +1,17 @@
 import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
-// intro → [Votre bien] → [competition, price, duration] per comparable →
-// dangerous competitor → seller perceived price → price analysis → conclusion.
+// intro → [Votre bien] → [competition, price, price reveal, duration] per
+// comparable → dangerous competitor → seller perceived price → price analysis →
+// conclusion. Mission 41 aligns the per-comparable loop on the Storyboard's four
+// screens (A/B/C/D): the guess and the reveal are two distinct screens so the
+// seller's reaction to the revealed price has room to happen.
 export type LivePageType =
   | 'intro'
   | 'subject_property'
   | 'comparable_competition'
   | 'comparable_price'
+  | 'comparable_price_reveal'
   | 'comparable_duration'
   | 'dangerous_competitor'
   | 'seller_perceived_price'
@@ -21,13 +25,14 @@ export type LivePage = {
   // Per-comparable pages only:
   comparableId: string | null;
   comparableIndex: number | null; // 1-based position among retained
-  step: 1 | 2 | 3 | null; // step within the 3-step loop
+  step: 1 | 2 | 3 | 4 | null; // step within the 4-step loop
 };
 
-const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3; title: string }[] = [
+const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3 | 4; title: string }[] = [
   { type: 'comparable_competition', step: 1, title: 'Un sérieux concurrent ?' },
   { type: 'comparable_price', step: 2, title: 'À quel prix ?' },
-  { type: 'comparable_duration', step: 3, title: 'Pourquoi toujours en vente ?' },
+  { type: 'comparable_price_reveal', step: 3, title: 'Ce prix vous paraît-il cohérent ?' },
+  { type: 'comparable_duration', step: 4, title: 'Pourquoi toujours en vente ?' },
 ];
 
 // `hasSubjectProperty` decides whether the "Votre bien" recognition slide (Act 1)

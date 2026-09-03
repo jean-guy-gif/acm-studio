@@ -71,6 +71,12 @@ export async function saveLiveComparableResponse(
     ...(formData.has('seller_estimated_listing_price') && {
       seller_estimated_listing_price: numberOrNull(formData.get('seller_estimated_listing_price')),
     }),
+    ...(formData.has('seller_price_coherence') && {
+      seller_price_coherence: textOrNull(formData.get('seller_price_coherence')),
+    }),
+    ...(formData.has('seller_price_coherence_comment') && {
+      seller_price_coherence_comment: textOrNull(formData.get('seller_price_coherence_comment')),
+    }),
     ...(formData.has('seller_estimated_days_on_market') && {
       seller_estimated_days_on_market: numberOrNull(
         formData.get('seller_estimated_days_on_market'),

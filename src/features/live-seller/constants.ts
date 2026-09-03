@@ -23,6 +23,18 @@ export const PROPERTY_CONFIRMED_LABELS: Record<PropertyConfirmed, string> = {
   no: 'Non, il y a des choses à corriger',
 };
 
+// Mission 41 — screen 3 "Ce prix vous paraît-il cohérent ?": the seller reacts to
+// the revealed price (never the seller's own property price — only the competitor's).
+export const PRICE_COHERENCE_VALUES = ['coherent', 'too_high', 'too_low', 'unsure'] as const;
+export type PriceCoherence = (typeof PRICE_COHERENCE_VALUES)[number];
+
+export const PRICE_COHERENCE_LABELS: Record<PriceCoherence, string> = {
+  coherent: 'Oui, ce prix paraît cohérent',
+  too_high: 'Non, il est trop élevé',
+  too_low: 'Non, il est trop bas',
+  unsure: 'Difficile à dire',
+};
+
 export const MARKET_DURATION_REASONS = [
   'price_too_high',
   'condition',

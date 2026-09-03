@@ -3,6 +3,7 @@ import type {
   ComparisonStatus,
   DangerousReason,
   MarketDurationReason,
+  PriceCoherence,
   PropertyConfirmed,
   SeriousCompetitor,
 } from '@/features/live-seller/constants';
@@ -99,6 +100,8 @@ export type LiveComparableResponseInput = {
   seller_serious_competitor: SeriousCompetitor | null;
   seller_serious_competitor_comment: string | null;
   seller_estimated_listing_price: number | null;
+  seller_price_coherence: PriceCoherence | null;
+  seller_price_coherence_comment: string | null;
   seller_estimated_days_on_market: number | null;
   seller_market_duration_reason: MarketDurationReason | null;
   seller_market_duration_comment: string | null;

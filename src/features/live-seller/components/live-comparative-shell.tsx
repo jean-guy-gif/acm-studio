@@ -15,6 +15,7 @@ import { LivePageIntro } from '@/features/live-seller/components/live-page-intro
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
+import { LivePagePriceReveal } from '@/features/live-seller/components/live-page-price-reveal';
 import {
   chromeBtn,
   ctaPrimary,
@@ -144,7 +145,7 @@ export function LiveComparativeShell({
   const isIntro = page.type === 'intro';
   const stepLabel =
     page.comparableIndex != null && live
-      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur 3`
+      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur 4`
       : page.title;
 
   return (
@@ -223,6 +224,8 @@ export function LiveComparativeShell({
           <LivePageCompetition entry={entry} saveAction={saveResponse} />
         ) : page.type === 'comparable_price' && entry && saveResponse ? (
           <LivePagePrice entry={entry} saveAction={saveResponse} />
+        ) : page.type === 'comparable_price_reveal' && entry && saveResponse ? (
+          <LivePagePriceReveal entry={entry} saveAction={saveResponse} />
         ) : page.type === 'comparable_duration' && entry && saveResponse ? (
           <LivePageDuration entry={entry} saveAction={saveResponse} />
         ) : page.type === 'dangerous_competitor' && live ? (
