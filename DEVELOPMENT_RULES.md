@@ -198,6 +198,8 @@ Chaque table possède :
 
 Aucune table sans politique RLS.
 
+`src/lib/supabase/database.types.ts` est généré par `npm run gen:types` et ne se modifie jamais à la main.
+
 ---
 
 # Règle 9 — Sécurité
