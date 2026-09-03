@@ -11,6 +11,7 @@ import {
   formSectionTitle,
 } from '@/components/ui/styles';
 import type { SaveCondominiumResult } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
+import type { BrochureCondominiumPrefill } from '@/features/subject-property-import/types';
 import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
 import {
   DateField,
@@ -33,16 +34,25 @@ const boolStr = (value: boolean | null | undefined): string =>
 export function CondominiumForm({
   condominium,
   saveAction,
+  imported,
 }: {
   condominium: SubjectPropertyCondominium | null;
   saveAction: (formData: FormData) => Promise<SaveCondominiumResult>;
+  imported?: BrochureCondominiumPrefill;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({
-    is_condominium: boolStr(condominium?.is_condominium ?? false),
-    total_lots: str(condominium?.total_lots),
+    is_condominium:
+      imported?.is_condominium != null
+        ? boolStr(imported.is_condominium)
+        : boolStr(condominium?.is_condominium ?? false),
+    total_lots:
+      imported?.total_lots != null ? String(imported.total_lots) : str(condominium?.total_lots),
     residential_lots: str(condominium?.residential_lots),
-    annual_charges: str(condominium?.annual_charges),
+    annual_charges:
+      imported?.annual_charges != null
+        ? String(imported.annual_charges)
+        : str(condominium?.annual_charges),
     works_fund: str(condominium?.works_fund),
     syndic_name: str(condominium?.syndic_name),
     ongoing_procedures: boolStr(condominium?.ongoing_procedures),

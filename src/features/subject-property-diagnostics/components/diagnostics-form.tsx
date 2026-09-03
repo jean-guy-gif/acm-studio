@@ -11,6 +11,7 @@ import {
   formSectionTitle,
 } from '@/components/ui/styles';
 import type { SaveDiagnosticsResult } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
+import type { BrochureDiagnosticsPrefill } from '@/features/subject-property-import/types';
 import {
   DIAGNOSTIC_STATUS_LABELS,
   DIAGNOSTIC_STATUSES,
@@ -31,18 +32,27 @@ const STATUS_OPTIONS = DIAGNOSTIC_STATUSES.map((value) => ({
 const str = (value: string | number | null | undefined): string =>
   value == null ? '' : String(value);
 
+// An imported value (from a brochure) pre-fills the field; otherwise the saved
+// value is used. Same guardrail-friendly pattern as the property form (Mission 38).
+const pick = (
+  importedValue: number | null | undefined,
+  savedValue: string | number | null | undefined,
+): string => (importedValue != null ? String(importedValue) : str(savedValue));
+
 export function DiagnosticsForm({
   diagnostics,
   saveAction,
+  imported,
 }: {
   diagnostics: SubjectPropertyDiagnostics | null;
   saveAction: (formData: FormData) => Promise<SaveDiagnosticsResult>;
+  imported?: BrochureDiagnosticsPrefill;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({
     dpe_date: str(diagnostics?.dpe_date),
-    energy_consumption: str(diagnostics?.energy_consumption),
-    ges_emissions: str(diagnostics?.ges_emissions),
+    energy_consumption: pick(imported?.energy_consumption, diagnostics?.energy_consumption),
+    ges_emissions: pick(imported?.ges_emissions, diagnostics?.ges_emissions),
     asbestos_status: str(diagnostics?.asbestos_status),
     lead_status: str(diagnostics?.lead_status),
     electricity_status: str(diagnostics?.electricity_status),

@@ -45,3 +45,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Mission 42 — raw agency brochures (real seller documents, ~10 MB). The committed
+# fixtures live under src/features/subject-property-import/services/__fixtures__.
+/Brochure/
