@@ -79,11 +79,13 @@ export const chromeBtn =
 export const errorText = 'text-sm font-medium text-red-600 stage:text-red-300';
 export const okText = 'text-sm font-medium text-emerald-600 stage:text-emerald-300';
 
-// Convention de comparaison (toujours le concurrent vs le bien vendeur) :
-// équivalent = noir gras (blanc gras en scène), avantage = vert, faiblesse =
-// orange, inconnu = gris. Jamais remplacés par le bleu de marque.
+// Convention de comparaison (toujours le concurrent vs le bien vendeur), alignée
+// sur la formation de Laurent : avantage = vert, équivalent = GRIS neutre,
+// faiblesse = orange. Jamais remplacés par le bleu de marque. Le gris
+// « équivalent » reste lisible en scène sombre (blanc à 80 %), à ne pas
+// confondre avec le gris très effacé de `unknown` (que l'écran masque désormais).
 export const comparisonValueClass: Record<string, string> = {
-  same: 'font-bold text-zinc-900 stage:text-white',
+  same: 'font-semibold text-zinc-600 stage:text-white/80',
   competitor_advantage: 'font-semibold text-emerald-600 stage:text-emerald-300',
   competitor_weakness: 'font-semibold text-amber-600 stage:text-amber-300',
   unknown: 'text-zinc-400 stage:text-white/40',

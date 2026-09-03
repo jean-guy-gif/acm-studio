@@ -6,11 +6,13 @@ import {
 import type { ComparisonStatus } from '@/features/live-seller/constants';
 import type { FeatureComparison } from '@/features/live-seller/types';
 
-// Colour convention (always the COMPETITOR relative to the seller's property):
-//   same                 -> black / bold (white on stage)  (équivalent)
-//   competitor_advantage -> green                          (avantage du concurrent)
-//   competitor_weakness  -> orange                         (faiblesse du concurrent)
-//   unknown              -> neutral grey                   (donnée absente)
+// Colour convention (always the COMPETITOR relative to the seller's property),
+// matching Laurent's training — vert = mieux, gris = pareil, orange = moins bien:
+//   competitor_advantage -> green         (avantage du concurrent)
+//   same                 -> neutral grey  (équivalent)
+//   competitor_weakness  -> orange        (faiblesse du concurrent)
+//   unknown              -> NOT SHOWN     (filtered out below; the engine still
+//                                          produces it for the advisor report)
 const STATUS_HINT: Record<ComparisonStatus, string> = {
   same: 'Équivalent',
   competitor_advantage: 'Avantage concurrent',
@@ -19,6 +21,22 @@ const STATUS_HINT: Record<ComparisonStatus, string> = {
 };
 
 export function LiveFeatureComparison({ items }: { items: FeatureComparison[] }) {
+  // Product decision (Laurent) : the seller must not see the holes in our data.
+  // `unknown` criteria are hidden here — the engine keeps producing them so a
+  // later advisor report can say "surface non comparable" without recomputing.
+  const visibleItems = items.filter((item) => item.comparisonStatus !== 'unknown');
+
+  if (visibleItems.length === 0) {
+    return (
+      <div className="flex flex-col gap-3">
+        <span className={statLabel}>Face à votre bien, critère par critère</span>
+        <p className="text-sm text-zinc-500 stage:text-white/60">
+          Les critères comparables ne sont pas disponibles pour ce concurrent.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -26,12 +44,13 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
         <span className="text-xs text-zinc-400 stage:text-white/40">
           <span className="font-semibold text-emerald-600 stage:text-emerald-300">vert</span> =
           avantage du concurrent ·{' '}
-          <span className="font-semibold text-amber-600 stage:text-amber-300">orange</span> =
-          faiblesse · <span className="font-bold">gras</span> = équivalent
+          <span className="font-semibold text-zinc-500 stage:text-white/70">gris</span> = équivalent
+          · <span className="font-semibold text-amber-600 stage:text-amber-300">orange</span> =
+          faiblesse
         </span>
       </div>
       <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <div
             key={item.criterion}
             className={`flex flex-col gap-1 rounded-xl border px-3.5 py-2.5 ${comparisonBadgeClass[item.comparisonStatus]}`}
