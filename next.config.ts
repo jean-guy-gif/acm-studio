@@ -11,13 +11,18 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '8mb',
     },
   },
-  // pdfjs charge ses polices de base et ses cmaps depuis des fichiers du paquet.
-  // Ils ne sont pas embarqués dans la fonction serverless à moins d'être tracés
-  // explicitement : sans cela l'import PDF (action serveur de la fiche vendeur)
-  // échoue en production alors qu'il passe en local. On les trace pour la route
-  // du bien vendeur, la seule qui lit un PDF (mission 42).
+  // pdfjs doit rester un vrai module Node chargé depuis node_modules à l'exécution.
+  // Empaqueté dans le chunk serveur, require.resolve renvoie un identifiant de
+  // module (un nombre) au lieu d'un chemin de fichier, et la résolution des données
+  // (standard_fonts, cmaps) échoue en production (« path must be a string »).
+  serverExternalPackages: ['pdfjs-dist'],
+  // Externe ne suffit pas : les fichiers de données de pdfjs ne sont embarqués dans
+  // la fonction serverless que s'ils sont tracés explicitement. On les trace pour la
+  // route du bien vendeur, la seule qui lit un PDF (mission 42).
+  // The key is a GLOB matched against page routes: "[projectId]" would be read as a
+  // character class, so the dynamic segment is written as "*" to match it literally.
   outputFileTracingIncludes: {
-    '/builder/[projectId]/property': [
+    '/builder/*/property': [
       './node_modules/pdfjs-dist/standard_fonts/**',
       './node_modules/pdfjs-dist/cmaps/**',
     ],

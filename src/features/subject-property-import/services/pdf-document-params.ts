@@ -14,7 +14,17 @@ let cached: { standardFontDataUrl: string; cMapUrl: string } | null = null;
 function pdfDataPaths(): { standardFontDataUrl: string; cMapUrl: string } {
   if (!cached) {
     const require = createRequire(import.meta.url);
-    const packageRoot = dirname(require.resolve('pdfjs-dist/package.json'));
+    const resolved = require.resolve('pdfjs-dist/package.json');
+    // If pdfjs was bundled into the server chunk, require.resolve returns a webpack
+    // MODULE ID (a number), not a file path — and dirname() would throw an opaque
+    // "path must be a string" deep in the stack. Fail loudly with the real cause:
+    // pdfjs-dist must be in serverExternalPackages (next.config.ts).
+    if (typeof resolved !== 'string') {
+      throw new Error(
+        `pdfjs-dist a été empaqueté dans le bundle serveur (require.resolve a renvoyé ${typeof resolved} « ${String(resolved)} »). Ajoutez 'pdfjs-dist' à serverExternalPackages dans next.config.ts pour qu'il reste un module Node externe.`,
+      );
+    }
+    const packageRoot = dirname(resolved);
     cached = {
       // pdfjs expects directory URLs ending with a trailing slash.
       standardFontDataUrl: join(packageRoot, 'standard_fonts/'),
