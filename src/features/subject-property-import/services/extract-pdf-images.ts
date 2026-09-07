@@ -12,6 +12,7 @@ import {
   encodeJpeg,
   type PixelKind,
 } from '@/features/subject-property-import/services/encode-jpeg';
+import { pdfDocumentParams } from '@/features/subject-property-import/services/pdf-document-params';
 
 // Extracts the embedded PHOTOS from a brochure PDF, in pure JavaScript (pdfjs).
 // Three filters, exactly as the brief asks:
@@ -52,12 +53,9 @@ export async function extractPdfImages(bytes: Uint8Array): Promise<BrochureImage
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   let doc;
   try {
-    doc = await pdfjs.getDocument({
-      data: bytes,
-      isEvalSupported: false,
-      useSystemFonts: false,
-    }).promise;
-  } catch {
+    doc = await pdfjs.getDocument(pdfDocumentParams(bytes)).promise;
+  } catch (error) {
+    console.error('[extractPdfImages] getDocument failed:', error);
     return { ok: false, error: 'Le PDF n’a pas pu être lu.' };
   }
   if (doc.numPages > MAX_BROCHURE_PAGES) {

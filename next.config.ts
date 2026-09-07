@@ -11,6 +11,17 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '8mb',
     },
   },
+  // pdfjs charge ses polices de base et ses cmaps depuis des fichiers du paquet.
+  // Ils ne sont pas embarqués dans la fonction serverless à moins d'être tracés
+  // explicitement : sans cela l'import PDF (action serveur de la fiche vendeur)
+  // échoue en production alors qu'il passe en local. On les trace pour la route
+  // du bien vendeur, la seule qui lit un PDF (mission 42).
+  outputFileTracingIncludes: {
+    '/builder/[projectId]/property': [
+      './node_modules/pdfjs-dist/standard_fonts/**',
+      './node_modules/pdfjs-dist/cmaps/**',
+    ],
+  },
 };
 
 export default nextConfig;

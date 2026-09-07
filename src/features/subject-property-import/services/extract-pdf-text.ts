@@ -5,6 +5,7 @@ import {
   MAX_BROCHURE_PAGES,
   PDF_MAGIC,
 } from '@/features/subject-property-import/constants';
+import { pdfDocumentParams } from '@/features/subject-property-import/services/pdf-document-params';
 
 // Reads the TEXT LAYER of a PDF, page by page, preserving reading order. Pure
 // JavaScript (pdfjs-dist): Vercel has no system binary, so pdftotext / mupdf are
@@ -86,17 +87,17 @@ export async function extractPdfText(bytes: Uint8Array): Promise<PdfTextResult> 
     return { ok: false, error: 'Ce fichier n’est pas un PDF.' };
   }
 
-  // Legacy build + no worker: runs inside a Node serverless function. eval and
-  // system fonts are disabled — we only need character codes, not rendering.
+  // Legacy build: runs inside a Node serverless function. Font/cmap data paths are
+  // resolved from the installed package (pdfDocumentParams); we read character
+  // codes only, so font rendering is disabled.
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   let doc;
   try {
-    doc = await pdfjs.getDocument({
-      data: bytes,
-      isEvalSupported: false,
-      useSystemFonts: false,
-    }).promise;
-  } catch {
+    doc = await pdfjs.getDocument(pdfDocumentParams(bytes)).promise;
+  } catch (error) {
+    // Surface the real cause in the server logs (Vercel) without leaking it to the
+    // advisor — the displayed message stays generic.
+    console.error('[extractPdfText] getDocument failed:', error);
     return { ok: false, error: 'Le PDF n’a pas pu être lu.' };
   }
 
@@ -128,7 +129,9 @@ export async function extractPdfText(bytes: Uint8Array): Promise<PdfTextResult> 
       page.cleanup();
     }
     return { ok: true, pages };
-  } catch {
+  } catch (error) {
+    // Same as above: log the real cause server-side, show a generic message.
+    console.error('[extractPdfText] text extraction failed:', error);
     return { ok: false, error: 'Le PDF n’a pas pu être lu.' };
   } finally {
     await doc.destroy();
