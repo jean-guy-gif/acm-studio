@@ -13,12 +13,8 @@ import {
   inputBase,
   link,
 } from '@/components/ui/styles';
-import {
-  fetchPageViaExtension,
-  fetchRobotsViaExtension,
-} from '@/features/browser-extension/client';
 import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
-import { decideRobotsAllowed } from '@/features/comparable-import/services/robots-decision';
+import { importListingFromUrl } from '@/features/comparable-import/services/import-listing-from-url';
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
@@ -132,46 +128,16 @@ export function SubjectPropertyImportPanel({
 
   function importFromUrl(targetUrl: string = url) {
     setError(null);
-    const formData = new FormData();
-    formData.set('url', targetUrl);
-    const parsed = (() => {
-      try {
-        return new URL(targetUrl);
-      } catch {
-        return null;
-      }
-    })();
     startTransition(async () => {
-      // With the extension, both the robots.txt AND the page are read in the
-      // ADVISOR'S browser — same address, so the robots check reflects what the
-      // portal really answers (§6), and the page is not blocked as it is from the
-      // server's data-center address. A forbidden — or unreadable — robots.txt is
-      // never treated as "allowed" (only a genuine 404 fail-opens).
-      if (extension.available && parsed) {
-        const robots = await fetchRobotsViaExtension(
-          new URL('/robots.txt', parsed.origin).toString(),
-        );
-        if (!decideRobotsAllowed(robots, parsed.pathname + parsed.search)) {
-          setError(
-            'Ce portail interdit l’analyse automatique de cette page. Utilisez le copier-coller ci-dessous.',
-          );
-          setShowPaste(true);
-          return;
-        }
-        const page = await fetchPageViaExtension(targetUrl);
-        if (page.ok) {
-          const htmlData = new FormData();
-          htmlData.set('url', page.finalUrl || targetUrl);
-          htmlData.set('html', page.html);
-          // The HTML is re-validated by the existing import parser (never trusted).
-          apply(await importHtmlAction(htmlData), () => setShowPaste(true));
-          return;
-        }
-        // The extension could not read the page: fall through to the server attempt,
-        // then the paste fallback — the tool stays whole either way.
-      }
-      const res = await importAction(formData);
-      // A refused / failed fetch is exactly what the paste fallback solves.
+      // Shared import path (Mission 46): extension → robots + page in the advisor's
+      // browser → HTML import; else server import. A refused / failed fetch opens the
+      // paste fallback. The HTML is re-validated by the existing parser (never trusted).
+      const res = await importListingFromUrl({
+        url: targetUrl,
+        extensionAvailable: extension.available === true,
+        importUrlAction: importAction,
+        importHtmlAction,
+      });
       apply(res, () => setShowPaste(true));
     });
   }

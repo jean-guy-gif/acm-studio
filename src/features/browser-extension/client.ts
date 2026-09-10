@@ -16,8 +16,12 @@ const FETCH_TIMEOUT_MS = 50_000;
 const ROBOTS_TIMEOUT_MS = 8_000;
 
 export type ExtensionPing = { available: boolean; version?: string };
+// The size + duration let the app say, when the parser finds nothing, whether it
+// received a full page (~286 000 chars for a complete Bien'ici fiche) or a shell
+// (< 50 000). The real cause is kept in the extension's service-worker log.
 export type ExtensionFetchResult =
-  { ok: true; html: string; finalUrl: string } | { ok: false; error: string };
+  | { ok: true; html: string; finalUrl: string; size: number; durationMs: number }
+  | { ok: false; error: string; size?: number; durationMs?: number };
 // A robots.txt read by the extension: the real HTTP status lets the app tell a
 // genuine 404 (allowed) from a refusal (not allowed). `{ ok: false }` = read failed.
 export type ExtensionRobotsResult = { ok: true; status: number; text: string } | { ok: false };

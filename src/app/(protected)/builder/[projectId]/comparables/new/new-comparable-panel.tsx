@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 
 import { SubmitButton } from '@/components/submit-button';
+import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
+import { importListingFromUrl } from '@/features/comparable-import/services/import-listing-from-url';
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import { takeTransfer } from '@/features/comparable-import/components/import-transfer';
@@ -116,6 +118,7 @@ export function NewComparablePanel({
   initialUrl,
   fromAssistant = false,
 }: Props) {
+  const extension = useBrowserExtension();
   const [url, setUrl] = useState(initialUrl ?? '');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -173,13 +176,17 @@ export function NewComparablePanel({
 
   function handleImport(targetUrl: string = url) {
     setError(null);
-    const formData = new FormData();
-    formData.set('url', targetUrl);
     const existingPhotos = readExistingPhotos();
     startTransition(async () => {
-      const res = await importAction(formData);
-      // A refused / failed fetch is exactly the case the paste fallback solves:
-      // open it so the advisor can copy the page from his own browser.
+      // Shared import path (Mission 46): a competitor never exists other than online,
+      // so this screen benefits most from the extension. Extension → robots + page in
+      // the advisor's browser → HTML import; else server import, then paste fallback.
+      const res = await importListingFromUrl({
+        url: targetUrl,
+        extensionAvailable: extension.available === true,
+        importUrlAction: importAction,
+        importHtmlAction,
+      });
       applyImportResult(res, existingPhotos, () => setShowPaste(true));
     });
   }
@@ -258,6 +265,12 @@ export function NewComparablePanel({
           Collez le lien SeLoger, Bien’ici, Figaro Immo, Green-Acres… — photos, texte et
           caractéristiques sont aspirés pour vous.
         </p>
+        {extension.available ? (
+          <p className="text-xs text-emerald-700 stage:text-emerald-300">
+            Extension détectée : les portails qui bloquent l’analyse à distance sont lus directement
+            depuis votre navigateur.
+          </p>
+        ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="url"
