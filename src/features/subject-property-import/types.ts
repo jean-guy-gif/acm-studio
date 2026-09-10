@@ -6,11 +6,13 @@
 // estimate, and the advisor's range is his professional opinion, never a value
 // read from a document.
 export type SubjectPropertyImportPrefill = {
+  property_type: string | null;
   surface_area: number | null;
   land_area: number | null;
   rooms_count: number | null;
   bedrooms_count: number | null;
   bathrooms_count: number | null;
+  floor: number | null;
   address: string | null;
   postal_code: string | null;
   city: string | null;
@@ -24,6 +26,11 @@ export type SubjectPropertyImportPrefill = {
   general_condition: string | null;
   outdoor_spaces: string[];
   parking_types: string[];
+  // Factual costs (Mission 44) — not the sale price, so they DO pre-fill their field.
+  monthly_charges: number | null;
+  property_tax: number | null;
+  // Advisor argument "Points forts" seeded from the fiche's amenities.
+  strengths: string[];
 };
 
 // What is shown to the advisor as INFORMATION only — it writes no field. The read

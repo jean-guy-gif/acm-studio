@@ -51,14 +51,16 @@ describe('mapListingToProperty', () => {
     expect(prefill.description).toBe('Bel appartement traversant.');
   });
 
-  it('GUARDRAIL: the prefill carries no price and no advisor range', () => {
+  it('GUARDRAIL: the prefill carries no sale price and no advisor range', () => {
     const { prefill } = mapListingToProperty(listing({ price: 430000 }));
     const keys = Object.keys(prefill);
     expect(keys).not.toContain('price');
     expect(keys).not.toContain('advisor_price_min');
     expect(keys).not.toContain('advisor_price_max');
-    expect(keys).not.toContain('monthly_charges');
-    // No key anywhere holds the read price value.
+    // The factual-cost fields exist (Mission 44) but a listing never fills them.
+    expect(prefill.monthly_charges).toBeNull();
+    expect(prefill.property_tax).toBeNull();
+    // No key anywhere holds the read sale-price value.
     expect(JSON.stringify(prefill)).not.toContain('430000');
   });
 
@@ -72,7 +74,7 @@ describe('mapListingToProperty', () => {
 
   it('does not map the listing title to a property type', () => {
     const { prefill } = mapListingToProperty(listing());
-    expect(prefill).not.toHaveProperty('property_type');
+    expect(prefill.property_type).toBeNull();
     expect(JSON.stringify(prefill)).not.toContain('Appartement T3 lumineux');
   });
 

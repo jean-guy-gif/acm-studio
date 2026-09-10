@@ -11,6 +11,11 @@
 // here is information only — it never becomes a field and never pre-fills a range
 // (CLAUDE.md; the temptation is highest here because it is the advisor's own price).
 
+import {
+  MAX_LIST_ITEMS,
+  MAX_LIST_ITEM_LENGTH,
+} from '@/features/subject-property/constants/property-options';
+
 // ---------------------------------------------------------------------------
 // 1. GENERIC READER — no domain knowledge
 // ---------------------------------------------------------------------------
@@ -81,17 +86,29 @@ export function sectionItems(layout: BrochureLayout, header: string): string[] {
 
 export type BrochureFields = {
   // Seller-property form
+  propertyType: string | null;
   surfaceArea: number | null;
+  roomsCount: number | null;
   bedroomsCount: number | null;
+  bathroomsCount: number | null;
+  floor: number | null;
   postalCode: string | null;
   city: string | null;
+  description: string | null;
   constructionYear: number | null;
   generalCondition: string | null;
   exposure: string | null;
+  heatingType: string | null;
   energyRating: string | null;
   gesRating: string | null;
   outdoorSpaces: string[];
   parkingTypes: string[];
+  // Factual financial amounts — NOT the sale price, so they DO write their field
+  // (Mission 44). Only the sale estimate is forbidden from writing a field.
+  propertyTax: number | null;
+  monthlyCharges: number | null;
+  // Amenities → advisor argument "Points forts" (order preserved, capped)
+  strengths: string[];
   // Diagnostics (Mission 22) — only these two are present on the sheet
   energyConsumption: number | null;
   gesEmissions: number | null;
@@ -102,8 +119,6 @@ export type BrochureFields = {
   // Information only (never written to a field)
   readPrice: number | null;
   agencyReference: string | null;
-  taxeFonciere: number | null;
-  monthlyCharges: number | null;
   // The footer's annual quote-part equals 12× the monthly charges on the detail
   // page — the same figure expressed twice, not two independent data points. True
   // when they agree, false when they diverge (a signal to flag, never averaged),
@@ -154,6 +169,61 @@ function pairValue(layout: BrochureLayout, label: string): string | null {
   return found ? found.value : null;
 }
 
+// The page-2 stat block is laid out as [value, value, …][label, label, …] in
+// parallel order (e.g. "60.21 m²", "3", then "Surface habitable", "Pièces"). To
+// read one label's value we find its run of consecutive known labels and take the
+// value at the same offset among the run's preceding lines. Surface and bedrooms
+// come from elsewhere; this is only used for "Pièces".
+const BLOCK_LABELS = new Set([
+  'surface habitable',
+  'pièces',
+  'chambres',
+  'étage',
+  "nombre d'étages",
+]);
+
+function blockValue(layout: BrochureLayout, label: string): string | null {
+  const { lines } = layout;
+  const idx = lines.findIndex((line) => line.toLowerCase() === label.toLowerCase());
+  if (idx === -1) {
+    return null;
+  }
+  let runStart = idx;
+  while (runStart - 1 >= 0 && BLOCK_LABELS.has(lines[runStart - 1].toLowerCase())) {
+    runStart -= 1;
+  }
+  let runEnd = idx;
+  while (runEnd + 1 < lines.length && BLOCK_LABELS.has(lines[runEnd + 1].toLowerCase())) {
+    runEnd += 1;
+  }
+  const runLength = runEnd - runStart + 1;
+  const offset = idx - runStart;
+  const valueIndex = runStart - runLength + offset;
+  return valueIndex >= 0 ? lines[valueIndex] : null;
+}
+
+// "2ème / 6" → 2, "1er" → 1, "Rez-de-jardin" / "Rez-de-chaussée" → 0 (ground floor).
+function parseFloor(raw: string | null): number | null {
+  if (raw == null) {
+    return null;
+  }
+  const value = raw.toLowerCase();
+  if (value.includes('rez')) {
+    return 0;
+  }
+  const match = /(\d+)/.exec(value);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
+// Heating: map a fiche value ONLY when it matches the enumeration exactly; leave the
+// field empty otherwise. Do NOT add "climatisation" → "pompe à chaleur individuelle":
+// the sheets pair "Type de chauffage : Climatisation" with "Moyen de chauffage :
+// Collectif", so writing "individuelle" would CONTRADICT the document — the same
+// fault as declaring the copropriété "Non" by default. A false value is worse than
+// an empty cell (the advisor fills a blank; he never sees a wrong one). No current
+// fiche value maps cleanly, so this table is intentionally empty until one does.
+const HEATING_MAP: Record<string, string> = {};
+
 export function parseAgencyBrochure(pages: string[]): BrochureFields {
   const layout = readBrochureLayout(pages);
   const text = layout.fullText;
@@ -173,9 +243,45 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
     return Number.isInteger(year) && year > 1700 && year < 2100 ? year : null;
   })();
 
-  // --- Bedrooms: count the "Chambre, N m²" rooms in the Surfaces section ---
+  // Property type from "Vente - Appartement" (the fiche's own word, no enum).
+  const propertyTypeMatch = layout.lines
+    .map((line) => /^Vente\s*[-–]\s*(.+)$/.exec(line))
+    .find((match) => match != null);
+  const propertyType = propertyTypeMatch ? propertyTypeMatch[1].trim() : null;
+
+  // Floor from the "Étage :" pair; rooms from the page-2 stat block ("Pièces").
+  const floor = parseFloor(pairValue(layout, 'Étage'));
+  const roomsCount = frNumber(blockValue(layout, 'Pièces') ?? '');
+
+  const heatingRaw = pairValue(layout, 'Type de chauffage');
+  const heatingType = heatingRaw ? (HEATING_MAP[heatingRaw.trim().toLowerCase()] ?? null) : null;
+
+  // Description: the marketing paragraph on the first page, between the price line
+  // and the stat block ("N m²"). Joined into one string.
+  const description = (() => {
+    const start = layout.lines.findIndex((line) =>
+      /€\s*Honoraires à la charge du vendeur/i.test(line),
+    );
+    if (start === -1) {
+      return null;
+    }
+    const collected: string[] = [];
+    for (let i = start + 1; i < layout.lines.length; i += 1) {
+      if (/^\d+([.,]\d+)?\s*m²$/.test(layout.lines[i])) {
+        break;
+      }
+      collected.push(layout.lines[i]);
+    }
+    const text = collected.join(' ').replace(/\s+/g, ' ').trim();
+    return text === '' ? null : text;
+  })();
+
+  // --- Bedrooms + bathrooms: count rooms in the Surfaces section -----------
   const surfaces = sectionItems(layout, 'Surfaces');
   const bedroomsCount = surfaces.filter((line) => /^chambre\b/i.test(line)).length || null;
+  // "Salle de douche", "Salle de bain(s)", "Salle d'eau" all count as a bathroom.
+  const bathroomsCount =
+    surfaces.filter((line) => /^salle\s+(de\s+(douche|bain)|d['’]eau)/i.test(line)).length || null;
 
   // Outdoor spaces and private parking are listed either room-by-room (Surfaces)
   // or as amenities (Prestations) — scan both. "Parking public" is deliberately
@@ -200,6 +306,13 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
     else if (name.startsWith('box')) addParking('closed_box');
   }
 
+  // The listed amenities feed the advisor's "Points forts" argument, in the fiche's
+  // order, capped to the field's limits. The advisor sorts and completes — it is his
+  // argument, not the tool's. Watch points are deliberately NOT touched.
+  const strengths = sectionItems(layout, 'Prestations')
+    .slice(0, MAX_LIST_ITEMS)
+    .map((item) => item.slice(0, MAX_LIST_ITEM_LENGTH));
+
   // --- Diagnostics + DPE/GES letters (footer legal mention) ---------------
   const energyMatch = /Classe [ée]nergie\s+([\d\s ]+)\s*kWh\/m²\.?an\s*\(([A-G])\)/i.exec(text);
   const energyConsumption = energyMatch ? frNumber(energyMatch[1]) : null;
@@ -212,10 +325,14 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
   // --- Condominium (footer legal mention) ---------------------------------
   const lotsMatch = /Nombre de lots dans la copropriété\s*:\s*([\d\s ]+)/i.exec(text);
   const totalLots = lotsMatch ? frNumber(lotsMatch[1]) : null;
-  const isCondominium = totalLots != null ? true : null;
 
   const quotePartMatch = /quote-part de charges courantes\s+([\d\s .,]+?)\s*€\/an/i.exec(text);
   const annualCharges = quotePartMatch ? frNumber(quotePartMatch[1]) : null;
+
+  // A "quote-part de charges courantes de copropriété" only exists for a condominium,
+  // so its presence alone marks the bien as one — even when no lot count is printed
+  // (Mission 44: never declare "Non" by default when the fiche says otherwise).
+  const isCondominium = totalLots != null || annualCharges != null ? true : null;
 
   // --- Information only ----------------------------------------------------
   const priceMatch = /([\d\s ]{4,})\s*€\s*Honoraires à la charge du vendeur/i.exec(text);
@@ -230,7 +347,7 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
   const postalCode = postalCity ? postalCity[1] : null;
   const city = postalCity ? postalCity[2].trim() : null;
 
-  const taxeFonciere = frNumber((pairValue(layout, 'Taxe foncière') ?? '').replace(/€\/an/i, ''));
+  const propertyTax = frNumber((pairValue(layout, 'Taxe foncière') ?? '').replace(/€\/an/i, ''));
   const monthlyCharges = frNumber((pairValue(layout, 'Charges') ?? '').replace(/€\/mois/i, ''));
 
   // The footer annual quote-part should equal 12× the monthly charges. Compare, but
@@ -241,17 +358,26 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
       : null;
 
   return {
+    propertyType,
     surfaceArea,
+    roomsCount,
     bedroomsCount,
+    bathroomsCount,
+    floor,
     postalCode,
     city,
+    description,
     constructionYear,
     generalCondition,
     exposure,
+    heatingType,
     energyRating,
     gesRating,
     outdoorSpaces,
     parkingTypes,
+    propertyTax,
+    monthlyCharges,
+    strengths,
     energyConsumption,
     gesEmissions,
     totalLots,
@@ -259,8 +385,6 @@ export function parseAgencyBrochure(pages: string[]): BrochureFields {
     isCondominium,
     readPrice,
     agencyReference,
-    taxeFonciere,
-    monthlyCharges,
     chargesConsistent,
   };
 }

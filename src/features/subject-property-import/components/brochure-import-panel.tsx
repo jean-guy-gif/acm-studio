@@ -168,12 +168,8 @@ export function BrochureImportPanel({
                 Prix lu sur la fiche
               </p>
               <p className="text-zinc-600 stage:text-white/65">
-                {euro(info.readPrice)}
-                {info.taxeFonciere != null
-                  ? ` · taxe foncière ${euro(info.taxeFonciere)}/an`
-                  : ''}{' '}
-                — pour information : l’outil ne l’enregistre pas et ne préremplit pas votre
-                fourchette.
+                {euro(info.readPrice)} — pour information : l’outil ne l’enregistre pas et ne
+                préremplit pas votre fourchette.
               </p>
             </div>
           ) : null}

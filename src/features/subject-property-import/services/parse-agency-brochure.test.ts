@@ -33,14 +33,25 @@ describe('parseAgencyBrochure — Le Cannet (studio, has copro lots)', () => {
   const f = parseAgencyBrochure(loadPages('brochure-le-cannet'));
 
   it('maps the seller-property fields from known labels', () => {
+    expect(f.propertyType).toBe('Appartement');
     expect(f.surfaceArea).toBe(24);
+    expect(f.roomsCount).toBe(1);
+    expect(f.floor).toBe(2); // "Étage : 2ème / 6"
     expect(f.generalCondition).toBe('excellent');
     expect(f.exposure).toBe('east');
+    expect(f.heatingType).toBeNull(); // "Climatisation" + "Collectif" maps to no exact enum
     expect(f.constructionYear).toBe(1970);
     expect(f.postalCode).toBe('06110');
     expect(f.city).toBe('Le Cannet');
     expect(f.outdoorSpaces).toEqual(['terrace']);
     expect(f.bedroomsCount).toBeNull(); // a studio: no "Chambre" line
+    expect(f.bathroomsCount).toBe(1); // "Salle de douche"
+  });
+
+  it('takes the description paragraph and the amenities as strengths', () => {
+    expect(f.description).toContain('Charmant studio de 24 m²');
+    expect(f.strengths).toContain('Ascenseur');
+    expect(f.strengths.length).toBeLessThanOrEqual(10);
   });
 
   it('reads DPE/GES value AND letter from the footer', () => {
@@ -56,11 +67,11 @@ describe('parseAgencyBrochure — Le Cannet (studio, has copro lots)', () => {
     expect(f.annualCharges).toBe(1164);
   });
 
-  it('keeps the price and tax as information only, and cross-checks the charges', () => {
-    expect(f.readPrice).toBe(139900);
+  it('writes taxe foncière and charges to their field; only the sale price is info', () => {
+    expect(f.readPrice).toBe(139900); // information only
     expect(f.agencyReference).toBe('86020239');
-    expect(f.taxeFonciere).toBe(629);
-    expect(f.monthlyCharges).toBe(97);
+    expect(f.propertyTax).toBe(629); // → property_tax field
+    expect(f.monthlyCharges).toBe(97); // → monthly_charges field
     // 97 × 12 = 1164 → the two figures agree.
     expect(f.chargesConsistent).toBe(true);
   });
@@ -71,6 +82,8 @@ describe('parseAgencyBrochure — Cannes (3 bedrooms, garage, no copro lots)', (
 
   it('counts bedrooms from the Surfaces section and detects garage + outdoor', () => {
     expect(f.surfaceArea).toBe(78.31);
+    expect(f.roomsCount).toBe(4);
+    expect(f.floor).toBe(1); // "Étage : 1er"
     expect(f.bedroomsCount).toBe(3);
     expect(f.outdoorSpaces).toEqual(expect.arrayContaining(['balcony', 'terrace']));
     expect(f.parkingTypes).toEqual(['garage']);
@@ -78,13 +91,13 @@ describe('parseAgencyBrochure — Cannes (3 bedrooms, garage, no copro lots)', (
     expect(f.exposure).toBe('south_east');
   });
 
-  it('reads DPE/GES and the annual quote-part; no lots → is_condominium stays null', () => {
+  it('marks the bien as a condominium from the quote-part even with no lot count', () => {
     expect(f.energyConsumption).toBe(107);
     expect(f.energyRating).toBe('B');
     expect(f.gesRating).toBe('C');
     expect(f.annualCharges).toBe(3492);
-    expect(f.totalLots).toBeNull();
-    expect(f.isCondominium).toBeNull();
+    expect(f.totalLots).toBeNull(); // no "Nombre de lots" on this fiche
+    expect(f.isCondominium).toBe(true); // the copro quote-part alone proves it
     // 291 × 12 = 3492.
     expect(f.chargesConsistent).toBe(true);
   });
@@ -99,9 +112,13 @@ describe('parseAgencyBrochure — Villeneuve-Loubet (decimal charges, garden)', 
     // 255.56 × 12 = 3066.72.
     expect(f.chargesConsistent).toBe(true);
     expect(f.surfaceArea).toBe(60);
+    expect(f.roomsCount).toBe(3);
+    expect(f.floor).toBe(0); // "Étage : Rez-de-jardin"
     expect(f.exposure).toBe('south');
     expect(f.bedroomsCount).toBe(2);
     expect(f.outdoorSpaces).toEqual(expect.arrayContaining(['garden']));
+    // The copro quote-part marks it a condominium (no lot count printed here either).
+    expect(f.isCondominium).toBe(true);
   });
 });
 

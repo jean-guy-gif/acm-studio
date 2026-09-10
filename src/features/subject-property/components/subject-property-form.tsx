@@ -57,9 +57,10 @@ const str = (value: string | number | null | undefined): string =>
   value == null ? '' : String(value);
 
 // An imported value (when present) pre-fills the field; otherwise the saved
-// property value is kept. GUARDRAIL: the advisor range, the financials and the
-// property type are NEVER seeded from an import — the range is the advisor's
-// opinion, and a read price writes no field.
+// property value is kept. GUARDRAIL: the SALE PRICE and the advisor RANGE are never
+// seeded from an import — the range is the advisor's opinion, and a read sale price
+// writes no field. Factual amounts a fiche carries (property type, floor, taxe
+// foncière, charges) DO pre-fill their field (Mission 44).
 function initialScalars(
   property: SubjectProperty | null,
   imported?: SubjectPropertyImportPrefill,
@@ -70,7 +71,7 @@ function initialScalars(
   ): string => (imported && importedValue != null ? String(importedValue) : str(propertyValue));
 
   return {
-    property_type: str(property?.property_type),
+    property_type: pick(imported?.property_type, property?.property_type),
     surface_area: pick(imported?.surface_area, property?.surface_area),
     land_area: pick(imported?.land_area, property?.land_area),
     rooms_count: pick(imported?.rooms_count, property?.rooms_count),
@@ -81,7 +82,7 @@ function initialScalars(
     city: pick(imported?.city, property?.city),
     description: pick(imported?.description, property?.description),
     district: pick(imported?.district, property?.district),
-    floor: str(property?.floor),
+    floor: pick(imported?.floor, property?.floor),
     building_floors: str(property?.building_floors),
     energy_rating: pick(imported?.energy_rating, property?.energy_rating),
     ges_rating: pick(imported?.ges_rating, property?.ges_rating),
@@ -89,10 +90,10 @@ function initialScalars(
     exposure: pick(imported?.exposure, property?.exposure),
     construction_year: pick(imported?.construction_year, property?.construction_year),
     general_condition: pick(imported?.general_condition, property?.general_condition),
-    monthly_charges: str(property?.monthly_charges),
+    monthly_charges: pick(imported?.monthly_charges, property?.monthly_charges),
     advisor_price_min: str(property?.advisor_price_min),
     advisor_price_max: str(property?.advisor_price_max),
-    property_tax: str(property?.property_tax),
+    property_tax: pick(imported?.property_tax, property?.property_tax),
   };
 }
 
@@ -133,7 +134,11 @@ export function SubjectPropertyForm({
   const [parkingTypes, setParkingTypes] = useState<string[]>(() =>
     initialArray(imported?.parking_types, property?.parking_types),
   );
-  const [strengths, setStrengths] = useState<string[]>(property?.strengths ?? []);
+  const [strengths, setStrengths] = useState<string[]>(
+    initialArray(imported?.strengths, property?.strengths),
+  );
+  // Watch points are NEVER seeded from a fiche: a commercial sheet sells, it does not
+  // flag weaknesses honestly (Mission 44 §4).
   const [watchPoints, setWatchPoints] = useState<string[]>(property?.watch_points ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [banner, setBanner] = useState<string | null>(null);

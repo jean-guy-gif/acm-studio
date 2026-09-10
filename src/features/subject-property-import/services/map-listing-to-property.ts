@@ -14,11 +14,15 @@ import type { SubjectPropertyImport } from '@/features/subject-property-import/t
 export function mapListingToProperty(data: ImportedComparableData): SubjectPropertyImport {
   return {
     prefill: {
+      // A listing carries no property type, floor, factual costs or strengths — those
+      // fields exist for the brochure import (Mission 44) and stay empty here.
+      property_type: null,
       surface_area: data.surfaceArea,
       land_area: data.landArea,
       rooms_count: data.roomsCount,
       bedrooms_count: data.bedroomsCount,
       bathrooms_count: data.bathroomsCount,
+      floor: null,
       address: data.address,
       postal_code: data.postalCode,
       city: data.city,
@@ -32,6 +36,9 @@ export function mapListingToProperty(data: ImportedComparableData): SubjectPrope
       general_condition: data.generalCondition,
       outdoor_spaces: data.outdoorSpaces,
       parking_types: data.parkingTypes,
+      monthly_charges: null,
+      property_tax: null,
+      strengths: [],
     },
     info: {
       readPrice: data.price,
