@@ -59,7 +59,7 @@ export function SubjectPropertyImportForm({
   importAction: (formData: FormData) => Promise<ComparableImportResult>;
   importHtmlAction: (formData: FormData) => Promise<ComparableImportResult>;
   recoverAction: (url: string) => Promise<RecoverPropertyPhotoResult>;
-  parseBrochureAction: (formData: FormData) => Promise<ParseBrochureResult>;
+  parseBrochureAction: (pages: string[]) => Promise<ParseBrochureResult>;
   depositBrochureAction: (formData: FormData) => Promise<DepositBrochureResult>;
   diagnostics: SubjectPropertyDiagnostics | null;
   saveDiagnosticsAction: (formData: FormData) => Promise<SaveDiagnosticsResult>;

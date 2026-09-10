@@ -15,6 +15,10 @@ import type {
   DepositBrochureResult,
   ParseBrochureResult,
 } from '@/features/subject-property-import/actions/import-brochure-pdf';
+import {
+  extractBrochurePhotos,
+  readBrochurePages,
+} from '@/features/subject-property-import/services/read-brochure-pdf';
 import type { BrochureImport } from '@/features/subject-property-import/types';
 
 const euro = (value: number | null): string =>
@@ -30,7 +34,7 @@ export function BrochureImportPanel({
   depositAction,
   onImported,
 }: {
-  parseAction: (formData: FormData) => Promise<ParseBrochureResult>;
+  parseAction: (pages: string[]) => Promise<ParseBrochureResult>;
   depositAction: (formData: FormData) => Promise<DepositBrochureResult>;
   onImported: (data: BrochureImport) => void;
 }) {
@@ -43,39 +47,61 @@ export function BrochureImportPanel({
   const [depositing, setDepositing] = useState(false);
   const [deposit, setDeposit] = useState<{ deposited: number; failed: number } | null>(null);
 
+  // The PDF is read HERE, in the browser (Mission 43): it never leaves the advisor's
+  // machine. Only the extracted text is sent to the server action.
   function analyse() {
     if (!file) return;
     setError(null);
     setDeposit(null);
-    const formData = new FormData();
-    formData.set('brochure', file);
     startTransition(async () => {
-      const result = await parseAction(formData);
-      if (result.ok) {
-        setSummary(result.data);
-        onImported(result.data);
-      } else {
+      try {
+        const pages = await readBrochurePages(file);
+        const result = await parseAction(pages);
+        if (result.ok) {
+          setSummary(result.data);
+          onImported(result.data);
+        } else {
+          setSummary(null);
+          setError(result.error);
+        }
+      } catch (readError) {
         setSummary(null);
-        setError(result.error);
+        setError(readError instanceof Error ? readError.message : 'Le PDF n’a pas pu être lu.');
       }
     });
   }
 
-  // Explicit click only. Extracts, filters and deposits the fiche's photos into the
-  // seller-property bucket, adding to any photos already present.
+  // Explicit click only. Decodes and re-encodes the fiche's photos to JPEG in the
+  // browser (canvas.toBlob), then sends them to the deposit action, which revalidates
+  // each one before adding it to the seller-property bucket.
   async function recoverPhotos() {
     if (!file) return;
     setDepositing(true);
     setDeposit(null);
-    const formData = new FormData();
-    formData.set('brochure', file);
-    const result = await depositAction(formData);
-    setDepositing(false);
-    if (result.ok) {
-      setDeposit({ deposited: result.deposited, failed: result.failed });
-      router.refresh();
-    } else {
-      setError(result.error);
+    setError(null);
+    try {
+      const blobs = await extractBrochurePhotos(file);
+      if (blobs.length === 0) {
+        setDeposit({ deposited: 0, failed: 0 });
+        return;
+      }
+      const formData = new FormData();
+      blobs.forEach((blob, index) => formData.append('photos', blob, `fiche-${index + 1}.jpg`));
+      const result = await depositAction(formData);
+      if (result.ok) {
+        setDeposit({ deposited: result.deposited, failed: result.failed });
+        router.refresh();
+      } else {
+        setError(result.error);
+      }
+    } catch (extractError) {
+      setError(
+        extractError instanceof Error
+          ? extractError.message
+          : 'Les photos n’ont pas pu être extraites.',
+      );
+    } finally {
+      setDepositing(false);
     }
   }
 

@@ -2,8 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { extractPdfImages } from '@/features/subject-property-import/services/extract-pdf-images';
-import { extractPdfText } from '@/features/subject-property-import/services/extract-pdf-text';
+import { MAX_BROCHURE_TEXT_BYTES } from '@/features/subject-property-import/constants';
 import { mapBrochureToProperty } from '@/features/subject-property-import/services/map-brochure-to-property';
 import { parseAgencyBrochure } from '@/features/subject-property-import/services/parse-agency-brochure';
 import type { BrochureImport } from '@/features/subject-property-import/types';
@@ -24,33 +23,29 @@ export type ParseBrochureResult = { ok: true; data: BrochureImport } | { ok: fal
 export type DepositBrochureResult =
   { ok: true; deposited: number; failed: number } | { ok: false; error: string };
 
-function readBrochureFile(formData: FormData): File | null {
-  const entry = formData.get('brochure');
-  return entry instanceof File && entry.size > 0 ? entry : null;
-}
-
-// Reads the seller's own commercial brochure (PDF) and returns the pre-fill for the
-// property / diagnostics / condominium forms. The PDF is DATA — parsed, never
-// executed — and the read price is INFORMATION only (it never lands in a field and
-// never pre-fills the advisor's range: CLAUDE.md, and here it is the advisor's own
-// agency price). Requires a signed-in advisor; writes nothing.
-export async function parseBrochurePdf(formData: FormData): Promise<ParseBrochureResult> {
+// Since Mission 43 the PDF is read in the advisor's BROWSER; the server receives
+// only the extracted TEXT (a few kilobytes). The parser and mapper are unchanged —
+// the value of Mission 42 is preserved. Never trust the client: the text is DATA
+// (never executed, never re-injected as HTML) and its size is bounded here.
+//
+// GUARDRAIL (CLAUDE.md): the read price is INFORMATION only — it never lands in a
+// field and never pre-fills the advisor's range. Here it is the advisor's own agency
+// price, so the temptation is highest.
+export async function parseBrochureText(pages: string[]): Promise<ParseBrochureResult> {
   const profile = await getProfile();
   if (!profile) {
     return { ok: false, error: 'Vous devez être connecté.' };
   }
-  const file = readBrochureFile(formData);
-  if (!file) {
-    return { ok: false, error: 'Choisissez un fichier PDF.' };
+  if (!Array.isArray(pages) || pages.length === 0) {
+    return { ok: false, error: 'Aucun texte n’a pu être lu dans ce PDF.' };
+  }
+  const safePages = pages.map((page) => (typeof page === 'string' ? page : ''));
+  const totalBytes = safePages.reduce((sum, page) => sum + Buffer.byteLength(page, 'utf8'), 0);
+  if (totalBytes > MAX_BROCHURE_TEXT_BYTES) {
+    return { ok: false, error: 'Le contenu du PDF est trop volumineux.' };
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const text = await extractPdfText(bytes);
-  if (!text.ok) {
-    return { ok: false, error: text.error };
-  }
-
-  const fields = parseAgencyBrochure(text.pages);
+  const fields = parseAgencyBrochure(safePages);
   const data = mapBrochureToProperty(fields);
   if (data.found.length === 0) {
     return {
@@ -63,14 +58,16 @@ export async function parseBrochurePdf(formData: FormData): Promise<ParseBrochur
 }
 
 // PRODUCT DECISION — NE JAMAIS copier les photos automatiquement. Comme pour
-// l'import d'annonce (mission 38), la récupération des images de la fiche ne se
-// fait qu'au CLIC EXPLICITE du conseiller. `projectId` est lié côté serveur.
+// l'import d'annonce (mission 38), la récupération ne se fait qu'au CLIC EXPLICITE
+// du conseiller. `projectId` est lié côté serveur.
 //
-// Les images du PDF sont décodées puis ré-encodées en PNG et déposées via
-// depositPropertyPhoto (mission 37), avec EXACTEMENT les mêmes validations qu'un
-// téléversement manuel. Elles s'AJOUTENT aux photos existantes, dans la limite de
-// nombre. Une image qui échoue n'interrompt pas les autres ; si l'écriture finale
-// échoue, les fichiers déposés sont retirés (aucun orphelin).
+// Depuis la mission 43, les images sont décodées et ré-encodées en JPEG dans le
+// navigateur (canvas.toBlob) ; le serveur reçoit des fichiers image. Chaque fichier
+// est REVALIDÉ par validatePhotoBytes — octets magiques, format, taille — EXACTEMENT
+// comme un téléversement manuel, car on ne fait jamais confiance au client. Les
+// photos s'AJOUTENT aux existantes, dans la limite de nombre. Une image qui échoue
+// n'interrompt pas les autres ; si l'écriture finale échoue, les fichiers déposés
+// sont retirés (aucun orphelin).
 export async function depositBrochurePhotos(
   projectId: string,
   formData: FormData,
@@ -79,9 +76,10 @@ export async function depositBrochurePhotos(
   if (!context.ok) {
     return { ok: false, error: context.error };
   }
-  const file = readBrochureFile(formData);
-  if (!file) {
-    return { ok: false, error: 'Choisissez un fichier PDF.' };
+
+  const files = formData.getAll('photos').filter((entry): entry is File => entry instanceof File);
+  if (files.length === 0) {
+    return { ok: false, error: 'Aucune photo à récupérer.' };
   }
 
   const { supabase, agencyId, currentPaths } = context;
@@ -90,16 +88,11 @@ export async function depositBrochurePhotos(
     return { ok: false, error: `Maximum ${MAX_PROPERTY_PHOTOS} photos atteint.` };
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const extracted = await extractPdfImages(bytes);
-  if (!extracted.ok) {
-    return { ok: false, error: extracted.error };
-  }
-
   const depositedPaths: string[] = [];
   let failed = 0;
-  for (const image of extracted.images.slice(0, remaining)) {
-    const validation = validatePhotoBytes(image.bytes);
+  for (const file of files.slice(0, remaining)) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const validation = validatePhotoBytes(bytes);
     if (!validation.ok) {
       failed += 1;
       continue;
@@ -107,7 +100,7 @@ export async function depositBrochurePhotos(
     const deposit = await depositPropertyPhoto(supabase, {
       agencyId,
       projectId,
-      bytes: image.bytes,
+      bytes,
       format: validation.format,
     });
     if (deposit.ok) {

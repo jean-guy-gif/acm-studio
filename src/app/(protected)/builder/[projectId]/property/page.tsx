@@ -13,7 +13,7 @@ import { saveSubjectProperty } from '@/features/subject-property/actions/save-su
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import {
   depositBrochurePhotos,
-  parseBrochurePdf,
+  parseBrochureText,
 } from '@/features/subject-property-import/actions/import-brochure-pdf';
 import { recoverPropertyPhoto } from '@/features/subject-property-import/actions/recover-property-photos';
 import { SubjectPropertyImportForm } from '@/features/subject-property-import/components/subject-property-import-form';
@@ -68,7 +68,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         importAction={importFromUrl}
         importHtmlAction={importFromHtml}
         recoverAction={recoverPhoto}
-        parseBrochureAction={parseBrochurePdf}
+        parseBrochureAction={parseBrochureText}
         depositBrochureAction={depositBrochure}
         diagnostics={diagnostics}
         saveDiagnosticsAction={saveDiagnostics}

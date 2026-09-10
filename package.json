@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "pdfjs:assets": "node scripts/copy-pdfjs-assets.mjs",
+    "postinstall": "npm run pdfjs:assets",
+    "predev": "npm run pdfjs:assets",
     "dev": "next dev",
+    "prebuild": "npm run pdfjs:assets",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -16,7 +20,6 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
-    "jpeg-js": "^0.4.4",
     "next": "16.2.10",
     "pdfjs-dist": "^4.10.38",
     "react": "19.2.4",

@@ -1,21 +1,25 @@
-// Mission 42 — importing the seller's own commercial brochure (PDF). Bounds are
-// applied BEFORE the file is parsed: a serverless function must never be handed an
-// unbounded document. The fixtures weigh 3–4 MB / 10–13 pages; the caps leave room
-// for larger agency sheets without inviting a decompression bomb.
+// Mission 42/43 — importing the seller's own commercial brochure (PDF). Since
+// Mission 43 the PDF is read in the advisor's BROWSER (pdfjs as a browser library);
+// only the extracted text and the re-encoded photos reach the server. These bounds
+// guard the browser side before reading, and the server side on what it receives.
+
+// Client-side: refuse an oversized file before handing it to pdfjs. The fixtures
+// weigh 3–4 MB / 10–13 pages; the caps leave room for larger sheets without
+// inviting a decompression bomb.
 export const MAX_BROCHURE_BYTES = 20 * 1024 * 1024; // 20 MiB
 export const MAX_BROCHURE_PAGES = 40;
 
-// Embedded-image filter (Mission 42). Real photos are ~1024 px; the agency logo is
-// 512 px and the DPE/GES vignettes ~311 px, so a 600 px floor on the larger side
-// keeps the photos and drops the furniture. The count is bounded by the property
-// photo cap (Mission 37) at the deposit step.
+// Server-side: the received text is DATA and must be bounded. A real fiche is a few
+// kilobytes of text; this leaves generous room while refusing an abusive payload.
+export const MAX_BROCHURE_TEXT_BYTES = 1 * 1024 * 1024; // 1 MiB
+
+// Embedded-image filter. Real photos are ~1024 px; the agency logo is 512 px and
+// the DPE/GES vignettes ~311 px, so a 600 px floor on the larger side keeps the
+// photos and drops the furniture. The count is bounded by the property photo cap
+// (Mission 37) at the deposit step.
 export const MIN_BROCHURE_IMAGE_DIMENSION = 600;
 
-// Recovered brochure photos are re-encoded to JPEG (they are photos, shown in a
-// full-screen gallery, not screenshots). 82 is the usual sweet spot: no visible
-// loss, ~10× lighter than a lossless PNG.
-export const BROCHURE_JPEG_QUALITY = 82;
-
-// A PDF starts with "%PDF-" (25 50 44 46 2D). Checked on the raw bytes before we
-// hand anything to the parser — the file is DATA, never an instruction.
-export const PDF_MAGIC = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
+// Photos are re-encoded to JPEG in the browser via canvas.toBlob (they are photos
+// shown in a full-screen gallery, not screenshots). 0.82 is the usual sweet spot:
+// no visible loss, far lighter than a lossless PNG.
+export const BROCHURE_JPEG_QUALITY = 0.82;
