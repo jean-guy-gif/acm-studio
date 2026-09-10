@@ -369,6 +369,71 @@ export type Database = {
           },
         ]
       }
+      listing_observations: {
+        Row: {
+          agency_id: string
+          canonical_url: string
+          created_at: string
+          id: string
+          listing_key: string
+          modified_at: string | null
+          observed_on: string
+          portal: string
+          price: number
+          price_per_square_meter: number | null
+          published_at: string | null
+          published_bound_label: string | null
+          published_lower_bound_at: string | null
+          secondary_id: string | null
+          view_count: number | null
+          view_count_since: string | null
+        }
+        Insert: {
+          agency_id: string
+          canonical_url: string
+          created_at?: string
+          id?: string
+          listing_key: string
+          modified_at?: string | null
+          observed_on?: string
+          portal: string
+          price: number
+          price_per_square_meter?: number | null
+          published_at?: string | null
+          published_bound_label?: string | null
+          published_lower_bound_at?: string | null
+          secondary_id?: string | null
+          view_count?: number | null
+          view_count_since?: string | null
+        }
+        Update: {
+          agency_id?: string
+          canonical_url?: string
+          created_at?: string
+          id?: string
+          listing_key?: string
+          modified_at?: string | null
+          observed_on?: string
+          portal?: string
+          price?: number
+          price_per_square_meter?: number | null
+          published_at?: string | null
+          published_bound_label?: string | null
+          published_lower_bound_at?: string | null
+          secondary_id?: string | null
+          view_count?: number | null
+          view_count_since?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_observations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_seller_responses: {
         Row: {
           agency_id: string

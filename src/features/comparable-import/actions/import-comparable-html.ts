@@ -3,6 +3,7 @@
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
+import { recordListingObservation } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -14,7 +15,9 @@ const GENERIC_ERROR = 'L’import a échoué. Vous pouvez saisir le bien manuell
 // opens the listing in HIS OWN browser, copies the page source and pastes it
 // here. Nothing is bypassed — this only analyses content the advisor can
 // already see. Same extraction pipeline as the URL import; NO remote request
-// is ever made by this action.
+// is ever made by this action. Since Mission 47 it also records a dated market
+// observation as a side effect (a fact about the public listing, never a
+// comparable row and never tied to a role).
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
 
 export async function importComparableHtml(
@@ -62,6 +65,10 @@ export async function importComparableHtml(
   if (foundFields.length === 0 && data.photoUrls.length === 0) {
     return { ok: false, error: 'Aucune information exploitable n’a été détectée.' };
   }
+
+  // Side effect: record a dated observation of this public listing (best effort;
+  // only if a price was read and the listing has an identity — see the service).
+  await recordListingObservation(supabase, profile.agency_id, url.href, data);
 
   return { ok: true, data, foundFields, missingFields };
 }

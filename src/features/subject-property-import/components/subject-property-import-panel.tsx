@@ -53,8 +53,9 @@ const euro = (value: number | null): string =>
 
 // Rebranding the three online-listing gestures already used for competitors onto
 // the SUBJECT property: paste the address (URL), paste the page, or the "Envoyer
-// vers ACM Studio" favourite. It CALLS importComparableUrl / importComparableHtml
-// (read-only, they write nothing) and hands the mapped prefill up to the form.
+// vers ACM Studio" favourite. It CALLS importComparableUrl / importComparableHtml,
+// which write no comparable row but DO record a dated market observation of the
+// public listing (Mission 47), and hands the mapped prefill up to the form.
 export function SubjectPropertyImportPanel({
   importAction,
   importHtmlAction,

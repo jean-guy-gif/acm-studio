@@ -4,6 +4,7 @@ import type { ComparableImportResult } from '@/features/comparable-import/types'
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { fetchListingPage } from '@/features/comparable-import/services/fetch-listing-page';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
+import { recordListingObservation } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -12,8 +13,10 @@ import { createClient } from '@/lib/supabase/server';
 const GENERIC_ERROR = 'L’import a échoué. Vous pouvez saisir le bien manuellement.';
 
 // projectId is bound server-side from the route; never taken from the client.
-// This action only READS a remote page and returns prefill data — it never
-// writes to `comparables`.
+// This action reads a remote page and returns prefill data. It never writes a
+// `comparables` row — but since Mission 47 it DOES write a dated market
+// observation as a side effect (a fact about the public listing, deduplicated to
+// one per day, agency-scoped).
 export async function importComparableUrl(
   projectId: string,
   formData: FormData,
@@ -57,6 +60,10 @@ export async function importComparableUrl(
   if (foundFields.length === 0 && data.photoUrls.length === 0) {
     return { ok: false, error: 'Aucune information exploitable n’a été détectée.' };
   }
+
+  // Side effect: record a dated observation of this public listing (best effort;
+  // only if a price was read and the listing has an identity — see the service).
+  await recordListingObservation(supabase, profile.agency_id, url.href, data);
 
   return { ok: true, data, foundFields, missingFields };
 }
