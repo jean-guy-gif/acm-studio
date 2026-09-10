@@ -6,6 +6,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Run tests in UTC, whatever the developer's machine. Guard-rail against the
+    // next latent timezone-dependent case: a green suite must not depend on the
+    // host's zone. The code is already zone-independent (see extract-listing-
+    // published-at), this keeps CI and local machines agreeing.
+    env: { TZ: 'UTC' },
   },
   resolve: {
     alias: {

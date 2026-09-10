@@ -48,7 +48,16 @@ function parseIsoDate(value: string, nowMs: number): number | null {
   if (!ISO_DATE.test(trimmed)) {
     return null;
   }
-  const time = new Date(trimmed).getTime();
+  // A date-time WITHOUT a timezone designator (e.g. "2026-06-07T08:00:00", as some
+  // portals publish) is read as UTC — never as the machine's local time, which is
+  // what `new Date` would otherwise do for a time-bearing string. Rationale: this
+  // runs SERVER-SIDE and only feeds the days-on-market delay, expressed in whole
+  // days; a two-hour ambiguity shifts nothing unless the moment straddles midnight.
+  // Production behaviour is unchanged; it simply stops depending on the host's zone.
+  const hasTime = /[T ]\d{2}:\d{2}/.test(trimmed);
+  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  const normalized = hasTime && !hasZone ? `${trimmed.replace(' ', 'T')}Z` : trimmed;
+  const time = new Date(normalized).getTime();
   if (Number.isNaN(time)) {
     return null;
   }
