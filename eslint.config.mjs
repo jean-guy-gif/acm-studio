@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // The browser extension is a separate artifact with its own runtime (chrome.*)
+    // and is not part of the Next.js app — it is linted/loaded on its own.
+    'extension/**',
+    // Generated pdfjs browser assets (copied from node_modules, git-ignored).
+    'public/pdfjs/**',
   ]),
 ]);
 

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "ACM Studio — Accès annonces",
+  "version": "0.1.0",
+  "description": "Récupère, dans le navigateur du conseiller, la page d'une annonce ou d'une recherche pour ACM Studio. Ne lit rien d'autre, ne stocke rien, n'envoie rien ailleurs.",
+  "background": { "service_worker": "background.js" },
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://seloger.com/*",
+    "https://*.seloger.com/*",
+    "https://bienici.com/*",
+    "https://*.bienici.com/*",
+    "https://green-acres.fr/*",
+    "https://*.green-acres.fr/*",
+    "https://immobilier.lefigaro.fr/*",
+    "https://maisonsetappartements.fr/*",
+    "https://*.maisonsetappartements.fr/*",
+    "https://leboncoin.fr/*",
+    "https://*.leboncoin.fr/*"
+  ],
+  "externally_connectable": {
+    "matches": ["https://acm-studio-henna.vercel.app/*", "http://localhost:3000/*"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://acm-studio-henna.vercel.app/*", "http://localhost:3000/*"],
+      "js": ["content-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

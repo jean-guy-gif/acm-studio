@@ -13,6 +13,12 @@ import {
   inputBase,
   link,
 } from '@/components/ui/styles';
+import {
+  fetchPageViaExtension,
+  fetchRobotsViaExtension,
+} from '@/features/browser-extension/client';
+import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
+import { decideRobotsAllowed } from '@/features/comparable-import/services/robots-decision';
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
@@ -65,6 +71,7 @@ export function SubjectPropertyImportPanel({
   onImported: (prefill: SubjectPropertyImportPrefill) => void;
 }) {
   const router = useRouter();
+  const extension = useBrowserExtension();
   const [url, setUrl] = useState('');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +134,42 @@ export function SubjectPropertyImportPanel({
     setError(null);
     const formData = new FormData();
     formData.set('url', targetUrl);
+    const parsed = (() => {
+      try {
+        return new URL(targetUrl);
+      } catch {
+        return null;
+      }
+    })();
     startTransition(async () => {
+      // With the extension, both the robots.txt AND the page are read in the
+      // ADVISOR'S browser — same address, so the robots check reflects what the
+      // portal really answers (§6), and the page is not blocked as it is from the
+      // server's data-center address. A forbidden — or unreadable — robots.txt is
+      // never treated as "allowed" (only a genuine 404 fail-opens).
+      if (extension.available && parsed) {
+        const robots = await fetchRobotsViaExtension(
+          new URL('/robots.txt', parsed.origin).toString(),
+        );
+        if (!decideRobotsAllowed(robots, parsed.pathname + parsed.search)) {
+          setError(
+            'Ce portail interdit l’analyse automatique de cette page. Utilisez le copier-coller ci-dessous.',
+          );
+          setShowPaste(true);
+          return;
+        }
+        const page = await fetchPageViaExtension(targetUrl);
+        if (page.ok) {
+          const htmlData = new FormData();
+          htmlData.set('url', page.finalUrl || targetUrl);
+          htmlData.set('html', page.html);
+          // The HTML is re-validated by the existing import parser (never trusted).
+          apply(await importHtmlAction(htmlData), () => setShowPaste(true));
+          return;
+        }
+        // The extension could not read the page: fall through to the server attempt,
+        // then the paste fallback — the tool stays whole either way.
+      }
       const res = await importAction(formData);
       // A refused / failed fetch is exactly what the paste fallback solves.
       apply(res, () => setShowPaste(true));
@@ -167,6 +209,12 @@ export function SubjectPropertyImportPanel({
         Le bien est déjà commercialisé ? Collez le lien SeLoger, Bien’ici, Figaro Immo, Green-Acres…
         — infos et caractéristiques sont reprises pour vous, à relire avant d’enregistrer.
       </p>
+      {extension.available ? (
+        <p className="text-xs text-emerald-700 stage:text-emerald-300">
+          Extension détectée : les portails qui bloquent l’analyse à distance sont lus directement
+          depuis votre navigateur.
+        </p>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="url"

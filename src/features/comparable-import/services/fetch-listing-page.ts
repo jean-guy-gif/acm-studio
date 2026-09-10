@@ -3,6 +3,7 @@ import dns from 'node:dns';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import {
   ALLOW_ALL,
+  BOT_TOKEN,
   parseRobots,
   type RobotsPolicy,
 } from '@/features/comparable-import/utils/robots-policy';
@@ -24,8 +25,8 @@ const ACCEPTED_CONTENT_TYPES = ['text/html', 'application/xhtml+xml'];
 // convention des moteurs (Googlebot, Bingbot) : ce n'est pas un déguisement en
 // navigateur, c'est le format que les portails savent lire. Le nom du robot et
 // une adresse de contact y figurent en clair — nous ne prétendons jamais être
-// autre chose que ce que nous sommes.
-export const BOT_TOKEN = 'acmstudiobot';
+// autre chose que ce que nous sommes. BOT_TOKEN vit maintenant dans robots-policy
+// (module pur), pour être partagé avec la décision robots côté navigateur.
 const CONTACT_URL = process.env.ACM_BOT_CONTACT_URL ?? 'https://start-academy.fr';
 const USER_AGENT = `Mozilla/5.0 (compatible; ACMStudioBot/1.0; +${CONTACT_URL})`;
 

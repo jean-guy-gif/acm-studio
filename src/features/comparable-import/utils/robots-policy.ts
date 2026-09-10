@@ -17,6 +17,11 @@ export type RobotsPolicy = {
 export const ALLOW_ALL: RobotsPolicy = { isAllowed: () => true };
 export const DENY_ALL: RobotsPolicy = { isAllowed: () => false };
 
+// The robot identity token robots.txt groups are matched against. Lives here (a
+// pure module) so both the server fetcher and the browser-side robots decision can
+// use it without dragging in server-only code.
+export const BOT_TOKEN = 'acmstudiobot';
+
 type Rule = { pattern: string; allow: boolean };
 
 // Un motif robots.txt accepte `*` (n'importe quelle suite) et `$` (fin d'URL).
