@@ -126,9 +126,18 @@ function resolveLocation(
 export function extractGreenAcres(html: string, originalUrl?: string): PartialListingData {
   const result: PartialListingData = {};
 
-  // Real total price: <span class="info-price">340 000 €</span>.
-  // Exact class match so "info-price-container" (a wrapper) is not captured.
-  const priceRaw = firstMatch(html, /class="info-price"[^>]*>([^<]+)</i);
+  // Real listing price: <div class="price-container"><span class="price">349 000</span>
+  // <span class="symbol">€</span></div>. The number and the € live in SEPARATE
+  // elements, so we read span.price's content and never require an adjacent €.
+  //
+  // We do NOT fall back to `info-price`: on a page that also carries « similar
+  // properties » blocks, every info-price is ANOTHER listing's price (each in its
+  // own advert-delete-<id>). Reading it would import a neighbour's price. No
+  // price-container → leave the price empty rather than guess.
+  const priceContainer = firstMatch(html, /class="price-container"[^>]*>([\s\S]*?)<\/div>/i);
+  const priceRaw = priceContainer
+    ? firstMatch(priceContainer, /class="price"[^>]*>([^<]+)</i)
+    : null;
   const price = priceRaw ? normalizePrice(decodeHtmlEntities(priceRaw)) : null;
   if (price != null) {
     result.price = price;

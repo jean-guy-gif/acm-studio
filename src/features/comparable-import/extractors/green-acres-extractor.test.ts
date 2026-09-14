@@ -8,10 +8,8 @@ import { extractGreenAcres } from '@/features/comparable-import/extractors/green
 const FIXTURE = `
 <title>Antibes/Ames Du Purgatoire</title>
 <meta property="og:description" content="Bel appartement lumineux au calme" />
-<div class="info-price-container">
-  <span class="info-price">340&#xA0;000 &#x20AC;</span>
-  <div class="surface-price">5&#xA0;070 &#x20AC;/m&#xB2;</div>
-</div>
+<div class="price-container"><span class="price">340&#xA0;000</span><span class="symbol">&#xA0;&#x20AC;</span></div>
+<div class="surface-price">5&#xA0;070 &#x20AC;/m&#xB2;</div>
 <ul itemscope itemtype="http://schema.org/BreadcrumbList">
   <li itemprop="itemListElement"><span itemprop="name">Accueil</span></li>
   <li itemprop="itemListElement"><span itemprop="name">Appartements Alpes-Maritimes</span></li>
@@ -39,7 +37,40 @@ const COMMERCIAL_FIXTURE = `
 <div itemprop="addressLocality">Nice (06000) &#x2013; quartier Musiciens</div>
 `;
 
+// Reconstruction of the measured Cagnes-sur-Mer page
+// (green-acres.fr/fr/properties/appartement/cagnes-sur-mer/A98cqw1yg8fmz1bt.htm) with
+// its DISTINGUISHING trap: the real price lives in price-container, while the page
+// ALSO carries « biens similaires » blocks whose info-price is ANOTHER listing's
+// price, each in its own advert-delete-<id>. The extractor must read 349 000 and
+// never one of the neighbours' prices.
+const CAGNES_WITH_SIMILAR = `
+<title>Appartement Cagnes-sur-Mer</title>
+<div class="price-container"><span class="price">349&nbsp;000</span><span class="symbol">&nbsp;&#x20AC;</span></div>
+<div class="surface-price">3&nbsp;598&nbsp;&#x20AC;/m&#xB2;</div>
+<a data-advertid="A98cqw1yg8fmz1bt" href="#"></a>
+<section class="similar-adverts">
+  <div class="advert advert-delete-111"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>
+  <div class="advert advert-delete-222"><span class="info-price">449&nbsp;000 &#x20AC;</span></div>
+  <div class="advert advert-delete-333"><span class="info-price">295&nbsp;000 &#x20AC;</span></div>
+  <div class="advert advert-delete-444"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>
+  <div class="advert advert-delete-555"><span class="info-price">295&nbsp;000 &#x20AC;</span></div>
+</section>
+`;
+
 describe('extractGreenAcres', () => {
+  it('reads the price-container price (349 000) even when « similar » info-price blocks are present', () => {
+    const data = extractGreenAcres(CAGNES_WITH_SIMILAR);
+    // The only non-regression that matters here: the real price, not a neighbour's.
+    expect(data.price).toBe(349000);
+    expect(data.portalPricePerSquareMeter).toBe(3598);
+  });
+
+  it('no price-container → price left empty, never an info-price fallback', () => {
+    const onlySimilar =
+      '<div class="advert advert-delete-9"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>';
+    expect(extractGreenAcres(onlySimilar).price).toBeUndefined();
+  });
+
   it('reads the labelled price, portal price/m², surface and rooms (not the price/m² as price)', () => {
     const data = extractGreenAcres(FIXTURE);
     expect(data.price).toBe(340000);
