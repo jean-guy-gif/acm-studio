@@ -3,6 +3,7 @@ import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
+import { parseFrenchDate } from '@/features/comparable-import/utils/parse-french-date';
 
 const DOMAIN = 'green-acres.fr';
 
@@ -160,6 +161,24 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
   const surface = surfaceRaw ? normalizeArea(decodeHtmlEntities(surfaceRaw)) : null;
   if (surface != null) {
     result.surfaceArea = surface;
+  }
+
+  // Mission 47 — « Vu 269 fois depuis le 23/07/2026 » : the view count AND the exact
+  // listing date. The French date accepts the day on one or two digits (parseFrenchDate).
+  const viewsRaw = decodeHtmlEntities(html).match(
+    /Vu\s+([\d  .]+)\s*fois\s+depuis\s+le\s+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})/i,
+  );
+  if (viewsRaw) {
+    const count = Number.parseInt(viewsRaw[1].replace(/\D/g, ''), 10);
+    if (Number.isFinite(count)) {
+      result.viewCount = count;
+    }
+    const iso = parseFrenchDate(viewsRaw[2]);
+    if (iso) {
+      result.viewCountSince = iso;
+      // Green Acres dates the listing exactly through this phrase (§1).
+      result.listingPublishedAt = iso;
+    }
   }
 
   const rooms = normalizeCount(firstMatch(html, /(\d+)\s*pi[eè]ces?\b/i));

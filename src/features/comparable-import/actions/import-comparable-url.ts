@@ -4,7 +4,7 @@ import type { ComparableImportResult } from '@/features/comparable-import/types'
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { fetchListingPage } from '@/features/comparable-import/services/fetch-listing-page';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
-import { recordListingObservation } from '@/features/comparable-import/services/record-listing-observation';
+import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -61,9 +61,9 @@ export async function importComparableUrl(
     return { ok: false, error: 'Aucune information exploitable n’a été détectée.' };
   }
 
-  // Side effect: record a dated observation of this public listing (best effort;
-  // only if a price was read and the listing has an identity — see the service).
-  await recordListingObservation(supabase, profile.agency_id, url.href, data);
+  // Side effect: record a dated observation of this public listing and derive its
+  // history (age, price change). Best effort — never fails the import.
+  const history = await observeListing(supabase, profile.agency_id, url.href, data);
 
-  return { ok: true, data, foundFields, missingFields };
+  return { ok: true, data, foundFields, missingFields, history };
 }

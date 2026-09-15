@@ -47,6 +47,7 @@ const CAGNES_WITH_SIMILAR = `
 <title>Appartement Cagnes-sur-Mer</title>
 <div class="price-container"><span class="price">349&nbsp;000</span><span class="symbol">&nbsp;&#x20AC;</span></div>
 <div class="surface-price">3&nbsp;598&nbsp;&#x20AC;/m&#xB2;</div>
+<span class="views-count">Vu 269 fois depuis le 23/07/2026</span>
 <a data-advertid="A98cqw1yg8fmz1bt" href="#"></a>
 <section class="similar-adverts">
   <div class="advert advert-delete-111"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>
@@ -69,6 +70,13 @@ describe('extractGreenAcres', () => {
     const onlySimilar =
       '<div class="advert advert-delete-9"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>';
     expect(extractGreenAcres(onlySimilar).price).toBeUndefined();
+  });
+
+  it('reads « Vu 269 fois depuis le 23/07/2026 » : view count + exact listing date', () => {
+    const data = extractGreenAcres(CAGNES_WITH_SIMILAR);
+    expect(data.viewCount).toBe(269);
+    expect(data.viewCountSince).toBe('2026-07-23T00:00:00.000Z');
+    expect(data.listingPublishedAt).toBe('2026-07-23T00:00:00.000Z');
   });
 
   it('reads the labelled price, portal price/m², surface and rooms (not the price/m² as price)', () => {

@@ -33,6 +33,10 @@ function listing(over: Partial<ImportedComparableData> = {}): ImportedComparable
     parkingTypes: ['garage'],
     listingPublishedAt: null,
     daysOnMarket: null,
+    publicationLowerBoundLabel: null,
+    modifiedAt: null,
+    viewCount: null,
+    viewCountSince: null,
     ...over,
   };
 }

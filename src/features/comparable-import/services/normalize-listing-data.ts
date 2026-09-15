@@ -327,6 +327,13 @@ export function normalizeListingData(
     // restent nuls : on ne devine pas une durée.
     listingPublishedAt: publishedAt,
     daysOnMarket: daysOnMarketSince(publishedAt),
+    // Mission 47 — formes d'ancienneté propres au portail. Seuls les extracteurs de
+    // portail les renseignent (Bien'ici / Green Acres) ; ailleurs elles restent
+    // nulles. Elles ne perturbent pas le chemin schema.org de SeLoger ci-dessus.
+    publicationLowerBoundLabel: parts.portal.publicationLowerBoundLabel ?? null,
+    modifiedAt: parts.portal.modifiedAt ?? null,
+    viewCount: parts.portal.viewCount ?? null,
+    viewCountSince: parts.portal.viewCountSince ?? null,
   };
   // A description that is just the portal's generic slogan is not usable.
   if (data.listingDescription && isGenericTitle(data.listingDescription, source)) {

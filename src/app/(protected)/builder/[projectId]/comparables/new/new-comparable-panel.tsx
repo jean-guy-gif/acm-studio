@@ -21,9 +21,11 @@ import {
   initialCreateComparableState,
   type CreateComparableState,
 } from '@/features/comparables/actions/create-comparable-state';
+import { ListingHistorySummary } from '@/features/comparable-import/components/listing-history-summary';
 import type {
   ComparableImportResult,
   ImportedComparableData,
+  ListingHistory,
 } from '@/features/comparable-import/types';
 import {
   ComparableFormFields,
@@ -127,6 +129,7 @@ export function NewComparablePanel({
     data: ImportedComparableData;
     found: string[];
     missing: string[];
+    history: ListingHistory | null;
   } | null>(null);
   const [importKey, setImportKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
@@ -164,6 +167,7 @@ export function NewComparablePanel({
         data: { ...res.data, photoUrls: mergedPhotos.slice(0, 20) },
         found: res.foundFields,
         missing: res.missingFields,
+        history: res.history ?? null,
       });
       setImportKey((value) => value + 1);
       setError(null);
@@ -383,6 +387,13 @@ export function NewComparablePanel({
               );
             })()}
           </div>
+        ) : null}
+        {result ? (
+          <ListingHistorySummary
+            history={result.history}
+            viewCount={result.data.viewCount}
+            viewCountSince={result.data.viewCountSince}
+          />
         ) : null}
         <p className="text-xs text-zinc-400 stage:text-white/40">
           L’import est une aide à la saisie. Vérifiez et complétez le formulaire avant
