@@ -1,6 +1,18 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { extractGreenAcres } from '@/features/comparable-import/extractors/green-acres-extractor';
+
+// The REAL page measured in production on 16/09/2026 (579 984 chars), where the
+// old first-match-over-the-whole-document reading shipped a wrong value. The page
+// announces 349 000 € and 3 598 €/m² ; it also carries « biens similaires » cards
+// (each ANOTHER listing) and a price-reduction/converter widget. The extractor
+// must read the MAIN advert and nothing else.
+const CAGNES_URL =
+  'https://www.green-acres.fr/fr/properties/appartement/cagnes-sur-mer/A98cqw1yg8fmz1bt.htm';
+const cagnesHtml = readFileSync(join(__dirname, '__fixtures__', 'green-acres-cagnes.html'), 'utf8');
 
 // Residential fixture with the REAL Green Acres structured location sources
 // (schema.org addressLocality microdata + breadcrumb). The <title> deliberately
@@ -37,46 +49,60 @@ const COMMERCIAL_FIXTURE = `
 <div itemprop="addressLocality">Nice (06000) &#x2013; quartier Musiciens</div>
 `;
 
-// Reconstruction of the measured Cagnes-sur-Mer page
-// (green-acres.fr/fr/properties/appartement/cagnes-sur-mer/A98cqw1yg8fmz1bt.htm) with
-// its DISTINGUISHING trap: the real price lives in price-container, while the page
-// ALSO carries « biens similaires » blocks whose info-price is ANOTHER listing's
-// price, each in its own advert-delete-<id>. The extractor must read 349 000 and
-// never one of the neighbours' prices.
-const CAGNES_WITH_SIMILAR = `
-<title>Appartement Cagnes-sur-Mer</title>
-<div class="price-container"><span class="price">349&nbsp;000</span><span class="symbol">&nbsp;&#x20AC;</span></div>
-<div class="surface-price">3&nbsp;598&nbsp;&#x20AC;/m&#xB2;</div>
-<span class="views-count">Vu 269 fois depuis le 23/07/2026</span>
-<a data-advertid="A98cqw1yg8fmz1bt" href="#"></a>
-<section class="similar-adverts">
-  <div class="advert advert-delete-111"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>
-  <div class="advert advert-delete-222"><span class="info-price">449&nbsp;000 &#x20AC;</span></div>
-  <div class="advert advert-delete-333"><span class="info-price">295&nbsp;000 &#x20AC;</span></div>
-  <div class="advert advert-delete-444"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>
-  <div class="advert advert-delete-555"><span class="info-price">295&nbsp;000 &#x20AC;</span></div>
+// Live-DOM hazard: the extension captures the HYDRATED DOM, where an EMPTY
+// price-container (the price-reduction widget, before JS fills it) and a
+// currency-converter number can appear BEFORE the real price, and « biens
+// similaires » cards follow with their own info-price/surface. Reading any field
+// by first match over the WHOLE document lets the empty span blank the price
+// (production symptom) and a neighbour's number land in the advert. The extractor
+// must delimit the main advert and ignore all of it.
+const LIVE_DOM_HAZARD = `
+<span class="sticky-price"><span class="price"></span></span>
+<div class="price-reduction-graph"><div class="price-container" id="new-price"><div class="new-price"><span class="price"></span></div></div></div>
+<p class="financial-value"><span class="price">4&nbsp;153</span></p>
+<div class="mobile-details"><div class="price-detail">
+  <div class="price-container"><span class="price">349&nbsp;000</span><span class="symbol">&nbsp;&#x20AC;</span></div>
+  <div class="surface-price">3&nbsp;598 &#x20AC;/m&#xB2;</div>
+</div></div>
+<span class="views-count">Vu 118 fois depuis le 02/09/2026</span>
+<section>
+  <div class="announce-info"><span class="info-price-container"><strong class="info-price">299&nbsp;000 &#x20AC;</strong></span><div class="info-tag" title="Surface habitable">81 m&#xB2;</div></div>
 </section>
 `;
 
 describe('extractGreenAcres', () => {
-  it('reads the price-container price (349 000) even when « similar » info-price blocks are present', () => {
-    const data = extractGreenAcres(CAGNES_WITH_SIMILAR);
-    // The only non-regression that matters here: the real price, not a neighbour's.
+  it('real Cagnes page: reads the main advert price (349 000) and price/m² (3 598)', () => {
+    const data = extractGreenAcres(cagnesHtml, CAGNES_URL);
     expect(data.price).toBe(349000);
     expect(data.portalPricePerSquareMeter).toBe(3598);
   });
 
-  it('no price-container → price left empty, never an info-price fallback', () => {
-    const onlySimilar =
-      '<div class="advert advert-delete-9"><span class="info-price">299&nbsp;000 &#x20AC;</span></div>';
-    expect(extractGreenAcres(onlySimilar).price).toBeUndefined();
+  it('real Cagnes page: surface, rooms and city come from the main advert, not a neighbour', () => {
+    const data = extractGreenAcres(cagnesHtml, CAGNES_URL);
+    expect(data.surfaceArea).toBe(97); // neighbours read 81/95/68/75 m²
+    expect(data.roomsCount).toBe(4);
+    expect(data.city).toBe('Cagnes-sur-Mer');
   });
 
-  it('reads « Vu 269 fois depuis le 23/07/2026 » : view count + exact listing date', () => {
-    const data = extractGreenAcres(CAGNES_WITH_SIMILAR);
-    expect(data.viewCount).toBe(269);
-    expect(data.viewCountSince).toBe('2026-07-23T00:00:00.000Z');
-    expect(data.listingPublishedAt).toBe('2026-07-23T00:00:00.000Z');
+  it('real Cagnes page: « Vu 118 fois depuis le 02/09/2026 » — view count + exact listing date', () => {
+    const data = extractGreenAcres(cagnesHtml, CAGNES_URL);
+    expect(data.viewCount).toBe(118);
+    expect(data.viewCountSince).toBe('2026-09-02T00:00:00.000Z');
+    expect(data.listingPublishedAt).toBe('2026-09-02T00:00:00.000Z');
+  });
+
+  it('live-DOM hazard: an empty price-container first + a converter number + a neighbour never fool it', () => {
+    const data = extractGreenAcres(LIVE_DOM_HAZARD);
+    expect(data.price).toBe(349000); // not empty (the empty spans), not 4 153, not 299 000
+    expect(data.portalPricePerSquareMeter).toBe(3598);
+    expect(data.viewCount).toBe(118);
+    expect(data.surfaceArea).toBeUndefined(); // the neighbour's 81 m² is cut off
+  });
+
+  it('no price-container with a value → price left empty, never an info-price fallback', () => {
+    const onlySimilar =
+      '<div class="announce-info"><span class="info-price-container"><strong class="info-price">299&nbsp;000 &#x20AC;</strong></span></div>';
+    expect(extractGreenAcres(onlySimilar).price).toBeUndefined();
   });
 
   it('reads the labelled price, portal price/m², surface and rooms (not the price/m² as price)', () => {

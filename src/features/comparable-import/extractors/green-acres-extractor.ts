@@ -17,6 +17,41 @@ function firstMatch(html: string, regex: RegExp): string | null {
   return match ? match[1] : null;
 }
 
+// A Green Acres detail page is NOT just the advert: it also renders « biens
+// similaires » cards (each one ANOTHER listing — class "announce-info" /
+// "info-price-container" / "info-tag") and, further down, a price-reduction
+// widget and a currency converter whose own "price-container" carries an EMPTY
+// <span class="price">. Reading any field by first match over the WHOLE document
+// lets a neighbour's price/surface — or that empty span — land in the advert.
+// That is the same class of defect as info-price, and it shipped a wrong value
+// to production. So we FIRST delimit the main advert region (everything before
+// the first neighbour card) and read every trap-prone field INSIDE it.
+function mainAdvertRegion(html: string): string {
+  const boundaries = [
+    html.search(/class="announce-info"/i),
+    html.search(/class="info-price-container"/i),
+  ].filter((index) => index >= 0);
+  return boundaries.length > 0 ? html.slice(0, Math.min(...boundaries)) : html;
+}
+
+// Reads the real listing price from the labelled price-container, scanning only
+// the main advert region. Skips any price-container whose <span class="price"> is
+// EMPTY (the price-reduction widget renders empty ones) and returns the first
+// container that actually holds a number. No price-container with a value → null,
+// never a fallback to info-price (a neighbour's price).
+function priceFromMainAdvert(main: string): number | null {
+  const container = /class="price-container"[^>]*>([\s\S]*?)<\/div>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = container.exec(main)) !== null) {
+    const raw = firstMatch(match[1], /class="price"[^>]*>([^<]+)</i);
+    const price = raw ? normalizePrice(decodeHtmlEntities(raw)) : null;
+    if (price != null) {
+      return price;
+    }
+  }
+  return null;
+}
+
 // A property-type or commercial word must never be accepted as a city/district,
 // even if a source yields it. Small, bounded safety net — the real defence is
 // sourcing from reliable structure below, not this list.
@@ -135,17 +170,16 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
   // properties » blocks, every info-price is ANOTHER listing's price (each in its
   // own advert-delete-<id>). Reading it would import a neighbour's price. No
   // price-container → leave the price empty rather than guess.
-  const priceContainer = firstMatch(html, /class="price-container"[^>]*>([\s\S]*?)<\/div>/i);
-  const priceRaw = priceContainer
-    ? firstMatch(priceContainer, /class="price"[^>]*>([^<]+)</i)
-    : null;
-  const price = priceRaw ? normalizePrice(decodeHtmlEntities(priceRaw)) : null;
+  // Everything price/surface/room-related is read from the main advert region,
+  // never the whole document (neighbour cards + price-reduction/converter widgets).
+  const main = mainAdvertRegion(html);
+  const price = priceFromMainAdvert(main);
   if (price != null) {
     result.price = price;
   }
 
   // Portal's own price/m²: <div class="surface-price">5 070 €/m²</div>.
-  const ppsmRaw = firstMatch(html, /class="surface-price"[^>]*>([^<]+)</i);
+  const ppsmRaw = firstMatch(main, /class="surface-price"[^>]*>([^<]+)</i);
   if (ppsmRaw) {
     const decoded = decodeHtmlEntities(ppsmRaw).replace(/€.*/, '');
     const ppsm = normalizePrice(decoded);
@@ -156,8 +190,8 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
 
   // Surface: "57 m² de surface habitable" or "Surface : 57 m²".
   const surfaceRaw =
-    firstMatch(html, /([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)\s*de\s*surface\s*habitable/i) ??
-    firstMatch(html, /surface\s*(?:habitable)?\s*:?\s*([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)/i);
+    firstMatch(main, /([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)\s*de\s*surface\s*habitable/i) ??
+    firstMatch(main, /surface\s*(?:habitable)?\s*:?\s*([\d][\d\s .,&#x;]{0,14})m(?:²|&#xB2;|2)/i);
   const surface = surfaceRaw ? normalizeArea(decodeHtmlEntities(surfaceRaw)) : null;
   if (surface != null) {
     result.surfaceArea = surface;
@@ -165,7 +199,7 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
 
   // Mission 47 — « Vu 269 fois depuis le 23/07/2026 » : the view count AND the exact
   // listing date. The French date accepts the day on one or two digits (parseFrenchDate).
-  const viewsRaw = decodeHtmlEntities(html).match(
+  const viewsRaw = decodeHtmlEntities(main).match(
     /Vu\s+([\d  .]+)\s*fois\s+depuis\s+le\s+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})/i,
   );
   if (viewsRaw) {
@@ -181,15 +215,15 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
     }
   }
 
-  const rooms = normalizeCount(firstMatch(html, /(\d+)\s*pi[eè]ces?\b/i));
+  const rooms = normalizeCount(firstMatch(main, /(\d+)\s*pi[eè]ces?\b/i));
   if (rooms != null) {
     result.roomsCount = rooms;
   }
-  const bedrooms = normalizeCount(firstMatch(html, /(\d+)\s*chambres?\b/i));
+  const bedrooms = normalizeCount(firstMatch(main, /(\d+)\s*chambres?\b/i));
   if (bedrooms != null) {
     result.bedroomsCount = bedrooms;
   }
-  const bathrooms = normalizeCount(firstMatch(html, /(\d+)\s*salles?\s*d[e'’ ]?\s*(?:bain|eau)/i));
+  const bathrooms = normalizeCount(firstMatch(main, /(\d+)\s*salles?\s*d[e'’ ]?\s*(?:bain|eau)/i));
   if (bathrooms != null) {
     result.bathroomsCount = bathrooms;
   }
@@ -215,7 +249,7 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
   }
 
   // Heating + energy source: "chauffage central au fuel".
-  const heatingRaw = firstMatch(html, /chauffage\s+([a-zàâçéèêëîïôûùüœ '-]{2,40})/i);
+  const heatingRaw = firstMatch(main, /chauffage\s+([a-zàâçéèêëîïôûùüœ '-]{2,40})/i);
   if (heatingRaw) {
     const heating = decodeHtmlEntities(heatingRaw).trim();
     const auMatch = heating.match(/^(.*?)\s+au\s+([a-zàâçéèêëîïôûùüœ-]+)/i);

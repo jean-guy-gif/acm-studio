@@ -3,3 +3,7 @@ node_modules
 
 # Supabase generated types — never edited by hand, do not reformat
 src/lib/supabase/database.types.ts
+
+# Real portal pages captured as test fixtures (hundreds of KB of minified HTML):
+# never hand-edited, and prettier --check would choke on them for nothing.
+src/features/comparable-import/extractors/__fixtures__
