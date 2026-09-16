@@ -31,6 +31,34 @@ const STABLE_DELTA = 0.02; // "stable" = two consecutive reads within 2 %
 const MAX_WAIT_MS = 15_000; // hard cap on waiting for the page to build
 const LOW_SIZE = 50_000; // below this, a hidden window likely never rendered
 
+// Stability alone no longer concludes: a WAITING PAGE (interstitial "Un instant…")
+// holds a stable, tiny HTML for a second before the real page renders — and the old
+// code accepted it, so « Un instant… » landed in a competitor's Titre in production.
+// Two signals now mark a page as an unfinished shell:
+//   - it is smaller than this floor (mesuré : coquilles 29–33 k, vraies fiches
+//     233 k–756 k — 60 k passe largement entre les deux) ;
+//   - its title is a known waiting title (second signal below).
+// A shell is never accepted on stability; we keep watching to MAX_WAIT_MS and take
+// the last state (logged), so the app can honestly see it received a shell. This is
+// the same cause as the Bien'ici shell of 10 September — a general defect, not
+// portal-specific.
+const SIZE_FLOOR = 60_000;
+
+// Waiting-page titles, ONE entry per real measurement. Never invent one: each
+// pattern MUST cite the portal and the date it was seen, or it does not belong here.
+const WAITING_TITLES = [
+  // maisonsetappartements.fr — mesuré le 2026-09-16 : la page d'attente titre « Un instant… ».
+  { portal: 'maisonsetappartements.fr', since: '2026-09-16', pattern: /un instant/i },
+];
+
+function isWaitingShell(reading) {
+  if (reading.size < SIZE_FLOOR) {
+    return true;
+  }
+  const title = (reading.title || '').trim();
+  return WAITING_TITLES.some((entry) => entry.pattern.test(title));
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function isAllowedUrl(rawUrl) {
@@ -78,6 +106,7 @@ async function probe(tabId) {
       func: () => ({
         size: document.documentElement.outerHTML.length,
         visibility: document.visibilityState,
+        title: document.title,
       }),
     });
     return result ?? null;
@@ -86,11 +115,14 @@ async function probe(tabId) {
   }
 }
 
-// Waits until the HTML size is stable over two consecutive reads (< 2 % change),
-// or the hard cap is reached. Adapts to slow/fast portals instead of guessing.
+// Waits until the HTML size is stable over two consecutive reads (< 2 % change)
+// AND the page is not a waiting shell, or the hard cap is reached. Adapts to
+// slow/fast portals instead of guessing — but a stable SHELL no longer ends the
+// wait: we keep watching until the real page renders or the cap is hit.
 async function waitForStableSize(tabId, startedAt) {
   let previous = null;
-  let last = { size: 0, visibility: 'unknown' };
+  let last = { size: 0, visibility: 'unknown', title: '' };
+  let shellLogged = false;
   while (Date.now() - startedAt < MAX_WAIT_MS) {
     await sleep(POLL_MS);
     const reading = await probe(tabId);
@@ -98,16 +130,28 @@ async function waitForStableSize(tabId, startedAt) {
       continue;
     }
     last = reading;
-    log(`taille=${reading.size} visibilité=${reading.visibility}`);
-    if (
+    log(
+      `taille=${reading.size} visibilité=${reading.visibility} titre=${JSON.stringify(reading.title ?? '')}`,
+    );
+    const stable =
       previous != null &&
-      Math.abs(reading.size - previous) / Math.max(reading.size, 1) < STABLE_DELTA
-    ) {
-      return last;
+      Math.abs(reading.size - previous) / Math.max(reading.size, 1) < STABLE_DELTA;
+    if (stable) {
+      if (!isWaitingShell(reading)) {
+        return last; // stable AND substantial → the page is finished
+      }
+      if (!shellLogged) {
+        // The transition that was missing from the log: a page went stable while
+        // still a shell, so we deliberately keep waiting instead of concluding.
+        log(
+          `coquille détectée (taille=${reading.size} titre=${JSON.stringify(reading.title ?? '')}), on continue d'attendre`,
+        );
+        shellLogged = true;
+      }
     }
     previous = reading.size;
   }
-  log('plafond de 15 s atteint avant stabilité');
+  log(`plafond de ${MAX_WAIT_MS / 1000} s atteint — dernier état : ${last.size} caractères`);
   return last;
 }
 
@@ -120,7 +164,9 @@ async function loadAndRead(tabId, windowId, requestWindowId, startedAt) {
   log('status=complete');
 
   let stable = await waitForStableSize(tabId, startedAt);
-  log(`stabilisé à ${stable.size} (visibilité=${stable.visibility})`);
+  // "retenu", not "stabilisé" : this is the state we keep, whether it settled or the
+  // cap was hit on a shell — the size tells the honest story.
+  log(`état retenu : ${stable.size} caractères (visibilité=${stable.visibility})`);
 
   // The one rattrapage, tied to the real cause: a window Chrome marked hidden from
   // the start builds nothing. Bring it to front ONCE, wait again, then give focus
