@@ -8,22 +8,36 @@
 // Read as UTC: the value only feeds a whole-day delay, and must not depend on the
 // machine's timezone (same rationale as parseIsoDate).
 
+// Full names AND the abbreviations Bien'ici writes with a trailing point
+// (« 8 sept. 2026 »). The point is stripped by the caller's regex, so the key is
+// the letters only. Measured rule: janv. févr. avr. juil. sept. oct. nov. déc.
+// s'abrègent ; mars, mai, juin, août ne s'abrègent PAS (déjà couverts en entier).
 const MONTHS: Record<string, number> = {
   janvier: 1,
+  janv: 1,
   février: 2,
   fevrier: 2,
+  févr: 2,
+  fevr: 2,
   mars: 3,
   avril: 4,
+  avr: 4,
   mai: 5,
   juin: 6,
   juillet: 7,
+  juil: 7,
   août: 8,
   aout: 8,
   septembre: 9,
+  sept: 9,
   octobre: 10,
+  oct: 10,
   novembre: 11,
+  nov: 11,
   décembre: 12,
   decembre: 12,
+  déc: 12,
+  dec: 12,
 };
 
 function toIso(year: number, month: number, day: number): string | null {
