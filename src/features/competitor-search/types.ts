@@ -2,11 +2,12 @@
 // Suggestions éphémères : rien n'est persisté tant que le conseiller n'a pas
 // importé puis enregistré un bien via la création existante.
 
+// Figaro a été retiré (septembre 2026) : il n'est plus proposé au conseiller.
+// Portails réellement supportés par la recherche.
 export const SEARCH_PORTALS = [
   'green_acres',
   'seloger',
   'bienici',
-  'figaro',
   'maisons_appartements',
 ] as const;
 export type SearchPortal = (typeof SEARCH_PORTALS)[number];
@@ -15,7 +16,6 @@ export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
   green_acres: 'Green Acres',
   seloger: 'SeLoger',
   bienici: 'Bien’ici',
-  figaro: 'Figaro Immobilier',
   maisons_appartements: 'Maisons et Appartements',
 };
 

@@ -266,7 +266,7 @@ export function NewComparablePanel({
       <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
         <h2 className={formSectionTitle}>Importer depuis une annonce</h2>
         <p className={hintText}>
-          Collez le lien SeLoger, Bien’ici, Figaro Immo, Green-Acres… — photos, texte et
+          Collez le lien SeLoger, Bien’ici, Green-Acres, Maisons et Appartements… — photos, texte et
           caractéristiques sont aspirés pour vous.
         </p>
         {extension.available ? (

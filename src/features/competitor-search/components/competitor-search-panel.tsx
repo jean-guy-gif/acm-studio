@@ -307,10 +307,10 @@ export function CompetitorSearchPanel({
         <p className={hintText}>Critères : {criteriaLabel}</p>
       </div>
       <p className="text-xs text-zinc-400 stage:text-white/40">
-        La recherche interroge Green Acres, SeLoger, Bien’ici et Figaro Immobilier. Un portail qui
-        refuse la lecture automatique reste accessible : ouvrez sa recherche, copiez le code de la
-        page de résultats et collez-le. Chaque suggestion reste à retenir ou à écarter — rien n’est
-        enregistré sans votre validation.
+        La recherche interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements. Un portail
+        qui refuse la lecture automatique reste accessible : ouvrez sa recherche, copiez le code de
+        la page de résultats et collez-le. Chaque suggestion reste à retenir ou à écarter — rien
+        n’est enregistré sans votre validation.
       </p>
       {error ? (
         <p role="alert" className={alertError}>

@@ -24,14 +24,6 @@ export function slugifyCity(city: string): string {
     .replace(/^-|-$/g, '');
 }
 
-// Vocabulaire subject_properties -> segment d'URL Figaro.
-function figaroType(propertyType: string | null): string {
-  if (propertyType === 'house') {
-    return 'maison';
-  }
-  return 'appartement';
-}
-
 export function buildPortalSearchUrls(criteria: CompetitorSearchCriteria): PortalSearchLink[] {
   const slug = slugifyCity(criteria.city);
   const postalCode = criteria.postalCode?.trim() ?? '';
@@ -62,16 +54,6 @@ export function buildPortalSearchUrls(criteria: CompetitorSearchCriteria): Porta
     url: /^\d{5}$/.test(postalCode)
       ? `https://www.bienici.com/recherche/achat/${slug}-${postalCode}`
       : `https://www.bienici.com/recherche/achat/${slug}`,
-  });
-
-  // Figaro Immobilier :
-  // https://immobilier.lefigaro.fr/annonces/immobilier-vente-appartement-nice+06000.html
-  links.push({
-    portal: 'figaro',
-    label: SEARCH_PORTAL_LABELS.figaro,
-    url: /^\d{5}$/.test(postalCode)
-      ? `https://immobilier.lefigaro.fr/annonces/immobilier-vente-${figaroType(criteria.propertyType)}-${slug}+${postalCode}.html`
-      : `https://immobilier.lefigaro.fr/annonces/immobilier-vente-${figaroType(criteria.propertyType)}-${slug}.html`,
   });
 
   // Maisons et Appartements :

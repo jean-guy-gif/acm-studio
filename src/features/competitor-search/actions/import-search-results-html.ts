@@ -47,7 +47,7 @@ export async function importSearchResultsHtml(
     return {
       ok: false,
       error:
-        'Portail non reconnu. Collez une page de résultats SeLoger, Bien’ici, Figaro ou Green Acres.',
+        'Portail non reconnu. Collez une page de résultats SeLoger, Bien’ici, Green Acres ou Maisons et Appartements.',
     };
   }
 

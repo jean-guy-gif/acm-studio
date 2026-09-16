@@ -173,8 +173,9 @@ export function SubjectPropertyImportPanel({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={formSectionTitle}>Importer depuis une annonce en ligne</h2>
       <p className={hintText}>
-        Le bien est déjà commercialisé ? Collez le lien SeLoger, Bien’ici, Figaro Immo, Green-Acres…
-        — infos et caractéristiques sont reprises pour vous, à relire avant d’enregistrer.
+        Le bien est déjà commercialisé ? Collez le lien SeLoger, Bien’ici, Green-Acres, Maisons et
+        Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
+        d’enregistrer.
       </p>
       {extension.available ? (
         <p className="text-xs text-emerald-700 stage:text-emerald-300">

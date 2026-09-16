@@ -10,8 +10,9 @@ describe('detectSearchPortal', () => {
     expect(detectSearchPortal('www.green-acres.fr')).toBe('green_acres');
     expect(detectSearchPortal('www.seloger.com')).toBe('seloger');
     expect(detectSearchPortal('www.bienici.com')).toBe('bienici');
-    expect(detectSearchPortal('immobilier.lefigaro.fr')).toBe('figaro');
-    expect(detectSearchPortal('proprietes.lefigaro.fr')).toBe('figaro');
+    expect(detectSearchPortal('www.maisonsetappartements.fr')).toBe('maisons_appartements');
+    // Figaro retiré : ses hôtes ne sont plus reconnus par la recherche.
+    expect(detectSearchPortal('immobilier.lefigaro.fr')).toBeNull();
     expect(detectSearchPortal('example.com')).toBeNull();
   });
 });
@@ -79,21 +80,6 @@ describe('extractSearchResults', () => {
       'https://www.bienici.com/annonce/vente/nice/appartement/5pieces/ag757613-543251441',
     );
     expect(results[0].price).toBe(890000);
-  });
-
-  it('extracts Figaro listing links (prestige id form)', () => {
-    const html = `
-      <a href="https://proprietes.lefigaro.fr/annonces/appartement-gironde-aquitaine-france/104387285/">Y</a>
-      <span>990 000 €</span><span>98 m²</span>
-    `;
-    const results = extractSearchResults(
-      html,
-      'https://proprietes.lefigaro.fr/annonces/appartement-achat-prestige-france/',
-      'figaro',
-    );
-    expect(results).toHaveLength(1);
-    expect(results[0].price).toBe(990000);
-    expect(results[0].surfaceArea).toBe(98);
   });
 
   it('ignores generic images and returns null fields when nothing is readable', () => {
