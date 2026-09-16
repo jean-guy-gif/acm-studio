@@ -4,6 +4,7 @@ import { normalizeArea } from '@/features/comparable-import/utils/normalize-area
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 import { parseFrenchDate } from '@/features/comparable-import/utils/parse-french-date';
+import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
 
 const DOMAIN = 'green-acres.fr';
 
@@ -305,13 +306,17 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
     }
   }
 
-  // Description from Open Graph description.
-  const descRaw = firstMatch(html, /<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
-  if (descRaw) {
-    const description = decodeHtmlEntities(descRaw).trim();
-    if (description !== '') {
-      result.listingDescription = description;
-    }
+  // Description — Mission 48 §3.1 : la classe des descriptions (description-text /
+  // description-details) est AUSSI celle des cartes voisines. On lit donc DANS le
+  // bloc de l'annonce (mainAdvertRegion), jamais sur la page entière, sinon on
+  // importe la description d'un autre bien (mesuré : la terrasse de 14 m² et le
+  // « local à vélos » d'un voisin s'affichaient à la place de la nôtre). L'og:
+  // description (souvent tronquée) ne sert que de repli.
+  const scopedDescription = extractVisibleDescription(main);
+  const ogRaw = firstMatch(html, /<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
+  const description = scopedDescription ?? (ogRaw ? decodeHtmlEntities(ogRaw).trim() : null);
+  if (description && description !== '') {
+    result.listingDescription = description;
   }
 
   // Photos scoped to this advert (data-advertid) only, never neighbours' thumbs.

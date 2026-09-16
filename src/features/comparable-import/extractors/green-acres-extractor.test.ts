@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { extractGreenAcres } from '@/features/comparable-import/extractors/green-acres-extractor';
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
+import { detectSource } from '@/features/comparable-import/utils/detect-source';
 
 // The REAL page measured in production on 16/09/2026 (579 984 chars), where the
 // old first-match-over-the-whole-document reading shipped a wrong value. The page
@@ -221,5 +222,28 @@ describe('extractGreenAcres — outdoor suggestions from the prose (Mission 48 �
       'https://www.green-acres.fr/fr/properties/maison/x/Axyz.htm',
     );
     expect(data.outdoorSuggestions ?? []).toEqual([]);
+  });
+});
+
+describe('extractGreenAcres — description scoped to the annonce block (Mission 48 §3.1)', () => {
+  // `description-text` / `description-details` is ALSO the class of the neighbour
+  // cards, so the page-wide readers imported a neighbour's description (14 m²
+  // terrace, « local à vélos », 2022). Only mainAdvertRegion is safe.
+  const importGreenAcres = () => {
+    const source = detectSource(new URL(CAGNES_URL).hostname);
+    return normalizeListingData(extractListingData(cagnesHtml, CAGNES_URL), CAGNES_URL, source)
+      .data;
+  };
+
+  it('imports OUR description (Lycée Auguste Renoir), never a neighbour’s (local à vélos)', () => {
+    const data = importGreenAcres();
+    expect(data.listingDescription).toContain('Lycée Auguste Renoir');
+    expect(data.listingDescription).toContain('terrasse de 56');
+    expect(data.listingDescription).not.toContain('vélos');
+    expect(data.listingDescription).not.toContain('14 m²');
+  });
+
+  it('the publication date comes from the annonce block, not a neighbour (02/09/2026)', () => {
+    expect(importGreenAcres().listingPublishedAt).toBe('2026-09-02T00:00:00.000Z');
   });
 });

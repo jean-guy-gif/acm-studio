@@ -318,11 +318,20 @@ export function normalizeListingData(
     floorsCount: num(merged.floorsCount),
     // Mission 48 — extérieurs mentionnés dans la prose, PROPOSÉS (voir plus bas).
     outdoorSuggestions: parts.portal.outdoorSuggestions ?? [],
-    listingDescription: pickLongestDescription(
-      ordered,
-      parts.embeddedDescription ?? null,
-      parts.visibleDescription ?? null,
-    ),
+    // Mission 48 §3.1 — chez Green Acres, la classe des descriptions est AUSSI celle
+    // des cartes voisines : TOUS les lecteurs pleine page (html, visible, embedded)
+    // rapportent la description d'un autre bien (mesuré : terrasse de 14 m², « local
+    // à vélos »). Seul l'extracteur de portail lit DANS mainAdvertRegion, donc on ne
+    // garde QUE sa description scopée. Ailleurs, le choix « la plus longue » habituel.
+    // Le libellé vient de detect-source ('green-acres.fr' → 'Green Acres').
+    listingDescription:
+      source === 'Green Acres'
+        ? (parts.portal.listingDescription ?? null)
+        : pickLongestDescription(
+            ordered,
+            parts.embeddedDescription ?? null,
+            parts.visibleDescription ?? null,
+          ),
     listingFeatures: [],
     photoUrls: [],
     generalCondition: null,
