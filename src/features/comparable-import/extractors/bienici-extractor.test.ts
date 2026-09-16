@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { extractBienIci } from '@/features/comparable-import/extractors/bienici-extractor';
+import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
+import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 
 // Real page measured on 16/09/2026 (bienici.com/annonce/vente/antibes/appartement/
 // 4pieces/iad-france-1010343). A RECENT listing: Bien'ici prints exact dates.
@@ -68,5 +70,52 @@ describe('extractBienIci', () => {
     expect(data.modifiedAt).toBe('2026-08-29T00:00:00.000Z');
     // A lower bound is NEVER an exact publication date.
     expect(data.listingPublishedAt).toBeUndefined();
+  });
+
+  // Mission 48 — the labelInfo characteristics, read from the real Antibes page.
+  it('reads the typed characteristics from the labelInfo blocks', () => {
+    const data = extractBienIci(antibesHtml);
+    expect(data.surfaceArea).toBe(75.65);
+    expect(data.roomsCount).toBe(4);
+    expect(data.bedroomsCount).toBe(3);
+    expect(data.bathroomsCount).toBe(1); // « 1 salle d'eau »
+    expect(data.constructionYear).toBe(2000);
+    expect(data.price).toBe(417000);
+  });
+
+  it('« 2e étage (sur 6) » gives floor 2 and 6 floors', () => {
+    const data = extractBienIci(antibesHtml);
+    expect(data.floor).toBe(2);
+    expect(data.floorsCount).toBe(6);
+  });
+
+  it('keeps « 1 box », « Terrasse », « Jardin »… as features but never the interface / DPE / ref / mandate blocks', () => {
+    const data = extractBienIci(antibesHtml);
+    expect(data.listingFeatures).toContain('1 box');
+    expect(data.listingFeatures).toEqual(
+      expect.arrayContaining(['Terrasse', 'Jardin', 'Ascenseur', 'Digicode', 'Interphone']),
+    );
+    const joined = (data.listingFeatures ?? []).join(' | ');
+    expect(joined).not.toMatch(/Estimez votre mensualité/i);
+    expect(joined).not.toMatch(/Barèmes de l’agence/i);
+    expect(joined).not.toMatch(/Signaler une anomalie/i);
+    expect(joined).not.toMatch(/Réf\. de l’annonce/i);
+    expect(joined).not.toMatch(/Date de réalisation du DPE/i);
+    expect(joined).not.toMatch(/Mandat en exclusivité/i);
+  });
+
+  it('« 4 560 m² de terrain » on an apartment is recorded but NOT kept (co-ownership parcel, §2.4)', () => {
+    const data = extractBienIci(antibesHtml);
+    expect(data.landArea == null).toBe(true);
+  });
+
+  it('through the pipeline: « 1 box » fills parking, « Terrasse »/« Jardin » fill outdoor', () => {
+    const url =
+      'https://www.bienici.com/annonce/vente/antibes/appartement/4pieces/iad-france-1010343';
+    const { data } = normalizeListingData(extractListingData(antibesHtml, url), url, 'bienici.com');
+    expect(data.parkingTypes).toContain('closed_box');
+    expect(data.outdoorSpaces).toEqual(expect.arrayContaining(['terrace', 'garden']));
+    // The apartment's terrain never reaches the grid.
+    expect(data.landArea).toBeNull();
   });
 });

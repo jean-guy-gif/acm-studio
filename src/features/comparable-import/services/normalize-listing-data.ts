@@ -22,6 +22,9 @@ type ScalarField = Exclude<
   | 'exposure'
   | 'outdoorSpaces'
   | 'parkingTypes'
+  // Mission 48 : suggestions d'extérieurs (proposées, pas cochées) — dérivées, pas
+  // piochées dans un extracteur.
+  | 'outdoorSuggestions'
   // Mission 33 : la date vient d'un lecteur dédié et les jours en sont déduits.
   | 'listingPublishedAt'
   | 'daysOnMarket'
@@ -44,6 +47,8 @@ const SCALAR_FIELDS: ScalarField[] = [
   'energySource',
   'price',
   'portalPricePerSquareMeter',
+  'floor',
+  'floorsCount',
   'listingDescription',
 ];
 
@@ -309,6 +314,10 @@ export function normalizeListingData(
     energySource: str(merged.energySource),
     price: num(merged.price),
     portalPricePerSquareMeter: num(merged.portalPricePerSquareMeter),
+    floor: num(merged.floor),
+    floorsCount: num(merged.floorsCount),
+    // Mission 48 — extérieurs mentionnés dans la prose, PROPOSÉS (voir plus bas).
+    outdoorSuggestions: parts.portal.outdoorSuggestions ?? [],
     listingDescription: pickLongestDescription(
       ordered,
       parts.embeddedDescription ?? null,
@@ -355,9 +364,15 @@ export function normalizeListingData(
   data.listingFeatures = [...new Set(data.listingFeatures)];
 
   // Deterministic mapping of structured characteristics from the accessible text.
+  // Mission 48 — when the portal PROPOSES outdoor spaces (Green Acres, whose
+  // terrace/parking live only in prose), that prose is NOT authoritative for
+  // auto-checking: a « terrasse » in the description must be PROPOSED, never ticked
+  // in silence (§3). So we drop the free description from the mapping in that case;
+  // outdoor/parking then come only from the structured features (none, for Green
+  // Acres), and the advisor ticks the suggestion. Other portals are unchanged.
   const mapped = mapComparableCharacteristics({
     features: [...data.listingFeatures, ...visibleFeatures],
-    description: data.listingDescription,
+    description: data.outdoorSuggestions.length > 0 ? null : data.listingDescription,
     title: data.title,
   });
   data.generalCondition = mapped.generalCondition;

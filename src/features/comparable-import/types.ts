@@ -18,10 +18,21 @@ export type ImportedComparableData = {
   heatingType: string | null;
   energySource: string | null;
   price: number | null;
-  // Price per m² as displayed by the portal (not recomputed by ACM).
+  // Price per m² as displayed by the portal (not recomputed by ACM). When the
+  // portal publishes none (Bien'ici), the import screen shows one computed by ACM
+  // from price ÷ surface — « Calculé ACM » — via acmPricePerSquareMeter, never
+  // presented as a portal figure (Mission 48 §2.5).
   portalPricePerSquareMeter: number | null;
+  // Mission 48 — étage relevé (Bien'ici « 2e étage (sur 6) »). Pas un critère de
+  // la grille du Live (qui compare surface/pièces/extérieurs…) ; champ typé.
+  floor: number | null;
+  floorsCount: number | null;
   listingDescription: string | null;
   listingFeatures: string[];
+  // Mission 48 — extérieurs mentionnés dans la PROSE de l'annonce (Green Acres ne
+  // publie pas les cases). PROPOSÉS au conseiller (« — à confirmer »), jamais
+  // cochés en silence. Lus dans le bloc de l'annonce, jamais la page entière.
+  outdoorSuggestions: string[];
   photoUrls: string[];
   // Mission 24 — structured characteristics mapped deterministically from text.
   generalCondition: string | null;
@@ -64,8 +75,11 @@ export type PartialListingData = {
   energySource?: string | null;
   price?: number | null;
   portalPricePerSquareMeter?: number | null;
+  floor?: number | null;
+  floorsCount?: number | null;
   listingDescription?: string | null;
   listingFeatures?: string[];
+  outdoorSuggestions?: string[];
   photoUrls?: string[];
   listingPublishedAt?: string | null;
   publicationLowerBoundLabel?: string | null;

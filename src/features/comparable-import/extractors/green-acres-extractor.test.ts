@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { extractGreenAcres } from '@/features/comparable-import/extractors/green-acres-extractor';
+import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
+import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 
 // The REAL page measured in production on 16/09/2026 (579 984 chars), where the
 // old first-match-over-the-whole-document reading shipped a wrong value. The page
@@ -187,5 +189,37 @@ describe('extractGreenAcres', () => {
       expect(data.city).toBeUndefined();
       expect(data.district).toBeUndefined();
     });
+  });
+});
+
+describe('extractGreenAcres — outdoor suggestions from the prose (Mission 48 §3)', () => {
+  it('proposes the terrace with its area and the parking count, from the annonce block only', () => {
+    const data = extractGreenAcres(cagnesHtml, CAGNES_URL);
+    expect(data.outdoorSuggestions).toContain('terrasse (56 m²)');
+    expect(data.outdoorSuggestions).toContain('2 places de parking');
+    // Never a neighbour's / another block's figure (the 14 m² and the 449 000 €
+    // terrace live in « biens similaires », outside mainAdvertRegion).
+    expect((data.outdoorSuggestions ?? []).join(' ')).not.toContain('14 m²');
+  });
+
+  it('never auto-checks outdoor from the prose — it stays a suggestion (pipeline)', () => {
+    const { data } = normalizeListingData(
+      extractListingData(cagnesHtml, CAGNES_URL),
+      CAGNES_URL,
+      'green-acres.fr',
+    );
+    expect(data.outdoorSpaces).toEqual([]); // not ticked in silence
+    expect(data.outdoorSuggestions).toContain('terrasse (56 m²)'); // proposed instead
+  });
+
+  it('« Structure/extérieur à restaurer » (building condition) proposes no exterior', () => {
+    const html = `
+      <a data-advertid="Axyz"></a>
+      <div class="description-text">Maison à rénover. Structure/extérieur à restaurer. Séjour lumineux.</div>`;
+    const data = extractGreenAcres(
+      html,
+      'https://www.green-acres.fr/fr/properties/maison/x/Axyz.htm',
+    );
+    expect(data.outdoorSuggestions ?? []).toEqual([]);
   });
 });

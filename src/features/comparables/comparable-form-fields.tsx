@@ -23,6 +23,9 @@ export type ComparableFieldDefaults = {
   exposure?: string | null;
   outdoor_spaces?: string[];
   parking_types?: string[];
+  // Mission 48 — extérieurs mentionnés dans la PROSE (Green Acres) : proposés au
+  // conseiller sous le champ, « à confirmer ». Jamais cochés d'office.
+  outdoor_suggestions?: string[];
   title?: string | null;
   listing_url?: string | null;
   source?: string | null;
@@ -347,6 +350,14 @@ export function ComparableFormFields({
           OUTDOOR_SPACE_LABELS as Record<OutdoorSpace, string>,
           outdoorSelected,
         )}
+        {/* Mission 48 §3 — Green Acres ne publie pas les cases d'extérieurs ; ce que
+            la description mentionne est PROPOSÉ ici, jamais coché d'office. Le
+            conseiller coche lui-même la case correspondante ci-dessus. */}
+        {initial?.outdoor_suggestions && initial.outdoor_suggestions.length > 0 ? (
+          <p className="mt-1 text-xs text-amber-700 stage:text-amber-300">
+            La description mentionne : {initial.outdoor_suggestions.join(', ')}. — à confirmer
+          </p>
+        ) : null}
         {fieldError('outdoor_spaces')}
       </fieldset>
       <fieldset className={labelWide}>

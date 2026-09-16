@@ -84,6 +84,8 @@ function toDefaults(data: ImportedComparableData): ComparableFieldDefaults {
     exposure: data.exposure,
     outdoor_spaces: data.outdoorSpaces,
     parking_types: data.parkingTypes,
+    // Mission 48 — extérieurs lus dans la prose (Green Acres), proposés « à confirmer ».
+    outdoor_suggestions: data.outdoorSuggestions,
     // Mission 33 — délai déduit de la date de mise en ligne publiée par le
     // portail. Le conseiller peut toujours corriger.
     days_on_market: data.daysOnMarket,

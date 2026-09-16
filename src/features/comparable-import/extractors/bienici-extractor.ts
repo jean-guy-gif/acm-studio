@@ -36,6 +36,72 @@ function annonceDetailRegion(decoded: string): string {
   return nextSection === -1 ? after : after.slice(0, nextSection);
 }
 
+// The characteristics live in a DIFFERENT section (« À propos de ce bien » /
+// detailsSection_aboutThisProperty) — the 25 `labelInfo` blocks. Scope reading to
+// it (Mission 48 §4): never across the whole render, where the similar-ads carousel
+// carries its own « Terrasse », « 4 pièces », etc. Empty string if the section is
+// absent (nothing is read rather than reaching for the page).
+function propertyDetailRegion(decoded: string): string {
+  const anchor = decoded.indexOf('detailsSection_aboutThisProperty');
+  if (anchor === -1) {
+    return '';
+  }
+  const after = decoded.slice(anchor);
+  const nextSection = after.search(/<section\b/i);
+  return nextSection === -1 ? after : after.slice(0, nextSection);
+}
+
+function labelInfoTexts(region: string): string[] {
+  const texts: string[] = [];
+  for (const match of region.matchAll(
+    /<div class=['"]labelInfo[^'"]*['"][^>]*>([\s\S]*?)<\/div>/gi,
+  )) {
+    const text = match[1]
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/ /g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text !== '') {
+      texts.push(text);
+    }
+  }
+  return texts;
+}
+
+function norm(text: string): string {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ /g, ' ');
+}
+
+// Blocks that must NEVER become a characteristic (Mission 48 §2.3). The DPE date is
+// the main trap (first dated block); the rest are interface commands, the agency
+// reference (never a key — §3 of mission 47), and the commercial mandate.
+const BIENICI_EXCLUSIONS = [
+  /date de realisation du dpe/,
+  /estimez votre mensualite/,
+  /baremes? de l'agence/,
+  /signaler une anomalie/,
+  /ref\.? de l'annonce|reference de l'annonce/,
+  /mandat en exclusivite/,
+  /publiee? le|modifiee? le|publiee? il y a/,
+];
+
+// A free characteristic is a SHORT NOMINAL GROUP (« Terrasse », « Câble TV »,
+// « 1 box ») — no label-colon (that is a typed datum), no conjugated verb /
+// imperative, at most five words. Anything else is discarded and LOGGED (§2.6), so
+// a future Bien'ici change surfaces in the log instead of in front of a seller.
+function looksLikeFeature(text: string): boolean {
+  if (text.length < 3 || text.length > 40) {
+    return false;
+  }
+  if (!/[a-zàâçéèêëîïôûùüœ]/i.test(text) || text.includes(':')) {
+    return false;
+  }
+  if (text.split(/\s+/).length > 5) {
+    return false;
+  }
+  return !/\b(estimez|signaler|voir|calculer|contactez|decouvrez|afficher)\b/i.test(norm(text));
+}
+
 // Bien'ici is a client-rendered SPA: the public HTML shell contains no listing
 // data. This extractor only reads an embedded ad JSON if one is present, and
 // returns nothing otherwise (controlled failure, manual entry stays available).
@@ -51,7 +117,8 @@ export function extractBienIci(html: string): PartialListingData {
   //   « Publiée il y a plus de 2 mois »                          → LOWER BOUND, verbatim.
   // Priority (exact date → lower bound → first ACM observation) is settled later
   // in deriveListingAge; here we only report what the phrase says.
-  const region = annonceDetailRegion(decodeHtmlEntities(html));
+  const decoded = decodeHtmlEntities(html);
+  const region = annonceDetailRegion(decoded);
 
   const publishedExact = region.match(new RegExp(`Publi[ée]e?\\s+le\\s+(${FRENCH_DATE})`, 'i'));
   if (publishedExact) {
@@ -74,6 +141,96 @@ export function extractBienIci(html: string): PartialListingData {
     if (iso) {
       result.modifiedAt = iso;
     }
+  }
+
+  // Mission 48 — the labelInfo characteristics, read from the property section only.
+  // Typed values fill their own field (they get compared in the grid); genuine
+  // free characteristics (Terrasse, Jardin, box, Ascenseur…) go to listingFeatures
+  // and the mapper turns them into outdoor/parking. A house's terrain is recorded
+  // but dropped here for anything else: « 4 560 m² de terrain » on an apartment is
+  // the co-ownership parcel, and a half-hectare apartment breaks the screen (§2.4).
+  const titleText =
+    decoded.match(/property="og:title"[^>]+content="([^"]+)"/i)?.[1] ??
+    decoded.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ??
+    '';
+  const titleNorm = norm(titleText);
+  const looksLikeHouse =
+    /\b(maison|villa|propriete|mas|ferme|chateau|batisse)\b/.test(titleNorm) &&
+    !/\bappartement\b/.test(titleNorm);
+
+  const features: string[] = [];
+  for (const text of labelInfoTexts(propertyDetailRegion(decoded))) {
+    const n = norm(text);
+    if (BIENICI_EXCLUSIONS.some((re) => re.test(n))) {
+      continue; // known non-characteristics (DPE date, interface, ref, mandate)
+    }
+
+    const price = /prix\s*:/.test(n) ? normalizePrice(n.match(/([\d .]+)\s*€/)?.[1]) : null;
+    const terrain = normalizeArea(n.match(/([\d .,]+?)\s*m²\s*de\s*terrain/)?.[1]);
+    const surface = /de\s*terrain/.test(n)
+      ? null
+      : normalizeArea(n.match(/^([\d .,]+?)\s*m²$/)?.[1]);
+    const rooms = normalizeCount(n.match(/^(\d+)\s*pieces?$/)?.[1]);
+    const bedrooms = normalizeCount(n.match(/(\d+)\s*chambres?/)?.[1]);
+    const bathrooms = normalizeCount(n.match(/(\d+)\s*salles?\s*d['’ ]?\s*(?:eau|bain)/)?.[1]);
+    const year = n.match(/construit en\s*(\d{4})/)?.[1];
+    const heating = text.match(/^chauffage\s*:\s*(.+)$/i)?.[1];
+    const floorMatch = n.match(/(\d+)\s*(?:er|e|eme|nd|re)?\s*etage\s*\(\s*sur\s*(\d+)\s*\)/);
+
+    let typed = false;
+    if (price != null) {
+      result.price = price;
+      typed = true;
+    }
+    if (terrain != null) {
+      typed = true;
+      if (looksLikeHouse) {
+        result.landArea = terrain;
+      } else {
+        console.warn(`[bienici] terrain relevé mais non retenu (bien non-maison) : ${text}`);
+      }
+    }
+    if (surface != null) {
+      result.surfaceArea = surface;
+      typed = true;
+    }
+    if (rooms != null) {
+      result.roomsCount = rooms;
+      typed = true;
+    }
+    if (bedrooms != null) {
+      result.bedroomsCount = bedrooms;
+      typed = true;
+    }
+    if (bathrooms != null) {
+      result.bathroomsCount = bathrooms;
+      typed = true;
+    }
+    if (year != null) {
+      result.constructionYear = Number.parseInt(year, 10);
+      typed = true;
+    }
+    if (heating != null && heating.trim() !== '') {
+      result.heatingType = heating.trim();
+      typed = true;
+    }
+    if (floorMatch) {
+      result.floor = Number.parseInt(floorMatch[1], 10);
+      result.floorsCount = Number.parseInt(floorMatch[2], 10);
+      typed = true;
+    }
+
+    if (typed) {
+      continue;
+    }
+    if (looksLikeFeature(text)) {
+      features.push(text);
+    } else {
+      console.warn(`[bienici] bloc labelInfo ignoré (forme inattendue) : ${text}`);
+    }
+  }
+  if (features.length > 0) {
+    result.listingFeatures = features;
   }
 
   const stateMatch = html.match(
