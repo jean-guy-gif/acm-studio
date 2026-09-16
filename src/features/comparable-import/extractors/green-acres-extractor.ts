@@ -312,7 +312,11 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
   // importe la description d'un autre bien (mesuré : la terrasse de 14 m² et le
   // « local à vélos » d'un voisin s'affichaient à la place de la nôtre). L'og:
   // description (souvent tronquée) ne sert que de repli.
-  const scopedDescription = extractVisibleDescription(main);
+  // Le bloc scopé commence par l'en-tête de section « À propos » : on le retire.
+  const scopedDescription =
+    extractVisibleDescription(main)
+      ?.replace(/^\s*À\s+propos\s+/i, '')
+      .trim() || null;
   const ogRaw = firstMatch(html, /<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
   const description = scopedDescription ?? (ogRaw ? decodeHtmlEntities(ogRaw).trim() : null);
   if (description && description !== '') {
