@@ -3,7 +3,7 @@
   "name": "ACM Studio — Accès annonces",
   "version": "0.1.0",
   "description": "Récupère, dans le navigateur du conseiller, la page d'une annonce ou d'une recherche pour ACM Studio. Ne lit rien d'autre, ne stocke rien, n'envoie rien ailleurs.",
-  "background": { "service_worker": "background.js" },
+  "background": { "service_worker": "background.js", "type": "module" },
   "permissions": ["tabs", "scripting"],
   "host_permissions": [
     "https://seloger.com/*",

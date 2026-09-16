@@ -11,69 +11,20 @@
 // stabilité. Chaque étape est journalisée (la console vide du service worker est ce
 // qui a coûté quatre jours).
 
+// Pure decision helpers live in a chrome-free module so Vitest can import and test
+// them (background.js itself cannot be imported — it calls chrome.* at load). The
+// size floor, the waiting-title list and the host allow-list are defined and
+// documented there.
+import { isAllowedUrl, isStableSize, isWaitingShell } from './page-readiness.js';
+
 const VERSION = chrome.runtime.getManifest().version;
 const log = (...args) => console.log('[ACM ext]', ...args);
 
-// Doit rester le jumeau exact des host_permissions du manifeste.
-// leboncoin.fr est VOLONTAIREMENT absent : son robots.txt interdit /ad/ — le
-// chemin même des annonces. On ne le supportera pas ; l'import serait refusé au
-// robots-check. Ne pas le rajouter (ni ici, ni dans le manifeste).
-const ALLOWED_HOST_SUFFIXES = [
-  'seloger.com',
-  'bienici.com',
-  'green-acres.fr',
-  'immobilier.lefigaro.fr',
-  'maisonsetappartements.fr',
-];
-
 const POLL_MS = 500; // interval between size probes
-const STABLE_DELTA = 0.02; // "stable" = two consecutive reads within 2 %
 const MAX_WAIT_MS = 15_000; // hard cap on waiting for the page to build
 const LOW_SIZE = 50_000; // below this, a hidden window likely never rendered
 
-// Stability alone no longer concludes: a WAITING PAGE (interstitial "Un instant…")
-// holds a stable, tiny HTML for a second before the real page renders — and the old
-// code accepted it, so « Un instant… » landed in a competitor's Titre in production.
-// Two signals now mark a page as an unfinished shell:
-//   - it is smaller than this floor (mesuré : coquilles 29–33 k, vraies fiches
-//     233 k–756 k — 60 k passe largement entre les deux) ;
-//   - its title is a known waiting title (second signal below).
-// A shell is never accepted on stability; we keep watching to MAX_WAIT_MS and take
-// the last state (logged), so the app can honestly see it received a shell. This is
-// the same cause as the Bien'ici shell of 10 September — a general defect, not
-// portal-specific.
-const SIZE_FLOOR = 60_000;
-
-// Waiting-page titles, ONE entry per real measurement. Never invent one: each
-// pattern MUST cite the portal and the date it was seen, or it does not belong here.
-const WAITING_TITLES = [
-  // maisonsetappartements.fr — mesuré le 2026-09-16 : la page d'attente titre « Un instant… ».
-  { portal: 'maisonsetappartements.fr', since: '2026-09-16', pattern: /un instant/i },
-];
-
-function isWaitingShell(reading) {
-  if (reading.size < SIZE_FLOOR) {
-    return true;
-  }
-  const title = (reading.title || '').trim();
-  return WAITING_TITLES.some((entry) => entry.pattern.test(title));
-}
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function isAllowedUrl(rawUrl) {
-  let url;
-  try {
-    url = new URL(rawUrl);
-  } catch {
-    return false;
-  }
-  if (url.protocol !== 'https:') {
-    return false;
-  }
-  const host = url.hostname.toLowerCase();
-  return ALLOWED_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
-}
 
 function waitForComplete(tabId, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -133,9 +84,7 @@ async function waitForStableSize(tabId, startedAt) {
     log(
       `taille=${reading.size} visibilité=${reading.visibility} titre=${JSON.stringify(reading.title ?? '')}`,
     );
-    const stable =
-      previous != null &&
-      Math.abs(reading.size - previous) / Math.max(reading.size, 1) < STABLE_DELTA;
+    const stable = isStableSize(previous, reading.size);
     if (stable) {
       if (!isWaitingShell(reading)) {
         return last; // stable AND substantial → the page is finished
