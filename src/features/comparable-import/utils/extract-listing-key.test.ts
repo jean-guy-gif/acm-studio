@@ -30,6 +30,18 @@ describe('extractListingKey — one measured portal each', () => {
     expect(identity?.listingKey).toBe('Al6sdpuxlkaknl9r');
   });
 
+  it('Maisons et Appartements : /ads/<id>, la chaîne de requête est du contexte de recherche', () => {
+    expect(
+      extractListingKey(
+        'https://www.maisonsetappartements.fr/ads/4534734?lang=fr&villes=2196&x=1#photos',
+      ),
+    ).toEqual({
+      portal: 'maisonsetappartements',
+      listingKey: '4534734',
+      canonicalUrl: 'https://www.maisonsetappartements.fr/ads/4534734',
+    });
+  });
+
   it('portail non mesuré → pas d’identité (on ne code aucun lecteur pour lui)', () => {
     expect(
       extractListingKey('https://immobilier.lefigaro.fr/annonces/annonce-12345.html'),

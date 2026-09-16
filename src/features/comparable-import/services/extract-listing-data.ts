@@ -8,6 +8,10 @@ import {
   isGreenAcres,
 } from '@/features/comparable-import/extractors/green-acres-extractor';
 import { extractHtml } from '@/features/comparable-import/extractors/html-extractor';
+import {
+  extractMaisonsEtAppartements,
+  isMaisonsEtAppartements,
+} from '@/features/comparable-import/extractors/maisons-et-appartements-extractor';
 import { extractJsonLd } from '@/features/comparable-import/extractors/json-ld-extractor';
 import { extractOpenGraph } from '@/features/comparable-import/extractors/open-graph-extractor';
 import {
@@ -69,6 +73,8 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     portal = extractBienIci(html);
   } else if (isFigaro(hostname)) {
     portal = extractFigaro(html);
+  } else if (isMaisonsEtAppartements(hostname)) {
+    portal = extractMaisonsEtAppartements(html);
   }
 
   return {

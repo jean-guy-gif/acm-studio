@@ -14,6 +14,7 @@ const PORTAL_LABELS: Record<string, string> = {
   seloger: 'SeLoger',
   bienici: 'Bien’ici',
   greenacres: 'Green Acres',
+  maisonsetappartements: 'Maisons et Appartements',
 };
 
 // Turns a lower-bound label ("plus de 2 mois") into a timestamp meaning "published no

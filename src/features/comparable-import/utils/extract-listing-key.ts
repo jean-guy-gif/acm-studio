@@ -14,6 +14,11 @@ const MEASURED_PORTALS: { suffixes: string[]; portal: string }[] = [
   { suffixes: ['seloger.com'], portal: 'seloger' },
   { suffixes: ['bienici.com'], portal: 'bienici' },
   { suffixes: ['green-acres.fr'], portal: 'greenacres' },
+  // L'identifiant est dans le chemin (/ads/4534734) ; la chaîne de requête n'est
+  // que du contexte de recherche → la règle keep=[] de normalize-listing-url est
+  // juste. Sans cette entrée, aucune observation n'est écrite et le portail n'a
+  // jamais d'historique de prix.
+  { suffixes: ['maisonsetappartements.fr'], portal: 'maisonsetappartements' },
   // leboncoin.fr : NON supporté, ne pas rajouter. Son robots.txt interdit /ad/,
   // le chemin des annonces — on ne le lira jamais, donc pas d'identité à en tirer.
 ];
