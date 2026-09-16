@@ -14,6 +14,8 @@ const MEASURED_PORTALS: { suffixes: string[]; portal: string }[] = [
   { suffixes: ['seloger.com'], portal: 'seloger' },
   { suffixes: ['bienici.com'], portal: 'bienici' },
   { suffixes: ['green-acres.fr'], portal: 'greenacres' },
+  // leboncoin.fr : NON supporté, ne pas rajouter. Son robots.txt interdit /ad/,
+  // le chemin des annonces — on ne le lira jamais, donc pas d'identité à en tirer.
 ];
 
 export type ListingIdentity = { portal: string; listingKey: string; canonicalUrl: string };

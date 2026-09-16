@@ -14,13 +14,16 @@
 const VERSION = chrome.runtime.getManifest().version;
 const log = (...args) => console.log('[ACM ext]', ...args);
 
+// Doit rester le jumeau exact des host_permissions du manifeste.
+// leboncoin.fr est VOLONTAIREMENT absent : son robots.txt interdit /ad/ — le
+// chemin même des annonces. On ne le supportera pas ; l'import serait refusé au
+// robots-check. Ne pas le rajouter (ni ici, ni dans le manifeste).
 const ALLOWED_HOST_SUFFIXES = [
   'seloger.com',
   'bienici.com',
   'green-acres.fr',
   'immobilier.lefigaro.fr',
   'maisonsetappartements.fr',
-  'leboncoin.fr',
 ];
 
 const POLL_MS = 500; // interval between size probes

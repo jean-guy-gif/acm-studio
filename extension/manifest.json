@@ -14,9 +14,7 @@
     "https://*.green-acres.fr/*",
     "https://immobilier.lefigaro.fr/*",
     "https://maisonsetappartements.fr/*",
-    "https://*.maisonsetappartements.fr/*",
-    "https://leboncoin.fr/*",
-    "https://*.leboncoin.fr/*"
+    "https://*.maisonsetappartements.fr/*"
   ],
   "externally_connectable": {
     "matches": ["https://acm-studio-henna.vercel.app/*", "http://localhost:3000/*"]

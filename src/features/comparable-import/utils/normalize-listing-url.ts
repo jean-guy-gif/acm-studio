@@ -26,7 +26,10 @@ const PORTAL_RULES: PortalRule[] = [
   { suffixes: ['green-acres.fr'], keepQueryParams: [] },
   { suffixes: ['lefigaro.fr'], keepQueryParams: [] },
   { suffixes: ['maisonsetappartements.fr'], keepQueryParams: [] },
-  { suffixes: ['leboncoin.fr'], keepQueryParams: [] },
+  // leboncoin.fr : NON supporté, ne pas rajouter. Son robots.txt interdit /ad/,
+  // le chemin même des annonces — l'import serait refusé au robots-check. Sans
+  // règle ici, une adresse leboncoin est traitée comme un portail inconnu
+  // (laissée intacte), ce qui est correct puisqu'on ne la lira jamais.
 ];
 
 function ruleFor(hostname: string): PortalRule | null {

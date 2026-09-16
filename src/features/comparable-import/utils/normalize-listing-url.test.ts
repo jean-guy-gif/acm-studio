@@ -51,13 +51,8 @@ describe('normalizeListingUrl — one case per portal (real address shapes)', ()
     ).toBe('https://www.maisonsetappartements.fr/fr/06/annonce-vente-appartement-nice-12345.html');
   });
 
-  it('Leboncoin : requête de suivi retirée (id dans le chemin)', () => {
-    expect(
-      normalizeListingUrl(
-        'https://www.leboncoin.fr/ad/ventes_immobilieres/1234567890?utm_campaign=z',
-      ),
-    ).toBe('https://www.leboncoin.fr/ad/ventes_immobilieres/1234567890');
-  });
+  // leboncoin.fr n'est plus un portail supporté (robots.txt interdit /ad/) : il
+  // tombe désormais dans « portail inconnu → adresse inchangée » ci-dessous.
 
   it('portail inconnu → adresse inchangée', () => {
     const url = 'https://portail-inconnu.example/annonce/42?ref=abc&page=2';
