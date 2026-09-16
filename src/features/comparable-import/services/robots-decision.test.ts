@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { decideRobotsAllowed } from '@/features/comparable-import/services/robots-decision';
 
-describe('decideRobotsAllowed', () => {
+describe('decideRobotsAllowed (RFC 9309 §2.3.1)', () => {
   it('obeys a 200 robots.txt that forbids our bot', () => {
     const source = {
       ok: true as const,
@@ -13,18 +13,24 @@ describe('decideRobotsAllowed', () => {
     expect(decideRobotsAllowed(source, '/recherche/nice')).toBe(true);
   });
 
-  it('fail-OPENS on a genuine 404 / 410 (no robots.txt — the protocol default)', () => {
-    expect(decideRobotsAllowed({ ok: true, status: 404, text: '' }, '/annonces/1')).toBe(true);
-    expect(decideRobotsAllowed({ ok: true, status: 410, text: '' }, '/annonces/1')).toBe(true);
+  it('4xx = « indisponible » → autorisé (401, 403, 404, 410)', () => {
+    // 403 is the case that motivated this: Maisons et Appartements answers 403 to
+    // robots.txt, which must NOT block the portal (RFC 9309 §2.3.1 "Unavailable").
+    for (const status of [401, 403, 404, 410]) {
+      expect(decideRobotsAllowed({ ok: true, status, text: '' }, '/ads/4534734')).toBe(true);
+    }
   });
 
-  it('does NOT conclude allowed on a refusal (403 / 429 / 5xx) — a block is not an absence', () => {
-    expect(decideRobotsAllowed({ ok: true, status: 403, text: '' }, '/annonces/1')).toBe(false);
-    expect(decideRobotsAllowed({ ok: true, status: 429, text: '' }, '/annonces/1')).toBe(false);
-    expect(decideRobotsAllowed({ ok: true, status: 503, text: '' }, '/annonces/1')).toBe(false);
+  it('429 = « ralentis » (Too Many Requests), pas une indisponibilité → refusé', () => {
+    expect(decideRobotsAllowed({ ok: true, status: 429, text: '' }, '/ads/4534734')).toBe(false);
   });
 
-  it('does NOT conclude allowed when the read itself failed', () => {
-    expect(decideRobotsAllowed({ ok: false }, '/annonces/1')).toBe(false);
+  it('5xx = « inatteignable » → refusé (500, 503)', () => {
+    expect(decideRobotsAllowed({ ok: true, status: 500, text: '' }, '/ads/4534734')).toBe(false);
+    expect(decideRobotsAllowed({ ok: true, status: 503, text: '' }, '/ads/4534734')).toBe(false);
+  });
+
+  it('échec de lecture (pas de statut) → refusé', () => {
+    expect(decideRobotsAllowed({ ok: false }, '/ads/4534734')).toBe(false);
   });
 });

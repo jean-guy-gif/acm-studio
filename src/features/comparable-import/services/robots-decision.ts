@@ -4,26 +4,34 @@ import { BOT_TOKEN, parseRobots } from '@/features/comparable-import/utils/robot
 // address the pages are fetched from), whether a listing path may be requested.
 // Pure and environment-agnostic — the policy lives in the app, never the extension.
 //
-// The distinction the mission insists on: a genuine 404 means "no robots.txt" and
-// fail-OPENS (protocol); a REFUSED read (403/429/5xx, or a failed fetch) is NOT a
-// 404 — when the extension is available and the read is blocked, we must NOT
-// conclude "allowed". Fail-open on a block would silently re-open the very door
-// robots is meant to keep the tool honest about.
+// Status handling follows RFC 9309 §2.3.1 ("Access Results"):
+//   - 2xx → parse the file and obey it;
+//   - 4xx → "Unavailable Status": there is effectively no robots.txt, so the robot
+//           MAY access the resources → ALLOWED. 401, 403, 404 and 410 all land here
+//           (a portal answering 403 to robots.txt — Maisons et Appartements does —
+//           must NOT block the whole portal);
+//   - 5xx → "Unreachable Status": the robot MUST assume a complete disallow →
+//           REFUSED; a failed read (no status at all) is treated the same way;
+//   - 429 → NOT an unavailability but "Too Many Requests" — a request to slow down.
+//           We listen and back off rather than read it as "crawl freely" → REFUSED.
+//           (Deliberate deviation from the plain 4xx rule, for the one 4xx that asks
+//           us to wait.)
 
 export type RobotsSource = { ok: true; status: number; text: string } | { ok: false };
 
-// robots.txt is "absent" for these statuses → allowed (the protocol default).
-const ABSENT_STATUSES = new Set([404, 410]);
-
 export function decideRobotsAllowed(source: RobotsSource, path: string): boolean {
   if (!source.ok) {
-    return false; // the read itself failed / was blocked → do not conclude allowed
+    return false; // read failed → unreachable → refused
   }
-  if (source.status === 200) {
+  const { status } = source;
+  if (status >= 200 && status <= 299) {
     return parseRobots(source.text, BOT_TOKEN).isAllowed(path);
   }
-  if (ABSENT_STATUSES.has(source.status)) {
-    return true; // no robots.txt → allowed
+  if (status === 429) {
+    return false; // Too Many Requests: back off, never conclude "crawl freely"
   }
-  return false; // 401 / 403 / 429 / 5xx … → a refusal, not an absence → not allowed
+  if (status >= 400 && status <= 499) {
+    return true; // RFC 9309 §2.3.1: an unavailable robots.txt → allowed
+  }
+  return false; // 5xx (unreachable), and anything unexpected → refused
 }
