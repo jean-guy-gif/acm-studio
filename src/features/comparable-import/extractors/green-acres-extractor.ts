@@ -5,6 +5,7 @@ import { normalizeCount } from '@/features/comparable-import/utils/normalize-cou
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 import { parseFrenchDate } from '@/features/comparable-import/utils/parse-french-date';
 import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
+import { readOutdoorSuggestions } from '@/features/comparable-import/utils/read-outdoor-suggestions';
 
 const DOMAIN = 'green-acres.fr';
 
@@ -158,50 +159,6 @@ function resolveLocation(
   return { city, district };
 }
 
-// Mission 48 — Green Acres publishes NO outdoor/parking checkboxes; the terrace and
-// parking live only in the PROSE (« …une belle terrasse de 56 m². Deux places de
-// parking… »). We read them from the MAIN advert region only (never the page, where
-// a neighbour's « Terrasse » at 449 000 € waits) and PROPOSE them — the advisor
-// ticks. We never auto-check: a wrong box in front of a seller costs more than an
-// empty one (§3). Conservative patterns: a terrace only with its area, parking only
-// with a count. « Structure/extérieur à restaurer » (building condition) never
-// matches these.
-const FR_NUMBER_WORDS: Record<string, number> = {
-  un: 1,
-  une: 1,
-  deux: 2,
-  trois: 3,
-  quatre: 4,
-  cinq: 5,
-  six: 6,
-  sept: 7,
-  huit: 8,
-  neuf: 9,
-};
-
-function outdoorSuggestionsFromRegion(main: string): string[] {
-  const text = decodeHtmlEntities(main).replace(/ /g, ' ');
-  const suggestions: string[] = [];
-
-  const terrace = text.match(/terrasse\s+de\s+(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i);
-  if (terrace) {
-    suggestions.push(`terrasse (${terrace[1].replace('.', ',')} m²)`);
-  }
-
-  const parking = text.match(
-    /\b(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf)\s+places?\s+de\s+parking/i,
-  );
-  if (parking) {
-    const raw = parking[1].toLowerCase();
-    const count = /^\d+$/.test(raw) ? Number.parseInt(raw, 10) : FR_NUMBER_WORDS[raw];
-    if (count && count > 0) {
-      suggestions.push(`${count} place${count > 1 ? 's' : ''} de parking`);
-    }
-  }
-
-  return suggestions;
-}
-
 // Green Acres renders full listing data in the HTML. This extractor reads the
 // portal's own labelled blocks (never the first monetary fragment).
 export function extractGreenAcres(html: string, originalUrl?: string): PartialListingData {
@@ -337,7 +294,7 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
     }
   }
 
-  const outdoorSuggestions = outdoorSuggestionsFromRegion(main);
+  const outdoorSuggestions = readOutdoorSuggestions(main);
   if (outdoorSuggestions.length > 0) {
     result.outdoorSuggestions = outdoorSuggestions;
   }

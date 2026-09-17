@@ -143,6 +143,25 @@ describe('Mission 49 — Bien’ici, un stationnement = une seule case', () => {
   });
 });
 
+// Revue déploiement : la règle des extérieurs/stationnements doit être la même pour
+// les 4 portails. Portail à caractéristiques STRUCTURÉES → il coche d'après elles ;
+// portail sans → il PROPOSE d'après la prose cadrée, et ne coche rien.
+describe('Mission 49 — extérieurs : cocher d’après le structuré, proposer d’après la prose', () => {
+  it('Maisons et Appartements (pas de caractéristiques structurées) PROPOSE, ne coche pas', () => {
+    const { data } = importFixture(FIXTURES.maisons);
+    expect(data.outdoorSpaces).toEqual([]);
+    expect(data.parkingTypes).toEqual([]);
+    expect(data.outdoorSuggestions).toContain('jardin (60 m²)');
+    expect(data.outdoorSuggestions).toContain('1 place de parking');
+  });
+
+  it('SeLoger (Balcon/Terrasse structurés) COCHE d’après eux, sans suggestion', () => {
+    const { data } = importFixture(FIXTURES.seloger);
+    expect(data.outdoorSpaces).toEqual(expect.arrayContaining(['balcony', 'terrace']));
+    expect(data.outdoorSuggestions).toEqual([]);
+  });
+});
+
 describe('selectListingDescription — la règle, testable', () => {
   it('préfère la lecture cadrée (niveau 1) à la métadonnée de page (niveau 2)', () => {
     const selected = selectListingDescription({

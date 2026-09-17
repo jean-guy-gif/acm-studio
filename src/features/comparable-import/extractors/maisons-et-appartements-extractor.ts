@@ -3,6 +3,7 @@ import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
+import { readOutdoorSuggestions } from '@/features/comparable-import/utils/read-outdoor-suggestions';
 
 const DOMAIN = 'maisonsetappartements.fr';
 
@@ -131,6 +132,15 @@ export function extractMaisonsEtAppartements(html: string): PartialListingData {
 
   if (typeof product.description === 'string' && product.description.trim() !== '') {
     result.listingDescription = product.description.trim();
+    // Mission 49 (revue) — M&A ne publie AUCUNE case d'extérieur/stationnement
+    // structurée : jardin, parking, balcon ne vivent que dans la prose du bloc
+    // Product (à nous par construction). On les PROPOSE — ligne « — à confirmer » —,
+    // jamais on ne les coche (même règle que Green Acres). L'écran laisse le
+    // conseiller trancher.
+    const suggestions = readOutdoorSuggestions(result.listingDescription);
+    if (suggestions.length > 0) {
+      result.outdoorSuggestions = suggestions;
+    }
   }
 
   const image =
