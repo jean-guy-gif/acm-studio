@@ -4,6 +4,7 @@ import type {
   PartialListingData,
 } from '@/features/comparable-import/types';
 import { mapComparableCharacteristics } from '@/features/comparable-import/services/map-comparable-characteristics';
+import { selectListingDescription } from '@/features/comparable-import/services/select-listing-description';
 import { deduplicatePhotoUrls } from '@/features/comparable-import/utils/deduplicate-photo-urls';
 import { isGenericImageUrl, isGenericTitle } from '@/features/comparable-import/utils/is-generic';
 import { keepListingPhotos } from '@/features/comparable-import/utils/listing-photo-scope';
@@ -153,24 +154,8 @@ function str(value: string | number | null): string | null {
   return typeof value === 'string' ? value : null;
 }
 
-// La description sert à cocher terrasse, garage, parking… : on retient la PLUS
-// LONGUE des candidates, jamais la première. Terrain (19/08) : la balise `meta`
-// arrive en tête du document et n'est qu'un résumé tronqué de 148 caractères,
-// là où la vraie description en fait plus de mille.
-function pickLongestDescription(
-  sources: readonly PartialListingData[],
-  ...extra: Array<string | null>
-): string | null {
-  const candidates = [...sources.map((source) => source.listingDescription), ...extra].filter(
-    (value): value is string => typeof value === 'string' && value.trim() !== '',
-  );
-  if (candidates.length === 0) {
-    return null;
-  }
-  return candidates.reduce((best, candidate) =>
-    candidate.trim().length > best.trim().length ? candidate : best,
-  );
-}
+// Mission 49 — le choix de la description (« la plus longue » remplacé par le choix
+// par provenance) vit désormais dans select-listing-description.
 
 function hostOf(url: string, baseUrl: string): string | null {
   try {
@@ -181,11 +166,7 @@ function hostOf(url: string, baseUrl: string): string | null {
 }
 
 // Garde les adresses encastrées servies par le MÊME hébergeur que la photo de
-// référence (la première fournie par la source la plus fiable). Terrain
-// (19/08, SeLoger) : se fier à TOUS les hébergeurs déjà vus faisait entrer les
-// logos d'agence, servis par un CDN distinct. Sans photo de référence, on ne
-// devine rien : mieux vaut aucune photo qu'un habillage présenté au vendeur
-// comme celle du bien.
+// référence. Sans photo de référence, on ne devine rien : aucune photo.
 function galleryFromSameHosts(
   embedded: readonly string[],
   reference: readonly string[],
@@ -205,6 +186,12 @@ function galleryFromSameHosts(
     return host != null && trustedHosts.has(host);
   });
 }
+
+// Mission 49 — les portails à carrousel de voisins (mesurés) : chez eux, les lecteurs
+// pleine page (html/jsonLd) rapportent les photos ET la description d'un autre bien.
+// Pour eux, on ne collecte les photos QUE de sources cadrées à l'annonce. Ailleurs
+// (portail inconnu, sans carrousel connu), la page EST l'annonce : pipeline complet.
+const CADRE_PORTALS = new Set(['Green Acres', "Bien'ici", 'SeLoger', 'Maisons et Appartements']);
 
 // A page only counts as a real listing when at least one HARD business field was
 // extracted. When a portal serves a block / captcha / search page instead of the
@@ -262,37 +249,69 @@ export function normalizeListingData(
     num(merged.surfaceArea),
   );
 
-  // Par source, dans l'ordre de priorité : la première source qui fournit des
-  // photos donne l'hébergeur de référence (voir galleryFromSameHosts).
-  const photoGroups = [
-    parts.portal.photoUrls ?? [],
-    parts.jsonLd.photoUrls ?? [],
-    parts.openGraph.photoUrls ?? [],
-    parts.html.photoUrls ?? [],
-  ].map((group) => group.filter((url) => !isGenericImageUrl(url)));
-  const identifiedPhotos = photoGroups.flat();
-  const referencePhotos = photoGroups.find((group) => group.length > 0) ?? [];
-
-  // Galerie chargée par script : on complète avec les adresses trouvées dans le
-  // texte de la page, mais UNIQUEMENT chez les hébergeurs déjà identifiés comme
-  // portant les photos de l'annonce. Sans ce filtre on ramasserait les visuels
-  // du site (bandeaux, avatars, partenaires) ; avec lui on récupère les autres
-  // photos du bien, qui sortent du même serveur d'images que la couverture.
-  // Terrain (19/08, SeLoger) : le logo de l'agence est une vraie balise <img> de
-  // la page, servie par un CDN d'images distinct. On applique donc le filtre
-  // d'hébergeur à TOUTES les candidates, pas seulement à la galerie encastrée :
-  // les photos d'un bien sortent du serveur d'images du portail.
-  const combinedPhotos = galleryFromSameHosts(
-    [...identifiedPhotos, ...(parts.embeddedPhotoUrls ?? [])],
-    referencePhotos,
-    listingUrl,
-  );
-  // Recette du 19/08 : la page contient aussi les photos des « biens
-  // similaires » et l'habillage du site. On les écarte AVANT la déduplication.
+  // Mission 49 — les photos, comme la description, se collectent DANS le bloc de
+  // l'annonce, jamais sur la page (SeLoger importait 8 photos de voisins sur 12 ; le
+  // lecteur html rapportait 101 balises <img> chez Bien'ici, dont tout le carrousel).
+  // Chez les portails à carrousel, on ne verse donc QUE des sources cadrées :
+  //   - parts.portal.photoUrls : cadrées par l'extracteur (Green Acres par advert-id,
+  //     Maisons et Appartements par l'id de groupe de l'image principale) ;
+  //   - parts.openGraph.photoUrls : la couverture og, métadonnée de page (§2) ;
+  //   - parts.embeddedPhotoUrls : la galerie encastrée, lue sur la SEULE tranche de
+  //     l'annonce (extract-listing-data ne la lit plus que là).
+  // Chez un portail inconnu (pas de carrousel connu), la page EST l'annonce : on garde
+  // le pipeline complet (jsonLd/html inclus, filtre d'hébergeur). Fail-closed : rien
+  // d'identifiable → aucune photo, journalisé — une vignette vide est honnête, la
+  // cuisine du voisin est une affirmation fausse devant un vendeur.
+  const referencePhotos = [
+    ...(parts.portal.photoUrls ?? []),
+    ...(parts.openGraph.photoUrls ?? []),
+  ].filter((url) => !isGenericImageUrl(url));
+  let scopedPhotos: string[];
+  if (CADRE_PORTALS.has(source)) {
+    // La galerie encastrée est déjà cadrée à la tranche de l'annonce ; on la retient
+    // chez le MÊME hébergeur que la couverture (portal / og), pour écarter l'habillage
+    // partenaire d'un CDN distinct. Sans couverture de référence, on ne devine rien :
+    // aucune photo (§, une vignette vide est honnête).
+    scopedPhotos = [
+      ...referencePhotos,
+      ...galleryFromSameHosts(parts.embeddedPhotoUrls ?? [], referencePhotos, listingUrl),
+    ];
+  } else {
+    // Portail inconnu : pipeline complet d'origine (ordre portal, jsonLd, og, html),
+    // filtré par hébergeur de la première source qui fournit des photos.
+    const photoGroups = [
+      parts.portal.photoUrls ?? [],
+      parts.jsonLd.photoUrls ?? [],
+      parts.openGraph.photoUrls ?? [],
+      parts.html.photoUrls ?? [],
+    ].map((group) => group.filter((url) => !isGenericImageUrl(url)));
+    const identifiedPhotos = photoGroups.flat();
+    const reference = photoGroups.find((group) => group.length > 0) ?? [];
+    scopedPhotos = galleryFromSameHosts(
+      [...identifiedPhotos, ...(parts.embeddedPhotoUrls ?? [])],
+      reference,
+      listingUrl,
+    );
+  }
   const candidatePhotos = deduplicatePhotoUrls(
-    keepListingPhotos(combinedPhotos, listingUrl),
+    keepListingPhotos(scopedPhotos, listingUrl),
     listingUrl,
   );
+  if (scopedPhotos.length > 0 && candidatePhotos.length === 0) {
+    console.warn(
+      `[photos] ${listingUrl} — cadrage sans photo identifiable, aucune retenue (fail-closed)`,
+    );
+  }
+
+  // Mission 49 — description par PROVENANCE (voir select-listing-description) : lecture
+  // cadrée de l'annonce (niveau 1), sinon og (niveau 2), sinon vide. Jamais un
+  // ratissage pleine page (niveau 3, supprimé) qui rapporterait un voisin.
+  const selectedDescription = selectListingDescription({
+    portalScoped: parts.portal.listingDescription ?? null,
+    regionVisible: parts.visibleDescription ?? null,
+    regionEmbedded: parts.embeddedDescription ?? null,
+    ogMeta: parts.openGraph.listingDescription ?? null,
+  });
 
   const data: ImportedComparableData = {
     title: pickTitle(ordered, source),
@@ -318,20 +337,7 @@ export function normalizeListingData(
     floorsCount: num(merged.floorsCount),
     // Mission 48 — extérieurs mentionnés dans la prose, PROPOSÉS (voir plus bas).
     outdoorSuggestions: parts.portal.outdoorSuggestions ?? [],
-    // Mission 48 §3.1 — chez Green Acres, la classe des descriptions est AUSSI celle
-    // des cartes voisines : TOUS les lecteurs pleine page (html, visible, embedded)
-    // rapportent la description d'un autre bien (mesuré : terrasse de 14 m², « local
-    // à vélos »). Seul l'extracteur de portail lit DANS mainAdvertRegion, donc on ne
-    // garde QUE sa description scopée. Ailleurs, le choix « la plus longue » habituel.
-    // Le libellé vient de detect-source ('green-acres.fr' → 'Green Acres').
-    listingDescription:
-      source === 'Green Acres'
-        ? (parts.portal.listingDescription ?? null)
-        : pickLongestDescription(
-            ordered,
-            parts.embeddedDescription ?? null,
-            parts.visibleDescription ?? null,
-          ),
+    listingDescription: selectedDescription.description,
     listingFeatures: [],
     photoUrls: [],
     generalCondition: null,
@@ -356,6 +362,13 @@ export function normalizeListingData(
   // A description that is just the portal's generic slogan is not usable.
   if (data.listingDescription && isGenericTitle(data.listingDescription, source)) {
     data.listingDescription = null;
+  }
+  // Mission 49 — une description vide est un résultat VALIDE (jamais un voisin en
+  // repli), mais on la journalise pour que sa disparition soit visible.
+  if (data.listingDescription == null) {
+    console.warn(
+      `[description] ${listingUrl} — aucune description cadrée retenue (provenance ${selectedDescription.provenance})`,
+    );
   }
 
   // Photos are only kept when the page really looks like a listing (see above).

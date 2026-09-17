@@ -19,11 +19,13 @@ import {
   isSeLoger,
 } from '@/features/comparable-import/extractors/seloger-extractor';
 import type { PartialListingData } from '@/features/comparable-import/types';
+import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { extractEmbeddedDescription } from '@/features/comparable-import/utils/extract-embedded-description';
 import { extractEmbeddedImageUrls } from '@/features/comparable-import/utils/extract-embedded-image-urls';
 import { extractListingPublishedAt } from '@/features/comparable-import/utils/extract-listing-published-at';
 import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
 import { extractVisibleFeatures } from '@/features/comparable-import/utils/extract-visible-features';
+import { mainAdvertRegion } from '@/features/comparable-import/utils/main-advert-region';
 
 export type ExtractedParts = {
   portal: PartialListingData;
@@ -77,15 +79,22 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     portal = extractMaisonsEtAppartements(html);
   }
 
+  // Mission 49 — description ET photos se lisent DANS le bloc de l'annonce, jamais
+  // sur la page (où les cartes voisines portent la description et les photos d'un
+  // autre bien). Les lecteurs génériques ci-dessous sont donc cadrés à cette seule
+  // tranche. Pour M&A et les portails inconnus, la tranche est vide : on ne ratisse
+  // pas la page — l'extracteur de portail fait foi (§3, le niveau 3 est supprimé).
+  const region = mainAdvertRegion(html, detectSource(hostname));
+
   return {
     portal,
     jsonLd: extractJsonLd(html),
     openGraph: extractOpenGraph(html),
     html: extractHtml(html),
-    embeddedPhotoUrls: extractEmbeddedImageUrls(html),
-    embeddedDescription: extractEmbeddedDescription(html),
+    embeddedPhotoUrls: extractEmbeddedImageUrls(region),
+    embeddedDescription: extractEmbeddedDescription(region),
     listingPublishedAt: extractListingPublishedAt(html),
-    visibleDescription: extractVisibleDescription(html),
+    visibleDescription: extractVisibleDescription(region),
     visibleFeatures: extractVisibleFeatures(html),
   };
 }

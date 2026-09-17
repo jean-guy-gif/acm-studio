@@ -12,7 +12,7 @@
 
 // 1. L'habillage du site. Ces chemins ne portent jamais la photo d'un bien.
 const SITE_CHROME =
-  /(^|[/_-])(badge|badges|logo|logos|sprite|sprites|icon|icons|placeholder|avatar|banner|pictos?|app[_-]?store|google[_-]?play|apple)([/_.-]|$)/i;
+  /(^|[/_-])(badge|badges|logo|logos|sprite|sprites|icon|icons|placeholder|avatar|banner|pictos?|app[_-]?store|google[_-]?play|apple|browser[_-]?upgrade)([/_.-]|$)/i;
 
 // 2. L'identifiant de l'annonce. Green Acres, SeLoger et consorts le placent
 // dans le chemin de leurs images ; il est aussi dans l'adresse de l'annonce.
@@ -33,9 +33,14 @@ function tokensOf(url: string, base: string): string[] {
 
 // Retourne les photos réellement rattachées à l'annonce.
 //
-// Le filtre par identifiant n'est appliqué QUE s'il laisse au moins deux photos :
-// beaucoup de portails ne mettent pas l'identifiant dans leurs images, et il
-// vaut mieux garder une galerie un peu large qu'une fiche sans photo.
+// Mission 49 — le CADRAGE (les photos arrivent déjà de la seule tranche de
+// l'annonce, voir extract-listing-data + normalize) est le moyen principal.
+// L'identifiant n'est plus qu'une CONFIRMATION SECONDAIRE : s'il apparaît dans
+// certaines photos (Green Acres met son advert-id dans l'URL), il départage un
+// éventuel intrus resté dans la tranche ; s'il n'apparaît nulle part (SeLoger =
+// UUID opaques), le cadrage amont fait foi et on garde la tranche. On n'ÉLARGIT
+// jamais au-delà de l'entrée cadrée — c'est l'appelant qui garantit le fail-closed
+// (entrée cadrée vide → aucune photo, journalisée).
 export function keepListingPhotos(photoUrls: string[], listingUrl: string): string[] {
   const withoutChrome = photoUrls.filter((url) => {
     try {
@@ -55,5 +60,7 @@ export function keepListingPhotos(photoUrls: string[], listingUrl: string): stri
   const matching = withoutChrome.filter((url) =>
     tokensOf(url, listingUrl).some((token) => listingTokens.has(token)),
   );
-  return matching.length >= 2 ? matching : withoutChrome;
+  // L'identifiant confirme quand il apparaît quelque part ; sinon, la tranche
+  // cadrée reste la vérité (jamais un élargissement hors d'elle).
+  return matching.length > 0 ? matching : withoutChrome;
 }

@@ -125,11 +125,14 @@ describe('normalizeListingData priority (JSON-LD > Open Graph > HTML)', () => {
     ['roomsCount', { roomsCount: 3 } as PartialListingData],
     ['title', { title: 'Appartement 3 pièces avec balcon' } as PartialListingData],
   ])('keeps the photos as soon as %s is extracted', (_field, jsonLd) => {
+    // Mission 49 — chez un portail à carrousel (Bien'ici), la photo vient d'une source
+    // CADRÉE (couverture og / galerie encastrée), jamais du lecteur html/jsonLd non
+    // cadré. On place donc la couverture dans openGraph.
     const { data, foundFields } = normalizeListingData(
       {
         portal: {},
-        jsonLd: { ...jsonLd, photoUrls: ['https://cdn.example.com/photo-1.jpg'] },
-        openGraph: {},
+        jsonLd,
+        openGraph: { photoUrls: ['https://cdn.example.com/photo-1.jpg'] },
         html: {},
         embeddedPhotoUrls: [],
         embeddedDescription: null,
