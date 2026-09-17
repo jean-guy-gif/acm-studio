@@ -339,6 +339,7 @@ function FindScreen() {
         criteriaLabel="Nice 06000"
         searchAction={previewSearchCompetitors}
         importResultsHtmlAction={previewImportSearchResults}
+        retryPortalAction={previewImportSearchResults}
         recordDecisionAction={previewRecordDecision}
         enrichAction={previewEnrichCandidate}
       />

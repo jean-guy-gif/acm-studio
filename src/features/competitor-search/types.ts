@@ -70,7 +70,11 @@ export type SearchExtraction = {
   excludedDuplicates: number;
 };
 
-export type PortalSearchStatus = 'ok' | 'blocked' | 'empty';
+// MISSION 50 §10 — trois issues d'échec distinctes, parce que l'écran n'en fait pas
+// la même chose : `refused` (robots.txt interdit ce chemin — permanent, coller,
+// jamais « réessayer »), `unreachable` (pas de réponse / délai / réseau — passager,
+// on peut relancer), `empty` (page reçue mais coquille ou zéro carte).
+export type PortalSearchStatus = 'ok' | 'refused' | 'unreachable' | 'empty';
 
 export type PortalSearchResult = {
   portal: SearchPortal;

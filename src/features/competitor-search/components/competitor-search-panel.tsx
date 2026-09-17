@@ -40,6 +40,7 @@ type Props = {
   criteriaLabel: string;
   searchAction: () => Promise<CompetitorSearchResult>;
   importResultsHtmlAction: (formData: FormData) => Promise<SearchResultsHtmlImport>;
+  retryPortalAction: (portal: PortalSearchResult['portal']) => Promise<SearchResultsHtmlImport>;
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   enrichAction: (url: string) => Promise<EnrichCandidateResult>;
 };
@@ -119,11 +120,13 @@ function PortalBlock({
   portal,
   projectId,
   onPaste,
+  onRetry,
   pending,
 }: {
   portal: PortalSearchResult;
   projectId: string;
   onPaste: (searchUrl: string, html: string) => void;
+  onRetry: (portal: PortalSearchResult['portal']) => void;
   pending: boolean;
 }) {
   const [discarded, setDiscarded] = useState<Set<string>>(new Set());
@@ -172,6 +175,20 @@ function PortalBlock({
           <p className="text-sm font-medium text-amber-700 stage:text-amber-300">
             {portal.message}
           </p>
+          {/* §10 : un échec « injoignable » est PASSAGER — on propose de relancer ce
+              portail. Un « refused » (robots.txt) est PERMANENT — jamais de bouton
+              « réessayer », seulement le collage. « empty » (coquille ou zéro carte)
+              propose aussi le collage, sans relance. */}
+          {portal.status === 'unreachable' ? (
+            <button
+              type="button"
+              onClick={() => onRetry(portal.portal)}
+              disabled={pending}
+              className={`${btnSecondary} self-start px-3 py-1.5 text-xs`}
+            >
+              Relancer {portal.label}
+            </button>
+          ) : null}
           {/* Recette du 19/08 : cet écran demandait encore « Cmd/Ctrl+U → code
               source », alors que l'écran d'ajout d'un concurrent avait déjà
               basculé sur le geste simple. Deux écrans du même outil ne peuvent
@@ -193,6 +210,7 @@ export function CompetitorSearchPanel({
   criteriaLabel,
   searchAction,
   importResultsHtmlAction,
+  retryPortalAction,
   recordDecisionAction,
   enrichAction,
 }: Props) {
@@ -249,6 +267,12 @@ export function CompetitorSearchPanel({
     });
   }
 
+  function mergePortal(updated: PortalSearchResult) {
+    setPortals((current) =>
+      (current ?? []).map((portal) => (portal.portal === updated.portal ? updated : portal)),
+    );
+  }
+
   function handlePaste(searchUrl: string, html: string) {
     setError(null);
     const formData = new FormData();
@@ -257,11 +281,21 @@ export function CompetitorSearchPanel({
     startTransition(async () => {
       const result = await importResultsHtmlAction(formData);
       if (result.ok) {
-        setPortals((current) =>
-          (current ?? []).map((portal) =>
-            portal.portal === result.portal.portal ? result.portal : portal,
-          ),
-        );
+        mergePortal(result.portal);
+      } else {
+        setError(result.error);
+      }
+    });
+  }
+
+  // §10 : relance d'UN portail injoignable (échec passager), sans refaire les trois
+  // autres. Le résultat remplace en place la carte de ce portail.
+  function handleRetry(portal: PortalSearchResult['portal']) {
+    setError(null);
+    startTransition(async () => {
+      const result = await retryPortalAction(portal);
+      if (result.ok) {
+        mergePortal(result.portal);
       } else {
         setError(result.error);
       }
@@ -306,6 +340,14 @@ export function CompetitorSearchPanel({
         </button>
         <p className={hintText}>Critères : {criteriaLabel}</p>
       </div>
+      {pending && portals == null ? (
+        // §10 : les portails sont interrogés l'un après l'autre, une seconde entre
+        // deux pages — on le DIT au lieu de faire semblant d'être instantané.
+        <p className={hintText}>
+          Les quatre portails sont interrogés l’un après l’autre, poliment (une seconde entre deux
+          pages). Cela prend quelques secondes.
+        </p>
+      ) : null}
       <p className="text-xs text-zinc-400 stage:text-white/40">
         La recherche interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements. Un portail
         qui refuse la lecture automatique reste accessible : ouvrez sa recherche, copiez le code de
@@ -367,6 +409,7 @@ export function CompetitorSearchPanel({
               portal={portal}
               projectId={projectId}
               onPaste={handlePaste}
+              onRetry={handleRetry}
               pending={pending}
             />
           ))

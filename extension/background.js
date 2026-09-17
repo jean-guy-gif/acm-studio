@@ -152,6 +152,7 @@ async function loadAndRead(tabId, windowId, requestWindowId, startedAt) {
 
 // Opens the page in a discreet, non-focused window, reads it, and closes the window
 // (always, even on error). `requestWindowId` is the advisor's ACM Studio window.
+// Used for a ONE-OFF read (single-listing import) — one window, opened and closed.
 async function fetchPage(rawUrl, requestWindowId) {
   if (!isAllowedUrl(rawUrl)) {
     return { ok: false, error: 'Adresse non autorisée par l’extension.' };
@@ -180,6 +181,66 @@ async function fetchPage(rawUrl, requestWindowId) {
       chrome.windows.remove(win.id).catch(() => {});
     }
   }
+}
+
+// MISSION 50 §10 — une recherche interroge quatre portails (parfois paginés). Une
+// SEULE fenêtre est réutilisée entre les pages, jamais une par page (mission 46 §5) :
+// openSearchWindow l'ouvre une fois, fetchInSearchWindow y navigue page après page,
+// closeSearchWindow la ferme à la fin. La cadence (une seconde entre deux pages) est
+// tenue par l'application qui orchestre la séquence, pas ici.
+async function openSearchWindow() {
+  try {
+    // about:blank : la fenêtre naît vide et discrète ; chaque page arrive par
+    // navigation du même onglet, pas par une nouvelle fenêtre.
+    const win = await chrome.windows.create({
+      url: 'about:blank',
+      focused: false,
+      width: 1024,
+      height: 800,
+      top: 60,
+      left: 60,
+    });
+    log(`fenêtre de recherche ouverte (win=${win.id})`);
+    return { ok: true, windowId: win.id };
+  } catch (error) {
+    const message =
+      error && error.message ? String(error.message) : 'Ouverture de la fenêtre échouée.';
+    log(`erreur ouverture fenêtre de recherche : ${message}`);
+    return { ok: false, error: message };
+  }
+}
+
+async function fetchInSearchWindow(rawUrl, windowId, requestWindowId) {
+  if (!isAllowedUrl(rawUrl)) {
+    return { ok: false, error: 'Adresse non autorisée par l’extension.' };
+  }
+  const startedAt = Date.now();
+  try {
+    const tabs = await chrome.tabs.query({ windowId });
+    const tabId = tabs && tabs[0] ? tabs[0].id : null;
+    if (tabId == null) {
+      return { ok: false, error: 'Fenêtre de recherche introuvable.' };
+    }
+    await chrome.tabs.update(tabId, { url: rawUrl });
+    log(`navigation fenêtre de recherche (win=${windowId} tab=${tabId}) ${rawUrl}`);
+    // Même lecture que le one-off : on réutilise windowId pour le rattrapage éventuel.
+    return await loadAndRead(tabId, windowId, requestWindowId, startedAt);
+  } catch (error) {
+    const durationMs = Date.now() - startedAt;
+    const message = error && error.message ? String(error.message) : 'Lecture de la page échouée.';
+    log(`erreur navigation fenêtre de recherche : ${message} (${durationMs} ms)`);
+    return { ok: false, error: message, durationMs };
+  }
+}
+
+async function closeSearchWindow(windowId) {
+  try {
+    await chrome.windows.remove(windowId);
+    log(`fenêtre de recherche fermée (win=${windowId})`);
+  } catch {
+    // Déjà fermée : rien à faire.
+  }
+  return { ok: true };
 }
 
 // Reads a robots.txt from the SAME browser (same address) as the pages, so the app's
@@ -220,6 +281,23 @@ function handle(message, sender, sendResponse) {
   if (message.kind === 'fetchPage' && typeof message.url === 'string') {
     fetchPage(message.url, requestWindowId).then(sendResponse);
     return true; // keep the message channel open for the async response
+  }
+  // Mission 50 §10 — une seule fenêtre réutilisée pour toute une recherche.
+  if (message.kind === 'openSearchWindow') {
+    openSearchWindow().then(sendResponse);
+    return true;
+  }
+  if (
+    message.kind === 'fetchInSearchWindow' &&
+    typeof message.url === 'string' &&
+    typeof message.windowId === 'number'
+  ) {
+    fetchInSearchWindow(message.url, message.windowId, requestWindowId).then(sendResponse);
+    return true;
+  }
+  if (message.kind === 'closeSearchWindow' && typeof message.windowId === 'number') {
+    closeSearchWindow(message.windowId).then(sendResponse);
+    return true;
   }
   sendResponse({ ok: false, error: 'Action inconnue.' });
 }

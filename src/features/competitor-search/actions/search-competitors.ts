@@ -7,11 +7,8 @@ import type {
   RankedCandidate,
 } from '@/features/competitor-search/types';
 import { buildPortalSearchUrls } from '@/features/competitor-search/services/build-portal-search-urls';
-import {
-  candidateSignature,
-  extractSearchResults,
-  filterAndDedupeCandidates,
-} from '@/features/competitor-search/services/extract-search-results';
+import { candidateSignature } from '@/features/competitor-search/services/extract-search-results';
+import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
 import { fetchListingPage } from '@/features/comparable-import/services/fetch-listing-page';
 import {
   applyLearning,
@@ -72,45 +69,20 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
 
   const links = buildPortalSearchUrls(criteria);
 
-  const portals: PortalSearchResult[] = await Promise.all(
-    links.map(async (link): Promise<PortalSearchResult> => {
-      const page = await fetchListingPage(link.url);
-      if (!page.ok) {
-        return {
-          portal: link.portal,
-          label: link.label,
-          searchUrl: link.url,
-          status: 'blocked',
-          message: `${page.error} Ouvrez la recherche dans votre navigateur puis collez le code de la page de résultats.`,
-          candidates: [],
-        };
-      }
-      // Cartes lues par marqueur, puis §6 : on écarte le neuf et les doublons
-      // (prix+surface+pièces+commune, première occurrence gardée). Rien n'est
-      // masqué au conseiller au-delà de ces règles écrites.
-      const rawCards = extractSearchResults(page.html, page.finalUrl, link.portal);
-      const { candidates } = filterAndDedupeCandidates(rawCards);
-      if (candidates.length === 0) {
-        return {
-          portal: link.portal,
-          label: link.label,
-          searchUrl: link.url,
-          status: 'empty',
-          message:
-            'Aucune annonce détectée automatiquement. Ouvrez la recherche dans votre navigateur puis collez le code de la page de résultats.',
-          candidates: [],
-        };
-      }
-      return {
-        portal: link.portal,
-        label: link.label,
-        searchUrl: link.url,
-        status: 'ok',
-        message: null,
-        candidates,
-      };
-    }),
-  );
+  // §10 : les portails sont lus L'UN APRÈS L'AUTRE, une seconde entre deux pages,
+  // chacun isolé (un portail muet n'emporte pas les trois autres). La tentative
+  // serveur reste le lecteur ; la lecture par l'extension viendra s'y brancher sans
+  // changer cette orchestration. fetchListingPage lit déjà le robots.txt (caché par
+  // hôte 15 min) et rend un `reason` : robots interdit → refused, tout le reste →
+  // unreachable.
+  const portals: PortalSearchResult[] = await readPortalsSequentially(links, {
+    readPage: async (url) => {
+      const page = await fetchListingPage(url);
+      return page.ok
+        ? { ok: true, html: page.html, finalUrl: page.finalUrl }
+        : { ok: false, reason: page.reason };
+    },
+  });
 
   // Décisions déjà prises DANS L'AGENCE : c'est la mémoire de l'outil. On lit
   // large (toute l'agence) pour que les conseillers s'entraident, comme demandé.

@@ -21,10 +21,20 @@
     if (!data || data.__acmStudio !== REQUEST || typeof data.id !== 'string') {
       return;
     }
-    const request =
-      data.kind === 'fetchPage' || data.kind === 'fetchRobots'
-        ? { kind: data.kind, url: data.url }
-        : { kind: 'ping' };
+    // Relais explicite, kind par kind : rien d'autre que ces actions connues ne
+    // passe au service worker (une valeur inattendue retombe sur « ping »).
+    let request;
+    if (data.kind === 'fetchPage' || data.kind === 'fetchRobots') {
+      request = { kind: data.kind, url: data.url };
+    } else if (data.kind === 'openSearchWindow') {
+      request = { kind: 'openSearchWindow' };
+    } else if (data.kind === 'fetchInSearchWindow') {
+      request = { kind: 'fetchInSearchWindow', url: data.url, windowId: data.windowId };
+    } else if (data.kind === 'closeSearchWindow') {
+      request = { kind: 'closeSearchWindow', windowId: data.windowId };
+    } else {
+      request = { kind: 'ping' };
+    }
     chrome.runtime.sendMessage(request, (result) => {
       const error = chrome.runtime.lastError;
       window.postMessage(

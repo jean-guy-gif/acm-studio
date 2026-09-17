@@ -51,8 +51,23 @@ export type FetchDeps = {
   robotsFor?: (url: URL) => Promise<RobotsPolicy>;
 };
 
+// Motif machine du refus, pour que l'appelant distingue un robots.txt qui INTERDIT
+// (permanent → coller, jamais réessayer) d'une absence de réponse réseau (passager →
+// on peut relancer). Le message reste l'affichage ; le reason est la décision.
+export type FetchFailureReason =
+  | 'invalid'
+  | 'forbidden'
+  | 'robots'
+  | 'timeout'
+  | 'network'
+  | 'refused'
+  | 'unavailable'
+  | 'not-html'
+  | 'too-large';
+
 export type FetchPageResult =
-  { ok: true; html: string; finalUrl: string } | { ok: false; error: string };
+  | { ok: true; html: string; finalUrl: string }
+  | { ok: false; error: string; reason: FetchFailureReason };
 
 async function defaultResolveHost(hostname: string): Promise<string[]> {
   const records = await dns.promises.lookup(hostname, { all: true });
@@ -192,19 +207,19 @@ export async function fetchListingPage(
 
   let current = normalizeUrl(rawUrl);
   if (!current || !isAllowedProtocol(current)) {
-    return { ok: false, error: FETCH_MESSAGES.invalid };
+    return { ok: false, error: FETCH_MESSAGES.invalid, reason: 'invalid' };
   }
 
   for (let redirect = 0; redirect <= FETCH_LIMITS.maxRedirects; redirect += 1) {
     if (!(await isHostAllowed(current, resolveHost))) {
-      return { ok: false, error: FETCH_MESSAGES.forbidden };
+      return { ok: false, error: FETCH_MESSAGES.forbidden, reason: 'forbidden' };
     }
 
     // Le portail publie ses règles : on les lit et on s'y tient, y compris
     // après une redirection.
     const robots = await robotsFor(current);
     if (!robots.isAllowed(current.pathname + current.search)) {
-      return { ok: false, error: FETCH_MESSAGES.robots };
+      return { ok: false, error: FETCH_MESSAGES.robots, reason: 'robots' };
     }
 
     const controller = new AbortController();
@@ -224,54 +239,54 @@ export async function fetchListingPage(
     } catch (error) {
       clearTimeout(timer);
       if (error instanceof Error && error.name === 'AbortError') {
-        return { ok: false, error: FETCH_MESSAGES.timeout };
+        return { ok: false, error: FETCH_MESSAGES.timeout, reason: 'timeout' };
       }
-      return { ok: false, error: FETCH_MESSAGES.unanalyzable };
+      return { ok: false, error: FETCH_MESSAGES.unanalyzable, reason: 'network' };
     }
     clearTimeout(timer);
 
     if (response.status >= 300 && response.status < 400) {
       if (redirect >= FETCH_LIMITS.maxRedirects) {
-        return { ok: false, error: FETCH_MESSAGES.forbidden };
+        return { ok: false, error: FETCH_MESSAGES.forbidden, reason: 'forbidden' };
       }
       const location = response.headers.get('location');
       if (!location) {
-        return { ok: false, error: FETCH_MESSAGES.unavailable };
+        return { ok: false, error: FETCH_MESSAGES.unavailable, reason: 'unavailable' };
       }
       let next: URL;
       try {
         next = new URL(location, current);
       } catch {
-        return { ok: false, error: FETCH_MESSAGES.forbidden };
+        return { ok: false, error: FETCH_MESSAGES.forbidden, reason: 'forbidden' };
       }
       if (!isAllowedProtocol(next)) {
-        return { ok: false, error: FETCH_MESSAGES.forbidden };
+        return { ok: false, error: FETCH_MESSAGES.forbidden, reason: 'forbidden' };
       }
       current = next;
       continue;
     }
 
     if (response.status === 401 || response.status === 403 || response.status === 429) {
-      return { ok: false, error: FETCH_MESSAGES.refused };
+      return { ok: false, error: FETCH_MESSAGES.refused, reason: 'refused' };
     }
     if (response.status === 404 || response.status === 410) {
-      return { ok: false, error: FETCH_MESSAGES.unavailable };
+      return { ok: false, error: FETCH_MESSAGES.unavailable, reason: 'unavailable' };
     }
     if (response.status >= 400) {
-      return { ok: false, error: FETCH_MESSAGES.unavailable };
+      return { ok: false, error: FETCH_MESSAGES.unavailable, reason: 'unavailable' };
     }
 
     const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
     if (!ACCEPTED_CONTENT_TYPES.some((type) => contentType.includes(type))) {
-      return { ok: false, error: FETCH_MESSAGES.notHtml };
+      return { ok: false, error: FETCH_MESSAGES.notHtml, reason: 'not-html' };
     }
 
     const html = await readLimited(response, FETCH_LIMITS.maxBytes);
     if (html === null) {
-      return { ok: false, error: FETCH_MESSAGES.tooLarge };
+      return { ok: false, error: FETCH_MESSAGES.tooLarge, reason: 'too-large' };
     }
     return { ok: true, html, finalUrl: current.toString() };
   }
 
-  return { ok: false, error: FETCH_MESSAGES.forbidden };
+  return { ok: false, error: FETCH_MESSAGES.forbidden, reason: 'forbidden' };
 }

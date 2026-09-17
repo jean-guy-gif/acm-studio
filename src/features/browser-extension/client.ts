@@ -26,7 +26,17 @@ export type ExtensionFetchResult =
 // genuine 404 (allowed) from a refusal (not allowed). `{ ok: false }` = read failed.
 export type ExtensionRobotsResult = { ok: true; status: number; text: string } | { ok: false };
 
-type Pending = { kind: 'ping' | 'fetchPage' | 'fetchRobots'; url?: string };
+type Pending = {
+  kind:
+    | 'ping'
+    | 'fetchPage'
+    | 'fetchRobots'
+    | 'openSearchWindow'
+    | 'fetchInSearchWindow'
+    | 'closeSearchWindow';
+  url?: string;
+  windowId?: number;
+};
 
 let requestCounter = 0;
 
@@ -102,5 +112,43 @@ export async function fetchPageViaExtension(url: string): Promise<ExtensionFetch
     return response;
   } catch {
     return { ok: false, error: 'L’extension n’a pas répondu.' };
+  }
+}
+
+// MISSION 50 §10 — une SEULE fenêtre réutilisée pour toute une recherche. L'app
+// l'ouvre une fois, lit chaque page dedans (en tenant la cadence d'une seconde entre
+// deux pages, côté app), puis la ferme. Ouvrir/fermer une fenêtre par page est
+// interdit (mission 46 §5).
+export async function openSearchWindowViaExtension(): Promise<{ ok: boolean; windowId?: number }> {
+  try {
+    const response = await send<{ ok?: boolean; windowId?: number }>(
+      { kind: 'openSearchWindow' },
+      PING_TIMEOUT_MS + 4_000,
+    );
+    return { ok: response.ok === true, windowId: response.windowId };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function fetchInSearchWindowViaExtension(
+  url: string,
+  windowId: number,
+): Promise<ExtensionFetchResult> {
+  try {
+    return await send<ExtensionFetchResult>(
+      { kind: 'fetchInSearchWindow', url, windowId },
+      FETCH_TIMEOUT_MS,
+    );
+  } catch {
+    return { ok: false, error: 'L’extension n’a pas répondu.' };
+  }
+}
+
+export async function closeSearchWindowViaExtension(windowId: number): Promise<void> {
+  try {
+    await send<{ ok?: boolean }>({ kind: 'closeSearchWindow', windowId }, PING_TIMEOUT_MS + 2_000);
+  } catch {
+    // La fenêtre se ferme d'elle-même si l'extension ne répond pas ; rien à forcer.
   }
 }

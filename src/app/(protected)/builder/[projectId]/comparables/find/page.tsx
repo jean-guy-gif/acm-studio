@@ -6,6 +6,7 @@ import { ImportBookmarklet } from '@/features/comparable-import/components/impor
 import { importSearchResultsHtml } from '@/features/competitor-search/actions/import-search-results-html';
 import { enrichCandidate } from '@/features/competitor-search/actions/enrich-candidate';
 import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
+import { retryPortalSearch } from '@/features/competitor-search/actions/retry-portal-search';
 import { searchCompetitors } from '@/features/competitor-search/actions/search-competitors';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -28,6 +29,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
 
   const searchAction = searchCompetitors.bind(null, projectId);
   const importResultsHtmlAction = importSearchResultsHtml.bind(null, projectId);
+  const retryPortalAction = retryPortalSearch.bind(null, projectId);
   const recordDecisionAction = recordCompetitorDecision.bind(null, projectId);
   const enrichAction = enrichCandidate.bind(null, projectId);
 
@@ -52,6 +54,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
             criteriaLabel={criteriaLabel}
             searchAction={searchAction}
             importResultsHtmlAction={importResultsHtmlAction}
+            retryPortalAction={retryPortalAction}
             recordDecisionAction={recordDecisionAction}
             enrichAction={enrichAction}
           />
