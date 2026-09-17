@@ -48,6 +48,7 @@ const FIXTURES = {
     ours: 'Descriptif de cet appartement',
     photoHost: 'file.bienici.com',
     photoOurs: 'iad-france-1010343', // identifiant de l'annonce dans l'URL photo
+    photoCount: 20,
   },
   greenAcres: {
     file: 'green-acres-cagnes.html',
@@ -55,6 +56,7 @@ const FIXTURES = {
     ours: 'Lycée Auguste Renoir',
     photoHost: 'green-acres.com',
     photoOurs: 'A98cqw1yg8fmz1bt', // advert-id
+    photoCount: 10, // 10 sous Photos/ ; la vignette miniPhotos/ est dédupliquée
   },
   maisons: {
     file: 'maisons-et-appartements-villeneuve.html',
@@ -62,6 +64,7 @@ const FIXTURES = {
     ours: 'jardin',
     photoHost: 'medias.maisonsetappartements.fr',
     photoOurs: '5045398', // id de groupe de la galerie
+    photoCount: 7, // 7 angles ; f600x400 et f1200x800 du même angle = une entrée
   },
 } as const;
 
@@ -127,6 +130,16 @@ describe('Mission 49 — Maisons et Appartements, photos du seul groupe de l’a
       expect(url).toContain('5045398');
     }
     expect(data.photoUrls.some((url) => /5045136|5045230|5045239/.test(url))).toBe(false);
+  });
+});
+
+// Revue déploiement : la page ne publie qu'un « 1 box ». L'écran cochait Garage EN
+// PLUS (d'après « en option deux garages » dans la prose) — deux cases pour un seul
+// stationnement. La liste structurée fait foi ; la prose ne coche pas.
+describe('Mission 49 — Bien’ici, un stationnement = une seule case', () => {
+  it('« 1 box » coche Box fermé seulement, jamais Garage d’après la prose « deux garages en option »', () => {
+    const { data } = importFixture(FIXTURES.bienici);
+    expect(data.parkingTypes).toEqual(['closed_box']);
   });
 });
 

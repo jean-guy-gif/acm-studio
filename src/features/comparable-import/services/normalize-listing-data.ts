@@ -395,21 +395,33 @@ export function normalizeListingData(
   data.listingFeatures = [...new Set(data.listingFeatures)];
 
   // Deterministic mapping of structured characteristics from the accessible text.
-  // Mission 48 — when the portal PROPOSES outdoor spaces (Green Acres, whose
-  // terrace/parking live only in prose), that prose is NOT authoritative for
-  // auto-checking: a « terrasse » in the description must be PROPOSED, never ticked
-  // in silence (§3). So we drop the free description from the mapping in that case;
-  // outdoor/parking then come only from the structured features (none, for Green
-  // Acres), and the advisor ticks the suggestion. Other portals are unchanged.
-  const mapped = mapComparableCharacteristics({
-    features: [...data.listingFeatures, ...visibleFeatures],
-    description: data.outdoorSuggestions.length > 0 ? null : data.listingDescription,
+  const features = [...data.listingFeatures, ...visibleFeatures];
+
+  // État et exposition : lus de tout le texte (features + description + titre) — un
+  // « à rénover » ou une exposition ne vivent souvent que dans la prose. Mission 48 :
+  // sauf chez un portail qui PROPOSE ses extérieurs (Green Acres), dont la prose ne
+  // coche jamais en silence.
+  const proseDescription = data.outdoorSuggestions.length > 0 ? null : data.listingDescription;
+  const full = mapComparableCharacteristics({
+    features,
+    description: proseDescription,
     title: data.title,
   });
-  data.generalCondition = mapped.generalCondition;
-  data.exposure = mapped.exposure;
-  data.outdoorSpaces = mapped.outdoorSpaces;
-  data.parkingTypes = mapped.parkingTypes;
+  data.generalCondition = full.generalCondition;
+  data.exposure = full.exposure;
+
+  // Extérieurs et stationnements : quand le portail publie une LISTE de
+  // caractéristiques structurées (Bien'ici : labelInfo « Terrasse », « 1 box »…),
+  // elle fait foi — on ne coche PAS d'après la prose. Sinon « en option deux garages
+  // (28 000 € chacun) » cochait Garage EN PLUS du « 1 box », soit deux cases pour un
+  // seul stationnement (revue déploiement, Mission 49). Sans liste structurée (M&A,
+  // dont le jardin ne vit que dans la description), on retombe sur le texte complet.
+  const forOutdoorParking =
+    data.listingFeatures.length > 0
+      ? mapComparableCharacteristics({ features, title: data.title })
+      : full;
+  data.outdoorSpaces = forOutdoorParking.outdoorSpaces;
+  data.parkingTypes = forOutdoorParking.parkingTypes;
 
   const foundFields: string[] = [];
   const missingFields: string[] = [];
