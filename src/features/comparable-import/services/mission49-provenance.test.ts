@@ -37,7 +37,10 @@ const FIXTURES = {
     url: 'https://www.seloger.com/annonces/achat/appartement/villeneuve-loubet-06270/26ZEJMLWB13Y',
     ours: 'Bouches du Loup',
     photoHost: 'mms.seloger.com',
-    photoNeighbourAbsent: '2a7c0a82', // n'apparaît qu'après la section recommandée (>440237)
+    // Pas de jeton dans les URLs (UUID). Le critère autoritaire est le tableau
+    // medias.images de la charge d'hydratation : l'annonce en publie 11 (« Afficher
+    // les 11 photos »), on doit en garder 11 — ni moins (régression), ni plus (voisin).
+    photoCount: 11,
   },
   bienici: {
     file: 'bienici-antibes.html',
@@ -96,10 +99,11 @@ describe.each(Object.entries(FIXTURES))('Mission 49 — %s', (_name, fixture) =>
       if ('photoOurs' in fixture) {
         expect(url).toContain(fixture.photoOurs);
       }
-      // Sinon (SeLoger, UUID), au moins : jamais une photo de la section recommandée.
-      if ('photoNeighbourAbsent' in fixture) {
-        expect(url).not.toContain(fixture.photoNeighbourAbsent);
-      }
+    }
+    // Sinon (SeLoger, UUID) : le compte AUTORITAIRE (tableau medias.images = nombre
+    // publié) — ni régression (12→4), ni voisin ajouté.
+    if ('photoCount' in fixture) {
+      expect(data.photoUrls.length).toBe(fixture.photoCount);
     }
   });
 });

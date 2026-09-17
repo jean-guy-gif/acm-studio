@@ -23,7 +23,13 @@
 const NEIGHBOUR_ANCHORS: Record<string, RegExp> = {
   'Green Acres': /class="(?:announce-info|info-price-container)"/i,
   "Bien'ici": /vue-similar-ads/i,
-  SeLoger: /SimilarListings|recommand[ée]/i,
+  // SeLoger : ancre PRÉCISE sur la section des biens similaires. Le motif large
+  // `/recommand[ée]/` matchait un FAUX positif — « (20 % recommandé) » du calculateur
+  // de prêt (aviv.CDP.Sections.Mortgage.Equity, char 440237) — et coupait la région à
+  // travers l'annonce elle-même. La vraie section est `data-testid="cdp-similar-listings"`.
+  // (Les PHOTOS SeLoger ne dépendent plus de cette coupe : elles viennent du tableau
+  // autoritaire medias.images de l'extracteur ; cette région ne sert qu'à la description.)
+  SeLoger: /data-testid="cdp-similar-listings"|id="similarListings"/i,
 };
 
 // Maisons et Appartements : les photos des voisins sont IMBRIQUÉES dans les nôtres,

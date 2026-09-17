@@ -46,6 +46,56 @@ function onlyValue(html: string, pattern: RegExp): string | null {
   return values.size === 1 ? [...values][0] : null;
 }
 
+// Mission 49 — les photos de l'annonce, lues dans la CHARGE D'HYDRATATION (SeLoger
+// est une SPA Next), pas dans le DOM rendu. Le nœud du bien porte
+// `"medias":{"images":[{ "url": "https://mms.seloger.com/…" }, …]}` : c'est le
+// tableau AUTORITAIRE (les URLs sont des UUID opaques, sans clé d'annonce, donc
+// aucun autre critère ne les distingue). Position-indépendant : marche que la galerie
+// soit rendue en haut, en bas, ou pas du tout. Sur une page avec des similaires
+// rendus, plusieurs tableaux coexistent — on retient CELUI dont le nœud porte la
+// référence de NOTRE annonce (la clé de l'URL). Aucun tableau rattachable → aucune
+// photo (fail-closed), jamais celle d'un voisin.
+function listingPhotosFromHydration(flat: string, listingKey: string | null): string[] {
+  const blocks = [...flat.matchAll(/"medias"\s*:\s*\{\s*"images"\s*:\s*(\[[\s\S]*?\])/g)];
+  if (blocks.length === 0) {
+    return [];
+  }
+  let chosen: RegExpMatchArray | null = null;
+  if (listingKey) {
+    chosen =
+      blocks.find(
+        (block) =>
+          block.index != null &&
+          flat.slice(Math.max(0, block.index - 800), block.index).includes(listingKey),
+      ) ?? null;
+  }
+  if (!chosen && blocks.length === 1) {
+    chosen = blocks[0];
+  }
+  if (!chosen) {
+    return []; // plusieurs annonces, aucune rattachée à notre clé → rien, pas un voisin
+  }
+  const urls: string[] = [];
+  for (const image of chosen[1].matchAll(/"url"\s*:\s*"([^"]+)"/g)) {
+    urls.push(image[1]);
+  }
+  return [...new Set(urls)];
+}
+
+// Dernier segment du chemin de l'URL = clé canonique de l'annonce (ex. 26ZEJMLWB13Y).
+function listingKeyOf(rawUrl: string | undefined): string | null {
+  if (!rawUrl) {
+    return null;
+  }
+  try {
+    const segments = new URL(rawUrl).pathname.split('/').filter(Boolean);
+    const last = segments[segments.length - 1] ?? '';
+    return last.length >= 3 ? last : null;
+  } catch {
+    return null;
+  }
+}
+
 // Parses city/district from a SeLoger listing path like ".../antibes-06/l-estagnol/...".
 function locationFromUrl(rawUrl: string | undefined): { city?: string; district?: string } {
   if (!rawUrl) {
@@ -173,6 +223,24 @@ export function extractSeLoger(html: string, originalUrl?: string): PartialListi
   }
   if (energy.gesRating) {
     result.gesRating = energy.gesRating;
+  }
+
+  // Mission 49 — photos AUTORITAIRES depuis la charge d'hydratation (voir plus haut).
+  const photos = listingPhotosFromHydration(flat, listingKeyOf(originalUrl));
+  if (photos.length > 0) {
+    result.photoUrls = photos;
+  }
+  // Contrôle du nombre annoncé (« Afficher les 11 photos ») : rend vérifiable un
+  // pipeline sans jeton dans les URLs. Écart → journal, jamais un échec silencieux.
+  const announced = firstMatch(html, /Afficher\s+les\s+(\d+)\s+photos/i);
+  if (announced != null) {
+    const expected = Number.parseInt(announced, 10);
+    if (Number.isFinite(expected) && photos.length < expected) {
+      console.warn(
+        `[seloger] ${expected} photos annoncées, ${photos.length} lues dans medias.images` +
+          ` (${originalUrl ?? '?'})`,
+      );
+    }
   }
 
   return result;

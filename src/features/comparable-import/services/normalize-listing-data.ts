@@ -268,14 +268,23 @@ export function normalizeListingData(
   ].filter((url) => !isGenericImageUrl(url));
   let scopedPhotos: string[];
   if (CADRE_PORTALS.has(source)) {
-    // La galerie encastrée est déjà cadrée à la tranche de l'annonce ; on la retient
-    // chez le MÊME hébergeur que la couverture (portal / og), pour écarter l'habillage
-    // partenaire d'un CDN distinct. Sans couverture de référence, on ne devine rien :
-    // aucune photo (§, une vignette vide est honnête).
-    scopedPhotos = [
-      ...referencePhotos,
-      ...galleryFromSameHosts(parts.embeddedPhotoUrls ?? [], referencePhotos, listingUrl),
-    ];
+    const authoritative = (parts.portal.photoUrls ?? []).filter((url) => !isGenericImageUrl(url));
+    if (authoritative.length > 0) {
+      // L'extracteur du portail fournit un tableau AUTORITAIRE (Green Acres advert-id,
+      // Maisons et Appartements id de groupe, SeLoger medias.images) : on ne garde QUE
+      // lui — pas d'ajout de la couverture og ni de la galerie encastrée, qui n'y
+      // ajouteraient qu'un doublon recadré. Le compte reste celui que l'annonce publie.
+      scopedPhotos = authoritative;
+    } else {
+      // Bien'ici : pas de tableau autoritaire. La galerie encastrée est déjà cadrée à
+      // la tranche de l'annonce ; on la retient chez le MÊME hébergeur que la couverture
+      // og, pour écarter l'habillage partenaire d'un CDN distinct. Sans couverture de
+      // référence, on ne devine rien : aucune photo (une vignette vide est honnête).
+      scopedPhotos = [
+        ...referencePhotos,
+        ...galleryFromSameHosts(parts.embeddedPhotoUrls ?? [], referencePhotos, listingUrl),
+      ];
+    }
   } else {
     // Portail inconnu : pipeline complet d'origine (ordre portal, jsonLd, og, html),
     // filtré par hébergeur de la première source qui fournit des photos.
