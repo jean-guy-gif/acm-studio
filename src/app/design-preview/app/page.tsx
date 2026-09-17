@@ -80,7 +80,8 @@ import {
   previewUploadPropertyPhotos,
   previewUpdatePropertyPhotos,
   previewSavePositioning,
-  previewSearchCompetitors,
+  previewPrepareSearch,
+  previewRankCandidates,
   previewVoid,
 } from './preview-actions';
 
@@ -337,9 +338,9 @@ function FindScreen() {
       <CompetitorSearchPanel
         projectId="design-preview"
         criteriaLabel="Nice 06000"
-        searchAction={previewSearchCompetitors}
+        prepareAction={previewPrepareSearch}
+        rankAction={previewRankCandidates}
         importResultsHtmlAction={previewImportSearchResults}
-        retryPortalAction={previewImportSearchResults}
         recordDecisionAction={previewRecordDecision}
         enrichAction={previewEnrichCandidate}
       />

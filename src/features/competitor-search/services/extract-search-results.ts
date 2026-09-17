@@ -138,6 +138,20 @@ function absolute(href: string | null, baseUrl: string): string | null {
   }
 }
 
+// Décode un base64 (l'adresse Green Acres de data-o) SANS dépendre de l'environnement :
+// l'extraction tourne désormais dans le navigateur (lecture par l'extension) comme
+// côté serveur. `atob` existe des deux côtés ; l'adresse est de l'ASCII (une URL).
+function decodeBase64(value: string): string {
+  try {
+    if (typeof atob === 'function') {
+      return atob(value);
+    }
+    return Buffer.from(value, 'base64').toString('binary');
+  } catch {
+    return '';
+  }
+}
+
 function titleCaseCity(value: string | null): string | null {
   if (value == null) {
     return null;
@@ -243,7 +257,7 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
   let url = pageUrl;
   if (dataO) {
     try {
-      const decoded = Buffer.from(dataO, 'base64').toString('utf8');
+      const decoded = decodeBase64(dataO);
       url = absolute(decoded, pageUrl) ?? pageUrl;
     } catch {
       // data-o illisible : on garde la clé, l'URL reste celle de la page.

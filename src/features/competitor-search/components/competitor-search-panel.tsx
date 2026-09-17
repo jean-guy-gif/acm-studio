@@ -18,14 +18,26 @@ import type {
   EnrichCandidateResult,
   EnrichedCandidate,
 } from '@/features/competitor-search/actions/enrich-candidate';
+import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
+import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
+import {
+  closeSearchWindowViaExtension,
+  openSearchWindowViaExtension,
+  pingExtension,
+} from '@/features/browser-extension/client';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import {
   RankedCandidateCard,
   type DecisionPayload,
 } from '@/features/competitor-search/components/ranked-candidate-card';
+import {
+  readPageViaExtension,
+  type PortalRobotsCache,
+} from '@/features/competitor-search/services/read-page-via-extension';
+import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
+import type { PortalSearchLink } from '@/features/competitor-search/services/build-portal-search-urls';
 import type {
   CompetitorCandidate,
-  CompetitorSearchResult,
   PortalSearchResult,
   RankedCandidate,
   RecordDecisionResult,
@@ -38,9 +50,11 @@ const euro = (value: number | null): string =>
 type Props = {
   projectId: string;
   criteriaLabel: string;
-  searchAction: () => Promise<CompetitorSearchResult>;
+  // §10 : le serveur prépare (critères + adresses) et classe (avec l'apprentissage) ;
+  // la LECTURE des quatre portails se fait par l'extension, dans le navigateur.
+  prepareAction: () => Promise<PrepareSearchResult>;
+  rankAction: (portals: PortalSearchResult[]) => Promise<RankSearchResult>;
   importResultsHtmlAction: (formData: FormData) => Promise<SearchResultsHtmlImport>;
-  retryPortalAction: (portal: PortalSearchResult['portal']) => Promise<SearchResultsHtmlImport>;
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   enrichAction: (url: string) => Promise<EnrichCandidateResult>;
 };
@@ -208,20 +222,26 @@ function PortalBlock({
 export function CompetitorSearchPanel({
   projectId,
   criteriaLabel,
-  searchAction,
+  prepareAction,
+  rankAction,
   importResultsHtmlAction,
-  retryPortalAction,
   recordDecisionAction,
   enrichAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
+  const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // La recherche automatique demande l'extension ; absente, on ne dégrade PAS en
+  // quatre collages (§10) — on le dit et on propose l'ajout manuel par adresse.
+  const [extensionMissing, setExtensionMissing] = useState(false);
   const [portals, setPortals] = useState<PortalSearchResult[] | null>(null);
+  const [searchLinks, setSearchLinks] = useState<PortalSearchLink[]>([]);
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
   const [enriched, setEnriched] = useState<Record<string, EnrichedCandidate>>({});
   const [enriching, setEnriching] = useState(0);
+  const busy = pending || searching;
 
   // Complète les premières fiches en tâche de fond : le conseiller voit les
   // photos et les caractéristiques arriver au lieu d'attendre devant un écran
@@ -247,30 +267,75 @@ export function CompetitorSearchPanel({
     await Promise.all(Array.from({ length: ENRICH_CONCURRENCY }, worker));
   }
 
-  function runSearch() {
+  // Reclasse (serveur, avec l'apprentissage) après toute mise à jour de la liste des
+  // portails — recherche, relance d'un portail, collage. Le classement est la seule
+  // vue « du plus au moins ressemblant » ; sans reclassement, une carte collée ou
+  // relancée n'y entrerait pas.
+  async function refreshRanking(next: PortalSearchResult[]) {
+    setPortals(next);
+    const rank = await rankAction(next);
+    if (rank.ok) {
+      setRanked(rank.ranked);
+      setLearnedNotes(rank.learnedNotes);
+    } else {
+      setError(rank.error);
+    }
+    return rank;
+  }
+
+  // §10 — la recherche est MENÉE PAR L'EXTENSION : le serveur prépare les adresses,
+  // l'extension lit les quatre portails dans UNE seule fenêtre, l'un après l'autre.
+  // Extension absente → on ne fait pas quatre collages : on le dit (extensionMissing)
+  // et on renvoie vers l'ajout manuel par adresse.
+  async function runSearch() {
     setError(null);
-    startTransition(async () => {
-      const result = await searchAction();
-      if (result.ok) {
-        setPortals(result.portals);
-        setRanked(result.ranked);
-        setLearnedNotes(result.learnedNotes);
-        setDecided({});
-        setEnriched({});
-        void enrichTop(result.ranked);
-      } else {
-        setError(result.error);
+    setExtensionMissing(false);
+    setSearching(true);
+    try {
+      const prep = await prepareAction();
+      if (!prep.ok) {
+        setError(prep.error);
         setPortals(null);
         setRanked([]);
         setLearnedNotes([]);
+        return;
       }
-    });
-  }
+      setSearchLinks(prep.links);
 
-  function mergePortal(updated: PortalSearchResult) {
-    setPortals((current) =>
-      (current ?? []).map((portal) => (portal.portal === updated.portal ? updated : portal)),
-    );
+      const ping = await pingExtension();
+      if (!ping.available) {
+        setExtensionMissing(true);
+        setPortals(null);
+        setRanked([]);
+        setLearnedNotes([]);
+        return;
+      }
+
+      const win = await openSearchWindowViaExtension();
+      if (!win.ok || win.windowId == null) {
+        setError('La fenêtre de recherche n’a pas pu s’ouvrir. Réessayez.');
+        return;
+      }
+      const robotsCache: PortalRobotsCache = new Map();
+      let read: PortalSearchResult[];
+      try {
+        read = await readPortalsSequentially(prep.links, {
+          readPage: (url) => readPageViaExtension(url, { windowId: win.windowId, robotsCache }),
+          interPageDelayMs: 1000,
+        });
+      } finally {
+        await closeSearchWindowViaExtension(win.windowId);
+      }
+
+      setDecided({});
+      setEnriched({});
+      const rank = await refreshRanking(read);
+      if (rank.ok) {
+        void enrichTop(rank.ranked);
+      }
+    } finally {
+      setSearching(false);
+    }
   }
 
   function handlePaste(searchUrl: string, html: string) {
@@ -281,25 +346,42 @@ export function CompetitorSearchPanel({
     startTransition(async () => {
       const result = await importResultsHtmlAction(formData);
       if (result.ok) {
-        mergePortal(result.portal);
+        const next = (portals ?? []).map((portal) =>
+          portal.portal === result.portal.portal ? result.portal : portal,
+        );
+        await refreshRanking(next);
       } else {
         setError(result.error);
       }
     });
   }
 
-  // §10 : relance d'UN portail injoignable (échec passager), sans refaire les trois
-  // autres. Le résultat remplace en place la carte de ce portail.
-  function handleRetry(portal: PortalSearchResult['portal']) {
+  // §10 : relance d'UN portail injoignable (échec passager), par l'extension, sans
+  // refaire les trois autres. Une fenêtre one-off (ouverte puis fermée par l'extension)
+  // suffit pour une seule page.
+  async function handleRetry(portal: PortalSearchResult['portal']) {
+    const link = searchLinks.find((candidate) => candidate.portal === portal);
+    if (!link) {
+      return;
+    }
     setError(null);
-    startTransition(async () => {
-      const result = await retryPortalAction(portal);
-      if (result.ok) {
-        mergePortal(result.portal);
-      } else {
-        setError(result.error);
+    setSearching(true);
+    try {
+      const ping = await pingExtension();
+      if (!ping.available) {
+        setExtensionMissing(true);
+        return;
       }
-    });
+      const robotsCache: PortalRobotsCache = new Map();
+      const [one] = await readPortalsSequentially([link], {
+        readPage: (url) => readPageViaExtension(url, { robotsCache }),
+        interPageDelayMs: 0,
+      });
+      const next = (portals ?? []).map((current) => (current.portal === portal ? one : current));
+      await refreshRanking(next);
+    } finally {
+      setSearching(false);
+    }
   }
 
   // « Oui, c'est un concurrent » / « Non, et voici pourquoi ». C'est cette trace
@@ -335,29 +417,50 @@ export function CompetitorSearchPanel({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={runSearch} disabled={pending} className={btnPrimary}>
-          {pending && portals == null ? 'Recherche en cours…' : 'Lancer la recherche'}
+        <button type="button" onClick={runSearch} disabled={busy} className={btnPrimary}>
+          {searching ? 'Recherche en cours…' : 'Lancer la recherche'}
         </button>
         <p className={hintText}>Critères : {criteriaLabel}</p>
       </div>
-      {pending && portals == null ? (
+      {searching ? (
         // §10 : les portails sont interrogés l'un après l'autre, une seconde entre
         // deux pages — on le DIT au lieu de faire semblant d'être instantané.
         <p className={hintText}>
           Les quatre portails sont interrogés l’un après l’autre, poliment (une seconde entre deux
-          pages). Cela prend quelques secondes.
+          pages) dans une fenêtre discrète. Cela prend quelques secondes.
         </p>
       ) : null}
       <p className="text-xs text-zinc-400 stage:text-white/40">
-        La recherche interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements. Un portail
-        qui refuse la lecture automatique reste accessible : ouvrez sa recherche, copiez le code de
-        la page de résultats et collez-le. Chaque suggestion reste à retenir ou à écarter — rien
-        n’est enregistré sans votre validation.
+        La recherche interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements via
+        l’extension ACM Studio. Un portail qui refuse la lecture reste accessible : ouvrez sa
+        recherche, copiez le code de la page de résultats et collez-le. Chaque suggestion reste à
+        retenir ou à écarter — rien n’est enregistré sans votre validation.
       </p>
       {error ? (
         <p role="alert" className={alertError}>
           {error}
         </p>
+      ) : null}
+      {extensionMissing ? (
+        // La recherche automatique demande l'extension. Absente, on ne dégrade PAS en
+        // quatre collages : on le dit, et on propose le geste qui existe déjà — ajouter
+        // un concurrent par son adresse. Un clic ne devient pas huit sans le dire.
+        <div className={`${card} flex flex-col gap-2 p-4`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            La recherche automatique demande l’extension ACM Studio
+          </span>
+          <p className={hintText}>
+            L’extension lit les quatre portails depuis votre navigateur. Sans elle, la recherche
+            automatique n’est pas disponible — plutôt que de vous demander quatre copier-coller,
+            ajoutez un concurrent par son adresse, le geste habituel.
+          </p>
+          <Link
+            href={`/builder/${projectId}/comparables/new`}
+            className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+          >
+            Ajouter un concurrent par son adresse
+          </Link>
+        </div>
       ) : null}
       {learnedNotes.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>
@@ -410,7 +513,7 @@ export function CompetitorSearchPanel({
               projectId={projectId}
               onPaste={handlePaste}
               onRetry={handleRetry}
-              pending={pending}
+              pending={busy}
             />
           ))
         : null}

@@ -5,9 +5,9 @@ import { backLink, kickerLabel, link, pageTitle, softPanel } from '@/components/
 import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
 import { importSearchResultsHtml } from '@/features/competitor-search/actions/import-search-results-html';
 import { enrichCandidate } from '@/features/competitor-search/actions/enrich-candidate';
+import { prepareCompetitorSearch } from '@/features/competitor-search/actions/prepare-competitor-search';
+import { rankCompetitorCandidates } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
-import { retryPortalSearch } from '@/features/competitor-search/actions/retry-portal-search';
-import { searchCompetitors } from '@/features/competitor-search/actions/search-competitors';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
@@ -27,9 +27,9 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   const property = await getSubjectProperty(projectId);
   const hasCity = Boolean(property?.city && property.city.trim() !== '');
 
-  const searchAction = searchCompetitors.bind(null, projectId);
+  const prepareAction = prepareCompetitorSearch.bind(null, projectId);
+  const rankAction = rankCompetitorCandidates.bind(null, projectId);
   const importResultsHtmlAction = importSearchResultsHtml.bind(null, projectId);
-  const retryPortalAction = retryPortalSearch.bind(null, projectId);
   const recordDecisionAction = recordCompetitorDecision.bind(null, projectId);
   const enrichAction = enrichCandidate.bind(null, projectId);
 
@@ -52,9 +52,9 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           <CompetitorSearchPanel
             projectId={projectId}
             criteriaLabel={criteriaLabel}
-            searchAction={searchAction}
+            prepareAction={prepareAction}
+            rankAction={rankAction}
             importResultsHtmlAction={importResultsHtmlAction}
-            retryPortalAction={retryPortalAction}
             recordDecisionAction={recordDecisionAction}
             enrichAction={enrichAction}
           />

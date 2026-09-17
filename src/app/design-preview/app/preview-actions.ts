@@ -5,10 +5,11 @@
 // /design-preview/app (gardé hors production) — jamais par l'application réelle.
 
 import type { EnrichCandidateResult } from '@/features/competitor-search/actions/enrich-candidate';
+import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
+import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
 import type {
-  CompetitorSearchResult,
   RecordDecisionResult,
   SearchResultsHtmlImport,
 } from '@/features/competitor-search/types';
@@ -52,7 +53,11 @@ export async function previewImport(): Promise<ComparableImportResult> {
   return { ok: false, error: REFUSAL };
 }
 
-export async function previewSearchCompetitors(): Promise<CompetitorSearchResult> {
+export async function previewPrepareSearch(): Promise<PrepareSearchResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewRankCandidates(): Promise<RankSearchResult> {
   return { ok: false, error: REFUSAL };
 }
 
