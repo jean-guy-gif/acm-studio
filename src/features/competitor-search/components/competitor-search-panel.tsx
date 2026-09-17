@@ -62,6 +62,10 @@ type Props = {
 // Nombre de fiches complétées automatiquement après une recherche. Au-delà, le
 // conseiller a déjà de quoi trancher, et chaque fiche coûte un appel au portail.
 const ENRICHED_COUNT = 12;
+// Seuil de ressemblance : au-dessus, on affiche ; en dessous, on plie derrière
+// « Voir les N autres, moins ressemblants ». On ne masque rien (mission 36) — un
+// clic révèle tout —, on coupe seulement une liste trop longue à trancher.
+const SIMILARITY_THRESHOLD = 60;
 // Quelques appels en parallèle : assez pour que l'écran se remplisse vite, assez
 // peu pour rester un visiteur poli.
 const ENRICH_CONCURRENCY = 3;
@@ -241,6 +245,7 @@ export function CompetitorSearchPanel({
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
   const [enriched, setEnriched] = useState<Record<string, EnrichedCandidate>>({});
   const [enriching, setEnriching] = useState(0);
+  const [showLessRelevant, setShowLessRelevant] = useState(false);
   const busy = pending || searching;
 
   // Complète les premières fiches en tâche de fond : le conseiller voit les
@@ -413,6 +418,21 @@ export function CompetitorSearchPanel({
   }
 
   const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
+  // On coupe la liste au seuil de ressemblance : les plus ressemblants d'abord, le
+  // reste plié derrière un bouton. Rien n'est perdu — un clic révèle tout.
+  const relevant = undecided.filter((entry) => entry.score >= SIMILARITY_THRESHOLD);
+  const lessRelevant = undecided.filter((entry) => entry.score < SIMILARITY_THRESHOLD);
+
+  const renderCard = (entry: RankedCandidate) => (
+    <RankedCandidateCard
+      key={entry.candidate.url}
+      ranked={entry}
+      enriched={enriched[entry.candidate.url] ?? null}
+      projectId={projectId}
+      pending={busy}
+      onDecision={(payload) => handleDecision(entry, payload)}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -490,18 +510,37 @@ export function CompetitorSearchPanel({
               {enriching > 1 ? 's' : ''} restante{enriching > 1 ? 's' : ''})
             </p>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {undecided.map((entry) => (
-              <RankedCandidateCard
-                key={entry.candidate.url}
-                ranked={entry}
-                enriched={enriched[entry.candidate.url] ?? null}
-                projectId={projectId}
-                pending={pending}
-                onDecision={(payload) => handleDecision(entry, payload)}
-              />
-            ))}
-          </div>
+          {/* Les plus ressemblants (≥ seuil). Si tout est en dessous du seuil, on
+              affiche quand même le premier groupe vide-mains via lessRelevant. */}
+          {relevant.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {relevant.map(renderCard)}
+            </div>
+          ) : (
+            <p className={hintText}>
+              Aucun candidat au-dessus du seuil de ressemblance. Les propositions ci-dessous sont
+              plus éloignées — à vous de juger.
+            </p>
+          )}
+
+          {lessRelevant.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLessRelevant((value) => !value)}
+                className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+              >
+                {showLessRelevant
+                  ? 'Masquer les moins ressemblants'
+                  : `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, moins ressemblant${lessRelevant.length > 1 ? 's' : ''}`}
+              </button>
+              {showLessRelevant ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {lessRelevant.map(renderCard)}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

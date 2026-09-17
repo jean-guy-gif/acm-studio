@@ -51,6 +51,10 @@ export type CompetitorCandidate = {
   price: number | null;
   surfaceArea: number | null;
   roomsCount: number | null;
+  // Type du bien (vocabulaire subject_properties : apartment/house/land/…), lu sur la
+  // carte. Le type n'est JAMAIS relâché (§5 point 8) : un type différent du bien
+  // vendeur n'entre pas dans la liste. null quand la carte ne le dit pas.
+  propertyType: string | null;
   // Prix au m² tel que le portail l'affiche, jamais recalculé par nous.
   pricePerSqm: number | null;
   // Commune lue sur la carte : sert à repérer une commune voisine (la carte le DIT,

@@ -4,7 +4,6 @@ import type {
   SearchPortal,
 } from '@/features/competitor-search/types';
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
-import { extractImageUrls } from '@/features/comparable-import/utils/extract-image-urls';
 import { isGenericImageUrl } from '@/features/comparable-import/utils/is-generic';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
@@ -107,15 +106,41 @@ function readRooms(text: string | null): number | null {
   return match ? normalizeCount(match[1]) : null;
 }
 
+// Un LOGO D'AGENCE n'est pas la photo du bien (même famille que l'habillage écarté
+// en mission 49). On le reconnaît à la balise (« Logo de l'annonceur », classe
+// account-logo/agency) ou au chemin (/Agences/, /logos/, /logo…). Écarté : mieux vaut
+// pas de vignette qu'un logo.
+function isAgencyLogo(imgTag: string, src: string): boolean {
+  if (/logo|annonceur|agen(?:ce|cy)|publisher/i.test(imgTag)) {
+    return true;
+  }
+  return /\/agences?\/|\/logos?\/|[/_-]logo[._/-]|\/publisher/i.test(src);
+}
+
+const IMG_URL_ATTRS = ['data-src', 'data-lazy-src', 'data-original', 'data-thumb-src', 'src'];
+
+function imgTagSrc(tag: string): string | null {
+  for (const name of IMG_URL_ATTRS) {
+    const match = tag.match(new RegExp(`${name}\\s*=\\s*"([^"]+)"`, 'i'));
+    if (match) {
+      return decodeHtmlEntities(match[1]);
+    }
+  }
+  return null;
+}
+
+// Première VRAIE photo du bien dans la carte : on parcourt les <img> dans l'ordre, on
+// saute les logos d'agence et les images génériques (placeholder). Aucune → null.
 function firstPhoto(chunk: string, baseUrl: string): string | null {
-  for (const image of extractImageUrls(chunk)) {
-    if (isGenericImageUrl(image)) {
+  for (const tag of chunk.match(/<img\b[^>]*>/gi) ?? []) {
+    const src = imgTagSrc(tag);
+    if (src == null || isGenericImageUrl(src) || isAgencyLogo(tag, src)) {
       continue;
     }
     try {
-      const absolute = new URL(image, baseUrl);
-      if (absolute.protocol === 'http:' || absolute.protocol === 'https:') {
-        return absolute.toString();
+      const url = new URL(src, baseUrl);
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        return url.toString();
       }
     } catch {
       // URL de photo invalide : ignorée.
@@ -150,6 +175,36 @@ function decodeBase64(value: string): string {
   } catch {
     return '';
   }
+}
+
+// Type du bien lu sur la carte, ramené au vocabulaire subject_properties. On ne
+// devine rien : on reconnaît le mot publié (« Appartement », « Maison », segment
+// /appartement/ d'une URL). Inconnu → null (le classement ne l'exclura pas pour une
+// absence, seulement pour une DIFFÉRENCE avérée).
+function detectPropertyType(text: string | null): string | null {
+  if (text == null) {
+    return null;
+  }
+  const t = decodeHtmlEntities(text).toLowerCase();
+  if (/\b(appartements?|studios?|lofts?|duplex)\b/.test(t)) {
+    return 'apartment';
+  }
+  if (/\b(maisons?|villas?|mas|bastides?|chalets?|propri[ée]t[ée]s?|ch[aâ]teaux?)\b/.test(t)) {
+    return 'house';
+  }
+  if (/\bterrains?\b/.test(t)) {
+    return 'land';
+  }
+  if (/\bimmeubles?\b/.test(t)) {
+    return 'building';
+  }
+  if (/\b(locaux|local|bureaux?|commerces?|fonds\s+de\s+commerce)\b/.test(t)) {
+    return 'commercial';
+  }
+  if (/\b(parkings?|garages?|box)\b/.test(t)) {
+    return 'parking';
+  }
+  return null;
 }
 
 function titleCaseCity(value: string | null): string | null {
@@ -217,6 +272,7 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     price: readPrice(priceText),
     surfaceArea: readSurface(title),
     roomsCount: readRooms(title),
+    propertyType: detectPropertyType(title),
     pricePerSqm: null,
     city,
     photoUrl: firstPhoto(chunk, pageUrl),
@@ -241,6 +297,11 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     price: readPrice(priceText),
     surfaceArea: readSurface(alt),
     roomsCount: readRooms(alt),
+    // Type sur le chemin de l'annonce (/annonce/vente/<ville>/<type>/…) ou dans l'alt.
+    propertyType:
+      detectPropertyType(
+        href?.match(/\/annonce\/[a-z]+\/[a-z0-9'’-]+\/([a-z-]+)\//i)?.[1] ?? null,
+      ) ?? detectPropertyType(alt),
     pricePerSqm: readPricePerSqm(
       firstGroup(chunk, /ad-price__price-per-square-meter"[^>]*>([^<]+)/i),
     ),
@@ -270,13 +331,21 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
   }
   const localisation = firstGroup(chunk, /announce-localisation"[^>]*>([^<]+)/i);
   const city = titleCaseCity(localisation?.split('(')[0] ?? null);
+  // Green Acres ne publie PAS de titre sur la carte : le type vient du chemin de
+  // l'annonce (/properties/<type>/…), donnée publiée par le portail. On compose un
+  // libellé honnête à partir du type et de la commune, plutôt que « Annonce détectée ».
+  const typeSegment = url.match(/\/properties\/([a-z-]+)\//i)?.[1] ?? null;
+  const propertyType = detectPropertyType(typeSegment);
+  const typeLabel = typeSegment ? titleCaseCity(typeSegment) : null;
+  const title = typeLabel && city ? `${typeLabel} à ${city}` : (typeLabel ?? null);
   return {
     key,
     url,
-    title: null,
+    title,
     price: readPrice(firstGroup(chunk, /info-price"[^>]*>([^<]+)/i)),
     surfaceArea: readSurface(tags.get('surface habitable') ?? null),
     roomsCount: readRooms(tags.get('pièces') ?? tags.get('pieces') ?? null),
+    propertyType,
     pricePerSqm: readPricePerSqm(tags.get('prix par m²') ?? tags.get('prix par m2') ?? null),
     city,
     photoUrl: firstPhoto(chunk, pageUrl),
@@ -297,6 +366,7 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     price: readPrice(firstGroup(chunk, /RR_prix[^"]*"[^>]*>([^<]+)/i)),
     surfaceArea: readSurface(alt),
     roomsCount: readRooms(alt) ?? readRooms(firstGroup(chunk, /data-room="([^"]+)"/i)),
+    propertyType: detectPropertyType(alt),
     pricePerSqm: null,
     city,
     photoUrl: firstPhoto(chunk, pageUrl),

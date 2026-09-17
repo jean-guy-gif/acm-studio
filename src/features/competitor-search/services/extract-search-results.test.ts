@@ -136,6 +136,65 @@ describe('extractSearchResults — lecture robuste des champs', () => {
   });
 });
 
+// §5 point 8 — le type de bien est lu sur la carte (jamais relâché au classement).
+describe('extractSearchResults — type de bien et titre', () => {
+  it('SeLoger : le type est lu (majorité d’appartements sur une recherche appartement)', () => {
+    const cards = load('seloger');
+    expect(cards.filter((c) => c.propertyType === 'apartment').length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('Bien’ici : le type est lu depuis le chemin de l’annonce', () => {
+    const cards = load('bienici');
+    expect(cards.filter((c) => c.propertyType === 'apartment').length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('Green Acres : pas de titre publié → libellé composé « Type à Commune », type lu', () => {
+    const cards = load('green_acres');
+    // Aucune carte ne retombe sur « Annonce détectée » : chacune porte un libellé.
+    expect(cards.every((c) => c.title != null && c.title.trim() !== '')).toBe(true);
+    const apart = cards.find((c) => c.propertyType === 'apartment');
+    expect(apart?.title).toMatch(/ à /);
+  });
+
+  it('Maisons et Appartements : le type est lu depuis l’alt', () => {
+    const cards = load('maisons_appartements');
+    expect(cards.filter((c) => c.propertyType === 'apartment').length).toBeGreaterThanOrEqual(10);
+  });
+});
+
+// Point 3 — un logo d'agence n'est pas la photo du bien : on l'écarte, on prend la
+// première VRAIE photo, et à défaut pas de vignette (jamais un logo).
+describe('extractSearchResults — la vignette n’est jamais un logo d’agence', () => {
+  it('saute le logo de l’annonceur et prend la vraie photo', () => {
+    const [card] = extractSearchResults(
+      [
+        '<article data-id="iad-1"><a class="detailedSheetLink" href="/annonce/vente/nice/appartement/2pieces/iad-1"></a>',
+        '<div class="account-logo"><img src="https://file.bienici.com/photo/agency-logo-xyz?height=90&width=180" alt="Logo de l’annonceur"></div>',
+        '<div class="photo"><img src="https://file.bienici.com/photo/iad-1_real_photo.jpg?width=300&height=180&fit=cover" alt="Achat appartement 2 pièces 60 m²"></div>',
+        '</article>',
+      ].join(''),
+      'https://www.bienici.com/recherche/achat/nice-06000',
+      'bienici',
+    );
+    expect(card.photoUrl).toContain('iad-1_real_photo');
+    expect(card.photoUrl).not.toContain('agency-logo');
+  });
+
+  it('aucune vraie photo (seulement un logo /Agences/) → pas de vignette', () => {
+    const [card] = extractSearchResults(
+      [
+        '<article id="7" class="RR_article" itemscope itemtype="https://schema.org/Apartment">',
+        '<a href="https://www.maisonsetappartements.fr/views/ficheAnnonce.php?IdAnnonce=7"></a>',
+        '<img src="https://medias.maisonsetappartements.fr/Agences/Logos/five-star.png" alt="Appartement à vendre à Nice - 2 pièces 40 m²">',
+        '</article>',
+      ].join(''),
+      'https://www.maisonsetappartements.fr/views/Search.php',
+      'maisons_appartements',
+    );
+    expect(card.photoUrl).toBeNull();
+  });
+});
+
 // §11.3 — les programmes neufs sont écartés, y compris à fourchette de prix.
 describe('filterAndDedupeCandidates — le neuf est écarté', () => {
   it('SeLoger : au moins un programme neuf figure et est écarté', () => {
@@ -175,6 +234,7 @@ describe('filterAndDedupeCandidates — le neuf est écarté', () => {
 describe('filterAndDedupeCandidates — déduplication prix+surface+pièces+commune', () => {
   const base = {
     title: null,
+    propertyType: null,
     pricePerSqm: null,
     photoUrl: null,
     isNewBuild: false,

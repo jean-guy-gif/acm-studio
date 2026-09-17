@@ -54,23 +54,60 @@ export function RankedCandidateCard({
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<DecisionReason>('surface_too_different');
   const [comment, setComment] = useState('');
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   const { candidate } = ranked;
-  // La fiche complétée prime sur ce que la page de résultats laissait deviner.
-  const photo = enriched?.photoUrls[0] ?? candidate.photoUrl;
+  // La fiche complétée prime sur ce que la page de résultats laissait deviner. La
+  // galerie complète vient de la fiche ; à défaut, la seule vignette de la carte.
+  const photos =
+    enriched && enriched.photoUrls.length > 0
+      ? enriched.photoUrls
+      : candidate.photoUrl
+        ? [candidate.photoUrl]
+        : [];
   const price = enriched?.price ?? candidate.price;
   const surface = enriched?.surfaceArea ?? candidate.surfaceArea;
   const rooms = enriched?.roomsCount ?? candidate.roomsCount;
 
+  const shown = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
+  const step = (delta: number) =>
+    setPhotoIndex((index) => (index + delta + photos.length) % photos.length);
+
   return (
     <div className={`${card} group flex flex-col gap-2.5 overflow-hidden`}>
-      {photo ? (
-        <RemoteImage
-          src={photo}
-          alt={candidate.title ?? 'Bien concurrent'}
-          className="h-36 w-full object-cover"
-          fallbackClassName="h-36 w-full"
-        />
+      {photos.length > 0 ? (
+        <div className="relative h-36 w-full">
+          <RemoteImage
+            src={photos[shown]}
+            alt={candidate.title ?? 'Bien concurrent'}
+            className="h-36 w-full object-cover"
+            fallbackClassName="h-36 w-full"
+          />
+          {/* Point 4 — défiler la galerie du bien depuis la vignette de la carte. */}
+          {photos.length > 1 ? (
+            <>
+              <button
+                type="button"
+                aria-label="Photo précédente"
+                onClick={() => step(-1)}
+                className="absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                aria-label="Photo suivante"
+                onClick={() => step(1)}
+                className="absolute top-1/2 right-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+              >
+                ›
+              </button>
+              <span className="absolute right-1 bottom-1 rounded bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+                {shown + 1}/{photos.length}
+              </span>
+            </>
+          ) : null}
+        </div>
       ) : (
         <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
           Photo indisponible

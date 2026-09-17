@@ -35,6 +35,17 @@ export function rankCandidates(
       if (signature != null && seenSignatures.has(signature)) {
         continue;
       }
+      // §5 point 8 — le type de bien n'est JAMAIS relâché : un appartement ne
+      // concurrence pas une maison. Un type DIFFÉRENT du bien vendeur n'entre pas
+      // dans la liste, quel que soit son score. Type inconnu (non publié) → on garde,
+      // on n'exclut pas pour une absence (le conseiller tranchera).
+      if (
+        criteria.propertyType != null &&
+        candidate.propertyType != null &&
+        candidate.propertyType !== criteria.propertyType
+      ) {
+        continue;
+      }
       seen.add(candidate.url);
       if (signature != null) {
         seenSignatures.add(signature);
@@ -50,11 +61,11 @@ export function rankCandidates(
         surfaceArea: candidate.surfaceArea,
         roomsCount: candidate.roomsCount,
         // La commune est lue SUR LA CARTE : une commune voisine sort en « Autre
-        // commune » au lieu d'être masquée (§6). Quartier et type fiable n'arrivent
-        // qu'après l'enrichissement de la fiche.
+        // commune » au lieu d'être masquée (§6). Le type est lu sur la carte (§5) ;
+        // le quartier fiable n'arrive qu'après l'enrichissement de la fiche.
         city: candidate.city ?? criteria.city,
         district: null,
-        propertyType: null,
+        propertyType: candidate.propertyType,
       };
       const base = scoreCandidate(criteria, facts);
       const adjusted = applyLearning(
