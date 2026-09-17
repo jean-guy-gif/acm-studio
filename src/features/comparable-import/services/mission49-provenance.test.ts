@@ -23,30 +23,42 @@ import { detectSource } from '@/features/comparable-import/utils/detect-source';
 // la première SeLoger réelle, d'où « le portail le plus utilisé était le seul non
 // mesuré ».
 const DIR = join(__dirname, '..', 'extractors', '__fixtures__');
+
+// `photoHost` seul ne prouve rien : chez Bien'ici, les photos des VOISINS sortent du
+// MÊME CDN file.bienici.com que les nôtres (hektor-planetimmobilier-24967 @204175,
+// apimo-87032581 @206782) — le filtre par hôte ne les sépare pas. Le cadrage Bien'ici
+// repose sur la coupe POSITIONNELLE à vue-similar-ads (char 203546) : les photos des
+// voisins sont toutes APRÈS. Là où l'URL porte l'identifiant de l'annonce, on l'exige
+// (`photoOurs`) ; chez SeLoger (UUID opaques), on exige au moins l'ABSENCE d'une photo
+// qui n'existe que dans la section recommandée (`photoNeighbourAbsent`).
 const FIXTURES = {
   seloger: {
     file: 'seloger-villeneuve-loubet.html',
     url: 'https://www.seloger.com/annonces/achat/appartement/villeneuve-loubet-06270/26ZEJMLWB13Y',
     ours: 'Bouches du Loup',
     photoHost: 'mms.seloger.com',
+    photoNeighbourAbsent: '2a7c0a82', // n'apparaît qu'après la section recommandée (>440237)
   },
   bienici: {
     file: 'bienici-antibes.html',
     url: 'https://www.bienici.com/annonce/vente/antibes/appartement/4pieces/iad-france-1010343',
     ours: 'Descriptif de cet appartement',
     photoHost: 'file.bienici.com',
+    photoOurs: 'iad-france-1010343', // identifiant de l'annonce dans l'URL photo
   },
   greenAcres: {
     file: 'green-acres-cagnes.html',
     url: 'https://www.green-acres.fr/fr/properties/appartement/cagnes-sur-mer/A98cqw1yg8fmz1bt.htm',
     ours: 'Lycée Auguste Renoir',
     photoHost: 'green-acres.com',
+    photoOurs: 'A98cqw1yg8fmz1bt', // advert-id
   },
   maisons: {
     file: 'maisons-et-appartements-villeneuve.html',
     url: 'https://www.maisonsetappartements.fr/ads/4534734',
     ours: 'jardin',
     photoHost: 'medias.maisonsetappartements.fr',
+    photoOurs: '5045398', // id de groupe de la galerie
   },
 } as const;
 
@@ -75,11 +87,19 @@ describe.each(Object.entries(FIXTURES))('Mission 49 — %s', (_name, fixture) =>
     expect(['main-advert', 'page-meta']).toContain(selected.provenance);
   });
 
-  it('les photos sont servies par le CDN photos de l’annonce (pas l’habillage ni le voisinage)', () => {
+  it('les photos sont cadrées à l’annonce (pas l’habillage ni le voisinage)', () => {
     const { data } = importFixture(fixture);
     expect(data.photoUrls.length).toBeGreaterThan(0);
     for (const url of data.photoUrls) {
       expect(url).toContain(fixture.photoHost);
+      // Là où l'identifiant de l'annonce est dans l'URL, TOUTES les photos le portent.
+      if ('photoOurs' in fixture) {
+        expect(url).toContain(fixture.photoOurs);
+      }
+      // Sinon (SeLoger, UUID), au moins : jamais une photo de la section recommandée.
+      if ('photoNeighbourAbsent' in fixture) {
+        expect(url).not.toContain(fixture.photoNeighbourAbsent);
+      }
     }
   });
 });

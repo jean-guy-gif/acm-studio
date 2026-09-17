@@ -29,8 +29,7 @@ const NEIGHBOUR_ANCHORS: Record<string, RegExp> = {
 // Maisons et Appartements : les photos des voisins sont IMBRIQUÉES dans les nôtres,
 // aucun découpage positionnel ne les sépare — le cadrage y est STRUCTUREL (l'id de
 // groupe de l'image principale, dans l'extracteur), donc ce module ne rend rien à
-// ratisser sur la page.
-const STRUCTURALLY_SCOPED = new Set(['Maisons et Appartements']);
+// ratisser sur la page (comme un portail inconnu ci-dessous).
 
 export function mainAdvertRegion(html: string, source: string): string {
   const anchor = NEIGHBOUR_ANCHORS[source];
@@ -38,10 +37,12 @@ export function mainAdvertRegion(html: string, source: string): string {
     const match = anchor.exec(html);
     return match ? html.slice(0, match.index) : html;
   }
-  if (STRUCTURALLY_SCOPED.has(source)) {
-    return '';
-  }
-  // Portail inconnu : aucun carrousel connu à écarter — la page EST l'annonce.
-  // On ne prive pas ces imports de leur description et de leurs photos.
-  return html;
+  // Maisons et Appartements (cadrage structurel par l'extracteur) ET portail inconnu :
+  // pas de tranche cadrée. On NE renomme PAS la page entière en « bloc de l'annonce »
+  // — ce serait un repli ouvert (Mission 49 §3). Un portail sans tranche connue n'a
+  // pas de niveau 1 : la description retombe sur og (niveau 2) puis vide, et les
+  // lecteurs cadrés (visible/embedded) ne rapportent rien. Un futur portail ajouté
+  // sans ancre tombe donc tout de suite au test « source de niveau 1 ou 2 », au lieu
+  // de passer non cadré jusqu'à ce qu'un vendeur voie la description d'un voisin.
+  return '';
 }
