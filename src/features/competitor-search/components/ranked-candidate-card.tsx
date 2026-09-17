@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
@@ -39,7 +38,8 @@ export type DecisionPayload = {
 export function RankedCandidateCard({
   ranked,
   enriched,
-  projectId,
+  selected,
+  onToggleSelect,
   onDecision,
   pending,
 }: {
@@ -47,7 +47,11 @@ export function RankedCandidateCard({
   // Fiche complétée en tâche de fond (photos, caractéristiques) : absente tant
   // que le portail n'a pas répondu, ou définitivement s'il a refusé.
   enriched: EnrichedCandidate | null;
-  projectId: string;
+  // MISSION 50 §8 — case à cocher : la SEULE interaction pour retenir. Cochée =
+  // retenue au lot (importée à la validation). Le « Non » reste, comme motif de
+  // refus FACULTATIF pour qui veut le donner ; rien n'est écrit avant la validation.
+  selected: boolean;
+  onToggleSelect: () => void;
   onDecision: (payload: DecisionPayload) => void;
   pending: boolean;
 }) {
@@ -211,29 +215,34 @@ export function RankedCandidateCard({
             </div>
           </div>
         ) : (
-          <div className="mt-auto flex flex-wrap gap-2 pt-2 text-sm">
-            <Link
-              href={`/builder/${projectId}/comparables/new?importUrl=${encodeURIComponent(candidate.url)}`}
-              onClick={() => onDecision({ decision: 'accepted', reason: null, comment: '' })}
-              className={`${btnPrimary} px-3 py-1.5 text-xs`}
-            >
-              Oui, c’est un concurrent
-            </Link>
-            <button
-              type="button"
-              onClick={() => setRejecting(true)}
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-            >
-              Non
-            </button>
-            <a
-              href={candidate.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-            >
-              Voir l’annonce
-            </a>
+          <div className="mt-auto flex flex-col gap-2 pt-2 text-sm">
+            <label className="flex cursor-pointer items-center gap-2 font-medium text-zinc-800 stage:text-white/90">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={onToggleSelect}
+                disabled={pending}
+                className="h-4 w-4 accent-brand"
+              />
+              À retenir
+            </label>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setRejecting(true)}
+                className={`${btnSecondary} px-3 py-1.5`}
+              >
+                Écarter avec un motif
+              </button>
+              <a
+                href={candidate.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={`${btnSecondary} px-3 py-1.5`}
+              >
+                Voir l’annonce
+              </a>
+            </div>
           </div>
         )}
       </div>

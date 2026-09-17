@@ -82,6 +82,8 @@ import {
   previewSavePositioning,
   previewPrepareSearch,
   previewRankCandidates,
+  previewImportAndCreate,
+  previewRecordDecisions,
   previewVoid,
 } from './preview-actions';
 
@@ -342,6 +344,8 @@ function FindScreen() {
         rankAction={previewRankCandidates}
         importResultsHtmlAction={previewImportSearchResults}
         recordDecisionAction={previewRecordDecision}
+        importAction={previewImportAndCreate}
+        recordDecisionsAction={previewRecordDecisions}
         enrichAction={previewEnrichCandidate}
       />
     </div>
