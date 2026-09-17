@@ -7,7 +7,11 @@ import type {
   RankedCandidate,
 } from '@/features/competitor-search/types';
 import { buildPortalSearchUrls } from '@/features/competitor-search/services/build-portal-search-urls';
-import { extractSearchResults } from '@/features/competitor-search/services/extract-search-results';
+import {
+  candidateSignature,
+  extractSearchResults,
+  filterAndDedupeCandidates,
+} from '@/features/competitor-search/services/extract-search-results';
 import { fetchListingPage } from '@/features/comparable-import/services/fetch-listing-page';
 import {
   applyLearning,
@@ -81,7 +85,11 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
           candidates: [],
         };
       }
-      const candidates = extractSearchResults(page.html, page.finalUrl, link.portal);
+      // Cartes lues par marqueur, puis §6 : on écarte le neuf et les doublons
+      // (prix+surface+pièces+commune, première occurrence gardée). Rien n'est
+      // masqué au conseiller au-delà de ces règles écrites.
+      const rawCards = extractSearchResults(page.html, page.finalUrl, link.portal);
+      const { candidates } = filterAndDedupeCandidates(rawCards);
       if (candidates.length === 0) {
         return {
           portal: link.portal,
@@ -132,12 +140,23 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
   // pas : un concurrent atypique existe, et c'est le conseiller qui tranche.
   const ranked: RankedCandidate[] = [];
   const seen = new Set<string>();
+  // Déduplication CROISÉE entre portails : le même bien se retrouve sur plusieurs
+  // portails avec des URLs différentes mais la même signature prix+surface+pièces+
+  // commune (§6). Première occurrence gardée.
+  const seenSignatures = new Set<string>();
   for (const portal of portals) {
     for (const candidate of portal.candidates) {
       if (seen.has(candidate.url)) {
         continue;
       }
+      const signature = candidateSignature(candidate);
+      if (signature != null && seenSignatures.has(signature)) {
+        continue;
+      }
       seen.add(candidate.url);
+      if (signature != null) {
+        seenSignatures.add(signature);
+      }
       let host = '';
       try {
         host = new URL(candidate.url).hostname.toLowerCase();
@@ -148,9 +167,11 @@ export async function searchCompetitors(projectId: string): Promise<CompetitorSe
         price: candidate.price,
         surfaceArea: candidate.surfaceArea,
         roomsCount: candidate.roomsCount,
-        // Les pages de résultats ne portent ni quartier ni type fiable : ces
-        // critères entreront en jeu après l'enrichissement de la fiche.
-        city: criteria.city,
+        // La commune est lue SUR LA CARTE : une annonce d'une commune voisine
+        // (Saint-Laurent-du-Var sur une recherche Nice) sort en « Autre commune »
+        // au lieu d'être masquée (§6). Le quartier et le type fiable n'arrivent
+        // qu'après l'enrichissement de la fiche.
+        city: candidate.city ?? criteria.city,
         district: null,
         propertyType: null,
       };

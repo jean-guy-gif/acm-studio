@@ -37,13 +37,37 @@ export type CompetitorSearchCriteria = {
 
 // Une annonce candidate détectée sur une page de résultats. Champs best-effort :
 // tout champ non détecté reste null — l'import de la fiche fera foi.
+//
+// MISSION 50 : la carte porte assez pour classer, aucune fiche n'est ouverte. La
+// `key` est l'identifiant publié PAR LE PORTAIL (jamais une référence d'agence,
+// mission 47 §3) ; elle sert d'identité stable et de base de déduplication. Le neuf
+// est écarté (§6) mais on garde le drapeau pour le journaliser sans mentir.
 export type CompetitorCandidate = {
+  // Identifiant publié par le portail : id SeLoger, data-id Bien'ici,
+  // data-advertid Green Acres, id M&A. null seulement si la carte n'en porte pas.
+  key: string | null;
   url: string;
   title: string | null;
   price: number | null;
   surfaceArea: number | null;
   roomsCount: number | null;
+  // Prix au m² tel que le portail l'affiche, jamais recalculé par nous.
+  pricePerSqm: number | null;
+  // Commune lue sur la carte : sert à repérer une commune voisine (la carte le DIT,
+  // on ne masque pas — §6) et à dédupliquer (prix+surface+pièces+commune).
+  city: string | null;
   photoUrl: string | null;
+  // Programme neuf reconnu à la STRUCTURE (titre « neuf », segment /programme/,
+  // fourchette de prix, domaine selogerneuf.com). Écarté du classement, journalisé.
+  isNewBuild: boolean;
+};
+
+// Résultat de la lecture d'une page de résultats : les cartes retenues, plus le
+// compte de ce qui a été écarté, pour le dire au conseiller sans rien cacher.
+export type SearchExtraction = {
+  candidates: CompetitorCandidate[];
+  excludedNewBuild: number;
+  excludedDuplicates: number;
 };
 
 export type PortalSearchStatus = 'ok' | 'blocked' | 'empty';

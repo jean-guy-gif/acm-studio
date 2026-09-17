@@ -5,6 +5,7 @@ import { SEARCH_PORTAL_LABELS } from '@/features/competitor-search/types';
 import {
   detectSearchPortal,
   extractSearchResults,
+  filterAndDedupeCandidates,
 } from '@/features/competitor-search/services/extract-search-results';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -59,7 +60,8 @@ export async function importSearchResultsHtml(
     return { ok: false, error: 'Le contenu collé est trop volumineux.' };
   }
 
-  const candidates = extractSearchResults(html, url.href, portal);
+  const rawCards = extractSearchResults(html, url.href, portal);
+  const { candidates } = filterAndDedupeCandidates(rawCards);
   if (candidates.length === 0) {
     return { ok: false, error: 'Aucune annonce détectée dans le code collé.' };
   }
