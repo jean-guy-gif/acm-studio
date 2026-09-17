@@ -129,6 +129,11 @@ export function buildPortalSearchUrls(criteria: CompetitorSearchCriteria): Porta
 
   // Entrées propres (sans paramètre) pour les trois portails à identifiant de lieu :
   // non interdites, elles ouvrent la recherche que le navigateur du conseiller résout.
+  //
+  // Green Acres titre la page « 1 576 maisons à vendre » alors qu'elle sert tous les
+  // types (19 appartements sur 24 mesurés). Le libellé est de la rédaction SEO, pas un
+  // filtre. Ne pas changer le chemin en croyant corriger un bug. Le filtrage de type
+  // se fait chez nous (garde de type au classement), pas dans l'adresse.
   const greenAcres = `https://www.green-acres.fr/immobilier/${slug}`;
   const seloger = department
     ? `https://www.seloger.com/immobilier/achat/immo-${slug}-${department}/`

@@ -66,6 +66,27 @@ describe('rankCandidates — garde de type de bien', () => {
     expect(ranked.map((r) => r.candidate.key)).toEqual(['appart']);
   });
 
+  it('écarte un parking (box) d’une recherche d’appartement — jamais devant un vendeur', () => {
+    const ranked = rankCandidates(
+      CRITERIA,
+      [
+        portal([
+          candidate({ key: 'appart', url: 'https://x/appart', propertyType: 'apartment' }),
+          candidate({
+            key: 'box',
+            url: 'https://x/box',
+            price: 30000,
+            surfaceArea: 12,
+            roomsCount: null,
+            propertyType: 'parking',
+          }),
+        ]),
+      ],
+      NO_LEARNING,
+    );
+    expect(ranked.map((r) => r.candidate.key)).toEqual(['appart']);
+  });
+
   it('garde une annonce dont le type est inconnu (on n’exclut pas pour une absence)', () => {
     const ranked = rankCandidates(
       CRITERIA,

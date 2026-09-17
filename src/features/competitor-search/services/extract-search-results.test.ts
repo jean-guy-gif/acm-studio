@@ -28,8 +28,10 @@ const PAGES: Record<SearchPortal, { file: string; url: string; count: number }> 
     count: 26,
   },
   green_acres: {
+    // La page que notre constructeur fetch réellement : /immobilier/nice (H1 trompeur
+    // « 1 576 maisons à vendre », mais 19 appartements / 4 maisons / 1 parking sur 24).
     file: 'green-acres-resultats-nice.html',
-    url: 'https://www.green-acres.fr/fr/list?searchQuery=cn-nice',
+    url: 'https://www.green-acres.fr/immobilier/nice',
     count: 24,
   },
   maisons_appartements: {
@@ -154,6 +156,16 @@ describe('extractSearchResults — type de bien et titre', () => {
     expect(cards.every((c) => c.title != null && c.title.trim() !== '')).toBe(true);
     const apart = cards.find((c) => c.propertyType === 'apartment');
     expect(apart?.title).toMatch(/ à /);
+  });
+
+  it('Green Acres : page tous types (19 appartements / 4 maisons / 1 parking mesurés)', () => {
+    // La page /immobilier/nice titre « maisons à vendre » mais sert tous les types.
+    // On vérifie que le lecteur les distingue — dont le PARKING, à écarter d'un 3 pièces.
+    const cards = load('green_acres');
+    const byType = (t: string) => cards.filter((c) => c.propertyType === t).length;
+    expect(byType('apartment')).toBe(19);
+    expect(byType('house')).toBe(4);
+    expect(byType('parking')).toBe(1);
   });
 
   it('Maisons et Appartements : le type est lu depuis l’alt', () => {
