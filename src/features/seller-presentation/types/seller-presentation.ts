@@ -24,6 +24,8 @@ export type LiveComparableEntry = {
   id: string;
   position: number;
   title: string | null;
+  // Type de bien en vocabulaire canonique (apartment/house/…), null si non renseigné.
+  propertyType: string | null;
   city: string | null;
   district: string | null;
   price: number;

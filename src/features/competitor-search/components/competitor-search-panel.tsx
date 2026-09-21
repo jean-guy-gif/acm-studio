@@ -56,7 +56,11 @@ type Props = {
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   // §8 — import d'un concurrent depuis le HTML lu par l'extension, et écriture des
   // décisions du lot (retenues + écartées) en un appel.
-  importAction: (url: string, html: string) => Promise<ImportAndCreateResult>;
+  importAction: (
+    url: string,
+    html: string,
+    propertyType: string | null,
+  ) => Promise<ImportAndCreateResult>;
   recordDecisionsAction: (decisions: BatchDecision[]) => Promise<RecordDecisionResult>;
 };
 
@@ -471,10 +475,11 @@ export function CompetitorSearchPanel({
   // est journalisée ET rendue visible sur la fiche en échec. `windowId` réutilise la
   // fenêtre unique du lot ; absent = fenêtre one-off (relance d'une seule fiche).
   async function importOne(
-    url: string,
+    candidate: CompetitorCandidate,
     robotsCache: PortalRobotsCache,
     windowId?: number,
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
+    const url = candidate.url;
     const read = await readPageViaExtension(url, { windowId, robotsCache });
     if (!read.ok) {
       const reason =
@@ -486,7 +491,9 @@ export function CompetitorSearchPanel({
       console.warn(`[import] ${url} — ${reason}`);
       return { ok: false, reason };
     }
-    const result = await importAction(url, read.html);
+    // Le type lu sur la CARTE de recherche voyage jusqu'à la création : la page
+    // d'annonce ne le porte pas de façon fiable, la carte oui.
+    const result = await importAction(url, read.html, candidate.propertyType);
     if (!result.ok) {
       console.warn(`[import] ${url} — ${result.error}`);
       return { ok: false, reason: result.error };
@@ -544,7 +551,7 @@ export function CompetitorSearchPanel({
         if (i > 0) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-        const outcome = await importOne(checked[i].candidate.url, robotsCache, win.windowId);
+        const outcome = await importOne(checked[i].candidate, robotsCache, win.windowId);
         if (outcome.ok) {
           importedOk.push(checked[i]);
         } else {
@@ -589,7 +596,7 @@ export function CompetitorSearchPanel({
       setExtensionMissing(true);
       return 'l’extension ACM Studio n’a pas répondu';
     }
-    const outcome = await importOne(candidate.url, new Map());
+    const outcome = await importOne(candidate, new Map());
     if (!outcome.ok) {
       return outcome.reason;
     }
@@ -625,7 +632,7 @@ export function CompetitorSearchPanel({
     }
     setImporting(true);
     try {
-      const outcome = await importOne(entry.candidate.url, new Map());
+      const outcome = await importOne(entry.candidate, new Map());
       if (outcome.ok) {
         await recordDecisionsAction([decisionOf(entry, 'accepted')]);
         setDecided((current) => ({ ...current, [entry.candidate.url]: 'accepted' }));

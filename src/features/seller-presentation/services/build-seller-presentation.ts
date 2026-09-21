@@ -355,6 +355,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       id: comparable.id,
       position: index + 1,
       title: comparable.title,
+      propertyType: comparable.property_type,
       city: comparable.city,
       district: comparable.district,
       price: comparable.price,

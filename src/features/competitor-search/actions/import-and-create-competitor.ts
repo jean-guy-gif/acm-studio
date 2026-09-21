@@ -8,6 +8,7 @@ import { observeListing } from '@/features/comparable-import/services/record-lis
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -28,6 +29,9 @@ export async function importAndCreateComparable(
   projectId: string,
   rawUrl: string,
   html: string,
+  // Type lu sur la CARTE de recherche (déjà canonique). Normalisé ici par sécurité —
+  // la colonne exige le vocabulaire canonique, jamais du texte libre. Null = inconnu.
+  propertyType: string | null = null,
 ): Promise<ImportAndCreateResult> {
   const profile = await getProfile();
   if (!profile) {
@@ -70,6 +74,9 @@ export async function importAndCreateComparable(
   // Observation datée (mission 47), best effort — comme l'import unitaire.
   await observeListing(supabase, profile.agency_id, url.href, data);
 
+  // Type canonique écrit en base (apartment/house/…) ; jamais le texte libre.
+  const canonicalType = normalizePropertyType(propertyType);
+
   // display_order = max + 1, recalculé à chaque tentative ; sur collision (contrainte
   // unique différée, 23505) on réessaie. Même logique que createComparable.
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -85,6 +92,7 @@ export async function importAndCreateComparable(
 
     const { error } = await supabase.from('comparables').insert({
       ...input,
+      property_type: canonicalType,
       project_id: projectId,
       agency_id: profile.agency_id,
       display_order: nextOrder,

@@ -7,16 +7,31 @@
 // portail à l'autre, un seul qui passe et le vendeur le lit. On COMPOSE un libellé
 // neutre à partir des seuls champs STRUCTURÉS : aucun prix ne peut y entrer par accident.
 //
-// Le type de bien (« Appartement ») n'est pas stocké sur un comparable (la table
-// comparables n'a pas de colonne de type) : le libellé s'en tient à pièces / surface /
-// commune. Déterministe.
+// Le type de bien, quand il est connu (rempli à l'import depuis la carte de recherche,
+// en vocabulaire canonique), ouvre le libellé : « Appartement · 3 pièces · … ». Type
+// null (ancien import, saisie manuelle) → on s'en tient à pièces / surface / commune.
+// Déterministe, aucun prix.
+const TYPE_LABEL_FR: Record<string, string> = {
+  apartment: 'Appartement',
+  house: 'Maison',
+  land: 'Terrain',
+  building: 'Immeuble',
+  commercial: 'Local commercial',
+  parking: 'Parking',
+};
+
 export function neutralComparableLabel(entry: {
+  propertyType?: string | null;
   roomsCount: number | null;
   surfaceArea: number | null;
   city: string | null;
   district: string | null;
 }): string {
   const parts: string[] = [];
+  const typeLabel = entry.propertyType ? TYPE_LABEL_FR[entry.propertyType] : undefined;
+  if (typeLabel) {
+    parts.push(typeLabel);
+  }
   if (entry.roomsCount != null && entry.roomsCount > 0) {
     parts.push(`${entry.roomsCount} pièce${entry.roomsCount > 1 ? 's' : ''}`);
   }
