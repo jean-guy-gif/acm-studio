@@ -5,8 +5,12 @@
 // avec le dark mode système, aucune logique métier ici.
 
 // Racine de la présentation (le conteneur passé en plein écran).
+// MISSION 51 §3.4 — plus d'`overflow-hidden` inconditionnel ici : en plein écran,
+// il bloquait la molette (le contenu plus haut que l'écran devenait inatteignable).
+// Le shell applique désormais l'overflow selon le mode (défilant en plein écran,
+// clippé sinon pour la lueur décorative).
 export const stageRoot =
-  'relative flex min-h-[100dvh] flex-col overflow-hidden bg-white text-zinc-900 transition-colors duration-300 stage:bg-gradient-to-br stage:from-brand-deep stage:via-[#013a58] stage:to-[#01283b] stage:text-white';
+  'relative flex min-h-[100dvh] flex-col bg-white text-zinc-900 transition-colors duration-300 stage:bg-gradient-to-br stage:from-brand-deep stage:via-[#013a58] stage:to-[#01283b] stage:text-white';
 
 // Surligneur discret d'ambiance derrière le contenu (halo bleu en scène).
 export const stageGlow =

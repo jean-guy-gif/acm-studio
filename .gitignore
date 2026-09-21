@@ -52,3 +52,6 @@ next-env.d.ts
 
 # Mission 43 — pdfjs browser assets, copied from node_modules by scripts/copy-pdfjs-assets.mjs
 /public/pdfjs/
+
+# Playwright MCP scratch output
+.playwright-mcp/

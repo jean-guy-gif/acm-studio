@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Logo } from '@/components/brand/logo';
-import { saveLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
+import {
+  persistLiveComparableResponse,
+  saveLiveComparableResponse,
+} from '@/features/live-seller/actions/save-live-comparable-response';
 import { saveLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
@@ -15,7 +18,10 @@ import { LivePageIntro } from '@/features/live-seller/components/live-page-intro
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
-import { LivePagePriceReveal } from '@/features/live-seller/components/live-page-price-reveal';
+import {
+  LivePagePriceRevealPilot,
+  type PriceCoherenceDraft,
+} from '@/features/live-seller/components/live-page-price-reveal-pilot';
 import {
   chromeBtn,
   ctaPrimary,
@@ -52,6 +58,22 @@ export function LiveComparativeShell({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stage, setStage] = useState<LiveStageTheme>(initialStage);
 
+  // MISSION 51 — état de l'écran-pilote (étape 3, contrat « Valider et continuer »).
+  // Le brouillon de la réaction du vendeur vit ICI (composant contrôlé) ; le shell
+  // l'enregistre en arrière-plan et suit l'issue de chaque enregistrement.
+  const [revealDraft, setRevealDraft] = useState<PriceCoherenceDraft>({
+    coherence: '',
+    comment: '',
+  });
+  type SaveStatus = 'pending' | 'ok' | 'failed';
+  type SaveRecord = {
+    status: SaveStatus;
+    comparableId: string;
+    formData: FormData;
+    error?: string;
+  };
+  const [saves, setSaves] = useState<Record<string, SaveRecord>>({});
+
   const live = presentation.live;
   const hasSubjectProperty = presentation.property != null;
   const pages = useMemo(() => buildLivePages(live, hasSubjectProperty), [live, hasSubjectProperty]);
@@ -70,13 +92,101 @@ export function LiveComparativeShell({
     canAdvanceRef.current = canAdvance;
   }, [canAdvance]);
 
+  const isPilot = page.type === 'comparable_price_reveal' && entry != null;
+  const currentSave = saves[page.key];
+
+  // MISSION 51 §3.2 — enregistrements en arrière-plan encore en échec. Tant qu'il en
+  // reste un, la fin de séance est bloquée (voir `go`) et une bannière propose la
+  // relance : aucune réponse affichée ne peut être perdue en silence (§2.1).
+  const failedSaves = useMemo(
+    () => Object.entries(saves).filter(([, record]) => record.status === 'failed'),
+    [saves],
+  );
+  const hasFailedSavesRef = useRef(false);
+  useEffect(() => {
+    hasFailedSavesRef.current = failedSaves.length > 0;
+  }, [failedSaves]);
+
   const go = useCallback(
     (delta: number) => {
       if (delta > 0 && !canAdvanceRef.current) return;
-      setIndex((i) => Math.max(0, Math.min(pages.length - 1, i + delta)));
+      setIndex((i) => {
+        const target = Math.max(0, Math.min(pages.length - 1, i + delta));
+        // Fin de séance bloquée tant qu'un enregistrement a échoué : on n'atteint pas
+        // la conclusion en laissant une réponse du vendeur non confirmée en base.
+        if (delta > 0 && pages[target]?.type === 'conclusion' && hasFailedSavesRef.current) {
+          return i;
+        }
+        return target;
+      });
     },
-    [pages.length],
+    [pages],
   );
+
+  // Enregistre une réponse EN ARRIÈRE-PLAN (sans revalidatePath), suit son issue et
+  // conserve le FormData pour permettre une relance en cas d'échec.
+  const runSave = useCallback(
+    (key: string, comparableId: string, formData: FormData) => {
+      setSaves((current) => ({ ...current, [key]: { status: 'pending', comparableId, formData } }));
+      void persistLiveComparableResponse(projectId, comparableId, formData)
+        .then((result) => {
+          // Le détail technique va au JOURNAL, pas à l'écran (jamais devant le vendeur).
+          if (!result.ok) {
+            console.error('[live] enregistrement échoué', {
+              key,
+              comparableId,
+              error: result.error,
+            });
+          }
+          setSaves((current) => ({
+            ...current,
+            [key]: {
+              ...current[key],
+              status: result.ok ? 'ok' : 'failed',
+              error: result.ok ? undefined : result.error,
+            },
+          }));
+        })
+        .catch((cause) => {
+          console.error('[live] enregistrement injoignable', { key, comparableId, cause });
+          setSaves((current) => ({
+            ...current,
+            [key]: { ...current[key], status: 'failed', error: 'Réseau indisponible.' },
+          }));
+        });
+    },
+    [projectId],
+  );
+
+  // « Valider et continuer » de l'écran-pilote : on enregistre la réaction en
+  // arrière-plan PUIS on avance immédiatement — la révélation ne consomme aucune
+  // réponse en aval avant l'analyse, l'avance optimiste est donc sûre ici (§3.2).
+  const onValidateReveal = useCallback(() => {
+    if (!entry) return;
+    const formData = new FormData();
+    formData.set('seller_price_coherence', revealDraft.coherence);
+    formData.set('seller_price_coherence_comment', revealDraft.comment);
+    runSave(page.key, entry.id, formData);
+    go(1);
+  }, [entry, revealDraft, page.key, runSave, go]);
+
+  // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    rootRef.current?.scrollTo({ top: 0 });
+  }, [currentIndex]);
+
+  // À l'ouverture de l'écran-pilote, le brouillon part de la réponse persistée.
+  const initializedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (page.type !== 'comparable_price_reveal' || !entry) return;
+    if (initializedKeyRef.current === page.key) return;
+    initializedKeyRef.current = page.key;
+    setRevealDraft({
+      coherence: entry.response?.seller_price_coherence ?? '',
+      comment: entry.response?.seller_price_coherence_comment ?? '',
+    });
+  }, [page.key, page.type, entry]);
 
   const toggleFullscreen = useCallback(() => {
     const element = rootRef.current;
@@ -149,7 +259,37 @@ export function LiveComparativeShell({
       : page.title;
 
   return (
-    <div ref={rootRef} data-stage={stage} className={stageRoot}>
+    <div
+      ref={rootRef}
+      data-stage={stage}
+      className={`${stageRoot} ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
+    >
+      {/* MISSION 51 §3.2 — un enregistrement en échec ne doit pas passer inaperçu,
+          MAIS il s'adresse au CONSEILLER, pas au vendeur : pastille discrète dans le
+          coin des réglages (chrome conseiller), jamais une bande pleine largeur devant
+          le client. Le détail technique est au journal ; l'écran dit l'essentiel. */}
+      {failedSaves.length > 0 ? (
+        <div
+          className="fixed top-3 right-3 z-50 flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-amber-900 shadow-sm"
+          style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
+          role="status"
+        >
+          <span className="text-xs font-medium">
+            Réponse non enregistrée. Relancez avant de continuer.
+          </span>
+          {failedSaves.map(([key, record]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => runSave(key, record.comparableId, record.formData)}
+              className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:bg-amber-300"
+            >
+              Relancer
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className={stageGlow} aria-hidden />
 
       {/* Chrome supérieur : identité + réglages, volontairement discret. */}
@@ -201,7 +341,9 @@ export function LiveComparativeShell({
       {/* La fiche courante. */}
       <main
         key={page.key}
-        className="live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-8 sm:py-8"
+        className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-8 sm:py-8 ${
+          isPilot ? 'pb-28' : ''
+        }`}
       >
         {page.type === 'intro' ? (
           <LivePageIntro
@@ -224,8 +366,12 @@ export function LiveComparativeShell({
           <LivePageCompetition entry={entry} saveAction={saveResponse} />
         ) : page.type === 'comparable_price' && entry && saveResponse ? (
           <LivePagePrice entry={entry} saveAction={saveResponse} />
-        ) : page.type === 'comparable_price_reveal' && entry && saveResponse ? (
-          <LivePagePriceReveal entry={entry} saveAction={saveResponse} />
+        ) : page.type === 'comparable_price_reveal' && entry ? (
+          <LivePagePriceRevealPilot
+            entry={entry}
+            draft={revealDraft}
+            onDraftChange={setRevealDraft}
+          />
         ) : page.type === 'comparable_duration' && entry && saveResponse ? (
           <LivePageDuration entry={entry} saveAction={saveResponse} />
         ) : page.type === 'dangerous_competitor' && live ? (
@@ -249,8 +395,9 @@ export function LiveComparativeShell({
       </main>
 
       {/* Navigation : Suivant en évidence, verrouillé tant que la réponse
-          attendue n'est pas enregistrée. */}
-      {!isIntro ? (
+          attendue n'est pas enregistrée. Masquée sur l'écran-pilote, qui porte sa
+          propre barre « Valider et continuer » ancrée à la fenêtre. */}
+      {!isIntro && !isPilot ? (
         <footer className="relative mx-auto flex w-full max-w-5xl items-center justify-between gap-3 border-t border-zinc-200 px-4 py-4 sm:px-8 stage:border-white/10">
           <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
             ← Précédent
@@ -268,6 +415,42 @@ export function LiveComparativeShell({
             Suivant →
           </button>
         </footer>
+      ) : null}
+
+      {/* MISSION 51 §3.1 + §3.3 — barre de l'écran-pilote ANCRÉE À LA FENÊTRE (fixed),
+          un seul bouton « Valider et continuer » qui enregistre ET avance : plus de
+          « Suivant » distinct du « Enregistrer » où la saisie se perdait (§2.1). */}
+      {isPilot ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+          style={{
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            paddingTop: '1rem',
+          }}
+        >
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
+              ← Précédent
+            </button>
+            <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
+              {currentSave?.status === 'pending'
+                ? 'Enregistrement…'
+                : currentSave?.status === 'ok'
+                  ? 'Réponse enregistrée'
+                  : currentSave?.status === 'failed'
+                    ? 'Enregistrement à relancer'
+                    : ''}
+            </span>
+            <button
+              type="button"
+              onClick={onValidateReveal}
+              disabled={index >= pages.length - 1}
+              className={ctaPrimary}
+            >
+              Valider et continuer →
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );
