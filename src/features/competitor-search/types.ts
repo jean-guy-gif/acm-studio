@@ -60,7 +60,9 @@ export type CompetitorCandidate = {
   // Commune lue sur la carte : sert à repérer une commune voisine (la carte le DIT,
   // on ne masque pas — §6) et à dédupliquer (prix+surface+pièces+commune).
   city: string | null;
-  photoUrl: string | null;
+  // TOUTES les photos portées par la carte (filtrées : hors logos, habillage, ≤160 px),
+  // dans l'ordre — pour défiler sur place. Vide si la carte n'en porte aucune.
+  photoUrls: string[];
   // Programme neuf reconnu à la STRUCTURE (titre « neuf », segment /programme/,
   // fourchette de prix, domaine selogerneuf.com). Écarté du classement, journalisé.
   isNewBuild: boolean;

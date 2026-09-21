@@ -142,9 +142,15 @@ function imgTagSrc(tag: string): string | null {
   return null;
 }
 
-// Première VRAIE photo du bien dans la carte : on parcourt les <img> dans l'ordre, on
-// saute les logos d'agence et les images génériques (placeholder). Aucune → null.
-function firstPhoto(chunk: string, baseUrl: string): string | null {
+// TOUTES les VRAIES photos du bien portées par la carte, dans l'ordre : on parcourt
+// les <img>, on saute les logos d'agence, l'habillage générique et les vignettes/icônes
+// (dimension déclarée ≤ 160 px), on résout en absolu et on déduplique les URLs
+// identiques. On ne va JAMAIS chercher la galerie complète sur la page d'annonce — ce
+// serait une fenêtre par candidat, exactement ce qu'on évite. Ce qui est sur la carte
+// suffit. Liste vide si aucune vraie photo (jamais un logo par défaut).
+function cardPhotos(chunk: string, baseUrl: string): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
   for (const tag of chunk.match(/<img\b[^>]*>/gi) ?? []) {
     const src = imgTagSrc(tag);
     if (src == null || isGenericImageUrl(src) || isAgencyLogo(tag, src)) {
@@ -152,14 +158,19 @@ function firstPhoto(chunk: string, baseUrl: string): string | null {
     }
     try {
       const url = new URL(src, baseUrl);
-      if (url.protocol === 'http:' || url.protocol === 'https:') {
-        return url.toString();
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        continue;
+      }
+      const absolute = url.toString();
+      if (!seen.has(absolute)) {
+        seen.add(absolute);
+        urls.push(absolute);
       }
     } catch {
       // URL de photo invalide : ignorée.
     }
   }
-  return null;
+  return urls;
 }
 
 function absolute(href: string | null, baseUrl: string): string | null {
@@ -205,6 +216,10 @@ function titleCaseCity(value: string | null): string | null {
 
 type CardChunk = { key: string | null; chunk: string };
 
+// Plafond de fenêtre d'une carte : borne la dernière carte (sans borne suivante) pour
+// qu'elle n'avale pas le pied de page. Large devant une carte réelle (< 6 000 car.).
+const CARD_MAX_CHARS = 16000;
+
 // Découpe le document en fenêtres [début d'une carte, début de la suivante], selon
 // des BORNES portées par le marqueur du portail. On ne lit jamais au-delà de la
 // carte suivante : le contenu d'une carte ne déborde pas sur sa voisine.
@@ -223,7 +238,12 @@ function splitByBoundaries(
   const cards: CardChunk[] = [];
   for (let i = 0; i < marks.length; i += 1) {
     const start = marks[i].index;
-    const end = i + 1 < marks.length ? marks[i + 1].index : html.length;
+    // La DERNIÈRE carte n'a pas de borne suivante : sans plafond, sa fenêtre avalerait
+    // tout le pied de page (et ses images promo passeraient pour des photos du bien).
+    // Une carte réelle fait < 6 000 caractères ; on borne à 16 000, ce qui ne tronque
+    // aucune carte mais empêche la dernière de déborder.
+    const next = i + 1 < marks.length ? marks[i + 1].index : html.length;
+    const end = Math.min(next, start + CARD_MAX_CHARS);
     const chunk = html.slice(start, end);
     if (keep && !keep(chunk.slice(0, 300))) {
       continue;
@@ -258,7 +278,7 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     propertyType: normalizePropertyType(title),
     pricePerSqm: null,
     city,
-    photoUrl: firstPhoto(chunk, pageUrl),
+    photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
   };
 }
@@ -289,7 +309,7 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
       firstGroup(chunk, /ad-price__price-per-square-meter"[^>]*>([^<]+)/i),
     ),
     city,
-    photoUrl: firstPhoto(chunk, pageUrl),
+    photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
   };
 }
@@ -331,7 +351,7 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
     propertyType,
     pricePerSqm: readPricePerSqm(tags.get('prix par m²') ?? tags.get('prix par m2') ?? null),
     city,
-    photoUrl: firstPhoto(chunk, pageUrl),
+    photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild: false,
   };
 }
@@ -352,7 +372,7 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     propertyType: normalizePropertyType(alt),
     pricePerSqm: null,
     city,
-    photoUrl: firstPhoto(chunk, pageUrl),
+    photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild: false,
   };
 }

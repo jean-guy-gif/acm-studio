@@ -21,7 +21,7 @@ function candidate(over: Partial<CompetitorCandidate>): CompetitorCandidate {
     propertyType: 'apartment',
     pricePerSqm: null,
     city: 'Nice',
-    photoUrl: null,
+    photoUrls: [],
     isNewBuild: false,
     ...over,
   };

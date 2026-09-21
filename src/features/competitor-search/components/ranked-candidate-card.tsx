@@ -62,13 +62,9 @@ export function RankedCandidateCard({
 
   const { candidate } = ranked;
   // La fiche complétée prime sur ce que la page de résultats laissait deviner. La
-  // galerie complète vient de la fiche ; à défaut, la seule vignette de la carte.
+  // galerie complète vient de la fiche ; à défaut, LES photos de la carte (plusieurs).
   const photos =
-    enriched && enriched.photoUrls.length > 0
-      ? enriched.photoUrls
-      : candidate.photoUrl
-        ? [candidate.photoUrl]
-        : [];
+    enriched && enriched.photoUrls.length > 0 ? enriched.photoUrls : candidate.photoUrls;
   const price = enriched?.price ?? candidate.price;
   const surface = enriched?.surfaceArea ?? candidate.surfaceArea;
   const rooms = enriched?.roomsCount ?? candidate.roomsCount;

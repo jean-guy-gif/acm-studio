@@ -91,22 +91,54 @@ function CandidateCard({
 }) {
   const [importing, setImporting] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const photos = candidate.photoUrls;
+  const shown = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
+  const step = (delta: number) =>
+    setPhotoIndex((index) => (index + delta + photos.length) % photos.length);
   return (
     <div
       className={`${card} group flex flex-col gap-2.5 overflow-hidden transition-colors hover:border-brand/60 stage:hover:border-brand/60`}
     >
-      {candidate.photoUrl ? (
-        <RemoteImage
-          src={candidate.photoUrl}
-          alt={candidate.title ?? 'Bien concurrent'}
-          className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          fallbackClassName="h-36 w-full"
-        />
-      ) : (
-        <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
-          Photo indisponible
-        </div>
-      )}
+      <div className="relative h-36 w-full">
+        {photos.length > 0 ? (
+          <RemoteImage
+            src={photos[shown]}
+            alt={candidate.title ?? 'Bien concurrent'}
+            className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            fallbackClassName="h-36 w-full"
+          />
+        ) : (
+          <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
+            Photo indisponible
+          </div>
+        )}
+        {/* Défiler SUR PLACE, dans la carte : flèches + compteur, pas de lightbox. Une
+            seule photo → pas de flèches (plutôt que des flèches inertes). */}
+        {photos.length > 1 ? (
+          <>
+            <button
+              type="button"
+              aria-label="Photo précédente"
+              onClick={() => step(-1)}
+              className="absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Photo suivante"
+              onClick={() => step(1)}
+              className="absolute top-1/2 right-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+            >
+              ›
+            </button>
+            <span className="absolute right-1 bottom-1 rounded bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+              {shown + 1}/{photos.length}
+            </span>
+          </>
+        ) : null}
+      </div>
       <div className="flex flex-1 flex-col gap-1.5 px-3.5 pb-3.5">
         <div className="font-title text-base leading-snug font-semibold capitalize text-zinc-900 stage:text-white">
           {candidate.title ?? 'Annonce détectée'}

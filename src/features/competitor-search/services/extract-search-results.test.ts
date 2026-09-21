@@ -183,32 +183,37 @@ describe('extractSearchResults — la vignette n’est jamais un logo d’agence
   // un monde que SeLoger ne fabrique pas.
   it('SeLoger (fixture réelle) : aucune carte ne retient le logo minuscule de l’agence', () => {
     const cards = load('seloger');
-    expect(cards.filter((c) => c.photoUrl != null)).toHaveLength(30);
+    // Chaque carte garde PLUSIEURS photos (5 mesurées), jamais zéro, jamais le logo.
+    expect(cards.every((c) => c.photoUrls.length >= 2)).toBe(true);
     for (const card of cards) {
-      const url = card.photoUrl ?? '';
-      // Aucune dimension déclarée ≤ 160 px : ce serait une vignette/logo, pas la photo.
-      for (const m of url.matchAll(/[?&](?:w|h|width|height)=(\d{1,4})\b/gi)) {
-        expect(Number.parseInt(m[1], 10)).toBeGreaterThan(160);
+      for (const url of card.photoUrls) {
+        // Aucune dimension déclarée ≤ 160 px : ce serait une vignette/logo, pas la photo.
+        for (const m of url.matchAll(/[?&](?:w|h|width|height)=(\d{1,4})\b/gi)) {
+          expect(Number.parseInt(m[1], 10)).toBeGreaterThan(160);
+        }
       }
     }
   });
 
-  it('saute le logo de l’annonceur et prend la vraie photo', () => {
+  it('garde TOUTES les vraies photos et saute le logo de l’annonceur', () => {
     const [card] = extractSearchResults(
       [
         '<article data-id="iad-1"><a class="detailedSheetLink" href="/annonce/vente/nice/appartement/2pieces/iad-1"></a>',
         '<div class="account-logo"><img src="https://file.bienici.com/photo/agency-logo-xyz?height=90&width=180" alt="Logo de l’annonceur"></div>',
-        '<div class="photo"><img src="https://file.bienici.com/photo/iad-1_real_photo.jpg?width=300&height=180&fit=cover" alt="Achat appartement 2 pièces 60 m²"></div>',
+        '<div class="photo"><img src="https://file.bienici.com/photo/iad-1_photo1.jpg?width=300&height=180&fit=cover" alt="Achat appartement 2 pièces 60 m²"></div>',
+        '<div class="photo"><img src="https://file.bienici.com/photo/iad-1_photo2.jpg?width=300&height=180&fit=cover" alt=""></div>',
         '</article>',
       ].join(''),
       'https://www.bienici.com/recherche/achat/nice-06000',
       'bienici',
     );
-    expect(card.photoUrl).toContain('iad-1_real_photo');
-    expect(card.photoUrl).not.toContain('agency-logo');
+    expect(card.photoUrls).toHaveLength(2);
+    expect(card.photoUrls.join(' ')).toContain('iad-1_photo1');
+    expect(card.photoUrls.join(' ')).toContain('iad-1_photo2');
+    expect(card.photoUrls.join(' ')).not.toContain('agency-logo');
   });
 
-  it('aucune vraie photo (seulement un logo /Agences/) → pas de vignette', () => {
+  it('aucune vraie photo (seulement un logo /Agences/) → liste vide, jamais un logo', () => {
     const [card] = extractSearchResults(
       [
         '<article id="7" class="RR_article" itemscope itemtype="https://schema.org/Apartment">',
@@ -219,7 +224,7 @@ describe('extractSearchResults — la vignette n’est jamais un logo d’agence
       'https://www.maisonsetappartements.fr/views/Search.php',
       'maisons_appartements',
     );
-    expect(card.photoUrl).toBeNull();
+    expect(card.photoUrls).toEqual([]);
   });
 });
 
@@ -264,7 +269,7 @@ describe('filterAndDedupeCandidates — déduplication prix+surface+pièces+comm
     title: null,
     propertyType: null,
     pricePerSqm: null,
-    photoUrl: null,
+    photoUrls: [],
     isNewBuild: false,
   };
 
