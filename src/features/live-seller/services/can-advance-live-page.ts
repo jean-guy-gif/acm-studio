@@ -1,12 +1,13 @@
 import type { LiveSellerSummary } from '@/features/live-seller/types';
-import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { LiveNavComparable, LivePageType } from '@/features/live-seller/services/build-live-pages';
 
 // Reveal gates use persisted answers only. Local form values must never let the
 // global navigation skip ahead before the server has accepted the answer.
+// La garde ne lit que la réponse persistée du concurrent : elle se type sur ce
+// minimum, donc la donnée projetée (sans prix) la satisfait comme la donnée complète.
 export function canAdvanceLivePage(
   pageType: LivePageType,
-  entry: LiveComparableEntry | null,
+  entry: LiveNavComparable | null,
   summary: LiveSellerSummary | null,
 ): boolean {
   if (pageType === 'subject_property') {
@@ -27,6 +28,12 @@ export function canAdvanceLivePage(
   // is not re-gated here — reaching it already required the guess above.
   if (pageType === 'comparable_duration') {
     return entry?.response?.seller_estimated_days_on_market != null;
+  }
+  // MISSION 51 — écran 7 en devine-puis-révèle : on ne quitte la valeur perçue (et la
+  // fourchette conseiller ne se livre) qu'une fois la perception PERSISTÉE. Ce fait en
+  // base est aussi la borne d'autorisation de la fourchette (maxReachableLiveIndex).
+  if (pageType === 'seller_perceived_price') {
+    return summary?.seller_perceived_property_price != null;
   }
   return true;
 }

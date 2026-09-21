@@ -42,6 +42,7 @@ export type NeutralSellerComparable = {
   bedroomsCount: number | null;
   energyRating: string | null;
   gesRating: string | null;
+  photoUrl: string | null;
   photoUrls: string[];
   featureComparison: FeatureComparison[];
   // Les réponses du vendeur lui appartiennent : rien à lui cacher.
@@ -85,6 +86,7 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
     bedroomsCount: entry.bedroomsCount,
     energyRating: entry.energyRating,
     gesRating: entry.gesRating,
+    photoUrl: entry.photoUrl,
     photoUrls: entry.photoUrls,
     featureComparison: entry.featureComparison,
     response: entry.response,

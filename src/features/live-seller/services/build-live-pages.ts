@@ -1,4 +1,11 @@
-import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
+import type { LiveComparableResponse } from '@/features/live-seller/types';
+
+// MISSION 51 — la navigation ne lit d'un concurrent que son id et sa réponse persistée.
+// On la type sur ce MINIMUM structurel, si bien que la donnée complète (côté serveur) ET
+// la donnée PROJETÉE remise au vendeur (sans prix) satisfont toutes deux ces fonctions,
+// sans conversion.
+export type LiveNavComparable = { id: string; response: LiveComparableResponse | null };
+export type LiveNavData = { comparables: LiveNavComparable[] };
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
 // intro → [Votre bien] → [competition, price, price reveal, duration] per
@@ -39,7 +46,7 @@ const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3 | 4; title: string
 // is inserted — absent when the dossier has no subject property, same logic as the
 // dangerous-competitor page when there is no competitor.
 export function buildLivePages(
-  live: LiveComparativeData | null,
+  live: LiveNavData | null,
   hasSubjectProperty: boolean,
 ): LivePage[] {
   const pages: LivePage[] = [

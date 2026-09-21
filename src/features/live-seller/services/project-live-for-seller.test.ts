@@ -54,6 +54,7 @@ const NEUTRAL_KEYS = [
   'bedroomsCount',
   'energyRating',
   'gesRating',
+  'photoUrl',
   'photoUrls',
   'featureComparison',
   'response',
