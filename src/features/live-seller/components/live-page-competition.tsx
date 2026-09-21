@@ -10,6 +10,7 @@ import {
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import {
   choice,
   ctaPrimary,
@@ -56,8 +57,10 @@ export function LivePageCompetition({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
-          <LiveComparableHeader entry={entry} />
+          {/* Avant le prix : jamais le titre du portail (il contient le prix), ni dans
+              la vignette ni dans le texte alternatif de la photo. Libellé neutre. */}
+          <LiveGallery photos={entry.photoUrls} alt={neutralComparableLabel(entry)} />
+          <LiveComparableHeader entry={entry} hidePrice />
         </div>
 
         <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>

@@ -9,6 +9,7 @@ import {
   type LiveActionState,
 } from '@/features/live-seller/actions/live-action-state';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
   bigInput,
@@ -61,8 +62,10 @@ export function LivePagePrice({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
-          <LiveComparableHeader entry={entry} />
+          {/* Le vendeur ESTIME le prix ici : le vrai prix est à l'écran suivant. Aucun
+              montant ne doit fuir — ni le titre du portail, ni via le texte alternatif. */}
+          <LiveGallery photos={entry.photoUrls} alt={neutralComparableLabel(entry)} />
+          <LiveComparableHeader entry={entry} hidePrice />
         </div>
 
         <div className="flex h-fit flex-col gap-4">
