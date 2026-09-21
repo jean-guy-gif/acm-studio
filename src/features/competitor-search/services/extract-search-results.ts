@@ -108,14 +108,26 @@ function readRooms(text: string | null): number | null {
 }
 
 // Un LOGO D'AGENCE n'est pas la photo du bien (même famille que l'habillage écarté
-// en mission 49). On le reconnaît à la balise (« Logo de l'annonceur », classe
-// account-logo/agency) ou au chemin (/Agences/, /logos/, /logo…). Écarté : mieux vaut
-// pas de vignette qu'un logo.
+// en mission 49). Deux familles de signaux, MESURÉES :
+//  - le balisage/chemin : « Logo de l'annonceur », account-logo, /Agences/, /logos/… ;
+//  - la TAILLE : chez SeLoger le logo n'a AUCUN de ces mots — c'est juste la première
+//    image de la carte, minuscule (h=50), sur le même CDN que les photos, avec le nom
+//    de l'agence en alt (« CABINET IMMOBILIER NICE »). La vraie photo fait w=626. Une
+//    image dont une dimension déclarée est ≤ 160 px est une vignette/logo, pas la
+//    photo du bien (les vrais logos Bien'ici font height=90 ; les photos ≥ 180).
 function isAgencyLogo(imgTag: string, src: string): boolean {
   if (/logo|annonceur|agen(?:ce|cy)|publisher/i.test(imgTag)) {
     return true;
   }
-  return /\/agences?\/|\/logos?\/|[/_-]logo[._/-]|\/publisher/i.test(src);
+  if (/\/agences?\/|\/logos?\/|[/_-]logo[._/-]|\/publisher/i.test(src)) {
+    return true;
+  }
+  for (const match of src.matchAll(/[?&](?:w|h|width|height)=(\d{1,4})\b/gi)) {
+    if (Number.parseInt(match[1], 10) <= 160) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const IMG_URL_ATTRS = ['data-src', 'data-lazy-src', 'data-original', 'data-thumb-src', 'src'];

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
@@ -15,7 +16,7 @@ import {
   surfaceComparison,
 } from '@/features/comparables/services/calculate-comparable-summary';
 import type { Comparable } from '@/features/comparables/types';
-import { getMainPhotoUrl } from '@/features/comparables/utils/comparable-photos';
+import { getComparablePhotoUrls } from '@/features/comparables/utils/comparable-photos';
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
 
@@ -49,18 +50,23 @@ export function ComparableCard({
   isFirst,
   isLast,
 }: ComparableCardProps) {
-  const photo = getMainPhotoUrl(comparable);
+  const photos = getComparablePhotoUrls(comparable);
+  const [photoIndex, setPhotoIndex] = useState(0);
   const acmPricePerSquareMeter = pricePerSquareMeter(comparable.price, comparable.surface_area);
   const gap = surfaceComparison(comparable.surface_area, subjectSurfaceArea);
+
+  const shown = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
+  const step = (delta: number) =>
+    setPhotoIndex((index) => (index + delta + photos.length) % photos.length);
 
   return (
     <li
       className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand/60 sm:flex-row stage:hover:border-brand/60`}
     >
-      <div className="h-32 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-44 stage:bg-white/10">
-        {photo ? (
+      <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-44 stage:bg-white/10">
+        {photos.length > 0 ? (
           <RemoteImage
-            src={photo}
+            src={photos[shown]}
             alt={comparable.title ?? 'Bien concurrent'}
             className="h-full w-full object-cover"
             fallbackClassName="h-full w-full"
@@ -70,6 +76,31 @@ export function ComparableCard({
             Pas de photo
           </div>
         )}
+        {/* §3 (revue) — défiler la galerie du concurrent importé, comme sur la carte
+            classée : des flèches sur la vignette de la fiche, dans le dossier. */}
+        {photos.length > 1 ? (
+          <>
+            <button
+              type="button"
+              aria-label="Photo précédente"
+              onClick={() => step(-1)}
+              className="absolute top-1/2 left-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Photo suivante"
+              onClick={() => step(1)}
+              className="absolute top-1/2 right-1 -translate-y-1/2 rounded-full bg-black/45 px-2 py-1 text-sm leading-none text-white hover:bg-black/65"
+            >
+              ›
+            </button>
+            <span className="absolute right-1 bottom-1 rounded bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+              {shown + 1}/{photos.length}
+            </span>
+          </>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5">

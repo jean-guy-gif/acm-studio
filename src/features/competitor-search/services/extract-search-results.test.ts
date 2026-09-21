@@ -177,6 +177,22 @@ describe('extractSearchResults — type de bien et titre', () => {
 // Point 3 — un logo d'agence n'est pas la photo du bien : on l'écarte, on prend la
 // première VRAIE photo, et à défaut pas de vignette (jamais un logo).
 describe('extractSearchResults — la vignette n’est jamais un logo d’agence', () => {
+  // Le cas de PRODUCTION qui manquait : chez SeLoger le logo n'a AUCUN mot « logo »,
+  // c'est la première image, minuscule (h=50), même CDN, alt = nom de l'agence. Un
+  // test sur une fixture réelle, pas sur un balisage inventé (Bien'ici) qui validait
+  // un monde que SeLoger ne fabrique pas.
+  it('SeLoger (fixture réelle) : aucune carte ne retient le logo minuscule de l’agence', () => {
+    const cards = load('seloger');
+    expect(cards.filter((c) => c.photoUrl != null)).toHaveLength(30);
+    for (const card of cards) {
+      const url = card.photoUrl ?? '';
+      // Aucune dimension déclarée ≤ 160 px : ce serait une vignette/logo, pas la photo.
+      for (const m of url.matchAll(/[?&](?:w|h|width|height)=(\d{1,4})\b/gi)) {
+        expect(Number.parseInt(m[1], 10)).toBeGreaterThan(160);
+      }
+    }
+  });
+
   it('saute le logo de l’annonceur et prend la vraie photo', () => {
     const [card] = extractSearchResults(
       [

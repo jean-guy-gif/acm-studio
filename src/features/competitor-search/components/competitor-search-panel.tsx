@@ -83,14 +83,14 @@ function CandidateCard({
   pending,
 }: {
   candidate: CompetitorCandidate;
-  // §3 — import EN PLACE : renvoie true si le concurrent a bien été créé (la carte
-  // est alors retirée par le parent), false sinon (on l'affiche à l'écran).
-  onImport: () => Promise<boolean>;
+  // §3 — import EN PLACE : renvoie null si le concurrent a bien été créé (la carte est
+  // alors retirée par le parent), sinon la CAUSE réelle de l'échec (affichée).
+  onImport: () => Promise<string | null>;
   onDiscard: () => void;
   pending: boolean;
 }) {
   const [importing, setImporting] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   return (
     <div
       className={`${card} group flex flex-col gap-2.5 overflow-hidden transition-colors hover:border-brand/60 stage:hover:border-brand/60`}
@@ -120,8 +120,9 @@ function CandidateCard({
         </div>
         <div className="mt-auto flex flex-col gap-2 pt-2 text-sm">
           {failed ? (
+            // La cause réelle, visible sur la carte (pas seulement dans la console).
             <p className="text-xs font-medium text-amber-700 stage:text-amber-300">
-              L’import a échoué. Réessayez, ou ouvrez l’annonce.
+              L’import a échoué — cause : {failed}. Réessayez, ou ouvrez l’annonce.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2 text-xs">
@@ -130,14 +131,14 @@ function CandidateCard({
               type="button"
               disabled={pending || importing}
               onClick={async () => {
-                setFailed(false);
+                setFailed(null);
                 setImporting(true);
-                const ok = await onImport();
-                if (!ok) {
+                const reason = await onImport();
+                if (reason != null) {
                   setImporting(false);
-                  setFailed(true);
+                  setFailed(reason);
                 }
-                // Si ok, le parent retire la carte ; pas besoin de remettre l'état.
+                // Si null, le parent retire la carte ; pas besoin de remettre l'état.
               }}
               className={`${btnPrimary} px-3 py-1.5`}
             >
@@ -174,7 +175,7 @@ function PortalBlock({
   pending,
 }: {
   portal: PortalSearchResult;
-  onImport: (candidate: CompetitorCandidate) => Promise<boolean>;
+  onImport: (candidate: CompetitorCandidate) => Promise<string | null>;
   onPaste: (searchUrl: string, html: string) => void;
   onRetry: (portal: PortalSearchResult['portal']) => void;
   pending: boolean;
@@ -294,7 +295,10 @@ export function CompetitorSearchPanel({
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(
     null,
   );
-  const [importFailures, setImportFailures] = useState<RankedCandidate[]>([]);
+  // La fiche en échec ET sa cause réelle (robots ? prix ? fenêtre ?), affichée.
+  const [importFailures, setImportFailures] = useState<
+    { entry: RankedCandidate; reason: string }[]
+  >([]);
   const busy = pending || searching || importing;
 
   // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
@@ -472,20 +476,32 @@ export function CompetitorSearchPanel({
   }
 
   // §8 — importe UNE fiche par l'extension : lit la page de l'annonce (robots respecté)
-  // puis crée le concurrent. Renvoie l'issue, jamais ne jette : le lot isole chaque
-  // fiche. `windowId` réutilise la fenêtre unique du lot ; absent = fenêtre one-off
-  // (relance d'une seule fiche).
+  // puis crée le concurrent. Renvoie l'ISSUE AVEC SA CAUSE, jamais un booléen nu : le
+  // catch qui détruit l'information est la leçon de la mission 46 §2.4. La cause réelle
+  // est journalisée ET rendue visible sur la fiche en échec. `windowId` réutilise la
+  // fenêtre unique du lot ; absent = fenêtre one-off (relance d'une seule fiche).
   async function importOne(
-    entry: RankedCandidate,
+    url: string,
     robotsCache: PortalRobotsCache,
     windowId?: number,
-  ): Promise<boolean> {
-    const read = await readPageViaExtension(entry.candidate.url, { windowId, robotsCache });
+  ): Promise<{ ok: true } | { ok: false; reason: string }> {
+    const read = await readPageViaExtension(url, { windowId, robotsCache });
     if (!read.ok) {
-      return false;
+      const reason =
+        read.reason === 'robots'
+          ? 'le robots.txt de l’annonce refuse la lecture automatique'
+          : read.reason === 'invalid'
+            ? 'adresse d’annonce invalide'
+            : 'la fiche n’a pas répondu (réseau ou fenêtre fermée)';
+      console.warn(`[import] ${url} — ${reason}`);
+      return { ok: false, reason };
     }
-    const result = await importAction(entry.candidate.url, read.html);
-    return result.ok;
+    const result = await importAction(url, read.html);
+    if (!result.ok) {
+      console.warn(`[import] ${url} — ${result.error}`);
+      return { ok: false, reason: result.error };
+    }
+    return { ok: true };
   }
 
   const decisionOf = (
@@ -532,17 +548,17 @@ export function CompetitorSearchPanel({
     setImportProgress({ done: 0, total: checked.length });
     const robotsCache: PortalRobotsCache = new Map();
     const importedOk: RankedCandidate[] = [];
-    const failures: RankedCandidate[] = [];
+    const failures: { entry: RankedCandidate; reason: string }[] = [];
     try {
       for (let i = 0; i < checked.length; i += 1) {
         if (i > 0) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-        const ok = await importOne(checked[i], robotsCache, win.windowId);
-        if (ok) {
+        const outcome = await importOne(checked[i].candidate.url, robotsCache, win.windowId);
+        if (outcome.ok) {
           importedOk.push(checked[i]);
         } else {
-          failures.push(checked[i]);
+          failures.push({ entry: checked[i], reason: outcome.reason });
         }
         setImportProgress({ done: importedOk.length, total: checked.length });
       }
@@ -577,19 +593,15 @@ export function CompetitorSearchPanel({
   // §3 (revue) — « Retenir et importer » d'une carte de portail se fait EN PLACE,
   // comme le refus : un clic, l'import se fait (fenêtre one-off), la décision est
   // écrite, la carte quitte la liste. Aucune navigation, aucun formulaire à revalider.
-  async function importFromPortal(candidate: CompetitorCandidate): Promise<boolean> {
+  async function importFromPortal(candidate: CompetitorCandidate): Promise<string | null> {
     const ping = await pingExtension();
     if (!ping.available) {
       setExtensionMissing(true);
-      return false;
+      return 'l’extension ACM Studio n’a pas répondu';
     }
-    const read = await readPageViaExtension(candidate.url, { robotsCache: new Map() });
-    if (!read.ok) {
-      return false;
-    }
-    const result = await importAction(candidate.url, read.html);
-    if (!result.ok) {
-      return false;
+    const outcome = await importOne(candidate.url, new Map());
+    if (!outcome.ok) {
+      return outcome.reason;
     }
     await recordDecisionsAction([
       {
@@ -610,7 +622,7 @@ export function CompetitorSearchPanel({
         candidates: portal.candidates.filter((c) => c.url !== candidate.url),
       })),
     );
-    return true;
+    return null;
   }
 
   // Relance d'UNE fiche en échec, seule (fenêtre one-off). Réussie → retenue.
@@ -623,15 +635,15 @@ export function CompetitorSearchPanel({
     }
     setImporting(true);
     try {
-      const ok = await importOne(entry, new Map());
-      if (ok) {
+      const outcome = await importOne(entry.candidate.url, new Map());
+      if (outcome.ok) {
         await recordDecisionsAction([decisionOf(entry, 'accepted')]);
         setDecided((current) => ({ ...current, [entry.candidate.url]: 'accepted' }));
         setImportFailures((current) =>
-          current.filter((f) => f.candidate.url !== entry.candidate.url),
+          current.filter((f) => f.entry.candidate.url !== entry.candidate.url),
         );
       } else {
-        setError(`« ${entry.candidate.title ?? entry.candidate.url} » n’a pas pu être importée.`);
+        setError(`« ${entry.candidate.title ?? entry.candidate.url} » : ${outcome.reason}.`);
       }
     } finally {
       setImporting(false);
@@ -790,13 +802,18 @@ export function CompetitorSearchPanel({
                 {importFailures.length > 1 ? 'ont' : 'a'} pas pu être importée
                 {importFailures.length > 1 ? 's' : ''} — les autres sont bien entrées.
               </span>
-              {importFailures.map((entry) => (
+              {importFailures.map(({ entry, reason }) => (
                 <div
                   key={entry.candidate.url}
                   className="flex flex-wrap items-center justify-between gap-2 text-sm"
                 >
-                  <span className="text-zinc-700 stage:text-white/80">
+                  <span className="min-w-0 text-zinc-700 stage:text-white/80">
                     {entry.candidate.title ?? entry.candidate.url}
+                    {/* La cause réelle, visible sur la fiche en échec (pas seulement
+                        dans la console) — mission 46 §2.4. */}
+                    <span className="block text-xs text-amber-700 stage:text-amber-300">
+                      Cause : {reason}.
+                    </span>
                   </span>
                   <button
                     type="button"
