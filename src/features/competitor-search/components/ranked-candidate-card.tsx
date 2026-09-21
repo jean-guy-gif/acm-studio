@@ -61,10 +61,14 @@ export function RankedCandidateCard({
   const [photoIndex, setPhotoIndex] = useState(0);
 
   const { candidate } = ranked;
-  // La fiche complétée prime sur ce que la page de résultats laissait deviner. La
-  // galerie complète vient de la fiche ; à défaut, LES photos de la carte (plusieurs).
+  // La galerie vient de la fiche enrichie SI elle est plus riche ; sinon LES photos de
+  // la carte de résultat (SeLoger en publie 5, Green Acres 4). Une enrichissement
+  // maigre (1 photo, fréquent quand le portail bloque la lecture serveur — les cartes
+  // « déjà retenues » n'étaient pas enrichies mieux) ne doit JAMAIS masquer les photos
+  // déjà lues sur la carte : on prend la source la plus fournie.
+  const enrichedPhotos = enriched?.photoUrls ?? [];
   const photos =
-    enriched && enriched.photoUrls.length > 0 ? enriched.photoUrls : candidate.photoUrls;
+    enrichedPhotos.length > candidate.photoUrls.length ? enrichedPhotos : candidate.photoUrls;
   const price = enriched?.price ?? candidate.price;
   const surface = enriched?.surfaceArea ?? candidate.surfaceArea;
   const rooms = enriched?.roomsCount ?? candidate.roomsCount;
