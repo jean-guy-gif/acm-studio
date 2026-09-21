@@ -1,20 +1,20 @@
 import { Logo } from '@/components/brand/logo';
-import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
 
 // Introduction premium : composition sombre, une seule idée principale, logo,
-// dossier vendeur, et un unique bouton de démarrage.
+// dossier vendeur, et un unique bouton de démarrage. Ne lit que le NOMBRE de
+// concurrents — aucun montant.
 export function LivePageIntro({
-  live,
+  comparablesCount,
   sellerName,
   address,
   onStart,
 }: {
-  live: LiveComparativeData | null;
+  comparablesCount: number;
   sellerName: string;
   address: string | null;
   onStart: () => void;
 }) {
-  const count = live?.comparables.length ?? 0;
+  const count = comparablesCount;
 
   return (
     <section className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep to-[#01283b] p-8 text-white sm:p-12">

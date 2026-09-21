@@ -30,7 +30,11 @@ export async function deliverLiveFragment(
   request: DeliverLiveRequest,
 ): Promise<DeliverLiveResult> {
   if (request.kind === 'comparable-reveal') {
-    const written = await writeLiveComparableResponse(projectId, request.comparableId, request.formData);
+    const written = await writeLiveComparableResponse(
+      projectId,
+      request.comparableId,
+      request.formData,
+    );
     if (!written.ok) {
       return { ok: false, error: written.error, fieldErrors: written.fieldErrors };
     }

@@ -21,7 +21,6 @@ import {
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
-import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -29,11 +28,11 @@ const euro = (value: number | null): string =>
 // "1. Valeur perçue par le vendeur" — a manual seller input. The observed market
 // positioning is shown for context (never as "vraie valeur du marché").
 export function LivePagePerceived({
-  live,
+  competitiveMarketCentral,
   summary,
   saveAction,
 }: {
-  live: LiveComparativeData;
+  competitiveMarketCentral: number | null;
   summary: LiveSellerSummary | null;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
@@ -84,7 +83,7 @@ export function LivePagePerceived({
 
       <div className={panelSoft}>
         <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
-        <div className={statValue}>{euro(live.competitiveMarketCentral)}</div>
+        <div className={statValue}>{euro(competitiveMarketCentral)}</div>
       </div>
     </div>
   );

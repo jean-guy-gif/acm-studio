@@ -1,5 +1,8 @@
 import type { LiveSellerSummary } from '@/features/live-seller/types';
-import type { LiveNavComparable, LivePageType } from '@/features/live-seller/services/build-live-pages';
+import type {
+  LiveNavComparable,
+  LivePageType,
+} from '@/features/live-seller/services/build-live-pages';
 
 // Reveal gates use persisted answers only. Local form values must never let the
 // global navigation skip ahead before the server has accepted the answer.

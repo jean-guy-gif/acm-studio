@@ -4,7 +4,10 @@ import type { LiveSellerSummary } from '@/features/live-seller/types';
 
 // Minimum structurel lu par la borne : concurrents (id + réponse) et résumé vendeur.
 // Donnée complète et donnée projetée le satisfont toutes deux.
-type LiveReachSource = { comparables: LiveNavComparable[]; sellerSummary: LiveSellerSummary | null };
+type LiveReachSource = {
+  comparables: LiveNavComparable[];
+  sellerSummary: LiveSellerSummary | null;
+};
 
 // MISSION 51 §2.2 — le prix ne doit fuir sur AUCUN chemin. La garde d'avancement
 // (canAdvanceLivePage) protège le bouton « Suivant », mais PAS l'ouverture directe par

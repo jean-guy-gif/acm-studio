@@ -9,7 +9,11 @@ import {
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import { DANGEROUS_REASON_LABELS, type DangerousReason } from '@/features/live-seller/constants';
-import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
+import type { LiveSellerSummary } from '@/features/live-seller/types';
+import type {
+  AuthorizedAdvisorRange,
+  AuthorizedSellerComparable,
+} from '@/features/live-seller/services/project-live-for-seller';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -25,12 +29,19 @@ function Line({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function LivePageConclusion({ live }: { live: LiveComparativeData }) {
-  const summary = live.sellerSummary;
-  const dangerous = live.comparables.find(
-    (c) => c.id === summary?.seller_most_dangerous_comparable_id,
-  );
-  const decision = live.advisorDecision;
+// La fourchette conseiller (central, décision) est LIVRÉE — jamais dans la charge
+// initiale. Le concurrent le plus dangereux est déjà autorisé (post-révélation).
+export function LivePageConclusion({
+  summary,
+  advisorRange,
+  dangerous,
+}: {
+  summary: LiveSellerSummary | null;
+  advisorRange: AuthorizedAdvisorRange | null;
+  dangerous: AuthorizedSellerComparable | null;
+}) {
+  const competitiveMarketCentral = advisorRange?.competitiveMarketCentral ?? null;
+  const decision = advisorRange?.advisorDecision ?? null;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -48,7 +59,7 @@ export function LivePageConclusion({ live }: { live: LiveComparativeData }) {
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
-          <div className={bigValue}>{euro(live.competitiveMarketCentral)}</div>
+          <div className={bigValue}>{euro(competitiveMarketCentral)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse comparative de marché du conseiller</div>

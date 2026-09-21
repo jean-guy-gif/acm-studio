@@ -1,20 +1,13 @@
 import { notFound } from 'next/navigation';
 
-import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { clampInitialLiveIndex } from '@/features/live-seller/services/max-reachable-live-index';
 import {
-  getLiveComparableResponses,
-  getLiveSellerSummary,
-} from '@/features/live-seller/queries/get-live-seller-data';
-import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
-import { getProject } from '@/features/projects/queries/get-project';
-import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
-import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
-import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
-import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
-import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
+  authorizeAdvisorRange,
+  projectLiveForSeller,
+} from '@/features/live-seller/services/project-live-for-seller';
 
 type LivePageProps = {
   params: Promise<{ projectId: string }>;
@@ -36,64 +29,32 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   const { projectId } = await params;
   const { fiche } = await searchParams;
 
-  // Access control: getProject is scoped to the caller's agency (via getProfile)
-  // and returns null for a foreign or missing project → 404 (repo convention).
-  const project = await getProject(projectId);
-  if (!project) {
+  // Chargement unique (accès contrôlé : getProject cadré sur l'agence → 404 sinon).
+  const presentation = await loadLivePresentation(projectId);
+  if (!presentation) {
     notFound();
   }
 
-  const [
-    property,
-    comparables,
-    savedPositioning,
-    diagnostics,
-    condominium,
-    sellerResponses,
-    sellerSummary,
-    propertyPhotos,
-  ] = await Promise.all([
-    getSubjectProperty(projectId),
-    getComparables(projectId),
-    getSavedPricePositioning(projectId),
-    getSubjectPropertyDiagnostics(projectId),
-    getSubjectPropertyCondominium(projectId),
-    getLiveComparableResponses(projectId),
-    getLiveSellerSummary(projectId),
-    getPropertyPhotos(projectId),
-  ]);
+  // MISSION 51 §2.2 — le vendeur ne reçoit qu'une charge PROJETÉE : chaque concurrent est
+  // neutre (aucun prix) tant que son estimation n'est pas persistée, et la fourchette
+  // conseiller n'y est pas. Le prix et la fourchette sont LIVRÉS ensuite, après
+  // autorisation côté serveur. La borne d'ouverture (2.2) se calcule sur cette même
+  // donnée projetée — les réponses persistées qu'elle porte suffisent.
+  const projectedLive = presentation.live ? projectLiveForSeller(presentation.live) : null;
+  // La fourchette n'est autorisée qu'une fois la valeur perçue persistée (écran 7) : nulle
+  // avant, elle n'entre donc pas dans la charge tant que le vendeur ne s'est pas prononcé.
+  const advisorRange = presentation.live ? authorizeAdvisorRange(presentation.live) : null;
 
-  // The subject property's photo_urls are PRIVATE storage paths (Mission 37):
-  // sign them here (getPropertyPhotos reuses signPropertyPhotos) so the pure,
-  // synchronous builder receives ready-to-display URLs.
-  const propertyPhotoUrls = propertyPhotos
-    .map((photo) => photo.url)
-    .filter((url): url is string => url !== null);
-
-  // Same business entry point as the Builder — Live never rebuilds the content.
-  const presentation = buildSellerPresentation({
-    project,
-    property,
-    diagnostics,
-    condominium,
-    comparables,
-    savedPositioning,
-    sellerResponses,
-    sellerSummary,
-    generatedAt: new Date().toISOString(),
-    propertyPhotoUrls,
-  });
-
-  // §2.2 — l'index d'ouverture demandé par l'URL est BORNÉ à la page la plus loin
-  // légitimement atteinte (réponses persistées) : ouvrir la révélation avant d'avoir
-  // estimé ne produit jamais son HTML (donc jamais le prix), quel que soit le chemin.
-  const pages = buildLivePages(presentation.live, presentation.property != null);
-  const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, presentation.live);
+  const pages = buildLivePages(projectedLive, presentation.property != null);
+  const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
 
   return (
     <LiveComparativeShell
       projectId={projectId}
-      presentation={presentation}
+      live={projectedLive}
+      property={presentation.property}
+      projectName={presentation.project.name}
+      advisorRange={advisorRange}
       initialIndex={initialIndex}
     />
   );

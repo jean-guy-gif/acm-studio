@@ -26,15 +26,16 @@ import {
   SERIOUS_COMPETITOR_LABELS,
   SERIOUS_COMPETITOR_VALUES,
 } from '@/features/live-seller/constants';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
 // Page 1 — "Est-il un sérieux concurrent ?" NO price, no price/m², no duration,
-// no history. The seller judges the product before knowing its price.
+// no history. The seller judges the product before knowing its price. Le type projeté
+// interdit ici tout accès au prix : `entry` n'a pas de champ `price` avant la révélation.
 export function LivePageCompetition({
   entry,
   saveAction,
 }: {
-  entry: LiveComparableEntry;
+  entry: SellerComparable;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
   const [state, formAction] = useActionState(saveAction, initialLiveActionState);
@@ -60,7 +61,11 @@ export function LivePageCompetition({
           {/* Avant le prix : jamais le titre du portail (il contient le prix), ni dans
               la vignette ni dans le texte alternatif de la photo. Libellé neutre. */}
           <LiveGallery photos={entry.photoUrls} alt={neutralComparableLabel(entry)} />
-          <LiveComparableHeader entry={entry} hidePrice />
+          <LiveComparableHeader
+            heading={neutralComparableLabel(entry)}
+            city={entry.city}
+            district={entry.district}
+          />
         </div>
 
         <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>

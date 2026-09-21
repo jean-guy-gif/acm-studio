@@ -1,21 +1,19 @@
-import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
-
 // Read-only identity facts shown under the photos. Never editable.
 //
-// `hidePrice` : sur les étapes AVANT la révélation du prix, on n'affiche PAS le titre
-// du portail (qui contient souvent le prix) — on compose un libellé neutre à partir des
-// champs structurés. Sur les étapes d'après la révélation, le titre réel est permis.
+// MISSION 51 — l'en-tête ne connaît plus le concurrent, seulement le TITRE déjà choisi
+// par l'appelant : un libellé neutre COMPOSÉ avant la révélation (jamais le titre du
+// portail, qui porte le prix), le titre réel après. Le type projeté garantit la règle en
+// amont — un écran pré-révélation n'a pas de champ `title` à passer.
 export function LiveComparableHeader({
-  entry,
-  hidePrice = false,
+  heading,
+  city,
+  district,
 }: {
-  entry: LiveComparableEntry;
-  hidePrice?: boolean;
+  heading: string;
+  city: string | null;
+  district: string | null;
 }) {
-  const heading = hidePrice ? neutralComparableLabel(entry) : (entry.title ?? 'Bien concurrent');
-  const location =
-    [entry.district, entry.city].filter(Boolean).join(', ') || 'Localisation inconnue';
+  const location = [district, city].filter(Boolean).join(', ') || 'Localisation inconnue';
   return (
     <div className="flex flex-col gap-0.5">
       <h3 className="font-title text-2xl leading-snug font-semibold text-zinc-900 stage:text-white">

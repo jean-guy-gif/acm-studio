@@ -35,7 +35,7 @@ import {
   SERIOUS_COMPETITOR_LABELS,
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -48,7 +48,7 @@ export function LivePageDuration({
   entry,
   saveAction,
 }: {
-  entry: LiveComparableEntry;
+  entry: AuthorizedSellerComparable;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
   const [state, formAction] = useActionState(saveAction, initialLiveActionState);
@@ -83,7 +83,11 @@ export function LivePageDuration({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
           <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
-          <LiveComparableHeader entry={entry} />
+          <LiveComparableHeader
+            heading={entry.title ?? 'Bien concurrent'}
+            city={entry.city}
+            district={entry.district}
+          />
 
           <div className={`${panelSoft} grid grid-cols-2 gap-4 sm:grid-cols-3`}>
             <div>

@@ -12,8 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 // voie unique. Sécurité inchangée : projet vérifié pour l'agence, et un concurrent « le
 // plus dangereux » doit appartenir au dossier ET être un concurrent sérieux/incertain.
 export type WriteLiveSummaryResult =
-  | { ok: true }
-  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+  { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 export async function writeLiveSellerSummary(
   projectId: string,
@@ -67,7 +66,11 @@ export async function writeLiveSellerSummary(
   });
   const validation = validateLiveSellerSummary(normalized);
   if (!validation.ok) {
-    return { ok: false, error: 'Corrigez les champs indiqués.', fieldErrors: validation.fieldErrors };
+    return {
+      ok: false,
+      error: 'Corrigez les champs indiqués.',
+      fieldErrors: validation.fieldErrors,
+    };
   }
 
   const dangerousId = validation.value.seller_most_dangerous_comparable_id;

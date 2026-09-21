@@ -20,8 +20,7 @@ import {
   questionHint,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
-import type { LiveSellerSummary, PriceGap } from '@/features/live-seller/types';
-import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
+import type { LivePriceGaps, LiveSellerSummary, PriceGap } from '@/features/live-seller/types';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -44,11 +43,11 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
 // ACM Studio never computes this value. The gaps are shown without any automatic
 // judgement.
 export function LivePageAnalysis({
-  live,
+  priceGaps,
   summary,
   saveAction,
 }: {
-  live: LiveComparativeData;
+  priceGaps: LivePriceGaps;
   summary: LiveSellerSummary | null;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
@@ -57,7 +56,7 @@ export function LivePageAnalysis({
     state.values?.advisor_comparative_market_price ??
     summary?.advisor_comparative_market_price ??
     '';
-  const gaps = live.priceGaps;
+  const gaps = priceGaps;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">

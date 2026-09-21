@@ -15,7 +15,7 @@ import {
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { PRICE_COHERENCE_VALUES, PRICE_COHERENCE_LABELS } from '@/features/live-seller/constants';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
@@ -41,7 +41,7 @@ export function LivePagePriceRevealPilot({
   draft,
   onDraftChange,
 }: {
-  entry: LiveComparableEntry;
+  entry: AuthorizedSellerComparable;
   draft: PriceCoherenceDraft;
   onDraftChange: (next: PriceCoherenceDraft) => void;
 }) {
@@ -63,7 +63,11 @@ export function LivePagePriceRevealPilot({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
           <div className="flex flex-col gap-4">
             <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
-            <LiveComparableHeader entry={entry} />
+            <LiveComparableHeader
+              heading={entry.title ?? 'Bien concurrent'}
+              city={entry.city}
+              district={entry.district}
+            />
           </div>
         </div>
       </div>
@@ -82,7 +86,11 @@ export function LivePagePriceRevealPilot({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
           <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
-          <LiveComparableHeader entry={entry} />
+          <LiveComparableHeader
+            heading={entry.title ?? 'Bien concurrent'}
+            city={entry.city}
+            district={entry.district}
+          />
         </div>
 
         <div className="flex h-fit flex-col gap-4">

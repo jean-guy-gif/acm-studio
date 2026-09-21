@@ -45,10 +45,7 @@ const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3 | 4; title: string
 // `hasSubjectProperty` decides whether the "Votre bien" recognition slide (Act 1)
 // is inserted — absent when the dossier has no subject property, same logic as the
 // dangerous-competitor page when there is no competitor.
-export function buildLivePages(
-  live: LiveNavData | null,
-  hasSubjectProperty: boolean,
-): LivePage[] {
+export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boolean): LivePage[] {
   const pages: LivePage[] = [
     {
       key: 'intro',

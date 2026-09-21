@@ -13,6 +13,10 @@ import {
   LiveComparativeShell,
   type LiveStageTheme,
 } from '@/features/live-seller/components/live-comparative-shell';
+import {
+  authorizeAdvisorRange,
+  projectLiveForSeller,
+} from '@/features/live-seller/services/project-live-for-seller';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 
 // ---------------------------------------------------------------------------
@@ -63,10 +67,16 @@ export default async function DesignPreviewPage({
     propertyPhotoUrls: [], // demo subject property has no photos
   });
 
+  const projectedLive = presentation.live ? projectLiveForSeller(presentation.live) : null;
+  const advisorRange = presentation.live ? authorizeAdvisorRange(presentation.live) : null;
+
   return (
     <LiveComparativeShell
       projectId="design-preview"
-      presentation={presentation}
+      live={projectedLive}
+      property={presentation.property}
+      projectName={presentation.project.name}
+      advisorRange={advisorRange}
       initialIndex={initialIndex}
       initialStage={initialStage}
     />

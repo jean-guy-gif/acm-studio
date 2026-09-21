@@ -27,7 +27,7 @@ import {
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -40,7 +40,7 @@ export function LivePageDangerous({
   summary,
   saveAction,
 }: {
-  comparables: LiveComparableEntry[];
+  comparables: AuthorizedSellerComparable[];
   summary: LiveSellerSummary | null;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {

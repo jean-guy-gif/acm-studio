@@ -22,7 +22,7 @@ import {
   questionHint,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
-import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
 // Screen 2 — "À quel prix ?" The seller commits a guess. The real price stays
 // MASKED here: it is revealed only on the next screen ("Ce prix vous paraît-il
@@ -33,7 +33,7 @@ export function LivePagePrice({
   entry,
   saveAction,
 }: {
-  entry: LiveComparableEntry;
+  entry: SellerComparable;
   saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
   const router = useRouter();
@@ -65,7 +65,11 @@ export function LivePagePrice({
           {/* Le vendeur ESTIME le prix ici : le vrai prix est à l'écran suivant. Aucun
               montant ne doit fuir — ni le titre du portail, ni via le texte alternatif. */}
           <LiveGallery photos={entry.photoUrls} alt={neutralComparableLabel(entry)} />
-          <LiveComparableHeader entry={entry} hidePrice />
+          <LiveComparableHeader
+            heading={neutralComparableLabel(entry)}
+            city={entry.city}
+            district={entry.district}
+          />
         </div>
 
         <div className="flex h-fit flex-col gap-4">

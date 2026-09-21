@@ -31,7 +31,12 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
-import type { SellerPresentation } from '@/features/seller-presentation/types/seller-presentation';
+import type {
+  AuthorizedAdvisorRange,
+  AuthorizedSellerComparable,
+  SellerLiveData,
+} from '@/features/live-seller/services/project-live-for-seller';
+import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 
 export type LiveStageTheme = 'dark' | 'light';
 
@@ -41,12 +46,22 @@ export type LiveStageTheme = 'dark' | 'light';
 // are persisted through server actions.
 export function LiveComparativeShell({
   projectId,
-  presentation,
+  live,
+  property,
+  projectName,
+  advisorRange,
   initialIndex = 0,
   initialStage = 'dark',
 }: {
   projectId: string;
-  presentation: SellerPresentation;
+  // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
+  // charge), le prix n'apparaît qu'à l'autorisation.
+  live: SellerLiveData | null;
+  property: SellerPresentationProperty | null;
+  projectName: string;
+  // Fourchette conseiller — livrée hors de la charge des concurrents (jamais un montant
+  // avant l'autorisation côté serveur).
+  advisorRange: AuthorizedAdvisorRange | null;
   // Fiche d'ouverture : reprise après un rechargement en plein rendez-vous
   // (paramètre « fiche » de l'URL, écrit ci-dessous), ou choix de l'aperçu design.
   initialIndex?: number;
@@ -74,8 +89,7 @@ export function LiveComparativeShell({
   };
   const [saves, setSaves] = useState<Record<string, SaveRecord>>({});
 
-  const live = presentation.live;
-  const hasSubjectProperty = presentation.property != null;
+  const hasSubjectProperty = property != null;
   const pages = useMemo(() => buildLivePages(live, hasSubjectProperty), [live, hasSubjectProperty]);
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
@@ -83,6 +97,16 @@ export function LiveComparativeShell({
     page.comparableId != null
       ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
       : null;
+  // Concurrent AUTORISÉ (estimation persistée → prix livré) pour les écrans post-révélation.
+  const authorizedEntry = entry?.authorized ? entry : null;
+  // Concurrents autorisés (post-révélation) — écran 6 et résolution du plus dangereux.
+  const authorizedComparables: AuthorizedSellerComparable[] = (live?.comparables ?? []).filter(
+    (c): c is AuthorizedSellerComparable => c.authorized,
+  );
+  const dangerousComparable =
+    authorizedComparables.find(
+      (c) => c.id === live?.sellerSummary?.seller_most_dangerous_comparable_id,
+    ) ?? null;
   const canAdvance = canAdvanceLivePage(page.type, entry, live?.sellerSummary ?? null);
   // Garde de progression : on lit la valeur courante via une ref pour que `go`
   // reste référentiellement stable (react-hooks/preserve-manual-memoization) tout
@@ -347,18 +371,14 @@ export function LiveComparativeShell({
       >
         {page.type === 'intro' ? (
           <LivePageIntro
-            live={live}
-            sellerName={presentation.project.name}
-            address={
-              [presentation.property?.address, presentation.property?.city]
-                .filter(Boolean)
-                .join(', ') || null
-            }
+            comparablesCount={live?.comparables.length ?? 0}
+            sellerName={projectName}
+            address={[property?.address, property?.city].filter(Boolean).join(', ') || null}
             onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
           />
-        ) : page.type === 'subject_property' && presentation.property ? (
+        ) : page.type === 'subject_property' && property ? (
           <LivePageProperty
-            property={presentation.property}
+            property={property}
             summary={live?.sellerSummary ?? null}
             saveAction={saveSummary}
           />
@@ -366,26 +386,38 @@ export function LiveComparativeShell({
           <LivePageCompetition entry={entry} saveAction={saveResponse} />
         ) : page.type === 'comparable_price' && entry && saveResponse ? (
           <LivePagePrice entry={entry} saveAction={saveResponse} />
-        ) : page.type === 'comparable_price_reveal' && entry ? (
+        ) : page.type === 'comparable_price_reveal' && authorizedEntry ? (
           <LivePagePriceRevealPilot
-            entry={entry}
+            entry={authorizedEntry}
             draft={revealDraft}
             onDraftChange={setRevealDraft}
           />
-        ) : page.type === 'comparable_duration' && entry && saveResponse ? (
-          <LivePageDuration entry={entry} saveAction={saveResponse} />
+        ) : page.type === 'comparable_duration' && authorizedEntry && saveResponse ? (
+          <LivePageDuration entry={authorizedEntry} saveAction={saveResponse} />
         ) : page.type === 'dangerous_competitor' && live ? (
           <LivePageDangerous
-            comparables={live.comparables}
+            comparables={authorizedComparables}
             summary={live.sellerSummary}
             saveAction={saveSummary}
           />
-        ) : page.type === 'seller_perceived_price' && live ? (
-          <LivePagePerceived live={live} summary={live.sellerSummary} saveAction={saveSummary} />
-        ) : page.type === 'price_analysis' && live ? (
-          <LivePageAnalysis live={live} summary={live.sellerSummary} saveAction={saveSummary} />
-        ) : page.type === 'conclusion' && live ? (
-          <LivePageConclusion live={live} />
+        ) : page.type === 'seller_perceived_price' ? (
+          <LivePagePerceived
+            competitiveMarketCentral={advisorRange?.competitiveMarketCentral ?? null}
+            summary={live?.sellerSummary ?? null}
+            saveAction={saveSummary}
+          />
+        ) : page.type === 'price_analysis' && advisorRange ? (
+          <LivePageAnalysis
+            priceGaps={advisorRange.priceGaps}
+            summary={live?.sellerSummary ?? null}
+            saveAction={saveSummary}
+          />
+        ) : page.type === 'conclusion' ? (
+          <LivePageConclusion
+            summary={live?.sellerSummary ?? null}
+            advisorRange={advisorRange}
+            dangerous={dangerousComparable}
+          />
         ) : (
           <p className="text-zinc-500 stage:text-white/60">
             Contenu indisponible : préparez le dossier vendeur et ses concurrents dans la
