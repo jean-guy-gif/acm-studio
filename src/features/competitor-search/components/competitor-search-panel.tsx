@@ -14,10 +14,6 @@ import {
   link as linkCls,
 } from '@/components/ui/styles';
 
-import type {
-  EnrichCandidateResult,
-  EnrichedCandidate,
-} from '@/features/competitor-search/actions/enrich-candidate';
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
@@ -62,19 +58,12 @@ type Props = {
   // décisions du lot (retenues + écartées) en un appel.
   importAction: (url: string, html: string) => Promise<ImportAndCreateResult>;
   recordDecisionsAction: (decisions: BatchDecision[]) => Promise<RecordDecisionResult>;
-  enrichAction: (url: string) => Promise<EnrichCandidateResult>;
 };
 
-// Nombre de fiches complétées automatiquement après une recherche. Au-delà, le
-// conseiller a déjà de quoi trancher, et chaque fiche coûte un appel au portail.
-const ENRICHED_COUNT = 12;
 // Seuil de ressemblance : au-dessus, on affiche ; en dessous, on plie derrière
 // « Voir les N autres, moins ressemblants ». On ne masque rien (mission 36) — un
 // clic révèle tout —, on coupe seulement une liste trop longue à trancher.
 const SIMILARITY_THRESHOLD = 60;
-// Quelques appels en parallèle : assez pour que l'écran se remplisse vite, assez
-// peu pour rester un visiteur poli.
-const ENRICH_CONCURRENCY = 3;
 
 function CandidateCard({
   candidate,
@@ -298,7 +287,6 @@ export function CompetitorSearchPanel({
   recordDecisionAction,
   importAction,
   recordDecisionsAction,
-  enrichAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [searching, setSearching] = useState(false);
@@ -316,8 +304,6 @@ export function CompetitorSearchPanel({
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
-  const [enriched, setEnriched] = useState<Record<string, EnrichedCandidate>>({});
-  const [enriching, setEnriching] = useState(0);
   const [showLessRelevant, setShowLessRelevant] = useState(false);
   // §8 — sélection du lot. On stocke les CHOIX EXPLICITES (url → coché ?) ; une carte
   // absente suit son défaut : cochée d'office au-dessus du seuil ET de type connu,
@@ -358,30 +344,6 @@ export function CompetitorSearchPanel({
     selection[entry.candidate.url] ?? defaultChecked(entry);
   const toggleSelect = (entry: RankedCandidate) =>
     setSelection((current) => ({ ...current, [entry.candidate.url]: !isChecked(entry) }));
-
-  // Complète les premières fiches en tâche de fond : le conseiller voit les
-  // photos et les caractéristiques arriver au lieu d'attendre devant un écran
-  // figé. Une fiche qui échoue est simplement laissée en l'état.
-  async function enrichTop(entries: RankedCandidate[]) {
-    const queue = entries.slice(0, ENRICHED_COUNT).map((entry) => entry.candidate.url);
-    setEnriching(queue.length);
-    let index = 0;
-    const worker = async () => {
-      for (;;) {
-        const current = index;
-        index += 1;
-        if (current >= queue.length) {
-          return;
-        }
-        const result = await enrichAction(queue[current]);
-        if (result.ok) {
-          setEnriched((state) => ({ ...state, [result.data.url]: result.data }));
-        }
-        setEnriching((count) => Math.max(0, count - 1));
-      }
-    };
-    await Promise.all(Array.from({ length: ENRICH_CONCURRENCY }, worker));
-  }
 
   // Reclasse (serveur, avec l'apprentissage) après toute mise à jour de la liste des
   // portails — recherche, relance d'un portail, collage. Le classement est la seule
@@ -448,14 +410,10 @@ export function CompetitorSearchPanel({
       }
 
       setDecided({});
-      setEnriched({});
       setSelection({});
       setImportProgress(null);
       setImportFailures([]);
-      const rank = await refreshRanking(read);
-      if (rank.ok) {
-        void enrichTop(rank.ranked);
-      }
+      await refreshRanking(read);
     } finally {
       setSearching(false);
     }
@@ -722,7 +680,6 @@ export function CompetitorSearchPanel({
     <RankedCandidateCard
       key={entry.candidate.url}
       ranked={entry}
-      enriched={enriched[entry.candidate.url] ?? null}
       selected={isChecked(entry)}
       onToggleSelect={() => toggleSelect(entry)}
       pending={busy}
@@ -800,13 +757,6 @@ export function CompetitorSearchPanel({
             Le pourcentage mesure la ressemblance avec le bien de votre client. Rien n’est masqué :
             une annonce éloignée descend dans la liste, elle ne disparaît pas.
           </p>
-          {enriching > 0 ? (
-            <p className={hintText}>
-              Récupération des photos et des caractéristiques… ({enriching} fiche
-              {enriching > 1 ? 's' : ''} restante{enriching > 1 ? 's' : ''})
-            </p>
-          ) : null}
-
           {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
               un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.
               L'avancement s'affiche pendant l'import (« 3 sur 8 »). */}

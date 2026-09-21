@@ -18,7 +18,6 @@ import {
   DECISION_REASON_LABELS,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import type { EnrichedCandidate } from '@/features/competitor-search/actions/enrich-candidate';
 import type { RankedCandidate } from '@/features/competitor-search/types';
 
 const euro = (value: number | null): string =>
@@ -37,16 +36,12 @@ export type DecisionPayload = {
 // vendeur, de ce qui l'en éloigne, et de ce que l'outil croit avoir appris.
 export function RankedCandidateCard({
   ranked,
-  enriched,
   selected,
   onToggleSelect,
   onDecision,
   pending,
 }: {
   ranked: RankedCandidate;
-  // Fiche complétée en tâche de fond (photos, caractéristiques) : absente tant
-  // que le portail n'a pas répondu, ou définitivement s'il a refusé.
-  enriched: EnrichedCandidate | null;
   // MISSION 50 §8 — case à cocher : la SEULE interaction pour retenir. Cochée =
   // retenue au lot (importée à la validation). Le « Non » reste, comme motif de
   // refus FACULTATIF pour qui veut le donner ; rien n'est écrit avant la validation.
@@ -61,17 +56,14 @@ export function RankedCandidateCard({
   const [photoIndex, setPhotoIndex] = useState(0);
 
   const { candidate } = ranked;
-  // La galerie vient de la fiche enrichie SI elle est plus riche ; sinon LES photos de
-  // la carte de résultat (SeLoger en publie 5, Green Acres 4). Une enrichissement
-  // maigre (1 photo, fréquent quand le portail bloque la lecture serveur — les cartes
-  // « déjà retenues » n'étaient pas enrichies mieux) ne doit JAMAIS masquer les photos
-  // déjà lues sur la carte : on prend la source la plus fournie.
-  const enrichedPhotos = enriched?.photoUrls ?? [];
-  const photos =
-    enrichedPhotos.length > candidate.photoUrls.length ? enrichedPhotos : candidate.photoUrls;
-  const price = enriched?.price ?? candidate.price;
-  const surface = enriched?.surfaceArea ?? candidate.surfaceArea;
-  const rooms = enriched?.roomsCount ?? candidate.roomsCount;
+  // On classe et on tranche sur les seules données de la CARTE de résultat, déjà lues,
+  // zéro fetch (l'enrichissement automatique par candidat — 12 fetchs serveur bloqués
+  // par les portails — a été retiré). La lecture profonde de la fiche a lieu à l'import
+  // d'un concurrent retenu, là où elle a du sens.
+  const photos = candidate.photoUrls;
+  const price = candidate.price;
+  const surface = candidate.surfaceArea;
+  const rooms = candidate.roomsCount;
 
   const shown = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
   const step = (delta: number) =>
@@ -132,19 +124,9 @@ export function RankedCandidateCard({
           <span className="font-semibold text-brand-deep stage:text-white">{euro(price)}</span>
           {surface != null ? ` · ${surface} m²` : ''}
           {rooms != null ? ` · ${rooms} pièces` : ''}
-          {enriched?.district ? ` · ${enriched.district}` : ''}
+          {candidate.city ? ` · ${candidate.city}` : ''}
           {` · ${ranked.portalLabel}`}
         </div>
-
-        {enriched ? (
-          <div className="text-xs text-zinc-500 stage:text-white/50">
-            {enriched.daysOnMarket != null ? `En ligne depuis ${enriched.daysOnMarket} j` : null}
-            {enriched.energyRating ? ` · DPE ${enriched.energyRating}` : ''}
-            {enriched.listingFeatures.length > 0
-              ? ` · ${enriched.listingFeatures.slice(0, 4).join(', ')}`
-              : ''}
-          </div>
-        ) : null}
 
         {ranked.alreadyJudged ? (
           <span className={ranked.alreadyJudged === 'accepted' ? badgeBrand : badgeRejected}>

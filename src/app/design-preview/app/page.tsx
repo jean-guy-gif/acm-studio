@@ -72,7 +72,6 @@ import {
   previewDeletePositioning,
   previewImport,
   previewImportSearchResults,
-  previewEnrichCandidate,
   previewRecordDecision,
   previewSaveCondominium,
   previewSaveDiagnostics,
@@ -346,7 +345,6 @@ function FindScreen() {
         recordDecisionAction={previewRecordDecision}
         importAction={previewImportAndCreate}
         recordDecisionsAction={previewRecordDecisions}
-        enrichAction={previewEnrichCandidate}
       />
     </div>
   );
