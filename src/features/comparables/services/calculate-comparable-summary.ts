@@ -47,7 +47,9 @@ export function surfaceComparison(
   }
   const deltaSquareMeters = comparableSurface - subjectSurface;
   const deltaPercent = (deltaSquareMeters / subjectSurface) * 100;
-  return { deltaSquareMeters, deltaPercent };
+  // Arrondi à la SOURCE, comme les autres écarts du produit (surfaceDeviationPercentage,
+  // gapPercentage) : jamais un flottant brut « -9.939999999999998 » à l'écran.
+  return { deltaSquareMeters: round1(deltaSquareMeters), deltaPercent: Math.round(deltaPercent) };
 }
 
 function round1(value: number): number {

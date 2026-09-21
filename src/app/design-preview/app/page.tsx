@@ -83,6 +83,7 @@ import {
   previewRankCandidates,
   previewImportAndCreate,
   previewRecordDecisions,
+  previewBulkComparables,
   previewVoid,
 } from './preview-actions';
 
@@ -299,6 +300,8 @@ function ComparablesScreen() {
         toggleAction={previewVoid}
         moveAction={previewVoid}
         deleteAction={previewVoid}
+        rejectSelectedAction={previewBulkComparables}
+        deleteSelectedAction={previewBulkComparables}
       />
       <RejectedComparablesList
         comparables={rejected}

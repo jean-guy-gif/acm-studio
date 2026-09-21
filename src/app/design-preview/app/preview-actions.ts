@@ -5,6 +5,7 @@
 // /design-preview/app (gardé hors production) — jamais par l'application réelle.
 
 import type { EnrichCandidateResult } from '@/features/competitor-search/actions/enrich-candidate';
+import type { BulkComparableResult } from '@/features/comparables/actions/bulk-comparable-actions';
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
@@ -63,6 +64,10 @@ export async function previewRankCandidates(): Promise<RankSearchResult> {
 }
 
 export async function previewImportAndCreate(): Promise<ImportAndCreateResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewBulkComparables(): Promise<BulkComparableResult> {
   return { ok: false, error: REFUSAL };
 }
 

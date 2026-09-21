@@ -104,6 +104,11 @@ describe('surfaceComparison', () => {
     expect(surfaceComparison(60, 50)).toEqual({ deltaSquareMeters: 10, deltaPercent: 20 });
     expect(surfaceComparison(40, 50)).toEqual({ deltaSquareMeters: -10, deltaPercent: -20 });
   });
+
+  it('arrondit à la source : jamais un flottant brut « -9.939999… »', () => {
+    // 50,06 - 60 = -9,939999999999998 → -9,9 m² et -17 % à l'affichage.
+    expect(surfaceComparison(50.06, 60)).toEqual({ deltaSquareMeters: -9.9, deltaPercent: -17 });
+  });
 });
 
 describe('calculateComparableSummary', () => {

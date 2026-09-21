@@ -10,6 +10,10 @@ import {
   kickerLabel,
   pageTitle,
 } from '@/components/ui/styles';
+import {
+  bulkDeleteComparables,
+  bulkRejectComparables,
+} from '@/features/comparables/actions/bulk-comparable-actions';
 import { deleteComparable } from '@/features/comparables/actions/delete-comparable';
 import { moveSelectedComparable } from '@/features/comparables/actions/move-selected-comparable';
 import { toggleComparableSelection } from '@/features/comparables/actions/toggle-comparable-selection';
@@ -51,6 +55,8 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const toggleAction = toggleComparableSelection.bind(null, projectId);
   const moveAction = moveSelectedComparable.bind(null, projectId);
   const deleteAction = deleteComparable.bind(null, projectId);
+  const rejectSelectedAction = bulkRejectComparables.bind(null, projectId);
+  const deleteSelectedAction = bulkDeleteComparables.bind(null, projectId);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -99,6 +105,8 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
             toggleAction={toggleAction}
             moveAction={moveAction}
             deleteAction={deleteAction}
+            rejectSelectedAction={rejectSelectedAction}
+            deleteSelectedAction={deleteSelectedAction}
           />
           <RejectedComparablesList
             comparables={rejected}

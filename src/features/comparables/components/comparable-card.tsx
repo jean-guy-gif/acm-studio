@@ -30,6 +30,9 @@ type ComparableCardProps = {
   moveAction?: ServerAction;
   isFirst?: boolean;
   isLast?: boolean;
+  // Sélection de lot (optionnelle) : présente = une case à cocher est affichée, même
+  // modèle que la recherche (§8). Absente = carte normale (liste des écartés).
+  selection?: { checked: boolean; onToggle: () => void; disabled?: boolean };
 };
 
 const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
@@ -49,6 +52,7 @@ export function ComparableCard({
   moveAction,
   isFirst,
   isLast,
+  selection,
 }: ComparableCardProps) {
   const photos = getComparablePhotoUrls(comparable);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -61,8 +65,20 @@ export function ComparableCard({
 
   return (
     <li
-      className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand/60 sm:flex-row stage:hover:border-brand/60`}
+      className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand/60 sm:flex-row sm:items-start stage:hover:border-brand/60`}
     >
+      {selection ? (
+        <label className="flex shrink-0 cursor-pointer items-center pt-1 sm:pt-2">
+          <input
+            type="checkbox"
+            checked={selection.checked}
+            onChange={selection.onToggle}
+            disabled={selection.disabled}
+            aria-label={`Sélectionner ${comparable.title?.trim() || 'ce bien concurrent'}`}
+            className="h-4 w-4 accent-brand"
+          />
+        </label>
+      ) : null}
       <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-44 stage:bg-white/10">
         {photos.length > 0 ? (
           <RemoteImage
@@ -140,8 +156,8 @@ export function ComparableCard({
         {gap ? (
           <div className="text-xs text-zinc-400 stage:text-white/40">
             Écart de surface avec le bien vendeur : {gap.deltaSquareMeters > 0 ? '+' : ''}
-            {gap.deltaSquareMeters} m² ({gap.deltaPercent > 0 ? '+' : ''}
-            {Math.round(gap.deltaPercent)} %)
+            {gap.deltaSquareMeters.toLocaleString('fr-FR')} m² ({gap.deltaPercent > 0 ? '+' : ''}
+            {gap.deltaPercent} %)
           </div>
         ) : null}
 
