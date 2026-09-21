@@ -1,18 +1,8 @@
 'use client';
 
-import { useActionState } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import {
   bigInput,
   bigInputUnit,
-  ctaPrimary,
-  errorText,
-  okText,
   panel,
   panelSoft,
   question,
@@ -23,33 +13,37 @@ import {
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 
 const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
+  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
 
-// "1. Valeur perçue par le vendeur" — a manual seller input. The observed market
-// positioning is shown for context (never as "vraie valeur du marché").
+// "1. Valeur perçue par le vendeur" — saisie manuelle du vendeur.
+//
+// MISSION 51 — DEVINE-PUIS-RÉVÈLE : le positionnement marché n'est PAS montré à
+// l'arrivée (ce serait ancrer le vendeur sur la réponse qu'on cherche). Il est LIVRÉ et
+// affiché seulement APRÈS que le vendeur a donné sa valeur perçue (`revealed`). Écran
+// contrôlé par le shell : formulaire nu, sans bouton propre.
 export function LivePagePerceived({
   competitiveMarketCentral,
+  revealed,
   summary,
-  saveAction,
 }: {
   competitiveMarketCentral: number | null;
+  revealed: boolean;
   summary: LiveSellerSummary | null;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
-  const perceived =
-    state.values?.seller_perceived_property_price ?? summary?.seller_perceived_property_price ?? '';
+  const perceived = summary?.seller_perceived_property_price ?? '';
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>À quel prix positionneriez-vous aujourd’hui votre bien ?</h2>
         <p className={questionHint}>
-          Après avoir observé le marché, votre intuition compte : c’est elle que nous notons ici.
+          {revealed
+            ? 'Voici le positionnement observé sur le marché concurrentiel, face à votre intuition.'
+            : 'D’abord votre intuition, sans regarder le marché : c’est elle que nous notons ici.'}
         </p>
       </div>
 
-      <form action={formAction} className={`${panel} flex flex-col gap-4`}>
+      <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
         <label className="flex flex-col gap-2">
           <span className={statLabel}>Valeur perçue par le vendeur</span>
           <div className="flex items-center gap-3">
@@ -64,27 +58,15 @@ export function LivePagePerceived({
             />
             <span className={bigInputUnit}>€</span>
           </div>
-          {state.fieldErrors.seller_perceived_property_price ? (
-            <span role="alert" className={errorText}>
-              {state.fieldErrors.seller_perceived_property_price}
-            </span>
-          ) : null}
         </label>
-        {state.error ? (
-          <p role="alert" className={errorText}>
-            {state.error}
-          </p>
-        ) : null}
-        {state.ok ? <p className={okText}>Enregistré.</p> : null}
-        <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-          Enregistrer
-        </SubmitButton>
       </form>
 
-      <div className={panelSoft}>
-        <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
-        <div className={statValue}>{euro(competitiveMarketCentral)}</div>
-      </div>
+      {revealed ? (
+        <div className={`${panelSoft} live-reveal-pop`}>
+          <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
+          <div className={statValue}>{euro(competitiveMarketCentral)}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

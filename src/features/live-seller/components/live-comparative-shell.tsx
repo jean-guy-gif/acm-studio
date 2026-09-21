@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Logo } from '@/components/brand/logo';
-import {
-  persistLiveComparableResponse,
-  saveLiveComparableResponse,
-} from '@/features/live-seller/actions/save-live-comparable-response';
-import { saveLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
+import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
+import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
+import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
@@ -18,10 +16,7 @@ import { LivePageIntro } from '@/features/live-seller/components/live-page-intro
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
-import {
-  LivePagePriceRevealPilot,
-  type PriceCoherenceDraft,
-} from '@/features/live-seller/components/live-page-price-reveal-pilot';
+import { LivePagePriceRevealPilot } from '@/features/live-seller/components/live-page-price-reveal-pilot';
 import {
   chromeBtn,
   ctaPrimary,
@@ -30,12 +25,13 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
-import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
 import type {
   AuthorizedAdvisorRange,
   AuthorizedSellerComparable,
+  SellerComparable,
   SellerLiveData,
 } from '@/features/live-seller/services/project-live-for-seller';
+import type { LiveComparableResponse } from '@/features/live-seller/types';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 
 export type LiveStageTheme = 'dark' | 'light';
@@ -73,55 +69,68 @@ export function LiveComparativeShell({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stage, setStage] = useState<LiveStageTheme>(initialStage);
 
-  // MISSION 51 — état de l'écran-pilote (étape 3, contrat « Valider et continuer »).
-  // Le brouillon de la réaction du vendeur vit ICI (composant contrôlé) ; le shell
-  // l'enregistre en arrière-plan et suit l'issue de chaque enregistrement.
-  const [revealDraft, setRevealDraft] = useState<PriceCoherenceDraft>({
-    coherence: '',
-    comment: '',
-  });
   type SaveStatus = 'pending' | 'ok' | 'failed';
-  type SaveRecord = {
-    status: SaveStatus;
-    comparableId: string;
-    formData: FormData;
-    error?: string;
-  };
+  type SaveRecord = { status: SaveStatus; retry: () => void; error?: string };
   const [saves, setSaves] = useState<Record<string, SaveRecord>>({});
+  // Vrai pendant une transition qui ATTEND la confirmation serveur (quitter 1/2/3/5).
+  const [busy, setBusy] = useState(false);
+  const [awaitError, setAwaitError] = useState<string | null>(null);
+  // Fragments LIVRÉS pendant la séance (jamais dans la charge initiale) : la révélation
+  // d'un concurrent (prix), la fourchette conseiller (central).
+  const [delivered, setDelivered] = useState<Record<string, AuthorizedSellerComparable>>({});
+  const [deliveredRange, setDeliveredRange] = useState<AuthorizedAdvisorRange | null>(null);
+  // Réponse concurrent mise à jour côté client APRÈS persistance : écran 2 (base puis
+  // graphe — 'no' retire les étapes suivantes) et écran 5 (durée révélée).
+  const [responseOverrides, setResponseOverrides] = useState<
+    Record<string, LiveComparableResponse>
+  >({});
+  const mainRef = useRef<HTMLElement | null>(null);
 
   const hasSubjectProperty = property != null;
-  const pages = useMemo(() => buildLivePages(live, hasSubjectProperty), [live, hasSubjectProperty]);
+
+  // Concurrents EFFECTIFS : projetés, recouverts des fragments livrés et des réponses
+  // mises à jour côté client, sans rechargement.
+  const comparables = useMemo<SellerComparable[]>(() => {
+    const base = live?.comparables ?? [];
+    return base.map((c) => {
+      const override = responseOverrides[c.id];
+      const up = delivered[c.id];
+      // Le concurrent LIVRÉ porte déjà sa réponse fraîche (estimation persistée) : on ne
+      // l'écrase pas avec la réponse projetée à l'ouverture — on ne fusionne qu'un
+      // éventuel override client (réponse « sérieux » de l'écran 2, jours de l'écran 5).
+      if (up) return override ? { ...up, response: override } : up;
+      return override ? { ...c, response: override } : c;
+    });
+  }, [live, delivered, responseOverrides]);
+  const summary = live?.sellerSummary ?? null;
+  const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
+
+  const pages = useMemo(
+    () => buildLivePages(navLive, hasSubjectProperty),
+    [navLive, hasSubjectProperty],
+  );
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
   const entry =
     page.comparableId != null
-      ? (live?.comparables.find((c) => c.id === page.comparableId) ?? null)
+      ? (comparables.find((c) => c.id === page.comparableId) ?? null)
       : null;
-  // Concurrent AUTORISÉ (estimation persistée → prix livré) pour les écrans post-révélation.
   const authorizedEntry = entry?.authorized ? entry : null;
-  // Concurrents autorisés (post-révélation) — écran 6 et résolution du plus dangereux.
-  const authorizedComparables: AuthorizedSellerComparable[] = (live?.comparables ?? []).filter(
+  const authorizedComparables = comparables.filter(
     (c): c is AuthorizedSellerComparable => c.authorized,
   );
+  const effectiveRange = deliveredRange ?? advisorRange;
   const dangerousComparable =
-    authorizedComparables.find(
-      (c) => c.id === live?.sellerSummary?.seller_most_dangerous_comparable_id,
-    ) ?? null;
-  const canAdvance = canAdvanceLivePage(page.type, entry, live?.sellerSummary ?? null);
-  // Garde de progression : on lit la valeur courante via une ref pour que `go`
-  // reste référentiellement stable (react-hooks/preserve-manual-memoization) tout
-  // en respectant la dernière valeur de `canAdvance` au moment de l'appel.
-  const canAdvanceRef = useRef(canAdvance);
-  useEffect(() => {
-    canAdvanceRef.current = canAdvance;
-  }, [canAdvance]);
+    authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??
+    null;
 
-  const isPilot = page.type === 'comparable_price_reveal' && entry != null;
+  const isInteractive = page.type !== 'intro' && page.type !== 'conclusion';
   const currentSave = saves[page.key];
+  // devine-puis-révèle : la durée observée (5) et le central marché (7) ne se montrent
+  // qu'après la réponse du vendeur — jamais à l'arrivée.
+  const durationRevealed = authorizedEntry?.response?.seller_estimated_days_on_market != null;
+  const rangeRevealed = effectiveRange != null;
 
-  // MISSION 51 §3.2 — enregistrements en arrière-plan encore en échec. Tant qu'il en
-  // reste un, la fin de séance est bloquée (voir `go`) et une bannière propose la
-  // relance : aucune réponse affichée ne peut être perdue en silence (§2.1).
   const failedSaves = useMemo(
     () => Object.entries(saves).filter(([, record]) => record.status === 'failed'),
     [saves],
@@ -133,11 +142,10 @@ export function LiveComparativeShell({
 
   const go = useCallback(
     (delta: number) => {
-      if (delta > 0 && !canAdvanceRef.current) return;
+      setAwaitError(null);
       setIndex((i) => {
         const target = Math.max(0, Math.min(pages.length - 1, i + delta));
-        // Fin de séance bloquée tant qu'un enregistrement a échoué : on n'atteint pas
-        // la conclusion en laissant une réponse du vendeur non confirmée en base.
+        // Fin de séance bloquée tant qu'un enregistrement de fond a échoué.
         if (delta > 0 && pages[target]?.type === 'conclusion' && hasFailedSavesRef.current) {
           return i;
         }
@@ -147,70 +155,152 @@ export function LiveComparativeShell({
     [pages],
   );
 
-  // Enregistre une réponse EN ARRIÈRE-PLAN (sans revalidatePath), suit son issue et
-  // conserve le FormData pour permettre une relance en cas d'échec.
-  const runSave = useCallback(
-    (key: string, comparableId: string, formData: FormData) => {
-      setSaves((current) => ({ ...current, [key]: { status: 'pending', comparableId, formData } }));
-      void persistLiveComparableResponse(projectId, comparableId, formData)
-        .then((result) => {
-          // Le détail technique va au JOURNAL, pas à l'écran (jamais devant le vendeur).
-          if (!result.ok) {
-            console.error('[live] enregistrement échoué', {
-              key,
-              comparableId,
-              error: result.error,
-            });
-          }
-          setSaves((current) => ({
-            ...current,
-            [key]: {
-              ...current[key],
-              status: result.ok ? 'ok' : 'failed',
-              error: result.ok ? undefined : result.error,
-            },
-          }));
-        })
-        .catch((cause) => {
-          console.error('[live] enregistrement injoignable', { key, comparableId, cause });
-          setSaves((current) => ({
-            ...current,
-            [key]: { ...current[key], status: 'failed', error: 'Réseau indisponible.' },
-          }));
-        });
+  // Enregistrement EN ARRIÈRE-PLAN (avance optimiste), suivi, avec relance.
+  const runBackground = useCallback(
+    (key: string, save: () => Promise<{ ok: boolean; error?: string }>) => {
+      const attempt = () => {
+        setSaves((s) => ({ ...s, [key]: { status: 'pending', retry: attempt } }));
+        void save()
+          .then((r) => {
+            if (!r.ok) console.error('[live] enregistrement échoué', { key, error: r.error });
+            setSaves((s) => ({
+              ...s,
+              [key]: { status: r.ok ? 'ok' : 'failed', retry: attempt, error: r.error },
+            }));
+          })
+          .catch((cause) => {
+            console.error('[live] enregistrement injoignable', { key, cause });
+            setSaves((s) => ({
+              ...s,
+              [key]: { status: 'failed', retry: attempt, error: 'Réseau indisponible.' },
+            }));
+          });
+      };
+      attempt();
     },
-    [projectId],
+    [],
   );
 
-  // « Valider et continuer » de l'écran-pilote : on enregistre la réaction en
-  // arrière-plan PUIS on avance immédiatement — la révélation ne consomme aucune
-  // réponse en aval avant l'analyse, l'avance optimiste est donc sûre ici (§3.2).
-  const onValidateReveal = useCallback(() => {
-    if (!entry) return;
-    const formData = new FormData();
-    formData.set('seller_price_coherence', revealDraft.coherence);
-    formData.set('seller_price_coherence_comment', revealDraft.comment);
-    runSave(page.key, entry.id, formData);
+  const harvest = useCallback(() => {
+    const form = mainRef.current?.querySelector('form');
+    return form ? new FormData(form) : new FormData();
+  }, []);
+
+  // « Valider et continuer » — un seul bouton par écran (§3.1). ATTENTES sur quitter
+  // 1/2/3/5 (l'écran suivant dépend de la réponse persistée : borne 2.2, affichage) ;
+  // avance OPTIMISTE ailleurs (§3.2). Révélation (3) et fourchette (7) LIVRÉES.
+  const onValidate = useCallback(async () => {
+    if (busy || index >= pages.length - 1) return;
+    setAwaitError(null);
+    const fd = harvest();
+
+    if (page.type === 'subject_property') {
+      setBusy(true);
+      const r = await persistLiveSellerSummary(projectId, fd);
+      setBusy(false);
+      if (r.ok) go(1);
+      else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      return;
+    }
+    if (page.type === 'comparable_competition' && entry) {
+      setBusy(true);
+      const r = await persistLiveComparableResponse(projectId, entry.id, fd);
+      setBusy(false);
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      // BASE PUIS GRAPHE : réponse en base d'abord, graphe client ensuite.
+      setResponseOverrides((o) => ({
+        ...o,
+        [entry.id]: {
+          ...(entry.response ?? {}),
+          seller_serious_competitor: (fd.get('seller_serious_competitor') as string) || null,
+          seller_serious_competitor_comment:
+            (fd.get('seller_serious_competitor_comment') as string) || null,
+        } as LiveComparableResponse,
+      }));
+      go(1);
+      return;
+    }
+    if (page.type === 'comparable_price' && entry) {
+      setBusy(true);
+      const r = await deliverLiveFragment(projectId, {
+        kind: 'comparable-reveal',
+        comparableId: entry.id,
+        formData: fd,
+      });
+      setBusy(false);
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      if (r.fragment.kind === 'comparable') {
+        // La révélation arrive AVEC la navigation autorisée : on la fusionne côté client.
+        const revealed = r.fragment.comparable;
+        setDelivered((d) => ({ ...d, [entry.id]: revealed }));
+        go(1);
+      }
+      return;
+    }
+    if (page.type === 'comparable_duration' && entry) {
+      if (!durationRevealed) {
+        setBusy(true);
+        const r = await persistLiveComparableResponse(projectId, entry.id, fd);
+        setBusy(false);
+        if (r.ok) {
+          setResponseOverrides((o) => ({
+            ...o,
+            [entry.id]: {
+              ...(entry.response ?? {}),
+              seller_estimated_days_on_market:
+                Number(fd.get('seller_estimated_days_on_market')) || null,
+            } as LiveComparableResponse,
+          }));
+        } else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
+      go(1);
+      return;
+    }
+    if (page.type === 'seller_perceived_price') {
+      if (!rangeRevealed) {
+        setBusy(true);
+        const r = await deliverLiveFragment(projectId, { kind: 'advisor-range', formData: fd });
+        setBusy(false);
+        if (r.ok && r.fragment.kind === 'advisor-range') setDeliveredRange(r.fragment.advisorRange);
+        else if (!r.ok) setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      go(1);
+      return;
+    }
+    // OPTIMISTE : 4 révélation, 6 dangereux, 8 analyse.
+    if (entry)
+      runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
+    else runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
     go(1);
-  }, [entry, revealDraft, page.key, runSave, go]);
+  }, [
+    busy,
+    index,
+    pages.length,
+    page.type,
+    page.key,
+    entry,
+    projectId,
+    durationRevealed,
+    rangeRevealed,
+    go,
+    runBackground,
+    harvest,
+  ]);
 
   // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
   useEffect(() => {
     window.scrollTo({ top: 0 });
     rootRef.current?.scrollTo({ top: 0 });
   }, [currentIndex]);
-
-  // À l'ouverture de l'écran-pilote, le brouillon part de la réponse persistée.
-  const initializedKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (page.type !== 'comparable_price_reveal' || !entry) return;
-    if (initializedKeyRef.current === page.key) return;
-    initializedKeyRef.current = page.key;
-    setRevealDraft({
-      coherence: entry.response?.seller_price_coherence ?? '',
-      comment: entry.response?.seller_price_coherence_comment ?? '',
-    });
-  }, [page.key, page.type, entry]);
 
   const toggleFullscreen = useCallback(() => {
     const element = rootRef.current;
@@ -273,9 +363,6 @@ export function LiveComparativeShell({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [go, toggleFullscreen]);
 
-  const saveResponse = entry ? saveLiveComparableResponse.bind(null, projectId, entry.id) : null;
-  const saveSummary = saveLiveSellerSummary.bind(null, projectId);
-
   const isIntro = page.type === 'intro';
   const stepLabel =
     page.comparableIndex != null && live
@@ -305,7 +392,7 @@ export function LiveComparativeShell({
             <button
               key={key}
               type="button"
-              onClick={() => runSave(key, record.comparableId, record.formData)}
+              onClick={() => record.retry()}
               className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:bg-amber-300"
             >
               Relancer
@@ -362,11 +449,13 @@ export function LiveComparativeShell({
         </div>
       ) : null}
 
-      {/* La fiche courante. */}
+      {/* La fiche courante. `mainRef` permet à la barre unique de MOISSONNER le
+          formulaire de l'écran courant au clic « Valider et continuer ». */}
       <main
+        ref={mainRef}
         key={page.key}
         className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-8 sm:py-8 ${
-          isPilot ? 'pb-28' : ''
+          isInteractive ? 'pb-28' : ''
         }`}
       >
         {page.type === 'intro' ? (
@@ -377,45 +466,29 @@ export function LiveComparativeShell({
             onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
           />
         ) : page.type === 'subject_property' && property ? (
-          <LivePageProperty
-            property={property}
-            summary={live?.sellerSummary ?? null}
-            saveAction={saveSummary}
-          />
-        ) : page.type === 'comparable_competition' && entry && saveResponse ? (
-          <LivePageCompetition entry={entry} saveAction={saveResponse} />
-        ) : page.type === 'comparable_price' && entry && saveResponse ? (
-          <LivePagePrice entry={entry} saveAction={saveResponse} />
+          <LivePageProperty property={property} summary={summary} />
+        ) : page.type === 'comparable_competition' && entry ? (
+          <LivePageCompetition entry={entry} />
+        ) : page.type === 'comparable_price' && entry ? (
+          <LivePagePrice entry={entry} />
         ) : page.type === 'comparable_price_reveal' && authorizedEntry ? (
-          <LivePagePriceRevealPilot
-            entry={authorizedEntry}
-            draft={revealDraft}
-            onDraftChange={setRevealDraft}
-          />
-        ) : page.type === 'comparable_duration' && authorizedEntry && saveResponse ? (
-          <LivePageDuration entry={authorizedEntry} saveAction={saveResponse} />
+          <LivePagePriceRevealPilot entry={authorizedEntry} />
+        ) : page.type === 'comparable_duration' && authorizedEntry ? (
+          <LivePageDuration entry={authorizedEntry} durationRevealed={durationRevealed} />
         ) : page.type === 'dangerous_competitor' && live ? (
-          <LivePageDangerous
-            comparables={authorizedComparables}
-            summary={live.sellerSummary}
-            saveAction={saveSummary}
-          />
+          <LivePageDangerous comparables={authorizedComparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (
           <LivePagePerceived
-            competitiveMarketCentral={advisorRange?.competitiveMarketCentral ?? null}
-            summary={live?.sellerSummary ?? null}
-            saveAction={saveSummary}
+            competitiveMarketCentral={effectiveRange?.competitiveMarketCentral ?? null}
+            revealed={rangeRevealed}
+            summary={summary}
           />
-        ) : page.type === 'price_analysis' && advisorRange ? (
-          <LivePageAnalysis
-            priceGaps={advisorRange.priceGaps}
-            summary={live?.sellerSummary ?? null}
-            saveAction={saveSummary}
-          />
+        ) : page.type === 'price_analysis' && effectiveRange ? (
+          <LivePageAnalysis priceGaps={effectiveRange.priceGaps} summary={summary} />
         ) : page.type === 'conclusion' ? (
           <LivePageConclusion
-            summary={live?.sellerSummary ?? null}
-            advisorRange={advisorRange}
+            summary={summary}
+            advisorRange={effectiveRange}
             dangerous={dangerousComparable}
           />
         ) : (
@@ -426,33 +499,11 @@ export function LiveComparativeShell({
         )}
       </main>
 
-      {/* Navigation : Suivant en évidence, verrouillé tant que la réponse
-          attendue n'est pas enregistrée. Masquée sur l'écran-pilote, qui porte sa
-          propre barre « Valider et continuer » ancrée à la fenêtre. */}
-      {!isIntro && !isPilot ? (
-        <footer className="relative mx-auto flex w-full max-w-5xl items-center justify-between gap-3 border-t border-zinc-200 px-4 py-4 sm:px-8 stage:border-white/10">
-          <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
-            ← Précédent
-          </button>
-          <button type="button" onClick={() => setIndex(0)} className={chromeBtn}>
-            Sommaire
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            disabled={index >= pages.length - 1 || !canAdvance}
-            className={ctaPrimary}
-            title={!canAdvance ? 'Enregistrez la réponse du vendeur pour continuer' : undefined}
-          >
-            Suivant →
-          </button>
-        </footer>
-      ) : null}
-
-      {/* MISSION 51 §3.1 + §3.3 — barre de l'écran-pilote ANCRÉE À LA FENÊTRE (fixed),
-          un seul bouton « Valider et continuer » qui enregistre ET avance : plus de
-          « Suivant » distinct du « Enregistrer » où la saisie se perdait (§2.1). */}
-      {isPilot ? (
+      {/* MISSION 51 §3.1/§3.3 — UNE barre ancrée à la fenêtre, UN bouton « Valider et
+          continuer » qui enregistre ET avance : plus de « Suivant » distinct du
+          « Enregistrer » (§2.1). Attentes sur quitter 1/2/3/5 (bouton occupé) ; avance
+          optimiste ailleurs ; libellé « Révéler … » sur la 1re phase des écrans 5 et 7. */}
+      {isInteractive ? (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
           style={{
@@ -464,22 +515,31 @@ export function LiveComparativeShell({
             <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
               ← Précédent
             </button>
-            <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
-              {currentSave?.status === 'pending'
+            <span
+              className={`text-xs ${awaitError ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
+              aria-live="polite"
+            >
+              {busy
                 ? 'Enregistrement…'
-                : currentSave?.status === 'ok'
-                  ? 'Réponse enregistrée'
-                  : currentSave?.status === 'failed'
-                    ? 'Enregistrement à relancer'
-                    : ''}
+                : awaitError
+                  ? awaitError
+                  : currentSave?.status === 'pending'
+                    ? 'Enregistrement…'
+                    : currentSave?.status === 'ok'
+                      ? 'Réponse enregistrée'
+                      : ''}
             </span>
             <button
               type="button"
-              onClick={onValidateReveal}
-              disabled={index >= pages.length - 1}
+              onClick={() => void onValidate()}
+              disabled={busy || index >= pages.length - 1}
               className={ctaPrimary}
             >
-              Valider et continuer →
+              {page.type === 'comparable_duration' && !durationRevealed
+                ? 'Révéler la durée →'
+                : page.type === 'seller_perceived_price' && !rangeRevealed
+                  ? 'Révéler le positionnement →'
+                  : 'Valider et continuer →'}
             </button>
           </div>
         </div>

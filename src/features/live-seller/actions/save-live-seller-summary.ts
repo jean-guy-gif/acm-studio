@@ -156,3 +156,18 @@ export async function saveLiveSellerSummary(
   revalidatePath(`/live/${projectId}`);
   return { ok: true, error: null, fieldErrors: {}, values: null };
 }
+
+// MISSION 51 §3.2 — enregistrement du résumé EN ARRIÈRE-PLAN (sans revalidatePath),
+// pour l'avance optimiste des écrans qui écrivent le résumé (bien vendeur, concurrent
+// dangereux, analyse). Le shell suit l'issue et bloque la fin de séance en cas d'échec.
+export type PersistLiveSummaryResult = { ok: boolean; error?: string };
+
+export async function persistLiveSellerSummary(
+  projectId: string,
+  formData: FormData,
+): Promise<PersistLiveSummaryResult> {
+  const { writeLiveSellerSummary } =
+    await import('@/features/live-seller/services/write-live-seller-summary');
+  const result = await writeLiveSellerSummary(projectId, formData);
+  return result.ok ? { ok: true } : { ok: false, error: result.error };
+}

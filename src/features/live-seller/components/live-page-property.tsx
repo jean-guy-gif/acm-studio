@@ -1,20 +1,10 @@
 'use client';
 
-import { useActionState } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
   choice,
-  ctaPrimary,
-  errorText,
   fieldInput,
   fieldLabel,
-  okText,
   panel,
   panelSoft,
   question,
@@ -62,17 +52,12 @@ function joinLabels<T extends string>(map: Record<T, string>, values: string[]):
 export function LivePageProperty({
   property,
   summary,
-  saveAction,
 }: {
   property: SellerPresentationProperty;
   summary: LiveSellerSummary | null;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
-  const currentAnswer =
-    state.values?.seller_property_confirmed ?? summary?.seller_property_confirmed ?? '';
-  const currentComment =
-    state.values?.seller_property_comment ?? summary?.seller_property_comment ?? '';
+  const currentAnswer = summary?.seller_property_confirmed ?? '';
+  const currentComment = summary?.seller_property_comment ?? '';
 
   const floors =
     property.floor != null
@@ -154,7 +139,7 @@ export function LivePageProperty({
           ) : null}
         </div>
 
-        <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>
+        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <fieldset className="flex flex-col gap-3">
             <legend className={fieldLabel}>
               Est-ce que cette présentation correspond bien à votre bien ?
@@ -173,11 +158,6 @@ export function LivePageProperty({
                 </label>
               ))}
             </div>
-            {state.fieldErrors.seller_property_confirmed ? (
-              <span role="alert" className={errorText}>
-                {state.fieldErrors.seller_property_confirmed}
-              </span>
-            ) : null}
           </fieldset>
 
           <label className="flex flex-col gap-1.5">
@@ -189,16 +169,6 @@ export function LivePageProperty({
               className={fieldInput}
             />
           </label>
-
-          {state.error ? (
-            <p role="alert" className={errorText}>
-              {state.error}
-            </p>
-          ) : null}
-          {state.ok ? <p className={okText}>Réponse enregistrée.</p> : null}
-          <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-            Enregistrer la réponse
-          </SubmitButton>
         </form>
       </div>
     </div>

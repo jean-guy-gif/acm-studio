@@ -31,20 +31,7 @@ const euro = (value: number | null): string =>
 // Le VERROU DE RÉVÉLATION reste double : la navigation n'atteint pas cet écran sans
 // l'estimation persistée (canAdvanceLivePage + clampInitialLiveIndex), ET cet écran
 // refuse d'afficher le moindre prix si l'estimation manque (lien direct) — §2.2.
-export type PriceCoherenceDraft = {
-  coherence: string;
-  comment: string;
-};
-
-export function LivePagePriceRevealPilot({
-  entry,
-  draft,
-  onDraftChange,
-}: {
-  entry: AuthorizedSellerComparable;
-  draft: PriceCoherenceDraft;
-  onDraftChange: (next: PriceCoherenceDraft) => void;
-}) {
+export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerComparable }) {
   const response = entry.response;
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const reveal = entry.priceReveal;
@@ -137,7 +124,7 @@ export function LivePagePriceRevealPilot({
             </div>
           </div>
 
-          <div className={`${panel} flex flex-col gap-4`}>
+          <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
             <fieldset className="flex flex-col gap-3">
               <legend className={fieldLabel}>Selon le vendeur, ce prix est…</legend>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -150,8 +137,7 @@ export function LivePagePriceRevealPilot({
                       type="radio"
                       name="seller_price_coherence"
                       value={value}
-                      checked={draft.coherence === value}
-                      onChange={() => onDraftChange({ ...draft, coherence: value })}
+                      defaultChecked={response?.seller_price_coherence === value}
                       className="sr-only"
                     />
                     {PRICE_COHERENCE_LABELS[value]}
@@ -165,12 +151,11 @@ export function LivePagePriceRevealPilot({
               <textarea
                 name="seller_price_coherence_comment"
                 rows={2}
-                value={draft.comment}
-                onChange={(event) => onDraftChange({ ...draft, comment: event.target.value })}
+                defaultValue={response?.seller_price_coherence_comment ?? ''}
                 className={fieldInput}
               />
             </label>
-          </div>
+          </form>
         </div>
       </div>
     </div>

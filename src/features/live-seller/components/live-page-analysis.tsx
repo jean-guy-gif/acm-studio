@@ -1,19 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import {
   bigInput,
   bigInputUnit,
   bigValue,
-  ctaPrimary,
-  errorText,
-  okText,
   panel,
   panelSoft,
   question,
@@ -45,17 +35,11 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
 export function LivePageAnalysis({
   priceGaps,
   summary,
-  saveAction,
 }: {
   priceGaps: LivePriceGaps;
   summary: LiveSellerSummary | null;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
-  const advisor =
-    state.values?.advisor_comparative_market_price ??
-    summary?.advisor_comparative_market_price ??
-    '';
+  const advisor = summary?.advisor_comparative_market_price ?? '';
   const gaps = priceGaps;
 
   return (
@@ -83,7 +67,7 @@ export function LivePageAnalysis({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
-        <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>
+        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <label className="flex flex-col gap-2">
             <span className={statLabel}>
               Analyse comparative de marché du conseiller — saisie manuelle
@@ -100,21 +84,7 @@ export function LivePageAnalysis({
               />
               <span className={bigInputUnit}>€</span>
             </div>
-            {state.fieldErrors.advisor_comparative_market_price ? (
-              <span role="alert" className={errorText}>
-                {state.fieldErrors.advisor_comparative_market_price}
-              </span>
-            ) : null}
           </label>
-          {state.error ? (
-            <p role="alert" className={errorText}>
-              {state.error}
-            </p>
-          ) : null}
-          {state.ok ? <p className={okText}>Enregistré.</p> : null}
-          <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-            Enregistrer
-          </SubmitButton>
         </form>
 
         <div className={`${panelSoft} h-fit`}>

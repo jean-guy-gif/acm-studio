@@ -1,13 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useActionState, useEffect } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
@@ -16,11 +8,8 @@ import {
   bigInputUnit,
   bigValue,
   choice,
-  ctaPrimary,
-  errorText,
   fieldInput,
   fieldLabel,
-  okText,
   panel,
   panelSoft,
   question,
@@ -46,28 +35,17 @@ const euro = (value: number | null): string =>
 // then comes the "why" discussion.
 export function LivePageDuration({
   entry,
-  saveAction,
+  durationRevealed,
 }: {
   entry: AuthorizedSellerComparable;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
+  // Révélée par le shell une fois les jours estimés PERSISTÉS (devine-puis-révèle).
+  durationRevealed: boolean;
 }) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
-  const router = useRouter();
   const response = entry.response;
-  const currentReason =
-    state.values?.seller_market_duration_reason ?? response?.seller_market_duration_reason ?? '';
-  const currentComment =
-    state.values?.seller_market_duration_comment ?? response?.seller_market_duration_comment ?? '';
+  const currentReason = response?.seller_market_duration_reason ?? '';
+  const currentComment = response?.seller_market_duration_comment ?? '';
   const savedEstimatedDays = response?.seller_estimated_days_on_market ?? null;
-  const currentEstimatedDays =
-    state.values?.seller_estimated_days_on_market ?? savedEstimatedDays ?? '';
-  const durationRevealed = savedEstimatedDays != null;
-
-  useEffect(() => {
-    if (state.ok) {
-      router.refresh();
-    }
-  }, [router, state]);
+  const currentEstimatedDays = savedEstimatedDays ?? '';
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -121,7 +99,7 @@ export function LivePageDuration({
           </div>
         </div>
 
-        <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>
+        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <label className="flex flex-col gap-2">
             <span className={statLabel}>Durée imaginée par le vendeur</span>
             <div className="flex items-center gap-3">
@@ -136,11 +114,6 @@ export function LivePageDuration({
               />
               <span className={bigInputUnit}>jours</span>
             </div>
-            {state.fieldErrors.seller_estimated_days_on_market ? (
-              <span role="alert" className={errorText}>
-                {state.fieldErrors.seller_estimated_days_on_market}
-              </span>
-            ) : null}
           </label>
 
           {durationRevealed ? (
@@ -227,16 +200,6 @@ export function LivePageDuration({
               Donnez d’abord votre estimation : la durée réellement observée s’affichera ensuite.
             </p>
           )}
-
-          {state.error ? (
-            <p role="alert" className={errorText}>
-              {state.error}
-            </p>
-          ) : null}
-          {state.ok ? <p className={okText}>Réponse enregistrée.</p> : null}
-          <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-            {durationRevealed ? 'Enregistrer' : 'Valider et révéler la durée observée'}
-          </SubmitButton>
         </form>
       </div>
 

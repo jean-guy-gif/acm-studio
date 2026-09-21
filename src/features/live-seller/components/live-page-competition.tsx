@@ -1,23 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import {
   choice,
-  ctaPrimary,
-  errorText,
   fieldInput,
   fieldLabel,
-  okText,
   panel,
   question,
   questionHint,
@@ -28,24 +18,16 @@ import {
 } from '@/features/live-seller/constants';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
-// Page 1 — "Est-il un sérieux concurrent ?" NO price, no price/m², no duration,
-// no history. The seller judges the product before knowing its price. Le type projeté
-// interdit ici tout accès au prix : `entry` n'a pas de champ `price` avant la révélation.
-export function LivePageCompetition({
-  entry,
-  saveAction,
-}: {
-  entry: SellerComparable;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
-}) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
+// Page 1 — "Est-il un sérieux concurrent ?" NO price, no price/m², no duration, no
+// history. Le type projeté interdit tout accès au prix : `entry` n'a pas de champ `price`.
+//
+// MISSION 51 §3.1 — écran CONTRÔLÉ par le shell : un simple formulaire (valeurs
+// pré-remplies depuis la réponse persistée), sans bouton propre. Le shell moissonne ce
+// formulaire au clic « Valider et continuer » et enregistre.
+export function LivePageCompetition({ entry }: { entry: SellerComparable }) {
   const response = entry.response;
-  const currentAnswer =
-    state.values?.seller_serious_competitor ?? response?.seller_serious_competitor ?? '';
-  const currentComment =
-    state.values?.seller_serious_competitor_comment ??
-    response?.seller_serious_competitor_comment ??
-    '';
+  const currentAnswer = response?.seller_serious_competitor ?? '';
+  const currentComment = response?.seller_serious_competitor_comment ?? '';
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -68,7 +50,7 @@ export function LivePageCompetition({
           />
         </div>
 
-        <form action={formAction} className={`${panel} flex h-fit flex-col gap-4`}>
+        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <fieldset className="flex flex-col gap-3">
             <legend className={fieldLabel}>La réponse du vendeur</legend>
             <div className="flex flex-col gap-3">
@@ -85,11 +67,6 @@ export function LivePageCompetition({
                 </label>
               ))}
             </div>
-            {state.fieldErrors.seller_serious_competitor ? (
-              <span role="alert" className={errorText}>
-                {state.fieldErrors.seller_serious_competitor}
-              </span>
-            ) : null}
           </fieldset>
 
           <label className="flex flex-col gap-1.5">
@@ -101,16 +78,6 @@ export function LivePageCompetition({
               className={fieldInput}
             />
           </label>
-
-          {state.error ? (
-            <p role="alert" className={errorText}>
-              {state.error}
-            </p>
-          ) : null}
-          {state.ok ? <p className={okText}>Réponse enregistrée.</p> : null}
-          <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-            Enregistrer la réponse
-          </SubmitButton>
         </form>
       </div>
 

@@ -1,20 +1,10 @@
 'use client';
 
-import { useActionState } from 'react';
-
-import { SubmitButton } from '@/components/submit-button';
-import {
-  initialLiveActionState,
-  type LiveActionState,
-} from '@/features/live-seller/actions/live-action-state';
 import { LivePhoto } from '@/features/live-seller/components/live-photo';
 import {
   choice,
-  ctaPrimary,
-  errorText,
   fieldInput,
   fieldLabel,
-  okText,
   panel,
   question,
   questionHint,
@@ -38,21 +28,13 @@ const euro = (value: number | null): string =>
 export function LivePageDangerous({
   comparables,
   summary,
-  saveAction,
 }: {
   comparables: AuthorizedSellerComparable[];
   summary: LiveSellerSummary | null;
-  saveAction: (state: LiveActionState, formData: FormData) => Promise<LiveActionState>;
 }) {
-  const [state, formAction] = useActionState(saveAction, initialLiveActionState);
-  const selected =
-    state.values?.seller_most_dangerous_comparable_id ??
-    summary?.seller_most_dangerous_comparable_id ??
-    '';
-  const reason =
-    state.values?.seller_most_dangerous_reason ?? summary?.seller_most_dangerous_reason ?? '';
-  const comment =
-    state.values?.seller_most_dangerous_comment ?? summary?.seller_most_dangerous_comment ?? '';
+  const selected = summary?.seller_most_dangerous_comparable_id ?? '';
+  const reason = summary?.seller_most_dangerous_reason ?? '';
+  const comment = summary?.seller_most_dangerous_comment ?? '';
   const eligibleComparables = comparables.filter((entry) => {
     const answer = entry.response?.seller_serious_competitor;
     return answer === 'yes' || answer === 'unsure';
@@ -67,7 +49,7 @@ export function LivePageDangerous({
         </p>
       </div>
 
-      <form action={formAction} className="flex flex-col gap-6">
+      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
         {eligibleComparables.length === 0 ? (
           <p className="text-base text-zinc-500 stage:text-white/60">
             Aucun bien n’a été retenu comme concurrent sérieux ou incertain.
@@ -161,15 +143,6 @@ export function LivePageDangerous({
               className={fieldInput}
             />
           </label>
-          {state.error ? (
-            <p role="alert" className={errorText}>
-              {state.error}
-            </p>
-          ) : null}
-          {state.ok ? <p className={okText}>Choix enregistré.</p> : null}
-          <SubmitButton pendingLabel="Enregistrement…" className={ctaPrimary}>
-            Enregistrer le choix
-          </SubmitButton>
         </div>
       </form>
     </div>
