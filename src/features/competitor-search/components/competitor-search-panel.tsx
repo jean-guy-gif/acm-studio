@@ -78,13 +78,19 @@ const ENRICH_CONCURRENCY = 3;
 
 function CandidateCard({
   candidate,
-  projectId,
+  onImport,
   onDiscard,
+  pending,
 }: {
   candidate: CompetitorCandidate;
-  projectId: string;
+  // §3 — import EN PLACE : renvoie true si le concurrent a bien été créé (la carte
+  // est alors retirée par le parent), false sinon (on l'affiche à l'écran).
+  onImport: () => Promise<boolean>;
   onDiscard: () => void;
+  pending: boolean;
 }) {
+  const [importing, setImporting] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <div
       className={`${card} group flex flex-col gap-2.5 overflow-hidden transition-colors hover:border-brand/60 stage:hover:border-brand/60`}
@@ -112,28 +118,48 @@ function CandidateCard({
           {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
           {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
         </div>
-        <div className="mt-auto flex flex-wrap gap-2 pt-2 text-sm">
-          <Link
-            href={`/builder/${projectId}/comparables/new?importUrl=${encodeURIComponent(candidate.url)}`}
-            className={`${btnPrimary} px-3 py-1.5 text-xs`}
-          >
-            Retenir et importer
-          </Link>
-          <a
-            href={candidate.url}
-            target="_blank"
-            rel="noreferrer noopener"
-            className={`${btnSecondary} px-3 py-1.5 text-xs`}
-          >
-            Voir l’annonce
-          </a>
-          <button
-            type="button"
-            onClick={onDiscard}
-            className={`${btnSecondary} px-3 py-1.5 text-xs`}
-          >
-            Écarter
-          </button>
+        <div className="mt-auto flex flex-col gap-2 pt-2 text-sm">
+          {failed ? (
+            <p className="text-xs font-medium text-amber-700 stage:text-amber-300">
+              L’import a échoué. Réessayez, ou ouvrez l’annonce.
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2 text-xs">
+            {/* §3 — en place : on clique, ça se fait, la carte quitte la liste. */}
+            <button
+              type="button"
+              disabled={pending || importing}
+              onClick={async () => {
+                setFailed(false);
+                setImporting(true);
+                const ok = await onImport();
+                if (!ok) {
+                  setImporting(false);
+                  setFailed(true);
+                }
+                // Si ok, le parent retire la carte ; pas besoin de remettre l'état.
+              }}
+              className={`${btnPrimary} px-3 py-1.5`}
+            >
+              {importing ? 'Import en cours…' : 'Retenir et importer'}
+            </button>
+            <a
+              href={candidate.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className={`${btnSecondary} px-3 py-1.5`}
+            >
+              Voir l’annonce
+            </a>
+            <button
+              type="button"
+              onClick={onDiscard}
+              disabled={pending || importing}
+              className={`${btnSecondary} px-3 py-1.5`}
+            >
+              Écarter
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -142,13 +168,13 @@ function CandidateCard({
 
 function PortalBlock({
   portal,
-  projectId,
+  onImport,
   onPaste,
   onRetry,
   pending,
 }: {
   portal: PortalSearchResult;
-  projectId: string;
+  onImport: (candidate: CompetitorCandidate) => Promise<boolean>;
   onPaste: (searchUrl: string, html: string) => void;
   onRetry: (portal: PortalSearchResult['portal']) => void;
   pending: boolean;
@@ -182,7 +208,8 @@ function PortalBlock({
               <CandidateCard
                 key={candidate.url}
                 candidate={candidate}
-                projectId={projectId}
+                onImport={() => onImport(candidate)}
+                pending={pending}
                 onDiscard={() =>
                   setDiscarded((current) => {
                     const next = new Set(current);
@@ -248,6 +275,11 @@ export function CompetitorSearchPanel({
   const [extensionMissing, setExtensionMissing] = useState(false);
   const [portals, setPortals] = useState<PortalSearchResult[] | null>(null);
   const [searchLinks, setSearchLinks] = useState<PortalSearchLink[]>([]);
+  // §1 (revue) — la fourchette du bien vendeur : la liste principale n'en sort pas.
+  const [advisorRange, setAdvisorRange] = useState<{ min: number | null; max: number | null }>({
+    min: null,
+    max: null,
+  });
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
@@ -265,8 +297,27 @@ export function CompetitorSearchPanel({
   const [importFailures, setImportFailures] = useState<RankedCandidate[]>([]);
   const busy = pending || searching || importing;
 
+  // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
+  // la LISTE PRINCIPALE ne contient QUE des biens dans la fourchette du bien vendeur.
+  // Ce qui est au-dessus/en dessous bascule dans le repli — rien n'est masqué, mais la
+  // liste que le conseiller regarde reste dans sa fourchette. Sans fourchette saisie,
+  // on retombe sur le seuil de ressemblance.
+  const hasRange = advisorRange.min != null || advisorRange.max != null;
+  const inRange = (entry: RankedCandidate): boolean => {
+    const price = entry.candidate.price;
+    if (price == null) {
+      return false; // sans prix, on ne peut pas confirmer la fourchette → repli
+    }
+    return (
+      (advisorRange.min == null || price >= advisorRange.min) &&
+      (advisorRange.max == null || price <= advisorRange.max)
+    );
+  };
+  const inMainList = (entry: RankedCandidate): boolean =>
+    hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
+
   const defaultChecked = (entry: RankedCandidate): boolean =>
-    entry.score >= SIMILARITY_THRESHOLD && entry.candidate.propertyType != null;
+    inMainList(entry) && entry.candidate.propertyType != null;
   const isChecked = (entry: RankedCandidate): boolean =>
     selection[entry.candidate.url] ?? defaultChecked(entry);
   const toggleSelect = (entry: RankedCandidate) =>
@@ -330,6 +381,10 @@ export function CompetitorSearchPanel({
         return;
       }
       setSearchLinks(prep.links);
+      setAdvisorRange({
+        min: prep.criteria.advisorPriceMin,
+        max: prep.criteria.advisorPriceMax,
+      });
 
       const ping = await pingExtension();
       if (!ping.available) {
@@ -519,6 +574,45 @@ export function CompetitorSearchPanel({
     setImporting(false);
   }
 
+  // §3 (revue) — « Retenir et importer » d'une carte de portail se fait EN PLACE,
+  // comme le refus : un clic, l'import se fait (fenêtre one-off), la décision est
+  // écrite, la carte quitte la liste. Aucune navigation, aucun formulaire à revalider.
+  async function importFromPortal(candidate: CompetitorCandidate): Promise<boolean> {
+    const ping = await pingExtension();
+    if (!ping.available) {
+      setExtensionMissing(true);
+      return false;
+    }
+    const read = await readPageViaExtension(candidate.url, { robotsCache: new Map() });
+    if (!read.ok) {
+      return false;
+    }
+    const result = await importAction(candidate.url, read.html);
+    if (!result.ok) {
+      return false;
+    }
+    await recordDecisionsAction([
+      {
+        url: candidate.url,
+        decision: 'accepted',
+        price: candidate.price,
+        surfaceArea: candidate.surfaceArea,
+        roomsCount: candidate.roomsCount,
+        city: candidate.city,
+        propertyType: candidate.propertyType,
+      },
+    ]);
+    setDecided((current) => ({ ...current, [candidate.url]: 'accepted' }));
+    // La carte quitte aussi l'affichage du portail (comme un refus la retire).
+    setPortals((current) =>
+      (current ?? []).map((portal) => ({
+        ...portal,
+        candidates: portal.candidates.filter((c) => c.url !== candidate.url),
+      })),
+    );
+    return true;
+  }
+
   // Relance d'UNE fiche en échec, seule (fenêtre one-off). Réussie → retenue.
   async function retryImportOne(entry: RankedCandidate) {
     setError(null);
@@ -573,10 +667,10 @@ export function CompetitorSearchPanel({
   }
 
   const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
-  // On coupe la liste au seuil de ressemblance : les plus ressemblants d'abord, le
-  // reste plié derrière un bouton. Rien n'est perdu — un clic révèle tout.
-  const relevant = undecided.filter((entry) => entry.score >= SIMILARITY_THRESHOLD);
-  const lessRelevant = undecided.filter((entry) => entry.score < SIMILARITY_THRESHOLD);
+  // Liste principale = dans la fourchette (ou, à défaut de fourchette, au-dessus du
+  // seuil) ; le reste bascule dans le repli. Rien n'est perdu — un clic révèle tout.
+  const relevant = undecided.filter((entry) => inMainList(entry));
+  const lessRelevant = undecided.filter((entry) => !inMainList(entry));
 
   const checkedCount = undecided.filter((entry) => isChecked(entry)).length;
 
@@ -725,8 +819,9 @@ export function CompetitorSearchPanel({
             </div>
           ) : (
             <p className={hintText}>
-              Aucun candidat au-dessus du seuil de ressemblance. Les propositions ci-dessous sont
-              plus éloignées — à vous de juger.
+              {hasRange
+                ? 'Aucun candidat dans votre fourchette de prix. Les propositions ci-dessous sont hors fourchette — à vous de juger.'
+                : 'Aucun candidat au-dessus du seuil de ressemblance. Les propositions ci-dessous sont plus éloignées — à vous de juger.'}
             </p>
           )}
 
@@ -738,8 +833,12 @@ export function CompetitorSearchPanel({
                 className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
               >
                 {showLessRelevant
-                  ? 'Masquer les moins ressemblants'
-                  : `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, moins ressemblant${lessRelevant.length > 1 ? 's' : ''}`}
+                  ? hasRange
+                    ? 'Masquer les biens hors fourchette'
+                    : 'Masquer les moins ressemblants'
+                  : hasRange
+                    ? `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, hors de votre fourchette`
+                    : `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, moins ressemblant${lessRelevant.length > 1 ? 's' : ''}`}
               </button>
               {showLessRelevant ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -756,7 +855,7 @@ export function CompetitorSearchPanel({
             <PortalBlock
               key={portal.portal}
               portal={portal}
-              projectId={projectId}
+              onImport={importFromPortal}
               onPaste={handlePaste}
               onRetry={handleRetry}
               pending={busy}

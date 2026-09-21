@@ -8,6 +8,7 @@ import { isGenericImageUrl } from '@/features/comparable-import/utils/is-generic
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
 import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 
 // MISSION 50 — lecture d'une page de RÉSULTATS de recherche.
 //
@@ -177,36 +178,6 @@ function decodeBase64(value: string): string {
   }
 }
 
-// Type du bien lu sur la carte, ramené au vocabulaire subject_properties. On ne
-// devine rien : on reconnaît le mot publié (« Appartement », « Maison », segment
-// /appartement/ d'une URL). Inconnu → null (le classement ne l'exclura pas pour une
-// absence, seulement pour une DIFFÉRENCE avérée).
-function detectPropertyType(text: string | null): string | null {
-  if (text == null) {
-    return null;
-  }
-  const t = decodeHtmlEntities(text).toLowerCase();
-  if (/\b(appartements?|studios?|lofts?|duplex)\b/.test(t)) {
-    return 'apartment';
-  }
-  if (/\b(maisons?|villas?|mas|bastides?|chalets?|propri[ée]t[ée]s?|ch[aâ]teaux?)\b/.test(t)) {
-    return 'house';
-  }
-  if (/\bterrains?\b/.test(t)) {
-    return 'land';
-  }
-  if (/\bimmeubles?\b/.test(t)) {
-    return 'building';
-  }
-  if (/\b(locaux|local|bureaux?|commerces?|fonds\s+de\s+commerce)\b/.test(t)) {
-    return 'commercial';
-  }
-  if (/\b(parkings?|garages?|box)\b/.test(t)) {
-    return 'parking';
-  }
-  return null;
-}
-
 function titleCaseCity(value: string | null): string | null {
   if (value == null) {
     return null;
@@ -272,7 +243,7 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     price: readPrice(priceText),
     surfaceArea: readSurface(title),
     roomsCount: readRooms(title),
-    propertyType: detectPropertyType(title),
+    propertyType: normalizePropertyType(title),
     pricePerSqm: null,
     city,
     photoUrl: firstPhoto(chunk, pageUrl),
@@ -299,9 +270,9 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     roomsCount: readRooms(alt),
     // Type sur le chemin de l'annonce (/annonce/vente/<ville>/<type>/…) ou dans l'alt.
     propertyType:
-      detectPropertyType(
+      normalizePropertyType(
         href?.match(/\/annonce\/[a-z]+\/[a-z0-9'’-]+\/([a-z-]+)\//i)?.[1] ?? null,
-      ) ?? detectPropertyType(alt),
+      ) ?? normalizePropertyType(alt),
     pricePerSqm: readPricePerSqm(
       firstGroup(chunk, /ad-price__price-per-square-meter"[^>]*>([^<]+)/i),
     ),
@@ -335,7 +306,7 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
   // l'annonce (/properties/<type>/…), donnée publiée par le portail. On compose un
   // libellé honnête à partir du type et de la commune, plutôt que « Annonce détectée ».
   const typeSegment = url.match(/\/properties\/([a-z-]+)\//i)?.[1] ?? null;
-  const propertyType = detectPropertyType(typeSegment);
+  const propertyType = normalizePropertyType(typeSegment);
   const typeLabel = typeSegment ? titleCaseCity(typeSegment) : null;
   const title = typeLabel && city ? `${typeLabel} à ${city}` : (typeLabel ?? null);
   return {
@@ -366,7 +337,7 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     price: readPrice(firstGroup(chunk, /RR_prix[^"]*"[^>]*>([^<]+)/i)),
     surfaceArea: readSurface(alt),
     roomsCount: readRooms(alt) ?? readRooms(firstGroup(chunk, /data-room="([^"]+)"/i)),
-    propertyType: detectPropertyType(alt),
+    propertyType: normalizePropertyType(alt),
     pricePerSqm: null,
     city,
     photoUrl: firstPhoto(chunk, pageUrl),

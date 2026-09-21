@@ -4,6 +4,7 @@ import {
   type LearnedPreferences,
 } from '@/features/competitor-search/services/learn-from-decisions';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import type {
   CompetitorSearchCriteria,
   PortalSearchResult,
@@ -26,6 +27,12 @@ export function rankCandidates(
   const seen = new Set<string>();
   const seenSignatures = new Set<string>();
 
+  // Le type du bien vendeur est saisi en TEXTE LIBRE FRANÇAIS (« appartement ») ; on
+  // le ramène au même vocabulaire que les cartes (canonique) AVANT de comparer, sinon
+  // la garde compare « appartement » à « apartment » et ne protège rien.
+  const subjectType = normalizePropertyType(criteria.propertyType);
+  const scoringCriteria = { ...criteria, propertyType: subjectType };
+
   for (const portal of portals) {
     for (const candidate of portal.candidates) {
       if (seen.has(candidate.url)) {
@@ -37,12 +44,12 @@ export function rankCandidates(
       }
       // §5 point 8 — le type de bien n'est JAMAIS relâché : un appartement ne
       // concurrence pas une maison. Un type DIFFÉRENT du bien vendeur n'entre pas
-      // dans la liste, quel que soit son score. Type inconnu (non publié) → on garde,
-      // on n'exclut pas pour une absence (le conseiller tranchera).
+      // dans la liste, quel que soit son score. Type inconnu (non publié ou bien
+      // vendeur sans type) → on garde, on n'exclut pas pour une absence.
       if (
-        criteria.propertyType != null &&
+        subjectType != null &&
         candidate.propertyType != null &&
-        candidate.propertyType !== criteria.propertyType
+        candidate.propertyType !== subjectType
       ) {
         continue;
       }
@@ -67,7 +74,7 @@ export function rankCandidates(
         district: null,
         propertyType: candidate.propertyType,
       };
-      const base = scoreCandidate(criteria, facts);
+      const base = scoreCandidate(scoringCriteria, facts);
       const adjusted = applyLearning(
         base,
         { ...facts, listingUrl: candidate.url, listingHost: host },

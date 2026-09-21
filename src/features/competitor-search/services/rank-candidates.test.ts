@@ -38,10 +38,12 @@ function portal(candidates: CompetitorCandidate[]): PortalSearchResult {
   };
 }
 
+// Le bien vendeur porte un type en TEXTE LIBRE FRANÇAIS (comme le formulaire) : la
+// garde doit le normaliser (« appartement » → apartment) pour comparer aux cartes.
 const CRITERIA: CompetitorSearchCriteria = {
   city: 'Nice',
   postalCode: '06000',
-  propertyType: 'apartment',
+  propertyType: 'appartement',
   district: null,
   surfaceArea: 60,
   roomsCount: 3,
@@ -52,6 +54,25 @@ const CRITERIA: CompetitorSearchCriteria = {
 // §5 point 8 — le type de bien n'est JAMAIS relâché : un type DIFFÉRENT du bien
 // vendeur n'entre pas dans la liste, quel que soit son score.
 describe('rankCandidates — garde de type de bien', () => {
+  it('normalise le type FRANÇAIS du bien vendeur (« Maison 3 pièces ») et écarte les appartements', () => {
+    const ranked = rankCandidates(
+      { ...CRITERIA, propertyType: 'Maison 3 pièces' },
+      [
+        portal([
+          candidate({ key: 'maison', url: 'https://x/maison', propertyType: 'house' }),
+          candidate({
+            key: 'appart',
+            url: 'https://x/appart',
+            surfaceArea: 75,
+            propertyType: 'apartment',
+          }),
+        ]),
+      ],
+      NO_LEARNING,
+    );
+    expect(ranked.map((r) => r.candidate.key)).toEqual(['maison']);
+  });
+
   it('écarte une maison d’une recherche d’appartement, même bien notée', () => {
     const ranked = rankCandidates(
       CRITERIA,
