@@ -20,6 +20,8 @@
 // candidats sont déjà cadrés — elle y est inoffensive. Et le choix REND SA SOURCE :
 // la règle est ainsi testable (§5, test 3).
 
+import { cleanDescription } from '@/features/comparable-import/utils/is-junk-description';
+
 export type DescriptionProvenance = 'main-advert' | 'page-meta' | 'none';
 
 export type SelectedDescription = {
@@ -48,17 +50,23 @@ export function selectListingDescription(input: {
   // Niveau 2 : métadonnée de page.
   ogMeta?: string | null;
 }): SelectedDescription {
+  // §2.3 — un mur d'inscription n'est pas une description : on l'écarte À CHAQUE
+  // niveau, avant même de choisir, pour qu'il ne devienne jamais la description retenue.
+  const portalScoped = cleanDescription(input.portalScoped);
+  const regionVisible = cleanDescription(input.regionVisible);
+  const regionEmbedded = cleanDescription(input.regionEmbedded);
+  const ogMeta = cleanDescription(input.ogMeta);
+
   // Niveau 1 — on préfère la lecture cadrée de l'extracteur (délibérée, nettoyée),
   // sinon la plus longue des lectures génériques CADRÉES.
   const level1 =
-    (input.portalScoped?.trim() ? input.portalScoped : null) ??
-    longest([input.regionVisible, input.regionEmbedded]);
+    (portalScoped?.trim() ? portalScoped : null) ?? longest([regionVisible, regionEmbedded]);
   if (level1) {
     return { description: level1, provenance: 'main-advert' };
   }
 
   // Niveau 2 — métadonnée de page.
-  const level2 = input.ogMeta?.trim() ? input.ogMeta.trim() : null;
+  const level2 = ogMeta?.trim() ? ogMeta.trim() : null;
   if (level2) {
     return { description: level2, provenance: 'page-meta' };
   }

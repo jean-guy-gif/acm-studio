@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { clampInitialLiveIndex } from '@/features/live-seller/services/max-reachable-live-index';
 import {
   getLiveComparableResponses,
   getLiveSellerSummary,
@@ -82,11 +84,17 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     propertyPhotoUrls,
   });
 
+  // §2.2 — l'index d'ouverture demandé par l'URL est BORNÉ à la page la plus loin
+  // légitimement atteinte (réponses persistées) : ouvrir la révélation avant d'avoir
+  // estimé ne produit jamais son HTML (donc jamais le prix), quel que soit le chemin.
+  const pages = buildLivePages(presentation.live, presentation.property != null);
+  const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, presentation.live);
+
   return (
     <LiveComparativeShell
       projectId={projectId}
       presentation={presentation}
-      initialIndex={parseInitialIndex(fiche)}
+      initialIndex={initialIndex}
     />
   );
 }

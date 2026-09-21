@@ -1,3 +1,4 @@
+import { cleanDescription } from '@/features/comparable-import/utils/is-junk-description';
 import { calculateComparableAnalysis } from '@/features/comparable-analysis/services/calculate-comparable-analysis';
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
 import { pricePerSquareMeter } from '@/features/comparables/services/calculate-comparable-summary';
@@ -98,7 +99,10 @@ function mapProperty(property: SubjectProperty, photoUrls: string[]): SellerPres
     city: property.city,
     district: property.district,
     postalCode: property.postal_code,
-    description: property.description,
+    // §2.3 — garde d'affichage : une description déjà stockée qui est en réalité un mur
+    // d'inscription (« Connectez-vous… Créer un compte ») ne doit pas atteindre le
+    // vendeur, même si elle a été importée avant le correctif à la source.
+    description: cleanDescription(property.description),
     surfaceArea: property.surface_area,
     roomsCount: property.rooms_count,
     bedroomsCount: property.bedrooms_count,
