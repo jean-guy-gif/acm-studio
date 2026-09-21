@@ -129,6 +129,7 @@ export type Database = {
           price_drop_amount: number | null
           price_drop_percentage: number | null
           project_id: string
+          property_type: string | null
           rooms_count: number | null
           source: string | null
           surface_area: number | null
@@ -169,6 +170,7 @@ export type Database = {
           price_drop_amount?: number | null
           price_drop_percentage?: number | null
           project_id: string
+          property_type?: string | null
           rooms_count?: number | null
           source?: string | null
           surface_area?: number | null
@@ -209,6 +211,7 @@ export type Database = {
           price_drop_amount?: number | null
           price_drop_percentage?: number | null
           project_id?: string
+          property_type?: string | null
           rooms_count?: number | null
           source?: string | null
           surface_area?: number | null

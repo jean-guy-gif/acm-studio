@@ -26,6 +26,7 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     district: null,
     surface_area: null,
     land_area: null,
+    property_type: null,
     rooms_count: null,
     bedrooms_count: null,
     bathrooms_count: null,

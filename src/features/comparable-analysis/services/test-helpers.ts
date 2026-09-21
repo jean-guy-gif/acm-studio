@@ -18,6 +18,7 @@ export function makeComparable(overrides: Partial<Comparable> = {}): Comparable 
     district: null,
     surface_area: 50,
     land_area: null,
+    property_type: null,
     rooms_count: null,
     bedrooms_count: null,
     bathrooms_count: null,
