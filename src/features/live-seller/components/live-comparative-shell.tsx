@@ -484,6 +484,7 @@ export function LiveComparativeShell({
           <LivePageAnalysis priceGaps={effectiveRange.priceGaps} summary={summary} />
         ) : page.type === 'conclusion' ? (
           <LivePageConclusion
+            projectId={projectId}
             summary={summary}
             advisorRange={effectiveRange}
             dangerous={dangerousComparable}

@@ -838,6 +838,66 @@ export type Database = {
           },
         ]
       }
+      project_meeting_conclusions: {
+        Row: {
+          agency_id: string
+          commercialization_price: number | null
+          concluded_at: string | null
+          created_at: string
+          follow_up_reason: string | null
+          frozen_advisor_analysis: number | null
+          frozen_advisor_price: number | null
+          frozen_market_computed: number | null
+          id: string
+          outcome: string | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          commercialization_price?: number | null
+          concluded_at?: string | null
+          created_at?: string
+          follow_up_reason?: string | null
+          frozen_advisor_analysis?: number | null
+          frozen_advisor_price?: number | null
+          frozen_market_computed?: number | null
+          id?: string
+          outcome?: string | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          commercialization_price?: number | null
+          concluded_at?: string | null
+          created_at?: string
+          follow_up_reason?: string | null
+          frozen_advisor_analysis?: number | null
+          frozen_advisor_price?: number | null
+          frozen_market_computed?: number | null
+          id?: string
+          outcome?: string | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_meeting_conclusions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_meeting_conclusions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_price_positionings: {
         Row: {
           advisor_price: number
@@ -1417,6 +1477,19 @@ export type Database = {
           profile_id: string
         }[]
       }
+      conclude_meeting: {
+        Args: {
+          p_advisor_analysis: number
+          p_advisor_price: number
+          p_agency_id: string
+          p_market_computed: number
+          p_outcome: string
+          p_price: number
+          p_project_id: string
+          p_reason: string
+        }
+        Returns: boolean
+      }
       current_agency_id_text: { Args: never; Returns: string }
       get_current_agency_id: { Args: never; Returns: string }
       move_comparable: {
@@ -1429,6 +1502,17 @@ export type Database = {
       }
       move_selected_comparable: {
         Args: { p_comparable_id: string; p_direction: string }
+        Returns: undefined
+      }
+      save_commercialization_price: {
+        Args: {
+          p_advisor_analysis: number
+          p_advisor_price: number
+          p_agency_id: string
+          p_market_computed: number
+          p_price: number
+          p_project_id: string
+        }
         Returns: undefined
       }
     }

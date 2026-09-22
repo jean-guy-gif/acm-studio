@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 const NAV = [
   { href: '/builder', label: 'Préparation', hint: 'Dossiers vendeurs' },
   { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
+  { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
   { href: '/admin', label: 'Administration', hint: 'Agence et équipe' },
 ];
 
