@@ -14,9 +14,21 @@ import { BuyerMatchCard } from '@/features/meeting-conclusion/components/buyer-m
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import {
   matchBuyerAgainstSuivi,
+  noneOfTypeLabel,
+  typeCountLabel,
   type BuyerCriteria,
   type BuyerMatchResult,
+  type SuiviComposition,
 } from '@/features/meeting-conclusion/services/buyer-match';
+
+// « 3 appartements · 1 maison · 2 sans type » — ce que le Suivi CONTIENT.
+function compositionLine(composition: SuiviComposition): string {
+  const parts = composition.byType.map(typeCountLabel);
+  if (composition.unclassifiedCount > 0) {
+    parts.push(`${composition.unclassifiedCount} sans type`);
+  }
+  return parts.join(' · ');
+}
 
 const num = (value: FormDataEntryValue | null): number | null => {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -98,23 +110,40 @@ export function BuyerSearchPanel({ dossiers }: { dossiers: SuiviDossier[] }) {
 
       {result != null ? (
         <div className="flex flex-col gap-4">
+          {/* Le RÉSULTAT saute aux yeux — surtout quand il est vide : un bloc net qui dit
+              ce que le Suivi contient, pas une ligne grise. */}
           {result.ranked.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              <span className={metaLabel}>
-                {result.ranked.length} dossier{result.ranked.length > 1 ? 's' : ''} du même type, du
-                plus proche au plus éloigné
-              </span>
-              <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {result.ranked.map((match) => (
-                  <BuyerMatchCard key={match.dossier.project.id} match={match} />
-                ))}
-              </ul>
+            <div className="rounded-2xl border border-brand/30 bg-brand-soft/60 p-5 stage:border-brand/40 stage:bg-brand/10">
+              <p className="font-title text-3xl font-bold text-brand-deep stage:text-brand">
+                {result.ranked.length} dossier{result.ranked.length > 1 ? 's' : ''} rapproché
+                {result.ranked.length > 1 ? 's' : ''}
+              </p>
+              <p className="mt-1 text-sm text-zinc-600 stage:text-white/70">
+                Rapprochement de votre recherche — ce n’est pas la liste complète du Suivi.
+              </p>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500 stage:text-white/60">
-              Aucun dossier du type recherché dans le Suivi.
-            </p>
+            <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 stage:border-amber-400/50 stage:bg-amber-500/10">
+              <p className="font-title text-2xl font-bold text-amber-900 sm:text-3xl stage:text-amber-200">
+                {result.requestedType != null
+                  ? `Votre Suivi ne contient ${noneOfTypeLabel(result.requestedType)}`
+                  : 'Aucun dossier ne correspond à cette recherche'}
+              </p>
+              {result.composition.byType.length > 0 || result.composition.unclassifiedCount > 0 ? (
+                <p className="mt-1 text-base font-medium text-amber-800 stage:text-amber-200/90">
+                  Votre Suivi&nbsp;: {compositionLine(result.composition)}.
+                </p>
+              ) : null}
+            </div>
           )}
+
+          {result.ranked.length > 0 ? (
+            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {result.ranked.map((match) => (
+                <BuyerMatchCard key={match.dossier.project.id} match={match} />
+              ))}
+            </ul>
+          ) : null}
 
           {/* §3.2 — les dossiers sans type normalisable, À PART, jamais mêlés au classement. */}
           {result.unclassified.length > 0 ? (
