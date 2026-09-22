@@ -17,6 +17,9 @@ export type SuiviDossier = {
   conclusion: MeetingConclusion | null;
 };
 
+// Retourne TOUT le Suivi (status 'meeting_completed'). Le filtre par issue et le
+// rapprochement acheteur portent sur cet ensemble complet — le filtrage est une opération
+// PURE et testable (filterSuiviByIssue), pas une requête de plus.
 export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
   const profile = await getProfile();
   if (!profile) {
@@ -50,7 +53,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
     supabase
       .from('project_meeting_conclusions')
       .select(
-        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, outcome, follow_up_reason, concluded_at',
+        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, outcome, follow_up_reason, concluded_at, outcome_changed_at',
       )
       .in('project_id', ids)
       .eq('agency_id', agencyId),
@@ -76,6 +79,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       outcome: (row.outcome as MeetingConclusion['outcome']) ?? null,
       followUpReason: row.follow_up_reason,
       concludedAt: row.concluded_at,
+      outcomeChangedAt: row.outcome_changed_at,
     });
   }
 

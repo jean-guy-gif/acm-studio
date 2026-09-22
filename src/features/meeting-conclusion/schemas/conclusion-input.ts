@@ -13,20 +13,25 @@ export const commercializationPriceSchema = z.object({
   commercialization_price: priceFromForm,
 });
 
+// Mission 54 — quatre issues posables.
+const outcomeEnum = z.enum(['signed', 'follow_up', 'sold_elsewhere', 'withdrawn']);
+
+const followUpReason = z
+  .string()
+  .trim()
+  .max(2000)
+  .optional()
+  // Motif seulement pour « à relancer » (contrainte base pmc_reason_only_follow_up).
+  .transform((value) => (value && value.length > 0 ? value : null));
+
 export const conclusionDecisionSchema = z
-  .object({
-    outcome: z.enum(['signed', 'follow_up']),
-    // Note de travail, seulement pour « à relancer ». ≤ 2000 (contrainte base).
-    follow_up_reason: z
-      .string()
-      .trim()
-      .max(2000)
-      .optional()
-      .transform((value) => (value && value.length > 0 ? value : null)),
-  })
+  .object({ outcome: outcomeEnum, follow_up_reason: followUpReason })
   .transform((input) => ({
     outcome: input.outcome,
     followUpReason: input.outcome === 'follow_up' ? input.follow_up_reason : null,
   }));
+
+// Le changement d'issue depuis le Suivi : mêmes règles que la conclusion.
+export const changeOutcomeSchema = conclusionDecisionSchema;
 
 export type ConclusionDecision = z.infer<typeof conclusionDecisionSchema>;

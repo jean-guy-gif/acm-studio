@@ -850,6 +850,7 @@ export type Database = {
           frozen_market_computed: number | null
           id: string
           outcome: string | null
+          outcome_changed_at: string
           project_id: string
           updated_at: string
         }
@@ -864,6 +865,7 @@ export type Database = {
           frozen_market_computed?: number | null
           id?: string
           outcome?: string | null
+          outcome_changed_at?: string
           project_id: string
           updated_at?: string
         }
@@ -878,6 +880,7 @@ export type Database = {
           frozen_market_computed?: number | null
           id?: string
           outcome?: string | null
+          outcome_changed_at?: string
           project_id?: string
           updated_at?: string
         }
@@ -1476,6 +1479,15 @@ export type Database = {
           agency_id: string
           profile_id: string
         }[]
+      }
+      change_meeting_outcome: {
+        Args: {
+          p_agency_id: string
+          p_outcome: string
+          p_project_id: string
+          p_reason: string
+        }
+        Returns: boolean
       }
       conclude_meeting: {
         Args: {
