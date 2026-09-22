@@ -1,3 +1,4 @@
+import { LiveCommercializationPrice } from '@/features/meeting-conclusion/components/live-commercialization-price';
 import { LivePhoto } from '@/features/live-seller/components/live-photo';
 import {
   bigValue,
@@ -32,10 +33,12 @@ function Line({ label, value }: { label: string; value: string }) {
 // La fourchette conseiller (central, décision) est LIVRÉE — jamais dans la charge
 // initiale. Le concurrent le plus dangereux est déjà autorisé (post-révélation).
 export function LivePageConclusion({
+  projectId,
   summary,
   advisorRange,
   dangerous,
 }: {
+  projectId: string;
   summary: LiveSellerSummary | null;
   advisorRange: AuthorizedAdvisorRange | null;
   dangerous: AuthorizedSellerComparable | null;
@@ -124,6 +127,10 @@ export function LivePageConclusion({
         Le marché concurrentiel montre à quels biens votre logement sera comparé. L’analyse
         comparative du conseiller détermine le positionnement professionnel proposé.
       </p>
+
+      {/* Mission 53 §1 — la seule question qui vient après l'analyse. Repères au-dessus (déjà
+          vus), champ vide en dessous. Remplir = l'accord. */}
+      <LiveCommercializationPrice projectId={projectId} />
     </div>
   );
 }

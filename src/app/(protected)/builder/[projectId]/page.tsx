@@ -106,6 +106,29 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             </span>
           </span>
         </Link>
+
+        {/* Mission 53 — l'issue du rendez-vous, côté conseiller. Disponible dès que le
+            dossier est prêt (dans le Live) ; reste accessible une fois conclu (Suivi). */}
+        {project.status === 'ready_for_meeting' || project.status === 'meeting_completed' ? (
+          <Link
+            href={`/builder/${projectId}/conclusion`}
+            className={`${card} group flex items-start gap-4 p-5 transition-all hover:-translate-y-0.5 hover:border-brand hover:shadow-lg hover:shadow-brand/10 stage:hover:border-brand stage:hover:shadow-none`}
+          >
+            <span className="font-title text-3xl leading-none font-bold text-brand/35 transition-colors group-hover:text-brand stage:text-brand/40">
+              ✓
+            </span>
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
+                Conclure le rendez-vous
+              </span>
+              <span className="text-sm text-zinc-500 stage:text-white/55">
+                {project.status === 'meeting_completed'
+                  ? 'Dossier dans le Suivi — voir ou corriger l’issue.'
+                  : 'Mandat signé ou à relancer, après le Live.'}
+              </span>
+            </span>
+          </Link>
+        ) : null}
       </div>
     </div>
   );

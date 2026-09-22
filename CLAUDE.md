@@ -234,9 +234,19 @@ Use soft delete when possible.
 
 `projects.status` est la seule vérité de l'état d'un dossier.
 
-- Le runtime n'écrit que `draft` (en préparation) et `ready_for_meeting` (prêt).
-  La readiness (bien vendeur + ≥ 3 concurrents exploitables + fourchette) DÉCLENCHE
-  l'écriture de `ready_for_meeting`, elle ne remplace pas l'état.
+Le parcours : **Préparation → Live → Suivi** — `draft` → `ready_for_meeting` →
+`meeting_completed`.
+
+- **`projects.status` porte la POSITION dans le parcours, jamais l'ISSUE d'une étape.**
+  Une issue (mandat signé / à relancer, …) se stocke avec ses faits — pas dans l'enum.
+  C'est ce qui empêche l'enum de grossir à chaque nuance : `meeting_completed` = « conclu,
+  en Suivi » ; que le mandat soit signé ou à relancer se lit dans `project_meeting_conclusions`.
+- Le passage en `meeting_completed` et l'écriture de l'issue sont UNE SEULE transaction
+  (fonction `conclude_meeting`) : un `meeting_completed` sans conclusion serait « en Suivi
+  sans issue » — l'équivalent du dossier invisible.
+- Le runtime n'écrit que `draft` (en préparation), `ready_for_meeting` (prêt) et
+  `meeting_completed` (conclu). La readiness (bien vendeur, au moins 3 concurrents
+  exploitables et fourchette) DÉCLENCHE l'écriture de `ready_for_meeting`, sans la remplacer.
 - Une donnée retirée ensuite ne dé-prête RIEN : on n'écrit jamais `draft`
   automatiquement.
 - Un backfill ne falsifie JAMAIS un état terminal (`meeting_completed`, `archived`) :
