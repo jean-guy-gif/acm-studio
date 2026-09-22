@@ -25,6 +25,7 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import type {
   AuthorizedAdvisorRange,
   AuthorizedSellerComparable,
@@ -92,15 +93,7 @@ export function LiveComparativeShell({
   // mises à jour côté client, sans rechargement.
   const comparables = useMemo<SellerComparable[]>(() => {
     const base = live?.comparables ?? [];
-    return base.map((c) => {
-      const override = responseOverrides[c.id];
-      const up = delivered[c.id];
-      // Le concurrent LIVRÉ porte déjà sa réponse fraîche (estimation persistée) : on ne
-      // l'écrase pas avec la réponse projetée à l'ouverture — on ne fusionne qu'un
-      // éventuel override client (réponse « sérieux » de l'écran 2, jours de l'écran 5).
-      if (up) return override ? { ...up, response: override } : up;
-      return override ? { ...c, response: override } : c;
-    });
+    return base.map((c) => overlaySellerComparable(c, delivered[c.id], responseOverrides[c.id]));
   }, [live, delivered, responseOverrides]);
   const summary = live?.sellerSummary ?? null;
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
@@ -454,8 +447,12 @@ export function LiveComparativeShell({
       <main
         ref={mainRef}
         key={page.key}
-        className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-8 sm:py-8 ${
-          isInteractive ? 'pb-28' : ''
+        // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
+        // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
+        // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
+        // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
+        className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
+          isInteractive ? 'pb-32' : 'pb-6 sm:pb-8'
         }`}
       >
         {page.type === 'intro' ? (

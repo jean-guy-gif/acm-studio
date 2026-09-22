@@ -14,6 +14,7 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { PRICE_COHERENCE_VALUES, PRICE_COHERENCE_LABELS } from '@/features/live-seller/constants';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 
@@ -36,9 +37,12 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const reveal = entry.priceReveal;
 
-  // Garde lien direct / hors séquence : jamais révéler un prix que le vendeur n'a
-  // pas encore imaginé. Miroir de la garde de navigation (défense en profondeur).
+  // Garde lien direct / hors séquence : jamais révéler un prix que le vendeur n'a pas
+  // encore imaginé. Miroir de la garde de navigation (défense en profondeur). ICI le prix
+  // n'est PAS encore mérité : on n'affiche donc PAS le titre réel du portail (il contient
+  // le prix — défaut 2.2), mais le LIBELLÉ NEUTRE composé, comme les écrans pré-révélation.
   if (savedEstimate == null) {
+    const neutralLabel = neutralComparableLabel(entry);
     return (
       <div className="flex flex-col gap-6 sm:gap-8">
         <div className="flex flex-col gap-3">
@@ -49,9 +53,9 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
           <div className="flex flex-col gap-4">
-            <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
+            <LiveGallery photos={entry.photoUrls} alt={neutralLabel} />
             <LiveComparableHeader
-              heading={entry.title ?? 'Bien concurrent'}
+              heading={neutralLabel}
               city={entry.city}
               district={entry.district}
             />

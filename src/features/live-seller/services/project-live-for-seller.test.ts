@@ -13,6 +13,7 @@ import {
   authorizeAdvisorRange,
   authorizeComparableReveal,
   isComparableAuthorized,
+  overlaySellerComparable,
   projectComparableForSeller,
   projectLiveForSeller,
 } from '@/features/live-seller/services/project-live-for-seller';
@@ -146,6 +147,33 @@ describe('livraison — fourchette conseiller absente de la charge initiale (§ 
     const delivered = authorizeComparableReveal(answered, authorizedId);
     expect(delivered?.authorized).toBe(true);
     expect(delivered?.price).toBeTypeOf('number');
+  });
+
+  it('overlay : un override « sérieux » (écran 2) NE FAIT PAS disparaître l’estimation livrée', () => {
+    // Reproduit le défaut 1/2/4 au niveau donnée : le concurrent est LIVRÉ avec son
+    // estimation (révélation autorisée), puis un override client de l'écran 2 (réponse
+    // « sérieux », sans estimation) le recouvre. L'estimation DOIT survivre — sinon la
+    // révélation retombe sur sa garde et le titre brut (avec le prix) s'affiche.
+    const answered = buildLive(true);
+    const authorized = answered.comparables.find(isComparableAuthorized)!;
+    const delivered = projectComparableForSeller(authorized);
+    expect(delivered.authorized).toBe(true);
+
+    const seriousOverride = {
+      seller_serious_competitor: 'yes',
+      seller_serious_competitor_comment: null,
+    };
+    const merged = overlaySellerComparable(
+      delivered,
+      delivered.authorized ? delivered : undefined,
+      seriousOverride,
+    );
+
+    expect(merged.authorized).toBe(true);
+    expect(merged.response?.seller_estimated_listing_price).toBe(
+      authorized.response?.seller_estimated_listing_price,
+    );
+    expect(merged.response?.seller_serious_competitor).toBe('yes');
   });
 
   it('la fourchette se livre par la même voie, MAIS seulement après la valeur perçue', () => {

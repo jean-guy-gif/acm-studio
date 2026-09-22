@@ -110,6 +110,33 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
   };
 }
 
+// MISSION 51 — recouvrement client d'un concurrent, SANS rechargement : la donnée
+// projetée à l'ouverture, recouverte du fragment LIVRÉ (révélation) et d'un éventuel
+// override de réponse (« sérieux » de l'écran 2, jours de l'écran 5).
+//
+// INVARIANT : un override ne PATCHE que ses champs, il ne remplace jamais la réponse du
+// concurrent livré. Sinon l'override de l'écran 2 (sans estimation) effacerait
+// l'estimation portée par le fragment livré, et la révélation retomberait sur sa garde —
+// titre brut affiché, prix perdu (défauts 1/2/4). Fonction PURE, donc testable.
+export function overlaySellerComparable(
+  projected: SellerComparable,
+  delivered: AuthorizedSellerComparable | undefined,
+  override: Partial<LiveComparableResponse> | undefined,
+): SellerComparable {
+  if (delivered) {
+    return override
+      ? { ...delivered, response: { ...delivered.response, ...override } as LiveComparableResponse }
+      : delivered;
+  }
+  if (!override) {
+    return projected;
+  }
+  return {
+    ...projected,
+    response: { ...(projected.response ?? {}), ...override } as LiveComparableResponse,
+  };
+}
+
 // La donnée Live remise au shell À L'OUVERTURE : concurrents projetés (neutres tant que
 // non estimés) et le résumé du vendeur (qui lui appartient). PAS de fourchette conseiller
 // — competitiveMarketCentral / priceGaps / advisorDecision n'entrent JAMAIS ici : ils
