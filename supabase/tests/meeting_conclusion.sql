@@ -138,8 +138,14 @@ begin
   if r.commercialization_price is not null then
     raise exception 'FAIL 7.2: un prix a été inventé alors que le vendeur n''a pas parlé';
   end if;
-  if r.frozen_market_computed <> 480000 then
-    raise exception 'FAIL 7.2: les montants n''ont pas été figés à la conclusion';
+  -- SANS prix saisi au préalable, save_commercialization_price n'a jamais tourné pour ce
+  -- dossier : c'est conclude_meeting qui doit figer ①②③. Ce sont justement les dossiers
+  -- « à relancer » qui ont le plus besoin de cette photo (relance deux mois plus tard).
+  if r.frozen_market_computed is distinct from 480000
+     or r.frozen_advisor_analysis is distinct from 360000
+     or r.frozen_advisor_price is distinct from 495000 then
+    raise exception 'FAIL 7.2: ①②③ non figés à la conclusion « à relancer » sans prix (%, %, %)',
+      r.frozen_market_computed, r.frozen_advisor_analysis, r.frozen_advisor_price;
   end if;
 end $$;
 
