@@ -452,7 +452,7 @@ export function LiveComparativeShell({
         // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
         // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
         className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
-          isInteractive ? 'pb-32' : 'pb-6 sm:pb-8'
+          isInteractive || page.type === 'conclusion' ? 'pb-32' : 'pb-6 sm:pb-8'
         }`}
       >
         {page.type === 'intro' ? (
@@ -539,6 +539,35 @@ export function LiveComparativeShell({
                   ? 'Révéler le positionnement →'
                   : 'Valider et continuer →'}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MISSION 53 — la FIN NORMALE du parcours. Le dernier écran mène à la conclusion
+          (écran conseiller), distincte de « Quitter » (chrome, en haut) qui sort SANS
+          conclure et laisse le dossier dans le Live. On sort du plein écran avant de passer
+          à un écran advisor-only que le vendeur ne doit pas voir. */}
+      {page.type === 'conclusion' ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+          style={{
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            paddingTop: '1rem',
+          }}
+        >
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
+              ← Précédent
+            </button>
+            <Link
+              href={`/builder/${projectId}/conclusion`}
+              onClick={() => {
+                void document.exitFullscreen?.().catch(() => {});
+              }}
+              className={ctaPrimary}
+            >
+              Terminer le rendez-vous →
+            </Link>
           </div>
         </div>
       ) : null}
