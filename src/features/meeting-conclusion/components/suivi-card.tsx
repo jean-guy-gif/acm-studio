@@ -1,24 +1,44 @@
 import Link from 'next/link';
 
-import { badgeBrand, badgeSelected, btnSecondary, card, metaLabel } from '@/components/ui/styles';
+import {
+  badgeBrand,
+  badgeNeutral,
+  badgeRejected,
+  badgeSelected,
+  btnSecondary,
+  card,
+  metaLabel,
+} from '@/components/ui/styles';
 import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components/conclusion-amounts-panel';
+import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
-import { propertyLabel } from '@/features/projects/services/preparation-card';
+import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import { propertyLabel } from '@/features/projects/services/property-label';
 
 const euro = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
 
 const formatDate = (iso: string | null): string | null =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : null;
 
-// Mission 53 §4 — la carte de Suivi : le bien, l'issue, le prix convenu (ou son absence),
-// les quatre chiffres figés et leurs écarts, la date, et le motif pour les « à relancer ».
+// « Vendu ailleurs » (parti) en rouge ; « retiré » (peut revenir) en gris neutre.
+const OUTCOME_BADGE: Record<ConclusionOutcome, string> = {
+  signed: badgeSelected,
+  follow_up: badgeBrand,
+  sold_elsewhere: badgeRejected,
+  withdrawn: badgeNeutral,
+};
+
+// Mission 53/54 — la carte de Suivi : le bien, l'issue (modifiable), le prix convenu (ou
+// son absence), les quatre chiffres figés et leurs écarts, les deux dates, et le motif.
 export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
   const { project, property, conclusion } = dossier;
   const bien = propertyLabel(property);
-  const signed = conclusion?.outcome === 'signed';
-  const followUp = conclusion?.outcome === 'follow_up';
+  const outcome = conclusion?.outcome ?? null;
   const price = conclusion?.commercializationPrice ?? null;
-  const date = formatDate(conclusion?.concludedAt ?? project.updated_at);
+  const meetingDate = formatDate(conclusion?.concludedAt ?? project.updated_at);
+  const changedDate = formatDate(conclusion?.outcomeChangedAt ?? null);
+  // Deux dates identiques = du bruit : on ne montre la seconde que si elle diffère.
+  const showChanged = changedDate != null && changedDate !== meetingDate;
 
   return (
     <li className={`${card} flex flex-col gap-4 p-5`}>
@@ -28,8 +48,9 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
             <span className="font-title text-xl font-semibold text-zinc-900 stage:text-white">
               {project.seller_name ?? 'Dossier vendeur'}
             </span>
-            {signed ? <span className={badgeSelected}>Mandat signé</span> : null}
-            {followUp ? <span className={badgeBrand}>À relancer</span> : null}
+            {outcome ? (
+              <span className={OUTCOME_BADGE[outcome]}>{OUTCOME_LABELS[outcome]}</span>
+            ) : null}
           </div>
           {bien ? (
             <span className="text-sm font-medium text-zinc-700 stage:text-white/80">{bien}</span>
@@ -50,11 +71,10 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
               </span>
             )}
           </span>
-          {date ? (
-            <span className="text-xs text-zinc-400 stage:text-white/40">
-              Rendez-vous conclu le {date}
-            </span>
-          ) : null}
+          <span className="text-xs text-zinc-400 stage:text-white/40">
+            {meetingDate ? `Rendez-vous conclu le ${meetingDate}` : null}
+            {showChanged ? ` · Issue changée le ${changedDate}` : null}
+          </span>
         </div>
         <Link href={`/builder/${project.id}`} className={btnSecondary}>
           Ouvrir le dossier
@@ -63,7 +83,7 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
 
       {conclusion ? <ConclusionAmountsPanel amounts={conclusion} /> : null}
 
-      {followUp && conclusion?.followUpReason ? (
+      {outcome === 'follow_up' && conclusion?.followUpReason ? (
         <div className="flex flex-col gap-1">
           <span className={metaLabel}>À relancer — ce qui retient le vendeur</span>
           <p className="text-sm whitespace-pre-wrap text-zinc-700 stage:text-white/80">
@@ -71,6 +91,12 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
           </p>
         </div>
       ) : null}
+
+      <SuiviIssueForm
+        projectId={project.id}
+        currentOutcome={outcome}
+        currentReason={conclusion?.followUpReason ?? null}
+      />
     </li>
   );
 }

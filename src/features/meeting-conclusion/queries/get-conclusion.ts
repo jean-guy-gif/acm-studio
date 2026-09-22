@@ -15,7 +15,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   const { data } = await supabase
     .from('project_meeting_conclusions')
     .select(
-      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, outcome, follow_up_reason, concluded_at',
+      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, outcome, follow_up_reason, concluded_at, outcome_changed_at',
     )
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
@@ -31,5 +31,6 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
     outcome: (data.outcome as MeetingConclusion['outcome']) ?? null,
     followUpReason: data.follow_up_reason,
     concludedAt: data.concluded_at,
+    outcomeChangedAt: data.outcome_changed_at,
   };
 }
