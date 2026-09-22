@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
+
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
 import { parseComparableForm } from '@/features/comparables/utils/comparable-input';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -110,6 +112,14 @@ export async function createComparable(
     return failureState;
   }
 
+  // MISSION 52 — un concurrent de plus peut compléter le dernier critère : le dossier
+  // bascule alors dans le Live (draft → ready). L'action redirige (pas de retour possible),
+  // donc la bascule s'annonce par un paramètre lu sur la liste des concurrents.
+  const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
+
   revalidatePath(`/builder/${projectId}/comparables`);
-  redirect(`/builder/${projectId}/comparables`);
+  revalidatePath(`/builder/${projectId}`);
+  revalidatePath('/builder');
+  revalidatePath('/live');
+  redirect(`/builder/${projectId}/comparables${becameReady ? '?bascule=1' : ''}`);
 }

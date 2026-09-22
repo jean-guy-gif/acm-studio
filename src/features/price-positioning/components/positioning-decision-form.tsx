@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/styles';
 import { AdvisorPrice } from '@/features/price-positioning/components/advisor-price';
 import { SellerPrice } from '@/features/price-positioning/components/seller-price';
+import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
 import {
@@ -35,6 +36,7 @@ type Props = {
   initialJustification: string;
   saveAction: (formData: FormData) => Promise<SavePositioningResult>;
   deleteAction: () => Promise<DeletePositioningResult>;
+  projectId: string;
 };
 
 export function PositioningDecisionForm({
@@ -47,8 +49,10 @@ export function PositioningDecisionForm({
   initialJustification,
   saveAction,
   deleteAction,
+  projectId,
 }: Props) {
   const router = useRouter();
+  const [becameReady, setBecameReady] = useState(false);
   const [advisorPrice, setAdvisorPrice] = useState<number | null>(initialAdvisorPrice);
   const [sellerPrice, setSellerPrice] = useState<number | null>(initialSellerPrice);
   const [justification, setJustification] = useState<string>(initialJustification);
@@ -82,6 +86,10 @@ export function PositioningDecisionForm({
       const result = await saveAction(formData);
       if (result.ok) {
         setMessage('Décision enregistrée.');
+        // La validation de la fourchette peut avoir fait basculer le dossier (§2).
+        if (result.becameReady) {
+          setBecameReady(true);
+        }
         router.refresh();
       } else {
         setError(result.error);
@@ -115,6 +123,7 @@ export function PositioningDecisionForm({
 
   return (
     <div className="flex flex-col gap-4">
+      {becameReady ? <BasculeBanner projectId={projectId} /> : null}
       <h2 className={sectionTitle}>Décision du conseiller</h2>
 
       <AdvisorPrice

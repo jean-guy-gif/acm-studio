@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { SubmitButton } from '@/components/submit-button';
 import {
   alertError,
-  badgeBrand,
   badgeNeutral,
   badgeSelected,
   btnDangerGhost,
@@ -16,23 +15,29 @@ import {
   pageTitle,
 } from '@/components/ui/styles';
 import { deleteProject } from '@/features/projects/actions/delete-project';
-import { getProjects } from '@/features/projects/queries/get-projects';
-import { statusLabel } from '@/features/projects/status-label';
+import {
+  declareProjectReady,
+  revertProjectToPreparation,
+} from '@/features/projects/actions/set-project-readiness';
+import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
+import {
+  advancementSteps,
+  fourchetteLabel,
+  propertyLabel,
+} from '@/features/projects/services/preparation-card';
 
 type BuilderPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; prets?: string }>;
 };
 
-// Couleur purement visuelle du badge de statut (les libellés viennent du
-// domaine, jamais inventés ici).
-const statusBadge = (status: string): string => {
-  if (status === 'ready_for_meeting') return badgeSelected;
-  if (status === 'meeting_completed') return badgeBrand;
-  return badgeNeutral;
-};
+const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors';
+const tabActive = `${tab} bg-brand text-white`;
+const tabIdle = `${tab} text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/55 stage:hover:bg-white/10`;
 
 export default async function BuilderPage({ searchParams }: BuilderPageProps) {
-  const [projects, { error }] = await Promise.all([getProjects(), searchParams]);
+  const { error, prets } = await searchParams;
+  const ready = prets === '1';
+  const dossiers = await getPreparationDossiers(ready);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -41,13 +46,22 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
           <span className={kickerLabel}>Dossiers vendeurs</span>
           <h1 className={pageTitle}>Préparation</h1>
           <p className={pageSubtitle}>
-            {projects.length === 0
-              ? 'Préparez ici vos rendez-vous vendeurs.'
-              : `${projects.length} dossier${projects.length > 1 ? 's' : ''} en cours dans votre agence.`}
+            {ready
+              ? 'Dossiers prêts : ils sont dans le Live, et restent modifiables ici.'
+              : 'Préparez ici vos rendez-vous vendeurs. Un dossier complet bascule tout seul dans le Live.'}
           </p>
         </div>
         <Link href="/builder/new" className={btnPrimary}>
           Nouveau dossier vendeur
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <Link href="/builder" className={ready ? tabIdle : tabActive}>
+          En cours
+        </Link>
+        <Link href="/builder?prets=1" className={ready ? tabActive : tabIdle}>
+          Prêts
         </Link>
       </div>
 
@@ -57,51 +71,126 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
         </p>
       ) : null}
 
-      {projects.length === 0 ? (
+      {dossiers.length === 0 ? (
         <div className={emptyState}>
-          <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
-            Aucun dossier vendeur.
-          </p>
-          <p>Créez votre premier dossier pour préparer un rendez-vous vendeur.</p>
-          <Link href="/builder/new" className={`${btnPrimary} mt-3`}>
-            Créer un dossier
-          </Link>
+          {ready ? (
+            <>
+              <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
+                Aucun dossier prêt.
+              </p>
+              <p>
+                Complétez un dossier (bien vendeur, au moins trois concurrents exploitables et
+                fourchette validée) : il basculera tout seul ici et dans le Live.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
+                Aucun dossier en cours.
+              </p>
+              <p>Créez un dossier pour préparer un rendez-vous vendeur.</p>
+              <Link href="/builder/new" className={`${btnPrimary} mt-3`}>
+                Créer un dossier
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {projects.map((project) => (
-            <li
-              key={project.id}
-              className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand sm:flex-row sm:items-center sm:justify-between sm:p-5 stage:hover:border-brand`}
-            >
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="font-title text-xl font-semibold text-zinc-900 stage:text-white">
-                    {project.seller_name}
+          {dossiers.map(({ project, property, fourchette, readiness }) => {
+            const bien = propertyLabel(property);
+            const fourchetteText = fourchetteLabel(fourchette);
+            return (
+              <li
+                key={project.id}
+                className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand sm:flex-row sm:items-center sm:justify-between sm:p-5 stage:hover:border-brand`}
+              >
+                <div className="flex min-w-0 flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="font-title text-xl font-semibold text-zinc-900 stage:text-white">
+                      {project.seller_name}
+                    </span>
+                    <span className={ready ? badgeSelected : badgeNeutral}>
+                      {ready ? 'Prêt pour le rendez-vous' : 'En préparation'}
+                    </span>
+                  </div>
+
+                  {/* Le bien — jamais inventé : rien ne s'affiche s'il n'est pas saisi. */}
+                  {bien ? (
+                    <span className="text-sm font-medium text-zinc-700 stage:text-white/80">
+                      {bien}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-zinc-400 italic stage:text-white/45">
+                      Bien vendeur non renseigné
+                    </span>
+                  )}
+
+                  {/* La fourchette du conseiller — écran conseiller, jamais le vendeur. */}
+                  <span className="text-sm text-zinc-500 stage:text-white/60">
+                    {fourchetteText ? (
+                      <>Fourchette conseiller : {fourchetteText}</>
+                    ) : (
+                      <span className="text-amber-700 stage:text-amber-300">
+                        Fourchette non saisie
+                      </span>
+                    )}
                   </span>
-                  <span className={statusBadge(project.status)}>{statusLabel(project.status)}</span>
+
+                  {/* L'avancement NOMMÉ : ce qui est fait, ce qui manque. */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                    {advancementSteps(readiness).map((step) => (
+                      <span
+                        key={step.label}
+                        className={
+                          step.done
+                            ? 'font-medium text-emerald-700 stage:text-emerald-300'
+                            : 'text-zinc-400 stage:text-white/45'
+                        }
+                      >
+                        {step.done ? `${step.label} ✓` : `${step.label} — à compléter`}
+                      </span>
+                    ))}
+                  </div>
+
+                  <span className="text-xs text-zinc-400 stage:text-white/40">
+                    {project.seller_email || 'E-mail non renseigné'} ·{' '}
+                    {project.seller_phone || 'Téléphone non renseigné'} · Créé le{' '}
+                    {new Date(project.created_at).toLocaleDateString('fr-FR')}
+                  </span>
                 </div>
-                <span className="truncate text-sm text-zinc-500 stage:text-white/55">
-                  {project.seller_email || 'E-mail non renseigné'} ·{' '}
-                  {project.seller_phone || 'Téléphone non renseigné'}
-                </span>
-                <span className="text-xs text-zinc-400 stage:text-white/40">
-                  Créé le {new Date(project.created_at).toLocaleDateString('fr-FR')}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Link href={`/builder/${project.id}`} className={btnSecondary}>
-                  Ouvrir le dossier
-                </Link>
-                <form action={deleteProject}>
-                  <input type="hidden" name="projectId" value={project.id} />
-                  <SubmitButton pendingLabel="Suppression…" className={btnDangerGhost}>
-                    Supprimer
-                  </SubmitButton>
-                </form>
-              </div>
-            </li>
-          ))}
+
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <Link href={`/builder/${project.id}`} className={btnSecondary}>
+                    Ouvrir le dossier
+                  </Link>
+                  {ready ? (
+                    <form action={revertProjectToPreparation}>
+                      <input type="hidden" name="projectId" value={project.id} />
+                      <SubmitButton pendingLabel="…" className={btnDangerGhost}>
+                        Remettre en préparation
+                      </SubmitButton>
+                    </form>
+                  ) : (
+                    <>
+                      <form action={declareProjectReady}>
+                        <input type="hidden" name="projectId" value={project.id} />
+                        <SubmitButton pendingLabel="…" className={btnSecondary}>
+                          Déclarer prêt
+                        </SubmitButton>
+                      </form>
+                      <form action={deleteProject}>
+                        <input type="hidden" name="projectId" value={project.id} />
+                        <SubmitButton pendingLabel="Suppression…" className={btnDangerGhost}>
+                          Supprimer
+                        </SubmitButton>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

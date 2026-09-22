@@ -75,6 +75,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         condominium={condominium}
         saveCondominiumAction={saveCondominium}
         findHref={`/builder/${projectId}/comparables/find`}
+        projectId={projectId}
       />
     </div>
   );
