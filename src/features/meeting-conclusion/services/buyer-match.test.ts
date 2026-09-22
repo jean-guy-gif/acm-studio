@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import {
   matchBuyerAgainstSuivi,
+  noneOfTypeLabel,
   referencePrice,
+  suiviComposition,
+  typeCountLabel,
   type BuyerCriteria,
 } from '@/features/meeting-conclusion/services/buyer-match';
 import type { ConclusionOutcome, MeetingConclusion } from '@/features/meeting-conclusion/types';
@@ -98,6 +101,39 @@ describe('buyer-match — LE TYPE FILTRE, IL NE PONDÈRE PAS (M50 §3)', () => {
     ]);
     expect(ranked).toHaveLength(3);
     expect(unclassified).toHaveLength(0);
+  });
+});
+
+describe('buyer-match — dire ce que le Suivi CONTIENT, pas seulement ce qui manque', () => {
+  it('résume la composition du Suivi par type', () => {
+    const composition = suiviComposition([
+      dossier('a1', { propertyType: 'Appartement' }),
+      dossier('a2', { propertyType: 'Studio' }), // studio → apartment (vocabulaire commun)
+      dossier('m1', { propertyType: 'Maison' }),
+      dossier('x1', { propertyType: null }),
+    ]);
+    expect(composition.byType).toEqual([
+      { type: 'apartment', count: 2 },
+      { type: 'house', count: 1 },
+    ]);
+    expect(composition.unclassifiedCount).toBe(1);
+  });
+
+  it('nomme les types en français (genre, pluriel)', () => {
+    expect(typeCountLabel({ type: 'apartment', count: 3 })).toBe('3 appartements');
+    expect(typeCountLabel({ type: 'house', count: 1 })).toBe('1 maison');
+    expect(noneOfTypeLabel('house')).toBe('aucune maison');
+    expect(noneOfTypeLabel('apartment')).toBe('aucun appartement');
+  });
+
+  it('une recherche « maison » sur un Suivi d’appartements rend 0 classé + la composition', () => {
+    const result = matchBuyerAgainstSuivi({ ...BUYER, propertyType: 'maison' }, [
+      dossier('a1', { propertyType: 'Appartement', commercializationPrice: 480000 }),
+      dossier('a2', { propertyType: 'Appartement', commercializationPrice: 490000 }),
+    ]);
+    expect(result.requestedType).toBe('house');
+    expect(result.ranked).toHaveLength(0);
+    expect(result.composition.byType).toEqual([{ type: 'apartment', count: 2 }]);
   });
 });
 

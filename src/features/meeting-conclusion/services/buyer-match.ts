@@ -95,9 +95,60 @@ function enrichGap(label: string, criteria: ScoringCriteria, facts: CandidateFac
 // un dossier sans type normalisable n'est pas mêlé au classement — il est mis à part sous
 // sa mention, à charge du conseiller de juger.
 export type BuyerMatchResult = {
+  requestedType: string | null; // type normalisé recherché, null si champ vide/non reconnu
   ranked: BuyerMatch[];
   unclassified: BuyerMatch[];
+  composition: SuiviComposition; // ce que le Suivi CONTIENT (pour dire pourquoi c'est vide)
 };
+
+// La composition du Suivi par type — pour dire au conseiller ce qu'il A, pas seulement ce
+// qu'il n'a pas. « aucune maison — 3 appartements » vaut mieux que « aucun résultat ».
+export type TypeCount = { type: string; count: number };
+export type SuiviComposition = { byType: TypeCount[]; unclassifiedCount: number };
+
+export function suiviComposition(dossiers: SuiviDossier[]): SuiviComposition {
+  const counts = new Map<string, number>();
+  let unclassifiedCount = 0;
+  for (const dossier of dossiers) {
+    const type = normalizePropertyType(dossier.property?.propertyType ?? null);
+    if (type == null) {
+      unclassifiedCount += 1;
+    } else {
+      counts.set(type, (counts.get(type) ?? 0) + 1);
+    }
+  }
+  const byType = [...counts.entries()]
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+  return { byType, unclassifiedCount };
+}
+
+// Les libellés français des types (genre + singulier/pluriel) — pour « aucune maison » et
+// « 3 appartements ». Un type hors table retombe sur un libellé neutre.
+const TYPE_FR: Record<string, { feminine: boolean; singular: string; plural: string }> = {
+  apartment: { feminine: false, singular: 'appartement', plural: 'appartements' },
+  house: { feminine: true, singular: 'maison', plural: 'maisons' },
+  land: { feminine: false, singular: 'terrain', plural: 'terrains' },
+  building: { feminine: false, singular: 'immeuble', plural: 'immeubles' },
+  commercial: { feminine: false, singular: 'local commercial', plural: 'locaux commerciaux' },
+  parking: { feminine: false, singular: 'parking', plural: 'parkings' },
+};
+
+// « 3 appartements », « 1 maison ».
+export function typeCountLabel({ type, count }: TypeCount): string {
+  const fr = TYPE_FR[type];
+  const noun = fr ? (count > 1 ? fr.plural : fr.singular) : count > 1 ? 'biens' : 'bien';
+  return `${count} ${noun}`;
+}
+
+// « aucune maison » / « aucun appartement ».
+export function noneOfTypeLabel(requestedType: string): string {
+  const fr = TYPE_FR[requestedType];
+  if (!fr) {
+    return 'aucun bien de ce type';
+  }
+  return `${fr.feminine ? 'aucune' : 'aucun'} ${fr.singular}`;
+}
 
 function buildMatch(
   dossier: SuiviDossier,
@@ -167,5 +218,5 @@ export function matchBuyerAgainstSuivi(
   // Les mieux rapprochés d'abord ; aucun classé n'est retiré (le conseiller tranche).
   ranked.sort((a, b) => b.score - a.score);
   unclassified.sort((a, b) => b.score - a.score);
-  return { ranked, unclassified };
+  return { requestedType, ranked, unclassified, composition: suiviComposition(dossiers) };
 }
