@@ -15,7 +15,7 @@ import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-sui
 import {
   matchBuyerAgainstSuivi,
   type BuyerCriteria,
-  type BuyerMatch,
+  type BuyerMatchResult,
 } from '@/features/meeting-conclusion/services/buyer-match';
 
 const num = (value: FormDataEntryValue | null): number | null => {
@@ -37,7 +37,7 @@ const text = (value: FormDataEntryValue | null): string | null => {
 // acheteur). Le rapprochement (matchBuyerAgainstSuivi) réutilise le moteur des concurrents
 // et tourne côté client — l'écran est advisor-only, les prix de référence y sont déjà.
 export function BuyerSearchPanel({ dossiers }: { dossiers: SuiviDossier[] }) {
-  const [matches, setMatches] = useState<BuyerMatch[] | null>(null);
+  const [result, setResult] = useState<BuyerMatchResult | null>(null);
 
   return (
     <section className={`${card} flex flex-col gap-4 p-5`}>
@@ -62,7 +62,7 @@ export function BuyerSearchPanel({ dossiers }: { dossiers: SuiviDossier[] }) {
             budgetMax: num(formData.get('budgetMax')),
             city: text(formData.get('city')),
           };
-          setMatches(matchBuyerAgainstSuivi(criteria, dossiers));
+          setResult(matchBuyerAgainstSuivi(criteria, dossiers));
         }}
       >
         <label className="flex flex-col gap-1.5">
@@ -96,24 +96,40 @@ export function BuyerSearchPanel({ dossiers }: { dossiers: SuiviDossier[] }) {
         </div>
       </form>
 
-      {matches != null ? (
-        matches.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <span className={metaLabel}>
-              {matches.length} dossier{matches.length > 1 ? 's' : ''} du Suivi, du plus proche au
-              plus éloigné
-            </span>
-            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {matches.map((match) => (
-                <BuyerMatchCard key={match.dossier.project.id} match={match} />
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p className="text-sm text-zinc-500 stage:text-white/60">
-            Aucun dossier dans le Suivi pour le moment.
-          </p>
-        )
+      {result != null ? (
+        <div className="flex flex-col gap-4">
+          {result.ranked.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <span className={metaLabel}>
+                {result.ranked.length} dossier{result.ranked.length > 1 ? 's' : ''} du même type, du
+                plus proche au plus éloigné
+              </span>
+              <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {result.ranked.map((match) => (
+                  <BuyerMatchCard key={match.dossier.project.id} match={match} />
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 stage:text-white/60">
+              Aucun dossier du type recherché dans le Suivi.
+            </p>
+          )}
+
+          {/* §3.2 — les dossiers sans type normalisable, À PART, jamais mêlés au classement. */}
+          {result.unclassified.length > 0 ? (
+            <div className="flex flex-col gap-2 border-t border-zinc-100 pt-4 stage:border-white/10">
+              <span className={metaLabel}>
+                Type non renseigné — à vérifier ({result.unclassified.length})
+              </span>
+              <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {result.unclassified.map((match) => (
+                  <BuyerMatchCard key={match.dossier.project.id} match={match} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

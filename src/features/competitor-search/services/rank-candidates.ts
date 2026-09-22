@@ -5,6 +5,7 @@ import {
 } from '@/features/competitor-search/services/learn-from-decisions';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
 import type {
   CompetitorSearchCriteria,
   PortalSearchResult,
@@ -44,13 +45,10 @@ export function rankCandidates(
       }
       // §5 point 8 — le type de bien n'est JAMAIS relâché : un appartement ne
       // concurrence pas une maison. Un type DIFFÉRENT du bien vendeur n'entre pas
-      // dans la liste, quel que soit son score. Type inconnu (non publié ou bien
-      // vendeur sans type) → on garde, on n'exclut pas pour une absence.
-      if (
-        subjectType != null &&
-        candidate.propertyType != null &&
-        candidate.propertyType !== subjectType
-      ) {
+      // dans la liste, quel que soit son score (même garde partagée que la recherche
+      // acheteur). Type inconnu (non publié ou bien vendeur sans type) → on garde, on
+      // n'exclut pas pour une absence.
+      if (typesConflict(subjectType, candidate.propertyType)) {
         continue;
       }
       seen.add(candidate.url);

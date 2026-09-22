@@ -50,14 +50,62 @@ const BUYER: BuyerCriteria = {
   city: 'Nice',
 };
 
+describe('buyer-match — LE TYPE FILTRE, IL NE PONDÈRE PAS (M50 §3)', () => {
+  it('une recherche « maison » ne classe AUCUN dossier apartment, quel que soit son score', () => {
+    // Un appartement qui matche prix + surface + commune + pièces (~85 pts chez le score) :
+    // il ne doit PAS sortir pour une recherche « maison ».
+    const parfaitApart = dossier('apart-parfait', {
+      propertyType: 'Appartement',
+      surfaceArea: 60,
+      roomsCount: 3,
+      city: 'Nice',
+      commercializationPrice: 480000,
+    });
+    const uneMaison = dossier('maison', {
+      propertyType: 'Maison',
+      surfaceArea: 60,
+      roomsCount: 3,
+      city: 'Nice',
+      commercializationPrice: 480000,
+    });
+
+    const { ranked, unclassified } = matchBuyerAgainstSuivi(
+      { ...BUYER, propertyType: 'maison', surfaceArea: 60, budgetMin: 454000, budgetMax: 520000 },
+      [parfaitApart, uneMaison],
+    );
+
+    // Aucun apartment dans le classement, ni dans les « à part ».
+    const ids = [...ranked, ...unclassified].map((m) => m.dossier.project.id);
+    expect(ids).not.toContain('apart-parfait');
+    // La maison, elle, est classée.
+    expect(ranked.map((m) => m.dossier.project.id)).toEqual(['maison']);
+  });
+
+  it('type demandé + dossier SANS type normalisable → mis à part, pas exclu, pas classé', () => {
+    const sansType = dossier('sans-type', { propertyType: null, commercializationPrice: 350000 });
+    const apart = dossier('apart', { propertyType: 'Appartement', commercializationPrice: 360000 });
+
+    const { ranked, unclassified } = matchBuyerAgainstSuivi(BUYER, [sansType, apart]);
+    expect(ranked.map((m) => m.dossier.project.id)).toEqual(['apart']);
+    expect(unclassified.map((m) => m.dossier.project.id)).toEqual(['sans-type']);
+  });
+
+  it('type NON demandé (champ vide) → aucun filtre, tous les types classés', () => {
+    const { ranked, unclassified } = matchBuyerAgainstSuivi({ ...BUYER, propertyType: null }, [
+      dossier('apart', { propertyType: 'Appartement', commercializationPrice: 360000 }),
+      dossier('maison', { propertyType: 'Maison', commercializationPrice: 360000 }),
+      dossier('sans-type', { propertyType: null, commercializationPrice: 360000 }),
+    ]);
+    expect(ranked).toHaveLength(3);
+    expect(unclassified).toHaveLength(0);
+  });
+});
+
 describe('buyer-match (§6.5) — la référence de prix est nommée', () => {
   it('un dossier signé prend le prix CONVENU ; sinon le prix CONSEILLÉ ; sinon rien', () => {
     expect(
       referencePrice(dossier('a', { commercializationPrice: 500000, advisorPrice: 510000 })),
-    ).toEqual({
-      kind: 'convenu',
-      value: 500000,
-    });
+    ).toEqual({ kind: 'convenu', value: 500000 });
     expect(
       referencePrice(
         dossier('b', { outcome: 'follow_up', commercializationPrice: null, advisorPrice: 510000 }),
@@ -68,48 +116,33 @@ describe('buyer-match (§6.5) — la référence de prix est nommée', () => {
     ).toEqual({ kind: null, value: null });
   });
 
-  it('le rapprochement porte la nature du prix de référence sur chaque carte', () => {
-    const matches = matchBuyerAgainstSuivi(BUYER, [
-      dossier('signe', { commercializationPrice: 380000 }),
-      dossier('relance', { outcome: 'follow_up', advisorPrice: 390000 }),
+  it('le rapprochement porte la nature du prix de référence sur chaque carte classée', () => {
+    const { ranked } = matchBuyerAgainstSuivi(BUYER, [
+      dossier('signe', { propertyType: 'Appartement', commercializationPrice: 380000 }),
+      dossier('relance', {
+        propertyType: 'Appartement',
+        outcome: 'follow_up',
+        advisorPrice: 390000,
+      }),
     ]);
-    const byId = Object.fromEntries(matches.map((m) => [m.dossier.project.id, m]));
+    const byId = Object.fromEntries(ranked.map((m) => [m.dossier.project.id, m]));
     expect(byId.signe.reference.kind).toBe('convenu');
     expect(byId.relance.reference.kind).toBe('conseille');
   });
 });
 
-describe('buyer-match (§6.4) — un type non normalisable n’est pas écarté en silence', () => {
-  it('le dossier apparaît dans les résultats, avec sa mention « type non reconnu »', () => {
-    const matches = matchBuyerAgainstSuivi(BUYER, [
-      dossier('bizarre', { propertyType: 'truc indéfini', commercializationPrice: 350000 }),
-    ]);
-    expect(matches).toHaveLength(1); // pas exclu
-    expect(matches[0].typeUnrecognized).toBe(true);
-  });
-
-  it('un dossier sans aucun prix de référence apparaît quand même (mention, pas exclusion)', () => {
-    const matches = matchBuyerAgainstSuivi(BUYER, [
-      dossier('sansprix', { commercializationPrice: null, advisorPrice: null }),
-    ]);
-    expect(matches).toHaveLength(1);
-    expect(matches[0].reference.kind).toBeNull();
-  });
-});
-
 describe('buyer-match — l’écart CHIFFRÉ lit les mêmes entrées que le score', () => {
   it('chiffre le dépassement de budget et l’écart de surface quand le score les classe dehors', () => {
-    // Prix 500 000 vs budget max 400 000 (25 % au-dessus → hors tolérance) ;
-    // surface 120 vs 80 recherchés (50 % → très différente).
-    const [match] = matchBuyerAgainstSuivi(BUYER, [
+    const { ranked } = matchBuyerAgainstSuivi(BUYER, [
       dossier('loin', {
+        propertyType: 'Appartement',
         surfaceArea: 120,
         roomsCount: 3,
         city: 'Nice',
         commercializationPrice: 500000,
       }),
     ]);
-    const details = match.weaknesses.map((w) => w.detail).filter((d): d is string => d != null);
+    const details = ranked[0].weaknesses.map((w) => w.detail).filter((d): d is string => d != null);
     expect(
       details.some((d) => /100\s?000\s?€.*au-dessus du budget/.test(d.replace(/ /g, ' '))),
     ).toBe(true);
@@ -117,17 +150,16 @@ describe('buyer-match — l’écart CHIFFRÉ lit les mêmes entrées que le sco
   });
 
   it('ne chiffre pas un bien que le score compte dans la tolérance (pas de contradiction)', () => {
-    // Prix 440 000 : 10 % au-dessus de 400 000 → « Proche de la fourchette » (force du score),
-    // donc PAS une faiblesse « au-dessus du budget ».
-    const [match] = matchBuyerAgainstSuivi(BUYER, [
+    const { ranked } = matchBuyerAgainstSuivi(BUYER, [
       dossier('proche', {
+        propertyType: 'Appartement',
         surfaceArea: 80,
         roomsCount: 3,
         city: 'Nice',
         commercializationPrice: 440000,
       }),
     ]);
-    const details = match.weaknesses.map((w) => w.detail ?? w.label);
+    const details = ranked[0].weaknesses.map((w) => w.detail ?? w.label);
     expect(details.some((d) => /budget/.test(d))).toBe(false);
   });
 });
