@@ -4,6 +4,7 @@ import type {
 } from '@/features/competitor-search/services/score-candidate';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 
 // Mission 54 §3 — la recherche acheteur RÉUTILISE le moteur de rapprochement des
@@ -89,46 +90,82 @@ function enrichGap(label: string, criteria: ScoringCriteria, facts: CandidateFac
   return { label, detail: null };
 }
 
-// Rapproche l'acheteur de TOUT le Suivi (§3). Aucun dossier écarté : un sans prix de
-// référence, un type non reconnu, apparaissent avec leur mention — le conseiller juge.
+// Le résultat sépare le CLASSEMENT des dossiers MIS À PART. Un dossier d'un type
+// DIFFÉRENT de celui demandé ne figure NULLE PART (le type filtre, il ne pondère pas) ;
+// un dossier sans type normalisable n'est pas mêlé au classement — il est mis à part sous
+// sa mention, à charge du conseiller de juger.
+export type BuyerMatchResult = {
+  ranked: BuyerMatch[];
+  unclassified: BuyerMatch[];
+};
+
+function buildMatch(
+  dossier: SuiviDossier,
+  scoringCriteria: ScoringCriteria,
+  dossierType: string | null,
+): BuyerMatch {
+  const reference = referencePrice(dossier);
+  const facts: CandidateFacts = {
+    price: reference.value,
+    surfaceArea: dossier.property?.surfaceArea ?? null,
+    roomsCount: dossier.property?.roomsCount ?? null,
+    city: dossier.property?.city ?? null,
+    district: null,
+    propertyType: dossierType,
+  };
+  const scored = scoreCandidate(scoringCriteria, facts);
+  return {
+    dossier,
+    score: scored.score,
+    comparedFacets: scored.comparedFacets,
+    reference,
+    typeUnrecognized: (dossier.property?.propertyType ?? null) != null && dossierType == null,
+    strengths: scored.strengths,
+    weaknesses: scored.weaknesses.map((label) => enrichGap(label, scoringCriteria, facts)),
+  };
+}
+
+// Mission 50 §3 / Mission 54 — LE TYPE FILTRE, IL NE PONDÈRE PAS.
+// - Type demandé + dossier d'un AUTRE type connu → écarté (n'entre ni dans le classement
+//   ni dans les « à part »), quel que soit son score.
+// - Type demandé + dossier SANS type normalisable → mis à part (« type non renseigné »).
+// - Type non demandé (champ vide, ou saisie non normalisable) → aucun filtre, tout est classé.
 export function matchBuyerAgainstSuivi(
   criteria: BuyerCriteria,
   dossiers: SuiviDossier[],
-): BuyerMatch[] {
+): BuyerMatchResult {
+  const requestedType = normalizePropertyType(criteria.propertyType);
   const scoringCriteria: ScoringCriteria = {
     city: criteria.city,
     district: null,
-    propertyType: normalizePropertyType(criteria.propertyType),
+    propertyType: requestedType,
     surfaceArea: criteria.surfaceArea,
     roomsCount: criteria.roomsCount,
     advisorPriceMin: criteria.budgetMin,
     advisorPriceMax: criteria.budgetMax,
   };
 
-  const matches = dossiers.map((dossier): BuyerMatch => {
-    const reference = referencePrice(dossier);
-    const rawType = dossier.property?.propertyType ?? null;
-    const facts: CandidateFacts = {
-      price: reference.value,
-      surfaceArea: dossier.property?.surfaceArea ?? null,
-      roomsCount: dossier.property?.roomsCount ?? null,
-      city: dossier.property?.city ?? null,
-      district: null,
-      propertyType: normalizePropertyType(rawType),
-    };
-    const scored = scoreCandidate(scoringCriteria, facts);
-    return {
-      dossier,
-      score: scored.score,
-      comparedFacets: scored.comparedFacets,
-      reference,
-      typeUnrecognized: rawType != null && normalizePropertyType(rawType) == null,
-      strengths: scored.strengths,
-      weaknesses: scored.weaknesses.map((label) => enrichGap(label, scoringCriteria, facts)),
-    };
-  });
+  const ranked: BuyerMatch[] = [];
+  const unclassified: BuyerMatch[] = [];
 
-  // Les mieux rapprochés d'abord ; aucun n'est retiré (le conseiller tranche).
-  matches.sort((a, b) => b.score - a.score);
-  return matches;
+  for (const dossier of dossiers) {
+    const dossierType = normalizePropertyType(dossier.property?.propertyType ?? null);
+    if (requestedType != null) {
+      // Un type CONNU et différent : le dossier ne sort pas, quel que soit son score.
+      if (typesConflict(requestedType, dossierType)) {
+        continue;
+      }
+      // Type demandé mais dossier sans type normalisable : à part, jamais dans le classement.
+      if (dossierType == null) {
+        unclassified.push(buildMatch(dossier, scoringCriteria, dossierType));
+        continue;
+      }
+    }
+    ranked.push(buildMatch(dossier, scoringCriteria, dossierType));
+  }
+
+  // Les mieux rapprochés d'abord ; aucun classé n'est retiré (le conseiller tranche).
+  ranked.sort((a, b) => b.score - a.score);
+  unclassified.sort((a, b) => b.score - a.score);
+  return { ranked, unclassified };
 }
