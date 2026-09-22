@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
+
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
@@ -13,7 +15,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type ImportAndCreateResult =
-  { ok: true; name: string | null } | { ok: false; error: string };
+  { ok: true; name: string | null; becameReady?: boolean } | { ok: false; error: string };
 
 const GENERIC_ERROR = 'L’import de cette annonce a échoué.';
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
@@ -99,8 +101,14 @@ export async function importAndCreateComparable(
       is_selected: true,
     });
     if (!error) {
+      // MISSION 52 — un concurrent importé peut compléter le dernier critère → bascule
+      // automatique du dossier dans le Live (draft → ready).
+      const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
       revalidatePath(`/builder/${projectId}/comparables`);
-      return { ok: true, name: input.title };
+      revalidatePath(`/builder/${projectId}`);
+      revalidatePath('/builder');
+      revalidatePath('/live');
+      return { ok: true, name: input.title, becameReady };
     }
     if (error.code !== '23505') {
       return { ok: false, error: GENERIC_ERROR };

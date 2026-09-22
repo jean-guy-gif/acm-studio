@@ -262,6 +262,7 @@ function PropertyScreen() {
       <Header back="Retour au dossier" kicker="Dossier · M. et Mme Démo" title="Bien vendeur" />
       <SubjectPropertyForm
         property={demoProperty}
+        projectId="design-preview"
         saveAction={previewSaveProperty}
         photos={[]}
         uploadPhotosAction={previewUploadPropertyPhotos}
@@ -448,6 +449,7 @@ function PositioningScreen() {
           </div>
           <PositioningDecisionForm
             range={positioning.recommendedRange}
+            projectId="design-preview"
             defaultAdvisorPrice={
               positioning.defaultAdvisorPrice ?? positioning.recommendedRange.central
             }

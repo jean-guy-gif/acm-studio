@@ -134,6 +134,7 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
             initialJustification={saved?.justification ?? ''}
             saveAction={saveAction}
             deleteAction={deleteAction}
+            projectId={projectId}
           />
 
           {/* 4. Saved decision */}

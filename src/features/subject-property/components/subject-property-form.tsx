@@ -20,6 +20,7 @@ import { PropertyLocationFields } from '@/features/subject-property/components/p
 import { PropertyPriceRangeStep } from '@/features/subject-property/components/property-price-range-step';
 import { NumberField, TextField } from '@/features/subject-property/components/property-inputs';
 import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
+import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { SubjectProperty } from '@/features/subject-property/types';
 import type { SubjectPropertyImportPrefill } from '@/features/subject-property-import/types';
 import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
@@ -115,6 +116,7 @@ export function SubjectPropertyForm({
   updatePhotosAction,
   imported,
   findHref,
+  projectId,
 }: {
   property: SubjectProperty | null;
   saveAction: (formData: FormData) => Promise<SaveSubjectPropertyResult>;
@@ -125,8 +127,10 @@ export function SubjectPropertyForm({
   // for a purely manual sheet and for the design preview.
   imported?: SubjectPropertyImportPrefill;
   findHref?: string;
+  projectId: string;
 }) {
   const router = useRouter();
+  const [becameReady, setBecameReady] = useState(false);
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
   const [outdoorSpaces, setOutdoorSpaces] = useState<string[]>(() =>
     initialArray(imported?.outdoor_spaces, property?.outdoor_spaces),
@@ -169,6 +173,9 @@ export function SubjectPropertyForm({
       if (result.ok) {
         setErrors({});
         setMessage('Bien vendeur enregistré.');
+        if (result.becameReady) {
+          setBecameReady(true);
+        }
         router.refresh();
       } else {
         setErrors(result.fieldErrors ?? {});
@@ -179,6 +186,7 @@ export function SubjectPropertyForm({
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
+      {becameReady ? <BasculeBanner projectId={projectId} /> : null}
       {banner ? (
         <p role="alert" className={alertError}>
           {banner}

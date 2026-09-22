@@ -50,6 +50,7 @@ export function SubjectPropertyImportForm({
   condominium,
   saveCondominiumAction,
   findHref,
+  projectId,
 }: {
   property: SubjectProperty | null;
   saveAction: (formData: FormData) => Promise<SaveSubjectPropertyResult>;
@@ -66,6 +67,7 @@ export function SubjectPropertyImportForm({
   condominium: SubjectPropertyCondominium | null;
   saveCondominiumAction: (formData: FormData) => Promise<SaveCondominiumResult>;
   findHref: string;
+  projectId: string;
 }) {
   const [imported, setImported] = useState<SubjectPropertyImportPrefill | null>(null);
   const [importedDiagnostics, setImportedDiagnostics] = useState<BrochureDiagnosticsPrefill | null>(
@@ -110,6 +112,7 @@ export function SubjectPropertyImportForm({
         updatePhotosAction={updatePhotosAction}
         imported={imported ?? undefined}
         findHref={findHref}
+        projectId={projectId}
       />
 
       {property ? (

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
+
 import {
   validateSubjectProperty,
   type RawSubjectPropertyInput,
@@ -10,7 +12,8 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type SaveSubjectPropertyResult =
-  { ok: true } | { ok: false; error?: string; fieldErrors?: Record<string, string> };
+  | { ok: true; becameReady?: boolean }
+  | { ok: false; error?: string; fieldErrors?: Record<string, string> };
 
 function textOrNull(value: FormDataEntryValue | null): string | null {
   const text = String(value ?? '').trim();
@@ -112,7 +115,14 @@ export async function saveSubjectProperty(
     return { ok: false, error: 'L’enregistrement du bien a échoué.' };
   }
 
+  // MISSION 52 — le bien vendeur vient d'être enregistré : si les trois critères sont
+  // désormais réunis, le dossier bascule tout seul dans le Live (draft → ready). La liste
+  // de Préparation et celle du Live changent donc aussi.
+  const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
+
   revalidatePath(`/builder/${projectId}`);
   revalidatePath(`/builder/${projectId}/property`);
-  return { ok: true };
+  revalidatePath('/builder');
+  revalidatePath('/live');
+  return { ok: true, becameReady };
 }

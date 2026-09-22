@@ -10,13 +10,13 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
-import { getProjects } from '@/features/projects/queries/get-projects';
+import { getReadyProjects } from '@/features/projects/queries/get-ready-projects';
 import { statusLabel } from '@/features/projects/status-label';
 
-// Rampe de lancement du Live : on choisit le dossier, la scène s'ouvre plein
-// cadre. Aucune donnée nouvelle — la même liste de dossiers que la Préparation.
+// Rampe de lancement du Live : on choisit le dossier, la scène s'ouvre plein cadre.
+// MISSION 52 — que des dossiers PRÊTS (filtre sur status), jamais de brouillon.
 export default async function LivePage() {
-  const projects = await getProjects();
+  const projects = await getReadyProjects();
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -32,10 +32,11 @@ export default async function LivePage() {
       {projects.length === 0 ? (
         <div className={emptyState}>
           <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
-            Aucun dossier vendeur à présenter.
+            Aucun dossier prêt pour le moment.
           </p>
           <p>
-            Créez d&apos;abord un dossier dans la{' '}
+            Un dossier apparaît ici dès qu&apos;il est prêt : bien vendeur, au moins trois
+            concurrents exploitables et fourchette validée. Terminez-en un dans la{' '}
             <Link href="/builder" className={link}>
               Préparation
             </Link>

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getComparables } from '@/features/comparables/queries/get-comparables';
+import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 import { parseDecisionInput } from '@/features/price-positioning/actions/parse-decision-input';
 import { buildPositioningSnapshot } from '@/features/price-positioning/services/build-positioning-snapshot';
 import { calculatePricePositioning } from '@/features/price-positioning/services/calculate-price-positioning';
@@ -12,7 +13,8 @@ import type { Database } from '@/lib/supabase/database.types';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
-export type SavePositioningResult = { ok: true } | { ok: false; error: string };
+export type SavePositioningResult =
+  { ok: true; becameReady?: boolean } | { ok: false; error: string };
 
 type PositioningInsert = Database['public']['Tables']['project_price_positionings']['Insert'];
 
@@ -97,6 +99,14 @@ export async function savePricePositioning(
     return { ok: false, error: 'L’enregistrement a échoué. Vérifiez les données et réessayez.' };
   }
 
+  // MISSION 52 — la fourchette est le plus souvent le DERNIER critère : sa validation
+  // fait basculer le dossier dans le Live (draft → ready), sans clic. On le signale à
+  // l'écran (becameReady) et on rafraîchit les deux listes.
+  const becameReady = await maybePromoteToReady(userClient, projectId, profile.agency_id);
+
   revalidatePath(`/builder/${projectId}/comparables/positioning`);
-  return { ok: true };
+  revalidatePath(`/builder/${projectId}`);
+  revalidatePath('/builder');
+  revalidatePath('/live');
+  return { ok: true, becameReady };
 }

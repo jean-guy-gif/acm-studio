@@ -230,6 +230,22 @@ Never expose data across agencies.
 
 Use soft delete when possible.
 
+### `projects.status` — cycle de vie
+
+`projects.status` est la seule vérité de l'état d'un dossier.
+
+- Le runtime n'écrit que `draft` (en préparation) et `ready_for_meeting` (prêt).
+  La readiness (bien vendeur + ≥ 3 concurrents exploitables + fourchette) DÉCLENCHE
+  l'écriture de `ready_for_meeting`, elle ne remplace pas l'état.
+- Une donnée retirée ensuite ne dé-prête RIEN : on n'écrit jamais `draft`
+  automatiquement.
+- Un backfill ne falsifie JAMAIS un état terminal (`meeting_completed`, `archived`) :
+  il ne les repousse pas vers `draft`/`ready_for_meeting`.
+- `archived` = soft delete : invisible par conception.
+- Aucun dossier NON terminal ne doit devenir invisible. Si un jour `meeting_completed`
+  ou `archived` sont réellement produits, c'est l'écran qui les montre quelque part —
+  jamais le backfill qui les normalise.
+
 ---
 
 ## AI rules

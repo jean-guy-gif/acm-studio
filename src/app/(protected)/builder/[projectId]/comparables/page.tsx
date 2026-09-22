@@ -23,12 +23,13 @@ import { RejectedComparablesList } from '@/features/comparables/components/rejec
 import { SelectedComparablesList } from '@/features/comparables/components/selected-comparables-list';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
+import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 
 type ComparablesPageProps = {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; bascule?: string }>;
 };
 
 export default async function ComparablesPage({ params, searchParams }: ComparablesPageProps) {
@@ -39,7 +40,7 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
     notFound();
   }
 
-  const [comparables, subjectProperty, { error }] = await Promise.all([
+  const [comparables, subjectProperty, { error, bascule }] = await Promise.all([
     getComparables(projectId),
     getSubjectProperty(projectId),
     searchParams,
@@ -80,6 +81,8 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           </Link>
         </div>
       </div>
+
+      {bascule === '1' ? <BasculeBanner projectId={projectId} /> : null}
 
       {error ? (
         <p role="alert" className={alertError}>
