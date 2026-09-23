@@ -24,10 +24,19 @@ describe('Logo — ratio préservé, jamais déformé', () => {
     }
   });
 
-  it('sans logo agence, retombe sur le logo Start Academy (largeur auto)', () => {
+  it('contexte PRODUIT (sans nom d’agence) : retombe sur le logo Start Academy', () => {
     const html = renderToStaticMarkup(createElement(Logo, {}));
     const img = html.match(/<img[^>]*>/)?.[0] ?? '';
     expect(img).toContain('w-auto');
     expect(img).toMatch(/start-academy-logo/);
+  });
+
+  it('contexte AGENCE sans logo : le NOM de l’agence en texte, JAMAIS Start Academy', () => {
+    const html = renderToStaticMarkup(
+      createElement(Logo, { fallbackName: 'ACME IMMO', className: 'h-9' }),
+    );
+    expect(html).toContain('ACME IMMO');
+    expect(html).not.toMatch(/start-academy-logo/);
+    expect(html).not.toMatch(/<img/); // aucun logo produit devant le vendeur
   });
 });

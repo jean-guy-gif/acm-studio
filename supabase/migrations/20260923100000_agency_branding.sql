@@ -48,33 +48,13 @@ revoke insert, update, delete, truncate on public.agency_branding from authentic
 revoke all on public.agency_branding from anon;
 
 -- Bucket PUBLIC pour les logos : un logo est une donnée publique de marque, affichée au
--- vendeur pendant le Live. Lecture publique via URL stable ; écritures cadrées sur l'agence
--- (1er segment du chemin = agency_id), même garde que project-photos.
+-- vendeur pendant le Live. Lecture publique via URL stable.
 insert into storage.buckets (id, name, public)
 values ('agency-branding', 'agency-branding', true)
 on conflict (id) do nothing;
 
-drop policy if exists "agency_branding_insert_own" on storage.objects;
-create policy "agency_branding_insert_own" on storage.objects for insert to authenticated
-  with check (
-    bucket_id = 'agency-branding'
-    and (storage.foldername(name))[1] = public.current_agency_id_text()
-  );
-
-drop policy if exists "agency_branding_update_own" on storage.objects;
-create policy "agency_branding_update_own" on storage.objects for update to authenticated
-  using (
-    bucket_id = 'agency-branding'
-    and (storage.foldername(name))[1] = public.current_agency_id_text()
-  )
-  with check (
-    bucket_id = 'agency-branding'
-    and (storage.foldername(name))[1] = public.current_agency_id_text()
-  );
-
-drop policy if exists "agency_branding_delete_own" on storage.objects;
-create policy "agency_branding_delete_own" on storage.objects for delete to authenticated
-  using (
-    bucket_id = 'agency-branding'
-    and (storage.foldername(name))[1] = public.current_agency_id_text()
-  );
+-- AUCUNE policy d'écriture pour `authenticated` : les dépôts passent EXCLUSIVEMENT par le
+-- Server Action (client service role), après authentification, sur un chemin imposé par le
+-- serveur (`{agency_id}/logo-{light|dark}.ext`). Le navigateur ne peut donc rien écrire ici
+-- directement — le bucket public ne portera JAMAIS que des logos. « Public » = lecture
+-- publique, pas dépôt public.

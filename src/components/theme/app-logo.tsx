@@ -10,11 +10,13 @@ export function AppLogo({
   className = 'h-8',
   lightUrl = null,
   darkUrl = null,
+  fallbackName = null,
 }: {
   priority?: boolean;
   className?: string;
   lightUrl?: string | null;
   darkUrl?: string | null;
+  fallbackName?: string | null;
 }) {
   const { theme } = useAppStage();
   return (
@@ -24,6 +26,7 @@ export function AppLogo({
       className={className}
       lightSrc={lightUrl}
       darkSrc={darkUrl}
+      fallbackName={fallbackName}
     />
   );
 }
