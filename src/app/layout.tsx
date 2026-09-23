@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Montserrat, Rajdhani } from 'next/font/google';
 
+import { BrandStyle } from '@/features/branding/components/brand-style';
 import './globals.css';
 
 // Montserrat = corps / interface ; Rajdhani = titres et éléments distinctifs
@@ -29,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${montserrat.variable} ${rajdhani.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <BrandStyle />
+        {children}
+      </body>
     </html>
   );
 }

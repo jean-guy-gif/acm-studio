@@ -16,6 +16,12 @@
   --color-brand: #3ea9ff;
   --color-brand-deep: #00527a;
   --color-brand-soft: #eaf5ff;
+  /* Mission 55 — les deux stops sombres du dégradé du Live, tokenisés (avant : en dur
+     #013a58 / #01283b), pour que le fond du Live suive la charte de l'agence. */
+  --color-brand-darker: #013a58;
+  --color-brand-darkest: #01283b;
+  /* Texte posé sur un aplat de marque (bouton). Surchargé par agence si besoin. */
+  --color-on-brand: #ffffff;
 
   --radius-card: 0.75rem;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);

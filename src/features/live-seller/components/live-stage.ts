@@ -10,7 +10,7 @@
 // Le shell applique désormais l'overflow selon le mode (défilant en plein écran,
 // clippé sinon pour la lueur décorative).
 export const stageRoot =
-  'relative flex min-h-[100dvh] flex-col bg-white text-zinc-900 transition-colors duration-300 stage:bg-gradient-to-br stage:from-brand-deep stage:via-[#013a58] stage:to-[#01283b] stage:text-white';
+  'relative flex min-h-[100dvh] flex-col bg-white text-zinc-900 transition-colors duration-300 stage:bg-gradient-to-br stage:from-brand-deep stage:via-brand-darker stage:to-brand-darkest stage:text-white';
 
 // Surligneur discret d'ambiance derrière le contenu (halo bleu en scène).
 export const stageGlow =

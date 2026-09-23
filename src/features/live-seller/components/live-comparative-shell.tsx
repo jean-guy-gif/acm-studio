@@ -49,6 +49,9 @@ export function LiveComparativeShell({
   advisorRange,
   initialIndex = 0,
   initialStage = 'dark',
+  logoLightUrl = null,
+  logoDarkUrl = null,
+  agencyName = null,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -64,6 +67,11 @@ export function LiveComparativeShell({
   initialIndex?: number;
   // Thème d'ouverture de la scène : sombre en Live réel, au choix dans l'aperçu.
   initialStage?: LiveStageTheme;
+  // Mission 55 — logo de l'agence (le vendeur ne doit pas voir le nom d'un autre) ; à défaut
+  // de logo, le NOM de l'agence — jamais Start Academy.
+  logoLightUrl?: string | null;
+  logoDarkUrl?: string | null;
+  agencyName?: string | null;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -399,7 +407,13 @@ export function LiveComparativeShell({
       {/* Chrome supérieur : identité + réglages, volontairement discret. */}
       <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">
         <div className="flex items-center gap-3">
-          <Logo onDark={stage === 'dark'} className="h-8 sm:h-9" />
+          <Logo
+            onDark={stage === 'dark'}
+            className="h-8 sm:h-9"
+            lightSrc={logoLightUrl}
+            darkSrc={logoDarkUrl}
+            fallbackName={agencyName}
+          />
           <span className="hidden text-sm font-medium text-zinc-400 sm:inline stage:text-white/50">
             Rendez-vous vendeur
           </span>
@@ -461,6 +475,9 @@ export function LiveComparativeShell({
             sellerName={projectName}
             address={[property?.address, property?.city].filter(Boolean).join(', ') || null}
             onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
+            logoLightUrl={logoLightUrl}
+            logoDarkUrl={logoDarkUrl}
+            agencyName={agencyName}
           />
         ) : page.type === 'subject_property' && property ? (
           <LivePageProperty property={property} summary={summary} />

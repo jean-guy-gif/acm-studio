@@ -8,18 +8,31 @@ export function LivePageIntro({
   sellerName,
   address,
   onStart,
+  logoLightUrl = null,
+  logoDarkUrl = null,
+  agencyName = null,
 }: {
   comparablesCount: number;
   sellerName: string;
   address: string | null;
   onStart: () => void;
+  logoLightUrl?: string | null;
+  logoDarkUrl?: string | null;
+  agencyName?: string | null;
 }) {
   const count = comparablesCount;
 
   return (
-    <section className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep to-[#01283b] p-8 text-white sm:p-12">
+    <section className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep to-brand-darkest p-8 text-white sm:p-12">
       <div className="flex flex-col gap-8">
-        <Logo onDark priority className="h-10" />
+        <Logo
+          onDark
+          priority
+          className="h-10"
+          lightSrc={logoLightUrl}
+          darkSrc={logoDarkUrl}
+          fallbackName={agencyName}
+        />
         <div className="flex flex-col gap-3">
           <p className="text-xs font-medium tracking-[0.2em] text-brand uppercase">
             Rendez-vous vendeur
