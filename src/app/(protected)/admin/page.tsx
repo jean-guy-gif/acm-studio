@@ -1,4 +1,6 @@
-import { emptyState, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import Link from 'next/link';
+
+import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 
 export default function AdminPage() {
   return (
@@ -9,14 +11,23 @@ export default function AdminPage() {
         <p className={pageSubtitle}>Gestion de l&apos;agence et des utilisateurs.</p>
       </div>
 
-      <div className={emptyState}>
-        <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
-          Bientôt disponible.
-        </p>
-        <p>
-          La gestion des conseillers et des réglages de l&apos;agence arrivera dans une prochaine
-          version.
-        </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Link
+          href="/admin/identite"
+          className={`${card} group flex items-start gap-4 p-5 transition-all hover:-translate-y-0.5 hover:border-brand hover:shadow-lg hover:shadow-brand/10 stage:hover:border-brand stage:hover:shadow-none`}
+        >
+          <span className="font-title text-3xl leading-none font-bold text-brand/35 transition-colors group-hover:text-brand stage:text-brand/40">
+            ✦
+          </span>
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
+              Identité de l’agence
+            </span>
+            <span className="text-sm text-zinc-500 stage:text-white/55">
+              Logo et couleur de marque, appliqués à tout l’outil.
+            </span>
+          </span>
+        </Link>
       </div>
     </div>
   );

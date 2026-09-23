@@ -22,6 +22,8 @@ export function Logo({
   onDark = false,
   priority = false,
   className = 'h-8',
+  lightSrc = null,
+  darkSrc = null,
 }: {
   /** Choisit la variante blanche (fond sombre) plutôt que la variante bleue (fond clair). */
   onDark?: boolean;
@@ -29,7 +31,27 @@ export function Logo({
   priority?: boolean;
   /** Ne fournir QUE la hauteur (ex. `h-10`). La largeur reste automatique. */
   className?: string;
+  /** Mission 55 — logo AGENCE (URL Storage). Fond clair. */
+  lightSrc?: string | null;
+  /** Mission 55 — logo AGENCE (URL Storage). Fond sombre. */
+  darkSrc?: string | null;
 }) {
+  // Mission 55 — si l'agence a déposé un logo, il remplace celui de Start Academy. Une seule
+  // version déposée sert les deux fonds (mieux qu'un mélange avec la marque par défaut).
+  const agencySrc = onDark ? (darkSrc ?? lightSrc) : (lightSrc ?? darkSrc);
+  if (agencySrc) {
+    // `w-auto` + hauteur imposée = ratio préservé, JAMAIS déformé (§4) : la boîte s'adapte,
+    // l'image non. Dimensions inconnues (upload agence) → <img> simple plutôt que next/image.
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={agencySrc}
+        alt="Logo de l’agence"
+        className={`w-auto shrink-0 self-start object-contain ${className}`}
+      />
+    );
+  }
+
   const src = onDark ? '/brand/start-academy-logo-white.png' : '/brand/start-academy-logo.png';
 
   // `w-auto self-start shrink-0` garantit le respect des proportions : sans

@@ -8,10 +8,22 @@ import { useAppStage } from '@/components/theme/app-stage';
 export function AppLogo({
   priority = false,
   className = 'h-8',
+  lightUrl = null,
+  darkUrl = null,
 }: {
   priority?: boolean;
   className?: string;
+  lightUrl?: string | null;
+  darkUrl?: string | null;
 }) {
   const { theme } = useAppStage();
-  return <Logo onDark={theme === 'dark'} priority={priority} className={className} />;
+  return (
+    <Logo
+      onDark={theme === 'dark'}
+      priority={priority}
+      className={className}
+      lightSrc={lightUrl}
+      darkSrc={darkUrl}
+    />
+  );
 }

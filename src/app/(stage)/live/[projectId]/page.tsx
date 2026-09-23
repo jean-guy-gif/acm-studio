@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
@@ -47,6 +48,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
 
   const pages = buildLivePages(projectedLive, presentation.property != null);
   const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
+  const branding = await getAgencyBranding();
 
   return (
     <LiveComparativeShell
@@ -56,6 +58,8 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       projectName={presentation.project.name}
       advisorRange={advisorRange}
       initialIndex={initialIndex}
+      logoLightUrl={branding?.logoLightUrl ?? null}
+      logoDarkUrl={branding?.logoDarkUrl ?? null}
     />
   );
 }

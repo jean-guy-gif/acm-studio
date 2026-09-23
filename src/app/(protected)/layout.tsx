@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { signOut } from '@/app/login/actions';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
+import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -19,7 +20,11 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect('/onboarding');
   }
 
-  const [agency, cookieStore] = await Promise.all([getAgency(profile.agency_id), cookies()]);
+  const [agency, cookieStore, branding] = await Promise.all([
+    getAgency(profile.agency_id),
+    cookies(),
+    getAgencyBranding(),
+  ]);
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
   return (
@@ -29,6 +34,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
       agencyName={agency ? agency.name : 'Agence inconnue'}
       initialTheme={theme}
       signOutAction={signOut}
+      logoLightUrl={branding?.logoLightUrl ?? null}
+      logoDarkUrl={branding?.logoDarkUrl ?? null}
     >
       {children}
     </AppShell>

@@ -13,28 +13,81 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          logo_url: string | null
           name: string
-          primary_color: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
-          logo_url?: string | null
           name: string
-          primary_color?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
-          logo_url?: string | null
           name?: string
-          primary_color?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      agency_branding: {
+        Row: {
+          agency_id: string
+          brand: string | null
+          brand_darker: string | null
+          brand_darkest: string | null
+          brand_deep: string | null
+          brand_soft: string | null
+          created_at: string
+          id: string
+          logo_dark_path: string | null
+          logo_light_path: string | null
+          on_brand_text: string | null
+          text_contrast_adjusted: boolean
+          updated_at: string
+          validated_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          brand?: string | null
+          brand_darker?: string | null
+          brand_darkest?: string | null
+          brand_deep?: string | null
+          brand_soft?: string | null
+          created_at?: string
+          id?: string
+          logo_dark_path?: string | null
+          logo_light_path?: string | null
+          on_brand_text?: string | null
+          text_contrast_adjusted?: boolean
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          brand?: string | null
+          brand_darker?: string | null
+          brand_darkest?: string | null
+          brand_deep?: string | null
+          brand_soft?: string | null
+          created_at?: string
+          id?: string
+          logo_dark_path?: string | null
+          logo_light_path?: string | null
+          on_brand_text?: string | null
+          text_contrast_adjusted?: boolean
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_branding_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {

@@ -240,7 +240,7 @@ function HubScreen() {
             </span>
           </span>
         ))}
-        <span className="group flex items-start gap-4 rounded-2xl bg-gradient-to-br from-brand-deep via-[#013a58] to-[#01283b] p-5 text-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/25">
+        <span className="group flex items-start gap-4 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-5 text-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/25">
           <span className="font-title text-3xl leading-none font-bold text-brand transition-transform group-hover:translate-x-0.5">
             →
           </span>
