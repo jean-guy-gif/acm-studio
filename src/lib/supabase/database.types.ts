@@ -900,7 +900,12 @@ export type Database = {
           follow_up_reason: string | null
           frozen_advisor_analysis: number | null
           frozen_advisor_price: number | null
+          frozen_exploitable_competitors: number | null
           frozen_market_computed: number | null
+          frozen_meeting_duration_seconds: number | null
+          frozen_retained_competitors: number | null
+          frozen_seller_perceived_price: number | null
+          frozen_seller_wanted_price: number | null
           id: string
           outcome: string | null
           outcome_changed_at: string
@@ -915,7 +920,12 @@ export type Database = {
           follow_up_reason?: string | null
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
+          frozen_exploitable_competitors?: number | null
           frozen_market_computed?: number | null
+          frozen_meeting_duration_seconds?: number | null
+          frozen_retained_competitors?: number | null
+          frozen_seller_perceived_price?: number | null
+          frozen_seller_wanted_price?: number | null
           id?: string
           outcome?: string | null
           outcome_changed_at?: string
@@ -930,7 +940,12 @@ export type Database = {
           follow_up_reason?: string | null
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
+          frozen_exploitable_competitors?: number | null
           frozen_market_computed?: number | null
+          frozen_meeting_duration_seconds?: number | null
+          frozen_retained_competitors?: number | null
+          frozen_seller_perceived_price?: number | null
+          frozen_seller_wanted_price?: number | null
           id?: string
           outcome?: string | null
           outcome_changed_at?: string
@@ -1547,16 +1562,24 @@ export type Database = {
           p_advisor_analysis: number
           p_advisor_price: number
           p_agency_id: string
+          p_exploitable?: number
           p_market_computed: number
           p_outcome: string
           p_price: number
           p_project_id: string
           p_reason: string
+          p_retained?: number
+          p_seller_perceived?: number
+          p_seller_wanted?: number
         }
         Returns: boolean
       }
       current_agency_id_text: { Args: never; Returns: string }
       get_current_agency_id: { Args: never; Returns: string }
+      meeting_duration_seconds: {
+        Args: { p_project_id: string }
+        Returns: number
+      }
       move_comparable: {
         Args: {
           move_direction: string
