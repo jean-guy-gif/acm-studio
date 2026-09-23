@@ -5,7 +5,10 @@ import { revalidatePath } from 'next/cache';
 
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { conclusionDecisionSchema } from '@/features/meeting-conclusion/schemas/conclusion-input';
-import { liveDerivedAmounts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
+import {
+  liveCapturedFacts,
+  liveDerivedAmounts,
+} from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -46,21 +49,29 @@ export async function concludeMeeting(
     return { ok: false, error: 'Ce dossier n’est pas prêt à être conclu.' };
   }
 
-  // ①②③ courants, au cas où l'étape 1 (prix au Live) ne les a pas déjà figés.
+  // Les valeurs COURANTES, au cas où l'étape 1 (prix au Live) ne les a pas déjà figées.
+  // La fonction fige au premier passage (COALESCE) et ne réécrit jamais.
   const presentation = await loadLivePresentation(projectId);
-  const amounts = liveDerivedAmounts(presentation?.live ?? null);
+  const live = presentation?.live ?? null;
+  const amounts = liveDerivedAmounts(live);
+  const facts = liveCapturedFacts(live);
 
   const serviceClient = createServiceRoleClient();
   const args: ConcludeArgs = {
     p_project_id: projectId,
     p_agency_id: profile.agency_id,
     p_outcome: parsed.data.outcome,
-    // p_reason / p_price acceptent null en base ; cast de typage seulement.
+    // Les paramètres nullables acceptent null en base ; cast de typage seulement.
     p_reason: parsed.data.followUpReason as string,
     p_price: null as unknown as number, // le prix vient du Live ; la fonction garde l'existant.
     p_market_computed: amounts.marketComputed as number,
     p_advisor_analysis: amounts.advisorAnalysis as number,
     p_advisor_price: amounts.advisorPrice as number,
+    // Mission 56 — quatre faits de plus, figés au même instant.
+    p_seller_wanted: facts.sellerWanted as number,
+    p_seller_perceived: facts.sellerPerceived as number,
+    p_retained: facts.retained as number,
+    p_exploitable: facts.exploitable as number,
   };
   const { error } = await serviceClient.rpc('conclude_meeting', args);
   if (error) {

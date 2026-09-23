@@ -13,6 +13,31 @@ export function liveDerivedAmounts(live: LiveComparativeData | null): Conclusion
   };
 }
 
+// Mission 56 — les quatre FAITS capturés à la conclusion, dérivés de la présentation.
+// Absent reste absent (prix null → null) ; les comptes sont des entiers dès que le Live
+// existe (retenus = concurrents is_selected ; exploitables = retenus avec prix et surface).
+export type CapturedFacts = {
+  sellerWanted: number | null; // prix souhaité par le vendeur (départ)
+  sellerPerceived: number | null; // valeur perçue par le vendeur (Live)
+  retained: number | null; // concurrents retenus — le nombre humain
+  exploitable: number | null; // concurrents exploitables — derrière frozen_market_computed
+};
+
+export function liveCapturedFacts(live: LiveComparativeData | null): CapturedFacts {
+  if (!live) {
+    return { sellerWanted: null, sellerPerceived: null, retained: null, exploitable: null };
+  }
+  return {
+    sellerWanted: live.advisorDecision?.sellerPrice ?? null,
+    sellerPerceived: live.sellerSummary?.seller_perceived_property_price ?? null,
+    retained: live.comparables.length,
+    exploitable: live.comparables.filter(
+      (comparable) =>
+        comparable.price > 0 && comparable.surfaceArea != null && comparable.surfaceArea > 0,
+    ).length,
+  };
+}
+
 // Ce qu'on AFFICHE : une fois figés, on montre les montants figés (§3 « figés, pas
 // recalculés ») ; tant qu'un montant n'est pas figé, on retombe sur la valeur courante.
 // Le prix convenu vient de la conclusion (saisi au Live), jamais du live-dérivé.
