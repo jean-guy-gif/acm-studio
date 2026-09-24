@@ -6,6 +6,8 @@ import { MAX_JUSTIFICATION_LENGTH } from '@/features/price-positioning/types/sav
 export type DecisionInput = {
   advisorPrice: number;
   sellerPrice: number | null;
+  // Mission 58 — l'analyse du conseiller (avis de valeur). Facultative : vide → null.
+  advisorComparativeMarketPrice: number | null;
   justification: string | null;
 };
 
@@ -30,11 +32,26 @@ export function parseDecisionInput(formData: FormData): DecisionInputResult {
     sellerPrice = parsed;
   }
 
+  // Mission 58 — l'analyse du conseiller (avis de valeur), facultative : vide → null,
+  // sinon un montant positif. Absente, le dossier reste prêt (aucun nouveau critère).
+  const analysisRaw = String(formData.get('advisorComparativeMarketPrice') ?? '').trim();
+  let advisorComparativeMarketPrice: number | null = null;
+  if (analysisRaw !== '') {
+    const parsed = Number(analysisRaw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return { ok: false, error: 'L’analyse du conseiller doit être vide ou un montant positif.' };
+    }
+    advisorComparativeMarketPrice = parsed;
+  }
+
   const justificationRaw = String(formData.get('justification') ?? '').trim();
   if (justificationRaw.length > MAX_JUSTIFICATION_LENGTH) {
     return { ok: false, error: 'La justification ne peut pas dépasser 1 000 caractères.' };
   }
   const justification = justificationRaw === '' ? null : justificationRaw;
 
-  return { ok: true, input: { advisorPrice, sellerPrice, justification } };
+  return {
+    ok: true,
+    input: { advisorPrice, sellerPrice, advisorComparativeMarketPrice, justification },
+  };
 }

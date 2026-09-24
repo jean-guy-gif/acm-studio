@@ -13,7 +13,6 @@ const EMPTY = {
   seller_most_dangerous_reason: null,
   seller_most_dangerous_comment: null,
   seller_perceived_property_price: null,
-  advisor_comparative_market_price: null,
 };
 
 describe('normalizeLiveSellerSummary', () => {
@@ -43,7 +42,7 @@ describe('normalizeLiveSellerSummary', () => {
     const result = normalizeLiveSellerSummary({ seller_perceived_property_price: 435000 });
 
     expect(result).toEqual({ seller_perceived_property_price: 435000 });
-    expect(result).not.toHaveProperty('advisor_comparative_market_price');
+    expect(result).not.toHaveProperty('seller_property_confirmed');
     expect(result).not.toHaveProperty('seller_most_dangerous_comparable_id');
   });
 });
@@ -60,7 +59,6 @@ describe('validateLiveSellerSummary', () => {
         seller_most_dangerous_reason: 'more_attractive_price',
         seller_most_dangerous_comment: 'Moins cher au m²',
         seller_perceived_property_price: 435000,
-        advisor_comparative_market_price: 420000,
       }).ok,
     ).toBe(true);
   });
@@ -92,6 +90,5 @@ describe('validateLiveSellerSummary', () => {
 
   it('rejects negative prices', () => {
     expect(validate({ ...EMPTY, seller_perceived_property_price: -5 }).ok).toBe(false);
-    expect(validate({ ...EMPTY, advisor_comparative_market_price: -5 }).ok).toBe(false);
   });
 });

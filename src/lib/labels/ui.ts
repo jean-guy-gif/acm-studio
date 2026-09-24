@@ -38,10 +38,13 @@ export const UI = {
   sellerResponse: 'Réponse du vendeur',
   seriousCompetitor: 'Concurrent sérieux',
   mostDangerousCompetitor: 'Concurrent le plus dangereux',
-  observedPositioning: 'Positionnement observé sur le marché concurrentiel',
-  advisorAnalysis: 'Analyse comparative de marché du conseiller',
+  // Mission 58 — vocabulaire unique, partout (Live compris) : les quatre repères M53.
+  marketComputed: 'Marché calculé',
+  observedPositioning: 'Marché calculé',
+  advisorAnalysis: 'Analyse du conseiller',
   sellerPerceivedValue: 'Valeur perçue par le vendeur',
   advisorPrice: 'Prix conseillé',
+  commercializationPrice: 'Prix de commercialisation',
 } as const;
 
 export type UiLabelKey = keyof typeof UI;

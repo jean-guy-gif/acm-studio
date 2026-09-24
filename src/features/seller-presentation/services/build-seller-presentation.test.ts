@@ -82,6 +82,7 @@ function makeSaved(overrides: Partial<SavedPricePositioning> = {}): SavedPricePo
     projectId: 'proj',
     advisorPrice: 300000,
     sellerPrice: 320000,
+    advisorComparativeMarketPrice: null,
     rangeLow: 270000,
     rangeCentral: 300000,
     rangeHigh: 330000,
@@ -630,12 +631,16 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 3 });
   });
 
-  it('computes final price gaps from the seller summary and observed market', () => {
+  it('computes final price gaps from the seller perception and the advisor analysis (prepared at positioning)', () => {
     const comparables = threeComps();
     const result = buildSellerPresentation(
       input({
         comparables,
-        savedPositioning: savedMatching(comparables, 52),
+        // Mission 58 — l'analyse du conseiller vient du positionnement, plus du résumé Live.
+        savedPositioning: {
+          ...savedMatching(comparables, 52),
+          advisorComparativeMarketPrice: 300000,
+        },
         sellerSummary: {
           id: 's1',
           project_id: 'proj',
@@ -644,7 +649,6 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
           seller_most_dangerous_reason: 'more_attractive_price',
           seller_most_dangerous_comment: null,
           seller_perceived_property_price: 320000,
-          advisor_comparative_market_price: 300000,
           created_at: AT,
           updated_at: AT,
         } as never,
@@ -654,7 +658,20 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(gaps.sellerPerceivedPrice).toBe(320000);
     expect(gaps.advisorComparativePrice).toBe(300000);
     expect(gaps.sellerVsAdvisor.amount).toBe(20000);
-    expect(result.live!.advisorDecision?.advisorPrice).toBe(300000);
+    expect(result.live!.advisorDecision?.advisorComparativeMarketPrice).toBe(300000);
+  });
+
+  // Mission 58 §6 — aucun nouveau critère de préparation : un dossier SANS avis de valeur
+  // reste prêt et bascule normalement dans le Live ; l'analyse s'y affiche « — » (null).
+  it('stays ready and builds the Live without an advisor analysis', () => {
+    const comparables = threeComps();
+    const result = buildSellerPresentation(
+      input({ comparables, savedPositioning: savedMatching(comparables, 52) }),
+    );
+    expect(result.status).toBe('ready');
+    expect(result.live).not.toBeNull();
+    expect(result.live!.advisorDecision?.advisorComparativeMarketPrice).toBeNull();
+    expect(result.live!.priceGaps.advisorComparativePrice).toBeNull();
   });
 
   it('returns null live when there is no property', () => {

@@ -37,7 +37,7 @@ export async function savePricePositioning(
   if (!parsed.ok) {
     return { ok: false, error: parsed.error };
   }
-  const { advisorPrice, sellerPrice, justification } = parsed.input;
+  const { advisorPrice, sellerPrice, advisorComparativeMarketPrice, justification } = parsed.input;
 
   // Authorisation: the project must belong to the caller's agency (RLS-scoped).
   const userClient = await createClient();
@@ -76,6 +76,8 @@ export async function savePricePositioning(
     agency_id: profile.agency_id, // server-imposed
     advisor_price: advisorPrice,
     seller_price: sellerPrice,
+    // Mission 58 — l'analyse du conseiller, décidée à froid, à côté du prix conseillé.
+    advisor_comparative_market_price: advisorComparativeMarketPrice,
     range_low: positioning.recommendedRange.low, // server-imposed
     range_central: positioning.recommendedRange.central, // server-imposed
     range_high: positioning.recommendedRange.high, // server-imposed

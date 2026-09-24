@@ -4,6 +4,13 @@ import { RemoteImage } from '@/components/ui/remote-image';
 // with a clean fallback when no accessible photo exists. No upload, no scraping.
 // `compact` = vignette de carte (synthèse, conclusion) : hauteur réduite, pas de
 // bande de galerie.
+//
+// Mission 58 §1 — RÈGLE, une fois pour toutes. La photo d'un concurrent est l'annonce d'un
+// confrère : on l'affiche TELLE QUELLE, filigrane de l'agence qui l'a publiée compris (le
+// vendeur le sait, et le lui montrer fait partie de la démonstration). ACM Studio ne retire
+// jamais un filigrane et n'APPOSE JAMAIS le logo de l'agence sur la photo d'un tiers — ce
+// serait copier, modifier et réhéberger l'œuvre d'autrui sous une autre marque. Aucun
+// traitement d'image, jamais.
 export function LivePhoto({
   photoUrl,
   photoUrls,

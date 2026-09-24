@@ -404,13 +404,16 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
             ? {
                 advisorPrice: savedPositioning.advisorPrice,
                 sellerPrice: savedPositioning.sellerPrice,
+                // Mission 58 — l'analyse du conseiller vient désormais du positionnement
+                // (préparée à froid), plus du résumé Live.
+                advisorComparativeMarketPrice: savedPositioning.advisorComparativeMarketPrice,
                 justification: savedPositioning.justification,
               }
             : null,
           priceGaps: calculateLivePriceGaps({
             sellerPerceivedPrice: sellerSummary?.seller_perceived_property_price ?? null,
             competitiveMarketCentral,
-            advisorComparativePrice: sellerSummary?.advisor_comparative_market_price ?? null,
+            advisorComparativePrice: savedPositioning?.advisorComparativeMarketPrice ?? null,
           }),
         }
       : null;

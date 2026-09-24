@@ -116,7 +116,8 @@ export type LiveSellerSummaryInput = {
   seller_most_dangerous_reason: DangerousReason | null;
   seller_most_dangerous_comment: string | null;
   seller_perceived_property_price: number | null;
-  advisor_comparative_market_price: number | null;
+  // Mission 58 — advisor_comparative_market_price a quitté le résumé Live pour le
+  // positionnement (préparation). Plus aucune saisie conseiller dans le Live.
   // Mission 39 — Act 1 "Votre bien": does the presentation match the seller's bien?
   seller_property_confirmed: PropertyConfirmed | null;
   seller_property_comment: string | null;

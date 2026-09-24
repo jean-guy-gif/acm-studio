@@ -457,6 +457,7 @@ function PositioningScreen() {
             isOutdated={false}
             initialAdvisorPrice={demoSavedPositioning.advisorPrice}
             initialSellerPrice={demoSavedPositioning.sellerPrice}
+            initialAdvisorAnalysis={demoSavedPositioning.advisorComparativeMarketPrice}
             initialJustification={demoSavedPositioning.justification ?? ''}
             saveAction={previewSavePositioning}
             deleteAction={previewDeletePositioning}

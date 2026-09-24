@@ -571,7 +571,6 @@ export type Database = {
       }
       live_seller_summary: {
         Row: {
-          advisor_comparative_market_price: number | null
           agency_id: string
           created_at: string
           id: string
@@ -585,7 +584,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          advisor_comparative_market_price?: number | null
           agency_id: string
           created_at?: string
           id?: string
@@ -599,7 +597,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          advisor_comparative_market_price?: number | null
           agency_id?: string
           created_at?: string
           id?: string
@@ -977,6 +974,7 @@ export type Database = {
       }
       project_price_positionings: {
         Row: {
+          advisor_comparative_market_price: number | null
           advisor_price: number
           agency_id: string
           calculation_snapshot: Json
@@ -995,6 +993,7 @@ export type Database = {
           validated_by: string
         }
         Insert: {
+          advisor_comparative_market_price?: number | null
           advisor_price: number
           agency_id: string
           calculation_snapshot: Json
@@ -1013,6 +1012,7 @@ export type Database = {
           validated_by: string
         }
         Update: {
+          advisor_comparative_market_price?: number | null
           advisor_price?: number
           agency_id?: string
           calculation_snapshot?: Json

@@ -1,8 +1,6 @@
 'use client';
 
 import {
-  bigInput,
-  bigInputUnit,
   bigValue,
   panel,
   panelSoft,
@@ -10,7 +8,7 @@ import {
   questionHint,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
-import type { LivePriceGaps, LiveSellerSummary, PriceGap } from '@/features/live-seller/types';
+import type { LivePriceGaps, PriceGap } from '@/features/live-seller/types';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
@@ -29,17 +27,10 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
   );
 }
 
-// "3. Analyse comparative de marché du conseiller" — a MANUAL advisor input.
-// ACM Studio never computes this value. The gaps are shown without any automatic
-// judgement.
-export function LivePageAnalysis({
-  priceGaps,
-  summary,
-}: {
-  priceGaps: LivePriceGaps;
-  summary: LiveSellerSummary | null;
-}) {
-  const advisor = summary?.advisor_comparative_market_price ?? '';
+// Mission 58 — les trois repères sont AFFICHÉS, jamais saisis : l'analyse du conseiller a été
+// préparée à froid au positionnement. Plus aucun champ de saisie conseiller devant le vendeur.
+// ACM Studio ne calcule jamais l'analyse du conseiller ; les écarts sont montrés sans jugement.
+export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
   const gaps = priceGaps;
 
   return (
@@ -47,7 +38,7 @@ export function LivePageAnalysis({
       <div className="flex flex-col gap-3">
         <h2 className={question}>Analyse des prix</h2>
         <p className={questionHint}>
-          Trois repères, côte à côte : la perception, le marché observé, l’analyse du conseiller.
+          Trois repères, côte à côte : la valeur perçue, le marché calculé, l’analyse du conseiller.
         </p>
       </div>
 
@@ -57,42 +48,20 @@ export function LivePageAnalysis({
           <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
+          <div className={statLabel}>Marché calculé</div>
           <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Analyse comparative de marché du conseiller</div>
+          <div className={statLabel}>Analyse du conseiller</div>
           <div className={bigValue}>{euro(gaps.advisorComparativePrice)}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
-        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
-          <label className="flex flex-col gap-2">
-            <span className={statLabel}>
-              Analyse comparative de marché du conseiller — saisie manuelle
-            </span>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                name="advisor_comparative_market_price"
-                min={0}
-                step="any"
-                placeholder="0"
-                defaultValue={advisor}
-                className={bigInput}
-              />
-              <span className={bigInputUnit}>€</span>
-            </div>
-          </label>
-        </form>
-
-        <div className={`${panelSoft} h-fit`}>
-          <div className={`${statLabel} mb-2`}>Écarts observés</div>
-          <GapRow label="Vendeur vs marché concurrentiel" gap={gaps.sellerVsMarket} />
-          <GapRow label="Vendeur vs analyse conseiller" gap={gaps.sellerVsAdvisor} />
-          <GapRow label="Marché concurrentiel vs analyse conseiller" gap={gaps.marketVsAdvisor} />
-        </div>
+      <div className={`${panelSoft} h-fit`}>
+        <div className={`${statLabel} mb-2`}>Écarts observés</div>
+        <GapRow label="Valeur perçue vs marché calculé" gap={gaps.sellerVsMarket} />
+        <GapRow label="Valeur perçue vs analyse du conseiller" gap={gaps.sellerVsAdvisor} />
+        <GapRow label="Marché calculé vs analyse du conseiller" gap={gaps.marketVsAdvisor} />
       </div>
     </div>
   );

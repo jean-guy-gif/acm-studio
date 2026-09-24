@@ -32,6 +32,9 @@ export type SavedPricePositioning = {
   projectId: string;
   advisorPrice: number;
   sellerPrice: number | null;
+  // Mission 58 — l'analyse du conseiller (son avis de valeur), déménagée du Live vers la
+  // préparation. Nullable : un dossier sans avis de valeur reste prêt.
+  advisorComparativeMarketPrice: number | null;
   rangeLow: number;
   rangeCentral: number;
   rangeHigh: number;

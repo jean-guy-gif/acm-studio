@@ -33,6 +33,7 @@ type Props = {
   isOutdated: boolean;
   initialAdvisorPrice: number;
   initialSellerPrice: number | null;
+  initialAdvisorAnalysis: number | null;
   initialJustification: string;
   saveAction: (formData: FormData) => Promise<SavePositioningResult>;
   deleteAction: () => Promise<DeletePositioningResult>;
@@ -46,6 +47,7 @@ export function PositioningDecisionForm({
   isOutdated,
   initialAdvisorPrice,
   initialSellerPrice,
+  initialAdvisorAnalysis,
   initialJustification,
   saveAction,
   deleteAction,
@@ -55,6 +57,7 @@ export function PositioningDecisionForm({
   const [becameReady, setBecameReady] = useState(false);
   const [advisorPrice, setAdvisorPrice] = useState<number | null>(initialAdvisorPrice);
   const [sellerPrice, setSellerPrice] = useState<number | null>(initialSellerPrice);
+  const [advisorAnalysis, setAdvisorAnalysis] = useState<number | null>(initialAdvisorAnalysis);
   const [justification, setJustification] = useState<string>(initialJustification);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -74,6 +77,7 @@ export function PositioningDecisionForm({
   function submit(values: {
     advisor: number | null;
     seller: number | null;
+    analysis: number | null;
     justification: string;
   }) {
     setError(null);
@@ -81,6 +85,10 @@ export function PositioningDecisionForm({
     const formData = new FormData();
     formData.set('advisorPrice', values.advisor == null ? '' : String(values.advisor));
     formData.set('sellerPrice', values.seller == null ? '' : String(values.seller));
+    formData.set(
+      'advisorComparativeMarketPrice',
+      values.analysis == null ? '' : String(values.analysis),
+    );
     formData.set('justification', values.justification);
     startTransition(async () => {
       const result = await saveAction(formData);
@@ -100,8 +108,9 @@ export function PositioningDecisionForm({
   function handleReplace() {
     setAdvisorPrice(defaultAdvisorPrice);
     setSellerPrice(null);
+    setAdvisorAnalysis(null);
     setJustification('');
-    submit({ advisor: defaultAdvisorPrice, seller: null, justification: '' });
+    submit({ advisor: defaultAdvisorPrice, seller: null, analysis: null, justification: '' });
   }
 
   function handleDelete() {
@@ -141,6 +150,33 @@ export function PositioningDecisionForm({
       />
 
       <div className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
+        {/* Mission 58 — l'analyse du conseiller (avis de valeur) se prépare ICI, à froid,
+            un seul champ facultatif. Elle est ensuite AFFICHÉE dans le Live, jamais saisie
+            devant le vendeur. */}
+        <label className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>Analyse du conseiller — avis de valeur (facultatif)</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              step="any"
+              inputMode="numeric"
+              placeholder="Votre avis de valeur"
+              value={advisorAnalysis == null ? '' : String(advisorAnalysis)}
+              onChange={(event) => {
+                const raw = event.target.value.trim();
+                const parsed = Number(raw);
+                setAdvisorAnalysis(raw === '' || !Number.isFinite(parsed) ? null : parsed);
+              }}
+              className={inputBase}
+            />
+            <span className="text-zinc-500 stage:text-white/60">€</span>
+          </div>
+          <span className="text-xs text-zinc-400 stage:text-white/40">
+            Affichée dans le Live à côté du marché calculé — jamais saisie devant le vendeur.
+          </span>
+        </label>
+
         <label className="flex flex-col gap-1.5">
           <span className={fieldLabel}>Justification (facultative)</span>
           <textarea
@@ -168,7 +204,14 @@ export function PositioningDecisionForm({
             type="button"
             className={btnPrimary}
             disabled={pending}
-            onClick={() => submit({ advisor: advisorPrice, seller: sellerPrice, justification })}
+            onClick={() =>
+              submit({
+                advisor: advisorPrice,
+                seller: sellerPrice,
+                analysis: advisorAnalysis,
+                justification,
+              })
+            }
           >
             {hasSaved ? 'Mettre à jour la décision' : 'Enregistrer la décision'}
           </button>
