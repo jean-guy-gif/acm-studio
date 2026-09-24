@@ -12,20 +12,26 @@ export type Database = {
       agencies: {
         Row: {
           created_at: string
+          follow_up_dormant_days: number
           id: string
           name: string
+          preparation_dormant_days: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          follow_up_dormant_days?: number
           id?: string
           name: string
+          preparation_dormant_days?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          follow_up_dormant_days?: number
           id?: string
           name?: string
+          preparation_dormant_days?: number
           updated_at?: string
         }
         Relationships: []

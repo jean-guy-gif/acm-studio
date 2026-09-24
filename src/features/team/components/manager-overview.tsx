@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { card, metaLabel } from '@/components/ui/styles';
+import { DormancyThresholds } from '@/features/team/components/dormancy-thresholds';
 import type { ManagerOverview } from '@/features/team/services/build-manager-overview';
 
 // Mission 59 jalon 1 — ce que le manager voit EN PLUS : l'activité de son agence, orientée
@@ -75,9 +76,11 @@ export function ManagerOverviewView({ overview }: { overview: ManagerOverview })
         </div>
       </section>
 
-      {/* Ce qui dort — dossiers qui n'avancent plus. Orienté action : chacun est cliquable. */}
+      {/* Ce qui dort — dossiers qui n'avancent plus. Orienté action : chacun est cliquable.
+          Les seuils se règlent ICI (§ seuils), et la section dit son seuil. */}
       <section className="flex flex-col gap-3">
         <span className={metaLabel}>Ce qui dort</span>
+        <DormancyThresholds initial={overview.thresholds} />
         {dormant.length === 0 ? (
           <div className={`${card} p-5 text-sm text-zinc-500 stage:text-white/55`}>
             Rien ne traîne : aucun dossier en préparation ni à relancer laissé de côté.
