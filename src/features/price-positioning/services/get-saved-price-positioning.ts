@@ -82,6 +82,7 @@ export async function getSavedPricePositioning(
     projectId: data.project_id,
     advisorPrice: data.advisor_price,
     sellerPrice: data.seller_price,
+    advisorComparativeMarketPrice: data.advisor_comparative_market_price,
     rangeLow: data.range_low,
     rangeCentral: data.range_central,
     rangeHigh: data.range_high,

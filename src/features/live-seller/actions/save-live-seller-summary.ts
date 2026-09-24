@@ -58,11 +58,6 @@ export async function saveLiveSellerSummary(
         formData.get('seller_perceived_property_price'),
       ),
     }),
-    ...(formData.has('advisor_comparative_market_price') && {
-      advisor_comparative_market_price: numberOrNull(
-        formData.get('advisor_comparative_market_price'),
-      ),
-    }),
     ...(formData.has('seller_property_confirmed') && {
       seller_property_confirmed: textOrNull(formData.get('seller_property_confirmed')),
     }),

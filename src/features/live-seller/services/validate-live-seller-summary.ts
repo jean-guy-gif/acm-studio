@@ -66,7 +66,6 @@ export function validateLiveSellerSummary(
   }
 
   checkPrice(input.seller_perceived_property_price, 'seller_perceived_property_price', errors);
-  checkPrice(input.advisor_comparative_market_price, 'advisor_comparative_market_price', errors);
 
   if (
     input.seller_property_confirmed != null &&

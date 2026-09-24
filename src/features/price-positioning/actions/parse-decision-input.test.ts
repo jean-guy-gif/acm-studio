@@ -11,22 +11,48 @@ function form(entries: Record<string, string>): FormData {
 }
 
 describe('parseDecisionInput', () => {
-  it('accepts advisorPrice, sellerPrice and justification', () => {
+  it('accepts advisorPrice, sellerPrice, advisor analysis and justification', () => {
     const result = parseDecisionInput(
-      form({ advisorPrice: '300000', sellerPrice: '320000', justification: 'Marché tendu' }),
+      form({
+        advisorPrice: '300000',
+        sellerPrice: '320000',
+        advisorComparativeMarketPrice: '310000',
+        justification: 'Marché tendu',
+      }),
     );
     expect(result).toEqual({
       ok: true,
-      input: { advisorPrice: 300000, sellerPrice: 320000, justification: 'Marché tendu' },
+      input: {
+        advisorPrice: 300000,
+        sellerPrice: 320000,
+        advisorComparativeMarketPrice: 310000,
+        justification: 'Marché tendu',
+      },
     });
   });
 
-  it('treats an empty seller price and justification as null', () => {
+  it('treats an empty seller price, advisor analysis and justification as null', () => {
     const result = parseDecisionInput(form({ advisorPrice: '300000' }));
     expect(result).toEqual({
       ok: true,
-      input: { advisorPrice: 300000, sellerPrice: null, justification: null },
+      input: {
+        advisorPrice: 300000,
+        sellerPrice: null,
+        advisorComparativeMarketPrice: null,
+        justification: null,
+      },
     });
+  });
+
+  // Mission 58 — l'avis de valeur se prépare ICI ; facultatif, mais s'il est fourni il doit
+  // être un montant positif (aucune valeur inventée, aucun ancrage négatif).
+  it('rejects a non-positive advisor analysis', () => {
+    expect(
+      parseDecisionInput(form({ advisorPrice: '300000', advisorComparativeMarketPrice: '0' })).ok,
+    ).toBe(false);
+    expect(
+      parseDecisionInput(form({ advisorPrice: '300000', advisorComparativeMarketPrice: '-5' })).ok,
+    ).toBe(false);
   });
 
   it('rejects a missing or non-positive advisor price', () => {
@@ -65,9 +91,9 @@ describe('parseDecisionInput', () => {
     );
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // Only the three permitted fields are ever present.
+      // Only the permitted decision fields are ever present.
       expect(Object.keys(result.input).sort()).toEqual(
-        ['advisorPrice', 'justification', 'sellerPrice'].sort(),
+        ['advisorComparativeMarketPrice', 'advisorPrice', 'justification', 'sellerPrice'].sort(),
       );
     }
   });

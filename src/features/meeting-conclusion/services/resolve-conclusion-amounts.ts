@@ -7,7 +7,9 @@ import type { ConclusionAmounts, MeetingConclusion } from '@/features/meeting-co
 export function liveDerivedAmounts(live: LiveComparativeData | null): ConclusionAmounts {
   return {
     marketComputed: live?.competitiveMarketCentral ?? null,
-    advisorAnalysis: live?.sellerSummary?.advisor_comparative_market_price ?? null,
+    // Mission 58 — l'analyse du conseiller vient du positionnement (préparation), plus du
+    // résumé Live. Le gel à la conclusion (M56) capte donc la même valeur, depuis sa source.
+    advisorAnalysis: live?.advisorDecision?.advisorComparativeMarketPrice ?? null,
     advisorPrice: live?.advisorDecision?.advisorPrice ?? null,
     commercializationPrice: null,
   };

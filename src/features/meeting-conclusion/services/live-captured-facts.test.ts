@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import type { LiveComparativeData } from '@/features/seller-presentation/types/seller-presentation';
-import { liveCapturedFacts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
+import {
+  liveCapturedFacts,
+  liveDerivedAmounts,
+} from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 
 // Fabrique une donnée Live minimale pour le calcul des faits (seuls comparables /
 // sellerSummary / advisorDecision comptent ici).
 function live(overrides: {
   sellerPrice?: number | null;
   perceived?: number | null;
+  analysis?: number | null;
   comparables?: { price: number; surfaceArea: number | null }[];
 }): LiveComparativeData {
   return {
@@ -22,10 +26,31 @@ function live(overrides: {
     advisorDecision:
       overrides.sellerPrice === undefined
         ? null
-        : { advisorPrice: 1, sellerPrice: overrides.sellerPrice, justification: null },
+        : {
+            advisorPrice: 1,
+            sellerPrice: overrides.sellerPrice,
+            advisorComparativeMarketPrice: overrides.analysis ?? null,
+            justification: null,
+          },
     priceGaps: {} as LiveComparativeData['priceGaps'],
   };
 }
+
+// Mission 58 — le gel à la conclusion (M56) capte l'analyse du conseiller depuis sa NOUVELLE
+// source : le positionnement (advisorDecision.advisorComparativeMarketPrice), plus le résumé
+// Live. La valeur préparée est donc bien celle qui sera figée.
+describe('liveDerivedAmounts — analyse du conseiller depuis le positionnement (Mission 58)', () => {
+  it('advisorAnalysis vient de advisorDecision.advisorComparativeMarketPrice', () => {
+    expect(
+      liveDerivedAmounts(live({ sellerPrice: 320000, analysis: 415000 })).advisorAnalysis,
+    ).toBe(415000);
+  });
+
+  it('absente au positionnement → null (aucune valeur inventée)', () => {
+    expect(liveDerivedAmounts(live({ sellerPrice: 320000 })).advisorAnalysis).toBeNull();
+    expect(liveDerivedAmounts(null).advisorAnalysis).toBeNull();
+  });
+});
 
 describe('liveCapturedFacts (Mission 56)', () => {
   it('null quand il n’y a pas de Live', () => {

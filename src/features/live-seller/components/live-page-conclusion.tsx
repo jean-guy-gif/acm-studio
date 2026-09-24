@@ -61,15 +61,15 @@ export function LivePageConclusion({
           <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Positionnement observé sur le marché concurrentiel</div>
+          <div className={statLabel}>Marché calculé</div>
           <div className={bigValue}>{euro(competitiveMarketCentral)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Analyse comparative de marché du conseiller</div>
-          <div className={bigValue}>{euro(summary?.advisor_comparative_market_price ?? null)}</div>
+          <div className={statLabel}>Analyse du conseiller</div>
+          <div className={bigValue}>{euro(decision?.advisorComparativeMarketPrice ?? null)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Prix conseillé (validé)</div>
+          <div className={statLabel}>Prix conseillé</div>
           <div className={bigValue}>{euro(decision?.advisorPrice ?? null)}</div>
         </div>
       </div>
@@ -124,8 +124,8 @@ export function LivePageConclusion({
       </div>
 
       <p className="max-w-3xl text-base text-zinc-600 stage:text-white/70">
-        Le marché concurrentiel montre à quels biens votre logement sera comparé. L’analyse
-        comparative du conseiller détermine le positionnement professionnel proposé.
+        Le marché calculé montre à quels biens votre logement sera comparé. L’analyse du conseiller
+        détermine le positionnement professionnel proposé.
       </p>
 
       {/* Mission 53 §1 — la seule question qui vient après l'analyse. Repères au-dessus (déjà

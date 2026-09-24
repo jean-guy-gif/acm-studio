@@ -8,7 +8,7 @@ import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
 
 export const AMOUNT_LABELS: Record<keyof ConclusionAmounts, string> = {
   marketComputed: 'Marché calculé (d’après les concurrents)',
-  advisorAnalysis: 'Analyse du conseiller (saisie manuelle)',
+  advisorAnalysis: 'Analyse du conseiller (avis de valeur)',
   advisorPrice: 'Prix conseillé (validé)',
   commercializationPrice: 'Prix de commercialisation (convenu)',
 };

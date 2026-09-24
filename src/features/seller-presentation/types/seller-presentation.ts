@@ -50,6 +50,9 @@ export type LiveComparableEntry = {
 export type LiveAdvisorDecision = {
   advisorPrice: number;
   sellerPrice: number | null;
+  // Mission 58 — l'analyse du conseiller (avis de valeur), préparée au positionnement puis
+  // LIVRÉE (advisor-only) aux écrans 7/8. Elle n'est plus dans la charge initiale du vendeur.
+  advisorComparativeMarketPrice: number | null;
   justification: string | null;
 };
 

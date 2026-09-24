@@ -131,6 +131,7 @@ export default async function PricePositioningPage({ params }: PositioningPagePr
             isOutdated={freshness === 'outdated'}
             initialAdvisorPrice={saved?.advisorPrice ?? positioning.recommendedRange.central}
             initialSellerPrice={saved?.sellerPrice ?? null}
+            initialAdvisorAnalysis={saved?.advisorComparativeMarketPrice ?? null}
             initialJustification={saved?.justification ?? ''}
             saveAction={saveAction}
             deleteAction={deleteAction}

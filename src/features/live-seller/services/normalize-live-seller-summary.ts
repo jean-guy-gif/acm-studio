@@ -5,7 +5,6 @@ export type RawLiveSellerSummary = {
   seller_most_dangerous_reason?: string | null;
   seller_most_dangerous_comment?: string | null;
   seller_perceived_property_price?: number | null;
-  advisor_comparative_market_price?: number | null;
   seller_property_confirmed?: string | null;
   seller_property_comment?: string | null;
 };
@@ -47,9 +46,6 @@ export function normalizeLiveSellerSummary(raw: RawLiveSellerSummary): LiveSelle
   }
   if ('seller_perceived_property_price' in raw) {
     result.seller_perceived_property_price = price(raw.seller_perceived_property_price ?? null);
-  }
-  if ('advisor_comparative_market_price' in raw) {
-    result.advisor_comparative_market_price = price(raw.advisor_comparative_market_price ?? null);
   }
   if ('seller_property_confirmed' in raw) {
     result.seller_property_confirmed = (trimToNull(
