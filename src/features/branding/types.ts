@@ -10,5 +10,9 @@ export type AgencyBranding = {
   textContrastAdjusted: boolean;
   logoLightUrl: string | null;
   logoDarkUrl: string | null;
+  // Mission 57 — la clé de la police retenue (parmi la liste embarquée), ou null → typo
+  // produit. Et l'adresse du site, conservée mais jamais ouverte (option B).
+  fontFamily: string | null;
+  siteUrl: string | null;
   validatedAt: string | null;
 };

@@ -18,8 +18,8 @@ export default async function AgencyIdentityPage() {
         <span className={kickerLabel}>Agence</span>
         <h1 className={pageTitle}>Identité de l’agence</h1>
         <p className={pageSubtitle}>
-          Votre logo et votre couleur de marque, appliqués à tout l’outil — jusqu’au Live que voit
-          le vendeur.
+          Votre logo, votre couleur et votre police de marque, appliqués à tout l’outil — jusqu’au
+          Live que voit le vendeur.
         </p>
       </div>
 
@@ -27,6 +27,8 @@ export default async function AgencyIdentityPage() {
         initialPrimary={branding?.brand ?? '#3ea9ff'}
         initialLogoLightUrl={branding?.logoLightUrl ?? null}
         initialLogoDarkUrl={branding?.logoDarkUrl ?? null}
+        initialFont={branding?.fontFamily ?? ''}
+        initialSiteUrl={branding?.siteUrl ?? ''}
       />
     </div>
   );

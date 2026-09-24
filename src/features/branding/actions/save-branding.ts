@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { typographyInputSchema } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -65,6 +66,16 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
   }
   const palette = derivePalette(primary);
 
+  // Mission 57 — la police retenue (clé embarquée, ou null → défaut produit) et l'adresse du
+  // site (conservée, jamais ouverte). Une clé hors liste ou une URL malformée est refusée.
+  const typography = typographyInputSchema.safeParse({
+    fontFamily: formData.get('font_family') ?? null,
+    siteUrl: formData.get('site_url') ?? null,
+  });
+  if (!typography.success) {
+    return { ok: false, error: 'Adresse du site invalide, ou police inconnue.' };
+  }
+
   // Écritures via le client SERVICE ROLE, APRÈS authentification : le chemin est imposé par
   // le serveur (agency_id de l'appelant), jamais fourni par le navigateur. La RLS du bucket
   // reste en défense pour tout accès direct.
@@ -98,6 +109,8 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     brand_darkest: palette.brandDarkest,
     on_brand_text: palette.onBrandText,
     text_contrast_adjusted: palette.textContrastAdjusted,
+    font_family: typography.data.fontFamily,
+    site_url: typography.data.siteUrl,
     validated_at: now,
     updated_at: now,
     // Ne pas écraser un chemin de logo existant avec null si aucun fichier n'a été redéposé.

@@ -13,6 +13,8 @@ const EMPTY: AgencyBranding = {
   textContrastAdjusted: false,
   logoLightUrl: null,
   logoDarkUrl: null,
+  fontFamily: null,
+  siteUrl: null,
   validatedAt: null,
 };
 
