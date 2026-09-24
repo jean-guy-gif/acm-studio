@@ -5,9 +5,18 @@ import { isManagerRole } from '@/features/team/services/role';
 // signés. Aucune moyenne, aucune tendance (§3 : des stats sur cinq dossiers ne disent rien).
 // Rien d'inventé : un conseiller sans dossier apparaît à ZÉRO, jamais absent de la liste.
 
-// « Depuis des semaines » / « depuis longtemps » (§3), en jours. Seuils nommés, pas magiques.
-export const PREPARATION_DORMANT_DAYS = 21; // un dossier en préparation qui n'avance plus
-export const FOLLOW_UP_DORMANT_DAYS = 30; // un « à relancer » dont l'issue n'a pas bougé
+// « Depuis des semaines » / « depuis longtemps » (§3), en jours — désormais RÉGLABLES par le
+// manager, par agence (Mission 59, seuils). Ces valeurs restent les DÉFAUTS produit : une agence
+// qui n'a rien réglé les hérite (colonnes agencies NOT NULL DEFAULT 21/30).
+export type DormancyThresholds = {
+  preparationDays: number; // un dossier en préparation qui n'avance plus
+  followUpDays: number; // un « à relancer » dont l'issue n'a pas bougé
+};
+
+export const DEFAULT_DORMANCY_THRESHOLDS: DormancyThresholds = {
+  preparationDays: 21,
+  followUpDays: 30,
+};
 
 export type TeamProfile = {
   id: string;
@@ -52,6 +61,8 @@ export type ManagerOverview = {
   advisors: AdvisorActivity[];
   dormant: DormantDossier[];
   agency: { inPreparation: number; ready: number; completed: number; signed: number };
+  // Les seuils EFFECTIVEMENT appliqués : la section les affiche et les rend réglables.
+  thresholds: DormancyThresholds;
 };
 
 function fullName(profile: TeamProfile): string {
@@ -66,12 +77,16 @@ function daysBetween(fromIso: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - from) / 86_400_000));
 }
 
-export function buildManagerOverview(
-  profiles: TeamProfile[],
-  projects: TeamProject[],
-  conclusions: TeamConclusion[],
-  now: Date = new Date(),
-): ManagerOverview {
+export function buildManagerOverview(args: {
+  profiles: TeamProfile[];
+  projects: TeamProject[];
+  conclusions: TeamConclusion[];
+  thresholds?: DormancyThresholds;
+  now?: Date;
+}): ManagerOverview {
+  const { profiles, projects, conclusions } = args;
+  const thresholds = args.thresholds ?? DEFAULT_DORMANCY_THRESHOLDS;
+  const now = args.now ?? new Date();
   const outcomeByProject = new Map(conclusions.map((c) => [c.projectId, c]));
   const nameById = new Map(profiles.map((p) => [p.id, fullName(p)]));
 
@@ -102,7 +117,7 @@ export function buildManagerOverview(
       if (activity) activity.inPreparation += 1;
       // Ce qui dort : en préparation depuis des semaines sans avancer.
       const idle = daysBetween(project.updatedAt, now);
-      if (idle >= PREPARATION_DORMANT_DAYS) {
+      if (idle >= thresholds.preparationDays) {
         dormant.push({
           projectId: project.id,
           sellerName: project.sellerName,
@@ -122,7 +137,7 @@ export function buildManagerOverview(
       // Ce qui dort : un « à relancer » dont l'issue n'a pas bougé depuis longtemps.
       if (conclusion?.outcome === 'follow_up' && conclusion.outcomeChangedAt) {
         const idle = daysBetween(conclusion.outcomeChangedAt, now);
-        if (idle >= FOLLOW_UP_DORMANT_DAYS) {
+        if (idle >= thresholds.followUpDays) {
           dormant.push({
             projectId: project.id,
             sellerName: project.sellerName,
@@ -148,5 +163,5 @@ export function buildManagerOverview(
     { inPreparation: 0, ready: 0, completed: 0, signed: 0 },
   );
 
-  return { advisors, dormant, agency };
+  return { advisors, dormant, agency, thresholds };
 }

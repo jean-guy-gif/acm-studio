@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   buildManagerOverview,
+  DEFAULT_DORMANCY_THRESHOLDS,
   type ManagerOverview,
   type TeamConclusion,
   type TeamProfile,
@@ -21,11 +22,20 @@ export async function getManagerOverview(): Promise<ManagerOverview | null> {
   }
   const supabase = await createClient();
 
-  const [{ data: profiles }, { data: projects }, { data: conclusions }] = await Promise.all([
-    supabase.from('profiles').select('id, first_name, last_name, role'),
-    supabase.from('projects').select('id, advisor_id, seller_name, status, updated_at'),
-    supabase.from('project_meeting_conclusions').select('project_id, outcome, outcome_changed_at'),
-  ]);
+  const [{ data: profiles }, { data: projects }, { data: conclusions }, { data: agency }] =
+    await Promise.all([
+      supabase.from('profiles').select('id, first_name, last_name, role'),
+      supabase.from('projects').select('id, advisor_id, seller_name, status, updated_at'),
+      supabase
+        .from('project_meeting_conclusions')
+        .select('project_id, outcome, outcome_changed_at'),
+      // Les seuils de dormance de l'agence (RLS : uniquement la sienne). Défauts produit en repli.
+      supabase
+        .from('agencies')
+        .select('preparation_dormant_days, follow_up_dormant_days')
+        .eq('id', profile.agency_id)
+        .maybeSingle(),
+    ]);
 
   const teamProfiles: TeamProfile[] = (profiles ?? []).map((p) => ({
     id: p.id,
@@ -46,5 +56,17 @@ export async function getManagerOverview(): Promise<ManagerOverview | null> {
     outcomeChangedAt: c.outcome_changed_at,
   }));
 
-  return buildManagerOverview(teamProfiles, teamProjects, teamConclusions);
+  const thresholds = agency
+    ? {
+        preparationDays: agency.preparation_dormant_days,
+        followUpDays: agency.follow_up_dormant_days,
+      }
+    : DEFAULT_DORMANCY_THRESHOLDS;
+
+  return buildManagerOverview({
+    profiles: teamProfiles,
+    projects: teamProjects,
+    conclusions: teamConclusions,
+    thresholds,
+  });
 }
