@@ -1,22 +1,8 @@
 import type { Metadata } from 'next';
-import { Montserrat, Rajdhani } from 'next/font/google';
 
 import { BrandStyle } from '@/features/branding/components/brand-style';
+import { embeddedFontClassNames } from '@/features/branding/fonts/embedded-fonts';
 import './globals.css';
-
-// Montserrat = corps / interface ; Rajdhani = titres et éléments distinctifs
-// (charte Start Academy).
-const montserrat = Montserrat({
-  variable: '--font-montserrat',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
-
-const rajdhani = Rajdhani({
-  variable: '--font-rajdhani',
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-});
 
 export const metadata: Metadata = {
   title: 'ACM Studio',
@@ -28,8 +14,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Mission 57 — toutes les polices embarquées disponibles en var(--font-*) ; la charte de
+  // l'agence (BrandStyle) désigne laquelle est active. Défaut : Montserrat + Rajdhani.
   return (
-    <html lang="fr" className={`${montserrat.variable} ${rajdhani.variable} h-full antialiased`}>
+    <html lang="fr" className={`${embeddedFontClassNames} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <BrandStyle />
         {children}

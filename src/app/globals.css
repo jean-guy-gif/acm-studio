@@ -23,6 +23,14 @@
   /* Texte posé sur un aplat de marque (bouton). Surchargé par agence si besoin. */
   --color-on-brand: #ffffff;
 
+  /* Typographies : Montserrat (corps/interface), Rajdhani (titres) — défaut Start Academy.
+     Mission 57 : NON-inline à dessein. Les jetons doivent être émis à :root pour que les
+     utilitaires (`font-sans`/`font-title`) les référencent en var() — sinon la valeur serait
+     figée à la compilation et la charte d'agence ne pourrait pas la surcharger au runtime
+     (exactement comme les couleurs `--color-brand*`, non-inline pour la même raison). */
+  --font-sans: var(--font-montserrat), Arial, Helvetica, sans-serif;
+  --font-title: var(--font-rajdhani), var(--font-montserrat), sans-serif;
+
   --radius-card: 0.75rem;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
 }
@@ -31,10 +39,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
-  /* Typographies : Montserrat (corps/interface), Rajdhani (titres). */
-  --font-sans: var(--font-montserrat), Arial, Helvetica, sans-serif;
-  --font-title: var(--font-rajdhani), var(--font-montserrat), sans-serif;
 }
 
 /* ===========================================================================

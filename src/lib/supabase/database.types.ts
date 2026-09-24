@@ -39,10 +39,12 @@ export type Database = {
           brand_deep: string | null
           brand_soft: string | null
           created_at: string
+          font_family: string | null
           id: string
           logo_dark_path: string | null
           logo_light_path: string | null
           on_brand_text: string | null
+          site_url: string | null
           text_contrast_adjusted: boolean
           updated_at: string
           validated_at: string | null
@@ -55,10 +57,12 @@ export type Database = {
           brand_deep?: string | null
           brand_soft?: string | null
           created_at?: string
+          font_family?: string | null
           id?: string
           logo_dark_path?: string | null
           logo_light_path?: string | null
           on_brand_text?: string | null
+          site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
           validated_at?: string | null
@@ -71,10 +75,12 @@ export type Database = {
           brand_deep?: string | null
           brand_soft?: string | null
           created_at?: string
+          font_family?: string | null
           id?: string
           logo_dark_path?: string | null
           logo_light_path?: string | null
           on_brand_text?: string | null
+          site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
           validated_at?: string | null

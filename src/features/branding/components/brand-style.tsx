@@ -1,5 +1,6 @@
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { brandingCssVariables } from '@/features/branding/services/branding-css';
+import { brandingFontDeclarations } from '@/features/branding/services/branding-typography';
 
 // Mission 55 — injecte la charte VALIDÉE de l'agence sur TOUT l'outil : un <style> qui
 // surcharge les jetons `--color-brand*` (et `--color-on-brand`) après la feuille Tailwind,
@@ -13,7 +14,10 @@ export async function BrandStyle() {
   if (!branding?.validatedAt) {
     return null;
   }
-  const declarations = brandingCssVariables(branding);
+  // Couleurs (jalon 1) + police (jalon 2), même mécanisme : des surcharges de jetons à :root,
+  // toutes deux filtrées (isValidHex / clé embarquée connue) — rien d'arbitraire n'entre.
+  const declarations =
+    `${brandingCssVariables(branding)} ${brandingFontDeclarations(branding.fontFamily)}`.trim();
   if (declarations === '') {
     return null;
   }

@@ -7,6 +7,7 @@ import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 
 import { btnPrimary, card, errorText, fieldLabel, metaLabel, okText } from '@/components/ui/styles';
 import { saveBranding } from '@/features/branding/actions/save-branding';
+import { EMBEDDED_FONTS, embeddedFontCssVar } from '@/features/branding/fonts/font-registry';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 
 type LogoState = { file: File | null; url: string | null; isJpeg: boolean };
@@ -29,29 +30,41 @@ export function BrandingForm({
   initialPrimary,
   initialLogoLightUrl,
   initialLogoDarkUrl,
+  initialFont,
+  initialSiteUrl,
 }: {
   initialPrimary: string;
   initialLogoLightUrl: string | null;
   initialLogoDarkUrl: string | null;
+  initialFont: string;
+  initialSiteUrl: string;
 }) {
   const [primary, setPrimary] = useState(initialPrimary);
   const [light, setLight] = useLogo(initialLogoLightUrl);
   const [dark, setDark] = useLogo(initialLogoDarkUrl);
+  const [font, setFont] = useState(initialFont);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
 
   const palette = useMemo(() => (isValidHex(primary) ? derivePalette(primary) : null), [primary]);
 
-  const previewVars = palette
-    ? ({
-        '--color-brand': palette.brand,
-        '--color-brand-deep': palette.brandDeep,
-        '--color-brand-soft': palette.brandSoft,
-        '--color-brand-darker': palette.brandDarker,
-        '--color-brand-darkest': palette.brandDarkest,
-        '--color-on-brand': palette.onBrandText,
-      } as CSSProperties)
-    : undefined;
+  // La police choisie (ou aucune → typo produit) pilote l'aperçu : on surcharge les DEUX
+  // jetons de police sur le conteneur, exactement comme le fera BrandStyle à l'échelle de
+  // l'outil — corps via `font-family`, titres via `--font-title` (que lit .font-title).
+  const fontVar = font ? embeddedFontCssVar(font) : null;
+  const previewStyle = {
+    ...(palette
+      ? {
+          '--color-brand': palette.brand,
+          '--color-brand-deep': palette.brandDeep,
+          '--color-brand-soft': palette.brandSoft,
+          '--color-brand-darker': palette.brandDarker,
+          '--color-brand-darkest': palette.brandDarkest,
+          '--color-on-brand': palette.onBrandText,
+        }
+      : {}),
+    ...(fontVar ? { fontFamily: `var(${fontVar})`, '--font-title': `var(${fontVar})` } : {}),
+  } as CSSProperties;
 
   return (
     <form
@@ -96,6 +109,67 @@ export function BrandingForm({
             </p>
           ) : null}
 
+          {/* Mission 57 — la police de marque : une liste courte, chaque nom rendu dans sa
+              propre fonte. « Par défaut » = la typo produit. Le choix (name="font_family")
+              part au serveur, qui n'accepte qu'une clé embarquée. */}
+          <fieldset className="flex flex-col gap-2">
+            <span className={fieldLabel}>Police de marque</span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm ${
+                  font === '' ? 'border-brand bg-brand-soft' : 'border-zinc-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="font_family"
+                  value=""
+                  checked={font === ''}
+                  onChange={() => setFont('')}
+                />
+                <span className="text-zinc-800">Par défaut</span>
+              </label>
+              {EMBEDDED_FONTS.map((embedded) => (
+                <label
+                  key={embedded.key}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 ${
+                    font === embedded.key ? 'border-brand bg-brand-soft' : 'border-zinc-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="font_family"
+                    value={embedded.key}
+                    checked={font === embedded.key}
+                    onChange={() => setFont(embedded.key)}
+                  />
+                  <span
+                    className="text-base text-zinc-800"
+                    style={{ fontFamily: `var(${embedded.cssVar})` }}
+                  >
+                    {embedded.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {/* L'adresse du site : conservée, jamais ouverte (option B). Elle ouvre la porte à
+              une extraction plus tard, pas maintenant. */}
+          <label className="flex flex-col gap-2">
+            <span className={fieldLabel}>Adresse de votre site (facultatif)</span>
+            <input
+              type="url"
+              name="site_url"
+              defaultValue={initialSiteUrl}
+              placeholder="https://votre-agence.fr"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="text-xs text-zinc-500">
+              Conservée pour plus tard — nous ne l’ouvrons pas. Votre police se choisit ci-dessus.
+            </span>
+          </label>
+
           <label className="flex flex-col gap-2">
             <span className={fieldLabel}>Logo — fond clair (écrans de travail)</span>
             <input
@@ -135,7 +209,7 @@ export function BrandingForm({
         <div className="flex flex-col gap-3">
           <span className={metaLabel}>Aperçu — le Live tel que votre vendeur le verra</span>
           <div
-            style={previewVars}
+            style={previewStyle}
             className="flex flex-col gap-5 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-6 text-white"
           >
             {dark.url ? (
