@@ -20,6 +20,15 @@ describe('extractSeLoger', () => {
     expect(data.roomsCount).toBe(3);
   });
 
+  it('mission 68 — un titre « Studio » sans T1/F1 compte pour 1 pièce', () => {
+    const data = extractSeLoger(
+      '<meta property="og:title" content="Studio à vendre 22 m² 149000 € Riquier Nice" />',
+      'https://www.seloger.com/annonces/achat/appartement/nice-06/riquier/1.htm',
+    );
+    expect(data.surfaceArea).toBe(22);
+    expect(data.roomsCount).toBe(1);
+  });
+
   it('recovers city and district from the original advisor URL (Antibes / L’Estagnol)', () => {
     const data = extractSeLoger(SERVED, ORIGINAL_URL);
     expect(data.city).toBe('Antibes');

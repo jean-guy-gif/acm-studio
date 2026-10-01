@@ -1,7 +1,10 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 
 const DOMAIN = 'seloger.com';
@@ -180,7 +183,8 @@ export function extractSeLoger(html: string, originalUrl?: string): PartialListi
     if (surface != null) {
       result.surfaceArea = surface;
     }
-    const rooms = normalizeCount(firstMatch(title, /\b[TF](\d+)\b/));
+    // Mission 68 — « Studio » sans « T1 » / « F1 » dans le titre = 1 pièce.
+    const rooms = normalizeCount(firstMatch(title, /\b[TF](\d+)\b/)) ?? studioRoomsCount(title);
     if (rooms != null) {
       result.roomsCount = rooms;
     }

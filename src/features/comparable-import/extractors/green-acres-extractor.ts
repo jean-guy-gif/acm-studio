@@ -1,7 +1,10 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 import { parseFrenchDate } from '@/features/comparable-import/utils/parse-french-date';
 import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
@@ -239,6 +242,14 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
     const title = decodeHtmlEntities(titleRaw).trim();
     if (title !== '') {
       result.title = title;
+      // Mission 68 — aucune « N pièces » sur la page, mais un titre qui dit « Studio » /
+      // « T1 » / « F1 » : 1 pièce. Le TITRE seulement, jamais la page entière.
+      if (result.roomsCount == null) {
+        const studio = studioRoomsCount(title);
+        if (studio != null) {
+          result.roomsCount = studio;
+        }
+      }
     }
   }
 

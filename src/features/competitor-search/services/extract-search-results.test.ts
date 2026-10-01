@@ -94,6 +94,35 @@ describe('extractSearchResults — chaque carte est une annonce, pas un lien de 
   });
 });
 
+// Mission 68 — une carte qui dit « Studio » sans « N pièces » compte pour 1 pièce.
+describe('extractSearchResults — un studio est un 1 pièce', () => {
+  it('Green Acres : les deux cartes réelles « Pièces : Studio » (29 m² et 21 m²) sont lues 1 pièce', () => {
+    // Avant : roomsCount null → écartées « faute de nombre de pièces » d'une recherche de studio.
+    const cards = load('green_acres');
+    const studio29 = cards.find((card) => card.key === 'A6ox2tei12dgtheq');
+    const studio21 = cards.find((card) => card.key === 'A4anxumz4cfmcv6h');
+    expect(studio29?.surfaceArea).toBe(29);
+    expect(studio29?.roomsCount).toBe(1);
+    expect(studio21?.surfaceArea).toBe(21);
+    expect(studio21?.roomsCount).toBe(1);
+  });
+
+  it('Green Acres : une carte sans étiquette « Pièces » (le parking) reste sans nombre de pièces', () => {
+    const parking = load('green_acres').find((card) => card.key === 'Agwtx8ngoa86yeso');
+    expect(parking?.propertyType).toBe('parking');
+    expect(parking?.roomsCount).toBeNull();
+  });
+
+  it('un « N pièces » explicite l’emporte toujours sur le mot « studio »', () => {
+    const [card] = extractSearchResults(
+      '<div id="classified-card-ABC123" data-testid="serp-core-classified-card-testid"><a data-testid="card-mfe-covering-link-testid" href="/annonces/achat/appartement/nice-06/1.htm" title="Appartement à vendre - Nice - 250 000 € - 2 pièces, 41 m², ancien studio agrandi"></a></div>',
+      'https://www.seloger.com/x',
+      'seloger',
+    );
+    expect(card.roomsCount).toBe(2);
+  });
+});
+
 // §11.6 — une carte sans prix ni surface ne fait pas échouer la lecture des autres.
 describe('extractSearchResults — lecture robuste des champs', () => {
   it('SeLoger : prix, surface et pièces lus sur la majorité des cartes', () => {

@@ -1,7 +1,10 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 import { readOutdoorSuggestions } from '@/features/comparable-import/utils/read-outdoor-suggestions';
 
@@ -118,7 +121,9 @@ export function extractMaisonsEtAppartements(html: string): PartialListingData {
     if (city && !NOT_A_CITY.test(city) && !/\d/.test(city)) {
       result.city = city;
     }
-    const rooms = normalizeCount(firstMatch(name, /(\d+)\s*pi[eè]ces?\b/i));
+    // Mission 68 — « Studio » / « T1 » / « F1 » sans « N pièces » dans le nom = 1 pièce.
+    const rooms =
+      normalizeCount(firstMatch(name, /(\d+)\s*pi[eè]ces?\b/i)) ?? studioRoomsCount(name);
     if (rooms != null) {
       result.roomsCount = rooms;
     }

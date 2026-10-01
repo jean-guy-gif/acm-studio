@@ -194,6 +194,76 @@ describe('rankCandidates — les quatre critères FILTRENT (Mission 61)', () => 
   });
 });
 
+// Mission 68 — la tolérance de surface reste ±5 % puis ±10 % au maximum, mais n'est JAMAIS
+// inférieure à ±3 m² : sans plancher, ±5 % d'un studio de 20 m² ne laissait que 19–21 m².
+describe('rankCandidates — plancher de ±3 m² sur la surface (Mission 68)', () => {
+  const STUDIO: CompetitorSearchCriteria = {
+    ...CRITERIA,
+    surfaceArea: 20,
+    roomsCount: 1,
+    advisorPriceMin: 100000,
+    advisorPriceMax: 200000,
+  };
+  const studio = (key: string, surfaceArea: number) =>
+    c({ key, surfaceArea, roomsCount: 1, price: 150000 });
+  const runStudio = (cands: CompetitorCandidate[]) =>
+    rankCandidates(STUDIO, [portal(cands)], PREFS);
+
+  it('pour 20 m² : 17–23 m² admis dès le cran 1, sans mention d’élargissement', () => {
+    const res = runStudio([
+      studio('s17', 17),
+      studio('s18', 18),
+      studio('s19', 19),
+      studio('s20', 20),
+      studio('s22', 22),
+      studio('s23', 23),
+      studio('s16_9', 16.9),
+      studio('s23_1', 23.1),
+    ]);
+    expect(keys(res).sort()).toEqual(['s17', 's18', 's19', 's20', 's22', 's23']);
+    expect(res.loosening.surfaceLoosened).toBe(false);
+    expect(res.loosening.roomsLoosened).toBe(false);
+    expect(res.ranked.some((r) => r.loosenedSurface)).toBe(false);
+  });
+
+  it('pour 20 m² : même au dernier cran (±10 % = 2 m²), on ne dépasse pas ±3 m²', () => {
+    // Trop peu de candidats → tous les crans sont parcourus ; 16 et 24 m² restent dehors.
+    const res = runStudio([
+      studio('s17', 17),
+      studio('s23', 23),
+      studio('s16', 16),
+      studio('s24', 24),
+    ]);
+    expect(keys(res).sort()).toEqual(['s17', 's23']);
+    expect(res.ranked.some((r) => r.loosenedSurface)).toBe(false);
+  });
+
+  it('pour 80 m² : rien ne change — 76–84 m² au cran 1 (±5 % = 4 m², au-dessus du plancher)', () => {
+    const res = run([
+      c({ key: 'a76', surfaceArea: 76 }),
+      c({ key: 'a78', surfaceArea: 78 }),
+      c({ key: 'a80', surfaceArea: 80 }),
+      c({ key: 'a81', surfaceArea: 81 }),
+      c({ key: 'a82', surfaceArea: 82 }),
+      c({ key: 'a84', surfaceArea: 84 }),
+      c({ key: 'a75', surfaceArea: 75 }),
+      c({ key: 'a85', surfaceArea: 85 }),
+    ]);
+    expect(keys(res).sort()).toEqual(['a76', 'a78', 'a80', 'a81', 'a82', 'a84']);
+    expect(res.loosening.surfaceLoosened).toBe(false);
+  });
+
+  it('pour 80 m² : le desserrage reste en pourcentage — 74 m² entre à ±7,5 %, 71 m² jamais', () => {
+    const res = run([
+      c({ key: 'a80', surfaceArea: 80 }),
+      c({ key: 'a74', surfaceArea: 74 }),
+      c({ key: 'a71', surfaceArea: 71 }),
+    ]);
+    expect(keys(res).sort()).toEqual(['a74', 'a80']);
+    expect(res.ranked.find((r) => r.candidate.key === 'a74')?.loosenedSurface).toBe(true);
+  });
+});
+
 // La VRAIE charge : les quatre pages de résultats Nice capturées par l'extension. C'est le cas
 // de Laurent — un 4 pièces de 80 m² — et l'invariant doit tenir quelles que soient les données :
 // jamais un 2 pièces, jamais une surface hors ±10 %, jamais une autre commune.
