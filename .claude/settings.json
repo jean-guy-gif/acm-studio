@@ -1,20 +1,40 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)", "Bash(npm test *)", "Bash(npm ci *)",
-      "Bash(npx vitest *)", "Bash(npx tsc *)", "Bash(npx eslint *)",
-      "Bash(npx prettier *)", "Bash(npx supabase migration list *)",
-      "Bash(git status *)", "Bash(git diff *)", "Bash(git log *)",
-      "Bash(git show *)", "Bash(git branch *)", "Bash(git switch *)",
-      "Bash(git fetch *)", "Bash(git pull *)", "Bash(git add *)",
-      "Bash(git commit *)", "Bash(git merge *)",
-      "Bash(git push -u origin mission-*)", "Bash(git push origin mission-*)",
-      "Bash(git push origin essai *)", "Bash(ls *)", "Bash(grep *)", "Bash(wc *)"
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npm ci *)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx prettier *)",
+      "Bash(npx supabase migration list *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git switch *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git merge *)",
+      "Bash(git push -u origin mission-*)",
+      "Bash(git push origin mission-*)",
+      "Bash(git push origin essai *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(wc *)"
     ],
     "deny": [
-      "Bash(git push --force*)", "Bash(git push -f *)", "Bash(git push * --force*)",
-      "Bash(git reset --hard *)", "Bash(npx supabase db reset --linked*)",
-      "Bash(supabase db reset --linked*)", "Bash(rm -rf *)"
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force*)",
+      "Bash(git reset --hard *)",
+      "Bash(npx supabase db reset --linked*)",
+      "Bash(supabase db reset --linked*)",
+      "Bash(rm -rf *)"
     ]
   }
 }
