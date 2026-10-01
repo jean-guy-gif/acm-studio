@@ -306,6 +306,7 @@ function PortalBlock({
               onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
             }
             disabled={pending}
+            pageLabel="de résultats"
           />
         </div>
       )}
@@ -885,6 +886,7 @@ export function CompetitorSearchPanel({
           <ListingPasteZone
             onPaste={({ html, text }) => handleSearchPaste(html.trim() !== '' ? html : text)}
             disabled={busy}
+            pageLabel="de résultats"
           />
         </div>
       ) : null}

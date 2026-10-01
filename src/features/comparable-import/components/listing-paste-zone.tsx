@@ -29,9 +29,12 @@ const getServerPlatform = (): null => null;
 type Props = {
   onPaste: (payload: { html: string; text: string }) => void;
   disabled?: boolean;
+  // La page à copier, telle qu'on la nomme au conseiller. Par défaut la page d'une annonce ;
+  // la recherche de concurrents colle une page de RÉSULTATS (mission 65).
+  pageLabel?: string;
 };
 
-export function ListingPasteZone({ onPaste, disabled = false }: Props) {
+export function ListingPasteZone({ onPaste, disabled = false, pageLabel = 'de l’annonce' }: Props) {
   const platform = useSyncExternalStore(subscribe, getPlatform, getServerPlatform);
   const [receivedChars, setReceivedChars] = useState<number | null>(null);
 
@@ -58,8 +61,8 @@ export function ListingPasteZone({ onPaste, disabled = false }: Props) {
     <div className="flex flex-col gap-2">
       <ol className="flex flex-col gap-1 text-sm text-zinc-700 stage:text-white/80">
         <li>
-          <strong>1.</strong> Sur la page de l’annonce, appuyez sur <kbd>{key}</kbd> + <kbd>A</kbd>{' '}
-          — tout est sélectionné.
+          <strong>1.</strong> Sur la page {pageLabel}, appuyez sur <kbd>{key}</kbd> + <kbd>A</kbd> —
+          tout est sélectionné.
         </li>
         <li>
           <strong>2.</strong> <kbd>{key}</kbd> + <kbd>C</kbd> — c’est copié.
@@ -72,7 +75,7 @@ export function ListingPasteZone({ onPaste, disabled = false }: Props) {
       <div
         role="textbox"
         tabIndex={0}
-        aria-label="Coller ici la page de l’annonce"
+        aria-label={`Coller ici la page ${pageLabel}`}
         contentEditable={!disabled}
         suppressContentEditableWarning
         onPaste={handlePaste}
