@@ -22,6 +22,8 @@ import {
   closeSearchWindowViaExtension,
   openSearchWindowViaExtension,
   pingExtension,
+  readOpenTabViaExtension,
+  type OpenSearchTab,
 } from '@/features/browser-extension/client';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import {
@@ -32,16 +34,19 @@ import {
   readPageViaExtension,
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
+import { detectSearchPortal } from '@/features/competitor-search/services/extract-search-results';
 import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
+import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
 import type { PortalSearchLink } from '@/features/competitor-search/services/build-portal-search-urls';
-import type {
-  CompetitorCandidate,
-  ExcludedForMissing,
-  Loosening,
-  PortalSearchResult,
-  RankedCandidate,
-  RecordDecisionResult,
-  SearchResultsHtmlImport,
+import {
+  SEARCH_PORTAL_LABELS,
+  type CompetitorCandidate,
+  type ExcludedForMissing,
+  type Loosening,
+  type PortalSearchResult,
+  type RankedCandidate,
+  type RecordDecisionResult,
+  type SearchResultsHtmlImport,
 } from '@/features/competitor-search/types';
 
 // Mission 61 — l'état d'admissibilité renvoyé par le classement, pour le bandeau.
@@ -53,6 +58,20 @@ type Admissibility = {
   minimum: number;
   rankedCount: number;
 };
+
+// Mission 65 — le portail d'un onglet ouvert, pour que le conseiller choisisse en lisant
+// « SeLoger — Appartements à vendre – Nice », pas une adresse.
+function tabPortalLabel(tab: OpenSearchTab): string {
+  try {
+    const portal = detectSearchPortal(new URL(tab.url).hostname);
+    return portal ? SEARCH_PORTAL_LABELS[portal] : 'Portail';
+  } catch {
+    return 'Portail';
+  }
+}
+
+const plural = (count: number, one: string, many: string): string =>
+  `${count} ${count > 1 ? many : one}`;
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
@@ -287,6 +306,7 @@ function PortalBlock({
               onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
             }
             disabled={pending}
+            pageLabel="de résultats"
           />
         </div>
       )}
@@ -334,7 +354,15 @@ export function CompetitorSearchPanel({
   const [importFailures, setImportFailures] = useState<
     { entry: RankedCandidate; reason: string }[]
   >([]);
-  const busy = pending || searching || importing;
+  // Mission 65 — « Lire ma recherche » : l'onglet que le conseiller a filtré lui-même.
+  const [reading, setReading] = useState(false);
+  // Plusieurs onglets de recherche ouverts : c'est le conseiller qui choisit.
+  const [tabChoices, setTabChoices] = useState<OpenSearchTab[] | null>(null);
+  // Repli sans extension (absente, ou trop ancienne pour lire un onglet) : le collage.
+  const [pasteFallback, setPasteFallback] = useState<'missing' | 'outdated' | null>(null);
+  // Ce qui vient d'être lu, dit tel quel (« SeLoger : 30 annonces lues… »).
+  const [readNote, setReadNote] = useState<string | null>(null);
+  const busy = pending || searching || importing || reading;
 
   // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
   // la LISTE PRINCIPALE ne contient QUE des biens dans la fourchette du bien vendeur.
@@ -443,6 +471,96 @@ export function CompetitorSearchPanel({
       await refreshRanking(read);
     } finally {
       setSearching(false);
+    }
+  }
+
+  // Mission 65 — une page de résultats filtrée PAR LE CONSEILLER (onglet lu par l'extension,
+  // ou code collé) suit le même chemin que la recherche automatique : lecture des cartes,
+  // neuf et doublons écartés, puis classement serveur avec les quatre filtres (M61). Elle
+  // remplace le résultat du même portail et laisse les autres en place.
+  async function integrateSearchPage(html: string, pageUrl: string | null) {
+    const read = readSearchPage(html, pageUrl);
+    if (!read.ok) {
+      setError(
+        read.reason === 'unknown_portal'
+          ? 'Portail non reconnu. Ouvrez une page de résultats SeLoger, Bien’ici, Green Acres ou Maisons et Appartements.'
+          : 'Aucune annonce détectée sur cette page. Vérifiez qu’il s’agit bien d’une page de résultats SeLoger, Bien’ici, Green Acres ou Maisons et Appartements, avec la liste affichée.',
+      );
+      return;
+    }
+    const prep = await prepareAction();
+    if (!prep.ok) {
+      setError(prep.error);
+      return;
+    }
+    setSearchLinks(prep.links);
+    setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+    const excluded = [
+      read.excludedNewBuild > 0
+        ? plural(read.excludedNewBuild, 'programme neuf écarté', 'programmes neufs écartés')
+        : null,
+      read.excludedDuplicates > 0
+        ? plural(read.excludedDuplicates, 'doublon écarté', 'doublons écartés')
+        : null,
+    ].filter((part): part is string => part != null);
+    setReadNote(
+      `${read.portal.label} : ${plural(read.cardsRead, 'annonce lue', 'annonces lues')} sur votre page${
+        excluded.length > 0 ? ` (${excluded.join(', ')})` : ''
+      }. Seules celles qui correspondent au bien de votre client sont proposées ci-dessous.`,
+    );
+    setPasteFallback(null);
+    const others = (portals ?? []).filter((portal) => portal.portal !== read.portal.portal);
+    await refreshRanking([...others, read.portal]);
+  }
+
+  // « Lire ma recherche » : AUCUNE requête au portail — l'extension lit l'onglet tel qu'il
+  // est affiché. `tabId` = l'onglet choisi quand plusieurs recherches sont ouvertes.
+  async function readMySearch(tabId?: number) {
+    setError(null);
+    setExtensionMissing(false);
+    setPasteFallback(null);
+    setTabChoices(null);
+    setReadNote(null);
+    setReading(true);
+    try {
+      const ping = await pingExtension();
+      if (!ping.available) {
+        setPasteFallback('missing');
+        return;
+      }
+      const result = await readOpenTabViaExtension(tabId);
+      if (!result.ok) {
+        if (result.reason === 'outdated') {
+          setPasteFallback('outdated');
+        } else if (result.reason === 'none') {
+          setError(
+            'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Faites votre recherche filtrée sur le portail, laissez l’onglet ouvert et affiché au moins une fois, puis cliquez à nouveau.',
+          );
+        } else {
+          setError('L’onglet n’a pas pu être lu. Réaffichez-le un instant, puis réessayez.');
+        }
+        return;
+      }
+      if (result.kind === 'choose') {
+        setTabChoices(result.tabs);
+        return;
+      }
+      await integrateSearchPage(result.html, result.finalUrl);
+    } finally {
+      setReading(false);
+    }
+  }
+
+  // Repli sans extension : le code de la page de résultats, collé. Pas d'adresse — le
+  // portail est reconnu aux marqueurs de ses cartes.
+  async function handleSearchPaste(html: string) {
+    setError(null);
+    setReadNote(null);
+    setReading(true);
+    try {
+      await integrateSearchPage(html, null);
+    } finally {
+      setReading(false);
     }
   }
 
@@ -719,11 +837,67 @@ export function CompetitorSearchPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Mission 65 — le conseiller filtre SON portail, ACM lit ce qu'il voit : c'est le
+          geste principal. La recherche automatique reste disponible, en second. */}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={runSearch} disabled={busy} className={btnPrimary}>
-          {searching ? 'Recherche en cours…' : 'Lancer la recherche'}
+        <button type="button" onClick={() => readMySearch()} disabled={busy} className={btnPrimary}>
+          {reading ? 'Lecture en cours…' : 'Lire ma recherche'}
         </button>
         <p className={hintText}>Critères : {criteriaLabel}</p>
+      </div>
+      <p className={hintText}>
+        Faites votre recherche filtrée sur le portail (pièces, surface, prix, secteur), laissez
+        l’onglet ouvert, puis cliquez ici.
+      </p>
+      {tabChoices ? (
+        // Plusieurs recherches ouvertes : on ne devine pas laquelle, le conseiller choisit.
+        <div className={`${card} flex flex-col gap-2 p-4`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            Plusieurs recherches sont ouvertes — laquelle lire ?
+          </span>
+          {tabChoices.map((tab) => (
+            <button
+              key={tab.tabId}
+              type="button"
+              onClick={() => readMySearch(tab.tabId)}
+              disabled={busy}
+              className={`${btnSecondary} justify-start px-3 py-1.5 text-left text-sm`}
+            >
+              {tabPortalLabel(tab)} — {tab.title.trim() !== '' ? tab.title : tab.url}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {pasteFallback ? (
+        // Critère 4 — sans extension, le collage de la page de résultats reste le repli.
+        <div className={`${card} flex flex-col gap-2 p-4`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            {pasteFallback === 'missing'
+              ? 'L’extension ACM Studio n’a pas répondu — collez votre page de résultats'
+              : 'Votre extension ACM Studio est trop ancienne pour lire un onglet — collez votre page de résultats'}
+          </span>
+          <p className={hintText}>
+            {pasteFallback === 'outdated'
+              ? 'Mettez l’extension à jour (version 0.2.0) pour lire l’onglet en un clic. En attendant, '
+              : 'Sans l’extension, '}
+            le repli est le collage : sur l’onglet de votre recherche filtrée, copiez la page de
+            résultats et collez-la ci-dessous. Le portail est reconnu tout seul.
+          </p>
+          <ListingPasteZone
+            onPaste={({ html, text }) => handleSearchPaste(html.trim() !== '' ? html : text)}
+            disabled={busy}
+            pageLabel="de résultats"
+          />
+        </div>
+      ) : null}
+      {readNote ? <p className={hintText}>{readNote}</p> : null}
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={runSearch} disabled={busy} className={btnSecondary}>
+          {searching ? 'Recherche en cours…' : 'Lancer la recherche automatique'}
+        </button>
+        <p className={hintText}>
+          En second : elle ne lit que la première page, non filtrée, de chaque portail.
+        </p>
       </div>
       {searching ? (
         // §10 : les portails sont interrogés l'un après l'autre, une seconde entre
@@ -734,10 +908,13 @@ export function CompetitorSearchPanel({
         </p>
       ) : null}
       <p className="text-xs text-zinc-400 stage:text-white/40">
-        La recherche interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements via
-        l’extension ACM Studio. Un portail qui refuse la lecture reste accessible : ouvrez sa
-        recherche, copiez le code de la page de résultats et collez-le. Chaque suggestion reste à
-        retenir ou à écarter — rien n’est enregistré sans votre validation.
+        « Lire ma recherche » lit l’onglet que vous avez laissé ouvert, tel qu’il est affiché, via
+        l’extension ACM Studio : aucune nouvelle requête n’est envoyée au portail. Sans l’extension,
+        le repli est le collage de la page de résultats. La recherche automatique interroge Green
+        Acres, SeLoger, Bien’ici et Maisons et Appartements ; un portail qui refuse la lecture reste
+        accessible : ouvrez sa recherche, copiez le code de la page de résultats et collez-le.
+        Chaque suggestion reste à retenir ou à écarter — rien n’est enregistré sans votre
+        validation.
       </p>
       {error ? (
         <p role="alert" className={alertError}>
@@ -826,8 +1003,9 @@ export function CompetitorSearchPanel({
             Concurrents proposés, du plus au moins ressemblant ({undecided.length})
           </h3>
           <p className={hintText}>
-            Le pourcentage mesure la ressemblance avec le bien de votre client. Rien n’est masqué :
-            une annonce éloignée descend dans la liste, elle ne disparaît pas.
+            Seules les annonces de la commune, dans votre fourchette de prix, avec le même nombre de
+            pièces et une surface proche sont proposées ; tout élargissement est signalé. Le
+            pourcentage mesure la ressemblance avec le bien de votre client.
           </p>
           {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
               un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.

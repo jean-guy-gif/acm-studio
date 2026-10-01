@@ -1,7 +1,8 @@
 /* global chrome */
 // ACM Studio extension — service worker (Manifest V3).
 //
-// Three functions, nothing else : ping, fetchRobots, fetchPage. The extension
+// Three functions, nothing else : ping, fetchRobots, fetchPage — plus, mission 65,
+// readOpenTab (lit un onglet DÉJÀ ouvert par le conseiller, sans rien charger). The extension
 // N'ANALYSE RIEN — elle rapporte du texte, l'application l'analyse. Rien n'est
 // stocké, rien n'est renvoyé ailleurs qu'à la page qui a appelé.
 //
@@ -15,7 +16,14 @@
 // them (background.js itself cannot be imported — it calls chrome.* at load). The
 // size floor, the waiting-title list and the host allow-list are defined and
 // documented there.
-import { isAllowedUrl, isStableSize, isWaitingShell } from './page-readiness.js';
+import {
+  SEARCH_HOST_SUFFIXES,
+  decideOpenTab,
+  isAllowedUrl,
+  isSearchTabUrl,
+  isStableSize,
+  isWaitingShell,
+} from './page-readiness.js';
 
 const VERSION = chrome.runtime.getManifest().version;
 const log = (...args) => console.log('[ACM ext]', ...args);
@@ -262,6 +270,72 @@ async function fetchRobots(rawUrl) {
   }
 }
 
+// MISSION 65 — « Lire ma recherche ». Le conseiller a fait SA recherche filtrée sur le portail
+// et a laissé l'onglet ouvert ; on lit cet onglet TEL QU'IL EST AFFICHÉ. Aucune requête au
+// portail : pas de rechargement, pas de navigation, pas de clic, pas de fenêtre ouverte — un
+// seul executeScript qui lit document.documentElement.outerHTML.
+//   · aucun onglet de recherche            → { ok: false, reason: 'none' }
+//   · un seul                              → { ok: true, kind: 'page', html, finalUrl, title }
+//   · plusieurs, sans tabId                → { ok: true, kind: 'choose', tabs } (le conseiller choisit)
+//   · tabId fourni (le choix du conseiller) → on lit CET onglet, s'il est toujours une recherche.
+const SEARCH_TAB_PATTERNS = SEARCH_HOST_SUFFIXES.flatMap((suffix) => [
+  `https://${suffix}/*`,
+  `https://*.${suffix}/*`,
+]);
+const NO_SEARCH_TAB = 'Aucun onglet de recherche ouvert sur un portail.';
+
+async function readOpenTab(tabId) {
+  try {
+    const tabs =
+      typeof tabId === 'number'
+        ? [await chrome.tabs.get(tabId)]
+        : await chrome.tabs.query({ url: SEARCH_TAB_PATTERNS });
+    const decision = decideOpenTab(tabs);
+    if (decision.kind === 'none') {
+      log('lecture d’onglet : aucun onglet de recherche ouvert');
+      return { ok: false, reason: 'none', error: NO_SEARCH_TAB };
+    }
+    if (decision.kind === 'choose') {
+      log(
+        `lecture d’onglet : ${decision.tabs.length} onglets de recherche, au conseiller de choisir`,
+      );
+      return { ok: true, kind: 'choose', tabs: decision.tabs };
+    }
+    const [{ result } = {}] = await chrome.scripting.executeScript({
+      target: { tabId: decision.tab.tabId },
+      func: () => ({
+        html: document.documentElement.outerHTML,
+        finalUrl: location.href,
+        title: document.title,
+      }),
+    });
+    if (!result || typeof result.html !== 'string' || result.html === '') {
+      log('lecture d’onglet : page vide');
+      return { ok: false, reason: 'error', error: 'Page vide.' };
+    }
+    // L'onglet a pu changer de page entre la liste et la lecture : on ne rapporte pas une
+    // page qui n'est plus une recherche.
+    if (!isSearchTabUrl(result.finalUrl)) {
+      return { ok: false, reason: 'none', error: NO_SEARCH_TAB };
+    }
+    log(
+      `onglet lu (tab=${decision.tab.tabId}) : ${result.html.length} caractères ${result.finalUrl}`,
+    );
+    return {
+      ok: true,
+      kind: 'page',
+      html: result.html,
+      finalUrl: result.finalUrl,
+      title: result.title || '',
+      size: result.html.length,
+    };
+  } catch (error) {
+    const message = error && error.message ? String(error.message) : 'Lecture de l’onglet échouée.';
+    log(`erreur lecture d’onglet : ${message}`); // the real cause is kept in the log
+    return { ok: false, reason: 'error', error: message };
+  }
+}
+
 // One handler for the content-script relay (onMessage) and a direct
 // externally_connectable call (onMessageExternal). Both answer asynchronously.
 function handle(message, sender, sendResponse) {
@@ -297,6 +371,11 @@ function handle(message, sender, sendResponse) {
   }
   if (message.kind === 'closeSearchWindow' && typeof message.windowId === 'number') {
     closeSearchWindow(message.windowId).then(sendResponse);
+    return true;
+  }
+  // Mission 65 — lire un onglet déjà ouvert (tabId = le choix du conseiller, s'il y en a un).
+  if (message.kind === 'readOpenTab') {
+    readOpenTab(typeof message.tabId === 'number' ? message.tabId : undefined).then(sendResponse);
     return true;
   }
   sendResponse({ ok: false, error: 'Action inconnue.' });

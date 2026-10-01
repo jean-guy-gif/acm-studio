@@ -6,7 +6,12 @@ portails refusent les adresses de centre de données ; le navigateur du conseill
 lui, n'est pas bloqué.
 
 L'extension **n'analyse rien**, **ne stocke rien**, et **ne renvoie qu'à la page ACM
-Studio** qui l'a appelée. Trois fonctions : `ping`, `fetchPage`, rien d'autre.
+Studio** qui l'a appelée. Trois fonctions : `ping`, `fetchPage`, rien d'autre — plus,
+depuis la version 0.2.0 (mission 65), `readOpenTab` : lire la page de résultats que le
+conseiller a **déjà ouverte** et filtrée lui-même. `readOpenTab` ne recharge rien, ne
+navigue pas, ne clique pas et n'ouvre aucune fenêtre ; s'il y a plusieurs onglets de
+recherche, elle en renvoie la liste et c'est le conseiller qui choisit. Permissions
+inchangées (après mise à jour du dossier : `chrome://extensions` → « Recharger »).
 
 ## Contenu
 
