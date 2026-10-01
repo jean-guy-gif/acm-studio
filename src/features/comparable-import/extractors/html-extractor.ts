@@ -1,7 +1,10 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { extractImageUrls } from '@/features/comparable-import/utils/extract-image-urls';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 
 function firstMatch(html: string, regex: RegExp): string | null {
@@ -49,7 +52,10 @@ export function extractHtml(html: string): PartialListingData {
     result.surfaceArea = surface;
   }
 
-  const rooms = normalizeCount(firstMatch(html, /(\d+)\s*pi[eè]ces?\b/i));
+  // Mission 68 — aucune « N pièces » sur la page, mais un titre qui dit « Studio » / « T1 » /
+  // « F1 » : 1 pièce. Le TITRE seulement, jamais la page entière.
+  const rooms =
+    normalizeCount(firstMatch(html, /(\d+)\s*pi[eè]ces?\b/i)) ?? studioRoomsCount(result.title);
   if (rooms != null) {
     result.roomsCount = rooms;
   }

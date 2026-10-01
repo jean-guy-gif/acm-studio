@@ -24,7 +24,8 @@ import type {
 // (ici), jamais de `scoreCandidate` qui est partagé — comme `typesConflict` (M54).
 //
 // Bornes (données par Laurent) : type via typesConflict (jamais desserré) ; prix = fourchette du
-// conseiller STRICTE, jamais élargie (mission 61 §2, décision A) ; pièces = exact ; surface = ±5 % ;
+// conseiller STRICTE, jamais élargie (mission 61 §2, décision A) ; pièces = exact ; surface = ±5 %,
+// jamais moins de ±3 m² (mission 68) ;
 // commune = `candidate.city` doit être la commune recherchée (garde-fou contre les portails qui
 // élargissent d'eux-mêmes).
 
@@ -34,6 +35,10 @@ const MINIMUM = 3; // sous ce plancher après le dernier cran, l'écran le dit e
 // Les crans, du moins grave au plus grave : surface d'abord (5 → 7,5 → 10 %), puis pièces (±1).
 // Le prix et la commune ne bougent à AUCUN cran.
 type Bounds = { surfaceTol: number; roomsTol: number };
+// Mission 68 — plancher de la tolérance de surface : ±5 % (puis ±10 % au plus) d'un petit bien
+// ne laisse presque rien passer (±1 m² pour 20 m²). La tolérance n'est donc jamais inférieure à
+// ±3 m² : 17–23 m² pour 20 m². Dès 60 m², ±5 % vaut déjà 3 m² — pour 80 m², rien ne change.
+const SURFACE_FLOOR_SQM = 3;
 const LEVELS: Bounds[] = [
   { surfaceTol: 0.05, roomsTol: 0 },
   { surfaceTol: 0.075, roomsTol: 0 },
@@ -96,8 +101,9 @@ function admit(
   if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
     if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
       return { ok: false, kind: 'missing', field: 'surface' };
-    const gap = Math.abs(candidate.surfaceArea - criteria.surfaceArea) / criteria.surfaceArea;
-    if (gap > bounds.surfaceTol + 1e-9) return { ok: false, kind: 'out' };
+    const gap = Math.abs(candidate.surfaceArea - criteria.surfaceArea);
+    const allowed = Math.max(criteria.surfaceArea * bounds.surfaceTol, SURFACE_FLOOR_SQM);
+    if (gap > allowed + 1e-9) return { ok: false, kind: 'out' };
   }
   return { ok: true };
 }
@@ -210,10 +216,18 @@ export function rankCandidates(
     return judgedA !== judgedB ? judgedA - judgedB : b.score - a.score;
   });
 
+  // Mission 68 — le plancher l'emporte-t-il sur le pourcentage au cran retenu ? Si oui, c'est lui
+  // la tolérance réelle, et l'écran doit dire « ±3 m² » plutôt qu'un pourcentage qui n'a pas servi.
+  const floorWins =
+    criteria.surfaceArea != null &&
+    criteria.surfaceArea > 0 &&
+    criteria.surfaceArea * chosen.surfaceTol < SURFACE_FLOOR_SQM - 1e-9;
+
   const loosening: Loosening = {
     surfaceTolerancePct: Math.round(chosen.surfaceTol * 1000) / 10,
     roomsTolerance: chosen.roomsTol,
     surfaceLoosened: chosen.surfaceTol > 0.05,
+    surfaceFloorSqm: floorWins ? SURFACE_FLOOR_SQM : null,
     roomsLoosened: chosen.roomsTol > 0,
   };
 

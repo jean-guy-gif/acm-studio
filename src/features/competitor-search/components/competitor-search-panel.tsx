@@ -34,6 +34,7 @@ import {
   readPageViaExtension,
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
+import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { detectSearchPortal } from '@/features/competitor-search/services/extract-search-results';
 import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
 import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
@@ -961,7 +962,9 @@ export function CompetitorSearchPanel({
             const L = admissibility.loosening;
             const ex = admissibility.excludedForMissing;
             const loosenParts: string[] = [];
-            if (L.surfaceLoosened) loosenParts.push(`±${L.surfaceTolerancePct} % de surface`);
+            // Mission 68 — la tolérance RÉELLEMENT appliquée : « ±3 m² » quand le plancher
+            // l'emporte sur le pourcentage, le pourcentage du cran sinon.
+            if (L.surfaceLoosened) loosenParts.push(`${surfaceToleranceLabel(L)} de surface`);
             if (L.roomsLoosened) loosenParts.push('±1 pièce');
             const excludedLines = [
               ex.surface > 0 ? `${ex.surface} sans surface indiquée` : null,

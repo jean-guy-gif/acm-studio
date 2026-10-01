@@ -1,7 +1,10 @@
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 
 // Both Figaro real-estate hosts share the same photo CDN and close title
@@ -71,7 +74,9 @@ export function extractFigaro(html: string): PartialListingData {
       result.postalCode = postalCode;
     }
 
-    const rooms = normalizeCount(firstMatch(title, /(\d+)\s*pi[eè]ces?\b/i));
+    // Mission 68 — « Studio » / « T1 » / « F1 » sans « N pièces » dans le titre = 1 pièce.
+    const rooms =
+      normalizeCount(firstMatch(title, /(\d+)\s*pi[eè]ces?\b/i)) ?? studioRoomsCount(title);
     if (rooms != null) {
       result.roomsCount = rooms;
     }

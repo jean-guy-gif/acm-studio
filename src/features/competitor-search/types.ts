@@ -123,6 +123,10 @@ export type Loosening = {
   surfaceTolerancePct: number; // 5 | 7.5 | 10
   roomsTolerance: number; // 0 (exact) | 1
   surfaceLoosened: boolean; // au-delà de ±5 %
+  // Mission 68 — non-null quand le plancher (±3 m²) l'emporte sur le pourcentage au cran retenu :
+  // c'est alors LUI la tolérance réellement appliquée, et l'écran dit « ±3 m² », pas un
+  // pourcentage. null dès que le pourcentage vaut au moins le plancher (80 m² : toujours null).
+  surfaceFloorSqm: number | null;
   roomsLoosened: boolean; // ±1 pièce
 };
 

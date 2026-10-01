@@ -17,3 +17,14 @@ export function normalizeCount(raw: unknown): number | null {
   const value = Number(match[1]);
   return Number.isInteger(value) && value >= 0 && value <= MAX_COUNT ? value : null;
 }
+
+// Mission 68 — un STUDIO est un 1 pièce, et les portails l'écrivent sans « 1 pièce » :
+// « Studio », « T1 » ou « F1 ». À n'appeler QUE sur un libellé court de l'annonce (titre,
+// étiquette « Pièces »), et seulement quand aucun « N pièces » n'y figure : sur une page
+// entière, « studio indépendant » dans la description d'une maison ferait un faux 1 pièce.
+export function studioRoomsCount(label: string | null | undefined): number | null {
+  if (label == null) {
+    return null;
+  }
+  return /\bstudio\b|\b[TF]1\b/i.test(label) ? 1 : null;
+}

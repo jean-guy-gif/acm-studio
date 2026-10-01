@@ -75,6 +75,20 @@ describe('extractHtml', () => {
     expect(data.portalPricePerSquareMeter).toBe(5827);
   });
 
+  it('mission 68 — un titre « Studio » sans « N pièces » compte pour 1 pièce', () => {
+    const data = extractHtml(
+      '<title>Studio à vendre Nice</title><div>Surface habitable : 22 m²</div>',
+    );
+    expect(data.roomsCount).toBe(1);
+  });
+
+  it('mission 68 — « studio » dans la description seule ne fait pas un 1 pièce', () => {
+    const data = extractHtml(
+      '<title>Maison à vendre Nice</title><p>Avec un studio indépendant au rez-de-jardin.</p>',
+    );
+    expect(data.roomsCount).toBeUndefined();
+  });
+
   it('prefers "surface habitable" over an earlier generic surface label', () => {
     // Figaro regression: a "Surface totale 110,7 m²" line preceded the real
     // "Surface habitable 98 m²" and used to win.

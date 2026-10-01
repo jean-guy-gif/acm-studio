@@ -6,7 +6,10 @@ import type {
 import { decodeHtmlEntities } from '@/features/comparable-import/utils/html-text';
 import { isGenericImageUrl } from '@/features/comparable-import/utils/is-generic';
 import { normalizeArea } from '@/features/comparable-import/utils/normalize-area';
-import { normalizeCount } from '@/features/comparable-import/utils/normalize-count';
+import {
+  normalizeCount,
+  studioRoomsCount,
+} from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 
@@ -103,8 +106,15 @@ function readRooms(text: string | null): number | null {
   if (text == null) {
     return null;
   }
-  const match = decodeHtmlEntities(text).match(/(\d{1,2})\s*pi[eè]ces?\b/i);
-  return match ? normalizeCount(match[1]) : null;
+  const decoded = decodeHtmlEntities(text);
+  const match = decoded.match(/(\d{1,2})\s*pi[eè]ces?\b/i);
+  if (match) {
+    return normalizeCount(match[1]);
+  }
+  // Mission 68 — une carte qui dit « Studio », « T1 » ou « F1 » sans « N pièces » (l'étiquette
+  // « Pièces : Studio » de Green Acres) compte pour 1 pièce. Sans cela elle était écartée
+  // « faute de nombre de pièces » alors que la carte le dit.
+  return studioRoomsCount(decoded);
 }
 
 // Un LOGO D'AGENCE n'est pas la photo du bien (même famille que l'habillage écarté
