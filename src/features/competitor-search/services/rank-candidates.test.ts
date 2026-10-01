@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { extractSearchResults } from '@/features/competitor-search/services/extract-search-results';
+import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
 import type {
@@ -236,6 +237,46 @@ describe('rankCandidates — plancher de ±3 m² sur la surface (Mission 68)', (
     ]);
     expect(keys(res).sort()).toEqual(['s17', 's23']);
     expect(res.ranked.some((r) => r.loosenedSurface)).toBe(false);
+  });
+
+  it('pour 20 m² : le bandeau dit la tolérance réelle — « ±3 m² de surface et ±1 pièce »', () => {
+    // Trop peu de studios → dernier cran (±10 % et ±1 pièce). ±10 % de 20 m² = 2 m² : c'est le
+    // plancher de ±3 m² qui filtre, et c'est lui que l'écran doit annoncer.
+    const res = runStudio([
+      studio('s17', 17),
+      studio('s23', 23),
+      c({ key: 'deux18', surfaceArea: 18, roomsCount: 2, price: 150000 }),
+      c({ key: 'deux24', surfaceArea: 24, roomsCount: 2, price: 150000 }),
+    ]);
+    expect(res.loosening.surfaceLoosened).toBe(true);
+    expect(res.loosening.roomsLoosened).toBe(true);
+    expect(res.loosening.surfaceFloorSqm).toBe(3);
+    expect(surfaceToleranceLabel(res.loosening)).toBe('±3 m²');
+    expect(keys(res).sort()).toEqual(['deux18', 's17', 's23']);
+    // La mention sur la carte suit la même règle : le 2 pièces de 18 m² entrait déjà à ±3 m²,
+    // sa carte ne parle que des pièces — jamais d'un élargissement de surface qui n'a pas eu lieu.
+    const two = res.ranked.find((r) => r.candidate.key === 'deux18');
+    expect(two?.loosenedRooms).toBe(true);
+    expect(two?.loosenedSurface).toBe(false);
+    expect(res.ranked.some((r) => r.loosenedSurface)).toBe(false);
+  });
+
+  it('pour 20 m² au cran 1 : le plancher s’applique, sans bandeau d’élargissement', () => {
+    const res = runStudio(
+      [17, 18, 19, 20, 22, 23].map((surface) => studio(`s${surface}`, surface)),
+    );
+    expect(res.loosening.surfaceLoosened).toBe(false);
+    expect(res.loosening.surfaceFloorSqm).toBe(3);
+  });
+
+  it('pour 80 m² : le bandeau reste en pourcentage — « ±10 % » au dernier cran, jamais « ±3 m² »', () => {
+    const res = run([c({ key: 'a80', surfaceArea: 80 }), c({ key: 'a73', surfaceArea: 73 })]);
+    expect(res.loosening.surfaceLoosened).toBe(true);
+    expect(res.loosening.surfaceTolerancePct).toBe(10);
+    expect(res.loosening.surfaceFloorSqm).toBeNull();
+    expect(surfaceToleranceLabel(res.loosening)).toBe('±10 %');
+    // Et la carte du 73 m² dit toujours qu'elle doit sa place à l'élargissement de la surface.
+    expect(res.ranked.find((r) => r.candidate.key === 'a73')?.loosenedSurface).toBe(true);
   });
 
   it('pour 80 m² : rien ne change — 76–84 m² au cran 1 (±5 % = 4 m², au-dessus du plancher)', () => {

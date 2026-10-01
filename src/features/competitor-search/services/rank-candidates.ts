@@ -216,10 +216,18 @@ export function rankCandidates(
     return judgedA !== judgedB ? judgedA - judgedB : b.score - a.score;
   });
 
+  // Mission 68 — le plancher l'emporte-t-il sur le pourcentage au cran retenu ? Si oui, c'est lui
+  // la tolérance réelle, et l'écran doit dire « ±3 m² » plutôt qu'un pourcentage qui n'a pas servi.
+  const floorWins =
+    criteria.surfaceArea != null &&
+    criteria.surfaceArea > 0 &&
+    criteria.surfaceArea * chosen.surfaceTol < SURFACE_FLOOR_SQM - 1e-9;
+
   const loosening: Loosening = {
     surfaceTolerancePct: Math.round(chosen.surfaceTol * 1000) / 10,
     roomsTolerance: chosen.roomsTol,
     surfaceLoosened: chosen.surfaceTol > 0.05,
+    surfaceFloorSqm: floorWins ? SURFACE_FLOOR_SQM : null,
     roomsLoosened: chosen.roomsTol > 0,
   };
 

@@ -134,7 +134,10 @@ export function RankedCandidateCard({
           </span>
         ) : null}
 
-        {/* Mission 61 — une annonce retenue grâce à un cran de desserrage le DIT. */}
+        {/* Mission 61 — une annonce retenue grâce à un cran de desserrage le DIT.
+            Mission 68 — même règle que le bandeau : quand le plancher de ±3 m² l'emporte, la
+            surface n'a pas été élargie pour cette annonce (elle entrait déjà à ±3 m²) ;
+            `loosenedSurface` est alors false et la mention ne parle que des pièces. */}
         {ranked.loosenedSurface || ranked.loosenedRooms ? (
           <span className="inline-flex w-fit rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
             Retenu après élargissement
