@@ -434,21 +434,14 @@ export function extractSearchResults(
 // chez deux agences, ou repris sur deux portails, partage cette signature bien que sa
 // clé de portail diffère. On ne déduplique QUE si les quatre champs sont présents :
 // à défaut, deux annonces distinctes se ressembleraient à tort (null|null|null|null).
-export function candidateSignature(candidate: CompetitorCandidate): string | null {
-  const { price, surfaceArea, roomsCount, city } = candidate;
-  if (price == null || surfaceArea == null || roomsCount == null || !city) {
-    return null;
-  }
-  const normalizedCity = city.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  return `${price}|${surfaceArea}|${roomsCount}|${normalizedCity}`;
-}
-
-// Écarte le neuf (§6) et déduplique (première occurrence gardée, écartées comptées).
+// Écarte le neuf (§6) et déduplique par IDENTITÉ PUBLIÉE (même URL d'annonce ; première
+// occurrence gardée, écartées comptées). Mission 61 §4 — on NE déduplique PLUS par ressemblance
+// prix|surface|pièces|commune : deux biens distincts peuvent la partager, et on préfère afficher
+// deux fois que masquer un vrai concurrent. Seule l'identité publiée (l'URL) fait foi.
 export function filterAndDedupeCandidates(candidates: CompetitorCandidate[]): SearchExtraction {
   let excludedNewBuild = 0;
   let excludedDuplicates = 0;
   const kept: CompetitorCandidate[] = [];
-  const seenSignatures = new Set<string>();
   const seenUrls = new Set<string>();
 
   for (const candidate of candidates) {
@@ -460,15 +453,7 @@ export function filterAndDedupeCandidates(candidates: CompetitorCandidate[]): Se
       excludedDuplicates += 1;
       continue;
     }
-    const signature = candidateSignature(candidate);
-    if (signature != null && seenSignatures.has(signature)) {
-      excludedDuplicates += 1;
-      continue;
-    }
     seenUrls.add(candidate.url);
-    if (signature != null) {
-      seenSignatures.add(signature);
-    }
     kept.push(candidate);
   }
 

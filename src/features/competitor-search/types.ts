@@ -109,6 +109,40 @@ export type RankedCandidate = {
   // Le conseiller a déjà tranché sur cette annonce : on le dit au lieu de la
   // reproposer comme neuve.
   alreadyJudged: 'accepted' | 'rejected' | null;
+  // Mission 61 — ce candidat n'est admissible que grâce à un cran de desserrage : sa carte le
+  // DIT (desserrage visible, correction de la M50 §3). false si admissible aux bornes serrées.
+  loosenedSurface: boolean;
+  loosenedRooms: boolean;
+};
+
+// Mission 61 §2 — l'état du desserrage appliqué, pour que l'écran dise ce qu'il a élargi et
+// pourquoi. Le prix et la commune ne bougent JAMAIS ; seules surface puis pièces se desserrent.
+export type Loosening = {
+  surfaceTolerancePct: number; // 5 | 7.5 | 10
+  roomsTolerance: number; // 0 (exact) | 1
+  surfaceLoosened: boolean; // au-delà de ±5 %
+  roomsLoosened: boolean; // ±1 pièce
+};
+
+// Mission 61 §3 — fail-closed, mais DIT : les candidats écartés faute d'une donnée qui EST le
+// critère, comptés par donnée manquante (« 4 annonces écartées faute de surface indiquée »). La
+// commune n'y figure PAS : une carte sans ville est dans le périmètre (l'URL interrogée porte la
+// commune, pas la vignette) — une donnée absente mais portée par la provenance n'écarte pas.
+export type ExcludedForMissing = {
+  surface: number;
+  rooms: number;
+  price: number;
+};
+
+// Le résultat du classement : les admissibles classés, l'état du desserrage, les écartés pour
+// donnée absente, et si on reste sous le minimum même après le dernier cran.
+export type RankedSearch = {
+  ranked: RankedCandidate[];
+  loosening: Loosening;
+  excludedForMissing: ExcludedForMissing;
+  belowMinimum: boolean; // < MINIMUM admissibles même après le dernier cran
+  target: number; // cible de candidats (6)
+  minimum: number; // plancher en dessous duquel l'écran le dit (3)
 };
 
 export type CompetitorSearchResult =

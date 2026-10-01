@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  candidateSignature,
   detectSearchPortal,
   extractSearchResults,
   filterAndDedupeCandidates,
@@ -263,8 +262,8 @@ describe('filterAndDedupeCandidates — le neuf est écarté', () => {
   });
 });
 
-// §11.4 — un doublon prix+surface+pièces+commune n'apparaît qu'une fois.
-describe('filterAndDedupeCandidates — déduplication prix+surface+pièces+commune', () => {
+// Mission 61 §4 — déduplication par IDENTITÉ PUBLIÉE (même URL), jamais par ressemblance.
+describe('filterAndDedupeCandidates — déduplication par URL publiée', () => {
   const base = {
     title: null,
     propertyType: null,
@@ -273,11 +272,11 @@ describe('filterAndDedupeCandidates — déduplication prix+surface+pièces+comm
     isNewBuild: false,
   };
 
-  it('le même bien chez deux agences n’apparaît qu’une fois, la première gardée', () => {
+  it('la même URL n’apparaît qu’une fois, la première gardée', () => {
     const candidates: CompetitorCandidate[] = [
       {
         ...base,
-        key: 'agenceA',
+        key: 'a1',
         url: 'https://x/a',
         price: 464000,
         surfaceArea: 66,
@@ -286,52 +285,45 @@ describe('filterAndDedupeCandidates — déduplication prix+surface+pièces+comm
       },
       {
         ...base,
-        key: 'agenceB',
-        url: 'https://x/b',
+        key: 'a2',
+        url: 'https://x/a',
         price: 464000,
         surfaceArea: 66,
         roomsCount: 3,
         city: 'Nice',
       },
+    ];
+    const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
+    expect(kept).toHaveLength(1);
+    expect(excludedDuplicates).toBe(1);
+    expect(kept[0].key).toBe('a1');
+  });
+
+  it('deux URLs DIFFÉRENTES avec le même prix+surface+pièces+commune : les DEUX sont gardées', () => {
+    // Le cas réel green-acres (An8hc0ul5arogkzl vs A8znxb4fpvhllc3g) : deux annonces publiées
+    // distinctes. On préfère afficher deux fois que masquer un vrai concurrent (§4).
+    const candidates: CompetitorCandidate[] = [
       {
         ...base,
-        key: 'autre',
-        url: 'https://x/c',
-        price: 500000,
-        surfaceArea: 80,
-        roomsCount: 4,
+        key: 'g1',
+        url: 'https://x/An8',
+        price: 1100000,
+        surfaceArea: 86,
+        roomsCount: 3,
+        city: 'Nice',
+      },
+      {
+        ...base,
+        key: 'g2',
+        url: 'https://x/A8z',
+        price: 1100000,
+        surfaceArea: 86,
+        roomsCount: 3,
         city: 'Nice',
       },
     ];
     const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
     expect(kept).toHaveLength(2);
-    expect(excludedDuplicates).toBe(1);
-    expect(kept[0].key).toBe('agenceA');
-  });
-
-  it('deux annonces sans prix ni surface ne sont pas fusionnées à tort', () => {
-    const candidates: CompetitorCandidate[] = [
-      {
-        ...base,
-        key: 'a',
-        url: 'https://x/a',
-        price: null,
-        surfaceArea: null,
-        roomsCount: null,
-        city: 'Nice',
-      },
-      {
-        ...base,
-        key: 'b',
-        url: 'https://x/b',
-        price: null,
-        surfaceArea: null,
-        roomsCount: null,
-        city: 'Nice',
-      },
-    ];
-    const { candidates: kept } = filterAndDedupeCandidates(candidates);
-    expect(kept).toHaveLength(2);
-    expect(candidateSignature(candidates[0])).toBeNull();
+    expect(excludedDuplicates).toBe(0);
   });
 });

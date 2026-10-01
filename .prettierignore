@@ -7,3 +7,6 @@ src/lib/supabase/database.types.ts
 # Real portal pages captured as test fixtures (hundreds of KB of minified HTML):
 # never hand-edited, and prettier --check would choke on them for nothing.
 src/features/comparable-import/extractors/__fixtures__
+
+# Mission 61 — pages portails réelles (ne pas reformater, ça casse l'extraction)
+src/features/competitor-search/__fixtures__

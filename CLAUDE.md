@@ -360,3 +360,25 @@ The MVP must only do this:
 8. Produce advisor report
 
 Everything else is V2.
+
+---
+
+## Données manquantes et provenance
+
+Une donnée absente mais **portée par la provenance** n'écarte pas ; une donnée absente qui **EST
+le critère** écarte, et se compte.
+
+Exemple (mission 61) : une carte de portail **sans ville** reste dans le périmètre — c'est l'URL
+interrogée qui porte la commune, pas la vignette. Mais une carte **sans surface** est écartée (et
+comptée) : sans surface, impossible de savoir si on est dans la tolérance. La confiance faite à la
+provenance pour la commune ne tient **que parce que le périmètre (la commune) ne se desserre
+jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
+
+---
+
+## Chantiers en suspens
+
+- **Identifiants de lieu par portail** — le secteur reste cadré à la **commune** tant que ce
+  chantier n'est pas fait. Filtrer/chercher au **quartier** exige de mapper le quartier du bien
+  vers l'identifiant de lieu propre à chaque portail (slugs/IDs de zone), un par un. En suspens
+  depuis la mission 50 ; la mission 61 filtre donc le secteur à la commune (`candidate.city`).
