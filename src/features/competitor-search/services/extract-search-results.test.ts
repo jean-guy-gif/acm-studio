@@ -332,9 +332,33 @@ describe('filterAndDedupeCandidates — déduplication par identité publiée', 
 
   it('sans clé publiée, l’adresse fait foi : même adresse → doublon, adresses différentes → gardées', () => {
     const candidates: CompetitorCandidate[] = [
-      { ...base, key: null, url: 'https://x/a', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
-      { ...base, key: null, url: 'https://x/a', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
-      { ...base, key: null, url: 'https://x/b', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
+      {
+        ...base,
+        key: null,
+        url: 'https://x/a',
+        price: 1,
+        surfaceArea: 1,
+        roomsCount: 1,
+        city: 'Nice',
+      },
+      {
+        ...base,
+        key: null,
+        url: 'https://x/a',
+        price: 1,
+        surfaceArea: 1,
+        roomsCount: 1,
+        city: 'Nice',
+      },
+      {
+        ...base,
+        key: null,
+        url: 'https://x/b',
+        price: 1,
+        surfaceArea: 1,
+        roomsCount: 1,
+        city: 'Nice',
+      },
     ];
     const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
     expect(kept).toHaveLength(2);

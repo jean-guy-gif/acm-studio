@@ -31,30 +31,38 @@ const rajdhani = Rajdhani({
 });
 
 // Les cinq autres de la liste embarquée (Montserrat y figure aussi, comme choix explicite).
+// `preload: false` : elles restent EMBARQUÉES (auto-hébergées, aucune requête extérieure) mais
+// ne sont pas préchargées par défaut — seule l'agence qui a choisi l'une d'elles la télécharge,
+// au moment où un texte la rend. Le défaut produit (Montserrat/Rajdhani) garde le préchargement.
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  preload: false,
 });
 const poppins = Poppins({
   variable: '--font-poppins',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  preload: false,
 });
 const sourceSans = Source_Sans_3({
   variable: '--font-source-sans',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  preload: false,
 });
 const workSans = Work_Sans({
   variable: '--font-work-sans',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  preload: false,
 });
 const nunitoSans = Nunito_Sans({
   variable: '--font-nunito-sans',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  preload: false,
 });
 
 // Toutes les variables, à poser une fois sur <html> : chaque police devient disponible en

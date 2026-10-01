@@ -10,3 +10,8 @@ src/features/comparable-import/extractors/__fixtures__
 
 # Mission 61 — pages portails réelles (ne pas reformater, ça casse l'extraction)
 src/features/competitor-search/__fixtures__
+
+# Mission 62 — documents de cadrage (plans, missions) et artefacts Supabase générés :
+# du prose et des fichiers outillés, jamais mis en forme par prettier.
+missions/
+supabase/.temp
