@@ -262,8 +262,9 @@ describe('filterAndDedupeCandidates — le neuf est écarté', () => {
   });
 });
 
-// Mission 61 §4 — déduplication par IDENTITÉ PUBLIÉE (même URL), jamais par ressemblance.
-describe('filterAndDedupeCandidates — déduplication par URL publiée', () => {
+// Mission 61 §2-C — déduplication par IDENTITÉ PUBLIÉE : la clé de l'annonce quand le portail en
+// publie une, l'adresse sinon. Jamais par ressemblance prix/surface/pièces/commune.
+describe('filterAndDedupeCandidates — déduplication par identité publiée', () => {
   const base = {
     title: null,
     propertyType: null,
@@ -272,12 +273,14 @@ describe('filterAndDedupeCandidates — déduplication par URL publiée', () => 
     isNewBuild: false,
   };
 
-  it('la même URL n’apparaît qu’une fois, la première gardée', () => {
+  it('la même clé n’apparaît qu’une fois, la première gardée (même si l’URL varie)', () => {
+    // M&A : la clé (IdAnnonce) fait foi ; deux lectures de la même annonce (adresse à un
+    // paramètre près) ne comptent qu'une fois.
     const candidates: CompetitorCandidate[] = [
       {
         ...base,
-        key: 'a1',
-        url: 'https://x/a',
+        key: '4533487',
+        url: 'https://x/ficheAnnonce.php?IdAnnonce=4533487',
         price: 464000,
         surfaceArea: 66,
         roomsCount: 3,
@@ -285,8 +288,8 @@ describe('filterAndDedupeCandidates — déduplication par URL publiée', () => 
       },
       {
         ...base,
-        key: 'a2',
-        url: 'https://x/a',
+        key: '4533487',
+        url: 'https://x/ficheAnnonce.php?IdAnnonce=4533487&fromRecherche=1',
         price: 464000,
         surfaceArea: 66,
         roomsCount: 3,
@@ -296,10 +299,10 @@ describe('filterAndDedupeCandidates — déduplication par URL publiée', () => 
     const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
     expect(kept).toHaveLength(1);
     expect(excludedDuplicates).toBe(1);
-    expect(kept[0].key).toBe('a1');
+    expect(kept[0].url).toBe('https://x/ficheAnnonce.php?IdAnnonce=4533487');
   });
 
-  it('deux URLs DIFFÉRENTES avec le même prix+surface+pièces+commune : les DEUX sont gardées', () => {
+  it('deux CLÉS DIFFÉRENTES avec le même prix+surface+pièces+commune : les DEUX sont gardées', () => {
     // Le cas réel green-acres (An8hc0ul5arogkzl vs A8znxb4fpvhllc3g) : deux annonces publiées
     // distinctes. On préfère afficher deux fois que masquer un vrai concurrent (§4).
     const candidates: CompetitorCandidate[] = [
@@ -324,6 +327,33 @@ describe('filterAndDedupeCandidates — déduplication par URL publiée', () => 
     ];
     const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
     expect(kept).toHaveLength(2);
+    expect(excludedDuplicates).toBe(0);
+  });
+
+  it('sans clé publiée, l’adresse fait foi : même adresse → doublon, adresses différentes → gardées', () => {
+    const candidates: CompetitorCandidate[] = [
+      { ...base, key: null, url: 'https://x/a', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
+      { ...base, key: null, url: 'https://x/a', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
+      { ...base, key: null, url: 'https://x/b', price: 1, surfaceArea: 1, roomsCount: 1, city: 'Nice' },
+    ];
+    const { candidates: kept, excludedDuplicates } = filterAndDedupeCandidates(candidates);
+    expect(kept).toHaveLength(2);
+    expect(excludedDuplicates).toBe(1);
+  });
+
+  // Mission 61 §2-C — la fixture M&A RÉELLE : 17 cartes, 17 adresses distinctes (IdAnnonce
+  // conservé par absolute()), 0 doublon. Avant le correctif, absolute() vidait la query → les 17
+  // cartes retombaient sur ficheAnnonce.php et 16 étaient écartées comme « doublons ».
+  it('Maisons et Appartements (fixture réelle) : 17 cartes, 17 adresses distinctes, 0 doublon', () => {
+    const cards = load('maisons_appartements');
+    expect(cards).toHaveLength(17);
+    const urls = new Set(cards.map((card) => card.url));
+    expect(urls.size).toBe(17);
+    for (const card of cards) {
+      expect(card.url).toMatch(/[?&]IdAnnonce=\d+/i);
+    }
+    const { candidates, excludedDuplicates } = filterAndDedupeCandidates(cards);
+    expect(candidates).toHaveLength(17);
     expect(excludedDuplicates).toBe(0);
   });
 });

@@ -24,7 +24,7 @@ import type {
 // (ici), jamais de `scoreCandidate` qui est partagé — comme `typesConflict` (M54).
 //
 // Bornes (données par Laurent) : type via typesConflict (jamais desserré) ; prix = fourchette du
-// conseiller élargie de 10 % de chaque côté, FIXE ; pièces = exact ; surface = ±5 % ;
+// conseiller STRICTE, jamais élargie (mission 61 §2, décision A) ; pièces = exact ; surface = ±5 % ;
 // commune = `candidate.city` doit être la commune recherchée (garde-fou contre les portails qui
 // élargissent d'eux-mêmes).
 
@@ -54,8 +54,10 @@ function priceBounds(criteria: CompetitorSearchCriteria): PriceBounds {
   if (min == null && max == null) return null; // pas de fourchette → pas de filtre prix
   const lo = min ?? max!;
   const hi = max ?? min!;
-  // Élargie de 10 % de chaque côté, FIXE : le desserrage n'y touche jamais.
-  return { low: lo * 0.9, high: hi * 1.1 };
+  // Mission 61 §2 — fourchette STRICTE (décision A, 1er octobre 2026) : la fourchette du
+  // conseiller ne s'élargit à AUCUN cran. C'est lui qui la fixe ; l'outil ne l'ouvre pas de
+  // 10 %. Le desserrage ne touche QUE la surface, puis les pièces.
+  return { low: lo, high: hi };
 }
 
 type Admission =
@@ -117,15 +119,18 @@ export function rankCandidates(
   const refCity = normCity(criteria.city);
   const prices = priceBounds(criteria);
 
-  // Rassembler les candidats, en déduplicant par IDENTITÉ PUBLIÉE (même portail + même URL). On
-  // ne déduplique PLUS par ressemblance prix/surface (M61 §4) : 0 doublon inter-portail mesuré,
-  // et deux biens distincts peuvent partager prix+surface+pièces+commune. On préfère afficher
-  // deux fois que masquer un vrai concurrent. Le type reste un filtre dur (M54, jamais desserré).
+  // Rassembler les candidats, en déduplicant par IDENTITÉ PUBLIÉE (mission 61 §2-C) : portail +
+  // clé de l'annonce quand elle existe, adresse sinon. On ne déduplique PLUS par ressemblance
+  // prix/surface (M61 §4) : deux biens distincts peuvent partager prix+surface+pièces+commune, et
+  // on préfère afficher deux fois que masquer un vrai concurrent. On ne déduplique PAS par la
+  // seule URL : chez M&A toutes les cartes partageaient l'adresse ficheAnnonce.php tant que la
+  // query était vidée — la clé publiée, elle, reste distincte. Le type reste un filtre dur (M54).
   const pool: PoolEntry[] = [];
-  const seenUrls = new Set<string>();
+  const seen = new Set<string>();
   for (const portal of portals) {
     for (const candidate of portal.candidates) {
-      if (seenUrls.has(candidate.url)) continue;
+      const identity = `${portal.portal}:${candidate.key ?? candidate.url}`;
+      if (seen.has(identity)) continue;
       if (typesConflict(subjectType, candidate.propertyType)) continue;
       let host = '';
       try {
@@ -133,7 +138,7 @@ export function rankCandidates(
       } catch {
         continue;
       }
-      seenUrls.add(candidate.url);
+      seen.add(identity);
       pool.push({ candidate, portal: portal.portal, portalLabel: portal.label, host });
     }
   }

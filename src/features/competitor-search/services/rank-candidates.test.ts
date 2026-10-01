@@ -124,16 +124,19 @@ describe('rankCandidates — les quatre critères FILTRENT (Mission 61)', () => 
     expect(tight?.loosenedSurface).toBe(false);
   });
 
-  it('§7.4 — la fourchette prix (±10 %) ne bouge à AUCUN cran', () => {
-    // Fourchette 400k–500k → bornes [360k, 550k]. Scénario qui FORCE le desserrage surface :
-    // le prix hors bornes reste exclu quoi qu’il arrive.
+  it('§7.4 — la fourchette prix du conseiller ne s’élargit à AUCUN cran (stricte)', () => {
+    // Décision A (M61 §2) : fourchette STRICTE. 400k–500k → bornes [400k, 500k], jamais élargies.
+    // Scénario qui FORCE le desserrage surface : le prix hors bornes reste exclu quoi qu’il arrive,
+    // et un prix à 399k (que des ±10 % auraient laissé passer) est DEHORS.
     const res = run([
-      c({ key: 'atlow', price: 360000, surfaceArea: 87 }), // pile à la borne basse
-      c({ key: 'below', price: 355000, surfaceArea: 80 }), // sous la borne → jamais
-      c({ key: 'above', price: 560000, surfaceArea: 80 }), // au-dessus → jamais
+      c({ key: 'atlow', price: 400000, surfaceArea: 87 }), // pile à la borne basse
+      c({ key: 'athigh', price: 500000, surfaceArea: 86 }), // pile à la borne haute
+      c({ key: 'below', price: 399000, surfaceArea: 80 }), // sous la borne stricte → jamais
+      c({ key: 'above', price: 500001, surfaceArea: 80 }), // au-dessus → jamais
     ]);
     expect(res.loosening.surfaceLoosened).toBe(true); // le desserrage a bien eu lieu
     expect(keys(res)).toContain('atlow');
+    expect(keys(res)).toContain('athigh');
     expect(keys(res)).not.toContain('below');
     expect(keys(res)).not.toContain('above');
   });

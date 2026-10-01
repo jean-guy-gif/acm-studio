@@ -173,14 +173,33 @@ function cardPhotos(chunk: string, baseUrl: string): string[] {
   return urls;
 }
 
-function absolute(href: string | null, baseUrl: string): string | null {
+// Adresse absolue d'une annonce. Le fragment (ancre d'UI) part TOUJOURS. La query, elle,
+// n'est gardée que pour les paramètres qui PORTENT l'identifiant publié de l'annonce :
+//   - SeLoger, Bien'ici, Green Acres publient l'identifiant dans le CHEMIN → rien à garder.
+//     Leur query n'est que du contexte de recherche, et le robots.txt du portail peut refuser
+//     ces formes d'adresse (cf. comparable-import/normalize-listing-url) — on la retire.
+//   - Maisons & Appartements publie l'identifiant dans la query (ficheAnnonce.php?…&IdAnnonce=…)
+//     → on garde IdAnnonce. Sans lui, les 17 cartes retombaient sur la même adresse et 16
+//     passaient pour des doublons (mission 61 §2-C).
+// On ne garde que les paramètres demandés, jamais toute la query : l'adresse reste minimale et
+// déterministe, comme la normalisation de l'import.
+function absolute(
+  href: string | null,
+  baseUrl: string,
+  keepQueryParams: readonly string[] = [],
+): string | null {
   if (href == null || href.trim() === '') {
     return null;
   }
   try {
     const url = new URL(href, baseUrl);
     url.hash = '';
+    const keep = new Set(keepQueryParams);
+    const kept = [...url.searchParams.entries()].filter(([name]) => keep.has(name));
     url.search = '';
+    for (const [name, value] of kept) {
+      url.searchParams.append(name, value);
+    }
     return url.toString();
   } catch {
     return null;
@@ -358,7 +377,10 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
 
 function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): CompetitorCandidate {
   const href = firstGroup(chunk, /href="([^"]*ficheAnnonce[^"]*)"/i);
-  const url = absolute(href, pageUrl) ?? pageUrl;
+  // M&A publie l'identifiant dans la query (IdAnnonce) : on le garde, sinon les 17 cartes
+  // retombent sur la même adresse ficheAnnonce.php (mission 61 §2-C). L'adresse ouvre la
+  // bonne fiche et l'import (comparable-import) la lit par son HTML, pas par la forme de l'URL.
+  const url = absolute(href, pageUrl, ['IdAnnonce']) ?? pageUrl;
   const alt = firstGroup(chunk, /<img[^>]*\balt="([^"]+)"/i);
   // Alt : « Appartement à vendre à Nice - 2 pièces 30 m² ».
   const city = titleCaseCity(alt?.match(/\bà\s+([A-Za-zÀ-ÿ'’ -]+?)\s*-\s*\d/)?.[1] ?? null);
@@ -430,30 +452,33 @@ export function extractSearchResults(
   return cards.map((card) => reader.read(card, pageUrl));
 }
 
-// Signature de déduplication : prix + surface + pièces + commune (§6). Le même bien
-// chez deux agences, ou repris sur deux portails, partage cette signature bien que sa
-// clé de portail diffère. On ne déduplique QUE si les quatre champs sont présents :
-// à défaut, deux annonces distinctes se ressembleraient à tort (null|null|null|null).
-// Écarte le neuf (§6) et déduplique par IDENTITÉ PUBLIÉE (même URL d'annonce ; première
-// occurrence gardée, écartées comptées). Mission 61 §4 — on NE déduplique PLUS par ressemblance
-// prix|surface|pièces|commune : deux biens distincts peuvent la partager, et on préfère afficher
-// deux fois que masquer un vrai concurrent. Seule l'identité publiée (l'URL) fait foi.
+// Écarte le neuf (§6) puis déduplique par IDENTITÉ PUBLIÉE (mission 61 §2-C) : la clé de
+// l'annonce quand le portail en publie une (id SeLoger, data-id Bien'ici, data-advertid Green
+// Acres, IdAnnonce M&A), l'adresse sinon. Première occurrence gardée, écartées comptées.
+//
+// On NE déduplique PLUS par ressemblance prix|surface|pièces|commune (§4) : deux biens distincts
+// peuvent la partager, et on préfère afficher deux fois que masquer un vrai concurrent. On ne
+// déduplique PAS non plus par la seule URL : tant que absolute() vidait la query, les 17 cartes
+// M&A retombaient sur la même adresse et 16 passaient pour des doublons. La clé publiée, elle,
+// reste distincte même quand l'adresse ne l'est pas. Cette fonction reçoit les cartes d'UN
+// portail : la clé y suffit pour l'identité (le portail est implicite).
 export function filterAndDedupeCandidates(candidates: CompetitorCandidate[]): SearchExtraction {
   let excludedNewBuild = 0;
   let excludedDuplicates = 0;
   const kept: CompetitorCandidate[] = [];
-  const seenUrls = new Set<string>();
+  const seen = new Set<string>();
 
   for (const candidate of candidates) {
     if (candidate.isNewBuild) {
       excludedNewBuild += 1;
       continue;
     }
-    if (seenUrls.has(candidate.url)) {
+    const identity = candidate.key ?? candidate.url;
+    if (seen.has(identity)) {
       excludedDuplicates += 1;
       continue;
     }
-    seenUrls.add(candidate.url);
+    seen.add(identity);
     kept.push(candidate);
   }
 
