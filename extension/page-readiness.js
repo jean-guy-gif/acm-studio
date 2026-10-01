@@ -31,6 +31,60 @@ export function isAllowedUrl(rawUrl) {
   return ALLOWED_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
 }
 
+// MISSION 65 — « Lire ma recherche » : les portails dont ACM Studio sait lire une page de
+// RÉSULTATS (immobilier.lefigaro.fr n'a pas de lecteur de cartes, il n'y figure pas).
+export const SEARCH_HOST_SUFFIXES = [
+  'seloger.com',
+  'bienici.com',
+  'green-acres.fr',
+  'maisonsetappartements.fr',
+];
+
+// Une page d'ANNONCE (pas de résultats), reconnue au chemin : /annonce(s)/ (SeLoger, Bien'ici),
+// /properties/ (Green Acres), /ads/ et ficheAnnonce (Maisons & Appartements).
+const LISTING_PATH = /\/annonces?\/|\/properties\/|\/ads\/|ficheannonce/i;
+
+// Un onglet « de recherche » = un portail lisible, en https, ni l'accueil ni une fiche
+// d'annonce. Les formes d'adresse de résultats varient trop d'un portail à l'autre pour être
+// énumérées ; on écarte ce qui n'en est sûrement pas, et l'application dira « aucune annonce
+// détectée » si la page lue ne porte pas de carte.
+export function isSearchTabUrl(rawUrl) {
+  let url;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:') {
+    return false;
+  }
+  const host = url.hostname.toLowerCase();
+  if (!SEARCH_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`))) {
+    return false;
+  }
+  if (url.pathname === '/' || url.pathname === '') {
+    return false;
+  }
+  return !LISTING_PATH.test(url.pathname);
+}
+
+// Que faire des onglets ouverts : aucun onglet de recherche → 'none' ; un seul → on le lit ;
+// plusieurs → on renvoie la liste et c'est le conseiller qui choisit (jamais l'extension).
+// Un onglet mis en veille par Chrome (`discarded`) est ignoré : le lire le RECHARGERAIT, et
+// « Lire ma recherche » n'envoie aucune requête au portail.
+export function decideOpenTab(tabs) {
+  const candidates = (tabs || [])
+    .filter((tab) => tab && typeof tab.id === 'number' && !tab.discarded && isSearchTabUrl(tab.url))
+    .map((tab) => ({ tabId: tab.id, title: tab.title || '', url: tab.url }));
+  if (candidates.length === 0) {
+    return { kind: 'none' };
+  }
+  if (candidates.length === 1) {
+    return { kind: 'read', tab: candidates[0] };
+  }
+  return { kind: 'choose', tabs: candidates };
+}
+
 // Below this many characters, a "stabilised" page is a WAITING SHELL, not a finished
 // page. Mesuré le 2026-09-16 sur maisonsetappartements.fr/ads/4534734 : la page
 // d'attente fait 29–33 k, les vraies fiches 233 k–756 k — 60 k passe largement entre

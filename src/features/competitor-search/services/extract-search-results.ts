@@ -382,8 +382,16 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
   // bonne fiche et l'import (comparable-import) la lit par son HTML, pas par la forme de l'URL.
   const url = absolute(href, pageUrl, ['IdAnnonce']) ?? pageUrl;
   const alt = firstGroup(chunk, /<img[^>]*\balt="([^"]+)"/i);
-  // Alt : « Appartement à vendre à Nice - 2 pièces 30 m² ».
-  const city = titleCaseCity(alt?.match(/\bà\s+([A-Za-zÀ-ÿ'’ -]+?)\s*-\s*\d/)?.[1] ?? null);
+  // Mission 65 — la commune est ÉCRITE sur la carte (« 77 m² Nice Réf : … », balise RR_ville_text) ;
+  // l'alt la répète (« Appartement à vendre à St-Laurent-du-Var  - 4 pièces 77 m² »). L'ancienne
+  // lecture (`\bà` sur l'alt) ne trouvait JAMAIS rien — « à » n'est pas un caractère de mot — et
+  // M&A complète ses résultats avec des communes voisines : sans commune lue, une annonce de
+  // Saint-Laurent-du-Var passait pour une annonce de Nice.
+  const city = titleCaseCity(
+    firstGroup(chunk, /class="[^"]*\bRR_ville_text\b[^"]*"[^>]*>([^<]+)/i) ??
+      alt?.match(/vendre\s+à\s+(.+?)\s+-\s+\d/i)?.[1] ??
+      null,
+  );
   return {
     key,
     url,

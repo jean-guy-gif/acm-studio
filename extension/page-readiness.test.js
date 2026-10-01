@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { SIZE_FLOOR, isAllowedUrl, isStableSize, isWaitingShell } from './page-readiness.js';
+import {
+  SIZE_FLOOR,
+  decideOpenTab,
+  isAllowedUrl,
+  isSearchTabUrl,
+  isStableSize,
+  isWaitingShell,
+} from './page-readiness.js';
 
 // These guard the two defects the extension shipped to production:
 //   - 10 September 2026: a background tab that never built, returning its shell;
@@ -67,5 +74,84 @@ describe('isStableSize', () => {
 
   it('un saut coquille → page réelle n’est pas stable', () => {
     expect(isStableSize(29_152, 235_339)).toBe(false);
+  });
+});
+
+// Mission 65 — « Lire ma recherche » : quel onglet ouvert lire, sans jamais deviner.
+describe('isSearchTabUrl (onglet de résultats d’un portail lisible)', () => {
+  it('accepte les pages de résultats des quatre portails', () => {
+    for (const url of [
+      'https://www.seloger.com/classified-search?distributionTypes=Buy&estateTypes=Apartment',
+      'https://www.bienici.com/recherche/achat/nice-06000/appartement/4-pieces?prix-min=400000',
+      'https://www.green-acres.fr/maison-a-vendre?searchQuery=cn-fr-lg-fr-city_id-gr_3668',
+      'https://www.maisonsetappartements.fr/views/Search.php?lang=fr&TypeAnnonce=VEN&nb_piece=4',
+    ]) {
+      expect(isSearchTabUrl(url)).toBe(true);
+    }
+  });
+
+  it('refuse une fiche d’annonce, l’accueil d’un portail et un site hors portails', () => {
+    for (const url of [
+      'https://www.seloger.com/annonces/achat/appartement/nice-06/riquier/268299919.htm',
+      'https://www.bienici.com/annonce/vente/nice/appartement/4pieces/apimo-87037164',
+      'https://www.green-acres.fr/fr/properties/appartement/nice/A7zuht59kaufm0za.htm',
+      'https://www.maisonsetappartements.fr/views/ficheAnnonce.php?IdAnnonce=4241266',
+      'https://www.maisonsetappartements.fr/ads/4534734',
+      'https://www.seloger.com/',
+      'https://immobilier.lefigaro.fr/annonces/immobilier-vente-appartement-nice.html',
+      'https://www.leboncoin.fr/recherche?category=9',
+      'https://example.com/recherche',
+      'http://www.seloger.com/classified-search',
+      'pas une url',
+    ]) {
+      expect(isSearchTabUrl(url)).toBe(false);
+    }
+  });
+});
+
+describe('decideOpenTab (aucun, un, plusieurs)', () => {
+  const seloger = {
+    id: 11,
+    title: 'Appartements à vendre – Nice',
+    url: 'https://www.seloger.com/classified-search?estateTypes=Apartment',
+  };
+  const bienici = {
+    id: 12,
+    title: 'Achat immobilier Nice (06)',
+    url: 'https://www.bienici.com/recherche/achat/nice-06000/appartement/4-pieces',
+  };
+  const annonce = {
+    id: 13,
+    title: 'Appartement 4 pièces',
+    url: 'https://www.bienici.com/annonce/vente/nice/appartement/4pieces/apimo-87037164',
+  };
+  const autre = { id: 14, title: 'Boîte de réception', url: 'https://mail.example.com/inbox' };
+
+  it('aucun onglet de recherche → none (une fiche d’annonce ou un autre site ne comptent pas)', () => {
+    expect(decideOpenTab([])).toEqual({ kind: 'none' });
+    expect(decideOpenTab(undefined)).toEqual({ kind: 'none' });
+    expect(decideOpenTab([annonce, autre])).toEqual({ kind: 'none' });
+  });
+
+  it('un seul onglet de recherche → on le lit', () => {
+    expect(decideOpenTab([autre, seloger, annonce])).toEqual({
+      kind: 'read',
+      tab: { tabId: 11, title: seloger.title, url: seloger.url },
+    });
+  });
+
+  it('plusieurs onglets de recherche → la liste, c’est le conseiller qui choisit', () => {
+    expect(decideOpenTab([seloger, autre, bienici])).toEqual({
+      kind: 'choose',
+      tabs: [
+        { tabId: 11, title: seloger.title, url: seloger.url },
+        { tabId: 12, title: bienici.title, url: bienici.url },
+      ],
+    });
+  });
+
+  it('un onglet mis en veille par Chrome est ignoré : le lire le rechargerait', () => {
+    expect(decideOpenTab([{ ...seloger, discarded: true }])).toEqual({ kind: 'none' });
+    expect(decideOpenTab([{ ...seloger, discarded: true }, bienici]).kind).toBe('read');
   });
 });

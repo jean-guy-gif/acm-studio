@@ -92,8 +92,10 @@ export type PortalSearchResult = {
   candidates: CompetitorCandidate[];
 };
 
-// Une annonce candidate, classée par ressemblance avec le bien du vendeur.
-// Rien n'est masqué : une annonce éloignée descend, elle ne disparaît pas.
+// Une annonce candidate ADMISE, classée par ressemblance avec le bien du vendeur.
+// Mission 61 : commune, prix, pièces et surface FILTRENT — une annonce hors d'un seul de ces
+// critères n'entre pas dans la liste (elle ne « descend » plus). Le score n'ordonne que
+// l'admissible ; les écartées faute de donnée sont comptées (ExcludedForMissing).
 export type RankedCandidate = {
   candidate: CompetitorCandidate;
   portal: SearchPortal;
