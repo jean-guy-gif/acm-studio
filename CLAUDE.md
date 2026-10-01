@@ -230,6 +230,17 @@ Never expose data across agencies.
 
 Use soft delete when possible.
 
+### Migrations
+
+Une migration vérifiée sur une base vide n'est pas vérifiée. Le local prouve la syntaxe, pas
+l'ordre des opérations : une écriture avant la levée d'une contrainte passe partout où il n'y a
+pas de ligne. C'est pourquoi on compte sur la vraie base avant d'appliquer, et pourquoi la
+transaction doit toujours pouvoir annuler.
+
+Exemple (1er octobre 2026) : `role = 'manager'` écrit AVANT le retrait du CHECK
+`{owner, admin, advisor}` — vert en local (base sans profil), rejeté sur staging (1 owner réel),
+la transaction a annulé et laissé staging intact.
+
 ### `projects.status` — cycle de vie
 
 `projects.status` est la seule vérité de l'état d'un dossier.
