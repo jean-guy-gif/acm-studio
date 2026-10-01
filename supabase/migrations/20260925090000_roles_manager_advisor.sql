@@ -8,11 +8,13 @@
 -- Migration sur des données réelles. Compte staging AVANT (dans le message de merge) : 1 owner,
 -- 0 admin, 0 advisor → prédiction : 1 ligne owner → manager, le CHECK passe à {manager, advisor}.
 --
--- Ordre obligatoire : on RÉÉCRIT les données d'abord (sinon le nouveau CHECK rejetterait les
--- lignes owner/admin existantes), puis on remplace la contrainte.
+-- Ordre obligatoire : on enlève D'ABORD l'ancienne contrainte (sinon écrire 'manager' violerait
+-- le CHECK encore actif {owner, admin, advisor}), PUIS on réécrit les données, PUIS on pose la
+-- nouvelle contrainte resserrée.
+alter table public.profiles drop constraint profiles_role_check;
+
 update public.profiles set role = 'manager', updated_at = now() where role in ('owner', 'admin');
 
-alter table public.profiles drop constraint profiles_role_check;
 alter table public.profiles
   add constraint profiles_role_check check (role in ('manager', 'advisor'));
 
