@@ -1,9 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import {
+  backLink,
+  kickerLabel,
+  pageSubtitle,
+  pageTitle,
+  sectionTitle,
+} from '@/components/ui/styles';
 import { ManagerOverviewView } from '@/features/team/components/manager-overview';
+import { TeamManagement } from '@/features/team/components/team-management';
 import { getManagerOverview } from '@/features/team/queries/get-manager-overview';
+import { getTeam } from '@/features/team/queries/get-team';
 import { isManagerRole } from '@/features/team/services/role';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -17,13 +25,13 @@ export default async function ManagerViewPage() {
     notFound();
   }
 
-  const overview = await getManagerOverview();
-  if (!overview) {
+  const [overview, team] = await Promise.all([getManagerOverview(), getTeam()]);
+  if (!overview || !team) {
     notFound();
   }
 
   return (
-    <div className="flex flex-col gap-6 md:gap-8">
+    <div className="flex flex-col gap-8 md:gap-10">
       <div className="flex flex-col gap-2">
         <Link href="/admin" className={backLink}>
           ← Administration
@@ -31,11 +39,19 @@ export default async function ManagerViewPage() {
         <span className={kickerLabel}>Agence · Vue manager</span>
         <h1 className={pageTitle}>L’équipe</h1>
         <p className={pageSubtitle}>
-          L’activité de votre agence, orientée action. Ces chiffres restent dans l’agence.
+          Votre équipe et l’activité de l’agence, orientées action. Tout reste dans l’agence.
         </p>
       </div>
 
-      <ManagerOverviewView overview={overview} />
+      <div className="flex flex-col gap-5">
+        <h2 className={sectionTitle}>Équipe et invitations</h2>
+        <TeamManagement team={team} />
+      </div>
+
+      <div className="flex flex-col gap-5">
+        <h2 className={sectionTitle}>Activité</h2>
+        <ManagerOverviewView overview={overview} />
+      </div>
     </div>
   );
 }

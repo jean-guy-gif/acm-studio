@@ -101,6 +101,60 @@ export type Database = {
           },
         ]
       }
+      agency_invitations: {
+        Row: {
+          accepted_at: string | null
+          agency_id: string
+          auth_user_id: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          role: string
+          sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          agency_id: string
+          auth_user_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          role: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          agency_id?: string
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_invitations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -867,6 +921,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          removed_at: string | null
           role: string
           updated_at: string
         }
@@ -877,6 +932,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          removed_at?: string | null
           role: string
           updated_at?: string
         }
@@ -887,6 +943,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          removed_at?: string | null
           role?: string
           updated_at?: string
         }
@@ -1553,6 +1610,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { first_name: string; last_name: string }
+        Returns: {
+          agency_id: string
+          profile_id: string
+        }[]
+      }
       bootstrap_agency_owner: {
         Args: { agency_name: string; first_name: string; last_name: string }
         Returns: {
