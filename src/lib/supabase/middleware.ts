@@ -7,7 +7,11 @@ import { env } from '@/lib/env';
 // harness: it renders ONLY fictional demo data and self-gates with notFound() in
 // production (see src/app/design-preview/page.tsx), so letting the middleware
 // pass it through exposes nothing.
-const PUBLIC_PATHS = ['/login', '/design-preview'];
+//
+// Mission 60 — /auth/confirm est le point d'entrée PUBLIC du lien d'invitation : il vérifie le
+// jeton et ÉTABLIT la session. S'il était gardé, l'invité (pas encore authentifié) serait renvoyé
+// vers /login avant d'avoir pu valider son lien. /accept-invitation, lui, est déjà authentifié.
+const PUBLIC_PATHS = ['/login', '/design-preview', '/auth/confirm'];
 
 // Official Supabase @supabase/ssr session handler for Next.js.
 // Restores the session, refreshes the auth tokens, and guards private routes.

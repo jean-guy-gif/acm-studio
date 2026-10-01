@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { signOut } from '@/app/login/actions';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
+import { btnPrimary } from '@/components/ui/styles';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -18,6 +19,28 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   if (!profile) {
     redirect('/onboarding');
+  }
+
+  // Mission 60 — un profil RETIRÉ garde son nom sur ses dossiers mais n'a plus accès : la RLS lui
+  // ferme déjà tout (get_current_agency_id l'ignore), et l'écran le lui dit clairement plutôt que
+  // de le renvoyer bootstraper une agence. Sortie par la déconnexion.
+  if (profile.removed_at) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50 p-6 text-center">
+        <h1 className="font-title text-2xl font-bold text-zinc-900">
+          Votre accès à cette agence a été retiré
+        </h1>
+        <p className="max-w-md text-zinc-600">
+          Vous n’avez plus accès à cet espace. Le travail que vous avez préparé reste à l’agence, à
+          votre nom.
+        </p>
+        <form action={signOut}>
+          <button type="submit" className={btnPrimary}>
+            Se déconnecter
+          </button>
+        </form>
+      </div>
+    );
   }
 
   const [agency, cookieStore, branding] = await Promise.all([

@@ -11,10 +11,17 @@ const numberCell = 'px-3 py-2.5 text-center tabular-nums text-zinc-800 stage:tex
 const headCell =
   'px-3 py-2.5 text-center text-xs font-medium tracking-wide text-zinc-500 stage:text-white/50';
 
-function Badge({ children, tone }: { children: React.ReactNode; tone: 'manager' | 'idle' }) {
+function Badge({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: 'manager' | 'idle' | 'removed';
+}) {
   const tones = {
     manager: 'bg-brand-soft text-brand-deep',
     idle: 'bg-amber-100 text-amber-800',
+    removed: 'bg-zinc-200 text-zinc-600',
   };
   return (
     <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>
@@ -54,6 +61,7 @@ export function ManagerOverviewView({ overview }: { overview: ManagerOverview })
                         {advisor.name}
                       </span>
                       {advisor.isManager ? <Badge tone="manager">Manager</Badge> : null}
+                      {advisor.isRemoved ? <Badge tone="removed">Retiré</Badge> : null}
                     </span>
                   </td>
                   <td className={numberCell}>{advisor.inPreparation}</td>

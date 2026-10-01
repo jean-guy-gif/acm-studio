@@ -23,6 +23,7 @@ export type TeamProfile = {
   firstName: string;
   lastName: string;
   role: string;
+  removedAt?: string | null;
 };
 
 export type TeamProject = {
@@ -43,6 +44,7 @@ export type AdvisorActivity = {
   advisorId: string;
   name: string;
   isManager: boolean;
+  isRemoved: boolean; // Mission 60 — retiré de l'agence ; son travail reste, à son nom.
   inPreparation: number; // status 'draft'
   ready: number; // 'ready_for_meeting'
   completed: number; // 'meeting_completed'
@@ -97,6 +99,7 @@ export function buildManagerOverview(args: {
       advisorId: profile.id,
       name: fullName(profile),
       isManager: isManagerRole(profile.role),
+      isRemoved: profile.removedAt != null,
       inPreparation: 0,
       ready: 0,
       completed: 0,
@@ -150,7 +153,18 @@ export function buildManagerOverview(args: {
     }
   }
 
-  const advisors = [...activityById.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  // Un membre RETIRÉ n'apparaît que s'il a laissé du travail (ses dossiers restent à son nom) ;
+  // les membres actifs apparaissent toujours (zéro compris). Actifs d'abord, puis par nom.
+  const hasActivity = (a: AdvisorActivity): boolean =>
+    a.inPreparation + a.ready + a.completed + a.signed > 0;
+  const advisors = [...activityById.values()]
+    .filter((a) => !a.isRemoved || hasActivity(a))
+    .sort((a, b) => {
+      if (a.isRemoved !== b.isRemoved) {
+        return a.isRemoved ? 1 : -1;
+      }
+      return a.name.localeCompare(b.name, 'fr');
+    });
   dormant.sort((a, b) => b.daysSinceChange - a.daysSinceChange);
 
   const agency = advisors.reduce(

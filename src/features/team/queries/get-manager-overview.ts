@@ -24,7 +24,7 @@ export async function getManagerOverview(): Promise<ManagerOverview | null> {
 
   const [{ data: profiles }, { data: projects }, { data: conclusions }, { data: agency }] =
     await Promise.all([
-      supabase.from('profiles').select('id, first_name, last_name, role'),
+      supabase.from('profiles').select('id, first_name, last_name, role, removed_at'),
       supabase.from('projects').select('id, advisor_id, seller_name, status, updated_at'),
       supabase
         .from('project_meeting_conclusions')
@@ -42,6 +42,7 @@ export async function getManagerOverview(): Promise<ManagerOverview | null> {
     firstName: p.first_name,
     lastName: p.last_name,
     role: p.role,
+    removedAt: p.removed_at,
   }));
   const teamProjects: TeamProject[] = (projects ?? []).map((p) => ({
     id: p.id,

@@ -16,7 +16,7 @@ function daysAgo(days: number): string {
   return new Date(NOW.getTime() - days * 86_400_000).toISOString();
 }
 
-const OWNER: TeamProfile = { id: 'u1', firstName: 'Alice', lastName: 'Manager', role: 'owner' };
+const OWNER: TeamProfile = { id: 'u1', firstName: 'Alice', lastName: 'Manager', role: 'manager' };
 const ADVISOR: TeamProfile = {
   id: 'u2',
   firstName: 'Bob',
@@ -153,6 +153,38 @@ describe('buildManagerOverview (Mission 59)', () => {
     expect(
       buildManagerOverview({ profiles: [ADVISOR], projects, conclusions, now: NOW }).dormant,
     ).toHaveLength(0);
+  });
+
+  // Mission 60 — un membre retiré garde son travail à son nom, mais s'efface s'il n'a rien laissé.
+  it('un membre retiré n’apparaît que s’il a laissé du travail, et il est marqué', () => {
+    const removedWithWork: TeamProfile = {
+      id: 'r1',
+      firstName: 'Removed',
+      lastName: 'AvecDossiers',
+      role: 'advisor',
+      removedAt: '2026-09-01T00:00:00Z',
+    };
+    const removedEmpty: TeamProfile = {
+      id: 'r2',
+      firstName: 'Removed',
+      lastName: 'SansRien',
+      role: 'advisor',
+      removedAt: '2026-09-01T00:00:00Z',
+    };
+    const projects = [project({ id: 'p1', advisorId: 'r1', status: 'meeting_completed' })];
+    const overview = buildManagerOverview({
+      profiles: [ADVISOR, removedWithWork, removedEmpty],
+      projects,
+      conclusions: [{ projectId: 'p1', outcome: 'signed', outcomeChangedAt: daysAgo(2) }],
+      now: NOW,
+    });
+    const ids = overview.advisors.map((a) => a.advisorId);
+    expect(ids).toContain('r1'); // a laissé un mandat signé → reste, à son nom
+    expect(ids).not.toContain('r2'); // rien laissé → s'efface de la liste
+    expect(overview.advisors.find((a) => a.advisorId === 'r1')?.isRemoved).toBe(true);
+    expect(overview.advisors.find((a) => a.advisorId === 'r1')?.signed).toBe(1);
+    // l'actif est toujours là (zéro compris) et en tête
+    expect(overview.advisors[0].advisorId).toBe('u2');
   });
 
   it('les dossiers archivés (soft delete) ne comptent nulle part', () => {
