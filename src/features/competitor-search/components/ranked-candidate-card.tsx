@@ -134,6 +134,19 @@ export function RankedCandidateCard({
           </span>
         ) : null}
 
+        {/* Mission 61 — une annonce retenue grâce à un cran de desserrage le DIT. */}
+        {ranked.loosenedSurface || ranked.loosenedRooms ? (
+          <span className="inline-flex w-fit rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            Retenu après élargissement
+            {ranked.loosenedSurface ? ' de la surface' : ''}
+            {ranked.loosenedRooms
+              ? ranked.loosenedSurface
+                ? ' et des pièces'
+                : ' des pièces'
+              : ''}
+          </span>
+        ) : null}
+
         {/* Pourquoi cette annonce est là, et pourquoi elle est à cette place. */}
         <div className="flex flex-wrap gap-1">
           {ranked.strengths.map((label) => (

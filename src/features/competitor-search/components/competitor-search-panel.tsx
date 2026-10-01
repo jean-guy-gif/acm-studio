@@ -36,11 +36,23 @@ import { readPortalsSequentially } from '@/features/competitor-search/services/r
 import type { PortalSearchLink } from '@/features/competitor-search/services/build-portal-search-urls';
 import type {
   CompetitorCandidate,
+  ExcludedForMissing,
+  Loosening,
   PortalSearchResult,
   RankedCandidate,
   RecordDecisionResult,
   SearchResultsHtmlImport,
 } from '@/features/competitor-search/types';
+
+// Mission 61 — l'état d'admissibilité renvoyé par le classement, pour le bandeau.
+type Admissibility = {
+  loosening: Loosening;
+  excludedForMissing: ExcludedForMissing;
+  belowMinimum: boolean;
+  target: number;
+  minimum: number;
+  rankedCount: number;
+};
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
@@ -306,6 +318,7 @@ export function CompetitorSearchPanel({
     max: null,
   });
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
+  const [admissibility, setAdmissibility] = useState<Admissibility | null>(null);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
   const [showLessRelevant, setShowLessRelevant] = useState(false);
@@ -358,6 +371,14 @@ export function CompetitorSearchPanel({
     const rank = await rankAction(next);
     if (rank.ok) {
       setRanked(rank.ranked);
+      setAdmissibility({
+        loosening: rank.loosening,
+        excludedForMissing: rank.excludedForMissing,
+        belowMinimum: rank.belowMinimum,
+        target: rank.target,
+        minimum: rank.minimum,
+        rankedCount: rank.ranked.length,
+      });
       setLearnedNotes(rank.learnedNotes);
     } else {
       setError(rank.error);
@@ -379,6 +400,7 @@ export function CompetitorSearchPanel({
         setError(prep.error);
         setPortals(null);
         setRanked([]);
+        setAdmissibility(null);
         setLearnedNotes([]);
         return;
       }
@@ -393,6 +415,7 @@ export function CompetitorSearchPanel({
         setExtensionMissing(true);
         setPortals(null);
         setRanked([]);
+        setAdmissibility(null);
         setLearnedNotes([]);
         return;
       }
@@ -754,6 +777,48 @@ export function CompetitorSearchPanel({
           ))}
         </div>
       ) : null}
+
+      {/* Mission 61 — le desserrage est VISIBLE, et les écartés pour donnée absente sont DITS. */}
+      {admissibility
+        ? (() => {
+            const L = admissibility.loosening;
+            const ex = admissibility.excludedForMissing;
+            const loosenParts: string[] = [];
+            if (L.surfaceLoosened) loosenParts.push(`±${L.surfaceTolerancePct} % de surface`);
+            if (L.roomsLoosened) loosenParts.push('±1 pièce');
+            const excludedLines = [
+              ex.surface > 0 ? `${ex.surface} sans surface indiquée` : null,
+              ex.rooms > 0 ? `${ex.rooms} sans nombre de pièces indiqué` : null,
+              ex.price > 0 ? `${ex.price} sans prix indiqué` : null,
+            ].filter((line): line is string => line != null);
+            if (
+              loosenParts.length === 0 &&
+              excludedLines.length === 0 &&
+              !admissibility.belowMinimum
+            )
+              return null;
+            return (
+              <div className="flex flex-col gap-1.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900">
+                {loosenParts.length > 0 ? (
+                  <p>
+                    Élargi à {loosenParts.join(' et ')}, faute de candidats dans les bornes serrées
+                    (le prix et la commune ne bougent pas).
+                  </p>
+                ) : null}
+                {admissibility.belowMinimum ? (
+                  <p>
+                    Trop peu de concurrents comparables ({admissibility.rankedCount}), même après le
+                    dernier cran d’élargissement. On ne complète pas avec des biens hors bornes :
+                    une liste courte et juste vaut mieux qu’une liste pleine et fausse.
+                  </p>
+                ) : null}
+                {excludedLines.length > 0 ? (
+                  <p>Écartées faute d’une donnée nécessaire : {excludedLines.join(' · ')}.</p>
+                ) : null}
+              </div>
+            );
+          })()
+        : null}
 
       {undecided.length > 0 ? (
         <section className="flex flex-col gap-3">

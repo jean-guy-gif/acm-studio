@@ -9,14 +9,14 @@ import { rankCandidates } from '@/features/competitor-search/services/rank-candi
 import type {
   CompetitorSearchCriteria,
   PortalSearchResult,
-  RankedCandidate,
+  RankedSearch,
 } from '@/features/competitor-search/types';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type RankSearchResult =
-  { ok: true; ranked: RankedCandidate[]; learnedNotes: string[] } | { ok: false; error: string };
+  ({ ok: true; learnedNotes: string[] } & RankedSearch) | { ok: false; error: string };
 
 const GENERIC_ERROR = 'Le classement a échoué.';
 
@@ -84,6 +84,6 @@ export async function rankCompetitorCandidates(
   }));
   const preferences = learnFromDecisions(decisions);
 
-  const ranked = rankCandidates(criteria, portals ?? [], preferences);
-  return { ok: true, ranked, learnedNotes: preferences.notes };
+  const search = rankCandidates(criteria, portals ?? [], preferences);
+  return { ok: true, ...search, learnedNotes: preferences.notes };
 }
