@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
   badgeBrand,
-  badgeNeutral,
   badgeRejected,
   btnPrimary,
   btnSecondary,
@@ -19,7 +18,11 @@ import {
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
 import { formatFrenchDate } from '@/features/competitor-search/services/stream-estate-import';
-import type { RankedCandidate, StreamEstateFacts } from '@/features/competitor-search/types';
+import type {
+  ProximityReason,
+  RankedCandidate,
+  StreamEstateFacts,
+} from '@/features/competitor-search/types';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
@@ -52,6 +55,53 @@ export function StreamEstateFactsLine({ facts }: { facts: StreamEstateFacts }) {
   );
 }
 
+// Étape 2 — « pourquoi il est proche », critère par critère, dans l'ordre où ils comptent : le
+// niveau 1 d'abord (secteur, surface, prix, stationnement, extérieur), puis le niveau 2. Ce qui
+// rapproche est en couleur, ce qui éloigne est barré d'un « ≠ », l'inconnu est dit « non indiqué ».
+function ReasonList({ reasons }: { reasons: ProximityReason[] }) {
+  return (
+    <>
+      {reasons.map((reason, index) => (
+        <span key={reason.criterion}>
+          {index > 0 ? ' · ' : ''}
+          <span
+            className={
+              reason.points > 0
+                ? 'font-medium text-brand-deep stage:text-white'
+                : reason.points < 0
+                  ? 'text-amber-800 stage:text-amber-300'
+                  : reason.known
+                    ? ''
+                    : 'text-zinc-400 stage:text-white/40'
+            }
+          >
+            {reason.label}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
+export function ProximityLines({ reasons }: { reasons: ProximityReason[] }) {
+  const first = reasons.filter((reason) => reason.level === 1);
+  const second = reasons.filter((reason) => reason.level === 2);
+  return (
+    <div className="flex flex-col gap-1 text-xs text-zinc-600 stage:text-white/70">
+      <p>
+        <span className="font-semibold">Pourquoi il est proche : </span>
+        <ReasonList reasons={first} />
+      </p>
+      {second.length > 0 ? (
+        <p>
+          <span className="font-semibold">Puis : </span>
+          <ReasonList reasons={second} />
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export type DecisionPayload = {
   decision: 'accepted' | 'rejected';
   reason: DecisionReason | null;
@@ -65,12 +115,15 @@ export type DecisionPayload = {
 // vendeur, de ce qui l'en éloigne, et de ce que l'outil croit avoir appris.
 export function RankedCandidateCard({
   ranked,
+  position,
   selected,
   onToggleSelect,
   onDecision,
   pending,
 }: {
   ranked: RankedCandidate;
+  // Étape 2 — la place de l'annonce dans l'ordre « les plus proches » (1 = la plus proche).
+  position: number;
   // MISSION 50 §8 — case à cocher : la SEULE interaction pour retenir. Cochée =
   // retenue au lot (importée à la validation). Le « Non » reste, comme motif de
   // refus FACULTATIF pour qui veut le donner ; rien n'est écrit avant la validation.
@@ -144,8 +197,8 @@ export function RankedCandidateCard({
           <span className="font-title text-base leading-snug font-semibold text-zinc-900 capitalize stage:text-white">
             {candidate.title ?? 'Annonce détectée'}
           </span>
-          <span className={badgeBrand} title="Ressemblance avec le bien de votre client">
-            {ranked.score}%
+          <span className={badgeBrand} title="Place dans l’ordre, du plus proche au plus éloigné">
+            n° {position}
           </span>
         </div>
 
@@ -184,19 +237,8 @@ export function RankedCandidateCard({
           </span>
         ) : null}
 
-        {/* Pourquoi cette annonce est là, et pourquoi elle est à cette place. */}
-        <div className="flex flex-wrap gap-1">
-          {ranked.strengths.map((label) => (
-            <span key={label} className={badgeBrand}>
-              {label}
-            </span>
-          ))}
-          {ranked.weaknesses.map((label) => (
-            <span key={label} className={badgeNeutral}>
-              {label}
-            </span>
-          ))}
-        </div>
+        {/* Pourquoi cette annonce est à cette place : chaque critère de l'ordre, dit tel quel. */}
+        <ProximityLines reasons={ranked.proximity.reasons} />
 
         {ranked.learnedPenalties.length > 0 ? (
           <p className={hintText}>

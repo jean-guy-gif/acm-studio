@@ -1,4 +1,5 @@
 import type {
+  CandidateFeatures,
   CompetitorCandidate,
   SearchExtraction,
   SearchPortal,
@@ -270,6 +271,49 @@ function firstTypeInText(text: string | null): string | null {
   return null;
 }
 
+// Étape 2 — ce qu'une carte de portail dit en champs structurés pour l'ORDRE : le quartier ÉCRIT
+// (jamais deviné d'une adresse) et l'étage SeLoger. Le reste (équipements, position) n'est pas sur
+// la carte : inconnu, donc neutre.
+function cardFeatures(district: string | null, floor: number | null): CandidateFeatures {
+  return {
+    location: null,
+    locationDiscarded: false,
+    district,
+    floor,
+    hasElevator: null,
+    hasPool: null,
+    parking: null,
+    outdoor: null,
+    condition: null,
+    exposure: null,
+    constructionYear: null,
+  };
+}
+
+// SeLoger : « Le Port, Nice (06300) » → « Le Port ». Le quartier précède la commune ; sans virgule,
+// la ligne ne nomme que la commune → pas de quartier.
+function selogerDistrict(address: string | null): string | null {
+  if (address == null) return null;
+  const match = address.match(/^(.+?),\s*[^,]+$/);
+  const district = match?.[1].trim() ?? '';
+  return district === '' ? null : district;
+}
+
+// SeLoger, dans le titre : « …, 41 m², Étage 1/3 » → 1 ; « …, RDC/2 » → 0.
+function selogerFloor(title: string | null): number | null {
+  const text = decodeHtmlEntities(title ?? '');
+  if (/,\s*RDC\b/i.test(text)) return 0;
+  const match = text.match(/,\s*[ÉE]tage\s+(\d{1,2})\b/i);
+  return match ? Number(match[1]) : null;
+}
+
+// Bien'ici : « 06000 Nice (Valrose) » → « Valrose ».
+function bieniciDistrict(address: string | null): string | null {
+  const match = decodeHtmlEntities(address ?? '').match(/\(([^)]+)\)\s*$/);
+  const district = match?.[1].trim() ?? '';
+  return district === '' ? null : district;
+}
+
 // --- découpage en cartes, par marqueur, portail par portail --------------------
 
 type CardChunk = { key: string | null; chunk: string };
@@ -340,6 +384,10 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
+    features: cardFeatures(
+      selogerDistrict(firstGroup(chunk, /cardmfe-description-box-address"[^>]*>([^<]+)/i)),
+      selogerFloor(title),
+    ),
   };
 }
 
@@ -373,6 +421,12 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
+    features: cardFeatures(
+      bieniciDistrict(
+        firstGroup(chunk, /(?:real-estate-main-info__address|detailsAddress)[^"]*"[^>]*>([^<]+)/i),
+      ),
+      null,
+    ),
   };
 }
 

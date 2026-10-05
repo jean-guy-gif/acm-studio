@@ -65,6 +65,8 @@ function makeProperty(overrides: Partial<SubjectProperty> = {}): SubjectProperty
     exposure: null,
     construction_year: null,
     general_condition: null,
+    has_elevator: null,
+    has_pool: null,
     outdoor_spaces: [],
     parking_types: [],
     monthly_charges: null,

@@ -48,6 +48,8 @@ type ScalarState = {
   exposure: string;
   construction_year: string;
   general_condition: string;
+  has_elevator: string;
+  has_pool: string;
   monthly_charges: string;
   advisor_price_min: string;
   advisor_price_max: string;
@@ -56,6 +58,10 @@ type ScalarState = {
 
 const str = (value: string | number | null | undefined): string =>
   value == null ? '' : String(value);
+
+// Ascenseur / piscine : « yes » / « no » / « » (non renseigné) dans le formulaire.
+const triState = (value: boolean | null | undefined): string =>
+  value == null ? '' : value ? 'yes' : 'no';
 
 // An imported value (when present) pre-fills the field; otherwise the saved
 // property value is kept. GUARDRAIL: the SALE PRICE and the advisor RANGE are never
@@ -91,6 +97,8 @@ function initialScalars(
     exposure: pick(imported?.exposure, property?.exposure),
     construction_year: pick(imported?.construction_year, property?.construction_year),
     general_condition: pick(imported?.general_condition, property?.general_condition),
+    has_elevator: triState(property?.has_elevator),
+    has_pool: triState(property?.has_pool),
     monthly_charges: pick(imported?.monthly_charges, property?.monthly_charges),
     advisor_price_min: str(property?.advisor_price_min),
     advisor_price_max: str(property?.advisor_price_max),
@@ -302,6 +310,8 @@ export function SubjectPropertyForm({
         exposure={scalars.exposure}
         constructionYear={scalars.construction_year}
         generalCondition={scalars.general_condition}
+        hasElevator={scalars.has_elevator}
+        hasPool={scalars.has_pool}
         outdoorSpaces={outdoorSpaces}
         parkingTypes={parkingTypes}
         onField={setField}

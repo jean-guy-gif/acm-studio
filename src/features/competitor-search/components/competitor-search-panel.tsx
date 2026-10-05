@@ -49,6 +49,8 @@ import {
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
+import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
+import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
 import { detectSearchPortal } from '@/features/competitor-search/services/extract-search-results';
 import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
 import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
@@ -68,6 +70,7 @@ import {
   type RankedCandidate,
   type RecordDecisionResult,
   type SearchResultsHtmlImport,
+  type SectorStatus,
 } from '@/features/competitor-search/types';
 
 // Mission 61 — l'état d'admissibilité renvoyé par le classement, pour le bandeau.
@@ -141,9 +144,9 @@ type OpenedSearches = {
   opened: number | null;
 };
 
-// Seuil de ressemblance : au-dessus, on affiche ; en dessous, on plie derrière
-// « Voir les N autres, moins ressemblants ». On ne masque rien (mission 36) — un
-// clic révèle tout —, on coupe seulement une liste trop longue à trancher.
+// Seuil de ressemblance : sans fourchette saisie, une annonce en dessous n'est pas cochée d'office.
+// L'affichage, lui, suit l'ordre « les plus proches » (étape 2) : les 10 premiers, puis le reste
+// derrière « Voir les N autres ». On ne masque rien (mission 36) — un clic révèle tout.
 const SIMILARITY_THRESHOLD = 60;
 
 function CandidateCard({
@@ -395,6 +398,8 @@ export function CompetitorSearchPanel({
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
   const [admissibility, setAdmissibility] = useState<Admissibility | null>(null);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
+  // Étape 2 — le secteur : distances mesurées depuis l'adresse du bien, ou neutre (et pourquoi).
+  const [sector, setSector] = useState<SectorStatus | null>(null);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
   const [showLessRelevant, setShowLessRelevant] = useState(false);
   // §8 — sélection du lot. On stocke les CHOIX EXPLICITES (url → coché ?) ; une carte
@@ -453,9 +458,17 @@ export function CompetitorSearchPanel({
   const inMainList = (entry: RankedCandidate): boolean =>
     hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
 
+  // Étape 2 — l'ordre « les plus proches » : les 10 premiers non tranchés sont montrés, le reste
+  // attend derrière « Voir les N autres ». Seuls les 10 montrés peuvent être cochés d'office : on
+  // n'importe jamais une annonce que le conseiller n'a pas eue sous les yeux.
+  const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
+  const { shown, others } = splitVisible(undecided);
+  const shownUrls = new Set(shown.map((entry) => entry.candidate.url));
+
   // Essai Stream Estate : une annonce d'origine que l'extension ne relit pas n'est pas cochée
   // d'office — son import échouerait à coup sûr.
   const defaultChecked = (entry: RankedCandidate): boolean =>
+    shownUrls.has(entry.candidate.url) &&
     inMainList(entry) &&
     entry.candidate.propertyType != null &&
     entry.candidate.streamEstate?.importable !== false;
@@ -482,6 +495,7 @@ export function CompetitorSearchPanel({
         rankedCount: rank.ranked.length,
       });
       setLearnedNotes(rank.learnedNotes);
+      setSector(rank.sector);
     } else {
       setError(rank.error);
     }
@@ -504,6 +518,7 @@ export function CompetitorSearchPanel({
         setRanked([]);
         setAdmissibility(null);
         setLearnedNotes([]);
+        setSector(null);
         return;
       }
       setSearchLinks(prep.links);
@@ -519,6 +534,7 @@ export function CompetitorSearchPanel({
         setRanked([]);
         setAdmissibility(null);
         setLearnedNotes([]);
+        setSector(null);
         return;
       }
 
@@ -1051,18 +1067,13 @@ export function CompetitorSearchPanel({
     });
   }
 
-  const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
-  // Liste principale = dans la fourchette (ou, à défaut de fourchette, au-dessus du
-  // seuil) ; le reste bascule dans le repli. Rien n'est perdu — un clic révèle tout.
-  const relevant = undecided.filter((entry) => inMainList(entry));
-  const lessRelevant = undecided.filter((entry) => !inMainList(entry));
-
   const checkedCount = undecided.filter((entry) => isChecked(entry)).length;
 
-  const renderCard = (entry: RankedCandidate) => (
+  const renderCard = (entry: RankedCandidate, position: number) => (
     <RankedCandidateCard
       key={entry.candidate.url}
       ranked={entry}
+      position={position}
       selected={isChecked(entry)}
       onToggleSelect={() => toggleSelect(entry)}
       pending={busy}
@@ -1331,13 +1342,24 @@ export function CompetitorSearchPanel({
       {undecided.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h3 className={formSectionTitle}>
-            Concurrents proposés, du plus au moins ressemblant ({undecided.length})
+            Concurrents proposés, du plus proche au plus éloigné ({undecided.length})
           </h3>
           <p className={hintText}>
             Seules les annonces de la commune, dans votre fourchette de prix, avec le même nombre de
-            pièces et une surface proche sont proposées ; tout élargissement est signalé. Le
-            pourcentage mesure la ressemblance avec le bien de votre client.
+            pièces et une surface proche sont proposées ; tout élargissement est signalé. L’ordre
+            suit d’abord le secteur, la surface, le prix, le stationnement et l’extérieur ; puis
+            l’état, l’étage, l’ascenseur, la piscine, l’exposition et l’année. Une donnée non
+            indiquée ne fait ni monter ni descendre une annonce.
           </p>
+          {sector ? (
+            sector.status === 'located' ? (
+              <p className={hintText}>Distances mesurées depuis « {sector.label} ».</p>
+            ) : (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {SECTOR_NEUTRAL_MESSAGES[sector.reason]}
+              </p>
+            )
+          ) : null}
           {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
               un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.
               L'avancement s'affiche pendant l'import (« 3 sur 8 »). */}
@@ -1391,21 +1413,14 @@ export function CompetitorSearchPanel({
             </div>
           ) : null}
 
-          {/* Les plus ressemblants (≥ seuil). Si tout est en dessous du seuil, on
-              affiche quand même le premier groupe vide-mains via lessRelevant. */}
-          {relevant.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {relevant.map(renderCard)}
-            </div>
-          ) : (
-            <p className={hintText}>
-              {hasRange
-                ? 'Aucun candidat dans votre fourchette de prix. Les propositions ci-dessous sont hors fourchette — à vous de juger.'
-                : 'Aucun candidat au-dessus du seuil de ressemblance. Les propositions ci-dessous sont plus éloignées — à vous de juger.'}
-            </p>
-          )}
+          {/* Étape 2 — les 10 plus proches, numérotés dans l'ordre. */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {shown.map((entry, index) => renderCard(entry, index + 1))}
+          </div>
 
-          {lessRelevant.length > 0 ? (
+          {/* Le reste, dans le même ordre, derrière un clic : rien n'est supprimé. Une carte
+              cachée n'est jamais cochée d'office. */}
+          {others.length > 0 ? (
             <div className="flex flex-col gap-3">
               <button
                 type="button"
@@ -1413,16 +1428,12 @@ export function CompetitorSearchPanel({
                 className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
               >
                 {showLessRelevant
-                  ? hasRange
-                    ? 'Masquer les biens hors fourchette'
-                    : 'Masquer les moins ressemblants'
-                  : hasRange
-                    ? `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, hors de votre fourchette`
-                    : `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, moins ressemblant${lessRelevant.length > 1 ? 's' : ''}`}
+                  ? `Masquer les ${others.length} autre${others.length > 1 ? 's' : ''}`
+                  : `Voir les ${others.length} autre${others.length > 1 ? 's' : ''}`}
               </button>
               {showLessRelevant ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {lessRelevant.map(renderCard)}
+                  {others.map((entry, index) => renderCard(entry, VISIBLE_CANDIDATES + index + 1))}
                 </div>
               ) : null}
             </div>

@@ -41,6 +41,45 @@ export type CompetitorSearchCriteria = {
   advisorPriceMax: number | null;
   // Mission 70 — terrain du bien vendeur : critère secondaire d'ORDRE, jamais un filtre.
   landArea?: number | null;
+  // Étape 2 Stream Estate — ce que la fiche du bien vendeur dit, pour l'ORDRE (jamais un filtre).
+  subject?: SubjectProximityFacts;
+};
+
+// Les champs STRUCTURÉS de la fiche du bien vendeur qui ordonnent les candidats. null = non
+// renseigné : le critère est alors neutre pour tous les candidats.
+export type SubjectProximityFacts = {
+  parkingTypes: string[]; // vocabulaire subject_properties (garage, closed_box…, none)
+  outdoorSpaces: string[]; // balcony, terrace, garden… none
+  generalCondition: string | null;
+  floor: number | null;
+  hasElevator: boolean | null;
+  hasPool: boolean | null;
+  exposure: string | null;
+  constructionYear: number | null;
+};
+
+export type GeoPoint = { lat: number; lon: number };
+
+// Ce que la carte (ou l'API) dit EN CHAMPS STRUCTURÉS, au-delà du prix et de la surface. Tout
+// champ absent reste null : inconnu, donc neutre. Rien n'est tiré d'une description.
+export type CandidateFeatures = {
+  // Position du bien (Stream Estate). null si absente OU écartée comme remplissage.
+  location: GeoPoint | null;
+  // La position existait mais a été écartée (valeur de remplissage, répétée ou trop grossière).
+  locationDiscarded: boolean;
+  // Quartier écrit sur la carte (SeLoger « Le Port, Nice », Bien'ici « Nice (Lanterne) »).
+  district: string | null;
+  floor: number | null; // 0 = rez-de-chaussée
+  hasElevator: boolean | null;
+  hasPool: boolean | null;
+  // Familles de stationnement nommées : 'garage' | 'box' | 'place'. null = rien d'écrit.
+  parking: string[] | null;
+  // Extérieurs nommés (balcony, terrace, garden, loggia, veranda) et ceux dits absents
+  // (« Pas de balcon »). null = rien d'écrit.
+  outdoor: { present: string[]; absent: string[] } | null;
+  condition: string | null; // vocabulaire general_condition
+  exposure: string | null; // vocabulaire exposure
+  constructionYear: number | null;
 };
 
 // Une annonce candidate détectée sur une page de résultats. Champs best-effort :
@@ -79,6 +118,8 @@ export type CompetitorCandidate = {
   isNewBuild: boolean;
   // Essai Stream Estate — présent seulement pour un bien venu de l'API.
   streamEstate?: StreamEstateFacts;
+  // Étape 2 — champs structurés qui ORDONNENT (secteur, étage, équipements). Absent = tout inconnu.
+  features?: CandidateFeatures;
 };
 
 // Ce que l'API Stream Estate dit d'un bien, en plus de la carte : d'où vient l'annonce
@@ -143,7 +184,34 @@ export type RankedCandidate = {
   // DIT (desserrage visible, correction de la M50 §3). false si admissible aux bornes serrées.
   loosenedSurface: boolean;
   loosenedRooms: boolean;
+  // Étape 2 — l'ordre « les plus proches » et sa justification, critère par critère.
+  proximity: ProximityAssessment;
 };
+
+// Un critère d'ordre, tel qu'il s'affiche sur la carte : « à 350 m », « terrasse ≠ balcon »,
+// « état non indiqué ». `points` > 0 rapproche, < 0 éloigne, 0 = neutre (dont l'inconnu).
+export type ProximityReason = {
+  criterion: string;
+  level: 1 | 2;
+  label: string;
+  points: number;
+  known: boolean;
+};
+
+export type ProximityAssessment = {
+  level1: number;
+  level2: number;
+  reasons: ProximityReason[];
+};
+
+// Le secteur (distance) n'est utilisé que si l'adresse du bien vendeur est géocodée précisément.
+// Sinon il est neutre pour tous, et l'écran dit pourquoi.
+export type SectorStatus =
+  | { status: 'located'; label: string }
+  | {
+      status: 'neutral';
+      reason: 'no_address' | 'imprecise' | 'low_score' | 'other_city' | 'unavailable';
+    };
 
 // Mission 61 §2 — l'état du desserrage appliqué, pour que l'écran dise ce qu'il a élargi et
 // pourquoi. Le prix et la commune ne bougent JAMAIS ; seules surface puis pièces se desserrent.

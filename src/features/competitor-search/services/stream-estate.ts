@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import {
+  readLocation,
+  readStreamEstateFeatures,
+  repeatedLocations,
+} from '@/features/competitor-search/services/stream-estate-features';
+import {
   SURFACE_FLOOR_SQM,
   WIDEST_SURFACE_TOLERANCE,
 } from '@/features/competitor-search/services/rank-candidates';
@@ -103,6 +108,11 @@ const advertSchema = z.object({
   url: z.string(),
   expired: z.boolean().nullable().optional(),
   lastCrawledAt: nullableString,
+  // Étape 2 — champs structurés de l'annonce (ordre, jamais filtre).
+  floor: nullableNumber,
+  elevator: z.boolean().nullable().optional(),
+  constructionYear: nullableNumber,
+  features: z.array(z.string()).nullable().optional(),
   events: z
     .array(
       z.object({
@@ -128,6 +138,10 @@ const propertySchema = z.object({
   lastCrawledAt: nullableString,
   pictures: z.array(z.string()).nullable().optional(),
   city: z.object({ name: nullableString }).nullable().optional(),
+  // Étape 2 — position, étage, ascenseur du bien (valeurs consolidées par Stream Estate).
+  location: z.object({ lat: nullableNumber, lon: nullableNumber }).nullable().optional(),
+  floor: nullableNumber,
+  elevator: z.boolean().nullable().optional(),
   adverts: z.array(advertSchema),
 });
 
@@ -212,7 +226,12 @@ const positive = (value: number | null | undefined): number | null =>
 
 const STREAM_TYPE_NAMES: Record<number, string> = { 0: 'apartment', 1: 'house' };
 
-export function toCandidate(property: StreamEstateProperty): CompetitorCandidate | null {
+// `repeated` : les points portés par plusieurs biens de la même réponse (coordonnées de
+// remplissage, écartées) — calculés sur toute la réponse par parseStreamEstateResponse.
+export function toCandidate(
+  property: StreamEstateProperty,
+  repeated: ReadonlySet<string> = new Set(),
+): CompetitorCandidate | null {
   const origin = pickOriginAdvert(property.adverts);
   const url = origin ? cleanAdvertUrl(origin.url) : null;
   if (origin == null || url == null) return null;
@@ -239,6 +258,7 @@ export function toCandidate(property: StreamEstateProperty): CompetitorCandidate
       priceDrops: priceDrops(property.adverts),
       importable: isImportableUrl(url),
     },
+    features: readStreamEstateFeatures(property, repeated),
   };
 }
 
@@ -248,12 +268,20 @@ export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResp
   const response = responseSchema.safeParse(json);
   if (!response.success) return null;
   const members = response.data['hydra:member'];
+  const properties = members.map((member) => propertySchema.safeParse(member));
+  // Un point répété se compte par BIEN distinct (un même bien renvoyé deux fois ne compte qu'une).
+  const byUuid = new Map<string, StreamEstateProperty>();
+  for (const property of properties) {
+    if (property.success) byUuid.set(property.data.uuid, property.data);
+  }
+  const repeated = repeatedLocations(
+    [...byUuid.values()].map((property) => readLocation(property.location)),
+  );
   const seen = new Set<string>();
   const candidates: CompetitorCandidate[] = [];
   let unreadable = 0;
-  for (const member of members) {
-    const property = propertySchema.safeParse(member);
-    const candidate = property.success ? toCandidate(property.data) : null;
+  for (const property of properties) {
+    const candidate = property.success ? toCandidate(property.data, repeated) : null;
     if (candidate == null) {
       unreadable += 1;
       continue;

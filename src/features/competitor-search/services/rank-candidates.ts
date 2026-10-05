@@ -2,6 +2,7 @@ import {
   applyLearning,
   type LearnedPreferences,
 } from '@/features/competitor-search/services/learn-from-decisions';
+import { assessProximity, compareProximity } from '@/features/competitor-search/services/proximity';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
@@ -10,6 +11,7 @@ import type {
   CompetitorCandidate,
   CompetitorSearchCriteria,
   ExcludedForMissing,
+  GeoPoint,
   Loosening,
   PortalSearchResult,
   RankedCandidate,
@@ -122,6 +124,8 @@ export function rankCandidates(
   criteria: CompetitorSearchCriteria,
   portals: PortalSearchResult[],
   preferences: LearnedPreferences,
+  // Étape 2 — position du bien vendeur, seulement si son adresse est géocodée précisément.
+  options: { subjectLocation?: GeoPoint | null } = {},
 ): RankedSearch {
   const subjectType = normalizePropertyType(criteria.propertyType);
   // Mission 70 — le terrain n'ordonne que pour une MAISON vendeuse. Le jardin d'un appartement ne
@@ -218,14 +222,22 @@ export function rankCandidates(
       alreadyJudged: adjusted.alreadyJudged,
       loosenedSurface: neededSurface(entry.candidate),
       loosenedRooms: neededRooms(entry.candidate),
+      proximity: assessProximity(
+        criteria,
+        entry.candidate,
+        options.subjectLocation ?? null,
+        subjectType,
+      ),
     };
   });
 
-  // Déjà tranchés derrière, puis par score.
+  // Étape 2 — « les plus proches » : déjà tranchés derrière, puis niveau 1, puis niveau 2 (le
+  // niveau 1 prime toujours). Le score (critères secondaires et apprentissage) ne départage plus
+  // qu'à égalité parfaite des deux niveaux. Les filtres, eux, n'ont pas bougé.
   ranked.sort((a, b) => {
     const judgedA = a.alreadyJudged == null ? 0 : 1;
     const judgedB = b.alreadyJudged == null ? 0 : 1;
-    return judgedA !== judgedB ? judgedA - judgedB : b.score - a.score;
+    return judgedA - judgedB || compareProximity(a.proximity, b.proximity) || b.score - a.score;
   });
 
   // Mission 68 — le plancher l'emporte-t-il sur le pourcentage au cran retenu ? Si oui, c'est lui

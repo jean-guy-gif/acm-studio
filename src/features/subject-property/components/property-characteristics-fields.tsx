@@ -17,10 +17,18 @@ import {
   PARKING_TYPES,
 } from '@/features/subject-property/constants/property-options';
 
+// Oui / Non ; le choix vide du sélecteur reste « — Non renseigné — ».
+const YES_NO = [
+  { value: 'yes', label: 'Oui' },
+  { value: 'no', label: 'Non' },
+];
+
 export function PropertyCharacteristicsFields({
   exposure,
   constructionYear,
   generalCondition,
+  hasElevator,
+  hasPool,
   outdoorSpaces,
   parkingTypes,
   onField,
@@ -30,6 +38,8 @@ export function PropertyCharacteristicsFields({
   exposure: string;
   constructionYear: string;
   generalCondition: string;
+  hasElevator: string;
+  hasPool: string;
   outdoorSpaces: string[];
   parkingTypes: string[];
   onField: (name: string, value: string) => void;
@@ -64,6 +74,20 @@ export function PropertyCharacteristicsFields({
             label: GENERAL_CONDITION_LABELS[value],
           }))}
           error={errors.general_condition}
+        />
+        <SelectField
+          label="Ascenseur"
+          value={hasElevator}
+          onChange={(value) => onField('has_elevator', value)}
+          options={YES_NO}
+          error={errors.has_elevator}
+        />
+        <SelectField
+          label="Piscine"
+          value={hasPool}
+          onChange={(value) => onField('has_pool', value)}
+          options={YES_NO}
+          error={errors.has_pool}
         />
       </div>
       <MultiCheckField

@@ -143,6 +143,20 @@ describe('parseStreamEstateResponse', () => {
         priceDrops: [-4.45],
         importable: true,
       },
+      // Cette fixture ne porte ni position ni équipements : tout reste inconnu, donc neutre.
+      features: {
+        location: null,
+        locationDiscarded: false,
+        district: null,
+        floor: null,
+        hasElevator: null,
+        hasPool: null,
+        parking: null,
+        outdoor: null,
+        condition: null,
+        exposure: null,
+        constructionYear: null,
+      },
     });
   });
 

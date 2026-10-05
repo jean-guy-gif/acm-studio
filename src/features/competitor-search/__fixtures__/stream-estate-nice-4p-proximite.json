@@ -1,0 +1,2381 @@
+{
+ "hydra:totalItems": 69,
+ "hydra:member": [
+  {
+   "uuid": "d062decb-22fd-4eec-aa63-080e8074d818",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 428000,
+   "surface": 72,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5944.44,
+   "createdAt": "2026-10-05T12:45:01+02:00",
+   "updatedAt": "2026-10-05T12:45:01+02:00",
+   "lastCrawledAt": "2026-10-05T14:20:54+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": {
+    "lat": 43.718583846154,
+    "lon": 7.25697
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/05/12/15a13127018110729eec68df3bce0a.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/269HQ7LK3HUY?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T14:20:54+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": 2028,
+     "features": [
+      "1er étage",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "3 chambres",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition ouest",
+      "Digicode",
+      "Interphone"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "721b5847-daec-4caa-90b3-5b4e6b54996e",
+   "title": "Appartement 4 pièces vue mer avec terrasse",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 450000,
+   "surface": 83.1,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5415.16,
+   "createdAt": "2026-10-03T11:31:02+02:00",
+   "updatedAt": "2026-10-04T12:23:24+02:00",
+   "lastCrawledAt": "2026-10-05T12:26:30+02:00",
+   "expired": false,
+   "floor": 5,
+   "elevator": true,
+   "location": {
+    "lat": 43.700935793,
+    "lon": 7.268391135
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/03/11/a75d54c58068a2174e285ddf1f2142.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/hektor-axim-med-172",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T12:26:30+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": 1994,
+     "features": [
+      "radiateur électrique individuel",
+      "Nombre de WC : 1"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "a4487464-4dbb-428e-b256-06675d77dcd5",
+   "title": "Appartement - 4 pièce(s) - 77 m²",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 457000,
+   "surface": 77,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5935.06,
+   "createdAt": "2026-10-03T01:52:43+02:00",
+   "updatedAt": "2026-10-03T01:52:43+02:00",
+   "lastCrawledAt": "2026-10-03T01:52:43+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/03/01/e042e91280a79ec8b3cd289c61b024.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1295897191A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-10-03T01:52:43+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "53e3eae3-e2ba-49a5-b964-e2996458a2d0",
+   "title": "Appartement - 4 pièce(s) - 77 m²",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 442000,
+   "surface": 77,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5740.26,
+   "createdAt": "2026-10-03T01:52:42+02:00",
+   "updatedAt": "2026-10-03T01:52:42+02:00",
+   "lastCrawledAt": "2026-10-03T01:52:42+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/03/01/fcb284501637f226f514985882a589.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1295897190A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-10-03T01:52:42+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "e4782acc-66c3-40e7-884c-2dc78adb62da",
+   "title": "Appartement - 4 pièce(s) - 73 m²",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 428000,
+   "surface": 73,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5863.01,
+   "createdAt": "2026-10-03T01:52:41+02:00",
+   "updatedAt": "2026-10-03T01:52:41+02:00",
+   "lastCrawledAt": "2026-10-03T01:52:41+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/03/01/e4f00925b08681492323514c37712d.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1295897189A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-10-03T01:52:41+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "286633da-03f3-465c-8a6d-8e74b7089af5",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 429000,
+   "surface": 86.57,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 4955.53,
+   "createdAt": "2026-10-02T15:42:40+02:00",
+   "updatedAt": "2026-10-02T16:11:52+02:00",
+   "lastCrawledAt": "2026-10-04T16:21:06+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": false,
+   "location": {
+    "lat": 43.711365384615,
+    "lon": 7.2501705128205
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/02/16/80e1b9fe9360503b1927dafa0d71eb.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87438892",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T16:25:56+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": null,
+     "features": [
+      "Radiateur Gaz Individuel"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26W7S4RS9XL4?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T16:21:06+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 02/10/2026",
+      "2 étage",
+      "Salle de bain",
+      "Salon (total 19,24 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "2 balcons",
+      "Belle vue",
+      "Exposition est",
+      "TV par câble",
+      "Interphone",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "443014ff-aaa1-45fc-8d2c-bad44cdb059f",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 456827,
+   "surface": 82,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5571.06,
+   "createdAt": "2026-10-02T14:03:58+02:00",
+   "updatedAt": "2026-10-02T14:03:58+02:00",
+   "lastCrawledAt": "2026-10-04T14:17:49+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.726645919877,
+    "lon": 7.27095312988
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/02/14/917cd4b3bcc767732a96c2fc293bf4.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26LS3XTTE3UF?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T14:17:49+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cuisine équipée",
+      "Cave",
+      "3 chambres",
+      "Entrée séparée",
+      "2 parkings: Box de stationnement, Parking",
+      "Terrasse",
+      "Sans vis-à-vis",
+      "Exposition sud-est",
+      "Digicode",
+      "Interphone"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "755df92a-d1c1-4123-9390-b0c0d539baa5",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 438770,
+   "surface": 77,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5698.31,
+   "createdAt": "2026-10-02T13:33:08+02:00",
+   "updatedAt": "2026-10-02T13:33:08+02:00",
+   "lastCrawledAt": "2026-10-04T14:17:38+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.718932059733,
+    "lon": 7.2529490949557
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/02/13/46fcef3d40d190cc38bb43816f4c98.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26SJM18J6YUH?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T14:17:38+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cave",
+      "3 chambres",
+      "2 parkings: Box de stationnement, Parking",
+      "Terrasse",
+      "Sans vis-à-vis",
+      "Exposition ouest",
+      "Digicode",
+      "Interphone"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "921a241b-1606-43c5-8014-23859760e800",
+   "title": "Vente appartement 4 pièces 83,1 m² Nice (06200) - Superimmo",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 450000,
+   "surface": 83,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5421.69,
+   "createdAt": "2026-10-01T09:09:06+02:00",
+   "updatedAt": "2026-10-01T09:09:06+02:00",
+   "lastCrawledAt": "2026-10-01T09:09:06+02:00",
+   "expired": false,
+   "floor": 5,
+   "elevator": true,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/01/09/6f313f8bc02ad848d833d67ff4b2bf.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06200"
+   },
+   "adverts": [
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-83m-nice-06200-x125paw",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T09:09:06+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "57ab3c88-8d06-4d08-b019-47b32d5a2fd5",
+   "title": "Vente appartement 4 pièces 79,41 m² Nice (06100) - Superimmo",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 449000,
+   "surface": 79,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5683.54,
+   "createdAt": "2026-10-01T06:26:28+02:00",
+   "updatedAt": "2026-10-01T06:26:28+02:00",
+   "lastCrawledAt": "2026-10-01T06:26:28+02:00",
+   "expired": false,
+   "floor": null,
+   "elevator": false,
+   "location": null,
+   "pictures": [],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-79m-nice-06100-x125p4c",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T06:26:28+02:00",
+     "floor": null,
+     "elevator": false,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "7065ad3b-b71f-4cd5-9666-bdca8d8fd9a6",
+   "title": "Vente appartement 4 pièces 79 m² Nice (06000) - Superimmo",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 470000,
+   "surface": 79,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5949.37,
+   "createdAt": "2026-10-01T06:26:16+02:00",
+   "updatedAt": "2026-10-01T06:26:16+02:00",
+   "lastCrawledAt": "2026-10-01T06:26:16+02:00",
+   "expired": false,
+   "floor": 3,
+   "elevator": false,
+   "location": null,
+   "pictures": [],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-79m-nice-06000-x125p4l",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T06:26:16+02:00",
+     "floor": 3,
+     "elevator": false,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "bd30f4e1-4de8-4dbf-a83f-e1b953b46027",
+   "title": "Nice Liberation - Appartement 4 Pièces De 78M2 - Terrasse - Cave - Garage",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 465000,
+   "surface": 77,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 6038.96,
+   "createdAt": "2026-09-30T20:52:41+02:00",
+   "updatedAt": "2026-10-05T00:31:34+02:00",
+   "lastCrawledAt": "2026-10-05T00:31:34+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.70841443346,
+    "lon": 7.2602738798141
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/05/00/d079638a820fa610a6559b7e3847fa.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26QZN2F2XNU2?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T21:20:32+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": 1987,
+     "features": [
+      "Disponible à partir du 01/10/2026",
+      "2/6 étage",
+      "Ascenseur",
+      "Cuisine équipée",
+      "Cave",
+      "Salon (total 30,15 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "1 parking: Garage",
+      "Balcon",
+      "Terrasse",
+      "Sans vis-à-vis",
+      "Exposition ouest",
+      "TV par câble",
+      "Interphone",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.vizzit.fr/fr/property/appartement/nice/Alt32vn7trnhuooi",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T00:31:34+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "77 m²",
+      "4 pièces",
+      "3 chambres",
+      "Terrasse",
+      "1 balcon",
+      "Cuisine séparée",
+      "Interphone",
+      "Climatisation",
+      "Toilettes séparées",
+      "Cave",
+      "Ascenseur",
+      "Orientation ouest",
+      "1 salle de douche",
+      "1 garage",
+      "1 place de parking",
+      "Étage 2",
+      "Cuisine séparée équipée"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "4b7e7ffd-095c-4012-987a-fd4cd41cf664",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 429000,
+   "surface": 72,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5958.33,
+   "createdAt": "2026-09-30T18:42:47+02:00",
+   "updatedAt": "2026-09-30T18:42:47+02:00",
+   "lastCrawledAt": "2026-10-04T19:18:03+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.700731267606,
+    "lon": 7.2543136619718
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/30/18/10ff39431e1f1e462d4a98f8bef328.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26GSFMZ892HR?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T19:18:03+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": 1960,
+     "features": [
+      "disponible immédiatement",
+      "2/5 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cuisine équipée",
+      "Cave",
+      "3 chambres",
+      "Balcon"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "55205c78-30a9-4248-b44a-5d0ae9084ffd",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 439000,
+   "surface": 79.51,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5521.32,
+   "createdAt": "2026-09-30T18:33:04+02:00",
+   "updatedAt": "2026-09-30T18:33:04+02:00",
+   "lastCrawledAt": "2026-10-04T19:18:03+02:00",
+   "expired": false,
+   "floor": 3,
+   "elevator": true,
+   "location": {
+    "lat": 43.726179169331,
+    "lon": 7.2564893554904
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/30/18/e224039dafffa8d151e816bf901d91.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26S9XVCTZSAB?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T19:18:03+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 30/09/2026",
+      "3 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cuisine équipée",
+      "Cave",
+      "Salon (total 21,35 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "1 parking: Garage",
+      "2 terrasses",
+      "Exposition sud",
+      "TV par câble",
+      "Gardien",
+      "Digicode",
+      "Interphone",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "5a5a7b15-1f19-492a-8100-370f716e95c1",
+   "title": "Duplex 4 pièces - Carré d'Or",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 475000,
+   "surface": 79,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 2,
+   "pricePerMeter": 6012.66,
+   "createdAt": "2026-09-28T18:43:11+02:00",
+   "updatedAt": "2026-09-29T00:42:27+02:00",
+   "lastCrawledAt": "2026-09-29T00:42:27+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": false,
+   "location": {
+    "lat": 43.698114149117,
+    "lon": 7.2663065332386
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/29/00/82bb71c57ed52e35d99a15179531f4.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26S1HTIFU85B?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-02T19:24:02+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 28/09/2026",
+      "2 étage",
+      "Kitchenette",
+      "2 chambres",
+      "Exposition est",
+      "TV par câble",
+      "Interphone",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87423154",
+     "expired": false,
+     "lastCrawledAt": "2026-10-02T19:27:55+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": null,
+     "features": [
+      "Radiateur Electrique Individuel"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.vizzit.fr/fr/property/appartement/nice/Askjnscy5g91hd5p",
+     "expired": false,
+     "lastCrawledAt": "2026-09-29T00:42:27+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": null,
+     "features": [
+      "79 m²",
+      "4 pièces",
+      "Interphone",
+      "Orientation est",
+      "Chauffage électrique",
+      "Étage 2",
+      "Cuisine américaine"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "86c681ba-259b-4e2b-a798-5426542065fc",
+   "title": "Vente appartement 4 pièces 79 m² Nice (06000) - Superimmo",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 475000,
+   "surface": 79,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 6012.66,
+   "createdAt": "2026-09-28T13:13:03+02:00",
+   "updatedAt": "2026-09-29T01:42:28+02:00",
+   "lastCrawledAt": "2026-09-29T01:42:28+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": null,
+   "location": {
+    "lat": 43.699076654635,
+    "lon": 7.2719553012495
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/29/01/0393ce2f7df9962a23a043156a3c7a.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87415668",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T13:24:03+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Radiateur Individuel"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26BU9CMZE5ES?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T14:20:36+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "Kitchenette",
+      "3 chambres",
+      "Exposition est",
+      "TV par câble",
+      "Interphone",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.vizzit.fr/fr/property/appartement/nice/Asa5seldsbocvdd5",
+     "expired": false,
+     "lastCrawledAt": "2026-09-29T00:52:06+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "79 m²",
+      "4 pièces",
+      "Interphone",
+      "Orientation est",
+      "Étage 2",
+      "Cuisine américaine"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-79m-nice-06000-x124vo7",
+     "expired": false,
+     "lastCrawledAt": "2026-09-29T01:42:28+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "ffc596b1-f31a-49a0-bea8-290f2ed7279b",
+   "title": "NICE - LIBERATION : MAGNIFIQUE APPARTEMENT DE 4 PIECES !",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 480000,
+   "surface": 81,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5925.93,
+   "createdAt": "2026-09-24T12:51:28+02:00",
+   "updatedAt": "2026-09-24T12:52:23+02:00",
+   "lastCrawledAt": "2026-10-01T13:28:58+02:00",
+   "expired": false,
+   "floor": 3,
+   "elevator": null,
+   "location": {
+    "lat": 43.709891332321,
+    "lon": 7.2642071233237
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/24/12/fee4fe9fa4e0cc786a94fb27c51284.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3275746573",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T13:42:58+02:00",
+     "floor": 3,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87123578",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T13:28:58+02:00",
+     "floor": 3,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Radiateur Gaz"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "8367d19a-ba30-48b5-83f2-60313714ce1c",
+   "title": "Vente appartement 4 pièces 82 m² Nice (06200) - Superimmo",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 459000,
+   "surface": 82,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5597.56,
+   "createdAt": "2026-09-23T19:55:31+02:00",
+   "updatedAt": "2026-09-23T19:55:31+02:00",
+   "lastCrawledAt": "2026-09-23T19:55:31+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/23/19/978166429a48f611e108e9e24934c7.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06200"
+   },
+   "adverts": [
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-82m-nice-06200-x123kgf",
+     "expired": false,
+     "lastCrawledAt": "2026-09-23T19:55:31+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "d227ea70-3cf8-43b6-894e-729071849903",
+   "title": "Appartement 4 pièces 82 m²",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 459000,
+   "surface": 82,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5597.56,
+   "createdAt": "2026-09-23T14:00:43+02:00",
+   "updatedAt": "2026-09-25T14:03:25+02:00",
+   "lastCrawledAt": "2026-09-30T14:32:24+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": null,
+   "location": {
+    "lat": 43.68435,
+    "lon": 7.219287
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/23/14/a8447630afb9e67170af54a474207a.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06200"
+   },
+   "adverts": [
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3275193243",
+     "expired": false,
+     "lastCrawledAt": "2026-09-30T14:32:24+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": 1989,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.vizzit.fr/fr/property/appartement/nice/Aysnajfss7ctqq6z",
+     "expired": false,
+     "lastCrawledAt": "2026-09-23T14:06:28+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "82 m²",
+      "4 pièces",
+      "3 chambres",
+      "Terrasse",
+      "Piscine",
+      "Climatisation",
+      "Gardien",
+      "1 salle de douche",
+      "1 garage",
+      "1 place de parking",
+      "4 étages",
+      "Chauffage électrique",
+      "Étage 1 sur 4",
+      "Cuisine équipée"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/262EVLACPR5H?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-09-30T17:23:43+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": 1989,
+     "features": [
+      "1er étage",
+      "Cuisine équipée",
+      "3 chambres",
+      "Entrée séparée",
+      "2 parkings: Garage, Parking",
+      "Terrasse",
+      "Piscine",
+      "Gardien"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1295630789A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-09-24T04:30:24+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109091227.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-24T17:02:02+02:00",
+     "floor": 1,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Climatisation",
+      "Gardien",
+      "Parking",
+      "Piscine",
+      "Salle d eau",
+      "Terrasse",
+      "Petit prix"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "fdfb41c8-4daa-4096-a066-53ec085e7546",
+   "title": "vente - appartement",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 459000,
+   "surface": 81.75,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5614.68,
+   "createdAt": "2026-09-23T09:50:32+02:00",
+   "updatedAt": "2026-09-25T07:31:55+02:00",
+   "lastCrawledAt": "2026-09-25T07:31:55+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": true,
+   "location": {
+    "lat": 43.7,
+    "lon": 7.25
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/25/07/8ef551882490c2528c7927cb596639.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06200"
+   },
+   "adverts": [
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3275039869",
+     "expired": false,
+     "lastCrawledAt": "2026-09-30T10:29:40+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": 1993,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26WEIRGXWJ75?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-09-30T10:27:59+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": 1993,
+     "features": [
+      "Disponible à partir du 23/09/2026",
+      "1er étage",
+      "Ascenseur",
+      "Cuisine équipée",
+      "Salon (total 23,19 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "1 parking: Box de stationnement",
+      "Terrasse",
+      "Belle vue",
+      "Exposition est",
+      "Piscine",
+      "TV par câble",
+      "Gardien",
+      "Digicode",
+      "Interphone",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87294365",
+     "expired": false,
+     "lastCrawledAt": "2026-09-30T10:27:04+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Convecteur Electrique Individuel",
+      "Nombre d'égages : 5"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109093415.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-25T07:31:55+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Terrasse",
+      "Ascenseur",
+      "Digicode",
+      "Garage",
+      "Gardien",
+      "Salle d eau",
+      "Climatisation",
+      "Interphone",
+      "Piscine"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "828d2950-aa3c-4c9b-89df-dcd8e0bc8cde",
+   "title": "vente - appartement",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 429000,
+   "surface": 73,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5876.71,
+   "createdAt": "2026-09-21T16:53:52+02:00",
+   "updatedAt": "2026-09-25T07:31:37+02:00",
+   "lastCrawledAt": "2026-09-25T07:31:37+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": null,
+   "location": {
+    "lat": 43.7,
+    "lon": 7.25
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/25/07/a7d1890ea13ce0a456cf5496a815bd.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87251688",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T17:24:40+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Climatisation Electrique Individuel"
+     ],
+     "events": [
+      {
+       "createdAt": "2026-09-22T16:59:24+02:00",
+       "fieldName": "price",
+       "percentVariation": -4.45
+      }
+     ]
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3274683924",
+     "expired": true,
+     "lastCrawledAt": "2026-09-29T16:33:40+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26KYNWBSNTLI?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-29T17:22:57+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 22/09/2026",
+      "2/1 étage",
+      "Cuisine équipée",
+      "Cave",
+      "Salon (total 22,82 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Belle vue",
+      "Exposition sud-ouest",
+      "TV par câble",
+      "Interphone",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26MWXCEQGKUW?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-24T18:22:34+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "Cuisine équipée",
+      "Cave",
+      "Salon (total 22 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Belle vue",
+      "Exposition sud-ouest",
+      "Interphone"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109055089.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-23T13:00:29+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Balcon",
+      "Cave",
+      "Climatisation",
+      "Interphone",
+      "Salle d eau"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109049865.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-25T07:31:37+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Balcon",
+      "Cave",
+      "Climatisation",
+      "Interphone",
+      "Salle d eau"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "e46243c9-2e74-4f3d-a4f6-0f6c14363844",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 405000,
+   "surface": 77.86,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5201.64,
+   "createdAt": "2026-09-21T16:53:46+02:00",
+   "updatedAt": "2026-09-25T18:34:15+02:00",
+   "lastCrawledAt": "2026-09-29T19:22:52+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": null,
+   "location": {
+    "lat": 43.724242018324,
+    "lon": 7.2756333525103
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/25/18/dc0b4734a5f10fcef0e6c9d5448116.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87198130",
+     "expired": true,
+     "lastCrawledAt": "2026-09-28T17:24:41+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Convecteur Electrique Individuel",
+      "Nombre d'égages : 3"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3275111235",
+     "expired": false,
+     "lastCrawledAt": "2026-09-27T13:39:16+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1958,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109093385.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-25T07:31:43+02:00",
+     "floor": null,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Balcon",
+      "Garage",
+      "Salle de bain",
+      "Petit prix"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26BKN4PDMGVB?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-29T19:22:52+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1958,
+     "features": [
+      "Disponible à partir du 25/09/2026",
+      "2/2 étage",
+      "Salle de bain",
+      "Salon (total 16,83 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "1 parking: Box de stationnement",
+      "Balcon",
+      "calme",
+      "Belle vue",
+      "Exposition sud",
+      "TV par câble",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "f8bea179-1891-49d9-be34-745904138d52",
+   "title": "vente - appartement",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 465000,
+   "surface": 85.72,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5424.64,
+   "createdAt": "2026-09-21T11:00:36+02:00",
+   "updatedAt": "2026-09-24T13:00:21+02:00",
+   "lastCrawledAt": "2026-09-24T13:00:21+02:00",
+   "expired": false,
+   "floor": 3,
+   "elevator": true,
+   "location": {
+    "lat": 43.680633072265,
+    "lon": 7.2198279731754
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/24/13/eb5f53cf1eaf06710222e3afd87746.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06200"
+   },
+   "adverts": [
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3273843167",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T11:29:12+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/ag066398-550718282",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T12:24:01+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "électricité",
+      "Cave",
+      "Nombre de WC : 1"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-108996741.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-21T13:10:31+02:00",
+     "floor": null,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Cave",
+      "Climatisation",
+      "Salle de bain",
+      "Terrasse",
+      "Ascenseur",
+      "Petit prix"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/269ZYJGBQJ9I?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T14:20:03+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "3 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cave",
+      "2 chambres",
+      "Terrasse",
+      "Belle vue",
+      "Exposition sud",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.superimmo.com/annonces/achat-appartement-85m-nice-06200-x122zum",
+     "expired": false,
+     "lastCrawledAt": "2026-09-21T20:18:21+02:00",
+     "floor": null,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3275646342",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T10:31:21+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/ag066398-551166911",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T11:26:58+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "électricité",
+      "Cave",
+      "Nombre de WC : 1"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26SEZVJ12QDY?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-01T12:20:31+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "3 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Cave",
+      "3 chambres",
+      "1 parking: Parking",
+      "Terrasse",
+      "Belle vue",
+      "Exposition sud",
+      "Piscine",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://immobilier.lefigaro.fr/annonces/annonce-109123573.html",
+     "expired": false,
+     "lastCrawledAt": "2026-09-24T13:00:21+02:00",
+     "floor": null,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "Climatisation",
+      "Parking",
+      "Piscine",
+      "Salle de bain",
+      "Terrasse",
+      "Ascenseur",
+      "Cave",
+      "Petit prix"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "051934d3-dae5-4c1b-b6f4-6f3a8d7a6da0",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 455000,
+   "surface": 81,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5617.28,
+   "createdAt": "2026-09-20T13:50:47+02:00",
+   "updatedAt": "2026-10-05T14:54:32+02:00",
+   "lastCrawledAt": "2026-10-05T14:54:32+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.72506025641,
+    "lon": 7.2682979487179
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/05/14/fbec4348ce7d3b224f5e1212f45817.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/26C6USZTJKZ1?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-21T14:53:48+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Balcon",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26H3NTPDWPSH?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-23T19:24:25+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26IWBJVCP7JM?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-27T14:19:15+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/2613BRIF399B?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-30T02:19:29+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26GHAZJPPM88?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-30T14:21:34+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/261AHLQUHJYV?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-10-04T14:17:30+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/2625V17P71FK?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T20:23:09+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/269NNC2W3W6A?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-05T14:54:32+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "2/3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain, Toilettes séparées",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Balcon",
+      "calme",
+      "Digicode",
+      "Alarme",
+      "Interphone",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "c34f98af-31fc-4622-8036-34c20694c210",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 472000,
+   "surface": 76.22,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 6192.6,
+   "createdAt": "2026-09-13T19:12:20+02:00",
+   "updatedAt": "2026-09-28T20:19:01+02:00",
+   "lastCrawledAt": "2026-09-28T20:19:01+02:00",
+   "expired": false,
+   "floor": 5,
+   "elevator": true,
+   "location": {
+    "lat": 43.707671219512,
+    "lon": 7.2596609756098
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/28/20/0cd44f5ec7f30432ed2d5f44b13245.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/apimo-87321238",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T19:24:30+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Radiateur Electrique Individuel",
+      "Nombre d'égages : 7"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26H8ZWTFJ25E?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-09-28T20:19:01+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": 2017,
+     "features": [
+      "Disponible à partir du 13/09/2026",
+      "5/6 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Cuisine ouverte",
+      "Salon (total 27,98 m²)",
+      "3 chambres",
+      "Entrée séparée",
+      "1 place de parking",
+      "Balcon",
+      "calme",
+      "Belle vue",
+      "Exposition sud",
+      "TV par câble",
+      "Digicode",
+      "Interphone",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.idealista.fr/immeuble/269735",
+     "expired": false,
+     "lastCrawledAt": "2026-09-14T03:32:25+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "76 m²",
+      "4 pièces",
+      "3 chambres",
+      "1 salle de bain",
+      "1 balcon",
+      "Orientation sud",
+      "Ascenseur",
+      "Accès handicapé",
+      "1 place de parking",
+      "Structure/extérieur à rafraîchir",
+      "Cuisine équipée"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3269445938",
+     "expired": true,
+     "lastCrawledAt": "2026-09-21T11:59:50+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": 2017,
+     "features": null,
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "fcc2ac1d-c5c5-4f6c-b50a-8cc415d7799f",
+   "title": "Nice – corniche bellevue | 4 pièces",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 447000,
+   "surface": 74,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 6040.54,
+   "createdAt": "2026-09-10T15:52:05+02:00",
+   "updatedAt": "2026-10-02T15:32:41+02:00",
+   "lastCrawledAt": "2026-10-02T15:32:41+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": false,
+   "location": {
+    "lat": 43.708073863284,
+    "lon": 7.2436435976682
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/17/15/ca573a44a2f3eef760f758e831c44d.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.bienici.com/annonce/ag066565-549147947",
+     "expired": true,
+     "lastCrawledAt": "2026-09-10T17:26:27+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1985,
+     "features": [
+      "électricité individuel",
+      "Nombre d'égages : 3"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3267493092",
+     "expired": false,
+     "lastCrawledAt": "2026-09-26T13:31:31+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": 1983,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26EEG5V41P7F?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-09-26T13:21:51+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1983,
+     "features": [
+      "2/2 étage",
+      "Salle de bain",
+      "3 chambres",
+      "1 parking: Parking",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Belle vue",
+      "Digicode",
+      "Interphone",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.bienici.com/annonce/ag060571-549295487",
+     "expired": false,
+     "lastCrawledAt": "2026-09-26T14:25:02+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1983,
+     "features": [
+      "électricité individuel",
+      "Nombre d'égages : 3",
+      "Nombre de WC : 1"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.leboncoin.fr/ad/ventes_immobilieres/3271390262",
+     "expired": false,
+     "lastCrawledAt": "2026-10-02T15:32:41+02:00",
+     "floor": 2,
+     "elevator": false,
+     "constructionYear": 1985,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/268JZXADRNI4?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-02T21:24:40+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": 1985,
+     "features": [
+      "2/2 étage",
+      "Salle de bain",
+      "3 chambres",
+      "1 place de parking",
+      "Balcon",
+      "Belle vue",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "ddb86cb7-1882-4aa0-a0a6-fe8005fd5031",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 450000,
+   "surface": 81,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5555.56,
+   "createdAt": "2026-09-09T19:52:49+02:00",
+   "updatedAt": "2026-09-28T15:04:10+02:00",
+   "lastCrawledAt": "2026-09-29T15:31:14+02:00",
+   "expired": false,
+   "floor": 5,
+   "elevator": null,
+   "location": {
+    "lat": 43.72633025641,
+    "lon": 7.2443848717949
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/28/15/3b07b60ce981a9eebbcf70cc5b3b2e.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/2659EEJXLXJU?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-10T20:19:08+02:00",
+     "floor": 0,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "RDC",
+      "Salle de bain",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "1 place de parking",
+      "Terrasse",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1295196036A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-09-09T21:15:09+02:00",
+     "floor": null,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26SV1MW3AF1W?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-29T15:31:14+02:00",
+     "floor": 5,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "5 étage",
+      "Salle de bain",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Entrée séparée",
+      "Terrasse",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "dc792283-3dad-4d3e-a73a-da03fd5c4f7a",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 459000,
+   "surface": 78.55,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5843.41,
+   "createdAt": "2026-09-03T14:39:45+02:00",
+   "updatedAt": "2026-09-30T18:34:27+02:00",
+   "lastCrawledAt": "2026-10-03T15:22:17+02:00",
+   "expired": false,
+   "floor": 6,
+   "elevator": true,
+   "location": {
+    "lat": 43.711365384615,
+    "lon": 7.2501705128205
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/04/15/1b9cb87af9f76b2894e1dfbe896215.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/26HIYLK6NM2I?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-03T15:22:17+02:00",
+     "floor": 6,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 03/09/2026",
+      "6 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Salon (total 21,1 m²)",
+      "3 chambres",
+      "2 terrasses",
+      "Belle vue",
+      "Exposition sud",
+      "TV par câble",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": [
+      {
+       "createdAt": "2026-09-04T15:26:56+02:00",
+       "fieldName": "price",
+       "percentVariation": -0.21
+      },
+      {
+       "createdAt": "2026-09-18T15:40:04+02:00",
+       "fieldName": "price",
+       "percentVariation": -1.06
+      },
+      {
+       "createdAt": "2026-09-30T18:34:27+02:00",
+       "fieldName": "price",
+       "percentVariation": -1.29
+      }
+     ]
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26HIYLK6NM2I?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-04T19:17:56+02:00",
+     "floor": 6,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 30/09/2026",
+      "6 étage",
+      "Ascenseur",
+      "Salle de bain",
+      "Salon (total 21,1 m²)",
+      "3 chambres",
+      "2 terrasses",
+      "Belle vue",
+      "Exposition sud",
+      "TV par câble",
+      "Pas de balcon",
+      "Non meublé"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "e3a43e80-e70e-41c6-ba60-eaa9cc6f083d",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 465000,
+   "surface": 73,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 6369.86,
+   "createdAt": "2026-09-02T15:26:26+02:00",
+   "updatedAt": "2026-10-02T16:27:22+02:00",
+   "lastCrawledAt": "2026-10-02T16:27:22+02:00",
+   "expired": false,
+   "floor": 1,
+   "elevator": true,
+   "location": {
+    "lat": 43.690605714286,
+    "lon": 7.297722244898
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/02/16/80c73692c14599e9fe563b5e68c8f0.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06000"
+   },
+   "adverts": [
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/269KATYFHMF7?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": false,
+     "lastCrawledAt": "2026-10-02T16:27:22+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": 2028,
+     "features": [
+      "Disponible à partir du 31/12/2028",
+      "1er étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "2 salles de bain, Toilettes séparées",
+      "3 chambres",
+      "1 parking: Box de stationnement",
+      "Terrasse",
+      "calme",
+      "Exposition ouest",
+      "Pas de balcon",
+      "Pas de cave",
+      "Non meublé"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26G5WHRGTHHG?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-10-02T16:27:36+02:00",
+     "floor": 1,
+     "elevator": true,
+     "constructionYear": null,
+     "features": [
+      "Disponible à partir du 31/12/2028",
+      "1er étage",
+      "Ascenseur",
+      "2 salles de bain, Toilettes séparées",
+      "3 chambres",
+      "1 parking: Parking",
+      "Terrasse",
+      "Exposition ouest",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "events": []
+    }
+   ]
+  },
+  {
+   "uuid": "e8aec357-9efb-4f18-bd08-01cdbf3919cf",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "transactionType": 0,
+   "price": 442000,
+   "surface": 77,
+   "landSurface": null,
+   "room": 4,
+   "bedroom": 3,
+   "pricePerMeter": 5740.26,
+   "createdAt": "2026-08-31T16:25:22+02:00",
+   "updatedAt": "2026-09-27T23:42:38+02:00",
+   "lastCrawledAt": "2026-09-29T00:20:06+02:00",
+   "expired": false,
+   "floor": 2,
+   "elevator": null,
+   "location": {
+    "lat": 43.718583846154,
+    "lon": 7.25697
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/09/27/23/b039dbadf5c044d81caea826dbdd73.jpg"
+   ],
+   "city": {
+    "name": "Nice",
+    "insee": "06088",
+    "zipcode": "06100"
+   },
+   "adverts": [
+    {
+     "url": "https://www.paruvendu.fr/immobilier/vente/appartement/1294837702A1KIVHAP000",
+     "expired": false,
+     "lastCrawledAt": "2026-08-31T16:25:22+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": null,
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26AD65EFUCQX?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-03T21:27:09+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "2 salles de bain",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Terrasse",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "events": []
+    },
+    {
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26W9Q9YYH3PT?utm_medium=mobile-app&utm_source=sl-iOS-phone&utm_campaign=on-site_message-sharing&utm_content=cdp&utm_term=sharing",
+     "expired": true,
+     "lastCrawledAt": "2026-09-29T00:20:06+02:00",
+     "floor": 2,
+     "elevator": null,
+     "constructionYear": null,
+     "features": [
+      "2 étage",
+      "2 salles de bain",
+      "Cuisine ouverte",
+      "3 chambres",
+      "Terrasse",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "events": []
+    }
+   ]
+  }
+ ]
+}
