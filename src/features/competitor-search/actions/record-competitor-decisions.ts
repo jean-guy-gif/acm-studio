@@ -27,8 +27,8 @@ export type BatchDecision = {
 const GENERIC_ERROR = 'Les décisions n’ont pas pu être enregistrées.';
 
 // MISSION 50 §8 — validation en lot : on écrit toutes les décisions d'un coup, au clic
-// (le geste humain). Les retenues (importées) en « accepted », les décochées en
-// « rejected » sans motif. L'instantané prix/surface/pièces/commune est conservé pour
+// (le geste humain). Le panneau n'y envoie que les retenues (importées), en « accepted » : une
+// annonce non cochée n'est plus un refus (batchDecisions). L'instantané prix/surface/pièces/commune est conservé pour
 // que l'apprentissage garde son sens quand l'annonce disparaît du portail.
 export async function recordCompetitorDecisions(
   projectId: string,

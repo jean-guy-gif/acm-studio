@@ -48,6 +48,7 @@ import {
   readPageViaExtension,
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
+import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
@@ -893,28 +894,15 @@ export function CompetitorSearchPanel({
     return { ok: true };
   }
 
-  const decisionOf = (
-    entry: RankedCandidate,
-    decision: 'accepted' | 'rejected',
-  ): BatchDecision => ({
-    url: entry.candidate.url,
-    decision,
-    price: entry.candidate.price,
-    surfaceArea: entry.candidate.surfaceArea,
-    roomsCount: entry.candidate.roomsCount,
-    city: entry.candidate.city,
-    propertyType: entry.candidate.propertyType,
-  });
-
   // §8 — la validation en lot. Au clic (le geste humain), et pas avant : les cochées
   // sont importées UNE PAR UNE dans une seule fenêtre, une seconde entre deux, avec
   // l'avancement à l'écran ; une fiche qui échoue est NOMMÉE et relançable seule, les
-  // autres entrent quand même. Puis on écrit les décisions : retenues importées =
-  // « accepted », décochées = « rejected » sans motif.
+  // autres entrent quand même. Puis on écrit les décisions : seules les importées, comme
+  // retenues. Une annonce non cochée (montrée ou derrière « Voir les N autres ») n'est ni
+  // retenue ni écartée : elle reste dans la liste, sans trace dans l'apprentissage.
   async function validateBatch() {
     const pending = ranked.filter((entry) => decided[entry.candidate.url] == null);
     const checked = pending.filter((entry) => isChecked(entry));
-    const unchecked = pending.filter((entry) => !isChecked(entry));
     if (checked.length === 0) {
       return;
     }
@@ -955,11 +943,8 @@ export function CompetitorSearchPanel({
       await closeSearchWindowViaExtension(win.windowId);
     }
 
-    // Décisions écrites d'un coup : importées = retenues, décochées = écartées.
-    const decisions = [
-      ...importedOk.map((entry) => decisionOf(entry, 'accepted')),
-      ...unchecked.map((entry) => decisionOf(entry, 'rejected')),
-    ];
+    // Décisions écrites d'un coup : les importées seulement, comme retenues.
+    const decisions = batchDecisions(importedOk);
     if (decisions.length > 0) {
       await recordDecisionsAction(decisions);
     }
@@ -968,9 +953,6 @@ export function CompetitorSearchPanel({
       const next = { ...current };
       for (const entry of importedOk) {
         next[entry.candidate.url] = 'accepted';
-      }
-      for (const entry of unchecked) {
-        next[entry.candidate.url] = 'rejected';
       }
       return next;
     });
@@ -1375,7 +1357,8 @@ export function CompetitorSearchPanel({
                 : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
             </button>
             <p className={hintText}>
-              Les cochées sont importées dans le dossier ; les décochées sont écartées. Environ une
+              Les cochées sont importées dans le dossier ; les autres restent dans la liste, sans
+              être comptées comme écartées (pour écarter, « Écarter avec un motif »). Environ une
               seconde par fiche — rien n’est enregistré avant ce clic.
             </p>
           </div>
