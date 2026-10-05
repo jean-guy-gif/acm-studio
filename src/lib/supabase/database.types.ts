@@ -1380,6 +1380,8 @@ export type Database = {
           floor: number | null
           general_condition: string | null
           ges_rating: string | null
+          has_elevator: boolean | null
+          has_pool: boolean | null
           heating_type: string | null
           id: string
           land_area: number | null
@@ -1416,6 +1418,8 @@ export type Database = {
           floor?: number | null
           general_condition?: string | null
           ges_rating?: string | null
+          has_elevator?: boolean | null
+          has_pool?: boolean | null
           heating_type?: string | null
           id?: string
           land_area?: number | null
@@ -1452,6 +1456,8 @@ export type Database = {
           floor?: number | null
           general_condition?: string | null
           ges_rating?: string | null
+          has_elevator?: boolean | null
+          has_pool?: boolean | null
           heating_type?: string | null
           id?: string
           land_area?: number | null

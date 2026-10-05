@@ -52,7 +52,8 @@ function read(portal: SearchPortal) {
   return result;
 }
 
-// Le même chemin que l'écran : cartes lues → neuf/doublons écartés → les quatre filtres (M61).
+// Le même chemin que l'écran : cartes lues → doublons écartés → les quatre filtres (M61), le neuf
+// tenu en réserve par le classement.
 function rank(portal: SearchPortal) {
   return rankCandidates(CRITERIA, [read(portal).portal], PREFS);
 }
@@ -65,19 +66,20 @@ describe('readSearchPage — pages de résultats filtrées par le conseiller (fi
   it.each([
     ['seloger', 30, 0, 0, 23],
     ['bienici', 26, 2, 1, 19],
-    ['green_acres', 24, 0, 0, 5],
+    ['green_acres', 24, 2, 0, 5],
     ['maisons_appartements', 15, 0, 0, 11],
   ] as const)(
-    '%s : %i cartes lues, %i neuf et %i doublon écartés, %i admis au cran 1 pour un 4P 80 m²',
+    '%s : %i cartes lues, %i neuf marqué, %i doublon écarté, %i admis au cran 1 pour un 4P 80 m²',
     (portal, cardsRead, newBuild, duplicates, admitted) => {
       const result = read(portal);
       expect(result.portal.portal).toBe(portal);
       expect(result.portal.status).toBe('ok');
       expect(result.cardsRead).toBeGreaterThanOrEqual(1);
       expect(result.cardsRead).toBe(cardsRead);
-      expect(result.excludedNewBuild).toBe(newBuild);
+      expect(result.newBuild).toBe(newBuild);
       expect(result.excludedDuplicates).toBe(duplicates);
-      expect(result.portal.candidates).toHaveLength(cardsRead - newBuild - duplicates);
+      expect(result.portal.candidates).toHaveLength(cardsRead - duplicates);
+      expect(result.portal.candidates.filter((c) => c.isNewBuild)).toHaveLength(newBuild);
       expect(tight(portal)).toHaveLength(admitted);
     },
   );

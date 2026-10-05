@@ -19,6 +19,12 @@ export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
   maisons_appartements: 'Maisons et Appartements',
 };
 
+// Essai Stream Estate — une SOURCE de candidats qui n'est pas un portail lu par l'extension :
+// ses biens passent par le même classement (rankCandidates) que ceux des quatre portails.
+export const STREAM_ESTATE_SOURCE = 'stream_estate';
+export const STREAM_ESTATE_LABEL = 'Stream Estate (essai)';
+export type CandidateSource = SearchPortal | typeof STREAM_ESTATE_SOURCE;
+
 // Critères dérivés du bien vendeur, côté serveur uniquement.
 //
 // MISSION 36 : la recherche ne se contente plus de la commune. Elle compare
@@ -35,6 +41,45 @@ export type CompetitorSearchCriteria = {
   advisorPriceMax: number | null;
   // Mission 70 — terrain du bien vendeur : critère secondaire d'ORDRE, jamais un filtre.
   landArea?: number | null;
+  // Étape 2 Stream Estate — ce que la fiche du bien vendeur dit, pour l'ORDRE (jamais un filtre).
+  subject?: SubjectProximityFacts;
+};
+
+// Les champs STRUCTURÉS de la fiche du bien vendeur qui ordonnent les candidats. null = non
+// renseigné : le critère est alors neutre pour tous les candidats.
+export type SubjectProximityFacts = {
+  parkingTypes: string[]; // vocabulaire subject_properties (garage, closed_box…, none)
+  outdoorSpaces: string[]; // balcony, terrace, garden… none
+  generalCondition: string | null;
+  floor: number | null;
+  hasElevator: boolean | null;
+  hasPool: boolean | null;
+  exposure: string | null;
+  constructionYear: number | null;
+};
+
+export type GeoPoint = { lat: number; lon: number };
+
+// Ce que la carte (ou l'API) dit EN CHAMPS STRUCTURÉS, au-delà du prix et de la surface. Tout
+// champ absent reste null : inconnu, donc neutre. Rien n'est tiré d'une description.
+export type CandidateFeatures = {
+  // Position du bien (Stream Estate). null si absente OU écartée comme remplissage.
+  location: GeoPoint | null;
+  // La position existait mais a été écartée (valeur de remplissage, répétée ou trop grossière).
+  locationDiscarded: boolean;
+  // Quartier écrit sur la carte (SeLoger « Le Port, Nice », Bien'ici « Nice (Lanterne) »).
+  district: string | null;
+  floor: number | null; // 0 = rez-de-chaussée
+  hasElevator: boolean | null;
+  hasPool: boolean | null;
+  // Familles de stationnement nommées : 'garage' | 'box' | 'place'. null = rien d'écrit.
+  parking: string[] | null;
+  // Extérieurs nommés (balcony, terrace, garden, loggia, veranda) et ceux dits absents
+  // (« Pas de balcon »). null = rien d'écrit.
+  outdoor: { present: string[]; absent: string[] } | null;
+  condition: string | null; // vocabulaire general_condition
+  exposure: string | null; // vocabulaire exposure
+  constructionYear: number | null;
 };
 
 // Une annonce candidate détectée sur une page de résultats. Champs best-effort :
@@ -43,7 +88,7 @@ export type CompetitorSearchCriteria = {
 // MISSION 50 : la carte porte assez pour classer, aucune fiche n'est ouverte. La
 // `key` est l'identifiant publié PAR LE PORTAIL (jamais une référence d'agence,
 // mission 47 §3) ; elle sert d'identité stable et de base de déduplication. Le neuf
-// est écarté (§6) mais on garde le drapeau pour le journaliser sans mentir.
+// est marqué : le classement le tient en réserve et ne l'ajoute qu'en complément (règle du 05/10).
 export type CompetitorCandidate = {
   // Identifiant publié par le portail : id SeLoger, data-id Bien'ici,
   // data-advertid Green Acres, id M&A. null seulement si la carte n'en porte pas.
@@ -68,16 +113,33 @@ export type CompetitorCandidate = {
   // TOUTES les photos portées par la carte (filtrées : hors logos, habillage, ≤160 px),
   // dans l'ordre — pour défiler sur place. Vide si la carte n'en porte aucune.
   photoUrls: string[];
-  // Programme neuf reconnu à la STRUCTURE (titre « neuf », segment /programme/,
-  // fourchette de prix, domaine selogerneuf.com). Écarté du classement, journalisé.
+  // Neuf reconnu à la STRUCTURE, jamais à la description (services/new-build.ts) : adresse
+  // /programme/ ou /neuf/, titre généré par le portail, fourchette de prix, année de construction
+  // à venir (Stream Estate). Tenu en réserve par le classement : complément sous 3 seulement.
   isNewBuild: boolean;
+  // Essai Stream Estate — présent seulement pour un bien venu de l'API.
+  streamEstate?: StreamEstateFacts;
+  // Étape 2 — champs structurés qui ORDONNENT (secteur, étage, équipements). Absent = tout inconnu.
+  features?: CandidateFeatures;
+};
+
+// Ce que l'API Stream Estate dit d'un bien, en plus de la carte : d'où vient l'annonce
+// retenue comme ORIGINE (celle que l'import relira, toujours sur un site de la liste blanche),
+// depuis quand le bien est en ligne,
+// et ses baisses de prix. Rien n'est recalculé : ce sont les valeurs de l'API.
+export type StreamEstateFacts = {
+  propertyId: string; // identifiant du bien chez Stream Estate (base de déduplication)
+  originSite: string; // site de l'annonce d'origine (« SeLoger », « leboncoin.fr »…)
+  onlineSince: string | null; // createdAt du bien (ISO)
+  lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
+  priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
 };
 
 // Résultat de la lecture d'une page de résultats : les cartes retenues, plus le
 // compte de ce qui a été écarté, pour le dire au conseiller sans rien cacher.
 export type SearchExtraction = {
   candidates: CompetitorCandidate[];
-  excludedNewBuild: number;
+  newBuild: number; // biens neufs gardés (marqués), tenus en réserve par le classement
   excludedDuplicates: number;
 };
 
@@ -87,8 +149,10 @@ export type SearchExtraction = {
 // on peut relancer), `empty` (page reçue mais coquille ou zéro carte).
 export type PortalSearchStatus = 'ok' | 'refused' | 'unreachable' | 'empty';
 
-export type PortalSearchResult = {
-  portal: SearchPortal;
+// Générique sur la source : les lecteurs de portails produisent un `PortalSearchResult<SearchPortal>`,
+// le classement accepte aussi la source Stream Estate (par défaut, toutes les sources).
+export type PortalSearchResult<Source extends CandidateSource = CandidateSource> = {
+  portal: Source;
   label: string;
   searchUrl: string;
   status: PortalSearchStatus;
@@ -103,7 +167,7 @@ export type PortalSearchResult = {
 // l'admissible ; les écartées faute de donnée sont comptées (ExcludedForMissing).
 export type RankedCandidate = {
   candidate: CompetitorCandidate;
-  portal: SearchPortal;
+  portal: CandidateSource;
   portalLabel: string;
   host: string;
   // 0 à 100, calculé sur les seuls critères comparables.
@@ -120,7 +184,37 @@ export type RankedCandidate = {
   // DIT (desserrage visible, correction de la M50 §3). false si admissible aux bornes serrées.
   loosenedSurface: boolean;
   loosenedRooms: boolean;
+  // Bien neuf ajouté en complément, faute de 3 concurrents admis dans l'ancien après le
+  // desserrage complet. Sa carte porte NEW_BUILD_COMPLEMENT_MENTION.
+  newBuildComplement: boolean;
+  // Étape 2 — l'ordre « les plus proches » et sa justification, critère par critère.
+  proximity: ProximityAssessment;
 };
+
+// Un critère d'ordre, tel qu'il s'affiche sur la carte : « à 350 m », « terrasse ≠ balcon »,
+// « état non indiqué ». `points` > 0 rapproche, < 0 éloigne, 0 = neutre (dont l'inconnu).
+export type ProximityReason = {
+  criterion: string;
+  level: 1 | 2;
+  label: string;
+  points: number;
+  known: boolean;
+};
+
+export type ProximityAssessment = {
+  level1: number;
+  level2: number;
+  reasons: ProximityReason[];
+};
+
+// Le secteur (distance) n'est utilisé que si l'adresse du bien vendeur est géocodée précisément.
+// Sinon il est neutre pour tous, et l'écran dit pourquoi.
+export type SectorStatus =
+  | { status: 'located'; label: string }
+  | {
+      status: 'neutral';
+      reason: 'no_address' | 'imprecise' | 'low_score' | 'other_city' | 'unavailable';
+    };
 
 // Mission 61 §2 — l'état du desserrage appliqué, pour que l'écran dise ce qu'il a élargi et
 // pourquoi. Le prix et la commune ne bougent JAMAIS ; seules surface puis pièces se desserrent.
@@ -151,7 +245,9 @@ export type RankedSearch = {
   ranked: RankedCandidate[];
   loosening: Loosening;
   excludedForMissing: ExcludedForMissing;
-  belowMinimum: boolean; // < MINIMUM admissibles même après le dernier cran
+  belowMinimum: boolean; // < MINIMUM admissibles même après le dernier cran (neuf ajouté compris)
+  // Biens neufs reçus et NON proposés (l'ancien suffisait, ou hors bornes, ou au-delà du complément).
+  newBuildHeld: number;
   target: number; // cible de candidats (6)
   minimum: number; // plancher en dessous duquel l'écran le dit (3)
 };

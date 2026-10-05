@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  parseTriState,
   validateSubjectProperty,
   type RawSubjectPropertyInput,
 } from '@/features/subject-property/services/validate-subject-property';
@@ -28,6 +29,8 @@ function input(overrides: Partial<RawSubjectPropertyInput> = {}): RawSubjectProp
     exposure: null,
     construction_year: null,
     general_condition: null,
+    has_elevator: null,
+    has_pool: null,
     outdoor_spaces: [],
     parking_types: [],
     monthly_charges: null,
@@ -220,5 +223,24 @@ describe('validateSubjectProperty — fourchette du conseiller', () => {
   it('refuse un montant négatif', () => {
     const result = validateSubjectProperty(input({ advisor_price_min: -1 }));
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('ascenseur et piscine — oui / non / non renseigné', () => {
+  it('lit « yes » et « no », et tout le reste comme non renseigné (jamais un non par défaut)', () => {
+    expect(parseTriState('yes')).toBe(true);
+    expect(parseTriState('no')).toBe(false);
+    expect(parseTriState('')).toBeNull();
+    expect(parseTriState(null)).toBeNull();
+    expect(parseTriState('true')).toBeNull();
+  });
+
+  it('garde les trois états tels quels à la validation', () => {
+    for (const value of [true, false, null]) {
+      const result = validateSubjectProperty(input({ has_elevator: value, has_pool: value }), YEAR);
+      if (!result.ok) throw new Error('validation');
+      expect(result.value.has_elevator).toBe(value);
+      expect(result.value.has_pool).toBe(value);
+    }
   });
 });

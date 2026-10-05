@@ -53,6 +53,8 @@ export const demoProperty: SubjectProperty = {
   exposure: 'south',
   construction_year: 1975,
   general_condition: 'good',
+  has_elevator: null,
+  has_pool: null,
   outdoor_spaces: ['balcony'],
   parking_types: [],
   monthly_charges: null,

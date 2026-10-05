@@ -26,7 +26,7 @@ export type SearchPagesRead = {
 };
 
 export function readSearchPages(pages: SearchPageInput[]): SearchPagesRead {
-  const byPortal = new Map<SearchPortal, PortalSearchResult>();
+  const byPortal = new Map<SearchPortal, PortalSearchResult<SearchPortal>>();
   const cardsRead = new Map<SearchPortal, number>();
   const emptyUrls: string[] = [];
   const learnInput: SearchPagesRead['learnInput'] = [];

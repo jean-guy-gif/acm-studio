@@ -11,7 +11,9 @@ import { rememberPortalPlaces } from '@/features/competitor-search/actions/remem
 import { rankCompetitorCandidates } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
 import { recordCompetitorDecisions } from '@/features/competitor-search/actions/record-competitor-decisions';
+import { searchStreamEstate } from '@/features/competitor-search/actions/search-stream-estate';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
+import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 
@@ -38,6 +40,10 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   const recordDecisionsAction = recordCompetitorDecisions.bind(null, projectId);
   const prepareOpenAction = prepareOpenSearches.bind(null, projectId);
   const rememberPlacesAction = rememberPortalPlaces.bind(null, projectId);
+  // Essai Stream Estate : seulement si la clé est définie côté serveur. On transmet une action
+  // liée, jamais la clé.
+  const streamEstateAction =
+    streamEstateApiKey() != null ? searchStreamEstate.bind(null, projectId) : undefined;
 
   const criteriaLabel = hasCity
     ? [property?.city, property?.postal_code].filter(Boolean).join(' ')
@@ -66,6 +72,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
             recordDecisionsAction={recordDecisionsAction}
             prepareOpenAction={prepareOpenAction}
             rememberPlacesAction={rememberPlacesAction}
+            streamEstateAction={streamEstateAction}
           />
           <ImportBookmarklet />
         </>

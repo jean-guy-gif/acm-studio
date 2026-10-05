@@ -33,6 +33,10 @@ export type RawSubjectPropertyInput = {
   exposure: string | null;
   construction_year: number | null;
   general_condition: string | null;
+  // Ascenseur et piscine : oui (true) / non (false) / non renseigné (null). Ils ordonnent les
+  // concurrents proposés (niveau 2), ils ne filtrent rien.
+  has_elevator: boolean | null;
+  has_pool: boolean | null;
   outdoor_spaces: string[];
   parking_types: string[];
   monthly_charges: number | null;
@@ -114,6 +118,14 @@ function checkList(values: string[], field: string, errors: Record<string, strin
     errors[field] = `Chaque élément est limité à ${MAX_LIST_ITEM_LENGTH} caractères.`;
   }
   return normalized;
+}
+
+// Trois états pour une question oui/non de la fiche : « yes » → true, « no » → false, tout le
+// reste (vide, valeur inattendue) → null, « non renseigné ». Jamais de « non » par défaut.
+export function parseTriState(value: string | null | undefined): boolean | null {
+  if (value === 'yes') return true;
+  if (value === 'no') return false;
+  return null;
 }
 
 // Deterministic, pure validation of the whole seller-property payload. Never

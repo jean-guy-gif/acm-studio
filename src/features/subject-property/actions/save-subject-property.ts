@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 
 import {
+  parseTriState,
   validateSubjectProperty,
   type RawSubjectPropertyInput,
 } from '@/features/subject-property/services/validate-subject-property';
@@ -81,6 +82,8 @@ export async function saveSubjectProperty(
     exposure: textOrNull(formData.get('exposure')),
     construction_year: integerOrNull(formData.get('construction_year')),
     general_condition: textOrNull(formData.get('general_condition')),
+    has_elevator: parseTriState(textOrNull(formData.get('has_elevator'))),
+    has_pool: parseTriState(textOrNull(formData.get('has_pool'))),
     outdoor_spaces: stringArray(formData, 'outdoor_spaces'),
     parking_types: stringArray(formData, 'parking_types'),
     monthly_charges: numberOrNull(formData.get('monthly_charges')),

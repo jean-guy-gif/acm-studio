@@ -23,6 +23,7 @@ import type {
 } from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { BatchDecision } from '@/features/competitor-search/actions/record-competitor-decisions';
+import type { StreamEstateSearchResult } from '@/features/competitor-search/actions/search-stream-estate';
 import {
   closeSearchWindowViaExtension,
   openSearchTabsViaExtension,
@@ -35,13 +36,21 @@ import {
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import {
   RankedCandidateCard,
+  StreamEstateFactsLine,
   type DecisionPayload,
 } from '@/features/competitor-search/components/ranked-candidate-card';
+import {
+  redirectedAwayFromListing,
+  withdrawnReason,
+} from '@/features/competitor-search/services/stream-estate-import';
 import {
   readPageViaExtension,
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
+import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
+import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
+import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
 import { detectSearchPortal } from '@/features/competitor-search/services/extract-search-results';
 import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
 import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
@@ -53,6 +62,7 @@ import {
 } from '@/features/competitor-search/services/read-search-pages';
 import {
   SEARCH_PORTAL_LABELS,
+  STREAM_ESTATE_SOURCE,
   type CompetitorCandidate,
   type ExcludedForMissing,
   type Loosening,
@@ -60,6 +70,7 @@ import {
   type RankedCandidate,
   type RecordDecisionResult,
   type SearchResultsHtmlImport,
+  type SectorStatus,
 } from '@/features/competitor-search/types';
 
 // Mission 61 — l'état d'admissibilité renvoyé par le classement, pour le bandeau.
@@ -70,6 +81,9 @@ type Admissibility = {
   target: number;
   minimum: number;
   rankedCount: number;
+  // Le neuf : ajouté en complément (sous 3 dans l'ancien) ou tenu en réserve.
+  newBuildAdded: number;
+  newBuildHeld: number;
 };
 
 // Mission 65 — le portail d'un onglet ouvert, pour que le conseiller choisisse en lisant
@@ -110,6 +124,22 @@ type Props = {
   // identifiants de commune relevés dans les onglets lus.
   prepareOpenAction: () => Promise<PrepareOpenSearchesResult>;
   rememberPlacesAction: (pages: RememberPortalPlacesInput) => Promise<RememberPortalPlacesResult>;
+  // Essai Stream Estate — fourni par la page SEULEMENT si la clé est définie côté serveur ;
+  // absent, le bouton n'existe pas.
+  streamEstateAction?: () => Promise<StreamEstateSearchResult>;
+};
+
+// Essai Stream Estate — ce que l'écran dit de la dernière recherche par l'API (dont son coût).
+type StreamEstateNote = {
+  billed: number;
+  totalItems: number | null;
+  unreadable: number;
+  outsideWhitelist: number;
+  expiredOrigin: number;
+  newBuild: number;
+  communeName: string;
+  inseeCode: string;
+  kept: number;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -120,9 +150,9 @@ type OpenedSearches = {
   opened: number | null;
 };
 
-// Seuil de ressemblance : au-dessus, on affiche ; en dessous, on plie derrière
-// « Voir les N autres, moins ressemblants ». On ne masque rien (mission 36) — un
-// clic révèle tout —, on coupe seulement une liste trop longue à trancher.
+// Seuil de ressemblance : sans fourchette saisie, une annonce en dessous n'est pas cochée d'office.
+// L'affichage, lui, suit l'ordre « les plus proches » (étape 2) : les 10 premiers, puis le reste
+// derrière « Voir les N autres ». On ne masque rien (mission 36) — un clic révèle tout.
 const SIMILARITY_THRESHOLD = 60;
 
 function CandidateCard({
@@ -199,6 +229,7 @@ function CandidateCard({
           {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
           {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
         </div>
+        {candidate.streamEstate ? <StreamEstateFactsLine facts={candidate.streamEstate} /> : null}
         <div className="mt-auto flex flex-col gap-2 pt-2 text-sm">
           {failed ? (
             // La cause réelle, visible sur la carte (pas seulement dans la console).
@@ -269,14 +300,17 @@ function PortalBlock({
     <section className={`${card} flex flex-col gap-3 p-5`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className={formSectionTitle}>{portal.label}</h2>
-        <a
-          href={portal.searchUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className={`${linkCls} text-sm hover:underline`}
-        >
-          Ouvrir la recherche {portal.label}
-        </a>
+        {/* Essai Stream Estate : pas de page de recherche publique, donc pas de lien. */}
+        {portal.searchUrl !== '' ? (
+          <a
+            href={portal.searchUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={`${linkCls} text-sm hover:underline`}
+          >
+            Ouvrir la recherche {portal.label}
+          </a>
+        ) : null}
       </div>
 
       {portal.status === 'ok' ? (
@@ -326,13 +360,15 @@ function PortalBlock({
               source », alors que l'écran d'ajout d'un concurrent avait déjà
               basculé sur le geste simple. Deux écrans du même outil ne peuvent
               pas exiger deux gestes différents — surtout pas celui-là. */}
-          <ListingPasteZone
-            onPaste={({ html, text }) =>
-              onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
-            }
-            disabled={pending}
-            pageLabel="de résultats"
-          />
+          {portal.portal !== STREAM_ESTATE_SOURCE ? (
+            <ListingPasteZone
+              onPaste={({ html, text }) =>
+                onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
+              }
+              disabled={pending}
+              pageLabel="de résultats"
+            />
+          ) : null}
         </div>
       )}
     </section>
@@ -350,6 +386,7 @@ export function CompetitorSearchPanel({
   recordDecisionsAction,
   prepareOpenAction,
   rememberPlacesAction,
+  streamEstateAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [searching, setSearching] = useState(false);
@@ -367,6 +404,8 @@ export function CompetitorSearchPanel({
   const [ranked, setRanked] = useState<RankedCandidate[]>([]);
   const [admissibility, setAdmissibility] = useState<Admissibility | null>(null);
   const [learnedNotes, setLearnedNotes] = useState<string[]>([]);
+  // Étape 2 — le secteur : distances mesurées depuis l'adresse du bien, ou neutre (et pourquoi).
+  const [sector, setSector] = useState<SectorStatus | null>(null);
   const [decided, setDecided] = useState<Record<string, 'accepted' | 'rejected'>>({});
   const [showLessRelevant, setShowLessRelevant] = useState(false);
   // §8 — sélection du lot. On stocke les CHOIX EXPLICITES (url → coché ?) ; une carte
@@ -394,7 +433,17 @@ export function CompetitorSearchPanel({
   const [openedSearches, setOpenedSearches] = useState<OpenedSearches | null>(null);
   const [readSummary, setReadSummary] = useState<string[]>([]);
   const [waitingTabs, setWaitingTabs] = useState<string[]>([]);
-  const busy = pending || searching || importing || reading || opening;
+  // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
+  const [streamSearching, setStreamSearching] = useState(false);
+  const [streamNote, setStreamNote] = useState<StreamEstateNote | null>(null);
+  const busy = pending || searching || importing || reading || opening || streamSearching;
+
+  // Essai Stream Estate — les biens de l'API restent à côté des portails quand on relit les
+  // onglets ou relance la recherche automatique : c'est tout l'intérêt de la comparaison.
+  const withStreamEstate = (next: PortalSearchResult[]): PortalSearchResult[] => [
+    ...next.filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
+    ...(portals ?? []).filter((portal) => portal.portal === STREAM_ESTATE_SOURCE),
+  ];
 
   // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
   // la LISTE PRINCIPALE ne contient QUE des biens dans la fourchette du bien vendeur.
@@ -415,8 +464,17 @@ export function CompetitorSearchPanel({
   const inMainList = (entry: RankedCandidate): boolean =>
     hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
 
+  // Étape 2 — l'ordre « les plus proches » : les 10 premiers non tranchés sont montrés, le reste
+  // attend derrière « Voir les N autres ». Seuls les 5 premiers sont cochés d'office ; on
+  // n'importe jamais une annonce que le conseiller n'a pas eue sous les yeux.
+  const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
+  const { shown, others, preselected } = splitVisible(undecided);
+  const preselectedUrls = new Set(preselected.map((entry) => entry.candidate.url));
+
   const defaultChecked = (entry: RankedCandidate): boolean =>
-    inMainList(entry) && entry.candidate.propertyType != null;
+    preselectedUrls.has(entry.candidate.url) &&
+    inMainList(entry) &&
+    entry.candidate.propertyType != null;
   const isChecked = (entry: RankedCandidate): boolean =>
     selection[entry.candidate.url] ?? defaultChecked(entry);
   const toggleSelect = (entry: RankedCandidate) =>
@@ -438,8 +496,11 @@ export function CompetitorSearchPanel({
         target: rank.target,
         minimum: rank.minimum,
         rankedCount: rank.ranked.length,
+        newBuildAdded: rank.ranked.filter((entry) => entry.newBuildComplement).length,
+        newBuildHeld: rank.newBuildHeld,
       });
       setLearnedNotes(rank.learnedNotes);
+      setSector(rank.sector);
     } else {
       setError(rank.error);
     }
@@ -462,6 +523,7 @@ export function CompetitorSearchPanel({
         setRanked([]);
         setAdmissibility(null);
         setLearnedNotes([]);
+        setSector(null);
         return;
       }
       setSearchLinks(prep.links);
@@ -477,6 +539,7 @@ export function CompetitorSearchPanel({
         setRanked([]);
         setAdmissibility(null);
         setLearnedNotes([]);
+        setSector(null);
         return;
       }
 
@@ -500,15 +563,57 @@ export function CompetitorSearchPanel({
       setSelection({});
       setImportProgress(null);
       setImportFailures([]);
-      await refreshRanking(read);
+      await refreshRanking(withStreamEstate(read));
     } finally {
       setSearching(false);
     }
   }
 
+  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), une page. Ses
+  // biens rejoignent les portails dans le MÊME classement : mêmes filtres, mêmes mentions.
+  async function searchViaStreamEstate() {
+    if (!streamEstateAction) {
+      return;
+    }
+    setError(null);
+    setStreamNote(null);
+    setStreamSearching(true);
+    try {
+      const result = await streamEstateAction();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const prep = await prepareAction();
+      if (!prep.ok) {
+        setError(prep.error);
+        return;
+      }
+      setSearchLinks(prep.links);
+      setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
+      const rank = await refreshRanking([...others, result.portal]);
+      setStreamNote({
+        billed: result.billed,
+        totalItems: result.totalItems,
+        unreadable: result.unreadable,
+        outsideWhitelist: result.outsideWhitelist,
+        expiredOrigin: result.expiredOrigin,
+        newBuild: result.newBuild,
+        communeName: result.communeName,
+        inseeCode: result.inseeCode,
+        kept: rank.ok
+          ? rank.ranked.filter((entry) => entry.portal === STREAM_ESTATE_SOURCE).length
+          : 0,
+      });
+    } finally {
+      setStreamSearching(false);
+    }
+  }
+
   // Mission 65 — une page de résultats filtrée PAR LE CONSEILLER (onglet lu par l'extension,
   // ou code collé) suit le même chemin que la recherche automatique : lecture des cartes,
-  // neuf et doublons écartés, puis classement serveur avec les quatre filtres (M61). Elle
+  // doublons écartés (le neuf est tenu en réserve par le classement), puis classement serveur avec les quatre filtres (M61). Elle
   // remplace le résultat du même portail et laisse les autres en place.
   async function integrateSearchPage(html: string, pageUrl: string | null) {
     const read = readSearchPage(html, pageUrl);
@@ -528,8 +633,8 @@ export function CompetitorSearchPanel({
     setSearchLinks(prep.links);
     setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
     const excluded = [
-      read.excludedNewBuild > 0
-        ? plural(read.excludedNewBuild, 'programme neuf écarté', 'programmes neufs écartés')
+      read.newBuild > 0
+        ? `${plural(read.newBuild, 'bien neuf', 'biens neufs')} : proposé${read.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien`
         : null,
       read.excludedDuplicates > 0
         ? plural(read.excludedDuplicates, 'doublon écarté', 'doublons écartés')
@@ -642,7 +747,7 @@ export function CompetitorSearchPanel({
       setSelection({});
       setImportProgress(null);
       setImportFailures([]);
-      const rank = await refreshRanking(read.portals);
+      const rank = await refreshRanking(withStreamEstate(read.portals));
       if (rank.ok) {
         setReadSummary(describeReadCounts(read.counts, rank.ranked));
       }
@@ -760,6 +865,9 @@ export function CompetitorSearchPanel({
     windowId?: number,
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const url = candidate.url;
+    const stream = candidate.streamEstate;
+    // Essai Stream Estate : l'annonce d'ORIGINE (toujours sur un site de la liste blanche) est
+    // relue par l'import existant.
     const read = await readPageViaExtension(url, { windowId, robotsCache });
     if (!read.ok) {
       const reason =
@@ -771,38 +879,34 @@ export function CompetitorSearchPanel({
       console.warn(`[import] ${url} — ${reason}`);
       return { ok: false, reason };
     }
+    // Essai Stream Estate : renvoyé hors de l'annonce (liste, accueil) = annonce retirée.
+    if (stream && redirectedAwayFromListing(url, read.finalUrl)) {
+      console.warn(`[import] ${url} — redirigée vers ${read.finalUrl}`);
+      return { ok: false, reason: withdrawnReason(stream) };
+    }
     // Le type lu sur la CARTE de recherche voyage jusqu'à la création : la page
     // d'annonce ne le porte pas de façon fiable, la carte oui.
     const result = await importAction(url, read.html, candidate.propertyType);
     if (!result.ok) {
       console.warn(`[import] ${url} — ${result.error}`);
+      // Essai Stream Estate : une page sans prix ni donnée = annonce introuvable ou retirée.
+      if (stream && result.code === 'listing_empty') {
+        return { ok: false, reason: withdrawnReason(stream) };
+      }
       return { ok: false, reason: result.error };
     }
     return { ok: true };
   }
 
-  const decisionOf = (
-    entry: RankedCandidate,
-    decision: 'accepted' | 'rejected',
-  ): BatchDecision => ({
-    url: entry.candidate.url,
-    decision,
-    price: entry.candidate.price,
-    surfaceArea: entry.candidate.surfaceArea,
-    roomsCount: entry.candidate.roomsCount,
-    city: entry.candidate.city,
-    propertyType: entry.candidate.propertyType,
-  });
-
   // §8 — la validation en lot. Au clic (le geste humain), et pas avant : les cochées
   // sont importées UNE PAR UNE dans une seule fenêtre, une seconde entre deux, avec
   // l'avancement à l'écran ; une fiche qui échoue est NOMMÉE et relançable seule, les
-  // autres entrent quand même. Puis on écrit les décisions : retenues importées =
-  // « accepted », décochées = « rejected » sans motif.
+  // autres entrent quand même. Puis on écrit les décisions : seules les importées, comme
+  // retenues. Une annonce non cochée (montrée ou derrière « Voir les N autres ») n'est ni
+  // retenue ni écartée : elle reste dans la liste, sans trace dans l'apprentissage.
   async function validateBatch() {
     const pending = ranked.filter((entry) => decided[entry.candidate.url] == null);
     const checked = pending.filter((entry) => isChecked(entry));
-    const unchecked = pending.filter((entry) => !isChecked(entry));
     if (checked.length === 0) {
       return;
     }
@@ -843,11 +947,8 @@ export function CompetitorSearchPanel({
       await closeSearchWindowViaExtension(win.windowId);
     }
 
-    // Décisions écrites d'un coup : importées = retenues, décochées = écartées.
-    const decisions = [
-      ...importedOk.map((entry) => decisionOf(entry, 'accepted')),
-      ...unchecked.map((entry) => decisionOf(entry, 'rejected')),
-    ];
+    // Décisions écrites d'un coup : les importées seulement, comme retenues.
+    const decisions = batchDecisions(importedOk);
     if (decisions.length > 0) {
       await recordDecisionsAction(decisions);
     }
@@ -856,9 +957,6 @@ export function CompetitorSearchPanel({
       const next = { ...current };
       for (const entry of importedOk) {
         next[entry.candidate.url] = 'accepted';
-      }
-      for (const entry of unchecked) {
-        next[entry.candidate.url] = 'rejected';
       }
       return next;
     });
@@ -955,18 +1053,13 @@ export function CompetitorSearchPanel({
     });
   }
 
-  const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
-  // Liste principale = dans la fourchette (ou, à défaut de fourchette, au-dessus du
-  // seuil) ; le reste bascule dans le repli. Rien n'est perdu — un clic révèle tout.
-  const relevant = undecided.filter((entry) => inMainList(entry));
-  const lessRelevant = undecided.filter((entry) => !inMainList(entry));
-
   const checkedCount = undecided.filter((entry) => isChecked(entry)).length;
 
-  const renderCard = (entry: RankedCandidate) => (
+  const renderCard = (entry: RankedCandidate, position: number) => (
     <RankedCandidateCard
       key={entry.candidate.url}
       ranked={entry}
+      position={position}
       selected={isChecked(entry)}
       onToggleSelect={() => toggleSelect(entry)}
       pending={busy}
@@ -986,6 +1079,16 @@ export function CompetitorSearchPanel({
         <button type="button" onClick={readAllMySearches} disabled={busy} className={btnPrimary}>
           {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
         </button>
+        {streamEstateAction ? (
+          <button
+            type="button"
+            onClick={searchViaStreamEstate}
+            disabled={busy}
+            className={btnPrimary}
+          >
+            {streamSearching ? 'Recherche Stream Estate…' : 'Chercher via Stream Estate (essai)'}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => readMySearch()}
@@ -1037,6 +1140,32 @@ export function CompetitorSearchPanel({
           {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur l’écran
           d’attente du portail. Puis relancez « Lire mes recherches ».
         </p>
+      ) : null}
+      {streamNote ? (
+        // Essai Stream Estate — le coût de la recherche, dit tel quel : l'API facture chaque
+        // annonce renvoyée, retenue ou non par le classement.
+        <div className={`${card} flex flex-col gap-1 p-3.5`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
+          </span>
+          <p className={hintText}>
+            {`${plural(streamNote.billed, 'annonce facturée', 'annonces facturées')}, dont ${plural(streamNote.expiredOrigin, 'écartée car expirée', 'écartées car expirées')} : annonce d’origine expirée, ou plus revue par Stream Estate depuis 7 jours.`}
+            {streamNote.totalItems != null
+              ? ` L’API en annonce ${streamNote.totalItems} pour ces critères (une seule page lue).`
+              : ''}{' '}
+            {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
+            les portails.
+            {streamNote.outsideWhitelist > 0
+              ? ` ${plural(streamNote.outsideWhitelist, 'bien écarté', 'biens écartés')} : aucune annonce sur SeLoger, Bien’ici, Green Acres, Figaro Immobilier ou Maisons et Appartements (les sites que l’extension relit).`
+              : ''}
+            {streamNote.unreadable > 0
+              ? ` ${plural(streamNote.unreadable, 'bien illisible écarté', 'biens illisibles écartés')} (sans annonce exploitable).`
+              : ''}
+            {streamNote.newBuild > 0
+              ? ` ${plural(streamNote.newBuild, 'bien neuf reçu', 'biens neufs reçus')} : proposé${streamNote.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien.`
+              : ''}
+          </p>
+        </div>
       ) : null}
       {readSummary.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>
@@ -1175,7 +1304,9 @@ export function CompetitorSearchPanel({
             if (
               loosenParts.length === 0 &&
               excludedLines.length === 0 &&
-              !admissibility.belowMinimum
+              !admissibility.belowMinimum &&
+              admissibility.newBuildAdded === 0 &&
+              admissibility.newBuildHeld === 0
             )
               return null;
             return (
@@ -1196,6 +1327,24 @@ export function CompetitorSearchPanel({
                 {excludedLines.length > 0 ? (
                   <p>Écartées faute d’une donnée nécessaire : {excludedLines.join(' · ')}.</p>
                 ) : null}
+                {admissibility.newBuildAdded > 0 ? (
+                  <p>
+                    {plural(admissibility.newBuildAdded, 'bien neuf ajouté', 'biens neufs ajoutés')}{' '}
+                    en fin de liste, faute de 3 concurrents dans l’ancien même après le dernier cran
+                    d’élargissement.
+                  </p>
+                ) : null}
+                {admissibility.newBuildHeld > 0 ? (
+                  <p>
+                    {plural(
+                      admissibility.newBuildHeld,
+                      'bien neuf non proposé',
+                      'biens neufs non proposés',
+                    )}{' '}
+                    : le neuf ne vient qu’en complément, quand il reste moins de 3 concurrents dans
+                    l’ancien.
+                  </p>
+                ) : null}
               </div>
             );
           })()
@@ -1204,13 +1353,24 @@ export function CompetitorSearchPanel({
       {undecided.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h3 className={formSectionTitle}>
-            Concurrents proposés, du plus au moins ressemblant ({undecided.length})
+            Concurrents proposés, du plus proche au plus éloigné ({undecided.length})
           </h3>
           <p className={hintText}>
             Seules les annonces de la commune, dans votre fourchette de prix, avec le même nombre de
-            pièces et une surface proche sont proposées ; tout élargissement est signalé. Le
-            pourcentage mesure la ressemblance avec le bien de votre client.
+            pièces et une surface proche sont proposées ; tout élargissement est signalé. L’ordre
+            suit d’abord le secteur, la surface, le prix, le stationnement et l’extérieur ; puis
+            l’état, l’étage, l’ascenseur, la piscine, l’exposition et l’année. Une donnée non
+            indiquée ne fait ni monter ni descendre une annonce.
           </p>
+          {sector ? (
+            sector.status === 'located' ? (
+              <p className={hintText}>Distances mesurées depuis « {sector.label} ».</p>
+            ) : (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {SECTOR_NEUTRAL_MESSAGES[sector.reason]}
+              </p>
+            )
+          ) : null}
           {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
               un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.
               L'avancement s'affiche pendant l'import (« 3 sur 8 »). */}
@@ -1226,7 +1386,8 @@ export function CompetitorSearchPanel({
                 : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
             </button>
             <p className={hintText}>
-              Les cochées sont importées dans le dossier ; les décochées sont écartées. Environ une
+              Les cochées sont importées dans le dossier ; les autres restent dans la liste, sans
+              être comptées comme écartées (pour écarter, « Écarter avec un motif »). Environ une
               seconde par fiche — rien n’est enregistré avant ce clic.
             </p>
           </div>
@@ -1264,21 +1425,14 @@ export function CompetitorSearchPanel({
             </div>
           ) : null}
 
-          {/* Les plus ressemblants (≥ seuil). Si tout est en dessous du seuil, on
-              affiche quand même le premier groupe vide-mains via lessRelevant. */}
-          {relevant.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {relevant.map(renderCard)}
-            </div>
-          ) : (
-            <p className={hintText}>
-              {hasRange
-                ? 'Aucun candidat dans votre fourchette de prix. Les propositions ci-dessous sont hors fourchette — à vous de juger.'
-                : 'Aucun candidat au-dessus du seuil de ressemblance. Les propositions ci-dessous sont plus éloignées — à vous de juger.'}
-            </p>
-          )}
+          {/* Étape 2 — les 10 plus proches, numérotés dans l'ordre. */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {shown.map((entry, index) => renderCard(entry, index + 1))}
+          </div>
 
-          {lessRelevant.length > 0 ? (
+          {/* Le reste, dans le même ordre, derrière un clic : rien n'est supprimé. Seuls les 5
+              premiers sont cochés d'office. */}
+          {others.length > 0 ? (
             <div className="flex flex-col gap-3">
               <button
                 type="button"
@@ -1286,16 +1440,12 @@ export function CompetitorSearchPanel({
                 className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
               >
                 {showLessRelevant
-                  ? hasRange
-                    ? 'Masquer les biens hors fourchette'
-                    : 'Masquer les moins ressemblants'
-                  : hasRange
-                    ? `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, hors de votre fourchette`
-                    : `Voir les ${lessRelevant.length} autre${lessRelevant.length > 1 ? 's' : ''}, moins ressemblant${lessRelevant.length > 1 ? 's' : ''}`}
+                  ? `Masquer les ${others.length} autre${others.length > 1 ? 's' : ''}`
+                  : `Voir les ${others.length} autre${others.length > 1 ? 's' : ''}`}
               </button>
               {showLessRelevant ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {lessRelevant.map(renderCard)}
+                  {others.map((entry, index) => renderCard(entry, VISIBLE_CANDIDATES + index + 1))}
                 </div>
               ) : null}
             </div>
