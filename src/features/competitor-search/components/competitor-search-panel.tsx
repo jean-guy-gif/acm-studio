@@ -23,6 +23,7 @@ import type {
 } from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { BatchDecision } from '@/features/competitor-search/actions/record-competitor-decisions';
+import type { StreamEstateSearchResult } from '@/features/competitor-search/actions/search-stream-estate';
 import {
   closeSearchWindowViaExtension,
   openSearchTabsViaExtension,
@@ -35,8 +36,14 @@ import {
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import {
   RankedCandidateCard,
+  StreamEstateFactsLine,
   type DecisionPayload,
 } from '@/features/competitor-search/components/ranked-candidate-card';
+import {
+  notImportableReason,
+  redirectedAwayFromListing,
+  withdrawnReason,
+} from '@/features/competitor-search/services/stream-estate-import';
 import {
   readPageViaExtension,
   type PortalRobotsCache,
@@ -53,6 +60,7 @@ import {
 } from '@/features/competitor-search/services/read-search-pages';
 import {
   SEARCH_PORTAL_LABELS,
+  STREAM_ESTATE_SOURCE,
   type CompetitorCandidate,
   type ExcludedForMissing,
   type Loosening,
@@ -110,6 +118,19 @@ type Props = {
   // identifiants de commune relevés dans les onglets lus.
   prepareOpenAction: () => Promise<PrepareOpenSearchesResult>;
   rememberPlacesAction: (pages: RememberPortalPlacesInput) => Promise<RememberPortalPlacesResult>;
+  // Essai Stream Estate — fourni par la page SEULEMENT si la clé est définie côté serveur ;
+  // absent, le bouton n'existe pas.
+  streamEstateAction?: () => Promise<StreamEstateSearchResult>;
+};
+
+// Essai Stream Estate — ce que l'écran dit de la dernière recherche par l'API (dont son coût).
+type StreamEstateNote = {
+  billed: number;
+  totalItems: number | null;
+  unreadable: number;
+  communeName: string;
+  inseeCode: string;
+  kept: number;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -199,6 +220,7 @@ function CandidateCard({
           {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
           {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
         </div>
+        {candidate.streamEstate ? <StreamEstateFactsLine facts={candidate.streamEstate} /> : null}
         <div className="mt-auto flex flex-col gap-2 pt-2 text-sm">
           {failed ? (
             // La cause réelle, visible sur la carte (pas seulement dans la console).
@@ -269,14 +291,17 @@ function PortalBlock({
     <section className={`${card} flex flex-col gap-3 p-5`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className={formSectionTitle}>{portal.label}</h2>
-        <a
-          href={portal.searchUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className={`${linkCls} text-sm hover:underline`}
-        >
-          Ouvrir la recherche {portal.label}
-        </a>
+        {/* Essai Stream Estate : pas de page de recherche publique, donc pas de lien. */}
+        {portal.searchUrl !== '' ? (
+          <a
+            href={portal.searchUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={`${linkCls} text-sm hover:underline`}
+          >
+            Ouvrir la recherche {portal.label}
+          </a>
+        ) : null}
       </div>
 
       {portal.status === 'ok' ? (
@@ -326,13 +351,15 @@ function PortalBlock({
               source », alors que l'écran d'ajout d'un concurrent avait déjà
               basculé sur le geste simple. Deux écrans du même outil ne peuvent
               pas exiger deux gestes différents — surtout pas celui-là. */}
-          <ListingPasteZone
-            onPaste={({ html, text }) =>
-              onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
-            }
-            disabled={pending}
-            pageLabel="de résultats"
-          />
+          {portal.portal !== STREAM_ESTATE_SOURCE ? (
+            <ListingPasteZone
+              onPaste={({ html, text }) =>
+                onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
+              }
+              disabled={pending}
+              pageLabel="de résultats"
+            />
+          ) : null}
         </div>
       )}
     </section>
@@ -350,6 +377,7 @@ export function CompetitorSearchPanel({
   recordDecisionsAction,
   prepareOpenAction,
   rememberPlacesAction,
+  streamEstateAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [searching, setSearching] = useState(false);
@@ -394,7 +422,17 @@ export function CompetitorSearchPanel({
   const [openedSearches, setOpenedSearches] = useState<OpenedSearches | null>(null);
   const [readSummary, setReadSummary] = useState<string[]>([]);
   const [waitingTabs, setWaitingTabs] = useState<string[]>([]);
-  const busy = pending || searching || importing || reading || opening;
+  // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
+  const [streamSearching, setStreamSearching] = useState(false);
+  const [streamNote, setStreamNote] = useState<StreamEstateNote | null>(null);
+  const busy = pending || searching || importing || reading || opening || streamSearching;
+
+  // Essai Stream Estate — les biens de l'API restent à côté des portails quand on relit les
+  // onglets ou relance la recherche automatique : c'est tout l'intérêt de la comparaison.
+  const withStreamEstate = (next: PortalSearchResult[]): PortalSearchResult[] => [
+    ...next.filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
+    ...(portals ?? []).filter((portal) => portal.portal === STREAM_ESTATE_SOURCE),
+  ];
 
   // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
   // la LISTE PRINCIPALE ne contient QUE des biens dans la fourchette du bien vendeur.
@@ -415,8 +453,12 @@ export function CompetitorSearchPanel({
   const inMainList = (entry: RankedCandidate): boolean =>
     hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
 
+  // Essai Stream Estate : une annonce d'origine que l'extension ne relit pas n'est pas cochée
+  // d'office — son import échouerait à coup sûr.
   const defaultChecked = (entry: RankedCandidate): boolean =>
-    inMainList(entry) && entry.candidate.propertyType != null;
+    inMainList(entry) &&
+    entry.candidate.propertyType != null &&
+    entry.candidate.streamEstate?.importable !== false;
   const isChecked = (entry: RankedCandidate): boolean =>
     selection[entry.candidate.url] ?? defaultChecked(entry);
   const toggleSelect = (entry: RankedCandidate) =>
@@ -500,9 +542,48 @@ export function CompetitorSearchPanel({
       setSelection({});
       setImportProgress(null);
       setImportFailures([]);
-      await refreshRanking(read);
+      await refreshRanking(withStreamEstate(read));
     } finally {
       setSearching(false);
+    }
+  }
+
+  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), une page. Ses
+  // biens rejoignent les portails dans le MÊME classement : mêmes filtres, mêmes mentions.
+  async function searchViaStreamEstate() {
+    if (!streamEstateAction) {
+      return;
+    }
+    setError(null);
+    setStreamNote(null);
+    setStreamSearching(true);
+    try {
+      const result = await streamEstateAction();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const prep = await prepareAction();
+      if (!prep.ok) {
+        setError(prep.error);
+        return;
+      }
+      setSearchLinks(prep.links);
+      setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
+      const rank = await refreshRanking([...others, result.portal]);
+      setStreamNote({
+        billed: result.billed,
+        totalItems: result.totalItems,
+        unreadable: result.unreadable,
+        communeName: result.communeName,
+        inseeCode: result.inseeCode,
+        kept: rank.ok
+          ? rank.ranked.filter((entry) => entry.portal === STREAM_ESTATE_SOURCE).length
+          : 0,
+      });
+    } finally {
+      setStreamSearching(false);
     }
   }
 
@@ -642,7 +723,7 @@ export function CompetitorSearchPanel({
       setSelection({});
       setImportProgress(null);
       setImportFailures([]);
-      const rank = await refreshRanking(read.portals);
+      const rank = await refreshRanking(withStreamEstate(read.portals));
       if (rank.ok) {
         setReadSummary(describeReadCounts(read.counts, rank.ranked));
       }
@@ -760,6 +841,12 @@ export function CompetitorSearchPanel({
     windowId?: number,
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const url = candidate.url;
+    const stream = candidate.streamEstate;
+    // Essai Stream Estate : l'annonce d'ORIGINE est relue par l'import existant. Sur un site que
+    // l'extension ne relit pas, on ne tente rien.
+    if (stream && !stream.importable) {
+      return { ok: false, reason: notImportableReason(stream) };
+    }
     const read = await readPageViaExtension(url, { windowId, robotsCache });
     if (!read.ok) {
       const reason =
@@ -771,11 +858,20 @@ export function CompetitorSearchPanel({
       console.warn(`[import] ${url} — ${reason}`);
       return { ok: false, reason };
     }
+    // Essai Stream Estate : renvoyé hors de l'annonce (liste, accueil) = annonce retirée.
+    if (stream && redirectedAwayFromListing(url, read.finalUrl)) {
+      console.warn(`[import] ${url} — redirigée vers ${read.finalUrl}`);
+      return { ok: false, reason: withdrawnReason(stream) };
+    }
     // Le type lu sur la CARTE de recherche voyage jusqu'à la création : la page
     // d'annonce ne le porte pas de façon fiable, la carte oui.
     const result = await importAction(url, read.html, candidate.propertyType);
     if (!result.ok) {
       console.warn(`[import] ${url} — ${result.error}`);
+      // Essai Stream Estate : une page sans prix ni donnée = annonce introuvable ou retirée.
+      if (stream && result.code === 'listing_empty') {
+        return { ok: false, reason: withdrawnReason(stream) };
+      }
       return { ok: false, reason: result.error };
     }
     return { ok: true };
@@ -986,6 +1082,16 @@ export function CompetitorSearchPanel({
         <button type="button" onClick={readAllMySearches} disabled={busy} className={btnPrimary}>
           {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
         </button>
+        {streamEstateAction ? (
+          <button
+            type="button"
+            onClick={searchViaStreamEstate}
+            disabled={busy}
+            className={btnPrimary}
+          >
+            {streamSearching ? 'Recherche Stream Estate…' : 'Chercher via Stream Estate (essai)'}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => readMySearch()}
@@ -1037,6 +1143,27 @@ export function CompetitorSearchPanel({
           {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur l’écran
           d’attente du portail. Puis relancez « Lire mes recherches ».
         </p>
+      ) : null}
+      {streamNote ? (
+        // Essai Stream Estate — le coût de la recherche, dit tel quel : l'API facture chaque
+        // annonce renvoyée, retenue ou non par le classement.
+        <div className={`${card} flex flex-col gap-1 p-3.5`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
+          </span>
+          <p className={hintText}>
+            {plural(streamNote.billed, 'annonce facturée', 'annonces facturées')} par cette
+            recherche
+            {streamNote.totalItems != null
+              ? ` (l’API en annonce ${streamNote.totalItems} pour ces critères, une seule page lue)`
+              : ''}
+            . {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
+            les portails.
+            {streamNote.unreadable > 0
+              ? ` ${plural(streamNote.unreadable, 'bien illisible écarté', 'biens illisibles écartés')} (sans annonce exploitable).`
+              : ''}
+          </p>
+        </div>
       ) : null}
       {readSummary.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>

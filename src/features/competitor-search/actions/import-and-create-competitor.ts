@@ -15,7 +15,10 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type ImportAndCreateResult =
-  { ok: true; name: string | null; becameReady?: boolean } | { ok: false; error: string };
+  | { ok: true; name: string | null; becameReady?: boolean }
+  // `listing_empty` : la page relue ne porte plus d'annonce (ni prix, ni donnée) — c'est ce que
+  // montre une annonce retirée ou introuvable (essai Stream Estate : « annonce retirée depuis »).
+  | { ok: false; error: string; code?: 'listing_empty' };
 
 const GENERIC_ERROR = 'L’import de cette annonce a échoué.';
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
@@ -67,10 +70,14 @@ export async function importAndCreateComparable(
   if (input == null) {
     // Sans prix, un concurrent n'a pas de sens (et le prix est requis en base). On
     // n'invente pas : la fiche est signalée en échec, relançable seule.
-    return { ok: false, error: 'Prix introuvable sur la fiche.' };
+    return { ok: false, error: 'Prix introuvable sur la fiche.', code: 'listing_empty' };
   }
   if (foundFields.length === 0) {
-    return { ok: false, error: 'Aucune information exploitable n’a été détectée.' };
+    return {
+      ok: false,
+      error: 'Aucune information exploitable n’a été détectée.',
+      code: 'listing_empty',
+    };
   }
 
   // Observation datée (mission 47), best effort — comme l'import unitaire.

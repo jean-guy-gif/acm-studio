@@ -19,6 +19,12 @@ export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
   maisons_appartements: 'Maisons et Appartements',
 };
 
+// Essai Stream Estate — une SOURCE de candidats qui n'est pas un portail lu par l'extension :
+// ses biens passent par le même classement (rankCandidates) que ceux des quatre portails.
+export const STREAM_ESTATE_SOURCE = 'stream_estate';
+export const STREAM_ESTATE_LABEL = 'Stream Estate (essai)';
+export type CandidateSource = SearchPortal | typeof STREAM_ESTATE_SOURCE;
+
 // Critères dérivés du bien vendeur, côté serveur uniquement.
 //
 // MISSION 36 : la recherche ne se contente plus de la commune. Elle compare
@@ -71,6 +77,21 @@ export type CompetitorCandidate = {
   // Programme neuf reconnu à la STRUCTURE (titre « neuf », segment /programme/,
   // fourchette de prix, domaine selogerneuf.com). Écarté du classement, journalisé.
   isNewBuild: boolean;
+  // Essai Stream Estate — présent seulement pour un bien venu de l'API.
+  streamEstate?: StreamEstateFacts;
+};
+
+// Ce que l'API Stream Estate dit d'un bien, en plus de la carte : d'où vient l'annonce
+// retenue comme ORIGINE (celle que l'import relira), depuis quand le bien est en ligne,
+// et ses baisses de prix. Rien n'est recalculé : ce sont les valeurs de l'API.
+export type StreamEstateFacts = {
+  propertyId: string; // identifiant du bien chez Stream Estate (base de déduplication)
+  originSite: string; // site de l'annonce d'origine (« SeLoger », « leboncoin.fr »…)
+  onlineSince: string | null; // createdAt du bien (ISO)
+  lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
+  priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
+  // L'annonce d'origine est sur un site que l'extension sait relire (import possible).
+  importable: boolean;
 };
 
 // Résultat de la lecture d'une page de résultats : les cartes retenues, plus le
@@ -87,8 +108,10 @@ export type SearchExtraction = {
 // on peut relancer), `empty` (page reçue mais coquille ou zéro carte).
 export type PortalSearchStatus = 'ok' | 'refused' | 'unreachable' | 'empty';
 
-export type PortalSearchResult = {
-  portal: SearchPortal;
+// Générique sur la source : les lecteurs de portails produisent un `PortalSearchResult<SearchPortal>`,
+// le classement accepte aussi la source Stream Estate (par défaut, toutes les sources).
+export type PortalSearchResult<Source extends CandidateSource = CandidateSource> = {
+  portal: Source;
   label: string;
   searchUrl: string;
   status: PortalSearchStatus;
@@ -103,7 +126,7 @@ export type PortalSearchResult = {
 // l'admissible ; les écartées faute de donnée sont comptées (ExcludedForMissing).
 export type RankedCandidate = {
   candidate: CompetitorCandidate;
-  portal: SearchPortal;
+  portal: CandidateSource;
   portalLabel: string;
   host: string;
   // 0 à 100, calculé sur les seuls critères comparables.

@@ -26,7 +26,7 @@ const PORTAL_ORIGINS: Record<SearchPortal, string> = {
 export type SearchPageRead =
   | {
       ok: true;
-      portal: PortalSearchResult;
+      portal: PortalSearchResult<SearchPortal>;
       // Cartes réellement lues sur la page, avant d'écarter le neuf et les doublons.
       cardsRead: number;
       excludedNewBuild: number;

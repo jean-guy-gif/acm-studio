@@ -18,10 +18,39 @@ import {
   DECISION_REASON_LABELS,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import type { RankedCandidate } from '@/features/competitor-search/types';
+import { formatFrenchDate } from '@/features/competitor-search/services/stream-estate-import';
+import type { RankedCandidate, StreamEstateFacts } from '@/features/competitor-search/types';
 
 const euro = (value: number | null): string =>
   value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+
+const percent = (value: number): string =>
+  `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`.replace('-', '−');
+
+// Essai Stream Estate — ce que l'API dit du bien, sur la carte : site d'origine, depuis quand il
+// est en ligne, ses baisses de prix. Et, si l'annonce d'origine est sur un site que l'extension
+// ne relit pas, on le dit AVANT le clic plutôt qu'après un échec.
+export function StreamEstateFactsLine({ facts }: { facts: StreamEstateFacts }) {
+  const since = formatFrenchDate(facts.onlineSince);
+  return (
+    <div className="flex flex-col gap-1 text-xs text-zinc-600 stage:text-white/70">
+      <span>
+        Annonce d’origine : <span className="font-medium">{facts.originSite}</span>
+        {since ? ` · en ligne depuis le ${since}` : ''}
+      </span>
+      <span>
+        {facts.priceDrops.length > 0
+          ? `Baisse${facts.priceDrops.length > 1 ? 's' : ''} de prix : ${facts.priceDrops.map(percent).join(' puis ')}`
+          : 'Aucune baisse de prix relevée'}
+      </span>
+      {facts.importable ? null : (
+        <span className="font-medium text-amber-700 stage:text-amber-300">
+          Import impossible : l’extension ne relit pas {facts.originSite}.
+        </span>
+      )}
+    </div>
+  );
+}
 
 export type DecisionPayload = {
   decision: 'accepted' | 'rejected';
@@ -130,6 +159,8 @@ export function RankedCandidateCard({
           {candidate.city ? ` · ${candidate.city}` : ''}
           {` · ${ranked.portalLabel}`}
         </div>
+
+        {candidate.streamEstate ? <StreamEstateFactsLine facts={candidate.streamEstate} /> : null}
 
         {ranked.alreadyJudged ? (
           <span className={ranked.alreadyJudged === 'accepted' ? badgeBrand : badgeRejected}>

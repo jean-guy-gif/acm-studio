@@ -6,6 +6,7 @@ import { scoreCandidate } from '@/features/competitor-search/services/score-cand
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
 import type {
+  CandidateSource,
   CompetitorCandidate,
   CompetitorSearchCriteria,
   ExcludedForMissing,
@@ -13,7 +14,6 @@ import type {
   PortalSearchResult,
   RankedCandidate,
   RankedSearch,
-  SearchPortal,
 } from '@/features/competitor-search/types';
 
 // MISSION 61 — les quatre critères qui comptent FILTRENT, ils ne marquent pas des points.
@@ -113,7 +113,7 @@ function admit(
 
 type PoolEntry = {
   candidate: CompetitorCandidate;
-  portal: SearchPortal;
+  portal: CandidateSource;
   portalLabel: string;
   host: string;
 };
