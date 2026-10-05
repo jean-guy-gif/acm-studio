@@ -46,7 +46,7 @@ function query(criteria: Partial<CompetitorSearchCriteria>): Record<string, stri
 }
 
 describe('buildStreamEstateQuery', () => {
-  it('traduit le bien vendeur : mêmes bornes que les portails, 30 jours, une page de 30', () => {
+  it('traduit le bien vendeur : mêmes bornes que les portails, 30 jours, une page de 20', () => {
     expect(query({})).toEqual({
       transactionType: '0',
       'propertyTypes[]': '0',
@@ -59,7 +59,7 @@ describe('buildStreamEstateQuery', () => {
       budgetMax: '480000',
       expired: 'false',
       fromUpdatedAt: '2026-09-05 15:16:18',
-      itemsPerPage: '30',
+      itemsPerPage: '20',
     });
   });
 
@@ -114,7 +114,7 @@ describe('buildStreamEstateQuery', () => {
 });
 
 describe('parseStreamEstateResponse', () => {
-  const parsed = parseStreamEstateResponse(fixture)!;
+  const parsed = parseStreamEstateResponse(fixture, NOW)!;
 
   it('compte les annonces facturées (renvoyées) et le total annoncé', () => {
     expect(parsed.billed).toBe(5);
@@ -176,11 +176,16 @@ describe('parseStreamEstateResponse', () => {
     }
   });
 
-  it('sur une vraie réponse de 30 biens : 7 sans site relisible écartés, 23 admis', () => {
+  it('sur une vraie réponse de 30 biens : 7 hors liste, 3 sans origine utilisable, 20 admis', () => {
     // 3 seulement sur ParuVendu, 4 seulement sur Superimmo ; les biens multi-sites restent.
-    const real = parseStreamEstateResponse(proximityFixture)!;
-    expect(real).toMatchObject({ billed: 30, outsideWhitelist: 7, unreadable: 0 });
-    expect(real.candidates).toHaveLength(23);
+    const real = parseStreamEstateResponse(proximityFixture, NOW)!;
+    expect(real).toMatchObject({
+      billed: 30,
+      outsideWhitelist: 7,
+      expiredOrigin: 3,
+      unreadable: 0,
+    });
+    expect(real.candidates).toHaveLength(20);
     expect(real.candidates.every((c) => isImportableUrl(c.url))).toBe(true);
   });
 
@@ -199,7 +204,7 @@ describe('parseStreamEstateResponse', () => {
         { url: seloger, expired: false, lastCrawledAt: '2026-10-01T10:00:00+02:00' },
       ],
     };
-    const result = parseStreamEstateResponse({ 'hydra:member': [property] })!;
+    const result = parseStreamEstateResponse({ 'hydra:member': [property] }, NOW)!;
     expect(result.outsideWhitelist).toBe(0);
     expect(result.candidates).toHaveLength(1);
     expect(result.candidates[0].url).toBe(seloger);
@@ -211,7 +216,7 @@ describe('parseStreamEstateResponse', () => {
       ...fixture['hydra:member'][1],
       adverts: [{ url: 'https://www.leboncoin.fr/ad/ventes_immobilieres/3000000001' }],
     };
-    expect(parseStreamEstateResponse({ 'hydra:member': [property] })).toMatchObject({
+    expect(parseStreamEstateResponse({ 'hydra:member': [property] }, NOW)).toMatchObject({
       billed: 1,
       outsideWhitelist: 1,
       unreadable: 0,
@@ -232,24 +237,114 @@ describe('parseStreamEstateResponse', () => {
   it('déduplique par l’identifiant du bien chez Stream Estate (chaque bien reste facturé)', () => {
     const members = fixture['hydra:member'];
     const twice = { ...fixture, 'hydra:member': [...members, members[0]] };
-    const result = parseStreamEstateResponse(twice)!;
+    const result = parseStreamEstateResponse(twice, NOW)!;
     expect(result.billed).toBe(6);
     expect(result.candidates).toHaveLength(4);
   });
 
   it('compte, sans le deviner, un bien sans annonce exploitable', () => {
     const broken = { ...fixture['hydra:member'][1], adverts: [] };
-    const result = parseStreamEstateResponse({ 'hydra:member': [broken] })!;
+    const result = parseStreamEstateResponse({ 'hydra:member': [broken] }, NOW)!;
     expect(result).toMatchObject({ billed: 1, unreadable: 1, candidates: [] });
   });
 
   it('rend null sur une réponse qui n’a pas la forme attendue', () => {
-    expect(parseStreamEstateResponse({ error: 'Access Denied' })).toBeNull();
+    expect(parseStreamEstateResponse({ error: 'Access Denied' }, NOW)).toBeNull();
+  });
+});
+
+describe('annonce d’origine utilisable : pas expirée, revue il y a 7 jours au plus', () => {
+  const real = parseStreamEstateResponse(proximityFixture, NOW)!;
+  const members = proximityFixture['hydra:member'];
+  const member = (prefix: string) => members.find((property) => property.uuid.startsWith(prefix))!;
+  const shown = (prefix: string) => real.candidates.some((c) => c.key!.startsWith(prefix));
+
+  it('vraie réponse : le bien reste « en ligne » par une annonce hors liste, ses annonces SeLoger sont mortes', () => {
+    // Le bien n'est pas expiré pour l'API (une annonce ParuVendu tient), mais toutes ses annonces
+    // SeLoger le sont : plus d'annonce d'origine, il n'est pas affiché.
+    for (const prefix of ['ddb86cb7', 'e8aec357']) {
+      const property = member(prefix);
+      expect(property.expired).toBe(false);
+      const whitelisted = property.adverts.filter((advert) => isImportableUrl(advert.url));
+      expect(whitelisted.length).toBeGreaterThan(0);
+      expect(whitelisted.every((advert) => advert.expired)).toBe(true);
+      expect(shown(prefix)).toBe(false);
+    }
+  });
+
+  it('vraie réponse : le bien paraît vu il y a 6 jours, mais grâce à une AUTRE annonce', () => {
+    // Seule annonce en ligne sur un site relisible : Figaro, pas revue depuis 10 jours. Le
+    // passage du 29/09 sur le bien vient d'une annonce SeLoger… expirée.
+    const property = member('e46243c9');
+    const daysAgo = (at: string) => (NOW.getTime() - Date.parse(at)) / 86_400_000;
+    expect(daysAgo(property.lastCrawledAt)).toBeLessThan(7);
+    const alive = property.adverts.filter((a) => isImportableUrl(a.url) && !a.expired);
+    expect(alive.map((a) => new URL(a.url).hostname)).toEqual(['immobilier.lefigaro.fr']);
+    expect(daysAgo(alive[0].lastCrawledAt)).toBeGreaterThan(7);
+    expect(shown('e46243c9')).toBe(false);
+  });
+
+  it('chaque bien affiché a une origine non expirée, revue dans les 7 jours', () => {
+    for (const candidate of real.candidates) {
+      const seenAt = Date.parse(candidate.streamEstate!.lastSeenAt!);
+      expect(NOW.getTime() - seenAt).toBeLessThanOrEqual(7 * 86_400_000);
+      const advert = member(candidate.key!).adverts.find((a) => a.url === candidate.url);
+      if (advert) expect(advert.expired).toBe(false);
+    }
+  });
+
+  const seloger = 'https://www.seloger.com/annonces/achat/appartement/nice-06/250123456.htm';
+  const bienici = 'https://www.bienici.com/annonce/vente/nice/appartement/4pieces/ag-1';
+  const one = (adverts: { url: string; expired?: boolean; lastCrawledAt?: string | null }[]) =>
+    parseStreamEstateResponse(
+      { 'hydra:member': [{ ...fixture['hydra:member'][1], uuid: 'x', adverts }] },
+      NOW,
+    )!;
+
+  it('borne : revue il y a 7 jours pile → gardée ; une seconde de plus → écartée', () => {
+    const exactly = new Date(NOW.getTime() - 7 * 86_400_000).toISOString();
+    const tooOld = new Date(NOW.getTime() - 7 * 86_400_000 - 1000).toISOString();
+    expect(one([{ url: seloger, expired: false, lastCrawledAt: exactly }]).candidates).toHaveLength(
+      1,
+    );
+    expect(one([{ url: seloger, expired: false, lastCrawledAt: tooOld }])).toMatchObject({
+      expiredOrigin: 1,
+      candidates: [],
+    });
+  });
+
+  it('sans date de passage du robot, l’annonce n’est pas utilisable', () => {
+    expect(one([{ url: seloger, expired: false, lastCrawledAt: null }])).toMatchObject({
+      expiredOrigin: 1,
+      outsideWhitelist: 0,
+      candidates: [],
+    });
+  });
+
+  it('une annonce expirée cède la place à une autre annonce relisible encore vivante', () => {
+    const result = one([
+      { url: seloger, expired: true, lastCrawledAt: '2026-10-05T10:00:00+02:00' },
+      { url: bienici, expired: false, lastCrawledAt: '2026-10-02T10:00:00+02:00' },
+    ]);
+    expect(result.candidates.map((c) => c.url)).toEqual([bienici]);
+  });
+
+  it('une annonce Leboncoin fraîche ne sauve pas une origine morte', () => {
+    expect(
+      one([
+        {
+          url: 'https://www.leboncoin.fr/ad/ventes_immobilieres/1',
+          expired: false,
+          lastCrawledAt: '2026-10-05T10:00:00+02:00',
+        },
+        { url: seloger, expired: true, lastCrawledAt: '2026-10-04T10:00:00+02:00' },
+      ]),
+    ).toMatchObject({ expiredOrigin: 1, outsideWhitelist: 0, candidates: [] });
   });
 });
 
 describe('les biens Stream Estate passent par rankCandidates', () => {
-  const parsed = parseStreamEstateResponse(fixture)!;
+  const parsed = parseStreamEstateResponse(fixture, NOW)!;
   const portal: PortalSearchResult = {
     portal: STREAM_ESTATE_SOURCE,
     label: STREAM_ESTATE_LABEL,

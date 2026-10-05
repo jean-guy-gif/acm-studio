@@ -35,7 +35,7 @@ const ranked = rankCandidates(
       searchUrl: '',
       status: 'ok',
       message: null,
-      candidates: parseStreamEstateResponse(fixture)!.candidates,
+      candidates: parseStreamEstateResponse(fixture, new Date('2026-10-05T13:16:18Z'))!.candidates,
     },
   ],
   learnFromDecisions([]),

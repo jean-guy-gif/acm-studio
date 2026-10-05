@@ -132,6 +132,7 @@ type StreamEstateNote = {
   totalItems: number | null;
   unreadable: number;
   outsideWhitelist: number;
+  expiredOrigin: number;
   communeName: string;
   inseeCode: string;
   kept: number;
@@ -591,6 +592,7 @@ export function CompetitorSearchPanel({
         totalItems: result.totalItems,
         unreadable: result.unreadable,
         outsideWhitelist: result.outsideWhitelist,
+        expiredOrigin: result.expiredOrigin,
         communeName: result.communeName,
         inseeCode: result.inseeCode,
         kept: rank.ok
@@ -1140,12 +1142,11 @@ export function CompetitorSearchPanel({
             Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
           </span>
           <p className={hintText}>
-            {plural(streamNote.billed, 'annonce facturée', 'annonces facturées')} par cette
-            recherche
+            {`${plural(streamNote.billed, 'annonce facturée', 'annonces facturées')}, dont ${plural(streamNote.expiredOrigin, 'écartée car expirée', 'écartées car expirées')} : annonce d’origine expirée, ou plus revue par Stream Estate depuis 7 jours.`}
             {streamNote.totalItems != null
-              ? ` (l’API en annonce ${streamNote.totalItems} pour ces critères, une seule page lue)`
-              : ''}
-            . {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
+              ? ` L’API en annonce ${streamNote.totalItems} pour ces critères (une seule page lue).`
+              : ''}{' '}
+            {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
             les portails.
             {streamNote.outsideWhitelist > 0
               ? ` ${plural(streamNote.outsideWhitelist, 'bien écarté', 'biens écartés')} : aucune annonce sur SeLoger, Bien’ici, Green Acres, Figaro Immobilier ou Maisons et Appartements (les sites que l’extension relit).`

@@ -37,6 +37,8 @@ import {
 // ÉTAPE 2 « les 10 plus proches » — l'ORDRE et la LIMITE changent, les filtres non.
 
 const PREFS = learnFromDecisions([]);
+// Heure de la recherche enregistrée (05/10/2026) : fixe la fenêtre des 7 jours de l’annonce d’origine.
+const RECORDED_AT = new Date('2026-10-05T13:16:18Z');
 // 12 avenue Jean Médecin, Nice — géocodé au numéro (score 0,98) le 05/10/2026.
 const JEAN_MEDECIN: GeoPoint = { lat: 43.699502, lon: 7.268857 };
 
@@ -387,12 +389,14 @@ describe('coordonnées de remplissage Stream Estate écartées', () => {
   });
 
   it('sur une vraie réponse (30 biens) : les points répétés et grossiers sont écartés, pas devinés', () => {
-    const parsed = parseStreamEstateResponse(proximityFixture)!;
+    const parsed = parseStreamEstateResponse(proximityFixture, RECORDED_AT)!;
     const features = parsed.candidates.map((candidate) => candidate.features!);
     const kept = features.filter((f) => f.location != null);
     const discarded = features.filter((f) => f.locationDiscarded);
     // Mesuré sur cette réponse : 2 × 43.7,7.25 et 2 points de zone partagés chacun par 2 biens.
-    expect(discarded).toHaveLength(6);
+    // e8aec357 (un des 2 au point 43.7186,7.25697) n'est plus affiché, origine expirée : il en
+    // reste 5 — mais le point reste « répété » pour son jumeau, compté sur toute la réponse.
+    expect(discarded).toHaveLength(5);
     expect(discarded.every((f) => f.location == null)).toBe(true);
     expect(kept.some((f) => f.location!.lat === 43.7 && f.location!.lon === 7.25)).toBe(false);
     const keys = kept.map((f) => `${f.location!.lat},${f.location!.lon}`);
@@ -450,7 +454,7 @@ describe('coordonnées de remplissage Stream Estate écartées', () => {
 });
 
 describe('limite : les 10 premiers, puis « Voir les N autres »', () => {
-  const parsed = parseStreamEstateResponse(proximityFixture)!;
+  const parsed = parseStreamEstateResponse(proximityFixture, RECORDED_AT)!;
   const ranked = rankCandidates(FLAT, [portalOf(parsed.candidates)], PREFS, {
     subjectLocation: JEAN_MEDECIN,
   }).ranked;

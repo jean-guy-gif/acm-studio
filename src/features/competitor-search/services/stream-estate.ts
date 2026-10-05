@@ -22,8 +22,22 @@ import type {
 // filtre, le conseiller tranche.
 
 export const STREAM_ESTATE_ENDPOINT = 'https://api.stream.estate/documents/properties';
-export const STREAM_ESTATE_PAGE_SIZE = 30; // une seule page : l'API facture à l'annonce renvoyée
+export const STREAM_ESTATE_PAGE_SIZE = 20; // une seule page : l'API facture à l'annonce renvoyée
 const UPDATED_WITHIN_DAYS = 30; // mesure du 05/10 : à 30 jours, les totaux rejoignent SeLoger
+
+// ANNONCE D'ORIGINE UTILISABLE (décision de Laurent, 05/10) : PAS marquée expirée ET revue par le
+// robot il y a 7 jours au plus. Le filtre `expired=false` de la requête ne suffit pas : pour l'API,
+// un bien n'est expiré que si TOUTES ses annonces le sont, et son `lastCrawledAt` est celui de sa
+// plus récente annonce en ligne, TOUS sites confondus. Mesure sur la réponse enregistrée du 05/10
+// (30 biens, 23 sur un site de la liste blanche) : 3 biens n'avaient plus d'annonce d'origine
+// utilisable — 2 dont toutes les annonces SeLoger étaient expirées (le bien restait « en ligne »
+// par une annonce ParuVendu), 1 dont la seule annonce en ligne d'un site relisible (Figaro) n'avait
+// pas été revue depuis 10 jours alors que le bien avait été vu 6 jours plus tôt (via une autre
+// annonce). Aucun filtre de l'API ne porte sur la fraîcheur des ANNONCES (doc du 05/10 : `fromUpdatedAt`
+// porte sur le bien, `fromExpiredAt` sur la date d'expiration) : le tri se fait donc sur la réponse,
+// et ces biens restent facturés — comptés à l'écran.
+export const ORIGIN_SEEN_WITHIN_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // LISTE BLANCHE (décision de Laurent, 05/10) : on ne garde que les biens IMPORTABLES, c'est-à-dire
 // ayant au moins une annonce sur un site que l'extension sait relire (copie de
@@ -100,7 +114,7 @@ export function buildStreamEstateQuery(
     params.append('budgetMax', String(max ?? min));
   }
   params.append('expired', 'false');
-  const since = new Date(now.getTime() - UPDATED_WITHIN_DAYS * 24 * 60 * 60 * 1000);
+  const since = new Date(now.getTime() - UPDATED_WITHIN_DAYS * DAY_MS);
   params.append('fromUpdatedAt', parisDateTime(since));
   params.append('itemsPerPage', String(STREAM_ESTATE_PAGE_SIZE));
   return { ok: true, params };
@@ -170,6 +184,9 @@ export type ParsedStreamEstateResponse = {
   unreadable: number;
   // Biens écartés par la liste blanche : aucune annonce sur un site que l'extension relit.
   outsideWhitelist: number;
+  // Biens écartés car leurs annonces sur un site de la liste sont toutes expirées, ou pas revues
+  // par le robot depuis plus de 7 jours : aucune annonce d'origine utilisable.
+  expiredOrigin: number;
 };
 
 export function isImportableUrl(rawUrl: string): boolean {
@@ -199,18 +216,30 @@ function cleanAdvertUrl(rawUrl: string): string | null {
   }
 }
 
+function isImportableAdvert(advert: StreamEstateAdvert): boolean {
+  return cleanAdvertUrl(advert.url) != null && isImportableUrl(advert.url);
+}
+
+// Pas marquée expirée, et revue par le robot dans les 7 derniers jours. Sans date de passage, rien
+// ne prouve qu'elle soit encore en ligne : pas utilisable.
+export function isUsableOrigin(advert: StreamEstateAdvert, now: Date): boolean {
+  if (advert.expired === true || !advert.lastCrawledAt) return false;
+  const seenAt = Date.parse(advert.lastCrawledAt);
+  return Number.isFinite(seenAt) && now.getTime() - seenAt <= ORIGIN_SEEN_WITHIN_DAYS * DAY_MS;
+}
+
 // L'annonce d'ORIGINE : celle que l'import relira. SEULEMENT parmi les annonces sur un site de la
-// liste blanche (un bien Leboncoin + SeLoger a SeLoger pour origine) ; les annonces encore en
-// ligne d'abord, puis la plus récemment vue par le robot. Aucune → null : bien hors liste.
-export function pickOriginAdvert(adverts: StreamEstateAdvert[]): StreamEstateAdvert | null {
-  const importable = adverts.filter(
-    (advert) => cleanAdvertUrl(advert.url) != null && isImportableUrl(advert.url),
+// liste blanche (un bien Leboncoin + SeLoger a SeLoger pour origine), et seulement si elle est
+// utilisable ; la plus récemment vue par le robot. Aucune → null.
+export function pickOriginAdvert(
+  adverts: StreamEstateAdvert[],
+  now: Date,
+): StreamEstateAdvert | null {
+  const usable = adverts.filter(
+    (advert) => isImportableAdvert(advert) && isUsableOrigin(advert, now),
   );
-  if (importable.length === 0) return null;
-  const rank = (advert: StreamEstateAdvert): number => (advert.expired === true ? 0 : 1);
-  return [...importable].sort(
-    (a, b) => rank(b) - rank(a) || (b.lastCrawledAt ?? '').localeCompare(a.lastCrawledAt ?? ''),
-  )[0];
+  if (usable.length === 0) return null;
+  return [...usable].sort((a, b) => b.lastCrawledAt!.localeCompare(a.lastCrawledAt!))[0];
 }
 
 // Le bien a-t-il au moins une annonce lisible ? Sinon il est illisible (compté à part de la liste
@@ -247,9 +276,10 @@ const STREAM_TYPE_NAMES: Record<number, string> = { 0: 'apartment', 1: 'house' }
 // remplissage, écartées) — calculés sur toute la réponse par parseStreamEstateResponse.
 export function toCandidate(
   property: StreamEstateProperty,
+  now: Date,
   repeated: ReadonlySet<string> = new Set(),
 ): CompetitorCandidate | null {
-  const origin = pickOriginAdvert(property.adverts);
+  const origin = pickOriginAdvert(property.adverts, now);
   const url = origin ? cleanAdvertUrl(origin.url) : null;
   if (origin == null || url == null) return null;
   const host = new URL(url).hostname;
@@ -280,7 +310,11 @@ export function toCandidate(
 
 // Toute la réponse : chaque bien devient un candidat, dédupliqué par son identifiant Stream
 // Estate. Une réponse qui n'a pas la forme attendue → null (l'action le dira, sans deviner).
-export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResponse | null {
+// `now` : l'heure de la recherche, qui fixe la fenêtre des 7 jours.
+export function parseStreamEstateResponse(
+  json: unknown,
+  now: Date,
+): ParsedStreamEstateResponse | null {
   const response = responseSchema.safeParse(json);
   if (!response.success) return null;
   const members = response.data['hydra:member'];
@@ -297,16 +331,19 @@ export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResp
   const candidates: CompetitorCandidate[] = [];
   let unreadable = 0;
   let outsideWhitelist = 0;
+  let expiredOrigin = 0;
   for (const property of properties) {
-    if (
-      property.success &&
-      hasUsableAdvert(property.data) &&
-      pickOriginAdvert(property.data.adverts) == null
-    ) {
-      outsideWhitelist += 1;
-      continue;
+    if (property.success && hasUsableAdvert(property.data)) {
+      if (!property.data.adverts.some(isImportableAdvert)) {
+        outsideWhitelist += 1;
+        continue;
+      }
+      if (pickOriginAdvert(property.data.adverts, now) == null) {
+        expiredOrigin += 1;
+        continue;
+      }
     }
-    const candidate = property.success ? toCandidate(property.data, repeated) : null;
+    const candidate = property.success ? toCandidate(property.data, now, repeated) : null;
     if (candidate == null) {
       unreadable += 1;
       continue;
@@ -321,5 +358,6 @@ export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResp
     totalItems: response.data['hydra:totalItems'] ?? null,
     unreadable,
     outsideWhitelist,
+    expiredOrigin,
   };
 }

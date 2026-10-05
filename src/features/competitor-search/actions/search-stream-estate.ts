@@ -26,6 +26,7 @@ export type StreamEstateSearchResult =
       totalItems: number | null; // total annoncé par l'API pour ces critères
       unreadable: number;
       outsideWhitelist: number; // biens sans annonce sur un site que l'extension relit
+      expiredOrigin: number; // biens dont l'annonce d'origine est expirée ou plus revue (7 jours)
       communeName: string;
       inseeCode: string;
     }
@@ -88,7 +89,8 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
   }
 
   // 2. La recherche, une seule page.
-  const query = buildStreamEstateQuery(criteria, commune.code, new Date());
+  const now = new Date();
+  const query = buildStreamEstateQuery(criteria, commune.code, now);
   if (!query.ok) {
     return {
       ok: false,
@@ -119,7 +121,7 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     return { ok: false, error: GENERIC_ERROR };
   }
 
-  const parsed = parseStreamEstateResponse(json);
+  const parsed = parseStreamEstateResponse(json, now);
   if (parsed == null) {
     console.error('[searchStreamEstate] réponse de forme inattendue');
     return { ok: false, error: GENERIC_ERROR };
@@ -142,6 +144,7 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     totalItems: parsed.totalItems,
     unreadable: parsed.unreadable,
     outsideWhitelist: parsed.outsideWhitelist,
+    expiredOrigin: parsed.expiredOrigin,
     communeName: commune.name,
     inseeCode: commune.code,
   };
