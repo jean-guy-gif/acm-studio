@@ -68,14 +68,25 @@ export function isSearchTabUrl(rawUrl) {
   return !LISTING_PATH.test(url.pathname);
 }
 
+// MISSION 69 — « Lire mes recherches » lit TOUS les onglets de recherche d'un coup : la liste
+// (même règle que la lecture d'un seul onglet — un onglet en veille n'est pas rechargé).
 // Que faire des onglets ouverts : aucun onglet de recherche → 'none' ; un seul → on le lit ;
 // plusieurs → on renvoie la liste et c'est le conseiller qui choisit (jamais l'extension).
 // Un onglet mis en veille par Chrome (`discarded`) est ignoré : le lire le RECHARGERAIT, et
 // « Lire ma recherche » n'envoie aucune requête au portail.
-export function decideOpenTab(tabs) {
-  const candidates = (tabs || [])
+export function listSearchTabs(tabs) {
+  return (tabs || [])
     .filter((tab) => tab && typeof tab.id === 'number' && !tab.discarded && isSearchTabUrl(tab.url))
-    .map((tab) => ({ tabId: tab.id, title: tab.title || '', url: tab.url }));
+    .map((tab) => ({
+      tabId: tab.id,
+      windowId: tab.windowId,
+      title: tab.title || '',
+      url: tab.url,
+    }));
+}
+
+export function decideOpenTab(tabs) {
+  const candidates = listSearchTabs(tabs).map(({ tabId, title, url }) => ({ tabId, title, url }));
   if (candidates.length === 0) {
     return { kind: 'none' };
   }
@@ -122,4 +133,19 @@ export function isStableSize(previous, current) {
     return false;
   }
   return Math.abs(current - previous) / Math.max(current, 1) < STABLE_DELTA;
+}
+
+// MISSION 69 — « Ouvrir mes recherches » : seules des adresses de RECHERCHE des portails lisibles
+// sont ouvertes (jamais une autre adresse, même autorisée), et jamais deux fois la même : un
+// onglet déjà ouvert sur cette adresse exacte n'est pas dupliqué.
+export function urlsToOpen(urls, openTabs) {
+  const already = new Set((openTabs || []).map((tab) => tab && tab.url).filter(Boolean));
+  const seen = new Set();
+  return (Array.isArray(urls) ? urls : []).filter((url) => {
+    if (typeof url !== 'string' || !isSearchTabUrl(url) || already.has(url) || seen.has(url)) {
+      return false;
+    }
+    seen.add(url);
+    return true;
+  });
 }

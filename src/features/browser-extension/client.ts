@@ -15,6 +15,9 @@ const PING_TIMEOUT_MS = 800;
 const FETCH_TIMEOUT_MS = 50_000;
 const ROBOTS_TIMEOUT_MS = 8_000;
 const OPEN_TAB_TIMEOUT_MS = 10_000;
+// Ouvrir quatre onglets : rapide. Tout lire : jusqu'à 15 s d'attente par onglet (mission 46).
+const OPEN_TABS_TIMEOUT_MS = 10_000;
+const READ_TABS_TIMEOUT_MS = 120_000;
 
 export type ExtensionPing = { available: boolean; version?: string };
 // The size + duration let the app say, when the parser finds nothing, whether it
@@ -37,6 +40,15 @@ export type ExtensionOpenTabResult =
   | { ok: true; kind: 'choose'; tabs: OpenSearchTab[] }
   | { ok: false; reason: 'none' | 'outdated' | 'error' };
 
+// MISSION 69 — « Lire mes recherches » : chaque onglet de recherche lu, ou la raison pour laquelle
+// il ne l'a pas été — `waiting` : resté sur l'écran d'attente du portail (cliquer une fois dessus).
+export type ExtensionSearchTabRead =
+  | { ok: true; tabId: number; url: string; title: string; html: string; finalUrl: string }
+  | { ok: false; tabId: number; url: string; title: string; reason: 'waiting' | 'error' };
+export type ExtensionSearchTabsResult =
+  | { ok: true; pages: ExtensionSearchTabRead[] }
+  | { ok: false; reason: 'none' | 'outdated' | 'error' };
+
 type Pending = {
   kind:
     | 'ping'
@@ -45,8 +57,11 @@ type Pending = {
     | 'openSearchWindow'
     | 'fetchInSearchWindow'
     | 'closeSearchWindow'
-    | 'readOpenTab';
+    | 'readOpenTab'
+    | 'openSearchTabs'
+    | 'readSearchTabs';
   url?: string;
+  urls?: string[];
   windowId?: number;
   tabId?: number;
 };
@@ -197,6 +212,47 @@ export async function readOpenTabViaExtension(tabId?: number): Promise<Extension
       }
       if (response.kind === 'choose' && Array.isArray(response.tabs)) {
         return { ok: true, kind: 'choose', tabs: response.tabs };
+      }
+      return { ok: false, reason: 'outdated' };
+    }
+    return { ok: false, reason: response.reason === 'none' ? 'none' : 'error' };
+  } catch {
+    return { ok: false, reason: 'error' };
+  }
+}
+
+// MISSION 69 — ouvre les recherches déjà filtrées dans des onglets visibles (c'est l'extension qui
+// ouvre : plusieurs window.open sur un clic seraient bloqués). `outdated` : extension sans cette
+// action (son pont retombe sur « ping » et répond sans `opened`).
+export async function openSearchTabsViaExtension(
+  urls: string[],
+): Promise<{ ok: true; opened: number } | { ok: false; reason: 'outdated' | 'error' }> {
+  try {
+    const response = await send<{ ok?: boolean; opened?: number; version?: string }>(
+      { kind: 'openSearchTabs', urls },
+      OPEN_TABS_TIMEOUT_MS,
+    );
+    if (response.ok === true && typeof response.opened === 'number') {
+      return { ok: true, opened: response.opened };
+    }
+    return { ok: false, reason: response.ok === true ? 'outdated' : 'error' };
+  } catch {
+    return { ok: false, reason: 'error' };
+  }
+}
+
+// MISSION 69 — lit tous les onglets de recherche ouverts, chacun activé le temps de se construire.
+export async function readSearchTabsViaExtension(): Promise<ExtensionSearchTabsResult> {
+  try {
+    const response = await send<{
+      ok?: boolean;
+      kind?: string;
+      reason?: string;
+      pages?: ExtensionSearchTabRead[];
+    }>({ kind: 'readSearchTabs' }, READ_TABS_TIMEOUT_MS);
+    if (response.ok === true) {
+      if (response.kind === 'pages' && Array.isArray(response.pages)) {
+        return { ok: true, pages: response.pages };
       }
       return { ok: false, reason: 'outdated' };
     }

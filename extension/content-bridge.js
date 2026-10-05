@@ -34,6 +34,10 @@
       request = { kind: 'closeSearchWindow', windowId: data.windowId };
     } else if (data.kind === 'readOpenTab') {
       request = { kind: 'readOpenTab', tabId: data.tabId };
+    } else if (data.kind === 'openSearchTabs') {
+      request = { kind: 'openSearchTabs', urls: data.urls };
+    } else if (data.kind === 'readSearchTabs') {
+      request = { kind: 'readSearchTabs' };
     } else {
       request = { kind: 'ping' };
     }

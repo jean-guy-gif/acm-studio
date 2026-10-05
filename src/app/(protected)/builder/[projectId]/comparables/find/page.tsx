@@ -6,6 +6,8 @@ import { ImportBookmarklet } from '@/features/comparable-import/components/impor
 import { importSearchResultsHtml } from '@/features/competitor-search/actions/import-search-results-html';
 import { importAndCreateComparable } from '@/features/competitor-search/actions/import-and-create-competitor';
 import { prepareCompetitorSearch } from '@/features/competitor-search/actions/prepare-competitor-search';
+import { prepareOpenSearches } from '@/features/competitor-search/actions/prepare-open-searches';
+import { rememberPortalPlaces } from '@/features/competitor-search/actions/remember-portal-places';
 import { rankCompetitorCandidates } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
 import { recordCompetitorDecisions } from '@/features/competitor-search/actions/record-competitor-decisions';
@@ -34,6 +36,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   const recordDecisionAction = recordCompetitorDecision.bind(null, projectId);
   const importAction = importAndCreateComparable.bind(null, projectId);
   const recordDecisionsAction = recordCompetitorDecisions.bind(null, projectId);
+  const prepareOpenAction = prepareOpenSearches.bind(null, projectId);
+  const rememberPlacesAction = rememberPortalPlaces.bind(null, projectId);
 
   const criteriaLabel = hasCity
     ? [property?.city, property?.postal_code].filter(Boolean).join(' ')
@@ -60,6 +64,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
             recordDecisionAction={recordDecisionAction}
             importAction={importAction}
             recordDecisionsAction={recordDecisionsAction}
+            prepareOpenAction={prepareOpenAction}
+            rememberPlacesAction={rememberPlacesAction}
           />
           <ImportBookmarklet />
         </>

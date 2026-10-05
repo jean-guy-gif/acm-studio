@@ -16,13 +16,20 @@ import {
 
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
+import type { PrepareOpenSearchesResult } from '@/features/competitor-search/actions/prepare-open-searches';
+import type {
+  RememberPortalPlacesInput,
+  RememberPortalPlacesResult,
+} from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { BatchDecision } from '@/features/competitor-search/actions/record-competitor-decisions';
 import {
   closeSearchWindowViaExtension,
+  openSearchTabsViaExtension,
   openSearchWindowViaExtension,
   pingExtension,
   readOpenTabViaExtension,
+  readSearchTabsViaExtension,
   type OpenSearchTab,
 } from '@/features/browser-extension/client';
 import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
@@ -39,6 +46,11 @@ import { detectSearchPortal } from '@/features/competitor-search/services/extrac
 import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
 import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
 import type { PortalSearchLink } from '@/features/competitor-search/services/build-portal-search-urls';
+import type { FilteredSearchLink } from '@/features/competitor-search/services/build-filtered-search-urls';
+import {
+  describeReadCounts,
+  readSearchPages,
+} from '@/features/competitor-search/services/read-search-pages';
 import {
   SEARCH_PORTAL_LABELS,
   type CompetitorCandidate,
@@ -62,7 +74,7 @@ type Admissibility = {
 
 // Mission 65 — le portail d'un onglet ouvert, pour que le conseiller choisisse en lisant
 // « SeLoger — Appartements à vendre – Nice », pas une adresse.
-function tabPortalLabel(tab: OpenSearchTab): string {
+function tabPortalLabel(tab: { url: string }): string {
   try {
     const portal = detectSearchPortal(new URL(tab.url).hostname);
     return portal ? SEARCH_PORTAL_LABELS[portal] : 'Portail';
@@ -94,6 +106,18 @@ type Props = {
     propertyType: string | null,
   ) => Promise<ImportAndCreateResult>;
   recordDecisionsAction: (decisions: BatchDecision[]) => Promise<RecordDecisionResult>;
+  // Mission 69 — « Ouvrir mes recherches » (adresses déjà filtrées) et l'apprentissage des
+  // identifiants de commune relevés dans les onglets lus.
+  prepareOpenAction: () => Promise<PrepareOpenSearchesResult>;
+  rememberPlacesAction: (pages: RememberPortalPlacesInput) => Promise<RememberPortalPlacesResult>;
+};
+
+// Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
+type OpenedSearches = {
+  city: string;
+  links: FilteredSearchLink[];
+  // null : l'extension n'a rien ouvert (absente ou trop ancienne) — les liens sont à ouvrir à la main.
+  opened: number | null;
 };
 
 // Seuil de ressemblance : au-dessus, on affiche ; en dessous, on plie derrière
@@ -324,6 +348,8 @@ export function CompetitorSearchPanel({
   recordDecisionAction,
   importAction,
   recordDecisionsAction,
+  prepareOpenAction,
+  rememberPlacesAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [searching, setSearching] = useState(false);
@@ -363,7 +389,12 @@ export function CompetitorSearchPanel({
   const [pasteFallback, setPasteFallback] = useState<'missing' | 'outdated' | null>(null);
   // Ce qui vient d'être lu, dit tel quel (« SeLoger : 30 annonces lues… »).
   const [readNote, setReadNote] = useState<string | null>(null);
-  const busy = pending || searching || importing || reading;
+  // Mission 69 — onglets ouverts, récapitulatif par portail, onglets restés sur l'écran d'attente.
+  const [opening, setOpening] = useState(false);
+  const [openedSearches, setOpenedSearches] = useState<OpenedSearches | null>(null);
+  const [readSummary, setReadSummary] = useState<string[]>([]);
+  const [waitingTabs, setWaitingTabs] = useState<string[]>([]);
+  const busy = pending || searching || importing || reading || opening;
 
   // §1 (revue) — décision de Laurent, qui prime sur « on classe, on ne filtre pas » :
   // la LISTE PRINCIPALE ne contient QUE des biens dans la fourchette du bien vendeur.
@@ -512,6 +543,113 @@ export function CompetitorSearchPanel({
     setPasteFallback(null);
     const others = (portals ?? []).filter((portal) => portal.portal !== read.portal.portal);
     await refreshRanking([...others, read.portal]);
+    // Mission 69 — une recherche faite à la main apprend l'identifiant de sa commune (si les
+    // cartes la confirment). Un échec n'interrompt rien.
+    if (pageUrl != null) {
+      await rememberPlacesAction([
+        { url: pageUrl, cardCities: read.portal.candidates.map((candidate) => candidate.city) },
+      ]).catch(() => undefined);
+    }
+  }
+
+  // Mission 69 — « Ouvrir mes recherches » : le serveur construit les adresses filtrées depuis le
+  // bien vendeur, l'extension les ouvre dans des onglets visibles. Sans extension (ou trop
+  // ancienne), les mêmes liens restent à ouvrir à la main.
+  async function openMySearches() {
+    setError(null);
+    setReadSummary([]);
+    setWaitingTabs([]);
+    setOpening(true);
+    try {
+      const prep = await prepareOpenAction();
+      if (!prep.ok) {
+        setError(prep.error);
+        return;
+      }
+      const ping = await pingExtension();
+      if (!ping.available) {
+        setOpenedSearches({ city: prep.city, links: prep.links, opened: null });
+        return;
+      }
+      const opened = await openSearchTabsViaExtension(prep.links.map((link) => link.url));
+      if (!opened.ok && opened.reason === 'error') {
+        setError('Les onglets n’ont pas pu s’ouvrir. Réessayez, ou ouvrez les liens ci-dessous.');
+      }
+      setOpenedSearches({
+        city: prep.city,
+        links: prep.links,
+        opened: opened.ok ? opened.opened : null,
+      });
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  // Mission 69 — « Lire mes recherches » : TOUS les onglets de recherche, d'un coup. L'extension
+  // active chaque onglet le temps qu'il se construise, puis revient à ACM ; un onglet resté sur
+  // l'écran d'attente est NOMMÉ, jamais lu comme une page vide. La liste fusionnée remplace la
+  // précédente ; le récapitulatif dit, par portail, combien d'annonces ont été lues et retenues.
+  async function readAllMySearches() {
+    setError(null);
+    setExtensionMissing(false);
+    setPasteFallback(null);
+    setTabChoices(null);
+    setReadNote(null);
+    setReadSummary([]);
+    setWaitingTabs([]);
+    setReading(true);
+    try {
+      const ping = await pingExtension();
+      if (!ping.available) {
+        setPasteFallback('missing');
+        return;
+      }
+      const result = await readSearchTabsViaExtension();
+      if (!result.ok) {
+        if (result.reason === 'outdated') {
+          setPasteFallback('outdated');
+        } else if (result.reason === 'none') {
+          setError(
+            'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Cliquez d’abord sur « Ouvrir mes recherches ».',
+          );
+        } else {
+          setError('Les onglets n’ont pas pu être lus. Réessayez.');
+        }
+        return;
+      }
+      const waiting = result.pages.filter((page) => !page.ok && page.reason === 'waiting');
+      setWaitingTabs([...new Set(waiting.map((page) => tabPortalLabel(page)))]);
+      const pages = result.pages.flatMap((page) =>
+        page.ok ? [{ html: page.html, url: page.finalUrl }] : [],
+      );
+      const read = readSearchPages(pages);
+      if (read.portals.length === 0) {
+        if (waiting.length === 0) {
+          setError(
+            'Aucune annonce détectée sur vos onglets de recherche. Vérifiez que chaque onglet affiche bien la liste des résultats, puis relancez.',
+          );
+        }
+        return;
+      }
+      const prep = await prepareAction();
+      if (!prep.ok) {
+        setError(prep.error);
+        return;
+      }
+      setSearchLinks(prep.links);
+      setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      setDecided({});
+      setSelection({});
+      setImportProgress(null);
+      setImportFailures([]);
+      const rank = await refreshRanking(read.portals);
+      if (rank.ok) {
+        setReadSummary(describeReadCounts(read.counts, rank.ranked));
+      }
+      await rememberPlacesAction(read.learnInput).catch(() => undefined);
+    } finally {
+      setReading(false);
+    }
   }
 
   // « Lire ma recherche » : AUCUNE requête au portail — l'extension lit l'onglet tel qu'il
@@ -838,18 +976,80 @@ export function CompetitorSearchPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Mission 65 — le conseiller filtre SON portail, ACM lit ce qu'il voit : c'est le
-          geste principal. La recherche automatique reste disponible, en second. */}
+      {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
+          du bien, puis lit tous les onglets d'un coup. La lecture d'un seul onglet (mission 65)
+          reste possible. La recherche automatique reste disponible, en second. */}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => readMySearch()} disabled={busy} className={btnPrimary}>
-          {reading ? 'Lecture en cours…' : 'Lire ma recherche'}
+        <button type="button" onClick={openMySearches} disabled={busy} className={btnPrimary}>
+          {opening ? 'Ouverture…' : 'Ouvrir mes recherches'}
+        </button>
+        <button type="button" onClick={readAllMySearches} disabled={busy} className={btnPrimary}>
+          {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
+        </button>
+        <button
+          type="button"
+          onClick={() => readMySearch()}
+          disabled={busy}
+          className={`${btnSecondary} px-3 py-1.5 text-sm`}
+        >
+          Lire un seul onglet
         </button>
         <p className={hintText}>Critères : {criteriaLabel}</p>
       </div>
       <p className={hintText}>
-        Faites votre recherche filtrée sur le portail (pièces, surface, prix, secteur), laissez
-        l’onglet ouvert, puis cliquez ici.
+        « Ouvrir mes recherches » ouvre les quatre portails, déjà filtrés avec le type, la commune,
+        les pièces, la surface et votre fourchette. Corrigez un filtre sur le portail si besoin,
+        puis « Lire mes recherches ».
       </p>
+      {openedSearches ? (
+        <div className={`${card} flex flex-col gap-2 p-4`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            {openedSearches.opened != null
+              ? openedSearches.opened > 0
+                ? `${plural(openedSearches.opened, 'onglet ouvert', 'onglets ouverts')} à côté d’ACM`
+                : 'Vos recherches sont déjà ouvertes dans vos onglets'
+              : 'Ouvrez vos recherches (l’extension ACM Studio 0.3.0 les ouvre en un clic)'}
+          </span>
+          {openedSearches.links.map((link) => (
+            <div key={link.portal} className="flex flex-col gap-0.5 text-sm">
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={`${linkCls} hover:underline`}
+              >
+                {link.label}
+                {link.needsPlace ? '' : ' — déjà filtré'}
+              </a>
+              {link.needsPlace ? (
+                <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
+                  Première recherche à {openedSearches.city} sur {link.label} : réglez la commune
+                  une fois, ACM s’en souviendra. Réglez aussi les filtres sur cet onglet.
+                </span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {waitingTabs.length > 0 ? (
+        <p role="alert" className={alertError}>
+          {waitingTabs.map((label) => `Cliquez une fois sur l’onglet ${label}`).join(' ; ')} —
+          {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur l’écran
+          d’attente du portail. Puis relancez « Lire mes recherches ».
+        </p>
+      ) : null}
+      {readSummary.length > 0 ? (
+        <div className={`${card} flex flex-col gap-1 p-3.5`}>
+          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            Vos recherches lues
+          </span>
+          {readSummary.map((line) => (
+            <p key={line} className={hintText}>
+              {line}
+            </p>
+          ))}
+        </div>
+      ) : null}
       {tabChoices ? (
         // Plusieurs recherches ouvertes : on ne devine pas laquelle, le conseiller choisit.
         <div className={`${card} flex flex-col gap-2 p-4`}>
@@ -909,12 +1109,13 @@ export function CompetitorSearchPanel({
         </p>
       ) : null}
       <p className="text-xs text-zinc-400 stage:text-white/40">
-        « Lire ma recherche » lit l’onglet que vous avez laissé ouvert, tel qu’il est affiché, via
-        l’extension ACM Studio : aucune nouvelle requête n’est envoyée au portail. Sans l’extension,
-        le repli est le collage de la page de résultats. La recherche automatique interroge Green
-        Acres, SeLoger, Bien’ici et Maisons et Appartements ; un portail qui refuse la lecture reste
-        accessible : ouvrez sa recherche, copiez le code de la page de résultats et collez-le.
-        Chaque suggestion reste à retenir ou à écarter — rien n’est enregistré sans votre
+        « Lire mes recherches » et « Lire un seul onglet » lisent vos onglets de recherche tels
+        qu’ils sont affichés, via l’extension ACM Studio (chaque onglet est affiché un instant, le
+        temps que sa page se construise) : aucune nouvelle requête n’est envoyée au portail. Sans
+        l’extension, le repli est le collage de la page de résultats. La recherche automatique
+        interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements ; un portail qui refuse
+        la lecture reste accessible : ouvrez sa recherche, copiez le code de la page de résultats et
+        collez-le. Chaque suggestion reste à retenir ou à écarter — rien n’est enregistré sans votre
         validation.
       </p>
       {error ? (
