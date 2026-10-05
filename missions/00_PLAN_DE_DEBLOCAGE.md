@@ -228,6 +228,15 @@ la 62 (préalable : les 4 pages filtrées, voir en tête de la mission 65).
 La mission 67 (pièces dans l'adresse et pages suivantes) ne se lance **que si** les pilotes
 réclament la recherche automatique.
 
+### Commande 3 ter — `/mission 69` : « Ouvrir mes recherches » (ajoutée le 05/10)
+
+ACM ouvre les portails déjà filtrés avec les caractéristiques du bien, puis lit tous les onglets
+d'un coup. Gratuit, sans API. La mission commence par une mesure.
+
+```text
+/mission 69
+```
+
 ### Commande 4 — `/mission 63` : une seule source de vérité
 
 ```text

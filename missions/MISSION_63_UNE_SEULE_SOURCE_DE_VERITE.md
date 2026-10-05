@@ -20,8 +20,12 @@ missions.
    docs : routes réelles (`src/app`) avec une ligne par écran, features (`src/features`) avec une
    ligne chacune, tables (`supabase/migrations`), séquence réelle du Live (`build-live-pages.ts`),
    cycle `projects.status`.
-2. **`docs/DECISIONS.md`** (150 lignes au plus) : relis les missions 37 à 61 et extrais chaque
-   décision produit sur une seule ligne datée, avec son numéro de mission. Exemple :
+2. **`docs/DECISIONS.md`** (150 lignes au plus) : relis les missions 37 à 65, **ainsi que les
+   messages de commit et de fusion des missions 61 à 68** (`git log`), et extrais chaque décision
+   produit sur une seule ligne datée, avec son numéro de mission. Plusieurs décisions récentes n'ont
+   été prises qu'en route et ne figurent que dans les commits : M61 fourchette de prix stricte ;
+   M65 lecture de l'onglet du conseiller dans le navigateur, commune M&A lue sur la carte ;
+   M68 studio/T1/F1 = 1 pièce, surface jamais moins de ±3 m². Exemple :
    « 28/08 · M40 · gris = équivalent ; un critère sans donnée ne s'affiche pas ». Regroupe par thème :
    Préparation · Concurrents & recherche · Live · Conclusion & Suivi · Agence & équipe · Données &
    provenance · Méthode. Quand une décision en remplace une autre, ne garde que la plus récente et note
