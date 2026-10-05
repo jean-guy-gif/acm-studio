@@ -35,7 +35,3 @@ export function withdrawnReason(facts: StreamEstateFacts): string {
     seen ? ` (vue en ligne le ${seen})` : ''
   } : la page d’origine sur ${facts.originSite} ne la montre plus — non importée`;
 }
-
-export function notImportableReason(facts: StreamEstateFacts): string {
-  return `l’annonce d’origine est sur ${facts.originSite}, que l’extension ne relit pas — ouvrez-la pour la saisir à la main`;
-}

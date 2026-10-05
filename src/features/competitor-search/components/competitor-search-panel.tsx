@@ -40,7 +40,6 @@ import {
   type DecisionPayload,
 } from '@/features/competitor-search/components/ranked-candidate-card';
 import {
-  notImportableReason,
   redirectedAwayFromListing,
   withdrawnReason,
 } from '@/features/competitor-search/services/stream-estate-import';
@@ -132,6 +131,7 @@ type StreamEstateNote = {
   billed: number;
   totalItems: number | null;
   unreadable: number;
+  outsideWhitelist: number;
   communeName: string;
   inseeCode: string;
   kept: number;
@@ -466,13 +466,10 @@ export function CompetitorSearchPanel({
   const { shown, others, preselected } = splitVisible(undecided);
   const preselectedUrls = new Set(preselected.map((entry) => entry.candidate.url));
 
-  // Essai Stream Estate : une annonce d'origine que l'extension ne relit pas n'est pas cochée
-  // d'office — son import échouerait à coup sûr.
   const defaultChecked = (entry: RankedCandidate): boolean =>
     preselectedUrls.has(entry.candidate.url) &&
     inMainList(entry) &&
-    entry.candidate.propertyType != null &&
-    entry.candidate.streamEstate?.importable !== false;
+    entry.candidate.propertyType != null;
   const isChecked = (entry: RankedCandidate): boolean =>
     selection[entry.candidate.url] ?? defaultChecked(entry);
   const toggleSelect = (entry: RankedCandidate) =>
@@ -593,6 +590,7 @@ export function CompetitorSearchPanel({
         billed: result.billed,
         totalItems: result.totalItems,
         unreadable: result.unreadable,
+        outsideWhitelist: result.outsideWhitelist,
         communeName: result.communeName,
         inseeCode: result.inseeCode,
         kept: rank.ok
@@ -859,11 +857,8 @@ export function CompetitorSearchPanel({
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const url = candidate.url;
     const stream = candidate.streamEstate;
-    // Essai Stream Estate : l'annonce d'ORIGINE est relue par l'import existant. Sur un site que
-    // l'extension ne relit pas, on ne tente rien.
-    if (stream && !stream.importable) {
-      return { ok: false, reason: notImportableReason(stream) };
-    }
+    // Essai Stream Estate : l'annonce d'ORIGINE (toujours sur un site de la liste blanche) est
+    // relue par l'import existant.
     const read = await readPageViaExtension(url, { windowId, robotsCache });
     if (!read.ok) {
       const reason =
@@ -1152,6 +1147,9 @@ export function CompetitorSearchPanel({
               : ''}
             . {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
             les portails.
+            {streamNote.outsideWhitelist > 0
+              ? ` ${plural(streamNote.outsideWhitelist, 'bien écarté', 'biens écartés')} : aucune annonce sur SeLoger, Bien’ici, Green Acres, Figaro Immobilier ou Maisons et Appartements (les sites que l’extension relit).`
+              : ''}
             {streamNote.unreadable > 0
               ? ` ${plural(streamNote.unreadable, 'bien illisible écarté', 'biens illisibles écartés')} (sans annonce exploitable).`
               : ''}

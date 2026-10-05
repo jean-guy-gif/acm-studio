@@ -30,9 +30,8 @@ const euro = (value: number | null): string =>
 const percent = (value: number): string =>
   `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`.replace('-', '−');
 
-// Essai Stream Estate — ce que l'API dit du bien, sur la carte : site d'origine, depuis quand il
-// est en ligne, ses baisses de prix. Et, si l'annonce d'origine est sur un site que l'extension
-// ne relit pas, on le dit AVANT le clic plutôt qu'après un échec.
+// Essai Stream Estate — ce que l'API dit du bien, sur la carte : site d'origine (toujours un site
+// que l'extension relit), depuis quand il est en ligne, ses baisses de prix.
 export function StreamEstateFactsLine({ facts }: { facts: StreamEstateFacts }) {
   const since = formatFrenchDate(facts.onlineSince);
   return (
@@ -46,11 +45,6 @@ export function StreamEstateFactsLine({ facts }: { facts: StreamEstateFacts }) {
           ? `Baisse${facts.priceDrops.length > 1 ? 's' : ''} de prix : ${facts.priceDrops.map(percent).join(' puis ')}`
           : 'Aucune baisse de prix relevée'}
       </span>
-      {facts.importable ? null : (
-        <span className="font-medium text-amber-700 stage:text-amber-300">
-          Import impossible : l’extension ne relit pas {facts.originSite}.
-        </span>
-      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ export type StreamEstateSearchResult =
       billed: number; // annonces renvoyées = annonces facturées
       totalItems: number | null; // total annoncé par l'API pour ces critères
       unreadable: number;
+      outsideWhitelist: number; // biens sans annonce sur un site que l'extension relit
       communeName: string;
       inseeCode: string;
     }
@@ -140,6 +141,7 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     billed: parsed.billed,
     totalItems: parsed.totalItems,
     unreadable: parsed.unreadable,
+    outsideWhitelist: parsed.outsideWhitelist,
     communeName: commune.name,
     inseeCode: commune.code,
   };

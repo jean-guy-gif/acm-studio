@@ -123,7 +123,8 @@ export type CompetitorCandidate = {
 };
 
 // Ce que l'API Stream Estate dit d'un bien, en plus de la carte : d'où vient l'annonce
-// retenue comme ORIGINE (celle que l'import relira), depuis quand le bien est en ligne,
+// retenue comme ORIGINE (celle que l'import relira, toujours sur un site de la liste blanche),
+// depuis quand le bien est en ligne,
 // et ses baisses de prix. Rien n'est recalculé : ce sont les valeurs de l'API.
 export type StreamEstateFacts = {
   propertyId: string; // identifiant du bien chez Stream Estate (base de déduplication)
@@ -131,8 +132,6 @@ export type StreamEstateFacts = {
   onlineSince: string | null; // createdAt du bien (ISO)
   lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
   priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
-  // L'annonce d'origine est sur un site que l'extension sait relire (import possible).
-  importable: boolean;
 };
 
 // Résultat de la lecture d'une page de résultats : les cartes retenues, plus le

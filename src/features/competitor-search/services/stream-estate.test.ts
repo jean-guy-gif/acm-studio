@@ -4,11 +4,13 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import fixture from '@/features/competitor-search/__fixtures__/stream-estate-nice-4p.json';
+import proximityFixture from '@/features/competitor-search/__fixtures__/stream-estate-nice-4p-proximite.json';
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
 import {
   buildStreamEstateQuery,
   IMPORTABLE_HOST_SUFFIXES,
+  isImportableUrl,
   parisDateTime,
   parseStreamEstateResponse,
 } from '@/features/competitor-search/services/stream-estate';
@@ -118,7 +120,9 @@ describe('parseStreamEstateResponse', () => {
     expect(parsed.billed).toBe(5);
     expect(parsed.totalItems).toBe(1435);
     expect(parsed.unreadable).toBe(0);
-    expect(parsed.candidates).toHaveLength(5);
+    // Le bien publié seulement sur ParuVendu est facturé, puis écarté par la liste blanche.
+    expect(parsed.outsideWhitelist).toBe(1);
+    expect(parsed.candidates).toHaveLength(4);
   });
 
   it('fait de chaque bien un candidat, avec ses faits Stream Estate', () => {
@@ -141,7 +145,6 @@ describe('parseStreamEstateResponse', () => {
         onlineSince: '2026-09-21T16:53:52+02:00',
         lastSeenAt: '2026-09-28T17:24:40+02:00',
         priceDrops: [-4.45],
-        importable: true,
       },
       // Cette fixture ne porte ni position ni équipements : tout reste inconnu, donc neutre.
       features: {
@@ -166,9 +169,54 @@ describe('parseStreamEstateResponse', () => {
     expect(['www.bienici.com', 'immobilier.lefigaro.fr']).toContain(origin);
   });
 
-  it('dit qu’une annonce d’origine sur un site non relisible n’est pas importable', () => {
-    const paruvendu = parsed.candidates.find((c) => c.url.includes('paruvendu.fr'))!;
-    expect(paruvendu.streamEstate).toMatchObject({ originSite: 'paruvendu.fr', importable: false });
+  it('liste blanche : aucun bien sans annonce sur un site que l’extension relit', () => {
+    expect(parsed.candidates.some((c) => c.url.includes('paruvendu.fr'))).toBe(false);
+    for (const candidate of parsed.candidates) {
+      expect(isImportableUrl(candidate.url)).toBe(true);
+    }
+  });
+
+  it('sur une vraie réponse de 30 biens : 7 sans site relisible écartés, 23 admis', () => {
+    // 3 seulement sur ParuVendu, 4 seulement sur Superimmo ; les biens multi-sites restent.
+    const real = parseStreamEstateResponse(proximityFixture)!;
+    expect(real).toMatchObject({ billed: 30, outsideWhitelist: 7, unreadable: 0 });
+    expect(real.candidates).toHaveLength(23);
+    expect(real.candidates.every((c) => isImportableUrl(c.url))).toBe(true);
+  });
+
+  it('un bien Leboncoin + SeLoger est admis, avec SeLoger pour origine', () => {
+    const seloger = 'https://www.seloger.com/annonces/achat/appartement/nice-06/250123456.htm';
+    const property = {
+      ...fixture['hydra:member'][1],
+      uuid: 'lbc-seloger',
+      adverts: [
+        // Leboncoin vu plus récemment et en ligne : il ne devient pas l'origine pour autant.
+        {
+          url: 'https://www.leboncoin.fr/ad/ventes_immobilieres/3000000001',
+          expired: false,
+          lastCrawledAt: '2026-10-05T10:00:00+02:00',
+        },
+        { url: seloger, expired: false, lastCrawledAt: '2026-10-01T10:00:00+02:00' },
+      ],
+    };
+    const result = parseStreamEstateResponse({ 'hydra:member': [property] })!;
+    expect(result.outsideWhitelist).toBe(0);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0].url).toBe(seloger);
+    expect(result.candidates[0].streamEstate?.originSite).toBe('SeLoger');
+  });
+
+  it('un bien seulement sur Leboncoin est écarté et compté, pas « illisible »', () => {
+    const property = {
+      ...fixture['hydra:member'][1],
+      adverts: [{ url: 'https://www.leboncoin.fr/ad/ventes_immobilieres/3000000001' }],
+    };
+    expect(parseStreamEstateResponse({ 'hydra:member': [property] })).toMatchObject({
+      billed: 1,
+      outsideWhitelist: 1,
+      unreadable: 0,
+      candidates: [],
+    });
   });
 
   it('retire les marqueurs de suivi des adresses', () => {
@@ -186,7 +234,7 @@ describe('parseStreamEstateResponse', () => {
     const twice = { ...fixture, 'hydra:member': [...members, members[0]] };
     const result = parseStreamEstateResponse(twice)!;
     expect(result.billed).toBe(6);
-    expect(result.candidates).toHaveLength(5);
+    expect(result.candidates).toHaveLength(4);
   });
 
   it('compte, sans le deviner, un bien sans annonce exploitable', () => {
@@ -211,21 +259,21 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
     candidates: parsed.candidates,
   };
 
-  it('mêmes filtres que les portails : les 5 biens de la fixture sont admis', () => {
+  it('mêmes filtres que les portails : les 4 biens importables de la fixture sont admis', () => {
     const search = rankCandidates(NICE_4P, [portal], PREFS);
-    expect(search.ranked).toHaveLength(5);
+    expect(search.ranked).toHaveLength(4);
     expect(search.ranked.every((entry) => entry.portal === STREAM_ESTATE_SOURCE)).toBe(true);
     expect(search.ranked[0].portalLabel).toBe(STREAM_ESTATE_LABEL);
   });
 
   it('mêmes filtres : un bien hors fourchette n’entre pas', () => {
     const search = rankCandidates({ ...NICE_4P, advisorPriceMax: 440000 }, [portal], PREFS);
-    // 429 000 et 428 000 restent ; 457 000, 475 000 et 450 000 sortent.
+    // 429 000 et 428 000 restent ; 475 000 et 450 000 sortent (457 000, ParuVendu, n'est pas là).
     expect(search.ranked.map((entry) => entry.candidate.price).sort()).toEqual([428000, 429000]);
   });
 
   it('mêmes mentions : un bien admis grâce à l’élargissement de la surface le dit', () => {
-    // Bien vendeur de 77 m² : ±5 % = 73,15–80,85 m², seuls 77 et 79 m² entrent. Moins de 6 à
+    // Bien vendeur de 77 m² : ±5 % = 73,15–80,85 m², seul 79 m² entre. Moins de 6 à
     // chaque cran → dernier cran ; 72, 73 et 83,1 m² n'entrent que grâce à l'élargissement.
     const search = rankCandidates({ ...NICE_4P, surfaceArea: 77 }, [portal], PREFS);
     expect(search.loosening.surfaceLoosened).toBe(true);

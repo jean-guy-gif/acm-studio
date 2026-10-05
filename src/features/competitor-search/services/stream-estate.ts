@@ -25,9 +25,16 @@ export const STREAM_ESTATE_ENDPOINT = 'https://api.stream.estate/documents/prope
 export const STREAM_ESTATE_PAGE_SIZE = 30; // une seule page : l'API facture à l'annonce renvoyée
 const UPDATED_WITHIN_DAYS = 30; // mesure du 05/10 : à 30 jours, les totaux rejoignent SeLoger
 
-// Les sites que l'extension sait relire (copie de ALLOWED_HOST_SUFFIXES, extension/
-// page-readiness.js — un test vérifie qu'elles restent égales). Une annonce d'origine ailleurs
-// (leboncoin, paruvendu…) ne peut pas être relue : elle n'est pas importable.
+// LISTE BLANCHE (décision de Laurent, 05/10) : on ne garde que les biens IMPORTABLES, c'est-à-dire
+// ayant au moins une annonce sur un site que l'extension sait relire (copie de
+// ALLOWED_HOST_SUFFIXES, extension/page-readiness.js — un test vérifie qu'elles restent égales).
+// Un bien publié seulement ailleurs (leboncoin, paruvendu, logic-immo…) n'est pas proposé.
+//
+// La liste s'applique à la RÉPONSE, pas à la requête : l'API accepte un paramètre `includedSites[]`
+// mais ne publie pas ses identifiants de site (ni dans la doc, ni dans les annonces), et ni le nom
+// d'éditeur (« SL »), ni le domaine, ni le nom du portail ne sont reconnus (sondé le 05/10 : 0
+// résultat en inclusion, aucun effet en exclusion). Conséquence : les biens hors liste sont encore
+// renvoyés, donc facturés, puis écartés et comptés.
 export const IMPORTABLE_HOST_SUFFIXES = [
   'seloger.com',
   'bienici.com',
@@ -161,6 +168,8 @@ export type ParsedStreamEstateResponse = {
   totalItems: number | null;
   // Biens renvoyés mais illisibles (sans annonce exploitable) : comptés, jamais devinés.
   unreadable: number;
+  // Biens écartés par la liste blanche : aucune annonce sur un site que l'extension relit.
+  outsideWhitelist: number;
 };
 
 export function isImportableUrl(rawUrl: string): boolean {
@@ -190,16 +199,24 @@ function cleanAdvertUrl(rawUrl: string): string | null {
   }
 }
 
-// L'annonce d'ORIGINE : celle que l'import relira. Parmi les annonces encore en ligne d'abord,
-// une annonce relisible par l'extension d'abord, puis la plus récemment vue par le robot.
+// L'annonce d'ORIGINE : celle que l'import relira. SEULEMENT parmi les annonces sur un site de la
+// liste blanche (un bien Leboncoin + SeLoger a SeLoger pour origine) ; les annonces encore en
+// ligne d'abord, puis la plus récemment vue par le robot. Aucune → null : bien hors liste.
 export function pickOriginAdvert(adverts: StreamEstateAdvert[]): StreamEstateAdvert | null {
-  const usable = adverts.filter((advert) => cleanAdvertUrl(advert.url) != null);
-  if (usable.length === 0) return null;
-  const rank = (advert: StreamEstateAdvert): number =>
-    (advert.expired === true ? 0 : 2) + (isImportableUrl(advert.url) ? 1 : 0);
-  return [...usable].sort(
+  const importable = adverts.filter(
+    (advert) => cleanAdvertUrl(advert.url) != null && isImportableUrl(advert.url),
+  );
+  if (importable.length === 0) return null;
+  const rank = (advert: StreamEstateAdvert): number => (advert.expired === true ? 0 : 1);
+  return [...importable].sort(
     (a, b) => rank(b) - rank(a) || (b.lastCrawledAt ?? '').localeCompare(a.lastCrawledAt ?? ''),
   )[0];
+}
+
+// Le bien a-t-il au moins une annonce lisible ? Sinon il est illisible (compté à part de la liste
+// blanche : ce n'est pas le même motif).
+function hasUsableAdvert(property: StreamEstateProperty): boolean {
+  return property.adverts.some((advert) => cleanAdvertUrl(advert.url) != null);
 }
 
 // Les baisses de prix (events « price » à variation négative), dans l'ordre chronologique. Une
@@ -256,7 +273,6 @@ export function toCandidate(
       onlineSince: property.createdAt ?? null,
       lastSeenAt: origin.lastCrawledAt ?? property.lastCrawledAt ?? null,
       priceDrops: priceDrops(property.adverts),
-      importable: isImportableUrl(url),
     },
     features: readStreamEstateFeatures(property, repeated),
   };
@@ -280,7 +296,16 @@ export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResp
   const seen = new Set<string>();
   const candidates: CompetitorCandidate[] = [];
   let unreadable = 0;
+  let outsideWhitelist = 0;
   for (const property of properties) {
+    if (
+      property.success &&
+      hasUsableAdvert(property.data) &&
+      pickOriginAdvert(property.data.adverts) == null
+    ) {
+      outsideWhitelist += 1;
+      continue;
+    }
     const candidate = property.success ? toCandidate(property.data, repeated) : null;
     if (candidate == null) {
       unreadable += 1;
@@ -295,5 +320,6 @@ export function parseStreamEstateResponse(json: unknown): ParsedStreamEstateResp
     billed: members.length,
     totalItems: response.data['hydra:totalItems'] ?? null,
     unreadable,
+    outsideWhitelist,
   };
 }

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatFrenchDate,
-  notImportableReason,
   redirectedAwayFromListing,
   withdrawnReason,
 } from '@/features/competitor-search/services/stream-estate-import';
@@ -14,7 +13,6 @@ const FACTS: StreamEstateFacts = {
   onlineSince: '2026-09-21T16:53:52+02:00',
   lastSeenAt: '2026-10-02T23:30:00+02:00',
   priceDrops: [],
-  importable: true,
 };
 
 describe('redirectedAwayFromListing', () => {
@@ -52,12 +50,6 @@ describe('messages', () => {
   it('sans date de passage, le message ne l’invente pas', () => {
     expect(withdrawnReason({ ...FACTS, lastSeenAt: null })).toMatch(
       /^annonce retirée depuis le dernier passage de Stream Estate : /,
-    );
-  });
-
-  it('un site non relisible est nommé', () => {
-    expect(notImportableReason({ ...FACTS, originSite: 'paruvendu.fr' })).toMatch(
-      /sur paruvendu\.fr, que l’extension ne relit pas/,
     );
   });
 
