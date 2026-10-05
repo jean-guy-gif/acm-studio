@@ -455,7 +455,10 @@ describe('coordonnées de remplissage Stream Estate écartées', () => {
 
 describe('limite : les 10 premiers, puis « Voir les N autres »', () => {
   const parsed = parseStreamEstateResponse(proximityFixture, RECORDED_AT)!;
-  const ranked = rankCandidates(FLAT, [portalOf(parsed.candidates)], PREFS, {
+  // Ce bloc porte sur la limite d'affichage, pas sur le neuf : les biens neufs de la réponse y sont
+  // traités comme de l'ancien, pour garder plus de 10 annonces classées.
+  const asOld = parsed.candidates.map((candidate) => ({ ...candidate, isNewBuild: false }));
+  const ranked = rankCandidates(FLAT, [portalOf(asOld)], PREFS, {
     subjectLocation: JEAN_MEDECIN,
   }).ranked;
 

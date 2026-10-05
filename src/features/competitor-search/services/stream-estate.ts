@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import {
+  isGeneratedNewBuildTitle,
+  isNewBuildAddress,
+} from '@/features/competitor-search/services/new-build';
+import {
   readLocation,
   readStreamEstateFeatures,
   repeatedLocations,
@@ -127,6 +131,8 @@ const nullableString = z.string().nullable().optional();
 
 const advertSchema = z.object({
   url: z.string(),
+  // Titre de l'annonce sur son site : celui que SeLoger génère dit « Appartement neuf à vendre ».
+  title: nullableString,
   expired: z.boolean().nullable().optional(),
   lastCrawledAt: nullableString,
   // Étape 2 — champs structurés de l'annonce (ordre, jamais filtre).
@@ -187,6 +193,8 @@ export type ParsedStreamEstateResponse = {
   // Biens écartés car leurs annonces sur un site de la liste sont toutes expirées, ou pas revues
   // par le robot depuis plus de 7 jours : aucune annonce d'origine utilisable.
   expiredOrigin: number;
+  // Parmi les candidats, les biens NEUFS : gardés et marqués, tenus en réserve par le classement.
+  newBuild: number;
 };
 
 export function isImportableUrl(rawUrl: string): boolean {
@@ -267,6 +275,29 @@ export function priceDrops(adverts: StreamEstateAdvert[]): number[] {
   return drops.sort((a, b) => a.at.localeCompare(b.at)).map((drop) => drop.value);
 }
 
+// LE NEUF chez Stream Estate : l'API ne le marque pas. Mesure du 05/10 sur les réponses
+// enregistrées (136 biens distincts, 7 neufs vus) — repères STRUCTURELS seulement :
+// - le titre généré par SeLoger « Appartement neuf à vendre », sur le bien ou sur l'une de ses
+//   annonces (même expirée : c'est le bien qui est neuf) → 6 des 7, aucun faux positif (le titre
+//   Leboncoin « …refait à neuf… » n'est pas un titre généré) ;
+// - une année de construction POSTÉRIEURE à l'année en cours (2028 : livraison à venir) → 2 des 7,
+//   dont le seul que le titre ne voit pas (« Appartement à vendre », année 2028). L'année en cours
+//   ne suffit pas (une maison de 2026 à Levens n'est pas un programme) ;
+// - une adresse /programme/ ou /neuf/ → 0 des 7 (SeLoger publie le neuf sous /annonce/achat/),
+//   gardé pour les autres sites.
+// L'éditeur ne distingue pas : « SL », type pro, contact « Agence professionnelle » pour 16 annonces
+// neuves comme pour 64 de l'ancien. La description n'est JAMAIS lue.
+export function isStreamEstateNewBuild(property: StreamEstateProperty, now: Date): boolean {
+  if (isGeneratedNewBuildTitle(property.title)) return true;
+  const year = now.getFullYear();
+  return property.adverts.some(
+    (advert) =>
+      isGeneratedNewBuildTitle(advert.title) ||
+      isNewBuildAddress(advert.url) ||
+      (advert.constructionYear != null && advert.constructionYear > year),
+  );
+}
+
 const positive = (value: number | null | undefined): number | null =>
   value != null && value > 0 ? value : null;
 
@@ -296,7 +327,7 @@ export function toCandidate(
     landArea: positive(property.landSurface),
     city: property.city?.name?.trim() || null,
     photoUrls: (property.pictures ?? []).filter((picture) => picture.startsWith('https://')),
-    isNewBuild: false,
+    isNewBuild: isStreamEstateNewBuild(property, now),
     streamEstate: {
       propertyId: property.uuid,
       originSite: detectSource(host),
@@ -354,6 +385,7 @@ export function parseStreamEstateResponse(
   }
   return {
     candidates,
+    newBuild: candidates.filter((candidate) => candidate.isNewBuild).length,
     billed: members.length,
     totalItems: response.data['hydra:totalItems'] ?? null,
     unreadable,

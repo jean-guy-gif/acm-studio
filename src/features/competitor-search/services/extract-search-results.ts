@@ -12,6 +12,7 @@ import {
   studioRoomsCount,
 } from '@/features/comparable-import/utils/normalize-count';
 import { normalizePrice } from '@/features/comparable-import/utils/normalize-price';
+import { isNewBuildAddress } from '@/features/competitor-search/services/new-build';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 
 // MISSION 50 — lecture d'une page de RÉSULTATS de recherche.
@@ -363,13 +364,15 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
   const title = attr(link, 'title');
   const url = absolute(href, pageUrl) ?? pageUrl;
   // Le titre porte tout : « Appartement à vendre - Nice - 249 000 € - 2 pièces, 41 m², Étage 1/3 ».
-  const parts = (title ?? '').split(/\s+-\s+/);
+  // Le neuf y ajoute un SEGMENT « neuf » (« Appartement à vendre - neuf - Nice - … ») : c'est ce
+  // segment qui le marque (jamais le mot « neuf » ailleurs dans le titre), et la commune vient
+  // après lui.
+  const allParts = (title ?? '').split(/\s+-\s+/);
+  const newBuildSegment = allParts.some((part) => /^neu(?:f|ve)s?$/i.test(part.trim()));
+  const parts = allParts.filter((part) => !/^neu(?:f|ve)s?$/i.test(part.trim()));
   const city = titleCaseCity(parts[1] ?? null);
   const priceText = title;
-  const isNewBuild =
-    /\bneufs?\b/i.test(title ?? '') ||
-    /selogerneuf\.com/i.test(href ?? '') ||
-    looksLikePriceRange(title ?? '');
+  const isNewBuild = newBuildSegment || isNewBuildAddress(url) || looksLikePriceRange(title ?? '');
   return {
     key,
     url,
@@ -400,7 +403,7 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
   const alt = firstGroup(chunk, /<img[^>]*\balt="([^"]+)"/i);
   // Ville lue sur le chemin de l'annonce : /annonce/vente/<ville>/… .
   const city = titleCaseCity(href?.match(/\/annonce\/[a-z]+\/([a-z0-9'’-]+)\//i)?.[1] ?? null);
-  const isNewBuild = /\/programme\//i.test(href ?? '') || looksLikePriceRange(priceText ?? '');
+  const isNewBuild = isNewBuildAddress(url) || looksLikePriceRange(priceText ?? '');
   return {
     key,
     url,
@@ -484,7 +487,8 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
     landArea: readLandArea(tags.get('terrain') ?? null),
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
-    isNewBuild: false,
+    // Le neuf a son segment d'adresse : /properties/neuf/<commune>/… .
+    isNewBuild: isNewBuildAddress(url),
   };
 }
 
@@ -518,7 +522,8 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     landArea: null,
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
-    isNewBuild: false,
+    // Le libellé de carte que M&A génère pour le neuf : « Immobilier neuf - Appartement à vendre… ».
+    isNewBuild: /^\s*immobilier\s+neu(?:f|ve)s?\s+-/i.test(alt ?? ''),
   };
 }
 
@@ -564,7 +569,7 @@ const READERS: Record<
 };
 
 // Lit TOUTES les cartes de la page, par marqueur. Le nombre renvoyé est le nombre de
-// cartes réelles (30 · 26 · 24 · 17) — l'écartement du neuf et la déduplication sont
+// cartes réelles (30 · 26 · 24 · 17) — le compte du neuf et la déduplication sont
 // une étape séparée (filterAndDedupeCandidates), pour que « cartes lues » reste
 // vérifiable indépendamment de ce qu'on retient.
 export function extractSearchResults(
@@ -578,7 +583,7 @@ export function extractSearchResults(
   return cards.map((card) => reader.read(card, pageUrl));
 }
 
-// Écarte le neuf (§6) puis déduplique par IDENTITÉ PUBLIÉE (mission 61 §2-C) : la clé de
+// Compte le neuf puis déduplique par IDENTITÉ PUBLIÉE (mission 61 §2-C) : la clé de
 // l'annonce quand le portail en publie une (id SeLoger, data-id Bien'ici, data-advertid Green
 // Acres, IdAnnonce M&A), l'adresse sinon. Première occurrence gardée, écartées comptées.
 //
@@ -588,25 +593,26 @@ export function extractSearchResults(
 // M&A retombaient sur la même adresse et 16 passaient pour des doublons. La clé publiée, elle,
 // reste distincte même quand l'adresse ne l'est pas. Cette fonction reçoit les cartes d'UN
 // portail : la clé y suffit pour l'identité (le portail est implicite).
+//
+// Le neuf n'est plus écarté ICI (règle de Laurent, 05/10) : il est gardé, marqué `isNewBuild`, et
+// c'est le classement qui le tient en réserve — il n'apparaît qu'en complément, sous 3 concurrents
+// admis dans l'ancien après le desserrage complet (rankCandidates).
 export function filterAndDedupeCandidates(candidates: CompetitorCandidate[]): SearchExtraction {
-  let excludedNewBuild = 0;
+  let newBuild = 0;
   let excludedDuplicates = 0;
   const kept: CompetitorCandidate[] = [];
   const seen = new Set<string>();
 
   for (const candidate of candidates) {
-    if (candidate.isNewBuild) {
-      excludedNewBuild += 1;
-      continue;
-    }
     const identity = candidate.key ?? candidate.url;
     if (seen.has(identity)) {
       excludedDuplicates += 1;
       continue;
     }
     seen.add(identity);
+    if (candidate.isNewBuild) newBuild += 1;
     kept.push(candidate);
   }
 
-  return { candidates: kept, excludedNewBuild, excludedDuplicates };
+  return { candidates: kept, newBuild, excludedDuplicates };
 }

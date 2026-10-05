@@ -88,7 +88,7 @@ export type CandidateFeatures = {
 // MISSION 50 : la carte porte assez pour classer, aucune fiche n'est ouverte. La
 // `key` est l'identifiant publié PAR LE PORTAIL (jamais une référence d'agence,
 // mission 47 §3) ; elle sert d'identité stable et de base de déduplication. Le neuf
-// est écarté (§6) mais on garde le drapeau pour le journaliser sans mentir.
+// est marqué : le classement le tient en réserve et ne l'ajoute qu'en complément (règle du 05/10).
 export type CompetitorCandidate = {
   // Identifiant publié par le portail : id SeLoger, data-id Bien'ici,
   // data-advertid Green Acres, id M&A. null seulement si la carte n'en porte pas.
@@ -113,8 +113,9 @@ export type CompetitorCandidate = {
   // TOUTES les photos portées par la carte (filtrées : hors logos, habillage, ≤160 px),
   // dans l'ordre — pour défiler sur place. Vide si la carte n'en porte aucune.
   photoUrls: string[];
-  // Programme neuf reconnu à la STRUCTURE (titre « neuf », segment /programme/,
-  // fourchette de prix, domaine selogerneuf.com). Écarté du classement, journalisé.
+  // Neuf reconnu à la STRUCTURE, jamais à la description (services/new-build.ts) : adresse
+  // /programme/ ou /neuf/, titre généré par le portail, fourchette de prix, année de construction
+  // à venir (Stream Estate). Tenu en réserve par le classement : complément sous 3 seulement.
   isNewBuild: boolean;
   // Essai Stream Estate — présent seulement pour un bien venu de l'API.
   streamEstate?: StreamEstateFacts;
@@ -138,7 +139,7 @@ export type StreamEstateFacts = {
 // compte de ce qui a été écarté, pour le dire au conseiller sans rien cacher.
 export type SearchExtraction = {
   candidates: CompetitorCandidate[];
-  excludedNewBuild: number;
+  newBuild: number; // biens neufs gardés (marqués), tenus en réserve par le classement
   excludedDuplicates: number;
 };
 
@@ -183,6 +184,9 @@ export type RankedCandidate = {
   // DIT (desserrage visible, correction de la M50 §3). false si admissible aux bornes serrées.
   loosenedSurface: boolean;
   loosenedRooms: boolean;
+  // Bien neuf ajouté en complément, faute de 3 concurrents admis dans l'ancien après le
+  // desserrage complet. Sa carte porte NEW_BUILD_COMPLEMENT_MENTION.
+  newBuildComplement: boolean;
   // Étape 2 — l'ordre « les plus proches » et sa justification, critère par critère.
   proximity: ProximityAssessment;
 };
@@ -241,7 +245,9 @@ export type RankedSearch = {
   ranked: RankedCandidate[];
   loosening: Loosening;
   excludedForMissing: ExcludedForMissing;
-  belowMinimum: boolean; // < MINIMUM admissibles même après le dernier cran
+  belowMinimum: boolean; // < MINIMUM admissibles même après le dernier cran (neuf ajouté compris)
+  // Biens neufs reçus et NON proposés (l'ancien suffisait, ou hors bornes, ou au-delà du complément).
+  newBuildHeld: number;
   target: number; // cible de candidats (6)
   minimum: number; // plancher en dessous duquel l'écran le dit (3)
 };

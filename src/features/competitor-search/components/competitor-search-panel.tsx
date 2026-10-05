@@ -81,6 +81,9 @@ type Admissibility = {
   target: number;
   minimum: number;
   rankedCount: number;
+  // Le neuf : ajouté en complément (sous 3 dans l'ancien) ou tenu en réserve.
+  newBuildAdded: number;
+  newBuildHeld: number;
 };
 
 // Mission 65 — le portail d'un onglet ouvert, pour que le conseiller choisisse en lisant
@@ -133,6 +136,7 @@ type StreamEstateNote = {
   unreadable: number;
   outsideWhitelist: number;
   expiredOrigin: number;
+  newBuild: number;
   communeName: string;
   inseeCode: string;
   kept: number;
@@ -492,6 +496,8 @@ export function CompetitorSearchPanel({
         target: rank.target,
         minimum: rank.minimum,
         rankedCount: rank.ranked.length,
+        newBuildAdded: rank.ranked.filter((entry) => entry.newBuildComplement).length,
+        newBuildHeld: rank.newBuildHeld,
       });
       setLearnedNotes(rank.learnedNotes);
       setSector(rank.sector);
@@ -593,6 +599,7 @@ export function CompetitorSearchPanel({
         unreadable: result.unreadable,
         outsideWhitelist: result.outsideWhitelist,
         expiredOrigin: result.expiredOrigin,
+        newBuild: result.newBuild,
         communeName: result.communeName,
         inseeCode: result.inseeCode,
         kept: rank.ok
@@ -606,7 +613,7 @@ export function CompetitorSearchPanel({
 
   // Mission 65 — une page de résultats filtrée PAR LE CONSEILLER (onglet lu par l'extension,
   // ou code collé) suit le même chemin que la recherche automatique : lecture des cartes,
-  // neuf et doublons écartés, puis classement serveur avec les quatre filtres (M61). Elle
+  // doublons écartés (le neuf est tenu en réserve par le classement), puis classement serveur avec les quatre filtres (M61). Elle
   // remplace le résultat du même portail et laisse les autres en place.
   async function integrateSearchPage(html: string, pageUrl: string | null) {
     const read = readSearchPage(html, pageUrl);
@@ -626,8 +633,8 @@ export function CompetitorSearchPanel({
     setSearchLinks(prep.links);
     setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
     const excluded = [
-      read.excludedNewBuild > 0
-        ? plural(read.excludedNewBuild, 'programme neuf écarté', 'programmes neufs écartés')
+      read.newBuild > 0
+        ? `${plural(read.newBuild, 'bien neuf', 'biens neufs')} : proposé${read.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien`
         : null,
       read.excludedDuplicates > 0
         ? plural(read.excludedDuplicates, 'doublon écarté', 'doublons écartés')
@@ -1154,6 +1161,9 @@ export function CompetitorSearchPanel({
             {streamNote.unreadable > 0
               ? ` ${plural(streamNote.unreadable, 'bien illisible écarté', 'biens illisibles écartés')} (sans annonce exploitable).`
               : ''}
+            {streamNote.newBuild > 0
+              ? ` ${plural(streamNote.newBuild, 'bien neuf reçu', 'biens neufs reçus')} : proposé${streamNote.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien.`
+              : ''}
           </p>
         </div>
       ) : null}
@@ -1294,7 +1304,9 @@ export function CompetitorSearchPanel({
             if (
               loosenParts.length === 0 &&
               excludedLines.length === 0 &&
-              !admissibility.belowMinimum
+              !admissibility.belowMinimum &&
+              admissibility.newBuildAdded === 0 &&
+              admissibility.newBuildHeld === 0
             )
               return null;
             return (
@@ -1314,6 +1326,24 @@ export function CompetitorSearchPanel({
                 ) : null}
                 {excludedLines.length > 0 ? (
                   <p>Écartées faute d’une donnée nécessaire : {excludedLines.join(' · ')}.</p>
+                ) : null}
+                {admissibility.newBuildAdded > 0 ? (
+                  <p>
+                    {plural(admissibility.newBuildAdded, 'bien neuf ajouté', 'biens neufs ajoutés')}{' '}
+                    en fin de liste, faute de 3 concurrents dans l’ancien même après le dernier cran
+                    d’élargissement.
+                  </p>
+                ) : null}
+                {admissibility.newBuildHeld > 0 ? (
+                  <p>
+                    {plural(
+                      admissibility.newBuildHeld,
+                      'bien neuf non proposé',
+                      'biens neufs non proposés',
+                    )}{' '}
+                    : le neuf ne vient qu’en complément, quand il reste moins de 3 concurrents dans
+                    l’ancien.
+                  </p>
                 ) : null}
               </div>
             );

@@ -27,8 +27,9 @@ export const VISIBLE_CANDIDATES = 10;
 export const PRESELECTED_CANDIDATES = 5;
 
 // Les 10 premiers sont montrés, les autres attendent derrière « Voir les N autres » — dans le même
-// ordre, rien n'est supprimé. `preselected` = les 5 premiers des montrés.
-export function splitVisible<T>(
+// ordre, rien n'est supprimé. `preselected` = les 5 premiers des montrés, HORS neuf ajouté en
+// complément : le conseiller le coche lui-même s'il le retient (pas de neuf par défaut).
+export function splitVisible<T extends { newBuildComplement?: boolean }>(
   ordered: T[],
   limit: number = VISIBLE_CANDIDATES,
 ): { shown: T[]; others: T[]; preselected: T[] } {
@@ -36,7 +37,9 @@ export function splitVisible<T>(
   return {
     shown,
     others: ordered.slice(limit),
-    preselected: shown.slice(0, PRESELECTED_CANDIDATES),
+    preselected: shown
+      .slice(0, PRESELECTED_CANDIDATES)
+      .filter((entry) => entry.newBuildComplement !== true),
   };
 }
 

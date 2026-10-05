@@ -27,9 +27,10 @@ export type SearchPageRead =
   | {
       ok: true;
       portal: PortalSearchResult<SearchPortal>;
-      // Cartes réellement lues sur la page, avant d'écarter le neuf et les doublons.
+      // Cartes réellement lues sur la page, avant d'écarter les doublons.
       cardsRead: number;
-      excludedNewBuild: number;
+      // Biens neufs gardés et marqués : le classement les tient en réserve (complément sous 3).
+      newBuild: number;
       excludedDuplicates: number;
     }
   // `unknown_portal` : ni l'adresse ni le code ne désignent un portail lisible.
@@ -66,7 +67,7 @@ export function readSearchPage(html: string, pageUrl: string | null): SearchPage
   }
   const searchUrl = pageUrl ?? PORTAL_ORIGINS[portal];
   const cards = extractSearchResults(html, searchUrl, portal);
-  const { candidates, excludedNewBuild, excludedDuplicates } = filterAndDedupeCandidates(cards);
+  const { candidates, newBuild, excludedDuplicates } = filterAndDedupeCandidates(cards);
   if (candidates.length === 0) {
     return { ok: false, reason: 'no_cards' };
   }
@@ -81,7 +82,7 @@ export function readSearchPage(html: string, pageUrl: string | null): SearchPage
       candidates,
     },
     cardsRead: cards.length,
-    excludedNewBuild,
+    newBuild,
     excludedDuplicates,
   };
 }

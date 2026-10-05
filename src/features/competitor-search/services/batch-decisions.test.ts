@@ -26,6 +26,13 @@ const CRITERIA: CompetitorSearchCriteria = {
   advisorPriceMax: 480000,
 };
 
+// Ce test porte sur la validation en lot, pas sur le neuf : les biens neufs de la réponse y sont
+// traités comme de l'ancien, pour garder plus de 10 annonces classées (« Voir les N autres »).
+const candidates = parseStreamEstateResponse(
+  fixture,
+  new Date('2026-10-05T13:16:18Z'),
+)!.candidates.map((candidate) => ({ ...candidate, isNewBuild: false }));
+
 const ranked = rankCandidates(
   CRITERIA,
   [
@@ -35,7 +42,7 @@ const ranked = rankCandidates(
       searchUrl: '',
       status: 'ok',
       message: null,
-      candidates: parseStreamEstateResponse(fixture, new Date('2026-10-05T13:16:18Z'))!.candidates,
+      candidates,
     },
   ],
   learnFromDecisions([]),

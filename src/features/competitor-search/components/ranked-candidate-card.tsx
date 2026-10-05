@@ -17,6 +17,7 @@ import {
   DECISION_REASON_LABELS,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
+import { NEW_BUILD_COMPLEMENT_MENTION } from '@/features/competitor-search/services/new-build';
 import { formatFrenchDate } from '@/features/competitor-search/services/stream-estate-import';
 import type {
   ProximityReason,
@@ -212,6 +213,13 @@ export function RankedCandidateCard({
         {ranked.alreadyJudged ? (
           <span className={ranked.alreadyJudged === 'accepted' ? badgeBrand : badgeRejected}>
             {ranked.alreadyJudged === 'accepted' ? 'Déjà retenu' : 'Déjà écarté'}
+          </span>
+        ) : null}
+
+        {/* Le neuf n'est proposé qu'en complément, sous 3 concurrents dans l'ancien : il le DIT. */}
+        {ranked.newBuildComplement ? (
+          <span className="inline-flex w-fit rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            {NEW_BUILD_COMPLEMENT_MENTION}
           </span>
         ) : null}
 

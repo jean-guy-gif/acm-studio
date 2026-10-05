@@ -27,6 +27,7 @@ export type StreamEstateSearchResult =
       unreadable: number;
       outsideWhitelist: number; // biens sans annonce sur un site que l'extension relit
       expiredOrigin: number; // biens dont l'annonce d'origine est expirée ou plus revue (7 jours)
+      newBuild: number; // biens neufs parmi les candidats, tenus en réserve par le classement
       communeName: string;
       inseeCode: string;
     }
@@ -145,6 +146,7 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     unreadable: parsed.unreadable,
     outsideWhitelist: parsed.outsideWhitelist,
     expiredOrigin: parsed.expiredOrigin,
+    newBuild: parsed.newBuild,
     communeName: commune.name,
     inseeCode: commune.code,
   };

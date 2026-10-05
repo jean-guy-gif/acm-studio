@@ -30,6 +30,11 @@ import type {
 // jamais moins de ±3 m² (mission 68) ;
 // commune = `candidate.city` doit être la commune recherchée (garde-fou contre les portails qui
 // élargissent d'eux-mêmes).
+//
+// LE NEUF (règle de Laurent, 05/10) : PAS DE NEUF. Les biens marqués `isNewBuild` ne comptent pas
+// pour choisir le cran et ne sont pas proposés — SAUF si, après le desserrage complet, il reste
+// moins de 3 concurrents admis dans l'ancien : on complète alors avec les biens neufs admis aux
+// mêmes bornes, les plus proches d'abord, jusqu'à 3 au plus. Chacun le dit sur sa carte.
 
 const TARGET = 6; // on vise 6 candidats ; en dessous, on desserre d'un cran.
 const MINIMUM = 3; // sous ce plancher après le dernier cran, l'écran le dit et ne complète pas.
@@ -163,11 +168,15 @@ export function rankCandidates(
     }
   }
 
+  // Le neuf est mis de côté AVANT tout : il ne pèse ni sur le choix du cran, ni sur les comptes.
+  const oldPool = pool.filter((entry) => !entry.candidate.isNewBuild);
+  const newBuildPool = pool.filter((entry) => entry.candidate.isNewBuild);
+
   // Choisir le premier cran qui atteint la cible ; sinon le dernier (STOP).
   let chosen = LEVELS[0];
   for (const level of LEVELS) {
     chosen = level;
-    const count = pool.filter(
+    const count = oldPool.filter(
       (p) => admit(criteria, p.candidate, level, prices, refCity).ok,
     ).length;
     if (count >= TARGET) break;
@@ -175,7 +184,7 @@ export function rankCandidates(
 
   const excludedForMissing: ExcludedForMissing = { surface: 0, rooms: 0, price: 0 };
   const admitted: PoolEntry[] = [];
-  for (const entry of pool) {
+  for (const entry of oldPool) {
     const verdict = admit(criteria, entry.candidate, chosen, prices, refCity);
     if (verdict.ok) {
       admitted.push(entry);
@@ -193,7 +202,7 @@ export function rankCandidates(
     chosen.roomsTol > 0 &&
     !admit(criteria, c, { surfaceTol: chosen.surfaceTol, roomsTol: 0 }, prices, refCity).ok;
 
-  const ranked: RankedCandidate[] = admitted.map((entry) => {
+  const toRanked = (entry: PoolEntry, newBuildComplement: boolean): RankedCandidate => {
     const facts = {
       price: entry.candidate.price,
       surfaceArea: entry.candidate.surfaceArea,
@@ -222,6 +231,7 @@ export function rankCandidates(
       alreadyJudged: adjusted.alreadyJudged,
       loosenedSurface: neededSurface(entry.candidate),
       loosenedRooms: neededRooms(entry.candidate),
+      newBuildComplement,
       proximity: assessProximity(
         criteria,
         entry.candidate,
@@ -229,16 +239,31 @@ export function rankCandidates(
         subjectType,
       ),
     };
-  });
+  };
 
   // Étape 2 — « les plus proches » : déjà tranchés derrière, puis niveau 1, puis niveau 2 (le
   // niveau 1 prime toujours). Le score (critères secondaires et apprentissage) ne départage plus
   // qu'à égalité parfaite des deux niveaux. Les filtres, eux, n'ont pas bougé.
-  ranked.sort((a, b) => {
+  const closestFirst = (a: RankedCandidate, b: RankedCandidate): number => {
     const judgedA = a.alreadyJudged == null ? 0 : 1;
     const judgedB = b.alreadyJudged == null ? 0 : 1;
     return judgedA - judgedB || compareProximity(a.proximity, b.proximity) || b.score - a.score;
-  });
+  };
+  const ranked = admitted.map((entry) => toRanked(entry, false)).sort(closestFirst);
+
+  // Le complément neuf. Moins de 3 dans l'ancien implique que le cran choisi est le DERNIER (on ne
+  // s'arrête avant que si la cible de 6 est atteinte) : le desserrage est complet. Le neuf passe
+  // les mêmes bornes, et vient APRÈS l'ancien.
+  let newBuildAdded = 0;
+  if (ranked.length < MINIMUM) {
+    const complement = newBuildPool
+      .filter((entry) => admit(criteria, entry.candidate, chosen, prices, refCity).ok)
+      .map((entry) => toRanked(entry, true))
+      .sort(closestFirst)
+      .slice(0, MINIMUM - ranked.length);
+    newBuildAdded = complement.length;
+    ranked.push(...complement);
+  }
 
   // Mission 68 — le plancher l'emporte-t-il sur le pourcentage au cran retenu ? Si oui, c'est lui
   // la tolérance réelle, et l'écran doit dire « ±3 m² » plutôt qu'un pourcentage qui n'a pas servi.
@@ -260,6 +285,7 @@ export function rankCandidates(
     loosening,
     excludedForMissing,
     belowMinimum: ranked.length < MINIMUM,
+    newBuildHeld: newBuildPool.length - newBuildAdded,
     target: TARGET,
     minimum: MINIMUM,
   };

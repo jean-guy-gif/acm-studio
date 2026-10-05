@@ -256,17 +256,39 @@ describe('extractSearchResults — la vignette n’est jamais un logo d’agence
   });
 });
 
-// §11.3 — les programmes neufs sont écartés, y compris à fourchette de prix.
-describe('filterAndDedupeCandidates — le neuf est écarté', () => {
-  it('SeLoger : au moins un programme neuf figure et est écarté', () => {
+// Le neuf est reconnu à la structure de la carte, puis GARDÉ et marqué : c'est le classement qui
+// le tient en réserve (complément sous 3 seulement, règle du 05/10).
+describe('filterAndDedupeCandidates — le neuf est marqué, gardé pour le classement', () => {
+  it('SeLoger : le programme neuf (segment « neuf », selogerneuf.com) est marqué et gardé', () => {
     const cards = load('seloger');
-    expect(cards.some((c) => c.isNewBuild)).toBe(true);
-    const { candidates, excludedNewBuild } = filterAndDedupeCandidates(cards);
-    expect(excludedNewBuild).toBeGreaterThanOrEqual(1);
-    expect(candidates.every((c) => !c.isNewBuild)).toBe(true);
+    const newBuild = cards.filter((c) => c.isNewBuild);
+    expect(newBuild).toHaveLength(1);
+    // Le segment « neuf » du titre n'est pas la commune.
+    expect(newBuild[0].city).toBe('Nice');
+    const { candidates, newBuild: count } = filterAndDedupeCandidates(cards);
+    expect(count).toBe(1);
+    expect(candidates.filter((c) => c.isNewBuild)).toHaveLength(1);
   });
 
-  it('Bien’ici : /programme/ et fourchette de prix sont écartés', () => {
+  it('Green Acres : /properties/neuf/ marque le neuf', () => {
+    const cards = extractSearchResults(
+      readFileSync(join(DIR, 'filtre/green-acres.html'), 'utf8'),
+      'https://www.green-acres.fr/fr/prog_show_properties.html',
+      'green_acres',
+    );
+    const newBuild = cards.filter((c) => c.isNewBuild);
+    expect(newBuild.map((c) => new URL(c.url).pathname.split('/')[3])).toEqual(['neuf', 'neuf']);
+    expect(cards.filter((c) => !c.isNewBuild).every((c) => !c.url.includes('/neuf/'))).toBe(true);
+  });
+
+  it('Maisons et Appartements : le libellé « Immobilier neuf - … » marque le neuf', () => {
+    const cards = load('maisons_appartements');
+    const newBuild = cards.filter((c) => c.isNewBuild);
+    expect(newBuild).toHaveLength(2);
+    expect(newBuild.every((c) => c.title!.startsWith('Immobilier neuf - '))).toBe(true);
+  });
+
+  it('Bien’ici : /programme/ et fourchette de prix marquent le neuf', () => {
     const cards = extractSearchResults(
       [
         // Programme neuf : segment /programme/ dans l'adresse + fourchette de prix.
@@ -284,10 +306,12 @@ describe('filterAndDedupeCandidates — le neuf est écarté', () => {
     );
     expect(cards[0].isNewBuild).toBe(true);
     expect(cards[1].isNewBuild).toBe(false);
-    const { candidates, excludedNewBuild } = filterAndDedupeCandidates(cards);
-    expect(excludedNewBuild).toBe(1);
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0].key).toBe('iad-2');
+    const { candidates, newBuild } = filterAndDedupeCandidates(cards);
+    expect(newBuild).toBe(1);
+    expect(candidates.map((c) => [c.key, c.isNewBuild])).toEqual([
+      ['mgc-1', true],
+      ['iad-2', false],
+    ]);
   });
 });
 
