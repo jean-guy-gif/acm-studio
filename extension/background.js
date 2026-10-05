@@ -2,7 +2,9 @@
 // ACM Studio extension — service worker (Manifest V3).
 //
 // Three functions, nothing else : ping, fetchRobots, fetchPage — plus, mission 65,
-// readOpenTab (lit un onglet DÉJÀ ouvert par le conseiller, sans rien charger). The extension
+// readOpenTab (lit un onglet DÉJÀ ouvert par le conseiller, sans rien charger), et mission 69,
+// openSearchTabs (ouvre des onglets VISIBLES de recherche filtrée) et readSearchTabs (lit tous les
+// onglets de recherche, chacun activé le temps de se construire). The extension
 // N'ANALYSE RIEN — elle rapporte du texte, l'application l'analyse. Rien n'est
 // stocké, rien n'est renvoyé ailleurs qu'à la page qui a appelé.
 //
@@ -23,6 +25,8 @@ import {
   isSearchTabUrl,
   isStableSize,
   isWaitingShell,
+  listSearchTabs,
+  urlsToOpen,
 } from './page-readiness.js';
 
 const VERSION = chrome.runtime.getManifest().version;
@@ -336,6 +340,101 @@ async function readOpenTab(tabId) {
   }
 }
 
+// MISSION 69 — « Ouvrir mes recherches ». C'est l'extension qui ouvre les onglets : plusieurs
+// window.open sur un clic seraient bloqués par Chrome. Les onglets sont VISIBLES, dans la fenêtre
+// du conseiller (à côté d'ACM) : il peut corriger un filtre sur le portail avant de lire. Ils
+// s'ouvrent sans prendre le focus (ACM reste affiché) ; un onglet déjà ouvert sur la même adresse
+// n'est pas dupliqué. Seules des adresses de recherche des portails lisibles passent.
+async function openSearchTabs(urls, requestWindowId) {
+  try {
+    const openTabs = await chrome.tabs.query({ url: SEARCH_TAB_PATTERNS });
+    const toOpen = urlsToOpen(urls, openTabs);
+    for (const url of toOpen) {
+      await chrome.tabs.create({
+        url,
+        active: false,
+        ...(requestWindowId != null ? { windowId: requestWindowId } : {}),
+      });
+      log(`onglet de recherche ouvert ${url}`);
+    }
+    return { ok: true, opened: toOpen.length };
+  } catch (error) {
+    const message =
+      error && error.message ? String(error.message) : 'Ouverture des onglets échouée.';
+    log(`erreur ouverture des onglets : ${message}`);
+    return { ok: false, error: message };
+  }
+}
+
+// MISSION 69 — « Lire mes recherches » : TOUS les onglets de recherche, d'un coup. Chrome ne
+// construit pas la page d'un onglet que personne n'a regardé (Bien'ici : écran d'attente sans fin,
+// vérifié le 05/10). Avant de lire un onglet, on l'ACTIVE, on attend que la page soit construite
+// (même attente que la mission 46 : taille stable ET pas une coquille, plafond 15 s), on lit, puis
+// on revient à ACM. Un onglet resté sur l'écran d'attente n'est PAS lu comme une page vide :
+// il revient en `waiting`, et l'écran demande de cliquer une fois dessus.
+async function readSearchTabs(requestTab) {
+  const results = [];
+  try {
+    const tabs = listSearchTabs(await chrome.tabs.query({ url: SEARCH_TAB_PATTERNS }));
+    if (tabs.length === 0) {
+      log('lecture des onglets : aucun onglet de recherche ouvert');
+      return { ok: false, reason: 'none', error: NO_SEARCH_TAB };
+    }
+    log(`lecture des onglets : ${tabs.length} onglets de recherche`);
+    for (const tab of tabs) {
+      const base = { tabId: tab.tabId, url: tab.url, title: tab.title };
+      try {
+        await chrome.tabs.update(tab.tabId, { active: true });
+        if (requestTab && tab.windowId != null && tab.windowId !== requestTab.windowId) {
+          await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        const state = await waitForStableSize(tab.tabId, Date.now());
+        if (isWaitingShell(state)) {
+          log(`onglet ${tab.tabId} resté sur l'écran d'attente (taille=${state.size})`);
+          results.push({ ...base, ok: false, reason: 'waiting' });
+          continue;
+        }
+        const [{ result } = {}] = await chrome.scripting.executeScript({
+          target: { tabId: tab.tabId },
+          func: () => ({
+            html: document.documentElement.outerHTML,
+            finalUrl: location.href,
+            title: document.title,
+          }),
+        });
+        if (!result || typeof result.html !== 'string' || result.html === '') {
+          results.push({ ...base, ok: false, reason: 'error' });
+          continue;
+        }
+        log(`onglet lu (tab=${tab.tabId}) : ${result.html.length} caractères ${result.finalUrl}`);
+        results.push({
+          ...base,
+          ok: true,
+          html: result.html,
+          finalUrl: result.finalUrl,
+          title: result.title || tab.title,
+        });
+      } catch (error) {
+        log(`erreur lecture onglet ${tab.tabId} : ${error && error.message}`);
+        results.push({ ...base, ok: false, reason: 'error' });
+      }
+    }
+    return { ok: true, kind: 'pages', pages: results };
+  } catch (error) {
+    const message = error && error.message ? String(error.message) : 'Lecture des onglets échouée.';
+    log(`erreur lecture des onglets : ${message}`);
+    return { ok: false, reason: 'error', error: message };
+  } finally {
+    // Retour à ACM, toujours — même après une erreur.
+    if (requestTab && requestTab.id != null) {
+      await chrome.tabs.update(requestTab.id, { active: true }).catch(() => {});
+      if (requestTab.windowId != null) {
+        await chrome.windows.update(requestTab.windowId, { focused: true }).catch(() => {});
+      }
+    }
+  }
+}
+
 // One handler for the content-script relay (onMessage) and a direct
 // externally_connectable call (onMessageExternal). Both answer asynchronously.
 function handle(message, sender, sendResponse) {
@@ -376,6 +475,15 @@ function handle(message, sender, sendResponse) {
   // Mission 65 — lire un onglet déjà ouvert (tabId = le choix du conseiller, s'il y en a un).
   if (message.kind === 'readOpenTab') {
     readOpenTab(typeof message.tabId === 'number' ? message.tabId : undefined).then(sendResponse);
+    return true;
+  }
+  // Mission 69 — ouvrir les recherches filtrées, puis les lire toutes.
+  if (message.kind === 'openSearchTabs' && Array.isArray(message.urls)) {
+    openSearchTabs(message.urls, requestWindowId).then(sendResponse);
+    return true;
+  }
+  if (message.kind === 'readSearchTabs') {
+    readSearchTabs(sender && sender.tab ? sender.tab : undefined).then(sendResponse);
     return true;
   }
   sendResponse({ ok: false, error: 'Action inconnue.' });

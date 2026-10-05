@@ -80,6 +80,8 @@ import {
   previewUpdatePropertyPhotos,
   previewSavePositioning,
   previewPrepareSearch,
+  previewPrepareOpenSearches,
+  previewRememberPlaces,
   previewRankCandidates,
   previewImportAndCreate,
   previewRecordDecisions,
@@ -349,6 +351,8 @@ function FindScreen() {
         recordDecisionAction={previewRecordDecision}
         importAction={previewImportAndCreate}
         recordDecisionsAction={previewRecordDecisions}
+        prepareOpenAction={previewPrepareOpenSearches}
+        rememberPlacesAction={previewRememberPlaces}
       />
     </div>
   );

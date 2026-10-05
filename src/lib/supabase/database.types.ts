@@ -913,6 +913,50 @@ export type Database = {
           },
         ]
       }
+      portal_place_ids: {
+        Row: {
+          city_key: string
+          city_label: string
+          created_at: string
+          id: string
+          learned_by: string | null
+          place_id: string
+          portal: string
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          city_key: string
+          city_label: string
+          created_at?: string
+          id?: string
+          learned_by?: string | null
+          place_id: string
+          portal: string
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          city_key?: string
+          city_label?: string
+          created_at?: string
+          id?: string
+          learned_by?: string | null
+          place_id?: string
+          portal?: string
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_place_ids_learned_by_fkey"
+            columns: ["learned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           agency_id: string

@@ -13,6 +13,14 @@ navigue pas, ne clique pas et n'ouvre aucune fenêtre ; s'il y a plusieurs ongle
 recherche, elle en renvoie la liste et c'est le conseiller qui choisit. Permissions
 inchangées (après mise à jour du dossier : `chrome://extensions` → « Recharger »).
 
+Version 0.3.0 (mission 69) : `openSearchTabs` ouvre, dans la fenêtre du conseiller, des
+onglets **visibles** sur les recherches déjà filtrées par ACM (adresses de recherche des
+portails lisibles uniquement, jamais deux fois la même) ; `readSearchTabs` lit **tous** les
+onglets de recherche d'un coup. Chrome ne construit pas un onglet que personne n'a regardé
+(Bien'ici) : chaque onglet est activé le temps que sa page se construise (même attente que
+la mission 46), puis ACM revient au premier plan. Un onglet resté sur l'écran d'attente est
+signalé, jamais lu comme une page vide. Permissions inchangées.
+
 ## Contenu
 
 - `manifest.json` — Manifest V3. `host_permissions` limitées aux portails retenus,

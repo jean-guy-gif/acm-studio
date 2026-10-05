@@ -8,6 +8,8 @@ import type { EnrichCandidateResult } from '@/features/competitor-search/actions
 import type { BulkComparableResult } from '@/features/comparables/actions/bulk-comparable-actions';
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
+import type { PrepareOpenSearchesResult } from '@/features/competitor-search/actions/prepare-open-searches';
+import type { RememberPortalPlacesResult } from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
@@ -57,6 +59,14 @@ export async function previewImport(): Promise<ComparableImportResult> {
 
 export async function previewPrepareSearch(): Promise<PrepareSearchResult> {
   return { ok: false, error: REFUSAL };
+}
+
+export async function previewPrepareOpenSearches(): Promise<PrepareOpenSearchesResult> {
+  return { ok: false, error: REFUSAL };
+}
+
+export async function previewRememberPlaces(): Promise<RememberPortalPlacesResult> {
+  return { ok: false };
 }
 
 export async function previewRankCandidates(): Promise<RankSearchResult> {

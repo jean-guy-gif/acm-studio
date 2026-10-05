@@ -7,6 +7,8 @@ import {
   isSearchTabUrl,
   isStableSize,
   isWaitingShell,
+  listSearchTabs,
+  urlsToOpen,
 } from './page-readiness.js';
 
 // These guard the two defects the extension shipped to production:
@@ -153,5 +155,65 @@ describe('decideOpenTab (aucun, un, plusieurs)', () => {
   it('un onglet mis en veille par Chrome est ignoré : le lire le rechargerait', () => {
     expect(decideOpenTab([{ ...seloger, discarded: true }])).toEqual({ kind: 'none' });
     expect(decideOpenTab([{ ...seloger, discarded: true }, bienici]).kind).toBe('read');
+  });
+});
+
+describe('listSearchTabs (mission 69 — tous les onglets de recherche)', () => {
+  it('garde les recherches des portails lisibles, écarte fiches, autres sites et onglets en veille', () => {
+    const tabs = [
+      {
+        id: 1,
+        windowId: 9,
+        title: 'SeLoger',
+        url: 'https://www.seloger.com/classified-search?x=1',
+      },
+      { id: 2, windowId: 9, title: 'Fiche', url: 'https://www.bienici.com/annonce/vente/nice/a-1' },
+      { id: 3, windowId: 9, title: 'Mail', url: 'https://mail.example.com/' },
+      {
+        id: 4,
+        windowId: 9,
+        title: 'Bien’ici',
+        url: 'https://www.bienici.com/recherche/achat/nice-06000/appartement/4-pieces',
+      },
+      {
+        id: 5,
+        windowId: 9,
+        title: 'En veille',
+        url: 'https://www.green-acres.fr/maison-a-vendre?searchQuery=x',
+        discarded: true,
+      },
+    ];
+    expect(listSearchTabs(tabs).map((tab) => tab.tabId)).toEqual([1, 4]);
+    expect(listSearchTabs(tabs)[1]).toEqual({
+      tabId: 4,
+      windowId: 9,
+      title: 'Bien’ici',
+      url: 'https://www.bienici.com/recherche/achat/nice-06000/appartement/4-pieces',
+    });
+  });
+});
+
+describe('urlsToOpen (mission 69 — « Ouvrir mes recherches »)', () => {
+  const seloger = 'https://www.seloger.com/classified-search?locations=AD08FR2038';
+  const bienici = 'https://www.bienici.com/recherche/achat/nice-06000/appartement/4-pieces';
+
+  it('n’ouvre que des recherches de portails lisibles (jamais une autre adresse)', () => {
+    expect(
+      urlsToOpen(
+        [
+          seloger,
+          'https://example.com/recherche',
+          'https://www.bienici.com/annonce/vente/nice/a-1',
+          'http://www.seloger.com/classified-search',
+          42,
+        ],
+        [],
+      ),
+    ).toEqual([seloger]);
+  });
+
+  it('n’ouvre pas deux fois la même adresse, ni une adresse déjà ouverte', () => {
+    expect(urlsToOpen([seloger, bienici, seloger], [{ url: bienici }])).toEqual([seloger]);
+    expect(urlsToOpen(undefined, [])).toEqual([]);
   });
 });
