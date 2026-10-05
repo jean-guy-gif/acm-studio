@@ -121,7 +121,14 @@ export function rankCandidates(
   preferences: LearnedPreferences,
 ): RankedSearch {
   const subjectType = normalizePropertyType(criteria.propertyType);
-  const scoringCriteria = { ...criteria, propertyType: subjectType };
+  // Mission 70 — le terrain n'ordonne que pour une MAISON vendeuse. Le jardin d'un appartement ne
+  // se compare pas au terrain de copropriété qu'un portail écrit sur la carte : pour un
+  // appartement, le terrain reste affiché sur la carte mais ne pèse rien dans l'ordre.
+  const scoringCriteria = {
+    ...criteria,
+    propertyType: subjectType,
+    landArea: subjectType === 'house' ? criteria.landArea : null,
+  };
   const refCity = normCity(criteria.city);
   const prices = priceBounds(criteria);
 

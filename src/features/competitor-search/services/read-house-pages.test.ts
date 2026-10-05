@@ -168,4 +168,79 @@ describe('Mission 70 — le terrain est un critère secondaire d’ordre', () =>
       scoreCandidate({ ...HOUSE, propertyType: 'apartment' }, { ...facts, landArea: 4560 }).score,
     ).toBe(base.score);
   });
+
+  it('un appartement vendeur avec jardin : le terrain de copropriété des cartes ne change pas l’ordre', () => {
+    const flat: CompetitorSearchCriteria = {
+      ...HOUSE,
+      propertyType: 'apartment',
+      surfaceArea: 80,
+      roomsCount: 4,
+      advisorPriceMin: 400000,
+      advisorPriceMax: 500000,
+    };
+    const card = (key: string, landArea: number | null): CompetitorCandidate => ({
+      key,
+      url: `https://www.seloger.com/annonces/${key}.htm`,
+      title: 'Appartement à vendre - Nice',
+      price: 450000,
+      surfaceArea: 80,
+      roomsCount: 4,
+      propertyType: 'apartment',
+      pricePerSqm: null,
+      landArea,
+      city: 'Nice',
+      photoUrls: [],
+      isNewBuild: false,
+    });
+    // Le terrain de copropriété (4 560 m²) passe en tête : si le terrain pesait, la carte à 150 m²
+    // (égale au jardin du vendeur) le doublerait.
+    const portal: PortalSearchResult = {
+      portal: 'seloger',
+      label: 'SeLoger',
+      searchUrl: 'https://www.seloger.com/classified-search',
+      status: 'ok',
+      message: null,
+      candidates: [card('copro', 4560), card('sans', null), card('jardin', 150)],
+    };
+    const order = (criteria: CompetitorSearchCriteria) =>
+      rankCandidates(criteria, [portal], PREFS).ranked.map((e) => [e.candidate.key, e.score]);
+    expect(order({ ...flat, landArea: 150 })).toEqual(order({ ...flat, landArea: null }));
+    expect(order({ ...flat, landArea: 150 }).map(([key]) => key)).toEqual([
+      'copro',
+      'sans',
+      'jardin',
+    ]);
+    // Le terrain reste lu sur la carte, donc affiché.
+    expect(
+      rankCandidates({ ...flat, landArea: 150 }, [portal], PREFS).ranked[0].candidate.landArea,
+    ).toBe(4560);
+  });
+
+  it('une maison vendeuse : le même terrain, lui, ordonne', () => {
+    const house: CompetitorSearchCriteria = { ...HOUSE, landArea: 800 };
+    const card = (key: string, landArea: number): CompetitorCandidate => ({
+      key,
+      url: `https://www.seloger.com/annonces/${key}.htm`,
+      title: 'Maison à vendre - Nice',
+      price: 800000,
+      surfaceArea: 145,
+      roomsCount: 5,
+      propertyType: 'house',
+      pricePerSqm: null,
+      landArea,
+      city: 'Nice',
+      photoUrls: [],
+      isNewBuild: false,
+    });
+    const portal: PortalSearchResult = {
+      portal: 'seloger',
+      label: 'SeLoger',
+      searchUrl: 'https://www.seloger.com/classified-search',
+      status: 'ok',
+      message: null,
+      candidates: [card('loin', 5300), card('proche', 800)],
+    };
+    const keys = rankCandidates(house, [portal], PREFS).ranked.map((e) => e.candidate.key);
+    expect(keys).toEqual(['proche', 'loin']);
+  });
 });
