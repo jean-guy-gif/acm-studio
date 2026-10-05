@@ -459,16 +459,16 @@ export function CompetitorSearchPanel({
     hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
 
   // Étape 2 — l'ordre « les plus proches » : les 10 premiers non tranchés sont montrés, le reste
-  // attend derrière « Voir les N autres ». Seuls les 10 montrés peuvent être cochés d'office : on
+  // attend derrière « Voir les N autres ». Seuls les 5 premiers sont cochés d'office ; on
   // n'importe jamais une annonce que le conseiller n'a pas eue sous les yeux.
   const undecided = ranked.filter((entry) => decided[entry.candidate.url] == null);
-  const { shown, others } = splitVisible(undecided);
-  const shownUrls = new Set(shown.map((entry) => entry.candidate.url));
+  const { shown, others, preselected } = splitVisible(undecided);
+  const preselectedUrls = new Set(preselected.map((entry) => entry.candidate.url));
 
   // Essai Stream Estate : une annonce d'origine que l'extension ne relit pas n'est pas cochée
   // d'office — son import échouerait à coup sûr.
   const defaultChecked = (entry: RankedCandidate): boolean =>
-    shownUrls.has(entry.candidate.url) &&
+    preselectedUrls.has(entry.candidate.url) &&
     inMainList(entry) &&
     entry.candidate.propertyType != null &&
     entry.candidate.streamEstate?.importable !== false;
@@ -1418,8 +1418,8 @@ export function CompetitorSearchPanel({
             {shown.map((entry, index) => renderCard(entry, index + 1))}
           </div>
 
-          {/* Le reste, dans le même ordre, derrière un clic : rien n'est supprimé. Une carte
-              cachée n'est jamais cochée d'office. */}
+          {/* Le reste, dans le même ordre, derrière un clic : rien n'est supprimé. Seuls les 5
+              premiers sont cochés d'office. */}
           {others.length > 0 ? (
             <div className="flex flex-col gap-3">
               <button

@@ -22,14 +22,22 @@ import type {
 // malus — et s'affiche « non indiqué ».
 
 export const VISIBLE_CANDIDATES = 10;
+// Parmi les 10 montrés, seuls les 5 premiers sont cochés d'office ; les 5 suivants restent à
+// cocher par le conseiller s'il les retient.
+export const PRESELECTED_CANDIDATES = 5;
 
 // Les 10 premiers sont montrés, les autres attendent derrière « Voir les N autres » — dans le même
-// ordre, rien n'est supprimé.
+// ordre, rien n'est supprimé. `preselected` = les 5 premiers des montrés.
 export function splitVisible<T>(
   ordered: T[],
   limit: number = VISIBLE_CANDIDATES,
-): { shown: T[]; others: T[] } {
-  return { shown: ordered.slice(0, limit), others: ordered.slice(limit) };
+): { shown: T[]; others: T[]; preselected: T[] } {
+  const shown = ordered.slice(0, limit);
+  return {
+    shown,
+    others: ordered.slice(limit),
+    preselected: shown.slice(0, PRESELECTED_CANDIDATES),
+  };
 }
 
 const EMPTY_FEATURES: CandidateFeatures = {
@@ -82,14 +90,16 @@ export function distanceMeters(a: GeoPoint, b: GeoPoint): number {
   return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
 }
 
-// Tranches : < 500 m, 500 m – 1 km, 1 – 2 km, > 2 km.
+// Tranches : < 500 m (+2), 500 m – 1 km (+1), 1 – 2 km (0), > 2 km (−1). Une position inconnue
+// vaut 0 : à autres critères égaux, une distance connue de moins de 1 km passe toujours devant,
+// et de 1 à 2 km elle est à égalité avec l'inconnu (le reste départage).
 export function distanceBand(meters: number): { points: number; label: string } {
   const label =
     meters < 1000 ? `à ${fr(Math.round(meters / 10) * 10)} m` : `à ${fr(meters / 1000, 1)} km`;
   if (meters < 500) return { points: 2, label };
   if (meters < 1000) return { points: 1, label };
-  if (meters <= 2000) return { points: -1, label };
-  return { points: -2, label };
+  if (meters <= 2000) return { points: 0, label };
+  return { points: -1, label };
 }
 
 export function normalizeDistrict(value: string | null): string | null {

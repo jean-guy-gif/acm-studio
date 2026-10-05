@@ -10,6 +10,7 @@ import { learnFromDecisions } from '@/features/competitor-search/services/learn-
 import {
   assessProximity,
   distanceBand,
+  PRESELECTED_CANDIDATES,
   splitVisible,
   VISIBLE_CANDIDATES,
 } from '@/features/competitor-search/services/proximity';
@@ -182,11 +183,39 @@ describe('ordre en deux niveaux : le niveau 1 prime toujours sur le niveau 2', (
     expect(order([offSurface, sameSurface])).toEqual([sameSurface.key, offSurface.key]);
   });
 
-  it('les tranches de distance : < 500 m, 500 m – 1 km, 1 – 2 km, > 2 km', () => {
+  it('le barème distance : +2 sous 500 m, +1 jusqu’à 1 km, 0 de 1 à 2 km, −1 au-delà', () => {
     expect(distanceBand(350)).toEqual({ points: 2, label: 'à 350 m' });
-    expect(distanceBand(800).points).toBe(1);
-    expect(distanceBand(1400)).toEqual({ points: -1, label: 'à 1,4 km' });
-    expect(distanceBand(2600).points).toBe(-2);
+    expect(distanceBand(800)).toEqual({ points: 1, label: 'à 800 m' });
+    expect(distanceBand(1400)).toEqual({ points: 0, label: 'à 1,4 km' });
+    expect(distanceBand(2000).points).toBe(0);
+    expect(distanceBand(2600)).toEqual({ points: -1, label: 'à 2,6 km' });
+  });
+
+  it('une distance connue et proche ne passe jamais derrière une position inconnue', () => {
+    // L'inconnu a tout le niveau 2 pour lui ; la distance connue (< 1 km) passe quand même devant.
+    const bestLevel2 = {
+      floor: 2,
+      hasElevator: true,
+      hasPool: false,
+      condition: 'good',
+      exposure: 'south',
+      constructionYear: 1970,
+    };
+    const unknownPosition = card(bestLevel2);
+    const at350 = card({ location: NEAR }); // ≈ 300 m
+    const at800 = card({ location: { lat: 43.7067, lon: 7.268857 } }); // ≈ 800 m
+    expect(order([unknownPosition, at800, at350])).toEqual([
+      at350.key,
+      at800.key,
+      unknownPosition.key,
+    ]);
+    // De 1 à 2 km : à égalité avec l'inconnu au niveau 1 (0 point), jamais derrière lui à cause
+    // de la distance ; c'est le niveau 2 qui départage.
+    const at1400 = card({ location: { lat: 43.712, lon: 7.268857 } });
+    expect(reasonOf(at1400, 'sector')?.points).toBe(0);
+    expect(reasonOf(unknownPosition, 'sector')?.points).toBe(0);
+    // Au-delà de 2 km, la distance éloigne.
+    expect(reasonOf(card({ location: FAR }), 'sector')?.points).toBe(-1);
   });
 
   it('les filtres ne changent pas : un bien hors fourchette n’entre pas, même tout proche', () => {
@@ -435,8 +464,21 @@ describe('limite : les 10 premiers, puis « Voir les N autres »', () => {
     expect([...shown, ...others]).toEqual(ranked);
   });
 
+  it('seuls les 5 premiers sont cochés d’office ; les 10 restent montrés et numérotés', () => {
+    const { shown, preselected } = splitVisible(ranked);
+    expect(PRESELECTED_CANDIDATES).toBe(5);
+    expect(preselected).toEqual(ranked.slice(0, 5));
+    expect(shown).toHaveLength(10);
+    // Aucune annonce au-delà du 5e n'est cochée d'office, montrée ou non.
+    expect(preselected.every((entry) => ranked.indexOf(entry) < 5)).toBe(true);
+  });
+
   it('moins de 10 annonces : tout est montré, rien derrière le bouton', () => {
-    expect(splitVisible(ranked.slice(0, 4))).toEqual({ shown: ranked.slice(0, 4), others: [] });
+    expect(splitVisible(ranked.slice(0, 4))).toEqual({
+      shown: ranked.slice(0, 4),
+      others: [],
+      preselected: ranked.slice(0, 4),
+    });
   });
 
   it('l’ordre est bien décroissant : niveau 1, puis niveau 2', () => {
