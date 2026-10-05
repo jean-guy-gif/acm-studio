@@ -88,6 +88,19 @@ function readSurface(text: string | null): number | null {
   return match ? normalizeArea(match[1]) : null;
 }
 
+// Mission 70 — surface du TERRAIN telle que la carte l'écrit (« 800 m² de terrain », « 5 300 m²
+// de terrain »). Jamais confondue avec la surface habitable : on n'accepte qu'un nombre suivi de
+// « m² de terrain ». Rien n'est cherché dans une description libre.
+function readLandArea(text: string | null): number | null {
+  if (text == null) {
+    return null;
+  }
+  const match = decodeHtmlEntities(text).match(
+    /(\d{1,3}(?:[\s  ]\d{3})*(?:[.,]\d{1,2})?)\s*m(?:²|2)\s+de\s+terrain/i,
+  );
+  return match ? normalizeArea(match[1].replace(/[\s  ]/g, '')) : null;
+}
+
 // Prix au m² tel que le portail l'AFFICHE, jamais recalculé (§ « aucune donnée
 // inventée »). Bien'ici abrège les gros montants : « 11k €/m² », « 17,4k €/m² ».
 function readPricePerSqm(text: string | null): number | null {
@@ -241,6 +254,22 @@ function titleCaseCity(value: string | null): string | null {
   return cleaned.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 }
 
+// Le type NOMMÉ EN PREMIER dans un texte libre, mot à mot : « maison individuelle divisée en 2
+// appartements » est une maison. normalizePropertyType, lui, teste les catégories dans un ordre
+// fixe (appartement d'abord) — juste pour un libellé court, pas pour une phrase.
+function firstTypeInText(text: string | null): string | null {
+  if (text == null) {
+    return null;
+  }
+  for (const word of decodeHtmlEntities(text).split(/[^\p{L}]+/u)) {
+    const type = word === '' ? null : normalizePropertyType(word);
+    if (type != null) {
+      return type;
+    }
+  }
+  return null;
+}
+
 // --- découpage en cartes, par marqueur, portail par portail --------------------
 
 type CardChunk = { key: string | null; chunk: string };
@@ -306,6 +335,8 @@ function readSelogerCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     roomsCount: readRooms(title),
     propertyType: normalizePropertyType(title),
     pricePerSqm: null,
+    // « …, 140 m², 800 m² de terrain » : le titre porte le terrain après l'habitable.
+    landArea: readLandArea(title),
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
@@ -337,6 +368,8 @@ function readBieniciCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     pricePerSqm: readPricePerSqm(
       firstGroup(chunk, /ad-price__price-per-square-meter"[^>]*>([^<]+)/i),
     ),
+    // Mission 70 — la carte Bien'ici n'affiche pas le terrain ; rien n'est déduit de la description.
+    landArea: null,
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild,
@@ -363,13 +396,27 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
   }
   const localisation = firstGroup(chunk, /announce-localisation"[^>]*>([^<]+)/i);
   const city = titleCaseCity(localisation?.split('(')[0] ?? null);
-  // Green Acres ne publie PAS de titre sur la carte : le type vient du chemin de
-  // l'annonce (/properties/<type>/…), donnée publiée par le portail. On compose un
-  // libellé honnête à partir du type et de la commune, plutôt que « Annonce détectée ».
+  // Mission 70 — sur une recherche de maisons, Green Acres écrit /properties/immobilier/… : le
+  // chemin ne dit plus le type. Le type se lit alors sur la CARTE, dans son titre (attribut title
+  // du bloc announce-info : « Villa 4Ch - Vue Dégagée », « Maison À Vendre »). Quand le chemin
+  // nomme un vrai type (/properties/appartement/…), il reste prioritaire : le titre est un texte
+  // libre, et lu en premier il ferait d'« élégant 4 pièces… cave et garage » un parking.
+  const cardTitle = firstGroup(chunk, /announce-info"[^>]*\btitle="([^"]*)"/i);
   const typeSegment = url.match(/\/properties\/([a-z-]+)\//i)?.[1] ?? null;
-  const propertyType = normalizePropertyType(typeSegment);
-  const typeLabel = typeSegment ? titleCaseCity(typeSegment) : null;
-  const title = typeLabel && city ? `${typeLabel} à ${city}` : (typeLabel ?? null);
+  const segmentType = normalizePropertyType(typeSegment);
+  const propertyType = segmentType ?? firstTypeInText(cardTitle);
+  // Libellé : composé du segment et de la commune, comme avant (« Appartement à Nice », « Neuf à
+  // Nice ») ; avec le segment générique « immobilier », le titre de la carte (jamais « Immobilier
+  // à … »).
+  const typeLabel =
+    typeSegment && typeSegment.toLowerCase() !== 'immobilier' ? titleCaseCity(typeSegment) : null;
+  const title = typeLabel
+    ? city
+      ? `${typeLabel} à ${city}`
+      : typeLabel
+    : cardTitle && cardTitle !== ''
+      ? cardTitle
+      : null;
   return {
     key,
     url,
@@ -379,6 +426,8 @@ function readGreenAcresCard({ key, chunk }: CardChunk, pageUrl: string): Competi
     roomsCount: readRooms(tags.get('pièces') ?? tags.get('pieces') ?? null),
     propertyType,
     pricePerSqm: readPricePerSqm(tags.get('prix par m²') ?? tags.get('prix par m2') ?? null),
+    // Étiquette « Terrain » de la carte : « 488 m² de terrain ».
+    landArea: readLandArea(tags.get('terrain') ?? null),
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild: false,
@@ -411,6 +460,8 @@ function readMaisonsCard({ key, chunk }: CardChunk, pageUrl: string): Competitor
     roomsCount: readRooms(alt) ?? readRooms(firstGroup(chunk, /data-room="([^"]+)"/i)),
     propertyType: normalizePropertyType(alt),
     pricePerSqm: null,
+    // Mission 70 — la carte M&A n'affiche pas le terrain ; rien n'est déduit de la description.
+    landArea: null,
     city,
     photoUrls: cardPhotos(chunk, pageUrl),
     isNewBuild: false,
@@ -445,10 +496,13 @@ const READERS: Record<
     read: readGreenAcresCard,
   },
   maisons_appartements: {
+    // Mission 70 — la carte porte le type schema.org du bien : Apartment sur une recherche
+    // d'appartements, House sur une recherche de maisons (SingleFamilyResidence en est la
+    // variante schema.org). N'accepter qu'Apartment rendait la page maison vide (0 carte).
     split: (html) =>
       splitByBoundaries(
         html,
-        /<article\b[^>]*\bid="(\d+)"[^>]*itemtype="https:\/\/schema\.org\/Apartment"/g,
+        /<article\b[^>]*\bid="(\d+)"[^>]*itemtype="https?:\/\/schema\.org\/(?:Apartment|House|SingleFamilyResidence)"/g,
         1,
       ),
     read: readMaisonsCard,

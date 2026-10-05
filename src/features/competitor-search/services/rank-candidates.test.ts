@@ -40,6 +40,7 @@ function c(over: Partial<CompetitorCandidate>): CompetitorCandidate {
     roomsCount: 4,
     propertyType: 'apartment',
     pricePerSqm: null,
+    landArea: null,
     city: 'Nice',
     photoUrls: [],
     isNewBuild: false,

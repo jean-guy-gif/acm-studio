@@ -59,6 +59,7 @@ export async function rankCompetitorCandidates(
     roomsCount: property.rooms_count,
     advisorPriceMin: property.advisor_price_min,
     advisorPriceMax: property.advisor_price_max,
+    landArea: property.land_area,
   };
 
   // Décisions déjà prises DANS L'AGENCE : la mémoire de l'outil, lue large pour que

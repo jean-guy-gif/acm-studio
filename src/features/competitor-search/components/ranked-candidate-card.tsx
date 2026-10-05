@@ -124,6 +124,9 @@ export function RankedCandidateCard({
           <span className="font-semibold text-brand-deep stage:text-white">{euro(price)}</span>
           {surface != null ? ` · ${surface} m²` : ''}
           {rooms != null ? ` · ${rooms} pièces` : ''}
+          {candidate.landArea != null
+            ? ` · ${candidate.landArea.toLocaleString('fr-FR')} m² de terrain`
+            : ''}
           {candidate.city ? ` · ${candidate.city}` : ''}
           {` · ${ranked.portalLabel}`}
         </div>
