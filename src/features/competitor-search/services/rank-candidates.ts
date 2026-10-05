@@ -187,6 +187,8 @@ export function rankCandidates(
       city: entry.candidate.city ?? criteria.city,
       district: null,
       propertyType: entry.candidate.propertyType,
+      // Mission 70 — critère secondaire : ordonne l'admissible, n'intervient pas dans admit().
+      landArea: entry.candidate.landArea,
     };
     const base = scoreCandidate(scoringCriteria, facts);
     const adjusted = applyLearning(

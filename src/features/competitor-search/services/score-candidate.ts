@@ -18,6 +18,8 @@ export type ScoringCriteria = {
   // Avis du conseiller, jamais une estimation de l'outil.
   advisorPriceMin: number | null;
   advisorPriceMax: number | null;
+  // Mission 70 — terrain du bien vendeur, critère SECONDAIRE : il ordonne, il ne filtre pas.
+  landArea?: number | null;
 };
 
 export type ScoredFacet = {
@@ -35,6 +37,7 @@ export type CandidateFacts = {
   city: string | null;
   district: string | null;
   propertyType: string | null;
+  landArea?: number | null;
 };
 
 const WEIGHTS = {
@@ -43,6 +46,7 @@ const WEIGHTS = {
   district: 20,
   propertyType: 15,
   rooms: 10,
+  land: 10,
 } as const;
 
 function normalizeLabel(value: string | null): string | null {
@@ -187,6 +191,34 @@ function scoreRooms(criteria: ScoringCriteria, rooms: number | null): ScoredFace
   return { weight: WEIGHTS.rooms, earned: 0, label: `${gap} pièces d’écart`, positive: false };
 }
 
+// Mission 70 — le terrain départage des maisons déjà admissibles. Il ne compte que si le bien
+// vendeur ET la carte l'écrivent : sinon il sort du calcul (poids 0) et ne déplace rien — les
+// appartements, sans terrain, gardent exactement leur score.
+function scoreLand(criteria: ScoringCriteria, land: number | null | undefined): ScoredFacet {
+  const reference = criteria.landArea;
+  if (reference == null || reference <= 0 || land == null || land <= 0) {
+    return { weight: 0, earned: 0, label: 'Terrain non comparable', positive: false };
+  }
+  const gap = Math.abs(land - reference) / reference;
+  if (gap <= 0.25) {
+    return { weight: WEIGHTS.land, earned: WEIGHTS.land, label: 'Terrain proche', positive: true };
+  }
+  if (gap <= 0.5) {
+    return {
+      weight: WEIGHTS.land,
+      earned: Math.round(WEIGHTS.land / 2),
+      label: 'Terrain assez proche',
+      positive: true,
+    };
+  }
+  return {
+    weight: WEIGHTS.land,
+    earned: 0,
+    label: land < reference ? 'Terrain plus petit' : 'Terrain plus grand',
+    positive: false,
+  };
+}
+
 export type CandidateScore = {
   // 0 à 100. Calculé sur les seuls critères comparables : une annonce dont on
   // ignore la surface n'est pas pénalisée pour cette ignorance.
@@ -205,6 +237,7 @@ export function scoreCandidate(criteria: ScoringCriteria, facts: CandidateFacts)
     scoreDistrict(criteria, facts),
     scorePropertyType(criteria, facts.propertyType),
     scoreRooms(criteria, facts.roomsCount),
+    scoreLand(criteria, facts.landArea),
   ];
 
   const total = facets.reduce((sum, facet) => sum + facet.weight, 0);

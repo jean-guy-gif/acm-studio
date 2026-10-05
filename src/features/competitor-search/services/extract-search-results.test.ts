@@ -298,6 +298,7 @@ describe('filterAndDedupeCandidates — déduplication par identité publiée', 
     title: null,
     propertyType: null,
     pricePerSqm: null,
+    landArea: null,
     photoUrls: [],
     isNewBuild: false,
   };

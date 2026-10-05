@@ -33,6 +33,8 @@ export type CompetitorSearchCriteria = {
   roomsCount: number | null;
   advisorPriceMin: number | null;
   advisorPriceMax: number | null;
+  // Mission 70 — terrain du bien vendeur : critère secondaire d'ORDRE, jamais un filtre.
+  landArea?: number | null;
 };
 
 // Une annonce candidate détectée sur une page de résultats. Champs best-effort :
@@ -57,6 +59,9 @@ export type CompetitorCandidate = {
   propertyType: string | null;
   // Prix au m² tel que le portail l'affiche, jamais recalculé par nous.
   pricePerSqm: number | null;
+  // Mission 70 — surface du terrain écrite sur la carte (SeLoger, Green Acres). Sert seulement à
+  // ORDONNER (critère secondaire), jamais à filtrer. null quand la carte ne l'écrit pas.
+  landArea: number | null;
   // Commune lue sur la carte : sert à repérer une commune voisine (la carte le DIT,
   // on ne masque pas — §6) et à dédupliquer (prix+surface+pièces+commune).
   city: string | null;
