@@ -1,71 +1,15 @@
 # ACM Studio
 
-## Description
+Préparer et conduire un rendez-vous vendeur interactif. Règles et contexte : `CLAUDE.md`.
 
-ACM Studio est un SaaS destiné aux conseillers immobiliers.
-
-Son objectif est d'améliorer le taux de signature des mandats exclusifs en préparant et guidant le rendez-vous vendeur.
-
----
-
-## Stack
-
-Next.js
-
-TypeScript
-
-Supabase
-
-TailwindCSS
-
-Shadcn
-
-OpenAI
-
-PptxGenJS
-
----
-
-## Installation
-
-npm install
-
----
-
-## Variables
-
-.env.local
-
-SUPABASE_URL=
-
-SUPABASE_ANON_KEY=
-
-OPENAI_API_KEY=
-
----
-
-## Lancement
-
-npm run dev
-
----
-
-## Build
-
-npm run build
-
----
-
-## Déploiement
-
-Vercel
-
----
-
-## Documentation
-
-- ARCHITECTURE.md
-- DATABASE.md
-- TASKS.md
-- UI_MAP.md
-- CLAUDE.md
+- **Installer** : `npm install`, puis copier `.env.example` en `.env.local` et le remplir.
+  Facultatif : `STREAM_ESTATE_API_KEY` (recherche Stream Estate, en essai).
+- **Lancer** : `npm run dev`, puis `http://localhost:3000`.
+- **Extension Chrome** : `chrome://extensions` → mode développeur → « Charger l'extension non
+  empaquetée » → dossier `extension/`.
+- **Tester** : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
+  `npm run build` (la CI GitHub les rejoue à chaque push).
+- **Déployer** : Vercel déploie `main` ; une migration s'applique à la main (`npx supabase db push`),
+  après comptage sur la vraie base.
+- **Missions** : `missions/MISSION_NN_*.md` ; `/mission NN` → essai → `/valide NN`. Décisions :
+  `docs/DECISIONS.md` ; état du code : `docs/ETAT_DU_PRODUIT.md`.
