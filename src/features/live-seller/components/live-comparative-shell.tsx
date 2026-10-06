@@ -22,6 +22,7 @@ import {
   ctaPrimary,
   navBtn,
   stageGlow,
+  stageGlowLayer,
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
@@ -402,11 +403,15 @@ export function LiveComparativeShell({
         </div>
       ) : null}
 
-      <div className={stageGlow} aria-hidden />
+      <div className={stageGlowLayer} aria-hidden>
+        <div className={stageGlow} />
+      </div>
 
       {/* Chrome supérieur : identité + réglages, volontairement discret. */}
       <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">
-        <div className="flex items-center gap-3">
+        {/* MISSION 72 — c'est le nom d'agence qui cède la place (tronqué dans <Logo>),
+            jamais les boutons : `min-w-0` ici, `shrink-0` sur les réglages. */}
+        <div className="flex min-w-0 items-center gap-3">
           <Logo
             onDark={stage === 'dark'}
             className="h-8 sm:h-9"
@@ -414,11 +419,11 @@ export function LiveComparativeShell({
             darkSrc={logoDarkUrl}
             fallbackName={agencyName}
           />
-          <span className="hidden text-sm font-medium text-zinc-400 sm:inline stage:text-white/50">
+          <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
             Rendez-vous vendeur
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => setStage((s) => (s === 'dark' ? 'light' : 'dark'))}
