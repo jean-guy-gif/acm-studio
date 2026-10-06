@@ -21,6 +21,8 @@ describe('pickInseeCode', () => {
       ok: true,
       code: '06088',
       name: 'Nice',
+      centre: null,
+      departement: null,
     });
   });
 
@@ -69,18 +71,24 @@ describe('pickInseeCode', () => {
 });
 
 describe('geoCommunesUrl', () => {
-  it('interroge par nom et code postal', () => {
-    const url = new URL(geoCommunesUrl('Nice', '06000'));
+  it('avec un code postal, interroge par le code postal seul (le nom est comparé ici)', () => {
+    const url = new URL(geoCommunesUrl('St Laurent du Var', '06700'));
     expect(url.origin + url.pathname).toBe('https://geo.api.gouv.fr/communes');
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      nom: 'Nice',
-      codePostal: '06000',
-      fields: 'nom,code,codesPostaux',
+      codePostal: '06700',
+      fields: 'nom,code,codesPostaux,centre,codeDepartement',
       format: 'json',
     });
   });
 
   it('sans code postal, par le nom seul', () => {
-    expect(new URL(geoCommunesUrl('Nice', null)).searchParams.has('codePostal')).toBe(false);
+    const params = new URL(geoCommunesUrl('Nice', null)).searchParams;
+    expect(params.has('codePostal')).toBe(false);
+    expect(params.get('nom')).toBe('Nice');
+  });
+
+  it('« St Laurent du Var » retrouve Saint-Laurent-du-Var parmi les communes du code postal', () => {
+    const slv: GeoCommune = { nom: 'Saint-Laurent-du-Var', code: '06123', codesPostaux: ['06700'] };
+    expect(pickInseeCode([slv], 'St Laurent du Var', '06700')).toMatchObject({ code: '06123' });
   });
 });

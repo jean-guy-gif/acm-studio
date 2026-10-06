@@ -133,7 +133,18 @@ export type StreamEstateFacts = {
   onlineSince: string | null; // createdAt du bien (ISO)
   lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
   priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
+  // Mission 71 — la commune du bien selon l'API (code INSEE + nom) : c'est le code, pas le nom,
+  // qui dit « même commune ». null si l'API ne le donne pas.
+  inseeCode?: string | null;
+  // Mission 71 — le cran de la recherche qui l'a trouvé (1 = identique … 7 = prix hors fourchette).
+  // Absent pour une réponse lue hors recherche par crans.
+  tier?: StreamEstateTier;
 };
+
+// Mission 71 — les crans de la recherche Stream Estate, dans l'ordre (décision de Laurent, 06/10) :
+// 1 identique (< 1 km), 2 plus grand (< 1 km), 3 une pièce de plus (< 1 km), 4 même ville < 2 km,
+// 5 même ville < 5 km, 6 rayon 10 km (communes voisines comprises), 7 prix ±5 % hors fourchette.
+export type StreamEstateTier = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 // Résultat de la lecture d'une page de résultats : les cartes retenues, plus le
 // compte de ce qui a été écarté, pour le dire au conseiller sans rien cacher.
@@ -189,6 +200,12 @@ export type RankedCandidate = {
   newBuildComplement: boolean;
   // Étape 2 — l'ordre « les plus proches » et sa justification, critère par critère.
   proximity: ProximityAssessment;
+  // Mission 71 — % de correspondance (points obtenus ÷ points possibles). null si aucun critère
+  // n'est comparable. La liste est triée par ce % décroissant.
+  matchPercent: number | null;
+  // Mission 71 — Stream Estate seulement : ce qui écarte ce bien de l'identique (« Même ville, à
+  // 1,6 km · Plus grand : 78 m² (+12 %) »). null pour un bien identique ou venu d'un portail.
+  gapLine: string | null;
 };
 
 // Un critère d'ordre, tel qu'il s'affiche sur la carte : « à 350 m », « terrasse ≠ balcon »,

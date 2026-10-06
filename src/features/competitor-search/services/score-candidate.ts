@@ -1,3 +1,5 @@
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
+
 // Classement des annonces candidates par ressemblance avec le bien du vendeur.
 //
 // Choix de conception (MISSION 36) : on CLASSE, on ne filtre pas. Une annonce
@@ -142,8 +144,9 @@ function scoreDistrict(criteria: ScoringCriteria, facts: CandidateFacts): Scored
       : { weight: WEIGHTS.district, earned: 0, label: 'Autre quartier', positive: false };
   }
   // À défaut de quartier, la commune vaut la moitié du critère.
-  const refCity = normalizeLabel(criteria.city);
-  const candidateCity = normalizeLabel(facts.city);
+  // Mission 71 — même comparaison des communes que le classement (St/Saint, tirets…).
+  const refCity = communeKey(criteria.city);
+  const candidateCity = communeKey(facts.city);
   if (refCity != null && candidateCity != null) {
     const half = Math.round(WEIGHTS.district / 2);
     return refCity === candidateCity

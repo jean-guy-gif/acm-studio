@@ -5,17 +5,13 @@ import {
   type CompetitorDecisionRecord,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import {
-  geocodeUrl,
-  judgeGeocode,
-  type SubjectGeocode,
-} from '@/features/competitor-search/services/geocode-subject';
+import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
-import type {
-  CompetitorSearchCriteria,
-  PortalSearchResult,
-  RankedSearch,
-  SectorStatus,
+import {
+  type CompetitorSearchCriteria,
+  type PortalSearchResult,
+  type RankedSearch,
+  type SectorStatus,
 } from '@/features/competitor-search/types';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -26,36 +22,6 @@ export type RankSearchResult =
   | { ok: false; error: string };
 
 const GENERIC_ERROR = 'Le classement a échoué.';
-const GEOCODE_TIMEOUT_MS = 5_000;
-
-// Étape 2 — le secteur : l'adresse du bien vendeur géocodée (Base Adresse Nationale, gratuite).
-// Un échec réseau ne bloque pas le classement : le secteur devient neutre et l'écran le dit.
-async function geocodeSubject(
-  address: string | null,
-  postalCode: string | null,
-  city: string,
-): Promise<SubjectGeocode> {
-  const url = geocodeUrl(address, postalCode, city);
-  if (url == null) {
-    return { ok: false, sector: { status: 'neutral', reason: 'no_address' } };
-  }
-  try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS),
-      // La même adresse se géocode à l'identique : le classement est relancé à chaque lecture.
-      next: { revalidate: 86_400 },
-    });
-    if (!response.ok) throw new Error(`api-adresse ${response.status}`);
-    return judgeGeocode(await response.json(), city);
-  } catch (error) {
-    console.error(
-      '[rankCompetitorCandidates] géocodage',
-      error instanceof Error ? error.message : error,
-    );
-    return { ok: false, sector: { status: 'neutral', reason: 'unavailable' } };
-  }
-}
-
 // MISSION 50 — le CLASSEMENT, côté serveur. Les cartes ont été lues par l'extension
 // dans le navigateur du conseiller ; elles arrivent ici en données (jamais exécutées,
 // jamais réinjectées). Les critères sont re-dérivés du bien vendeur côté serveur
@@ -132,9 +98,18 @@ export async function rankCompetitorCandidates(
   }));
   const preferences = learnFromDecisions(decisions);
 
-  const geocode = await geocodeSubject(property.address, property.postal_code, criteria.city);
+  // Mission 71 — la commune officielle (geo.api.gouv.fr, gratuit, en cache un jour) : son code
+  // INSEE dit « même commune » pour un bien Stream Estate, et son nom géocode l'adresse (« St
+  // Laurent du Var » fait tomber le score sous 0,8 : 0,74 contre 0,83, mesuré le 06/10).
+  const commune = await resolveCommune(criteria.city, criteria.postalCode);
+  const geocode = await geocodeSubject(
+    property.address,
+    property.postal_code,
+    commune.ok ? commune.name : criteria.city,
+  );
   const search = rankCandidates(criteria, portals ?? [], preferences, {
     subjectLocation: geocode.ok ? geocode.point : null,
+    subjectInseeCode: commune.ok ? commune.code : null,
   });
   return { ok: true, ...search, learnedNotes: preferences.notes, sector: geocode.sector };
 }

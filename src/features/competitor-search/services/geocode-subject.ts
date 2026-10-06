@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { normalizeDistrict } from '@/features/competitor-search/services/proximity';
 import type { GeoPoint, SectorStatus } from '@/features/competitor-search/types';
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
 
 // ÉTAPE 2 — le SECTEUR : l'adresse du bien vendeur géocodée par api-adresse.data.gouv.fr (Base
 // Adresse Nationale, gratuite, sans clé). Partie PURE : construire la requête, juger la réponse.
@@ -59,7 +59,7 @@ export function judgeGeocode(json: unknown, city: string): SubjectGeocode {
   const { geometry, properties } = first.data;
   if (!PRECISE_TYPES.has(properties.type)) return neutral('imprecise');
   if (properties.score < MIN_GEOCODE_SCORE) return neutral('low_score');
-  if (properties.city != null && normalizeDistrict(properties.city) !== normalizeDistrict(city)) {
+  if (properties.city != null && communeKey(properties.city) !== communeKey(city)) {
     return neutral('other_city');
   }
   const [lon, lat] = geometry.coordinates;

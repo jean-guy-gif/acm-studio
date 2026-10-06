@@ -23,7 +23,10 @@ import type {
 } from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { BatchDecision } from '@/features/competitor-search/actions/record-competitor-decisions';
-import type { StreamEstateSearchResult } from '@/features/competitor-search/actions/search-stream-estate';
+import type {
+  StreamEstateResume,
+  StreamEstateSearchResult,
+} from '@/features/competitor-search/actions/search-stream-estate';
 import {
   closeSearchWindowViaExtension,
   openSearchTabsViaExtension,
@@ -48,6 +51,15 @@ import {
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
+import { showBatchImport } from '@/features/competitor-search/services/batch-import-visibility';
+import {
+  canSearchMore,
+  describeStreamEstateSearch,
+  mergeStreamEstateNote,
+  MORE_LABEL,
+  resumeMemory,
+  type StreamEstateSearchNote,
+} from '@/features/competitor-search/services/stream-estate-summary';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
@@ -126,20 +138,8 @@ type Props = {
   rememberPlacesAction: (pages: RememberPortalPlacesInput) => Promise<RememberPortalPlacesResult>;
   // Essai Stream Estate — fourni par la page SEULEMENT si la clé est définie côté serveur ;
   // absent, le bouton n'existe pas.
-  streamEstateAction?: () => Promise<StreamEstateSearchResult>;
-};
-
-// Essai Stream Estate — ce que l'écran dit de la dernière recherche par l'API (dont son coût).
-type StreamEstateNote = {
-  billed: number;
-  totalItems: number | null;
-  unreadable: number;
-  outsideWhitelist: number;
-  expiredOrigin: number;
-  newBuild: number;
-  communeName: string;
-  inseeCode: string;
-  kept: number;
+  // Mission 71 — `resume` : « Chercher encore », reprise au plafond.
+  streamEstateAction?: (resume?: StreamEstateResume | null) => Promise<StreamEstateSearchResult>;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -435,7 +435,7 @@ export function CompetitorSearchPanel({
   const [waitingTabs, setWaitingTabs] = useState<string[]>([]);
   // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
   const [streamSearching, setStreamSearching] = useState(false);
-  const [streamNote, setStreamNote] = useState<StreamEstateNote | null>(null);
+  const [streamNote, setStreamNote] = useState<StreamEstateSearchNote | null>(null);
   const busy = pending || searching || importing || reading || opening || streamSearching;
 
   // Essai Stream Estate — les biens de l'API restent à côté des portails quand on relit les
@@ -569,17 +569,29 @@ export function CompetitorSearchPanel({
     }
   }
 
-  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), une page. Ses
-  // biens rejoignent les portails dans le MÊME classement : mêmes filtres, mêmes mentions.
-  async function searchViaStreamEstate() {
+  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), par crans. Ses
+  // biens rejoignent les portails dans le MÊME classement. `more` : « Chercher encore » — reprend
+  // exactement où la recherche s'est arrêtée au plafond, et ajoute ses biens aux précédents.
+  async function searchViaStreamEstate(more = false) {
     if (!streamEstateAction) {
       return;
     }
+    const previousPortal = more
+      ? ((portals ?? []).find((portal) => portal.portal === STREAM_ESTATE_SOURCE) ?? null)
+      : null;
+    const previousNote = more ? streamNote : null;
+    if (more && (previousNote?.cursor == null || previousPortal == null)) {
+      return;
+    }
     setError(null);
-    setStreamNote(null);
+    if (!more) setStreamNote(null);
     setStreamSearching(true);
     try {
-      const result = await streamEstateAction();
+      const result = await streamEstateAction(
+        more && previousNote?.cursor && previousPortal
+          ? { cursor: previousNote.cursor, memory: resumeMemory(previousPortal.candidates) }
+          : null,
+      );
       if (!result.ok) {
         setError(result.error);
         return;
@@ -592,20 +604,29 @@ export function CompetitorSearchPanel({
       setSearchLinks(prep.links);
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
-      const rank = await refreshRanking([...others, result.portal]);
-      setStreamNote({
-        billed: result.billed,
-        totalItems: result.totalItems,
-        unreadable: result.unreadable,
-        outsideWhitelist: result.outsideWhitelist,
-        expiredOrigin: result.expiredOrigin,
-        newBuild: result.newBuild,
-        communeName: result.communeName,
-        inseeCode: result.inseeCode,
-        kept: rank.ok
-          ? rank.ranked.filter((entry) => entry.portal === STREAM_ESTATE_SOURCE).length
-          : 0,
-      });
+      const candidates = [...(previousPortal?.candidates ?? []), ...result.portal.candidates];
+      await refreshRanking([
+        ...others,
+        {
+          ...result.portal,
+          candidates,
+          status: candidates.length > 0 ? 'ok' : 'empty',
+          message: candidates.length > 0 ? null : result.portal.message,
+        },
+      ]);
+      setStreamNote(
+        mergeStreamEstateNote(previousNote, {
+          billed: result.billed,
+          stop: result.stop,
+          cursor: result.cursor,
+          tiers: result.tiers,
+          counts: result.counts,
+          newBuild: result.newBuild,
+          located: result.located,
+          communeName: result.communeName,
+          inseeCode: result.inseeCode,
+        }),
+      );
     } finally {
       setStreamSearching(false);
     }
@@ -1082,7 +1103,7 @@ export function CompetitorSearchPanel({
         {streamEstateAction ? (
           <button
             type="button"
-            onClick={searchViaStreamEstate}
+            onClick={() => searchViaStreamEstate()}
             disabled={busy}
             className={btnPrimary}
           >
@@ -1141,32 +1162,39 @@ export function CompetitorSearchPanel({
           d’attente du portail. Puis relancez « Lire mes recherches ».
         </p>
       ) : null}
-      {streamNote ? (
-        // Essai Stream Estate — le coût de la recherche, dit tel quel : l'API facture chaque
-        // annonce renvoyée, retenue ou non par le classement.
-        <div className={`${card} flex flex-col gap-1 p-3.5`}>
-          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
-          </span>
-          <p className={hintText}>
-            {`${plural(streamNote.billed, 'annonce facturée', 'annonces facturées')}, dont ${plural(streamNote.expiredOrigin, 'écartée car expirée', 'écartées car expirées')} : annonce d’origine expirée, ou plus revue par Stream Estate depuis 7 jours.`}
-            {streamNote.totalItems != null
-              ? ` L’API en annonce ${streamNote.totalItems} pour ces critères (une seule page lue).`
-              : ''}{' '}
-            {plural(streamNote.kept, 'bien retenu', 'biens retenus')} après les mêmes filtres que
-            les portails.
-            {streamNote.outsideWhitelist > 0
-              ? ` ${plural(streamNote.outsideWhitelist, 'bien écarté', 'biens écartés')} : aucune annonce sur SeLoger, Bien’ici, Green Acres, Figaro Immobilier ou Maisons et Appartements (les sites que l’extension relit).`
-              : ''}
-            {streamNote.unreadable > 0
-              ? ` ${plural(streamNote.unreadable, 'bien illisible écarté', 'biens illisibles écartés')} (sans annonce exploitable).`
-              : ''}
-            {streamNote.newBuild > 0
-              ? ` ${plural(streamNote.newBuild, 'bien neuf reçu', 'biens neufs reçus')} : proposé${streamNote.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien.`
-              : ''}
-          </p>
-        </div>
-      ) : null}
+      {streamNote
+        ? (() => {
+            // Mission 71 — la ligne de bilan : combien, à quel cran, et ce que la recherche a coûté
+            // (l'API facture chaque annonce renvoyée, retenue ou non). Moins de 10 : pourquoi.
+            const summary = describeStreamEstateSearch(ranked, streamNote);
+            return (
+              <div className={`${card} flex flex-col gap-1 p-3.5`}>
+                <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+                  Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
+                </span>
+                <p className="text-sm font-medium text-zinc-800 stage:text-white">
+                  {summary.headline}
+                </p>
+                {summary.details.map((line) => (
+                  <p key={line} className={hintText}>
+                    {line}
+                  </p>
+                ))}
+                {/* Au plafond avant 10 : le conseiller décide de payer 20 annonces de plus. */}
+                {canSearchMore(ranked, streamNote) ? (
+                  <button
+                    type="button"
+                    onClick={() => searchViaStreamEstate(true)}
+                    disabled={busy}
+                    className={`${btnSecondary} mt-1 self-start px-3 py-1.5 text-sm`}
+                  >
+                    {streamSearching ? 'Recherche Stream Estate…' : MORE_LABEL}
+                  </button>
+                ) : null}
+              </div>
+            );
+          })()
+        : null}
       {readSummary.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>
           <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
@@ -1350,17 +1378,43 @@ export function CompetitorSearchPanel({
           })()
         : null}
 
+      {/* Mission 71 §1 — le bouton d'import groupé est visible dès qu'un candidat est affiché,
+          même quand le classement n'en garde aucun (il est alors désactivé). */}
+      {showBatchImport(undecided, portals) ? (
+        <div className="flex flex-col gap-2">
+          {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
+              un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.
+              L'avancement s'affiche pendant l'import (« 3 sur 8 »). */}
+          <button
+            type="button"
+            onClick={validateBatch}
+            disabled={busy || checkedCount === 0}
+            className={btnPrimary}
+          >
+            {importing && importProgress
+              ? `Import en cours… ${importProgress.done} sur ${importProgress.total}`
+              : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
+          </button>
+          <p className={hintText}>
+            Les cochées sont importées dans le dossier ; les autres restent dans la liste, sans être
+            comptées comme écartées (pour écarter, « Écarter avec un motif »). Environ une seconde
+            par fiche — rien n’est enregistré avant ce clic.
+          </p>
+        </div>
+      ) : null}
+
       {undecided.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h3 className={formSectionTitle}>
             Concurrents proposés, du plus proche au plus éloigné ({undecided.length})
           </h3>
           <p className={hintText}>
-            Seules les annonces de la commune, dans votre fourchette de prix, avec le même nombre de
-            pièces et une surface proche sont proposées ; tout élargissement est signalé. L’ordre
-            suit d’abord le secteur, la surface, le prix, le stationnement et l’extérieur ; puis
-            l’état, l’étage, l’ascenseur, la piscine, l’exposition et l’année. Une donnée non
-            indiquée ne fait ni monter ni descendre une annonce.
+            Les portails ne proposent que les annonces de la commune, dans votre fourchette de prix,
+            avec le même nombre de pièces et une surface proche. Stream Estate commence par
+            l’identique et n’élargit que s’il manque des biens ; chaque élargissement est écrit sur
+            la carte. L’ordre suit le % de correspondance (secteur, surface, prix, pièces,
+            stationnement, extérieur, puis état, étage, ascenseur, année, piscine, exposition) ; un
+            critère non indiqué sort du calcul.
           </p>
           {sector ? (
             sector.status === 'located' ? (
@@ -1371,27 +1425,6 @@ export function CompetitorSearchPanel({
               </p>
             )
           ) : null}
-          {/* §8 — la validation en lot. Le bouton dit ce qu'il fait, avec le compte ;
-              un lot qui écrit N fiches ne se déclenche pas derrière un libellé vague.
-              L'avancement s'affiche pendant l'import (« 3 sur 8 »). */}
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={validateBatch}
-              disabled={busy || checkedCount === 0}
-              className={btnPrimary}
-            >
-              {importing && importProgress
-                ? `Import en cours… ${importProgress.done} sur ${importProgress.total}`
-                : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
-            </button>
-            <p className={hintText}>
-              Les cochées sont importées dans le dossier ; les autres restent dans la liste, sans
-              être comptées comme écartées (pour écarter, « Écarter avec un motif »). Environ une
-              seconde par fiche — rien n’est enregistré avant ce clic.
-            </p>
-          </div>
-
           {importFailures.length > 0 ? (
             <div className={`${card} flex flex-col gap-2 p-3.5`}>
               <span className="text-sm font-semibold text-amber-700 stage:text-amber-300">
