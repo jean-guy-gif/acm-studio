@@ -41,11 +41,11 @@ signalé, jamais lu comme une page vide. Permissions inchangées.
 ## Portails autorisés (`host_permissions`)
 
 seloger.com · bienici.com · green-acres.fr · immobilier.lefigaro.fr ·
-maisonsetappartements.fr · leboncoin.fr
+maisonsetappartements.fr
 
-`leboncoin.fr` est présent **par anticipation** : son extracteur viendra dans une
-mission à part. Toute modification des permissions relance la validation Google, d'où
-son ajout dès maintenant.
+La liste suit le `manifest.json`, qui fait foi. Leboncoin n'est pas supporté (son
+`robots.txt` interdit `/ad/`). Toute modification des permissions relance la validation
+de Google.
 
 ## Origines ACM Studio autorisées
 

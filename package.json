@@ -16,7 +16,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "extension:icons": "node scripts/extension-icons.mjs",
+    "extension:zip": "node scripts/extension-zip.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

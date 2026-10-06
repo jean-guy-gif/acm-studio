@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 
 import { SubmitButton } from '@/components/submit-button';
 import { AppLogo } from '@/components/theme/app-logo';
@@ -11,8 +12,11 @@ import {
   fieldLabel,
   inputBase,
   kickerLabel,
+  link,
   pageSubtitle,
 } from '@/components/ui/styles';
+
+import { PRIVACY_PATH } from '@/lib/legal';
 
 import { login } from './actions';
 
@@ -74,6 +78,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Se connecter
             </SubmitButton>
           </form>
+          <footer className="border-t border-zinc-200/80 pt-4 text-center text-xs stage:border-white/10">
+            <Link href={PRIVACY_PATH} className={link}>
+              Confidentialité
+            </Link>
+          </footer>
         </div>
       </div>
     </AppStage>

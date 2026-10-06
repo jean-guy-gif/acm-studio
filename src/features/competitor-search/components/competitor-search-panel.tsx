@@ -74,6 +74,8 @@ import {
 } from '@/features/competitor-search/services/read-search-pages';
 import {
   SEARCH_PORTAL_LABELS,
+  STREAM_ESTATE_LABEL,
+  STREAM_ESTATE_SEARCH_BUTTON,
   STREAM_ESTATE_SOURCE,
   type CompetitorCandidate,
   type ExcludedForMissing,
@@ -1090,26 +1092,36 @@ export function CompetitorSearchPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
-          du bien, puis lit tous les onglets d'un coup. La lecture d'un seul onglet (mission 65)
-          reste possible. La recherche automatique reste disponible, en second. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={openMySearches} disabled={busy} className={btnPrimary}>
-          {opening ? 'Ouverture…' : 'Ouvrir mes recherches'}
-        </button>
-        <button type="button" onClick={readAllMySearches} disabled={busy} className={btnPrimary}>
-          {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
-        </button>
-        {streamEstateAction ? (
+      {/* Mission 73 — la recherche Stream Estate est la recherche par défaut : bouton principal,
+          en premier. Absent sans clé (décision Stream Estate), les portails restent alors seuls. */}
+      {streamEstateAction ? (
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => searchViaStreamEstate()}
             disabled={busy}
             className={btnPrimary}
           >
-            {streamSearching ? 'Recherche Stream Estate…' : 'Chercher via Stream Estate (essai)'}
+            {streamSearching ? 'Recherche en cours…' : STREAM_ESTATE_SEARCH_BUTTON}
           </button>
-        ) : null}
+          <p className={hintText}>Critères : {criteriaLabel}</p>
+        </div>
+      ) : null}
+      {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
+          du bien, puis lit tous les onglets d'un coup. La lecture d'un seul onglet (mission 65)
+          reste possible. Mission 73 : en secondaire, sous leur intitulé. */}
+      <h3 className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+        {streamEstateAction
+          ? 'Ou chercher vous-même sur les portails'
+          : 'Chercher vous-même sur les portails'}
+      </h3>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={openMySearches} disabled={busy} className={btnSecondary}>
+          {opening ? 'Ouverture…' : 'Ouvrir mes recherches'}
+        </button>
+        <button type="button" onClick={readAllMySearches} disabled={busy} className={btnSecondary}>
+          {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
+        </button>
         <button
           type="button"
           onClick={() => readMySearch()}
@@ -1118,7 +1130,7 @@ export function CompetitorSearchPanel({
         >
           Lire un seul onglet
         </button>
-        <p className={hintText}>Critères : {criteriaLabel}</p>
+        {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
       </div>
       <p className={hintText}>
         « Ouvrir mes recherches » ouvre les quatre portails, déjà filtrés avec le type, la commune,
@@ -1170,7 +1182,7 @@ export function CompetitorSearchPanel({
             return (
               <div className={`${card} flex flex-col gap-1 p-3.5`}>
                 <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-                  Stream Estate (essai) — {streamNote.communeName} ({streamNote.inseeCode})
+                  {STREAM_ESTATE_LABEL} — {streamNote.communeName} ({streamNote.inseeCode})
                 </span>
                 <p className="text-sm font-medium text-zinc-800 stage:text-white">
                   {summary.headline}

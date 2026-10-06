@@ -26,6 +26,7 @@ import {
 } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
   STREAM_ESTATE_LABEL,
+  STREAM_ESTATE_SEARCH_BUTTON,
   STREAM_ESTATE_SOURCE,
   type PortalSearchResult,
 } from '@/features/competitor-search/types';
@@ -181,8 +182,7 @@ export async function searchStreamEstate(
     // mêmes, on ne reprend pas à l'aveugle.
     return {
       ok: false,
-      error:
-        'Le bien vendeur a changé depuis la recherche : relancez « Chercher via Stream Estate (essai) ».',
+      error: `Le bien vendeur a changé depuis la recherche : relancez « ${STREAM_ESTATE_SEARCH_BUTTON} ».`,
     };
   }
   const outcome = await runTieredSearch({
