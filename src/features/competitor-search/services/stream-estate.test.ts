@@ -318,6 +318,8 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
     expect(search.ranked).toHaveLength(4);
     expect(search.ranked.every((entry) => entry.portal === STREAM_ESTATE_SOURCE)).toBe(true);
     expect(search.ranked[0].portalLabel).toBe(STREAM_ESTATE_LABEL);
+    // Mission 73 — la recherche par défaut ne se dit plus « en essai ».
+    expect(STREAM_ESTATE_LABEL).not.toMatch(/essai/i);
   });
 
   it('Stream Estate desserre jusqu’à 5 % hors fourchette, pas au-delà (mission 71)', () => {

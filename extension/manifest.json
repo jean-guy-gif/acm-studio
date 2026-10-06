@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
   "name": "ACM Studio — Accès annonces",
-  "version": "0.4.0",
-  "description": "Récupère, dans le navigateur du conseiller, la page d'une annonce ou d'une recherche pour ACM Studio. Ne lit rien d'autre, ne stocke rien, n'envoie rien ailleurs.",
+  "version": "1.0.0",
+  "description": "Lit, à la demande du conseiller, les annonces immobilières des portails pour ACM Studio. Ne stocke rien, n'envoie rien ailleurs.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "background": { "service_worker": "background.js", "type": "module" },
   "permissions": ["tabs", "scripting"],
   "host_permissions": [

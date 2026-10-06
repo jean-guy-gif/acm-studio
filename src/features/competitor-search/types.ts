@@ -22,7 +22,9 @@ export const SEARCH_PORTAL_LABELS: Record<SearchPortal, string> = {
 // Essai Stream Estate — une SOURCE de candidats qui n'est pas un portail lu par l'extension :
 // ses biens passent par le même classement (rankCandidates) que ceux des quatre portails.
 export const STREAM_ESTATE_SOURCE = 'stream_estate';
-export const STREAM_ESTATE_LABEL = 'Stream Estate (essai)';
+export const STREAM_ESTATE_LABEL = 'Stream Estate';
+// Mission 73 — le bouton de la recherche par défaut ; l'action le cite quand il faut relancer.
+export const STREAM_ESTATE_SEARCH_BUTTON = 'Chercher les concurrents';
 export type CandidateSource = SearchPortal | typeof STREAM_ESTATE_SOURCE;
 
 // Critères dérivés du bien vendeur, côté serveur uniquement.

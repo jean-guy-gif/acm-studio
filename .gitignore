@@ -63,3 +63,6 @@ next-env.d.ts
 # Mission 66 — sorties de Playwright (captures d’échec, rapports)
 /test-results/
 /playwright-report/
+
+# Mission 73 — paquet de l'extension (npm run extension:zip), généré
+/dist
