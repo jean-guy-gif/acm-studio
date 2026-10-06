@@ -4,6 +4,7 @@ import type {
   DispersionLevel,
   SurfaceAnalysis,
 } from '@/features/comparable-analysis/types/comparable-analysis';
+import { formatPercent, formatSquareMeters } from '@/lib/format';
 
 const DISPERSION_LABEL: Record<DispersionLevel, string> = {
   faible: 'Faible dispersion',
@@ -13,7 +14,7 @@ const DISPERSION_LABEL: Record<DispersionLevel, string> = {
 
 function label(comparable: AnalyzedComparable): string {
   const title = comparable.title?.trim() || 'Bien concurrent';
-  return `${title} — ${comparable.surfaceArea} m²`;
+  return `${title} — ${formatSquareMeters(comparable.surfaceArea)}`;
 }
 
 export function ComparableAnalysisSurfaces({
@@ -26,11 +27,13 @@ export function ComparableAnalysisSurfaces({
       <h2 className={sectionTitle}>Analyse des surfaces</h2>
       <p className="text-sm text-zinc-600 stage:text-white/65">
         Amplitude :{' '}
-        {surfaceAnalysis.surfaceRange != null ? `${surfaceAnalysis.surfaceRange} m²` : '—'} ·
-        Dispersion :{' '}
+        {surfaceAnalysis.surfaceRange != null
+          ? formatSquareMeters(surfaceAnalysis.surfaceRange)
+          : '—'}{' '}
+        · Dispersion :{' '}
         {surfaceAnalysis.dispersion ? DISPERSION_LABEL[surfaceAnalysis.dispersion] : '—'}
         {surfaceAnalysis.surfaceSpreadPercent != null
-          ? ` (${surfaceAnalysis.surfaceSpreadPercent} %)`
+          ? ` (${formatPercent(surfaceAnalysis.surfaceSpreadPercent)})`
           : ''}
       </p>
       <ul className="text-sm text-zinc-600 stage:text-white/65">

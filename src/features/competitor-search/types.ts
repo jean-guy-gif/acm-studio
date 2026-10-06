@@ -285,6 +285,3 @@ export type CompetitorSearchResult =
 
 // Décision du conseiller sur une annonce proposée.
 export type RecordDecisionResult = { ok: true } | { ok: false; error: string };
-
-export type SearchResultsHtmlImport =
-  { ok: true; portal: PortalSearchResult } | { ok: false; error: string };

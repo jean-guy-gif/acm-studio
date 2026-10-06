@@ -7,6 +7,7 @@ import type {
   ProximityReason,
   SubjectProximityFacts,
 } from '@/features/competitor-search/types';
+import { formatNumber, formatPercent, formatSquareMeters } from '@/lib/format';
 
 // ÉTAPE 2 « LES 10 PLUS PROCHES » — l'ORDRE des candidats déjà admis, jamais un filtre.
 //
@@ -79,8 +80,7 @@ const reason = (
 const unknown = (criterion: string, level: 1 | 2, label: string): ProximityReason =>
   reason(criterion, level, label, 0, false);
 
-const fr = (value: number, digits = 0): string =>
-  value.toLocaleString('fr-FR', { maximumFractionDigits: digits });
+const fr = (value: number, digits = 0): string => formatNumber(value, { maxDecimals: digits });
 
 // --- secteur --------------------------------------------------------------------------------
 
@@ -164,7 +164,10 @@ function surface(
   }
   const gap = value - ref;
   const abs = Math.abs(gap);
-  const label = abs < 0.5 ? 'même surface' : `${fr(abs, 1)} m² de ${gap > 0 ? 'plus' : 'moins'}`;
+  const label =
+    abs < 0.5
+      ? 'même surface'
+      : `${formatSquareMeters(abs, { maxDecimals: 1 })} de ${gap > 0 ? 'plus' : 'moins'}`;
   if (abs <= Math.max(ref * 0.03, 1)) return reason('surface', 1, label, 1);
   if (abs <= Math.max(ref * 0.06, 2)) return reason('surface', 1, label, 0);
   return reason('surface', 1, label, -1);
@@ -185,7 +188,7 @@ function price(
   const label =
     pct === 0
       ? 'prix au centre de votre fourchette'
-      : `prix ${rel > 0 ? '+' : '−'}${pct} % du centre de votre fourchette`;
+      : `prix ${rel > 0 ? '+' : '−'}${formatPercent(pct)} du centre de votre fourchette`;
   if (Math.abs(rel) <= 0.03) return reason('price', 1, label, 1);
   if (Math.abs(rel) <= 0.06) return reason('price', 1, label, 0);
   return reason('price', 1, label, -1);

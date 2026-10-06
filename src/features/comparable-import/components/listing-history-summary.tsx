@@ -1,4 +1,5 @@
 import type { ListingHistory } from '@/features/comparable-import/types';
+import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
 
 // Shows what ACM knows about a listing over time (Mission 47 §5). Rules held here:
 //   - the source is ALWAYS named ("d'après SeLoger", "(Bien'ici)", "par ACM") — a
@@ -8,7 +9,7 @@ import type { ListingHistory } from '@/features/comparable-import/types';
 //   - a price change is a CONSTAT proposed to the advisor, with its two dates, never
 //     written in silence.
 
-const euro = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
+const euro = (value: number): string => formatEuro(value);
 
 const frDate = (iso: string): string => {
   const date = new Date(iso);
@@ -61,7 +62,7 @@ export function ListingHistorySummary({
       {age ? <AgeLine age={age} /> : null}
       {viewCount != null ? (
         <p className="text-zinc-600 stage:text-white/65">
-          Vu {viewCount.toLocaleString('fr-FR')} fois
+          Vu {formatNumber(viewCount)} fois
           {viewCountSince ? ` depuis le ${frDate(viewCountSince)}` : ''} (Green Acres).
         </p>
       ) : null}
@@ -71,7 +72,7 @@ export function ListingHistorySummary({
           {frDate(change.fromDate)}, {euro(change.toPrice)} le {frDate(change.toDate)}, soit{' '}
           {change.amount >= 0 ? '−' : '+'}
           {euro(Math.abs(change.amount))} ({change.amount >= 0 ? '−' : '+'}
-          {Math.abs(change.percentage)} %). À valider avant d’enregistrer.
+          {formatPercent(Math.abs(change.percentage))}). À valider avant d’enregistrer.
         </p>
       ) : null}
     </div>

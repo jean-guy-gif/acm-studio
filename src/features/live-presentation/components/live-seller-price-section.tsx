@@ -7,6 +7,7 @@ import type {
   PriceDeviation,
 } from '@/features/price-positioning/types/price-positioning';
 import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
+import { formatEuro, formatPercent } from '@/lib/format';
 
 const POSITION_LABEL: Record<MarketPosition, string> = {
   below_observed_market: 'Sous le marché observé',
@@ -15,16 +16,16 @@ const POSITION_LABEL: Record<MarketPosition, string> = {
 };
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 function deviation(label: string, value: PriceDeviation | null) {
   if (value == null) {
     return null;
   }
-  const absolute = `${value.absolute > 0 ? '+' : ''}${value.absolute.toLocaleString('fr-FR')} €`;
+  const absolute = formatEuro(value.absolute, { signed: true });
   const percentage =
-    value.percentage != null ? ` (${value.percentage > 0 ? '+' : ''}${value.percentage} %)` : '';
+    value.percentage != null ? ` (${formatPercent(value.percentage, { signed: true })})` : '';
   return (
     <p className="text-lg">
       {label} : {absolute}

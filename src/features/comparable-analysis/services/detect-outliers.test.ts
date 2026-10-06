@@ -8,6 +8,8 @@ function analyzed(id: string, ppsm: number): AnalyzedComparable {
     id,
     title: id,
     city: null,
+    district: null,
+    roomsCount: null,
     price: ppsm * 50,
     surfaceArea: 50,
     pricePerSquareMeter: ppsm,

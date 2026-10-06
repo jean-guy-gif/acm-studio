@@ -1,3 +1,4 @@
+import { formatSquareMeters } from '@/lib/format';
 // LIVE — étapes AVANT la révélation du prix (« Est-il un sérieux concurrent ? »,
 // « À quel prix pensez-vous ? »). Le vendeur juge le bien SANS son prix : la pédagogie
 // tombe si un montant fuit à l'écran. Le titre brut du portail contient souvent le prix
@@ -36,7 +37,7 @@ export function neutralComparableLabel(entry: {
     parts.push(`${entry.roomsCount} pièce${entry.roomsCount > 1 ? 's' : ''}`);
   }
   if (entry.surfaceArea != null && entry.surfaceArea > 0) {
-    parts.push(`${entry.surfaceArea} m²`);
+    parts.push(formatSquareMeters(entry.surfaceArea));
   }
   const location = entry.district?.trim() || entry.city?.trim();
   if (location) {

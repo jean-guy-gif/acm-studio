@@ -12,6 +12,8 @@ export type AnalyzedComparable = {
   id: string;
   title: string | null;
   city: string | null;
+  district: string | null;
+  roomsCount: number | null;
   price: number;
   surfaceArea: number;
   pricePerSquareMeter: number;

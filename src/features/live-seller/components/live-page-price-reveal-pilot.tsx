@@ -17,9 +17,9 @@ import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { PRICE_COHERENCE_VALUES, PRICE_COHERENCE_LABELS } from '@/features/live-seller/constants';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // MISSION 51 — écran-pilote (étape 3) du contrat « Valider et continuer ».
 //
@@ -98,14 +98,11 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
               <div>
                 <div className={statLabel}>Écart</div>
                 <div className={bigValue}>
-                  {reveal.gapAmount != null
-                    ? `${reveal.gapAmount >= 0 ? '+' : ''}${reveal.gapAmount.toLocaleString('fr-FR')} €`
-                    : '—'}
+                  {reveal.gapAmount != null ? formatEuro(reveal.gapAmount, { signed: true }) : '—'}
                 </div>
                 {reveal.gapPercentage != null ? (
                   <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {reveal.gapPercentage >= 0 ? '+' : ''}
-                    {reveal.gapPercentage} %
+                    {formatPercent(reveal.gapPercentage, { signed: true })}
                   </div>
                 ) : null}
               </div>
@@ -113,7 +110,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
                 <div className={statLabel}>Prix au m²</div>
                 <div className={statValue}>
                   {reveal.pricePerSquareMeter != null
-                    ? `${reveal.pricePerSquareMeter.toLocaleString('fr-FR')} €/m²`
+                    ? formatEuroPerSquareMeter(reveal.pricePerSquareMeter)
                     : '—'}
                 </div>
               </div>

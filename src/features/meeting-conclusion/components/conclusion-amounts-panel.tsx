@@ -4,16 +4,16 @@ import {
   conclusionGaps,
 } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
+import { formatEuro, formatPercent } from '@/lib/format';
 
 const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : 'Non renseigné';
+  value != null ? formatEuro(value) : 'Non renseigné';
 
 const gapText = (amount: number | null, percentage: number | null): string => {
   if (amount == null || percentage == null) {
     return '—';
   }
-  const sign = amount >= 0 ? '+' : '';
-  return `${sign}${amount.toLocaleString('fr-FR')} € (${sign}${percentage} %)`;
+  return `${formatEuro(amount, { signed: true })} (${formatPercent(percentage, { signed: true })})`;
 };
 
 function Row({ label, value }: { label: string; value: string }) {

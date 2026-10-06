@@ -1,5 +1,6 @@
 import { RemoteImage } from '@/components/ui/remote-image';
 import { card, hintText, sectionTitle, softPanel } from '@/components/ui/styles';
+import { formatEuro, formatPercent, formatSquareMeters } from '@/lib/format';
 
 export type InfluentialComparableDisplay = {
   comparableId: string;
@@ -15,7 +16,7 @@ export type InfluentialComparableDisplay = {
 };
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 export function InfluentialComparablesView({
@@ -58,12 +59,12 @@ export function InfluentialComparablesView({
                   {comparable.district?.trim() ? ` · ${comparable.district.trim()}` : ''}
                 </span>
                 <span>
-                  {euro(comparable.price)} · {comparable.surfaceArea} m² ·{' '}
+                  {euro(comparable.price)} · {formatSquareMeters(comparable.surfaceArea)} ·{' '}
                   {euro(comparable.pricePerSquareMeter)}/m²
                 </span>
                 <span>
-                  Écart de surface : {comparable.surfaceDeviationPercentage} % · Score de proximité
-                  : {comparable.proximityScore}
+                  Écart de surface : {formatPercent(comparable.surfaceDeviationPercentage)} · Score
+                  de proximité : {comparable.proximityScore}
                 </span>
               </div>
             </li>

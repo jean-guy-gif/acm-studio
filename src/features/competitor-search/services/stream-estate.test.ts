@@ -330,7 +330,7 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
       428000, 429000, 450000,
     ]);
     const above = search.ranked.find((entry) => entry.candidate.price === 450000)!;
-    expect(above.gapLine).toContain('Prix 2 % au-dessus de votre fourchette');
+    expect(above.gapLine).toContain('Prix 2\u00A0% au-dessus de votre fourchette');
   });
 
   it('les crans des portails ne s’appliquent pas à Stream Estate : l’écart est sur la carte', () => {
@@ -342,7 +342,7 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
     expect(search.ranked.every((entry) => !entry.loosenedSurface)).toBe(true);
     expect(search.ranked.map((entry) => entry.candidate.surfaceArea).sort()).toEqual([72, 73, 79]);
     expect(search.ranked.find((entry) => entry.candidate.surfaceArea === 79)!.gapLine).toContain(
-      'Plus grand : 79 m² (+20 %)',
+      'Plus grand : 79\u00A0m² (+20\u00A0%)',
     );
   });
 });

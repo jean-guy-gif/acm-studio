@@ -17,6 +17,12 @@ import {
 } from '@/features/comparables/services/calculate-comparable-summary';
 import type { Comparable } from '@/features/comparables/types';
 import { getComparablePhotoUrls } from '@/features/comparables/utils/comparable-photos';
+import {
+  formatEuro,
+  formatEuroPerSquareMeter,
+  formatPercent,
+  formatSquareMeters,
+} from '@/lib/format';
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
 
@@ -138,14 +144,16 @@ export function ComparableCard({
 
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
           <span className="font-title text-base font-bold text-brand-deep stage:text-white">
-            {comparable.price > 0 ? `${comparable.price.toLocaleString('fr-FR')} €` : 'Prix —'}
+            {comparable.price > 0 ? formatEuro(comparable.price) : 'Prix —'}
           </span>
           <span className="text-zinc-600 stage:text-white/70">
-            {comparable.surface_area != null ? `${comparable.surface_area} m²` : 'Surface —'}
+            {comparable.surface_area != null
+              ? formatSquareMeters(comparable.surface_area)
+              : 'Surface —'}
           </span>
           <span className="text-zinc-600 stage:text-white/70">
             {acmPricePerSquareMeter != null
-              ? `${acmPricePerSquareMeter.toLocaleString('fr-FR')} €/m²`
+              ? formatEuroPerSquareMeter(acmPricePerSquareMeter)
               : 'Prix/m² —'}
           </span>
           <span className="text-zinc-600 stage:text-white/70">
@@ -155,9 +163,9 @@ export function ComparableCard({
 
         {gap ? (
           <div className="text-xs text-zinc-400 stage:text-white/40">
-            Écart de surface avec le bien vendeur : {gap.deltaSquareMeters > 0 ? '+' : ''}
-            {gap.deltaSquareMeters.toLocaleString('fr-FR')} m² ({gap.deltaPercent > 0 ? '+' : ''}
-            {gap.deltaPercent} %)
+            Écart de surface avec le bien vendeur :{' '}
+            {formatSquareMeters(gap.deltaSquareMeters, { signed: true })} (
+            {formatPercent(gap.deltaPercent, { signed: true })})
           </div>
         ) : null}
 

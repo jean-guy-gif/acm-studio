@@ -5,6 +5,7 @@ import type {
   PositioningFreshness,
   SavedPricePositioning,
 } from '@/features/price-positioning/types/saved-price-positioning';
+import { formatDateTime, formatEuro } from '@/lib/format';
 
 const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
   very_high: 'Très forte',
@@ -14,7 +15,7 @@ const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
 };
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 export function SavedPositioningCard({
@@ -68,7 +69,7 @@ export function SavedPositioningCard({
       ) : null}
 
       <p className="text-xs text-zinc-400 stage:text-white/40">
-        Validé le {new Date(saved.validatedAt).toLocaleString('fr-FR')}
+        Validé le {formatDateTime(saved.validatedAt)}
         {saved.validatedByName ? ` par ${saved.validatedByName}` : ''}.
       </p>
     </section>

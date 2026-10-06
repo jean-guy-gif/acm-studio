@@ -11,9 +11,9 @@ import {
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
+import { formatEuro } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // "1. Valeur perçue par le vendeur" — saisie manuelle du vendeur.
 //

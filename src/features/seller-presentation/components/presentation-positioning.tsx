@@ -5,6 +5,7 @@ import type {
 } from '@/features/price-positioning/types/price-positioning';
 import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
 import type { PositioningStatus } from '@/features/seller-presentation/types/seller-presentation';
+import { formatDateTime, formatEuro } from '@/lib/format';
 
 const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
   very_high: 'Très forte',
@@ -20,7 +21,7 @@ const STATUS_LABEL: Record<PositioningStatus, string> = {
 };
 
 function euro(value: number | null | undefined): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 export function PresentationPositioning({
@@ -81,7 +82,7 @@ export function PresentationPositioning({
               </p>
               {saved.justification ? <p>Justification : {saved.justification}</p> : null}
               <p className="text-xs text-zinc-400 stage:text-white/40">
-                Validé le {new Date(saved.validatedAt).toLocaleString('fr-FR')}
+                Validé le {formatDateTime(saved.validatedAt)}
                 {saved.validatedByName ? ` par ${saved.validatedByName}` : ''}.
               </p>
             </div>

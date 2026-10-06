@@ -5,7 +5,7 @@ import {
   fetchRobotsViaExtension,
   type ExtensionRobotsResult,
 } from '@/features/browser-extension/client';
-import type { PortalReadOutcome } from '@/features/competitor-search/services/read-portals-sequentially';
+import type { FetchFailureReason } from '@/features/comparable-import/services/fetch-listing-page';
 
 // MISSION 50 §10 — lecture d'une page de résultats PAR L'EXTENSION (navigateur du
 // conseiller). On lit le robots.txt AVANT chaque adresse (l'extension le rapporte
@@ -16,6 +16,9 @@ import type { PortalReadOutcome } from '@/features/competitor-search/services/re
 // Trois issues, comme l'orchestrateur les attend : robots interdit → refused
 // (permanent), lecture ratée → unreachable (passager), page reçue → ok (l'orchestrateur
 // conclura empty si zéro carte).
+
+export type PortalReadOutcome =
+  { ok: true; html: string; finalUrl: string } | { ok: false; reason: FetchFailureReason };
 
 export type PortalRobotsCache = Map<string, ExtensionRobotsResult>;
 

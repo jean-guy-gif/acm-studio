@@ -182,7 +182,7 @@ describe('buyer-match — l’écart CHIFFRÉ lit les mêmes entrées que le sco
     expect(
       details.some((d) => /100\s?000\s?€.*au-dessus du budget/.test(d.replace(/ /g, ' '))),
     ).toBe(true);
-    expect(details.some((d) => /40 m² de plus que recherché/.test(d))).toBe(true);
+    expect(details.some((d) => /40\u00A0m² de plus que recherché/.test(d))).toBe(true);
   });
 
   it('ne chiffre pas un bien que le score compte dans la tolérance (pas de contradiction)', () => {

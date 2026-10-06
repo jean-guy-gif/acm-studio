@@ -1,7 +1,8 @@
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
+import { formatEuro } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

@@ -41,7 +41,7 @@ export const FETCH_MESSAGES = {
   notHtml: 'Le contenu reçu n’est pas une page HTML.',
   unavailable: 'L’annonce semble indisponible ou supprimée.',
   robots:
-    'Ce portail interdit l’analyse automatique de cette page. Utilisez le copier-coller ci-dessous.',
+    'Ce portail interdit l’analyse automatique de cette page. Saisissez le bien à la main ci-dessous.',
 } as const;
 
 export type FetchDeps = {
@@ -52,7 +52,7 @@ export type FetchDeps = {
 };
 
 // Motif machine du refus, pour que l'appelant distingue un robots.txt qui INTERDIT
-// (permanent → coller, jamais réessayer) d'une absence de réponse réseau (passager →
+// (permanent → saisie à la main, jamais réessayer) d'une absence de réponse réseau (passager →
 // on peut relancer). Le message reste l'affichage ; le reason est la décision.
 export type FetchFailureReason =
   | 'invalid'

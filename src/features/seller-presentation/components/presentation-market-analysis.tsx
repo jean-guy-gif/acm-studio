@@ -1,8 +1,9 @@
 import { card, hintText, metaLabel, sectionTitle } from '@/components/ui/styles';
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 export function PresentationMarketAnalysis({ analysis }: { analysis: ComparableAnalysis | null }) {
@@ -35,7 +36,7 @@ export function PresentationMarketAnalysis({ analysis }: { analysis: ComparableA
             <div className={metaLabel}>Surface médiane</div>
             <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
               {analysis.statistics.medianSurfaceArea != null
-                ? `${analysis.statistics.medianSurfaceArea} m²`
+                ? formatSquareMeters(analysis.statistics.medianSurfaceArea)
                 : '—'}
             </div>
           </div>

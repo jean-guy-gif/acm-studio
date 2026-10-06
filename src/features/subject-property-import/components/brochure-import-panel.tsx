@@ -20,9 +20,9 @@ import {
   readBrochurePages,
 } from '@/features/subject-property-import/services/read-brochure-pdf';
 import type { BrochureImport } from '@/features/subject-property-import/types';
+import { formatEuro } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // Mission 42 — importing the seller's OWN commercial brochure (PDF). Distinct from
 // the online-listing panel: the fiche also fills two diagnostics fields and the

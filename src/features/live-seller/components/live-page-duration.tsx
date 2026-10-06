@@ -25,9 +25,9 @@ import {
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { formatEuro, formatEuroPerSquareMeter, formatNumber, formatPercent } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // Page 3 — "Pourquoi est-il toujours sur le marché ?" The seller first GUESSES
 // how long the property has been for sale; the observed duration and the price
@@ -76,7 +76,7 @@ export function LivePageDuration({
               <div className={statLabel}>Prix au m²</div>
               <div className={statValue}>
                 {entry.pricePerSquareMeter != null
-                  ? `${entry.pricePerSquareMeter.toLocaleString('fr-FR')}\u00A0€/m²`
+                  ? formatEuroPerSquareMeter(entry.pricePerSquareMeter)
                   : '—'}
               </div>
             </div>
@@ -122,7 +122,7 @@ export function LivePageDuration({
                 <div className={statLabel}>Durée observée sur le marché</div>
                 <div className={revealValue}>
                   {entry.marketDuration.available && entry.marketDuration.days != null
-                    ? `${entry.marketDuration.days.toLocaleString('fr-FR')}\u00A0jours`
+                    ? `${formatNumber(entry.marketDuration.days)}\u00A0jours`
                     : 'Non disponible'}
                 </div>
                 {entry.marketDuration.available ? (
@@ -136,8 +136,8 @@ export function LivePageDuration({
                 entry.marketDuration.days !== savedEstimatedDays ? (
                   <div className="mt-1 text-sm font-medium text-zinc-600 stage:text-white/75">
                     {entry.marketDuration.days > savedEstimatedDays
-                      ? `Soit ${(entry.marketDuration.days - savedEstimatedDays).toLocaleString('fr-FR')} jours de plus que l’estimation du vendeur (${savedEstimatedDays.toLocaleString('fr-FR')} jours).`
-                      : `Soit ${(savedEstimatedDays - entry.marketDuration.days).toLocaleString('fr-FR')} jours de moins que l’estimation du vendeur (${savedEstimatedDays.toLocaleString('fr-FR')} jours).`}
+                      ? `Soit ${formatNumber(entry.marketDuration.days - savedEstimatedDays)} jours de plus que l’estimation du vendeur (${formatNumber(savedEstimatedDays)} jours).`
+                      : `Soit ${formatNumber(savedEstimatedDays - entry.marketDuration.days)} jours de moins que l’estimation du vendeur (${formatNumber(savedEstimatedDays)} jours).`}
                   </div>
                 ) : null}
               </div>
@@ -153,7 +153,7 @@ export function LivePageDuration({
                     <div className={bigValue}>
                       {euro(entry.priceHistory.totalDropAmount)}
                       {entry.priceHistory.totalDropPercentage != null
-                        ? ` (${entry.priceHistory.totalDropPercentage} %)`
+                        ? ` (${formatPercent(entry.priceHistory.totalDropPercentage)})`
                         : ''}
                     </div>
                   </div>

@@ -12,13 +12,12 @@ import { normalizeListingUrl } from '@/features/comparable-import/utils/normaliz
 // With the extension: robots.txt AND the page are read in the ADVISOR'S browser (the
 // portals block the server's data-center address, not the advisor). robots is
 // respected first; a refusal is never read as an absence. Without the extension —
-// or if it cannot read the page — we fall back to the server import, then the paste
-// zone. The HTML is always re-validated by the existing server parser (never trusted).
+// or if it cannot read the page — we fall back to the server import. The HTML is always re-validated by the existing server parser (never trusted).
 
 // Exact message: the portal refuses this ADDRESS, not necessarily the listing (the
-// canonical form may well be allowed, and the paste zone always works).
+// canonical form may well be allowed).
 export const ROBOTS_BLOCKED_MESSAGE =
-  'Ce portail refuse cette adresse (pas nécessairement l’annonce). Utilisez le copier-coller ci-dessous.';
+  'Ce portail refuse cette adresse (pas nécessairement l’annonce). Saisissez le bien à la main ci-dessous.';
 
 function safeUrl(raw: string): URL | null {
   try {
@@ -59,7 +58,7 @@ export async function importListingFromUrl(opts: {
       return importHtmlAction(htmlData);
     }
     console.warn(`[ACM import] extension : ${page.error}`);
-    // fall through to the server attempt, then the paste fallback
+    // fall through to the server attempt
   }
 
   const formData = new FormData();

@@ -119,7 +119,7 @@ describe('gapLine', () => {
       features: { ...FEATURES, location: SUBJECT },
     });
     expect(gapLine(CRITERIA, wider, place(1600))).toBe(
-      'Même ville, à 1,6 km · Plus grand : 78,4 m² (+12 %) · 5 pièces (+1) · Prix 4 % au-dessus de votre fourchette',
+      'Même ville, à 1,6 km · Plus grand : 78,4\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
     );
   });
 
@@ -136,7 +136,7 @@ describe('gapLine', () => {
       'Commune voisine : Cagnes-sur-Mer, 6,1 km',
     );
     expect(gapLine(CRITERIA, candidate({ price: 385000 }), place(null))).toBe(
-      'Même ville — quartier non vérifié · Prix 4 % en dessous de votre fourchette',
+      'Même ville — quartier non vérifié · Prix 4\u00A0% en dessous de votre fourchette',
     );
   });
 

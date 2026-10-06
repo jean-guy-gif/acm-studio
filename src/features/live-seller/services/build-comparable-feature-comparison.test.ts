@@ -213,8 +213,8 @@ describe('buildComparableFeatureComparison', () => {
     const comparable = bundle({ surfaceArea: 95 });
     const result = buildComparableFeatureComparison(subject, comparable);
     const surface = result.find((f) => f.criterion === 'surface');
-    expect(surface?.subjectValue).toBe('80 m²');
-    expect(surface?.comparableValue).toBe('95 m²');
+    expect(surface?.subjectValue).toBe('80\u00A0m²');
+    expect(surface?.comparableValue).toBe('95\u00A0m²');
     expect(subject.surfaceArea).toBe(80);
   });
 });

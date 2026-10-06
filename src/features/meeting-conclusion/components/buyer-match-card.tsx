@@ -8,8 +8,9 @@ import {
 import type { BuyerMatch } from '@/features/meeting-conclusion/services/buyer-match';
 import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
 import { propertyLabel } from '@/features/projects/services/property-label';
+import { formatEuro } from '@/lib/format';
 
-const euro = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
+const euro = (value: number): string => formatEuro(value);
 
 const OUTCOME_BADGE: Record<ConclusionOutcome, string> = {
   signed: badgeSelected,

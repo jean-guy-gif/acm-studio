@@ -1,4 +1,5 @@
 import type { PreparationProperty } from '@/features/projects/queries/get-preparation-dossiers';
+import { formatEuro, formatNumber, formatSquareMeters } from '@/lib/format';
 
 // MISSION 52 — composition des libellés du bien, PURE et testable. Isolée ici (sans aucun
 // import server-only) pour être partagée par des composants CLIENT (recherche acheteur du
@@ -19,7 +20,7 @@ export function propertyLabel(property: PreparationProperty | null): string | nu
     parts.push(`${property.roomsCount} pièce${property.roomsCount > 1 ? 's' : ''}`);
   }
   if (property.surfaceArea != null && property.surfaceArea > 0) {
-    parts.push(`${property.surfaceArea} m²`);
+    parts.push(formatSquareMeters(property.surfaceArea));
   }
   if (property.city?.trim()) {
     parts.push(property.city.trim());
@@ -27,12 +28,12 @@ export function propertyLabel(property: PreparationProperty | null): string | nu
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-const euro = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
+const euro = (value: number): string => formatEuro(value);
 
 // « 320 000 – 390 000 € », ou null quand la fourchette n'est pas saisie.
 export function fourchetteLabel(fourchette: { low: number; high: number } | null): string | null {
   if (!fourchette) {
     return null;
   }
-  return `${Math.round(fourchette.low).toLocaleString('fr-FR')} – ${euro(fourchette.high)}`;
+  return `${formatNumber(Math.round(fourchette.low))} – ${euro(fourchette.high)}`;
 }

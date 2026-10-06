@@ -9,19 +9,17 @@ import {
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import type { LivePriceGaps, PriceGap } from '@/features/live-seller/types';
+import { formatEuro, formatPercent } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-zinc-100 py-2.5 text-base last:border-0 stage:border-white/10">
       <span className="text-zinc-500 stage:text-white/60">{label}</span>
       <span className="font-title font-semibold text-zinc-900 stage:text-white">
-        {gap.amount != null
-          ? `${gap.amount >= 0 ? '+' : ''}${gap.amount.toLocaleString('fr-FR')}\u00A0€`
-          : '—'}
-        {gap.percentage != null ? ` (${gap.percentage >= 0 ? '+' : ''}${gap.percentage} %)` : ''}
+        {gap.amount != null ? formatEuro(gap.amount, { signed: true }) : '—'}
+        {gap.percentage != null ? ` (${formatPercent(gap.percentage, { signed: true })})` : ''}
       </span>
     </div>
   );

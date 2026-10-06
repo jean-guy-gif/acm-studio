@@ -1,7 +1,8 @@
 import type { SellerPresentationComparable } from '@/features/seller-presentation/types/seller-presentation';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 // Read-only comparables grid, in the order provided by the contract (display_order).
@@ -54,8 +55,10 @@ export function LiveComparablesSection({
 
           <p className="text-lg font-medium">
             {euro(comparable.price)}
-            {comparable.surfaceArea != null ? ` · ${comparable.surfaceArea} m²` : ''} ·{' '}
-            {euro(comparable.pricePerSquareMeter)}/m²
+            {comparable.surfaceArea != null
+              ? ` · ${formatSquareMeters(comparable.surfaceArea)}`
+              : ''}{' '}
+            · {euro(comparable.pricePerSquareMeter)}/m²
           </p>
 
           <p className="text-sm text-zinc-600 dark:text-zinc-400">

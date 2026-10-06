@@ -13,6 +13,7 @@ import {
   type RankedCandidate,
   type StreamEstateTier,
 } from '@/features/competitor-search/types';
+import { formatEuro } from '@/lib/format';
 
 // MISSION 71 §6 — la ligne de bilan d'une recherche Stream Estate, dite telle quelle :
 // « 10 comparables : 2 identiques, 3 plus grands, 5 à moins de 2 km — 37 annonces facturées
@@ -45,10 +46,7 @@ const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
 export const euroCost = (billed: number): string =>
-  `${(billed * STREAM_ESTATE_PRICE_PER_ADVERT_EUR).toLocaleString('fr-FR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} €`;
+  formatEuro(billed * STREAM_ESTATE_PRICE_PER_ADVERT_EUR, { minDecimals: 2, maxDecimals: 2 });
 
 // « Chercher encore (20 annonces, 0,20 €) » : seulement au plafond, avant 10, s'il reste des crans.
 export const MORE_LABEL = `Chercher encore (${STREAM_ESTATE_MORE_CAP} annonces, ${euroCost(STREAM_ESTATE_MORE_CAP)})`;

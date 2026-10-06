@@ -18,6 +18,7 @@ import {
   OUTDOOR_SPACE_LABELS,
   PARKING_TYPE_LABELS,
 } from '@/features/subject-property/constants/property-options';
+import { formatSquareMeters } from '@/lib/format';
 
 // Traduit une valeur d'enum via un dictionnaire, en conservant la valeur brute
 // en repli si (cas théorique, borné par les CHECK) elle n'est pas répertoriée.
@@ -141,7 +142,7 @@ function statusFor(
 function rawValue(criterion: ComparisonCriterion, bundle: FeatureBundle): string | null {
   switch (criterion) {
     case 'surface':
-      return bundle.surfaceArea == null ? null : `${bundle.surfaceArea} m²`;
+      return bundle.surfaceArea == null ? null : formatSquareMeters(bundle.surfaceArea);
     case 'rooms':
       return bundle.roomsCount == null ? null : String(bundle.roomsCount);
     case 'bedrooms':

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
@@ -32,11 +31,9 @@ import {
   openSearchTabsViaExtension,
   openSearchWindowViaExtension,
   pingExtension,
-  readOpenTabViaExtension,
   readSearchTabsViaExtension,
-  type OpenSearchTab,
 } from '@/features/browser-extension/client';
-import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
+import { ExtensionRequiredNotice } from '@/features/browser-extension/extension-required-notice';
 import {
   RankedCandidateCard,
   StreamEstateFactsLine,
@@ -64,14 +61,12 @@ import { surfaceToleranceLabel } from '@/features/competitor-search/services/des
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
 import { detectSearchPortal } from '@/features/competitor-search/services/extract-search-results';
-import { readPortalsSequentially } from '@/features/competitor-search/services/read-portals-sequentially';
-import { readSearchPage } from '@/features/competitor-search/services/read-search-page';
-import type { PortalSearchLink } from '@/features/competitor-search/services/build-portal-search-urls';
 import type { FilteredSearchLink } from '@/features/competitor-search/services/build-filtered-search-urls';
 import {
   describeReadCounts,
   readSearchPages,
 } from '@/features/competitor-search/services/read-search-pages';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 import {
   SEARCH_PORTAL_LABELS,
   STREAM_ESTATE_LABEL,
@@ -83,7 +78,6 @@ import {
   type PortalSearchResult,
   type RankedCandidate,
   type RecordDecisionResult,
-  type SearchResultsHtmlImport,
   type SectorStatus,
 } from '@/features/competitor-search/types';
 
@@ -100,8 +94,7 @@ type Admissibility = {
   newBuildHeld: number;
 };
 
-// Mission 65 — le portail d'un onglet ouvert, pour que le conseiller choisisse en lisant
-// « SeLoger — Appartements à vendre – Nice », pas une adresse.
+// Le portail d'un onglet de recherche, pour le nommer (« Cliquez une fois sur l'onglet SeLoger »).
 function tabPortalLabel(tab: { url: string }): string {
   try {
     const portal = detectSearchPortal(new URL(tab.url).hostname);
@@ -114,17 +107,14 @@ function tabPortalLabel(tab: { url: string }): string {
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 type Props = {
-  projectId: string;
   criteriaLabel: string;
-  // §10 : le serveur prépare (critères + adresses) et classe (avec l'apprentissage) ;
-  // la LECTURE des quatre portails se fait par l'extension, dans le navigateur.
+  // Le serveur prépare les critères et classe (avec l'apprentissage) ; la LECTURE des onglets
+  // de recherche se fait par l'extension, dans le navigateur.
   prepareAction: () => Promise<PrepareSearchResult>;
   rankAction: (portals: PortalSearchResult[]) => Promise<RankSearchResult>;
-  importResultsHtmlAction: (formData: FormData) => Promise<SearchResultsHtmlImport>;
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   // §8 — import d'un concurrent depuis le HTML lu par l'extension, et écriture des
   // décisions du lot (retenues + écartées) en un appel.
@@ -148,8 +138,7 @@ type Props = {
 type OpenedSearches = {
   city: string;
   links: FilteredSearchLink[];
-  // null : l'extension n'a rien ouvert (absente ou trop ancienne) — les liens sont à ouvrir à la main.
-  opened: number | null;
+  opened: number;
 };
 
 // Seuil de ressemblance : sans fourchette saisie, une annonce en dessous n'est pas cochée d'office.
@@ -228,7 +217,7 @@ function CandidateCard({
           <span className="font-semibold text-brand-deep stage:text-white">
             {euro(candidate.price)}
           </span>
-          {candidate.surfaceArea != null ? ` · ${candidate.surfaceArea} m²` : ''}
+          {candidate.surfaceArea != null ? ` · ${formatSquareMeters(candidate.surfaceArea)}` : ''}
           {candidate.roomsCount != null ? ` · ${candidate.roomsCount} pièces` : ''}
         </div>
         {candidate.streamEstate ? <StreamEstateFactsLine facts={candidate.streamEstate} /> : null}
@@ -284,14 +273,10 @@ function CandidateCard({
 function PortalBlock({
   portal,
   onImport,
-  onPaste,
-  onRetry,
   pending,
 }: {
   portal: PortalSearchResult;
   onImport: (candidate: CompetitorCandidate) => Promise<string | null>;
-  onPaste: (searchUrl: string, html: string) => void;
-  onRetry: (portal: PortalSearchResult['portal']) => void;
   pending: boolean;
 }) {
   const [discarded, setDiscarded] = useState<Set<string>>(new Set());
@@ -340,49 +325,16 @@ function PortalBlock({
           </div>
         </>
       ) : (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-amber-700 stage:text-amber-300">
-            {portal.message}
-          </p>
-          {/* §10 : un échec « injoignable » est PASSAGER — on propose de relancer ce
-              portail. Un « refused » (robots.txt) est PERMANENT — jamais de bouton
-              « réessayer », seulement le collage. « empty » (coquille ou zéro carte)
-              propose aussi le collage, sans relance. */}
-          {portal.status === 'unreachable' ? (
-            <button
-              type="button"
-              onClick={() => onRetry(portal.portal)}
-              disabled={pending}
-              className={`${btnSecondary} self-start px-3 py-1.5 text-xs`}
-            >
-              Relancer {portal.label}
-            </button>
-          ) : null}
-          {/* Recette du 19/08 : cet écran demandait encore « Cmd/Ctrl+U → code
-              source », alors que l'écran d'ajout d'un concurrent avait déjà
-              basculé sur le geste simple. Deux écrans du même outil ne peuvent
-              pas exiger deux gestes différents — surtout pas celui-là. */}
-          {portal.portal !== STREAM_ESTATE_SOURCE ? (
-            <ListingPasteZone
-              onPaste={({ html, text }) =>
-                onPaste(portal.searchUrl, html.trim() !== '' ? html : text)
-              }
-              disabled={pending}
-              pageLabel="de résultats"
-            />
-          ) : null}
-        </div>
+        <p className="text-sm font-medium text-amber-700 stage:text-amber-300">{portal.message}</p>
       )}
     </section>
   );
 }
 
 export function CompetitorSearchPanel({
-  projectId,
   criteriaLabel,
   prepareAction,
   rankAction,
-  importResultsHtmlAction,
   recordDecisionAction,
   importAction,
   recordDecisionsAction,
@@ -391,13 +343,10 @@ export function CompetitorSearchPanel({
   streamEstateAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
-  const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // La recherche automatique demande l'extension ; absente, on ne dégrade PAS en
-  // quatre collages (§10) — on le dit et on propose l'ajout manuel par adresse.
-  const [extensionMissing, setExtensionMissing] = useState(false);
+  // Mission 74 — l'extension manque ou est trop ancienne : un seul message, sans repli.
+  const [extensionIssue, setExtensionIssue] = useState<'missing' | 'outdated' | null>(null);
   const [portals, setPortals] = useState<PortalSearchResult[] | null>(null);
-  const [searchLinks, setSearchLinks] = useState<PortalSearchLink[]>([]);
   // §1 (revue) — la fourchette du bien vendeur : la liste principale n'en sort pas.
   const [advisorRange, setAdvisorRange] = useState<{ min: number | null; max: number | null }>({
     min: null,
@@ -422,14 +371,8 @@ export function CompetitorSearchPanel({
   const [importFailures, setImportFailures] = useState<
     { entry: RankedCandidate; reason: string }[]
   >([]);
-  // Mission 65 — « Lire ma recherche » : l'onglet que le conseiller a filtré lui-même.
+  // Mission 69 — « Lire mes recherches » : les onglets que le conseiller a filtrés.
   const [reading, setReading] = useState(false);
-  // Plusieurs onglets de recherche ouverts : c'est le conseiller qui choisit.
-  const [tabChoices, setTabChoices] = useState<OpenSearchTab[] | null>(null);
-  // Repli sans extension (absente, ou trop ancienne pour lire un onglet) : le collage.
-  const [pasteFallback, setPasteFallback] = useState<'missing' | 'outdated' | null>(null);
-  // Ce qui vient d'être lu, dit tel quel (« SeLoger : 30 annonces lues… »).
-  const [readNote, setReadNote] = useState<string | null>(null);
   // Mission 69 — onglets ouverts, récapitulatif par portail, onglets restés sur l'écran d'attente.
   const [opening, setOpening] = useState(false);
   const [openedSearches, setOpenedSearches] = useState<OpenedSearches | null>(null);
@@ -438,10 +381,9 @@ export function CompetitorSearchPanel({
   // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
   const [streamSearching, setStreamSearching] = useState(false);
   const [streamNote, setStreamNote] = useState<StreamEstateSearchNote | null>(null);
-  const busy = pending || searching || importing || reading || opening || streamSearching;
+  const busy = pending || importing || reading || opening || streamSearching;
 
-  // Essai Stream Estate — les biens de l'API restent à côté des portails quand on relit les
-  // onglets ou relance la recherche automatique : c'est tout l'intérêt de la comparaison.
+  // Les biens de Stream Estate restent à côté des portails quand on relit les onglets.
   const withStreamEstate = (next: PortalSearchResult[]): PortalSearchResult[] => [
     ...next.filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
     ...(portals ?? []).filter((portal) => portal.portal === STREAM_ESTATE_SOURCE),
@@ -483,9 +425,7 @@ export function CompetitorSearchPanel({
     setSelection((current) => ({ ...current, [entry.candidate.url]: !isChecked(entry) }));
 
   // Reclasse (serveur, avec l'apprentissage) après toute mise à jour de la liste des
-  // portails — recherche, relance d'un portail, collage. Le classement est la seule
-  // vue « du plus au moins ressemblant » ; sans reclassement, une carte collée ou
-  // relancée n'y entrerait pas.
+  // portails. Le classement est la seule vue « du plus au moins ressemblant ».
   async function refreshRanking(next: PortalSearchResult[]) {
     setPortals(next);
     const rank = await rankAction(next);
@@ -507,68 +447,6 @@ export function CompetitorSearchPanel({
       setError(rank.error);
     }
     return rank;
-  }
-
-  // §10 — la recherche est MENÉE PAR L'EXTENSION : le serveur prépare les adresses,
-  // l'extension lit les quatre portails dans UNE seule fenêtre, l'un après l'autre.
-  // Extension absente → on ne fait pas quatre collages : on le dit (extensionMissing)
-  // et on renvoie vers l'ajout manuel par adresse.
-  async function runSearch() {
-    setError(null);
-    setExtensionMissing(false);
-    setSearching(true);
-    try {
-      const prep = await prepareAction();
-      if (!prep.ok) {
-        setError(prep.error);
-        setPortals(null);
-        setRanked([]);
-        setAdmissibility(null);
-        setLearnedNotes([]);
-        setSector(null);
-        return;
-      }
-      setSearchLinks(prep.links);
-      setAdvisorRange({
-        min: prep.criteria.advisorPriceMin,
-        max: prep.criteria.advisorPriceMax,
-      });
-
-      const ping = await pingExtension();
-      if (!ping.available) {
-        setExtensionMissing(true);
-        setPortals(null);
-        setRanked([]);
-        setAdmissibility(null);
-        setLearnedNotes([]);
-        setSector(null);
-        return;
-      }
-
-      const win = await openSearchWindowViaExtension();
-      if (!win.ok || win.windowId == null) {
-        setError('La fenêtre de recherche n’a pas pu s’ouvrir. Réessayez.');
-        return;
-      }
-      const robotsCache: PortalRobotsCache = new Map();
-      let read: PortalSearchResult[];
-      try {
-        read = await readPortalsSequentially(prep.links, {
-          readPage: (url) => readPageViaExtension(url, { windowId: win.windowId, robotsCache }),
-          interPageDelayMs: 1000,
-        });
-      } finally {
-        await closeSearchWindowViaExtension(win.windowId);
-      }
-
-      setDecided({});
-      setSelection({});
-      setImportProgress(null);
-      setImportFailures([]);
-      await refreshRanking(withStreamEstate(read));
-    } finally {
-      setSearching(false);
-    }
   }
 
   // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), par crans. Ses
@@ -603,7 +481,6 @@ export function CompetitorSearchPanel({
         setError(prep.error);
         return;
       }
-      setSearchLinks(prep.links);
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
       const candidates = [...(previousPortal?.candidates ?? []), ...result.portal.candidates];
@@ -634,57 +511,12 @@ export function CompetitorSearchPanel({
     }
   }
 
-  // Mission 65 — une page de résultats filtrée PAR LE CONSEILLER (onglet lu par l'extension,
-  // ou code collé) suit le même chemin que la recherche automatique : lecture des cartes,
-  // doublons écartés (le neuf est tenu en réserve par le classement), puis classement serveur avec les quatre filtres (M61). Elle
-  // remplace le résultat du même portail et laisse les autres en place.
-  async function integrateSearchPage(html: string, pageUrl: string | null) {
-    const read = readSearchPage(html, pageUrl);
-    if (!read.ok) {
-      setError(
-        read.reason === 'unknown_portal'
-          ? 'Portail non reconnu. Ouvrez une page de résultats SeLoger, Bien’ici, Green Acres ou Maisons et Appartements.'
-          : 'Aucune annonce détectée sur cette page. Vérifiez qu’il s’agit bien d’une page de résultats SeLoger, Bien’ici, Green Acres ou Maisons et Appartements, avec la liste affichée.',
-      );
-      return;
-    }
-    const prep = await prepareAction();
-    if (!prep.ok) {
-      setError(prep.error);
-      return;
-    }
-    setSearchLinks(prep.links);
-    setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
-    const excluded = [
-      read.newBuild > 0
-        ? `${plural(read.newBuild, 'bien neuf', 'biens neufs')} : proposé${read.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien`
-        : null,
-      read.excludedDuplicates > 0
-        ? plural(read.excludedDuplicates, 'doublon écarté', 'doublons écartés')
-        : null,
-    ].filter((part): part is string => part != null);
-    setReadNote(
-      `${read.portal.label} : ${plural(read.cardsRead, 'annonce lue', 'annonces lues')} sur votre page${
-        excluded.length > 0 ? ` (${excluded.join(', ')})` : ''
-      }. Seules celles qui correspondent au bien de votre client sont proposées ci-dessous.`,
-    );
-    setPasteFallback(null);
-    const others = (portals ?? []).filter((portal) => portal.portal !== read.portal.portal);
-    await refreshRanking([...others, read.portal]);
-    // Mission 69 — une recherche faite à la main apprend l'identifiant de sa commune (si les
-    // cartes la confirment). Un échec n'interrompt rien.
-    if (pageUrl != null) {
-      await rememberPlacesAction([
-        { url: pageUrl, cardCities: read.portal.candidates.map((candidate) => candidate.city) },
-      ]).catch(() => undefined);
-    }
-  }
-
   // Mission 69 — « Ouvrir mes recherches » : le serveur construit les adresses filtrées depuis le
-  // bien vendeur, l'extension les ouvre dans des onglets visibles. Sans extension (ou trop
-  // ancienne), les mêmes liens restent à ouvrir à la main.
+  // bien vendeur, l'extension les ouvre dans des onglets visibles.
   async function openMySearches() {
     setError(null);
+    setExtensionIssue(null);
+    setOpenedSearches(null);
     setReadSummary([]);
     setWaitingTabs([]);
     setOpening(true);
@@ -696,18 +528,19 @@ export function CompetitorSearchPanel({
       }
       const ping = await pingExtension();
       if (!ping.available) {
-        setOpenedSearches({ city: prep.city, links: prep.links, opened: null });
+        setExtensionIssue('missing');
         return;
       }
       const opened = await openSearchTabsViaExtension(prep.links.map((link) => link.url));
-      if (!opened.ok && opened.reason === 'error') {
-        setError('Les onglets n’ont pas pu s’ouvrir. Réessayez, ou ouvrez les liens ci-dessous.');
+      if (!opened.ok) {
+        if (opened.reason === 'outdated') {
+          setExtensionIssue('outdated');
+        } else {
+          setError('Les onglets n’ont pas pu s’ouvrir. Réessayez.');
+        }
+        return;
       }
-      setOpenedSearches({
-        city: prep.city,
-        links: prep.links,
-        opened: opened.ok ? opened.opened : null,
-      });
+      setOpenedSearches({ city: prep.city, links: prep.links, opened: opened.opened });
     } finally {
       setOpening(false);
     }
@@ -719,23 +552,20 @@ export function CompetitorSearchPanel({
   // précédente ; le récapitulatif dit, par portail, combien d'annonces ont été lues et retenues.
   async function readAllMySearches() {
     setError(null);
-    setExtensionMissing(false);
-    setPasteFallback(null);
-    setTabChoices(null);
-    setReadNote(null);
+    setExtensionIssue(null);
     setReadSummary([]);
     setWaitingTabs([]);
     setReading(true);
     try {
       const ping = await pingExtension();
       if (!ping.available) {
-        setPasteFallback('missing');
+        setExtensionIssue('missing');
         return;
       }
       const result = await readSearchTabsViaExtension();
       if (!result.ok) {
         if (result.reason === 'outdated') {
-          setPasteFallback('outdated');
+          setExtensionIssue('outdated');
         } else if (result.reason === 'none') {
           setError(
             'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Cliquez d’abord sur « Ouvrir mes recherches ».',
@@ -764,7 +594,6 @@ export function CompetitorSearchPanel({
         setError(prep.error);
         return;
       }
-      setSearchLinks(prep.links);
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       setDecided({});
       setSelection({});
@@ -777,103 +606,6 @@ export function CompetitorSearchPanel({
       await rememberPlacesAction(read.learnInput).catch(() => undefined);
     } finally {
       setReading(false);
-    }
-  }
-
-  // « Lire ma recherche » : AUCUNE requête au portail — l'extension lit l'onglet tel qu'il
-  // est affiché. `tabId` = l'onglet choisi quand plusieurs recherches sont ouvertes.
-  async function readMySearch(tabId?: number) {
-    setError(null);
-    setExtensionMissing(false);
-    setPasteFallback(null);
-    setTabChoices(null);
-    setReadNote(null);
-    setReading(true);
-    try {
-      const ping = await pingExtension();
-      if (!ping.available) {
-        setPasteFallback('missing');
-        return;
-      }
-      const result = await readOpenTabViaExtension(tabId);
-      if (!result.ok) {
-        if (result.reason === 'outdated') {
-          setPasteFallback('outdated');
-        } else if (result.reason === 'none') {
-          setError(
-            'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Faites votre recherche filtrée sur le portail, laissez l’onglet ouvert et affiché au moins une fois, puis cliquez à nouveau.',
-          );
-        } else {
-          setError('L’onglet n’a pas pu être lu. Réaffichez-le un instant, puis réessayez.');
-        }
-        return;
-      }
-      if (result.kind === 'choose') {
-        setTabChoices(result.tabs);
-        return;
-      }
-      await integrateSearchPage(result.html, result.finalUrl);
-    } finally {
-      setReading(false);
-    }
-  }
-
-  // Repli sans extension : le code de la page de résultats, collé. Pas d'adresse — le
-  // portail est reconnu aux marqueurs de ses cartes.
-  async function handleSearchPaste(html: string) {
-    setError(null);
-    setReadNote(null);
-    setReading(true);
-    try {
-      await integrateSearchPage(html, null);
-    } finally {
-      setReading(false);
-    }
-  }
-
-  function handlePaste(searchUrl: string, html: string) {
-    setError(null);
-    const formData = new FormData();
-    formData.set('url', searchUrl);
-    formData.set('html', html);
-    startTransition(async () => {
-      const result = await importResultsHtmlAction(formData);
-      if (result.ok) {
-        const next = (portals ?? []).map((portal) =>
-          portal.portal === result.portal.portal ? result.portal : portal,
-        );
-        await refreshRanking(next);
-      } else {
-        setError(result.error);
-      }
-    });
-  }
-
-  // §10 : relance d'UN portail injoignable (échec passager), par l'extension, sans
-  // refaire les trois autres. Une fenêtre one-off (ouverte puis fermée par l'extension)
-  // suffit pour une seule page.
-  async function handleRetry(portal: PortalSearchResult['portal']) {
-    const link = searchLinks.find((candidate) => candidate.portal === portal);
-    if (!link) {
-      return;
-    }
-    setError(null);
-    setSearching(true);
-    try {
-      const ping = await pingExtension();
-      if (!ping.available) {
-        setExtensionMissing(true);
-        return;
-      }
-      const robotsCache: PortalRobotsCache = new Map();
-      const [one] = await readPortalsSequentially([link], {
-        readPage: (url) => readPageViaExtension(url, { robotsCache }),
-        interPageDelayMs: 0,
-      });
-      const next = (portals ?? []).map((current) => (current.portal === portal ? one : current));
-      await refreshRanking(next);
-    } finally {
-      setSearching(false);
     }
   }
 
@@ -934,12 +666,12 @@ export function CompetitorSearchPanel({
       return;
     }
     setError(null);
-    setExtensionMissing(false);
+    setExtensionIssue(null);
     setImportFailures([]);
 
     const ping = await pingExtension();
     if (!ping.available) {
-      setExtensionMissing(true);
+      setExtensionIssue('missing');
       return;
     }
     const win = await openSearchWindowViaExtension();
@@ -994,7 +726,7 @@ export function CompetitorSearchPanel({
   async function importFromPortal(candidate: CompetitorCandidate): Promise<string | null> {
     const ping = await pingExtension();
     if (!ping.available) {
-      setExtensionMissing(true);
+      setExtensionIssue('missing');
       return 'l’extension ACM Studio n’a pas répondu';
     }
     const outcome = await importOne(candidate, new Map());
@@ -1028,7 +760,7 @@ export function CompetitorSearchPanel({
     setError(null);
     const ping = await pingExtension();
     if (!ping.available) {
-      setExtensionMissing(true);
+      setExtensionIssue('missing');
       return;
     }
     setImporting(true);
@@ -1108,8 +840,8 @@ export function CompetitorSearchPanel({
         </div>
       ) : null}
       {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
-          du bien, puis lit tous les onglets d'un coup. La lecture d'un seul onglet (mission 65)
-          reste possible. Mission 73 : en secondaire, sous leur intitulé. */}
+          du bien, puis lit tous les onglets d'un coup. Mission 73 : en secondaire, sous leur
+          intitulé. */}
       <h3 className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
         {streamEstateAction
           ? 'Ou chercher vous-même sur les portails'
@@ -1122,29 +854,18 @@ export function CompetitorSearchPanel({
         <button type="button" onClick={readAllMySearches} disabled={busy} className={btnSecondary}>
           {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
         </button>
-        <button
-          type="button"
-          onClick={() => readMySearch()}
-          disabled={busy}
-          className={`${btnSecondary} px-3 py-1.5 text-sm`}
-        >
-          Lire un seul onglet
-        </button>
         {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
       </div>
       <p className={hintText}>
-        « Ouvrir mes recherches » ouvre les quatre portails, déjà filtrés avec le type, la commune,
-        les pièces, la surface et votre fourchette. Corrigez un filtre sur le portail si besoin,
+        « Ouvrir mes recherches » ouvre les portails déjà filtrés ; corrigez un filtre si besoin,
         puis « Lire mes recherches ».
       </p>
       {openedSearches ? (
         <div className={`${card} flex flex-col gap-2 p-4`}>
           <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            {openedSearches.opened != null
-              ? openedSearches.opened > 0
-                ? `${plural(openedSearches.opened, 'onglet ouvert', 'onglets ouverts')} à côté d’ACM`
-                : 'Vos recherches sont déjà ouvertes dans vos onglets'
-              : 'Ouvrez vos recherches (l’extension ACM Studio 0.3.0 les ouvre en un clic)'}
+            {openedSearches.opened > 0
+              ? `${plural(openedSearches.opened, 'onglet ouvert', 'onglets ouverts')} à côté d’ACM`
+              : 'Vos recherches sont déjà ouvertes dans vos onglets'}
           </span>
           {openedSearches.links.map((link) => (
             <div key={link.portal} className="flex flex-col gap-0.5 text-sm">
@@ -1219,100 +940,12 @@ export function CompetitorSearchPanel({
           ))}
         </div>
       ) : null}
-      {tabChoices ? (
-        // Plusieurs recherches ouvertes : on ne devine pas laquelle, le conseiller choisit.
-        <div className={`${card} flex flex-col gap-2 p-4`}>
-          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            Plusieurs recherches sont ouvertes — laquelle lire ?
-          </span>
-          {tabChoices.map((tab) => (
-            <button
-              key={tab.tabId}
-              type="button"
-              onClick={() => readMySearch(tab.tabId)}
-              disabled={busy}
-              className={`${btnSecondary} justify-start px-3 py-1.5 text-left text-sm`}
-            >
-              {tabPortalLabel(tab)} — {tab.title.trim() !== '' ? tab.title : tab.url}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {pasteFallback ? (
-        // Critère 4 — sans extension, le collage de la page de résultats reste le repli.
-        <div className={`${card} flex flex-col gap-2 p-4`}>
-          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            {pasteFallback === 'missing'
-              ? 'L’extension ACM Studio n’a pas répondu — collez votre page de résultats'
-              : 'Votre extension ACM Studio est trop ancienne pour lire un onglet — collez votre page de résultats'}
-          </span>
-          <p className={hintText}>
-            {pasteFallback === 'outdated'
-              ? 'Mettez l’extension à jour (version 0.2.0) pour lire l’onglet en un clic. En attendant, '
-              : 'Sans l’extension, '}
-            le repli est le collage : sur l’onglet de votre recherche filtrée, copiez la page de
-            résultats et collez-la ci-dessous. Le portail est reconnu tout seul.
-          </p>
-          <ListingPasteZone
-            onPaste={({ html, text }) => handleSearchPaste(html.trim() !== '' ? html : text)}
-            disabled={busy}
-            pageLabel="de résultats"
-          />
-        </div>
-      ) : null}
-      {readNote ? <p className={hintText}>{readNote}</p> : null}
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={runSearch} disabled={busy} className={btnSecondary}>
-          {searching ? 'Recherche en cours…' : 'Lancer la recherche automatique'}
-        </button>
-        <p className={hintText}>
-          En second : elle ne lit que la première page, non filtrée, de chaque portail.
-        </p>
-      </div>
-      {searching ? (
-        // §10 : les portails sont interrogés l'un après l'autre, une seconde entre
-        // deux pages — on le DIT au lieu de faire semblant d'être instantané.
-        <p className={hintText}>
-          Les quatre portails sont interrogés l’un après l’autre, poliment (une seconde entre deux
-          pages) dans une fenêtre discrète. Cela prend quelques secondes.
-        </p>
-      ) : null}
-      <p className="text-xs text-zinc-400 stage:text-white/40">
-        « Lire mes recherches » et « Lire un seul onglet » lisent vos onglets de recherche tels
-        qu’ils sont affichés, via l’extension ACM Studio (chaque onglet est affiché un instant, le
-        temps que sa page se construise) : aucune nouvelle requête n’est envoyée au portail. Sans
-        l’extension, le repli est le collage de la page de résultats. La recherche automatique
-        interroge Green Acres, SeLoger, Bien’ici et Maisons et Appartements ; un portail qui refuse
-        la lecture reste accessible : ouvrez sa recherche, copiez le code de la page de résultats et
-        collez-le. Chaque suggestion reste à retenir ou à écarter — rien n’est enregistré sans votre
-        validation.
-      </p>
       {error ? (
         <p role="alert" className={alertError}>
           {error}
         </p>
       ) : null}
-      {extensionMissing ? (
-        // La recherche automatique demande l'extension. Absente, on ne dégrade PAS en
-        // quatre collages : on le dit, et on propose le geste qui existe déjà — ajouter
-        // un concurrent par son adresse. Un clic ne devient pas huit sans le dire.
-        <div className={`${card} flex flex-col gap-2 p-4`}>
-          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            La recherche automatique demande l’extension ACM Studio
-          </span>
-          <p className={hintText}>
-            L’extension lit les quatre portails depuis votre navigateur. Sans elle, la recherche
-            automatique n’est pas disponible — plutôt que de vous demander quatre copier-coller,
-            ajoutez un concurrent par son adresse, le geste habituel.
-          </p>
-          <Link
-            href={`/builder/${projectId}/comparables/new`}
-            className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
-          >
-            Ajouter un concurrent par son adresse
-          </Link>
-        </div>
-      ) : null}
+      {extensionIssue ? <ExtensionRequiredNotice reason={extensionIssue} /> : null}
       {learnedNotes.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>
           <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
@@ -1504,8 +1137,6 @@ export function CompetitorSearchPanel({
               key={portal.portal}
               portal={portal}
               onImport={importFromPortal}
-              onPaste={handlePaste}
-              onRetry={handleRetry}
               pending={busy}
             />
           ))
