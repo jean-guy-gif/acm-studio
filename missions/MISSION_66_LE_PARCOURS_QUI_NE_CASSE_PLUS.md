@@ -15,9 +15,10 @@ quelques minutes et sans passer par un portail.
 1. `@playwright/test` est ajouté en devDependency. Justification (règle 19) : aucun outil existant ne
    pilote un navigateur dans les tests. Script `e2e` dans package.json, configuration dans
    `playwright.config.ts`, tests dans `tests/e2e/`.
-2. Un compte et une agence de test dédiés, nommés « TEST AUTOMATIQUE — ne pas utiliser ». Je les crée
-   moi-même par invitation (M60) : Claude Code ne crée aucun compte en base. Les identifiants vont
-   dans `.env.e2e.local` (ignoré par git) : `E2E_BASE_URL`, `E2E_EMAIL`, `E2E_PASSWORD`.
+2. Un compte et une agence de test dédiés, « TEST AUTOMATIQUE — ne pas utiliser ». Laurent les a
+   créés lui-même (Supabase → Users → Add user, puis connexion sur l'URL d'essai → onboarding) :
+   Claude Code ne crée aucun compte en base. Les identifiants sont dans `.env.e2e.local` (vérifie
+   qu'il est ignoré par git) : `E2E_BASE_URL`, `E2E_EMAIL`, `E2E_PASSWORD`. Ne les affiche jamais.
 3. Le scénario :
    - connexion → nouveau dossier → bien vendeur saisi à la main (appartement, 3 pièces, 65 m², une
      vraie commune) → fourchette ;
