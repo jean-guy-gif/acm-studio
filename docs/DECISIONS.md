@@ -121,6 +121,7 @@ chaque mission validée.
 - 24/09 · M60 · On entre par invitation e-mail ; agence et rôle voyagent avec elle ; elle n'est « envoyée » que si l'e-mail part ; une adresse déjà inscrite n'est pas invitée.
 - 24/09 · M60 · Retirer quelqu'un retire l'accès, pas la personne : ses dossiers restent à son nom, sans réattribution.
 - 24/09 · M60 · Deux rôles, manager et conseiller ; le dernier manager ne peut ni se retirer ni être rétrogradé ; gardes à l'écran et à l'action.
+- 06/10 · M64 · Le lien d'invitation suit l'environnement d'où elle part (`{{ .RedirectTo }}`, posé d'après `NEXT_PUBLIC_SITE_URL`) ; le modèle du projet en ligne se colle à la main ; l'envoi passe par un SMTP.
 
 ## Données & provenance
 
@@ -143,3 +144,5 @@ chaque mission validée.
 - 06/10 · M63 · `comparable` reste dans le code existant ; `competitor` pour le nouveau code ; « Concurrent » à l'écran.
 - 06/10 · M63 · Une mission jamais exécutée (ni branche ni commit) n'entre pas ici ; quand le commit contredit la mission, le commit fait foi.
 - 06/10 · M63 · Aucune nouvelle fonctionnalité avant le pilote ; une mission naît d'un problème vu en vrai rendez-vous ; les idées vont dans `docs/IDEES.md`.
+- 06/10 · M64 · On essaie sur `acm-studio-essai.vercel.app` (branche `essai`) ; l'extension accepte l'URL de travail, l'URL d'essai et localhost, jamais `*.vercel.app`.
+- 06/10 · M64 · Base Supabase partagée entre travail et essai : une migration reste compatible avec `main` et s'applique, après comptage, avant l'essai ; les données d'essai sont nommées « TEST ».
