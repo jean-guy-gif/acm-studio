@@ -192,8 +192,19 @@ export function RankedCandidateCard({
           <span className="font-title text-base leading-snug font-semibold text-zinc-900 capitalize stage:text-white">
             {candidate.title ?? 'Annonce détectée'}
           </span>
-          <span className={badgeBrand} title="Place dans l’ordre, du plus proche au plus éloigné">
-            n° {position}
+          <span className="flex shrink-0 flex-col items-end gap-1">
+            <span className={badgeBrand} title="Place dans l’ordre, du plus proche au plus éloigné">
+              n° {position}
+            </span>
+            {/* Mission 71 — % de correspondance : points obtenus ÷ points possibles. */}
+            {ranked.matchPercent != null ? (
+              <span
+                className="text-sm font-semibold text-brand-deep stage:text-white"
+                title="Correspondance avec le bien du vendeur (un critère non indiqué sort du calcul)"
+              >
+                {ranked.matchPercent} %
+              </span>
+            ) : null}
           </span>
         </div>
 
@@ -236,6 +247,14 @@ export function RankedCandidateCard({
                 ? ' et des pièces'
                 : ' des pièces'
               : ''}
+          </span>
+        ) : null}
+
+        {/* Mission 71 — Stream Estate : ce qui écarte ce bien de l'identique (distance, commune
+            voisine, plus grand, une pièce de plus, prix hors fourchette, quartier non vérifié). */}
+        {ranked.gapLine ? (
+          <span className="inline-flex w-fit rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            {ranked.gapLine}
           </span>
         ) : null}
 

@@ -6,7 +6,8 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type LoadedSearchCriteria =
-  | { ok: true; criteria: CompetitorSearchCriteria; profileId: string }
+  // `address` : l'adresse du bien vendeur, pour le géocodage (secteur, crans Stream Estate).
+  | { ok: true; criteria: CompetitorSearchCriteria; profileId: string; address: string | null }
   | { ok: false; reason: 'forbidden' | 'no_city' };
 
 // Les critères de recherche viennent du bien vendeur, côté serveur, jamais du client. Le dossier
@@ -37,6 +38,7 @@ export async function loadSearchCriteria(projectId: string): Promise<LoadedSearc
   return {
     ok: true,
     profileId: profile.id,
+    address: property.address,
     criteria: {
       city: property.city.trim(),
       postalCode: property.postal_code,

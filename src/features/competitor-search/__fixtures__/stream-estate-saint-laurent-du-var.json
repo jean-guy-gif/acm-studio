@@ -1,0 +1,570 @@
+{
+ "hydra:totalItems": 10000,
+ "hydra:member": [
+  {
+   "uuid": "4a9b4d3f-dee0-4acd-bbb2-31937123e9d5",
+   "title": "vente appartement 4 Pièce(s)",
+   "propertyType": 0,
+   "price": 1099000,
+   "surface": 140,
+   "landSurface": null,
+   "room": 4,
+   "pricePerMeter": 7850,
+   "createdAt": "2026-10-06T15:01:42+02:00",
+   "lastCrawledAt": "2026-10-06T15:01:42+02:00",
+   "floor": 6,
+   "elevator": true,
+   "location": {
+    "lat": 43.673199744989,
+    "lon": 7.1923969641906
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/15/a2c469e6c5a6157c8f987bb33bddea.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "vente appartement 4 Pièce(s)",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T15:01:42+02:00",
+     "floor": 6,
+     "elevator": true,
+     "features": [
+      "140 m²",
+      "4 pièces",
+      "3 chambres",
+      "1 salle de bain",
+      "Terrasse",
+      "Orientation sud",
+      "Piscine",
+      "Ascenseur",
+      "Orientation ouest",
+      "1 salle de douche",
+      "1 place de parking",
+      "7 étages",
+      "Chauffage central collectif",
+      "Étage 6 sur 7",
+      "Cuisine américaine"
+     ],
+     "url": "https://www.vizzit.fr/fr/property/appartement/saint-laurent-du-var/Aes2b6ox3f1uecg1",
+     "events": [
+      {
+       "createdAt": "2026-10-06T15:01:42+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "da29845c-a1d7-4cc2-8896-f3e461d43181",
+   "title": "Studio neuf à vendre",
+   "propertyType": 0,
+   "price": 262000,
+   "surface": 28,
+   "landSurface": null,
+   "room": 1,
+   "pricePerMeter": 9357.14,
+   "createdAt": "2026-10-06T13:32:45+02:00",
+   "lastCrawledAt": "2026-10-06T15:24:29+02:00",
+   "floor": 3,
+   "elevator": null,
+   "location": {
+    "lat": 43.65612,
+    "lon": 7.189365
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/13/cce375c5b195e3ba8455bc9f3c5757.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Studio neuf à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T15:24:29+02:00",
+     "floor": 3,
+     "features": [
+      "3 étage",
+      "Salle de bain",
+      "Cuisine ouverte",
+      "Entrée séparée",
+      "1 place de parking",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/26UHHTMWLVYU",
+     "events": [
+      {
+       "createdAt": "2026-10-06T13:32:45+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      },
+      {
+       "createdAt": "2026-10-06T15:24:29+02:00",
+       "fieldName": "bedroom",
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "85fe8b72-9441-444d-b314-27deba05931f",
+   "title": "Vente appartement 4 pièces 76 m² Saint-Laurent-du-Var (06700) - Superimmo",
+   "propertyType": 0,
+   "price": 395000,
+   "surface": 76,
+   "landSurface": null,
+   "room": 4,
+   "pricePerMeter": 5197.37,
+   "createdAt": "2026-10-06T09:55:03+02:00",
+   "lastCrawledAt": "2026-10-06T09:55:03+02:00",
+   "floor": null,
+   "elevator": null,
+   "location": null,
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/09/e5f2744c0b7cb351f615c51c2cbe0c.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Vente appartement 4 pièces 76 m² Saint-Laurent-du-Var (06700) - Superimmo",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T09:55:03+02:00",
+     "url": "https://www.superimmo.com/annonces/achat-appartement-76m-saint-laurent-du-var-06700-x126ziw",
+     "events": [
+      {
+       "createdAt": "2026-10-06T09:55:03+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "7dfef0f4-21cc-4a34-932b-868810f9a116",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "price": 378000,
+   "surface": 64,
+   "landSurface": null,
+   "room": 3,
+   "pricePerMeter": 5906.25,
+   "createdAt": "2026-10-06T08:12:03+02:00",
+   "lastCrawledAt": "2026-10-06T14:25:30+02:00",
+   "floor": 1,
+   "elevator": null,
+   "location": {
+    "lat": 43.698338039216,
+    "lon": 7.1759837254902
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/08/a9d310adc7e1fd05c362bc3d00a226.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement neuf à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T14:25:30+02:00",
+     "floor": 1,
+     "features": [
+      "1er étage",
+      "Salle de bain",
+      "Cuisine ouverte",
+      "2 chambres",
+      "Entrée séparée",
+      "1 place de parking",
+      "Terrasse",
+      "Pas de balcon",
+      "Pas de cave"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/264J7YBRKCPP",
+     "events": [
+      {
+       "createdAt": "2026-10-06T08:12:03+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "029e7a44-83c4-44ad-aa79-e6df8819f03b",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "price": 440000,
+   "surface": 62,
+   "landSurface": null,
+   "room": 3,
+   "pricePerMeter": 7096.77,
+   "createdAt": "2026-10-06T04:32:04+02:00",
+   "lastCrawledAt": "2026-10-06T11:20:31+02:00",
+   "floor": 3,
+   "elevator": true,
+   "location": {
+    "lat": 43.664896470588,
+    "lon": 7.1930623529412
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/04/3a540609d89f97dc738768771a495b.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T11:20:31+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": 2028,
+     "features": [
+      "3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "2 chambres",
+      "2 parkings: 2 parkings",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition ouest",
+      "Digicode",
+      "Interphone"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/26D8RFFUBL2J",
+     "events": [
+      {
+       "createdAt": "2026-10-06T04:32:04+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "b2cd2adc-628c-41a8-8ebe-a70b56382401",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "price": 549000,
+   "surface": 67,
+   "landSurface": null,
+   "room": 3,
+   "pricePerMeter": 8194.03,
+   "createdAt": "2026-10-06T04:12:50+02:00",
+   "lastCrawledAt": "2026-10-06T16:22:38+02:00",
+   "floor": 3,
+   "elevator": true,
+   "location": {
+    "lat": 43.65612,
+    "lon": 7.189365
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/04/c3181325d0544d4ad22c8d4c722522.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T16:22:38+02:00",
+     "floor": 3,
+     "elevator": true,
+     "constructionYear": 2029,
+     "features": [
+      "3 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "2 chambres",
+      "4 parkings: 4 parkings",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition sud",
+      "Digicode",
+      "Interphone"
+     ],
+     "url": "https://www.seloger.com/wl-cdp/26PP9FWC5BK9",
+     "events": [
+      {
+       "createdAt": "2026-10-06T04:12:50+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "379c4ab8-ff02-45a8-9ccb-4dc0e2f4c658",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "price": 518000,
+   "surface": 59,
+   "landSurface": null,
+   "room": 3,
+   "pricePerMeter": 8779.66,
+   "createdAt": "2026-10-06T02:14:51+02:00",
+   "lastCrawledAt": "2026-10-06T14:26:20+02:00",
+   "floor": 5,
+   "elevator": true,
+   "location": {
+    "lat": 43.65612,
+    "lon": 7.189365
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/02/8c257d6638950da71f55d03c47eefa.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T14:26:20+02:00",
+     "floor": 5,
+     "elevator": true,
+     "constructionYear": 2029,
+     "features": [
+      "5 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "2 chambres",
+      "4 parkings: 4 parkings",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition nord",
+      "Piscine",
+      "Digicode",
+      "Interphone"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/26Y41LXPLXN5",
+     "events": [
+      {
+       "createdAt": "2026-10-06T02:14:51+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "94c556c7-ae57-48fb-83c1-53602744f8da",
+   "title": "Appartement neuf à vendre",
+   "propertyType": 0,
+   "price": 375000,
+   "surface": 65,
+   "landSurface": null,
+   "room": 3,
+   "pricePerMeter": 5769.23,
+   "createdAt": "2026-10-06T01:23:05+02:00",
+   "lastCrawledAt": "2026-10-06T14:22:09+02:00",
+   "floor": 1,
+   "elevator": true,
+   "location": {
+    "lat": 43.674203,
+    "lon": 7.187514
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/06/01/0dc59bad76356196b0b3de2bd34356.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement neuf à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T14:22:09+02:00",
+     "floor": 1,
+     "elevator": true,
+     "features": [
+      "1er étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "2 chambres",
+      "1 place de parking",
+      "Terrasse",
+      "Digicode",
+      "Interphone",
+      "Pas de cave"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/26AACGWQILM3",
+     "events": [
+      {
+       "createdAt": "2026-10-06T01:23:05+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "892f59e8-d29c-44f8-9986-933b10fcc2f7",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "price": 300000,
+   "surface": 45,
+   "landSurface": null,
+   "room": 2,
+   "pricePerMeter": 6666.67,
+   "createdAt": "2026-10-05T22:42:43+02:00",
+   "lastCrawledAt": "2026-10-06T11:22:49+02:00",
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.676451578947,
+    "lon": 7.1890657894737
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/05/22/45f55a81ae0f488aa0ed3c7fb615dd.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T11:22:49+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": 2028,
+     "features": [
+      "2 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "1 chambre",
+      "2 parkings: 2 parkings",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition nord",
+      "Digicode",
+      "Interphone"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/26XL8PGL5JBD",
+     "events": [
+      {
+       "createdAt": "2026-10-05T22:42:43+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "60900a82-10e2-4744-ac72-bf3ec9d6e2f4",
+   "title": "Appartement à vendre",
+   "propertyType": 0,
+   "price": 731000,
+   "surface": 84,
+   "landSurface": null,
+   "room": 4,
+   "pricePerMeter": 8702.38,
+   "createdAt": "2026-10-05T22:32:42+02:00",
+   "lastCrawledAt": "2026-10-06T02:18:45+02:00",
+   "floor": 2,
+   "elevator": true,
+   "location": {
+    "lat": 43.65612,
+    "lon": 7.189365
+   },
+   "pictures": [
+    "https://pictures.notif.immo/properties/2026/10/05/22/77d1c5538465e5cfd34fc65126ca97.jpg"
+   ],
+   "city": {
+    "name": "Saint-Laurent-du-Var",
+    "insee": "06123",
+    "zipcode": "06700"
+   },
+   "adverts": [
+    {
+     "title": "Appartement à vendre",
+     "expired": false,
+     "lastCrawledAt": "2026-10-06T02:18:45+02:00",
+     "floor": 2,
+     "elevator": true,
+     "constructionYear": 2029,
+     "features": [
+      "2 étage",
+      "Ascenseur",
+      "Accessible aux personne à mobilité réduite",
+      "Salle de bain",
+      "Cave",
+      "3 chambres",
+      "4 parkings: 4 parkings",
+      "Balcon",
+      "Terrasse",
+      "calme",
+      "Sans vis-à-vis",
+      "Exposition sud",
+      "Piscine",
+      "Digicode",
+      "Alarme",
+      "Interphone"
+     ],
+     "url": "https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/saint-laurent-du-var-06700/265N56TZGXYA",
+     "events": [
+      {
+       "createdAt": "2026-10-05T22:32:42+02:00",
+       "fieldName": null,
+       "percentVariation": null
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

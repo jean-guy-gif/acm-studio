@@ -221,7 +221,8 @@ describe('ordre en deux niveaux : le niveau 1 prime toujours sur le niveau 2', (
   });
 
   it('les filtres ne changent pas : un bien hors fourchette n’entre pas, même tout proche', () => {
-    const outside = card({ location: NEAR }, { price: 490000 });
+    // Mission 71 — Stream Estate admet jusqu'à 5 % hors fourchette (504 000 €) ; au-delà, rien.
+    const outside = card({ location: NEAR }, { price: 510000 });
     const inside = card({ location: FAR });
     expect(order([outside, inside])).toEqual([inside.key]);
   });
@@ -488,10 +489,15 @@ describe('limite : les 10 premiers, puis « Voir les N autres »', () => {
     });
   });
 
-  it('l’ordre est bien décroissant : niveau 1, puis niveau 2', () => {
+  it('l’ordre est bien décroissant : le %, puis niveau 1, puis niveau 2 (mission 71)', () => {
     for (let i = 1; i < ranked.length; i += 1) {
-      const [a, b] = [ranked[i - 1].proximity, ranked[i].proximity];
-      expect(a.level1 > b.level1 || (a.level1 === b.level1 && a.level2 >= b.level2)).toBe(true);
+      const [a, b] = [ranked[i - 1], ranked[i]];
+      const [pa, pb] = [a.matchPercent ?? -1, b.matchPercent ?? -1];
+      expect(pa >= pb).toBe(true);
+      if (pa === pb) {
+        const [x, y] = [a.proximity, b.proximity];
+        expect(x.level1 > y.level1 || (x.level1 === y.level1 && x.level2 >= y.level2)).toBe(true);
+      }
     }
   });
 });

@@ -11,13 +11,10 @@ import {
   readStreamEstateFeatures,
   repeatedLocations,
 } from '@/features/competitor-search/services/stream-estate-features';
-import {
-  SURFACE_FLOOR_SQM,
-  WIDEST_SURFACE_TOLERANCE,
-} from '@/features/competitor-search/services/rank-candidates';
 import type {
   CompetitorCandidate,
   CompetitorSearchCriteria,
+  GeoPoint,
 } from '@/features/competitor-search/types';
 
 // ESSAI STREAM ESTATE — la partie PURE (aucun réseau, aucune clé) : construire la requête depuis
@@ -26,7 +23,7 @@ import type {
 // filtre, le conseiller tranche.
 
 export const STREAM_ESTATE_ENDPOINT = 'https://api.stream.estate/documents/properties';
-export const STREAM_ESTATE_PAGE_SIZE = 20; // une seule page : l'API facture à l'annonce renvoyée
+export const STREAM_ESTATE_PAGE_SIZE = 20; // l'API facture à l'annonce renvoyée
 const UPDATED_WITHIN_DAYS = 30; // mesure du 05/10 : à 30 jours, les totaux rejoignent SeLoger
 
 // ANNONCE D'ORIGINE UTILISABLE (décision de Laurent, 05/10) : PAS marquée expirée ET revue par le
@@ -85,12 +82,12 @@ export function parisDateTime(date: Date): string {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
-// Les critères du bien vendeur, traduits pour l'API. Mêmes bornes que les portails (mission 69) :
-// pièces exactes, surface ±10 % jamais moins de ±3 m², fourchette du conseiller STRICTE. Une
-// donnée absente du bien vendeur n'est pas envoyée (le classement fera foi, comme ailleurs).
-export function buildStreamEstateQuery(
-  criteria: CompetitorSearchCriteria,
-  inseeCode: string,
+// Mission 71 — le socle commun à toutes les requêtes des crans : le type du bien vendeur, la vente,
+// les annonces en ligne, mises à jour depuis 30 jours. Les tranches (secteur, surface, pièces,
+// prix) et la page sont ajoutées par stream-estate-tiers.ts. Seuls l'appartement et la maison sont
+// cherchés.
+export function baseStreamEstateQuery(
+  criteria: Pick<CompetitorSearchCriteria, 'propertyType'>,
   now: Date,
 ): StreamEstateQuery {
   const type = normalizePropertyType(criteria.propertyType);
@@ -98,29 +95,12 @@ export function buildStreamEstateQuery(
   if (streamType == null) {
     return { ok: false, reason: 'unsupported_type' };
   }
-
   const params = new URLSearchParams();
   params.append('transactionType', '0');
   params.append('propertyTypes[]', String(streamType));
-  params.append('includedInseeCodes[]', inseeCode);
-  if (criteria.roomsCount != null) {
-    params.append('roomMin', String(criteria.roomsCount));
-    params.append('roomMax', String(criteria.roomsCount));
-  }
-  if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
-    const tolerance = Math.max(criteria.surfaceArea * WIDEST_SURFACE_TOLERANCE, SURFACE_FLOOR_SQM);
-    params.append('surfaceMin', String(Math.floor(criteria.surfaceArea - tolerance)));
-    params.append('surfaceMax', String(Math.ceil(criteria.surfaceArea + tolerance)));
-  }
-  const { advisorPriceMin: min, advisorPriceMax: max } = criteria;
-  if (min != null || max != null) {
-    params.append('budgetMin', String(min ?? max));
-    params.append('budgetMax', String(max ?? min));
-  }
   params.append('expired', 'false');
   const since = new Date(now.getTime() - UPDATED_WITHIN_DAYS * DAY_MS);
   params.append('fromUpdatedAt', parisDateTime(since));
-  params.append('itemsPerPage', String(STREAM_ESTATE_PAGE_SIZE));
   return { ok: true, params };
 }
 
@@ -164,7 +144,7 @@ const propertySchema = z.object({
   createdAt: nullableString,
   lastCrawledAt: nullableString,
   pictures: z.array(z.string()).nullable().optional(),
-  city: z.object({ name: nullableString }).nullable().optional(),
+  city: z.object({ name: nullableString, insee: nullableString }).nullable().optional(),
   // Étape 2 — position, étage, ascenseur du bien (valeurs consolidées par Stream Estate).
   location: z.object({ lat: nullableNumber, lon: nullableNumber }).nullable().optional(),
   floor: nullableNumber,
@@ -195,6 +175,9 @@ export type ParsedStreamEstateResponse = {
   expiredOrigin: number;
   // Parmi les candidats, les biens NEUFS : gardés et marqués, tenus en réserve par le classement.
   newBuild: number;
+  // Mission 71 — la position brute de chaque bien lu (même écarté), pour repérer un point de
+  // remplissage d'une page à l'autre.
+  locations: { uuid: string; point: GeoPoint | null }[];
 };
 
 export function isImportableUrl(rawUrl: string): boolean {
@@ -334,6 +317,7 @@ export function toCandidate(
       onlineSince: property.createdAt ?? null,
       lastSeenAt: origin.lastCrawledAt ?? property.lastCrawledAt ?? null,
       priceDrops: priceDrops(property.adverts),
+      inseeCode: property.city?.insee?.trim() || null,
     },
     features: readStreamEstateFeatures(property, repeated),
   };
@@ -342,21 +326,27 @@ export function toCandidate(
 // Toute la réponse : chaque bien devient un candidat, dédupliqué par son identifiant Stream
 // Estate. Une réponse qui n'a pas la forme attendue → null (l'action le dira, sans deviner).
 // `now` : l'heure de la recherche, qui fixe la fenêtre des 7 jours.
+// Mission 71 — `seenLocations` : les positions des biens DÉJÀ lus dans les pages précédentes de la
+// même recherche (par identifiant), pour qu'un point de remplissage se repère d'une page à l'autre.
 export function parseStreamEstateResponse(
   json: unknown,
   now: Date,
+  seenLocations: ReadonlyMap<string, GeoPoint | null> = new Map(),
 ): ParsedStreamEstateResponse | null {
   const response = responseSchema.safeParse(json);
   if (!response.success) return null;
   const members = response.data['hydra:member'];
   const properties = members.map((member) => propertySchema.safeParse(member));
   // Un point répété se compte par BIEN distinct (un même bien renvoyé deux fois ne compte qu'une).
-  const byUuid = new Map<string, StreamEstateProperty>();
+  const byUuid = new Map<string, GeoPoint | null>(seenLocations);
   for (const property of properties) {
-    if (property.success) byUuid.set(property.data.uuid, property.data);
+    if (property.success) byUuid.set(property.data.uuid, readLocation(property.data.location));
   }
-  const repeated = repeatedLocations(
-    [...byUuid.values()].map((property) => readLocation(property.location)),
+  const repeated = repeatedLocations([...byUuid.values()]);
+  const locations = properties.flatMap((property) =>
+    property.success
+      ? [{ uuid: property.data.uuid, point: readLocation(property.data.location) }]
+      : [],
   );
   const seen = new Set<string>();
   const candidates: CompetitorCandidate[] = [];
@@ -391,5 +381,6 @@ export function parseStreamEstateResponse(
     unreadable,
     outsideWhitelist,
     expiredOrigin,
+    locations,
   };
 }

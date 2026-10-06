@@ -2,21 +2,35 @@ import {
   applyLearning,
   type LearnedPreferences,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import { assessProximity, compareProximity } from '@/features/competitor-search/services/proximity';
+import { gapLine, matchPercent } from '@/features/competitor-search/services/match-percent';
+import {
+  assessProximity,
+  compareProximity,
+  distanceMeters,
+} from '@/features/competitor-search/services/proximity';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
-import type {
-  CandidateSource,
-  CompetitorCandidate,
-  CompetitorSearchCriteria,
-  ExcludedForMissing,
-  GeoPoint,
-  Loosening,
-  PortalSearchResult,
-  RankedCandidate,
-  RankedSearch,
+import {
+  identicalSurfaceTolerance,
+  SURFACE_FLOOR_SQM,
+  WIDEST_SURFACE_TOLERANCE,
+} from '@/features/competitor-search/utils/surface-tolerance';
+import {
+  STREAM_ESTATE_SOURCE,
+  type CandidateSource,
+  type CompetitorCandidate,
+  type CompetitorSearchCriteria,
+  type ExcludedForMissing,
+  type GeoPoint,
+  type Loosening,
+  type PortalSearchResult,
+  type RankedCandidate,
+  type RankedSearch,
 } from '@/features/competitor-search/types';
+
+export { SURFACE_FLOOR_SQM, WIDEST_SURFACE_TOLERANCE };
 
 // MISSION 61 — les quatre critères qui comptent FILTRENT, ils ne marquent pas des points.
 //
@@ -42,13 +56,6 @@ const MINIMUM = 3; // sous ce plancher après le dernier cran, l'écran le dit e
 // Les crans, du moins grave au plus grave : surface d'abord (5 → 7,5 → 10 %), puis pièces (±1).
 // Le prix et la commune ne bougent à AUCUN cran.
 type Bounds = { surfaceTol: number; roomsTol: number };
-// Mission 68 — plancher de la tolérance de surface : ±5 % (puis ±10 % au plus) d'un petit bien
-// ne laisse presque rien passer (±1 m² pour 20 m²). La tolérance n'est donc jamais inférieure à
-// ±3 m² : 17–23 m² pour 20 m². Dès 60 m², ±5 % vaut déjà 3 m² — pour 80 m², rien ne change.
-export const SURFACE_FLOOR_SQM = 3;
-// Mission 69 — la tolérance de surface envoyée aux portails = le DERNIER cran de surface (±10 %).
-// La lecture garde ensuite ses crans (5 → 7,5 → 10 %) sur ce que le portail a renvoyé.
-export const WIDEST_SURFACE_TOLERANCE = 0.1;
 const LEVELS: Bounds[] = [
   { surfaceTol: 0.05, roomsTol: 0 },
   { surfaceTol: 0.075, roomsTol: 0 },
@@ -56,11 +63,18 @@ const LEVELS: Bounds[] = [
   { surfaceTol: 0.1, roomsTol: 1 },
 ];
 
-function normCity(value: string | null): string | null {
-  if (value == null) return null;
-  const cleaned = value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  return cleaned === '' ? null : cleaned;
-}
+// Mission 71 — la même comparaison des communes partout (accents, tirets, St/Saint) : un bien
+// vendeur écrit « St Laurent du Var » écartait tous les biens « Saint-Laurent-du-Var ».
+const normCity = communeKey;
+
+// MISSION 71 — Stream Estate desserre, les portails non. Un bien Stream Estate a été cherché par
+// crans (stream-estate-tiers.ts) ; le classement revalide ici, côté serveur, les bornes LES PLUS
+// LARGES de ces crans : surface de −10 % (±3 m² au moins) à +25 %, pièces identiques ou une de
+// plus, prix à ±5 % hors fourchette, commune du bien (code INSEE) sauf aux crans 6 et 7 (10 km,
+// communes voisines comprises). Jamais plus petit, jamais une pièce de moins.
+const STREAM_ESTATE_BIGGER = 1.25;
+const STREAM_ESTATE_PRICE_MARGIN = 0.05;
+const NEIGHBOUR_TIER = 6;
 
 type PriceBounds = { low: number; high: number } | null;
 
@@ -118,6 +132,57 @@ function admit(
   return { ok: true };
 }
 
+function sameCommuneAs(
+  candidate: CompetitorCandidate,
+  refCity: string | null,
+  subjectInseeCode: string | null,
+): boolean {
+  const insee = candidate.streamEstate?.inseeCode ?? null;
+  if (candidate.streamEstate && subjectInseeCode != null && insee != null) {
+    return insee === subjectInseeCode;
+  }
+  const city = normCity(candidate.city);
+  // Une carte sans ville est dans le périmètre (portée par la provenance, mission 61).
+  return refCity == null || city == null || city === refCity;
+}
+
+function admitStreamEstate(
+  criteria: CompetitorSearchCriteria,
+  candidate: CompetitorCandidate,
+  prices: PriceBounds,
+  sameCommune: boolean,
+): Admission {
+  if (!sameCommune && (candidate.streamEstate?.tier ?? 1) < NEIGHBOUR_TIER) {
+    return { ok: false, kind: 'out' };
+  }
+  if (prices != null) {
+    if (candidate.price == null || candidate.price <= 0)
+      return { ok: false, kind: 'missing', field: 'price' };
+    if (
+      candidate.price < prices.low * (1 - STREAM_ESTATE_PRICE_MARGIN) - 1e-6 ||
+      candidate.price > prices.high * (1 + STREAM_ESTATE_PRICE_MARGIN) + 1e-6
+    )
+      return { ok: false, kind: 'out' };
+  }
+  if (criteria.roomsCount != null) {
+    if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
+    const extra = candidate.roomsCount - criteria.roomsCount;
+    if (extra < 0 || extra > 1) return { ok: false, kind: 'out' };
+  }
+  if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
+    if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
+      return { ok: false, kind: 'missing', field: 'surface' };
+    const ref = criteria.surfaceArea;
+    const tolerance = identicalSurfaceTolerance(ref);
+    const high = Math.max(ref + tolerance, ref * STREAM_ESTATE_BIGGER);
+    // Bornes entières côté API (stream-estate-tiers.ts) : on tolère l'arrondi.
+    if (candidate.surfaceArea < Math.floor(ref - tolerance) - 1e-9)
+      return { ok: false, kind: 'out' };
+    if (candidate.surfaceArea > Math.ceil(high) + 1e-9) return { ok: false, kind: 'out' };
+  }
+  return { ok: true };
+}
+
 type PoolEntry = {
   candidate: CompetitorCandidate;
   portal: CandidateSource;
@@ -130,8 +195,12 @@ export function rankCandidates(
   portals: PortalSearchResult[],
   preferences: LearnedPreferences,
   // Étape 2 — position du bien vendeur, seulement si son adresse est géocodée précisément.
-  options: { subjectLocation?: GeoPoint | null } = {},
+  // Mission 71 — code INSEE de la commune du bien : c'est lui qui dit « même commune » pour un
+  // bien Stream Estate (le nom ne sert qu'à défaut).
+  options: { subjectLocation?: GeoPoint | null; subjectInseeCode?: string | null } = {},
 ): RankedSearch {
+  const subjectLocation = options.subjectLocation ?? null;
+  const subjectInseeCode = options.subjectInseeCode ?? null;
   const subjectType = normalizePropertyType(criteria.propertyType);
   // Mission 70 — le terrain n'ordonne que pour une MAISON vendeuse. Le jardin d'un appartement ne
   // se compare pas au terrain de copropriété qu'un portail écrit sur la carte : pour un
@@ -171,21 +240,36 @@ export function rankCandidates(
   // Le neuf est mis de côté AVANT tout : il ne pèse ni sur le choix du cran, ni sur les comptes.
   const oldPool = pool.filter((entry) => !entry.candidate.isNewBuild);
   const newBuildPool = pool.filter((entry) => entry.candidate.isNewBuild);
+  const isStream = (entry: PoolEntry) => entry.portal === STREAM_ESTATE_SOURCE;
 
-  // Choisir le premier cran qui atteint la cible ; sinon le dernier (STOP).
+  // Choisir le premier cran qui atteint la cible ; sinon le dernier (STOP). Mission 71 — sur les
+  // seuls PORTAILS : ils gardent exactement leurs filtres, Stream Estate a ses propres crans.
+  const portalOldPool = oldPool.filter((entry) => !isStream(entry));
   let chosen = LEVELS[0];
-  for (const level of LEVELS) {
-    chosen = level;
-    const count = oldPool.filter(
-      (p) => admit(criteria, p.candidate, level, prices, refCity).ok,
-    ).length;
-    if (count >= TARGET) break;
+  if (portalOldPool.length > 0) {
+    for (const level of LEVELS) {
+      chosen = level;
+      const count = portalOldPool.filter(
+        (p) => admit(criteria, p.candidate, level, prices, refCity).ok,
+      ).length;
+      if (count >= TARGET) break;
+    }
   }
+
+  const admitEntry = (entry: PoolEntry): Admission =>
+    isStream(entry)
+      ? admitStreamEstate(
+          criteria,
+          entry.candidate,
+          prices,
+          sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
+        )
+      : admit(criteria, entry.candidate, chosen, prices, refCity);
 
   const excludedForMissing: ExcludedForMissing = { surface: 0, rooms: 0, price: 0 };
   const admitted: PoolEntry[] = [];
   for (const entry of oldPool) {
-    const verdict = admit(criteria, entry.candidate, chosen, prices, refCity);
+    const verdict = admitEntry(entry);
     if (verdict.ok) {
       admitted.push(entry);
     } else if (verdict.kind === 'missing') {
@@ -213,6 +297,15 @@ export function rankCandidates(
       // Mission 70 — critère secondaire : ordonne l'admissible, n'intervient pas dans admit().
       landArea: entry.candidate.landArea,
     };
+    const proximity = assessProximity(criteria, entry.candidate, subjectLocation, subjectType);
+    const location = entry.candidate.features?.location ?? null;
+    const place = {
+      distanceMeters:
+        subjectLocation != null && location != null
+          ? distanceMeters(subjectLocation, location)
+          : null,
+      sameCommune: sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
+    };
     const base = scoreCandidate(scoringCriteria, facts);
     const adjusted = applyLearning(
       base,
@@ -229,25 +322,27 @@ export function rankCandidates(
       weaknesses: base.weaknesses,
       learnedPenalties: adjusted.penalties,
       alreadyJudged: adjusted.alreadyJudged,
-      loosenedSurface: neededSurface(entry.candidate),
-      loosenedRooms: neededRooms(entry.candidate),
+      loosenedSurface: !isStream(entry) && neededSurface(entry.candidate),
+      loosenedRooms: !isStream(entry) && neededRooms(entry.candidate),
       newBuildComplement,
-      proximity: assessProximity(
-        criteria,
-        entry.candidate,
-        options.subjectLocation ?? null,
-        subjectType,
-      ),
+      proximity,
+      matchPercent: matchPercent(criteria, entry.candidate, proximity.reasons, place),
+      gapLine: isStream(entry) ? gapLine(criteria, entry.candidate, place) : null,
     };
   };
 
-  // Étape 2 — « les plus proches » : déjà tranchés derrière, puis niveau 1, puis niveau 2 (le
-  // niveau 1 prime toujours). Le score (critères secondaires et apprentissage) ne départage plus
-  // qu'à égalité parfaite des deux niveaux. Les filtres, eux, n'ont pas bougé.
+  // Mission 71 — déjà tranchés derrière, puis le % de correspondance décroissant : un bien à 4 km
+  // ne passe jamais devant un bien identique à 300 m. À égalité de %, l'ordre « les plus proches »
+  // (étape 2) décide : niveau 1, puis niveau 2, puis le score (critères secondaires, apprentissage).
   const closestFirst = (a: RankedCandidate, b: RankedCandidate): number => {
     const judgedA = a.alreadyJudged == null ? 0 : 1;
     const judgedB = b.alreadyJudged == null ? 0 : 1;
-    return judgedA - judgedB || compareProximity(a.proximity, b.proximity) || b.score - a.score;
+    return (
+      judgedA - judgedB ||
+      (b.matchPercent ?? -1) - (a.matchPercent ?? -1) ||
+      compareProximity(a.proximity, b.proximity) ||
+      b.score - a.score
+    );
   };
   const ranked = admitted.map((entry) => toRanked(entry, false)).sort(closestFirst);
 
@@ -257,7 +352,7 @@ export function rankCandidates(
   let newBuildAdded = 0;
   if (ranked.length < MINIMUM) {
     const complement = newBuildPool
-      .filter((entry) => admit(criteria, entry.candidate, chosen, prices, refCity).ok)
+      .filter((entry) => admitEntry(entry).ok)
       .map((entry) => toRanked(entry, true))
       .sort(closestFirst)
       .slice(0, MINIMUM - ranked.length);
