@@ -24,12 +24,12 @@ chaque mission validée.
 - 22/09 · M52 · Un dossier prêt reste modifiable : onglet « Prêts » de Préparation, et « Remettre en préparation ».
 - 24/09 · M58 · L'analyse du conseiller (son avis de valeur) se saisit au positionnement, en fin de préparation ; elle n'est pas requise pour être prêt.
 - 05/10 · Stream Estate · Fiche du bien vendeur : ascenseur et piscine (oui / non / non renseigné).
+- 06/10 · M74 · « Analyse des prix » décrit le moins cher et le plus cher par les champs du bien (pièces, surface, quartier ou commune, prix, prix au m²), jamais par le titre de l'annonce ; un champ absent est omis.
 
 ## Concurrents & recherche
 
 - 10/09 · M45 · Les portails se lisent par l'extension Chrome, dans le navigateur du conseiller : zéro service payant. L'extension rapporte la page ; l'application l'analyse.
 - 10/09 · M45 · Extension : ouverte à la seule origine d'ACM, aux seuls domaines des portails ; elle ne stocke rien et n'envoie rien ailleurs.
-- 10/09 · M45 · L'outil reste entier sans l'extension : coller l'adresse, coller la page, favori, saisie manuelle.
 - 10/09 · M45 · `robots.txt` est lu et respecté avant toute demande de page ; un refus n'est jamais lu comme une absence ; les pages se lisent une à une, en nombre plafonné.
 - 16/09 · M45 (suite) · Leboncoin n'est pas supporté (son `robots.txt` interdit `/ad/`) ; Figaro n'est plus proposé au conseiller.
 - 10/09 · M46 · L'extension ouvre la page dans une fenêtre non focalisée et attend que le HTML se stabilise (15 s au plus) ; chaque étape est journalisée.
@@ -54,12 +54,11 @@ chaque mission validée.
 - 01/10 · M61 · Le desserrage est visible : bandeau, et mention sur la carte retenue grâce à lui (remplace M50, desserrage invisible).
 - 01/10 · M61 · Secteur cadré à la commune ; une carte sans ville reste, une carte sans surface ou sans pièces est écartée et comptée.
 - 01/10 · M61 · Dédoublonnage sur l'identité publiée (portail + clé), jamais sur une ressemblance (remplace M50, prix + surface + pièces + commune).
-- 01/10 · M65 · Geste principal : le conseiller filtre son portail, ACM lit l'onglet ouvert sans aucune requête au portail ; repli : coller la page de résultats.
 - 01/10 · M65 · Maisons & Appartements : la commune se lit sur la carte.
 - 01/10 · M68 · « Studio », « T1 », « F1 » = 1 pièce (sur la carte ; à l'import, sur le titre seulement).
 - 01/10 · M68 · La tolérance de surface n'est jamais inférieure à ±3 m² ; le bandeau dit la tolérance réellement appliquée.
 - 05/10 · M69 · « Ouvrir mes recherches » : l'extension ouvre des onglets visibles, déjà filtrés (type, commune, pièces exactes, surface ±10 % plancher ±3 m², fourchette stricte).
-- 05/10 · M69 · « Lire mes recherches » lit tous les onglets de recherche d'un coup, avec un récapitulatif par portail ; lire un seul onglet reste possible.
+- 05/10 · M69 · « Lire mes recherches » lit tous les onglets de recherche d'un coup, sans aucune requête au portail, avec un récapitulatif par portail.
 - 05/10 · M69 · Les identifiants de commune par portail s'apprennent dans l'adresse des onglets lus, jamais devinés ; la table est commune à toutes les agences.
 - 05/10 · M70 · Maisons lues sur les portails ; le terrain de la carte ordonne seulement, et seulement pour une maison vendeuse ; il ne filtre jamais.
 - 05/10 · Stream Estate · Filtre de mise à jour à 30 jours, biens non expirés ; l'écran dit le nombre d'annonces facturées.
@@ -82,6 +81,11 @@ chaque mission validée.
 - 06/10 · M73 · Extension 1.0.0, destinée au Chrome Web Store en « non répertorié » : `npm run extension:zip` fabrique le paquet (ce que Chrome charge, sans tests ni README) ; le dépôt est fait par Laurent, avec la fiche `docs/extension-store.md`.
 - 06/10 · M73 · Le manifeste fait foi pour les sites autorisés (cinq portails, pas Leboncoin) : la fiche du Store et le README le suivent ; sa description tient en 132 caractères et la fiche la reprend mot pour mot, un test le vérifie.
 - 06/10 · M73 · Icônes de l'extension : monogramme « ACM » aux couleurs de l'app, tracé sans police et généré par `npm run extension:icons`.
+- 06/10 · M74 · L'extension est obligatoire pour lire les portails : plus de collage de page, plus de favori, plus de lecture d'un seul onglet, plus de recherche automatique non filtrée (remplace M45 « l'outil reste entier sans l'extension », M65 « repli : coller la page », M69 « lire un seul onglet reste possible »).
+- 06/10 · M74 · Extension absente ou trop ancienne : un seul message, partout ; bouton « Installer l'extension » si `NEXT_PUBLIC_EXTENSION_INSTALL_URL` est définie, sinon « demandez le lien à votre agence » ; aucune adresse en dur.
+- 06/10 · M74 · Restent sans l'extension : l'import par adresse côté serveur et la saisie manuelle ; un portail qui refuse l'adresse renvoie vers la saisie à la main.
+- 06/10 · M74 · Biens concurrents : « Trouver des concurrents » est le bouton principal, « Ajouter un bien » le secondaire.
+- 06/10 · M74 · Le raccourci « Vérifier l'ancienneté sur L'Acquéreur » est retiré : l'ancienneté vient du portail ou des observations (M47).
 
 ## Live
 
@@ -139,6 +143,9 @@ chaque mission validée.
 - 01/10 · M61 · Donnée absente portée par la provenance : n'écarte pas ; donnée absente qui est le critère : écarte, et se compte.
 - 06/10 · M73 · `/confidentialite` est publique, sans connexion : les chemins publics sont une liste d'autorisation de chemins exacts ; la page ne lit ni la session ni la base.
 - 06/10 · M73 · La page de confidentialité dit ce que le code fait réellement (ce que lit l'extension, ce qui est conservé, à qui partent les critères de recherche) ; elle n'annonce ni région d'hébergement ni durée de conservation ; éditeur SAS Start Academy, contact formation@start-academy.fr.
+- 06/10 · M74 · Un seul formateur de nombres (`src/lib/format`), en `fr-FR` : virgule décimale, espace des milliers, 2 décimales au plus, aucun zéro inutile, vrai signe moins, unité liée par une espace insécable ; seul l'affichage arrondit, aucun calcul ne change.
+- 06/10 · M74 · Montants et prix au m² à l'euro près ; surfaces et pourcentages jusqu'à 2 décimales ; un écart nul s'affiche sans signe.
+- 06/10 · M74 · Un test interdit `toFixed(` et `toLocaleString(` dans `src/` hors de `src/lib/format` (tests exclus).
 
 ## Méthode
 
