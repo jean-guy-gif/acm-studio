@@ -94,6 +94,8 @@ chaque mission validée.
 - 24/09 · M58 · Aucun champ de saisie conseiller sur un écran montré au vendeur : l'analyse du conseiller y est affichée.
 - 24/09 · M58 · Un seul vocabulaire, partout : Marché calculé · Analyse du conseiller · Prix conseillé · Prix de commercialisation.
 - 24/09 · M58 · Photos des concurrents telles quelles : jamais de retrait de filigrane, jamais le logo de l'agence sur la photo d'un confrère.
+- 06/10 · M72 · Le décor de la scène vit dans sa propre couche rognée : la scène du Live n'est jamais plus large que la fenêtre et ne peut pas être décalée de côté, plein écran compris.
+- 06/10 · M72 · Un nom d'agence long est tronqué avec des points de suspension (nom entier au survol) ; Clair, Plein écran et Quitter restent entiers et cliquables.
 
 ## Conclusion & Suivi
 
@@ -151,3 +153,6 @@ chaque mission validée.
 - 06/10 · M66 · Compte et agence de test dédiés, créés par Laurent ; identifiants et secret de contournement Vercel dans `.env.e2e.local`, jamais affichés ; aucune trace Playwright (elle contiendrait le mot de passe).
 - 06/10 · M66 · Chaque passage crée un dossier « TEST AUTOMATIQUE <date heure> » et ne touche que celui-là ; il reste dans le Suivi de l'agence de test (un dossier conclu ne se supprime pas — `docs/IDEES.md`).
 - 06/10 · M66 · Le débordement se mesure sur un écran stable (titre visible, animations finies, mesure reprise) et sur le contenu réel : le halo décoratif de la scène est ignoré.
+- 06/10 · M72 · Le test e2e ne remet jamais la scène à zéro avant de mesurer : il tente de la décaler, et un `scrollLeft` forcé doit rester à 0.
+- 06/10 · M72 · Test e2e court à part (`live-tablette`) : 768 × 1024, 1024 × 768 et 1366 × 1024, fenêtre et plein écran, sur un seul dossier prêt permanent « TEST AUTOMATIQUE — Live tablette », créé au premier passage puis réutilisé.
+- 06/10 · M72 · L'agence de test porte un nom d'au moins 60 caractères, sans logo ; sinon le test échoue en le disant, plutôt que de passer sans rien vérifier.
