@@ -76,11 +76,28 @@ export async function login(page: Page): Promise<void> {
 // ne se verrait pas au défilement : on mesure chaque élément. Sont ignorés le décor
 // (aria-hidden, ex. le halo de scène) et ce qui vit dans un conteneur qui défile ou rogne
 // de lui-même (galerie de photos).
-export async function expectNoHorizontalScroll(page: Page, screen: string): Promise<void> {
-  const result = await page.evaluate(() => {
+//
+// La mesure ne vaut que sur un écran STABLE : l'appelant a déjà attendu le titre de
+// l'écran ; ici on attend la fin des animations (transition d'entrée, révélation), et la
+// mesure est reprise (expect.poll) jusqu'à se stabiliser.
+//
+// La scène est plus large que la fenêtre à cause de son halo décoratif (922 px pour 768) :
+// elle rogne ce surplus, mais reste défilable PAR PROGRAMME. Playwright, quand il recentre
+// un élément avant de cliquer, peut donc la décaler de côté — ce qu'un vendeur ne peut pas
+// faire au doigt. On remet la scène à zéro avant de mesurer : la mesure porte sur le
+// contenu, pas sur ce décalage d'outil.
+type OverflowMeasure = {
+  animations: number;
+  pageScroll: number;
+  offenders: string[];
+};
+
+async function measureOverflow(page: Page): Promise<OverflowMeasure> {
+  return page.evaluate(() => {
     const doc = document.documentElement;
     const stage = document.querySelector<HTMLElement>('[data-stage]') ?? document.body;
     const width = doc.clientWidth;
+    stage.scrollLeft = 0;
     const offenders: string[] = [];
     for (const element of stage.querySelectorAll<HTMLElement>('*')) {
       if (element.closest('[aria-hidden="true"]')) continue;
@@ -100,10 +117,19 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
       offenders.push(`<${element.tagName.toLowerCase()}> « ${text} »`);
       if (offenders.length >= 3) break;
     }
-    return { scroll: doc.scrollWidth - doc.clientWidth, offenders };
+    return {
+      animations: document.getAnimations().filter((a) => a.playState === 'running').length,
+      pageScroll: Math.max(0, doc.scrollWidth - doc.clientWidth),
+      offenders,
+    };
   });
-  expect(result.scroll, `Défilement horizontal de la page sur « ${screen} »`).toBeLessThanOrEqual(
-    0,
-  );
-  expect(result.offenders, `Contenu hors de l'écran sur « ${screen} »`).toEqual([]);
+}
+
+export async function expectNoHorizontalScroll(page: Page, screen: string): Promise<void> {
+  await expect
+    .poll(() => measureOverflow(page), {
+      message: `Défilement horizontal ou contenu hors de l'écran sur « ${screen} »`,
+      timeout: 10_000,
+    })
+    .toEqual({ animations: 0, pageScroll: 0, offenders: [] });
 }
