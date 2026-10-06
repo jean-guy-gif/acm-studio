@@ -38,6 +38,8 @@ function toAnalyzed(comparable: Comparable): AnalyzedComparable {
     id: comparable.id,
     title: comparable.title,
     city: comparable.city,
+    district: comparable.district,
+    roomsCount: comparable.rooms_count,
     price: comparable.price,
     surfaceArea: comparable.surface_area as number,
     pricePerSquareMeter: pricePerSquareMeter(comparable.price, comparable.surface_area) as number,

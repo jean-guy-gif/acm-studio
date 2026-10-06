@@ -1,6 +1,7 @@
 import type { ConfidenceLevel } from '@/features/price-positioning/types/price-positioning';
 import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
 import type { PositioningStatus } from '@/features/seller-presentation/types/seller-presentation';
+import { formatEuro } from '@/lib/format';
 
 const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
   very_high: 'Très forte',
@@ -10,7 +11,7 @@ const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
 };
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 // Read-only. The saved decision is shown as-is and is never replaced by the

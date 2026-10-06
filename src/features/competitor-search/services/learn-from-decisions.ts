@@ -20,6 +20,7 @@ import type {
   CandidateFacts,
   CandidateScore,
 } from '@/features/competitor-search/services/score-candidate';
+import { formatEuro } from '@/lib/format';
 
 export const DECISION_REASONS = [
   'price_too_high',
@@ -103,7 +104,7 @@ function countBy(values: Array<string | null>): Map<string, number> {
 }
 
 function euro(value: number): string {
-  return `${Math.round(value).toLocaleString('fr-FR')} €`;
+  return formatEuro(value);
 }
 
 export function learnFromDecisions(

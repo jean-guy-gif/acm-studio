@@ -3,6 +3,7 @@ import type {
   MarketPosition,
   PriceDeviation,
 } from '@/features/price-positioning/types/price-positioning';
+import { formatEuro, formatPercent } from '@/lib/format';
 
 export const POSITION_LABEL: Record<MarketPosition, string> = {
   below_observed_market: 'Sous le marché observé',
@@ -14,11 +15,11 @@ export function formatDeviation(deviation: PriceDeviation | null): string {
   if (deviation == null) {
     return '—';
   }
-  const absolute = `${deviation.absolute > 0 ? '+' : ''}${deviation.absolute.toLocaleString('fr-FR')} €`;
+  const absolute = formatEuro(deviation.absolute, { signed: true });
   if (deviation.percentage == null) {
     return absolute;
   }
-  return `${absolute} (${deviation.percentage > 0 ? '+' : ''}${deviation.percentage} %)`;
+  return `${absolute} (${formatPercent(deviation.percentage, { signed: true })})`;
 }
 
 const inputClass = inputBase;

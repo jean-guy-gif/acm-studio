@@ -14,13 +14,12 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/[id]/property` — bien vendeur : import d'annonce ou de fiche PDF, photos, diagnostics, copropriété.
 - `/builder/[id]/comparables` — concurrents retenus et écartés, actions de lot (écarter, supprimer).
 - `/builder/[id]/comparables/new` — ajouter un concurrent : adresse (extension), page collée, saisie.
-- `/builder/[id]/comparables/find` — trouver des concurrents : « Ouvrir / Lire mes recherches », recherche automatique, Stream Estate (essai, si clé), validation en lot.
+- `/builder/[id]/comparables/find` — trouver des concurrents : « Chercher les concurrents » (Stream Estate, si clé), puis « Ouvrir / Lire mes recherches » sur les portails, validation en lot. Sans extension : un seul message d'installation (`NEXT_PUBLIC_EXTENSION_INSTALL_URL`).
 - `/builder/[id]/comparables/[comparableId]/edit` — modifier un concurrent.
 - `/builder/[id]/comparables/analysis` — analyse comparative, critère par critère.
 - `/builder/[id]/comparables/positioning` — positionnement : fourchette, prix conseillé, analyse du conseiller.
 - `/builder/[id]/presentation` — présentation vendeur : relecture de la matière avant le rendez-vous.
 - `/builder/[id]/conclusion` — écran conseiller : issue du rendez-vous et motif (dossier prêt ou conclu).
-- `/import-assistant` — reçoit une annonce envoyée par le favori « Envoyer vers ACM Studio ».
 
 **Live** — `/live` : dossiers prêts seulement · `/live/[id]` : la scène face au vendeur.
 

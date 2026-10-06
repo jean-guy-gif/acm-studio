@@ -70,11 +70,11 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           <h1 className={pageTitle}>Biens concurrents</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/builder/${projectId}/comparables/new`} className={btnPrimary}>
-            Ajouter un bien
-          </Link>
-          <Link href={`/builder/${projectId}/comparables/find`} className={btnSecondary}>
+          <Link href={`/builder/${projectId}/comparables/find`} className={btnPrimary}>
             Trouver des concurrents
+          </Link>
+          <Link href={`/builder/${projectId}/comparables/new`} className={btnSecondary}>
+            Ajouter un bien
           </Link>
           <Link href={`/builder/${projectId}/comparables/analysis`} className={btnSecondary}>
             Voir l’analyse

@@ -3,6 +3,7 @@ import type {
   DispersionLevel,
   PricePositioning,
 } from '@/features/price-positioning/types/price-positioning';
+import { formatEuro } from '@/lib/format';
 
 const LEVEL_LABEL: Record<ConfidenceLevel, string> = {
   very_high: 'Très forte',
@@ -17,7 +18,7 @@ const DISPERSION_LABEL: Record<DispersionLevel, string> = {
 };
 
 function euro(value: number | null | undefined): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 // Read-only. "Positionnement de marché observé" — never presented as an imposed

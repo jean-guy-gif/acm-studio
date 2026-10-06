@@ -3,13 +3,14 @@ import type {
   ComparableStatistics,
   SellerComparison,
 } from '@/features/comparable-analysis/types/comparable-analysis';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 function squareMeters(value: number | null): string {
-  return value != null ? `${value} m²` : '—';
+  return value != null ? formatSquareMeters(value) : '—';
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

@@ -1,5 +1,6 @@
 import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import type { ComparableOutlier } from '@/features/comparable-analysis/types/comparable-analysis';
+import { formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 
 export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableOutlier[] }) {
   return (
@@ -18,10 +19,9 @@ export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableO
             >
               <span className="font-medium">ATYPIQUE</span> —{' '}
               {outlier.title?.trim() || 'Bien concurrent'} :{' '}
-              {outlier.pricePerSquareMeter.toLocaleString('fr-FR')} €/m² (
-              {outlier.deviationPercent > 0 ? '+' : ''}
-              {outlier.deviationPercent} % vs médiane{' '}
-              {outlier.medianPricePerSquareMeter.toLocaleString('fr-FR')} €/m²)
+              {formatEuroPerSquareMeter(outlier.pricePerSquareMeter)} (
+              {formatPercent(outlier.deviationPercent, { signed: true })} vs médiane{' '}
+              {formatEuroPerSquareMeter(outlier.medianPricePerSquareMeter)})
             </li>
           ))}
         </ul>

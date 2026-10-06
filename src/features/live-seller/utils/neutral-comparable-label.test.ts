@@ -13,7 +13,7 @@ describe('neutralComparableLabel', () => {
       city: 'Villeneuve-Loubet',
       district: null,
     });
-    expect(label).toBe('3 pièces · 69 m² · Villeneuve-Loubet');
+    expect(label).toBe('3 pièces · 69\u00A0m² · Villeneuve-Loubet');
     // Le prix du titre brut (« … 365000 € … ») n'a aucune façon d'entrer ici.
     expect(label).not.toContain('365000');
     expect(label).not.toContain('365 000');
@@ -23,7 +23,7 @@ describe('neutralComparableLabel', () => {
   it('préfère le quartier à la commune quand il existe', () => {
     expect(
       neutralComparableLabel({ roomsCount: 2, surfaceArea: 45, city: 'Nice', district: 'Cimiez' }),
-    ).toBe('2 pièces · 45 m² · Cimiez');
+    ).toBe('2 pièces · 45\u00A0m² · Cimiez');
   });
 
   it('n’affiche que ce qui existe (une pièce au singulier, surface absente)', () => {

@@ -1,9 +1,10 @@
 import { RemoteImage } from '@/components/ui/remote-image';
 import { card, hintText, sectionTitle, softPanel } from '@/components/ui/styles';
 import type { SellerPresentationComparable } from '@/features/seller-presentation/types/seller-presentation';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${value.toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 export function PresentationComparables({
@@ -50,9 +51,11 @@ export function PresentationComparables({
                 </span>
                 <span>
                   {euro(comparable.price)} ·{' '}
-                  {comparable.surfaceArea != null ? `${comparable.surfaceArea} m²` : '—'} ·{' '}
-                  {euro(comparable.pricePerSquareMeter)}/m² · {comparable.roomsCount ?? '—'} pièces
-                  · DPE {comparable.energyRating ?? '—'} · GES {comparable.gesRating ?? '—'}
+                  {comparable.surfaceArea != null
+                    ? formatSquareMeters(comparable.surfaceArea)
+                    : '—'}{' '}
+                  · {euro(comparable.pricePerSquareMeter)}/m² · {comparable.roomsCount ?? '—'}{' '}
+                  pièces · DPE {comparable.energyRating ?? '—'} · GES {comparable.gesRating ?? '—'}
                 </span>
                 {comparable.influenceScore != null ? (
                   <span>Score de proximité : {comparable.influenceScore}</span>

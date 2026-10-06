@@ -13,10 +13,7 @@ import type { RememberPortalPlacesResult } from '@/features/competitor-search/ac
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
-import type {
-  RecordDecisionResult,
-  SearchResultsHtmlImport,
-} from '@/features/competitor-search/types';
+import type { RecordDecisionResult } from '@/features/competitor-search/types';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
 import type { SaveCondominiumResult } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
@@ -82,10 +79,6 @@ export async function previewBulkComparables(): Promise<BulkComparableResult> {
 }
 
 export async function previewRecordDecisions(): Promise<RecordDecisionResult> {
-  return { ok: false, error: REFUSAL };
-}
-
-export async function previewImportSearchResults(): Promise<SearchResultsHtmlImport> {
   return { ok: false, error: REFUSAL };
 }
 

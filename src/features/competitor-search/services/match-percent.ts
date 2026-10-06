@@ -4,6 +4,7 @@ import type {
   CompetitorSearchCriteria,
   ProximityReason,
 } from '@/features/competitor-search/types';
+import { formatNumber, formatPercent, formatSquareMeters } from '@/lib/format';
 
 // MISSION 71 — LE % DE CORRESPONDANCE, sur chaque carte (portails compris), sur 100 points :
 //   secteur 25 · surface 20 · prix 20 · pièces 15 · stationnement 5 · extérieur 5 ·
@@ -116,8 +117,7 @@ export function matchPercent(
   return Math.round((earned / possible) * 100);
 }
 
-const fr = (value: number, digits = 0): string =>
-  value.toLocaleString('fr-FR', { maximumFractionDigits: digits });
+const fr = (value: number, digits = 0): string => formatNumber(value, { maxDecimals: digits });
 
 const km = (meters: number): string => `${fr(meters / 1000, 1)} km`;
 
@@ -149,7 +149,9 @@ export function gapLine(
   const ref = criteria.surfaceArea;
   const value = candidate.surfaceArea;
   if (ref != null && ref > 0 && value != null && value > ref + identicalSurfaceTolerance(ref)) {
-    parts.push(`Plus grand : ${fr(value, 1)} m² (+${Math.round(((value - ref) / ref) * 100)} %)`);
+    parts.push(
+      `Plus grand : ${formatSquareMeters(value, { maxDecimals: 1 })} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
+    );
   }
   if (
     criteria.roomsCount != null &&
@@ -161,7 +163,9 @@ export function gapLine(
   const priceGap = priceOutsideRange(criteria, candidate.price);
   if (priceGap != null && priceGap !== 0) {
     const pct = Math.max(1, Math.round(Math.abs(priceGap) * 100));
-    parts.push(`Prix ${pct} % ${priceGap > 0 ? 'au-dessus de' : 'en dessous de'} votre fourchette`);
+    parts.push(
+      `Prix ${formatPercent(pct)} ${priceGap > 0 ? 'au-dessus de' : 'en dessous de'} votre fourchette`,
+    );
   }
   return parts.length > 0 ? parts.join(' · ') : null;
 }

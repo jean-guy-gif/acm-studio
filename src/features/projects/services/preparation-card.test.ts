@@ -15,7 +15,7 @@ describe('preparation-card — aucune valeur inventée (§1 / §5)', () => {
         surfaceArea: 97,
         city: 'Cagnes-sur-Mer',
       }),
-    ).toBe('Appartement · 4 pièces · 97 m² · Cagnes-sur-Mer');
+    ).toBe('Appartement · 4 pièces · 97\u00A0m² · Cagnes-sur-Mer');
 
     // Champs absents : simplement omis, jamais rendus en « — ».
     expect(

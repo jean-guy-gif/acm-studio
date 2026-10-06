@@ -14,8 +14,9 @@ import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-i
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
 import { propertyLabel } from '@/features/projects/services/property-label';
+import { formatEuro } from '@/lib/format';
 
-const euro = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
+const euro = (value: number): string => formatEuro(value);
 
 const formatDate = (iso: string | null): string | null =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : null;

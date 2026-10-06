@@ -81,12 +81,12 @@ describe('rankCandidates — les quatre critères FILTRENT (Mission 61)', () => 
   it('§7.2a — pour 80 m², rien hors 76–84 au premier passage (±5 %)', () => {
     const res = run([
       c({ key: 's80', surfaceArea: 80 }),
-      c({ key: 's84', surfaceArea: 84 }), // +5 % exact
-      c({ key: 's76', surfaceArea: 76 }), // −5 % exact
+      c({ key: 's84', surfaceArea: 84 }), // +5\u00A0% exact
+      c({ key: 's76', surfaceArea: 76 }), // −5\u00A0% exact
       c({ key: 's82', surfaceArea: 82 }),
       c({ key: 's78', surfaceArea: 78 }),
-      c({ key: 's81', surfaceArea: 81 }), // 6 dans ±5 % → pas de desserrage
-      c({ key: 's85', surfaceArea: 85 }), // 6,25 % → dehors
+      c({ key: 's81', surfaceArea: 81 }), // 6 dans ±5\u00A0% → pas de desserrage
+      c({ key: 's85', surfaceArea: 85 }), // 6,25\u00A0% → dehors
       c({ key: 's50', surfaceArea: 50 }),
     ]);
     expect(res.loosening.surfaceLoosened).toBe(false);
@@ -99,11 +99,11 @@ describe('rankCandidates — les quatre critères FILTRENT (Mission 61)', () => 
 
   it('§7.2b — après le dernier cran, rien hors 72–88 (±10 %), un 70 m² reste dehors', () => {
     const res = run([
-      c({ key: 's86', surfaceArea: 86 }), // 7,5 %
-      c({ key: 's88', surfaceArea: 88 }), // 10 %
-      c({ key: 's74', surfaceArea: 74 }), // 7,5 %
-      c({ key: 's72', surfaceArea: 72 }), // 10 %
-      c({ key: 's70', surfaceArea: 70 }), // 12,5 % → dehors, jamais
+      c({ key: 's86', surfaceArea: 86 }), // 7,5\u00A0%
+      c({ key: 's88', surfaceArea: 88 }), // 10\u00A0%
+      c({ key: 's74', surfaceArea: 74 }), // 7,5\u00A0%
+      c({ key: 's72', surfaceArea: 72 }), // 10\u00A0%
+      c({ key: 's70', surfaceArea: 70 }), // 12,5\u00A0% → dehors, jamais
       c({ key: 's50', surfaceArea: 50 }),
     ]);
     expect(res.loosening.surfaceTolerancePct).toBe(10);
@@ -117,7 +117,7 @@ describe('rankCandidates — les quatre critères FILTRENT (Mission 61)', () => 
   it('§7.3 — un bien retenu grâce au desserrage porte sa mention, et l’état le dit', () => {
     const res = run([
       c({ key: 'tight', surfaceArea: 80 }),
-      c({ key: 'wide', surfaceArea: 87 }), // 8,75 % → n’entre qu’après élargissement
+      c({ key: 'wide', surfaceArea: 87 }), // 8,75\u00A0% → n’entre qu’après élargissement
     ]);
     expect(res.loosening.surfaceLoosened).toBe(true);
     const wide = res.ranked.find((r) => r.candidate.key === 'wide');
@@ -252,7 +252,7 @@ describe('rankCandidates — plancher de ±3 m² sur la surface (Mission 68)', (
     expect(res.loosening.surfaceLoosened).toBe(true);
     expect(res.loosening.roomsLoosened).toBe(true);
     expect(res.loosening.surfaceFloorSqm).toBe(3);
-    expect(surfaceToleranceLabel(res.loosening)).toBe('±3 m²');
+    expect(surfaceToleranceLabel(res.loosening)).toBe('±3\u00A0m²');
     expect(keys(res).sort()).toEqual(['deux18', 's17', 's23']);
     // La mention sur la carte suit la même règle : le 2 pièces de 18 m² entrait déjà à ±3 m²,
     // sa carte ne parle que des pièces — jamais d'un élargissement de surface qui n'a pas eu lieu.
@@ -275,7 +275,7 @@ describe('rankCandidates — plancher de ±3 m² sur la surface (Mission 68)', (
     expect(res.loosening.surfaceLoosened).toBe(true);
     expect(res.loosening.surfaceTolerancePct).toBe(10);
     expect(res.loosening.surfaceFloorSqm).toBeNull();
-    expect(surfaceToleranceLabel(res.loosening)).toBe('±10 %');
+    expect(surfaceToleranceLabel(res.loosening)).toBe('±10\u00A0%');
     // Et la carte du 73 m² dit toujours qu'elle doit sa place à l'élargissement de la surface.
     expect(res.ranked.find((r) => r.candidate.key === 'a73')?.loosenedSurface).toBe(true);
   });

@@ -18,9 +18,9 @@ import {
 } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // Synthèse — the seller picks the most dangerous competitor among the ones he
 // judged serious (yes / unsure). The software records the choice but NEVER
@@ -81,7 +81,7 @@ export function LivePageDangerous({
                   <div className="text-sm text-zinc-500 stage:text-white/60">
                     {[entry.district, entry.city].filter(Boolean).join(', ') ||
                       'Localisation inconnue'}
-                    {entry.surfaceArea != null ? ` · ${entry.surfaceArea} m²` : ''}
+                    {entry.surfaceArea != null ? ` · ${formatSquareMeters(entry.surfaceArea)}` : ''}
                     {entry.roomsCount != null ? ` · ${entry.roomsCount} pièces` : ''}
                   </div>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -98,7 +98,7 @@ export function LivePageDangerous({
                     <div className="text-sm text-zinc-500 stage:text-white/60">
                       Imaginé : {euro(entry.response.seller_estimated_listing_price)}
                       {entry.priceReveal.gapAmount != null
-                        ? ` · écart ${entry.priceReveal.gapAmount >= 0 ? '+' : ''}${entry.priceReveal.gapAmount.toLocaleString('fr-FR')} €`
+                        ? ` · écart ${formatEuro(entry.priceReveal.gapAmount, { signed: true })}`
                         : ''}
                     </div>
                   ) : null}

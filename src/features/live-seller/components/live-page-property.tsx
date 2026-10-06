@@ -30,6 +30,7 @@ import {
   type ParkingType,
 } from '@/features/subject-property/constants/property-options';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
+import { formatSquareMeters } from '@/lib/format';
 
 // Act 1 — "Votre bien". The seller RECOGNISES the property before any competitor
 // is shown. Never a price, never the advisor range, never an estimate: the whole
@@ -69,7 +70,10 @@ export function LivePageProperty({
   // Recognition characteristics only — deliberately no price, charges or tax.
   const stats: { label: string; value: string | null }[] = [
     { label: 'Type', value: property.propertyType },
-    { label: 'Surface', value: property.surfaceArea != null ? `${property.surfaceArea} m²` : null },
+    {
+      label: 'Surface',
+      value: property.surfaceArea != null ? formatSquareMeters(property.surfaceArea) : null,
+    },
     { label: 'Pièces', value: property.roomsCount != null ? String(property.roomsCount) : null },
     {
       label: 'Chambres',

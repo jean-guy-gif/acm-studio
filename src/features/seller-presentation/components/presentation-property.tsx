@@ -1,6 +1,7 @@
 import { RemoteImage } from '@/components/ui/remote-image';
 import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
+import { formatSquareMeters } from '@/lib/format';
 
 function line(label: string, value: string | number | null): string {
   return value != null && value !== '' ? `${label} : ${value}` : `${label} : —`;
@@ -23,7 +24,10 @@ export function PresentationProperty({
             <span>{line('Ville', property.city)}</span>
             <span>{line('Quartier', property.district)}</span>
             <span>
-              {line('Surface', property.surfaceArea != null ? `${property.surfaceArea} m²` : null)}
+              {line(
+                'Surface',
+                property.surfaceArea != null ? formatSquareMeters(property.surfaceArea) : null,
+              )}
             </span>
             <span>{line('Pièces', property.roomsCount)}</span>
             <span>{line('Chambres', property.bedroomsCount)}</span>

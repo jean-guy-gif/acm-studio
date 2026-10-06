@@ -127,7 +127,7 @@ describe('la ligne de bilan', () => {
     });
     const summary = describeStreamEstateSearch(search.ranked, note);
     expect(summary.headline).toBe(
-      '3 comparables : 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces facturées (0,37 €)',
+      '3 comparables : 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces facturées (0,37\u00A0€)',
     );
     expect(summary.details[0]).toBe(
       'Moins de 10 : plus aucun bien après le dernier cran (rayon de 10 km).',
@@ -152,7 +152,7 @@ describe('la ligne de bilan', () => {
       located: false,
       tiers: [{ tier: 1, billed: 60, kept: 0, fallback: true }],
     });
-    expect(summary.headline).toBe('0 comparable — 60 annonces facturées (0,60 €)');
+    expect(summary.headline).toBe('0 comparable — 60 annonces facturées (0,60\u00A0€)');
     expect(summary.details[0]).toBe(
       'Moins de 10 : plafond atteint, la recherche s’arrête là — « Chercher encore » reprend au cran 1, page suivante.',
     );

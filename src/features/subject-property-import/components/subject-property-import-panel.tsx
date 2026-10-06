@@ -11,13 +11,12 @@ import {
   formSectionTitle,
   hintText,
   inputBase,
-  link,
 } from '@/components/ui/styles';
+import { ExtensionRequiredNotice } from '@/features/browser-extension/extension-required-notice';
 import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
 import { importListingFromUrl } from '@/features/comparable-import/services/import-listing-from-url';
-import { ImportBookmarklet } from '@/features/comparable-import/components/import-bookmarklet';
-import { ListingPasteZone } from '@/features/comparable-import/components/listing-paste-zone';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
+import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 import type { RecoverPropertyPhotoResult } from '@/features/subject-property-import/actions/recover-property-photos';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 import type {
@@ -48,12 +47,10 @@ const FIELD_LABELS: Record<string, string> = {
 
 const label = (key: string): string => FIELD_LABELS[key] ?? key;
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
-// Rebranding the three online-listing gestures already used for competitors onto
-// the SUBJECT property: paste the address (URL), paste the page, or the "Envoyer
-// vers ACM Studio" favourite. It CALLS importComparableUrl / importComparableHtml,
+// The online-listing import already used for competitors, on the SUBJECT property: the advisor
+// pastes the listing address. It CALLS importComparableUrl / importComparableHtml,
 // which write no comparable row but DO record a dated market observation of the
 // public listing (Mission 47), and hands the mapped prefill up to the form.
 export function SubjectPropertyImportPanel({
@@ -72,7 +69,6 @@ export function SubjectPropertyImportPanel({
   const [url, setUrl] = useState('');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [showPaste, setShowPaste] = useState(false);
   const [summary, setSummary] = useState<{
     found: string[];
     missing: string[];
@@ -86,7 +82,7 @@ export function SubjectPropertyImportPanel({
     null,
   );
 
-  function apply(res: ComparableImportResult, onRefused?: () => void) {
+  function apply(res: ComparableImportResult) {
     if (res.ok) {
       const { prefill, info } = mapListingToProperty(res.data);
       setSummary({
@@ -102,7 +98,6 @@ export function SubjectPropertyImportPanel({
       setError(res.error);
       setSummary(null);
       setRecovery(null);
-      onRefused?.();
     }
   }
 
@@ -131,42 +126,16 @@ export function SubjectPropertyImportPanel({
     setError(null);
     startTransition(async () => {
       // Shared import path (Mission 46): extension → robots + page in the advisor's
-      // browser → HTML import; else server import. A refused / failed fetch opens the
-      // paste fallback. The HTML is re-validated by the existing parser (never trusted).
+      // browser → HTML import; else server import. The HTML is re-validated by the existing
+      // parser (never trusted).
       const res = await importListingFromUrl({
         url: targetUrl,
         extensionAvailable: extension.available === true,
         importUrlAction: importAction,
         importHtmlAction,
       });
-      apply(res, () => setShowPaste(true));
+      apply(res);
     });
-  }
-
-  function importFromHtml(sourceUrl: string, html: string) {
-    setError(null);
-    const formData = new FormData();
-    formData.set('url', sourceUrl);
-    formData.set('html', html);
-    startTransition(async () => {
-      apply(await importHtmlAction(formData));
-    });
-  }
-
-  // Paste in the dedicated zone: either the ADDRESS (re-run the remote import) or
-  // the PAGE itself (analyse it as the advisor sees it).
-  function handleZonePaste({ html, text }: { html: string; text: string }) {
-    const trimmed = text.trim();
-    if (html.trim() === '' && /^https?:\/\/\S+$/i.test(trimmed)) {
-      setUrl(trimmed);
-      importFromUrl(trimmed);
-      return;
-    }
-    if (url.trim() === '') {
-      setError('Collez d’abord l’adresse de l’annonce dans le champ ci-dessus.');
-      return;
-    }
-    importFromHtml(url, html.trim() !== '' ? html : text);
   }
 
   return (
@@ -177,12 +146,7 @@ export function SubjectPropertyImportPanel({
         Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
         d’enregistrer.
       </p>
-      {extension.available ? (
-        <p className="text-xs text-emerald-700 stage:text-emerald-300">
-          Extension détectée : les portails qui bloquent l’analyse à distance sont lus directement
-          depuis votre navigateur.
-        </p>
-      ) : null}
+      {extension.available === false ? <ExtensionRequiredNotice reason="missing" /> : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
@@ -204,31 +168,6 @@ export function SubjectPropertyImportPanel({
         <p role="alert" className={alertError}>
           {error}
         </p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => setShowPaste((value) => !value)}
-        className={`${link} self-start text-sm hover:underline`}
-      >
-        {showPaste ? 'Masquer' : 'Le site refuse ? Copiez-collez la page en 3 gestes'}
-      </button>
-      {showPaste ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-dashed border-zinc-300 p-3.5 stage:border-white/20">
-          <p className="text-sm text-zinc-600 stage:text-white/70">
-            Ce portail refuse l’analyse à distance. Copiez la page comme vous copieriez un texte,
-            l’outil se charge du reste.
-          </p>
-          <ListingPasteZone onPaste={handleZonePaste} disabled={pending} />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-zinc-500 hover:underline stage:text-white/50">
-              Vous importez souvent depuis ce portail ? Un bouton à installer une fois
-            </summary>
-            <div className="pt-2">
-              <ImportBookmarklet />
-            </div>
-          </details>
-        </div>
       ) : null}
 
       {summary ? (
@@ -257,7 +196,7 @@ export function SubjectPropertyImportPanel({
               <p className="text-zinc-600 stage:text-white/65">
                 {euro(summary.info.readPrice)}
                 {summary.info.readPortalPricePerSquareMeter != null
-                  ? ` · ${summary.info.readPortalPricePerSquareMeter.toLocaleString('fr-FR')} €/m² (portail)`
+                  ? ` · ${formatEuroPerSquareMeter(summary.info.readPortalPricePerSquareMeter)} (portail)`
                   : ''}{' '}
                 — pour information : l’outil ne l’enregistre pas et ne préremplit pas votre
                 fourchette.

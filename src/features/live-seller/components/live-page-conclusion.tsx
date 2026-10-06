@@ -15,9 +15,9 @@ import type {
   AuthorizedAdvisorRange,
   AuthorizedSellerComparable,
 } from '@/features/live-seller/services/project-live-for-seller';
+import { formatEuro } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')}\u00A0€` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 function Line({ label, value }: { label: string; value: string }) {
   return (

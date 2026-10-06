@@ -1,12 +1,13 @@
 import { hintText, metaLabel, sectionTitle, softPanel } from '@/components/ui/styles';
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 function euro(value: number | null): string {
-  return value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+  return value != null ? formatEuro(value) : '—';
 }
 
 function squareMeters(value: number | null): string {
-  return value != null ? `${value} m²` : '—';
+  return value != null ? formatSquareMeters(value) : '—';
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

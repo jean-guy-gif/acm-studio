@@ -11,10 +11,9 @@ import { createClient } from '@/lib/supabase/server';
 
 const GENERIC_ERROR = 'L’import a échoué. Vous pouvez saisir le bien manuellement.';
 
-// Plan B when a portal refuses the server-side fetch (anti-bot): the advisor
-// opens the listing in HIS OWN browser, copies the page source and pastes it
-// here. Nothing is bypassed — this only analyses content the advisor can
-// already see. Same extraction pipeline as the URL import; NO remote request
+// The listing page read by the extension, in the ADVISOR'S own browser (portals refuse
+// the server-side fetch). Nothing is bypassed — this only analyses content the advisor
+// can already see. Same extraction pipeline as the URL import; NO remote request
 // is ever made by this action. Since Mission 47 it also records a dated market
 // observation as a side effect (a fact about the public listing, never a
 // comparable row and never tied to a role).
@@ -52,10 +51,10 @@ export async function importComparableHtml(
 
   const html = String(formData.get('html') ?? '');
   if (html.trim() === '') {
-    return { ok: false, error: 'Collez le code de la page de l’annonce.' };
+    return { ok: false, error: 'La page de l’annonce est vide.' };
   }
   if (Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
-    return { ok: false, error: 'Le contenu collé est trop volumineux.' };
+    return { ok: false, error: 'La page de l’annonce est trop volumineuse.' };
   }
 
   const parts = extractListingData(html, url.href);

@@ -18,6 +18,7 @@ import {
 } from '@/features/subject-property-diagnostics/constants/diagnostic-statuses';
 import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
 import type { SubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/types';
+import { formatSquareMeters } from '@/lib/format';
 
 function statusLabel(value: string | null): string | null {
   if (value == null) {
@@ -99,7 +100,7 @@ export function LivePropertySection({
         <Fact label="Quartier" value={property.district} />
         <Fact
           label="Surface"
-          value={property.surfaceArea != null ? `${property.surfaceArea} m²` : null}
+          value={property.surfaceArea != null ? formatSquareMeters(property.surfaceArea) : null}
         />
         <Fact label="Pièces" value={property.roomsCount} />
         <Fact label="Chambres" value={property.bedroomsCount} />

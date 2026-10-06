@@ -6,6 +6,7 @@ import { scoreCandidate } from '@/features/competitor-search/services/score-cand
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 54 §3 — la recherche acheteur RÉUTILISE le moteur de rapprochement des
 // concurrents (scoreCandidate) : on n'écrit pas un second moteur. Critères acheteur →
@@ -52,7 +53,7 @@ export type BuyerMatch = {
   weaknesses: BuyerGap[];
 };
 
-const eur = (value: number): string => `${Math.round(value).toLocaleString('fr-FR')} €`;
+const eur = (value: number): string => formatEuro(value);
 
 // Ces libellés miroir de score-candidate ne servent qu'à SAVOIR quand chiffrer (le verdict
 // du score). S'ils changeaient là-bas, on retomberait simplement sur le libellé qualitatif
@@ -83,7 +84,7 @@ function enrichGap(label: string, criteria: ScoringCriteria, facts: CandidateFac
     const gap = facts.surfaceArea - criteria.surfaceArea;
     return {
       label,
-      detail: `${Math.abs(gap)} m² ${gap < 0 ? 'de moins' : 'de plus'} que recherché`,
+      detail: `${formatSquareMeters(Math.abs(gap))} ${gap < 0 ? 'de moins' : 'de plus'} que recherché`,
     };
   }
   // Pas de chiffre pertinent (localisation, type, pièces déjà chiffrées) → le libellé seul.

@@ -24,12 +24,11 @@ import type {
   RankedCandidate,
   StreamEstateFacts,
 } from '@/features/competitor-search/types';
+import { formatEuro, formatPercent, formatSquareMeters } from '@/lib/format';
 
-const euro = (value: number | null): string =>
-  value != null ? `${Math.round(value).toLocaleString('fr-FR')} €` : '—';
+const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
-const percent = (value: number): string =>
-  `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`.replace('-', '−');
+const percent = (value: number): string => formatPercent(value, { maxDecimals: 1 });
 
 // Essai Stream Estate — ce que l'API dit du bien, sur la carte : site d'origine (toujours un site
 // que l'extension relit), depuis quand il est en ligne, ses baisses de prix.
@@ -202,7 +201,7 @@ export function RankedCandidateCard({
                 className="text-sm font-semibold text-brand-deep stage:text-white"
                 title="Correspondance avec le bien du vendeur (un critère non indiqué sort du calcul)"
               >
-                {ranked.matchPercent} %
+                {formatPercent(ranked.matchPercent)}
               </span>
             ) : null}
           </span>
@@ -210,10 +209,10 @@ export function RankedCandidateCard({
 
         <div className="text-sm text-zinc-500 stage:text-white/60">
           <span className="font-semibold text-brand-deep stage:text-white">{euro(price)}</span>
-          {surface != null ? ` · ${surface} m²` : ''}
+          {surface != null ? ` · ${formatSquareMeters(surface)}` : ''}
           {rooms != null ? ` · ${rooms} pièces` : ''}
           {candidate.landArea != null
-            ? ` · ${candidate.landArea.toLocaleString('fr-FR')} m² de terrain`
+            ? ` · ${formatSquareMeters(candidate.landArea)} de terrain`
             : ''}
           {candidate.city ? ` · ${candidate.city}` : ''}
           {` · ${ranked.portalLabel}`}

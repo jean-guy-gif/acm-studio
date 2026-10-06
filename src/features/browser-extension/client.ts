@@ -14,7 +14,6 @@
 const PING_TIMEOUT_MS = 800;
 const FETCH_TIMEOUT_MS = 50_000;
 const ROBOTS_TIMEOUT_MS = 8_000;
-const OPEN_TAB_TIMEOUT_MS = 10_000;
 // Ouvrir quatre onglets : rapide. Tout lire : jusqu'à 15 s d'attente par onglet (mission 46).
 const OPEN_TABS_TIMEOUT_MS = 10_000;
 const READ_TABS_TIMEOUT_MS = 120_000;
@@ -29,16 +28,6 @@ export type ExtensionFetchResult =
 // A robots.txt read by the extension: the real HTTP status lets the app tell a
 // genuine 404 (allowed) from a refusal (not allowed). `{ ok: false }` = read failed.
 export type ExtensionRobotsResult = { ok: true; status: number; text: string } | { ok: false };
-
-// MISSION 65 — « Lire ma recherche » : un onglet de résultats que le conseiller a laissé
-// ouvert. Soit la page lue, soit la liste des onglets candidats (à lui de choisir), soit un
-// échec nommé : `none` (aucun onglet de recherche), `outdated` (extension installée trop
-// ancienne pour connaître readOpenTab), `error` (lecture ratée).
-export type OpenSearchTab = { tabId: number; title: string; url: string };
-export type ExtensionOpenTabResult =
-  | { ok: true; kind: 'page'; html: string; finalUrl: string; title: string }
-  | { ok: true; kind: 'choose'; tabs: OpenSearchTab[] }
-  | { ok: false; reason: 'none' | 'outdated' | 'error' };
 
 // MISSION 69 — « Lire mes recherches » : chaque onglet de recherche lu, ou la raison pour laquelle
 // il ne l'a pas été — `waiting` : resté sur l'écran d'attente du portail (cliquer une fois dessus).
@@ -57,7 +46,6 @@ type Pending = {
     | 'openSearchWindow'
     | 'fetchInSearchWindow'
     | 'closeSearchWindow'
-    | 'readOpenTab'
     | 'openSearchTabs'
     | 'readSearchTabs';
   url?: string;
@@ -178,46 +166,6 @@ export async function closeSearchWindowViaExtension(windowId: number): Promise<v
     await send<{ ok?: boolean }>({ kind: 'closeSearchWindow', windowId }, PING_TIMEOUT_MS + 2_000);
   } catch {
     // La fenêtre se ferme d'elle-même si l'extension ne répond pas ; rien à forcer.
-  }
-}
-
-// MISSION 65 — lit l'onglet de recherche DÉJÀ ouvert par le conseiller (aucune requête au
-// portail). `tabId` = l'onglet qu'il a choisi quand il y en avait plusieurs. Une extension
-// 0.1.0 ne connaît pas `readOpenTab` : son pont retombe sur « ping » et répond sans `kind` —
-// on le reconnaît (`outdated`) au lieu de prendre un ping pour une page.
-export async function readOpenTabViaExtension(tabId?: number): Promise<ExtensionOpenTabResult> {
-  try {
-    const response = await send<{
-      ok?: boolean;
-      kind?: string;
-      reason?: string;
-      html?: string;
-      finalUrl?: string;
-      title?: string;
-      tabs?: OpenSearchTab[];
-    }>({ kind: 'readOpenTab', tabId }, OPEN_TAB_TIMEOUT_MS);
-    if (response.ok === true) {
-      if (
-        response.kind === 'page' &&
-        typeof response.html === 'string' &&
-        typeof response.finalUrl === 'string'
-      ) {
-        return {
-          ok: true,
-          kind: 'page',
-          html: response.html,
-          finalUrl: response.finalUrl,
-          title: response.title ?? '',
-        };
-      }
-      if (response.kind === 'choose' && Array.isArray(response.tabs)) {
-        return { ok: true, kind: 'choose', tabs: response.tabs };
-      }
-      return { ok: false, reason: 'outdated' };
-    }
-    return { ok: false, reason: response.reason === 'none' ? 'none' : 'error' };
-  } catch {
-    return { ok: false, reason: 'error' };
   }
 }
 

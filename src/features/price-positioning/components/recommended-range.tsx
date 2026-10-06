@@ -3,6 +3,7 @@ import type {
   DispersionLevel,
   RecommendedRange,
 } from '@/features/price-positioning/types/price-positioning';
+import { formatEuro, formatPercent } from '@/lib/format';
 
 const DISPERSION_LABEL: Record<DispersionLevel, string> = {
   low: 'Faible',
@@ -11,7 +12,7 @@ const DISPERSION_LABEL: Record<DispersionLevel, string> = {
 };
 
 function euro(value: number): string {
-  return `${value.toLocaleString('fr-FR')} €`;
+  return formatEuro(value);
 }
 
 export function RecommendedRangeView({
@@ -47,8 +48,8 @@ export function RecommendedRangeView({
         </div>
       </div>
       <p className="text-sm text-zinc-600 stage:text-white/65">
-        Dispersion : {DISPERSION_LABEL[range.dispersion]} (±{range.widthPercentage} %) · {usedCount}{' '}
-        comparable{usedCount > 1 ? 's' : ''} utilisé{usedCount > 1 ? 's' : ''}
+        Dispersion : {DISPERSION_LABEL[range.dispersion]} (±{formatPercent(range.widthPercentage)})
+        · {usedCount} comparable{usedCount > 1 ? 's' : ''} utilisé{usedCount > 1 ? 's' : ''}
       </p>
     </section>
   );
