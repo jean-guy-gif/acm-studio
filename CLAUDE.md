@@ -1,234 +1,85 @@
-# CLAUDE.md
-
-## Project
-
-ACM Studio is a SaaS for real estate advisors.
-
-Its purpose is to help advisors prepare and conduct interactive seller meetings in order to improve seller understanding and increase exclusive mandate conversion.
-
-ACM Studio is not an automated valuation tool.
-
-Never build features that estimate the seller property price automatically.
-
-The advisor decides.  
-The software prepares.  
-The seller understands.
-
----
-
-## Product architecture
-
-ACM Studio has three main areas:
-
-### Builder
-
-Used before the seller meeting.
-
-Purpose:
-
-- create a project
-- add the subject property
-- import competitors
-- review extracted data
-- validate analysis
-- prepare the meeting
-
-### Live
-
-Used during the seller meeting.
-
-Purpose:
-
-- display the interactive meeting sequence
-- ask questions
-- reveal competitor prices progressively
-- record seller answers
-- feed the perception engine
-
-### Admin
-
-Used for configuration.
-
-Purpose:
-
-- agencies
-- users
-- branding
-- permissions
-- templates
-- billing later
-
----
-
-## Core domain model
-
-Use these exact terms in code:
-
-- `Agency`
-- `Advisor`
-- `Project`
-- `SubjectProperty`
-- `Competitor`
-- `Analysis`
-- `Presentation`
-- `Meeting`
-- `SellerResponse`
-- `Report`
-
-Do not use:
-
-- dossier
-- bien principal
-- comparable
-- diaporama
-- estimation
-
-In user-facing French UI:
-
-- Project = Dossier vendeur
-- SubjectProperty = Votre bien
-- Competitor = Concurrent
-- Meeting = Rendez-vous vendeur
-- Report = Rapport conseiller
-
----
-
-## Absolute product rules
-
-Never ask for the seller property price during project creation.
-
-Never generate an automatic valuation.
-
-Never show competitor price before asking the seller to guess it.
-
-Never show several competitors on the same Live screen.
-
-Never store business logic only in React components.
-
-Never create fake data, fake photos, fake competitors, or fake sources.
-
-Always keep advisor validation before final outputs.
-
-Always distinguish seller-facing content from advisor-only content.
-
----
-
-## Tech stack
-
-Use:
-
-- Next.js
-- TypeScript
-- React
-- Tailwind CSS
-- shadcn/ui
-- Supabase
-- Supabase Auth
-- Supabase Storage
-- Zod
-- React Hook Form
-- OpenAI SDK
-- PptxGenJS later
-- Vitest
-- Playwright
-
-Avoid unless explicitly needed:
-
-- Redux
-- unnecessary global context
-- complex state machines too early
-- premature microservices
-
----
-
-## Folder structure
-
-Use this structure:
-
-```txt
-app/
-components/
-features/
-lib/
-services/
-hooks/
-types/
-supabase/
-docs/
-tests/
-public/
-```
-
-Feature-first structure:
-
-```txt
-features/projects/
-features/competitors/
-features/analysis/
-features/meeting/
-features/ipc/
-features/reports/
-features/branding/
-```
-
-Each feature may contain:
-
-```txt
-components/
-actions/
-schemas/
-services/
-types/
-hooks/
-tests/
-```
-
----
-
-## Coding rules
-
-Use TypeScript everywhere.
-
-Use Zod for validation.
-
-Use server actions for mutations when appropriate.
-
-Use Supabase clients from shared utilities.
-
-Keep UI components small.
-
-Keep business logic in services.
-
-Prefer simple readable code over clever code.
-
-Every new feature must include:
-
-- types
-- validation schema
-- service/action
-- UI component
-- error handling
-- tests where relevant
-
----
-
-## Database rules
-
-Supabase is the source of truth.
-
-Every table must have:
-
-- `id`
-- `created_at`
-- `updated_at` where relevant
-- RLS enabled
-- agency-based access control where relevant
-
-Never create a table without RLS policy.
-
-Never expose data across agencies.
-
-Use soft delete when possible.
+# CLAUDE.md — ACM Studio
+
+## Raison d'être
+
+ACM Studio est un SaaS pour conseillers immobiliers : préparer puis conduire un rendez-vous vendeur
+interactif, pour que le vendeur comprenne son marché et signe un mandat exclusif. Ce n'est pas un
+outil d'estimation automatique : ne jamais construire de fonction qui estime le prix du bien vendeur.
+
+Le conseiller décide.
+Le logiciel prépare.
+Le vendeur comprend.
+
+**Le gel.** Aucune nouvelle fonctionnalité avant le pilote. Une mission naît d'un problème
+rencontré en vrai rendez-vous. Les idées vont dans `docs/IDEES.md`.
+
+## Règles produit absolues
+
+- Ne jamais demander le prix du bien vendeur à la création du dossier.
+- Ne jamais produire d'estimation automatique.
+- Ne jamais montrer le prix d'un concurrent avant d'avoir demandé au vendeur de le deviner.
+- Ne jamais montrer plusieurs concurrents sur le même écran du Live.
+- Ne jamais garder la logique métier dans les seuls composants React.
+- Ne jamais créer de fausses données, fausses photos, faux concurrents ou fausses sources.
+- Toujours garder la validation du conseiller avant un résultat final.
+- Toujours distinguer ce que voit le vendeur de ce qui est réservé au conseiller.
+- L'IA assiste, ne décide jamais : elle n'estime pas le bien, n'invente rien, ne contourne pas le
+  conseiller ; ses sorties sont tracées.
+
+## Les espaces et le MVP
+
+- **Préparation** (`/builder`, `draft`) : bien vendeur, concurrents, analyse, positionnement.
+- **Live** (`/live`) : le rendez-vous face au vendeur ; seuls les dossiers prêts (`ready_for_meeting`).
+- **Suivi** (`/suivi`) : les dossiers conclus (`meeting_completed`), leur issue, la recherche acheteur.
+- **Administration** (`/admin`) : identité de l'agence et équipe — jamais la méthode.
+- **MVP** : ces trois espaces, de la création du dossier au Suivi. Le rapport conseiller et l'export
+  PowerPoint sortent du MVP : la Conclusion et le Suivi en tiennent lieu. Tout le reste est V2.
+
+## Le Live tel qu'il est
+
+Un moteur interactif, pas un diaporama ; chaque réponse du vendeur est enregistrée. Les écrans, dans
+l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
+
+- Introduction → Votre bien (« Reconnaissez-vous votre bien ? »), absent sans bien vendeur.
+- Chaque concurrent retenu, seul à l'écran : **Un sérieux concurrent ?** (sans prix ; « non » saute
+  la suite) → **À quel prix ?** (le vendeur devine) → **Ce prix vous paraît-il cohérent ?**
+  (révélation) → **Pourquoi toujours en vente ?** (durée devinée puis révélée, baisses, motif).
+- Le concurrent le plus dangereux → Votre valeur perçue (le marché après la réponse) → Analyse des
+  prix → Conclusion (« Sur quel prix partons-nous ? », champ vide). Puis, hors Live, l'écran
+  conseiller de conclusion : l'issue (signé, à relancer, vendu ailleurs, retiré).
+
+## Vocabulaire
+
+- Code : `Agency`, `Advisor`, `Project`, `SubjectProperty`, `Competitor`, `Meeting`,
+  `SellerResponse`. `comparable` reste dans le code existant (table `comparables`, features
+  `comparable*`) ; le nouveau code dit `competitor`, jamais `dossier`, `diaporama`, `estimation`.
+- Écran : Dossier vendeur · Votre bien / Bien vendeur · toujours « Concurrent » · Rendez-vous
+  vendeur · Marché calculé, Analyse du conseiller, Prix conseillé, Prix de commercialisation.
+
+## Stack (d'après `package.json`)
+
+Next.js 16 (App Router, server actions) · React 19 · TypeScript 5 · Tailwind CSS 4 · Supabase
+(Auth, Postgres + RLS, Storage) par `@supabase/ssr` · zod 4 pour les nouveaux schémas · pdfjs-dist
+(navigateur) · Vitest 4 · ESLint 9 · Prettier 3 · extension Chrome (`extension/`). Non installés :
+shadcn/ui, React Hook Form, OpenAI, PptxGenJS, Playwright. À éviter : Redux, contexte global
+inutile, machines à états prématurées, microservices.
+
+## Règles de code
+
+- `src/app` (routes), `src/features/<feature>/`, `src/lib`. TypeScript sans `any`, construit du bas
+  vers le haut : type → validation → service → action → interface → tests.
+- Les composants affichent, la logique métier vit dans les services, les mutations passent par des
+  server actions ; tout ce qui vient de l'utilisateur ou du navigateur est revalidé côté serveur.
+- `database.types.ts` se génère (`npm run gen:types`). Jamais exposés : la clé service Supabase, la
+  clé Stream Estate, les données d'une autre agence.
+- Dépendance nouvelle : besoin réel et non couvert, `npm install` se demande. Un refactoring ne
+  change aucun comportement. Démonstration identifiée comme telle. Desktop d'abord, tablette ok.
+
+## Base de données
+
+Supabase est la source de vérité. Chaque table a `id`, `created_at`, `updated_at` si utile, la RLS
+activée et un cloisonnement par agence là où il a un sens. Jamais de table sans politique RLS,
+jamais de donnée exposée d'une agence à l'autre. Suppression douce quand c'est possible.
 
 ### Migrations
 
@@ -267,102 +118,6 @@ Le parcours : **Préparation → Live → Suivi** — `draft` → `ready_for_mee
   ou `archived` sont réellement produits, c'est l'écran qui les montre quelque part —
   jamais le backfill qui les normalise.
 
----
-
-## AI rules
-
-AI is an assistant, not a decision-maker.
-
-AI may:
-
-- extract competitor data
-- summarize market data
-- suggest market reading
-- suggest advisor notes
-- calculate perception indicators
-
-AI must never:
-
-- estimate the seller property
-- invent missing data
-- invent photos
-- invent competitors
-- bypass advisor validation
-
-All AI outputs must be stored with traceability.
-
----
-
-## Live meeting rules
-
-Live is not a PowerPoint.
-
-Live is an interactive meeting engine.
-
-For each competitor, the sequence is:
-
-1. Discover competitor without price
-2. Ask seller if it is comparable
-3. Ask seller to guess price
-4. Reveal real price
-5. Ask if price is coherent
-6. Reveal time on market / price drop
-7. Ask why it is still available
-
-Every seller response must be stored.
-
-Responses feed the perception engine.
-
----
-
-## Definition of Done
-
-A task is done only when:
-
-- code builds
-- TypeScript passes
-- lint passes
-- main user flow works
-- errors are handled
-- no fake business data is introduced
-- naming respects the domain language
-- security rules are respected
-- UI is usable on desktop and tablet
-
----
-
-## Development workflow
-
-When implementing a task:
-
-1. Read `CLAUDE.md`
-2. Read `TASKS.md`
-3. Read related docs in `/docs`
-4. Implement only the requested task
-5. Do not add unrelated features
-6. Run checks
-7. Summarize what changed
-8. List remaining risks
-
----
-
-## MVP priority
-
-The MVP must only do this:
-
-1. Create a Project
-2. Add Subject Property
-3. Import competitor data manually or from PDF
-4. Validate competitors
-5. Generate a basic meeting script
-6. Run Live meeting
-7. Capture seller responses
-8. Produce advisor report
-
-Everything else is V2.
-
----
-
 ## Données manquantes et provenance
 
 Une donnée absente mais **portée par la provenance** n'écarte pas ; une donnée absente qui **EST
@@ -374,11 +129,22 @@ comptée) : sans surface, impossible de savoir si on est dans la tolérance. La 
 provenance pour la commune ne tient **que parce que le périmètre (la commune) ne se desserre
 jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 
----
-
 ## Chantiers en suspens
 
 - **Identifiants de lieu par portail** — le secteur reste cadré à la **commune** tant que ce
   chantier n'est pas fait. Filtrer/chercher au **quartier** exige de mapper le quartier du bien
   vers l'identifiant de lieu propre à chaque portail (slugs/IDs de zone), un par un. En suspens
   depuis la mission 50 ; la mission 61 filtre donc le secteur à la commune (`candidate.city`).
+
+## Flux de travail
+
+- `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
+  push. Puis Laurent essaie. Puis `/valide NN` fusionne dans `main` et complète
+  `docs/DECISIONS.md`. **Jamais de fusion dans `main` sans « valide ».**
+- Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
+  `npm run build` (la CI les rejoue à chaque push). Une mission n'est finie que vue à l'écran.
+- Repères : `docs/ETAT_DU_PRODUIT.md` (ce que fait le code), `docs/01_Method/Storyboard.md` et
+  `ACM_Protocol.md` (la méthode), `missions/` (l'historique). `docs/archive/` n'est plus à jour.
+- Les décisions produit, qui font autorité comme ce fichier :
+
+@docs/DECISIONS.md
