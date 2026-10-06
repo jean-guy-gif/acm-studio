@@ -141,6 +141,9 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
   push. Puis Laurent essaie. Puis `/valide NN` fusionne dans `main` et complète
   `docs/DECISIONS.md`. **Jamais de fusion dans `main` sans « valide ».**
+- On essaie sur l'URL d'essai (branche `essai`). La base Supabase est partagée avec l'environnement
+  de travail : une migration doit rester compatible avec le code de `main`, et elle s'applique,
+  après comptage, avant l'essai.
 - Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
   `npm run build` (la CI les rejoue à chaque push). Une mission n'est finie que vue à l'écran.
 - Repères : `docs/ETAT_DU_PRODUIT.md` (ce que fait le code), `docs/01_Method/Storyboard.md` et
