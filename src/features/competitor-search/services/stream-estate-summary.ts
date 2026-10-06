@@ -1,12 +1,15 @@
 import {
-  STREAM_ESTATE_BILLING_CAP,
+  STREAM_ESTATE_MORE_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
   STREAM_ESTATE_TARGET,
+  type TierCursor,
   type TieredSearchCounts,
+  type TieredSearchMemory,
   type TierReport,
 } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
   STREAM_ESTATE_SOURCE,
+  type CompetitorCandidate,
   type RankedCandidate,
   type StreamEstateTier,
 } from '@/features/competitor-search/types';
@@ -17,8 +20,9 @@ import {
 // Les comparables comptés sont ceux que le classement PROPOSE (anciens, hors neuf en complément).
 
 export type StreamEstateSearchNote = {
-  billed: number;
+  billed: number; // cumulé sur la recherche et ses reprises (« Chercher encore »)
   stop: 'target' | 'cap' | 'exhausted' | 'error';
+  cursor: TierCursor | null; // où reprendre, au plafond
   tiers: TierReport[];
   counts: TieredSearchCounts;
   newBuild: number;
@@ -46,13 +50,60 @@ export const euroCost = (billed: number): string =>
     maximumFractionDigits: 2,
   })} €`;
 
+// « Chercher encore (20 annonces, 0,20 €) » : seulement au plafond, avant 10, s'il reste des crans.
+export const MORE_LABEL = `Chercher encore (${STREAM_ESTATE_MORE_CAP} annonces, ${euroCost(STREAM_ESTATE_MORE_CAP)})`;
+
+const proposedOf = (ranked: RankedCandidate[]) =>
+  ranked.filter((entry) => entry.portal === STREAM_ESTATE_SOURCE && !entry.newBuildComplement);
+
+export function canSearchMore(ranked: RankedCandidate[], note: StreamEstateSearchNote): boolean {
+  return (
+    note.stop === 'cap' && note.cursor != null && proposedOf(ranked).length < STREAM_ESTATE_TARGET
+  );
+}
+
+// Une reprise s'ajoute à la recherche : le coût et les écartés se cumulent, les crans parcourus
+// s'enchaînent, l'arrêt et le point de reprise sont ceux de la dernière reprise.
+export function mergeStreamEstateNote(
+  previous: StreamEstateSearchNote | null,
+  next: StreamEstateSearchNote,
+): StreamEstateSearchNote {
+  if (previous == null) return next;
+  const sum = (key: keyof TieredSearchCounts) => previous.counts[key] + next.counts[key];
+  return {
+    ...next,
+    billed: previous.billed + next.billed,
+    tiers: [...previous.tiers, ...next.tiers],
+    newBuild: previous.newBuild + next.newBuild,
+    counts: {
+      unreadable: sum('unreadable'),
+      outsideWhitelist: sum('outsideWhitelist'),
+      expiredOrigin: sum('expiredOrigin'),
+      otherCommune: sum('otherCommune'),
+      unverifiedPosition: sum('unverifiedPosition'),
+    },
+  };
+}
+
+// Ce que l'écran renvoie au serveur pour reprendre : les biens déjà trouvés (jamais repris ni
+// recomptés) et leurs positions (pour repérer le remplissage d'une page à l'autre).
+export function resumeMemory(candidates: CompetitorCandidate[]): TieredSearchMemory {
+  const found = candidates.filter((candidate) => candidate.key != null);
+  return {
+    keys: found.map((candidate) => candidate.key!),
+    oldCount: found.filter((candidate) => !candidate.isNewBuild).length,
+    locations: found.map((candidate) => ({
+      uuid: candidate.key!,
+      point: candidate.features?.location ?? null,
+    })),
+  };
+}
+
 export function describeStreamEstateSearch(
   ranked: RankedCandidate[],
   note: StreamEstateSearchNote,
 ): { headline: string; details: string[] } {
-  const proposed = ranked.filter(
-    (entry) => entry.portal === STREAM_ESTATE_SOURCE && !entry.newBuildComplement,
-  );
+  const proposed = proposedOf(ranked);
   const byTier = new Map<StreamEstateTier, number>();
   for (const entry of proposed) {
     const tier = entry.candidate.streamEstate?.tier;
@@ -70,7 +121,11 @@ export function describeStreamEstateSearch(
     const lastTier = note.tiers.at(-1)?.tier;
     details.push(
       note.stop === 'cap'
-        ? `Moins de ${STREAM_ESTATE_TARGET} : plafond de ${STREAM_ESTATE_BILLING_CAP} annonces facturées atteint, la recherche s’arrête là.`
+        ? `Moins de ${STREAM_ESTATE_TARGET} : plafond atteint, la recherche s’arrête là${
+            note.cursor
+              ? ` — « Chercher encore » reprend au cran ${note.cursor.tier}, page suivante.`
+              : '.'
+          }`
         : note.stop === 'error'
           ? `Moins de ${STREAM_ESTATE_TARGET} : Stream Estate n’a plus répondu en cours de recherche ; voici ce qui a été trouvé avant.`
           : note.stop === 'exhausted'
@@ -93,7 +148,9 @@ export function describeStreamEstateSearch(
       'Adresse du bien non localisée avec certitude : pas de quartier. Les premiers crans cherchent dans toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
     );
   }
-  const fallback = note.tiers.filter((report) => report.fallback).map((report) => report.tier);
+  const fallback = [
+    ...new Set(note.tiers.filter((report) => report.fallback).map((report) => report.tier)),
+  ];
   if (fallback.length > 0) {
     details.push(
       `${fallback.length > 1 ? 'Crans' : 'Cran'} ${fallback.join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,

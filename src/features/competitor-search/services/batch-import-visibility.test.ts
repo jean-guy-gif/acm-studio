@@ -100,6 +100,7 @@ describe('la ligne de bilan', () => {
   const note: StreamEstateSearchNote = {
     billed: 37,
     stop: 'exhausted',
+    cursor: null,
     tiers: [
       { tier: 1, billed: 10, kept: 1, fallback: false },
       { tier: 6, billed: 27, kept: 2, fallback: false },
@@ -147,12 +148,13 @@ describe('la ligne de bilan', () => {
       ...note,
       billed: 60,
       stop: 'cap',
+      cursor: { plan: 0, price: 0, page: 4, size: 20, tier: 1 },
       located: false,
       tiers: [{ tier: 1, billed: 60, kept: 0, fallback: true }],
     });
     expect(summary.headline).toBe('0 comparable — 60 annonces facturées (0,60 €)');
     expect(summary.details[0]).toBe(
-      'Moins de 10 : plafond de 60 annonces facturées atteint, la recherche s’arrête là.',
+      'Moins de 10 : plafond atteint, la recherche s’arrête là — « Chercher encore » reprend au cran 1, page suivante.',
     );
     expect(summary.details[1]).toMatch(/^Adresse du bien non localisée/);
     expect(summary.details[2]).toMatch(/^Cran 1 : communes voisines non exclues/);

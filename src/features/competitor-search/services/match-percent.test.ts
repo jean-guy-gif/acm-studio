@@ -123,14 +123,26 @@ describe('gapLine', () => {
     );
   });
 
-  it('commune voisine, et quartier non vérifié pour un bien sans position fiable', () => {
+  it('commune voisine ; « Même ville — quartier non vérifié » sans position fiable', () => {
     const neighbour = candidate({ city: 'Cagnes-sur-Mer', features: { ...FEATURES } });
-    expect(gapLine(CRITERIA, neighbour, place(6100, false))).toBe(
-      'Commune voisine : Cagnes-sur-Mer, 6,1 km · Quartier non vérifié',
+    expect(gapLine(CRITERIA, neighbour, place(null, false))).toBe(
+      'Commune voisine : Cagnes-sur-Mer — quartier non vérifié',
+    );
+    const located = candidate({
+      city: 'Cagnes-sur-Mer',
+      features: { ...FEATURES, location: SUBJECT },
+    });
+    expect(gapLine(CRITERIA, located, place(6100, false))).toBe(
+      'Commune voisine : Cagnes-sur-Mer, 6,1 km',
     );
     expect(gapLine(CRITERIA, candidate({ price: 385000 }), place(null))).toBe(
-      'Quartier non vérifié · Prix 4 % en dessous de votre fourchette',
+      'Même ville — quartier non vérifié · Prix 4 % en dessous de votre fourchette',
     );
+  });
+
+  it('sans position, même commune : 15 points de secteur dans le %', () => {
+    // 15 + 20 + 20 + 15 = 70 sur 80.
+    expect(matchPercent(CRITERIA, candidate(), [], place(null, true))).toBe(88);
   });
 });
 

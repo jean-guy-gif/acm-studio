@@ -23,7 +23,10 @@ import type {
 } from '@/features/competitor-search/actions/remember-portal-places';
 import type { RankSearchResult } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import type { BatchDecision } from '@/features/competitor-search/actions/record-competitor-decisions';
-import type { StreamEstateSearchResult } from '@/features/competitor-search/actions/search-stream-estate';
+import type {
+  StreamEstateResume,
+  StreamEstateSearchResult,
+} from '@/features/competitor-search/actions/search-stream-estate';
 import {
   closeSearchWindowViaExtension,
   openSearchTabsViaExtension,
@@ -50,7 +53,11 @@ import {
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import { showBatchImport } from '@/features/competitor-search/services/batch-import-visibility';
 import {
+  canSearchMore,
   describeStreamEstateSearch,
+  mergeStreamEstateNote,
+  MORE_LABEL,
+  resumeMemory,
   type StreamEstateSearchNote,
 } from '@/features/competitor-search/services/stream-estate-summary';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
@@ -131,7 +138,8 @@ type Props = {
   rememberPlacesAction: (pages: RememberPortalPlacesInput) => Promise<RememberPortalPlacesResult>;
   // Essai Stream Estate — fourni par la page SEULEMENT si la clé est définie côté serveur ;
   // absent, le bouton n'existe pas.
-  streamEstateAction?: () => Promise<StreamEstateSearchResult>;
+  // Mission 71 — `resume` : « Chercher encore », reprise au plafond.
+  streamEstateAction?: (resume?: StreamEstateResume | null) => Promise<StreamEstateSearchResult>;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -561,17 +569,29 @@ export function CompetitorSearchPanel({
     }
   }
 
-  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), une page. Ses
-  // biens rejoignent les portails dans le MÊME classement : mêmes filtres, mêmes mentions.
-  async function searchViaStreamEstate() {
+  // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), par crans. Ses
+  // biens rejoignent les portails dans le MÊME classement. `more` : « Chercher encore » — reprend
+  // exactement où la recherche s'est arrêtée au plafond, et ajoute ses biens aux précédents.
+  async function searchViaStreamEstate(more = false) {
     if (!streamEstateAction) {
       return;
     }
+    const previousPortal = more
+      ? ((portals ?? []).find((portal) => portal.portal === STREAM_ESTATE_SOURCE) ?? null)
+      : null;
+    const previousNote = more ? streamNote : null;
+    if (more && (previousNote?.cursor == null || previousPortal == null)) {
+      return;
+    }
     setError(null);
-    setStreamNote(null);
+    if (!more) setStreamNote(null);
     setStreamSearching(true);
     try {
-      const result = await streamEstateAction();
+      const result = await streamEstateAction(
+        more && previousNote?.cursor && previousPortal
+          ? { cursor: previousNote.cursor, memory: resumeMemory(previousPortal.candidates) }
+          : null,
+      );
       if (!result.ok) {
         setError(result.error);
         return;
@@ -584,17 +604,29 @@ export function CompetitorSearchPanel({
       setSearchLinks(prep.links);
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
-      await refreshRanking([...others, result.portal]);
-      setStreamNote({
-        billed: result.billed,
-        stop: result.stop,
-        tiers: result.tiers,
-        counts: result.counts,
-        newBuild: result.newBuild,
-        located: result.located,
-        communeName: result.communeName,
-        inseeCode: result.inseeCode,
-      });
+      const candidates = [...(previousPortal?.candidates ?? []), ...result.portal.candidates];
+      await refreshRanking([
+        ...others,
+        {
+          ...result.portal,
+          candidates,
+          status: candidates.length > 0 ? 'ok' : 'empty',
+          message: candidates.length > 0 ? null : result.portal.message,
+        },
+      ]);
+      setStreamNote(
+        mergeStreamEstateNote(previousNote, {
+          billed: result.billed,
+          stop: result.stop,
+          cursor: result.cursor,
+          tiers: result.tiers,
+          counts: result.counts,
+          newBuild: result.newBuild,
+          located: result.located,
+          communeName: result.communeName,
+          inseeCode: result.inseeCode,
+        }),
+      );
     } finally {
       setStreamSearching(false);
     }
@@ -1071,7 +1103,7 @@ export function CompetitorSearchPanel({
         {streamEstateAction ? (
           <button
             type="button"
-            onClick={searchViaStreamEstate}
+            onClick={() => searchViaStreamEstate()}
             disabled={busy}
             className={btnPrimary}
           >
@@ -1148,6 +1180,17 @@ export function CompetitorSearchPanel({
                     {line}
                   </p>
                 ))}
+                {/* Au plafond avant 10 : le conseiller décide de payer 20 annonces de plus. */}
+                {canSearchMore(ranked, streamNote) ? (
+                  <button
+                    type="button"
+                    onClick={() => searchViaStreamEstate(true)}
+                    disabled={busy}
+                    className={`${btnSecondary} mt-1 self-start px-3 py-1.5 text-sm`}
+                  >
+                    {streamSearching ? 'Recherche Stream Estate…' : MORE_LABEL}
+                  </button>
+                ) : null}
               </div>
             );
           })()

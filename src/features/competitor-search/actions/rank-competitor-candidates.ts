@@ -8,7 +8,6 @@ import {
 import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
 import {
-  STREAM_ESTATE_SOURCE,
   type CompetitorSearchCriteria,
   type PortalSearchResult,
   type RankedSearch,
@@ -99,13 +98,18 @@ export async function rankCompetitorCandidates(
   }));
   const preferences = learnFromDecisions(decisions);
 
-  const geocode = await geocodeSubject(property.address, property.postal_code, criteria.city);
-  // Mission 71 — pour un bien Stream Estate, « même commune » se lit au code INSEE, pas au nom.
-  const hasStreamEstate = (portals ?? []).some((portal) => portal.portal === STREAM_ESTATE_SOURCE);
-  const commune = hasStreamEstate ? await resolveCommune(criteria.city, criteria.postalCode) : null;
+  // Mission 71 — la commune officielle (geo.api.gouv.fr, gratuit, en cache un jour) : son code
+  // INSEE dit « même commune » pour un bien Stream Estate, et son nom géocode l'adresse (« St
+  // Laurent du Var » fait tomber le score sous 0,8 : 0,74 contre 0,83, mesuré le 06/10).
+  const commune = await resolveCommune(criteria.city, criteria.postalCode);
+  const geocode = await geocodeSubject(
+    property.address,
+    property.postal_code,
+    commune.ok ? commune.name : criteria.city,
+  );
   const search = rankCandidates(criteria, portals ?? [], preferences, {
     subjectLocation: geocode.ok ? geocode.point : null,
-    subjectInseeCode: commune?.ok ? commune.code : null,
+    subjectInseeCode: commune.ok ? commune.code : null,
   });
   return { ok: true, ...search, learnedNotes: preferences.notes, sector: geocode.sector };
 }

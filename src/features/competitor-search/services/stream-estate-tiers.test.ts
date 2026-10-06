@@ -331,7 +331,7 @@ describe('le secteur : le cercle moins les communes voisines', () => {
 });
 
 describe('positions de remplissage et adresse non localisée', () => {
-  it('un bien sans position n’entre pas aux crans de quartier, seulement à partir du cran 5', async () => {
+  it('un bien sans position, confirmé dans la commune (INSEE), entre dès le cran 1', async () => {
     const pool = [{ id: 'sans', point: null }];
     // L'API simulée ne trouve pas un bien sans position par le rayon : on l'injecte à chaque appel.
     const api = fakeApi([]);
@@ -342,8 +342,15 @@ describe('positions de remplissage et adresse non localisée', () => {
     const { run } = search(pool, { fetchPage });
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
-    expect(outcome.candidates.map((c) => c.streamEstate?.tier)).toEqual([5]);
+    expect(outcome.candidates.map((c) => c.streamEstate?.tier)).toEqual([1]);
     expect(outcome.counts.unverifiedPosition).toBe(0);
+  });
+
+  it('chaque appel trie par date de mise à jour décroissante', async () => {
+    const { api, run } = search(many(3, 'same', () => ({ point: north(300) })));
+    await run;
+    expect(api.calls.length).toBeGreaterThan(0);
+    expect(api.calls.every((call) => call.params.get('order[updatedAt]') === 'desc')).toBe(true);
   });
 
   it('adresse non localisée : crans 1 à 3 sur toute la commune, 4 et 5 sautés, 10 km du centre', () => {
@@ -366,6 +373,85 @@ describe('positions de remplissage et adresse non localisée', () => {
     expect(planTiers(bare, { located: true, hasCentre: true }).map((p) => p.tier)).toEqual([
       1, 2, 4, 5, 6,
     ]);
+  });
+});
+
+describe('« Chercher encore » : reprendre exactement où l’on s’est arrêté', () => {
+  // 55 biens leboncoin (facturés, jamais importables) puis 12 importables, tous identiques.
+  const pool = [
+    ...many(55, 'lbc', () => ({ point: north(300), host: 'leboncoin.fr' })),
+    ...many(12, 'ok', () => ({ point: north(300) })),
+  ];
+
+  it('au plafond, la recherche dit où reprendre (même cran, page suivante)', async () => {
+    const { run } = search(pool);
+    const outcome = await run;
+    if (!outcome.ok) throw new Error('échec');
+    expect(outcome.stop).toBe('cap');
+    expect(outcome.billed).toBe(60);
+    expect(outcome.candidates).toHaveLength(5);
+    expect(outcome.cursor).toEqual({ plan: 0, price: 0, page: 4, size: 20, tier: 1 });
+  });
+
+  it('la reprise lit la page suivante, 20 annonces, sans refacturer ni reprendre un bien', async () => {
+    const first = await search(pool).run;
+    if (!first.ok || first.cursor == null) throw new Error('échec');
+    const api = fakeApi(pool);
+    const resumed = await runTieredSearch({
+      criteria: CRITERIA,
+      plans: planTiers(CRITERIA, { located: true, hasCentre: true }),
+      context: { inseeCode: SLV, origin: SUBJECT_POINT },
+      neighbours: () => [NICE],
+      fetchPage: api.fetchPage,
+      now: NOW,
+      cap: 20,
+      resume: {
+        cursor: first.cursor,
+        memory: {
+          keys: first.candidates.map((c) => c.key!),
+          oldCount: first.candidates.length,
+          locations: [],
+        },
+      },
+    });
+    if (!resumed.ok) throw new Error('échec');
+    expect(
+      api.calls.map((call) => [call.params.get('page'), call.params.get('itemsPerPage')]),
+    ).toEqual([['4', '20']]);
+    expect(resumed.billed).toBe(7);
+    expect(resumed.candidates.map((c) => c.key)).toEqual([
+      'ok-5',
+      'ok-6',
+      'ok-7',
+      'ok-8',
+      'ok-9',
+      'ok-10',
+      'ok-11',
+    ]);
+    expect(resumed.stop).toBe('target'); // 5 + 7 = 12 anciens
+  });
+
+  it('une reprise sans plus rien à lire passe au cran suivant', async () => {
+    const api = fakeApi(many(3, 'big', () => ({ point: north(300), surface: 75 })));
+    const resumed = await runTieredSearch({
+      criteria: CRITERIA,
+      plans: planTiers(CRITERIA, { located: true, hasCentre: true }),
+      context: { inseeCode: SLV, origin: SUBJECT_POINT },
+      neighbours: () => [NICE],
+      fetchPage: api.fetchPage,
+      now: NOW,
+      cap: 20,
+      resume: {
+        cursor: { plan: 0, price: 0, page: 5, size: 20, tier: 1 },
+        memory: { keys: [], oldCount: 0, locations: [] },
+      },
+    });
+    if (!resumed.ok) throw new Error('échec');
+    expect(resumed.tiers[0].tier).toBe(1);
+    expect(resumed.candidates.map((c) => c.streamEstate?.tier)).toEqual([2, 2, 2]);
+    // Les cercles plus larges refacturent les 3 mêmes biens (accepté), jamais au-delà de 20.
+    expect(resumed.billed).toBeLessThanOrEqual(20);
+    expect(resumed.stop).toBe('exhausted');
   });
 });
 

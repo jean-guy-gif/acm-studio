@@ -1,5 +1,7 @@
 'use server';
 
+import { z } from 'zod';
+
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
 import {
   fetchDepartmentCommunes,
@@ -15,8 +17,11 @@ import {
   neighbourInseeCodes,
   planTiers,
   runTieredSearch,
+  STREAM_ESTATE_MORE_CAP,
   type FetchStreamEstatePage,
+  type TierCursor,
   type TieredSearchCounts,
+  type TieredSearchMemory,
   type TierReport,
 } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
@@ -32,6 +37,8 @@ export type StreamEstateSearchResult =
       billed: number; // annonces renvoyées = annonces facturées, tous crans confondus
       // Pourquoi la recherche s'est arrêtée (10 atteints, plafond, plus rien, erreur en route).
       stop: 'target' | 'cap' | 'exhausted' | 'error';
+      // Au plafond : où « Chercher encore » reprendra (même cran, page suivante). null sinon.
+      cursor: TierCursor | null;
       tiers: TierReport[];
       counts: TieredSearchCounts;
       newBuild: number; // biens neufs parmi les candidats, tenus en réserve par le classement
@@ -42,6 +49,28 @@ export type StreamEstateSearchResult =
     }
   | { ok: false; error: string };
 
+// « Chercher encore » — ce que l'écran renvoie pour reprendre. Venu du navigateur : revalidé ici,
+// borné, et seulement pour reprendre (les critères, eux, sont relus du bien vendeur).
+const pointSchema = z.object({ lat: z.number().finite(), lon: z.number().finite() });
+const resumeSchema = z.object({
+  cursor: z.object({
+    plan: z.number().int().min(0).max(20),
+    price: z.number().int().min(0).max(5),
+    page: z.number().int().min(1).max(50),
+    size: z.number().int().min(1).max(20).nullable(),
+    tier: z.number().int().min(1).max(7),
+  }),
+  memory: z.object({
+    keys: z.array(z.string().min(1).max(100)).max(500),
+    oldCount: z.number().int().min(0).max(500),
+    locations: z
+      .array(z.object({ uuid: z.string().min(1).max(100), point: pointSchema.nullable() }))
+      .max(1000),
+  }),
+});
+
+export type StreamEstateResume = { cursor: TierCursor; memory: TieredSearchMemory };
+
 const TIMEOUT_MS = 10_000;
 const GENERIC_ERROR = 'La recherche Stream Estate a échoué. Réessayez.';
 
@@ -50,10 +79,19 @@ const GENERIC_ERROR = 'La recherche Stream Estate a échoué. Réessayez.';
 // plus 60 annonces facturées (stream-estate-tiers.ts). Les critères viennent du bien vendeur
 // (jamais du client), la clé reste ici. On renvoie des CANDIDATS (même forme que ceux des
 // portails) : le classement et la décision restent ceux de l'écran. Rien n'est écrit.
-export async function searchStreamEstate(projectId: string): Promise<StreamEstateSearchResult> {
+// `resume` : « Chercher encore » — reprendre exactement où la recherche s'était arrêtée au
+// plafond (même cran, page suivante), pour 20 annonces de plus.
+export async function searchStreamEstate(
+  projectId: string,
+  resume?: StreamEstateResume | null,
+): Promise<StreamEstateSearchResult> {
   const apiKey = streamEstateApiKey();
   if (apiKey == null) {
     return { ok: false, error: 'L’essai Stream Estate n’est pas activé.' };
+  }
+  const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
+  if (parsedResume != null && !parsedResume.success) {
+    return { ok: false, error: GENERIC_ERROR };
   }
 
   const loaded = await loadSearchCriteria(projectId);
@@ -92,7 +130,9 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
   }
 
   // 2. Le quartier : l'adresse du bien géocodée sûrement, sinon le centre de la commune (10 km).
-  const geocode = await geocodeSubject(loaded.address, criteria.postalCode, criteria.city);
+  // Avec le nom OFFICIEL de la commune : « St Laurent du Var » fait tomber le score du géocodage
+  // sous 0,8 (0,74 contre 0,83 pour la même adresse, mesuré le 06/10) — et le quartier avec.
+  const geocode = await geocodeSubject(loaded.address, criteria.postalCode, commune.name);
   const subjectPoint = geocode.ok ? geocode.point : null;
   const origin = subjectPoint ?? commune.centre;
 
@@ -129,14 +169,38 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     }
   };
 
-  // 4. Les crans, du plus proche au plus large.
+  // 4. Les crans, du plus proche au plus large — ou la reprise, 20 annonces de plus.
+  const plans = planTiers(criteria, { located: subjectPoint != null, hasCentre: origin != null });
+  const resumeFrom = parsedResume?.data ?? null;
+  if (
+    resumeFrom != null &&
+    (resumeFrom.cursor.plan >= plans.length ||
+      plans[resumeFrom.cursor.plan].tier !== resumeFrom.cursor.tier)
+  ) {
+    // Le bien vendeur a changé depuis (adresse, pièces, fourchette) : les crans ne sont plus les
+    // mêmes, on ne reprend pas à l'aveugle.
+    return {
+      ok: false,
+      error:
+        'Le bien vendeur a changé depuis la recherche : relancez « Chercher via Stream Estate (essai) ».',
+    };
+  }
   const outcome = await runTieredSearch({
     criteria,
-    plans: planTiers(criteria, { located: subjectPoint != null, hasCentre: origin != null }),
+    plans,
     context: { inseeCode: commune.code, origin },
     neighbours,
     fetchPage,
     now,
+    ...(resumeFrom != null
+      ? {
+          cap: STREAM_ESTATE_MORE_CAP,
+          resume: {
+            cursor: { ...resumeFrom.cursor, tier: plans[resumeFrom.cursor.plan].tier },
+            memory: resumeFrom.memory,
+          },
+        }
+      : {}),
   });
   if (!outcome.ok) {
     return {
@@ -162,6 +226,7 @@ export async function searchStreamEstate(projectId: string): Promise<StreamEstat
     },
     billed: outcome.billed,
     stop: outcome.stop,
+    cursor: outcome.cursor,
     tiers: outcome.tiers,
     counts: outcome.counts,
     newBuild: candidates.filter((candidate) => candidate.isNewBuild).length,

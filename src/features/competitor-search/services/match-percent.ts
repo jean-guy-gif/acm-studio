@@ -123,8 +123,8 @@ const km = (meters: number): string => `${fr(meters / 1000, 1)} km`;
 
 // MISSION 71 §5 — sur chaque carte Stream Estate élargie, une ligne dit l'écart à l'identique :
 // « Même ville, à 1,6 km », « Commune voisine : Cagnes-sur-Mer, 6,1 km », « Plus grand : 78 m²
-// (+12 %) », « 5 pièces (+1) », « Prix 4 % au-dessus de votre fourchette », et « quartier non
-// vérifié » pour un bien sans position fiable. null : rien ne l'écarte de l'identique.
+// (+12 %) », « 5 pièces (+1) », « Prix 4 % au-dessus de votre fourchette », et « Même ville —
+// quartier non vérifié » pour un bien sans position fiable. null : rien ne l'écarte de l'identique.
 export function gapLine(
   criteria: CompetitorSearchCriteria,
   candidate: CompetitorCandidate,
@@ -132,13 +132,19 @@ export function gapLine(
 ): string | null {
   const parts: string[] = [];
   const d = place.distanceMeters;
+  // Sans position fiable, la distance n'est pas connue : on dit la commune, et que le quartier
+  // n'est pas vérifié (correction du 06/10 : « Même ville — quartier non vérifié »).
+  const unverified = candidate.features?.location == null;
   if (!place.sameCommune) {
     const name = candidate.city ?? 'autre commune';
-    parts.push(`Commune voisine : ${name}${d != null ? `, ${km(d)}` : ''}`);
+    parts.push(
+      `Commune voisine : ${name}${d != null ? `, ${km(d)}` : unverified ? ' — quartier non vérifié' : ''}`,
+    );
+  } else if (unverified) {
+    parts.push('Même ville — quartier non vérifié');
   } else if (d != null && d >= 1000) {
     parts.push(`Même ville, à ${km(d)}`);
   }
-  if (candidate.features?.location == null) parts.push('Quartier non vérifié');
 
   const ref = criteria.surfaceArea;
   const value = candidate.surfaceArea;

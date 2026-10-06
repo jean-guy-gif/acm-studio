@@ -43,10 +43,13 @@ import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/su
 // FACTURATION : les tranches de surface, de pièces et de prix sont disjointes (bornes entières :
 // l'API arrondit une borne décimale, mesuré le 06/10). Un cercle plus large refacture les biens du
 // cercle précédent (on ne peut pas exclure un rayon) : accepté. Les pages d'un cran sont épuisées
-// avant de passer au suivant. Plafond de 60 annonces facturées par recherche.
+// avant de passer au suivant. Plafond de 60 annonces facturées par recherche ; au plafond avant
+// 10, « Chercher encore » reprend exactement où l'on s'était arrêté, 20 annonces à la fois.
 
 export const STREAM_ESTATE_TARGET = 10;
 export const STREAM_ESTATE_BILLING_CAP = 60;
+// « Chercher encore » : une page de plus, au choix du conseiller, une fois le plafond atteint.
+export const STREAM_ESTATE_MORE_CAP = 20;
 // Prix d'une annonce renvoyée (essai Stream Estate) : 37 annonces = 0,37 €.
 export const STREAM_ESTATE_PRICE_PER_ADVERT_EUR = 0.01;
 // Marge autour du cercle pour lister les communes voisines : une commune dont le CENTRE est à
@@ -68,8 +71,9 @@ export type TierPlan = {
   rooms: Range | null;
   // Une requête par tranche de prix ([] : pas de fourchette, pas de filtre prix).
   prices: Range[];
-  // Un bien sans position fiable n'entre qu'avec un cran « toute la commune » (sans quartier :
-  // bien vendeur non localisé) ou à partir du cran 5. Il porte alors « quartier non vérifié ».
+  // Un bien sans position fiable entre si ce cran ne parle pas de quartier (« toute la commune »,
+  // cran 5 et au-delà) ; sinon, seulement si son code INSEE confirme la commune. Il porte alors
+  // « Même ville — quartier non vérifié ».
   acceptsUnverifiedPosition: boolean;
 };
 
@@ -267,6 +271,9 @@ export function tierQueryParams(
     params.append('budgetMin', String(price.min));
     params.append('budgetMax', String(price.max));
   }
+  // Correction du 06/10 : les annonces mises à jour le plus récemment d'abord, pour que les biens
+  // vivants passent avant les expirés (le filtre des 7 jours, lui, ne change pas).
+  params.append('order[updatedAt]', 'desc');
   params.append('itemsPerPage', String(itemsPerPage));
   if (page > 1) params.append('page', String(page));
   return params;
@@ -293,14 +300,35 @@ export type TieredSearchCounts = {
   unverifiedPosition: number; // sans position fiable à un cran de quartier : écartés, facturés
 };
 
+// Où reprendre une recherche arrêtée au plafond : le cran (index dans le plan), la tranche de prix,
+// la page suivante et sa taille (une requête garde la même taille de page, sinon le décalage
+// change ; null = première page de la requête, taille libre).
+export type TierCursor = {
+  plan: number;
+  price: number;
+  page: number;
+  size: number | null;
+  tier: StreamEstateTier; // pour l'écran : « reprend au cran N »
+};
+
+// Ce que la recherche a déjà trouvé, pour une reprise (« Chercher encore ») : les biens déjà
+// retenus ne sont ni repris ni recomptés, les positions déjà vues servent à repérer le remplissage.
+export type TieredSearchMemory = {
+  keys: string[];
+  oldCount: number;
+  locations: { uuid: string; point: GeoPoint | null }[];
+};
+
 export type TieredSearchOutcome =
   | {
       ok: true;
       candidates: CompetitorCandidate[]; // dans l'ordre des crans ; chacun porte son cran
       billed: number;
-      // Pourquoi la recherche s'est arrêtée : 10 biens anciens atteints, plafond de 60, plus rien
-      // après le dernier cran, ou erreur de l'API en route (on garde ce qu'on a).
+      // Pourquoi la recherche s'est arrêtée : 10 biens anciens atteints, plafond, plus rien après
+      // le dernier cran, ou erreur de l'API en route (on garde ce qu'on a).
       stop: 'target' | 'cap' | 'exhausted' | 'error';
+      // Au plafond : où reprendre. null sinon.
+      cursor: TierCursor | null;
       tiers: TierReport[];
       counts: TieredSearchCounts;
     }
@@ -316,6 +344,8 @@ export type TieredSearchInput = {
   now: Date;
   target?: number;
   cap?: number;
+  // Reprise : là où la recherche précédente s'est arrêtée, et ce qu'elle avait trouvé.
+  resume?: { cursor: TierCursor; memory: TieredSearchMemory } | null;
 };
 
 export async function runTieredSearch(input: TieredSearchInput): Promise<TieredSearchOutcome> {
@@ -323,10 +353,14 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
   const cap = input.cap ?? STREAM_ESTATE_BILLING_CAP;
   const base = baseStreamEstateQuery(input.criteria, input.now);
   if (!base.ok) return { ok: false, reason: 'failed' };
+  const start = input.resume?.cursor ?? null;
+  const memory = input.resume?.memory ?? null;
 
   const candidates: CompetitorCandidate[] = [];
-  const keys = new Set<string>();
-  const seenLocations = new Map<string, GeoPoint | null>();
+  const keys = new Set<string>(memory?.keys ?? []);
+  const seenLocations = new Map<string, GeoPoint | null>(
+    (memory?.locations ?? []).map((location) => [location.uuid, location.point]),
+  );
   const counts: TieredSearchCounts = {
     unreadable: 0,
     outsideWhitelist: 0,
@@ -334,20 +368,25 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
     otherCommune: 0,
     unverifiedPosition: 0,
   };
-  // Écartés par bien distinct : un bien sans position écarté à 1 km peut entrer au cran 5.
+  // Écartés par bien distinct : un bien écarté à un cran peut entrer à un cran plus large.
   const otherCommune = new Set<string>();
   const unverifiedPosition = new Set<string>();
   const tiers: TierReport[] = [];
   let billed = 0;
-  const oldCount = () => candidates.filter((candidate) => !candidate.isNewBuild).length;
+  const oldCount = () =>
+    (memory?.oldCount ?? 0) + candidates.filter((candidate) => !candidate.isNewBuild).length;
 
-  const finish = (stop: 'target' | 'cap' | 'exhausted' | 'error'): TieredSearchOutcome => {
+  const finish = (
+    stop: 'target' | 'cap' | 'exhausted' | 'error',
+    cursor: TierCursor | null = null,
+  ): TieredSearchOutcome => {
     counts.otherCommune = [...otherCommune].filter((key) => !keys.has(key)).length;
     counts.unverifiedPosition = [...unverifiedPosition].filter((key) => !keys.has(key)).length;
-    return { ok: true, candidates, billed, stop, tiers, counts };
+    return { ok: true, candidates, billed, stop, cursor, tiers, counts };
   };
 
-  for (const plan of input.plans) {
+  for (let planIndex = start?.plan ?? 0; planIndex < input.plans.length; planIndex += 1) {
+    const plan = input.plans[planIndex];
     const report: TierReport = { tier: plan.tier, billed: 0, kept: 0, fallback: false };
     tiers.push(report);
     const excludeNeighbours = plan.area.kind === 'circle' && plan.area.withinCommune;
@@ -357,16 +396,25 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
       else report.fallback = true;
     }
     const verifyCommune = plan.area.kind === 'commune' || excludeNeighbours;
+    const prices = plan.prices.length > 0 ? plan.prices : [null];
+    const resumingPlan = start != null && planIndex === start.plan;
 
-    for (const price of plan.prices.length > 0 ? plan.prices : [null]) {
-      for (let page = 1; page <= MAX_PAGES_PER_QUERY; page += 1) {
+    for (
+      let priceIndex = resumingPlan ? start.price : 0;
+      priceIndex < prices.length;
+      priceIndex += 1
+    ) {
+      const price = prices[priceIndex];
+      const resumingQuery = resumingPlan && priceIndex === start.price;
+      // Une requête garde la même taille de page d'un bout à l'autre (sinon le décalage change).
+      let size: number | null = resumingQuery ? start.size : null;
+      for (let page = resumingQuery ? start.page : 1; page <= MAX_PAGES_PER_QUERY; page += 1) {
         const remaining = cap - billed;
-        if (remaining <= 0) return finish('cap');
-        const itemsPerPage =
-          page === 1 ? Math.min(STREAM_ESTATE_PAGE_SIZE, remaining) : STREAM_ESTATE_PAGE_SIZE;
-        // Une page suivante doit garder la même taille (sinon le décalage de page change) : sous
-        // le plafond restant, on s'arrête.
-        if (itemsPerPage > remaining) return finish('cap');
+        const itemsPerPage = size ?? Math.min(STREAM_ESTATE_PAGE_SIZE, remaining);
+        if (remaining <= 0 || itemsPerPage > remaining) {
+          return finish('cap', { plan: planIndex, price: priceIndex, page, size, tier: plan.tier });
+        }
+        size = itemsPerPage;
 
         const params = () =>
           tierQueryParams(base.params, plan, price, input.context, excluded, page, itemsPerPage);
@@ -403,7 +451,14 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
               continue;
             }
           }
-          if (!plan.acceptsUnverifiedPosition && candidate.features?.location == null) {
+          // Ce qui est payé et valable est gardé (correction du 06/10) : un bien sans position
+          // fiable mais CONFIRMÉ dans la commune par son code INSEE entre dès ce cran (« Même ville
+          // — quartier non vérifié ») ; attendre un cran plus large le referait payer.
+          if (
+            !plan.acceptsUnverifiedPosition &&
+            candidate.features?.location == null &&
+            insee !== input.context.inseeCode
+          ) {
             unverifiedPosition.add(candidate.key!);
             continue;
           }
