@@ -62,7 +62,6 @@ chaque mission validée.
 - 05/10 · M69 · « Lire mes recherches » lit tous les onglets de recherche d'un coup, avec un récapitulatif par portail ; lire un seul onglet reste possible.
 - 05/10 · M69 · Les identifiants de commune par portail s'apprennent dans l'adresse des onglets lus, jamais devinés ; la table est commune à toutes les agences.
 - 05/10 · M70 · Maisons lues sur les portails ; le terrain de la carte ordonne seulement, et seulement pour une maison vendeuse ; il ne filtre jamais.
-- 05/10 · Stream Estate · Recherche par l'API Stream Estate, en essai : bouton présent seulement si la clé est définie ; commune par code INSEE exact, sinon aucune recherche.
 - 05/10 · Stream Estate · Filtre de mise à jour à 30 jours, biens non expirés ; l'écran dit le nombre d'annonces facturées.
 - 05/10 · Stream Estate · Annonce d'origine utilisable : non expirée et revue depuis 7 jours au plus ; un bien sans origine utilisable n'est pas affiché, il est compté.
 - 05/10 · Stream Estate · Seuls les biens importables : au moins une annonce sur un site que l'extension relit (SeLoger, Bien'ici, Green Acres, Figaro Immobilier, M&A) ; les autres sont écartés et comptés.
@@ -78,6 +77,11 @@ chaque mission validée.
 - 06/10 · M71 · % de correspondance sur chaque carte, portails compris : secteur 25, surface 20, prix 20, pièces 15, stationnement 5, extérieur 5, niveau 2 sur 10 ; un critère inconnu sort du calcul. La liste est triée par % ; à égalité, l'ordre en deux niveaux décide (remplace Stream Estate, ordre et barème distance).
 - 06/10 · M71 · Une carte Stream Estate élargie dit son écart (distance, commune voisine, plus grand, pièce de plus, prix hors fourchette).
 - 06/10 · M71 · Une seule comparaison des communes partout (accents, tirets, St/Ste) ; Stream Estate compare le code INSEE. Le bouton d'import groupé est visible dès qu'un candidat est affiché.
+- 06/10 · M73 · Stream Estate est la recherche par défaut : « Chercher les concurrents », bouton principal placé en premier, présent seulement si la clé est définie ; commune par code INSEE exact, sinon aucune recherche (remplace Stream Estate, « en essai »).
+- 06/10 · M73 · « Ouvrir mes recherches » et « Lire mes recherches » sont secondaires, sous « Ou chercher vous-même sur les portails » ; le bilan et les cartes disent « Stream Estate », sans « (essai) ».
+- 06/10 · M73 · Extension 1.0.0, destinée au Chrome Web Store en « non répertorié » : `npm run extension:zip` fabrique le paquet (ce que Chrome charge, sans tests ni README) ; le dépôt est fait par Laurent, avec la fiche `docs/extension-store.md`.
+- 06/10 · M73 · Le manifeste fait foi pour les sites autorisés (cinq portails, pas Leboncoin) : la fiche du Store et le README le suivent ; sa description tient en 132 caractères et la fiche la reprend mot pour mot, un test le vérifie.
+- 06/10 · M73 · Icônes de l'extension : monogramme « ACM » aux couleurs de l'app, tracé sans police et généré par `npm run extension:icons`.
 
 ## Live
 
@@ -133,6 +137,8 @@ chaque mission validée.
 - 16/09 · M49 · La provenance départage, jamais la longueur, la position ni la fréquence (couleurs comprises, M55).
 - 21/09 · M51 · Une garde de rendu n'est pas une garde de donnée ; liste d'autorisation, jamais liste d'exclusion.
 - 01/10 · M61 · Donnée absente portée par la provenance : n'écarte pas ; donnée absente qui est le critère : écarte, et se compte.
+- 06/10 · M73 · `/confidentialite` est publique, sans connexion : les chemins publics sont une liste d'autorisation de chemins exacts ; la page ne lit ni la session ni la base.
+- 06/10 · M73 · La page de confidentialité dit ce que le code fait réellement (ce que lit l'extension, ce qui est conservé, à qui partent les critères de recherche) ; elle n'annonce ni région d'hébergement ni durée de conservation ; éditeur SAS Start Academy, contact formation@start-academy.fr.
 
 ## Méthode
 
