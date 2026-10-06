@@ -146,3 +146,8 @@ chaque mission validée.
 - 06/10 · M63 · Aucune nouvelle fonctionnalité avant le pilote ; une mission naît d'un problème vu en vrai rendez-vous ; les idées vont dans `docs/IDEES.md`.
 - 06/10 · M64 · On essaie sur `acm-studio-essai.vercel.app` (branche `essai`) ; l'extension accepte l'URL de travail, l'URL d'essai et localhost, jamais `*.vercel.app`.
 - 06/10 · M64 · Base Supabase partagée entre travail et essai : une migration reste compatible avec `main` et s'applique, après comptage, avant l'essai ; les données d'essai sont nommées « TEST ».
+- 06/10 · M66 · `npm run e2e` (Playwright) rejoue le parcours complet sur l'URL d'essai, sans portail : Préparation → Live (bureau puis 768 × 1024) → conclusion « à relancer » → Suivi ; lancé à la main ou après un déploiement d'essai, jamais dans la CI.
+- 06/10 · M66 · Le test vérifie trois règles absolues : aucun prix de concurrent avant la devinette (écran et charge de la page), un seul concurrent par écran, fourchette du conseiller absente du Live.
+- 06/10 · M66 · Compte et agence de test dédiés, créés par Laurent ; identifiants et secret de contournement Vercel dans `.env.e2e.local`, jamais affichés ; aucune trace Playwright (elle contiendrait le mot de passe).
+- 06/10 · M66 · Chaque passage crée un dossier « TEST AUTOMATIQUE <date heure> » et ne touche que celui-là ; il reste dans le Suivi de l'agence de test (un dossier conclu ne se supprime pas — `docs/IDEES.md`).
+- 06/10 · M66 · Le débordement se mesure sur un écran stable (titre visible, animations finies, mesure reprise) et sur le contenu réel : le halo décoratif de la scène est ignoré.
