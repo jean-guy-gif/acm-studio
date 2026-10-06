@@ -8,12 +8,13 @@ M54 : 3 fusions en 1 h 30). Et un conseiller pilote ne recevrait probablement pa
 ## Préalable : 15 minutes dans Vercel et Supabase, à faire par toi (Claude Code ne peut pas)
 
 1. **Vercel → acm-studio → Settings → Domains → Add** : un domaine d'essai, par exemple
-   `acm-studio-essai.vercel.app` (s'il est libre), rattaché à la branche Git `essai`. Claude Code
-   crée la branche à l'étape 1 ; tu peux la créer avant depuis GitHub.
+   `acm-studio-essai.vercel.app` (s'il est libre), rattaché à la branche Git `essai`. Laurent la
+   crée avant (`git push origin main:essai`).
 2. **Vercel → Settings → Environment Variables** :
    - `NEXT_PUBLIC_SITE_URL` = `https://acm-studio-henna.vercel.app` pour Production ;
    - `NEXT_PUBLIC_SITE_URL` = l'URL d'essai pour Preview, branche `essai` ;
-   - vérifie que les trois variables Supabase existent aussi pour Preview.
+   - vérifie que les trois variables Supabase existent aussi pour Preview ;
+   - `STREAM_ESTATE_API_KEY` en Preview : remplacer la branche `essai-api-stream-estate` par `essai`.
 3. **Supabase → Authentication → URL Configuration → Redirect URLs** : ajoute
    `<URL d'essai>/auth/confirm` et `<URL d'essai>/accept-invitation`, et vérifie que les deux de
    l'URL de travail y sont.
@@ -25,9 +26,12 @@ Donne l'URL d'essai à Claude Code au début de la session.
 
 ## À faire (Claude Code)
 
-1. Crée la branche `essai` à partir de `main` et pousse-la.
+1. La branche `essai` existe déjà (créée par Laurent depuis `main`) : pars d'elle, à jour avec `main`.
+   Supprime ensuite la branche locale et distante `essai-api-stream-estate`, fusionnée dans `main`
+   (demande-moi la permission).
 2. `extension/manifest.json` : ajoute l'URL d'essai à `externally_connectable.matches` et
-   `content_scripts.matches`, puis passe la version à 0.2.0. N'ajoute **pas** `*.vercel.app` : Chrome
+   `content_scripts.matches`, puis passe la version à 0.4.0
+   (elle est à 0.3.0 depuis la mission 69). N'ajoute **pas** `*.vercel.app` : Chrome
    refuse les jokers sur un domaine public. Si une autre liste d'origines existe (`extension/*.js`,
    `src/features/browser-extension/`), mets-la à jour aussi.
 3. Ajoute `NEXT_PUBLIC_SITE_URL` à `.env.example`, avec un commentaire d'une ligne. Cherche toute

@@ -49,10 +49,11 @@ son ajout dès maintenant.
 
 ## Origines ACM Studio autorisées
 
-- `https://acm-studio-henna.vercel.app`
+- `https://acm-studio-henna.vercel.app` (travail)
+- `https://acm-studio-essai.vercel.app` (essai, branche `essai`)
 - `http://localhost:3000` (développement)
 
-Si l'URL de production change, mettre à jour les trois listes du `manifest.json`
+Si une URL change, mettre à jour les deux listes du `manifest.json`
 (`externally_connectable.matches` et `content_scripts.matches`).
 
 ## Politesse (côté application)
