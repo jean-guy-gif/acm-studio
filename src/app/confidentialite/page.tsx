@@ -97,10 +97,11 @@ export default function ConfidentialitePage() {
             <li>Vercel : l’hébergement de l’application.</li>
             <li>
               Pour chercher des concurrents, ACM Studio transmet les critères de la recherche
-              (commune, type de bien, surface, pièces, fourchette de prix, secteur) à Stream Estate,
-              et l’adresse du bien aux services publics de géographie de l’État
-              (api-adresse.data.gouv.fr, geo.api.gouv.fr) pour la situer. Ni le nom ni les
-              coordonnées du vendeur ne leur sont transmis.
+              (commune, type de bien, surface, pièces, fourchette de prix, et la position du bien
+              (coordonnées), pour chercher autour de lui) à Stream Estate, et l’adresse du bien aux
+              services publics de géographie de l’État (api-adresse.data.gouv.fr, geo.api.gouv.fr)
+              pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
+              transmis.
             </li>
             <li>Les e-mails d’invitation sont envoyés par Google (messagerie de l’éditeur).</li>
           </ul>
