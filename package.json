@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
+    "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -28,6 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
