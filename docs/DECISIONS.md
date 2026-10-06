@@ -135,3 +135,5 @@ chaque mission validée.
 - 01/10 · M62 · Intégration continue à chaque push : typecheck, lint, format:check, test, build.
 - 06/10 · M63 · Rapport conseiller et export PowerPoint sortent du MVP : la Conclusion et le Suivi en tiennent lieu.
 - 06/10 · M63 · `comparable` reste dans le code existant ; `competitor` pour le nouveau code ; « Concurrent » à l'écran.
+- 06/10 · M63 · Une mission jamais exécutée (ni branche ni commit) n'entre pas ici ; quand le commit contredit la mission, le commit fait foi.
+- 06/10 · M63 · Aucune nouvelle fonctionnalité avant le pilote ; une mission naît d'un problème vu en vrai rendez-vous ; les idées vont dans `docs/IDEES.md`.
