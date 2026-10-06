@@ -81,6 +81,10 @@ Supabase est la source de vérité. Chaque table a `id`, `created_at`, `updated_
 activée et un cloisonnement par agence là où il a un sens. Jamais de table sans politique RLS,
 jamais de donnée exposée d'une agence à l'autre. Suppression douce quand c'est possible.
 
+Le modèle d'e-mail d'invitation du projet en ligne se colle à la main (Authentication → Emails →
+Templates → Invite user) depuis `supabase/templates/invite.html` ; l'envoi passe par le SMTP Google
+de laurent@start-academy.fr.
+
 ### Migrations
 
 Une migration vérifiée sur une base vide n'est pas vérifiée. Le local prouve la syntaxe, pas
