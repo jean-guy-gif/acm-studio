@@ -63,10 +63,13 @@ export function Logo({
   // devant le vendeur. (Contexte produit pré-auth : `fallbackName` absent → logo par défaut.)
   if (fallbackName) {
     return (
+      // Mission 72 — un nom long est tronqué (points de suspension) plutôt que de pousser
+      // ce qui le suit ; le nom entier reste lisible au survol.
       <span
-        className={`font-title flex items-center self-start font-bold whitespace-nowrap text-brand-deep uppercase ${className} stage:text-white`}
+        title={fallbackName}
+        className={`font-title flex max-w-full min-w-0 items-center self-start font-bold whitespace-nowrap text-brand-deep uppercase ${className} stage:text-white`}
       >
-        {fallbackName}
+        <span className="truncate">{fallbackName}</span>
       </span>
     );
   }

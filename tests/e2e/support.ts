@@ -81,14 +81,17 @@ export async function login(page: Page): Promise<void> {
 // l'écran ; ici on attend la fin des animations (transition d'entrée, révélation), et la
 // mesure est reprise (expect.poll) jusqu'à se stabiliser.
 //
-// La scène est plus large que la fenêtre à cause de son halo décoratif (922 px pour 768) :
-// elle rogne ce surplus, mais reste défilable PAR PROGRAMME. Playwright, quand il recentre
-// un élément avant de cliquer, peut donc la décaler de côté — ce qu'un vendeur ne peut pas
-// faire au doigt. On remet la scène à zéro avant de mesurer : la mesure porte sur le
-// contenu, pas sur ce décalage d'outil.
+// Mission 72 — le halo vit dans sa propre couche rognée : la scène n'est plus large que la
+// fenêtre, et rien ne peut la décaler de côté. On le prouve au lieu de le contourner : la
+// scène n'est PAS remise à zéro avant la mesure (un décalage laissé par un focus ou un
+// recentrage se verrait), puis on tente de la décaler par programme — `scrollLeft` doit
+// rester à 0.
 type OverflowMeasure = {
   animations: number;
   pageScroll: number;
+  stageScroll: number;
+  stageShift: number;
+  forcedShift: number;
   offenders: string[];
 };
 
@@ -97,7 +100,7 @@ async function measureOverflow(page: Page): Promise<OverflowMeasure> {
     const doc = document.documentElement;
     const stage = document.querySelector<HTMLElement>('[data-stage]') ?? document.body;
     const width = doc.clientWidth;
-    stage.scrollLeft = 0;
+    const stageShift = stage.scrollLeft;
     const offenders: string[] = [];
     for (const element of stage.querySelectorAll<HTMLElement>('*')) {
       if (element.closest('[aria-hidden="true"]')) continue;
@@ -117,9 +120,17 @@ async function measureOverflow(page: Page): Promise<OverflowMeasure> {
       offenders.push(`<${element.tagName.toLowerCase()}> « ${text} »`);
       if (offenders.length >= 3) break;
     }
+    // Tentative de décalage : sur une scène saine, la valeur écrite est ignorée. On rend
+    // ensuite à la scène sa position d'avant, quelle qu'elle soit.
+    stage.scrollLeft = stageShift + 200;
+    const forcedShift = stage.scrollLeft;
+    stage.scrollLeft = stageShift;
     return {
       animations: document.getAnimations().filter((a) => a.playState === 'running').length,
       pageScroll: Math.max(0, doc.scrollWidth - doc.clientWidth),
+      stageScroll: stage.scrollWidth - stage.clientWidth,
+      stageShift,
+      forcedShift,
       offenders,
     };
   });
@@ -131,5 +142,12 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
       message: `Défilement horizontal ou contenu hors de l'écran sur « ${screen} »`,
       timeout: 10_000,
     })
-    .toEqual({ animations: 0, pageScroll: 0, offenders: [] });
+    .toEqual({
+      animations: 0,
+      pageScroll: 0,
+      stageScroll: 0,
+      stageShift: 0,
+      forcedShift: 0,
+      offenders: [],
+    });
 }

@@ -12,6 +12,11 @@
 export const stageRoot =
   'relative flex min-h-[100dvh] flex-col bg-white text-zinc-900 transition-colors duration-300 stage:bg-gradient-to-br stage:from-brand-deep stage:via-brand-darker stage:to-brand-darkest stage:text-white';
 
+// MISSION 72 — couche du halo : il déborde volontairement à droite (right-[-20%]), donc il
+// vit dans sa propre couche rognée, jamais dans la largeur de la scène. `overflow-clip`
+// (et non `hidden`) : une couche rognée ne défile pas, même par programme.
+export const stageGlowLayer = 'pointer-events-none absolute inset-0 overflow-clip';
+
 // Surligneur discret d'ambiance derrière le contenu (halo bleu en scène).
 export const stageGlow =
   'pointer-events-none absolute -top-40 right-[-20%] hidden h-[32rem] w-[32rem] rounded-full bg-brand/20 blur-3xl stage:block';
@@ -77,7 +82,7 @@ export const navBtn =
 
 // Bouton discret du chrome (sommaire, bascule de thème).
 export const chromeBtn =
-  'inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
+  'inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
 
 // Messages d'état des formulaires.
 export const errorText = 'text-sm font-medium text-red-600 stage:text-red-300';
