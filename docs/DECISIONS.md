@@ -67,11 +67,17 @@ chaque mission validée.
 - 05/10 · Stream Estate · Annonce d'origine utilisable : non expirée et revue depuis 7 jours au plus ; un bien sans origine utilisable n'est pas affiché, il est compté.
 - 05/10 · Stream Estate · Seuls les biens importables : au moins une annonce sur un site que l'extension relit (SeLoger, Bien'ici, Green Acres, Figaro Immobilier, M&A) ; les autres sont écartés et comptés.
 - 05/10 · Stream Estate · Champs structurés seulement ; donnée inconnue d'un côté ou de l'autre = neutre (« non indiqué ») ; la description n'est jamais lue.
-- 05/10 · Stream Estate · Ordre en deux niveaux : secteur, surface, prix, stationnement, extérieur ; puis état, étage, ascenseur, piscine, exposition, année. Le score ne départage qu'à égalité.
-- 05/10 · Stream Estate · Barème distance : +2 sous 500 m, +1 jusqu'à 1 km, 0 jusqu'à 2 km, −1 au-delà ; adresse non géocodée avec précision = neutre, et l'écran dit pourquoi.
 - 05/10 · Stream Estate · 10 affichés et numérotés, 5 cochés d'office, le reste derrière « Voir les N autres » (remplace M50, cochés au-dessus du seuil).
 - 05/10 · Stream Estate · Apprentissage sur les seuls écarts explicites (« Écarter avec un motif ») ; un importé compte comme retenu ; un non coché ne laisse aucune trace (remplace M50).
 - 05/10 · Stream Estate · Le neuf n'entre qu'en complément, sous 3 concurrents dans l'ancien après desserrage complet, avec sa mention et jamais coché d'office (remplace M50, neuf écarté).
+- 06/10 · M71 · Stream Estate cherche par crans et s'arrête à 10 biens anciens importables et vivants : identique (< 1 km, mêmes pièces, surface ±10 %, fourchette stricte), plus grand (+10 à +25 %), une pièce de plus, même ville < 2 km, < 5 km, 10 km communes voisines comprises, prix ±5 % hors fourchette. Jamais plus petit, jamais une pièce de moins ; les portails ne desserrent pas.
+- 06/10 · M71 · « Dans la commune et à N km » = rayon moins les communes voisines (centre à moins de N + 8 km), code INSEE revérifié ; l'API ignore le rayon avec `includedInseeCodes[]`. Liste refusée ou indisponible : cercle seul, dit dans le bilan.
+- 06/10 · M71 · Sans adresse géocodée sûre, pas de quartier : crans 1 à 3 sur toute la commune, 2 et 5 km sautés, 10 km depuis le centre de la commune. On géocode avec le nom officiel de la commune.
+- 06/10 · M71 · Ce qui est payé et valable est gardé : un bien sans position fiable, confirmé dans la commune par son code INSEE, entre dès son cran avec « Même ville — quartier non vérifié ».
+- 06/10 · M71 · Facturation : tranches disjointes (bornes entières), appels triés par mise à jour décroissante, pages d'un cran épuisées avant le suivant ; plafond automatique de 60 annonces, puis « Chercher encore » (20 annonces, 0,20 €) au choix du conseiller, qui reprend où la recherche s'est arrêtée. Le bilan dit le nombre par cran et le coût cumulé.
+- 06/10 · M71 · % de correspondance sur chaque carte, portails compris : secteur 25, surface 20, prix 20, pièces 15, stationnement 5, extérieur 5, niveau 2 sur 10 ; un critère inconnu sort du calcul. La liste est triée par % ; à égalité, l'ordre en deux niveaux décide (remplace Stream Estate, ordre et barème distance).
+- 06/10 · M71 · Une carte Stream Estate élargie dit son écart (distance, commune voisine, plus grand, pièce de plus, prix hors fourchette).
+- 06/10 · M71 · Une seule comparaison des communes partout (accents, tirets, St/Ste) ; Stream Estate compare le code INSEE. Le bouton d'import groupé est visible dès qu'un candidat est affiché.
 
 ## Live
 
