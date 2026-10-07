@@ -118,4 +118,53 @@ describe('extractBienIci', () => {
     // The apartment's terrain never reaches the grid.
     expect(data.landArea).toBeNull();
   });
+
+  // Mission 76 — the page Laurent imported (« 1 seule photo intégrée et 18 échecs »).
+  describe('gallery photos (Cagnes-sur-Mer, laforet-immo-facile-52960884)', () => {
+    const cagnesUrl =
+      'https://www.bienici.com/annonce/vente/cagnes-sur-mer/maison/9pieces/laforet-immo-facile-52960884';
+    const cagnesHtml = readFileSync(
+      join(__dirname, '__fixtures__', 'bienici-cagnes-maison.html'),
+      'utf8',
+    );
+    const photoPrefix =
+      'https://file.bienici.com/photo/laforet-immo-facile-52960884_media.immo-facile.com_office9_laforet_cagnes-sur-mer_catalog_images_pr_p_5_2_9_6_0_8_8_4_52960884';
+
+    it('reads the 18 photos of the ad, each address whole (never cut at « .jpg »)', () => {
+      const photos = extractBienIci(cagnesHtml, cagnesUrl).photoUrls ?? [];
+      expect(photos).toHaveLength(18);
+      expect(photos[0]).toBe(`${photoPrefix}a.jpg_DATEMAJ_02_10_2026-15_21_56`);
+      expect(photos[17]).toBe(`${photoPrefix}r.jpg_DATEMAJ_02_10_2026-15_21_59`);
+      for (const photo of photos) {
+        expect(photo).toMatch(/\.jpg_DATEMAJ_02_10_2026-15_21_5\d$/);
+      }
+    });
+
+    it('full size and without duplicate: no resize parameter, no agency logo', () => {
+      const photos = extractBienIci(cagnesHtml, cagnesUrl).photoUrls ?? [];
+      expect(new Set(photos).size).toBe(photos.length);
+      expect(photos.some((photo) => photo.includes('?'))).toBe(false);
+      expect(photos.some((photo) => /logo/i.test(photo))).toBe(false);
+    });
+
+    it('through the pipeline: 18 photos reach the import, not 19', () => {
+      const parts = extractListingData(cagnesHtml, cagnesUrl);
+      const { data } = normalizeListingData(parts, cagnesUrl, "Bien'ici");
+      expect(data.photoUrls).toHaveLength(18);
+      expect(data.photoUrls[0]).toBe(`${photoPrefix}a.jpg_DATEMAJ_02_10_2026-15_21_56`);
+    });
+
+    it('without the ad identifier, no gallery is read by the extractor', () => {
+      expect(extractBienIci(cagnesHtml).photoUrls).toBeUndefined();
+      expect(
+        extractBienIci(cagnesHtml, 'https://www.bienici.com/recherche/achat/cagnes-sur-mer-06800')
+          .photoUrls,
+      ).toBeUndefined();
+    });
+
+    it('the photos of another ad are never read', () => {
+      const other = cagnesUrl.replace('52960884', '11111111');
+      expect(extractBienIci(cagnesHtml, other).photoUrls).toBeUndefined();
+    });
+  });
 });

@@ -72,7 +72,7 @@ export function extractListingData(html: string, originalUrl: string): Extracted
   } else if (isSeLoger(hostname)) {
     portal = extractSeLoger(html, originalUrl);
   } else if (isBienIci(hostname)) {
-    portal = extractBienIci(html);
+    portal = extractBienIci(html, originalUrl);
   } else if (isFigaro(hostname)) {
     portal = extractFigaro(html);
   } else if (isMaisonsEtAppartements(hostname)) {

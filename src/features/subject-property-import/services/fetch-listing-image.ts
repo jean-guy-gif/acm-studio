@@ -56,6 +56,18 @@ async function assertFetchable(
   return { ok: true, url };
 }
 
+// Mission 76 — a failed photo says why, in the advisor's words; the HTTP code stays
+// in the message so a support exchange can name it.
+function refusalMessage(status: number): string {
+  if (status === 404 || status === 410) {
+    return `Photo introuvable sur le site de l’annonce (${status}).`;
+  }
+  if (status === 401 || status === 403) {
+    return `Le site de l’annonce refuse le téléchargement (${status}).`;
+  }
+  return `Le site de l’annonce a répondu une erreur (${status}).`;
+}
+
 export async function fetchListingImage(
   rawUrl: string,
   deps: FetchImageDeps = {},
@@ -96,7 +108,7 @@ export async function fetchListingImage(
       }
 
       if (!response.ok) {
-        return { ok: false, error: `Téléchargement refusé (${response.status}).` };
+        return { ok: false, error: refusalMessage(response.status) };
       }
       const declaredLength = Number(response.headers.get('content-length'));
       if (Number.isFinite(declaredLength) && declaredLength > MAX_PHOTO_BYTES) {
@@ -112,7 +124,14 @@ export async function fetchListingImage(
       return { ok: true, bytes };
     }
   } catch {
-    return { ok: false, error: 'Téléchargement de l’image échoué.' };
+    // The only abort is our own timer: say it, instead of a bare « échoué ».
+    if (controller.signal.aborted) {
+      return {
+        ok: false,
+        error: `Le site de l’annonce n’a pas répondu en ${TIMEOUT_MS / 1000} s.`,
+      };
+    }
+    return { ok: false, error: 'Connexion au site de l’annonce impossible.' };
   } finally {
     clearTimeout(timer);
   }

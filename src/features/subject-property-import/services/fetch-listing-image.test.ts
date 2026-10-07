@@ -144,4 +144,29 @@ describe('fetchListingImage', () => {
     });
     expect(result.ok).toBe(false);
   });
+
+  // Mission 76 — a failed photo says why.
+  it.each([
+    [404, 'Photo introuvable sur le site de l’annonce (404).'],
+    [403, 'Le site de l’annonce refuse le téléchargement (403).'],
+    [500, 'Le site de l’annonce a répondu une erreur (500).'],
+  ])('names the cause of a %i answer', async (status, message) => {
+    const fetchImpl = vi.fn(async () => new Response('file not found', { status }));
+    const result = await fetchListingImage('https://example.com/a.jpg', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      resolveHost: resolvePublic,
+    });
+    expect(result).toEqual({ ok: false, error: message });
+  });
+
+  it('names an unreachable site', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
+    const result = await fetchListingImage('https://example.com/a.jpg', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      resolveHost: resolvePublic,
+    });
+    expect(result).toEqual({ ok: false, error: 'Connexion au site de l’annonce impossible.' });
+  });
 });

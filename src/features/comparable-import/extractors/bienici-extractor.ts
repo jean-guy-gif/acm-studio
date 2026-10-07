@@ -102,11 +102,57 @@ function looksLikeFeature(text: string): boolean {
   return !/\b(estimez|signaler|voir|calculer|contactez|decouvrez|afficher)\b/i.test(norm(text));
 }
 
+// Mission 76 — the ad identifier as Bien'ici publishes it: the last segment of
+// the listing path (« /annonce/vente/<commune>/<type>/<pièces>/<identifiant> »).
+function adIdFromListingUrl(listingUrl: string): string | null {
+  try {
+    const { pathname } = new URL(listingUrl);
+    if (!/\/annonce\//i.test(pathname)) {
+      return null;
+    }
+    const id = pathname.split('/').filter(Boolean).at(-1) ?? '';
+    return /^[a-z0-9][a-z0-9_.-]*$/i.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+// Mission 76 — the gallery photos of THIS ad, whole and full-size.
+//
+// Measured on 07/10/2026 (Cagnes-sur-Mer, laforet-immo-facile-52960884): Bien'ici
+// names every photo « file.bienici.com/photo/<identifiant de l'annonce>_<fichier
+// d'origine> », and the original file name is the agency's — here it ends with
+// « .jpg_DATEMAJ_02_10_2026-15_21_56 ». The generic gallery reader stops an address
+// at its image extension: 18 addresses out of 19 were cut and answered 404.
+//
+// So the address is read up to the end of its PATH (never up to an extension), and
+// the resize parameters (« ?width=600&height=370&fit=cover ») are dropped: without
+// them the server returns the full-size photo. The structured data of the page only
+// carries the cover (JSON-LD Product.image), which is why the gallery is read.
+//
+// EXCEPTION to « nothing is read across the whole page » (Mission 48): the frame
+// here is the published identifier, not a position. The agency logo and the photos
+// of similar ads carry ANOTHER identifier, wherever they sit in the page.
+function galleryPhotoUrls(html: string, adId: string): string[] {
+  const escapedId = adId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`https://file\\.bienici\\.com/photo/${escapedId}_[^"'\\s<>?&]+`, 'gi');
+  return [...new Set(html.match(pattern) ?? [])];
+}
+
 // Bien'ici is a client-rendered SPA: the public HTML shell contains no listing
-// data. This extractor only reads an embedded ad JSON if one is present, and
-// returns nothing otherwise (controlled failure, manual entry stays available).
-export function extractBienIci(html: string): PartialListingData {
+// data. This extractor reads the page as rendered in the advisor's browser, plus an
+// embedded ad JSON if one is present, and returns nothing otherwise (controlled
+// failure, manual entry stays available).
+export function extractBienIci(html: string, listingUrl?: string): PartialListingData {
   const result: PartialListingData = {};
+
+  const adId = listingUrl ? adIdFromListingUrl(listingUrl) : null;
+  if (adId) {
+    const photos = galleryPhotoUrls(html, adId);
+    if (photos.length > 0) {
+      result.photoUrls = photos;
+    }
+  }
 
   // Mission 47 — dated phrases from the RENDERED page (Bien'ici is client-rendered;
   // the extension captures the visible text). We anchor on the PHRASE, never on
