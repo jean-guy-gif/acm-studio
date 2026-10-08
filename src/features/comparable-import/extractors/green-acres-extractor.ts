@@ -164,6 +164,28 @@ function resolveLocation(
 
 // Green Acres renders full listing data in the HTML. This extractor reads the
 // portal's own labelled blocks (never the first monetary fragment).
+// MISSION 80 — la classe DPE. Mesuré (Cagnes) : le bloc `graphic dpe` dessine TOUTE l'échelle,
+// sept barres `ScaleGraph__InnerWrapper` portant chacune sa lettre (`ScaleGraph__KeyText`). Sur
+// l'annonce mesurée aucune barre n'est distinguée des autres : l'annonce n'affiche pas de classe,
+// et le lecteur générique y lisait « A », la première lettre de l'échelle. On ne lit donc une
+// lettre que si UNE SEULE barre porte une classe que les autres n'ont pas ; sinon rien.
+// Exception à M48 (tout se lit dans le bloc de l'annonce) : ce bloc vit dans la fenêtre de détail
+// de l'annonce, rendue APRÈS les cartes voisines. Il est lu sur la page entière, à la condition
+// qu'il y soit unique — les cartes voisines n'en portent pas.
+export function readGreenAcresDpe(html: string): string | null {
+  const blocks = html.split(/class="graphic dpe"/i);
+  if (blocks.length !== 2) return null;
+  const block = blocks[1].split(/class="graphic ges"/i)[0];
+  const bars = [
+    ...block.matchAll(
+      /class="ScaleGraph__InnerWrapper([^"]*)"[^>]*>\s*<div class="ScaleGraph__KeyText">\s*([A-G])\s*</g,
+    ),
+  ];
+  if (bars.length !== 7) return null;
+  const marked = bars.filter((bar) => bar[1].trim() !== '');
+  return marked.length === 1 ? marked[0][2] : null;
+}
+
 export function extractGreenAcres(html: string, originalUrl?: string): PartialListingData {
   const result: PartialListingData = {};
 
@@ -259,6 +281,11 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
   }
   if (location.district) {
     result.district = location.district;
+  }
+
+  const energyRating = readGreenAcresDpe(html);
+  if (energyRating) {
+    result.energyRating = energyRating;
   }
 
   // Heating + energy source: "chauffage central au fuel".

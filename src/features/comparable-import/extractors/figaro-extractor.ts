@@ -109,8 +109,31 @@ function structuredPhotoUrls(html: string): string[] {
 // The page's JSON-LD @graph mixes the AGENCY Organization (Paris HQ address,
 // Google-hosted logo) with the listing, so the generic extractors alone would
 // yield a wrong city/photo — this portal extractor supplies the trusted values.
+// MISSION 80 — la classe DPE. Mesuré (Nice, C) : le bilan énergie de l'annonce
+// (`#detail-classified-dpe`, un seul par page) affiche l'échelle entière dans `ul.dpe-list`, et
+// marque la classe du bien d'un `active` : `<li class="active dpe-c">C</li>`. On lit ce seul
+// élément marqué — la classe CSS et la lettre affichée doivent dire la même chose. Sans marque,
+// ou avec plusieurs, rien n'est lu : jamais la première lettre de l'échelle.
+export function readFigaroDpe(html: string): string | null {
+  const lists = [
+    ...html.matchAll(/<ul[^>]*class="[^"]*\bdpe-list\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi),
+  ];
+  if (lists.length !== 1) return null;
+  const active = [...lists[0][1].matchAll(/<li[^>]*class="([^"]*)"[^>]*>\s*([A-G])\s*<\/li>/gi)]
+    .map((item) => ({ classes: item[1].toLowerCase().split(/\s+/), letter: item[2].toUpperCase() }))
+    .filter((item) => item.classes.includes('active'));
+  if (active.length !== 1) return null;
+  const { classes, letter } = active[0];
+  return classes.includes(`dpe-${letter.toLowerCase()}`) ? letter : null;
+}
+
 export function extractFigaro(html: string): PartialListingData {
   const result: PartialListingData = {};
+
+  const energyRating = readFigaroDpe(html);
+  if (energyRating) {
+    result.energyRating = energyRating;
+  }
 
   const titleRaw =
     firstMatch(html, /<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i) ??

@@ -11,6 +11,7 @@ import { LivePageAnalysis } from '@/features/live-seller/components/live-page-an
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
 import { LivePageDangerous } from '@/features/live-seller/components/live-page-dangerous';
+import { LivePageDpe } from '@/features/live-seller/components/live-page-dpe';
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
@@ -278,6 +279,11 @@ export function LiveComparativeShell({
       go(1);
       return;
     }
+    // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
+    if (page.type === 'dpe_market') {
+      go(1);
+      return;
+    }
     // OPTIMISTE : 4 révélation, 6 dangereux, 8 analyse.
     if (entry)
       runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
@@ -494,6 +500,11 @@ export function LiveComparativeShell({
           <LivePagePriceRevealPilot entry={authorizedEntry} />
         ) : page.type === 'comparable_duration' && authorizedEntry ? (
           <LivePageDuration entry={authorizedEntry} durationRevealed={durationRevealed} />
+        ) : page.type === 'dpe_market' ? (
+          <LivePageDpe
+            subjectEnergyRating={property?.energyRating ?? null}
+            competitorEnergyRatings={comparables.map((c) => c.energyRating)}
+          />
         ) : page.type === 'dangerous_competitor' && live ? (
           <LivePageDangerous comparables={authorizedComparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (

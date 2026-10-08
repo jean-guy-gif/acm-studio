@@ -1,3 +1,4 @@
+import { dpeClass, dpeGapLabel } from '@/features/dpe/services/dpe';
 import {
   applyLearning,
   type LearnedPreferences,
@@ -211,6 +212,17 @@ type PoolEntry = {
   host: string;
 };
 
+// Mission 80 — ce que la carte dit du DPE du candidat, face à celui du bien vendeur.
+function candidateDpe(
+  criteria: CompetitorSearchCriteria,
+  candidate: CompetitorCandidate,
+): RankedCandidate['dpe'] {
+  const letter = dpeClass(candidate.energyClass);
+  return letter == null
+    ? null
+    : { letter, label: dpeGapLabel(letter, dpeClass(criteria.energyClass)) };
+}
+
 export function rankCandidates(
   criteria: CompetitorSearchCriteria,
   portals: PortalSearchResult[],
@@ -362,6 +374,7 @@ export function rankCandidates(
       proximity,
       matchPercent: matchPercent(criteria, entry.candidate, proximity.reasons, place),
       gapLine: isStream(entry) ? gapLine(criteria, entry.candidate, place) : null,
+      dpe: candidateDpe(criteria, entry.candidate),
     };
   };
 

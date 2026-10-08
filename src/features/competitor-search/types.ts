@@ -2,6 +2,8 @@
 // Suggestions éphémères : rien n'est persisté tant que le conseiller n'a pas
 // importé puis enregistré un bien via la création existante.
 
+import type { DpeClass } from '@/features/dpe/services/dpe';
+
 // Figaro a été retiré (septembre 2026) : il n'est plus proposé au conseiller.
 // Portails réellement supportés par la recherche.
 export const SEARCH_PORTALS = [
@@ -41,6 +43,9 @@ export type CompetitorSearchCriteria = {
   roomsCount: number | null;
   advisorPriceMin: number | null;
   advisorPriceMax: number | null;
+  // Mission 80 — classe DPE du bien vendeur (A à G), null tant que le conseiller ne l'a pas
+  // saisie. Compte dans le % de correspondance ; ne filtre jamais et ne crée aucun cran.
+  energyClass?: DpeClass | null;
   // Mission 70 — terrain du bien vendeur : critère secondaire d'ORDRE, jamais un filtre.
   landArea?: number | null;
   // Étape 2 Stream Estate — ce que la fiche du bien vendeur dit, pour l'ORDRE (jamais un filtre).
@@ -119,6 +124,9 @@ export type CompetitorCandidate = {
   // /programme/ ou /neuf/, titre généré par le portail, fourchette de prix, année de construction
   // à venir (Stream Estate). Tenu en réserve par le classement : complément sous 3 seulement.
   isNewBuild: boolean;
+  // Mission 80 — classe DPE (A à G) quand la source la donne en champ structuré (Stream Estate).
+  // Absente ou null = non indiquée : la carte d'un portail ne la porte pas, elle arrive à l'import.
+  energyClass?: DpeClass | null;
   // Essai Stream Estate — présent seulement pour un bien venu de l'API.
   streamEstate?: StreamEstateFacts;
   // Étape 2 — champs structurés qui ORDONNENT (secteur, étage, équipements). Absent = tout inconnu.
@@ -216,6 +224,10 @@ export type RankedCandidate = {
   // Mission 71 — Stream Estate seulement : ce qui écarte ce bien de l'identique (« Même ville, à
   // 1,6 km · Plus grand : 78 m² (+12 %) »). null pour un bien identique ou venu d'un portail.
   gapLine: string | null;
+  // Mission 80 — la classe DPE du candidat et ce que la carte en dit face au bien vendeur
+  // (« DPE D, comme le vôtre », « DPE F, deux classes de moins » ; « DPE D » seul sans classe
+  // côté vendeur). null quand la source ne donne pas la classe.
+  dpe: { letter: DpeClass; label: string } | null;
 };
 
 // Un critère d'ordre, tel qu'il s'affiche sur la carte : « à 350 m », « terrasse ≠ balcon »,

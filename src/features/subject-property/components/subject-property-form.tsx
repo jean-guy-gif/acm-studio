@@ -3,6 +3,7 @@
 import { useImperativeHandle, useState, type Ref } from 'react';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
+import { dpeClass } from '@/features/dpe/services/dpe';
 import { PropertyCharacteristicsFields } from '@/features/subject-property/components/property-characteristics-fields';
 import { PropertyEnergyFields } from '@/features/subject-property/components/property-energy-fields';
 import { PropertyFinancialFields } from '@/features/subject-property/components/property-financial-fields';
@@ -109,7 +110,7 @@ function initialScalars(
     district: pick(imported?.district, property?.district),
     floor: pick(imported?.floor, property?.floor),
     building_floors: pick(imported?.building_floors, property?.building_floors),
-    energy_rating: pick(imported?.energy_rating, property?.energy_rating),
+    energy_rating: dpeClass(pick(imported?.energy_rating, property?.energy_rating)) ?? '',
     ges_rating: gesListValue(pick(imported?.ges_rating, property?.ges_rating)) ?? '',
     heating_type: inList(pick(imported?.heating_type, property?.heating_type), HEATING_TYPES),
     exposure: inList(pick(imported?.exposure, property?.exposure), EXPOSURES),

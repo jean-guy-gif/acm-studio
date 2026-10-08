@@ -1,3 +1,4 @@
+import { DPE_CLASSES } from '@/features/dpe/services/dpe';
 import {
   EXCLUSIVE_NONE,
   EXPOSURES,
@@ -171,6 +172,7 @@ export function validateSubjectProperty(
   }
   checkInteger(input.construction_year, 'construction_year', 1500, currentYear + 1, errors);
 
+  checkEnum(input.energy_rating, DPE_CLASSES, 'energy_rating', errors);
   checkEnum(input.ges_rating, GES_RATINGS, 'ges_rating', errors);
   checkEnum(input.exposure, EXPOSURES, 'exposure', errors);
   checkEnum(input.general_condition, GENERAL_CONDITIONS, 'general_condition', errors);

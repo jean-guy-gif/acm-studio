@@ -21,6 +21,7 @@ import { ComparableSelectionSummaryView } from '@/features/comparables/component
 import { ComparableSelectionWarningsView } from '@/features/comparables/components/comparable-selection-warnings';
 import { RejectedComparablesList } from '@/features/comparables/components/rejected-comparables-list';
 import { SelectedComparablesList } from '@/features/comparables/components/selected-comparables-list';
+import { DpeCountLine } from '@/features/dpe/components/dpe-count-line';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
@@ -111,6 +112,7 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
             rejectSelectedAction={rejectSelectedAction}
             deleteSelectedAction={deleteSelectedAction}
           />
+          <DpeCountLine energyRatings={selected.map((comparable) => comparable.energy_rating)} />
           <RejectedComparablesList
             comparables={rejected}
             projectId={projectId}
