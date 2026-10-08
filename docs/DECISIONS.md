@@ -25,6 +25,13 @@ chaque mission validée.
 - 24/09 · M58 · L'analyse du conseiller (son avis de valeur) se saisit au positionnement, en fin de préparation ; elle n'est pas requise pour être prêt.
 - 05/10 · Stream Estate · Fiche du bien vendeur : ascenseur et piscine (oui / non / non renseigné).
 - 06/10 · M74 · « Analyse des prix » décrit le moins cher et le plus cher par les champs du bien (pièces, surface, quartier ou commune, prix, prix au m²), jamais par le titre de l'annonce ; un champ absent est omis.
+- 08/10 · M77 · Une annonce remplit le type de bien, l'étage et le nombre d'étages : le type se lit dans un segment de l'adresse qui est un type, sinon dans un titre qui n'en nomme qu'un ; deux types (« Maison avec garage ») ne décident rien, le nom de domaine n'est jamais lu, et le titre lui-même n'est écrit nulle part.
+- 08/10 · M77 · « Type de bien » est une liste (Appartement, Maison, Terrain, Immeuble, Local commercial, Parking) ; le libellé français est enregistré, sans migration ; un texte libre reconnu s'affiche dans le bon choix, un texte inconnu reste affiché tel quel.
+- 08/10 · M77 · Un seul « Enregistrer », bouton principal d'une barre fixée à la fenêtre : bien, diagnostics et copropriété s'enregistrent ensemble, tout est validé avant la première écriture ; les sections sont visibles dès le départ.
+- 08/10 · M77 · Diagnostics et copropriété ne s'écrivent que si le conseiller les a touchés ou qu'une fiche PDF les a remplis : un simple enregistrement ne crée aucune ligne vide.
+- 08/10 · M77 · « Trouver des concurrents → » et « ← Retour au dossier » vivent dans la barre et enregistrent avant de partir ; le lien de retour du haut de page est retiré.
+- 08/10 · M77 · La barre dit l'état de la fiche (« Modifications non enregistrées », « Enregistré », « 2 champs à corriger », « Il manque : type de bien ») ; un clic mène au champ.
+- 08/10 · M77 · Ville ou type manquant ne retient que le départ vers la recherche : « Enregistrer » et « Retour au dossier » enregistrent quand même.
 
 ## Concurrents & recherche
 
@@ -90,6 +97,7 @@ chaque mission validée.
 - 07/10 · M76 · Bien'ici : les photos se lisent par l'identifiant publié de l'annonce, sur toute la page (exception à M48, écrite en commentaire), en pleine taille et sans doublon ; les données structurées n'y portent que la couverture.
 - 07/10 · M76 · Figaro Immobilier : les photos viennent de l'état de l'application (`__NUXT_DATA__`), en pleine taille ; le portail est cadré comme les autres, plus de lecture pleine page des images ; à défaut, la galerie du CDN Figaro.
 - 07/10 · M76 · Un échec de récupération de photo dit sa cause, regroupée avec le nombre de photos concernées ; le code HTTP reste dans le message.
+- 08/10 · M77 · La recherche de concurrents exige la ville et le type du bien vendeur ; un type qui ne se reconnaît pas compte comme manquant ; l'écran nomme le champ et son lien ouvre la fiche dessus.
 
 ## Live
 
