@@ -1,26 +1,28 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useImperativeHandle, useState, type Ref } from 'react';
 
-import {
-  alertError,
-  alertOk,
-  btnPrimary,
-  fieldLabel,
-  formSection,
-  formSectionTitle,
-  inputBase,
-} from '@/components/ui/styles';
+import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
 import { PropertyCharacteristicsFields } from '@/features/subject-property/components/property-characteristics-fields';
 import { PropertyEnergyFields } from '@/features/subject-property/components/property-energy-fields';
 import { PropertyFinancialFields } from '@/features/subject-property/components/property-financial-fields';
 import { PropertyListField } from '@/features/subject-property/components/property-list-field';
 import { PropertyLocationFields } from '@/features/subject-property/components/property-location-fields';
 import { PropertyPriceRangeStep } from '@/features/subject-property/components/property-price-range-step';
-import { NumberField, TextField } from '@/features/subject-property/components/property-inputs';
-import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
-import { BasculeBanner } from '@/features/projects/components/bascule-banner';
+import {
+  NumberField,
+  SelectField,
+  TextField,
+} from '@/features/subject-property/components/property-inputs';
+import {
+  propertyTypeLabel,
+  propertyTypeOptions,
+} from '@/features/subject-property/services/property-type-choice';
+import { propertyFieldId } from '@/features/subject-property/services/search-requirements';
+import type {
+  SheetEntries,
+  SheetSectionHandle,
+} from '@/features/subject-property/services/sheet-form';
 import type { SubjectProperty } from '@/features/subject-property/types';
 import type { SubjectPropertyImportPrefill } from '@/features/subject-property-import/types';
 import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
@@ -68,6 +70,9 @@ const triState = (value: boolean | null | undefined): string =>
 // seeded from an import — the range is the advisor's opinion, and a read sale price
 // writes no field. Factual amounts a fiche carries (property type, floor, taxe
 // foncière, charges) DO pre-fill their field (Mission 44).
+//
+// MISSION 77 — this component no longer saves: it is one section of the sheet. The
+// save bar reads its values (`ref`) and hands back the field errors.
 function initialScalars(
   property: SubjectProperty | null,
   imported?: SubjectPropertyImportPrefill,
@@ -77,8 +82,12 @@ function initialScalars(
     propertyValue: string | number | null | undefined,
   ): string => (imported && importedValue != null ? String(importedValue) : str(propertyValue));
 
+  // MISSION 77 — le type s'affiche dans le bon choix de la liste : « appartement T3 » déjà
+  // enregistré se lit « Appartement ». Un texte qui ne se reconnaît pas est gardé tel quel.
+  const propertyType = pick(imported?.property_type, property?.property_type);
+
   return {
-    property_type: pick(imported?.property_type, property?.property_type),
+    property_type: propertyTypeLabel(propertyType) ?? propertyType,
     surface_area: pick(imported?.surface_area, property?.surface_area),
     land_area: pick(imported?.land_area, property?.land_area),
     rooms_count: pick(imported?.rooms_count, property?.rooms_count),
@@ -90,7 +99,7 @@ function initialScalars(
     description: pick(imported?.description, property?.description),
     district: pick(imported?.district, property?.district),
     floor: pick(imported?.floor, property?.floor),
-    building_floors: str(property?.building_floors),
+    building_floors: pick(imported?.building_floors, property?.building_floors),
     energy_rating: pick(imported?.energy_rating, property?.energy_rating),
     ges_rating: pick(imported?.ges_rating, property?.ges_rating),
     heating_type: pick(imported?.heating_type, property?.heating_type),
@@ -118,27 +127,25 @@ function initialArray(
 
 export function SubjectPropertyForm({
   property,
-  saveAction,
   photos,
   uploadPhotosAction,
   updatePhotosAction,
   imported,
-  findHref,
-  projectId,
+  errors = {},
+  onDirty,
+  ref,
 }: {
   property: SubjectProperty | null;
-  saveAction: (formData: FormData) => Promise<SaveSubjectPropertyResult>;
   photos: SignedPhoto[];
   uploadPhotosAction: (formData: FormData) => Promise<UploadPropertyPhotosResult>;
   updatePhotosAction: (desiredPaths: string[]) => Promise<UpdatePropertyPhotosResult>;
   // Pre-fill coming from an online-listing import (Mission 38). Optional: absent
   // for a purely manual sheet and for the design preview.
   imported?: SubjectPropertyImportPrefill;
-  findHref?: string;
-  projectId: string;
+  errors?: Record<string, string>;
+  onDirty?: () => void;
+  ref?: Ref<SheetSectionHandle>;
 }) {
-  const router = useRouter();
-  const [becameReady, setBecameReady] = useState(false);
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
   const [outdoorSpaces, setOutdoorSpaces] = useState<string[]>(() =>
     initialArray(imported?.outdoor_spaces, property?.outdoor_spaces),
@@ -152,62 +159,37 @@ export function SubjectPropertyForm({
   // Watch points are NEVER seeded from a fiche: a commercial sheet sells, it does not
   // flag weaknesses honestly (Mission 44 §4).
   const [watchPoints, setWatchPoints] = useState<string[]>(property?.watch_points ?? []);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [banner, setBanner] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
 
-  const setField = (name: string, value: string) =>
+  const setField = (name: string, value: string) => {
     setScalars((previous) => ({ ...previous, [name]: value }));
+    onDirty?.();
+  };
   const setArray = (name: string, value: string[]) => {
     if (name === 'outdoor_spaces') setOutdoorSpaces(value);
     else if (name === 'parking_types') setParkingTypes(value);
+    onDirty?.();
   };
 
-  function submit() {
-    setBanner(null);
-    setMessage(null);
-    const formData = new FormData();
-    for (const [name, value] of Object.entries(scalars)) {
-      formData.set(name, value);
-    }
-    for (const value of outdoorSpaces) formData.append('outdoor_spaces', value);
-    for (const value of parkingTypes) formData.append('parking_types', value);
-    for (const value of strengths) formData.append('strengths', value);
-    for (const value of watchPoints) formData.append('watch_points', value);
-
-    startTransition(async () => {
-      const result = await saveAction(formData);
-      if (result.ok) {
-        setErrors({});
-        setMessage('Bien vendeur enregistré.');
-        if (result.becameReady) {
-          setBecameReady(true);
-        }
-        router.refresh();
-      } else {
-        setErrors(result.fieldErrors ?? {});
-        setBanner(result.error ?? 'L’enregistrement a échoué.');
-      }
-    });
-  }
+  useImperativeHandle(ref, () => ({
+    entries: (): SheetEntries => [
+      ...Object.entries(scalars),
+      ...outdoorSpaces.map((value): [string, string] => ['outdoor_spaces', value]),
+      ...parkingTypes.map((value): [string, string] => ['parking_types', value]),
+      ...strengths.map((value): [string, string] => ['strengths', value]),
+      ...watchPoints.map((value): [string, string] => ['watch_points', value]),
+    ],
+  }));
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
-      {becameReady ? <BasculeBanner projectId={projectId} /> : null}
-      {banner ? (
-        <p role="alert" className={alertError}>
-          {banner}
-        </p>
-      ) : null}
-      {message ? <p className={alertOk}>{message}</p> : null}
-
       <section className={formSection}>
         <h2 className={formSectionTitle}>Informations générales</h2>
-        <TextField
+        <SelectField
+          id={propertyFieldId('property_type')}
           label="Type de bien"
           value={scalars.property_type}
           onChange={(v) => setField('property_type', v)}
+          options={propertyTypeOptions(scalars.property_type)}
           error={errors.property_type}
         />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -266,6 +248,7 @@ export function SubjectPropertyForm({
             error={errors.postal_code}
           />
           <TextField
+            id={propertyFieldId('city')}
             label="Ville"
             value={scalars.city}
             onChange={(v) => setField('city', v)}
@@ -330,13 +313,19 @@ export function SubjectPropertyForm({
         <PropertyListField
           label="Points forts"
           items={strengths}
-          onChange={setStrengths}
+          onChange={(items) => {
+            setStrengths(items);
+            onDirty?.();
+          }}
           error={errors.strengths}
         />
         <PropertyListField
           label="Points de vigilance"
           items={watchPoints}
-          onChange={setWatchPoints}
+          onChange={(items) => {
+            setWatchPoints(items);
+            onDirty?.();
+          }}
           error={errors.watch_points}
         />
       </section>
@@ -346,17 +335,7 @@ export function SubjectPropertyForm({
         advisorPriceMax={scalars.advisor_price_max}
         onField={setField}
         errors={errors}
-        findHref={findHref}
       />
-
-      <button
-        type="button"
-        onClick={submit}
-        disabled={pending}
-        className={`${btnPrimary} self-start`}
-      >
-        {pending ? 'Enregistrement…' : 'Enregistrer le bien vendeur'}
-      </button>
     </div>
   );
 }

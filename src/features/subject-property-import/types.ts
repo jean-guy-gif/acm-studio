@@ -13,6 +13,7 @@ export type SubjectPropertyImportPrefill = {
   bedrooms_count: number | null;
   bathrooms_count: number | null;
   floor: number | null;
+  building_floors: number | null;
   address: string | null;
   postal_code: string | null;
   city: string | null;

@@ -1,14 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-
-import { btnSecondary, formSection, formSectionTitle, hintText } from '@/components/ui/styles';
+import { formSection, formSectionTitle, hintText } from '@/components/ui/styles';
 import { NumberField } from '@/features/subject-property/components/property-inputs';
 
 // Mission 38 — the advisor's price range, moved out of "Données financières" to
 // become the step that immediately follows the import: "here is what we found,
-// how much do YOU think this is worth?", then "Trouver des concurrents" as the
-// obvious end-of-screen action.
+// how much do YOU think this is worth?". "Trouver des concurrents" follows in the
+// save bar, which saves before leaving (Mission 77).
 //
 // Mission 36 rule, unchanged: this is the advisor's professional opinion, not an
 // estimate produced by the tool. It only targets the competitor search and is
@@ -18,13 +16,11 @@ export function PropertyPriceRangeStep({
   advisorPriceMax,
   onField,
   errors,
-  findHref,
 }: {
   advisorPriceMin: string;
   advisorPriceMax: string;
   onField: (name: string, value: string) => void;
   errors: Record<string, string>;
-  findHref?: string;
 }) {
   return (
     <section className={formSection}>
@@ -51,11 +47,6 @@ export function PropertyPriceRangeStep({
           error={errors.advisor_price_max}
         />
       </div>
-      {findHref ? (
-        <Link href={findHref} className={`${btnSecondary} self-start`}>
-          Trouver des concurrents →
-        </Link>
-      ) : null}
     </section>
   );
 }

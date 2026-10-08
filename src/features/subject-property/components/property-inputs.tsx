@@ -5,8 +5,13 @@ import { checkChip, errorText, fieldLabel, inputBase } from '@/components/ui/sty
 // Small shared presentational input primitives for the seller-property form.
 // Errors are rendered near their field.
 
+// `data-field-error` : the save bar scrolls to the first field in error (Mission 77).
 function FieldError({ error }: { error?: string }) {
-  return error ? <span className={errorText}>{error}</span> : null;
+  return error ? (
+    <span data-field-error className={errorText}>
+      {error}
+    </span>
+  ) : null;
 }
 
 export function TextField({
@@ -14,16 +19,19 @@ export function TextField({
   value,
   onChange,
   error,
+  id,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  id?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className={fieldLabel}>{label}</span>
       <input
+        id={id}
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -131,17 +139,20 @@ export function SelectField({
   onChange,
   options,
   error,
+  id,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   error?: string;
+  id?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className={fieldLabel}>{label}</span>
       <select
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={inputBase}

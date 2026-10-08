@@ -1,4 +1,6 @@
 import type { ImportedComparableData } from '@/features/comparable-import/types';
+import { detectListingPropertyType } from '@/features/subject-property-import/services/detect-listing-property-type';
+import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
 import type { SubjectPropertyImport } from '@/features/subject-property-import/types';
 
 // Pure mapping from the shared aspiration result to the seller-property prefill.
@@ -8,21 +10,24 @@ import type { SubjectPropertyImport } from '@/features/subject-property-import/t
 // GUARDRAIL (CLAUDE.md): a price read on the listing is INFORMATION for the
 // advisor — it never lands in a form field, and it never pre-fills the advisor's
 // range. The `prefill` therefore carries no price and no advisor range; the read
-// price travels in `info` only. `title` is a headline, not a property type, so it
-// is not mapped either. Photos are remote portal URLs, incompatible with the
-// private storage bucket (Mission 37), so they are reported as a count only.
+// price travels in `info` only. The `title` itself is a headline and is never
+// written anywhere; only the property type it (or the listing address) names
+// without ambiguity is kept, as a list label (Mission 77). Photos are remote
+// portal URLs, incompatible with the private storage bucket (Mission 37), so they
+// are reported as a count only.
 export function mapListingToProperty(data: ImportedComparableData): SubjectPropertyImport {
   return {
     prefill: {
-      // A listing carries no property type, floor, factual costs or strengths — those
-      // fields exist for the brochure import (Mission 44) and stay empty here.
-      property_type: null,
+      // A listing carries no factual costs or strengths — those fields exist for the
+      // brochure import (Mission 44) and stay empty here.
+      property_type: propertyTypeLabel(detectListingPropertyType(data.title, data.listingUrl)),
       surface_area: data.surfaceArea,
       land_area: data.landArea,
       rooms_count: data.roomsCount,
       bedrooms_count: data.bedroomsCount,
       bathrooms_count: data.bathroomsCount,
-      floor: null,
+      floor: data.floor,
+      building_floors: data.floorsCount,
       address: data.address,
       postal_code: data.postalCode,
       city: data.city,

@@ -59,7 +59,11 @@ export function PropertyListField({
       <span className="text-xs text-zinc-400 stage:text-white/40">
         {items.length} / {MAX_LIST_ITEMS} éléments · {MAX_LIST_ITEM_LENGTH} caractères max.
       </span>
-      {error ? <span className={errorText}>{error}</span> : null}
+      {error ? (
+        <span data-field-error className={errorText}>
+          {error}
+        </span>
+      ) : null}
     </fieldset>
   );
 }

@@ -70,9 +70,6 @@ import {
   previewDeletePositioning,
   previewImport,
   previewRecordDecision,
-  previewSaveCondominium,
-  previewSaveDiagnostics,
-  previewSaveProperty,
   previewUploadPropertyPhotos,
   previewUpdatePropertyPhotos,
   previewSavePositioning,
@@ -260,14 +257,12 @@ function PropertyScreen() {
       <Header back="Retour au dossier" kicker="Dossier · M. et Mme Démo" title="Bien vendeur" />
       <SubjectPropertyForm
         property={demoProperty}
-        projectId="design-preview"
-        saveAction={previewSaveProperty}
         photos={[]}
         uploadPhotosAction={previewUploadPropertyPhotos}
         updatePhotosAction={previewUpdatePropertyPhotos}
       />
-      <DiagnosticsForm diagnostics={null} saveAction={previewSaveDiagnostics} />
-      <CondominiumForm condominium={null} saveAction={previewSaveCondominium} />
+      <DiagnosticsForm diagnostics={null} />
+      <CondominiumForm condominium={null} />
     </div>
   );
 }

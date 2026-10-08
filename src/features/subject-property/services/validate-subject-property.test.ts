@@ -244,3 +244,26 @@ describe('ascenseur et piscine — oui / non / non renseigné', () => {
     }
   });
 });
+
+// Mission 77 — le type de bien se choisit dans une liste ; la colonne reste du texte.
+describe('validateSubjectProperty — type de bien', () => {
+  const saved = (property_type: string | null) => {
+    const result = validateSubjectProperty(input({ property_type }), YEAR);
+    return result.ok ? result.value.property_type : 'INVALIDE';
+  };
+
+  it('enregistre le libellé de la liste', () => {
+    expect(saved('Maison')).toBe('Maison');
+    expect(saved('Local commercial')).toBe('Local commercial');
+  });
+
+  it('range un texte libre reconnu dans le bon choix', () => {
+    expect(saved('appartement')).toBe('Appartement');
+    expect(saved('Villa 6 pièces')).toBe('Maison');
+  });
+
+  it('garde tel quel un texte qui ne se reconnaît pas, et le vide reste vide', () => {
+    expect(saved('Péniche')).toBe('Péniche');
+    expect(saved(null)).toBeNull();
+  });
+});

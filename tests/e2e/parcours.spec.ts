@@ -60,15 +60,22 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
         .locator('label')
         .filter({ has: page.locator('span', { hasText: new RegExp(`^${label}$`) }) })
         .locator('input');
-    await field('Type de bien').fill('Appartement');
+    // Mission 77 — le type se choisit dans une liste.
+    await page
+      .locator('label')
+      .filter({ has: page.locator('span', { hasText: /^Type de bien$/ }) })
+      .locator('select')
+      .selectOption('Appartement');
     await field('Surface').fill('65');
     await field('Pièces').fill('3');
     await field('Code postal').fill('06000');
     await field('Ville').fill('Nice');
     await field('De').fill(String(FOURCHETTE.min));
     await field('À').fill(String(FOURCHETTE.max));
-    await page.getByRole('button', { name: 'Enregistrer le bien vendeur' }).click();
-    await expect(page.getByText('Bien vendeur enregistré.')).toBeVisible();
+    // Mission 77 — un seul bouton, dans la barre fixée, qui dit où en est la fiche.
+    await expect(page.getByText('Modifications non enregistrées')).toBeVisible();
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+    await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
   });
 
   await test.step('Trois concurrents saisis à la main', async () => {

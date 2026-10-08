@@ -138,3 +138,25 @@ export const PARKING_TYPE_LABELS: Record<ParkingType, string> = {
   carport: 'Carport',
   none: 'Aucun',
 };
+
+// MISSION 77 — le type de bien se choisit dans une liste. Le vocabulaire canonique est celui
+// de `normalizePropertyType` (recherche de concurrents) ; la colonne `property_type` reste du
+// texte et reçoit le LIBELLÉ français, relu ensuite par ce même normaliseur.
+export const PROPERTY_TYPES = [
+  'apartment',
+  'house',
+  'land',
+  'building',
+  'commercial',
+  'parking',
+] as const;
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  apartment: 'Appartement',
+  house: 'Maison',
+  land: 'Terrain',
+  building: 'Immeuble',
+  commercial: 'Local commercial',
+  parking: 'Parking',
+};
