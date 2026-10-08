@@ -75,7 +75,8 @@ const normCity = communeKey;
 // LARGES de ces crans : surface de −10 % (±3 m² au moins) à +25 %, pièces identiques ou une de
 // plus, prix à ±5 % hors fourchette, commune du bien (code INSEE) sauf aux crans 7 et 8 (10 km,
 // communes voisines comprises). Jamais plus petit.
-// MISSION 78 — à partir du cran 6 les pièces sont libres (une carte sans pièces n'est plus
+// MISSION 78 — à partir du cran 6 les pièces sont libres pour une maison, et seulement vers le
+// haut pour un appartement (une carte sans pièces n'est plus
 // écartée : ce n'est plus le critère) et la surface n'a plus de plafond ; elle reste « jamais
 // plus petite » (−10 % au plus), et le prix ne bouge pas.
 const STREAM_ESTATE_BIGGER = 1.25;
@@ -156,6 +157,7 @@ function admitStreamEstate(
   candidate: CompetitorCandidate,
   prices: PriceBounds,
   sameCommune: boolean,
+  subjectType: string | null,
 ): Admission {
   const tier = candidate.streamEstate?.tier ?? 1;
   const freed = tier >= ROOMS_FREED_TIER;
@@ -175,6 +177,18 @@ function admitStreamEstate(
     if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
     const extra = candidate.roomsCount - criteria.roomsCount;
     if (extra < 0 || extra > 1) return { ok: false, kind: 'out' };
+  }
+  // Ajustement du 08/10 — pièces libérées : dans les deux sens pour une maison, seulement vers
+  // le haut pour un appartement (jamais moins de pièces que le bien vendeur). Une carte sans
+  // nombre de pièces reste acceptée.
+  if (
+    freed &&
+    subjectType !== 'house' &&
+    criteria.roomsCount != null &&
+    candidate.roomsCount != null &&
+    candidate.roomsCount < criteria.roomsCount
+  ) {
+    return { ok: false, kind: 'out' };
   }
   if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
     if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
@@ -282,6 +296,7 @@ export function rankCandidates(
           entry.candidate,
           prices,
           sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
+          subjectType,
         )
       : admit(criteria, entry.candidate, chosen, prices, refCity);
 

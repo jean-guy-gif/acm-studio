@@ -179,8 +179,10 @@ describe('les tranches sont disjointes', () => {
       ...many(2, 'big', (i) => ({ point: north(400), surface: 71 + i * 7 })),
       ...many(2, 'room', () => ({ point: north(500), room: 4, surface: 75 })),
       ...many(2, 'small', () => ({ point: north(300), surface: 55 })), // plus petit : jamais
-      // Une pièce de moins : jamais avant le cran 6, où les pièces se libèrent (mission 78).
+      // Appartement : une pièce de moins, jamais — même au cran 6, où les pièces ne se libèrent
+      // que vers le haut (mission 78).
       ...many(2, 'less', () => ({ point: north(300), room: 2 })),
+      ...many(2, 'more', () => ({ point: north(300), room: 5 })),
     ];
     const { api, run } = search(pool);
     const outcome = await run;
@@ -193,8 +195,11 @@ describe('les tranches sont disjointes', () => {
     // Crans 4 à 6 (2 et 5 km dans la commune) : seul le cran 6 ramène du nouveau, une fois.
     const beyond = api.calls
       .filter((call) => ['2', '5'].includes(call.params.get('radius') ?? ''))
-      .flatMap((call) => call.billed.filter((id) => id.startsWith('less')));
-    expect(beyond.sort()).toEqual(['less-0', 'less-1']);
+      .flatMap((call) => call.billed.filter((id) => id.startsWith('more')));
+    expect(beyond.sort()).toEqual(['more-0', 'more-1']);
+    expect(api.calls.flatMap((call) => call.billed).some((id) => id.startsWith('less'))).toBe(
+      false,
+    );
     expect(outcome.ok && outcome.candidates.map((c) => c.streamEstate?.tier)).toEqual([
       1, 1, 2, 2, 3, 3, 6, 6,
     ]);
@@ -559,6 +564,18 @@ describe('mission 78 : une grande maison trouve ses comparables', () => {
       ['11', null, '180', null],
       ['9', '10', '251', null],
     ]);
+  });
+
+  it('appartement : les pièces ne se libèrent que vers le haut, jamais moins de pièces', () => {
+    const flat = planTiers(CRITERIA, { located: true, hasCentre: true });
+    const rooms = (tier: number) => {
+      const plan = flat.find((candidate) => candidate.tier === tier)!;
+      return (plan.slices ?? [plan]).map((slice) => slice.rooms);
+    };
+    // Cran 6 : 5 pièces et plus, ou 3 à 4 pièces au-delà de +25 % — aucune tranche « 2 pièces ».
+    expect(rooms(6)).toEqual([{ min: 5 }, { min: 3, max: 4 }]);
+    expect(rooms(7)).toEqual([{ min: 3 }]);
+    expect(rooms(8)).toEqual([{ min: 3 }]);
   });
 
   it('à 10 km et hors fourchette, les pièces restent libres et la surface sans plafond', () => {

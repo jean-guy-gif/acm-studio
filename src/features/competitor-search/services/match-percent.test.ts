@@ -314,6 +314,36 @@ describe('mission 78 : pièces libres', () => {
     expect(search.ranked.find((entry) => entry.candidate.key === 'freed')?.matchPercent).toBe(81);
   });
 
+  it('appartement : aux crans 6 à 8, jamais moins de pièces que le bien vendeur', () => {
+    const flat = { ...HOUSE, propertyType: 'apartment', roomsCount: 3, surfaceArea: 63 };
+    const card = (key: string, price: number, roomsCount: number | null) =>
+      house(key, 6, { propertyType: 'apartment', surfaceArea: 64, price, roomsCount });
+    const search = rankCandidates(
+      flat,
+      [
+        {
+          portal: STREAM_ESTATE_SOURCE,
+          label: STREAM_ESTATE_LABEL,
+          searchUrl: '',
+          status: 'ok',
+          message: null,
+          candidates: [
+            card('two', 700000, 2),
+            card('five', 701000, 5),
+            card('roomless', 702000, null),
+          ],
+        },
+      ],
+      learnFromDecisions([]),
+      { subjectLocation: SUBJECT, subjectInseeCode: '06027' },
+    );
+    expect(search.ranked.map((entry) => entry.candidate.key).sort()).toEqual(['five', 'roomless']);
+    const line = (key: string) =>
+      search.ranked.find((entry) => entry.candidate.key === key)?.gapLine;
+    expect(line('five')).toBe('5 pièces au lieu de 3');
+    expect(line('roomless')).toBe('Nombre de pièces non indiqué');
+  });
+
   it('une commune voisine n’entre qu’à partir du cran 7', () => {
     const elsewhere = (key: string, tier: 6 | 7, price: number) =>
       house(key, tier, {

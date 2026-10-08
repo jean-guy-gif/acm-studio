@@ -17,6 +17,7 @@ import type {
   GeoPoint,
   StreamEstateTier,
 } from '@/features/competitor-search/types';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 
 // MISSION 71 — LA RECHERCHE STREAM ESTATE PAR CRANS (décision de Laurent, 06/10). Partie PURE :
@@ -39,7 +40,8 @@ import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/su
 // MISSION 78 — LES PIÈCES SE LIBÈRENT APRÈS LA VILLE À 5 KM, ET LE RESTENT (décision de Laurent,
 // 08/10). Mesure du 08/10 : une maison de 9 pièces et 200 m² à Cagnes-sur-Mer ne trouvait RIEN,
 // aucune maison à 9 ou 10 pièces n'étant en vente dans la fourchette — les maisons de cette
-// surface y ont 5 à 7 pièces. Aux crans 6 à 8 : le nombre de pièces ne filtre plus (le % de
+// surface y ont 5 à 7 pièces. Aux crans 6 à 8 : le nombre de pièces ne filtre plus pour une
+// maison ; pour un appartement il ne se libère que vers le haut, jamais moins de pièces (le % de
 // correspondance le compte, la carte le dit) ; la surface reste « jamais plus petite » (−10 % au
 // plus) mais n'a plus de plafond, la fourchette stricte borne déjà ; et l'annonce d'origine est
 // gardée si elle a été revue depuis 21 jours au plus (7 aux crans 1 à 5), la carte disant « vue
@@ -166,7 +168,15 @@ export function planTiers(
     ? { min: s.identicalSurface.min }
     : null;
   const wideSurface = freed ? freedSurface : surfaceAny;
-  const wideRooms = freed ? null : roomsAny;
+  // Ajustement du 08/10 (Laurent) : pour une MAISON les pièces sont libres dans les deux sens ;
+  // pour tout autre bien (appartement), elles ne se libèrent que vers le haut — un 3 pièces ne se
+  // voit jamais proposer un 2 pièces.
+  const bothWays = normalizePropertyType(criteria.propertyType) === 'house';
+  const wideRooms: OpenRange | null = !freed
+    ? roomsAny
+    : bothWays || s.rooms == null
+      ? null
+      : { min: s.rooms };
   const wideOrigin = freed ? FREED_ORIGIN_SEEN_WITHIN_DAYS : ORIGIN_SEEN_WITHIN_DAYS;
 
   const neighbourhood: TierArea = options.located
@@ -233,7 +243,7 @@ export function planTiers(
     // sans quartier), privé de ce que les crans 1 à 5 y ont déjà demandé (mêmes pièces ou une de
     // plus, jusqu'à +25 %).
     const slices: TierSlice[] = [
-      ...(s.rooms > 1 ? [{ rooms: { max: s.rooms - 1 }, surface: freedSurface }] : []),
+      ...(bothWays && s.rooms > 1 ? [{ rooms: { max: s.rooms - 1 }, surface: freedSurface }] : []),
       { rooms: { min: s.rooms + 2 }, surface: freedSurface },
       ...(surfaceAny ? [{ rooms: roomsAny, surface: { min: surfaceAny.max + 1 } }] : []),
     ];
@@ -243,7 +253,7 @@ export function planTiers(
         ? { kind: 'circle', radiusKm: 5, withinCommune: true }
         : { kind: 'commune' },
       surface: freedSurface,
-      rooms: null,
+      rooms: wideRooms,
       slices,
       prices: inRange,
       originWithinDays: FREED_ORIGIN_SEEN_WITHIN_DAYS,
