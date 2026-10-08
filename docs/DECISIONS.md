@@ -32,6 +32,9 @@ chaque mission validée.
 - 08/10 · M77 · « Trouver des concurrents → » et « ← Retour au dossier » vivent dans la barre et enregistrent avant de partir ; le lien de retour du haut de page est retiré.
 - 08/10 · M77 · La barre dit l'état de la fiche (« Modifications non enregistrées », « Enregistré », « 2 champs à corriger », « Il manque : type de bien ») ; un clic mène au champ.
 - 08/10 · M77 · Ville ou type manquant ne retient que le départ vers la recherche : « Enregistrer » et « Retour au dossier » enregistrent quand même.
+- 08/10 · M78 · Le chauffage lu sur une annonce est traduit dans la liste (une énergie, individuel ou collectif) ; non reconnu, le champ reste vide : deux énergies ne décident rien, la climatisation n'est jamais lue comme une pompe à chaleur.
+- 08/10 · M78 · « Gaz » ou « fioul » seul ne dit pas individuel ou collectif : vide pour un appartement, individuel pour une maison.
+- 08/10 · M78 · À l'import (annonce et fiche PDF), un champ à liste (chauffage, exposition, état, GES, extérieurs, stationnement) ne reçoit jamais une valeur hors liste ; un menu ne garde jamais une valeur qu'il ne sait pas afficher.
 
 ## Concurrents & recherche
 
@@ -98,6 +101,13 @@ chaque mission validée.
 - 07/10 · M76 · Figaro Immobilier : les photos viennent de l'état de l'application (`__NUXT_DATA__`), en pleine taille ; le portail est cadré comme les autres, plus de lecture pleine page des images ; à défaut, la galerie du CDN Figaro.
 - 07/10 · M76 · Un échec de récupération de photo dit sa cause, regroupée avec le nombre de photos concernées ; le code HTTP reste dans le message.
 - 08/10 · M77 · La recherche de concurrents exige la ville et le type du bien vendeur ; un type qui ne se reconnaît pas compte comme manquant ; l'écran nomme le champ et son lien ouvre la fiche dessus.
+- 08/10 · M78 · Stream Estate, après la ville à 5 km : cran 6 « même ville, pièces libres », puis 10 km (cran 7), puis prix ±5 % (cran 8), pièces toujours libres ; la surface reste jamais plus de 10 % plus petite, sans plafond (remplace M71, « jamais une pièce de moins » ; crans 1 à 5 inchangés).
+- 08/10 · M78 · Pièces libres dans les deux sens pour une maison ; pour un appartement, seulement vers le haut : jamais moins de pièces que le bien vendeur. Sans nombre de pièces sur le bien vendeur, rien ne se libère.
+- 08/10 · M78 · Aux crans 6 à 8, une carte sans nombre de pièces est acceptée et dit « Nombre de pièces non indiqué ».
+- 08/10 · M78 · Aux crans 6 à 8, l'annonce d'origine est gardée si elle a été revue depuis 21 jours au plus (7 jours aux crans 1 à 5) ; au-delà de 7 jours la carte dit « Annonce vue il y a N jours » ; le filtre des 30 jours ne change pas.
+- 08/10 · M78 · La carte dit l'écart de pièces : « 7 pièces au lieu de 9 » ; le % de correspondance compte déjà les pièces.
+- 08/10 · M78 · Stream Estate seulement : un même bien sous deux identifiants (même commune, même prix, mêmes pièces, surface à 2 m² près) n'apparaît et ne compte qu'une fois ; le bilan dit le nombre de doublons (exception à M61, « jamais sur une ressemblance »).
+- 08/10 · M78 · Le cran 6 se découpe en tranches disjointes pour ne pas refacturer ce que les crans 1 à 5 ont demandé ; la recherche s'arrête à la fin de la page où le dixième bien est atteint (11 possibles).
 
 ## Live
 
