@@ -31,7 +31,11 @@ import type {
 } from '@/features/subject-property/services/sheet-form';
 import type { SubjectProperty } from '@/features/subject-property/types';
 import { applyDpe } from '@/features/subject-property-dpe/services/apply-dpe';
-import type { DpeReading, DpeRequest } from '@/features/subject-property-dpe/types';
+import {
+  DPE_FIELDS,
+  type DpeReading,
+  type DpeRequest,
+} from '@/features/subject-property-dpe/types';
 import type { SubjectPropertyImportPrefill } from '@/features/subject-property-import/types';
 import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
@@ -192,9 +196,13 @@ export function SubjectPropertyForm({
 
   // Demandé après un import et quand le conseiller quitte l'adresse (ou le code postal, la
   // ville) — jamais à chaque frappe, et une seule fois pour une même adresse. Un échec ne dit
-  // rien : le champ reste vide.
-  const readDpe = () => {
+  // rien : le champ reste vide. Quitter la surface relance aussi (`onlyIfEmpty`), tant qu'un des
+  // champs que le DPE remplit n'a pas reçu de valeur d'ailleurs.
+  const readDpe = (onlyIfEmpty = false) => {
     if (dpeAction == null) return;
+    if (onlyIfEmpty && !DPE_FIELDS.some((field) => scalars[field] === '' && !touched.has(field))) {
+      return;
+    }
     const request: DpeRequest = {
       address: scalars.address,
       postal_code: scalars.postal_code,
@@ -217,7 +225,7 @@ export function SubjectPropertyForm({
         }
       });
   };
-  const readDpeOnMount = useRef(imported != null ? readDpe : null);
+  const readDpeOnMount = useRef(imported != null ? () => readDpe() : null);
   useEffect(() => {
     readDpeOnMount.current?.();
   }, []);
@@ -256,6 +264,7 @@ export function SubjectPropertyForm({
             min={0}
             suffix="m²"
             onChange={(v) => setField('surface_area', v)}
+            onBlur={() => readDpe(true)}
             error={errors.surface_area}
           />
           <NumberField
@@ -295,7 +304,7 @@ export function SubjectPropertyForm({
           label="Adresse"
           value={scalars.address}
           onChange={(v) => setField('address', v)}
-          onBlur={readDpe}
+          onBlur={() => readDpe()}
           error={errors.address}
         />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -303,7 +312,7 @@ export function SubjectPropertyForm({
             label="Code postal"
             value={scalars.postal_code}
             onChange={(v) => setField('postal_code', v)}
-            onBlur={readDpe}
+            onBlur={() => readDpe()}
             error={errors.postal_code}
           />
           <TextField
@@ -311,7 +320,7 @@ export function SubjectPropertyForm({
             label="Ville"
             value={scalars.city}
             onChange={(v) => setField('city', v)}
-            onBlur={readDpe}
+            onBlur={() => readDpe()}
             error={errors.city}
           />
         </div>

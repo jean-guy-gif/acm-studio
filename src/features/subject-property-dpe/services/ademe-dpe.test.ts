@@ -146,48 +146,88 @@ describe('translateDpeHeating', () => {
 const lines = (...results: unknown[]) => ({ total: results.length, results });
 const apartment = (surface: number | null = null) => ({ propertyType: 'Appartement', surface });
 
-describe('chooseDpe', () => {
-  it('a single DPE fills the three fields, with its date (12 avenue Jean Médecin, Nice)', () => {
-    expect(chooseDpe(lines(row()), apartment())).toEqual({
-      heating_type: { value: 'collective_gas', date: '2023-04-02' },
-      energy_rating: { value: 'E', date: '2023-04-02' },
-      ges_rating: { value: 'E', date: '2023-04-02' },
+const house = (surface: number | null = null) => ({ propertyType: 'Maison', surface });
+const houseRow = (overrides: Record<string, unknown> = {}) =>
+  row({
+    type_batiment: 'maison',
+    surface_habitable_logement: 136.2,
+    type_energie_principale_chauffage: 'Fioul domestique',
+    type_installation_chauffage: undefined,
+    date_etablissement_dpe: '2025-04-27',
+    ...overrides,
+  });
+const E = { value: 'E', date: '2023-04-02' };
+
+describe('chooseDpe — house', () => {
+  it('a single DPE fills the three fields, surface or not (14 chemin du Val Fleuri, Cagnes)', () => {
+    expect(chooseDpe(lines(houseRow()), house())).toEqual({
+      heating_type: { value: 'individual_fuel', date: '2025-04-27' },
+      energy_rating: { value: 'E', date: '2025-04-27' },
+      ges_rating: { value: 'E', date: '2025-04-27' },
     });
   });
 
   it('several DPE that agree fill the field, dated by the most recent — field by field', () => {
     const reading = chooseDpe(
       lines(
-        row({ date_etablissement_dpe: '2024-05-17', etiquette_dpe: 'D', etiquette_ges: 'B' }),
-        row({ date_etablissement_dpe: '2026-08-31', etiquette_dpe: 'C', etiquette_ges: 'B' }),
+        houseRow({ date_etablissement_dpe: '2024-05-17', etiquette_dpe: 'D' }),
+        houseRow({ date_etablissement_dpe: '2026-08-31', etiquette_dpe: 'C' }),
       ),
-      apartment(),
+      house(),
     );
-    expect(reading.heating_type).toEqual({ value: 'collective_gas', date: '2026-08-31' });
-    expect(reading.ges_rating).toEqual({ value: 'B', date: '2026-08-31' });
+    expect(reading.heating_type).toEqual({ value: 'individual_fuel', date: '2026-08-31' });
+    expect(reading.ges_rating).toEqual({ value: 'E', date: '2026-08-31' });
     expect(reading.energy_rating).toBeUndefined();
   });
 
   it('when they disagree, only the DPE within 5 % of the surface decide', () => {
+    const rows = lines(
+      houseRow(),
+      houseRow({ surface_habitable_logement: 95, etiquette_dpe: 'C' }),
+    );
+    expect(chooseDpe(rows, house(140)).energy_rating?.value).toBe('E');
+    expect(chooseDpe(rows, house()).energy_rating).toBeUndefined();
+    expect(chooseDpe(rows, house(110)).energy_rating).toBeUndefined();
+  });
+});
+
+describe('chooseDpe — apartment', () => {
+  it('classes come only from a DPE within 5 % of the surface, even with a single DPE', () => {
+    // 12 avenue Jean Médecin, Nice : one DPE, 42,6 m² — it may be a neighbour's.
+    expect(chooseDpe(lines(row()), apartment())).toEqual({
+      heating_type: { ...E, value: 'collective_gas' },
+    });
+    expect(chooseDpe(lines(row()), apartment(90))).toEqual({
+      heating_type: { ...E, value: 'collective_gas' },
+    });
+    expect(chooseDpe(lines(row()), apartment(43))).toEqual({
+      heating_type: { ...E, value: 'collective_gas' },
+      energy_rating: E,
+      ges_rating: E,
+    });
+  });
+
+  it('classes stay empty even when every DPE of the address gives the same letter', () => {
+    const rows = lines(row(), row({ surface_habitable_logement: 60 }));
+    expect(chooseDpe(rows, apartment(120)).ges_rating).toBeUndefined();
+    expect(chooseDpe(rows, apartment(120)).heating_type?.value).toBe('collective_gas');
+  });
+
+  it('heating: all the DPE of the address when they agree, else the surface rule', () => {
     const gas = row({
       surface_habitable_logement: 54.8,
       type_installation_chauffage: 'individuel',
     });
     const electric = row({
       surface_habitable_logement: 80,
-      etiquette_dpe: 'D',
       type_energie_principale_chauffage: 'Électricité',
       type_installation_chauffage: 'individuel',
     });
     expect(chooseDpe(lines(gas, electric), apartment(55)).heating_type?.value).toBe(
       'individual_gas',
     );
-    expect(chooseDpe(lines(gas, electric), apartment(55)).energy_rating?.value).toBe('E');
-    // No surface on the sheet, or none close enough: empty, silently.
-    expect(chooseDpe(lines(gas, electric), apartment())).toEqual({
-      ges_rating: { value: 'E', date: '2023-04-02' },
-    });
-    expect(chooseDpe(lines(gas, electric), apartment(65)).heating_type).toBeUndefined();
+    expect(chooseDpe(lines(gas, electric), apartment())).toEqual({});
+    expect(chooseDpe(lines(gas, electric), apartment(65))).toEqual({});
   });
 
   it('the same flat diagnosed twice counts; two different flats of the same size do not', () => {
@@ -201,17 +241,20 @@ describe('chooseDpe', () => {
     const neighbour = row({ surface_habitable_logement: 26.8, etiquette_dpe: 'C' });
     expect(chooseDpe(lines(first, neighbour, other), apartment(27)).energy_rating).toBeUndefined();
   });
+});
 
+describe('chooseDpe — what is ignored', () => {
   it('ignores a building DPE and a DPE of another type than the property', () => {
     const building = row({
       type_batiment: 'immeuble',
       surface_habitable_logement: undefined,
-      etiquette_dpe: 'G',
+      type_installation_chauffage: 'individuel',
     });
-    const house = row({ type_batiment: 'maison', etiquette_dpe: 'A' });
-    expect(chooseDpe(lines(row(), building, house), apartment()).energy_rating?.value).toBe('E');
+    expect(chooseDpe(lines(row(), building, houseRow()), apartment()).heating_type?.value).toBe(
+      'collective_gas',
+    );
     expect(chooseDpe(lines(building), apartment())).toEqual({});
-    expect(chooseDpe(lines(row()), { propertyType: 'Maison', surface: null })).toEqual({});
+    expect(chooseDpe(lines(row()), house())).toEqual({});
   });
 
   it('decides nothing without a house or apartment type, or on an unreadable answer', () => {
@@ -223,11 +266,11 @@ describe('chooseDpe', () => {
   });
 
   it('writes a class as a single letter A to G, nothing else', () => {
-    expect(
-      chooseDpe(lines(row({ etiquette_dpe: 'e', etiquette_ges: 'N.C.' })), apartment()),
-    ).toEqual({
-      heating_type: { value: 'collective_gas', date: '2023-04-02' },
-      energy_rating: { value: 'E', date: '2023-04-02' },
-    });
+    const reading = chooseDpe(
+      lines(row({ etiquette_dpe: 'e', etiquette_ges: 'N.C.' })),
+      apartment(43),
+    );
+    expect(reading.energy_rating).toEqual(E);
+    expect(reading.ges_rating).toBeUndefined();
   });
 });

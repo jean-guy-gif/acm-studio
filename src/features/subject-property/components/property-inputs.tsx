@@ -58,6 +58,7 @@ export function NumberField({
   label,
   value,
   onChange,
+  onBlur,
   error,
   step = 'any',
   min,
@@ -66,6 +67,7 @@ export function NumberField({
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   error?: string;
   step?: string | number;
   min?: number;
@@ -81,6 +83,7 @@ export function NumberField({
           step={step}
           min={min}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
           className={`${inputBase} w-full min-w-0 flex-1`}
         />
         {suffix ? (

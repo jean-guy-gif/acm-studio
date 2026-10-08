@@ -123,11 +123,16 @@ function agreed(rows: AdemeDpeRow[], read: (row: AdemeDpeRow) => string | null) 
 
 // CE QUE LES DPE DE L'ADRESSE PERMETTENT D'ÉCRIRE, champ par champ :
 // - les DPE d'immeuble et ceux d'un autre type que le bien (maison / appartement) sont ignorés ;
-// - un seul DPE, ou plusieurs qui disent la même chose : le champ est rempli ;
-// - sinon, on ne garde que les DPE dont la surface est à 5 % de celle du bien, s'ils sont
-//   d'accord entre eux (un même appartement diagnostiqué deux fois compte) ;
-// - sinon rien, en silence. Une réponse incomplète (plus de DPE que de lignes lues) ne décide
-//   rien : on ne peut pas dire « tous d'accord » sans les avoir tous lus.
+// - MAISON : un seul DPE, ou plusieurs qui disent la même chose, remplit le champ ; sinon, les
+//   seuls DPE dont la surface est à 5 % de celle du bien, s'ils sont d'accord entre eux ;
+// - APPARTEMENT, chauffage : même règle — tous les DPE de l'adresse qui disent la même chose
+//   décrivent l'installation de l'immeuble ;
+// - APPARTEMENT, classes DPE et GES : SEULEMENT d'un DPE à 5 % de la surface du bien. Sans
+//   surface sur la fiche, elles restent vides, même avec un seul DPE à l'adresse : il peut être
+//   celui d'un voisin, et ces lettres s'affichent devant le vendeur ;
+// - un même logement diagnostiqué deux fois compte ; sinon rien, en silence. Une réponse
+//   incomplète (plus de DPE que de lignes lues) ne décide rien : on ne peut pas dire « tous
+//   d'accord » sans les avoir tous lus.
 export function chooseDpe(
   json: unknown,
   subject: { propertyType: string | null; surface: number | null },
@@ -154,7 +159,9 @@ export function chooseDpe(
 
   const reading: DpeReading = {};
   for (const field of DPE_FIELDS) {
-    const found = agreed(rows, READERS[field]) ?? agreed(sameSurface, READERS[field]);
+    const wholeAddress = wanted === 'maison' || field === 'heating_type';
+    const found =
+      (wholeAddress ? agreed(rows, READERS[field]) : null) ?? agreed(sameSurface, READERS[field]);
     if (found != null) reading[field] = found;
   }
   return reading;
