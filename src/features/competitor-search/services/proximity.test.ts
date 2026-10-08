@@ -86,7 +86,9 @@ function card(features: Partial<CandidateFeatures>, over: Partial<CompetitorCand
     key: `p${n}`,
     url: `https://www.seloger.com/annonces/p${n}.htm`,
     title: null,
-    price: 440000, // centre de la fourchette 400–480 k€
+    // Centre de la fourchette 400–480 k€, à 1 € près : même commune, même prix, mêmes pièces et
+    // même surface seraient UN SEUL bien pour Stream Estate (mission 78).
+    price: 440000 + n,
     surfaceArea: 80,
     roomsCount: 4,
     propertyType: 'apartment',

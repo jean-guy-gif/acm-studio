@@ -1,5 +1,6 @@
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { detectListingPropertyType } from '@/features/subject-property-import/services/detect-listing-property-type';
+import { keepListValues } from '@/features/subject-property/services/list-values';
 import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
 import type { SubjectPropertyImport } from '@/features/subject-property-import/types';
 
@@ -15,36 +16,45 @@ import type { SubjectPropertyImport } from '@/features/subject-property-import/t
 // without ambiguity is kept, as a list label (Mission 77). Photos are remote
 // portal URLs, incompatible with the private storage bucket (Mission 37), so they
 // are reported as a count only.
+//
+// MISSION 78 — a list field (heating, exposure, condition, GES, outdoor, parking) only ever
+// receives a value OF its list: the heating read on the listing (« gaz individuel ») is
+// translated, and anything that is not recognised stays empty (`keepListValues`).
 export function mapListingToProperty(data: ImportedComparableData): SubjectPropertyImport {
+  const type = detectListingPropertyType(data.title, data.listingUrl);
   return {
-    prefill: {
-      // A listing carries no factual costs or strengths — those fields exist for the
-      // brochure import (Mission 44) and stay empty here.
-      property_type: propertyTypeLabel(detectListingPropertyType(data.title, data.listingUrl)),
-      surface_area: data.surfaceArea,
-      land_area: data.landArea,
-      rooms_count: data.roomsCount,
-      bedrooms_count: data.bedroomsCount,
-      bathrooms_count: data.bathroomsCount,
-      floor: data.floor,
-      building_floors: data.floorsCount,
-      address: data.address,
-      postal_code: data.postalCode,
-      city: data.city,
-      district: data.district,
-      description: data.listingDescription,
-      energy_rating: data.energyRating,
-      ges_rating: data.gesRating,
-      heating_type: data.heatingType,
-      exposure: data.exposure,
-      construction_year: data.constructionYear,
-      general_condition: data.generalCondition,
-      outdoor_spaces: data.outdoorSpaces,
-      parking_types: data.parkingTypes,
-      monthly_charges: null,
-      property_tax: null,
-      strengths: [],
-    },
+    prefill: keepListValues(
+      {
+        // A listing carries no factual costs or strengths — those fields exist for the
+        // brochure import (Mission 44) and stay empty here.
+        property_type: propertyTypeLabel(type),
+        surface_area: data.surfaceArea,
+        land_area: data.landArea,
+        rooms_count: data.roomsCount,
+        bedrooms_count: data.bedroomsCount,
+        bathrooms_count: data.bathroomsCount,
+        floor: data.floor,
+        building_floors: data.floorsCount,
+        address: data.address,
+        postal_code: data.postalCode,
+        city: data.city,
+        district: data.district,
+        description: data.listingDescription,
+        energy_rating: data.energyRating,
+        ges_rating: data.gesRating,
+        heating_type: data.heatingType,
+        exposure: data.exposure,
+        construction_year: data.constructionYear,
+        general_condition: data.generalCondition,
+        outdoor_spaces: data.outdoorSpaces,
+        parking_types: data.parkingTypes,
+        monthly_charges: null,
+        property_tax: null,
+        strengths: [],
+      },
+      // For a house, « gaz » or « fioul » alone means individual heating.
+      { energySource: data.energySource, house: type === 'house' },
+    ),
     info: {
       readPrice: data.price,
       readPortalPricePerSquareMeter: data.portalPricePerSquareMeter,

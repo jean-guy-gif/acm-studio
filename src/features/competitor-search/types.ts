@@ -138,15 +138,23 @@ export type StreamEstateFacts = {
   // Mission 71 — la commune du bien selon l'API (code INSEE + nom) : c'est le code, pas le nom,
   // qui dit « même commune ». null si l'API ne le donne pas.
   inseeCode?: string | null;
-  // Mission 71 — le cran de la recherche qui l'a trouvé (1 = identique … 7 = prix hors fourchette).
+  // Mission 71 — le cran de la recherche qui l'a trouvé (1 = identique … 8 = prix hors fourchette).
   // Absent pour une réponse lue hors recherche par crans.
   tier?: StreamEstateTier;
+  // Mission 78 — l'annonce d'origine a été revue il y a plus de 7 jours (admise jusqu'à 21 jours
+  // aux crans à pièces libres) : nombre de jours entiers, que la carte dit. Absent sinon.
+  staleOriginDays?: number;
 };
 
 // Mission 71 — les crans de la recherche Stream Estate, dans l'ordre (décision de Laurent, 06/10) :
 // 1 identique (< 1 km), 2 plus grand (< 1 km), 3 une pièce de plus (< 1 km), 4 même ville < 2 km,
-// 5 même ville < 5 km, 6 rayon 10 km (communes voisines comprises), 7 prix ±5 % hors fourchette.
-export type StreamEstateTier = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+// 5 même ville < 5 km. Mission 78 — puis les pièces se libèrent et le restent : 6 même ville, pièces
+// libres, 7 rayon 10 km (communes voisines comprises), 8 prix ±5 % hors fourchette.
+export type StreamEstateTier = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+// À partir de ce cran, le nombre de pièces ne filtre plus et la surface n'a plus de plafond.
+export const ROOMS_FREED_TIER = 6;
+// À partir de ce cran, les communes voisines sont comprises.
+export const NEIGHBOUR_TIER = 7;
 
 // Résultat de la lecture d'une page de résultats : les cartes retenues, plus le
 // compte de ce qui a été écarté, pour le dire au conseiller sans rien cacher.

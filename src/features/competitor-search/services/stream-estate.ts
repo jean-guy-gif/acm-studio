@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import {
   isGeneratedNewBuildTitle,
@@ -38,6 +39,11 @@ const UPDATED_WITHIN_DAYS = 30; // mesure du 05/10 : à 30 jours, les totaux rej
 // porte sur le bien, `fromExpiredAt` sur la date d'expiration) : le tri se fait donc sur la réponse,
 // et ces biens restent facturés — comptés à l'écran.
 export const ORIGIN_SEEN_WITHIN_DAYS = 7;
+// MISSION 78 (décision de Laurent, 08/10) — aux crans où les pièces sont libérées, une annonce
+// d'origine revue depuis 21 jours au plus est gardée, et la carte dit « vue il y a N jours ».
+// Mesure du 08/10 (maison 9 pièces à Cagnes-sur-Mer) : 12 des 20 biens reçus à 10 km étaient
+// écartés par la règle des 7 jours, aucun n'étant marqué expiré (revus il y a 8 à 22 jours).
+export const FREED_ORIGIN_SEEN_WITHIN_DAYS = 21;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // LISTE BLANCHE (décision de Laurent, 05/10) : on ne garde que les biens IMPORTABLES, c'est-à-dire
@@ -211,12 +217,26 @@ function isImportableAdvert(advert: StreamEstateAdvert): boolean {
   return cleanAdvertUrl(advert.url) != null && isImportableUrl(advert.url);
 }
 
-// Pas marquée expirée, et revue par le robot dans les 7 derniers jours. Sans date de passage, rien
-// ne prouve qu'elle soit encore en ligne : pas utilisable.
-export function isUsableOrigin(advert: StreamEstateAdvert, now: Date): boolean {
+// Pas marquée expirée, et revue par le robot dans les 7 derniers jours (21 aux crans à pièces
+// libres, mission 78). Sans date de passage, rien ne prouve qu'elle soit encore en ligne : pas
+// utilisable.
+export function isUsableOrigin(
+  advert: StreamEstateAdvert,
+  now: Date,
+  withinDays: number = ORIGIN_SEEN_WITHIN_DAYS,
+): boolean {
   if (advert.expired === true || !advert.lastCrawledAt) return false;
   const seenAt = Date.parse(advert.lastCrawledAt);
-  return Number.isFinite(seenAt) && now.getTime() - seenAt <= ORIGIN_SEEN_WITHIN_DAYS * DAY_MS;
+  return Number.isFinite(seenAt) && now.getTime() - seenAt <= withinDays * DAY_MS;
+}
+
+// Mission 78 — depuis combien de jours entiers l'annonce d'origine a été revue, seulement au-delà
+// des 7 jours ordinaires : c'est ce que la carte dit (« Annonce vue il y a 12 jours »).
+function staleOriginDays(lastCrawledAt: string | null | undefined, now: Date): number | null {
+  const seenAt = lastCrawledAt ? Date.parse(lastCrawledAt) : NaN;
+  if (!Number.isFinite(seenAt)) return null;
+  const age = now.getTime() - seenAt;
+  return age > ORIGIN_SEEN_WITHIN_DAYS * DAY_MS ? Math.floor(age / DAY_MS) : null;
 }
 
 // L'annonce d'ORIGINE : celle que l'import relira. SEULEMENT parmi les annonces sur un site de la
@@ -225,9 +245,10 @@ export function isUsableOrigin(advert: StreamEstateAdvert, now: Date): boolean {
 export function pickOriginAdvert(
   adverts: StreamEstateAdvert[],
   now: Date,
+  withinDays: number = ORIGIN_SEEN_WITHIN_DAYS,
 ): StreamEstateAdvert | null {
   const usable = adverts.filter(
-    (advert) => isImportableAdvert(advert) && isUsableOrigin(advert, now),
+    (advert) => isImportableAdvert(advert) && isUsableOrigin(advert, now, withinDays),
   );
   if (usable.length === 0) return null;
   return [...usable].sort((a, b) => b.lastCrawledAt!.localeCompare(a.lastCrawledAt!))[0];
@@ -292,11 +313,13 @@ export function toCandidate(
   property: StreamEstateProperty,
   now: Date,
   repeated: ReadonlySet<string> = new Set(),
+  originWithinDays: number = ORIGIN_SEEN_WITHIN_DAYS,
 ): CompetitorCandidate | null {
-  const origin = pickOriginAdvert(property.adverts, now);
+  const origin = pickOriginAdvert(property.adverts, now, originWithinDays);
   const url = origin ? cleanAdvertUrl(origin.url) : null;
   if (origin == null || url == null) return null;
   const host = new URL(url).hostname;
+  const stale = staleOriginDays(origin.lastCrawledAt, now);
   return {
     key: property.uuid,
     url,
@@ -318,6 +341,7 @@ export function toCandidate(
       lastSeenAt: origin.lastCrawledAt ?? property.lastCrawledAt ?? null,
       priceDrops: priceDrops(property.adverts),
       inseeCode: property.city?.insee?.trim() || null,
+      ...(stale != null ? { staleOriginDays: stale } : {}),
     },
     features: readStreamEstateFeatures(property, repeated),
   };
@@ -332,6 +356,8 @@ export function parseStreamEstateResponse(
   json: unknown,
   now: Date,
   seenLocations: ReadonlyMap<string, GeoPoint | null> = new Map(),
+  // Mission 78 — fraîcheur exigée de l'annonce d'origine : 7 jours, 21 aux crans à pièces libres.
+  originWithinDays: number = ORIGIN_SEEN_WITHIN_DAYS,
 ): ParsedStreamEstateResponse | null {
   const response = responseSchema.safeParse(json);
   if (!response.success) return null;
@@ -359,12 +385,14 @@ export function parseStreamEstateResponse(
         outsideWhitelist += 1;
         continue;
       }
-      if (pickOriginAdvert(property.data.adverts, now) == null) {
+      if (pickOriginAdvert(property.data.adverts, now, originWithinDays) == null) {
         expiredOrigin += 1;
         continue;
       }
     }
-    const candidate = property.success ? toCandidate(property.data, now, repeated) : null;
+    const candidate = property.success
+      ? toCandidate(property.data, now, repeated, originWithinDays)
+      : null;
     if (candidate == null) {
       unreadable += 1;
       continue;
@@ -383,4 +411,27 @@ export function parseStreamEstateResponse(
     expiredOrigin,
     locations,
   };
+}
+
+// MISSION 78 (décision de Laurent, 08/10) — LE MÊME BIEN SOUS DEUX IDENTIFIANTS. Stream Estate
+// renvoie parfois une même maison deux fois (mesure du 08/10 à Cagnes-sur-Mer : 4 paires sur 28
+// biens reçus, une annonce par site rangée sous deux biens). Même commune, même prix, mêmes
+// pièces, surface à 2 m² près : c'est le même bien, il n'apparaît et ne compte qu'une fois.
+// Exception à M61 (« jamais sur une ressemblance »), pour Stream Estate seulement : ici les
+// deux fiches viennent de la même source, qui n'a pas su les rapprocher.
+const SAME_PROPERTY_SURFACE_SQM = 2;
+
+export function isSameStreamEstateProperty(
+  a: CompetitorCandidate,
+  b: CompetitorCandidate,
+): boolean {
+  if (a.price == null || a.price !== b.price) return false;
+  if (a.roomsCount !== b.roomsCount) return false;
+  if (a.surfaceArea == null || b.surfaceArea == null) return false;
+  if (Math.abs(a.surfaceArea - b.surfaceArea) > SAME_PROPERTY_SURFACE_SQM + 1e-9) return false;
+  const inseeA = a.streamEstate?.inseeCode ?? null;
+  const inseeB = b.streamEstate?.inseeCode ?? null;
+  if (inseeA != null && inseeB != null) return inseeA === inseeB;
+  const cityA = communeKey(a.city);
+  return cityA != null && cityA === communeKey(b.city);
 }

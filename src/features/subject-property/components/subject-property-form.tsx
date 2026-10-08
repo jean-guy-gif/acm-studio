@@ -15,6 +15,12 @@ import {
   TextField,
 } from '@/features/subject-property/components/property-inputs';
 import {
+  EXPOSURES,
+  GENERAL_CONDITIONS,
+  HEATING_TYPES,
+} from '@/features/subject-property/constants/property-options';
+import { gesListValue, listValue } from '@/features/subject-property/services/list-values';
+import {
   propertyTypeLabel,
   propertyTypeOptions,
 } from '@/features/subject-property/services/property-type-choice';
@@ -85,6 +91,9 @@ function initialScalars(
   // MISSION 77 — le type s'affiche dans le bon choix de la liste : « appartement T3 » déjà
   // enregistré se lit « Appartement ». Un texte qui ne se reconnaît pas est gardé tel quel.
   const propertyType = pick(imported?.property_type, property?.property_type);
+  // MISSION 78 — un menu ne garde jamais une valeur qu'il ne sait pas afficher : hors liste, le
+  // champ est vide (il affichait « Non renseigné » en gardant la valeur cachée).
+  const inList = (value: string, list: readonly string[]): string => listValue(value, list) ?? '';
 
   return {
     property_type: propertyTypeLabel(propertyType) ?? propertyType,
@@ -101,11 +110,14 @@ function initialScalars(
     floor: pick(imported?.floor, property?.floor),
     building_floors: pick(imported?.building_floors, property?.building_floors),
     energy_rating: pick(imported?.energy_rating, property?.energy_rating),
-    ges_rating: pick(imported?.ges_rating, property?.ges_rating),
-    heating_type: pick(imported?.heating_type, property?.heating_type),
-    exposure: pick(imported?.exposure, property?.exposure),
+    ges_rating: gesListValue(pick(imported?.ges_rating, property?.ges_rating)) ?? '',
+    heating_type: inList(pick(imported?.heating_type, property?.heating_type), HEATING_TYPES),
+    exposure: inList(pick(imported?.exposure, property?.exposure), EXPOSURES),
     construction_year: pick(imported?.construction_year, property?.construction_year),
-    general_condition: pick(imported?.general_condition, property?.general_condition),
+    general_condition: inList(
+      pick(imported?.general_condition, property?.general_condition),
+      GENERAL_CONDITIONS,
+    ),
     has_elevator: triState(property?.has_elevator),
     has_pool: triState(property?.has_pool),
     monthly_charges: pick(imported?.monthly_charges, property?.monthly_charges),

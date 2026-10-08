@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
+import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
+import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 
@@ -112,5 +117,60 @@ describe('mapListingToProperty', () => {
     const { prefill } = mapListingToProperty(listing({ surfaceArea: null, city: null }));
     expect(prefill.surface_area).toBeNull();
     expect(prefill.city).toBeNull();
+  });
+
+  // Mission 78 — the heating read on a listing is translated into the list, or left empty:
+  // a list field never receives a value outside its list.
+  describe('list fields (Mission 78)', () => {
+    const fixtures = join(process.cwd(), 'src/features/comparable-import/extractors/__fixtures__');
+    const imported = (file: string, url: string) => {
+      const html = readFileSync(join(fixtures, file), 'utf8');
+      return normalizeListingData(extractListingData(html, url), url, "Bien'ici").data;
+    };
+
+    it('Bien’ici, Cagnes : « gaz individuel » becomes the list value', () => {
+      const data = imported(
+        'bienici-cagnes-maison.html',
+        'https://www.bienici.com/annonce/vente/cagnes-sur-mer/maison/9pieces/laforet-immo-facile-52960884',
+      );
+      expect(data.heatingType).toBe('gaz individuel');
+      expect(mapListingToProperty(data).prefill.heating_type).toBe('individual_gas');
+    });
+
+    it('a heating that is not recognised leaves the field empty', () => {
+      const { prefill } = mapListingToProperty(listing({ heatingType: 'central' }));
+      expect(prefill.heating_type).toBeNull();
+    });
+
+    it('« gaz » alone: individual for a house, empty for an apartment', () => {
+      const house = listing({ title: 'Maison 5 pièces', heatingType: 'gaz' });
+      expect(mapListingToProperty(house).prefill.heating_type).toBe('individual_gas');
+      const flat = listing({ heatingType: 'gaz' });
+      expect(mapListingToProperty(flat).prefill.heating_type).toBeNull();
+    });
+
+    it('the heating joins its energy source', () => {
+      const { prefill } = mapListingToProperty(
+        listing({ heatingType: 'individuel', energySource: 'fioul' }),
+      );
+      expect(prefill.heating_type).toBe('individual_fuel');
+    });
+
+    it('no list field receives a value outside its list', () => {
+      const { prefill } = mapListingToProperty(
+        listing({
+          gesRating: 'NC',
+          exposure: 'plein sud',
+          generalCondition: 'refait à neuf',
+          outdoorSpaces: ['balcony', 'cour'],
+          parkingTypes: ['2 places'],
+        }),
+      );
+      expect(prefill.ges_rating).toBeNull();
+      expect(prefill.exposure).toBeNull();
+      expect(prefill.general_condition).toBeNull();
+      expect(prefill.outdoor_spaces).toEqual(['balcony']);
+      expect(prefill.parking_types).toEqual([]);
+    });
   });
 });

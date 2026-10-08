@@ -1,3 +1,4 @@
+import { keepListValues } from '@/features/subject-property/services/list-values';
 import type { BrochureFields } from '@/features/subject-property-import/services/parse-agency-brochure';
 import type {
   BrochureImport,
@@ -21,7 +22,8 @@ function isFilled(value: unknown): boolean {
 }
 
 export function mapBrochureToProperty(fields: BrochureFields): BrochureImport {
-  const property: SubjectPropertyImportPrefill = {
+  // Mission 78 — a list field only ever receives a value of its list (`keepListValues`).
+  const property: SubjectPropertyImportPrefill = keepListValues({
     property_type: fields.propertyType,
     surface_area: fields.surfaceArea,
     land_area: null,
@@ -46,7 +48,7 @@ export function mapBrochureToProperty(fields: BrochureFields): BrochureImport {
     monthly_charges: fields.monthlyCharges,
     property_tax: fields.propertyTax,
     strengths: fields.strengths,
-  };
+  });
 
   const diagnostics = {
     energy_consumption: fields.energyConsumption,

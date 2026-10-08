@@ -56,10 +56,10 @@ const pointSchema = z.object({ lat: z.number().finite(), lon: z.number().finite(
 const resumeSchema = z.object({
   cursor: z.object({
     plan: z.number().int().min(0).max(20),
-    price: z.number().int().min(0).max(5),
+    price: z.number().int().min(0).max(10),
     page: z.number().int().min(1).max(50),
     size: z.number().int().min(1).max(20).nullable(),
-    tier: z.number().int().min(1).max(7),
+    tier: z.number().int().min(1).max(8),
   }),
   memory: z.object({
     keys: z.array(z.string().min(1).max(100)).max(500),
