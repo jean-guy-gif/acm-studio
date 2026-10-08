@@ -18,6 +18,7 @@ import { importListingFromUrl } from '@/features/comparable-import/services/impo
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 import type { RecoverPropertyPhotoResult } from '@/features/subject-property-import/actions/recover-property-photos';
+import { summarizeRecoveryFailures } from '@/features/subject-property-import/services/summarize-recovery-failures';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 import type {
   SubjectPropertyImportInfo,
@@ -78,9 +79,12 @@ export function SubjectPropertyImportPanel({
   // Photo recovery is browser-driven, one image at a time (see the server action
   // comment). Never automatic — it only runs on the explicit click below.
   const [recovering, setRecovering] = useState(false);
-  const [recovery, setRecovery] = useState<{ done: number; ok: number; failed: number } | null>(
-    null,
-  );
+  const [recovery, setRecovery] = useState<{
+    done: number;
+    ok: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
 
   function apply(res: ComparableImportResult) {
     if (res.ok) {
@@ -105,17 +109,17 @@ export function SubjectPropertyImportPanel({
   // list must not race) and reports how many photos were recovered / failed.
   async function recoverPhotos(urls: string[]) {
     setRecovering(true);
-    setRecovery({ done: 0, ok: 0, failed: 0 });
+    setRecovery({ done: 0, ok: 0, failed: 0, errors: [] });
     let ok = 0;
-    let failed = 0;
+    const errors: string[] = [];
     for (const photoUrl of urls) {
       const result = await recoverAction(photoUrl);
       if (result.ok) {
         ok += 1;
       } else {
-        failed += 1;
+        errors.push(result.error);
       }
-      setRecovery({ done: ok + failed, ok, failed });
+      setRecovery({ done: ok + errors.length, ok, failed: errors.length, errors: [...errors] });
     }
     setRecovering(false);
     // Refresh so the recovered photos appear in the "Photos du bien vendeur" field.
@@ -219,11 +223,22 @@ export function SubjectPropertyImportPanel({
                   : 'Récupérer ces photos'}
               </button>
               {recovery && !recovering ? (
-                <p className="text-zinc-600 stage:text-white/65">
-                  {recovery.ok} photo(s) récupérée(s)
-                  {recovery.failed > 0 ? ` · ${recovery.failed} échec(s)` : ''} — visibles dans «
-                  Photos du bien vendeur ».
-                </p>
+                <>
+                  <p className="text-zinc-600 stage:text-white/65">
+                    {recovery.ok} photo(s) récupérée(s)
+                    {recovery.failed > 0 ? ` · ${recovery.failed} échec(s)` : ''} — visibles dans «
+                    Photos du bien vendeur ».
+                  </p>
+                  {recovery.failed > 0 ? (
+                    <ul className="list-disc pl-5 text-zinc-600 stage:text-white/65">
+                      {summarizeRecoveryFailures(recovery.errors).map(({ cause, count }) => (
+                        <li key={cause}>
+                          {count} photo(s) : {cause}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
               ) : (
                 <p className="text-xs text-zinc-400 stage:text-white/40">
                   Les photos récupérées s’ajoutent à celles déjà présentes, sans les remplacer.

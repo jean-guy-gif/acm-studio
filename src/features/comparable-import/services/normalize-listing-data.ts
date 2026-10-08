@@ -191,7 +191,24 @@ function galleryFromSameHosts(
 // pleine page (html/jsonLd) rapportent les photos ET la description d'un autre bien.
 // Pour eux, on ne collecte les photos QUE de sources cadrées à l'annonce. Ailleurs
 // (portail inconnu, sans carrousel connu), la page EST l'annonce : pipeline complet.
-const CADRE_PORTALS = new Set(['Green Acres', "Bien'ici", 'SeLoger', 'Maisons et Appartements']);
+const CADRE_PORTALS = new Set([
+  'Green Acres',
+  "Bien'ici",
+  'SeLoger',
+  'Maisons et Appartements',
+  // Mission 76 — mesuré le 07/10/2026 : le lecteur pleine page y rapportait 20
+  // pictogrammes (« ic_carac_cave.svg »…) et aucune photo.
+  'Figaro Immobilier',
+]);
+
+// Mission 76 — Figaro Immobilier héberge désormais les photos de ses annonces chez
+// Google (lh3.googleusercontent.com). Cet hébergeur reste écarté PARTOUT ailleurs
+// (logos d'agence, avis, cartes — voir is-generic) ; il n'est admis que dans la liste
+// que l'extracteur Figaro lit dans les données de l'annonce elle-même : c'est la
+// provenance qui l'autorise, pas l'hébergeur.
+function isFigaroStructuredPhoto(url: string, source: string): boolean {
+  return source === 'Figaro Immobilier' && /^https:\/\/lh3\.googleusercontent\.com\//i.test(url);
+}
 
 // A page only counts as a real listing when at least one HARD business field was
 // extracted. When a portal serves a block / captcha / search page instead of the
@@ -268,7 +285,9 @@ export function normalizeListingData(
   ].filter((url) => !isGenericImageUrl(url));
   let scopedPhotos: string[];
   if (CADRE_PORTALS.has(source)) {
-    const authoritative = (parts.portal.photoUrls ?? []).filter((url) => !isGenericImageUrl(url));
+    const authoritative = (parts.portal.photoUrls ?? []).filter(
+      (url) => isFigaroStructuredPhoto(url, source) || !isGenericImageUrl(url),
+    );
     if (authoritative.length > 0) {
       // L'extracteur du portail fournit un tableau AUTORITAIRE (Green Acres advert-id,
       // Maisons et Appartements id de groupe, SeLoger medias.images) : on ne garde QUE

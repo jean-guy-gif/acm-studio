@@ -53,3 +53,50 @@ describe('extractEmbeddedImageUrls — nettoyage', () => {
     expect(extractEmbeddedImageUrls(html)).toEqual(['https://mms.seloger.com/1/a.jpg?ci_seal=abc']);
   });
 });
+
+// Mission 76 — mesuré le 07/10/2026 (Bien'ici, laforet-immo-facile-52960884) : le
+// nom de fichier de l'agence continue APRÈS l'extension. Coupée à « .jpg », l'adresse
+// n'existait pas (404) : 18 photos sur 19 échouaient.
+describe('extractEmbeddedImageUrls — l’adresse ne se coupe plus à l’extension', () => {
+  it('garde le chemin entier d’une adresse en « .jpg_DATEMAJ_… »', () => {
+    const html = `<img src="https://cdn.portail.fr/photo/52960884b.jpg_DATEMAJ_02_10_2026-15_21_57">
+      <script>var g={"u":"https:\\/\\/cdn.portail.fr\\/photo\\/52960884c.jpg_DATEMAJ_02_10_2026-15_21_57"}</script>`;
+    expect(extractEmbeddedImageUrls(html)).toEqual([
+      'https://cdn.portail.fr/photo/52960884b.jpg_DATEMAJ_02_10_2026-15_21_57',
+      'https://cdn.portail.fr/photo/52960884c.jpg_DATEMAJ_02_10_2026-15_21_57',
+    ]);
+  });
+
+  it('garde aussi ce qui suit « .png » et « .webp »', () => {
+    const html = `"https://cdn.portail.fr/a.png_v2" "https://cdn.portail.fr/b.webp/1600"`;
+    expect(extractEmbeddedImageUrls(html)).toEqual([
+      'https://cdn.portail.fr/a.png_v2',
+      'https://cdn.portail.fr/b.webp/1600',
+    ]);
+  });
+
+  it('s’arrête aux guillemets écrits en entités et à l’adresse suivante d’une liste', () => {
+    const html = `<div style="background:url(&quot;https://cdn.portail.fr/a.jpg&quot;)"></div>
+      <i data-list="https://cdn.portail.fr/b.jpg,https://cdn.portail.fr/c.jpg"></i>`;
+    expect(extractEmbeddedImageUrls(html)).toEqual([
+      'https://cdn.portail.fr/a.jpg',
+      'https://cdn.portail.fr/b.jpg',
+      'https://cdn.portail.fr/c.jpg',
+    ]);
+  });
+
+  it('ne retire que les paramètres de vignette connus, par hébergeur', () => {
+    const html = `"https://file.bienici.com/photo/x_a.jpg_DATEMAJ_1?width=600&amp;height=370&amp;fit=cover"
+      "https://mms.seloger.com/1/a.jpg?ci_seal=abc&amp;w=800"`;
+    expect(extractEmbeddedImageUrls(html)).toEqual([
+      'https://file.bienici.com/photo/x_a.jpg_DATEMAJ_1',
+      'https://mms.seloger.com/1/a.jpg?ci_seal=abc&w=800',
+    ]);
+  });
+
+  it('une extension qui n’est que le début d’un mot ne fait pas une image', () => {
+    expect(
+      extractEmbeddedImageUrls('"https://cdn.portail.fr/page.jpgx" "https://x.fr/a.pngs"'),
+    ).toEqual([]);
+  });
+});
