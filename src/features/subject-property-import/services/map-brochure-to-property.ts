@@ -29,6 +29,7 @@ export function mapBrochureToProperty(fields: BrochureFields): BrochureImport {
     bedrooms_count: fields.bedroomsCount,
     bathrooms_count: fields.bathroomsCount,
     floor: fields.floor,
+    building_floors: null,
     address: null,
     postal_code: fields.postalCode,
     city: fields.city,

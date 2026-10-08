@@ -1,16 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useImperativeHandle, useState, type Ref } from 'react';
 
-import {
-  alertError,
-  alertOk,
-  btnPrimary,
-  formSection,
-  formSectionTitle,
-} from '@/components/ui/styles';
-import type { SaveDiagnosticsResult } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import type { BrochureDiagnosticsPrefill } from '@/features/subject-property-import/types';
 import {
   DIAGNOSTIC_STATUS_LABELS,
@@ -23,6 +15,7 @@ import {
   SelectField,
   TextareaField,
 } from '@/features/subject-property/components/property-inputs';
+import type { SheetSectionHandle } from '@/features/subject-property/services/sheet-form';
 
 const STATUS_OPTIONS = DIAGNOSTIC_STATUSES.map((value) => ({
   value,
@@ -39,16 +32,21 @@ const pick = (
   savedValue: string | number | null | undefined,
 ): string => (importedValue != null ? String(importedValue) : str(savedValue));
 
+// MISSION 77 — one section of the sheet: it no longer saves. The save bar reads its values
+// (`ref`) and hands back the field errors.
 export function DiagnosticsForm({
   diagnostics,
-  saveAction,
   imported,
+  errors = {},
+  onDirty,
+  ref,
 }: {
   diagnostics: SubjectPropertyDiagnostics | null;
-  saveAction: (formData: FormData) => Promise<SaveDiagnosticsResult>;
   imported?: BrochureDiagnosticsPrefill;
+  errors?: Record<string, string>;
+  onDirty?: () => void;
+  ref?: Ref<SheetSectionHandle>;
 }) {
-  const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({
     dpe_date: str(diagnostics?.dpe_date),
     energy_consumption: pick(imported?.energy_consumption, diagnostics?.energy_consumption),
@@ -63,33 +61,13 @@ export function DiagnosticsForm({
     diagnostics_valid_until: str(diagnostics?.diagnostics_valid_until),
     notes: str(diagnostics?.notes),
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [banner, setBanner] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
 
-  const set = (name: string, value: string) =>
+  const set = (name: string, value: string) => {
     setValues((previous) => ({ ...previous, [name]: value }));
+    onDirty?.();
+  };
 
-  function submit() {
-    setBanner(null);
-    setMessage(null);
-    const formData = new FormData();
-    for (const [name, value] of Object.entries(values)) {
-      formData.set(name, value);
-    }
-    startTransition(async () => {
-      const result = await saveAction(formData);
-      if (result.ok) {
-        setErrors({});
-        setMessage('Diagnostics enregistrés.');
-        router.refresh();
-      } else {
-        setErrors(result.fieldErrors ?? {});
-        setBanner(result.error ?? 'L’enregistrement a échoué.');
-      }
-    });
-  }
+  useImperativeHandle(ref, () => ({ entries: () => Object.entries(values) }));
 
   const status = (name: string, label: string) => (
     <SelectField
@@ -104,13 +82,6 @@ export function DiagnosticsForm({
   return (
     <section className={`${formSection} max-w-3xl`}>
       <h2 className={formSectionTitle}>Diagnostics</h2>
-      {banner ? (
-        <p role="alert" className={alertError}>
-          {banner}
-        </p>
-      ) : null}
-      {message ? <p className={alertOk}>{message}</p> : null}
-
       <div className="grid gap-3 sm:grid-cols-3">
         <DateField
           label="Date DPE"
@@ -169,15 +140,6 @@ export function DiagnosticsForm({
         onChange={(v) => set('notes', v)}
         error={errors.notes}
       />
-
-      <button
-        type="button"
-        onClick={submit}
-        disabled={pending}
-        className={`${btnPrimary} self-start`}
-      >
-        {pending ? 'Enregistrement…' : 'Enregistrer les diagnostics'}
-      </button>
     </section>
   );
 }

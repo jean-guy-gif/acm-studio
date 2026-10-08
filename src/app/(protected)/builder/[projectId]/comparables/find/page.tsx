@@ -14,6 +14,11 @@ import { CompetitorSearchPanel } from '@/features/competitor-search/components/c
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import {
+  missingForSearch,
+  propertyFieldId,
+  SEARCH_REQUIREMENT_LABELS,
+} from '@/features/subject-property/services/search-requirements';
 
 type FindCompetitorsPageProps = {
   params: Promise<{ projectId: string }>;
@@ -29,6 +34,12 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
 
   const property = await getSubjectProperty(projectId);
   const hasCity = Boolean(property?.city && property.city.trim() !== '');
+  // MISSION 77 — la recherche a besoin de la ville (le secteur) et du type (filtre dur, M54).
+  // Ce qui manque est nommé, et son lien ouvre la fiche sur le champ.
+  const missing = missingForSearch({
+    property_type: property?.property_type,
+    city: property?.city,
+  });
 
   const prepareAction = prepareCompetitorSearch.bind(null, projectId);
   const rankAction = rankCompetitorCandidates.bind(null, projectId);
@@ -56,7 +67,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
         <h1 className={pageTitle}>Trouver des concurrents</h1>
       </div>
 
-      {hasCity ? (
+      {missing.length === 0 ? (
         <CompetitorSearchPanel
           criteriaLabel={criteriaLabel}
           prepareAction={prepareAction}
@@ -72,10 +83,19 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
         <div
           className={`${softPanel} flex flex-col gap-2 p-4 text-sm text-zinc-600 stage:text-white/70`}
         >
-          <p>La recherche se base sur la localisation du bien vendeur, qui n’est pas renseignée.</p>
-          <Link href={`/builder/${projectId}/property`} className={`${link} hover:underline`}>
-            Renseigner le bien vendeur
-          </Link>
+          <p>La recherche se base sur le type et la localisation du bien vendeur. Il manque :</p>
+          <ul className="flex flex-col gap-1">
+            {missing.map((name) => (
+              <li key={name}>
+                <Link
+                  href={`/builder/${projectId}/property#${propertyFieldId(name)}`}
+                  className={`${link} hover:underline`}
+                >
+                  Renseigner {name === 'city' ? 'la' : 'le'} {SEARCH_REQUIREMENT_LABELS[name]}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

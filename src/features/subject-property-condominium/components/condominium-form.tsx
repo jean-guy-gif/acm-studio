@@ -1,16 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useImperativeHandle, useState, type Ref } from 'react';
 
-import {
-  alertError,
-  alertOk,
-  btnPrimary,
-  formSection,
-  formSectionTitle,
-} from '@/components/ui/styles';
-import type { SaveCondominiumResult } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
+import { formSection, formSectionTitle } from '@/components/ui/styles';
 import type { BrochureCondominiumPrefill } from '@/features/subject-property-import/types';
 import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
 import {
@@ -20,6 +12,7 @@ import {
   TextareaField,
   TextField,
 } from '@/features/subject-property/components/property-inputs';
+import type { SheetSectionHandle } from '@/features/subject-property/services/sheet-form';
 
 const TRI_STATE_OPTIONS = [
   { value: 'true', label: 'Oui' },
@@ -31,16 +24,21 @@ const str = (value: string | number | null | undefined): string =>
 const boolStr = (value: boolean | null | undefined): string =>
   value == null ? '' : value ? 'true' : 'false';
 
+// MISSION 77 — one section of the sheet: it no longer saves. The save bar reads its values
+// (`ref`) and hands back the field errors.
 export function CondominiumForm({
   condominium,
-  saveAction,
   imported,
+  errors = {},
+  onDirty,
+  ref,
 }: {
   condominium: SubjectPropertyCondominium | null;
-  saveAction: (formData: FormData) => Promise<SaveCondominiumResult>;
   imported?: BrochureCondominiumPrefill;
+  errors?: Record<string, string>;
+  onDirty?: () => void;
+  ref?: Ref<SheetSectionHandle>;
 }) {
-  const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({
     is_condominium:
       imported?.is_condominium != null
@@ -66,34 +64,14 @@ export function CondominiumForm({
     last_general_assembly_date: str(condominium?.last_general_assembly_date),
     notes: str(condominium?.notes),
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [banner, setBanner] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
 
-  const set = (name: string, value: string) =>
+  const set = (name: string, value: string) => {
     setValues((previous) => ({ ...previous, [name]: value }));
-  const isCondo = values.is_condominium === 'true';
+    onDirty?.();
+  };
 
-  function submit() {
-    setBanner(null);
-    setMessage(null);
-    const formData = new FormData();
-    for (const [name, value] of Object.entries(values)) {
-      formData.set(name, value);
-    }
-    startTransition(async () => {
-      const result = await saveAction(formData);
-      if (result.ok) {
-        setErrors({});
-        setMessage('Copropriété enregistrée.');
-        router.refresh();
-      } else {
-        setErrors(result.fieldErrors ?? {});
-        setBanner(result.error ?? 'L’enregistrement a échoué.');
-      }
-    });
-  }
+  useImperativeHandle(ref, () => ({ entries: () => Object.entries(values) }));
+  const isCondo = values.is_condominium === 'true';
 
   const tri = (name: string, label: string) => (
     <SelectField
@@ -108,13 +86,6 @@ export function CondominiumForm({
   return (
     <section className={`${formSection} max-w-3xl`}>
       <h2 className={formSectionTitle}>Copropriété</h2>
-      {banner ? (
-        <p role="alert" className={alertError}>
-          {banner}
-        </p>
-      ) : null}
-      {message ? <p className={alertOk}>{message}</p> : null}
-
       <SelectField
         label="Bien en copropriété"
         value={values.is_condominium}
@@ -228,15 +199,6 @@ export function CondominiumForm({
           />
         </>
       ) : null}
-
-      <button
-        type="button"
-        onClick={submit}
-        disabled={pending}
-        className={`${btnPrimary} self-start`}
-      >
-        {pending ? 'Enregistrement…' : 'Enregistrer la copropriété'}
-      </button>
     </section>
   );
 }

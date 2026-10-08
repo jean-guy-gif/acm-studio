@@ -16,31 +16,16 @@ import type { CreateComparableState } from '@/features/comparables/actions/creat
 import type { RecordDecisionResult } from '@/features/competitor-search/types';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
-import type { SaveCondominiumResult } from '@/features/subject-property-condominium/actions/save-subject-property-condominium';
-import type { SaveDiagnosticsResult } from '@/features/subject-property-diagnostics/actions/save-subject-property-diagnostics';
-import type { SaveSubjectPropertyResult } from '@/features/subject-property/actions/save-subject-property';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
 import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
 
 const REFUSAL = 'Aperçu design : aucune donnée n’est enregistrée ici.';
-
-export async function previewSaveProperty(): Promise<SaveSubjectPropertyResult> {
-  return { ok: false, error: REFUSAL };
-}
 
 export async function previewUploadPropertyPhotos(): Promise<UploadPropertyPhotosResult> {
   return { ok: false, error: REFUSAL };
 }
 
 export async function previewUpdatePropertyPhotos(): Promise<UpdatePropertyPhotosResult> {
-  return { ok: false, error: REFUSAL };
-}
-
-export async function previewSaveDiagnostics(): Promise<SaveDiagnosticsResult> {
-  return { ok: false, error: REFUSAL };
-}
-
-export async function previewSaveCondominium(): Promise<SaveCondominiumResult> {
   return { ok: false, error: REFUSAL };
 }
 

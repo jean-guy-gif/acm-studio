@@ -10,6 +10,7 @@ import {
   PARKING_TYPES,
 } from '@/features/subject-property/constants/property-options';
 import { normalizePropertyList } from '@/features/subject-property/services/normalize-property-arrays';
+import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
 
 // Parsed but unvalidated seller-property input (numbers already parsed to
 // number|null, arrays to string[]). Produced by the action from the FormData.
@@ -198,6 +199,9 @@ export function validateSubjectProperty(
     ok: true,
     value: {
       ...input,
+      // MISSION 77 — un type reconnu s'enregistre sous son libellé de liste ; un texte qui ne
+      // se reconnaît pas est gardé tel quel, jamais effacé.
+      property_type: propertyTypeLabel(input.property_type) ?? input.property_type,
       outdoor_spaces: outdoorSpaces,
       parking_types: parkingTypes,
       strengths,

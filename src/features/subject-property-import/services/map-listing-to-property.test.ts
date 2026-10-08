@@ -79,10 +79,26 @@ describe('mapListingToProperty', () => {
     expect(info.readPortalPricePerSquareMeter).toBe(5972);
   });
 
-  it('does not map the listing title to a property type', () => {
+  // Mission 77 — the type the title names fills the list choice; the headline itself is
+  // still never written anywhere.
+  it('maps the type named by the title to its list label, never the title itself', () => {
     const { prefill } = mapListingToProperty(listing());
-    expect(prefill.property_type).toBeNull();
+    expect(prefill.property_type).toBe('Appartement');
     expect(JSON.stringify(prefill)).not.toContain('Appartement T3 lumineux');
+  });
+
+  it('leaves the type empty when neither the title nor the address names one', () => {
+    const { prefill } = mapListingToProperty(listing({ title: 'Bien rare à saisir' }));
+    expect(prefill.property_type).toBeNull();
+  });
+
+  it('maps the floor and the number of floors when the listing publishes them', () => {
+    const { prefill } = mapListingToProperty(listing({ floor: 2, floorsCount: 6 }));
+    expect(prefill.floor).toBe(2);
+    expect(prefill.building_floors).toBe(6);
+    const empty = mapListingToProperty(listing()).prefill;
+    expect(empty.floor).toBeNull();
+    expect(empty.building_floors).toBeNull();
   });
 
   it('reports the detected photo count without pre-filling any photo field', () => {
