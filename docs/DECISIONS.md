@@ -86,6 +86,10 @@ chaque mission validée.
 - 06/10 · M74 · Restent sans l'extension : l'import par adresse côté serveur et la saisie manuelle ; un portail qui refuse l'adresse renvoie vers la saisie à la main.
 - 06/10 · M74 · Biens concurrents : « Trouver des concurrents » est le bouton principal, « Ajouter un bien » le secondaire.
 - 06/10 · M74 · Le raccourci « Vérifier l'ancienneté sur L'Acquéreur » est retiré : l'ancienneté vient du portail ou des observations (M47).
+- 07/10 · M76 · Une adresse d'image se lit jusqu'à ce qui la borne dans la page, jamais jusqu'à son extension (« .jpg_DATEMAJ_… ») ; les paramètres de vignette ne se retirent que par hébergeur mesuré (`file.bienici.com` : `width`, `height`, `fit`).
+- 07/10 · M76 · Bien'ici : les photos se lisent par l'identifiant publié de l'annonce, sur toute la page (exception à M48, écrite en commentaire), en pleine taille et sans doublon ; les données structurées n'y portent que la couverture.
+- 07/10 · M76 · Figaro Immobilier : les photos viennent de l'état de l'application (`__NUXT_DATA__`), en pleine taille ; le portail est cadré comme les autres, plus de lecture pleine page des images ; à défaut, la galerie du CDN Figaro.
+- 07/10 · M76 · Un échec de récupération de photo dit sa cause, regroupée avec le nombre de photos concernées ; le code HTTP reste dans le message.
 
 ## Live
 
@@ -146,6 +150,7 @@ chaque mission validée.
 - 06/10 · M74 · Un seul formateur de nombres (`src/lib/format`), en `fr-FR` : virgule décimale, espace des milliers, 2 décimales au plus, aucun zéro inutile, vrai signe moins, unité liée par une espace insécable ; seul l'affichage arrondit, aucun calcul ne change.
 - 06/10 · M74 · Montants et prix au m² à l'euro près ; surfaces et pourcentages jusqu'à 2 décimales ; un écart nul s'affiche sans signe.
 - 06/10 · M74 · Un test interdit `toFixed(` et `toLocaleString(` dans `src/` hors de `src/lib/format` (tests exclus).
+- 07/10 · M76 · Un hébergeur écarté (Google) n'est admis que par provenance : pour les photos que Figaro publie dans les données de l'annonce elle-même, jamais ailleurs.
 
 ## Méthode
 
@@ -169,3 +174,6 @@ chaque mission validée.
 - 06/10 · M72 · Le test e2e ne remet jamais la scène à zéro avant de mesurer : il tente de la décaler, et un `scrollLeft` forcé doit rester à 0.
 - 06/10 · M72 · Test e2e court à part (`live-tablette`) : 768 × 1024, 1024 × 768 et 1366 × 1024, fenêtre et plein écran, sur un seul dossier prêt permanent « TEST AUTOMATIQUE — Live tablette », créé au premier passage puis réutilisé.
 - 06/10 · M72 · L'agence de test porte un nom d'au moins 60 caractères, sans logo ; sinon le test échoue en le disant, plutôt que de passer sans rien vérifier.
+- 07/10 · M76 · Écart accepté à M48 : faute de pouvoir passer par l'extension, une fixture peut être capturée par un Chromium (Bien'ici) ou dans le Chrome du conseiller (Figaro) ; la validation se fait à l'essai, par l'extension, sur une annonce réelle par portail.
+- 07/10 · M76 · Une fixture capturée dans un vrai navigateur est nettoyée des scripts tiers, des styles et des identifiants de suivi avant d'être commitée ; les données lues restent intactes.
+- 07/10 · M76 · Non-régression des photos : chaque fixture existante doit donner au moins les mêmes photos qu'avant, jamais un logo ni la photo d'un autre bien.
