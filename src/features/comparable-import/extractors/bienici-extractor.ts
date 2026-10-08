@@ -143,8 +143,30 @@ function galleryPhotoUrls(html: string, adId: string): string[] {
 // data. This extractor reads the page as rendered in the advisor's browser, plus an
 // embedded ad JSON if one is present, and returns nothing otherwise (controlled
 // failure, manual entry stays available).
+// MISSION 80 — la classe DPE. Mesuré sur deux annonces (Antibes : C, Cagnes : D) : la section
+// « Diagnostic de Performance Énergétique » (energySection, une seule par page) porte UNE ligne
+// `dpe-line active`, dont `dpe-line__classification` écrit la lettre. Sans cette ligne marquée,
+// ou avec plusieurs, rien n'est lu : jamais la première lettre d'une échelle.
+export function readBienIciDpe(html: string): string | null {
+  const sections = html.split(/<section[^>]*class="[^"]*\benergySection\b/i);
+  if (sections.length !== 2) return null;
+  const section = sections[1].split(/<\/section>/i)[0];
+  const active = [
+    ...section.matchAll(
+      /class="dpe-line active"[\s\S]{0,2500}?class="dpe-line__classification"[^>]*>\s*<span>\s*(?:<div>)?\s*([A-G])\s*</g,
+    ),
+  ];
+  const lines = section.match(/class="dpe-line active"/g) ?? [];
+  return active.length === 1 && lines.length === 1 ? active[0][1] : null;
+}
+
 export function extractBienIci(html: string, listingUrl?: string): PartialListingData {
   const result: PartialListingData = {};
+
+  const energyRating = readBienIciDpe(html);
+  if (energyRating) {
+    result.energyRating = energyRating;
+  }
 
   const adId = listingUrl ? adIdFromListingUrl(listingUrl) : null;
   if (adId) {

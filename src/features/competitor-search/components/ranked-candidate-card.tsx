@@ -12,6 +12,7 @@ import {
   hintText,
   inputBase,
 } from '@/components/ui/styles';
+import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import {
   DECISION_REASONS,
   DECISION_REASON_LABELS,
@@ -217,6 +218,14 @@ export function RankedCandidateCard({
           {candidate.city ? ` · ${candidate.city}` : ''}
           {` · ${ranked.portalLabel}`}
         </div>
+
+        {/* Mission 80 — la classe DPE en couleur et, si le bien vendeur en a une, l'écart. */}
+        {ranked.dpe ? (
+          <span className="flex items-center gap-1.5 text-xs text-zinc-600 stage:text-white/70">
+            <DpeLetter letter={ranked.dpe.letter} />
+            {ranked.dpe.label}
+          </span>
+        ) : null}
 
         {candidate.streamEstate ? <StreamEstateFactsLine facts={candidate.streamEstate} /> : null}
 

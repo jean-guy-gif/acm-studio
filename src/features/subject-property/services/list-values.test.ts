@@ -75,6 +75,7 @@ describe('list guards', () => {
 
   it('keepListValues empties every list field that holds a foreign value', () => {
     const kept = keepListValues({
+      energy_rating: 'vierge',
       ges_rating: 'vierge',
       heating_type: 'chauffage au sol',
       exposure: 'plein sud',
@@ -84,6 +85,7 @@ describe('list guards', () => {
       city: 'Cagnes-sur-Mer',
     });
     expect(kept).toEqual({
+      energy_rating: null,
       ges_rating: null,
       heating_type: null,
       exposure: null,

@@ -125,12 +125,13 @@ export const EXPOSURE_RANK: Record<string, number | null> = {
 export const SURFACE_SIMILARITY_TOLERANCE = 0.05;
 
 // The criteria the comparison engine evaluates, in display order.
+// Mission 80 — le DPE passe juste après la surface.
 export const COMPARISON_CRITERIA = [
   'surface',
+  'energy_rating',
   'rooms',
   'bedrooms',
   'condition',
-  'energy_rating',
   'ges_rating',
   'outdoor',
   'parking',

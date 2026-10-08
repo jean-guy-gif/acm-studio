@@ -1,5 +1,6 @@
 'use server';
 
+import { dpeClass } from '@/features/dpe/services/dpe';
 import {
   learnFromDecisions,
   type CompetitorDecisionRecord,
@@ -61,6 +62,7 @@ export async function rankCompetitorCandidates(
     roomsCount: property.rooms_count,
     advisorPriceMin: property.advisor_price_min,
     advisorPriceMax: property.advisor_price_max,
+    energyClass: dpeClass(property.energy_rating),
     landArea: property.land_area,
     subject: {
       parkingTypes: property.parking_types ?? [],

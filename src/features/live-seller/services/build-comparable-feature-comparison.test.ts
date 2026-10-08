@@ -27,10 +27,10 @@ describe('buildComparableFeatureComparison', () => {
     const result = buildComparableFeatureComparison(bundle(), bundle());
     expect(result.map((f) => f.criterion)).toEqual([
       'surface',
+      'energy_rating', // Mission 80 — le DPE passe juste après la surface.
       'rooms',
       'bedrooms',
       'condition',
-      'energy_rating',
       'ges_rating',
       'outdoor',
       'parking',

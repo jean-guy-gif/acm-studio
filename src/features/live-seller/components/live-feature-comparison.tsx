@@ -1,3 +1,5 @@
+import { DpeLetter } from '@/features/dpe/components/dpe-letter';
+import { dpeClass } from '@/features/dpe/services/dpe';
 import {
   comparisonBadgeClass,
   comparisonValueClass,
@@ -62,7 +64,12 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
               <span
                 className={`font-title text-lg leading-tight ${comparisonValueClass[item.comparisonStatus]}`}
               >
-                {item.comparableValue ?? '—'}
+                {/* Mission 80 — le DPE s'affiche en lettre colorée (A vert → G rouge). */}
+                {item.criterion === 'energy_rating' && dpeClass(item.comparableValue) ? (
+                  <DpeLetter letter={dpeClass(item.comparableValue)!} size="md" />
+                ) : (
+                  (item.comparableValue ?? '—')
+                )}
               </span>
               <span className="text-[0.68rem] opacity-70">
                 {STATUS_HINT[item.comparisonStatus]}
