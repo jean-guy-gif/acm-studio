@@ -88,4 +88,27 @@ describe('buildLivePages', () => {
     // even with no comparables at all
     expect(buildLivePages(live(0), false).some((p) => p.type === 'subject_property')).toBe(false);
   });
+
+  // Mission 80 — « Le DPE face au marché ».
+  const withDpe = (ratings: (string | null)[]) => {
+    const scenario = live(ratings.length);
+    ratings.forEach((rating, i) => {
+      (scenario.comparables[i] as { energyRating: string | null }).energyRating = rating;
+    });
+    return scenario;
+  };
+
+  it('inserts the DPE screen right after the last competitor, before the dangerous one', () => {
+    const types = buildLivePages(withDpe([null, 'D']), false).map((p) => p.type);
+    const at = types.indexOf('dpe_market');
+    expect(types[at - 1]).toBe('comparable_duration');
+    expect(types[at + 1]).toBe('dangerous_competitor');
+    expect(types.filter((type) => type === 'dpe_market')).toHaveLength(1);
+  });
+
+  it('omits the DPE screen when no competitor shows a DPE class', () => {
+    const types = buildLivePages(withDpe([null, '', 'vierge']), false).map((p) => p.type);
+    expect(types).not.toContain('dpe_market');
+    expect(buildLivePages(live(0), true).map((p) => p.type)).not.toContain('dpe_market');
+  });
 });

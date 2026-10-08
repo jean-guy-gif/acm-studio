@@ -97,6 +97,7 @@ describe('parseStreamEstateResponse', () => {
       city: 'Nice',
       photoUrls: expect.any(Array),
       isNewBuild: false,
+      energyClass: null,
       streamEstate: {
         propertyId: '828d2950-aa3c-4c9b-89df-dcd8e0bc8cde',
         originSite: "Bien'ici",
@@ -299,6 +300,66 @@ describe('annonce d’origine utilisable : pas expirée, revue il y a 7 jours au
         { url: seloger, expired: true, lastCrawledAt: '2026-10-04T10:00:00+02:00' },
       ]),
     ).toMatchObject({ expiredOrigin: 1, outsideWhitelist: 0, candidates: [] });
+  });
+});
+
+// Mission 80 — la classe DPE est portée par chaque ANNONCE du bien (`energy.category`), mesure
+// du 08/10 sur 28 biens : 19 en portent une, 1 a des lettres qui se contredisent.
+describe('Mission 80 — la classe DPE d’un bien Stream Estate', () => {
+  const seloger = 'https://www.seloger.com/annonces/achat/appartement/nice-06/250123456.htm';
+  const bienici = 'https://www.bienici.com/annonce/vente/nice/appartement/4pieces/ag-1';
+  const leboncoin = 'https://www.leboncoin.fr/ad/ventes_immobilieres/1';
+  const fresh = '2026-10-05T10:00:00+02:00';
+  const older = '2026-10-03T10:00:00+02:00';
+  const energyClass = (adverts: { url: string; lastCrawledAt: string; energy?: unknown }[]) =>
+    parseStreamEstateResponse(
+      {
+        'hydra:member': [
+          {
+            ...fixture['hydra:member'][1],
+            uuid: 'x',
+            adverts: adverts.map((advert) => ({ ...advert, expired: false })),
+          },
+        ],
+      },
+      NOW,
+    )!.candidates[0].energyClass;
+
+  it('la lettre de l’annonce d’origine retenue, même si une autre annonce dit autre chose', () => {
+    expect(
+      energyClass([
+        { url: seloger, lastCrawledAt: fresh, energy: { category: 'D', value: 209 } },
+        { url: leboncoin, lastCrawledAt: fresh, energy: { category: 'C', value: 150 } },
+      ]),
+    ).toBe('D');
+  });
+
+  it('origine sans lettre : la lettre commune à toutes les annonces qui en portent une', () => {
+    expect(
+      energyClass([
+        { url: seloger, lastCrawledAt: fresh },
+        { url: bienici, lastCrawledAt: older, energy: { category: 'e', value: 300 } },
+        { url: leboncoin, lastCrawledAt: fresh, energy: { category: 'E', value: 301 } },
+      ]),
+    ).toBe('E');
+  });
+
+  it('origine sans lettre et annonces qui se contredisent : non indiqué', () => {
+    expect(
+      energyClass([
+        { url: seloger, lastCrawledAt: fresh, energy: { category: null, value: null } },
+        { url: bienici, lastCrawledAt: older, energy: { category: 'C', value: 150 } },
+        { url: leboncoin, lastCrawledAt: fresh, energy: { category: 'D', value: 209 } },
+      ]),
+    ).toBeNull();
+  });
+
+  it('aucune lettre, ou une forme inattendue : non indiqué, et le bien reste lisible', () => {
+    expect(energyClass([{ url: seloger, lastCrawledAt: fresh }])).toBeNull();
+    expect(energyClass([{ url: seloger, lastCrawledAt: fresh, energy: 'D' }])).toBeNull();
+    expect(
+      energyClass([{ url: seloger, lastCrawledAt: fresh, energy: { category: 'H' } }]),
+    ).toBeNull();
   });
 });
 

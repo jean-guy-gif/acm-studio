@@ -1,3 +1,4 @@
+import { DPE_MATCH_POINTS, dpeClass, dpeMatchPoints } from '@/features/dpe/services/dpe';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 import type {
   CompetitorCandidate,
@@ -9,6 +10,7 @@ import { formatNumber, formatPercent, formatSquareMeters } from '@/lib/format';
 // MISSION 71 — LE % DE CORRESPONDANCE, sur chaque carte (portails compris), sur 100 points :
 //   secteur 25 · surface 20 · prix 20 · pièces 15 · stationnement 5 · extérieur 5 ·
 //   niveau 2 : état 2, étage 2, ascenseur 2, année 2, piscine 1, exposition 1.
+// MISSION 80 — plus le DPE, sur 10 points, quand les deux classes sont connues.
 // Un critère inconnu d'un côté OU de l'autre sort du calcul : % = points obtenus ÷ points possibles.
 // La liste est triée par ce % décroissant ; à égalité, l'ordre « les plus proches » décide.
 //
@@ -78,6 +80,13 @@ function rooms(criteria: CompetitorSearchCriteria, candidate: CompetitorCandidat
   return { earned: value === ref ? 15 : value === ref + 1 ? 7 : 0, possible: 15 };
 }
 
+// Mission 80 — le DPE sur 10 points : même classe 10, une classe d'écart 5, au-delà 0. Inconnu
+// d'un côté ou de l'autre : hors calcul. Il ne filtre jamais et ne crée aucun cran.
+function energy(criteria: CompetitorSearchCriteria, candidate: CompetitorCandidate): Facet {
+  const earned = dpeMatchPoints(dpeClass(candidate.energyClass), dpeClass(criteria.energyClass));
+  return earned == null ? out : { earned, possible: DPE_MATCH_POINTS };
+}
+
 const FROM_PROXIMITY: Record<string, number> = {
   parking: 5,
   outdoor: 5,
@@ -109,6 +118,7 @@ export function matchPercent(
     surface(criteria, candidate),
     price(criteria, candidate),
     rooms(criteria, candidate),
+    energy(criteria, candidate),
     ...fromProximity(reasons),
   ];
   const possible = facets.reduce((total, facet) => total + facet.possible, 0);

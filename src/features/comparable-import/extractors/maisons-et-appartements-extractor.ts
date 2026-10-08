@@ -88,8 +88,22 @@ function scopedPhotos(html: string, productImage: string): string[] {
 // portal (« Publiée », « Mise en ligne », « il y a », « Modifiée » are all absent —
 // the dates present are a price validity, the current day and a DPE mention), so
 // listingPublishedAt stays empty and the age comes from the first ACM observation.
+// MISSION 80 — la classe DPE. Mesuré (Villeneuve-Loubet, D) : l'étiquette de l'annonce est
+// l'élément `#dpe_etiquette`, unique, dont la classe porte la lettre (`dpe2-d`) ; la lettre n'est
+// écrite nulle part en texte. Sans cet élément ou sans lettre dans sa classe, rien n'est lu.
+export function readMaisonsEtAppartementsDpe(html: string): string | null {
+  const tags = html.match(/<[a-z]+[^>]*\bid="dpe_etiquette"[^>]*>/gi) ?? [];
+  if (tags.length !== 1) return null;
+  const letter = tags[0].match(/\bclass="[^"]*\bdpe2-([a-g])\b[^"]*"/i)?.[1];
+  return letter ? letter.toUpperCase() : null;
+}
+
 export function extractMaisonsEtAppartements(html: string): PartialListingData {
   const result: PartialListingData = {};
+  const energyRating = readMaisonsEtAppartementsDpe(html);
+  if (energyRating) {
+    result.energyRating = energyRating;
+  }
   const product = readProductJsonLd(html);
 
   if (!product) {

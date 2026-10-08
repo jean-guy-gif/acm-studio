@@ -67,16 +67,28 @@ export function extractListingData(html: string, originalUrl: string): Extracted
   }
 
   let portal: PartialListingData = {};
+  // Mission 80 — sur ces quatre portails, la classe DPE ne vient que de la lettre MARQUÉE que
+  // lit l'extracteur du portail. Le lecteur générique (un libellé « DPE » suivi d'une lettre)
+  // y lisait l'échelle : « A » sur Green Acres, « D » sur une annonce Figaro classée C.
+  let portalReadsDpe = false;
   if (isGreenAcres(hostname)) {
     portal = extractGreenAcres(html, originalUrl);
+    portalReadsDpe = true;
   } else if (isSeLoger(hostname)) {
     portal = extractSeLoger(html, originalUrl);
   } else if (isBienIci(hostname)) {
     portal = extractBienIci(html, originalUrl);
+    portalReadsDpe = true;
   } else if (isFigaro(hostname)) {
     portal = extractFigaro(html);
+    portalReadsDpe = true;
   } else if (isMaisonsEtAppartements(hostname)) {
     portal = extractMaisonsEtAppartements(html);
+    portalReadsDpe = true;
+  }
+  const generic = extractHtml(html);
+  if (portalReadsDpe) {
+    delete generic.energyRating;
   }
 
   // Mission 49 — description ET photos se lisent DANS le bloc de l'annonce, jamais
@@ -90,7 +102,7 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     portal,
     jsonLd: extractJsonLd(html),
     openGraph: extractOpenGraph(html),
-    html: extractHtml(html),
+    html: generic,
     embeddedPhotoUrls: extractEmbeddedImageUrls(region),
     embeddedDescription: extractEmbeddedDescription(region),
     listingPublishedAt: extractListingPublishedAt(html),

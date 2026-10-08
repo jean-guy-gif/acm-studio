@@ -1,15 +1,22 @@
+import { dpeMedian } from '@/features/dpe/services/dpe';
 import type { LiveComparableResponse } from '@/features/live-seller/types';
 
 // MISSION 51 — la navigation ne lit d'un concurrent que son id et sa réponse persistée.
 // On la type sur ce MINIMUM structurel, si bien que la donnée complète (côté serveur) ET
 // la donnée PROJETÉE remise au vendeur (sans prix) satisfont toutes deux ces fonctions,
 // sans conversion.
-export type LiveNavComparable = { id: string; response: LiveComparableResponse | null };
+// MISSION 80 — et sa classe DPE : c'est elle qui décide si l'écran « Le DPE face au marché »
+// existe. Ce n'est pas un montant ; elle voyage déjà dans la donnée projetée.
+export type LiveNavComparable = {
+  id: string;
+  response: LiveComparableResponse | null;
+  energyRating?: string | null;
+};
 export type LiveNavData = { comparables: LiveNavComparable[] };
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
 // intro → [Votre bien] → [competition, price, price reveal, duration] per
-// comparable → dangerous competitor → seller perceived price → price analysis →
+// comparable → [le DPE face au marché] → dangerous competitor → seller perceived price → price analysis →
 // conclusion. Mission 41 aligns the per-comparable loop on the Storyboard's four
 // screens (A/B/C/D): the guess and the reveal are two distinct screens so the
 // seller's reaction to the revealed price has room to happen.
@@ -20,6 +27,7 @@ export type LivePageType =
   | 'comparable_price'
   | 'comparable_price_reveal'
   | 'comparable_duration'
+  | 'dpe_market'
   | 'dangerous_competitor'
   | 'seller_perceived_price'
   | 'price_analysis'
@@ -85,6 +93,19 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
       });
     }
   });
+
+  // Mission 80 — « Le DPE face au marché », après le dernier concurrent. Absent tant qu'aucun
+  // concurrent n'affiche de classe DPE : sans repère, l'écran n'aurait rien à dire.
+  if (dpeMedian(comparables.map((comparable) => comparable.energyRating)) != null) {
+    pages.push({
+      key: 'dpe_market',
+      type: 'dpe_market',
+      title: 'Le DPE face au marché',
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+    });
+  }
 
   if (comparables.length > 0) {
     pages.push({

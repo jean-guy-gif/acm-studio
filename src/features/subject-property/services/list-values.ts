@@ -7,6 +7,7 @@ import {
   PARKING_TYPES,
   type HeatingType,
 } from '@/features/subject-property/constants/property-options';
+import { dpeClass } from '@/features/dpe/services/dpe';
 
 // MISSION 78 — LES CHAMPS À LISTE. Une valeur lue sur une annonce ou une fiche n'entre dans un
 // champ à liste que si elle EST une valeur de la liste : sinon le menu affichait « Non renseigné »
@@ -105,6 +106,7 @@ export function gesListValue(value: string | null | undefined) {
 }
 
 type ListFields = {
+  energy_rating: string | null;
   ges_rating: string | null;
   heating_type: string | null;
   exposure: string | null;
@@ -121,6 +123,7 @@ export function keepListValues<T extends ListFields>(
 ): T {
   return {
     ...prefill,
+    energy_rating: dpeClass(prefill.energy_rating),
     ges_rating: gesListValue(prefill.ges_rating),
     heating_type: translateHeating(prefill.heating_type, heating.energySource, {
       house: heating.house,

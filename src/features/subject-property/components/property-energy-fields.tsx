@@ -1,7 +1,8 @@
 'use client';
 
 import { formSection, formSectionTitle } from '@/components/ui/styles';
-import { SelectField, TextField } from '@/features/subject-property/components/property-inputs';
+import { DPE_CLASSES } from '@/features/dpe/services/dpe';
+import { SelectField } from '@/features/subject-property/components/property-inputs';
 import {
   GES_RATINGS,
   HEATING_TYPE_LABELS,
@@ -25,10 +26,12 @@ export function PropertyEnergyFields({
     <section className={formSection}>
       <h2 className={formSectionTitle}>Énergie et chauffage</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField
+        {/* Mission 80 — une liste A à G ; vide = pas encore de DPE. */}
+        <SelectField
           label="Classe DPE"
           value={energyRating}
           onChange={(value) => onField('energy_rating', value)}
+          options={DPE_CLASSES.map((value) => ({ value, label: value }))}
           error={errors.energy_rating}
         />
         <SelectField

@@ -96,6 +96,25 @@ describe('matchPercent', () => {
     expect(matchPercent(CRITERIA, candidate(), [unknown], place(300))).toBe(100);
   });
 
+  it('Mission 80 — DPE sur 10 points : même classe 10, une classe d’écart 5, au-delà 0', () => {
+    const subject = { ...CRITERIA, energyClass: 'D' as const };
+    const at = (energyClass: 'D' | 'E' | 'C' | 'F') =>
+      matchPercent(subject, candidate({ energyClass }), [], place(300));
+    // Secteur, surface, prix et pièces identiques : 80 sur 80, plus le DPE sur 10.
+    expect([at('D'), at('E'), at('C'), at('F')]).toEqual([100, 94, 94, 89]);
+  });
+
+  it('Mission 80 — DPE inconnu d’un côté ou de l’autre : hors calcul', () => {
+    const subject = { ...CRITERIA, energyClass: 'D' as const };
+    const wider = candidate({ surfaceArea: 78.4, roomsCount: 5, price: 468000 });
+    // Sans DPE : 40 sur 80, comme avant la mission.
+    expect(matchPercent(subject, wider, [], place(1600))).toBe(50);
+    expect(matchPercent(subject, { ...wider, energyClass: null }, [], place(1600))).toBe(50);
+    expect(matchPercent(CRITERIA, { ...wider, energyClass: 'G' }, [], place(1600))).toBe(50);
+    // Avec les deux : 40 + 10 sur 90.
+    expect(matchPercent(subject, { ...wider, energyClass: 'D' }, [], place(1600))).toBe(56);
+  });
+
   it('niveau 2 : état, étage, ascenseur, année 2 ; piscine, exposition 1', () => {
     const reasons = ['condition', 'floor', 'elevator', 'year', 'pool', 'exposure'].map((c) =>
       known(c, -1),

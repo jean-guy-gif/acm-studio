@@ -1,3 +1,4 @@
+import { dpeClass, type DpeClass } from '@/features/dpe/services/dpe';
 import { z } from 'zod';
 
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
@@ -126,6 +127,10 @@ const advertSchema = z.object({
   elevator: z.boolean().nullable().optional(),
   constructionYear: nullableNumber,
   features: z.array(z.string()).nullable().optional(),
+  // Mission 80 — la classe DPE est portée par l'ANNONCE, pas par le bien (mesure du 08/10 :
+  // `{"category":"D","value":209}`, clé absente ou catégorie nulle quand le site ne la publie pas).
+  // Une forme inattendue ne rend pas le bien illisible : la classe est alors inconnue.
+  energy: z.object({ category: nullableString }).nullable().optional().catch(null),
   events: z
     .array(
       z.object({
@@ -302,6 +307,23 @@ export function isStreamEstateNewBuild(property: StreamEstateProperty, now: Date
   );
 }
 
+// MISSION 80 — la classe DPE d'un bien Stream Estate : celle de l'annonce d'ORIGINE (celle que
+// l'import relira) ; à défaut, la lettre commune à toutes les annonces qui en portent une ; si
+// elles se contredisent, inconnue (« non indiqué »).
+export function streamEstateEnergyClass(
+  adverts: StreamEstateAdvert[],
+  origin: StreamEstateAdvert | null,
+): DpeClass | null {
+  const fromOrigin = dpeClass(origin?.energy?.category);
+  if (fromOrigin != null) return fromOrigin;
+  const letters = new Set(
+    adverts
+      .map((advert) => dpeClass(advert.energy?.category))
+      .filter((letter): letter is DpeClass => letter != null),
+  );
+  return letters.size === 1 ? [...letters][0] : null;
+}
+
 const positive = (value: number | null | undefined): number | null =>
   value != null && value > 0 ? value : null;
 
@@ -334,6 +356,7 @@ export function toCandidate(
     city: property.city?.name?.trim() || null,
     photoUrls: (property.pictures ?? []).filter((picture) => picture.startsWith('https://')),
     isNewBuild: isStreamEstateNewBuild(property, now),
+    energyClass: streamEstateEnergyClass(property.adverts, origin),
     streamEstate: {
       propertyId: property.uuid,
       originSite: detectSource(host),
