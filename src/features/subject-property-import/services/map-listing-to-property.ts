@@ -21,12 +21,13 @@ import type { SubjectPropertyImport } from '@/features/subject-property-import/t
 // receives a value OF its list: the heating read on the listing (« gaz individuel ») is
 // translated, and anything that is not recognised stays empty (`keepListValues`).
 export function mapListingToProperty(data: ImportedComparableData): SubjectPropertyImport {
+  const type = detectListingPropertyType(data.title, data.listingUrl);
   return {
     prefill: keepListValues(
       {
         // A listing carries no factual costs or strengths — those fields exist for the
         // brochure import (Mission 44) and stay empty here.
-        property_type: propertyTypeLabel(detectListingPropertyType(data.title, data.listingUrl)),
+        property_type: propertyTypeLabel(type),
         surface_area: data.surfaceArea,
         land_area: data.landArea,
         rooms_count: data.roomsCount,
@@ -51,7 +52,8 @@ export function mapListingToProperty(data: ImportedComparableData): SubjectPrope
         property_tax: null,
         strengths: [],
       },
-      data.energySource,
+      // For a house, « gaz » or « fioul » alone means individual heating.
+      { energySource: data.energySource, house: type === 'house' },
     ),
     info: {
       readPrice: data.price,

@@ -103,7 +103,7 @@ describe('la ligne de bilan', () => {
     cursor: null,
     tiers: [
       { tier: 1, billed: 10, kept: 1, fallback: false },
-      { tier: 6, billed: 27, kept: 2, fallback: false },
+      { tier: 7, billed: 27, kept: 2, fallback: false },
     ],
     counts: {
       unreadable: 0,
@@ -111,6 +111,7 @@ describe('la ligne de bilan', () => {
       expiredOrigin: 0,
       otherCommune: 1,
       unverifiedPosition: 0,
+      duplicates: 0,
     },
     newBuild: 0,
     located: true,
@@ -121,7 +122,7 @@ describe('la ligne de bilan', () => {
   it('compte les comparables proposés par cran, et le coût', () => {
     // Parmi les candidats lus, les 3 admis sont aux places 1, 2 et 5 ; on les traite en ancien
     // (le neuf en complément n'est pas compté, test suivant) et on leur donne trois crans.
-    const tiers: StreamEstateTier[] = [1, 1, 2, 1, 1, 6, 1, 1];
+    const tiers: StreamEstateTier[] = [1, 1, 2, 1, 1, 7, 1, 1];
     const search = rankCandidates(SLV, [portal(tiers, { asOld: true })], PREFS, {
       subjectInseeCode: '06123',
     });

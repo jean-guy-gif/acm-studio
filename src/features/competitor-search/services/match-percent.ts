@@ -123,7 +123,8 @@ const km = (meters: number): string => `${fr(meters / 1000, 1)} km`;
 
 // MISSION 71 §5 — sur chaque carte Stream Estate élargie, une ligne dit l'écart à l'identique :
 // « Même ville, à 1,6 km », « Commune voisine : Cagnes-sur-Mer, 6,1 km », « Plus grand : 78 m²
-// (+12 %) », « 5 pièces (+1) », « Prix 4 % au-dessus de votre fourchette », et « Même ville —
+// (+12 %) », « 5 pièces (+1) », « 7 pièces au lieu de 9 », « Annonce vue il y a 12 jours »,
+// « Prix 4 % au-dessus de votre fourchette », et « Même ville —
 // quartier non vérifié » pour un bien sans position fiable. null : rien ne l'écarte de l'identique.
 export function gapLine(
   criteria: CompetitorSearchCriteria,
@@ -153,12 +154,16 @@ export function gapLine(
       `Plus grand : ${formatSquareMeters(value, { maxDecimals: 1 })} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
     );
   }
-  if (
-    criteria.roomsCount != null &&
-    candidate.roomsCount != null &&
-    candidate.roomsCount === criteria.roomsCount + 1
-  ) {
-    parts.push(`${candidate.roomsCount} pièces (+1)`);
+  if (criteria.roomsCount != null) {
+    const count = candidate.roomsCount;
+    if (count === criteria.roomsCount + 1) {
+      parts.push(`${count} pièces (+1)`);
+    } else if (count != null && count !== criteria.roomsCount) {
+      // Mission 78 — pièces libérées : « 7 pièces au lieu de 9 ».
+      parts.push(`${count} pièce${count > 1 ? 's' : ''} au lieu de ${criteria.roomsCount}`);
+    } else if (count == null) {
+      parts.push('Nombre de pièces non indiqué');
+    }
   }
   const priceGap = priceOutsideRange(criteria, candidate.price);
   if (priceGap != null && priceGap !== 0) {
@@ -167,5 +172,9 @@ export function gapLine(
       `Prix ${formatPercent(pct)} ${priceGap > 0 ? 'au-dessus de' : 'en dessous de'} votre fourchette`,
     );
   }
+  // Mission 78 — annonce d'origine revue il y a plus de 7 jours (admise jusqu'à 21 jours aux
+  // crans à pièces libres) : la carte le dit.
+  const stale = candidate.streamEstate?.staleOriginDays;
+  if (stale != null) parts.push(`Annonce vue il y a ${stale} jours`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }

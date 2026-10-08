@@ -165,6 +165,8 @@ describe('l’ordre affiché suit le %', () => {
     const stream = (key: string, location: GeoPoint, tier: 1 | 5) =>
       candidate({
         key,
+        // Deux biens distincts : au même prix, ils n'en feraient qu'un (mission 78).
+        price: tier === 1 ? 420000 : 421000,
         url: `https://www.seloger.com/annonces/achat/appartement/${key}.htm`,
         features: { ...FEATURES, location, parking: ['garage'] },
         streamEstate: {
@@ -213,5 +215,122 @@ describe('l’ordre affiché suit le %', () => {
       ['far', 80], // 8 + 20 + 20 + 15 + 5 (même garage) = 68 sur 85
     ]);
     expect(search.ranked[1].gapLine).toBe('Même ville, à 4 km');
+  });
+});
+
+// MISSION 78 — pièces libérées : la carte dit son écart, le classement revalide par cran.
+describe('mission 78 : pièces libres', () => {
+  const HOUSE: CompetitorSearchCriteria = {
+    city: 'Cagnes-sur-Mer',
+    postalCode: '06800',
+    propertyType: 'house',
+    district: null,
+    surfaceArea: 200,
+    roomsCount: 9,
+    advisorPriceMin: 600000,
+    advisorPriceMax: 750000,
+  };
+  const house = (
+    key: string,
+    tier: 1 | 3 | 5 | 6 | 7 | 8,
+    over: Partial<CompetitorCandidate> = {},
+  ) =>
+    candidate({
+      key,
+      url: `https://www.seloger.com/annonces/achat/maison/${key}.htm`,
+      propertyType: 'house',
+      city: 'Cagnes-sur-Mer',
+      price: 700000,
+      surfaceArea: 201,
+      roomsCount: 7,
+      features: { ...FEATURES, location: SUBJECT },
+      ...over,
+      streamEstate: {
+        propertyId: key,
+        originSite: 'SeLoger',
+        onlineSince: null,
+        lastSeenAt: null,
+        priceDrops: [],
+        inseeCode: '06027',
+        tier,
+        ...over.streamEstate,
+      },
+    });
+  const rank = (candidates: CompetitorCandidate[]) =>
+    rankCandidates(
+      HOUSE,
+      [
+        {
+          portal: STREAM_ESTATE_SOURCE,
+          label: STREAM_ESTATE_LABEL,
+          searchUrl: '',
+          status: 'ok',
+          message: null,
+          candidates,
+        },
+      ],
+      learnFromDecisions([]),
+      { subjectLocation: SUBJECT, subjectInseeCode: '06027' },
+    );
+
+  it('la carte dit « 7 pièces au lieu de 9 »', () => {
+    expect(gapLine(HOUSE, house('a', 6), place(300))).toBe('7 pièces au lieu de 9');
+    expect(gapLine(HOUSE, house('b', 6, { roomsCount: 1 }), place(300))).toBe(
+      '1 pièce au lieu de 9',
+    );
+    expect(gapLine(HOUSE, house('c', 3, { roomsCount: 10 }), place(300))).toBe('10 pièces (+1)');
+    expect(gapLine(HOUSE, house('d', 7, { roomsCount: null }), place(300))).toBe(
+      'Nombre de pièces non indiqué',
+    );
+  });
+
+  it('la carte dit « Annonce vue il y a N jours » au-delà de 7 jours', () => {
+    const stale = house('a', 6, {
+      roomsCount: 9,
+      streamEstate: { staleOriginDays: 12 } as CompetitorCandidate['streamEstate'],
+    });
+    expect(gapLine(HOUSE, stale, place(300))).toBe('Annonce vue il y a 12 jours');
+  });
+
+  it('moins de pièces ou bien plus grand : admis aux crans 6 à 8, jamais aux crans 1 à 5', () => {
+    const search = rank([
+      house('freed', 6, { price: 700000 }),
+      house('huge', 7, { price: 701000, surfaceArea: 320 }),
+      house('roomless', 7, { price: 702000, roomsCount: null }),
+      house('early', 5, { price: 703000 }), // 7 pièces à un cran qui exige 9 ou 10
+      house('early-huge', 5, { price: 704000, roomsCount: 9, surfaceArea: 320 }),
+      house('small', 6, { price: 705000, surfaceArea: 170 }), // jamais plus de 10 % plus petit
+      house('pricey', 8, { price: 800000 }), // au-delà de ±5 % hors fourchette
+    ]);
+    expect(search.ranked.map((entry) => entry.candidate.key).sort()).toEqual([
+      'freed',
+      'huge',
+      'roomless',
+    ]);
+    expect(search.ranked.find((entry) => entry.candidate.key === 'huge')?.gapLine).toBe(
+      'Plus grand : 320\u00A0m² (+60\u00A0%) · 7 pièces au lieu de 9',
+    );
+    // Les pièces comptent dans le % : 7 au lieu de 9 perd les 15 points des pièces.
+    expect(search.ranked.find((entry) => entry.candidate.key === 'freed')?.matchPercent).toBe(81);
+  });
+
+  it('une commune voisine n’entre qu’à partir du cran 7', () => {
+    const elsewhere = (key: string, tier: 6 | 7, price: number) =>
+      house(key, tier, {
+        price,
+        city: 'Vence',
+        streamEstate: { inseeCode: '06157' } as CompetitorCandidate['streamEstate'],
+      });
+    const search = rank([elsewhere('six', 6, 700000), elsewhere('seven', 7, 701000)]);
+    expect(search.ranked.map((entry) => entry.candidate.key)).toEqual(['seven']);
+  });
+
+  it('le même bien sous deux identifiants n’est proposé qu’une fois', () => {
+    const search = rank([
+      house('a', 6, { price: 695000, surfaceArea: 189 }),
+      house('b', 7, { price: 695000, surfaceArea: 189.35 }),
+      house('c', 7, { price: 695000, surfaceArea: 195 }),
+    ]);
+    expect(search.ranked.map((entry) => entry.candidate.key).sort()).toEqual(['a', 'c']);
   });
 });

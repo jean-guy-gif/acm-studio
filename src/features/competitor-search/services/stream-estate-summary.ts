@@ -38,8 +38,9 @@ const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
   3: ['avec une pièce de plus', 'avec une pièce de plus'],
   4: ['à moins de 2 km', 'à moins de 2 km'],
   5: ['à moins de 5 km', 'à moins de 5 km'],
-  6: ['à moins de 10 km', 'à moins de 10 km'],
-  7: ['prix hors fourchette (±5 %)', 'prix hors fourchette (±5 %)'],
+  6: ['dans la même ville, pièces libres', 'dans la même ville, pièces libres'],
+  7: ['à moins de 10 km', 'à moins de 10 km'],
+  8: ['prix hors fourchette (±5 %)', 'prix hors fourchette (±5 %)'],
 };
 
 const plural = (count: number, one: string, many: string): string =>
@@ -79,6 +80,7 @@ export function mergeStreamEstateNote(
       expiredOrigin: sum('expiredOrigin'),
       otherCommune: sum('otherCommune'),
       unverifiedPosition: sum('unverifiedPosition'),
+      duplicates: sum('duplicates'),
     },
   };
 }
@@ -128,9 +130,9 @@ export function describeStreamEstateSearch(
           ? `Moins de ${STREAM_ESTATE_TARGET} : Stream Estate n’a plus répondu en cours de recherche ; voici ce qui a été trouvé avant.`
           : note.stop === 'exhausted'
             ? `Moins de ${STREAM_ESTATE_TARGET} : plus aucun bien après le dernier cran (${
-                lastTier === 7
+                lastTier === 8
                   ? 'rayon de 10 km, prix à ±5 % hors fourchette'
-                  : lastTier === 6
+                  : lastTier === 7
                     ? 'rayon de 10 km'
                     : 'toute la commune'
               }).`
@@ -163,7 +165,10 @@ export function describeStreamEstateSearch(
       ? `${plural(counts.unverifiedPosition, 'bien', 'biens')} sans position fiable aux crans de quartier`
       : null,
     counts.expiredOrigin > 0
-      ? `${plural(counts.expiredOrigin, 'annonce d’origine expirée', 'annonces d’origine expirées')} ou plus revue${counts.expiredOrigin > 1 ? 's' : ''} depuis 7 jours`
+      ? `${plural(counts.expiredOrigin, 'annonce d’origine expirée', 'annonces d’origine expirées')} ou plus revue${counts.expiredOrigin > 1 ? 's' : ''} depuis 7 jours (21 aux crans à pièces libres)`
+      : null,
+    counts.duplicates > 0
+      ? `${plural(counts.duplicates, 'doublon', 'doublons')} (le même bien sous un second identifiant)`
       : null,
     counts.outsideWhitelist > 0
       ? `${plural(counts.outsideWhitelist, 'bien', 'biens')} sans annonce sur un site que l’extension relit`

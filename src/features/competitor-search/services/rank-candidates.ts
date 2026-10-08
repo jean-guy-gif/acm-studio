@@ -17,7 +17,10 @@ import {
   SURFACE_FLOOR_SQM,
   WIDEST_SURFACE_TOLERANCE,
 } from '@/features/competitor-search/utils/surface-tolerance';
+import { isSameStreamEstateProperty } from '@/features/competitor-search/services/stream-estate';
 import {
+  NEIGHBOUR_TIER,
+  ROOMS_FREED_TIER,
   STREAM_ESTATE_SOURCE,
   type CandidateSource,
   type CompetitorCandidate,
@@ -70,11 +73,13 @@ const normCity = communeKey;
 // MISSION 71 — Stream Estate desserre, les portails non. Un bien Stream Estate a été cherché par
 // crans (stream-estate-tiers.ts) ; le classement revalide ici, côté serveur, les bornes LES PLUS
 // LARGES de ces crans : surface de −10 % (±3 m² au moins) à +25 %, pièces identiques ou une de
-// plus, prix à ±5 % hors fourchette, commune du bien (code INSEE) sauf aux crans 6 et 7 (10 km,
-// communes voisines comprises). Jamais plus petit, jamais une pièce de moins.
+// plus, prix à ±5 % hors fourchette, commune du bien (code INSEE) sauf aux crans 7 et 8 (10 km,
+// communes voisines comprises). Jamais plus petit.
+// MISSION 78 — à partir du cran 6 les pièces sont libres (une carte sans pièces n'est plus
+// écartée : ce n'est plus le critère) et la surface n'a plus de plafond ; elle reste « jamais
+// plus petite » (−10 % au plus), et le prix ne bouge pas.
 const STREAM_ESTATE_BIGGER = 1.25;
 const STREAM_ESTATE_PRICE_MARGIN = 0.05;
-const NEIGHBOUR_TIER = 6;
 
 type PriceBounds = { low: number; high: number } | null;
 
@@ -152,7 +157,9 @@ function admitStreamEstate(
   prices: PriceBounds,
   sameCommune: boolean,
 ): Admission {
-  if (!sameCommune && (candidate.streamEstate?.tier ?? 1) < NEIGHBOUR_TIER) {
+  const tier = candidate.streamEstate?.tier ?? 1;
+  const freed = tier >= ROOMS_FREED_TIER;
+  if (!sameCommune && tier < NEIGHBOUR_TIER) {
     return { ok: false, kind: 'out' };
   }
   if (prices != null) {
@@ -164,7 +171,7 @@ function admitStreamEstate(
     )
       return { ok: false, kind: 'out' };
   }
-  if (criteria.roomsCount != null) {
+  if (criteria.roomsCount != null && !freed) {
     if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
     const extra = candidate.roomsCount - criteria.roomsCount;
     if (extra < 0 || extra > 1) return { ok: false, kind: 'out' };
@@ -178,7 +185,7 @@ function admitStreamEstate(
     // Bornes entières côté API (stream-estate-tiers.ts) : on tolère l'arrondi.
     if (candidate.surfaceArea < Math.floor(ref - tolerance) - 1e-9)
       return { ok: false, kind: 'out' };
-    if (candidate.surfaceArea > Math.ceil(high) + 1e-9) return { ok: false, kind: 'out' };
+    if (!freed && candidate.surfaceArea > Math.ceil(high) + 1e-9) return { ok: false, kind: 'out' };
   }
   return { ok: true };
 }
@@ -226,6 +233,18 @@ export function rankCandidates(
       const identity = `${portal.portal}:${candidate.key ?? candidate.url}`;
       if (seen.has(identity)) continue;
       if (typesConflict(subjectType, candidate.propertyType)) continue;
+      // Mission 78 — Stream Estate seulement : le même bien sous un second identifiant (même
+      // commune, même prix, mêmes pièces, surface à 2 m² près) n'apparaît qu'une fois.
+      if (
+        portal.portal === STREAM_ESTATE_SOURCE &&
+        pool.some(
+          (entry) =>
+            entry.portal === STREAM_ESTATE_SOURCE &&
+            isSameStreamEstateProperty(entry.candidate, candidate),
+        )
+      ) {
+        continue;
+      }
       let host = '';
       try {
         host = new URL(candidate.url).hostname.toLowerCase();

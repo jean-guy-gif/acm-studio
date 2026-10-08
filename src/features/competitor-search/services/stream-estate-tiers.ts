@@ -5,6 +5,9 @@ import {
 } from '@/features/competitor-search/services/resolve-insee-code';
 import {
   baseStreamEstateQuery,
+  FREED_ORIGIN_SEEN_WITHIN_DAYS,
+  isSameStreamEstateProperty,
+  ORIGIN_SEEN_WITHIN_DAYS,
   parseStreamEstateResponse,
   STREAM_ESTATE_PAGE_SIZE,
 } from '@/features/competitor-search/services/stream-estate';
@@ -29,8 +32,19 @@ import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/su
 //   2. plus grand : < 1 km, surface de +10 % à +25 % (jamais plus petit) ;
 //   3. une pièce de plus : < 1 km (surface identique ou plus grande) ;
 //   4. même ville < 2 km, 5. même ville < 5 km (avec les élargissements 2 et 3) ;
-//   6. rayon de 10 km, communes voisines comprises ;
-//   7. prix à ±5 % hors fourchette, en dernier recours (10 km).
+//   6. même ville, pièces libres ;
+//   7. rayon de 10 km, communes voisines comprises ;
+//   8. prix à ±5 % hors fourchette, en dernier recours (10 km).
+//
+// MISSION 78 — LES PIÈCES SE LIBÈRENT APRÈS LA VILLE À 5 KM, ET LE RESTENT (décision de Laurent,
+// 08/10). Mesure du 08/10 : une maison de 9 pièces et 200 m² à Cagnes-sur-Mer ne trouvait RIEN,
+// aucune maison à 9 ou 10 pièces n'étant en vente dans la fourchette — les maisons de cette
+// surface y ont 5 à 7 pièces. Aux crans 6 à 8 : le nombre de pièces ne filtre plus (le % de
+// correspondance le compte, la carte le dit) ; la surface reste « jamais plus petite » (−10 % au
+// plus) mais n'a plus de plafond, la fourchette stricte borne déjà ; et l'annonce d'origine est
+// gardée si elle a été revue depuis 21 jours au plus (7 aux crans 1 à 5), la carte disant « vue
+// il y a N jours ». Sans nombre de pièces sur le bien vendeur, rien ne se libère : pas de cran 6,
+// et les crans 7 et 8 gardent leurs bornes de la mission 71.
 //
 // LE SECTEUR (mesures du 06/10) : l'API sait chercher dans un rayon (`lat`, `lon`, `radius` en km)
 // et exclure des communes (`excludedInseeCodes[]`), mais IGNORE le rayon dès qu'on lui donne
@@ -42,7 +56,9 @@ import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/su
 //
 // FACTURATION : les tranches de surface, de pièces et de prix sont disjointes (bornes entières :
 // l'API arrondit une borne décimale, mesuré le 06/10). Un cercle plus large refacture les biens du
-// cercle précédent (on ne peut pas exclure un rayon) : accepté. Les pages d'un cran sont épuisées
+// cercle précédent (on ne peut pas exclure un rayon) : accepté. Le cran 6 ne redemande pas ce que
+// les crans 1 à 5 ont déjà payé : il se découpe en tranches (moins de pièces ; deux pièces de plus
+// et au-delà ; mêmes pièces mais plus grand que +25 %). Les pages d'un cran sont épuisées
 // avant de passer au suivant. Plafond de 60 annonces facturées par recherche ; au plafond avant
 // 10, « Chercher encore » reprend exactement où l'on s'était arrêté, 20 annonces à la fois.
 
@@ -58,19 +74,27 @@ export const NEIGHBOUR_MARGIN_KM = 8;
 const MAX_PAGES_PER_QUERY = 10;
 
 export type Range = { min: number; max: number };
+// Mission 78 — une borne peut manquer : « 181 m² et plus », « 8 pièces au plus ».
+export type OpenRange = { min?: number; max?: number };
+export type TierSlice = { rooms: OpenRange | null; surface: OpenRange | null };
 
 // Où chercher : toute la commune (code INSEE), ou un cercle autour d'un point. `withinCommune` :
-// le cercle est privé des communes voisines (crans 1 à 5) ; sinon il les comprend (crans 6 et 7).
+// le cercle est privé des communes voisines (crans 1 à 6) ; sinon il les comprend (crans 7 et 8).
 export type TierArea =
   { kind: 'commune' } | { kind: 'circle'; radiusKm: number; withinCommune: boolean };
 
 export type TierPlan = {
   tier: StreamEstateTier;
   area: TierArea;
-  surface: Range | null; // null : le bien vendeur n'a pas de surface, on ne filtre pas
-  rooms: Range | null;
+  surface: OpenRange | null; // null : le bien vendeur n'a pas de surface, on ne filtre pas
+  rooms: OpenRange | null; // null : pas de filtre sur les pièces
+  // Mission 78 — plusieurs tranches disjointes de pièces et de surface pour ce cran, à la place de
+  // `surface` et `rooms` (cran 6 : ce que les crans 1 à 5 n'ont pas déjà demandé).
+  slices?: TierSlice[];
   // Une requête par tranche de prix ([] : pas de fourchette, pas de filtre prix).
   prices: Range[];
+  // Fraîcheur exigée de l'annonce d'origine, en jours : 7, ou 21 aux crans à pièces libres.
+  originWithinDays: number;
   // Un bien sans position fiable entre si ce cran ne parle pas de quartier (« toute la commune »,
   // cran 5 et au-delà) ; sinon, seulement si son code INSEE confirme la commune. Il porte alors
   // « Même ville — quartier non vérifié ».
@@ -136,6 +160,14 @@ export function planTiers(
   const plusOneRoom: Range | null = s.rooms != null ? { min: s.rooms + 1, max: s.rooms + 1 } : null;
   const roomsAny: Range | null = s.rooms != null ? { min: s.rooms, max: s.rooms + 1 } : null;
   const inRange = s.advisorPrices ? [s.advisorPrices] : [];
+  // Mission 78 — pièces libérées : jamais plus petit, plus de plafond.
+  const freed = s.rooms != null;
+  const freedSurface: OpenRange | null = s.identicalSurface
+    ? { min: s.identicalSurface.min }
+    : null;
+  const wideSurface = freed ? freedSurface : surfaceAny;
+  const wideRooms = freed ? null : roomsAny;
+  const wideOrigin = freed ? FREED_ORIGIN_SEEN_WITHIN_DAYS : ORIGIN_SEEN_WITHIN_DAYS;
 
   const neighbourhood: TierArea = options.located
     ? { kind: 'circle', radiusKm: 1, withinCommune: true }
@@ -148,6 +180,7 @@ export function planTiers(
       surface: s.identicalSurface,
       rooms: sameRooms,
       prices: inRange,
+      originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     },
   ];
@@ -158,6 +191,7 @@ export function planTiers(
       surface: s.biggerSurface,
       rooms: sameRooms,
       prices: inRange,
+      originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     });
   }
@@ -168,6 +202,7 @@ export function planTiers(
       surface: surfaceAny,
       rooms: plusOneRoom,
       prices: inRange,
+      originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     });
   }
@@ -179,6 +214,7 @@ export function planTiers(
         surface: surfaceAny,
         rooms: roomsAny,
         prices: inRange,
+        originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
         acceptsUnverifiedPosition: false,
       },
       {
@@ -187,26 +223,51 @@ export function planTiers(
         surface: surfaceAny,
         rooms: roomsAny,
         prices: inRange,
+        originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
         acceptsUnverifiedPosition: true,
       },
     );
   }
-  if (options.located || options.hasCentre) {
+  if (s.rooms != null) {
+    // Cran 6 — même ville, pièces libres : le cercle de 5 km dans la commune (toute la commune
+    // sans quartier), privé de ce que les crans 1 à 5 y ont déjà demandé (mêmes pièces ou une de
+    // plus, jusqu'à +25 %).
+    const slices: TierSlice[] = [
+      ...(s.rooms > 1 ? [{ rooms: { max: s.rooms - 1 }, surface: freedSurface }] : []),
+      { rooms: { min: s.rooms + 2 }, surface: freedSurface },
+      ...(surfaceAny ? [{ rooms: roomsAny, surface: { min: surfaceAny.max + 1 } }] : []),
+    ];
     plans.push({
       tier: 6,
-      area: { kind: 'circle', radiusKm: 10, withinCommune: false },
-      surface: surfaceAny,
-      rooms: roomsAny,
+      area: options.located
+        ? { kind: 'circle', radiusKm: 5, withinCommune: true }
+        : { kind: 'commune' },
+      surface: freedSurface,
+      rooms: null,
+      slices,
       prices: inRange,
+      originWithinDays: FREED_ORIGIN_SEEN_WITHIN_DAYS,
+      acceptsUnverifiedPosition: true,
+    });
+  }
+  if (options.located || options.hasCentre) {
+    plans.push({
+      tier: 7,
+      area: { kind: 'circle', radiusKm: 10, withinCommune: false },
+      surface: wideSurface,
+      rooms: wideRooms,
+      prices: inRange,
+      originWithinDays: wideOrigin,
       acceptsUnverifiedPosition: true,
     });
     if (s.outsidePrices.length > 0) {
       plans.push({
-        tier: 7,
+        tier: 8,
         area: { kind: 'circle', radiusKm: 10, withinCommune: false },
-        surface: surfaceAny,
-        rooms: roomsAny,
+        surface: wideSurface,
+        rooms: wideRooms,
         prices: s.outsidePrices,
+        originWithinDays: wideOrigin,
         acceptsUnverifiedPosition: true,
       });
     }
@@ -243,7 +304,7 @@ export type TierQueryContext = {
 // voisines à retirer du cercle (null = cercle seul, repli).
 export function tierQueryParams(
   base: URLSearchParams,
-  plan: TierPlan,
+  plan: Pick<TierPlan, 'area' | 'rooms' | 'surface'>,
   price: Range | null,
   context: TierQueryContext,
   excluded: string[] | null,
@@ -259,14 +320,11 @@ export function tierQueryParams(
     params.append('radius', String(plan.area.radiusKm));
     for (const code of excluded ?? []) params.append('excludedInseeCodes[]', code);
   }
-  if (plan.rooms) {
-    params.append('roomMin', String(plan.rooms.min));
-    params.append('roomMax', String(plan.rooms.max));
-  }
-  if (plan.surface) {
-    params.append('surfaceMin', String(plan.surface.min));
-    params.append('surfaceMax', String(plan.surface.max));
-  }
+  // Une borne absente n'est pas envoyée (mesure du 08/10 : l'API accepte `surfaceMin` seul).
+  if (plan.rooms?.min != null) params.append('roomMin', String(plan.rooms.min));
+  if (plan.rooms?.max != null) params.append('roomMax', String(plan.rooms.max));
+  if (plan.surface?.min != null) params.append('surfaceMin', String(plan.surface.min));
+  if (plan.surface?.max != null) params.append('surfaceMax', String(plan.surface.max));
   if (price) {
     params.append('budgetMin', String(price.min));
     params.append('budgetMax', String(price.max));
@@ -298,10 +356,12 @@ export type TieredSearchCounts = {
   expiredOrigin: number;
   otherCommune: number; // renvoyés hors de la commune à un cran « même ville » : écartés, facturés
   unverifiedPosition: number; // sans position fiable à un cran de quartier : écartés, facturés
+  // Mission 78 — le même bien renvoyé sous un second identifiant : montré une fois, facturé deux.
+  duplicates: number;
 };
 
-// Où reprendre une recherche arrêtée au plafond : le cran (index dans le plan), la tranche de prix,
-// la page suivante et sa taille (une requête garde la même taille de page, sinon le décalage
+// Où reprendre une recherche arrêtée au plafond : le cran (index dans le plan), la requête du cran
+// (`price` : index parmi ses tranches — pièces et surface, puis prix), la page suivante et sa taille (une requête garde la même taille de page, sinon le décalage
 // change ; null = première page de la requête, taille libre).
 export type TierCursor = {
   plan: number;
@@ -367,6 +427,7 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
     expiredOrigin: 0,
     otherCommune: 0,
     unverifiedPosition: 0,
+    duplicates: 0,
   };
   // Écartés par bien distinct : un bien écarté à un cran peut entrer à un cran plus large.
   const otherCommune = new Set<string>();
@@ -396,7 +457,11 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
       else report.fallback = true;
     }
     const verifyCommune = plan.area.kind === 'commune' || excludeNeighbours;
-    const prices = plan.prices.length > 0 ? plan.prices : [null];
+    // Les requêtes du cran : chaque tranche de pièces et de surface, pour chaque tranche de prix.
+    const slices: TierSlice[] = plan.slices ?? [{ rooms: plan.rooms, surface: plan.surface }];
+    const prices = slices.flatMap((slice) =>
+      (plan.prices.length > 0 ? plan.prices : [null]).map((price) => ({ slice, price })),
+    );
     const resumingPlan = start != null && planIndex === start.plan;
 
     for (
@@ -404,7 +469,8 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
       priceIndex < prices.length;
       priceIndex += 1
     ) {
-      const price = prices[priceIndex];
+      const { slice, price } = prices[priceIndex];
+      const query = { area: plan.area, ...slice };
       const resumingQuery = resumingPlan && priceIndex === start.price;
       // Une requête garde la même taille de page d'un bout à l'autre (sinon le décalage change).
       let size: number | null = resumingQuery ? start.size : null;
@@ -417,7 +483,7 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
         size = itemsPerPage;
 
         const params = () =>
-          tierQueryParams(base.params, plan, price, input.context, excluded, page, itemsPerPage);
+          tierQueryParams(base.params, query, price, input.context, excluded, page, itemsPerPage);
         let response = await input.fetchPage(params());
         if (!response.ok && !response.refused && excluded != null && excluded.length > 0) {
           // L'API refuse la liste des communes voisines (adresse trop longue, erreur) : repli sur
@@ -430,7 +496,12 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
           if (response.refused) return { ok: false, reason: 'refused' };
           return candidates.length > 0 ? finish('error') : { ok: false, reason: 'failed' };
         }
-        const parsed = parseStreamEstateResponse(response.json, input.now, seenLocations);
+        const parsed = parseStreamEstateResponse(
+          response.json,
+          input.now,
+          seenLocations,
+          plan.originWithinDays,
+        );
         if (parsed == null) {
           return candidates.length > 0 ? finish('error') : { ok: false, reason: 'failed' };
         }
@@ -460,6 +531,12 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
             insee !== input.context.inseeCode
           ) {
             unverifiedPosition.add(candidate.key!);
+            continue;
+          }
+          // Mission 78 — le même bien sous un second identifiant : une seule carte, un seul compte.
+          if (candidates.some((kept) => isSameStreamEstateProperty(kept, candidate))) {
+            keys.add(candidate.key!);
+            counts.duplicates += 1;
             continue;
           }
           keys.add(candidate.key!);

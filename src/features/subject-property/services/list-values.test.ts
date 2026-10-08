@@ -29,6 +29,14 @@ describe('translateHeating', () => {
     expect(translateHeating('central', 'fuel')).toBeNull();
   });
 
+  it('for a house, « gaz » or « fioul » alone means individual', () => {
+    expect(translateHeating('gaz', null, { house: true })).toBe('individual_gas');
+    expect(translateHeating('central', 'fuel', { house: true })).toBe('individual_fuel');
+    expect(translateHeating('Gaz collectif', null, { house: true })).toBe('collective_gas');
+    expect(translateHeating('central', null, { house: true })).toBeNull();
+    expect(translateHeating('gaz', null, { house: false })).toBeNull();
+  });
+
   it('keeps a value that is already in the list', () => {
     for (const value of HEATING_TYPES) expect(translateHeating(value)).toBe(value);
   });

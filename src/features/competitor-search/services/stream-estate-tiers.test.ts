@@ -45,6 +45,7 @@ type Fake = {
   room?: number;
   price?: number;
   host?: string;
+  seenDaysAgo?: number; // dernier passage du robot sur l'annonce d'origine (1 jour par défaut)
 };
 
 let counter = 0;
@@ -57,12 +58,21 @@ function north(meters: number): GeoPoint {
   };
 }
 
+// Chaque bien factice a son prix, à 1 € près : même commune, même prix, mêmes pièces et même
+// surface seraient UN SEUL bien (mission 78, doublons).
+const priceOffsets = new Map<string, number>();
+function distinctPrice(id: string): number {
+  if (!priceOffsets.has(id)) priceOffsets.set(id, priceOffsets.size);
+  return 400000 + priceOffsets.get(id)!;
+}
+
 function toJson(fake: Fake) {
+  const seenAt = new Date(NOW.getTime() - (fake.seenDaysAgo ?? 1) * 86_400_000).toISOString();
   return {
     uuid: fake.id,
     title: 'Appartement à vendre',
     propertyType: 0,
-    price: fake.price ?? 400000,
+    price: fake.price ?? distinctPrice(fake.id),
     surface: fake.surface ?? 63,
     room: fake.room ?? 3,
     createdAt: '2026-09-20T10:00:00+02:00',
@@ -74,7 +84,7 @@ function toJson(fake: Fake) {
       {
         url: `https://www.${fake.host ?? 'seloger.com'}/annonces/achat/appartement/${fake.id}.htm`,
         expired: false,
-        lastCrawledAt: '2026-10-05T10:00:00+02:00',
+        lastCrawledAt: seenAt,
       },
     ],
   };
@@ -163,13 +173,14 @@ describe('les tranches sont disjointes', () => {
     expect(small.biggerSurface).toBeNull();
   });
 
-  it('dans un même cercle, aucun bien n’est facturé deux fois par les crans 1 à 3', async () => {
+  it('dans la commune, aucun bien n’est facturé deux fois par les crans 1 à 6', async () => {
     const pool = [
       ...many(2, 'same', () => ({ point: north(300) })),
       ...many(2, 'big', (i) => ({ point: north(400), surface: 71 + i * 7 })),
       ...many(2, 'room', () => ({ point: north(500), room: 4, surface: 75 })),
       ...many(2, 'small', () => ({ point: north(300), surface: 55 })), // plus petit : jamais
-      ...many(2, 'less', () => ({ point: north(300), room: 2 })), // une pièce de moins : jamais
+      // Une pièce de moins : jamais avant le cran 6, où les pièces se libèrent (mission 78).
+      ...many(2, 'less', () => ({ point: north(300), room: 2 })),
     ];
     const { api, run } = search(pool);
     const outcome = await run;
@@ -179,9 +190,15 @@ describe('les tranches sont disjointes', () => {
     expect(billed.sort()).toEqual(
       ['big-0', 'big-1', 'room-0', 'room-1', 'same-0', 'same-1'].sort(),
     );
+    // Crans 4 à 6 (2 et 5 km dans la commune) : seul le cran 6 ramène du nouveau, une fois.
+    const beyond = api.calls
+      .filter((call) => ['2', '5'].includes(call.params.get('radius') ?? ''))
+      .flatMap((call) => call.billed.filter((id) => id.startsWith('less')));
+    expect(beyond.sort()).toEqual(['less-0', 'less-1']);
     expect(outcome.ok && outcome.candidates.map((c) => c.streamEstate?.tier)).toEqual([
-      1, 1, 2, 2, 3, 3,
+      1, 1, 2, 2, 3, 3, 6, 6,
     ]);
+    expect(outcome.ok && outcome.candidates.map((c) => c.key)).not.toContain('small-0');
   });
 });
 
@@ -291,12 +308,12 @@ describe('le secteur : le cercle moins les communes voisines', () => {
     expect(params.get('page')).toBeNull();
   });
 
-  it('un bien d’une commune voisine passé à travers est écarté, compté, et entre au cran 6', async () => {
+  it('un bien d’une commune voisine passé à travers est écarté, compté, et entre au cran 7', async () => {
     const pool = [{ id: 'nice', point: north(600), insee: NICE, city: 'Nice' }];
     const { run } = search(pool, { neighbours: () => [] }); // la liste a « raté » Nice
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
-    expect(outcome.candidates.map((c) => [c.key, c.streamEstate?.tier])).toEqual([['nice', 6]]);
+    expect(outcome.candidates.map((c) => [c.key, c.streamEstate?.tier])).toEqual([['nice', 7]]);
     expect(outcome.counts.otherCommune).toBe(0); // entré ensuite : n'est plus compté écarté
     expect(outcome.stop).toBe('exhausted');
   });
@@ -308,14 +325,14 @@ describe('le secteur : le cercle moins les communes voisines', () => {
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
     expect(outcome.candidates).toHaveLength(3);
-    expect(outcome.tiers.filter((r) => r.fallback).map((r) => r.tier)).toEqual([1, 2, 3, 4, 5]);
+    expect(outcome.tiers.filter((r) => r.fallback).map((r) => r.tier)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('liste indisponible (geo.api.gouv.fr) : repli dit pour les crans 1 à 5', async () => {
+  it('liste indisponible (geo.api.gouv.fr) : repli dit pour les crans 1 à 6', async () => {
     const { run } = search([], { neighbours: null });
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
-    expect(outcome.tiers.filter((r) => r.fallback).map((r) => r.tier)).toEqual([1, 2, 3, 4, 5]);
+    expect(outcome.tiers.filter((r) => r.fallback).map((r) => r.tier)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('les voisines : communes du département dont le centre est à moins de rayon + 8 km', () => {
@@ -359,20 +376,22 @@ describe('positions de remplissage et adresse non localisée', () => {
       [1, 'commune'],
       [2, 'commune'],
       [3, 'commune'],
-      [6, 'circle'],
+      [6, 'commune'],
       [7, 'circle'],
+      [8, 'circle'],
     ]);
     expect(plans.slice(0, 3).every((plan) => plan.acceptsUnverifiedPosition)).toBe(true);
     expect(planTiers(CRITERIA, { located: false, hasCentre: false }).map((p) => p.tier)).toEqual([
-      1, 2, 3,
+      1, 2, 3, 6,
     ]);
   });
 
-  it('sans fourchette, pas de cran 7 ; sans pièces, pas de cran 3', () => {
+  it('sans fourchette, pas de cran 8 ; sans pièces, ni cran 3 ni cran 6', () => {
     const bare = { ...CRITERIA, advisorPriceMin: null, advisorPriceMax: null, roomsCount: null };
-    expect(planTiers(bare, { located: true, hasCentre: true }).map((p) => p.tier)).toEqual([
-      1, 2, 4, 5, 6,
-    ]);
+    const plans = planTiers(bare, { located: true, hasCentre: true });
+    expect(plans.map((p) => p.tier)).toEqual([1, 2, 4, 5, 7]);
+    // Rien ne se libère : le rayon de 10 km garde ses bornes de la mission 71.
+    expect(plans.at(-1)).toMatchObject({ surface: { min: 56, max: 78 }, originWithinDays: 7 });
   });
 });
 
@@ -460,5 +479,161 @@ describe('erreurs de l’API', () => {
     const api = fakeApi([], { refuseAll: true });
     const { run } = search([], { fetchPage: api.fetchPage });
     expect(await run).toEqual({ ok: false, reason: 'refused' });
+  });
+});
+
+// MISSION 78 — les pièces se libèrent après la ville à 5 km, et le restent.
+describe('mission 78 : une grande maison trouve ses comparables', () => {
+  const CAGNES = '06027';
+  // La maison de l'essai du 08/10 : 9 pièces, 200,13 m², 600–750 k€, sans adresse.
+  const HOUSE: CompetitorSearchCriteria = {
+    city: 'Cagnes-sur-Mer',
+    postalCode: '06800',
+    propertyType: 'Maison',
+    district: null,
+    surfaceArea: 200.13,
+    roomsCount: 9,
+    advisorPriceMin: 600000,
+    advisorPriceMax: 750000,
+  };
+  const CENTRE: GeoPoint = { lat: 43.6712, lon: 7.1502 };
+  const plans = planTiers(HOUSE, { located: false, hasCentre: true });
+  const base = baseStreamEstateQuery(HOUSE, NOW);
+  if (!base.ok) throw new Error('type');
+  const paramsOf = (tier: number) => {
+    const plan = plans.find((candidate) => candidate.tier === tier)!;
+    const context = { inseeCode: CAGNES, origin: CENTRE };
+    return (plan.slices ?? [plan]).map((slice) => {
+      const params = tierQueryParams(
+        base.params,
+        { area: plan.area, ...slice },
+        plan.prices[0],
+        context,
+        null,
+        1,
+        20,
+      );
+      return ['roomMin', 'roomMax', 'surfaceMin', 'surfaceMax'].map((key) => params.get(key));
+    });
+  };
+  const house = (id: string, over: Partial<Fake> = {}): Fake => ({
+    id,
+    point: null,
+    insee: CAGNES,
+    city: 'Cagnes-sur-Mer',
+    surface: 200,
+    room: 6,
+    price: 650000 + id.length * 1000 + id.charCodeAt(id.length - 1),
+    ...over,
+  });
+  const run = (pool: Fake[]) => {
+    const api = fakeApi(pool);
+    return {
+      api,
+      outcome: runTieredSearch({
+        criteria: HOUSE,
+        plans,
+        context: { inseeCode: CAGNES, origin: CENTRE },
+        neighbours: null,
+        fetchPage: api.fetchPage,
+        now: NOW,
+      }),
+    };
+  };
+
+  it('les crans 1 à 3 gardent 9 ou 10 pièces ; le cran 6 libère les pièces dans la commune', () => {
+    expect(plans.map((plan) => [plan.tier, plan.area.kind, plan.originWithinDays])).toEqual([
+      [1, 'commune', 7],
+      [2, 'commune', 7],
+      [3, 'commune', 7],
+      [6, 'commune', 21],
+      [7, 'circle', 21],
+      [8, 'circle', 21],
+    ]);
+    expect(paramsOf(1)).toEqual([['9', '9', '180', '221']]);
+    expect(paramsOf(3)).toEqual([['10', '10', '180', '250']]);
+    // Trois tranches qui ne redemandent rien aux crans 1 à 3 : moins de pièces, deux pièces de
+    // plus et au-delà, mêmes pièces mais plus grand que +25 %. Jamais plus petit que 180 m².
+    expect(paramsOf(6)).toEqual([
+      [null, '8', '180', null],
+      ['11', null, '180', null],
+      ['9', '10', '251', null],
+    ]);
+  });
+
+  it('à 10 km et hors fourchette, les pièces restent libres et la surface sans plafond', () => {
+    expect(paramsOf(7)).toEqual([[null, null, '180', null]]);
+    expect(paramsOf(8)).toEqual([[null, null, '180', null]]);
+    expect(plans.find((plan) => plan.tier === 8)!.prices).toEqual([
+      { min: 570000, max: 599999 },
+      { min: 750001, max: 787500 },
+    ]);
+  });
+
+  it('des maisons de 5 à 7 pièces entrent au cran 6 ; une plus petite, jamais', async () => {
+    const pool = [
+      house('six', { room: 6, surface: 185 }),
+      house('seven', { room: 7, surface: 320 }), // plus de plafond de surface
+      house('twelve', { room: 12, surface: 210 }),
+      house('small', { room: 6, surface: 169 }), // plus de 10 % plus petite
+    ];
+    const { api, outcome } = run(pool);
+    const result = await outcome;
+    if (!result.ok) throw new Error('échec');
+    expect(result.candidates.map((c) => [c.key, c.streamEstate?.tier])).toEqual([
+      ['six', 6],
+      ['seven', 6],
+      ['twelve', 6],
+    ]);
+    // Le cran 6 ne facture chaque bien qu'une fois.
+    const commune = api.calls.filter((call) => call.params.has('includedInseeCodes[]'));
+    const billed = commune.flatMap((call) => call.billed);
+    expect(new Set(billed).size).toBe(billed.length);
+  });
+
+  it('annonce d’origine revue il y a 12 jours : écartée au cran 1, gardée aux crans libérés', async () => {
+    const pool = [
+      house('same', { room: 9, seenDaysAgo: 12 }), // cran 1 : 7 jours, écartée
+      house('freed', { room: 6, seenDaysAgo: 12 }),
+      house('old', { room: 6, seenDaysAgo: 25 }), // plus de 21 jours : jamais
+      house('fresh', { room: 5, seenDaysAgo: 2 }),
+    ];
+    const result = await run(pool).outcome;
+    if (!result.ok) throw new Error('échec');
+    expect(
+      result.candidates.map((c) => [c.key, c.streamEstate?.tier, c.streamEstate?.staleOriginDays]),
+    ).toEqual([
+      ['freed', 6, 12],
+      ['fresh', 6, undefined],
+    ]);
+    // « same » (9 pièces, 12 jours) : écartée au cran 1 ; « old » : écartée au cran 6.
+    expect(result.counts.expiredOrigin).toBe(2);
+  });
+
+  it('le même bien sous deux identifiants n’apparaît et ne compte qu’une fois', async () => {
+    const twin = { room: 6, surface: 169 + 15, price: 695000 };
+    const pool = [
+      house('a', twin),
+      house('b', { ...twin, surface: 185.9 }), // à 2 m² près : le même
+      house('c', { ...twin, surface: 190 }), // plus de 2 m² d'écart : un autre bien
+      house('d', { ...twin, price: 696000 }), // autre prix : un autre bien
+    ];
+    const result = await run(pool).outcome;
+    if (!result.ok) throw new Error('échec');
+    expect(result.candidates.map((c) => c.key)).toEqual(['a', 'c', 'd']);
+    expect(result.counts.duplicates).toBe(1);
+  });
+
+  it('un doublon ne compte pas dans les 10', async () => {
+    const pool = [
+      ...many(9, 'h', (i) => house(`h-${i}`, { price: 600000 + i * 1000 })),
+      house('twin', { price: 600000 }), // le même que h-0
+      house('tenth', { price: 700000 }),
+    ];
+    const result = await run(pool).outcome;
+    if (!result.ok) throw new Error('échec');
+    expect(result.stop).toBe('target');
+    expect(result.candidates).toHaveLength(10);
+    expect(result.candidates.map((c) => c.key)).not.toContain('twin');
   });
 });

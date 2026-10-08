@@ -142,6 +142,13 @@ describe('mapListingToProperty', () => {
       expect(prefill.heating_type).toBeNull();
     });
 
+    it('« gaz » alone: individual for a house, empty for an apartment', () => {
+      const house = listing({ title: 'Maison 5 pièces', heatingType: 'gaz' });
+      expect(mapListingToProperty(house).prefill.heating_type).toBe('individual_gas');
+      const flat = listing({ heatingType: 'gaz' });
+      expect(mapListingToProperty(flat).prefill.heating_type).toBeNull();
+    });
+
     it('the heating joins its energy source', () => {
       const { prefill } = mapListingToProperty(
         listing({ heatingType: 'individuel', energySource: 'fioul' }),
