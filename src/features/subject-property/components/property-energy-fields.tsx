@@ -12,12 +12,15 @@ export function PropertyEnergyFields({
   energyRating,
   gesRating,
   heatingType,
+  mentions = {},
   onField,
   errors,
 }: {
   energyRating: string;
   gesRating: string;
   heatingType: string;
+  // Mission 79 — « d’après le DPE du … » sous un champ que le DPE officiel a rempli.
+  mentions?: { energy_rating?: string; ges_rating?: string; heating_type?: string };
   onField: (name: string, value: string) => void;
   errors: Record<string, string>;
 }) {
@@ -30,6 +33,7 @@ export function PropertyEnergyFields({
           value={energyRating}
           onChange={(value) => onField('energy_rating', value)}
           error={errors.energy_rating}
+          hint={mentions.energy_rating}
         />
         <SelectField
           label="Classe GES"
@@ -37,6 +41,7 @@ export function PropertyEnergyFields({
           onChange={(value) => onField('ges_rating', value)}
           options={GES_RATINGS.map((value) => ({ value, label: value }))}
           error={errors.ges_rating}
+          hint={mentions.ges_rating}
         />
       </div>
       <SelectField
@@ -45,6 +50,7 @@ export function PropertyEnergyFields({
         onChange={(value) => onField('heating_type', value)}
         options={HEATING_TYPES.map((value) => ({ value, label: HEATING_TYPE_LABELS[value] }))}
         error={errors.heating_type}
+        hint={mentions.heating_type}
       />
     </section>
   );

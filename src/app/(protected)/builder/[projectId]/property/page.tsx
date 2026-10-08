@@ -7,6 +7,7 @@ import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagn
 import { importComparableHtml } from '@/features/comparable-import/actions/import-comparable-html';
 import { importComparableUrl } from '@/features/comparable-import/actions/import-comparable-url';
 import { saveSubjectPropertySheet } from '@/features/subject-property/actions/save-subject-property-sheet';
+import { readOfficialDpe } from '@/features/subject-property-dpe/actions/read-official-dpe';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import {
   depositBrochurePhotos,
@@ -43,6 +44,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const importFromHtml = importComparableHtml.bind(null, projectId);
   const recoverPhoto = recoverPropertyPhoto.bind(null, projectId);
   const depositBrochure = depositBrochurePhotos.bind(null, projectId);
+  const readDpe = readOfficialDpe.bind(null, projectId);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -64,6 +66,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         recoverAction={recoverPhoto}
         parseBrochureAction={parseBrochureText}
         depositBrochureAction={depositBrochure}
+        dpeAction={readDpe}
         diagnostics={diagnostics}
         condominium={condominium}
         findHref={`/builder/${projectId}/comparables/find`}

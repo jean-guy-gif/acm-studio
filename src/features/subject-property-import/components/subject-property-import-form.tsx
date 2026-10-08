@@ -38,6 +38,7 @@ import {
   type SheetSectionHandle,
 } from '@/features/subject-property/services/sheet-form';
 import type { SubjectProperty } from '@/features/subject-property/types';
+import type { DpeReading, DpeRequest } from '@/features/subject-property-dpe/types';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
 import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
 import type { SignedPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
@@ -82,6 +83,7 @@ export function SubjectPropertyImportForm({
   recoverAction,
   parseBrochureAction,
   depositBrochureAction,
+  dpeAction,
   diagnostics,
   condominium,
   findHref,
@@ -98,6 +100,7 @@ export function SubjectPropertyImportForm({
   recoverAction: (url: string) => Promise<RecoverPropertyPhotoResult>;
   parseBrochureAction: (pages: string[]) => Promise<ParseBrochureResult>;
   depositBrochureAction: (formData: FormData) => Promise<DepositBrochureResult>;
+  dpeAction: (request: DpeRequest) => Promise<DpeReading>;
   diagnostics: SubjectPropertyDiagnostics | null;
   condominium: SubjectPropertyCondominium | null;
   findHref: string;
@@ -260,6 +263,7 @@ export function SubjectPropertyImportForm({
         uploadPhotosAction={uploadPhotosAction}
         updatePhotosAction={updatePhotosAction}
         imported={imported ?? undefined}
+        dpeAction={dpeAction}
         errors={errors.property}
         onDirty={() => markDirty('property')}
       />

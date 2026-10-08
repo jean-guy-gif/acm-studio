@@ -1,6 +1,6 @@
 'use client';
 
-import { checkChip, errorText, fieldLabel, inputBase } from '@/components/ui/styles';
+import { checkChip, errorText, fieldLabel, hintText, inputBase } from '@/components/ui/styles';
 
 // Small shared presentational input primitives for the seller-property form.
 // Errors are rendered near their field.
@@ -14,17 +14,27 @@ function FieldError({ error }: { error?: string }) {
   ) : null;
 }
 
+// `hint` : d'où vient la valeur quand ce n'est pas le conseiller qui l'a saisie (« d’après le DPE
+// du … », mission 79).
+function FieldHint({ hint }: { hint?: string }) {
+  return hint ? <span className={hintText}>{hint}</span> : null;
+}
+
 export function TextField({
   label,
   value,
   onChange,
+  onBlur,
   error,
+  hint,
   id,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   error?: string;
+  hint?: string;
   id?: string;
 }) {
   return (
@@ -35,8 +45,10 @@ export function TextField({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
         className={inputBase}
       />
+      <FieldHint hint={hint} />
       <FieldError error={error} />
     </label>
   );
@@ -139,6 +151,7 @@ export function SelectField({
   onChange,
   options,
   error,
+  hint,
   id,
 }: {
   label: string;
@@ -146,6 +159,7 @@ export function SelectField({
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   error?: string;
+  hint?: string;
   id?: string;
 }) {
   return (
@@ -164,6 +178,7 @@ export function SelectField({
           </option>
         ))}
       </select>
+      <FieldHint hint={hint} />
       <FieldError error={error} />
     </label>
   );

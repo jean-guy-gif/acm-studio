@@ -103,6 +103,12 @@ export default function ConfidentialitePage() {
               pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
               transmis.
             </li>
+            <li>
+              Pour lire le diagnostic de performance énergétique (DPE) du bien vendeur, ACM Studio
+              envoie l’adresse du bien, sous la forme de son identifiant dans la Base Adresse
+              Nationale, à la base publique de l’ADEME (data.ademe.fr). Rien d’autre ne lui est
+              transmis.
+            </li>
             <li>Les e-mails d’invitation sont envoyés par Google (messagerie de l’éditeur).</li>
           </ul>
         </section>

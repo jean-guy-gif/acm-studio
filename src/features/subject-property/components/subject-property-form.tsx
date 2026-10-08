@@ -1,6 +1,6 @@
 'use client';
 
-import { useImperativeHandle, useState, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
 import { PropertyCharacteristicsFields } from '@/features/subject-property/components/property-characteristics-fields';
@@ -30,6 +30,8 @@ import type {
   SheetSectionHandle,
 } from '@/features/subject-property/services/sheet-form';
 import type { SubjectProperty } from '@/features/subject-property/types';
+import { applyDpe } from '@/features/subject-property-dpe/services/apply-dpe';
+import type { DpeReading, DpeRequest } from '@/features/subject-property-dpe/types';
 import type { SubjectPropertyImportPrefill } from '@/features/subject-property-import/types';
 import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/components/subject-property-photos-field';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
@@ -143,6 +145,7 @@ export function SubjectPropertyForm({
   uploadPhotosAction,
   updatePhotosAction,
   imported,
+  dpeAction,
   errors = {},
   onDirty,
   ref,
@@ -154,6 +157,8 @@ export function SubjectPropertyForm({
   // Pre-fill coming from an online-listing import (Mission 38). Optional: absent
   // for a purely manual sheet and for the design preview.
   imported?: SubjectPropertyImportPrefill;
+  // Mission 79 — lit le DPE officiel de l'adresse (ADEME). Absent : la fiche ne demande rien.
+  dpeAction?: (request: DpeRequest) => Promise<DpeReading>;
   errors?: Record<string, string>;
   onDirty?: () => void;
   ref?: Ref<SheetSectionHandle>;
@@ -172,10 +177,50 @@ export function SubjectPropertyForm({
   // flag weaknesses honestly (Mission 44 §4).
   const [watchPoints, setWatchPoints] = useState<string[]>(property?.watch_points ?? []);
 
+  // MISSION 79 — le DPE officiel ne remplit que ce qui est resté vide (`applyDpe`) : il n'entre
+  // pas dans `scalars`, il se lit par-dessus, et un champ que le conseiller touche lui échappe.
+  const [dpe, setDpe] = useState<DpeReading>({});
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+  const askedDpe = useRef('');
+  const { values, mentions } = applyDpe(scalars, dpe, touched);
+
   const setField = (name: string, value: string) => {
     setScalars((previous) => ({ ...previous, [name]: value }));
+    setTouched((previous) => (previous.has(name) ? previous : new Set(previous).add(name)));
     onDirty?.();
   };
+
+  // Demandé après un import et quand le conseiller quitte l'adresse (ou le code postal, la
+  // ville) — jamais à chaque frappe, et une seule fois pour une même adresse. Un échec ne dit
+  // rien : le champ reste vide.
+  const readDpe = () => {
+    if (dpeAction == null) return;
+    const request: DpeRequest = {
+      address: scalars.address,
+      postal_code: scalars.postal_code,
+      city: scalars.city,
+      property_type: scalars.property_type,
+      surface_area: scalars.surface_area,
+    };
+    const asked = JSON.stringify(request);
+    if (asked === askedDpe.current) return;
+    askedDpe.current = asked;
+    const located = request.address.trim() !== '' && request.city.trim() !== '';
+    void (located ? dpeAction(request) : Promise.resolve<DpeReading>({}))
+      .catch((): DpeReading => ({}))
+      .then((reading) => {
+        // Une réponse à une adresse que le conseiller a déjà changée ne s'applique pas.
+        if (askedDpe.current !== asked) return;
+        setDpe(reading);
+        if (Object.keys(applyDpe(scalars, reading, touched).mentions).length > 0) {
+          onDirty?.();
+        }
+      });
+  };
+  const readDpeOnMount = useRef(imported != null ? readDpe : null);
+  useEffect(() => {
+    readDpeOnMount.current?.();
+  }, []);
   const setArray = (name: string, value: string[]) => {
     if (name === 'outdoor_spaces') setOutdoorSpaces(value);
     else if (name === 'parking_types') setParkingTypes(value);
@@ -184,7 +229,7 @@ export function SubjectPropertyForm({
 
   useImperativeHandle(ref, () => ({
     entries: (): SheetEntries => [
-      ...Object.entries(scalars),
+      ...Object.entries(values),
       ...outdoorSpaces.map((value): [string, string] => ['outdoor_spaces', value]),
       ...parkingTypes.map((value): [string, string] => ['parking_types', value]),
       ...strengths.map((value): [string, string] => ['strengths', value]),
@@ -250,6 +295,7 @@ export function SubjectPropertyForm({
           label="Adresse"
           value={scalars.address}
           onChange={(v) => setField('address', v)}
+          onBlur={readDpe}
           error={errors.address}
         />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -257,6 +303,7 @@ export function SubjectPropertyForm({
             label="Code postal"
             value={scalars.postal_code}
             onChange={(v) => setField('postal_code', v)}
+            onBlur={readDpe}
             error={errors.postal_code}
           />
           <TextField
@@ -264,6 +311,7 @@ export function SubjectPropertyForm({
             label="Ville"
             value={scalars.city}
             onChange={(v) => setField('city', v)}
+            onBlur={readDpe}
             error={errors.city}
           />
         </div>
@@ -295,9 +343,10 @@ export function SubjectPropertyForm({
         errors={errors}
       />
       <PropertyEnergyFields
-        energyRating={scalars.energy_rating}
-        gesRating={scalars.ges_rating}
-        heatingType={scalars.heating_type}
+        energyRating={values.energy_rating}
+        gesRating={values.ges_rating}
+        heatingType={values.heating_type}
+        mentions={mentions}
         onField={setField}
         errors={errors}
       />
