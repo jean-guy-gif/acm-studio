@@ -122,6 +122,14 @@ chaque mission validée.
 - 09/10 · M75 · L'étiquette du Localisateur s'affiche telle quelle et ne se lit jamais pour décider : ACM décide sur la clé stable `etiquetteCle`, stockée, et sur `confirme`.
 - 09/10 · M75 · État inconnu ou fiche à ouvrir : « Trouver l'adresse » ouvre l'annonce dans un onglet, le Localisateur l'analyse seul ; « Localiser moi-même » affiche le message renvoyé (plafond de vues compris), sans insister.
 - 09/10 · M75 · Sans Localisateur ou bêta terminée : une ligne discrète « Installez le Localisateur Academia… » ; partage éteint : « Activez « Partager avec ACM Studio »… » ; rien d'autre ne change.
+- 09/10 · M83 · Chaque concurrent porte « Vendu par » (agence, particulier, inconnu) et « Exclusivité » (oui, non, inconnu), lus à l'import avec leur provenance (donnée de l'annonce, badge, annonceur, titre, description, aucune mention, conseiller) ; ordre de lecture : donnée structurée, badge, titre, description.
+- 09/10 · M83 · « Vendu par » ne lit que « agence » (donnée structurée, nom d'agence du bloc annonceur, JSON-LD Organization) ; les mandataires comptent comme agence ; « particulier » n'est jamais lu, le conseiller le choisit.
+- 09/10 · M83 · Agence sans aucune mention d'exclusivité (badge, titre, description) : mandat simple, « Non », provenance « aucune mention dans l'annonce », sur tous les portails ; « Inconnu » reste quand le vendeur est inconnu.
+- 09/10 · M83 · « exclusivité » se lit avec ou sans accent, en majuscules, « en exclusivité », « mandat exclusif », « Exclusif » seul en accroche ; « exclusivement », « quartier exclusif », « jouissance exclusive », une exclusivité niée et le titre d'une page de résultats ne comptent pas.
+- 09/10 · M83 · Aucune photo n'est lue pour l'exclusivité ; Stream Estate ne dit rien sur la carte de recherche, l'import de l'annonce d'origine décide, et son bloc contact n'est jamais stocké.
+- 09/10 · M83 · Le conseiller corrige d'un clic, sur la carte et dans la liste de tournée ; sa correction porte la provenance « indiqué par vous » et rien ne la réécrit (l'import ne fait que créer, le formulaire de modification ne porte pas ces champs) ; « Inconnu » choisi par lui est gardé comme sa réponse.
+- 09/10 · M83 · Green Acres : le badge « Exclusivité » se lit dans le bloc titre, arrêté à la première carte similaire (plus tôt que l'ancre de M49) ; SeLoger : l'état se lit sur la page entière et deux valeurs contraires ne décident rien (exception à M48, écrite en commentaire).
+- 09/10 · M83 · Green Acres : une annonce ouverte par-dessus une recherche (`openAdvert`) s'ouvre sur son adresse propre (`/fr/properties/<id>.htm`) ; le terrain se lit dans l'étiquette du bloc titre quand la fiche l'affiche en m², quel que soit le type du bien, jamais dans une carte voisine.
 
 ## Live
 
@@ -164,12 +172,13 @@ chaque mission validée.
 - 23/09 · M56 · Une valeur absente reste absente ; la durée des conclusions passées n'est pas rattrapée.
 - 23/09 · M56 · Pas de tableau de bord avant d'avoir des données ; s'il traverse les agences, il sera agrégé et anonyme.
 - 09/10 · M75 · Dossier conclu « mandat signé » : section « Concurrents à prospecter » sur la page du dossier (adresse, étiquette, prix, surface, pièces, en ligne depuis, baisses de prix) et liste de tournée imprimable A4 ; les autres issues ne l'ouvrent pas.
-- 09/10 · M75 · Tournée : seules les baisses y figurent, la baisse validée par le conseiller avant le constat d'ACM ; « agence ou particulier » et « exclusivité » n'y sont pas, ACM ne les lit pas (mission suivante, après mesure par portail).
+- 09/10 · M75 · Tournée : seules les baisses y figurent, la baisse validée par le conseiller avant le constat d'ACM.
 - 09/10 · M81 · La conclusion s'ouvre pour un dossier en préparation, prêt ou conclu (liste d'autorisation) : jamais de 404 pour un rendez-vous réellement mené ; un dossier archivé reste fermé.
 - 09/10 · M81 · Conclure un dossier en préparation le fait passer directement dans le Suivi (`draft` → `meeting_completed`), dans la même écriture que l'issue ; la bascule en « prêt » reste automatique (M52) et lancer le Live d'un dossier en préparation reste permis.
 - 09/10 · M81 · L'action ne renvoie vers le Suivi que si le dossier y est entré ; sinon elle le dit.
 - 09/10 · M81 · « Terminer le rendez-vous » enregistre d'abord un prix de commercialisation saisi et non enregistré, puis ouvre la conclusion ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien.
 - 09/10 · M82 · Carte du Suivi : « Le chemin parcouru pendant le rendez-vous » — prix du vendeur en début de rendez-vous, prix de commercialisation, écart en € et en % du prix de départ (arrondi à l'entier) ; côté conseiller seulement ; une valeur absente reste absente (« Non renseigné », écart « — »).
+- 09/10 · M83 · Liste de tournée : chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier » ; un particulier l'emporte sur une exclusivité ; les boutons de correction ne s'impriment pas (remplace M75, « agence ou particulier » et « exclusivité » n'y sont pas).
 
 ## Agence & équipe
 
@@ -202,6 +211,7 @@ chaque mission validée.
 - 07/10 · M76 · Un hébergeur écarté (Google) n'est admis que par provenance : pour les photos que Figaro publie dans les données de l'annonce elle-même, jamais ailleurs.
 - 09/10 · M75 · L'adresse d'un concurrent ne passe jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code. `/confidentialite` mentionne ce traitement (usage interne de prospection par l'agence).
 - 09/10 · M75 · La réponse du Localisateur est une donnée, revalidée côté serveur et rattachée au concurrent par l'adresse de son annonce : un état inconnu rejette l'entrée, une clé ou une source hors liste (dont `autre`) reste vide ; seul son `message` s'affiche, jamais son `error`.
+- 09/10 · M83 · « Vendu par » et « Exclusivité » d'un concurrent ne passent jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code (comme les adresses, M75).
 
 ## Méthode
 
@@ -228,3 +238,4 @@ chaque mission validée.
 - 07/10 · M76 · Écart accepté à M48 : faute de pouvoir passer par l'extension, une fixture peut être capturée par un Chromium (Bien'ici) ou dans le Chrome du conseiller (Figaro) ; la validation se fait à l'essai, par l'extension, sur une annonce réelle par portail.
 - 07/10 · M76 · Une fixture capturée dans un vrai navigateur est nettoyée des scripts tiers, des styles et des identifiants de suivi avant d'être commitée ; les données lues restent intactes.
 - 07/10 · M76 · Non-régression des photos : chaque fixture existante doit donner au moins les mêmes photos qu'avant, jamais un logo ni la photo d'un autre bien.
+- 09/10 · M83 · Écart accepté à M48 : la fixture Green Acres de Grasse a été récupérée à l'adresse propre de l'annonce par le robot déclaré d'ACM, puis nettoyée (M76) ; les pièges mesurés sans fixture (badge voisin, `isExclusive` Figaro) sont testés sur des extraits écrits d'après les structures relevées.
