@@ -1,3 +1,4 @@
+import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
 import { PROSPECTING_STEP_LABELS } from '@/features/competitor-mandate/services/mandate-columns';
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
@@ -47,6 +48,16 @@ export function ProspectingList({
               <div className="py-0.5 print:hidden">
                 <CompetitorMandateLine competitor={row.mandate} />
               </div>
+              {filesProjectId ? (
+                <ConfirmAddressActions
+                  projectId={filesProjectId}
+                  competitorId={row.id}
+                  listingUrl={row.listingUrl}
+                  canAccept={row.canAcceptAddress}
+                  confirmed={row.confirmed && row.address != null}
+                  confirmedByAdvisor={row.confirmedByAdvisor}
+                />
+              ) : null}
               {filesProjectId ? (
                 <PrepareFileLinks
                   projectId={filesProjectId}
