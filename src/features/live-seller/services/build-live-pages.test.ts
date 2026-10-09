@@ -46,17 +46,32 @@ describe('buildLivePages', () => {
     expect(rejectedPages.map((page) => page.type)).toEqual(['comparable_competition']);
   });
 
-  it('orders the whole flow: intro, loop, dangerous, perceived, analysis, conclusion', () => {
+  it('orders the whole flow: intro, perceived, loop, dangerous, analysis, conclusion', () => {
     const pages = buildLivePages(live(2), false);
-    expect(pages[0].type).toBe('intro');
-    expect(pages.map((p) => p.type).slice(-4)).toEqual([
-      'dangerous_competitor',
+    expect(pages.map((p) => p.type).slice(0, 3)).toEqual([
+      'intro',
       'seller_perceived_price',
+      'comparable_competition',
+    ]);
+    expect(pages.map((p) => p.type).slice(-3)).toEqual([
+      'dangerous_competitor',
       'price_analysis',
       'conclusion',
     ]);
-    // intro + 2*4 + 4 tail
-    expect(pages).toHaveLength(1 + 8 + 4);
+    // intro + perceived + 2*4 + 3 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 3);
+  });
+
+  // Mission 82 — le vendeur dit son prix avant de voir le moindre concurrent.
+  it('asks the seller perceived price right after "Votre bien", before any competitor', () => {
+    const types = buildLivePages(live(2), true).map((p) => p.type);
+    expect(types.slice(0, 4)).toEqual([
+      'intro',
+      'subject_property',
+      'seller_perceived_price',
+      'comparable_competition',
+    ]);
+    expect(types.filter((type) => type === 'seller_perceived_price')).toHaveLength(1);
   });
 
   it('skips the per-comparable loop and the dangerous page when there are none', () => {

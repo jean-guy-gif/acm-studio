@@ -6,6 +6,7 @@ import {
   mainText,
   pagePayload,
   uniqueDossierName,
+  withoutSpaces,
 } from './support';
 
 // Mission 66 — un dossier de bout en bout, sans portail : Préparation → Live → Suivi.
@@ -134,6 +135,25 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .filter({ hasText: 'À relancer' })
       .last();
     await expect(card, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
+
+    // Mission 82 — le chemin parcouru : prix du vendeur en début de rendez-vous, prix de
+    // commercialisation, et l'écart entre les deux.
+    const journey = page
+      .locator('li')
+      .filter({ has: page.locator(`a[href="/builder/${projectId}"]`) })
+      .getByText('Le chemin parcouru pendant le rendez-vous')
+      .locator('..');
+    await expect(journey.getByText('Prix du vendeur en début de rendez-vous')).toBeVisible();
+    const journeyText = withoutSpaces(await journey.innerText());
+    expect(journeyText, 'Le prix du vendeur en début de rendez-vous manque au Suivi').toContain(
+      String(PERCEIVED_PRICE),
+    );
+    expect(journeyText, 'Le prix de commercialisation manque au Suivi').toContain(
+      String(COMMERCIALIZATION_PRICE),
+    );
+    expect(journeyText, 'L’écart début → commercialisation manque au Suivi').toContain(
+      String(PERCEIVED_PRICE - COMMERCIALIZATION_PRICE),
+    );
   });
 });
 
@@ -171,6 +191,24 @@ async function walkLive(
   await onScreen('Votre bien');
   await choose('Oui, c’est bien mon bien');
   await page.locator('textarea[name="seller_property_comment"]').fill(COMMENT);
+  await validate();
+
+  // Votre valeur perçue — mission 82 : en début de rendez-vous, avant tout concurrent, et
+  // sans rien révéler (ni marché, ni prix de concurrent, ni fourchette).
+  await expect(
+    page.getByRole('heading', { name: 'À quel prix positionneriez-vous aujourd’hui votre bien ?' }),
+  ).toBeVisible();
+  await onScreen('Votre valeur perçue');
+  await expect(
+    page.getByText('Positionnement observé sur le marché concurrentiel'),
+    'Le marché est révélé dès la valeur perçue',
+  ).toHaveCount(0);
+  if (firstPass) {
+    for (const competitor of COMPETITORS) {
+      await expectPriceHidden(page, competitor, 'Votre valeur perçue');
+    }
+  }
+  await page.locator('input[name="seller_perceived_property_price"]').fill(String(PERCEIVED_PRICE));
   await validate();
 
   for (const [index, competitor] of COMPETITORS.entries()) {
@@ -245,20 +283,17 @@ async function walkLive(
   await page.locator('textarea[name="seller_most_dangerous_comment"]').fill(COMMENT);
   await validate();
 
-  // Votre valeur perçue — le marché ne s'affiche qu'après la réponse.
-  await expect(
-    page.getByRole('heading', { name: 'À quel prix positionneriez-vous aujourd’hui votre bien ?' }),
-  ).toBeVisible();
-  await onScreen('Votre valeur perçue');
-  await page.locator('input[name="seller_perceived_property_price"]').fill(String(PERCEIVED_PRICE));
-  const revealRange = page.getByRole('button', { name: /Révéler le positionnement/ });
-  if (await revealRange.isVisible()) await revealRange.click();
-  await expect(page.getByRole('button', { name: /Valider et continuer/ })).toBeVisible();
-  await onScreen('Votre valeur perçue · marché révélé');
-  await validate();
-
   // Analyse des prix
   await expect(page.getByRole('heading', { name: 'Analyse des prix', exact: true })).toBeVisible();
+  // Le marché se révèle ici, face au prix donné en début de rendez-vous.
+  await expect(
+    page.getByText('Positionnement observé sur le marché concurrentiel', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('Votre prix en début de rendez-vous')).toBeVisible();
+  expect(
+    await mainText(page),
+    'Le prix du vendeur en début de rendez-vous n’est pas rappelé sur « Analyse des prix »',
+  ).toContain(String(PERCEIVED_PRICE));
   await onScreen('Analyse des prix');
   await validate();
 

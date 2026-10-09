@@ -13,7 +13,8 @@ import { writeLiveSellerSummary } from '@/features/live-seller/services/write-li
 // charge initiale ; il est LIVRÉ ici, après persistance ET ré-vérification côté serveur
 // sur la donnée fraîche :
 //   • révélation d'un concurrent — autorisée par l'estimation persistée ;
-//   • fourchette conseiller — autorisée par la valeur perçue persistée (écrans 7/8).
+//   • fourchette conseiller — autorisée par la valeur perçue persistée ET tous les
+//     concurrents estimés ou écartés (mission 82), à l'entrée de « Analyse des prix ».
 // Persister (rapide) puis livrer, en UN aller-retour : l'écran avance, le prix arrive
 // avec la navigation autorisée, jamais avant. Le client ne peut pas forcer la livraison
 // d'un montant que le vendeur n'a pas encore mérité de voir.
@@ -60,7 +61,10 @@ export async function deliverLiveFragment(
   }
   const advisorRange = authorizeAdvisorRange(presentation.live);
   if (!advisorRange) {
-    return { ok: false, error: 'Fourchette non autorisée : valeur perçue manquante.' };
+    return {
+      ok: false,
+      error: 'Analyse indisponible : il manque le prix du vendeur ou l’estimation d’un concurrent.',
+    };
   }
   return { ok: true, fragment: { kind: 'advisor-range', advisorRange } };
 }

@@ -176,17 +176,59 @@ describe('livraison — fourchette conseiller absente de la charge initiale (§ 
     expect(merged.response?.seller_serious_competitor).toBe('yes');
   });
 
-  it('la fourchette se livre par la même voie, MAIS seulement après la valeur perçue', () => {
-    // Sans valeur perçue persistée : refusée (comme la révélation sans estimation).
-    const fresh = buildLive(false);
+  // Mission 82 — la valeur perçue se donne en début de rendez-vous : elle ne suffit plus à
+  // livrer le marché, fait des prix des concurrents.
+  type Live = ReturnType<typeof buildLive>;
+  const withResponses = (
+    live: Live,
+    answer: (index: number) => Record<string, unknown> | null,
+  ): Live => ({
+    ...live,
+    comparables: live.comparables.map((entry, index) => ({
+      ...entry,
+      response: answer(index) as (typeof entry)['response'],
+    })),
+  });
+  const estimated = { seller_serious_competitor: 'yes', seller_estimated_listing_price: 400000 };
+
+  it('la fourchette se livre par la même voie, MAIS jamais sans la valeur perçue', () => {
+    // Tous les concurrents estimés, mais aucun prix du vendeur : refusée.
+    const fresh = withResponses(buildLive(false), () => estimated);
     expect(fresh.sellerSummary?.seller_perceived_property_price ?? null).toBeNull();
     expect(authorizeAdvisorRange(fresh)).toBeNull();
+  });
 
-    // Une fois la valeur perçue persistée : livrée.
-    const answered = buildLive(true);
-    expect(answered.sellerSummary?.seller_perceived_property_price).not.toBeNull();
-    const range = authorizeAdvisorRange(answered);
-    expect(range?.competitiveMarketCentral).toBe(answered.competitiveMarketCentral);
-    expect(range?.advisorDecision).toBe(answered.advisorDecision);
+  it('la valeur perçue seule ne livre RIEN tant qu’un concurrent reste à deviner', () => {
+    const base = buildLive(true);
+    expect(base.sellerSummary?.seller_perceived_property_price).not.toBeNull();
+    expect(base.comparables.length).toBeGreaterThan(1);
+
+    // Début de rendez-vous : le vendeur a dit son prix, aucun concurrent vu.
+    expect(authorizeAdvisorRange(withResponses(base, () => null))).toBeNull();
+    // Un seul concurrent encore sans estimation suffit à refuser.
+    expect(
+      authorizeAdvisorRange(withResponses(base, (index) => (index === 0 ? null : estimated))),
+    ).toBeNull();
+    // « Sérieux » sans estimation : la devinette reste à faire.
+    expect(
+      authorizeAdvisorRange(
+        withResponses(base, (index) =>
+          index === 0 ? { seller_serious_competitor: 'yes' } : estimated,
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it('tous les concurrents estimés ou écartés par « non » : la fourchette est livrée', () => {
+    const base = buildLive(true);
+    const done = withResponses(base, (index) =>
+      index === 0 ? { seller_serious_competitor: 'no' } : estimated,
+    );
+    const range = authorizeAdvisorRange(done);
+    expect(range?.competitiveMarketCentral).toBe(base.competitiveMarketCentral);
+    expect(range?.advisorDecision).toBe(base.advisorDecision);
+    expect(range?.priceGaps.sellerPerceivedPrice).toBe(
+      base.sellerSummary?.seller_perceived_property_price,
+    );
   });
 });

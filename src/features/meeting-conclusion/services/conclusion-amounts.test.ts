@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   amountRows,
   conclusionGaps,
+  sellerJourneyGap,
 } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
 
@@ -57,5 +58,18 @@ describe('conclusion-amounts — on stocke les faits, on calcule les écarts à 
   it('un prix convenu absent ⇒ aucun écart (le vendeur n’a pas parlé)', () => {
     const gaps = conclusionGaps({ ...FULL, commercializationPrice: null });
     expect(gaps.every((g) => g.amount === null && g.percentage === null)).toBe(true);
+  });
+
+  // Mission 82 — du prix du vendeur en début de rendez-vous au prix de commercialisation.
+  it('mesure le chemin parcouru : prix de commercialisation face au prix de départ du vendeur', () => {
+    // 690 000 vs 750 000 → −60 000 (−8 %)
+    expect(sellerJourneyGap(750000, 690000)).toMatchObject({ amount: -60000, percentage: -8 });
+    expect(sellerJourneyGap(700000, 700000)).toMatchObject({ amount: 0, percentage: 0 });
+  });
+
+  it('ne calcule aucun écart sans les deux prix (une valeur absente reste absente)', () => {
+    expect(sellerJourneyGap(null, 690000)).toMatchObject({ amount: null, percentage: null });
+    expect(sellerJourneyGap(750000, null)).toMatchObject({ amount: null, percentage: null });
+    expect(sellerJourneyGap(0, 690000)).toMatchObject({ amount: null, percentage: null });
   });
 });

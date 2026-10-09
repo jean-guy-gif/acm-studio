@@ -140,7 +140,7 @@ export function overlaySellerComparable(
 // La donnée Live remise au shell À L'OUVERTURE : concurrents projetés (neutres tant que
 // non estimés) et le résumé du vendeur (qui lui appartient). PAS de fourchette conseiller
 // — competitiveMarketCentral / priceGaps / advisorDecision n'entrent JAMAIS ici : ils
-// sont LIVRÉS à l'entrée des écrans 7/8, par la même voie que la révélation.
+// sont LIVRÉS à l'entrée de « Analyse des prix », par la même voie que la révélation.
 export type SellerLiveData = {
   comparables: SellerComparable[];
   sellerSummary: LiveSellerSummary | null;
@@ -155,7 +155,7 @@ export function projectLiveForSeller(live: LiveComparativeData): SellerLiveData 
 
 // LA VOIE DE LIVRAISON — unique. Deux fragments autorisés, jamais dans la charge initiale :
 //   • la révélation d'UN concurrent (prix + écart), autorisée par estimation PERSISTÉE ;
-//   • la fourchette conseiller (écrans 7/8), montants advisor-only.
+//   • la fourchette conseiller (« Analyse des prix », conclusion), montants advisor-only.
 // Le serveur re-dérive la présentation et RE-VÉRIFIE l'autorisation ; le client ne peut
 // pas forcer la livraison d'un prix que le vendeur n'a pas encore estimé.
 export type AuthorizedAdvisorRange = {
@@ -182,13 +182,19 @@ export function authorizeComparableReveal(
   return projected.authorized ? projected : null;
 }
 
-// La fourchette est autorisée par un FAIT EN BASE — la valeur perçue du vendeur est
-// persistée — exactement comme la révélation l'est par l'estimation persistée. Même
-// mécanisme (garde sur une réponse persistée), pas un régime « navigation ». C'est aussi
-// la bonne pédagogie : on ne montre le central marché qu'APRÈS que le vendeur s'est
-// prononcé (écran 7 en devine-puis-révèle).
+// La fourchette est autorisée par des FAITS EN BASE, exactement comme la révélation l'est
+// par l'estimation persistée — pas un régime « navigation ».
+// MISSION 82 — la valeur perçue se donne désormais en début de rendez-vous : elle ne suffit
+// plus. Le central marché est fait des prix des concurrents ; il ne se livre donc qu'une
+// fois CHAQUE concurrent estimé (ou écarté par « non », qui saute sa devinette). Sinon il
+// partirait dans le navigateur avant la première devinette.
 export function isAdvisorRangeAuthorized(live: LiveComparativeData): boolean {
-  return live.sellerSummary?.seller_perceived_property_price != null;
+  if (live.sellerSummary?.seller_perceived_property_price == null) {
+    return false;
+  }
+  return live.comparables.every(
+    (entry) => entry.response?.seller_serious_competitor === 'no' || isComparableAuthorized(entry),
+  );
 }
 
 export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvisorRange | null {

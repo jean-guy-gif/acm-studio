@@ -32,9 +32,8 @@ export function canAdvanceLivePage(
   if (pageType === 'comparable_duration') {
     return entry?.response?.seller_estimated_days_on_market != null;
   }
-  // MISSION 51 — écran 7 en devine-puis-révèle : on ne quitte la valeur perçue (et la
-  // fourchette conseiller ne se livre) qu'une fois la perception PERSISTÉE. Ce fait en
-  // base est aussi la borne d'autorisation de la fourchette (maxReachableLiveIndex).
+  // MISSION 82 — le vendeur dit son prix avant de voir un concurrent : on ne quitte la
+  // page qu'une fois ce prix PERSISTÉ (aucun concurrent atteignable avant, même par l'URL).
   if (pageType === 'seller_perceived_price') {
     return summary?.seller_perceived_property_price != null;
   }

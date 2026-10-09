@@ -40,13 +40,14 @@ rencontré en vrai rendez-vous. Les idées vont dans `docs/IDEES.md`.
 Un moteur interactif, pas un diaporama ; chaque réponse du vendeur est enregistrée. Les écrans, dans
 l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
 
-- Introduction → Votre bien (« Reconnaissez-vous votre bien ? »), absent sans bien vendeur.
+- Introduction → Votre bien (« Reconnaissez-vous votre bien ? »), absent sans bien vendeur →
+  Votre valeur perçue (le vendeur dit son prix, rien n'est révélé).
 - Chaque concurrent retenu, seul à l'écran : **Un sérieux concurrent ?** (sans prix ; « non » saute
   la suite) → **À quel prix ?** (le vendeur devine) → **Ce prix vous paraît-il cohérent ?**
   (révélation) → **Pourquoi toujours en vente ?** (durée devinée puis révélée, baisses, motif).
-- Le concurrent le plus dangereux → Votre valeur perçue (le marché après la réponse) → Analyse des
-  prix → Conclusion (« Sur quel prix partons-nous ? », champ vide). Puis, hors Live, l'écran
-  conseiller de conclusion : l'issue (signé, à relancer, vendu ailleurs, retiré).
+- Le concurrent le plus dangereux → Analyse des prix (rappel du prix du vendeur, marché révélé) →
+  Conclusion (« Sur quel prix partons-nous ? », champ vide). Puis, hors Live, l'écran conseiller
+  de conclusion : l'issue (signé, à relancer, vendu ailleurs, retiré).
 
 ## Vocabulaire
 
