@@ -40,6 +40,10 @@ function imported(over: Partial<ImportedComparableData> = {}): ImportedComparabl
     modifiedAt: null,
     viewCount: null,
     viewCountSince: null,
+    soldBy: null,
+    soldBySource: null,
+    exclusivity: null,
+    exclusivitySource: null,
     ...over,
   };
 }

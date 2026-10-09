@@ -31,6 +31,20 @@ describe('normalizeListingUrl — one case per portal (real address shapes)', ()
     );
   });
 
+  it('Green-Acres : annonce ouverte par-dessus une recherche (openAdvert) → son adresse propre', () => {
+    expect(
+      normalizeListingUrl(
+        'https://www.green-acres.fr/maison-a-vendre?searchQuery=cn-fr-lg-fr-city_id-city_7123-type-properties-mn_p-310000-mx_p-380000-mn_beds-3&openAdvert=Aw85w5p55r5k79fd',
+      ),
+    ).toBe('https://www.green-acres.fr/fr/properties/Aw85w5p55r5k79fd.htm');
+  });
+
+  it('Green-Acres : un openAdvert qui n’est pas un identifiant est ignoré', () => {
+    expect(
+      normalizeListingUrl('https://www.green-acres.fr/maison-a-vendre?openAdvert=../../admin'),
+    ).toBe('https://www.green-acres.fr/maison-a-vendre');
+  });
+
   it('Green-Acres : requête de suivi retirée', () => {
     expect(
       normalizeListingUrl('https://www.green-acres.fr/en/properties/12345.htm?utm_source=results'),

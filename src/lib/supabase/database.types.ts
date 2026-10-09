@@ -228,6 +228,8 @@ export type Database = {
           district: string | null
           energy_rating: string | null
           energy_source: string | null
+          exclusivity: string | null
+          exclusivity_source: string | null
           exposure: string | null
           general_condition: string | null
           ges_rating: string | null
@@ -260,6 +262,8 @@ export type Database = {
           project_id: string
           property_type: string | null
           rooms_count: number | null
+          sold_by: string | null
+          sold_by_source: string | null
           source: string | null
           surface_area: number | null
           title: string | null
@@ -279,6 +283,8 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          exclusivity?: string | null
+          exclusivity_source?: string | null
           exposure?: string | null
           general_condition?: string | null
           ges_rating?: string | null
@@ -311,6 +317,8 @@ export type Database = {
           project_id: string
           property_type?: string | null
           rooms_count?: number | null
+          sold_by?: string | null
+          sold_by_source?: string | null
           source?: string | null
           surface_area?: number | null
           title?: string | null
@@ -330,6 +338,8 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          exclusivity?: string | null
+          exclusivity_source?: string | null
           exposure?: string | null
           general_condition?: string | null
           ges_rating?: string | null
@@ -362,6 +372,8 @@ export type Database = {
           project_id?: string
           property_type?: string | null
           rooms_count?: number | null
+          sold_by?: string | null
+          sold_by_source?: string | null
           source?: string | null
           surface_area?: number | null
           title?: string | null

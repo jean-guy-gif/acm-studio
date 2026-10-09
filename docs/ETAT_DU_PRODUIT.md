@@ -12,7 +12,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/new` — nouveau dossier vendeur (aucun prix demandé).
 - `/builder/[id]` — le dossier : cinq étapes, puis accès au Live et à la conclusion ; mandat signé : section « Concurrents à prospecter ».
 - `/builder/[id]/property` — bien vendeur : import d'annonce ou de fiche PDF, photos, diagnostics, copropriété.
-- `/builder/[id]/comparables` — concurrents retenus et écartés, actions de lot (écarter, supprimer) ; adresse de chaque concurrent retenu, demandée au Localisateur Academia (`NEXT_PUBLIC_LOCALISATEUR_ID`).
+- `/builder/[id]/comparables` — concurrents retenus et écartés, actions de lot (écarter, supprimer) ; adresse de chaque concurrent retenu, demandée au Localisateur Academia (`NEXT_PUBLIC_LOCALISATEUR_ID`). Chaque carte dit « Vendu par » (agence, particulier, inconnu) et « Exclusivité » (oui, non, inconnu), lus sur l'annonce à l'import avec leur provenance, corrigés d'un clic par le conseiller ; une agence dont l'annonce ne mentionne nulle part l'exclusivité est en mandat simple (« Non », « aucune mention dans l'annonce ») ; jamais côté vendeur.
 - `/builder/[id]/comparables/new` — ajouter un concurrent : adresse (extension), page collée, saisie.
 - `/builder/[id]/comparables/find` — trouver des concurrents : « Chercher les concurrents » (Stream Estate, si clé), puis « Ouvrir / Lire mes recherches » sur les portails, validation en lot. Sans extension : un seul message d'installation (`NEXT_PUBLIC_EXTENSION_INSTALL_URL`).
 - `/builder/[id]/comparables/[comparableId]/edit` — modifier un concurrent.
@@ -20,7 +20,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/[id]/comparables/positioning` — positionnement : fourchette, prix conseillé, analyse du conseiller.
 - `/builder/[id]/presentation` — présentation vendeur : relecture de la matière avant le rendez-vous.
 - `/builder/[id]/conclusion` — écran conseiller : issue du rendez-vous et motif (dossier prêt ou conclu).
-- `/builder/[id]/prospection` — liste de tournée imprimable (A4) des concurrents à prospecter : dossier conclu « mandat signé » seulement.
+- `/builder/[id]/prospection` — liste de tournée imprimable (A4) des concurrents à prospecter : dossier conclu « mandat signé » seulement. Chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier ».
 
 **Live** — `/live` : dossiers prêts seulement · `/live/[id]` : la scène face au vendeur.
 
