@@ -144,6 +144,12 @@ chaque mission validée.
 - 08/10 · M80 · Sur cet écran, jamais de montant ni de prix calculé ; les concurrents sans classe n'y sont pas montrés au vendeur.
 - 08/10 · M80 · Nombre pair de concurrents classés : le repère est la moins bonne des deux lettres du milieu ; repère A et DPE vendeur inconnu : « devra être en A », sans « ou mieux ».
 - 08/10 · M80 · Grille du Live : le DPE passe juste après la surface, en lettre colorée ; sans DPE côté vendeur, il n'y apparaît pas (M40).
+- 09/10 · M82 · « Votre valeur perçue » vient juste après « Votre bien », avant le premier concurrent : la question, la saisie, « Valider et continuer » ; elle ne révèle rien (ni marché, ni prix, ni fourchette) et le prix du vendeur est requis pour avancer.
+- 09/10 · M82 · Le marché calculé se révèle sur « Analyse des prix », avec le rappel « Votre prix en début de rendez-vous : … » ; le bouton « Révéler le positionnement » disparaît (précise M51 : la révélation vient après la réponse, ici en fin de rendez-vous).
+- 09/10 · M82 · Le marché calculé n'est livré au navigateur qu'une fois le prix du vendeur enregistré ET chaque concurrent estimé ou écarté par « non » (remplace M51, « la valeur perçue enregistrée suffit »).
+- 09/10 · M82 · Corriger le prix du vendeur en revenant sur sa page fait recalculer les écarts à la prochaine entrée sur « Analyse des prix ».
+- 09/10 · M82 · « Analyse des prix » n'est jamais vide : s'il reste une étape sautée, « Il reste à passer : Concurrent 3 (…) » avec « Y aller », qui ouvre le concurrent là où il s'est arrêté ; la valeur perçue manquante y figure en premier ; tout passé mais analyse non chargée : « Afficher l'analyse ».
+- 09/10 · M82 · Sur cet écran, un concurrent se nomme par son libellé neutre (type · pièces · surface · commune) : jamais le titre du portail, jamais l'adresse, aucun prix (M51, M75).
 
 ## Conclusion & Suivi
 
@@ -163,6 +169,7 @@ chaque mission validée.
 - 09/10 · M81 · Conclure un dossier en préparation le fait passer directement dans le Suivi (`draft` → `meeting_completed`), dans la même écriture que l'issue ; la bascule en « prêt » reste automatique (M52) et lancer le Live d'un dossier en préparation reste permis.
 - 09/10 · M81 · L'action ne renvoie vers le Suivi que si le dossier y est entré ; sinon elle le dit.
 - 09/10 · M81 · « Terminer le rendez-vous » enregistre d'abord un prix de commercialisation saisi et non enregistré, puis ouvre la conclusion ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien.
+- 09/10 · M82 · Carte du Suivi : « Le chemin parcouru pendant le rendez-vous » — prix du vendeur en début de rendez-vous, prix de commercialisation, écart en € et en % du prix de départ (arrondi à l'entier) ; côté conseiller seulement ; une valeur absente reste absente (« Non renseigné », écart « — »).
 
 ## Agence & équipe
 
