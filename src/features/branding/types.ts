@@ -14,5 +14,9 @@ export type AgencyBranding = {
   // produit. Et l'adresse du site, conservée mais jamais ouverte (option B).
   fontFamily: string | null;
   siteUrl: string | null;
+  // Mission 84 — l'adresse postale et la carte professionnelle de l'agence, en pied des
+  // dossiers de prospection ; null → la mention est omise.
+  postalAddress: string | null;
+  professionalCard: string | null;
   validatedAt: string | null;
 };

@@ -17,7 +17,7 @@ export async function getAgencyBranding(): Promise<AgencyBranding | null> {
   const { data } = await supabase
     .from('agency_branding')
     .select(
-      'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, text_contrast_adjusted, logo_light_path, logo_dark_path, font_family, site_url, validated_at',
+      'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, text_contrast_adjusted, logo_light_path, logo_dark_path, font_family, site_url, postal_address, professional_card, validated_at',
     )
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
@@ -40,6 +40,8 @@ export async function getAgencyBranding(): Promise<AgencyBranding | null> {
     logoDarkUrl: publicUrl(data.logo_dark_path),
     fontFamily: data.font_family,
     siteUrl: data.site_url,
+    postalAddress: data.postal_address,
+    professionalCard: data.professional_card,
     validatedAt: data.validated_at,
   };
 }
