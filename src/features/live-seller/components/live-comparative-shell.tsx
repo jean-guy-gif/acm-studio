@@ -9,6 +9,7 @@ import { persistLiveComparableResponse } from '@/features/live-seller/actions/sa
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
+import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
 import { LivePageDangerous } from '@/features/live-seller/components/live-page-dangerous';
@@ -29,6 +30,7 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import type {
@@ -37,7 +39,7 @@ import type {
   SellerComparable,
   SellerLiveData,
 } from '@/features/live-seller/services/project-live-for-seller';
-import type { LiveComparableResponse } from '@/features/live-seller/types';
+import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 
 export type LiveStageTheme = 'dark' | 'light';
@@ -90,9 +92,13 @@ export function LiveComparativeShell({
   const [busy, setBusy] = useState(false);
   const [awaitError, setAwaitError] = useState<string | null>(null);
   // Fragments LIVRÉS pendant la séance (jamais dans la charge initiale) : la révélation
-  // d'un concurrent (prix), la fourchette conseiller (central).
+  // d'un concurrent (prix), la fourchette conseiller (central). `range` part de ce que le
+  // serveur a autorisé à l'ouverture (reprise après rechargement).
   const [delivered, setDelivered] = useState<Record<string, AuthorizedSellerComparable>>({});
-  const [deliveredRange, setDeliveredRange] = useState<AuthorizedAdvisorRange | null>(null);
+  const [range, setRange] = useState<AuthorizedAdvisorRange | null>(advisorRange);
+  // Mission 82 — le prix du vendeur, enregistré en début de rendez-vous : gardé côté client
+  // pour que la page le réaffiche si on y revient (la charge d'ouverture ne le porte pas).
+  const [perceivedOverride, setPerceivedOverride] = useState<number | null>(null);
   // Réponse concurrent mise à jour côté client APRÈS persistance : écran 2 (base puis
   // graphe — 'no' retire les étapes suivantes) et écran 5 (durée révélée).
   const [responseOverrides, setResponseOverrides] = useState<
@@ -151,7 +157,16 @@ export function LiveComparativeShell({
     const base = live?.comparables ?? [];
     return base.map((c) => overlaySellerComparable(c, delivered[c.id], responseOverrides[c.id]));
   }, [live, delivered, responseOverrides]);
-  const summary = live?.sellerSummary ?? null;
+  const summary = useMemo<LiveSellerSummary | null>(() => {
+    const base = live?.sellerSummary ?? null;
+    if (perceivedOverride == null) {
+      return base;
+    }
+    return {
+      ...(base ?? {}),
+      seller_perceived_property_price: perceivedOverride,
+    } as LiveSellerSummary;
+  }, [live, perceivedOverride]);
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
 
   const pages = useMemo(
@@ -168,17 +183,21 @@ export function LiveComparativeShell({
   const authorizedComparables = comparables.filter(
     (c): c is AuthorizedSellerComparable => c.authorized,
   );
-  const effectiveRange = deliveredRange ?? advisorRange;
+  const effectiveRange = range;
+  // Mission 82 — ce qui reste à passer avant « Analyse des prix » (étape sautée au clavier).
+  const pendingSteps = useMemo(
+    () => pendingBeforeAnalysis(pages, comparables, summary),
+    [pages, comparables, summary],
+  );
   const dangerousComparable =
     authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??
     null;
 
   const isInteractive = page.type !== 'intro' && page.type !== 'conclusion';
   const currentSave = saves[page.key];
-  // devine-puis-révèle : la durée observée (5) et le central marché (7) ne se montrent
-  // qu'après la réponse du vendeur — jamais à l'arrivée.
+  // devine-puis-révèle : la durée observée ne se montre qu'après la réponse du vendeur —
+  // jamais à l'arrivée. Le central marché, lui, n'arrive que sur « Analyse des prix ».
   const durationRevealed = authorizedEntry?.response?.seller_estimated_days_on_market != null;
-  const rangeRevealed = effectiveRange != null;
 
   const failedSaves = useMemo(
     () => Object.entries(saves).filter(([, record]) => record.status === 'failed'),
@@ -237,11 +256,21 @@ export function LiveComparativeShell({
 
   // « Valider et continuer » — un seul bouton par écran (§3.1). ATTENTES sur quitter
   // 1/2/3/5 (l'écran suivant dépend de la réponse persistée : borne 2.2, affichage) ;
-  // avance OPTIMISTE ailleurs (§3.2). Révélation (3) et fourchette (7) LIVRÉES.
+  // avance OPTIMISTE ailleurs (§3.2). Révélation (3) LIVRÉE ; fourchette LIVRÉE à l'entrée
+  // de « Analyse des prix » (mission 82), jamais avant.
   const onValidate = useCallback(async () => {
     if (busy || index >= pages.length - 1) return;
     setAwaitError(null);
     const fd = harvest();
+    const entersAnalysis = pages[index + 1]?.type === 'price_analysis';
+    // Enregistre le formulaire de l'écran, puis demande la fourchette : le serveur ne la
+    // livre que si le prix du vendeur est en base et que chaque concurrent est estimé.
+    const deliverRange = async (): Promise<{ ok: boolean; error?: string }> => {
+      const r = await deliverLiveFragment(projectId, { kind: 'advisor-range', formData: fd });
+      if (!r.ok) return { ok: false, error: r.error };
+      if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
+      return { ok: true };
+    };
 
     if (page.type === 'subject_property') {
       setBusy(true);
@@ -314,15 +343,36 @@ export function LiveComparativeShell({
       return;
     }
     if (page.type === 'seller_perceived_price') {
-      if (!rangeRevealed) {
-        setBusy(true);
-        const r = await deliverLiveFragment(projectId, { kind: 'advisor-range', formData: fd });
-        setBusy(false);
-        if (r.ok && r.fragment.kind === 'advisor-range') setDeliveredRange(r.fragment.advisorRange);
-        else if (!r.ok) setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      const raw = String(fd.get('seller_perceived_property_price') ?? '').trim();
+      const typed = raw === '' ? Number.NaN : Number(raw);
+      if (!Number.isFinite(typed)) {
+        setAwaitError('Indiquez le prix que le vendeur a en tête.');
         return;
       }
+      setBusy(true);
+      // Sans concurrent, « Analyse des prix » suit directement : la fourchette se livre ici.
+      const r = entersAnalysis
+        ? await deliverRange()
+        : await persistLiveSellerSummary(projectId, fd);
+      setBusy(false);
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      // Un prix corrigé en revenant sur la page périme les écarts déjà livrés : ils seront
+      // redemandés à l'entrée de « Analyse des prix ».
+      if (!entersAnalysis && typed !== summary?.seller_perceived_property_price) setRange(null);
+      setPerceivedOverride(typed);
       go(1);
+      return;
+    }
+    // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
+    if (entersAnalysis && range == null && pendingSteps.length === 0) {
+      setBusy(true);
+      const r = await deliverRange();
+      setBusy(false);
+      if (r.ok) go(1);
+      else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
       return;
     }
     // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
@@ -330,7 +380,7 @@ export function LiveComparativeShell({
       go(1);
       return;
     }
-    // OPTIMISTE : 4 révélation, 6 dangereux, 8 analyse.
+    // OPTIMISTE : révélation, concurrent le plus dangereux (fourchette déjà livrée), analyse.
     if (entry)
       runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
     else runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
@@ -338,17 +388,34 @@ export function LiveComparativeShell({
   }, [
     busy,
     index,
-    pages.length,
+    pages,
     page.type,
     page.key,
     entry,
     projectId,
     durationRevealed,
-    rangeRevealed,
+    range,
+    summary,
+    pendingSteps,
     go,
     runBackground,
     harvest,
   ]);
+
+  // Arrivée sur « Analyse des prix » sans passer par « Valider et continuer » alors que tout
+  // est passé : la fourchette se demande ici, par la même voie gardée côté serveur.
+  const showAnalysis = async () => {
+    if (busy) return;
+    setAwaitError(null);
+    setBusy(true);
+    const r = await deliverLiveFragment(projectId, {
+      kind: 'advisor-range',
+      formData: new FormData(),
+    });
+    setBusy(false);
+    if (r.ok && r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
+    else if (!r.ok) setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+  };
 
   // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
   useEffect(() => {
@@ -554,13 +621,19 @@ export function LiveComparativeShell({
         ) : page.type === 'dangerous_competitor' && live ? (
           <LivePageDangerous comparables={authorizedComparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (
-          <LivePagePerceived
-            competitiveMarketCentral={effectiveRange?.competitiveMarketCentral ?? null}
-            revealed={rangeRevealed}
-            summary={summary}
-          />
+          <LivePagePerceived summary={summary} />
         ) : page.type === 'price_analysis' && effectiveRange ? (
           <LivePageAnalysis priceGaps={effectiveRange.priceGaps} />
+        ) : page.type === 'price_analysis' ? (
+          <LivePageAnalysisPending
+            steps={pendingSteps}
+            busy={busy}
+            onOpen={(pageIndex) => {
+              setAwaitError(null);
+              setIndex(pageIndex);
+            }}
+            onShowAnalysis={() => void showAnalysis()}
+          />
         ) : page.type === 'conclusion' ? (
           <LivePageConclusion
             projectId={projectId}
@@ -580,7 +653,7 @@ export function LiveComparativeShell({
       {/* MISSION 51 §3.1/§3.3 — UNE barre ancrée à la fenêtre, UN bouton « Valider et
           continuer » qui enregistre ET avance : plus de « Suivant » distinct du
           « Enregistrer » (§2.1). Attentes sur quitter 1/2/3/5 (bouton occupé) ; avance
-          optimiste ailleurs ; libellé « Révéler … » sur la 1re phase des écrans 5 et 7. */}
+          optimiste ailleurs ; libellé « Révéler … » sur la 1re phase de l'écran de durée. */}
       {isInteractive ? (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
@@ -615,9 +688,7 @@ export function LiveComparativeShell({
             >
               {page.type === 'comparable_duration' && !durationRevealed
                 ? 'Révéler la durée →'
-                : page.type === 'seller_perceived_price' && !rangeRevealed
-                  ? 'Révéler le positionnement →'
-                  : 'Valider et continuer →'}
+                : 'Valider et continuer →'}
             </button>
           </div>
         </div>

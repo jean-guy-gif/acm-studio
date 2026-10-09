@@ -23,10 +23,14 @@ function live(
   return { comparables, sellerSummary } as unknown as LiveComparativeData;
 }
 
+// Mission 82 — le prix du vendeur se donne avant les concurrents : il est enregistré dans
+// les scénarios qui portent sur la révélation d'un concurrent.
+const PERCEIVED = { seller_perceived_property_price: 750000 } as never;
+
 describe('maxReachableLiveIndex / clampInitialLiveIndex — §2.2', () => {
   it('la révélation est INATTEIGNABLE par l’URL tant que l’estimation n’est pas enregistrée', () => {
     // Un concurrent jugé « sérieux », mais aucune estimation encore donnée.
-    const data = live([entry('c1', { seller_serious_competitor: 'yes' } as never)]);
+    const data = live([entry('c1', { seller_serious_competitor: 'yes' } as never)], PERCEIVED);
     const pages = buildLivePages(data, false);
 
     const revealIndex = pages.findIndex((p) => p.type === 'comparable_price_reveal');
@@ -42,15 +46,32 @@ describe('maxReachableLiveIndex / clampInitialLiveIndex — §2.2', () => {
   });
 
   it('une fois l’estimation enregistrée, la révélation devient atteignable', () => {
-    const data = live([
-      entry('c1', {
-        seller_serious_competitor: 'yes',
-        seller_estimated_listing_price: 350000,
-      } as never),
-    ]);
+    const data = live(
+      [
+        entry('c1', {
+          seller_serious_competitor: 'yes',
+          seller_estimated_listing_price: 350000,
+        } as never),
+      ],
+      PERCEIVED,
+    );
     const pages = buildLivePages(data, false);
     const revealIndex = pages.findIndex((p) => p.type === 'comparable_price_reveal');
     expect(clampInitialLiveIndex(revealIndex, pages, data)).toBe(revealIndex);
+  });
+
+  // Mission 82 — la valeur perçue se donne en 3e page : tant qu'elle n'est pas enregistrée,
+  // aucun concurrent n'est atteignable, même par l'adresse.
+  it('aucun concurrent n’est atteignable tant que le prix du vendeur n’est pas enregistré', () => {
+    const data = live([entry('c1', null)]);
+    const pages = buildLivePages(data, false);
+    const perceivedIndex = pages.findIndex((p) => p.type === 'seller_perceived_price');
+    const firstCompetitor = pages.findIndex((p) => p.type === 'comparable_competition');
+    expect(perceivedIndex).toBeLessThan(firstCompetitor);
+    expect(clampInitialLiveIndex(firstCompetitor, pages, data)).toBe(perceivedIndex);
+
+    const answered = live([entry('c1', null)], PERCEIVED);
+    expect(clampInitialLiveIndex(firstCompetitor, pages, answered)).toBe(firstCompetitor);
   });
 
   it('index 0 (introduction) toujours autorisé, valeur négative ramenée à 0', () => {

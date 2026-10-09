@@ -12,9 +12,10 @@ import {
 import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components/conclusion-amounts-panel';
 import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
+import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
 import { propertyLabel } from '@/features/projects/services/property-label';
-import { formatEuro } from '@/lib/format';
+import { formatEuro, formatPercent } from '@/lib/format';
 
 const euro = (value: number): string => formatEuro(value);
 
@@ -40,6 +41,9 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
   const changedDate = formatDate(conclusion?.outcomeChangedAt ?? null);
   // Deux dates identiques = du bruit : on ne montre la seconde que si elle diffère.
   const showChanged = changedDate != null && changedDate !== meetingDate;
+  // Mission 82 — du prix du vendeur en début de rendez-vous au prix de commercialisation.
+  const sellerStart = conclusion?.sellerPerceivedPrice ?? null;
+  const journey = sellerJourneyGap(sellerStart, price);
 
   return (
     <li className={`${card} flex flex-col gap-4 p-5`}>
@@ -81,6 +85,39 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
           Ouvrir le dossier
         </Link>
       </div>
+
+      {conclusion ? (
+        <div className={`${card} flex flex-col gap-1 p-5`}>
+          <div className={`${metaLabel} mb-1`}>Le chemin parcouru pendant le rendez-vous</div>
+          {[
+            {
+              label: 'Prix du vendeur en début de rendez-vous',
+              value: sellerStart != null ? euro(sellerStart) : 'Non renseigné',
+            },
+            {
+              label: 'Prix de commercialisation',
+              value: price != null ? euro(price) : 'Non convenu',
+            },
+            {
+              label: journey.label,
+              value:
+                journey.amount != null && journey.percentage != null
+                  ? `${formatEuro(journey.amount, { signed: true })} (${formatPercent(journey.percentage, { signed: true })})`
+                  : '—',
+            },
+          ].map((row) => (
+            <div
+              key={row.label}
+              className="flex items-baseline justify-between gap-3 border-b border-zinc-100 py-2 last:border-0 stage:border-white/10"
+            >
+              <span className="text-sm text-zinc-500 stage:text-white/60">{row.label}</span>
+              <span className="text-right font-title font-semibold text-zinc-900 stage:text-white">
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {conclusion ? <ConclusionAmountsPanel amounts={conclusion} /> : null}
 

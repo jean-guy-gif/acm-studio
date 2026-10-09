@@ -68,3 +68,18 @@ export function conclusionGaps(amounts: ConclusionAmounts): ConclusionGap[] {
     ),
   ];
 }
+
+// Mission 82 — le chemin parcouru pendant le rendez-vous : du prix que le vendeur avait en
+// tête en arrivant au prix de commercialisation convenu. Écart relatif au prix de départ.
+// Une valeur absente reste absente (M56) : pas d'écart sans les deux prix.
+export function sellerJourneyGap(
+  sellerPerceivedPrice: number | null,
+  commercializationPrice: number | null,
+): ConclusionGap {
+  return gap(
+    'vs_seller_start',
+    'Écart entre les deux',
+    commercializationPrice,
+    sellerPerceivedPrice,
+  );
+}

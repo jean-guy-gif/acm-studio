@@ -75,14 +75,14 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
 
 1. **Introduction** — l'agence, le vendeur, le nombre de concurrents.
 2. **Votre bien** — « Reconnaissez-vous votre bien dans cette présentation ? » (absent sans bien vendeur).
-3. Pour chaque concurrent retenu, quatre écrans :
+3. **Votre valeur perçue** — le vendeur donne son prix avant de voir un concurrent ; rien n'est révélé.
+4. Pour chaque concurrent retenu, quatre écrans :
    1. **Un sérieux concurrent ?** — fiche, photos, grille ; ni prix ni délai. « Non » saute les trois suivants.
    2. **À quel prix ?** — le vendeur devine ; le prix reste masqué.
    3. **Ce prix vous paraît-il cohérent ?** — révélation du prix réel et des écarts.
    4. **Pourquoi toujours en vente ?** — durée devinée puis révélée, baisses, motif.
-4. **Le concurrent le plus dangereux** — lequel, et pourquoi (absent sans concurrent).
-5. **Votre valeur perçue** — le vendeur donne son prix ; le marché s'affiche ensuite.
-6. **Analyse des prix** — valeur perçue, marché calculé, analyse du conseiller, écarts.
+5. **Le concurrent le plus dangereux** — lequel, et pourquoi (absent sans concurrent).
+6. **Analyse des prix** — rappel du prix du vendeur en début de rendez-vous, marché calculé révélé, analyse du conseiller, écarts.
 7. **Conclusion** — les repères, puis « Sur quel prix partons-nous ? » (champ vide).
 
 Puis, hors Live : l'écran conseiller de conclusion (`/builder/[id]/conclusion`).

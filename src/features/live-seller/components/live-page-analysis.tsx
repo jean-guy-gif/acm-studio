@@ -28,6 +28,8 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
 // Mission 58 — les trois repères sont AFFICHÉS, jamais saisis : l'analyse du conseiller a été
 // préparée à froid au positionnement. Plus aucun champ de saisie conseiller devant le vendeur.
 // ACM Studio ne calcule jamais l'analyse du conseiller ; les écarts sont montrés sans jugement.
+// MISSION 82 — c'est ICI que le positionnement observé se révèle, face au prix que le vendeur
+// a donné en début de rendez-vous, rappelé en tête d'écran.
 export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
   const gaps = priceGaps;
 
@@ -36,8 +38,14 @@ export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
       <div className="flex flex-col gap-3">
         <h2 className={question}>Analyse des prix</h2>
         <p className={questionHint}>
-          Trois repères, côte à côte : la valeur perçue, le marché calculé, l’analyse du conseiller.
+          Voici le positionnement observé sur le marché concurrentiel, face au prix que vous aviez
+          en tête.
         </p>
+        {gaps.sellerPerceivedPrice != null ? (
+          <p className="font-title text-xl font-semibold text-zinc-900 sm:text-2xl stage:text-white">
+            Votre prix en début de rendez-vous&nbsp;: {formatEuro(gaps.sellerPerceivedPrice)}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -45,9 +53,12 @@ export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
           <div className={statLabel}>Valeur perçue par le vendeur</div>
           <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
-        <div className={`${panel} flex flex-col gap-1.5`}>
+        <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
           <div className={statLabel}>Marché calculé</div>
           <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
+          <div className="text-sm text-zinc-500 stage:text-white/60">
+            Positionnement observé sur le marché concurrentiel
+          </div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse du conseiller</div>

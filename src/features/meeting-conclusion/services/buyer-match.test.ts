@@ -27,6 +27,7 @@ function dossier(id: string, o: Overrides): SuiviDossier {
     advisorAnalysis: null,
     advisorPrice: o.advisorPrice ?? null,
     commercializationPrice: o.commercializationPrice ?? null,
+    sellerPerceivedPrice: null,
     outcome: o.outcome ?? 'signed',
     followUpReason: null,
     concludedAt: null,
