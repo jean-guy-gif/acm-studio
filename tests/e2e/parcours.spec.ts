@@ -211,6 +211,26 @@ async function walkLive(
   await page.locator('input[name="seller_perceived_property_price"]').fill(String(PERCEIVED_PRICE));
   await validate();
 
+  // Mission 82 — sauter les concurrents au clavier ne laisse pas « Analyse des prix » vide :
+  // l'écran nomme ce qui reste à passer, sans aucun prix, et « Y aller » y mène.
+  if (firstPass) {
+    await expect(
+      page.getByText(`Concurrent 1 sur ${COMPETITORS.length} · Étape 1 sur 4`),
+    ).toBeVisible();
+    const analysis = page.getByRole('heading', { name: 'Analyse des prix', exact: true });
+    for (let press = 0; press < 40 && !(await analysis.isVisible()); press += 1) {
+      await page.keyboard.press('ArrowRight');
+    }
+    await expect(analysis).toBeVisible();
+    await expect(page.getByText('Il reste à passer :')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Y aller' })).toHaveCount(COMPETITORS.length);
+    for (const competitor of COMPETITORS) {
+      await expectPriceHidden(page, competitor, 'Analyse des prix · il reste à passer');
+    }
+    await onScreen('Analyse des prix · il reste à passer');
+    await page.getByRole('button', { name: 'Y aller' }).first().click();
+  }
+
   for (const [index, competitor] of COMPETITORS.entries()) {
     const label = `Concurrent ${index + 1} sur ${COMPETITORS.length}`;
     const others = COMPETITORS.filter((other) => other !== competitor);

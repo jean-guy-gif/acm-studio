@@ -9,6 +9,7 @@ import { persistLiveComparableResponse } from '@/features/live-seller/actions/sa
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
+import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
 import { LivePageDangerous } from '@/features/live-seller/components/live-page-dangerous';
@@ -29,6 +30,7 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import type {
@@ -182,6 +184,11 @@ export function LiveComparativeShell({
     (c): c is AuthorizedSellerComparable => c.authorized,
   );
   const effectiveRange = range;
+  // Mission 82 — ce qui reste à passer avant « Analyse des prix » (étape sautée au clavier).
+  const pendingSteps = useMemo(
+    () => pendingBeforeAnalysis(pages, comparables, summary),
+    [pages, comparables, summary],
+  );
   const dangerousComparable =
     authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??
     null;
@@ -359,7 +366,8 @@ export function LiveComparativeShell({
       go(1);
       return;
     }
-    if (entersAnalysis && range == null) {
+    // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
+    if (entersAnalysis && range == null && pendingSteps.length === 0) {
       setBusy(true);
       const r = await deliverRange();
       setBusy(false);
@@ -388,10 +396,26 @@ export function LiveComparativeShell({
     durationRevealed,
     range,
     summary,
+    pendingSteps,
     go,
     runBackground,
     harvest,
   ]);
+
+  // Arrivée sur « Analyse des prix » sans passer par « Valider et continuer » alors que tout
+  // est passé : la fourchette se demande ici, par la même voie gardée côté serveur.
+  const showAnalysis = async () => {
+    if (busy) return;
+    setAwaitError(null);
+    setBusy(true);
+    const r = await deliverLiveFragment(projectId, {
+      kind: 'advisor-range',
+      formData: new FormData(),
+    });
+    setBusy(false);
+    if (r.ok && r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
+    else if (!r.ok) setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+  };
 
   // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
   useEffect(() => {
@@ -600,6 +624,16 @@ export function LiveComparativeShell({
           <LivePagePerceived summary={summary} />
         ) : page.type === 'price_analysis' && effectiveRange ? (
           <LivePageAnalysis priceGaps={effectiveRange.priceGaps} />
+        ) : page.type === 'price_analysis' ? (
+          <LivePageAnalysisPending
+            steps={pendingSteps}
+            busy={busy}
+            onOpen={(pageIndex) => {
+              setAwaitError(null);
+              setIndex(pageIndex);
+            }}
+            onShowAnalysis={() => void showAnalysis()}
+          />
         ) : page.type === 'conclusion' ? (
           <LivePageConclusion
             projectId={projectId}
