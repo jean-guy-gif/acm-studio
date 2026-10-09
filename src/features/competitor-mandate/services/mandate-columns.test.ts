@@ -74,6 +74,24 @@ describe('parseImportedMandateForm — champs cachés revalidés', () => {
     });
   });
 
+  it('agence sans mention : « non », provenance « aucune mention »', () => {
+    expect(
+      parseImportedMandateForm(
+        form({
+          sold_by: 'agency',
+          sold_by_source: 'advertiser',
+          exclusivity: 'no',
+          exclusivity_source: 'no_mention',
+        }),
+      ),
+    ).toEqual({
+      sold_by: 'agency',
+      sold_by_source: 'advertiser',
+      exclusivity: 'no',
+      exclusivity_source: 'no_mention',
+    });
+  });
+
   it('une saisie à la main ne porte rien', () => {
     expect(parseImportedMandateForm(form({}))).toEqual(UNKNOWN);
   });
@@ -87,8 +105,26 @@ describe('parseImportedMandateForm — champs cachés revalidés', () => {
     ['provenance hors liste', { exclusivity: 'yes', exclusivity_source: 'photo' }],
     ['provenance « conseiller » forgée', { sold_by: 'agency', sold_by_source: 'advisor' }],
     ['valeur sans provenance', { exclusivity: 'yes' }],
+    ['« aucune mention » sans agence', { exclusivity: 'no', exclusivity_source: 'no_mention' }],
+    [
+      '« aucune mention » n’est pas une provenance de vendeur',
+      { sold_by: 'agency', sold_by_source: 'no_mention' },
+    ],
   ])('%s : ignoré', (_label, fields) => {
     expect(parseImportedMandateForm(form(fields))).toEqual(UNKNOWN);
+  });
+
+  it('« aucune mention » ne dit jamais « oui » : l’agence reste, l’exclusivité est ignorée', () => {
+    expect(
+      parseImportedMandateForm(
+        form({
+          sold_by: 'agency',
+          sold_by_source: 'advertiser',
+          exclusivity: 'yes',
+          exclusivity_source: 'no_mention',
+        }),
+      ),
+    ).toEqual({ ...UNKNOWN, sold_by: 'agency', sold_by_source: 'advertiser' });
   });
 });
 

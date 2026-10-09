@@ -57,7 +57,7 @@ describe('lecture sur les pages réelles', () => {
     });
   });
 
-  it('Figaro : « origin » dit l’agence ; sans « isExclusive », l’exclusivité reste inconnue', () => {
+  it('Figaro : « origin » dit l’agence ; sans « isExclusive » ni mention, mandat simple', () => {
     expect(
       importMandate(
         'figaro-nice-appartement.html',
@@ -66,12 +66,12 @@ describe('lecture sur les pages réelles', () => {
     ).toEqual({
       soldBy: 'agency',
       soldBySource: 'listing_data',
-      exclusivity: null,
-      exclusivitySource: null,
+      exclusivity: 'no',
+      exclusivitySource: 'no_mention',
     });
   });
 
-  it('Green Acres : l’agence du bloc annonceur ; pas de badge, exclusivité inconnue', () => {
+  it('Green Acres : l’agence du bloc annonceur ; ni badge ni mention, mandat simple', () => {
     expect(
       importMandate(
         'green-acres-cagnes.html',
@@ -80,12 +80,37 @@ describe('lecture sur les pages réelles', () => {
     ).toEqual({
       soldBy: 'agency',
       soldBySource: 'advertiser',
-      exclusivity: null,
-      exclusivitySource: null,
+      exclusivity: 'no',
+      exclusivitySource: 'no_mention',
     });
   });
 
-  it('Maisons et Appartements : le vendeur de l’offre est une organisation', () => {
+  // Retour d'essai du 09/10/2026 : annonce ouverte par-dessus une recherche (openAdvert), lue
+  // ici sur son adresse propre, à la nouvelle présentation de Green Acres.
+  it('Green Acres (Grasse, nouvelle présentation) : la bonne annonce, son agence, exclusivité oui', () => {
+    const url = 'https://www.green-acres.fr/fr/properties/immobilier/grasse/Aw85w5p55r5k79fd.htm';
+    const { data } = normalizeListingData(
+      extractListingData(fixture('green-acres-grasse-exclusivite.html'), url),
+      url,
+      'Green Acres',
+    );
+    expect(data).toMatchObject({
+      title: 'Exclusivite - Grasse Quartier Sainte-Anne - Maison De Hameau Pleine De Charme',
+      city: 'Grasse',
+      price: 325500,
+      surfaceArea: 128,
+      roomsCount: 6,
+      soldBy: 'agency',
+      soldBySource: 'advertiser',
+      exclusivity: 'yes',
+      exclusivitySource: 'badge',
+    });
+    expect(data.listingDescription).toMatch(/^EXCLUSIVITE - GRASSE QUARTIER SAINTE-ANNE/);
+    expect(data.photoUrls.length).toBeGreaterThan(0);
+    expect(data.photoUrls.every((photo) => photo.includes('Aw85w5p55r5k79fd'))).toBe(true);
+  });
+
+  it('Maisons et Appartements : le vendeur de l’offre est une organisation ; aucune mention, mandat simple', () => {
     expect(
       importMandate(
         'maisons-et-appartements-villeneuve.html',
@@ -94,8 +119,8 @@ describe('lecture sur les pages réelles', () => {
     ).toEqual({
       soldBy: 'agency',
       soldBySource: 'listing_data',
-      exclusivity: null,
-      exclusivitySource: null,
+      exclusivity: 'no',
+      exclusivitySource: 'no_mention',
     });
   });
 });
@@ -242,13 +267,47 @@ describe('ordre de lecture', () => {
     ).toMatchObject({ exclusivity: 'yes', exclusivitySource: 'description' });
   });
 
-  it('le texte ne dit jamais « non », et rien du vendeur', () => {
+  it('vendeur inconnu : le texte ne dit jamais « non », et rien du vendeur', () => {
     expect(
       readListingMandate({
         marked: UNKNOWN_MANDATE,
         title: 'Maison 6 pièces Nice',
         description: 'Mandat simple, sans exclusivité. Notre agence vous propose…',
       }),
+    ).toEqual(UNKNOWN_MANDATE);
+  });
+});
+
+describe('agence sans aucune mention d’exclusivité : mandat simple', () => {
+  const agency = { ...UNKNOWN_MANDATE, soldBy: 'agency', soldBySource: 'advertiser' } as const;
+
+  it('ni badge, ni titre, ni description : « non », provenance « aucune mention »', () => {
+    expect(
+      readListingMandate({
+        marked: agency,
+        title: 'Maison 6 pièces Nice',
+        description: 'Belle maison avec jardin à jouissance exclusive, quartier exclusif.',
+      }),
+    ).toEqual({ ...agency, exclusivity: 'no', exclusivitySource: 'no_mention' });
+  });
+
+  it('une mention dans le titre ou la description l’emporte', () => {
+    expect(
+      readListingMandate({ marked: agency, title: 'EXCLUSIVITE - Grasse', description: null }),
+    ).toMatchObject({ exclusivity: 'yes', exclusivitySource: 'title' });
+    expect(
+      readListingMandate({ marked: agency, title: 'Maison', description: 'Mandat exclusif.' }),
+    ).toMatchObject({ exclusivity: 'yes', exclusivitySource: 'description' });
+  });
+
+  it('un badge l’emporte aussi', () => {
+    const marked = { ...agency, exclusivity: 'yes', exclusivitySource: 'badge' } as const;
+    expect(readListingMandate({ marked, title: 'Maison', description: null })).toEqual(marked);
+  });
+
+  it('vendeur inconnu : l’exclusivité reste inconnue', () => {
+    expect(
+      readListingMandate({ marked: UNKNOWN_MANDATE, title: 'Maison', description: 'Jardin.' }),
     ).toEqual(UNKNOWN_MANDATE);
   });
 });

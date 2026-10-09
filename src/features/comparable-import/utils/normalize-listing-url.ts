@@ -41,6 +41,20 @@ function ruleFor(hostname: string): PortalRule | null {
   );
 }
 
+// Mission 83 — Green Acres ouvre une annonce PAR-DESSUS la page de recherche : l'adresse copiée
+// est alors celle de la recherche, et l'annonce n'y figure que dans `openAdvert`. Retirer la
+// requête rendait la page de recherche (« 0 propriétés »), lue comme une annonce. Mesuré le
+// 09/10/2026 : l'annonce a son adresse propre, `/fr/properties/<id>.htm`, que le portail redirige
+// vers sa fiche (`/fr/properties/immobilier/grasse/<id>.htm`). On ouvre celle-là.
+function greenAcresOpenAdvert(url: URL): string | null {
+  const host = url.hostname.toLowerCase();
+  if (host !== 'green-acres.fr' && !host.endsWith('.green-acres.fr')) {
+    return null;
+  }
+  const id = url.searchParams.get('openAdvert') ?? '';
+  return /^[A-Za-z0-9]{8,32}$/.test(id) ? `${url.origin}/fr/properties/${id}.htm` : null;
+}
+
 export function normalizeListingUrl(rawUrl: string): string {
   let url: URL;
   try {
@@ -52,6 +66,11 @@ export function normalizeListingUrl(rawUrl: string): string {
   const rule = ruleFor(url.hostname);
   if (!rule) {
     return rawUrl; // unknown portal → untouched
+  }
+
+  const openAdvert = greenAcresOpenAdvert(url);
+  if (openAdvert) {
+    return openAdvert;
   }
 
   const keep = new Set(rule.keepQueryParams);
