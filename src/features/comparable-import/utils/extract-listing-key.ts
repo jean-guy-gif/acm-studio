@@ -23,6 +23,14 @@ const MEASURED_PORTALS: { suffixes: string[]; portal: string }[] = [
   // le chemin des annonces — on ne le lira jamais, donc pas d'identité à en tirer.
 ];
 
+// Le nom du portail tel qu'on le montre (« d'après SeLoger ») : la source est toujours nommée.
+export const LISTING_PORTAL_LABELS: Record<string, string> = {
+  seloger: 'SeLoger',
+  bienici: 'Bien’ici',
+  greenacres: 'Green Acres',
+  maisonsetappartements: 'Maisons et Appartements',
+};
+
 export type ListingIdentity = { portal: string; listingKey: string; canonicalUrl: string };
 
 export function extractListingKey(rawUrl: string): ListingIdentity | null {

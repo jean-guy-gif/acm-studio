@@ -69,6 +69,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
 
       {missing.length === 0 ? (
         <CompetitorSearchPanel
+          projectId={projectId}
           criteriaLabel={criteriaLabel}
           prepareAction={prepareAction}
           rankAction={rankAction}

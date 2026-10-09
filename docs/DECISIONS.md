@@ -35,6 +35,8 @@ chaque mission validée.
 - 08/10 · M78 · Le chauffage lu sur une annonce est traduit dans la liste (une énergie, individuel ou collectif) ; non reconnu, le champ reste vide : deux énergies ne décident rien, la climatisation n'est jamais lue comme une pompe à chaleur.
 - 08/10 · M78 · « Gaz » ou « fioul » seul ne dit pas individuel ou collectif : vide pour un appartement, individuel pour une maison.
 - 08/10 · M78 · À l'import (annonce et fiche PDF), un champ à liste (chauffage, exposition, état, GES, extérieurs, stationnement) ne reçoit jamais une valeur hors liste ; un menu ne garde jamais une valeur qu'il ne sait pas afficher.
+- 08/10 · M80 · « Classe DPE » du bien vendeur est une liste A à G, saisie par le conseiller ; vide = pas encore de DPE ; la base ADEME n'est pas interrogée (mission 79 abandonnée).
+- 08/10 · M80 · Sous les concurrents retenus : « DPE de vos concurrents : 2 C, 4 D, 1 E, 3 non indiqués » ; une valeur hors A à G compte comme non indiquée.
 
 ## Concurrents & recherche
 
@@ -108,6 +110,12 @@ chaque mission validée.
 - 08/10 · M78 · La carte dit l'écart de pièces : « 7 pièces au lieu de 9 » ; le % de correspondance compte déjà les pièces.
 - 08/10 · M78 · Stream Estate seulement : un même bien sous deux identifiants (même commune, même prix, mêmes pièces, surface à 2 m² près) n'apparaît et ne compte qu'une fois ; le bilan dit le nombre de doublons (exception à M61, « jamais sur une ressemblance »).
 - 08/10 · M78 · Le cran 6 se découpe en tranches disjointes pour ne pas refacturer ce que les crans 1 à 5 ont demandé ; la recherche s'arrête à la fin de la page où le dixième bien est atteint (11 possibles).
+- 08/10 · M80 · La carte affiche la classe DPE en couleur (A vert → G rouge) et, si le bien vendeur en a une, l'écart : « DPE D, comme le vôtre », « DPE F, deux classes de moins », « DPE B, deux classes de mieux ».
+- 08/10 · M80 · % de correspondance : DPE sur 10 points (même classe 10, une classe d'écart 5, au-delà 0), seulement si les deux classes sont connues ; le DPE ne filtre jamais et ne crée aucun cran (complète M71).
+- 08/10 · M80 · Stream Estate : la classe DPE est celle de l'annonce d'origine retenue, sinon la lettre commune à toutes les annonces, sinon « non indiqué ».
+- 08/10 · M80 · Les marqueurs DPE des cartes de recherche des portails ne sont pas lus : la lettre arrive à l'import.
+- 08/10 · M80 · À l'import, Bien'ici, Figaro, Green Acres et Maisons & Appartements ne lisent que la lettre MARQUÉE sur la page ; une lettre qui n'est pas clairement marquée reste vide, jamais la première lettre de l'échelle ; le lecteur générique ne décide plus du DPE pour ces portails.
+- 08/10 · M80 · Green Acres : le bloc DPE se lit sur la page entière, à condition d'y être unique, et seulement si une seule barre de l'échelle est distinguée (exception à M48, écrite en commentaire).
 
 ## Live
 
@@ -126,6 +134,10 @@ chaque mission validée.
 - 24/09 · M58 · Photos des concurrents telles quelles : jamais de retrait de filigrane, jamais le logo de l'agence sur la photo d'un confrère.
 - 06/10 · M72 · Le décor de la scène vit dans sa propre couche rognée : la scène du Live n'est jamais plus large que la fenêtre et ne peut pas être décalée de côté, plein écran compris.
 - 06/10 · M72 · Un nom d'agence long est tronqué avec des points de suspension (nom entier au survol) ; Clair, Plein écran et Quitter restent entiers et cliquables.
+- 08/10 · M80 · Écran « Le DPE face au marché », après le dernier concurrent : repère = la lettre médiane des concurrents qui en affichent une ; atout, dans la moyenne, moins bon, ou — sans DPE vendeur — la classe à viser après le passage du diagnostiqueur ; absent si aucun concurrent n'affiche de classe.
+- 08/10 · M80 · Sur cet écran, jamais de montant ni de prix calculé ; les concurrents sans classe n'y sont pas montrés au vendeur.
+- 08/10 · M80 · Nombre pair de concurrents classés : le repère est la moins bonne des deux lettres du milieu ; repère A et DPE vendeur inconnu : « devra être en A », sans « ou mieux ».
+- 08/10 · M80 · Grille du Live : le DPE passe juste après la surface, en lettre colorée ; sans DPE côté vendeur, il n'y apparaît pas (M40).
 
 ## Conclusion & Suivi
 

@@ -5,17 +5,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { deriveListingAge } from '@/features/comparable-import/services/derive-listing-age';
 import { derivePriceChange } from '@/features/comparable-import/services/derive-price-change';
 import type { ImportedComparableData, ListingHistory } from '@/features/comparable-import/types';
-import { extractListingKey } from '@/features/comparable-import/utils/extract-listing-key';
+import {
+  LISTING_PORTAL_LABELS,
+  extractListingKey,
+} from '@/features/comparable-import/utils/extract-listing-key';
 import type { Database } from '@/lib/supabase/database.types';
 
 type Client = SupabaseClient<Database>;
-
-const PORTAL_LABELS: Record<string, string> = {
-  seloger: 'SeLoger',
-  bienici: 'Bien’ici',
-  greenacres: 'Green Acres',
-  maisonsetappartements: 'Maisons et Appartements',
-};
 
 // Turns a lower-bound label ("plus de 2 mois") into a timestamp meaning "published no
 // later than this" — observedAt minus the stated duration. For ordering only; the
@@ -120,7 +116,7 @@ export async function observeListing(
       {
         publishedAtExact: data.listingPublishedAt,
         lowerBoundLabel: data.publicationLowerBoundLabel,
-        source: PORTAL_LABELS[identity.portal] ?? identity.portal,
+        source: LISTING_PORTAL_LABELS[identity.portal] ?? identity.portal,
         firstObservedAt,
       },
       now,

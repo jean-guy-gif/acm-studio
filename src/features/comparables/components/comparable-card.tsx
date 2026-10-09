@@ -11,6 +11,8 @@ import {
   btnSecondary,
   card,
 } from '@/components/ui/styles';
+import { CompetitorLocationLine } from '@/features/competitor-locator/components/competitor-location-line';
+import type { LocatorAvailability } from '@/features/competitor-locator/types';
 import {
   pricePerSquareMeter,
   surfaceComparison,
@@ -39,6 +41,9 @@ type ComparableCardProps = {
   // Sélection de lot (optionnelle) : présente = une case à cocher est affichée, même
   // modèle que la recherche (§8). Absente = carte normale (liste des écartés).
   selection?: { checked: boolean; onToggle: () => void; disabled?: boolean };
+  // Mission 75 — présent pour les biens retenus : l'adresse rendue par le Localisateur.
+  // `undefined` = carte sans ligne d'adresse (biens écartés).
+  locatorAvailability?: LocatorAvailability | null;
 };
 
 const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
@@ -59,6 +64,7 @@ export function ComparableCard({
   isFirst,
   isLast,
   selection,
+  locatorAvailability,
 }: ComparableCardProps) {
   const photos = getComparablePhotoUrls(comparable);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -167,6 +173,10 @@ export function ComparableCard({
             {formatSquareMeters(gap.deltaSquareMeters, { signed: true })} (
             {formatPercent(gap.deltaPercent, { signed: true })})
           </div>
+        ) : null}
+
+        {locatorAvailability !== undefined ? (
+          <CompetitorLocationLine competitor={comparable} availability={locatorAvailability} />
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
