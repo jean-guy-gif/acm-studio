@@ -224,6 +224,22 @@ export function extractGreenAcres(html: string, originalUrl?: string): PartialLi
     result.surfaceArea = surface;
   }
 
+  // Mission 83 (retours d'essai) — le terrain, quand la fiche l'affiche, quel que soit le type
+  // sous lequel le portail classe le bien (« immobilier » à Grasse). Mesuré le 09/10/2026 : il est
+  // publié dans l'étiquette « Terrain » du bloc titre (`tag` + `tag__label` : « 400 m² »). Les
+  // cartes voisines portent le leur dans un autre gabarit (`info-tag` : « 163 m² de terrain ») ;
+  // on s'arrête de toute façon à la première carte. Une valeur sans « m² » n'est pas lue.
+  const firstCard = main.search(/class="announce-card\b/);
+  const landRaw = firstMatch(
+    firstCard >= 0 ? main.slice(0, firstCard) : main,
+    /<span class="tag\b[^"]*" title="Terrain">[\s\S]{0,200}?<span class="tag__label">([^<]{1,30})<\/span>/i,
+  );
+  const landLabel = landRaw ? decodeHtmlEntities(landRaw) : '';
+  const land = /m\s*(?:²|2)\s*$/i.test(landLabel.trim()) ? normalizeArea(landLabel) : null;
+  if (land != null) {
+    result.landArea = land;
+  }
+
   // Mission 47 — « Vu 269 fois depuis le 23/07/2026 » : the view count AND the exact
   // listing date. The French date accepts the day on one or two digits (parseFrenchDate).
   const viewsRaw = decodeHtmlEntities(main).match(

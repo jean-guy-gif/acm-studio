@@ -14,6 +14,8 @@ export type Exclusivity = (typeof EXCLUSIVITY_VALUES)[number];
 //   advertiser   — nom de l'agence dans le bloc annonceur de l'annonce
 //   title        — titre de l'annonce
 //   description  — texte de l'annonce
+//   no_mention   — vendu par une agence, et rien dans l'annonce ne parle d'exclusivité :
+//                  mandat simple (exclusivité « non » seulement)
 //   advisor      — choisi par le conseiller
 export const MANDATE_SOURCES = [
   'listing_data',
@@ -21,6 +23,7 @@ export const MANDATE_SOURCES = [
   'advertiser',
   'title',
   'description',
+  'no_mention',
   'advisor',
 ] as const;
 export type MandateSource = (typeof MANDATE_SOURCES)[number];
@@ -57,6 +60,7 @@ export const MANDATE_SOURCE_LABELS: Record<MandateSource, string> = {
   advertiser: 'annonceur de l’annonce',
   title: 'titre de l’annonce',
   description: 'description de l’annonce',
+  no_mention: 'aucune mention dans l’annonce',
   advisor: 'indiqué par vous',
 };
 

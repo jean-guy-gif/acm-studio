@@ -8,6 +8,15 @@ import {
 describe('mentionsExclusivity', () => {
   it.each([
     'Exclusivité',
+    'exclusivité',
+    'Exclusivite',
+    'EXCLUSIVITE',
+    'EXCLUSIVITÉ',
+    'en exclusivité',
+    'mandat exclusif',
+    'MANDAT EXCLUSIF',
+    'Exclusivite - Grasse Quartier Sainte-Anne - Maison De Hameau Pleine De Charme',
+    'EXCLUSIVITE - GRASSE QUARTIER SAINTE-ANNE -Très rare opportunité',
     'EXCLUSIVITE Idéalement situé dans le très recherché quartier des Bouches du Loup',
     'Exclusivité. Napoléon III, bel appartement',
     'Laforêt Immobilier vous présente en exclusivité cette belle maison',
@@ -23,6 +32,8 @@ describe('mentionsExclusivity', () => {
 
   it.each([
     'Résidence exclusivement réservée aux seniors',
+    'EXCLUSIVEMENT POUR INVESTISSEUR',
+    'Hôtel particulier à vendre',
     'Dans un quartier exclusif de la Côte d’Azur',
     'Jardin à jouissance exclusive',
     'Une vue exclusive sur la baie',

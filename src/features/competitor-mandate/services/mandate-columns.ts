@@ -44,12 +44,17 @@ export function parseImportedMandateForm(formData: FormData): MandateColumns {
     const source = text(formData, name);
     return isMandateSource(source) && source !== 'advisor' ? source : null;
   };
-  const soldBySource = readSource('sold_by_source');
+  const readSoldBySource = readSource('sold_by_source');
+  const soldBySource = readSoldBySource === 'no_mention' ? null : readSoldBySource;
   const exclusivitySource = readSource('exclusivity_source');
   const soldBy = text(formData, 'sold_by');
   const exclusivity = text(formData, 'exclusivity');
   const soldByRead = soldBy === 'agency' && soldBySource != null;
-  const exclusivityRead = isExclusivity(exclusivity) && exclusivitySource != null;
+  // « aucune mention » ne peut dire que « non », et seulement d'une agence.
+  const exclusivityRead =
+    isExclusivity(exclusivity) &&
+    exclusivitySource != null &&
+    (exclusivitySource !== 'no_mention' || (exclusivity === 'no' && soldByRead));
   return {
     sold_by: soldByRead ? 'agency' : null,
     sold_by_source: soldByRead ? soldBySource : null,

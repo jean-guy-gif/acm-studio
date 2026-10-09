@@ -20,8 +20,10 @@ import {
 //   Green Acres  badge « Exclusivité » du bloc titre ; nom de l'agence du bloc annonceur
 //   Maisons et Appartements  rien de marqué (la description le dit) ; JSON-LD `seller`
 //
-// Ordre : donnée structurée, puis badge, puis titre, puis description. Rien d'autre ne décide :
-// sans marque, la valeur reste inconnue (null) — jamais « non », que seul SeLoger sait dire.
+// Ordre : donnée structurée, puis badge, puis titre, puis description. Si rien ne parle
+// d'exclusivité et que le vendeur est une AGENCE, c'est un mandat simple : « non », provenance
+// « aucune mention dans l'annonce » (retours d'essai du 09/10/2026, sur tous les portails). Sans
+// vendeur connu, l'exclusivité reste inconnue (null).
 // « particulier » n'est jamais lu : le conseiller le choisit. Aucune photo n'est lue.
 
 type Marked = ListingMandate;
@@ -161,7 +163,8 @@ export function readMarkedMandate(html: string, source: string): ListingMandate 
 
 // La lecture complète : ce que la page marque, puis — pour l'exclusivité seulement — le titre
 // et la description de l'annonce, tels que l'import les a retenus (déjà cadrés au bloc de
-// l'annonce, M48/M49). Le texte ne dit jamais « non », et ne dit rien du vendeur.
+// l'annonce, M48/M49). Le texte ne dit jamais « non » par lui-même, et ne dit rien du vendeur ;
+// c'est l'ABSENCE de toute mention, chez une agence, qui dit « non ».
 export function readListingMandate(input: {
   marked: ListingMandate;
   title: string | null;
@@ -176,6 +179,9 @@ export function readListingMandate(input: {
   }
   if (mentionsExclusivity(description)) {
     return { ...marked, exclusivity: 'yes', exclusivitySource: 'description' };
+  }
+  if (marked.soldBy === 'agency') {
+    return { ...marked, exclusivity: 'no', exclusivitySource: 'no_mention' };
   }
   return marked;
 }
