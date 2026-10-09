@@ -10,6 +10,7 @@ import { observeListing } from '@/features/comparable-import/services/record-lis
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
+import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -101,6 +102,8 @@ export async function importAndCreateComparable(
 
     const { error } = await supabase.from('comparables').insert({
       ...input,
+      // Mission 83 — vendeur et exclusivité tels que l'annonce les dit, avec leur provenance.
+      ...importedMandateColumns(data),
       property_type: canonicalType,
       project_id: projectId,
       agency_id: profile.agency_id,

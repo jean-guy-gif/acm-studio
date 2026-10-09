@@ -1,3 +1,5 @@
+import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
+import { PROSPECTING_STEP_LABELS } from '@/features/competitor-mandate/services/mandate-columns';
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
@@ -28,6 +30,13 @@ export function ProspectingList({ rows }: { rows: ProspectingRow[] }) {
                   {row.label}
                 </span>
               ) : null}
+              {/* Mission 83 — à qui s'adresser. La correction d'un clic ne s'imprime pas. */}
+              <span className="font-medium text-zinc-800 stage:text-white/90 print:text-black">
+                {PROSPECTING_STEP_LABELS[row.step]}
+              </span>
+              <div className="py-0.5 print:hidden">
+                <CompetitorMandateLine competitor={row.mandate} />
+              </div>
               {row.title ? (
                 <span className="text-zinc-600 stage:text-white/70 print:text-zinc-800">
                   {row.title}

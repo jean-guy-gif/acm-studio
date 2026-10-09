@@ -45,6 +45,10 @@ function listing(over: Partial<ImportedComparableData> = {}): ImportedComparable
     modifiedAt: null,
     viewCount: null,
     viewCountSince: null,
+    soldBy: null,
+    soldBySource: null,
+    exclusivity: null,
+    exclusivitySource: null,
     ...over,
   };
 }
