@@ -1,3 +1,5 @@
+import type { Exclusivity, MandateSource } from '@/features/competitor-mandate/types';
+
 // Final normalised data offered to the advisor for prefill (never persisted directly).
 export type ImportedComparableData = {
   title: string | null;
@@ -52,6 +54,12 @@ export type ImportedComparableData = {
   modifiedAt: string | null;
   viewCount: number | null;
   viewCountSince: string | null;
+  // Mission 83 — qui vend, et sous quel mandat, avec la provenance de chaque valeur. Null =
+  // inconnu. « particulier » n'est jamais lu : le conseiller le choisit.
+  soldBy: 'agency' | null;
+  soldBySource: MandateSource | null;
+  exclusivity: Exclusivity | null;
+  exclusivitySource: MandateSource | null;
 };
 
 // Partial data produced by a single extractor before the priority merge.

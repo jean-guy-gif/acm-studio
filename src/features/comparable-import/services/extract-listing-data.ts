@@ -18,6 +18,7 @@ import {
   extractSeLoger,
   isSeLoger,
 } from '@/features/comparable-import/extractors/seloger-extractor';
+import { readMarkedMandate } from '@/features/comparable-import/services/read-listing-mandate';
 import type { PartialListingData } from '@/features/comparable-import/types';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { extractEmbeddedDescription } from '@/features/comparable-import/utils/extract-embedded-description';
@@ -26,6 +27,7 @@ import { extractListingPublishedAt } from '@/features/comparable-import/utils/ex
 import { extractVisibleDescription } from '@/features/comparable-import/utils/extract-visible-description';
 import { extractVisibleFeatures } from '@/features/comparable-import/utils/extract-visible-features';
 import { mainAdvertRegion } from '@/features/comparable-import/utils/main-advert-region';
+import type { ListingMandate } from '@/features/competitor-mandate/types';
 
 export type ExtractedParts = {
   portal: PartialListingData;
@@ -53,6 +55,9 @@ export type ExtractedParts = {
   // « Box de stationnement », « Ascenseur »). Elle sortait vide sur les CINQ
   // portails testés : personne ne la lisait.
   visibleFeatures: string[];
+  // Mission 83 — ce que la page MARQUE du vendeur et de l'exclusivité (donnée structurée,
+  // badge, bloc annonceur). Le titre et la description complètent dans normalize-listing-data.
+  mandate?: ListingMandate;
 };
 
 // Runs the domain-specific extractor (if any) plus the generic ones. The portal
@@ -96,7 +101,8 @@ export function extractListingData(html: string, originalUrl: string): Extracted
   // autre bien). Les lecteurs génériques ci-dessous sont donc cadrés à cette seule
   // tranche. Pour M&A et les portails inconnus, la tranche est vide : on ne ratisse
   // pas la page — l'extracteur de portail fait foi (§3, le niveau 3 est supprimé).
-  const region = mainAdvertRegion(html, detectSource(hostname));
+  const source = detectSource(hostname);
+  const region = mainAdvertRegion(html, source);
 
   return {
     portal,
@@ -108,5 +114,6 @@ export function extractListingData(html: string, originalUrl: string): Extracted
     listingPublishedAt: extractListingPublishedAt(html),
     visibleDescription: extractVisibleDescription(region),
     visibleFeatures: extractVisibleFeatures(html),
+    mandate: readMarkedMandate(html, source),
   };
 }

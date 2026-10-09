@@ -316,6 +316,16 @@ export function NewComparablePanel({
           </p>
         ) : null}
         <input type="hidden" name="__importGen" value={String(importKey)} />
+        {/* Mission 83 — vendeur et exclusivité lus sur l'annonce importée : ils suivent la fiche
+            jusqu'à l'enregistrement, et se corrigent ensuite sur la carte du concurrent. */}
+        <input type="hidden" name="sold_by" value={result?.data.soldBy ?? ''} />
+        <input type="hidden" name="sold_by_source" value={result?.data.soldBySource ?? ''} />
+        <input type="hidden" name="exclusivity" value={result?.data.exclusivity ?? ''} />
+        <input
+          type="hidden"
+          name="exclusivity_source"
+          value={result?.data.exclusivitySource ?? ''}
+        />
         <ComparableFormFields
           initial={initial}
           values={echoValues}

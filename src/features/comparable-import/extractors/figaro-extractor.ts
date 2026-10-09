@@ -43,19 +43,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const NUXT_WRAPPERS = new Set(['ShallowReactive', 'Reactive', 'ShallowRef', 'Ref']);
 const PHOTO_SIZES = ['extra-large', 'large'] as const;
 
-function structuredPhotoUrls(html: string): string[] {
+type NuxtClassified = {
+  cell: (index: unknown) => unknown;
+  classified: Record<string, unknown>;
+};
+
+// The « classified » node of the application state (the ad itself), with the cell reader that
+// resolves its children. Null when the state is absent or does not have that shape.
+function openClassified(html: string): NuxtClassified | null {
   const raw = firstMatch(html, /<script[^>]*\bid="__NUXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
   if (!raw) {
-    return [];
+    return null;
   }
   let table: unknown;
   try {
     table = JSON.parse(raw);
   } catch {
-    return [];
+    return null;
   }
   if (!Array.isArray(table)) {
-    return [];
+    return null;
   }
   const cells: unknown[] = table;
 
@@ -79,7 +86,39 @@ function structuredPhotoUrls(html: string): string[] {
   }
 
   let node: unknown = cell(1);
-  for (const key of ['data', 'classifiedDetailResponse', 'classified', 'images', 'photos']) {
+  for (const key of ['data', 'classifiedDetailResponse', 'classified']) {
+    node = isRecord(node) ? cell(node[key]) : undefined;
+  }
+  return isRecord(node) ? { cell, classified: node } : null;
+}
+
+// Mission 83 — two facts of the ad, read on the SAME path as its photos (the similar and related
+// ads are other branches). Measured on 09/10/2026 (annonce-97911443, -107916943, -108367635):
+// « isExclusive » is true on an exclusive ad and ABSENT otherwise (annonce-109593037), so only
+// `true` is reported; « origin » reads "professionnel" on every ad measured.
+export function readFigaroMandateFacts(html: string): {
+  isExclusive: boolean;
+  origin: string | null;
+} {
+  const opened = openClassified(html);
+  if (!opened) {
+    return { isExclusive: false, origin: null };
+  }
+  const origin = opened.cell(opened.classified.origin);
+  return {
+    isExclusive: opened.cell(opened.classified.isExclusive) === true,
+    origin: typeof origin === 'string' ? origin : null,
+  };
+}
+
+function structuredPhotoUrls(html: string): string[] {
+  const opened = openClassified(html);
+  if (!opened) {
+    return [];
+  }
+  const { cell } = opened;
+  let node: unknown = opened.classified;
+  for (const key of ['images', 'photos']) {
     node = isRecord(node) ? cell(node[key]) : undefined;
   }
   if (!Array.isArray(node)) {

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
+import { parseImportedMandateForm } from '@/features/competitor-mandate/services/mandate-columns';
 import { parseComparableForm } from '@/features/comparables/utils/comparable-input';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -93,6 +94,9 @@ export async function createComparable(
 
     const { error } = await supabase.from('comparables').insert({
       ...parsed.input,
+      // Mission 83 — ce que l'annonce importée disait du vendeur et de l'exclusivité (champs
+      // cachés, revalidés). Une saisie à la main n'en porte pas : inconnu.
+      ...parseImportedMandateForm(formData),
       project_id: projectId,
       agency_id: profile.agency_id,
       display_order: nextOrder,

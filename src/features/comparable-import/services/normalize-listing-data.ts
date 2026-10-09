@@ -1,3 +1,5 @@
+import { readListingMandate } from '@/features/comparable-import/services/read-listing-mandate';
+import { UNKNOWN_MANDATE } from '@/features/competitor-mandate/types';
 import type { ExtractedParts } from '@/features/comparable-import/services/extract-listing-data';
 import type {
   ImportedComparableData,
@@ -29,6 +31,11 @@ type ScalarField = Exclude<
   // Mission 33 : la date vient d'un lecteur dédié et les jours en sont déduits.
   | 'listingPublishedAt'
   | 'daysOnMarket'
+  // Mission 83 : vendeur et exclusivité viennent de read-listing-mandate.
+  | 'soldBy'
+  | 'soldBySource'
+  | 'exclusivity'
+  | 'exclusivitySource'
 >;
 
 const SCALAR_FIELDS: ScalarField[] = [
@@ -386,6 +393,7 @@ export function normalizeListingData(
     modifiedAt: parts.portal.modifiedAt ?? null,
     viewCount: parts.portal.viewCount ?? null,
     viewCountSince: parts.portal.viewCountSince ?? null,
+    ...UNKNOWN_MANDATE,
   };
   // A description that is just the portal's generic slogan is not usable.
   if (data.listingDescription && isGenericTitle(data.listingDescription, source)) {
@@ -396,6 +404,19 @@ export function normalizeListingData(
   if (data.listingDescription == null) {
     console.warn(
       `[description] ${listingUrl} — aucune description cadrée retenue (provenance ${selectedDescription.provenance})`,
+    );
+  }
+
+  // Mission 83 — vendeur et exclusivité : ce que la page marque, puis le titre et la description
+  // RETENUS ci-dessus (cadrés au bloc de l'annonce). Rien sur une page qui n'est pas une annonce.
+  if (hasListingSignal(data)) {
+    Object.assign(
+      data,
+      readListingMandate({
+        marked: parts.mandate ?? UNKNOWN_MANDATE,
+        title: data.title,
+        description: data.listingDescription,
+      }),
     );
   }
 

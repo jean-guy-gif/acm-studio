@@ -6,6 +6,10 @@ import {
   extractListingKey,
 } from '@/features/comparable-import/utils/extract-listing-key';
 import type { Comparable } from '@/features/comparables/types';
+import {
+  prospectingStep,
+  type ProspectingStep,
+} from '@/features/competitor-mandate/services/mandate-columns';
 import { formatEuro, formatPercent } from '@/lib/format';
 
 // Mission 75 — « Concurrents à prospecter » : la liste de tournée d'un dossier conclu « mandat
@@ -39,6 +43,17 @@ export type ProspectingRow = {
   onlineSince: string | null;
   priceDrop: string | null;
   listingUrl: string | null;
+  // Mission 83 — à qui s'adresser (confrère, propriétaire, à vérifier), et les quatre valeurs
+  // que le conseiller corrige d'un clic sur la ligne.
+  step: ProspectingStep;
+  mandate: {
+    id: string;
+    project_id: string;
+    sold_by: string | null;
+    sold_by_source: string | null;
+    exclusivity: string | null;
+    exclusivity_source: string | null;
+  };
 };
 
 const frDate = (iso: string): string => {
@@ -138,6 +153,15 @@ export function buildProspectingRows(
         onlineSince: describeOnlineSince(age),
         priceDrop: describePriceDrop(competitor, own),
         listingUrl: clean(competitor.listing_url),
+        step: prospectingStep(competitor),
+        mandate: {
+          id: competitor.id,
+          project_id: competitor.project_id,
+          sold_by: competitor.sold_by,
+          sold_by_source: competitor.sold_by_source,
+          exclusivity: competitor.exclusivity,
+          exclusivity_source: competitor.exclusivity_source,
+        },
       };
     });
 }

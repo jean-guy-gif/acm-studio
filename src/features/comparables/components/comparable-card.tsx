@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/styles';
 import { CompetitorLocationLine } from '@/features/competitor-locator/components/competitor-location-line';
 import type { LocatorAvailability } from '@/features/competitor-locator/types';
+import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
 import {
   pricePerSquareMeter,
   surfaceComparison,
@@ -178,6 +179,8 @@ export function ComparableCard({
         {locatorAvailability !== undefined ? (
           <CompetitorLocationLine competitor={comparable} availability={locatorAvailability} />
         ) : null}
+
+        <CompetitorMandateLine competitor={comparable} />
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
           <form action={toggleAction}>
