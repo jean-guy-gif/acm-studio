@@ -23,19 +23,3 @@ export const prospectingFileInputSchema = z.object({
 });
 
 export type ProspectingFileInput = z.infer<typeof prospectingFileInputSchema>;
-
-export const publicListingUrlSchema = z
-  .string()
-  .trim()
-  .max(500)
-  .refine((value) => {
-    if (value === '') {
-      return true;
-    }
-    try {
-      const url = new URL(value);
-      return url.protocol === 'https:' || url.protocol === 'http:';
-    } catch {
-      return false;
-    }
-  });

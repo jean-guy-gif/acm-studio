@@ -99,7 +99,7 @@ export async function getProspectingFile(
         .maybeSingle(),
       supabase
         .from('subject_properties')
-        .select(`address, postal_code, photo_urls, public_listing_url, ${OUR_LISTING_SELECT}`)
+        .select(`address, postal_code, photo_urls, ${OUR_LISTING_SELECT}`)
         .eq('project_id', projectId)
         .eq('agency_id', agencyId)
         .maybeSingle(),
@@ -120,7 +120,6 @@ export async function getProspectingFile(
   const blockerFor = (version: ProspectingFileVersion): FileBlocker | null =>
     fileBlocker({
       version,
-      publicListingUrl: property.public_listing_url,
       addressConfirmed: confirmedAddress != null,
       advisorPhone: profile.phone,
     });
@@ -224,20 +223,4 @@ export async function getProspectingFile(
       }),
     ),
   };
-}
-
-// Le lien de l'annonce publiée de notre bien, pour la page du dossier ; null s'il manque.
-export async function getPublicListingUrl(projectId: string): Promise<string | null> {
-  const profile = await getProfile();
-  if (!profile) {
-    return null;
-  }
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('subject_properties')
-    .select('public_listing_url')
-    .eq('project_id', projectId)
-    .eq('agency_id', profile.agency_id)
-    .maybeSingle();
-  return data?.public_listing_url ?? null;
 }

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  prospectingFileInputSchema,
-  publicListingUrlSchema,
-} from '@/features/prospecting-file/schemas/prospecting-file-input';
+import { prospectingFileInputSchema } from '@/features/prospecting-file/schemas/prospecting-file-input';
 import { defaultTexts } from '@/features/prospecting-file/services/build-prospecting-file';
 import {
   chosenPhotoPath,
@@ -76,20 +73,5 @@ describe('version propriétaire : jamais « mandat », même réécrit', () => {
     expect(ownerForbiddenWord('owner', rewritten)).toBe(true);
     expect(ownerForbiddenWord('colleague', rewritten)).toBe(false);
     expect(ownerForbiddenWord('owner', input())).toBe(false);
-  });
-});
-
-describe('lien de l’annonce publiée', () => {
-  it('une adresse http(s), ou vide pour le retirer', () => {
-    expect(publicListingUrlSchema.safeParse(' https://www.seloger.com/a/1.htm ').data).toBe(
-      'https://www.seloger.com/a/1.htm',
-    );
-    expect(publicListingUrlSchema.safeParse('').success).toBe(true);
-  });
-
-  it('refuse ce qui n’est pas un lien', () => {
-    for (const value of ['seloger.com/a/1', 'javascript:alert(1)', 'ftp://x.fr/a', 42]) {
-      expect(publicListingUrlSchema.safeParse(value).success).toBe(false);
-    }
   });
 });
