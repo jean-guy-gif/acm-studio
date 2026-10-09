@@ -4,6 +4,7 @@
 import { Fragment } from 'react';
 
 import { DPE_COLORS } from '@/features/dpe/services/dpe';
+import { agencyMentions } from '@/features/prospecting-file/services/build-prospecting-file';
 import { DOCUMENT_CSS } from '@/features/prospecting-file/components/document-styles';
 import { lines, paragraphs, parseEmphasis } from '@/features/prospecting-file/services/emphasis';
 import type { QrCode } from '@/features/prospecting-file/services/qr-code';
@@ -164,17 +165,6 @@ function Contact({ sender, hook, qr }: { sender: ProspectingSender; hook: string
   );
 }
 
-// Pied de page : l'agence, puis son adresse et sa carte professionnelle quand elles sont
-// renseignées (Administration → Identité) ; absentes, ces mentions sont omises.
-const agencyLine = (sender: ProspectingSender, withAddress: boolean): string =>
-  [
-    sender.agencyName,
-    withAddress ? sender.postalAddress : null,
-    sender.professionalCard ? `Carte pro ${sender.professionalCard}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
 function Letter({ text }: { text: string }) {
   return (
     <>
@@ -249,7 +239,7 @@ function OwnerPages({
 
         {texts.keyMessage ? <div className="pf-key">{texts.keyMessage}</div> : null}
         <footer className="pf-foot">
-          <span>{agencyLine(sender, true)}</span>
+          <span>{agencyMentions(sender, { withAddress: true })}</span>
           <span>{fixed.turnPage}</span>
         </footer>
       </section>
@@ -317,7 +307,7 @@ function ColleaguePage({ file, texts, sender, qr }: ProspectingFileDocumentProps
       <Proposal file={file} texts={texts} />
       <Contact sender={sender} hook={texts.contactHook} qr={qr} />
       <footer className="pf-foot">
-        <span>{agencyLine(sender, false)}</span>
+        <span>{agencyMentions(sender, { withAddress: false })}</span>
         <span>{file.fixed.information}</span>
       </footer>
     </section>

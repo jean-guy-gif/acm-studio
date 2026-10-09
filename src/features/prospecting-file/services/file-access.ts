@@ -35,32 +35,25 @@ export function resolveFileVersion(
   return isFileVersion(requested) && versions.includes(requested) ? requested : null;
 }
 
-export const NO_PUBLIC_LISTING_MESSAGE =
-  'Renseignez le lien de l’annonce publiée de votre bien pour préparer les dossiers.';
 export const ADDRESS_TO_CONFIRM_MESSAGE = 'Adresse à confirmer avant d’envoyer';
 export const PHONE_MISSING_MESSAGE =
   'Renseignez votre téléphone dans « Mon profil » : il figure dans la mention « Pour ne plus être sollicité ».';
 
-export type FileBlocker = 'no_public_listing' | 'address_unconfirmed' | 'phone_missing';
+export type FileBlocker = 'address_unconfirmed' | 'phone_missing';
 
 export const FILE_BLOCKER_MESSAGES: Record<FileBlocker, string> = {
-  no_public_listing: NO_PUBLIC_LISTING_MESSAGE,
   address_unconfirmed: ADDRESS_TO_CONFIRM_MESSAGE,
   phone_missing: PHONE_MISSING_MESSAGE,
 };
 
-// Ce qui retient un dossier, dans l'ordre où le conseiller peut le lever. Aucun dossier sans
-// annonce publiée de notre bien ; aucun dossier propriétaire sans adresse confirmée par le
-// Localisateur, ni sans le téléphone qui permet de ne plus être sollicité.
+// Ce qui retient un dossier, dans l'ordre où le conseiller peut le lever. Le dossier s'ouvre dès
+// le mandat signé ; aucun dossier propriétaire sans adresse confirmée par le Localisateur, ni
+// sans le téléphone qui permet de ne plus être sollicité.
 export function fileBlocker(input: {
   version: ProspectingFileVersion;
-  publicListingUrl: string | null;
   addressConfirmed: boolean;
   advisorPhone: string | null;
 }): FileBlocker | null {
-  if (!input.publicListingUrl?.trim()) {
-    return 'no_public_listing';
-  }
   if (input.version === 'owner') {
     if (!input.addressConfirmed) {
       return 'address_unconfirmed';

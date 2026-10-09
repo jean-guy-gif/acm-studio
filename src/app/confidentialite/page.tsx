@@ -70,8 +70,7 @@ export default function ConfidentialitePage() {
             <li>
               Les dossiers vendeur : le nom du vendeur et, si le conseiller les saisit, son e-mail
               et son téléphone ; le bien (adresse, caractéristiques, photos déposées par le
-              conseiller) ; la fourchette et l’analyse du conseiller ; le lien de l’annonce publiée
-              du bien, quand le conseiller le renseigne.
+              conseiller) ; la fourchette et l’analyse du conseiller.
             </li>
             <li>
               Les concurrents retenus : les informations publiées dans l’annonce (prix, surface,

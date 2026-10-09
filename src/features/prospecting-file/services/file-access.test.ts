@@ -26,7 +26,6 @@ describe('la version se choisit seule', () => {
 describe('ce qui retient un dossier', () => {
   const ready = {
     version: 'owner' as const,
-    publicListingUrl: 'https://www.seloger.com/annonces/1.htm',
     addressConfirmed: true,
     advisorPhone: '06 12 34 56 78',
   };
@@ -35,11 +34,9 @@ describe('ce qui retient un dossier', () => {
     expect(fileBlocker(ready)).toBeNull();
   });
 
-  it('aucun dossier sans annonce publiée de notre bien, quelle que soit la version', () => {
-    for (const version of ['owner', 'colleague'] as const) {
-      expect(fileBlocker({ ...ready, version, publicListingUrl: null })).toBe('no_public_listing');
-      expect(fileBlocker({ ...ready, version, publicListingUrl: '  ' })).toBe('no_public_listing');
-    }
+  it('le dossier s’ouvre dès le mandat signé, sans lien d’annonce à renseigner', () => {
+    expect(Object.keys(ready)).toEqual(['version', 'addressConfirmed', 'advisorPhone']);
+    expect(fileBlocker({ ...ready, version: 'colleague' })).toBeNull();
   });
 
   it('pas de dossier propriétaire sans adresse confirmée', () => {

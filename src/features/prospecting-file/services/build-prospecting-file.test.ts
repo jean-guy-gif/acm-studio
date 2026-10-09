@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  agencyMentions,
   allTexts,
   buildProspectingFile,
   resolveTexts,
@@ -149,6 +150,34 @@ describe('version confrère', () => {
     expect(spaced(file.defaults.letter)).toContain(
       'Vous avez en exclusivité la maison de 7 pièces à Cagnes sur Mer. Je viens de rentrer en mandat une maison comparable à 650 m.',
     );
+  });
+});
+
+describe('mentions de l’agence en pied de page', () => {
+  const agency = {
+    agencyName: 'Agence du Port',
+    postalAddress: '1 rue Exemple, 06800 Cagnes-sur-Mer',
+    professionalCard: 'CPI 0000 0000 000 000 000',
+  };
+
+  it('renseignées : nom, adresse, carte professionnelle', () => {
+    expect(agencyMentions(agency, { withAddress: true })).toBe(
+      'Agence du Port · 1 rue Exemple, 06800 Cagnes-sur-Mer · Carte pro CPI 0000 0000 000 000 000',
+    );
+    expect(agencyMentions(agency, { withAddress: false })).toBe(
+      'Agence du Port · Carte pro CPI 0000 0000 000 000 000',
+    );
+  });
+
+  it('facultatives : vides, elles sont omises, sans séparateur ni libellé orphelin', () => {
+    for (const empty of [null, '', '  ']) {
+      expect(
+        agencyMentions(
+          { ...agency, postalAddress: empty, professionalCard: empty },
+          { withAddress: true },
+        ),
+      ).toBe('Agence du Port');
+    }
   });
 });
 

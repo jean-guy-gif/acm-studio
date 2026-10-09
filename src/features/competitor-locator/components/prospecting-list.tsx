@@ -9,7 +9,7 @@ import { formatEuro, formatSquareMeters } from '@/lib/format';
 // sert à l'écran et à l'impression A4.
 //
 // Mission 84 — `filesProjectId` : sur la page du dossier, chaque ligne propose « Préparer le
-// dossier » ; absent (liste de tournée imprimable, ou annonce de notre bien non publiée), rien.
+// dossier » dès le mandat signé ; absent (liste de tournée imprimable), rien.
 export function ProspectingList({
   rows,
   filesProjectId = null,

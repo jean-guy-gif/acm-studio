@@ -14,7 +14,6 @@ import { ProspectingSection } from '@/features/competitor-locator/components/pro
 import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
-import { getPublicListingUrl } from '@/features/prospecting-file/queries/get-prospecting-file';
 import { getProject } from '@/features/projects/queries/get-project';
 import { statusLabel } from '@/features/projects/status-label';
 
@@ -65,8 +64,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const prospectingRows = isProspectingOpen(project.status, conclusion?.outcome)
     ? await getProspectingRows(projectId)
     : null;
-  // Mission 84 — le lien de l'annonce publiée de notre bien ouvre les dossiers de prospection.
-  const publicListingUrl = prospectingRows ? await getPublicListingUrl(projectId) : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -146,11 +143,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       </div>
 
       {prospectingRows ? (
-        <ProspectingSection
-          projectId={projectId}
-          rows={prospectingRows}
-          publicListingUrl={publicListingUrl}
-        />
+        <ProspectingSection projectId={projectId} rows={prospectingRows} />
       ) : (
         <CompetitorLocatorWatcher projectId={projectId} />
       )}

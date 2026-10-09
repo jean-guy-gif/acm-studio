@@ -15,6 +15,7 @@ import type {
   ProspectingFileOverrides,
   ProspectingFileTexts,
   ProspectingFileVersion,
+  ProspectingSender,
 } from '@/features/prospecting-file/types';
 
 // Mission 84 — le dossier complet, tel qu'il s'imprime : TOUS ses textes sortent d'ici, pour
@@ -207,6 +208,21 @@ export function buildProspectingFile(
     differences: differences(facts),
     fixed: version === 'owner' ? OWNER_FIXED : COLLEAGUE_FIXED,
   };
+}
+
+// Pied de page : l'agence, puis son adresse et sa carte professionnelle quand elles sont
+// renseignées (Administration → Identité). Facultatives : vides, ces mentions sont omises.
+export function agencyMentions(
+  sender: Pick<ProspectingSender, 'agencyName' | 'postalAddress' | 'professionalCard'>,
+  options: { withAddress: boolean },
+): string {
+  return [
+    sender.agencyName,
+    options.withAddress ? sender.postalAddress?.trim() : null,
+    sender.professionalCard?.trim() ? `Carte pro ${sender.professionalCard.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 // Tout ce que le document dit, à plat : c'est sur cette liste que les tests cherchent les
