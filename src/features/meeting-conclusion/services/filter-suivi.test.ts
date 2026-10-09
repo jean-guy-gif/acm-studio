@@ -13,6 +13,7 @@ function dossier(id: string, outcome: ConclusionOutcome): SuiviDossier {
       advisorAnalysis: null,
       advisorPrice: null,
       commercializationPrice: null,
+      sellerPerceivedPrice: null,
       outcome,
       followUpReason: null,
       concludedAt: null,

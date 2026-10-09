@@ -159,6 +159,10 @@ chaque mission validée.
 - 23/09 · M56 · Pas de tableau de bord avant d'avoir des données ; s'il traverse les agences, il sera agrégé et anonyme.
 - 09/10 · M75 · Dossier conclu « mandat signé » : section « Concurrents à prospecter » sur la page du dossier (adresse, étiquette, prix, surface, pièces, en ligne depuis, baisses de prix) et liste de tournée imprimable A4 ; les autres issues ne l'ouvrent pas.
 - 09/10 · M75 · Tournée : seules les baisses y figurent, la baisse validée par le conseiller avant le constat d'ACM ; « agence ou particulier » et « exclusivité » n'y sont pas, ACM ne les lit pas (mission suivante, après mesure par portail).
+- 09/10 · M81 · La conclusion s'ouvre pour un dossier en préparation, prêt ou conclu (liste d'autorisation) : jamais de 404 pour un rendez-vous réellement mené ; un dossier archivé reste fermé.
+- 09/10 · M81 · Conclure un dossier en préparation le fait passer directement dans le Suivi (`draft` → `meeting_completed`), dans la même écriture que l'issue ; la bascule en « prêt » reste automatique (M52) et lancer le Live d'un dossier en préparation reste permis.
+- 09/10 · M81 · L'action ne renvoie vers le Suivi que si le dossier y est entré ; sinon elle le dit.
+- 09/10 · M81 · « Terminer le rendez-vous » enregistre d'abord un prix de commercialisation saisi et non enregistré, puis ouvre la conclusion ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien.
 
 ## Agence & équipe
 

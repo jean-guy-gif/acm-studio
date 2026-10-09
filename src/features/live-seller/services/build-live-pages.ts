@@ -15,9 +15,9 @@ export type LiveNavComparable = {
 export type LiveNavData = { comparables: LiveNavComparable[] };
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
-// intro → [Votre bien] → [competition, price, price reveal, duration] per
-// comparable → [le DPE face au marché] → dangerous competitor → seller perceived price → price analysis →
-// conclusion. Mission 41 aligns the per-comparable loop on the Storyboard's four
+// intro → [Votre bien] → seller perceived price → [competition, price, price reveal,
+// duration] per comparable → [le DPE face au marché] → dangerous competitor → price
+// analysis → conclusion. Mission 41 aligns the per-comparable loop on the Storyboard's four
 // screens (A/B/C/D): the guess and the reveal are two distinct screens so the
 // seller's reaction to the revealed price has room to happen.
 export type LivePageType =
@@ -76,6 +76,17 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
     });
   }
 
+  // Mission 82 — le vendeur dit son prix AVANT de voir le moindre concurrent : la page ne
+  // révèle rien, le marché n'arrive que sur « Analyse des prix ».
+  pages.push({
+    key: 'seller_perceived_price',
+    type: 'seller_perceived_price',
+    title: 'Votre valeur perçue',
+    comparableId: null,
+    comparableIndex: null,
+    step: null,
+  });
+
   const comparables = live?.comparables ?? [];
   comparables.forEach((comparable, index) => {
     const steps =
@@ -119,14 +130,6 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
   }
 
   pages.push(
-    {
-      key: 'seller_perceived_price',
-      type: 'seller_perceived_price',
-      title: 'Votre valeur perçue',
-      comparableId: null,
-      comparableIndex: null,
-      step: null,
-    },
     {
       key: 'price_analysis',
       type: 'price_analysis',

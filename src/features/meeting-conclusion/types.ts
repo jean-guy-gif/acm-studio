@@ -29,6 +29,9 @@ export type ConclusionAmounts = {
 };
 
 export type MeetingConclusion = ConclusionAmounts & {
+  // Mission 82 — le prix que le vendeur avait en tête en début de rendez-vous, figé à la
+  // conclusion (M56). Réservé au conseiller.
+  sellerPerceivedPrice: number | null;
   outcome: ConclusionOutcome | null;
   followUpReason: string | null;
   concludedAt: string | null; // la date du rendez-vous
