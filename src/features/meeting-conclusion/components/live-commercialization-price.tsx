@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import {
   bigInput,
@@ -13,13 +13,27 @@ import {
   questionHint,
 } from '@/features/live-seller/components/live-stage';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
+import { pendingCommercializationPrice } from '@/features/meeting-conclusion/services/pending-commercialization-price';
 
 // Mission 53 §1 — la seule question du dernier écran : « Sur quel prix partons-nous ? ».
 // Champ VIDE à l'ouverture, jamais pré-rempli avec le prix conseillé (§7.5, règle M51).
 // Remplir et enregistrer = l'accord. Le vendeur n'y voit aucune case « oui ».
-export function LiveCommercializationPrice({ projectId }: { projectId: string }) {
+// Mission 81 — `onPendingChange` dit à la scène si un prix est saisi sans être enregistré :
+// « Terminer le rendez-vous » l'enregistre alors avant d'ouvrir la conclusion.
+export function LiveCommercializationPrice({
+  projectId,
+  onPendingChange,
+}: {
+  projectId: string;
+  onPendingChange?: (typed: string | null) => void;
+}) {
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const lastSavedRef = useRef<string | null>(null);
+
+  // Le champ repart vide à chaque ouverture de l'écran : en le quittant, plus rien n'attend.
+  useEffect(() => () => onPendingChange?.(null), [onPendingChange]);
 
   return (
     <form
@@ -27,8 +41,15 @@ export function LiveCommercializationPrice({ projectId }: { projectId: string })
       onSubmit={(event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
+        const submitted = String(formData.get('commercialization_price') ?? '');
         startTransition(async () => {
           const result = await saveCommercializationPrice(projectId, formData);
+          if (result.ok) {
+            lastSavedRef.current = submitted;
+            onPendingChange?.(
+              pendingCommercializationPrice(inputRef.current?.value ?? '', submitted),
+            );
+          }
           setState(
             result.ok
               ? { ok: true, message: 'Prix de commercialisation enregistré.' }
@@ -46,6 +67,7 @@ export function LiveCommercializationPrice({ projectId }: { projectId: string })
       </div>
       <div className="flex items-center gap-3">
         <input
+          ref={inputRef}
           type="number"
           name="commercialization_price"
           min={0}
@@ -53,6 +75,11 @@ export function LiveCommercializationPrice({ projectId }: { projectId: string })
           placeholder="—"
           defaultValue=""
           autoComplete="off"
+          onChange={(event) =>
+            onPendingChange?.(
+              pendingCommercializationPrice(event.currentTarget.value, lastSavedRef.current),
+            )
+          }
           className={bigInput}
         />
         <span className={bigInputUnit}>€</span>

@@ -178,6 +178,56 @@ do $$ begin
   end if;
 end $$;
 
+-- =====================================================================
+-- Mission 81 — un rendez-vous mené sur un dossier encore EN PRÉPARATION se conclut : le
+-- prix saisi au Live est repris, et la conclusion fait passer `draft` → `meeting_completed`
+-- dans la même écriture que l'issue. Un dossier archivé, lui, n'est jamais basculé.
+-- =====================================================================
+insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
+  ('cccccccc-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000000',
+   '11111111-1111-1111-1111-111111111111', 'Brouillon', 'draft'),
+  ('cccccccc-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000000',
+   '11111111-1111-1111-1111-111111111111', 'Archive', 'archived');
+
+select public.save_commercialization_price(
+  'cccccccc-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000000',
+  455000, 460000, 450000, 458000);
+
+do $$
+declare v_became boolean; r public.project_meeting_conclusions%rowtype; st text;
+begin
+  select public.conclude_meeting(
+    'cccccccc-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000000',
+    'signed', null, null, 999999, 888888, 777777) into v_became;
+  if not v_became then
+    raise exception 'FAIL M81: conclure un dossier en préparation ne l''a pas fait entrer en Suivi';
+  end if;
+  select status into st from public.projects where id = 'cccccccc-0000-0000-0000-000000000004';
+  select * into r from public.project_meeting_conclusions
+    where project_id = 'cccccccc-0000-0000-0000-000000000004';
+  if st is distinct from 'meeting_completed' then
+    raise exception 'FAIL M81: status attendu meeting_completed, obtenu %', st;
+  end if;
+  if r.outcome is distinct from 'signed' then
+    raise exception 'FAIL M81: issue attendue signed, obtenue %', r.outcome;
+  end if;
+  if r.commercialization_price <> 455000 or r.frozen_market_computed <> 460000 then
+    raise exception 'FAIL M81: le prix ou les montants figés au Live ont été perdus';
+  end if;
+end $$;
+
+do $$
+declare v_became boolean; st text;
+begin
+  select public.conclude_meeting(
+    'cccccccc-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000000',
+    'signed', null, null, null, null, null) into v_became;
+  select status into st from public.projects where id = 'cccccccc-0000-0000-0000-000000000005';
+  if v_became or st is distinct from 'archived' then
+    raise exception 'FAIL M81: un dossier archivé a été basculé (status %)', st;
+  end if;
+end $$;
+
 -- La garde M52 : un dossier en meeting_completed a TOUJOURS une conclusion (jamais « en
 -- Suivi sans issue »), parce que status et issue sont écrits dans la même transaction.
 do $$

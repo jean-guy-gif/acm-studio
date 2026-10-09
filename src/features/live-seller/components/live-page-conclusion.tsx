@@ -37,8 +37,10 @@ export function LivePageConclusion({
   summary,
   advisorRange,
   dangerous,
+  onPendingPriceChange,
 }: {
   projectId: string;
+  onPendingPriceChange?: (typed: string | null) => void;
   summary: LiveSellerSummary | null;
   advisorRange: AuthorizedAdvisorRange | null;
   dangerous: AuthorizedSellerComparable | null;
@@ -130,7 +132,7 @@ export function LivePageConclusion({
 
       {/* Mission 53 §1 — la seule question qui vient après l'analyse. Repères au-dessus (déjà
           vus), champ vide en dessous. Remplir = l'accord. */}
-      <LiveCommercializationPrice projectId={projectId} />
+      <LiveCommercializationPrice projectId={projectId} onPendingChange={onPendingPriceChange} />
     </div>
   );
 }
