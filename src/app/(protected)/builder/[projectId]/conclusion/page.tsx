@@ -13,6 +13,7 @@ import { loadLivePresentation } from '@/features/live-seller/services/load-live-
 import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components/conclusion-amounts-panel';
 import { ConclusionDecisionForm } from '@/features/meeting-conclusion/components/conclusion-decision-form';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
 import { resolveConclusionAmounts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 import { getProject } from '@/features/projects/queries/get-project';
 
@@ -22,7 +23,8 @@ type ConclusionPageProps = {
 
 // Mission 53 §2 — l'écran conseiller, jamais vu du vendeur : consigner l'issue du
 // rendez-vous. Accessible pour un dossier prêt (à conclure) ou déjà conclu (pour corriger
-// l'issue). Un dossier encore en préparation n'a rien à conclure → 404.
+// l'issue). Mission 81 — et pour un dossier encore en préparation : le Live peut y être
+// lancé, un rendez-vous réellement mené doit pouvoir se conclure.
 export default async function ConclusionPage({ params }: ConclusionPageProps) {
   const { projectId } = await params;
 
@@ -30,7 +32,7 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
   if (!project) {
     notFound();
   }
-  if (project.status !== 'ready_for_meeting' && project.status !== 'meeting_completed') {
+  if (!canConcludeProject(project.status)) {
     notFound();
   }
 

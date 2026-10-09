@@ -116,6 +116,12 @@ chaque mission validée.
 - 08/10 · M80 · Les marqueurs DPE des cartes de recherche des portails ne sont pas lus : la lettre arrive à l'import.
 - 08/10 · M80 · À l'import, Bien'ici, Figaro, Green Acres et Maisons & Appartements ne lisent que la lettre MARQUÉE sur la page ; une lettre qui n'est pas clairement marquée reste vide, jamais la première lettre de l'échelle ; le lecteur générique ne décide plus du DPE pour ces portails.
 - 08/10 · M80 · Green Acres : le bloc DPE se lit sur la page entière, à condition d'y être unique, et seulement si une seule barre de l'échelle est distinguée (exception à M48, écrite en commentaire).
+- 09/10 · M75 · L'adresse d'un concurrent retenu vient du Localisateur Academia, une extension distincte : ACM l'interroge après chaque import et à l'ouverture du dossier, pour les seuls concurrents retenus qui ont une annonce ; identifiant lu dans `NEXT_PUBLIC_LOCALISATEUR_ID`, jamais en dur.
+- 09/10 · M75 · Analyse « en cours » : ACM redemande toutes les 10 s pendant 2 min, puis à la prochaine ouverture du dossier ou au retour sur l'onglet ; une adresse confirmée ne se redemande plus.
+- 09/10 · M75 · Le Localisateur décide de la certitude, ACM n'a aucun seuil : adresse retenue en silence si `confirme` est vrai ou si la clé vaut `confirmee`, et seulement s'il rend une adresse unique ; sinon « Localiser moi-même » (« maison à préciser » garde son bouton).
+- 09/10 · M75 · L'étiquette du Localisateur s'affiche telle quelle et ne se lit jamais pour décider : ACM décide sur la clé stable `etiquetteCle`, stockée, et sur `confirme`.
+- 09/10 · M75 · État inconnu ou fiche à ouvrir : « Trouver l'adresse » ouvre l'annonce dans un onglet, le Localisateur l'analyse seul ; « Localiser moi-même » affiche le message renvoyé (plafond de vues compris), sans insister.
+- 09/10 · M75 · Sans Localisateur ou bêta terminée : une ligne discrète « Installez le Localisateur Academia… » ; partage éteint : « Activez « Partager avec ACM Studio »… » ; rien d'autre ne change.
 
 ## Live
 
@@ -151,6 +157,8 @@ chaque mission validée.
 - 23/09 · M56 · Neuf faits figés à la conclusion, pour toutes les issues : 4 montants, prix souhaité, valeur perçue, concurrents retenus et exploitables, durée du rendez-vous.
 - 23/09 · M56 · Une valeur absente reste absente ; la durée des conclusions passées n'est pas rattrapée.
 - 23/09 · M56 · Pas de tableau de bord avant d'avoir des données ; s'il traverse les agences, il sera agrégé et anonyme.
+- 09/10 · M75 · Dossier conclu « mandat signé » : section « Concurrents à prospecter » sur la page du dossier (adresse, étiquette, prix, surface, pièces, en ligne depuis, baisses de prix) et liste de tournée imprimable A4 ; les autres issues ne l'ouvrent pas.
+- 09/10 · M75 · Tournée : seules les baisses y figurent, la baisse validée par le conseiller avant le constat d'ACM ; « agence ou particulier » et « exclusivité » n'y sont pas, ACM ne les lit pas (mission suivante, après mesure par portail).
 
 ## Agence & équipe
 
@@ -181,6 +189,8 @@ chaque mission validée.
 - 06/10 · M74 · Montants et prix au m² à l'euro près ; surfaces et pourcentages jusqu'à 2 décimales ; un écart nul s'affiche sans signe.
 - 06/10 · M74 · Un test interdit `toFixed(` et `toLocaleString(` dans `src/` hors de `src/lib/format` (tests exclus).
 - 07/10 · M76 · Un hébergeur écarté (Google) n'est admis que par provenance : pour les photos que Figaro publie dans les données de l'annonce elle-même, jamais ailleurs.
+- 09/10 · M75 · L'adresse d'un concurrent ne passe jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code. `/confidentialite` mentionne ce traitement (usage interne de prospection par l'agence).
+- 09/10 · M75 · La réponse du Localisateur est une donnée, revalidée côté serveur et rattachée au concurrent par l'adresse de son annonce : un état inconnu rejette l'entrée, une clé ou une source hors liste (dont `autre`) reste vide ; seul son `message` s'affiche, jamais son `error`.
 
 ## Méthode
 

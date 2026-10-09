@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { conclusionDecisionSchema } from '@/features/meeting-conclusion/schemas/conclusion-input';
+import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
 import {
   liveCapturedFacts,
   liveDerivedAmounts,
@@ -39,14 +40,15 @@ export async function concludeMeeting(
     return { ok: false, error: 'Choisissez « Mandat signé » ou « À relancer ».' };
   }
 
-  // Autorisation + garde de position : on ne conclut qu'un dossier dans le Live (prêt) ou
-  // déjà conclu (pour corriger l'issue). getProject est cadré sur l'agence.
+  // Autorisation + garde de position : on conclut un dossier prêt, déjà conclu (pour corriger
+  // l'issue) ou — mission 81 — encore en préparation, puisque le Live peut y être lancé.
+  // getProject est cadré sur l'agence.
   const project = await getProject(projectId);
   if (!project) {
     return { ok: false, error: 'Dossier introuvable pour votre agence.' };
   }
-  if (project.status !== 'ready_for_meeting' && project.status !== 'meeting_completed') {
-    return { ok: false, error: 'Ce dossier n’est pas prêt à être conclu.' };
+  if (!canConcludeProject(project.status)) {
+    return { ok: false, error: 'Ce dossier ne peut pas être conclu.' };
   }
 
   // Les valeurs COURANTES, au cas où l'étape 1 (prix au Live) ne les a pas déjà figées.
@@ -73,9 +75,18 @@ export async function concludeMeeting(
     p_retained: facts.retained as number,
     p_exploitable: facts.exploitable as number,
   };
-  const { error } = await serviceClient.rpc('conclude_meeting', args);
+  const { data: enteredFollowUp, error } = await serviceClient.rpc('conclude_meeting', args);
   if (error) {
     return { ok: false, error: 'La conclusion a échoué. Réessayez.' };
+  }
+  // La fonction retourne true quand le dossier vient d'entrer dans le Suivi. Un dossier qui
+  // n'y était pas déjà et n'y est pas entré serait « conclu hors du Suivi » : on le dit au
+  // lieu de rediriger vers un Suivi où il n'apparaît pas.
+  if (project.status !== 'meeting_completed' && enteredFollowUp !== true) {
+    return {
+      ok: false,
+      error: 'L’issue est notée, mais le dossier n’est pas passé dans le Suivi. Réessayez.',
+    };
   }
 
   revalidatePath('/live');
