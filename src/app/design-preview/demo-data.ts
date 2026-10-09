@@ -34,6 +34,7 @@ export const demoProperty: SubjectProperty = {
   postal_code: '06000',
   advisor_price_min: null,
   advisor_price_max: null,
+  public_listing_url: null,
   property_type: 'apartment',
   surface_area: 72,
   land_area: null,

@@ -32,12 +32,16 @@ export function BrandingForm({
   initialLogoDarkUrl,
   initialFont,
   initialSiteUrl,
+  initialPostalAddress,
+  initialProfessionalCard,
 }: {
   initialPrimary: string;
   initialLogoLightUrl: string | null;
   initialLogoDarkUrl: string | null;
   initialFont: string;
   initialSiteUrl: string;
+  initialPostalAddress: string;
+  initialProfessionalCard: string;
 }) {
   const [primary, setPrimary] = useState(initialPrimary);
   const [light, setLight] = useLogo(initialLogoLightUrl);
@@ -167,6 +171,34 @@ export function BrandingForm({
             />
             <span className="text-xs text-zinc-500">
               Conservée pour plus tard — nous ne l’ouvrons pas. Votre police se choisit ci-dessus.
+            </span>
+          </label>
+
+          {/* Mission 84 — les mentions de l'agence en pied des dossiers de prospection.
+              Facultatives : absentes, elles sont omises du document. */}
+          <label className="flex flex-col gap-2">
+            <span className={fieldLabel}>Adresse postale de l’agence (facultatif)</span>
+            <input
+              type="text"
+              name="postal_address"
+              maxLength={200}
+              defaultValue={initialPostalAddress}
+              placeholder="1 rue Exemple, 06800 Cagnes-sur-Mer"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className={fieldLabel}>Carte professionnelle (facultatif)</span>
+            <input
+              type="text"
+              name="professional_card"
+              maxLength={80}
+              defaultValue={initialProfessionalCard}
+              placeholder="CPI 0000 0000 000 000 000"
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="text-xs text-zinc-500">
+              Imprimées en pied des dossiers de prospection.
             </span>
           </label>
 

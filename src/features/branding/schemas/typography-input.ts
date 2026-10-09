@@ -17,4 +17,16 @@ export const typographyInputSchema = z.object({
     .transform((value) => (value ? value : null)),
 });
 
+// Mission 84 — l'adresse postale et la carte professionnelle de l'agence : deux textes courts,
+// imprimés en pied des dossiers de prospection. Vides → null → mention omise.
+const optionalText = (max: number) =>
+  z
+    .union([z.string().trim().max(max), z.null()])
+    .transform((value) => (value ? value.replace(/\s+/g, ' ') : null));
+
+export const agencyMentionsInputSchema = z.object({
+  postalAddress: optionalText(200),
+  professionalCard: optionalText(80),
+});
+
 export type TypographyInput = z.infer<typeof typographyInputSchema>;

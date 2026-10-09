@@ -46,6 +46,7 @@ function makeProperty(overrides: Partial<SubjectProperty> = {}): SubjectProperty
     postal_code: '06600',
     advisor_price_min: null,
     advisor_price_max: null,
+    public_listing_url: null,
     property_type: 'appartement',
     surface_area: 52,
     land_area: null,
