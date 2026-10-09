@@ -71,6 +71,18 @@ describe('lecture sur les pages réelles', () => {
     });
   });
 
+  it('Green Acres : une fiche sans terrain affiché n’en reçoit pas', () => {
+    const url =
+      'https://www.green-acres.fr/fr/properties/appartement/cagnes-sur-mer/A98cqw1yg8fmz1bt.htm';
+    const { data } = normalizeListingData(
+      extractListingData(fixture('green-acres-cagnes.html'), url),
+      url,
+      'Green Acres',
+    );
+    expect(data.landArea).toBeNull();
+    expect(data.surfaceArea).toBe(97);
+  });
+
   it('Green Acres : l’agence du bloc annonceur ; ni badge ni mention, mandat simple', () => {
     expect(
       importMandate(
@@ -99,6 +111,8 @@ describe('lecture sur les pages réelles', () => {
       city: 'Grasse',
       price: 325500,
       surfaceArea: 128,
+      // Le terrain de la fiche (400 m²), pas celui d'une annonce voisine (163 m²).
+      landArea: 400,
       roomsCount: 6,
       soldBy: 'agency',
       soldBySource: 'advertiser',
