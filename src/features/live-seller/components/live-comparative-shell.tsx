@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Logo } from '@/components/brand/logo';
@@ -21,12 +22,14 @@ import { LivePagePriceRevealPilot } from '@/features/live-seller/components/live
 import {
   chromeBtn,
   ctaPrimary,
+  errorText,
   navBtn,
   stageGlow,
   stageGlowLayer,
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import type {
   AuthorizedAdvisorRange,
@@ -98,6 +101,49 @@ export function LiveComparativeShell({
   const mainRef = useRef<HTMLElement | null>(null);
 
   const hasSubjectProperty = property != null;
+
+  // Mission 81 — un prix de commercialisation saisi mais pas enregistré : « Terminer le
+  // rendez-vous » l'enregistre d'abord, puis ouvre la conclusion. Un échec retient sur
+  // l'écran, avec son message.
+  const router = useRouter();
+  const pendingPriceRef = useRef<string | null>(null);
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const handlePendingPriceChange = useCallback((typed: string | null) => {
+    pendingPriceRef.current = typed;
+    setFinishError(null);
+  }, []);
+  const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (finishing) {
+      event.preventDefault();
+      return;
+    }
+    const typed = pendingPriceRef.current;
+    if (typed == null) {
+      void document.exitFullscreen?.().catch(() => {});
+      return;
+    }
+    event.preventDefault();
+    setFinishing(true);
+    setFinishError(null);
+    const formData = new FormData();
+    formData.set('commercialization_price', typed);
+    let failure: string | null = null;
+    try {
+      const result = await saveCommercializationPrice(projectId, formData);
+      failure = result.ok ? null : result.error;
+    } catch {
+      failure = 'L’enregistrement du prix a échoué. Réessayez.';
+    }
+    if (failure) {
+      setFinishing(false);
+      setFinishError(failure);
+      return;
+    }
+    pendingPriceRef.current = null;
+    void document.exitFullscreen?.().catch(() => {});
+    router.push(`/builder/${projectId}/conclusion`);
+  };
 
   // Concurrents EFFECTIFS : projetés, recouverts des fragments livrés et des réponses
   // mises à jour côté client, sans rechargement.
@@ -521,6 +567,7 @@ export function LiveComparativeShell({
             summary={summary}
             advisorRange={effectiveRange}
             dangerous={dangerousComparable}
+            onPendingPriceChange={handlePendingPriceChange}
           />
         ) : (
           <p className="text-zinc-500 stage:text-white/60">
@@ -592,15 +639,17 @@ export function LiveComparativeShell({
             <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
               ← Précédent
             </button>
-            <Link
-              href={`/builder/${projectId}/conclusion`}
-              onClick={() => {
-                void document.exitFullscreen?.().catch(() => {});
-              }}
-              className={ctaPrimary}
-            >
-              Terminer le rendez-vous →
-            </Link>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {finishError ? <span className={errorText}>{finishError}</span> : null}
+              <Link
+                href={`/builder/${projectId}/conclusion`}
+                onClick={finishMeeting}
+                aria-disabled={finishing}
+                className={ctaPrimary}
+              >
+                {finishing ? 'Enregistrement du prix…' : 'Terminer le rendez-vous →'}
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}
