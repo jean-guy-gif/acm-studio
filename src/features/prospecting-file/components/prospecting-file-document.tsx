@@ -289,9 +289,9 @@ function OwnerPages({
   );
 }
 
-function ColleaguePage({ file, texts, sender, qr }: ProspectingFileDocumentProps) {
+function ColleaguePage({ file, texts, sender, photoUrl, qr }: ProspectingFileDocumentProps) {
   return (
-    <section className="pf-page">
+    <section className="pf-page compact">
       <Header file={file} sender={sender} />
       <h1 className="pf-h1">
         <Title text={texts.title} />
@@ -299,8 +299,24 @@ function ColleaguePage({ file, texts, sender, qr }: ProspectingFileDocumentProps
       <Letter text={texts.letter} />
 
       <div className="pf-duo">
-        <Card card={file.ours} side="ours" />
-        <Card card={file.theirs} side="yours" />
+        {/* La photo de notre bien, et en face le bien du confrère sans photo. Sans photo de
+            notre côté, les deux cartes s'alignent sans bandeau. */}
+        <Card card={file.ours} side="ours">
+          {photoUrl ? (
+            <div className="pf-ph">
+              <img src={photoUrl} alt="" />
+            </div>
+          ) : null}
+        </Card>
+        <Card card={file.theirs} side="yours">
+          {photoUrl ? (
+            <div className="pf-ph">
+              {file.theirPlaceholder.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </div>
+          ) : null}
+        </Card>
       </div>
 
       <Chain steps={file.fixed.chain} />
@@ -318,7 +334,7 @@ export type ProspectingFileDocumentProps = {
   file: ProspectingFile;
   texts: ProspectingFileTexts;
   sender: ProspectingSender;
-  // La photo de NOTRE bien (version propriétaire) ; jamais celle du concurrent.
+  // La photo de NOTRE bien, sur les deux versions ; jamais celle du concurrent.
   photoUrl: string | null;
   qr: QrCode;
 };

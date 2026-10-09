@@ -7,6 +7,10 @@ import {
 } from '@/features/comparable-import/utils/extract-listing-key';
 import type { Comparable } from '@/features/comparables/types';
 import {
+  canAcceptProposedAddress,
+  confirmedByAdvisor,
+} from '@/features/competitor-locator/services/advisor-address';
+import {
   prospectingStep,
   type ProspectingStep,
 } from '@/features/competitor-mandate/services/mandate-columns';
@@ -37,6 +41,10 @@ export type ProspectingRow = {
   // Étiquette du Localisateur, affichée telle quelle.
   label: string | null;
   confirmed: boolean;
+  // Mission 84 — le conseiller peut confirmer lui-même : l'adresse proposée attend son accord,
+  // ou c'est déjà lui qui l'a confirmée ou saisie.
+  canAcceptAddress: boolean;
+  confirmedByAdvisor: boolean;
   price: number | null;
   surfaceArea: number | null;
   roomsCount: number | null;
@@ -147,6 +155,8 @@ export function buildProspectingRows(
         address: clean(competitor.locator_address),
         label: clean(competitor.locator_label),
         confirmed: competitor.locator_confirmed === true,
+        canAcceptAddress: canAcceptProposedAddress(competitor),
+        confirmedByAdvisor: confirmedByAdvisor(competitor),
         price: competitor.price > 0 ? competitor.price : null,
         surfaceArea: competitor.surface_area,
         roomsCount: competitor.rooms_count,

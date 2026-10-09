@@ -82,7 +82,8 @@ export default function ConfidentialitePage() {
               Les adresses des biens concurrents : si le conseiller a installé le Localisateur
               Academia (une extension distincte) et y a activé « Partager avec ACM Studio », ACM
               Studio lui transmet l’adresse des annonces des concurrents retenus et conserve ce
-              qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Usage de
+              qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Le
+              conseiller peut aussi confirmer cette adresse lui-même, ou la saisir. Usage de
               prospection par l’agence : ces adresses ne sont jamais montrées au vendeur.
             </li>
             <li>

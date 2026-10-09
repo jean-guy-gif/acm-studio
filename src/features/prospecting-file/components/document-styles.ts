@@ -68,6 +68,15 @@ export const DOCUMENT_CSS = `
 .pf-cta { font-size: 13pt; font-weight: 700; margin: 0 0 1mm; }
 .pf-qr { flex: 0 0 24mm; width: 24mm; height: 24mm; background: #fff; border-radius: 2mm; padding: 2mm; }
 .pf-qr svg { display: block; width: 100%; height: 100%; }
+/* Version confrère : une seule page, photo comprise. */
+.pf-page.compact .pf-h1 { margin: 5mm 0 3mm; }
+.pf-page.compact .pf-ph { height: 24mm; }
+.pf-page.compact .pf-duo { margin: 3mm 0; }
+.pf-page.compact .pf-card { padding: 3.5mm 5mm; }
+.pf-page.compact .pf-ttl { margin: 1mm 0 2mm; }
+.pf-page.compact .pf-chain { margin: 3mm 0 4mm; }
+.pf-page.compact .pf-steps li { padding: 1.8mm 0; }
+.pf-page.compact .pf-contact { margin-top: 4mm; padding: 4mm 6mm; }
 @media screen { .pf-page { box-shadow: 0 1px 3px rgb(0 0 0 / .12), 0 8px 24px rgb(0 0 0 / .08); } .pf-doc { display: flex; flex-direction: column; gap: 8mm; } }
 @media print { html, body { background: #fff; } }
 `;

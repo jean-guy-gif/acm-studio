@@ -218,49 +218,53 @@ export function ProspectingFileEditor({
           </span>
         </label>
 
-        {version === 'owner' ? (
-          <fieldset className="flex flex-col gap-2">
-            <span className={fieldLabel}>Photo de notre bien</span>
-            {photos.length > 0 ? (
-              <div className="grid grid-cols-4 gap-2">
-                {photos.map((photo, index) => (
-                  <label
-                    key={photo.path}
-                    className={`cursor-pointer overflow-hidden rounded-lg border-2 ${
-                      photo.path === photoPath ? 'border-brand' : 'border-transparent'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="photo"
-                      className="sr-only"
-                      checked={photo.path === photoPath}
-                      onChange={() => {
-                        setPhotoPath(photo.path);
-                        setState(null);
-                      }}
+        <fieldset className="flex flex-col gap-2">
+          <span className={fieldLabel}>Photo de notre bien</span>
+          {photos.length > 0 ? (
+            <div className="grid grid-cols-4 gap-2">
+              {photos.map((photo, index) => (
+                <label
+                  key={photo.path}
+                  className={`cursor-pointer overflow-hidden rounded-lg border-2 ${
+                    photo.path === photoPath ? 'border-brand' : 'border-transparent'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="photo"
+                    className="sr-only"
+                    checked={photo.path === photoPath}
+                    onChange={() => {
+                      setPhotoPath(photo.path);
+                      setState(null);
+                    }}
+                  />
+                  {photo.url ? (
+                    <img
+                      src={photo.url}
+                      alt={`Photo ${index + 1}`}
+                      className="h-16 w-full object-cover"
                     />
-                    {photo.url ? (
-                      <img
-                        src={photo.url}
-                        alt={`Photo ${index + 1}`}
-                        className="h-16 w-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
-                        Indisponible
-                      </span>
-                    )}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <span className="text-xs text-zinc-500">
-                Aucune photo sur la fiche du bien vendeur : la carte s’imprime sans photo.
-              </span>
-            )}
-          </fieldset>
-        ) : null}
+                  ) : (
+                    <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+                      Indisponible
+                    </span>
+                  )}
+                </label>
+              ))}
+            </div>
+          ) : (
+            <span className="flex flex-col items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+              Ajoutez une photo du bien vendeur
+              <Link
+                href={`/builder/${projectId}/property`}
+                className="text-xs font-medium underline underline-offset-2"
+              >
+                Ouvrir la fiche du bien vendeur
+              </Link>
+            </span>
+          )}
+        </fieldset>
 
         <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4">
           <div className="flex flex-wrap gap-2">
@@ -294,7 +298,7 @@ export function ProspectingFileEditor({
           file={file}
           texts={shown}
           sender={sender}
-          photoUrl={version === 'owner' ? photoUrl : null}
+          photoUrl={photoUrl}
           qr={qr}
         />
       </div>
