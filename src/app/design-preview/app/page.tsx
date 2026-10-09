@@ -334,6 +334,7 @@ function FindScreen() {
         title="Trouver des concurrents"
       />
       <CompetitorSearchPanel
+        projectId={demoProject.id}
         criteriaLabel="Nice 06000"
         prepareAction={previewPrepareSearch}
         rankAction={previewRankCandidates}

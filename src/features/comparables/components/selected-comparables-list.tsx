@@ -15,6 +15,8 @@ import {
 import type { BulkComparableResult } from '@/features/comparables/actions/bulk-comparable-actions';
 import { ComparableCard } from '@/features/comparables/components/comparable-card';
 import type { Comparable } from '@/features/comparables/types';
+import { LocatorNotice } from '@/features/competitor-locator/components/locator-notice';
+import { useCompetitorLocator } from '@/features/competitor-locator/use-competitor-locator';
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
 type BulkAction = (ids: string[]) => Promise<BulkComparableResult>;
@@ -55,6 +57,8 @@ export function SelectedComparablesList({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Mission 75 — à l'ouverture, ACM demande au Localisateur les adresses qui manquent.
+  const { availability: locatorAvailability } = useCompetitorLocator(projectId);
 
   // Une sélection ne survit pas à une liste qui change : on ne garde que les ids
   // encore présents (un bien écarté/supprimé ne doit pas rester « coché » fantôme).
@@ -96,6 +100,7 @@ export function SelectedComparablesList({
   return (
     <section className="flex flex-col gap-3">
       <h2 className={sectionTitle}>Biens retenus ({comparables.length})</h2>
+      {comparables.length > 0 ? <LocatorNotice availability={locatorAvailability} /> : null}
 
       {count > 0 ? (
         // La barre d'action : n'apparaît qu'avec une sélection. Écarter d'abord (courant),
@@ -170,6 +175,7 @@ export function SelectedComparablesList({
               deleteAction={deleteAction}
               isFirst={index === 0}
               isLast={index === comparables.length - 1}
+              locatorAvailability={locatorAvailability}
               selection={{
                 checked: selected.has(comparable.id),
                 onToggle: () => toggle(comparable.id),

@@ -239,6 +239,16 @@ export type Database = {
           listing_features: Json
           listing_published_at: string | null
           listing_url: string | null
+          locator_address: string | null
+          locator_analyzed_at: string | null
+          locator_confirmed: boolean | null
+          locator_label: string | null
+          locator_label_key: string | null
+          locator_latitude: number | null
+          locator_longitude: number | null
+          locator_property_id: string | null
+          locator_source: string | null
+          locator_state: string | null
           outdoor_spaces: string[]
           parking_types: string[]
           photo_urls: Json
@@ -280,6 +290,16 @@ export type Database = {
           listing_features?: Json
           listing_published_at?: string | null
           listing_url?: string | null
+          locator_address?: string | null
+          locator_analyzed_at?: string | null
+          locator_confirmed?: boolean | null
+          locator_label?: string | null
+          locator_label_key?: string | null
+          locator_latitude?: number | null
+          locator_longitude?: number | null
+          locator_property_id?: string | null
+          locator_source?: string | null
+          locator_state?: string | null
           outdoor_spaces?: string[]
           parking_types?: string[]
           photo_urls?: Json
@@ -321,6 +341,16 @@ export type Database = {
           listing_features?: Json
           listing_published_at?: string | null
           listing_url?: string | null
+          locator_address?: string | null
+          locator_analyzed_at?: string | null
+          locator_confirmed?: boolean | null
+          locator_label?: string | null
+          locator_label_key?: string | null
+          locator_latitude?: number | null
+          locator_longitude?: number | null
+          locator_property_id?: string | null
+          locator_source?: string | null
+          locator_state?: string | null
           outdoor_spaces?: string[]
           parking_types?: string[]
           photo_urls?: Json

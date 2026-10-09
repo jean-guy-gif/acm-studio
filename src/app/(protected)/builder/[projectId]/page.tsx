@@ -9,6 +9,11 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
+import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
+import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
+import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
+import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { statusLabel } from '@/features/projects/status-label';
 
@@ -53,6 +58,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   if (!project) {
     notFound();
   }
+
+  // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
+  const conclusion = project.status === 'meeting_completed' ? await getConclusion(projectId) : null;
+  const prospectingRows = isProspectingOpen(project.status, conclusion?.outcome)
+    ? await getProspectingRows(projectId)
+    : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -130,6 +141,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Link>
         ) : null}
       </div>
+
+      {prospectingRows ? (
+        <ProspectingSection projectId={projectId} rows={prospectingRows} />
+      ) : (
+        <CompetitorLocatorWatcher projectId={projectId} />
+      )}
     </div>
   );
 }
