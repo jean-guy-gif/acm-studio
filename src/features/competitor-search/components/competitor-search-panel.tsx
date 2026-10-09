@@ -34,6 +34,7 @@ import {
   readSearchTabsViaExtension,
 } from '@/features/browser-extension/client';
 import { ExtensionRequiredNotice } from '@/features/browser-extension/extension-required-notice';
+import { useCompetitorLocator } from '@/features/competitor-locator/use-competitor-locator';
 import {
   RankedCandidateCard,
   StreamEstateFactsLine,
@@ -110,6 +111,7 @@ const plural = (count: number, one: string, many: string): string =>
 const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 type Props = {
+  projectId: string;
   criteriaLabel: string;
   // Le serveur prépare les critères et classe (avec l'apprentissage) ; la LECTURE des onglets
   // de recherche se fait par l'extension, dans le navigateur.
@@ -332,6 +334,7 @@ function PortalBlock({
 }
 
 export function CompetitorSearchPanel({
+  projectId,
   criteriaLabel,
   prepareAction,
   rankAction,
@@ -343,6 +346,8 @@ export function CompetitorSearchPanel({
   streamEstateAction,
 }: Props) {
   const [pending, startTransition] = useTransition();
+  // Mission 75 — après chaque import, ACM demande l'adresse du concurrent au Localisateur.
+  const { refresh: refreshLocator } = useCompetitorLocator(projectId, false);
   const [error, setError] = useState<string | null>(null);
   // Mission 74 — l'extension manque ou est trop ancienne : un seul message, sans repli.
   const [extensionIssue, setExtensionIssue] = useState<'missing' | 'outdated' | null>(null);
@@ -650,6 +655,7 @@ export function CompetitorSearchPanel({
       }
       return { ok: false, reason: result.error };
     }
+    refreshLocator();
     return { ok: true };
   }
 
