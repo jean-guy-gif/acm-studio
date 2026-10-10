@@ -67,5 +67,7 @@ export async function confirmCompetitorAddress(
   revalidatePath(`/builder/${projectId}`);
   revalidatePath(`/builder/${projectId}/comparables`);
   revalidatePath(`/builder/${projectId}/prospection`);
+  revalidatePath('/prospection');
+  revalidatePath('/suivi');
   return { ok: true };
 }

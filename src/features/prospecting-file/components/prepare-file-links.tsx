@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { btnSecondary } from '@/components/ui/styles';
+import { btnPrimary, btnSecondary } from '@/components/ui/styles';
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
 import {
   ADDRESS_TO_CONFIRM_MESSAGE,
@@ -16,11 +16,14 @@ export function PrepareFileLinks({
   competitorId,
   step,
   addressConfirmed,
+  primary = false,
 }: {
   projectId: string;
   competitorId: string;
   step: ProspectingStep;
   addressConfirmed: boolean;
+  // Mission 86 — sur une carte de Prospection, c'est l'action principale, en petit.
+  primary?: boolean;
 }) {
   const versions = fileVersions(step);
   const single = versions.length === 1;
@@ -37,7 +40,7 @@ export function PrepareFileLinks({
             key={version}
             href={`/builder/${projectId}/prospection/${competitorId}?version=${version}`}
             target="_blank"
-            className={btnSecondary}
+            className={primary ? `${btnPrimary} px-3 py-1.5 text-xs` : btnSecondary}
           >
             {single
               ? 'Préparer le dossier'

@@ -152,4 +152,51 @@ describe('buildProspectingRows — la liste de tournée', () => {
       buildProspectingRows([makeComparable({ is_selected: false, listing_url: URL })], [], NOW),
     ).toEqual([]);
   });
+
+  // Mission 86 — ce que la page Prospection lit en plus.
+  it('dit le type, la commune, le portail et où en est la prospection', () => {
+    const [toConfirm, ready, handed] = buildProspectingRows(
+      [
+        makeComparable({
+          id: 'a',
+          listing_url: URL,
+          property_type: 'Appartement',
+          city: 'Antibes',
+        }),
+        makeComparable({
+          id: 'b',
+          listing_url: null,
+          source: null,
+          locator_address: '12 avenue des Mimosas',
+          locator_confirmed: true,
+        }),
+        makeComparable({
+          id: 'c',
+          locator_address: '14 chemin des Oliviers',
+          locator_confirmed: true,
+          prospecting_handed_at: '2026-10-07T09:00:00.000Z',
+        }),
+      ],
+      [],
+      NOW,
+    );
+    expect(toConfirm).toMatchObject({
+      propertyType: 'Appartement',
+      city: 'Antibes',
+      portal: 'Bien’ici',
+      status: 'to_confirm',
+      handedAt: null,
+    });
+    expect(ready).toMatchObject({ portal: null, status: 'ready' });
+    expect(handed).toMatchObject({ status: 'handed', handedAt: '2026-10-07T09:00:00.000Z' });
+  });
+
+  it('une adresse proposée mais non confirmée n’est pas « prête »', () => {
+    const [row] = buildProspectingRows(
+      [makeComparable({ locator_address: '12 avenue des Mimosas', locator_confirmed: false })],
+      [],
+      NOW,
+    );
+    expect(row.status).toBe('to_confirm');
+  });
 });

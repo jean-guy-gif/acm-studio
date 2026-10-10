@@ -9,3 +9,13 @@ export function launchReadinessLabel(first: number | null, last: number | null):
   }
   return start === end ? `${end}/10` : `${start}/10 → ${end}/10`;
 }
+
+// Mission 86 — la même note, en court, sur la ligne du Suivi : « 7 → 10/10 », ou « 10/10 ».
+export function launchReadinessShort(first: number | null, last: number | null): string | null {
+  const start = first ?? last;
+  const end = last ?? first;
+  if (start == null || end == null) {
+    return null;
+  }
+  return start === end ? `${end}/10` : `${start} → ${end}/10`;
+}

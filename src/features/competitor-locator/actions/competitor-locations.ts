@@ -145,6 +145,7 @@ export async function saveCompetitorLocations(
   if (changed > 0) {
     revalidatePath(`/builder/${projectId}/comparables`);
     revalidatePath(`/builder/${projectId}`);
+    revalidatePath('/prospection');
   }
   return { ok, changed };
 }
