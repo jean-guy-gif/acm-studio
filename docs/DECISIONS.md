@@ -171,8 +171,6 @@ chaque mission validée.
 - 22/09 · M53 · La conclusion n'est jamais obligatoire : quitter sans conclure laisse le dossier dans le Live.
 - 22/09 · M53 · Les montants se figent à la conclusion (copies, jamais recalculées) ; les écarts se calculent à l'affichage.
 - 22/09 · M54 · Quatre issues (+ Vendu ailleurs, Retiré de la vente), modifiables depuis le Suivi sans toucher aux montants figés ni au statut ; date du dernier changement d'issue.
-- 22/09 · M54 · Filtre par issue, plus « Tous » ; aucun dossier masqué sans que le filtre le dise.
-- 22/09 · M54 · Recherche acheteur jetable (rien n'est enregistré), sur tout le Suivi, avec le moteur des concurrents ; la carte nomme le prix de référence (convenu, sinon conseillé).
 - 22/09 · M54 · Un dossier dont le type ne se reconnaît pas est mis à part avec sa mention, jamais exclu en silence.
 - 23/09 · M56 · Neuf faits figés à la conclusion, pour toutes les issues : 4 montants, prix souhaité, valeur perçue, concurrents retenus et exploitables, durée du rendez-vous.
 - 23/09 · M56 · Une valeur absente reste absente ; la durée des conclusions passées n'est pas rattrapée.
@@ -199,6 +197,29 @@ chaque mission validée.
 - 10/10 · M85 · La première note, la dernière et la réponse « ce qui manquerait » sont figées à la conclusion, pour toutes les issues, comme la valeur perçue (M56) : lues dans le résumé du Live par `conclude_meeting`, jamais réécrites.
 - 10/10 · M85 · La première note ne se réécrit jamais, quoi qu'envoie le navigateur ; la réponse « ce qui manquerait » est gardée quand le vendeur passe à 10.
 - 10/10 · M85 · Carte du Suivi : « Prêt à lancer : 7/10 → 10/10 » (un seul chiffre si la note n'a pas changé) et « Ce qui manquait pour être à 10 » ; sans note, la carte n'en dit rien ; côté conseiller seulement.
+- 10/10 · M86 · Le Suivi se filtre en trois groupes — mandats signés, à relancer, vendus ailleurs · retirés — plus « Tous », par des compteurs cliquables et des pastilles ; aucun dossier masqué sans que le filtre le dise ; le badge garde les quatre issues (remplace M54, « filtre par issue »).
+- 10/10 · M86 · Compteur « Écart moyen : prix du vendeur → prix de commercialisation » : moyenne des écarts en % des mandats signés dont les deux prix sont connus ; masqué s'il n'y a rien à moyenner.
+- 10/10 · M86 · Une ligne par dossier : barre de couleur selon le groupe (vert, bleu, gris), bien et date de conclusion, chemin parcouru avec l'écart en %, « Prêt à lancer : 7 → 10/10 », et une seule action selon l'issue.
+- 10/10 · M86 · Mandat signé : « Prospecter · N concurrents → » ouvre la page Prospection filtrée sur ce bien, avec l'avancement dessous ; à relancer : « Relancer → » ouvre le dossier, le téléphone du vendeur s'affiche à côté en lien cliquable, et « Ce qui le retient » dit la réponse du vendeur (M85), sinon le motif du conseiller ; vendu ailleurs ou retiré : aucune action.
+- 10/10 · M86 · Tout ce que montrait la carte du Suivi (chemin parcouru en €, quatre repères, écarts, note et réponse, motif, dates, « Ouvrir le dossier », changement d'issue) se déplie sous « Voir le détail des prix » (précise M82 et M85, « carte du Suivi »).
+- 10/10 · M86 · Page « Prospection » (`/prospection`), dans le menu entre Suivi et Administration, avec le badge « NOUVEAU » pendant le pilote : tous les concurrents retenus de tous les mandats signés de l'agence, pour toute l'agence (M59) ; chaque carte dit « Pour : [dossier] · [bien] ».
+- 10/10 · M86 · Quatre colonnes : Adresse à confirmer, Prêt à envoyer, Dossier remis, Rendez-vous & mandats ; « à confirmer » et « prêt » se déduisent de l'adresse confirmée ; remis, RDV obtenu, mandat rentré et pas intéressé sont des faits datés, posés par le conseiller, un cran à la fois, le serveur relisant le statut courant.
+- 10/10 · M86 · « Pas intéressé » se note à tout moment avant « mandat rentré » ; la carte sort du tableau vers une liste repliée « Pas intéressés (N) » ; « Annuler » revient d'un cran, et annuler « pas intéressé » rend le concurrent là où il en était.
+- 10/10 · M86 · Carte remise : « Remis le JJ/MM · relance conseillée le JJ/MM », sept jours après la remise.
+- 10/10 · M86 · Compteurs de Prospection : concurrents à démarcher (tout le tableau), dossiers remis, rendez-vous obtenus, mandats rentrés — des faits cumulés, un mandat rentré comptant aussi comme rendez-vous et comme remise.
+- 10/10 · M86 · Filtres de Prospection, portés par l'adresse : bien vendeur, et confrères / propriétaires ; un concurrent « à vérifier » reste dans les deux, et il se précise sur sa carte (M83).
+- 10/10 · M86 · Sur une carte, le badge M83 dit « Exclusivité · appeler le confrère », « Propriétaire · aller sonner » ou « À vérifier » ; la liste de tournée imprimée garde ses libellés.
+- 10/10 · M86 · La version confrère du dossier reste préparable avant l'adresse (M84) ; « Marquer remis » attend l'adresse confirmée.
+- 10/10 · M86 · « Imprimer ma tournée » : la liste filtrée en A4, par l'impression du navigateur, groupée par bien vendeur, sans les « pas intéressés » ni les mandats rentrés.
+- 10/10 · M86 · Page du dossier : « Concurrents à prospecter » garde ses trois premières lignes et « Tout voir dans Prospection → » (précise M75).
+- 10/10 · M86 · Rapprochement acheteur, jetable (rien n'est enregistré) : il cherche dans les mandats signés, les vendeurs à relancer et les concurrents à prospecter, et range ce qui correspond en trois groupes ; les dossiers vendus ailleurs ou retirés n'y sortent plus (remplace M54, « sur tout le Suivi »).
+- 10/10 · M86 · Prix comparé : prix de commercialisation convenu, sinon prix conseillé, pour un dossier ; prix affiché de l'annonce pour un concurrent, qui rappelle son bien vendeur.
+- 10/10 · M86 · « Correspond » : commune identique (plusieurs possibles, séparées par des virgules), au moins le nombre de pièces demandé, surface au moins égale à 95 % de la demande, prix du budget min au budget max + 5 % ; un champ vide ne filtre pas ; le type filtre toujours (M54) ; le score de M54 ne fait que classer dans un groupe.
+- 10/10 · M86 · Un bien dans la marge de négociation le dit : « 10 000 € au-dessus du budget, à négocier ».
+- 10/10 · M86 · « Proches mais hors critères (N) », replié : les biens du bon type hors règles, avec l'écart chiffré ; une donnée demandée qui manque au bien l'y envoie, avec « non renseigné » (M61).
+- 10/10 · M86 · Actions : « Proposer une visite » et « Rappeler : « j'ai un acheteur » » ouvrent le dossier (téléphone cliquable à côté) ; « Ajouter à la tournée » ouvre Prospection filtrée sur le bien ; « Appeler le confrère » ouvre l'annonce, où figure son contact (M83).
+- 10/10 · M86 · Communes d'un acheteur : Juan-les-Pins et Cap d'Antibes = Antibes, Golfe-Juan = Vallauris, Cros-de-Cagnes = Cagnes-sur-Mer, La Bocca = Cannes ; comparaison de M71, code postal ôté ; liste tenue dans le code, à compléter pendant le pilote.
+- 10/10 · M86 · Rien trouvé du type demandé : le message dit ce que contiennent les trois listes, concurrents compris.
 
 ## Agence & équipe
 
@@ -235,6 +256,7 @@ chaque mission validée.
 - 09/10 · M75 · L'adresse d'un concurrent ne passe jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code. `/confidentialite` mentionne ce traitement (usage interne de prospection par l'agence).
 - 09/10 · M75 · La réponse du Localisateur est une donnée, revalidée côté serveur et rattachée au concurrent par l'adresse de son annonce : un état inconnu rejette l'entrée, une clé ou une source hors liste (dont `autre`) reste vide ; seul son `message` s'affiche, jamais son `error`.
 - 09/10 · M83 · « Vendu par » et « Exclusivité » d'un concurrent ne passent jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code (comme les adresses, M75).
+- 10/10 · M86 · Le statut de prospection d'un concurrent et la page Prospection ne passent jamais côté vendeur : un test le vérifie sur la charge, sur le code et sur la liste des routes (comme M75, M83).
 - 09/10 · M84 · Le dossier de prospection sort de l'agence : n'y entrent que les caractéristiques de notre bien et ce que l'annonce du concurrent publie, par listes de colonnes autorisées ; jamais le nom du vendeur, sa valeur perçue, l'analyse ou la fourchette du conseiller, jamais une photo, un titre ou une description du concurrent ni le nom de son propriétaire ; un test vérifie chaque interdit sur la charge et sur le code.
 - 09/10 · M84 · Le pied du dossier propriétaire dit « Votre adresse a été repérée à partir d'une annonce publiée. Pour ne plus être sollicité : [téléphone] » ; `/confidentialite` dit que l'adresse sort d'ACM sur ce courrier, et que le conseiller peut la confirmer ou la saisir (précise M75, « usage interne »).
 - 09/10 · M84 · La colonne `subject_properties.public_listing_url` reste en base, inutilisée : le lien de l'annonce n'est plus demandé.
@@ -265,7 +287,8 @@ chaque mission validée.
 - 07/10 · M76 · Une fixture capturée dans un vrai navigateur est nettoyée des scripts tiers, des styles et des identifiants de suivi avant d'être commitée ; les données lues restent intactes.
 - 07/10 · M76 · Non-régression des photos : chaque fixture existante doit donner au moins les mêmes photos qu'avant, jamais un logo ni la photo d'un autre bien.
 - 09/10 · M83 · Écart accepté à M48 : la fixture Green Acres de Grasse a été récupérée à l'adresse propre de l'annonce par le robot déclaré d'ACM, puis nettoyée (M76) ; les pièges mesurés sans fixture (badge voisin, `isExclusive` Figaro) sont testés sur des extraits écrits d'après les structures relevées.
-- 10/10 · M85 · Le gel (M63) a été levé deux fois à la demande de Laurent : pour la mission 84, puis pour la mission 85 (remplace M84, « la dernière fonctionnalité avant le pilote »).
+- 10/10 · M86 · Le gel (M63) a été levé trois fois à la demande de Laurent : pour les missions 84, 85 et 86 (remplace M85, « levé deux fois »).
+- 10/10 · M86 · Hors périmètre, notés pour plus tard : fiche acheteur enregistrée, glisser-déposer entre colonnes, statistiques de prospection par conseiller.
 - 09/10 · M84 · Dépendance ajoutée : `qrcode` (QR code de la carte de contact).
 - 10/10 · M85 · `database.types.ts` est de nouveau généré par `npm run gen:types` sur la base locale à jour (remplace M84, complété à la main).
 - 10/10 · M85 · La note de 1 à 10 n'a pas de statistiques agrégées : plus tard, avec assez de rendez-vous réels (M56).
