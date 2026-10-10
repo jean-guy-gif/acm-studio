@@ -143,7 +143,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
     // Rien n'a disparu : le détail se déplie sous la ligne.
     await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
-    await expect(row.locator(`a[href="/builder/${projectId}"]`)).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Ouvrir le dossier' })).toHaveAttribute(
+      'href',
+      `/builder/${projectId}`,
+    );
 
     // Mission 82 — le chemin parcouru : prix du vendeur en début de rendez-vous, prix de
     // commercialisation, et l'écart entre les deux.
