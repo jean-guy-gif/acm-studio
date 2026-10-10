@@ -370,6 +370,8 @@ async function walkLive(
     await expect(launchQuestion).toHaveCount(0);
     await page.locator('textarea[name="seller_launch_readiness_missing"]').fill(MISSING_FOR_TEN);
     await score(10).click();
+    // La note part en fond : on attend qu'elle soit en base avant de quitter l'écran.
+    await expect(page.getByText('Note enregistrée')).toBeVisible();
   } else {
     // Au second passage, la note enregistrée au premier est reprise.
     await expect(score(10), 'La note enregistrée n’est pas reprise').toHaveAttribute(

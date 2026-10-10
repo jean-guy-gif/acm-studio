@@ -162,6 +162,8 @@ export function LiveComparativeShell({
     missing: live?.sellerSummary?.seller_launch_readiness_missing ?? '',
   }));
   const closingSavesRef = useRef<Promise<void>>(Promise.resolve());
+  // Où en est l'enregistrement de fond de la note : la barre le dit au conseiller (M51).
+  const [closingSave, setClosingSave] = useState<'pending' | 'ok' | 'failed' | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
   const handleClosingScore = (score: number) => {
@@ -171,11 +173,12 @@ export function LiveComparativeShell({
     const formData = new FormData();
     formData.set('seller_launch_readiness_first', String(first));
     formData.set('seller_launch_readiness_last', String(score));
+    setClosingSave('pending');
     closingSavesRef.current = closingSavesRef.current
       .then(() => persistLiveSellerSummary(projectId, formData))
       .then(
-        () => undefined,
-        () => undefined,
+        (result) => setClosingSave(result.ok ? 'ok' : 'failed'),
+        () => setClosingSave('failed'),
       );
   };
   const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -811,7 +814,13 @@ export function LiveComparativeShell({
               ← Précédent
             </button>
             <div className="flex flex-wrap items-center justify-end gap-3">
-              {finishError ? <span className={errorText}>{finishError}</span> : null}
+              {finishError ? (
+                <span className={errorText}>{finishError}</span>
+              ) : closingSave === 'pending' || closingSave === 'ok' ? (
+                <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
+                  {closingSave === 'pending' ? 'Enregistrement…' : 'Note enregistrée'}
+                </span>
+              ) : null}
               <Link
                 href={`/builder/${projectId}/conclusion`}
                 onClick={finishMeeting}
