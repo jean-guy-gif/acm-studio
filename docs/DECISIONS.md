@@ -179,6 +179,18 @@ chaque mission validée.
 - 09/10 · M81 · « Terminer le rendez-vous » enregistre d'abord un prix de commercialisation saisi et non enregistré, puis ouvre la conclusion ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien.
 - 09/10 · M82 · Carte du Suivi : « Le chemin parcouru pendant le rendez-vous » — prix du vendeur en début de rendez-vous, prix de commercialisation, écart en € et en % du prix de départ (arrondi à l'entier) ; côté conseiller seulement ; une valeur absente reste absente (« Non renseigné », écart « — »).
 - 09/10 · M83 · Liste de tournée : chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier » ; un particulier l'emporte sur une exclusivité ; les boutons de correction ne s'impriment pas (remplace M75, « agence ou particulier » et « exclusivité » n'y sont pas).
+- 09/10 · M84 · Dossier conclu « mandat signé » : « Préparer le dossier » sur chaque concurrent de la liste de tournée, sans lien d'annonce à renseigner ; exclusivité → version confrère (une page A4), particulier ou mandat simple → version propriétaire (A4 recto-verso), inconnu → le conseiller choisit.
+- 09/10 · M84 · Pas de dossier propriétaire sans adresse confirmée (« Adresse à confirmer avant d'envoyer ») ni sans le téléphone du conseiller, qui figure dans « Pour ne plus être sollicité » ; la version confrère n'attend ni l'un ni l'autre.
+- 09/10 · M84 · Écran d'édition : textes pré-remplis et tous modifiables (titre, lettre, message clé, trois points, accroche), `*mot*` met en valeur, un champ vidé reprend le texte proposé ; seul le texte réellement modifié est gardé, par concurrent et par version.
+- 09/10 · M84 · « Télécharger le PDF » enregistre puis ouvre l'impression du navigateur (« Enregistrer au format PDF »), comme la liste de tournée ; aucun fichier n'est fabriqué côté serveur, rien n'est envoyé.
+- 09/10 · M84 · Accords selon le type du bien (« Votre maison et la nôtre », « Votre appartement et le nôtre »…) ; appartement : « Aux copropriétaires du … » ; un type non reconnu dit « bien ».
+- 09/10 · M84 · Lignes comparées : surface, terrain (maison), extérieur et stationnement (maison, appartement), secteur, DPE, prix ; les pièces vont dans le titre de la carte ; une ligne connue d'un seul côté ne s'affiche pas, jamais « — ».
+- 09/10 · M84 · « Ce qui les rapproche » et « Ce qui les distingue » énoncent des faits dans les deux sens, jamais « mieux », « moins bien », « plus cher », « moins cher » ; la distance ne s'écrit qu'entre deux positions sûres, sinon « même secteur » ; « à quelques rues » seulement sous 1 km mesuré.
+- 09/10 · M84 · Notre prix est le prix de commercialisation de la conclusion ; « Afficher les prix » est allumé si notre prix est inférieur, égal ou au plus 5 % au-dessus du leur, éteint au-delà ; éteint ou prix absent : « Même gamme de prix », sans chiffre.
+- 09/10 · M84 · Version propriétaire : le mot « mandat » n'apparaît nulle part, un texte réécrit qui le contient est refusé ; version confrère : honoraires partagés par accord inter-cabinet écrit, sans taux, ni message clé ni « rapproche / distingue ».
+- 09/10 · M84 · La photo de notre bien figure sur les deux versions (la première de la fiche par défaut, le conseiller en choisit une autre) ; sans photo, l'écran d'édition dit « Ajoutez une photo du bien vendeur » ; en face, la carte du concurrent n'a jamais de photo.
+- 09/10 · M84 · Le dossier est signé par le conseiller connecté (nom, photo, téléphone, e-mail) avec un QR code vers sa carte de contact (vCard), tracé sans image ni service extérieur.
+- 09/10 · M84 · Liste de tournée : le conseiller confirme l'adresse d'un concurrent dans ACM — « C'est la bonne adresse », « Localiser moi-même », « Saisir l'adresse » ; elle porte la provenance « vous », il peut la corriger, et aucune relecture du Localisateur ne la réécrit (précise M75, « le Localisateur décide de la certitude »). Une adresse saisie n'est pas géocodée.
 
 ## Agence & équipe
 
@@ -194,6 +206,9 @@ chaque mission validée.
 - 24/09 · M60 · Retirer quelqu'un retire l'accès, pas la personne : ses dossiers restent à son nom, sans réattribution.
 - 24/09 · M60 · Deux rôles, manager et conseiller ; le dernier manager ne peut ni se retirer ni être rétrogradé ; gardes à l'écran et à l'action.
 - 06/10 · M64 · Le lien d'invitation suit l'environnement d'où elle part (`{{ .RedirectTo }}`, posé d'après `NEXT_PUBLIC_SITE_URL`) ; le modèle du projet en ligne se colle à la main ; l'envoi passe par un SMTP.
+- 09/10 · M84 · « Mon profil » (`/profil`) : chaque conseiller renseigne son téléphone et sa photo ; le nom et l'e-mail viennent de l'invitation ; la photo va dans le bucket privé des photos, sous le dossier de l'agence.
+- 09/10 · M84 · Administration → Identité : adresse postale et carte professionnelle de l'agence, facultatives ; vides, ces mentions sont omises du pied des dossiers de prospection.
+- 09/10 · M84 · Le dossier de prospection est aux couleurs, logo et police de l'agence : variante lisible pour le texte, couleur exacte pour les aplats ; les couleurs du DPE restent sémantiques (M55).
 
 ## Données & provenance
 
@@ -212,6 +227,9 @@ chaque mission validée.
 - 09/10 · M75 · L'adresse d'un concurrent ne passe jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code. `/confidentialite` mentionne ce traitement (usage interne de prospection par l'agence).
 - 09/10 · M75 · La réponse du Localisateur est une donnée, revalidée côté serveur et rattachée au concurrent par l'adresse de son annonce : un état inconnu rejette l'entrée, une clé ou une source hors liste (dont `autre`) reste vide ; seul son `message` s'affiche, jamais son `error`.
 - 09/10 · M83 · « Vendu par » et « Exclusivité » d'un concurrent ne passent jamais côté vendeur : ni Live, ni présentation ; un test le vérifie sur la charge et sur le code (comme les adresses, M75).
+- 09/10 · M84 · Le dossier de prospection sort de l'agence : n'y entrent que les caractéristiques de notre bien et ce que l'annonce du concurrent publie, par listes de colonnes autorisées ; jamais le nom du vendeur, sa valeur perçue, l'analyse ou la fourchette du conseiller, jamais une photo, un titre ou une description du concurrent ni le nom de son propriétaire ; un test vérifie chaque interdit sur la charge et sur le code.
+- 09/10 · M84 · Le pied du dossier propriétaire dit « Votre adresse a été repérée à partir d'une annonce publiée. Pour ne plus être sollicité : [téléphone] » ; `/confidentialite` dit que l'adresse sort d'ACM sur ce courrier, et que le conseiller peut la confirmer ou la saisir (précise M75, « usage interne »).
+- 09/10 · M84 · La colonne `subject_properties.public_listing_url` reste en base, inutilisée : le lien de l'annonce n'est plus demandé.
 
 ## Méthode
 
@@ -239,3 +257,6 @@ chaque mission validée.
 - 07/10 · M76 · Une fixture capturée dans un vrai navigateur est nettoyée des scripts tiers, des styles et des identifiants de suivi avant d'être commitée ; les données lues restent intactes.
 - 07/10 · M76 · Non-régression des photos : chaque fixture existante doit donner au moins les mêmes photos qu'avant, jamais un logo ni la photo d'un autre bien.
 - 09/10 · M83 · Écart accepté à M48 : la fixture Green Acres de Grasse a été récupérée à l'adresse propre de l'annonce par le robot déclaré d'ACM, puis nettoyée (M76) ; les pièges mesurés sans fixture (badge voisin, `isExclusive` Figaro) sont testés sur des extraits écrits d'après les structures relevées.
+- 09/10 · M84 · Le gel (M63) est levé pour la mission 84, à la demande de Laurent : c'est la dernière fonctionnalité avant le pilote.
+- 09/10 · M84 · Dépendance ajoutée : `qrcode` (QR code de la carte de contact).
+- 09/10 · M84 · Docker arrêté : `database.types.ts` a été complété à la main d'après la migration ; à régénérer par `npm run gen:types` à la prochaine occasion.
