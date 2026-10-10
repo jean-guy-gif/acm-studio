@@ -2,6 +2,8 @@ import {
   DANGEROUS_REASONS,
   MAX_LIVE_COMMENT_LENGTH,
   MAX_LIVE_PRICE,
+  MAX_LAUNCH_READINESS,
+  MIN_LAUNCH_READINESS,
   PROPERTY_CONFIRMED_VALUES,
   type DangerousReason,
   type PropertyConfirmed,
@@ -20,6 +22,19 @@ function checkPrice(
 ): void {
   if (value != null && (!Number.isFinite(value) || value < 0 || value > MAX_LIVE_PRICE)) {
     errors[field] = 'Le prix doit être un montant positif.';
+  }
+}
+
+function checkReadiness(
+  value: number | null | undefined,
+  field: string,
+  errors: Record<string, string>,
+): void {
+  if (
+    value != null &&
+    (!Number.isInteger(value) || value < MIN_LAUNCH_READINESS || value > MAX_LAUNCH_READINESS)
+  ) {
+    errors[field] = `La note va de ${MIN_LAUNCH_READINESS} à ${MAX_LAUNCH_READINESS}.`;
   }
 }
 
@@ -78,6 +93,15 @@ export function validateLiveSellerSummary(
     input.seller_property_comment.length > MAX_LIVE_COMMENT_LENGTH
   ) {
     errors.seller_property_comment = `Limité à ${MAX_LIVE_COMMENT_LENGTH} caractères.`;
+  }
+
+  checkReadiness(input.seller_launch_readiness_first, 'seller_launch_readiness_first', errors);
+  checkReadiness(input.seller_launch_readiness_last, 'seller_launch_readiness_last', errors);
+  if (
+    input.seller_launch_readiness_missing != null &&
+    input.seller_launch_readiness_missing.length > MAX_LIVE_COMMENT_LENGTH
+  ) {
+    errors.seller_launch_readiness_missing = `Limité à ${MAX_LIVE_COMMENT_LENGTH} caractères.`;
   }
 
   if (Object.keys(errors).length > 0) {
