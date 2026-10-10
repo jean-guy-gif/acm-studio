@@ -174,22 +174,22 @@ export function SuiviRow({
             ) : null}
             {group === 'follow_up' ? (
               <>
-                {phone ? (
-                  <a
-                    href={`tel:${phone.replace(/[^\d+]/g, '')}`}
-                    title={`Appeler ${phone}`}
-                    className={`${btnSecondary} whitespace-nowrap`}
-                  >
-                    Relancer →
-                  </a>
-                ) : (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 @5xl:justify-end">
+                  {phone ? (
+                    <a
+                      href={`tel:${phone.replace(/[^\d+]/g, '')}`}
+                      className={`${link} text-sm whitespace-nowrap`}
+                    >
+                      {phone}
+                    </a>
+                  ) : null}
                   <Link
                     href={`/builder/${project.id}`}
                     className={`${btnSecondary} whitespace-nowrap`}
                   >
                     Relancer →
                   </Link>
-                )}
+                </div>
                 {holdsBack ? (
                   <span className="line-clamp-2 text-xs font-semibold text-amber-700 stage:text-amber-300">
                     Ce qui le retient&nbsp;: «&nbsp;{holdsBack}&nbsp;»

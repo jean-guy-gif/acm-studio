@@ -50,19 +50,44 @@ describe('applyProspectingMove', () => {
       ok: true,
       patch: { prospecting_mandate_at: NOW },
     });
-    expect(applyProspectingMove('handed', 'declined', NOW)).toEqual({
-      ok: true,
-      patch: { prospecting_declined_at: NOW },
-    });
+  });
+
+  it('« pas intéressé » se note à tout moment avant le mandat', () => {
+    for (const status of ['to_confirm', 'ready', 'handed', 'meeting'] as const) {
+      expect(applyProspectingMove(status, 'declined', NOW)).toEqual({
+        ok: true,
+        patch: { prospecting_declined_at: NOW },
+      });
+    }
+    expect(applyProspectingMove('mandate', 'declined', NOW).ok).toBe(false);
+    expect(applyProspectingMove('declined', 'declined', NOW).ok).toBe(false);
+  });
+
+  it('annuler « pas intéressé » rend le concurrent là où il en était', () => {
+    const atTheDoor = { ...NONE, prospecting_declined_at: NOW };
+    const afterMeeting = {
+      ...NONE,
+      prospecting_handed_at: NOW,
+      prospecting_meeting_at: NOW,
+      prospecting_declined_at: NOW,
+    };
+    for (const [dates, address, expected] of [
+      [atTheDoor, false, 'to_confirm'],
+      [atTheDoor, true, 'ready'],
+      [afterMeeting, true, 'meeting'],
+    ] as const) {
+      expect(prospectingStatus(dates, address)).toBe('declined');
+      const undo = applyProspectingMove('declined', 'back', NOW);
+      expect(undo).toEqual({ ok: true, patch: { prospecting_declined_at: null } });
+      if (undo.ok) expect(prospectingStatus({ ...dates, ...undo.patch }, address)).toBe(expected);
+    }
   });
 
   it('refuse un saut de cran', () => {
-    const refused: [ProspectingStatus, 'handed' | 'meeting' | 'mandate' | 'declined'][] = [
+    const refused: [ProspectingStatus, 'handed' | 'meeting' | 'mandate'][] = [
       ['to_confirm', 'handed'],
       ['ready', 'meeting'],
       ['handed', 'mandate'],
-      ['ready', 'declined'],
-      ['meeting', 'declined'],
       ['mandate', 'handed'],
     ];
     for (const [status, move] of refused) {

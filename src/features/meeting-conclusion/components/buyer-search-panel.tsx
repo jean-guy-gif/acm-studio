@@ -95,19 +95,21 @@ function HitAction({ candidate }: { candidate: BuyerCandidate }) {
     );
   }
   if (candidate.group === 'follow_up') {
-    const label = 'Rappeler : « j’ai un acheteur »';
-    return candidate.sellerPhone ? (
-      <a
-        href={phoneHref(candidate.sellerPhone)}
-        title={`Appeler ${candidate.sellerPhone}`}
-        className={miniSecondary}
-      >
-        {label}
-      </a>
-    ) : (
-      <Link href={`/builder/${candidate.projectId}`} className={miniSecondary}>
-        {label}
-      </Link>
+    // Le bouton ouvre le dossier ; le numéro, quand il y en a un, s'appelle d'un clic à côté.
+    return (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        {candidate.sellerPhone ? (
+          <a
+            href={phoneHref(candidate.sellerPhone)}
+            className="text-xs font-medium whitespace-nowrap text-brand-deep hover:underline stage:text-brand"
+          >
+            {candidate.sellerPhone}
+          </a>
+        ) : null}
+        <Link href={`/builder/${candidate.projectId}`} className={miniSecondary}>
+          Rappeler : « j’ai un acheteur »
+        </Link>
+      </div>
     );
   }
   const prospection = `/prospection?bien=${candidate.projectId}`;

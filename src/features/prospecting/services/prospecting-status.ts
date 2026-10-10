@@ -3,6 +3,9 @@
 // « À confirmer » et « prêt » se DÉDUISENT de l'adresse, comme avant la mission ; « remis »,
 // « rendez-vous obtenu », « mandat rentré » et « pas intéressé » sont des faits datés, posés par
 // le conseiller. On avance d'un cran à la fois, et on revient d'un cran (erreur de clic).
+// « Pas intéressé » se dit à tout moment avant le mandat — à la porte, après la remise, après un
+// rendez-vous sans mandat — et garde les faits d'avant : l'annuler rend le concurrent là où il
+// en était.
 
 export type ProspectingStatus =
   'to_confirm' | 'ready' | 'handed' | 'meeting' | 'mandate' | 'declined';
@@ -68,11 +71,12 @@ export function applyProspectingMove(
       : refuse('Le mandat se note après le rendez-vous.');
   }
   if (move === 'declined') {
-    return status === 'handed'
-      ? { ok: true, patch: { prospecting_declined_at: now } }
-      : refuse('« Pas intéressé » se note après la remise du dossier.');
+    return status === 'mandate' || status === 'declined'
+      ? refuse('« Pas intéressé » ne se note plus pour ce concurrent.')
+      : { ok: true, patch: { prospecting_declined_at: now } };
   }
-  // Retour d'un cran.
+  // Retour d'un cran. Annuler « pas intéressé » n'efface que lui : le concurrent retrouve le
+  // statut que disent ses autres dates (ou son adresse).
   if (status === 'declined') {
     return { ok: true, patch: { prospecting_declined_at: null } };
   }
@@ -129,8 +133,8 @@ export const BOARD_COLUMNS = [
 
 export type ProspectingCounters = {
   toCanvass: number; // concurrents à démarcher : tout le tableau
-  handed: number; // dossiers remis (qu'un rendez-vous ait suivi ou non)
-  meetings: number; // rendez-vous obtenus (mandats compris)
+  handed: number; // dossiers remis (qu'un rendez-vous ait suivi ou non), hors « pas intéressés »
+  meetings: number; // rendez-vous obtenus (mandats compris), hors « pas intéressés »
   mandates: number; // mandats rentrés
   declined: number; // pas intéressés, hors tableau
 };

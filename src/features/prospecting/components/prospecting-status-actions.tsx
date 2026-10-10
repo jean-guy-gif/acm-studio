@@ -12,14 +12,13 @@ import type {
 const small = 'px-3 py-1.5 text-xs';
 
 // Les gestes offerts par statut : un geste principal, et « Annuler » pour revenir d'un cran.
+// « Pas intéressé » se dit à tout moment avant le mandat rentré.
+const DECLINE = { move: 'declined', label: 'Pas intéressé' } as const;
 const MOVES: Record<ProspectingStatus, { move: ProspectingMove; label: string }[]> = {
-  to_confirm: [],
-  ready: [{ move: 'handed', label: 'Marquer remis' }],
-  handed: [
-    { move: 'meeting', label: 'RDV obtenu' },
-    { move: 'declined', label: 'Pas intéressé' },
-  ],
-  meeting: [{ move: 'mandate', label: 'Mandat rentré' }],
+  to_confirm: [DECLINE],
+  ready: [{ move: 'handed', label: 'Marquer remis' }, DECLINE],
+  handed: [{ move: 'meeting', label: 'RDV obtenu' }, DECLINE],
+  meeting: [{ move: 'mandate', label: 'Mandat rentré' }, DECLINE],
   mandate: [],
   declined: [],
 };
