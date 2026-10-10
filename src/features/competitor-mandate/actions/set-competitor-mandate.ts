@@ -49,5 +49,6 @@ export async function setCompetitorMandate(
   revalidatePath(`/builder/${projectId}/comparables`);
   revalidatePath(`/builder/${projectId}`);
   revalidatePath(`/builder/${projectId}/prospection`);
+  revalidatePath('/prospection');
   return { ok: true };
 }

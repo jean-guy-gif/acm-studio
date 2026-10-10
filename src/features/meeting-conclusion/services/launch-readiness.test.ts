@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { launchReadinessLabel } from '@/features/meeting-conclusion/services/launch-readiness';
+import {
+  launchReadinessLabel,
+  launchReadinessShort,
+} from '@/features/meeting-conclusion/services/launch-readiness';
 
 describe('launchReadinessLabel', () => {
   it('shows the first and the last score when the seller moved', () => {
@@ -22,5 +25,14 @@ describe('launchReadinessLabel', () => {
 
   it('says nothing when no score was given', () => {
     expect(launchReadinessLabel(null, null)).toBeNull();
+  });
+});
+
+describe('launchReadinessShort', () => {
+  it('writes the short form of the Suivi row', () => {
+    expect(launchReadinessShort(7, 10)).toBe('7 → 10/10');
+    expect(launchReadinessShort(10, 10)).toBe('10/10');
+    expect(launchReadinessShort(null, 6)).toBe('6/10');
+    expect(launchReadinessShort(null, null)).toBeNull();
   });
 });
