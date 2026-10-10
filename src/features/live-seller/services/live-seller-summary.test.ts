@@ -91,4 +91,40 @@ describe('validateLiveSellerSummary', () => {
   it('rejects negative prices', () => {
     expect(validate({ ...EMPTY, seller_perceived_property_price: -5 }).ok).toBe(false);
   });
+
+  // Mission 85 — la note « prêt à lancer » : un entier de 1 à 10, rien d'autre.
+  it('accepts a launch readiness score from 1 to 10, with what is still missing', () => {
+    for (const score of [1, 7, 10]) {
+      expect(validate({ seller_launch_readiness_last: score }).ok).toBe(true);
+    }
+    const result = validate({
+      seller_launch_readiness_first: 7,
+      seller_launch_readiness_last: 10,
+      seller_launch_readiness_missing: '  le délai  ',
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.seller_launch_readiness_missing).toBe('le délai');
+  });
+
+  it('rejects a launch readiness score outside 1 to 10 or not whole', () => {
+    for (const score of [0, 11, -3, 7.5, Number.NaN]) {
+      const last = validate({ seller_launch_readiness_last: score });
+      expect(last.ok).toBe(false);
+      if (!last.ok) expect(last.fieldErrors).toHaveProperty('seller_launch_readiness_last');
+      expect(validate({ seller_launch_readiness_first: score }).ok).toBe(false);
+    }
+  });
+
+  it('never requires a launch readiness score', () => {
+    const result = validate({
+      seller_launch_readiness_last: null,
+      seller_launch_readiness_missing: '',
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.seller_launch_readiness_missing).toBeNull();
+  });
+
+  it('rejects an answer longer than a Live comment', () => {
+    expect(validate({ seller_launch_readiness_missing: 'x'.repeat(2001) }).ok).toBe(false);
+  });
 });

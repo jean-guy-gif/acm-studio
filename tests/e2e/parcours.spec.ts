@@ -34,6 +34,7 @@ const FOURCHETTE = { min: 255_500, max: 345_500 };
 const PERCEIVED_PRICE = 330_000;
 const COMMERCIALIZATION_PRICE = 315_000;
 const COMMENT = 'Réponse saisie par le test automatique';
+const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
 
 test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   const dossierName = uniqueDossierName();
@@ -154,6 +155,19 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(journeyText, 'L’écart début → commercialisation manque au Suivi').toContain(
       String(PERCEIVED_PRICE - COMMERCIALIZATION_PRICE),
     );
+
+    // Mission 85 — la note donnée après le prix : la première, la dernière, et ce qui manquait.
+    const suiviCard = page
+      .locator('li')
+      .filter({ has: page.locator(`a[href="/builder/${projectId}"]`) });
+    await expect(
+      suiviCard.getByText('Prêt à lancer : 7/10 → 10/10'),
+      'La note du vendeur manque au Suivi',
+    ).toBeVisible();
+    await expect(
+      suiviCard.getByText(MISSING_FOR_TEN),
+      'Ce qui manquait pour être à 10 manque au Suivi',
+    ).toBeVisible();
   });
 });
 
@@ -325,6 +339,47 @@ async function walkLive(
   await commercialization.fill(String(COMMERCIALIZATION_PRICE));
   await page.getByRole('button', { name: 'Enregistrer le prix' }).click();
   await expect(page.getByText('Prix de commercialisation enregistré.')).toBeVisible();
+  await validate();
+
+  // Mission 85 — après le prix, le vendeur se situe de 1 à 10. Rien n'est pré-sélectionné ;
+  // sous 10 l'écran demande ce qui manque, à 10 il propose de lancer la vente.
+  await expect(
+    page.getByRole('heading', {
+      name: 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix ?',
+    }),
+  ).toBeVisible();
+  await onScreen('Prêt à lancer ?');
+  const scale = page.getByRole('group', { name: 'Votre note, de 1 à 10' });
+  await expect(scale.getByRole('button')).toHaveCount(10);
+  const score = (value: number) => scale.getByRole('button', { name: String(value), exact: true });
+  const missingQuestion = page.getByRole('heading', {
+    name: 'Qu’est-ce qui vous manquerait pour être à 10 ?',
+  });
+  const launchQuestion = page.getByRole('heading', { name: 'Alors, on lance la vente ?' });
+  if (firstPass) {
+    await expect(
+      scale.locator('button[aria-pressed="true"]'),
+      'Une note est pré-sélectionnée',
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: /Terminer le rendez-vous/ }),
+      'Sans note, le rendez-vous ne peut pas se terminer',
+    ).toBeVisible();
+    await score(7).click();
+    await expect(missingQuestion).toBeVisible();
+    await expect(launchQuestion).toHaveCount(0);
+    await page.locator('textarea[name="seller_launch_readiness_missing"]').fill(MISSING_FOR_TEN);
+    await score(10).click();
+  } else {
+    // Au second passage, la note enregistrée au premier est reprise.
+    await expect(score(10), 'La note enregistrée n’est pas reprise').toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+  await expect(launchQuestion).toBeVisible();
+  await expect(missingQuestion).toHaveCount(0);
+  if (tablet) await expectNoHorizontalScroll(page, 'Prêt à lancer ? (note donnée)');
   await expect(
     page.getByRole('link', { name: /Terminer le rendez-vous/ }),
     'Le dernier écran du Live ne mène plus à la conclusion',

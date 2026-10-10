@@ -7,6 +7,9 @@ export type RawLiveSellerSummary = {
   seller_perceived_property_price?: number | null;
   seller_property_confirmed?: string | null;
   seller_property_comment?: string | null;
+  seller_launch_readiness_first?: number | null;
+  seller_launch_readiness_last?: number | null;
+  seller_launch_readiness_missing?: string | null;
 };
 
 function trimToNull(value: string | null): string | null {
@@ -54,6 +57,19 @@ export function normalizeLiveSellerSummary(raw: RawLiveSellerSummary): LiveSelle
   }
   if ('seller_property_comment' in raw) {
     result.seller_property_comment = trimToNull(raw.seller_property_comment ?? null);
+  }
+  // Mission 85 — la note reste telle qu'elle arrive (NaN compris) : c'est la validation qui
+  // refuse ce qui n'est pas un entier de 1 à 10, jamais un arrondi silencieux ici.
+  if ('seller_launch_readiness_first' in raw) {
+    result.seller_launch_readiness_first = raw.seller_launch_readiness_first ?? null;
+  }
+  if ('seller_launch_readiness_last' in raw) {
+    result.seller_launch_readiness_last = raw.seller_launch_readiness_last ?? null;
+  }
+  if ('seller_launch_readiness_missing' in raw) {
+    result.seller_launch_readiness_missing = trimToNull(
+      raw.seller_launch_readiness_missing ?? null,
+    );
   }
   return result;
 }

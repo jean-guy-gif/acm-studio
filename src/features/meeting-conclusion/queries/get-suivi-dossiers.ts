@@ -53,7 +53,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
     supabase
       .from('project_meeting_conclusions')
       .select(
-        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, outcome, follow_up_reason, concluded_at, outcome_changed_at',
+        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, concluded_at, outcome_changed_at',
       )
       .in('project_id', ids)
       .eq('agency_id', agencyId),
@@ -77,6 +77,9 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       advisorPrice: row.frozen_advisor_price,
       commercializationPrice: row.commercialization_price,
       sellerPerceivedPrice: row.frozen_seller_perceived_price,
+      launchReadinessFirst: row.frozen_launch_readiness_first,
+      launchReadinessLast: row.frozen_launch_readiness_last,
+      launchReadinessMissing: row.frozen_launch_readiness_missing,
       outcome: (row.outcome as MeetingConclusion['outcome']) ?? null,
       followUpReason: row.follow_up_reason,
       concludedAt: row.concluded_at,

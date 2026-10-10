@@ -46,20 +46,21 @@ describe('buildLivePages', () => {
     expect(rejectedPages.map((page) => page.type)).toEqual(['comparable_competition']);
   });
 
-  it('orders the whole flow: intro, perceived, loop, dangerous, analysis, conclusion', () => {
+  it('orders the whole flow: intro, perceived, loop, dangerous, analysis, conclusion, closing', () => {
     const pages = buildLivePages(live(2), false);
     expect(pages.map((p) => p.type).slice(0, 3)).toEqual([
       'intro',
       'seller_perceived_price',
       'comparable_competition',
     ]);
-    expect(pages.map((p) => p.type).slice(-3)).toEqual([
+    expect(pages.map((p) => p.type).slice(-4)).toEqual([
       'dangerous_competitor',
       'price_analysis',
       'conclusion',
+      'closing_question',
     ]);
-    // intro + perceived + 2*4 + 3 tail
-    expect(pages).toHaveLength(1 + 1 + 8 + 3);
+    // intro + perceived + 2*4 + 4 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 4);
   });
 
   // Mission 82 — le vendeur dit son prix avant de voir le moindre concurrent.
@@ -81,7 +82,18 @@ describe('buildLivePages', () => {
       'seller_perceived_price',
       'price_analysis',
       'conclusion',
+      'closing_question',
     ]);
+  });
+
+  // Mission 85 — la question de 1 à 10 suit le prix de commercialisation et clôt le Live.
+  it('ends on the closing question, right after the commercialization price', () => {
+    for (const pages of [buildLivePages(live(0), false), buildLivePages(live(3), true)]) {
+      const types = pages.map((p) => p.type);
+      expect(types.at(-1)).toBe('closing_question');
+      expect(types.at(-2)).toBe('conclusion');
+      expect(types.filter((type) => type === 'closing_question')).toHaveLength(1);
+    }
   });
 
   it('assigns a 1-based comparable index', () => {
@@ -94,8 +106,8 @@ describe('buildLivePages', () => {
     expect(pages[0].type).toBe('intro');
     expect(pages[1].type).toBe('subject_property');
     expect(pages[1].title).toBe('Votre bien');
-    // intro + subject_property + 2*4 + 4 tail
-    expect(pages).toHaveLength(1 + 1 + 8 + 4);
+    // intro + subject_property + 2*4 + 5 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 5);
   });
 
   it('omits the "Votre bien" slide when the dossier has no subject property', () => {

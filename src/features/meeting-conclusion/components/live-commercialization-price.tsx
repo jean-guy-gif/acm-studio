@@ -15,17 +15,20 @@ import {
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { pendingCommercializationPrice } from '@/features/meeting-conclusion/services/pending-commercialization-price';
 
-// Mission 53 §1 — la seule question du dernier écran : « Sur quel prix partons-nous ? ».
+// Mission 53 §1 — la seule question de l'écran « Conclusion » : « Sur quel prix partons-nous ? ».
 // Champ VIDE à l'ouverture, jamais pré-rempli avec le prix conseillé (§7.5, règle M51).
 // Remplir et enregistrer = l'accord. Le vendeur n'y voit aucune case « oui ».
 // Mission 81 — `onPendingChange` dit à la scène si un prix est saisi sans être enregistré :
-// « Terminer le rendez-vous » l'enregistre alors avant d'ouvrir la conclusion.
+// elle l'enregistre alors avant de quitter l'écran (mission 85 : « Valider et continuer »).
+// `onSaved` lui rend le prix enregistré, que l'écran suivant rappelle.
 export function LiveCommercializationPrice({
   projectId,
   onPendingChange,
+  onSaved,
 }: {
   projectId: string;
   onPendingChange?: (typed: string | null) => void;
+  onSaved?: (saved: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
@@ -46,6 +49,7 @@ export function LiveCommercializationPrice({
           const result = await saveCommercializationPrice(projectId, formData);
           if (result.ok) {
             lastSavedRef.current = submitted;
+            onSaved?.(submitted);
             onPendingChange?.(
               pendingCommercializationPrice(inputRef.current?.value ?? '', submitted),
             );

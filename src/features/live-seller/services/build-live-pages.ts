@@ -17,7 +17,7 @@ export type LiveNavData = { comparables: LiveNavComparable[] };
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
 // intro → [Votre bien] → seller perceived price → [competition, price, price reveal,
 // duration] per comparable → [le DPE face au marché] → dangerous competitor → price
-// analysis → conclusion. Mission 41 aligns the per-comparable loop on the Storyboard's four
+// analysis → conclusion → closing question. Mission 41 aligns the per-comparable loop on the Storyboard's four
 // screens (A/B/C/D): the guess and the reveal are two distinct screens so the
 // seller's reaction to the revealed price has room to happen.
 export type LivePageType =
@@ -31,7 +31,8 @@ export type LivePageType =
   | 'dangerous_competitor'
   | 'seller_perceived_price'
   | 'price_analysis'
-  | 'conclusion';
+  | 'conclusion'
+  | 'closing_question';
 
 export type LivePage = {
   key: string;
@@ -142,6 +143,16 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
       key: 'conclusion',
       type: 'conclusion',
       title: 'Conclusion',
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+    },
+    // Mission 85 — après le prix de commercialisation, le vendeur se situe de 1 à 10.
+    // Dernier écran : c'est lui qui porte « Terminer le rendez-vous ».
+    {
+      key: 'closing_question',
+      type: 'closing_question',
+      title: 'Prêt à lancer ?',
       comparableId: null,
       comparableIndex: null,
       step: null,

@@ -58,6 +58,15 @@ export async function writeLiveSellerSummary(
     ...(formData.has('seller_property_comment') && {
       seller_property_comment: textOrNull(formData.get('seller_property_comment')),
     }),
+    ...(formData.has('seller_launch_readiness_first') && {
+      seller_launch_readiness_first: numberOrNull(formData.get('seller_launch_readiness_first')),
+    }),
+    ...(formData.has('seller_launch_readiness_last') && {
+      seller_launch_readiness_last: numberOrNull(formData.get('seller_launch_readiness_last')),
+    }),
+    ...(formData.has('seller_launch_readiness_missing') && {
+      seller_launch_readiness_missing: textOrNull(formData.get('seller_launch_readiness_missing')),
+    }),
   });
   const validation = validateLiveSellerSummary(normalized);
   if (!validation.ok) {

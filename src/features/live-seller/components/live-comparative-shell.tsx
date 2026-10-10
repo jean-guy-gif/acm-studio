@@ -10,6 +10,7 @@ import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-li
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
+import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
 import { LivePageDangerous } from '@/features/live-seller/components/live-page-dangerous';
@@ -108,30 +109,30 @@ export function LiveComparativeShell({
 
   const hasSubjectProperty = property != null;
 
-  // Mission 81 — un prix de commercialisation saisi mais pas enregistré : « Terminer le
-  // rendez-vous » l'enregistre d'abord, puis ouvre la conclusion. Un échec retient sur
-  // l'écran, avec son message.
+  // Mission 81 — un prix de commercialisation saisi mais pas enregistré est enregistré avant
+  // de quitter l'écran du prix. Mission 85 — c'est « Valider et continuer » qui le fait, la
+  // question de 1 à 10 venant ensuite. Un échec retient sur l'écran, avec son message.
   const router = useRouter();
   const pendingPriceRef = useRef<string | null>(null);
-  const [finishing, setFinishing] = useState(false);
-  const [finishError, setFinishError] = useState<string | null>(null);
+  // Le prix enregistré pendant cette séance : rappelé sur l'écran de la note, rien d'autre.
+  const [agreedPrice, setAgreedPrice] = useState<number | null>(null);
   const handlePendingPriceChange = useCallback((typed: string | null) => {
     pendingPriceRef.current = typed;
-    setFinishError(null);
+    setAwaitError(null);
   }, []);
-  const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (finishing) {
-      event.preventDefault();
-      return;
-    }
+  const handlePriceSaved = useCallback((saved: string) => {
+    const price = Number(saved);
+    setAgreedPrice(Number.isFinite(price) && price > 0 ? price : null);
+  }, []);
+  const leavePriceScreen = async () => {
+    if (busy) return;
+    setAwaitError(null);
     const typed = pendingPriceRef.current;
     if (typed == null) {
-      void document.exitFullscreen?.().catch(() => {});
+      go(1);
       return;
     }
-    event.preventDefault();
-    setFinishing(true);
-    setFinishError(null);
+    setBusy(true);
     const formData = new FormData();
     formData.set('commercialization_price', typed);
     let failure: string | null = null;
@@ -141,12 +142,71 @@ export function LiveComparativeShell({
     } catch {
       failure = 'L’enregistrement du prix a échoué. Réessayez.';
     }
+    setBusy(false);
+    if (failure) {
+      setAwaitError(failure);
+      return;
+    }
+    pendingPriceRef.current = null;
+    handlePriceSaved(typed);
+    go(1);
+  };
+
+  // Mission 85 — la note de 1 à 10 donnée après le prix. Chaque chiffre touché part en fond,
+  // l'un après l'autre (la première note doit arriver avant la suivante) ; « Terminer le
+  // rendez-vous » enregistre l'état final, réponse comprise, avant d'ouvrir la conclusion.
+  // Sans note, il n'enregistre rien : le rendez-vous ne se bloque jamais (M81).
+  const [closing, setClosing] = useState(() => ({
+    first: live?.sellerSummary?.seller_launch_readiness_first ?? null,
+    last: live?.sellerSummary?.seller_launch_readiness_last ?? null,
+    missing: live?.sellerSummary?.seller_launch_readiness_missing ?? '',
+  }));
+  const closingSavesRef = useRef<Promise<void>>(Promise.resolve());
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const handleClosingScore = (score: number) => {
+    const first = closing.first ?? score;
+    setClosing((c) => ({ ...c, first, last: score }));
+    setFinishError(null);
+    const formData = new FormData();
+    formData.set('seller_launch_readiness_first', String(first));
+    formData.set('seller_launch_readiness_last', String(score));
+    closingSavesRef.current = closingSavesRef.current
+      .then(() => persistLiveSellerSummary(projectId, formData))
+      .then(
+        () => undefined,
+        () => undefined,
+      );
+  };
+  const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (finishing) {
+      event.preventDefault();
+      return;
+    }
+    if (closing.first == null || closing.last == null) {
+      void document.exitFullscreen?.().catch(() => {});
+      return;
+    }
+    event.preventDefault();
+    setFinishing(true);
+    setFinishError(null);
+    const formData = new FormData();
+    formData.set('seller_launch_readiness_first', String(closing.first));
+    formData.set('seller_launch_readiness_last', String(closing.last));
+    formData.set('seller_launch_readiness_missing', closing.missing);
+    let failure: string | null = null;
+    try {
+      await closingSavesRef.current;
+      const result = await persistLiveSellerSummary(projectId, formData);
+      failure = result.ok ? null : (result.error ?? 'L’enregistrement de la note a échoué.');
+    } catch {
+      failure = 'L’enregistrement de la note a échoué. Réessayez.';
+    }
     if (failure) {
       setFinishing(false);
       setFinishError(failure);
       return;
     }
-    pendingPriceRef.current = null;
     void document.exitFullscreen?.().catch(() => {});
     router.push(`/builder/${projectId}/conclusion`);
   };
@@ -193,7 +253,8 @@ export function LiveComparativeShell({
     authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??
     null;
 
-  const isInteractive = page.type !== 'intro' && page.type !== 'conclusion';
+  const isClosingAct = page.type === 'conclusion' || page.type === 'closing_question';
+  const isInteractive = page.type !== 'intro' && !isClosingAct;
   const currentSave = saves[page.key];
   // devine-puis-révèle : la durée observée ne se montre qu'après la réponse du vendeur —
   // jamais à l'arrivée. Le central marché, lui, n'arrive que sur « Analyse des prix ».
@@ -590,7 +651,7 @@ export function LiveComparativeShell({
         // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
         // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
         className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
-          isInteractive || page.type === 'conclusion' ? 'pb-32' : 'pb-6 sm:pb-8'
+          isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
         }`}
       >
         {page.type === 'intro' ? (
@@ -641,6 +702,15 @@ export function LiveComparativeShell({
             advisorRange={effectiveRange}
             dangerous={dangerousComparable}
             onPendingPriceChange={handlePendingPriceChange}
+            onPriceSaved={handlePriceSaved}
+          />
+        ) : page.type === 'closing_question' ? (
+          <LivePageClosing
+            agreedPrice={agreedPrice}
+            score={closing.last}
+            missing={closing.missing}
+            onScore={handleClosingScore}
+            onMissingChange={(missing) => setClosing((c) => ({ ...c, missing }))}
           />
         ) : (
           <p className="text-zinc-500 stage:text-white/60">
@@ -694,11 +764,41 @@ export function LiveComparativeShell({
         </div>
       ) : null}
 
+      {/* MISSION 85 — l'écran du prix n'est plus le dernier : « Valider et continuer »
+          enregistre d'abord un prix saisi et non enregistré (M81), puis ouvre la question
+          de 1 à 10. Un champ vide n'enregistre rien et n'empêche pas d'avancer. */}
+      {page.type === 'conclusion' ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+          style={{
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            paddingTop: '1rem',
+          }}
+        >
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
+              ← Précédent
+            </button>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {awaitError ? <span className={errorText}>{awaitError}</span> : null}
+              <button
+                type="button"
+                onClick={() => void leavePriceScreen()}
+                disabled={busy}
+                className={ctaPrimary}
+              >
+                {busy ? 'Enregistrement du prix…' : 'Valider et continuer →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* MISSION 53 — la FIN NORMALE du parcours. Le dernier écran mène à la conclusion
           (écran conseiller), distincte de « Quitter » (chrome, en haut) qui sort SANS
           conclure et laisse le dossier dans le Live. On sort du plein écran avant de passer
           à un écran advisor-only que le vendeur ne doit pas voir. */}
-      {page.type === 'conclusion' ? (
+      {page.type === 'closing_question' ? (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
           style={{
@@ -718,7 +818,7 @@ export function LiveComparativeShell({
                 aria-disabled={finishing}
                 className={ctaPrimary}
               >
-                {finishing ? 'Enregistrement du prix…' : 'Terminer le rendez-vous →'}
+                {finishing ? 'Enregistrement…' : 'Terminer le rendez-vous →'}
               </Link>
             </div>
           </div>
