@@ -14,6 +14,10 @@ import {
   prospectingStep,
   type ProspectingStep,
 } from '@/features/competitor-mandate/services/mandate-columns';
+import {
+  prospectingStatus,
+  type ProspectingStatus,
+} from '@/features/prospecting/services/prospecting-status';
 import { formatEuro, formatPercent } from '@/lib/format';
 
 // Mission 75 — « Concurrents à prospecter » : la liste de tournée d'un dossier conclu « mandat
@@ -51,6 +55,16 @@ export type ProspectingRow = {
   onlineSince: string | null;
   priceDrop: string | null;
   listingUrl: string | null;
+  // Mission 86 — ce que la carte de Prospection et le rapprochement acheteur lisent en plus :
+  // le type et la commune de l'annonce, son portail, et où en est la prospection.
+  propertyType: string | null;
+  city: string | null;
+  portal: string | null;
+  status: ProspectingStatus;
+  handedAt: string | null;
+  meetingAt: string | null;
+  mandateAt: string | null;
+  declinedAt: string | null;
   // Mission 83 — à qui s'adresser (confrère, propriétaire, à vérifier), et les quatre valeurs
   // que le conseiller corrige d'un clic sur la ligne.
   step: ProspectingStep;
@@ -163,6 +177,19 @@ export function buildProspectingRows(
         onlineSince: describeOnlineSince(age),
         priceDrop: describePriceDrop(competitor, own),
         listingUrl: clean(competitor.listing_url),
+        propertyType: clean(competitor.property_type),
+        city: clean(competitor.city),
+        portal: identity
+          ? (LISTING_PORTAL_LABELS[identity.portal] ?? identity.portal)
+          : clean(competitor.source),
+        status: prospectingStatus(
+          competitor,
+          competitor.locator_confirmed === true && clean(competitor.locator_address) != null,
+        ),
+        handedAt: competitor.prospecting_handed_at,
+        meetingAt: competitor.prospecting_meeting_at,
+        mandateAt: competitor.prospecting_mandate_at,
+        declinedAt: competitor.prospecting_declined_at,
         step: prospectingStep(competitor),
         mandate: {
           id: competitor.id,

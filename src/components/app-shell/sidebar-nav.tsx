@@ -10,6 +10,8 @@ const NAV = [
   { href: '/builder', label: 'Préparation', hint: 'Dossiers vendeurs' },
   { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
   { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
+  // Mission 86 — signalée « NOUVEAU » pendant le pilote.
+  { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher', isNew: true },
   { href: '/admin', label: 'Administration', hint: 'Agence et équipe' },
 ];
 
@@ -39,6 +41,11 @@ export function SidebarNav() {
               }
             >
               {item.label}
+              {'isNew' in item && item.isNew ? (
+                <span className="ml-1.5 rounded bg-amber-600 px-1.5 py-0.5 align-middle font-sans text-[10px] font-bold tracking-wide text-white">
+                  NOUVEAU
+                </span>
+              ) : null}
             </span>
             <span
               className={

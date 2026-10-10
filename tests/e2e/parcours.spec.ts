@@ -35,6 +35,7 @@ const PERCEIVED_PRICE = 330_000;
 const COMMERCIALIZATION_PRICE = 315_000;
 const COMMENT = 'Réponse saisie par le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
+const PROSPECTING_ADDRESS = '12 avenue du Test Automatique, 06600 Antibes';
 
 test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   const dossierName = uniqueDossierName();
@@ -129,21 +130,24 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Le dossier apparaît dans le Suivi', async () => {
     await expect(page).toHaveURL(/\/suivi/);
-    const card = page
-      .locator('li, article, div')
-      .filter({ has: page.locator(`a[href="/builder/${projectId}"]`) })
-      .filter({ hasText: dossierName })
-      .filter({ hasText: 'À relancer' })
-      .last();
-    await expect(card, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
+    // Mission 86 — une ligne courte par dossier : l'issue, la note, ce qui retient le vendeur.
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await expect(row, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
+    await expect(row.getByText('À relancer', { exact: true })).toBeVisible();
+    await expect(
+      row.getByText('7 → 10/10'),
+      'La note du vendeur manque sur la ligne',
+    ).toBeVisible();
+    await expect(row.getByRole('link', { name: /Relancer/ })).toBeVisible();
+    await expect(row.getByText(/Ce qui le retient/)).toContainText(MISSING_FOR_TEN);
+
+    // Rien n'a disparu : le détail se déplie sous la ligne.
+    await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+    await expect(row.locator(`a[href="/builder/${projectId}"]`)).toBeVisible();
 
     // Mission 82 — le chemin parcouru : prix du vendeur en début de rendez-vous, prix de
     // commercialisation, et l'écart entre les deux.
-    const journey = page
-      .locator('li')
-      .filter({ has: page.locator(`a[href="/builder/${projectId}"]`) })
-      .getByText('Le chemin parcouru pendant le rendez-vous')
-      .locator('..');
+    const journey = row.getByText('Le chemin parcouru pendant le rendez-vous').locator('..');
     await expect(journey.getByText('Prix du vendeur en début de rendez-vous')).toBeVisible();
     const journeyText = withoutSpaces(await journey.innerText());
     expect(journeyText, 'Le prix du vendeur en début de rendez-vous manque au Suivi').toContain(
@@ -157,17 +161,94 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     );
 
     // Mission 85 — la note donnée après le prix : la première, la dernière, et ce qui manquait.
-    const suiviCard = page
-      .locator('li')
-      .filter({ has: page.locator(`a[href="/builder/${projectId}"]`) });
     await expect(
-      suiviCard.getByText('Prêt à lancer : 7/10 → 10/10'),
+      row.getByText('Prêt à lancer : 7/10 → 10/10'),
       'La note du vendeur manque au Suivi',
     ).toBeVisible();
     await expect(
-      suiviCard.getByText(MISSING_FOR_TEN),
+      row.getByText(`Ce qui manquait pour être à 10 : ${MISSING_FOR_TEN}`),
       'Ce qui manquait pour être à 10 manque au Suivi',
     ).toBeVisible();
+  });
+
+  // Mission 86 — Suivi → « Prospecter » → page Prospection filtrée sur le bien → « Marquer
+  // remis » → la carte passe dans « Dossier remis ».
+  await test.step('Le mandat se signe depuis la ligne du Suivi', async () => {
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await row.getByRole('button', { name: 'Changer l’issue' }).click();
+    await row
+      .locator('label')
+      .filter({ hasText: /^Mandat signé$/ })
+      .click();
+    await row.getByRole('button', { name: 'Enregistrer l’issue' }).click();
+    await expect(
+      row.getByRole('link', { name: `Prospecter · ${COMPETITORS.length} concurrents →` }),
+      'Un mandat signé ne propose pas de prospecter ses concurrents',
+    ).toBeVisible();
+    await expect(row.getByRole('link', { name: /Relancer/ })).toHaveCount(0);
+  });
+
+  await test.step('Prospection filtrée sur le bien, jusqu’au dossier remis', async () => {
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await row.getByRole('link', { name: /Prospecter/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/prospection\\?bien=${projectId}$`));
+    await expect(page.getByRole('heading', { name: 'Prospection', exact: true })).toBeVisible();
+
+    // Filtrée : les seuls concurrents de ce bien, et chaque carte dit pour quel bien vendeur.
+    const cards = page.getByTestId('prospecting-card');
+    await expect(cards).toHaveCount(COMPETITORS.length);
+    for (const card of await cards.all()) {
+      await expect(card.getByText('Pour :')).toBeVisible();
+      await expect(card.getByRole('link', { name: dossierName })).toBeVisible();
+    }
+
+    // Sans adresse, tout attend dans « Adresse à confirmer ».
+    const toConfirm = page.getByTestId('prospecting-column-to_confirm');
+    const ready = page.getByTestId('prospecting-column-ready');
+    const handed = page.getByTestId('prospecting-column-handed');
+    await expect(toConfirm.getByTestId('prospecting-card')).toHaveCount(COMPETITORS.length);
+
+    const first = toConfirm.getByTestId('prospecting-card').first();
+    await first.getByRole('button', { name: 'Saisir l’adresse' }).click();
+    await first.getByLabel('Adresse du bien concurrent').fill(PROSPECTING_ADDRESS);
+    await first.getByRole('button', { name: 'Confirmer l’adresse' }).click();
+
+    const readyCard = ready
+      .getByTestId('prospecting-card')
+      .filter({ hasText: PROSPECTING_ADDRESS });
+    await expect(readyCard, 'L’adresse confirmée ne rend pas le concurrent « prêt »').toBeVisible();
+    await readyCard.getByRole('button', { name: 'Marquer remis' }).click();
+
+    const handedCard = handed
+      .getByTestId('prospecting-card')
+      .filter({ hasText: PROSPECTING_ADDRESS });
+    await expect(handedCard, 'La carte n’est pas passée dans « Dossier remis »').toBeVisible();
+    await expect(handedCard.getByText(/Remis le \d{2}\/\d{2}/)).toBeVisible();
+    await expect(ready.getByTestId('prospecting-card')).toHaveCount(0);
+
+    // Le statut est en base : il tient au rechargement.
+    await page.reload();
+    await expect(
+      page
+        .getByTestId('prospecting-column-handed')
+        .getByTestId('prospecting-card')
+        .filter({ hasText: PROSPECTING_ADDRESS }),
+    ).toBeVisible();
+  });
+
+  await test.step('Suivi et Prospection tiennent sur tablette (768 × 1024)', async () => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    const overflow = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+    await expect(page.getByTestId('prospecting-card').first()).toBeVisible();
+    expect(await overflow(), 'La page Prospection déborde sur tablette').toBeLessThanOrEqual(0);
+    await page.goto('/suivi');
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await expect(row.getByText('1 remis')).toBeVisible();
+    expect(await overflow(), 'Le Suivi déborde sur tablette').toBeLessThanOrEqual(0);
+    await page.setViewportSize({ width: 1280, height: 720 });
   });
 });
 

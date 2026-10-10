@@ -7,6 +7,10 @@ import type { ProspectingRow } from '@/features/competitor-locator/services/buil
 
 // Mission 75 — dossier conclu « mandat signé » : les concurrents retenus deviennent une liste de
 // propriétaires à aller voir. Écran conseiller.
+// Mission 86 — la liste complète vit sur la page Prospection : ici, les trois premières lignes
+// et le lien qui y mène, filtré sur ce bien.
+const PREVIEW_ROWS = 3;
+
 export function ProspectingSection({
   projectId,
   rows,
@@ -32,7 +36,15 @@ export function ProspectingSection({
       </div>
       <CompetitorLocatorWatcher projectId={projectId} showNotice />
       {rows.length > 0 ? (
-        <ProspectingList rows={rows} filesProjectId={projectId} />
+        <>
+          <ProspectingList rows={rows.slice(0, PREVIEW_ROWS)} filesProjectId={projectId} />
+          <Link
+            href={`/prospection?bien=${projectId}`}
+            className="text-sm font-semibold text-brand-deep hover:underline stage:text-brand"
+          >
+            Tout voir dans Prospection →
+          </Link>
+        </>
       ) : (
         <p className={hintText}>Aucun concurrent retenu dans ce dossier.</p>
       )}

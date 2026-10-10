@@ -142,7 +142,6 @@ chaque mission validée.
 - 21/09 · M51 · Chaque écran s'ouvre en haut ; l'adresse désigne l'écran affiché ; le plein écran défile.
 - 22/09 · M51 · Valeur perçue et durée en devine-puis-révèle : le marché ne s'affiche qu'après la réponse du vendeur.
 - 22/09 · M52 · La liste du Live ne contient que des dossiers prêts.
-- 22/09 · M53 · Dernier écran : « Sur quel prix partons-nous ? », champ vide à l'ouverture, jamais pré-rempli ; le remplir vaut accord.
 - 24/09 · M58 · Aucun champ de saisie conseiller sur un écran montré au vendeur : l'analyse du conseiller y est affichée.
 - 24/09 · M58 · Un seul vocabulaire, partout : Marché calculé · Analyse du conseiller · Prix conseillé · Prix de commercialisation.
 - 24/09 · M58 · Photos des concurrents telles quelles : jamais de retrait de filigrane, jamais le logo de l'agence sur la photo d'un confrère.
@@ -158,6 +157,13 @@ chaque mission validée.
 - 09/10 · M82 · Corriger le prix du vendeur en revenant sur sa page fait recalculer les écarts à la prochaine entrée sur « Analyse des prix ».
 - 09/10 · M82 · « Analyse des prix » n'est jamais vide : s'il reste une étape sautée, « Il reste à passer : Concurrent 3 (…) » avec « Y aller », qui ouvre le concurrent là où il s'est arrêté ; la valeur perçue manquante y figure en premier ; tout passé mais analyse non chargée : « Afficher l'analyse ».
 - 09/10 · M82 · Sur cet écran, un concurrent se nomme par son libellé neutre (type · pièces · surface · commune) : jamais le titre du portail, jamais l'adresse, aucun prix (M51, M75).
+- 10/10 · M85 · « Sur quel prix partons-nous ? » reste l'écran du prix : champ vide à l'ouverture, jamais pré-rempli, le remplir vaut accord ; ce n'est plus le dernier écran (remplace M53, « dernier écran »).
+- 10/10 · M85 · Dernier écran du Live, « Prêt à lancer ? » : « Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix ? », dix grands boutons, rien de pré-sélectionné.
+- 10/10 · M85 · De 1 à 9 : « Qu'est-ce qui vous manquerait pour être à 10 ? », réponse du vendeur notée par le conseiller, facultative ; à 10 : « Alors, on lance la vente ? » ; le chiffre se change à volonté.
+- 10/10 · M85 · Sur cet écran, aucun montant sauf le prix de commercialisation enregistré pendant la séance ; après un rechargement, la question s'affiche sans le montant ; aucune formule de pression.
+- 10/10 · M85 · La note part en fond à chaque chiffre touché, avec la réponse déjà notée ; la barre dit « Enregistrement… » puis « Note enregistrée ».
+- 10/10 · M85 · « Terminer le rendez-vous » est sur l'écran de la note et reste possible sans note ; avec une note, il enregistre l'état final avant d'ouvrir la conclusion, et un échec retient sur l'écran avec son message.
+- 10/10 · M85 · L'écran du prix avance par « Valider et continuer », qui enregistre d'abord un prix saisi et non enregistré ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien (remplace M81, « Terminer le rendez-vous enregistre d'abord le prix »).
 
 ## Conclusion & Suivi
 
@@ -176,7 +182,6 @@ chaque mission validée.
 - 09/10 · M81 · La conclusion s'ouvre pour un dossier en préparation, prêt ou conclu (liste d'autorisation) : jamais de 404 pour un rendez-vous réellement mené ; un dossier archivé reste fermé.
 - 09/10 · M81 · Conclure un dossier en préparation le fait passer directement dans le Suivi (`draft` → `meeting_completed`), dans la même écriture que l'issue ; la bascule en « prêt » reste automatique (M52) et lancer le Live d'un dossier en préparation reste permis.
 - 09/10 · M81 · L'action ne renvoie vers le Suivi que si le dossier y est entré ; sinon elle le dit.
-- 09/10 · M81 · « Terminer le rendez-vous » enregistre d'abord un prix de commercialisation saisi et non enregistré, puis ouvre la conclusion ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien.
 - 09/10 · M82 · Carte du Suivi : « Le chemin parcouru pendant le rendez-vous » — prix du vendeur en début de rendez-vous, prix de commercialisation, écart en € et en % du prix de départ (arrondi à l'entier) ; côté conseiller seulement ; une valeur absente reste absente (« Non renseigné », écart « — »).
 - 09/10 · M83 · Liste de tournée : chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier » ; un particulier l'emporte sur une exclusivité ; les boutons de correction ne s'impriment pas (remplace M75, « agence ou particulier » et « exclusivité » n'y sont pas).
 - 09/10 · M84 · Dossier conclu « mandat signé » : « Préparer le dossier » sur chaque concurrent de la liste de tournée, sans lien d'annonce à renseigner ; exclusivité → version confrère (une page A4), particulier ou mandat simple → version propriétaire (A4 recto-verso), inconnu → le conseiller choisit.
@@ -191,6 +196,9 @@ chaque mission validée.
 - 09/10 · M84 · La photo de notre bien figure sur les deux versions (la première de la fiche par défaut, le conseiller en choisit une autre) ; sans photo, l'écran d'édition dit « Ajoutez une photo du bien vendeur » ; en face, la carte du concurrent n'a jamais de photo.
 - 09/10 · M84 · Le dossier est signé par le conseiller connecté (nom, photo, téléphone, e-mail) avec un QR code vers sa carte de contact (vCard), tracé sans image ni service extérieur.
 - 09/10 · M84 · Liste de tournée : le conseiller confirme l'adresse d'un concurrent dans ACM — « C'est la bonne adresse », « Localiser moi-même », « Saisir l'adresse » ; elle porte la provenance « vous », il peut la corriger, et aucune relecture du Localisateur ne la réécrit (précise M75, « le Localisateur décide de la certitude »). Une adresse saisie n'est pas géocodée.
+- 10/10 · M85 · La première note, la dernière et la réponse « ce qui manquerait » sont figées à la conclusion, pour toutes les issues, comme la valeur perçue (M56) : lues dans le résumé du Live par `conclude_meeting`, jamais réécrites.
+- 10/10 · M85 · La première note ne se réécrit jamais, quoi qu'envoie le navigateur ; la réponse « ce qui manquerait » est gardée quand le vendeur passe à 10.
+- 10/10 · M85 · Carte du Suivi : « Prêt à lancer : 7/10 → 10/10 » (un seul chiffre si la note n'a pas changé) et « Ce qui manquait pour être à 10 » ; sans note, la carte n'en dit rien ; côté conseiller seulement.
 
 ## Agence & équipe
 
@@ -257,6 +265,7 @@ chaque mission validée.
 - 07/10 · M76 · Une fixture capturée dans un vrai navigateur est nettoyée des scripts tiers, des styles et des identifiants de suivi avant d'être commitée ; les données lues restent intactes.
 - 07/10 · M76 · Non-régression des photos : chaque fixture existante doit donner au moins les mêmes photos qu'avant, jamais un logo ni la photo d'un autre bien.
 - 09/10 · M83 · Écart accepté à M48 : la fixture Green Acres de Grasse a été récupérée à l'adresse propre de l'annonce par le robot déclaré d'ACM, puis nettoyée (M76) ; les pièges mesurés sans fixture (badge voisin, `isExclusive` Figaro) sont testés sur des extraits écrits d'après les structures relevées.
-- 09/10 · M84 · Le gel (M63) est levé pour la mission 84, à la demande de Laurent : c'est la dernière fonctionnalité avant le pilote.
+- 10/10 · M85 · Le gel (M63) a été levé deux fois à la demande de Laurent : pour la mission 84, puis pour la mission 85 (remplace M84, « la dernière fonctionnalité avant le pilote »).
 - 09/10 · M84 · Dépendance ajoutée : `qrcode` (QR code de la carte de contact).
-- 09/10 · M84 · Docker arrêté : `database.types.ts` a été complété à la main d'après la migration ; à régénérer par `npm run gen:types` à la prochaine occasion.
+- 10/10 · M85 · `database.types.ts` est de nouveau généré par `npm run gen:types` sur la base locale à jour (remplace M84, complété à la main).
+- 10/10 · M85 · La note de 1 à 10 n'a pas de statistiques agrégées : plus tard, avec assez de rendez-vous réels (M56).

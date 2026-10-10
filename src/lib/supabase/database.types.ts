@@ -267,6 +267,10 @@ export type Database = {
           price_drop_percentage: number | null
           project_id: string
           property_type: string | null
+          prospecting_declined_at: string | null
+          prospecting_handed_at: string | null
+          prospecting_mandate_at: string | null
+          prospecting_meeting_at: string | null
           rooms_count: number | null
           sold_by: string | null
           sold_by_source: string | null
@@ -322,6 +326,10 @@ export type Database = {
           price_drop_percentage?: number | null
           project_id: string
           property_type?: string | null
+          prospecting_declined_at?: string | null
+          prospecting_handed_at?: string | null
+          prospecting_mandate_at?: string | null
+          prospecting_meeting_at?: string | null
           rooms_count?: number | null
           sold_by?: string | null
           sold_by_source?: string | null
@@ -377,6 +385,10 @@ export type Database = {
           price_drop_percentage?: number | null
           project_id?: string
           property_type?: string | null
+          prospecting_declined_at?: string | null
+          prospecting_handed_at?: string | null
+          prospecting_mandate_at?: string | null
+          prospecting_meeting_at?: string | null
           rooms_count?: number | null
           sold_by?: string | null
           sold_by_source?: string | null
