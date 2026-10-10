@@ -173,6 +173,8 @@ export function LiveComparativeShell({
     const formData = new FormData();
     formData.set('seller_launch_readiness_first', String(first));
     formData.set('seller_launch_readiness_last', String(score));
+    // La réponse déjà notée part avec le chiffre : passer de 7 à 10 ne la laisse pas en l'air.
+    formData.set('seller_launch_readiness_missing', closing.missing);
     setClosingSave('pending');
     closingSavesRef.current = closingSavesRef.current
       .then(() => persistLiveSellerSummary(projectId, formData))
