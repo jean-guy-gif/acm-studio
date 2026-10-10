@@ -93,5 +93,7 @@ describe('canAdvanceLivePage', () => {
   it('does not gate non-comparable pages', () => {
     expect(canAdvanceLivePage('intro', null, null)).toBe(true);
     expect(canAdvanceLivePage('conclusion', null, null)).toBe(true);
+    // Mission 85 — sans prix ni note, le rendez-vous se termine quand même (M81).
+    expect(canAdvanceLivePage('closing_question', null, null)).toBe(true);
   });
 });

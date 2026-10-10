@@ -13,6 +13,7 @@ import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components
 import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
+import { launchReadinessLabel } from '@/features/meeting-conclusion/services/launch-readiness';
 import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { formatEuro, formatPercent } from '@/lib/format';
@@ -44,6 +45,11 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
   // Mission 82 — du prix du vendeur en début de rendez-vous au prix de commercialisation.
   const sellerStart = conclusion?.sellerPerceivedPrice ?? null;
   const journey = sellerJourneyGap(sellerStart, price);
+  // Mission 85 — la note que le vendeur s'est donnée après le prix, et ce qui lui manquait.
+  const readiness = launchReadinessLabel(
+    conclusion?.launchReadinessFirst ?? null,
+    conclusion?.launchReadinessLast ?? null,
+  );
 
   return (
     <li className={`${card} flex flex-col gap-4 p-5`}>
@@ -116,6 +122,17 @@ export function SuiviCard({ dossier }: { dossier: SuiviDossier }) {
               </span>
             </div>
           ))}
+        </div>
+      ) : null}
+
+      {readiness ? (
+        <div className="flex flex-col gap-1">
+          <span className={metaLabel}>Prêt à lancer&nbsp;: {readiness}</span>
+          {conclusion?.launchReadinessMissing ? (
+            <p className="text-sm whitespace-pre-wrap text-zinc-700 stage:text-white/80">
+              Ce qui manquait pour être à 10&nbsp;: {conclusion.launchReadinessMissing}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

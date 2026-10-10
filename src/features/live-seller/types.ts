@@ -121,6 +121,11 @@ export type LiveSellerSummaryInput = {
   // Mission 39 — Act 1 "Votre bien": does the presentation match the seller's bien?
   seller_property_confirmed: PropertyConfirmed | null;
   seller_property_comment: string | null;
+  // Mission 85 — « où en êtes-vous pour lancer la vente à ce prix ? », de 1 à 10 : la
+  // première note donnée, la dernière, et ce qui manquerait pour être à 10.
+  seller_launch_readiness_first: number | null;
+  seller_launch_readiness_last: number | null;
+  seller_launch_readiness_missing: string | null;
 };
 
 export type LiveSellerSummaryPatch = Partial<LiveSellerSummaryInput>;

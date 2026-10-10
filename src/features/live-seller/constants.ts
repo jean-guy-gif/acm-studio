@@ -85,6 +85,9 @@ export const DANGEROUS_REASON_LABELS: Record<DangerousReason, string> = {
 
 export const MAX_LIVE_COMMENT_LENGTH = 2000;
 export const MAX_LIVE_PRICE = 1_000_000_000;
+// Mission 85 — l'échelle « où en êtes-vous pour lancer la vente à ce prix ? ».
+export const MIN_LAUNCH_READINESS = 1;
+export const MAX_LAUNCH_READINESS = 10;
 export const MAX_ESTIMATED_DAYS_ON_MARKET = 36_500;
 
 // ---------------------------------------------------------------------------

@@ -216,6 +216,9 @@ export const demoAnsweredSummary: LiveSellerSummary = {
   seller_perceived_property_price: 398000,
   seller_property_confirmed: 'yes',
   seller_property_comment: null,
+  seller_launch_readiness_first: null,
+  seller_launch_readiness_last: null,
+  seller_launch_readiness_missing: null,
   created_at: DEMO_AT,
   updated_at: DEMO_AT,
 };

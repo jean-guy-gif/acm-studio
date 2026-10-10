@@ -772,6 +772,9 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          seller_launch_readiness_first: number | null
+          seller_launch_readiness_last: number | null
+          seller_launch_readiness_missing: string | null
           seller_most_dangerous_comment: string | null
           seller_most_dangerous_comparable_id: string | null
           seller_most_dangerous_reason: string | null
@@ -785,6 +788,9 @@ export type Database = {
           created_at?: string
           id?: string
           project_id: string
+          seller_launch_readiness_first?: number | null
+          seller_launch_readiness_last?: number | null
+          seller_launch_readiness_missing?: string | null
           seller_most_dangerous_comment?: string | null
           seller_most_dangerous_comparable_id?: string | null
           seller_most_dangerous_reason?: string | null
@@ -798,6 +804,9 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string
+          seller_launch_readiness_first?: number | null
+          seller_launch_readiness_last?: number | null
+          seller_launch_readiness_missing?: string | null
           seller_most_dangerous_comment?: string | null
           seller_most_dangerous_comparable_id?: string | null
           seller_most_dangerous_reason?: string | null
@@ -1154,6 +1163,9 @@ export type Database = {
           frozen_advisor_analysis: number | null
           frozen_advisor_price: number | null
           frozen_exploitable_competitors: number | null
+          frozen_launch_readiness_first: number | null
+          frozen_launch_readiness_last: number | null
+          frozen_launch_readiness_missing: string | null
           frozen_market_computed: number | null
           frozen_meeting_duration_seconds: number | null
           frozen_retained_competitors: number | null
@@ -1174,6 +1186,9 @@ export type Database = {
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
           frozen_exploitable_competitors?: number | null
+          frozen_launch_readiness_first?: number | null
+          frozen_launch_readiness_last?: number | null
+          frozen_launch_readiness_missing?: string | null
           frozen_market_computed?: number | null
           frozen_meeting_duration_seconds?: number | null
           frozen_retained_competitors?: number | null
@@ -1194,6 +1209,9 @@ export type Database = {
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
           frozen_exploitable_competitors?: number | null
+          frozen_launch_readiness_first?: number | null
+          frozen_launch_readiness_last?: number | null
+          frozen_launch_readiness_missing?: string | null
           frozen_market_computed?: number | null
           frozen_meeting_duration_seconds?: number | null
           frozen_retained_competitors?: number | null
