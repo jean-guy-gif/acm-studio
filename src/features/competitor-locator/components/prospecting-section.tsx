@@ -32,7 +32,7 @@ export function ProspectingSection({
       </div>
       <CompetitorLocatorWatcher projectId={projectId} showNotice />
       {rows.length > 0 ? (
-        <ProspectingList rows={rows} />
+        <ProspectingList rows={rows} filesProjectId={projectId} />
       ) : (
         <p className={hintText}>Aucun concurrent retenu dans ce dossier.</p>
       )}

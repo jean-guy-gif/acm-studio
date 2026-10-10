@@ -1,12 +1,23 @@
+import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
 import { PROSPECTING_STEP_LABELS } from '@/features/competitor-mandate/services/mandate-columns';
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
+import { PrepareFileLinks } from '@/features/prospecting-file/components/prepare-file-links';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 75 — une ligne par concurrent à prospecter : l'adresse et l'étiquette du Localisateur,
 // puis ce que dit l'annonce. Écran CONSEILLER, jamais montré au vendeur. Sobre : la même liste
 // sert à l'écran et à l'impression A4.
-export function ProspectingList({ rows }: { rows: ProspectingRow[] }) {
+//
+// Mission 84 — `filesProjectId` : sur la page du dossier, chaque ligne propose « Préparer le
+// dossier » dès le mandat signé ; absent (liste de tournée imprimable), rien.
+export function ProspectingList({
+  rows,
+  filesProjectId = null,
+}: {
+  rows: ProspectingRow[];
+  filesProjectId?: string | null;
+}) {
   return (
     <ol className="flex flex-col divide-y divide-zinc-200 stage:divide-white/10 print:divide-zinc-300">
       {rows.map((row, index) => {
@@ -37,6 +48,24 @@ export function ProspectingList({ rows }: { rows: ProspectingRow[] }) {
               <div className="py-0.5 print:hidden">
                 <CompetitorMandateLine competitor={row.mandate} />
               </div>
+              {filesProjectId ? (
+                <ConfirmAddressActions
+                  projectId={filesProjectId}
+                  competitorId={row.id}
+                  listingUrl={row.listingUrl}
+                  canAccept={row.canAcceptAddress}
+                  confirmed={row.confirmed && row.address != null}
+                  confirmedByAdvisor={row.confirmedByAdvisor}
+                />
+              ) : null}
+              {filesProjectId ? (
+                <PrepareFileLinks
+                  projectId={filesProjectId}
+                  competitorId={row.id}
+                  step={row.step}
+                  addressConfirmed={row.confirmed && row.address != null}
+                />
+              ) : null}
               {row.title ? (
                 <span className="text-zinc-600 stage:text-white/70 print:text-zinc-800">
                   {row.title}

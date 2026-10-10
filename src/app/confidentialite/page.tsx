@@ -63,8 +63,9 @@ export default function ConfidentialitePage() {
           <h2 className={sectionTitle}>Ce qu’ACM Studio conserve</h2>
           <ul className={list}>
             <li>
-              Le compte du conseiller : adresse e-mail, nom, agence et rôle. L’identité de l’agence
-              : nom, logo, couleurs.
+              Le compte du conseiller : adresse e-mail, nom, agence et rôle et, s’il les renseigne,
+              son téléphone et sa photo. L’identité de l’agence : nom, logo, couleurs et, si elles
+              sont renseignées, adresse postale et carte professionnelle.
             </li>
             <li>
               Les dossiers vendeur : le nom du vendeur et, si le conseiller les saisit, son e-mail
@@ -81,8 +82,19 @@ export default function ConfidentialitePage() {
               Les adresses des biens concurrents : si le conseiller a installé le Localisateur
               Academia (une extension distincte) et y a activé « Partager avec ACM Studio », ACM
               Studio lui transmet l’adresse des annonces des concurrents retenus et conserve ce
-              qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Usage
-              interne de prospection par l’agence : ces adresses ne sont jamais montrées au vendeur.
+              qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Le
+              conseiller peut aussi confirmer cette adresse lui-même, ou la saisir. Usage de
+              prospection par l’agence : ces adresses ne sont jamais montrées au vendeur.
+            </li>
+            <li>
+              Les dossiers de prospection : quand un mandat est signé, le conseiller peut préparer
+              un courrier à imprimer, adressé au propriétaire d’un bien concurrent — à l’adresse
+              confirmée de ce bien — ou au confrère qui le vend. L’adresse sort donc d’ACM Studio
+              sur ce courrier, remis par le conseiller. Le courrier dit que l’adresse a été repérée
+              à partir d’une annonce publiée et donne le numéro à appeler pour ne plus être
+              sollicité ; il ne reprend ni photo du bien concurrent ni nom de son propriétaire, et
+              rien du vendeur. ACM Studio conserve les textes que le conseiller a réécrits ; il
+              n’envoie lui-même aucun courrier.
             </li>
             <li>
               Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la

@@ -94,7 +94,9 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
         return /\.(ts|tsx)$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : [];
       });
     const offenders = SELLER_SIDE.flatMap((dir) => files(join(SRC, dir)))
-      .filter((path) => /locator_|competitor-locator/.test(readFileSync(path, 'utf8')))
+      .filter((path) =>
+        /locator_|competitor-locator|prospecting-file/.test(readFileSync(path, 'utf8')),
+      )
       .map((path) => relative(SRC, path));
     expect(offenders).toEqual([]);
   });

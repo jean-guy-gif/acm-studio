@@ -29,6 +29,8 @@ export default async function AgencyIdentityPage() {
         initialLogoDarkUrl={branding?.logoDarkUrl ?? null}
         initialFont={branding?.fontFamily ?? ''}
         initialSiteUrl={branding?.siteUrl ?? ''}
+        initialPostalAddress={branding?.postalAddress ?? ''}
+        initialProfessionalCard={branding?.professionalCard ?? ''}
       />
     </div>
   );

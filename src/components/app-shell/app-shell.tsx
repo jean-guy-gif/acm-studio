@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { SidebarNav } from '@/components/app-shell/sidebar-nav';
 import { AppLogo } from '@/components/theme/app-logo';
 import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
@@ -62,6 +64,12 @@ export function AppShell({
               <span className="truncate text-xs text-zinc-400 stage:text-white/40">
                 {agencyName}
               </span>
+              <Link
+                href="/profil"
+                className="mt-1 text-xs font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
+              >
+                Mon profil
+              </Link>
             </div>
             <div className="flex items-center justify-between gap-2">
               <AppThemeToggle />

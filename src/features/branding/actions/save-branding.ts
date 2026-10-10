@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { typographyInputSchema } from '@/features/branding/schemas/typography-input';
+import {
+  agencyMentionsInputSchema,
+  typographyInputSchema,
+} from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -76,6 +79,16 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     return { ok: false, error: 'Adresse du site invalide, ou police inconnue.' };
   }
 
+  // Mission 84 — adresse postale et carte professionnelle, pour le pied des dossiers de
+  // prospection. Facultatives ; un texte trop long est refusé.
+  const mentions = agencyMentionsInputSchema.safeParse({
+    postalAddress: formData.get('postal_address') ?? null,
+    professionalCard: formData.get('professional_card') ?? null,
+  });
+  if (!mentions.success) {
+    return { ok: false, error: 'Adresse ou carte professionnelle trop longue.' };
+  }
+
   // Écritures via le client SERVICE ROLE, APRÈS authentification : le chemin est imposé par
   // le serveur (agency_id de l'appelant), jamais fourni par le navigateur. La RLS du bucket
   // reste en défense pour tout accès direct.
@@ -111,6 +124,8 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     text_contrast_adjusted: palette.textContrastAdjusted,
     font_family: typography.data.fontFamily,
     site_url: typography.data.siteUrl,
+    postal_address: mentions.data.postalAddress,
+    professional_card: mentions.data.professionalCard,
     validated_at: now,
     updated_at: now,
     // Ne pas écraser un chemin de logo existant avec null si aucun fichier n'a été redéposé.

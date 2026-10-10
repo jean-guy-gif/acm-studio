@@ -50,6 +50,8 @@ export type Database = {
           logo_dark_path: string | null
           logo_light_path: string | null
           on_brand_text: string | null
+          postal_address: string | null
+          professional_card: string | null
           site_url: string | null
           text_contrast_adjusted: boolean
           updated_at: string
@@ -68,6 +70,8 @@ export type Database = {
           logo_dark_path?: string | null
           logo_light_path?: string | null
           on_brand_text?: string | null
+          postal_address?: string | null
+          professional_card?: string | null
           site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
@@ -86,6 +90,8 @@ export type Database = {
           logo_dark_path?: string | null
           logo_light_path?: string | null
           on_brand_text?: string | null
+          postal_address?: string | null
+          professional_card?: string | null
           site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
@@ -464,6 +470,95 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitor_prospecting_files: {
+        Row: {
+          agency_id: string
+          comparable_id: string
+          contact_hook: string | null
+          created_at: string
+          id: string
+          key_message: string | null
+          letter: string | null
+          photo_path: string | null
+          project_id: string
+          proposal_1: string | null
+          proposal_2: string | null
+          proposal_3: string | null
+          show_prices: boolean | null
+          title: string | null
+          updated_at: string
+          updated_by: string | null
+          version: string
+        }
+        Insert: {
+          agency_id: string
+          comparable_id: string
+          contact_hook?: string | null
+          created_at?: string
+          id?: string
+          key_message?: string | null
+          letter?: string | null
+          photo_path?: string | null
+          project_id: string
+          proposal_1?: string | null
+          proposal_2?: string | null
+          proposal_3?: string | null
+          show_prices?: boolean | null
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version: string
+        }
+        Update: {
+          agency_id?: string
+          comparable_id?: string
+          contact_hook?: string | null
+          created_at?: string
+          id?: string
+          key_message?: string | null
+          letter?: string | null
+          photo_path?: string | null
+          project_id?: string
+          proposal_1?: string | null
+          proposal_2?: string | null
+          proposal_3?: string | null
+          show_prices?: boolean | null
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_prospecting_files_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_prospecting_files_comparable_id_fkey"
+            columns: ["comparable_id"]
+            isOneToOne: false
+            referencedRelation: "comparables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_prospecting_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_prospecting_files_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1007,6 +1102,8 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          phone: string | null
+          photo_path: string | null
           removed_at: string | null
           role: string
           updated_at: string
@@ -1018,6 +1115,8 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          phone?: string | null
+          photo_path?: string | null
           removed_at?: string | null
           role: string
           updated_at?: string
@@ -1029,6 +1128,8 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          phone?: string | null
+          photo_path?: string | null
           removed_at?: string | null
           role?: string
           updated_at?: string
@@ -1435,6 +1536,7 @@ export type Database = {
           project_id: string
           property_tax: number | null
           property_type: string | null
+          public_listing_url: string | null
           rooms_count: number | null
           strengths: string[]
           surface_area: number | null
@@ -1473,6 +1575,7 @@ export type Database = {
           project_id: string
           property_tax?: number | null
           property_type?: string | null
+          public_listing_url?: string | null
           rooms_count?: number | null
           strengths?: string[]
           surface_area?: number | null
@@ -1511,6 +1614,7 @@ export type Database = {
           project_id?: string
           property_tax?: number | null
           property_type?: string | null
+          public_listing_url?: string | null
           rooms_count?: number | null
           strengths?: string[]
           surface_area?: number | null
