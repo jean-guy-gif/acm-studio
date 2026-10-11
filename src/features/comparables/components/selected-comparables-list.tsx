@@ -165,7 +165,9 @@ export function SelectedComparablesList({
       ) : null}
 
       {comparables.length === 0 ? (
-        <p className={hintText}>Aucun concurrent retenu. Retenez les concurrents pertinents ci-dessous.</p>
+        <p className={hintText}>
+          Aucun concurrent retenu. Retenez les concurrents pertinents ci-dessous.
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable, index) => (

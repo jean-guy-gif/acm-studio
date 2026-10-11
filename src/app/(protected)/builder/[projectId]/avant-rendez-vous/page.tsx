@@ -1,3 +1,7 @@
+import {
+  countFieldsToVerify,
+  importedToVerifyLabel,
+} from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -10,6 +14,7 @@ import {
   pageSubtitle,
   pageTitle,
   sectionTitle,
+  link,
 } from '@/components/ui/styles';
 import { MarketAndDecision } from '@/features/before-meeting/components/market-and-decision';
 import { MarketGlanceCard } from '@/features/before-meeting/components/market-glance-card';
@@ -123,6 +128,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   const analysis = presentation.marketAnalysis;
 
   const retained = comparables.filter((comparable) => comparable.is_selected);
+  const toVerifyLabel = importedToVerifyLabel(countFieldsToVerify(property, comparables));
   const glance = buildMarketGlance(
     retained.map((comparable) => toGlanceCompetitor(comparable, generatedAt)),
   );
@@ -242,6 +248,23 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
               );
             })}
           </ul>
+          {/* Mission 97 — ce qui vient d'un import et n'a pas été relu : compté, jamais bloquant. */}
+          {toVerifyLabel ? (
+            <p
+              data-testid="imported-to-verify"
+              className="text-sm text-amber-700 stage:text-amber-300"
+            >
+              {toVerifyLabel} —{' '}
+              <Link href={`/builder/${projectId}/property`} className={link}>
+                le bien vendeur
+              </Link>{' '}
+              ou{' '}
+              <Link href={`/builder/${projectId}/comparables`} className={link}>
+                les concurrents
+              </Link>
+              .
+            </p>
+          ) : null}
         </div>
         <span className={`${ready ? badgeSelected : badgeRejected} px-3 py-1 text-sm`}>
           {ready ? 'Prêt' : 'Presque prêt'}

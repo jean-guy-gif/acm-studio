@@ -23,6 +23,7 @@ export function PropertyLocationFields({
         label="Quartier"
         value={district}
         onChange={(value) => onField('district', value)}
+        field="district"
         error={errors.district}
       />
       <div className="grid gap-3 sm:grid-cols-2">
@@ -32,6 +33,7 @@ export function PropertyLocationFields({
           step={1}
           min={-1}
           onChange={(value) => onField('floor', value)}
+          field="floor"
           error={errors.floor}
         />
         <NumberField
@@ -40,6 +42,7 @@ export function PropertyLocationFields({
           step={1}
           min={0}
           onChange={(value) => onField('building_floors', value)}
+          field="building_floors"
           error={errors.building_floors}
         />
       </div>

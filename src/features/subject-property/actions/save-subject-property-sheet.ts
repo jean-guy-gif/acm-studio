@@ -1,5 +1,9 @@
 'use server';
 
+import {
+  SUBJECT_VERIFIABLE_FIELDS,
+  sanitizeFieldsToVerify,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { revalidatePath } from 'next/cache';
 
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
@@ -103,6 +107,11 @@ export async function saveSubjectPropertySheet(
     .upsert(
       {
         ...(loneBound ? withoutRange : { ...withoutRange, advisor_price_min, advisor_price_max }),
+        // Mission 97 — ce qu'il reste à vérifier après un import, revalidé (liste d'autorisation).
+        fields_to_verify: sanitizeFieldsToVerify(
+          parts.property.getAll('fields_to_verify'),
+          SUBJECT_VERIFIABLE_FIELDS,
+        ),
         project_id: projectId,
         agency_id: profile.agency_id,
       },

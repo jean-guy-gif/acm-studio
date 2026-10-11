@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  COMPETITOR_VERIFIABLE_FIELDS,
+  VERIFY_LABEL,
+  sanitizeFieldsToVerify,
+} from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -71,6 +76,10 @@ export function ComparableCard({
   oppositionNote,
 }: ComparableCardProps) {
   const photos = getComparablePhotoUrls(comparable);
+  const toVerify = sanitizeFieldsToVerify(
+    comparable.fields_to_verify ?? [],
+    COMPETITOR_VERIFIABLE_FIELDS,
+  ).length;
   const [photoIndex, setPhotoIndex] = useState(0);
   const acmPricePerSquareMeter = pricePerSquareMeter(comparable.price, comparable.surface_area);
   const gap = surfaceComparison(comparable.surface_area, subjectSurfaceArea);
@@ -140,8 +149,20 @@ export function ComparableCard({
           <span className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
             {comparable.title?.trim() || 'Bien concurrent'}
           </span>
-          <span className={comparable.is_selected ? badgeSelected : badgeNeutral}>
-            {comparable.is_selected ? 'Retenu' : 'Écarté'}
+          <span className="flex flex-wrap items-center gap-1.5">
+            {/* Mission 97 — des champs importés restent à relire : la fiche du concurrent les montre. */}
+            {toVerify > 0 ? (
+              <Link
+                href={`/builder/${comparable.project_id}/comparables/${comparable.id}/edit`}
+                data-testid="competitor-to-verify"
+                className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-amber-800 stage:bg-amber-400/20 stage:text-amber-200"
+              >
+                {VERIFY_LABEL} · {toVerify}
+              </Link>
+            ) : null}
+            <span className={comparable.is_selected ? badgeSelected : badgeNeutral}>
+              {comparable.is_selected ? 'Retenu' : 'Écarté'}
+            </span>
           </span>
         </div>
 

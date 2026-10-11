@@ -32,7 +32,8 @@ const STEPS = [
   {
     href: (id: string) => `/builder/${id}/comparables`,
     title: 'Concurrents',
-    description: 'Chercher les biens en vente qui ressemblent au vôtre, les retenir ou les écarter.',
+    description:
+      'Chercher les biens en vente qui ressemblent au vôtre, les retenir ou les écarter.',
   },
   // Mission 91 — analyse, positionnement et présentation vendeur tiennent sur un seul écran.
   {

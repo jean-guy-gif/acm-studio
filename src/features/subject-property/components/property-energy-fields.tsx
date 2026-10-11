@@ -31,6 +31,7 @@ export function PropertyEnergyFields({
           label="Classe DPE"
           value={energyRating}
           onChange={(value) => onField('energy_rating', value)}
+          field="energy_rating"
           options={DPE_CLASSES.map((value) => ({ value, label: value }))}
           error={errors.energy_rating}
         />
@@ -38,6 +39,7 @@ export function PropertyEnergyFields({
           label="Classe GES"
           value={gesRating}
           onChange={(value) => onField('ges_rating', value)}
+          field="ges_rating"
           options={GES_RATINGS.map((value) => ({ value, label: value }))}
           error={errors.ges_rating}
         />
@@ -46,6 +48,7 @@ export function PropertyEnergyFields({
         label="Type de chauffage"
         value={heatingType}
         onChange={(value) => onField('heating_type', value)}
+        field="heating_type"
         options={HEATING_TYPES.map((value) => ({ value, label: HEATING_TYPE_LABELS[value] }))}
         error={errors.heating_type}
       />
