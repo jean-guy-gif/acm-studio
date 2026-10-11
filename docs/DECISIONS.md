@@ -23,6 +23,8 @@ chaque mission validée.
 - 22/09 · M52 · Il manque un élément : le conseiller peut déclarer prêt lui-même ; l'outil informe, il ne barre pas la route.
 - 22/09 · M52 · Un dossier prêt reste modifiable : onglet « Prêts » de Préparation, et « Remettre en préparation ».
 - 24/09 · M58 · L'analyse du conseiller (son avis de valeur) se saisit au positionnement, en fin de préparation ; elle n'est pas requise pour être prêt.
+- 11/10 · M89 · Positionnement : le prix calculé s'intitule « Prix des concurrents », champ « Montant (calculé, modifiable) » ; sous « Justification », « Prix souhaité vendeur » et « Analyse du conseiller », la mention « Affiché au vendeur à la fin du Live ».
+- 11/10 · M89 · Sur le positionnement et l'aperçu, « comparables » devient « concurrents » à l'écran (le code garde `comparable`, M63).
 - 05/10 · Stream Estate · Fiche du bien vendeur : ascenseur et piscine (oui / non / non renseigné).
 - 06/10 · M74 · « Analyse des prix » décrit le moins cher et le plus cher par les champs du bien (pièces, surface, quartier ou commune, prix, prix au m²), jamais par le titre de l'annonce ; un champ absent est omis.
 - 08/10 · M77 · Une annonce remplit le type de bien, l'étage et le nombre d'étages : le type se lit dans un segment de l'adresse qui est un type, sinon dans un titre qui n'en nomme qu'un ; deux types (« Maison avec garage ») ne décident rien, le nom de domaine n'est jamais lu, et le titre lui-même n'est écrit nulle part.
@@ -143,7 +145,6 @@ chaque mission validée.
 - 22/09 · M51 · Valeur perçue et durée en devine-puis-révèle : le marché ne s'affiche qu'après la réponse du vendeur.
 - 22/09 · M52 · La liste du Live ne contient que des dossiers prêts.
 - 24/09 · M58 · Aucun champ de saisie conseiller sur un écran montré au vendeur : l'analyse du conseiller y est affichée.
-- 24/09 · M58 · Un seul vocabulaire, partout : Marché calculé · Analyse du conseiller · Prix conseillé · Prix de commercialisation.
 - 24/09 · M58 · Photos des concurrents telles quelles : jamais de retrait de filigrane, jamais le logo de l'agence sur la photo d'un confrère.
 - 06/10 · M72 · Le décor de la scène vit dans sa propre couche rognée : la scène du Live n'est jamais plus large que la fenêtre et ne peut pas être décalée de côté, plein écran compris.
 - 06/10 · M72 · Un nom d'agence long est tronqué avec des points de suspension (nom entier au survol) ; Clair, Plein écran et Quitter restent entiers et cliquables.
@@ -164,6 +165,17 @@ chaque mission validée.
 - 10/10 · M85 · La note part en fond à chaque chiffre touché, avec la réponse déjà notée ; la barre dit « Enregistrement… » puis « Note enregistrée ».
 - 10/10 · M85 · « Terminer le rendez-vous » est sur l'écran de la note et reste possible sans note ; avec une note, il enregistre l'état final avant d'ouvrir la conclusion, et un échec retient sur l'écran avec son message.
 - 10/10 · M85 · L'écran du prix avance par « Valider et continuer », qui enregistre d'abord un prix saisi et non enregistré ; un échec retient sur l'écran avec son message ; un champ vide n'enregistre rien (remplace M81, « Terminer le rendez-vous enregistre d'abord le prix »).
+- 11/10 · M89 · Vocabulaire : Prix des concurrents · Analyse du conseiller · Prix de commercialisation devant le vendeur ; le prix calculé sur les biens en vente s'appelle « Prix des concurrents » partout (positionnement, aperçu, Live, conclusion, Suivi), il reste pré-rempli par le calcul et modifiable ; « Analyse du conseiller » garde son nom (remplace M58, « Marché calculé · … · Prix conseillé »).
+- 11/10 · M89 · Devant le vendeur, un seul prix calculé : « Prix des concurrents », c'est-à-dire le prix validé au positionnement, sinon le calcul courant ; « Marché calculé » ne lui est jamais montré, et les écarts d'« Analyse des prix » se mesurent au prix des concurrents (précise M82).
+- 11/10 · M89 · « Quitter » demande confirmation dans l'écran — « Quitter le rendez-vous ? Vos réponses sont enregistrées. », « Rester » / « Quitter » — sans boîte du navigateur, et mène à la liste `/live`, jamais à la page de préparation.
+- 11/10 · M89 · Le Live parle au vendeur à la 2e personne (« Votre réponse », « Le prix que vous imaginez », « Selon vous, pourquoi ? », « Votre valeur perçue »…) et ne lui montre aucune consigne destinée au conseiller.
+- 11/10 · M89 · Un dossier sans concurrent retenu ne se lance pas depuis `/live` : bouton désactivé, raison dite au conseiller ; ouvert par son adresse, l'écran vendeur reste neutre.
+- 11/10 · M89 · Le Live ne se fige jamais : tout enregistrement attendu par un bouton rend la main en cas d'échec ou après 20 secondes sans réponse, avec « Connexion perdue — touchez Valider pour réessayer » ; un refus du serveur garde son propre message.
+- 11/10 · M89 · Une réponse non enregistrée (enregistrement de fond en cours ou en échec) se dit avant de la perdre : la confirmation de « Quitter » le signale, et recharger ou fermer la page demande la confirmation du navigateur.
+- 11/10 · M89 · `/live` propose « Reprendre (écran N sur M) » pour un Live commencé et « Recommencer depuis le début » en lien secondaire ; un Live jamais commencé garde « Lancer le Live ».
+- 11/10 · M89 · La reprise rouvre là où l'appareil s'était arrêté (un numéro d'écran gardé par l'appareil, rien du dossier), sinon à l'écran qui suit la dernière réponse du vendeur ; le serveur borne toujours l'écran demandé.
+- 11/10 · M89 · La reprise n'exige plus « Votre bien » ni « Un sérieux concurrent ? », que le bouton n'exigeait pas ; trois verrous restent : le prix du vendeur avant tout concurrent (M82), la devinette avant le prix, la durée devinée avant la durée observée.
+- 11/10 · M89 · La question de 1 à 10 dit « à ce prix » seulement si un prix de commercialisation est enregistré, sinon « pour lancer la vente » ; seul le oui/non part vers l'écran, jamais le montant (précise M85).
 
 ## Conclusion & Suivi
 
@@ -211,6 +223,7 @@ chaque mission validée.
 - 10/10 · M86 · Une ligne par dossier : barre de couleur selon le groupe (vert, bleu, gris), bien et date de conclusion, chemin parcouru avec l'écart en %, « Prêt à lancer : 7 → 10/10 », et une seule action selon l'issue.
 - 10/10 · M86 · Mandat signé : « Prospecter · N concurrents → » ouvre la page Prospection filtrée sur ce bien, avec l'avancement dessous ; à relancer : « Relancer → » ouvre le dossier, le téléphone du vendeur s'affiche à côté en lien cliquable, et « Ce qui le retient » dit la réponse du vendeur (M85), sinon le motif du conseiller ; vendu ailleurs ou retiré : aucune action.
 - 10/10 · M86 · Tout ce que montrait la carte du Suivi (chemin parcouru en €, quatre repères, écarts, note et réponse, motif, dates, « Ouvrir le dossier », changement d'issue) se déplie sous « Voir le détail des prix » (précise M82 et M85, « carte du Suivi »).
+- 11/10 · M89 · Côté conseiller (détail des prix du Suivi, écran de conclusion), « Marché calculé » et son écart ne s'affichent que lorsqu'il diffère du prix des concurrents ; le bloc s'intitule « Les repères », prix des concurrents en premier ; le calcul brut reste figé à la conclusion (M53, M56).
 - 10/10 · M86 · Page « Prospection » (`/prospection`), dans le menu entre Suivi et Administration, avec le badge « NOUVEAU » pendant le pilote : tous les concurrents retenus de tous les mandats signés de l'agence, pour toute l'agence (M59) ; chaque carte dit « Pour : [dossier] · [bien] ».
 - 10/10 · M86 · Quatre colonnes : Adresse à confirmer, Prêt à envoyer, Dossier remis, Rendez-vous & mandats ; « à confirmer » et « prêt » se déduisent de l'adresse confirmée ; remis, RDV obtenu, mandat rentré et pas intéressé sont des faits datés, posés par le conseiller, un cran à la fois, le serveur relisant le statut courant.
 - 10/10 · M86 · « Pas intéressé » se note à tout moment avant « mandat rentré » ; la carte sort du tableau vers une liste repliée « Pas intéressés (N) » ; « Annuler » revient d'un cran, et annuler « pas intéressé » rend le concurrent là où il en était.
