@@ -114,6 +114,14 @@ export default function ConfidentialitePage() {
               Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la
               conclusion notée par le conseiller.
             </li>
+            <li>
+              L’historique des relances : quand un vendeur est « à relancer », le conseiller note le
+              motif de la relance, puis chaque relance qu’il fait. ACM Studio conserve la date de la
+              relance, la note d’une ligne que le conseiller peut y joindre et le nom du conseiller
+              qui l’a faite. Cet historique est visible par les seuls membres de l’agence ; il n’est
+              jamais montré au vendeur. ACM Studio n’envoie lui-même aucun message au vendeur : il
+              propose un texte, que le conseiller copie et envoie par ses propres moyens.
+            </li>
           </ul>
           <p className={paragraph}>
             Un dossier vendeur supprimé par le conseiller est archivé : il disparaît de l’outil,

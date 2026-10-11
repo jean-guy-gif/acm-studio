@@ -3,18 +3,20 @@ import { describe, expect, it } from 'vitest';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import {
   averageJourneyGap,
-  concludedAgoLabel,
   daysSince,
   exclusiveLabel,
   exclusiveSignedCount,
   sortSuivi,
   filterSuiviByGroup,
+  filterSuiviByMotive,
+  followUpMotiveCounts,
+  parseFollowUpMotive,
   parseSuiviGroup,
   suiviCounts,
   suiviGroup,
   whatHoldsBack,
 } from '@/features/meeting-conclusion/services/filter-suivi';
-import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import type { ConclusionOutcome, FollowUpMotive } from '@/features/meeting-conclusion/types';
 
 function dossier(
   id: string,
@@ -36,6 +38,8 @@ function dossier(
       launchReadinessMissing: null,
       outcome,
       followUpReason: null,
+      followUpMotive: null,
+      followUpMotiveDetail: null,
       mandateType: null,
       signedAt: null,
       concludedAt: null,
@@ -194,7 +198,80 @@ describe('sortSuivi — les « à relancer » du plus ancien au plus récent', (
   });
 });
 
-describe('« conclu il y a N jours »', () => {
+describe('sortSuivi — du plus ancien CONTACT au plus récent (mission 96)', () => {
+  const dated = (id: string, outcome: ConclusionOutcome, concludedAt: string) => {
+    const base = dossier(id, outcome);
+    return { ...base, conclusion: { ...base.conclusion!, concludedAt } };
+  };
+  const ids = (dossiers: SuiviDossier[]) => dossiers.map((d) => d.project.id);
+
+  it('une relance récente fait passer le dossier derrière un rendez-vous plus récent', () => {
+    const all = [
+      dated('vieux-rdv-relancé-hier', 'follow_up', '2026-08-01T10:00:00Z'),
+      dated('rdv-septembre', 'follow_up', '2026-09-20T10:00:00Z'),
+      dated('signé', 'signed', '2026-10-01T10:00:00Z'),
+      dated('rdv-octobre', 'follow_up', '2026-10-05T10:00:00Z'),
+    ];
+    const lastContacts = new Map<string, string | null>([
+      ['vieux-rdv-relancé-hier', '2026-10-10T09:00:00Z'],
+      ['rdv-septembre', '2026-09-20T10:00:00Z'],
+      ['rdv-octobre', '2026-10-05T10:00:00Z'],
+    ]);
+    expect(ids(sortSuivi(all, lastContacts))).toEqual([
+      'rdv-septembre',
+      'rdv-octobre',
+      'signé',
+      'vieux-rdv-relancé-hier',
+    ]);
+  });
+
+  it('sans dernier contact connu, la date du rendez-vous départage', () => {
+    const all = [
+      dated('a', 'follow_up', '2026-10-02T00:00:00Z'),
+      dated('b', 'follow_up', '2026-10-01T00:00:00Z'),
+    ];
+    expect(ids(sortSuivi(all, new Map([['a', null]])))).toEqual(['b', 'a']);
+  });
+});
+
+describe('le filtre par motif de relance (mission 96)', () => {
+  const withMotive = (id: string, outcome: ConclusionOutcome, motive: FollowUpMotive | null) => {
+    const base = dossier(id, outcome);
+    return { ...base, conclusion: { ...base.conclusion!, followUpMotive: motive } };
+  };
+  const all = [
+    withMotive('a', 'follow_up', 'thinking_price'),
+    withMotive('b', 'follow_up', 'awaiting_estimate'),
+    withMotive('c', 'follow_up', 'thinking_price'),
+    withMotive('d', 'follow_up', null),
+    withMotive('e', 'signed', null),
+  ];
+  const ids = (dossiers: SuiviDossier[]) => dossiers.map((d) => d.project.id);
+
+  it('ne garde que les « à relancer » du motif choisi', () => {
+    expect(ids(filterSuiviByMotive(all, 'thinking_price'))).toEqual(['a', 'c']);
+    expect(ids(filterSuiviByMotive(all, 'other'))).toEqual([]);
+  });
+
+  it('sans motif choisi, rien n’est masqué', () => {
+    expect(filterSuiviByMotive(all, null)).toEqual(all);
+  });
+
+  it('ne propose que les motifs portés par un dossier, avec leur nombre', () => {
+    expect([...followUpMotiveCounts(all)]).toEqual([
+      ['thinking_price', 2],
+      ['awaiting_estimate', 1],
+    ]);
+  });
+
+  it('un motif inconnu dans l’adresse ne filtre rien', () => {
+    expect(parseFollowUpMotive('thinking_price')).toBe('thinking_price');
+    expect(parseFollowUpMotive('hésite')).toBeNull();
+    expect(parseFollowUpMotive(undefined)).toBeNull();
+  });
+});
+
+describe('les jours écoulés', () => {
   const NOW = new Date('2026-10-11T12:00:00Z');
 
   it('compte les jours pleins écoulés', () => {
@@ -203,11 +280,5 @@ describe('« conclu il y a N jours »', () => {
     expect(daysSince('2026-09-20T12:00:00Z', NOW)).toBe(21);
     expect(daysSince(null, NOW)).toBeNull();
     expect(daysSince('pas une date', NOW)).toBeNull();
-  });
-
-  it('accorde le libellé', () => {
-    expect(concludedAgoLabel(0)).toBe('conclu aujourd’hui');
-    expect(concludedAgoLabel(1)).toBe('conclu il y a 1 jour');
-    expect(concludedAgoLabel(21)).toBe('conclu il y a 21 jours');
   });
 });

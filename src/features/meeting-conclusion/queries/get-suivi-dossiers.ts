@@ -2,7 +2,11 @@ import 'server-only';
 
 import type { PreparationProperty } from '@/features/projects/queries/get-preparation-dossiers';
 import type { Project } from '@/features/projects/types';
-import { isMandateType, type MeetingConclusion } from '@/features/meeting-conclusion/types';
+import {
+  isFollowUpMotive,
+  isMandateType,
+  type MeetingConclusion,
+} from '@/features/meeting-conclusion/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -53,7 +57,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
     supabase
       .from('project_meeting_conclusions')
       .select(
-        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, mandate_type, signed_at, concluded_at, outcome_changed_at',
+        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, mandate_type, signed_at, concluded_at, outcome_changed_at',
       )
       .in('project_id', ids)
       .eq('agency_id', agencyId),
@@ -92,6 +96,8 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       launchReadinessMissing: row.frozen_launch_readiness_missing,
       outcome: (row.outcome as MeetingConclusion['outcome']) ?? null,
       followUpReason: row.follow_up_reason,
+      followUpMotive: isFollowUpMotive(row.follow_up_motive) ? row.follow_up_motive : null,
+      followUpMotiveDetail: row.follow_up_motive_detail,
       mandateType: isMandateType(row.mandate_type) ? row.mandate_type : null,
       signedAt: row.signed_at,
       concludedAt: row.concluded_at,

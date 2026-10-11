@@ -14,12 +14,20 @@ import {
   link,
   metaLabel,
 } from '@/components/ui/styles';
+import { FollowUpContactForm } from '@/features/meeting-conclusion/components/follow-up-contact-form';
+import { FollowUpHistory } from '@/features/meeting-conclusion/components/follow-up-history';
+import { FollowUpMessage } from '@/features/meeting-conclusion/components/follow-up-message';
+import { SellerSaidBlock } from '@/features/meeting-conclusion/components/seller-said-block';
 import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components/conclusion-amounts-panel';
 import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
+import type { DossierFollowUp } from '@/features/meeting-conclusion/services/dossier-follow-up';
 import {
-  concludedAgoLabel,
+  FOLLOW_UP_DUE_LABEL,
+  lastContactLabel,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
+import {
   suiviGroup,
   whatHoldsBack,
   type SuiviGroup,
@@ -31,6 +39,7 @@ import {
 import {
   MANDATE_TYPE_LABELS,
   OUTCOME_LABELS,
+  followUpMotiveLabel,
   type ConclusionOutcome,
 } from '@/features/meeting-conclusion/types';
 import { shortDate } from '@/features/prospecting/services/prospecting-status';
@@ -68,13 +77,13 @@ export type SuiviProspecting = { count: number; progress: string | null };
 export function SuiviRow({
   dossier,
   prospecting,
-  concludedDaysAgo = null,
+  followUp,
 }: {
   dossier: SuiviDossier;
   prospecting: SuiviProspecting | null;
-  // Mission 90 — pour un vendeur « à relancer » : depuis combien de jours le rendez-vous est
-  // conclu (calculé par la page, côté serveur).
-  concludedDaysAgo?: number | null;
+  // Mission 96 — ce que le vendeur a dit, l'historique des relances, le délai depuis le dernier
+  // contact et le message proposé (calculés par la page, côté serveur).
+  followUp: DossierFollowUp;
 }) {
   const [open, setOpen] = useState(false);
   const { project, property, conclusion } = dossier;
@@ -102,6 +111,15 @@ export function SuiviRow({
   const changedDate = longDate(conclusion?.outcomeChangedAt ?? null);
   const detailsId = `suivi-details-${project.id}`;
   const missingMandateType = outcome === 'signed' && conclusion?.mandateType == null;
+  // Mission 96 — le motif de relance ; un « à relancer » d'avant la mission n'en a pas.
+  const motiveLabel =
+    outcome === 'follow_up'
+      ? followUpMotiveLabel(
+          conclusion?.followUpMotive ?? null,
+          conclusion?.followUpMotiveDetail ?? null,
+        )
+      : null;
+  const missingMotive = outcome === 'follow_up' && conclusion?.followUpMotive == null;
 
   return (
     <li
@@ -130,13 +148,27 @@ export function SuiviRow({
                   {MANDATE_TYPE_LABELS[conclusion.mandateType]}
                 </span>
               ) : null}
+              {/* Mission 96 — pourquoi relancer, et la pastille au-delà de 7 jours sans contact. */}
+              {motiveLabel ? (
+                <span data-testid="follow-up-motive" className={badgeNeutral}>
+                  {motiveLabel}
+                </span>
+              ) : null}
+              {followUp.due ? (
+                <span
+                  data-testid="follow-up-due"
+                  className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold whitespace-nowrap text-amber-800 stage:bg-amber-400/20 stage:text-amber-200"
+                >
+                  {FOLLOW_UP_DUE_LABEL}
+                </span>
+              ) : null}
             </div>
             <span className="text-sm text-zinc-500 stage:text-white/60">
               {[
                 bien ?? 'Bien vendeur non renseigné',
-                // Un vendeur à relancer : ce qui compte, c'est depuis quand il attend.
-                group === 'follow_up' && concludedDaysAgo != null
-                  ? concludedAgoLabel(concludedDaysAgo)
+                // Un vendeur à relancer : ce qui compte, c'est depuis quand on ne l'a pas contacté.
+                group === 'follow_up' && followUp.lastContactDays != null
+                  ? lastContactLabel(followUp.lastContactDays)
                   : `conclu le ${shortDate(concluded)}`,
                 // Mission 95 — la durée mesurée du Live, quand elle l'a été. Écran conseiller.
                 ...(liveDuration ? [liveDuration] : []),
@@ -255,6 +287,11 @@ export function SuiviRow({
             Un mandat signé avant la mission n'a pas de type : on le dit, et on propose de le
             compléter — aucun type n'est inventé. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3">
+          {missingMotive ? (
+            <span className="text-xs font-semibold text-amber-700 stage:text-amber-300">
+              Motif de relance non renseigné
+            </span>
+          ) : null}
           {missingMandateType ? (
             <span className="text-xs font-semibold text-amber-700 stage:text-amber-300">
               Type de mandat non renseigné
@@ -265,9 +302,16 @@ export function SuiviRow({
             currentOutcome={outcome}
             currentReason={conclusion?.followUpReason ?? null}
             currentMandateType={conclusion?.mandateType ?? null}
+            currentMotive={conclusion?.followUpMotive ?? null}
+            currentMotiveDetail={conclusion?.followUpMotiveDetail ?? null}
             knownPrice={price}
-            openLabel={missingMandateType ? 'Compléter' : 'Changer l’issue'}
+            openLabel={missingMandateType || missingMotive ? 'Compléter' : 'Changer l’issue'}
           />
+          {/* Mission 96 — consigner une relance, préparer le message : « à relancer » seulement. */}
+          {outcome === 'follow_up' ? <FollowUpContactForm projectId={project.id} /> : null}
+          {outcome === 'follow_up' && followUp.message ? (
+            <FollowUpMessage proposed={followUp.message} />
+          ) : null}
         </div>
 
         {open ? (
@@ -275,6 +319,9 @@ export function SuiviRow({
             id={detailsId}
             className="flex flex-col gap-4 border-t border-zinc-100 p-4 stage:border-white/10"
           >
+            {followUp.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
+            <FollowUpHistory contacts={followUp.contacts} />
+
             {conclusion ? (
               <div className="flex flex-col gap-1">
                 <div className={`${metaLabel} mb-1`}>Le chemin parcouru pendant le rendez-vous</div>

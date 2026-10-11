@@ -13,7 +13,14 @@ import {
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { ConclusionAmountsPanel } from '@/features/meeting-conclusion/components/conclusion-amounts-panel';
 import { ConclusionDecisionForm } from '@/features/meeting-conclusion/components/conclusion-decision-form';
+import { FollowUpHistory } from '@/features/meeting-conclusion/components/follow-up-history';
+import { SellerSaidBlock } from '@/features/meeting-conclusion/components/seller-said-block';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import {
+  emptySellerInsights,
+  getSellerInsights,
+} from '@/features/meeting-conclusion/queries/get-seller-insights';
+import { buildDossierFollowUp } from '@/features/meeting-conclusion/services/dossier-follow-up';
 import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
 import { resolveConclusionAmounts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -37,14 +44,30 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
     notFound();
   }
 
-  const [presentation, conclusion] = await Promise.all([
+  const [presentation, conclusion, insightsByProject] = await Promise.all([
     loadLivePresentation(projectId),
     getConclusion(projectId),
+    getSellerInsights([projectId]),
   ]);
   const amounts = resolveConclusionAmounts(conclusion, presentation?.live ?? null);
   const alreadyConcluded = project.status === 'meeting_completed';
   // Mission 95 — la durée mesurée du Live (début → « Terminer »), quand elle l'a été.
   const liveDuration = liveDurationLabel(project.live_started_at, project.live_ended_at);
+  // Mission 96 — sur un dossier conclu : ce que le vendeur a dit, et l'historique des relances.
+  // Le message de relance se prépare depuis le Suivi : aucune signature n'est demandée ici.
+  const insights = insightsByProject.get(projectId) ?? emptySellerInsights();
+  const followUp = alreadyConcluded
+    ? buildDossierFollowUp({
+        conclusion,
+        liveStartedAt: project.live_started_at,
+        liveEndedAt: project.live_ended_at,
+        competitors: insights.competitors,
+        dangerous: insights.dangerous,
+        contacts: insights.contacts,
+        now: new Date(),
+        signature: { advisorFirstName: null, agencyName: null },
+      })
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,12 +101,21 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
         }}
       />
 
+      {followUp?.sellerSaid || (followUp?.contacts.length ?? 0) > 0 ? (
+        <div className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
+          {followUp?.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
+          <FollowUpHistory contacts={followUp?.contacts ?? []} />
+        </div>
+      ) : null}
+
       <div className={`${card} p-5 sm:p-6`}>
         <ConclusionDecisionForm
           projectId={projectId}
           initialOutcome={conclusion?.outcome ?? null}
           initialReason={conclusion?.followUpReason ?? null}
           initialMandateType={conclusion?.mandateType ?? null}
+          initialMotive={conclusion?.followUpMotive ?? null}
+          initialMotiveDetail={conclusion?.followUpMotiveDetail ?? null}
           knownPrice={conclusion?.commercializationPrice ?? null}
         />
       </div>
