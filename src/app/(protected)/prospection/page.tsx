@@ -117,10 +117,7 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
             </div>
             <div className="flex min-w-56 flex-col rounded-xl bg-brand-deep px-4 py-3 text-white">
               <span className={tileNumber}>{counters.mandates}</span>
-              <span className="text-xs text-white/70">
-                Mandat{counters.mandates > 1 ? 's' : ''} rentré{counters.mandates > 1 ? 's' : ''}{' '}
-                grâce à la prospection
-              </span>
+              <span className="text-xs text-white/70">Mandats rentrés (déclarés)</span>
             </div>
           </div>
 

@@ -5,10 +5,10 @@ import { formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableOutlier[] }) {
   return (
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
-      <h2 className={sectionTitle}>Comparables atypiques</h2>
+      <h2 className={sectionTitle}>Concurrents atypiques</h2>
       {outliers.length === 0 ? (
         <p className={hintText}>
-          Aucun comparable atypique : tous les prix au m² sont proches de la médiane.
+          Aucun concurrent atypique : tous les prix au m² sont proches de la médiane.
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">

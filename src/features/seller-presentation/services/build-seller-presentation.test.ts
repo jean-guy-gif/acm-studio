@@ -46,7 +46,6 @@ function makeProperty(overrides: Partial<SubjectProperty> = {}): SubjectProperty
     postal_code: '06600',
     advisor_price_min: null,
     advisor_price_max: null,
-    public_listing_url: null,
     property_type: 'appartement',
     surface_area: 52,
     land_area: null,
@@ -442,13 +441,11 @@ describe('buildSellerPresentation — warnings', () => {
     );
   });
 
-  it('raises vigilance alerts (few comparables, no decision, seller price missing)', () => {
+  it('raises vigilance alerts (few comparables, no decision)', () => {
     const c = codes(
       input({ comparables: [comp('a', 5000), comp('b', 6000)], savedPositioning: null }),
     );
-    expect(c).toEqual(
-      expect.arrayContaining(['few_comparables', 'decision_not_saved', 'seller_price_missing']),
-    );
+    expect(c).toEqual(expect.arrayContaining(['few_comparables', 'decision_not_saved']));
   });
 
   it('raises an outdated-decision alert', () => {

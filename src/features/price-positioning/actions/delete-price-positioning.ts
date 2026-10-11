@@ -38,6 +38,6 @@ export async function deletePricePositioning(projectId: string): Promise<DeleteP
     return { ok: false, error: 'La suppression a échoué. Réessayez.' };
   }
 
-  revalidatePath(`/builder/${projectId}/comparables/positioning`);
+  revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
   return { ok: true };
 }

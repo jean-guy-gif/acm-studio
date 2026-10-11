@@ -77,8 +77,8 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           <Link href={`/builder/${projectId}/comparables/new`} className={btnSecondary}>
             Ajouter un bien
           </Link>
-          <Link href={`/builder/${projectId}/comparables/analysis`} className={btnSecondary}>
-            Voir l’analyse
+          <Link href={`/builder/${projectId}/avant-rendez-vous`} className={btnSecondary}>
+            Avant le rendez-vous →
           </Link>
         </div>
       </div>

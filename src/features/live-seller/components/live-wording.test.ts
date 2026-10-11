@@ -84,3 +84,12 @@ describe('la liste du Live (écran conseiller)', () => {
     expect(actions).toContain('Recommencer depuis le début');
   });
 });
+
+describe('le « prix souhaité vendeur » a quitté le Live (mission 91)', () => {
+  it('ne se lit plus sur aucun écran du Live : la valeur perçue du début suffit (M82)', () => {
+    const offenders = SELLER_SCREENS.filter((file) =>
+      /souhaité|decision\??\.sellerPrice/.test(shown(file)),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

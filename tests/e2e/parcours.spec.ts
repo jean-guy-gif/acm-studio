@@ -100,7 +100,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   });
 
   await test.step('Fourchette validée : le dossier passe en « prêt »', async () => {
-    await page.goto(`/builder/${projectId}/comparables/positioning`);
+    await page.goto(`/builder/${projectId}/avant-rendez-vous`);
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     await page.goto('/builder?prets=1');

@@ -34,20 +34,11 @@ const STEPS = [
     title: 'Biens concurrents',
     description: 'Importer depuis les portails, rechercher, accepter ou écarter.',
   },
+  // Mission 91 — analyse, positionnement et présentation vendeur tiennent sur un seul écran.
   {
-    href: (id: string) => `/builder/${id}/comparables/analysis`,
-    title: 'Analyse comparative',
-    description: 'Le bien face à ses concurrents, critère par critère.',
-  },
-  {
-    href: (id: string) => `/builder/${id}/comparables/positioning`,
-    title: 'Positionnement prix',
-    description: 'Prix des concurrents, calculé sur le marché et validé par le conseiller.',
-  },
-  {
-    href: (id: string) => `/builder/${id}/presentation`,
-    title: 'Présentation vendeur',
-    description: 'Vérifier la matière préparée avant le rendez-vous.',
+    href: (id: string) => `/builder/${id}/avant-rendez-vous`,
+    title: 'Avant le rendez-vous',
+    description: 'Le marché en un coup d’œil, votre décision, ce que verra le vendeur.',
   },
 ];
 
