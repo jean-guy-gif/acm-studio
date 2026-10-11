@@ -44,6 +44,7 @@ import {
 import type { SubjectProperty } from '@/features/subject-property/types';
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
 import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
+import { useUnsavedChangesGuard } from '@/lib/navigation/use-unsaved-changes-guard';
 import type { SignedPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
 
 type SheetPart = 'property' | 'diagnostics' | 'condominium';
@@ -162,6 +163,9 @@ export function SubjectPropertyImportForm({
   }
 
   const isDirty = dirty.property || dirty.diagnostics || dirty.condominium;
+  // Mission 93 — actualiser, fermer l'onglet ou cliquer dans le menu avec des modifications non
+  // enregistrées demande confirmation. Les deux sorties de la barre, elles, enregistrent d'abord.
+  useUnsavedChangesGuard(isDirty);
 
   async function save(staying: boolean): Promise<boolean> {
     // Une partie que le conseiller n'a pas touchée n'est pas envoyée (voir sheet-form).
@@ -182,6 +186,17 @@ export function SubjectPropertyImportForm({
       setSaveError(
         countSheetErrors(fieldErrors) > 0 ? null : (result.error ?? 'L’enregistrement a échoué.'),
       );
+      return false;
+    }
+    // Mission 93 — fiche enregistrée, sauf la fourchette à une seule borne : l'écran le dit, et
+    // cette saisie reste « non enregistrée » (on ne part pas chercher des concurrents avec).
+    if (result.notSaved) {
+      setErrors(result.notSaved);
+      setSaveError(null);
+      setDirty({ ...NOTHING_DIRTY, property: true });
+      if (result.becameReady) {
+        setBecameReady(true);
+      }
       return false;
     }
     setErrors(NO_SHEET_ERRORS);

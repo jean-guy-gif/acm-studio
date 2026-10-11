@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
+import { useUnsavedChangesGuard } from '@/lib/navigation/use-unsaved-changes-guard';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
 import {
@@ -133,6 +134,12 @@ export function ProspectingFileEditor({
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
 
+  // Mission 93 — ce qui a été modifié depuis le dernier enregistrement : quitter la page avec
+  // des modifications non enregistrées demande confirmation.
+  const current = JSON.stringify({ texts, showPrices, photoPath, theirChoice });
+  const [savedSnapshot, setSavedSnapshot] = useState(current);
+  useUnsavedChangesGuard(current !== savedSnapshot);
+
   const chooseTheirPhoto = (choice: TheirPhotoChoice) => {
     setTheirChoice(choice);
     setUploadError(null);
@@ -182,6 +189,7 @@ export function ProspectingFileEditor({
         setState({ ok: false, message: result.error });
         return;
       }
+      setSavedSnapshot(current);
       setState(
         result.warning
           ? { ok: false, message: `Enregistré. ${result.warning}` }

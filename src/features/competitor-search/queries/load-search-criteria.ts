@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
+import { completeAdvisorRange } from '@/features/subject-property/services/advisor-range';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -35,6 +36,8 @@ export async function loadSearchCriteria(projectId: string): Promise<LoadedSearc
     return { ok: false, reason: 'no_city' };
   }
 
+  // Mission 93 — la recherche ne reçoit jamais une borne seule : deux bornes, ou pas de fourchette.
+  const range = completeAdvisorRange(property.advisor_price_min, property.advisor_price_max);
   return {
     ok: true,
     profileId: profile.id,
@@ -46,8 +49,8 @@ export async function loadSearchCriteria(projectId: string): Promise<LoadedSearc
       district: property.district,
       surfaceArea: property.surface_area,
       roomsCount: property.rooms_count,
-      advisorPriceMin: property.advisor_price_min,
-      advisorPriceMax: property.advisor_price_max,
+      advisorPriceMin: range.min,
+      advisorPriceMax: range.max,
     },
   };
 }

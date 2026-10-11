@@ -9,6 +9,10 @@ import { validateSubjectPropertyCondominium } from '@/features/subject-property-
 import { normalizeSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/normalize-subject-property-diagnostics';
 import { parseDiagnosticsForm } from '@/features/subject-property-diagnostics/services/parse-diagnostics-form';
 import { validateSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/validate-subject-property-diagnostics';
+import {
+  LONE_BOUND_ERROR,
+  missingRangeBound,
+} from '@/features/subject-property/services/advisor-range';
 import { parseSubjectPropertyForm } from '@/features/subject-property/services/parse-subject-property-form';
 import {
   splitSheetForm,
@@ -19,7 +23,9 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type SaveSubjectPropertySheetResult =
-  | { ok: true; becameReady?: boolean }
+  // `notSaved` (mission 93) : la fiche est enregistrée, sauf le champ désigné — une fourchette
+  // à une seule borne. L'écran le dit et garde la saisie comme « non enregistrée ».
+  | { ok: true; becameReady?: boolean; notSaved?: SheetFieldErrors }
   | { ok: false; error?: string; fieldErrors?: SheetFieldErrors };
 
 // MISSION 77 — UN enregistrement pour toute la fiche : le bien, puis ses diagnostics et sa
@@ -65,8 +71,17 @@ export async function saveSubjectPropertySheet(
       )
     : null;
 
+  // Mission 93 — une borne seule : « Indiquez les deux montants ». Ce champ ne s'enregistre pas ;
+  // le reste de la fiche, si.
+  const parsedProperty = parseSubjectPropertyForm(parts.property);
+  const loneBound = missingRangeBound(
+    parsedProperty.advisor_price_min,
+    parsedProperty.advisor_price_max,
+  );
+  const rangeError: Record<string, string> = loneBound ? { [loneBound]: LONE_BOUND_ERROR } : {};
+
   const fieldErrors: SheetFieldErrors = {
-    property: property.ok ? {} : property.fieldErrors,
+    property: property.ok ? rangeError : { ...rangeError, ...property.fieldErrors },
     diagnostics: diagnostics == null || diagnostics.ok ? {} : diagnostics.fieldErrors,
     condominium: condominium == null || condominium.ok ? {} : condominium.fieldErrors,
   };
@@ -80,11 +95,14 @@ export async function saveSubjectPropertySheet(
 
   // One project has exactly one subject property. Upsert on the unique
   // project_id constraint so two concurrent saves cannot create two rows.
+  // Sans ses deux bornes, la fourchette n'est pas écrite : absente de l'UPSERT, elle garde la
+  // valeur déjà en base.
+  const { advisor_price_min, advisor_price_max, ...withoutRange } = property.value;
   const { data: saved, error } = await supabase
     .from('subject_properties')
     .upsert(
       {
-        ...property.value,
+        ...(loneBound ? withoutRange : { ...withoutRange, advisor_price_min, advisor_price_max }),
         project_id: projectId,
         agency_id: profile.agency_id,
       },
@@ -143,5 +161,12 @@ export async function saveSubjectPropertySheet(
   revalidatePath(`/builder/${projectId}/property`);
   revalidatePath('/builder');
   revalidatePath('/live');
+  if (loneBound) {
+    return {
+      ok: true,
+      becameReady,
+      notSaved: { property: rangeError, diagnostics: {}, condominium: {} },
+    };
+  }
   return { ok: true, becameReady };
 }

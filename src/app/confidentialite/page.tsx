@@ -90,11 +90,16 @@ export default function ConfidentialitePage() {
               Les dossiers de prospection : quand un mandat est signé, le conseiller peut préparer
               un courrier à imprimer, adressé au propriétaire d’un bien concurrent — à l’adresse
               confirmée de ce bien — ou au confrère qui le vend. L’adresse sort donc d’ACM Studio
-              sur ce courrier, remis par le conseiller. Le courrier dit que l’adresse a été repérée
-              à partir d’une annonce publiée et donne le numéro à appeler pour ne plus être
-              sollicité ; il ne reprend ni photo du bien concurrent ni nom de son propriétaire, et
-              rien du vendeur. ACM Studio conserve les textes que le conseiller a réécrits ; il
-              n’envoie lui-même aucun courrier.
+              sur ce courrier, remis par le conseiller. Le courrier adressé à un propriétaire porte
+              une mention légale : le responsable du traitement (l’agence, avec son adresse),
+              l’origine de l’adresse (une annonce publiée), le moyen de s’opposer à tout nouveau
+              contact (le téléphone ou l’e-mail du conseiller) et le droit de saisir la CNIL. Il ne
+              reprend ni le nom du propriétaire, ni rien du vendeur. Une photo du bien concurrent
+              n’y figure que si le conseiller le choisit (« Sans photo » par défaut) : une photo de
+              l’annonce, ou une photo qu’il importe lui-même. Elle est alors copiée dans le stockage
+              de l’agence, et retirée quand le conseiller en choisit une autre ou supprime ce
+              concurrent. ACM Studio conserve les textes que le conseiller a réécrits ; il n’envoie
+              lui-même aucun courrier.
             </li>
             <li>
               Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la
@@ -102,10 +107,25 @@ export default function ConfidentialitePage() {
             </li>
           </ul>
           <p className={paragraph}>
+            Un dossier vendeur supprimé par le conseiller est archivé : il disparaît de l’outil,
+            mais ses données restent conservées jusqu’à leur effacement, fait sur demande (voir «
+            Qui contacter »).
+          </p>
+          <p className={paragraph}>
             Une fiche commerciale en PDF est lue dans le navigateur du conseiller : le fichier n’est
             pas envoyé, seul son texte l’est. Les données d’une agence ne sont visibles que par les
             membres de cette agence. ACM Studio dépose les cookies nécessaires à la connexion et au
             choix du thème, et aucun cookie publicitaire ou de mesure d’audience.
+          </p>
+        </section>
+
+        <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
+          <h2 className={sectionTitle}>Qui est responsable</h2>
+          <p className={paragraph}>
+            L’agence immobilière qui utilise ACM Studio est responsable du traitement des données de
+            ses dossiers : vendeurs, biens, concurrents et prospection. {PUBLISHER_NAME}, éditeur
+            d’ACM Studio, est son sous-traitant : il héberge et traite ces données pour le compte de
+            l’agence.
           </p>
         </section>
 
@@ -129,8 +149,11 @@ export default function ConfidentialitePage() {
         <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
           <h2 className={sectionTitle}>Qui contacter</h2>
           <p className={paragraph}>
-            Pour toute question, ou pour consulter, corriger ou faire supprimer des données qui vous
-            concernent, écrivez à {PUBLISHER_NAME} :{' '}
+            Pour consulter, corriger ou faire supprimer des données qui vous concernent, ou pour
+            vous opposer à un contact, adressez-vous à l’agence concernée, responsable du traitement
+            : ses coordonnées figurent sur le courrier que vous avez reçu. Pour toute autre
+            question, ou si vous ne savez pas quelle agence est concernée, écrivez à{' '}
+            {PUBLISHER_NAME} :{' '}
             <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`} className={link}>
               {PRIVACY_CONTACT_EMAIL}
             </a>
