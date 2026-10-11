@@ -204,4 +204,29 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
       'comparedPrices={advisorRange?.marketReading.prices ?? []}',
     );
   });
+
+  // Décision de Laurent : on ne sait que les baisses CONNUES — le libellé le dit, côté vendeur
+  // comme dans « Avant le rendez-vous », et la ligne disparaît quand aucune n'est connue.
+  it('dit « Baisse de prix connue », jamais « Ont déjà baissé »', () => {
+    const analysis = shown('live-page-analysis.tsx');
+    const glance = readFileSync(
+      join(
+        process.cwd(),
+        'src',
+        'features',
+        'before-meeting',
+        'components',
+        'market-glance-card.tsx',
+      ),
+      'utf8',
+    );
+    for (const source of [analysis, glance]) {
+      expect(source).toContain("label: 'Baisse de prix connue'");
+      expect(source).not.toMatch(/Ont déjà baissé/);
+      // La ligne n'existe que si un nombre de baisses est connu.
+      expect(source).toMatch(
+        /droppedCount != null\) \{\s+figures\.push\(\{\s+label: 'Baisse de prix connue'/,
+      );
+    }
+  });
 });

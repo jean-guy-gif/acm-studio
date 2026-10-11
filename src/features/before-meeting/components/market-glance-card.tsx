@@ -30,7 +30,7 @@ export function MarketGlanceCard({ glance }: { glance: MarketGlance }) {
     });
   }
   if (glance.droppedCount != null) {
-    figures.push({ label: 'Ont déjà baissé', value: `${glance.droppedCount} sur ${count}` });
+    figures.push({ label: 'Baisse de prix connue', value: `${glance.droppedCount} sur ${count}` });
   }
 
   const first = glance.dots[0];

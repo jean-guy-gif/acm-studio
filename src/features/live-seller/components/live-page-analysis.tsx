@@ -137,7 +137,7 @@ export function LivePageAnalysis({
   }
   if (reading.droppedCount != null) {
     figures.push({
-      label: 'Ont déjà baissé leur prix',
+      label: 'Baisse de prix connue',
       value: `${reading.droppedCount} sur ${reading.revealedCount}`,
     });
   }
