@@ -105,7 +105,7 @@ test('un nom d’agence de 60 caractères ne pousse pas les boutons (768 px)', a
   const controls = [
     header.getByRole('button', { name: /Passer en thème/ }),
     header.getByRole('button', { name: 'Plein écran', exact: true }),
-    header.getByRole('link', { name: 'Quitter', exact: true }),
+    header.getByRole('button', { name: 'Quitter', exact: true }),
   ];
   for (const control of controls) {
     const label = (await control.innerText()).trim();
