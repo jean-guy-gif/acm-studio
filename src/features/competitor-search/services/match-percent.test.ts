@@ -138,7 +138,7 @@ describe('gapLine', () => {
       features: { ...FEATURES, location: SUBJECT },
     });
     expect(gapLine(CRITERIA, wider, place(1600))).toBe(
-      'Même ville, à 1,6 km · Plus grand : 78,4\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
+      'Même ville, à 1,6 km · Plus grand : 78\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
     );
   });
 

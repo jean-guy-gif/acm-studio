@@ -19,6 +19,8 @@ import {
   declareProjectReady,
   revertProjectToPreparation,
 } from '@/features/projects/actions/set-project-readiness';
+import { nextDossierStepHref } from '@/features/projects/services/dossier-steps';
+import { ExampleBadge } from '@/features/welcome/components/example-badge';
 import { ArchiveProjectButton } from '@/features/projects/components/archive-project-button';
 import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
 import {
@@ -81,7 +83,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
               </p>
               <p>
                 Complétez un dossier (bien vendeur, au moins trois concurrents exploitables et
-                fourchette validée) : il basculera tout seul ici et dans le Live.
+                décision de prix enregistrée) : il basculera tout seul ici et dans le Live.
               </p>
             </>
           ) : (
@@ -114,6 +116,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                     <span className={ready ? badgeSelected : badgeNeutral}>
                       {ready ? 'Prêt pour le rendez-vous' : 'En préparation'}
                     </span>
+                    {project.is_example ? <ExampleBadge /> : null}
                   </div>
 
                   {/* Le bien — jamais inventé : rien ne s'affiche s'il n'est pas saisi. */}
@@ -127,13 +130,14 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                     </span>
                   )}
 
-                  {/* La fourchette du conseiller — écran conseiller, jamais le vendeur. */}
+                  {/* La décision de prix enregistrée (« Avant le rendez-vous ») — écran conseiller,
+                      jamais le vendeur. */}
                   <span className="text-sm text-zinc-500 stage:text-white/60">
                     {fourchetteText ? (
-                      <>Fourchette conseiller : {fourchetteText}</>
+                      <>Décision de prix : {fourchetteText}</>
                     ) : (
                       <span className="text-amber-700 stage:text-amber-300">
-                        Fourchette non saisie
+                        Décision de prix à enregistrer
                       </span>
                     )}
                   </span>
@@ -162,7 +166,15 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                 </div>
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <Link href={`/builder/${project.id}`} className={btnSecondary}>
+                  {/* Mission 97 — un clic mène à l'étape à faire, pas à une page d'étapes. */}
+                  <Link
+                    href={nextDossierStepHref(project.id, {
+                      status: project.status,
+                      hasProperty: readiness.hasProperty,
+                      exploitableCount: readiness.exploitableCount,
+                    })}
+                    className={btnSecondary}
+                  >
                     Ouvrir le dossier
                   </Link>
                   {ready ? (

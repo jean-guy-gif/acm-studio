@@ -42,6 +42,7 @@ import {
   followUpMotiveLabel,
   type ConclusionOutcome,
 } from '@/features/meeting-conclusion/types';
+import { ExampleBadge } from '@/features/welcome/components/example-badge';
 import { shortDate } from '@/features/prospecting/services/prospecting-status';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { formatEuro, formatPercent } from '@/lib/format';
@@ -134,6 +135,8 @@ export function SuiviRow({
               <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
                 {project.seller_name ?? 'Dossier vendeur'}
               </span>
+              {/* Mission 97 — un dossier d'exemple se dit ; il ne compte dans aucun chiffre. */}
+              {project.is_example ? <ExampleBadge /> : null}
               {outcome ? (
                 <span className={`${OUTCOME_BADGE[outcome]} whitespace-nowrap`}>
                   {OUTCOME_LABELS[outcome]}

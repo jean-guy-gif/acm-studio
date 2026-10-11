@@ -161,7 +161,7 @@ export function gapLine(
   const value = candidate.surfaceArea;
   if (ref != null && ref > 0 && value != null && value > ref + identicalSurfaceTolerance(ref)) {
     parts.push(
-      `Plus grand : ${formatSquareMeters(value, { maxDecimals: 1 })} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
+      `Plus grand : ${formatSquareMeters(value)} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
     );
   }
   if (criteria.roomsCount != null) {

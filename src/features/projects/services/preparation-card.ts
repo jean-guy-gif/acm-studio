@@ -19,6 +19,6 @@ export function advancementSteps(readiness: PreparationReadiness): AdvancementSt
         : `${readiness.exploitableCount} concurrents`,
       done: readiness.exploitableCount >= MIN_READY_COMPARABLES,
     },
-    { label: 'Fourchette', done: readiness.hasPositioning },
+    { label: 'Décision de prix', done: readiness.hasPositioning },
   ];
 }

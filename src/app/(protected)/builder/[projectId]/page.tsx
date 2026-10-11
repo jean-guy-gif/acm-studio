@@ -52,9 +52,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
   const conclusion = project.status === 'meeting_completed' ? await getConclusion(projectId) : null;
-  const prospectingRows = isProspectingOpen(project.status, conclusion?.outcome)
-    ? await getProspectingRows(projectId)
-    : null;
+  // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
+  const prospectingRows =
+    !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
+      ? await getProspectingRows(projectId)
+      : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">

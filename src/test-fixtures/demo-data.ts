@@ -16,6 +16,7 @@ export const demoProject: Project = {
   advisor_id: 'demo',
   seller_name: 'M. et Mme Démo',
   live_rhythm: 'complete',
+  is_example: false,
   live_started_at: null,
   live_ended_at: null,
   seller_email: null,
@@ -60,6 +61,7 @@ export const demoProperty: SubjectProperty = {
   monthly_charges: null,
   property_tax: null,
   watch_points: [],
+  fields_to_verify: [],
   created_at: DEMO_AT,
   updated_at: DEMO_AT,
 };

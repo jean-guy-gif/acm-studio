@@ -119,29 +119,31 @@ describe('la ligne de bilan', () => {
     inseeCode: '06123',
   };
 
-  it('compte les comparables proposés par cran, et le coût', () => {
+  it('compte les concurrents proposés par élargissement, et le coût', () => {
     // Parmi les candidats lus, les 3 admis sont aux places 1, 2 et 5 ; on les traite en ancien
-    // (le neuf en complément n'est pas compté, test suivant) et on leur donne trois crans.
+    // (le neuf en complément n'est pas compté, test suivant) et on leur donne trois étapes de recherche.
     const tiers: StreamEstateTier[] = [1, 1, 2, 1, 1, 7, 1, 1];
     const search = rankCandidates(SLV, [portal(tiers, { asOld: true })], PREFS, {
       subjectInseeCode: '06123',
     });
     const summary = describeStreamEstateSearch(search.ranked, note);
     expect(summary.headline).toBe(
-      '3 comparables : 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces facturées (0,37\u00A0€)',
-    );
-    expect(summary.details[0]).toBe(
-      'Moins de 10 : plus aucun bien après le dernier cran (rayon de 10 km).',
+      '3 concurrents : 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces facturées (0,37\u00A0€)',
     );
     expect(summary.details).toContain(
-      'Écartés, mais facturés : 1 bien hors de Saint-Laurent-du-Var à un cran « même ville » · 2 biens sans annonce sur un site que l’extension relit.',
+      'Moins de 10 : plus aucun bien après le dernier élargissement (rayon de 10 km).',
+    );
+    // Mission 97 — un seul mot, « élargissement » : plus de « cran » à l'écran.
+    expect([summary.headline, ...summary.details].join(' ')).not.toMatch(/\bcrans?\b/i);
+    expect(summary.details).toContain(
+      'Écartés, mais facturés : 1 bien hors de Saint-Laurent-du-Var à un élargissement « même ville » · 2 biens sans annonce sur un site que l’extension relit.',
     );
   });
 
-  it('le neuf ajouté en complément n’est pas compté comme comparable', () => {
+  it('le neuf ajouté en complément n’est pas compté comme concurrent', () => {
     const search = rankCandidates(SLV, [portal()], PREFS, { subjectInseeCode: '06123' });
     expect(search.ranked.every((entry) => entry.newBuildComplement)).toBe(true);
-    expect(describeStreamEstateSearch(search.ranked, note).headline).toMatch(/^0 comparable —/);
+    expect(describeStreamEstateSearch(search.ranked, note).headline).toMatch(/^0 concurrent —/);
   });
 
   it('au plafond, il le dit ; sans adresse localisée, aussi', () => {
@@ -153,11 +155,11 @@ describe('la ligne de bilan', () => {
       located: false,
       tiers: [{ tier: 1, billed: 60, kept: 0, fallback: true }],
     });
-    expect(summary.headline).toBe('0 comparable — 60 annonces facturées (0,60\u00A0€)');
+    expect(summary.headline).toBe('0 concurrent — 60 annonces facturées (0,60\u00A0€)');
     expect(summary.details[0]).toBe(
-      'Moins de 10 : plafond atteint, la recherche s’arrête là — « Chercher encore » reprend au cran 1, page suivante.',
+      'Moins de 10 : plafond atteint, la recherche s’arrête là — « Chercher encore » reprend la recherche à l’identique, page suivante.',
     );
     expect(summary.details[1]).toMatch(/^Adresse du bien non localisée/);
-    expect(summary.details[2]).toMatch(/^Cran 1 : communes voisines non exclues/);
+    expect(summary.details[2]).toMatch(/^Pour « identique » : communes voisines non exclues/);
   });
 });

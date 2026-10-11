@@ -19,6 +19,7 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     updated_at: '2026-01-01T00:00:00Z',
     display_order: 0,
     is_selected: true,
+    fields_to_verify: [],
     title: null,
     address: null,
     postal_code: null,

@@ -165,9 +165,7 @@ function surface(
   const gap = value - ref;
   const abs = Math.abs(gap);
   const label =
-    abs < 0.5
-      ? 'même surface'
-      : `${formatSquareMeters(abs, { maxDecimals: 1 })} de ${gap > 0 ? 'plus' : 'moins'}`;
+    abs < 0.5 ? 'même surface' : `${formatSquareMeters(abs)} de ${gap > 0 ? 'plus' : 'moins'}`;
   if (abs <= Math.max(ref * 0.03, 1)) return reason('surface', 1, label, 1);
   if (abs <= Math.max(ref * 0.06, 2)) return reason('surface', 1, label, 0);
   return reason('surface', 1, label, -1);

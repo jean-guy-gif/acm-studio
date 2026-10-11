@@ -70,9 +70,10 @@ export function formatEuroPerSquareMeter(value: number, options: FormatNumberOpt
   return withUnit(value, '€/m²', { maxDecimals: 0, ...options });
 }
 
-// Une surface ou un écart de surface (« 64,7 m² », « −1,7 m² »).
+// Une surface ou un écart de surface, au m² près (« 65 m² », « −2 m² ») : mission 97, partout
+// comme dans les courriers (M87). Seul l'affichage arrondit ; la base garde la valeur saisie.
 export function formatSquareMeters(value: number, options: FormatNumberOptions = {}): string {
-  return withUnit(value, 'm²', options);
+  return withUnit(value, 'm²', { maxDecimals: 0, ...options });
 }
 
 export function formatPercent(value: number, options: FormatNumberOptions = {}): string {

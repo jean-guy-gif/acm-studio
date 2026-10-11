@@ -45,8 +45,8 @@ describe('formatNumber', () => {
 
 describe('unités', () => {
   it('suit les exemples de la mission 74', () => {
-    expect(plain(formatSquareMeters(64.7))).toBe('64,7 m²');
-    expect(plain(formatSquareMeters(-1.7000000000000028))).toBe('−1,7 m²');
+    expect(plain(formatSquareMeters(64.7))).toBe('65 m²');
+    expect(plain(formatSquareMeters(-1.7000000000000028))).toBe('−2 m²');
     expect(plain(formatEuroPerSquareMeter(4739.2))).toBe('4 739 €/m²');
     expect(plain(formatEuro(300000))).toBe('300 000 €');
   });
