@@ -14,6 +14,7 @@ import {
   type RankedSearch,
   type SectorStatus,
 } from '@/features/competitor-search/types';
+import { completeAdvisorRange } from '@/features/subject-property/services/advisor-range';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -53,6 +54,7 @@ export async function rankCompetitorCandidates(
     return { ok: false, error: GENERIC_ERROR };
   }
 
+  const range = completeAdvisorRange(property.advisor_price_min, property.advisor_price_max);
   const criteria: CompetitorSearchCriteria = {
     city: property.city.trim(),
     postalCode: property.postal_code,
@@ -60,8 +62,8 @@ export async function rankCompetitorCandidates(
     district: property.district,
     surfaceArea: property.surface_area,
     roomsCount: property.rooms_count,
-    advisorPriceMin: property.advisor_price_min,
-    advisorPriceMax: property.advisor_price_max,
+    advisorPriceMin: range.min,
+    advisorPriceMax: range.max,
     energyClass: dpeClass(property.energy_rating),
     landArea: property.land_area,
     subject: {

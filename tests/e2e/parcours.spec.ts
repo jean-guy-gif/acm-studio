@@ -45,6 +45,34 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await login(page);
   });
 
+  // Mission 93 — « Supprimer » demande confirmation dans l'écran, puis archive : le dossier
+  // disparaît des listes et ne s'ouvre plus par son adresse.
+  await test.step('Supprimer un dossier : confirmation, puis il disparaît', async () => {
+    const doomed = `${uniqueDossierName()} à supprimer`;
+    await page.goto('/builder/new');
+    await page.getByLabel('Nom du vendeur').fill(doomed);
+    await page.getByRole('button', { name: 'Créer le dossier' }).click();
+    await expect(page).toHaveURL(/\/builder\/[0-9a-f-]{36}$/);
+    const doomedUrl = page.url();
+
+    await page.goto('/builder');
+    const item = page.locator('li').filter({ hasText: doomed });
+    await item.getByRole('button', { name: 'Supprimer' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText(`Supprimer le dossier ${doomed}`)).toBeVisible();
+    await expect(dialog.getByText('Il disparaîtra de vos listes.')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Annuler' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(item, '« Annuler » a supprimé le dossier').toBeVisible();
+
+    await item.getByRole('button', { name: 'Supprimer' }).click();
+    await dialog.getByRole('button', { name: 'Supprimer' }).click();
+    await expect(page).toHaveURL(/\/builder$/);
+    await expect(page.getByText(doomed), 'Le dossier supprimé reste dans la liste').toHaveCount(0);
+    await page.goto(doomedUrl);
+    await expect(page.getByRole('heading', { name: 'Page introuvable' })).toBeVisible();
+  });
+
   await test.step('Nouveau dossier', async () => {
     await page.goto('/builder/new');
     await page.getByLabel('Nom du vendeur').fill(dossierName);
@@ -74,11 +102,26 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await field('Code postal').fill('06000');
     await field('Ville').fill('Nice');
     await field('De').fill(String(FOURCHETTE.min));
-    await field('À').fill(String(FOURCHETTE.max));
     // Mission 77 — un seul bouton, dans la barre fixée, qui dit où en est la fiche.
     await expect(page.getByText('Modifications non enregistrées')).toBeVisible();
+
+    // Mission 93 — quitter par le menu avec des modifications non enregistrées demande
+    // confirmation ; refuser laisse sur la fiche, saisie intacte.
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('ne sont pas enregistrées');
+      void dialog.dismiss();
+    });
+    await page.getByRole('link', { name: /^Suivi/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/property`));
+    await expect(field('Surface')).toHaveValue('65');
+
+    // Mission 93 — une seule borne : « Indiquez les deux montants ». Le reste s'enregistre.
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+    await expect(page.getByText('Indiquez les deux montants')).toBeVisible();
+    await field('À').fill(String(FOURCHETTE.max));
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
     await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
+    await expect(page.getByText('Indiquez les deux montants')).toHaveCount(0);
   });
 
   await test.step('Trois concurrents saisis à la main', async () => {

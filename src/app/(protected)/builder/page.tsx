@@ -14,11 +14,12 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
-import { deleteProject } from '@/features/projects/actions/delete-project';
+import { archiveProjectAction } from '@/features/projects/actions/archive-project';
 import {
   declareProjectReady,
   revertProjectToPreparation,
 } from '@/features/projects/actions/set-project-readiness';
+import { ArchiveProjectButton } from '@/features/projects/components/archive-project-button';
 import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
 import {
   advancementSteps,
@@ -179,12 +180,11 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                           Déclarer prêt
                         </SubmitButton>
                       </form>
-                      <form action={deleteProject}>
-                        <input type="hidden" name="projectId" value={project.id} />
-                        <SubmitButton pendingLabel="Suppression…" className={btnDangerGhost}>
-                          Supprimer
-                        </SubmitButton>
-                      </form>
+                      <ArchiveProjectButton
+                        projectId={project.id}
+                        projectName={project.seller_name}
+                        action={archiveProjectAction}
+                      />
                     </>
                   )}
                 </div>
