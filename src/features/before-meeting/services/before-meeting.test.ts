@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  bothRhythmsLabel,
   buildLiveSequence,
   durationLabel,
+  estimateLiveMinutes,
+  MINUTES_PER_SCREEN,
   tooManyCompetitorsNote,
 } from '@/features/before-meeting/services/live-sequence';
 import {
@@ -15,6 +18,8 @@ import {
   isReadyBadge,
 } from '@/features/before-meeting/services/readiness-checks';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+
+const plain = (text: string) => text.replace(/[\u00a0\u202f]/g, ' ');
 
 function competitor(id: string, overrides: Partial<GlanceCompetitor> = {}): GlanceCompetitor {
   return {
@@ -103,7 +108,7 @@ describe('buildLiveSequence', () => {
       },
     ]);
     expect(sequence.totalScreens).toBe(33);
-    expect(durationLabel(sequence)).toBe('40 à 55 min environ');
+    expect(plain(durationLabel(sequence))).toBe('environ 49 min');
     expect(sequence.competitorsWithoutDpe).toBe(1);
   });
 
@@ -129,7 +134,7 @@ describe('buildLiveSequence', () => {
       'Prix de commercialisation · Question de 1 à 10',
     ]);
     expect(sequence.totalScreens).toBe(5);
-    expect(durationLabel(sequence)).toBe('5 à 10 min environ');
+    expect(plain(durationLabel(sequence))).toBe('environ 7 min');
   });
 
   it('ne signale pas de concurrent sans DPE quand l’écran DPE n’existe pas', () => {
@@ -202,7 +207,7 @@ describe('mission 92 — un Live sans écrans inutiles', () => {
   it('prévient au-delà de 6 concurrents, sans rien bloquer', () => {
     const sequence = buildLiveSequence(seven, true);
     expect(tooManyCompetitorsNote(sequence, 7)).toBe(
-      '7 concurrents : environ 65 minutes de Live. Nous conseillons 6 au plus.',
+      '7 concurrents : environ 55 minutes de Live. Nous conseillons 6 au plus.',
     );
     expect(tooManyCompetitorsNote(buildLiveSequence(seven.slice(0, 6), true), 6)).toBeNull();
   });
@@ -218,5 +223,69 @@ describe('mission 92 — un Live sans écrans inutiles', () => {
       'Concurrent 2 — Pourquoi toujours en vente ?',
     );
     expect(withOneUnknown.screenTitles).toContain('Concurrent 1 — Pourquoi toujours en vente ?');
+  });
+});
+
+describe('mission 95 — le rythme du Live et sa durée estimée', () => {
+  const competitors = (count: number) =>
+    Array.from({ length: count }, (_value, i) => ({ id: `c${i}`, energyRating: 'D' }));
+  const screens = (count: number, rhythm: 'accelerated' | 'complete') =>
+    buildLiveSequence(competitors(count), true, rhythm);
+
+  it('la formule : écrans × 1,475, arrondi à la minute', () => {
+    expect(MINUTES_PER_SCREEN).toBe(1.475);
+    expect(estimateLiveMinutes(27)).toBe(40);
+    expect(estimateLiveMinutes(33)).toBe(49);
+  });
+
+  // Écrans communs : introduction, votre bien, valeur perçue, DPE, concurrent le plus dangereux,
+  // prix reformulé, analyse, prix de commercialisation, question de 1 à 10 = 9.
+  it('3 concurrents : les deux rythmes sont identiques (rien n’est accéléré avant le 4e)', () => {
+    for (const rhythm of ['accelerated', 'complete'] as const) {
+      const sequence = screens(3, rhythm);
+      expect(sequence.totalScreens).toBe(9 + 3 * 4);
+      expect(sequence.estimatedMinutes).toBe(31);
+    }
+  });
+
+  it('6 concurrents : 49 min en complet, 40 min en accéléré', () => {
+    expect(screens(6, 'complete').totalScreens).toBe(9 + 6 * 4);
+    expect(screens(6, 'complete').estimatedMinutes).toBe(49);
+    expect(screens(6, 'accelerated').totalScreens).toBe(9 + 3 * 4 + 3 * 2);
+    expect(screens(6, 'accelerated').estimatedMinutes).toBe(40);
+  });
+
+  it('8 concurrents : 60 min en complet, 46 min en accéléré', () => {
+    expect(screens(8, 'complete').totalScreens).toBe(9 + 8 * 4);
+    expect(screens(8, 'complete').estimatedMinutes).toBe(60);
+    expect(screens(8, 'accelerated').totalScreens).toBe(9 + 3 * 4 + 5 * 2);
+    expect(screens(8, 'accelerated').estimatedMinutes).toBe(46);
+  });
+
+  it('affiche les deux estimations côte à côte', () => {
+    expect(plain(bothRhythmsLabel(screens(6, 'accelerated'), screens(6, 'complete')))).toBe(
+      'Accéléré : environ 40 min · Complet : environ 49 min',
+    );
+  });
+
+  it('l’avertissement au-delà de 6 concurrents reprend la durée du rythme choisi', () => {
+    expect(tooManyCompetitorsNote(screens(7, 'accelerated'), 7)).toBe(
+      '7 concurrents : environ 43 minutes de Live. Nous conseillons 6 au plus.',
+    );
+    expect(tooManyCompetitorsNote(screens(7, 'complete'), 7)).toBe(
+      '7 concurrents : environ 55 minutes de Live. Nous conseillons 6 au plus.',
+    );
+  });
+
+  it('le déroulé compte les deux écrans des concurrents accélérés', () => {
+    const sequence = screens(5, 'accelerated');
+    expect(sequence.parts.find((part) => part.key === 'competitors')?.screenCount).toBe(
+      3 * 4 + 2 * 2,
+    );
+    expect(sequence.screenTitles).toContain('Concurrent 3 — Pourquoi toujours en vente ?');
+    expect(sequence.screenTitles).toContain(
+      'Concurrent 4 — Un sérieux concurrent, et à quel prix ?',
+    );
+    expect(sequence.screenTitles).not.toContain('Concurrent 4 — Pourquoi toujours en vente ?');
   });
 });

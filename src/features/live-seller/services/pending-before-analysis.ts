@@ -44,8 +44,11 @@ export function pendingBeforeAnalysis(
     }
     // On rouvre là où le concurrent s'est arrêté : la question, sinon la devinette.
     const target = serious == null ? 'comparable_competition' : 'comparable_price';
+    // Rythme accéléré (mission 95) : la question et la devinette sont sur le même écran.
     const pageIndex = pages.findIndex(
-      (page) => page.comparableId === comparable.id && page.type === target,
+      (page) =>
+        page.comparableId === comparable.id &&
+        (page.type === target || page.type === 'comparable_quick_guess'),
     );
     if (pageIndex >= 0) {
       steps.push({

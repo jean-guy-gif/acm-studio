@@ -13,6 +13,7 @@ import {
   authorizeAdvisorRange,
   authorizeComparableReveal,
   isComparableAuthorized,
+  isDurationAuthorized,
   isDurationKnown,
   overlaySellerComparable,
   projectComparableForSeller,
@@ -269,5 +270,63 @@ describe('isDurationKnown — l’étape « Durée » n’existe que s’il y a 
     expect(typeof projected.durationKnown).toBe('boolean');
     expect(projected).not.toHaveProperty('marketDuration');
     expect(projected).not.toHaveProperty('priceHistory');
+  });
+});
+
+// Mission 95 — « deviner, puis voir » vaut aussi pour la durée : la durée observée et les
+// baisses de prix ne quittent le serveur qu'une fois la durée DEVINÉE enregistrée.
+describe('le serveur refuse le prix et la durée avant leur devinette', () => {
+  const withResponse = (response: Record<string, unknown> | null) => {
+    const live = buildLive(true);
+    return { ...live.comparables[0], response: response as never };
+  };
+
+  it('sans devinette du prix : ni prix, ni durée, ni historique', () => {
+    const entry = withResponse({ seller_serious_competitor: 'yes' });
+    expect(isComparableAuthorized(entry)).toBe(false);
+    const projected = projectComparableForSeller(entry);
+    expect(projected.authorized).toBe(false);
+    expect(projected).not.toHaveProperty('price');
+    expect(projected).not.toHaveProperty('marketDuration');
+    expect(projected).not.toHaveProperty('priceHistory');
+    expect(
+      authorizeComparableReveal({ ...buildLive(true), comparables: [entry] }, entry.id),
+    ).toBeNull();
+  });
+
+  it('prix deviné, durée pas encore : le prix est livré, la durée ne l’est pas', () => {
+    const entry = withResponse({ seller_estimated_listing_price: 300000 });
+    expect(isDurationAuthorized(entry)).toBe(false);
+    const projected = projectComparableForSeller(entry);
+    expect(projected.authorized).toBe(true);
+    if (projected.authorized) {
+      expect(projected.price).toBe(entry.price);
+      expect(projected.marketDuration).toBeNull();
+      expect(projected.priceHistory).toBeNull();
+    }
+    const delivered = authorizeComparableReveal(
+      { ...buildLive(true), comparables: [entry] },
+      entry.id,
+    );
+    expect(delivered?.marketDuration).toBeNull();
+    expect(delivered?.priceHistory).toBeNull();
+  });
+
+  it('durée devinée : elle est livrée', () => {
+    const entry = withResponse({
+      seller_estimated_listing_price: 300000,
+      seller_estimated_days_on_market: 90,
+    });
+    expect(isDurationAuthorized(entry)).toBe(true);
+    const projected = projectComparableForSeller(entry);
+    if (projected.authorized) {
+      expect(projected.marketDuration).toEqual(entry.marketDuration);
+      expect(projected.priceHistory).toEqual(entry.priceHistory);
+    }
+  });
+
+  it('la durée devinée seule ne livre rien : il faut d’abord le prix deviné', () => {
+    const entry = withResponse({ seller_estimated_days_on_market: 90 });
+    expect(projectComparableForSeller(entry).authorized).toBe(false);
   });
 });

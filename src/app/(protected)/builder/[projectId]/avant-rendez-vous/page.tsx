@@ -17,10 +17,15 @@ import {
   SellerSequenceCard,
   type SequenceNote,
 } from '@/features/before-meeting/components/seller-sequence-card';
+import { LiveRhythmSetting } from '@/features/before-meeting/components/live-rhythm-setting';
 import {
+  bothRhythmsLabel,
   buildLiveSequence,
   tooManyCompetitorsNote,
 } from '@/features/before-meeting/services/live-sequence';
+import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
+import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
+import { canChangeLiveRhythm } from '@/features/live-seller/services/live-timing';
 import {
   buildMarketGlance,
   toGlanceCompetitor,
@@ -139,7 +144,23 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     energyRating: competitor.energyRating,
     durationKnown: isDurationKnown(competitor),
   }));
-  const sequence = buildLiveSequence(liveCompetitors, property != null);
+  // Mission 95 — le déroulé et la durée suivent le rythme choisi ; les deux estimations
+  // s'affichent côte à côte. Le rythme ne se modifie plus une fois le Live commencé.
+  const rhythm = presentation.project.liveRhythm;
+  const sequence = buildLiveSequence(liveCompetitors, property != null, rhythm);
+  const other = buildLiveSequence(
+    liveCompetitors,
+    property != null,
+    rhythm === 'accelerated' ? 'complete' : 'accelerated',
+  );
+  const bothEstimates = bothRhythmsLabel(
+    rhythm === 'accelerated' ? sequence : other,
+    rhythm === 'complete' ? sequence : other,
+  );
+  const rhythmLocked = !canChangeLiveRhythm({
+    liveStartedAt: presentation.project.liveStartedAt,
+    hasSellerAnswers: hasLiveStarted(presentation.live),
+  });
   const notes: SequenceNote[] = presentation.warnings.map((warning) => ({
     key: warning.code,
     severity: warning.severity,
@@ -313,7 +334,19 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         }
       />
 
-      <SellerSequenceCard sequence={sequence} notes={notes} projectId={projectId} />
+      <SellerSequenceCard
+        sequence={sequence}
+        notes={notes}
+        projectId={projectId}
+        rhythmSetting={
+          <LiveRhythmSetting
+            rhythm={rhythm}
+            locked={rhythmLocked}
+            bothEstimates={bothEstimates}
+            action={setLiveRhythm.bind(null, projectId)}
+          />
+        }
+      />
     </div>
   );
 }

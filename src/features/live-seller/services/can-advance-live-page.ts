@@ -32,6 +32,21 @@ export function canAdvanceLivePage(
   if (pageType === 'comparable_duration') {
     return entry?.response?.seller_estimated_days_on_market != null;
   }
+  // MISSION 95 — rythme accéléré. Les MÊMES verrous, sur deux écrans :
+  //   • écran 1 : on ne le quitte vers la révélation qu'avec la devinette du prix PERSISTÉE
+  //     (ou un « non », qui dispense de deviner et n'a pas d'écran 2) ;
+  //   • écran 2 : quand une durée est à révéler, on ne le quitte qu'avec la durée devinée.
+  if (pageType === 'comparable_quick_guess') {
+    return (
+      entry?.response?.seller_serious_competitor === 'no' ||
+      entry?.response?.seller_estimated_listing_price != null
+    );
+  }
+  if (pageType === 'comparable_quick_reveal') {
+    return (
+      entry?.durationKnown === false || entry?.response?.seller_estimated_days_on_market != null
+    );
+  }
   // MISSION 82 — le vendeur dit son prix avant de voir un concurrent : on ne quitte la
   // page qu'une fois ce prix PERSISTÉ (aucun concurrent atteignable avant, même par l'URL).
   if (pageType === 'seller_perceived_price') {
@@ -61,6 +76,13 @@ export function livePageHasAnswer(
     case 'comparable_price_reveal':
       return response?.seller_price_coherence != null;
     case 'comparable_duration':
+      return response?.seller_estimated_days_on_market != null;
+    case 'comparable_quick_guess':
+      return (
+        response?.seller_serious_competitor != null ||
+        response?.seller_estimated_listing_price != null
+      );
+    case 'comparable_quick_reveal':
       return response?.seller_estimated_days_on_market != null;
     case 'dangerous_competitor':
       return summary?.seller_most_dangerous_comparable_id != null;

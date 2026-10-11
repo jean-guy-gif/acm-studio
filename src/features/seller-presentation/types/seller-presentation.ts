@@ -1,3 +1,4 @@
+import type { LiveRhythm } from '@/features/live-seller/services/build-live-pages';
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
 import type {
@@ -99,6 +100,11 @@ export type SellerPresentationProject = {
   id: string;
   name: string;
   status: string | null;
+  // Mission 95 — le rythme du Live choisi pour ce dossier, et les heures de début et de fin du
+  // Live (null tant qu'elles n'ont pas été relevées). Côté conseiller.
+  liveRhythm: LiveRhythm;
+  liveStartedAt: string | null;
+  liveEndedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

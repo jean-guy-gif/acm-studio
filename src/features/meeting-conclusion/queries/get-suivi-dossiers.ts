@@ -32,7 +32,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
   const { data: projects } = await supabase
     .from('projects')
     .select(
-      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id',
+      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at',
     )
     .eq('agency_id', agencyId)
     .eq('status', 'meeting_completed')

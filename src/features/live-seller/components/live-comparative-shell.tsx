@@ -8,6 +8,7 @@ import { Logo } from '@/components/brand/logo';
 import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
+import { markLiveEnded, markLiveStarted } from '@/features/live-seller/actions/live-timing-actions';
 import {
   dangerousChoiceFromForm,
   type DangerousChoice,
@@ -22,6 +23,8 @@ import { LivePageDpe } from '@/features/live-seller/components/live-page-dpe';
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
 import { LivePageRevised } from '@/features/live-seller/components/live-page-revised';
+import { LivePageQuickGuess } from '@/features/live-seller/components/live-page-quick-guess';
+import { LivePageQuickReveal } from '@/features/live-seller/components/live-page-quick-reveal';
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
@@ -35,7 +38,7 @@ import {
   stageGlowLayer,
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
-import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { buildLivePages, type LiveRhythm } from '@/features/live-seller/services/build-live-pages';
 import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
 import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
@@ -67,6 +70,7 @@ export function LiveComparativeShell({
   projectName,
   advisorRange,
   initialIndex = 0,
+  rhythm = 'complete',
   initialStage = 'dark',
   logoLightUrl = null,
   logoDarkUrl = null,
@@ -85,6 +89,8 @@ export function LiveComparativeShell({
   // Fiche d'ouverture : reprise après un rechargement en plein rendez-vous
   // (paramètre « fiche » de l'URL, écrit ci-dessous), ou choix de l'aperçu design.
   initialIndex?: number;
+  // Mission 95 — le rythme du Live choisi pour ce dossier (figé une fois le Live commencé).
+  rhythm?: LiveRhythm;
   // Thème d'ouverture de la scène : sombre en Live réel, au choix dans l'aperçu.
   initialStage?: LiveStageTheme;
   // Mission 55 — logo de l'agence (le vendeur ne doit pas voir le nom d'un autre) ; à défaut
@@ -205,25 +211,36 @@ export function LiveComparativeShell({
   // Mission 92 — la tablette est encore tournée vers le vendeur : la fin du Live ouvre un
   // écran neutre (« Merci »), jamais l'écran conseiller de conclusion.
   const thanksHref = `/live/${projectId}/merci`;
+  // « Terminer le rendez-vous » : la note d'abord (les chiffres déjà partis en fond, puis l'état
+  // final), ensuite l'heure de fin du Live (mission 95). Un seul enregistrement protégé : un
+  // échec de la note rend le bouton, avec son message. L'heure de fin, elle, est une mesure —
+  // qu'elle ne s'écrive pas n'empêche jamais de terminer.
   const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (finishing) {
-      event.preventDefault();
-      return;
-    }
-    if (closing.first == null || closing.last == null) {
-      void document.exitFullscreen?.().catch(() => {});
-      return;
-    }
     event.preventDefault();
+    if (finishing) {
+      return;
+    }
     setFinishError(null);
+    const hasNote = closing.first != null && closing.last != null;
     const formData = new FormData();
-    formData.set('seller_launch_readiness_first', String(closing.first));
-    formData.set('seller_launch_readiness_last', String(closing.last));
-    formData.set('seller_launch_readiness_missing', closing.missing);
-    // Les chiffres déjà partis en fond d'abord, puis l'état final. Protégé : un échec rend le
-    // bouton, avec son message.
+    if (hasNote) {
+      formData.set('seller_launch_readiness_first', String(closing.first));
+      formData.set('seller_launch_readiness_last', String(closing.last));
+      formData.set('seller_launch_readiness_missing', closing.missing);
+    }
     const result = await guardedSave(
-      () => closingSavesRef.current.then(() => persistLiveSellerSummary(projectId, formData)),
+      () =>
+        (hasNote
+          ? closingSavesRef.current.then(() => persistLiveSellerSummary(projectId, formData))
+          : Promise.resolve<SaveResult>({ ok: true })
+        ).then((saved) =>
+          saved.ok
+            ? markLiveEnded(projectId).then(
+                () => saved,
+                () => saved,
+              )
+            : saved,
+        ),
       { setBusy: setFinishing },
     );
     if (!result.ok) {
@@ -255,8 +272,8 @@ export function LiveComparativeShell({
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
 
   const pages = useMemo(
-    () => buildLivePages(navLive, hasSubjectProperty),
-    [navLive, hasSubjectProperty],
+    () => buildLivePages(navLive, hasSubjectProperty, rhythm),
+    [navLive, hasSubjectProperty, rhythm],
   );
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
@@ -283,7 +300,15 @@ export function LiveComparativeShell({
   const currentSave = saves[page.key];
   // devine-puis-révèle : la durée observée ne se montre qu'après la réponse du vendeur —
   // jamais à l'arrivée. Le central marché, lui, n'arrive que sur « Analyse des prix ».
-  const durationRevealed = authorizedEntry?.response?.seller_estimated_days_on_market != null;
+  const durationRevealed =
+    authorizedEntry?.response?.seller_estimated_days_on_market != null &&
+    authorizedEntry.marketDuration != null;
+  // Mission 95 — écran 2 du rythme accéléré : reste-t-il une durée à deviner avant de la voir ?
+  const quickDurationPending =
+    page.type === 'comparable_quick_reveal' &&
+    authorizedEntry != null &&
+    authorizedEntry.durationKnown &&
+    !durationRevealed;
 
   const failedSaves = useMemo(
     () => Object.entries(saves).filter(([, record]) => record.status === 'failed'),
@@ -388,10 +413,12 @@ export function LiveComparativeShell({
         return;
       }
       // BASE PUIS GRAPHE : réponse en base d'abord, graphe client ensuite.
+      // Seuls les champs de CET écran : une copie de toute la réponse figerait ici une durée
+      // ou un prix encore vides, qui écraseraient ensuite la révélation livrée par le serveur.
       setResponseOverrides((o) => ({
         ...o,
         [entry.id]: {
-          ...(entry.response ?? {}),
+          ...(o[entry.id] ?? {}),
           seller_serious_competitor: (fd.get('seller_serious_competitor') as string) || null,
           seller_serious_competitor_comment:
             (fd.get('seller_serious_competitor_comment') as string) || null,
@@ -427,21 +454,110 @@ export function LiveComparativeShell({
     }
     if (page.type === 'comparable_duration' && entry) {
       if (!durationRevealed) {
-        const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
-        if (r.ok) {
-          setResponseOverrides((o) => ({
-            ...o,
-            [entry.id]: {
-              ...(entry.response ?? {}),
-              seller_estimated_days_on_market:
-                Number(fd.get('seller_estimated_days_on_market')) || null,
-            } as LiveComparableResponse,
-          }));
-        } else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        // Mission 95 — la durée observée n'est livrée par le serveur qu'une fois la durée
+        // devinée enregistrée : même voie gardée que le prix.
+        const r = await awaited(() =>
+          deliverLiveFragment(projectId, {
+            kind: 'comparable-reveal',
+            comparableId: entry.id,
+            formData: fd,
+          }),
+        );
+        if (!r.ok) {
+          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          return;
+        }
+        if (r.fragment.kind === 'comparable') {
+          const revealed = r.fragment.comparable;
+          if (revealed.response?.seller_estimated_days_on_market == null) {
+            setAwaitError('Indiquez la durée que vous imaginez.');
+            return;
+          }
+          setDelivered((d) => ({ ...d, [entry.id]: revealed }));
+        }
         return;
       }
       runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
       go(1);
+      return;
+    }
+    // MISSION 95 — rythme accéléré, écran 1 : le sérieux et la devinette du prix, enregistrés
+    // ensemble. « Non » dispense de deviner (et n'a pas d'écran 2) ; sinon la devinette est
+    // demandée, et le prix n'est livré qu'une fois celle-ci en base.
+    if (page.type === 'comparable_quick_guess' && entry) {
+      const serious = String(fd.get('seller_serious_competitor') ?? '');
+      const alreadyGuessed =
+        entry.authorized && entry.response?.seller_estimated_listing_price != null;
+      if (alreadyGuessed || serious === 'no') {
+        const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
+        if (!r.ok) {
+          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          return;
+        }
+        if (serious !== '') {
+          // Seul le champ de cet écran (voir plus haut) : en revenant ici après la révélation
+          // du prix, la durée encore vide ne doit pas être figée par-dessus sa révélation.
+          setResponseOverrides((o) => ({
+            ...o,
+            [entry.id]: {
+              ...(o[entry.id] ?? {}),
+              seller_serious_competitor: serious,
+            } as LiveComparableResponse,
+          }));
+        }
+        go(1);
+        return;
+      }
+      const guess = Number(String(fd.get('seller_estimated_listing_price') ?? '').trim());
+      if (!Number.isFinite(guess) || guess <= 0) {
+        setAwaitError('Indiquez le prix que vous imaginez.');
+        return;
+      }
+      const r = await awaited(() =>
+        deliverLiveFragment(projectId, {
+          kind: 'comparable-reveal',
+          comparableId: entry.id,
+          formData: fd,
+        }),
+      );
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      if (r.fragment.kind === 'comparable') {
+        const revealed = r.fragment.comparable;
+        setDelivered((d) => ({ ...d, [entry.id]: revealed }));
+        go(1);
+      }
+      return;
+    }
+    // Écran 2 : la durée se devine, puis se révèle à sa place — livrée par le serveur une
+    // fois la devinette en base. Sans durée connue, ou déjà révélée : on avance.
+    if (page.type === 'comparable_quick_reveal' && entry) {
+      if (!quickDurationPending) {
+        go(1);
+        return;
+      }
+      const days = String(fd.get('seller_estimated_days_on_market') ?? '').trim();
+      if (days === '' || !Number.isFinite(Number(days)) || Number(days) < 0) {
+        setAwaitError('Indiquez la durée que vous imaginez.');
+        return;
+      }
+      const r = await awaited(() =>
+        deliverLiveFragment(projectId, {
+          kind: 'comparable-reveal',
+          comparableId: entry.id,
+          formData: fd,
+        }),
+      );
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      if (r.fragment.kind === 'comparable') {
+        const revealed = r.fragment.comparable;
+        setDelivered((d) => ({ ...d, [entry.id]: revealed }));
+      }
       return;
     }
     if (page.type === 'seller_perceived_price') {
@@ -543,6 +659,7 @@ export function LiveComparativeShell({
     entry,
     projectId,
     durationRevealed,
+    quickDurationPending,
     range,
     summary,
     perceivedToConfirm,
@@ -593,6 +710,17 @@ export function LiveComparativeShell({
       window.localStorage.setItem(livePositionKey(projectId), String(currentIndex));
     } catch {
       // Stockage refusé (navigation privée) : la reprise se fera d'après les réponses.
+    }
+  }, [projectId, currentIndex]);
+
+  // Mission 95 — le Live relève son heure de début au premier écran qui suit l'introduction
+  // (une fois par ouverture ; le serveur n'écrit que si aucun début n'est noté, et la base
+  // garde le premier : une reprise après une pause ne le remet pas à zéro).
+  const startMarkedRef = useRef(false);
+  useEffect(() => {
+    if (currentIndex >= 1 && !startMarkedRef.current) {
+      startMarkedRef.current = true;
+      void markLiveStarted(projectId).catch(() => {});
     }
   }, [projectId, currentIndex]);
 
@@ -867,6 +995,10 @@ export function LiveComparativeShell({
           <LivePagePriceRevealPilot entry={authorizedEntry} />
         ) : page.type === 'comparable_duration' && authorizedEntry ? (
           <LivePageDuration entry={authorizedEntry} durationRevealed={durationRevealed} />
+        ) : page.type === 'comparable_quick_guess' && entry ? (
+          <LivePageQuickGuess entry={entry} />
+        ) : page.type === 'comparable_quick_reveal' && authorizedEntry ? (
+          <LivePageQuickReveal entry={authorizedEntry} />
         ) : page.type === 'dpe_market' ? (
           <LivePageDpe
             subjectEnergyRating={property?.energyRating ?? null}
@@ -975,7 +1107,7 @@ export function LiveComparativeShell({
                 disabled={busy || index >= pages.length - 1}
                 className={ctaPrimary}
               >
-                {page.type === 'comparable_duration' && !durationRevealed
+                {(page.type === 'comparable_duration' && !durationRevealed) || quickDurationPending
                   ? 'Révéler la durée →'
                   : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
                       (revisedToConfirm != null && page.type === 'seller_revised_price')

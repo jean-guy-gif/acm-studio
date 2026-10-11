@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { LiveFontPreload } from '@/features/branding/components/live-font-preload';
 import { getProfile } from '@/lib/auth/get-profile';
 
 // Groupe de routes « scène » : la présentation Live vendeur, plein cadre.
@@ -13,5 +14,12 @@ export default async function StageLayout({ children }: { children: React.ReactN
     redirect('/onboarding');
   }
 
-  return children;
+  // Mission 95 — les polices de la scène sont préchargées : le vendeur ne voit pas l'écran
+  // changer de police à l'ouverture.
+  return (
+    <>
+      <LiveFontPreload />
+      {children}
+    </>
+  );
 }
