@@ -52,6 +52,10 @@ export async function writeLiveSellerSummary(
         formData.get('seller_perceived_property_price'),
       ),
     }),
+    // Mission 94 — le prix reformulé : absent du formulaire (« Passer »), il n'est pas écrit.
+    ...(formData.has('seller_revised_property_price') && {
+      seller_revised_property_price: numberOrNull(formData.get('seller_revised_property_price')),
+    }),
     ...(formData.has('seller_property_confirmed') && {
       seller_property_confirmed: textOrNull(formData.get('seller_property_confirmed')),
     }),

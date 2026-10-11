@@ -31,7 +31,9 @@ const COMPETITORS: Competitor[] = [
 
 // La fourchette du conseiller : écran conseiller seulement, jamais devant le vendeur.
 const FOURCHETTE = { min: 255_500, max: 345_500 };
-const PERCEIVED_PRICE = 330_000;
+// Mission 94 — le vendeur arrive à 350 000 €, puis reformule à 325 000 € après avoir vu le marché.
+const PERCEIVED_PRICE = 350_000;
+const REVISED_PRICE = 325_000;
 const COMMERCIALIZATION_PRICE = 315_000;
 const COMMENT = 'Réponse saisie par le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
@@ -215,6 +217,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(journeyText, 'Le prix du vendeur en début de rendez-vous manque au Suivi').toContain(
       String(PERCEIVED_PRICE),
     );
+    await expect(journey.getByText('Prix du vendeur après avoir vu le marché')).toBeVisible();
+    expect(journeyText, 'Le prix reformulé par le vendeur manque au Suivi').toContain(
+      String(REVISED_PRICE),
+    );
     expect(journeyText, 'Le prix de commercialisation manque au Suivi').toContain(
       String(COMMERCIALIZATION_PRICE),
     );
@@ -389,9 +395,10 @@ async function walkLive(
   ).toBeVisible();
   await onScreen('Votre valeur perçue');
   await expect(
-    page.getByText('Positionnement observé sur le marché concurrentiel'),
+    page.locator('[data-price-band]'),
     'Le marché est révélé dès la valeur perçue',
   ).toHaveCount(0);
+  await expect(page.getByText('Prix des concurrents')).toHaveCount(0);
   if (firstPass) {
     for (const competitor of COMPETITORS) {
       await expectPriceHidden(page, competitor, 'Votre valeur perçue');
@@ -582,17 +589,60 @@ async function walkLive(
   await page.locator('textarea[name="seller_most_dangerous_comment"]').fill(COMMENT);
   await validate();
 
+  // Mission 94 — Acte 5 : après avoir vu les biens, le vendeur reformule lui-même son prix,
+  // avant que l'analyse ne s'affiche. L'écran ne révèle rien du marché.
+  await expect(
+    page.getByRole('heading', {
+      name: 'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
+    }),
+  ).toBeVisible();
+  await onScreen('Votre prix après le marché');
+  await expect(page.locator('[data-price-band]')).toHaveCount(0);
+  await expect(page.getByText('Prix des concurrents')).toHaveCount(0);
+  const revisedInput = page.locator('input[name="seller_revised_property_price"]');
+  if (firstPass) {
+    await expect(page.getByRole('button', { name: 'Passer', exact: true })).toBeVisible();
+    await revisedInput.fill(String(REVISED_PRICE));
+    await validate();
+    const confirmRevised = page.getByRole('button', { name: /Confirmer et continuer/ });
+    await expect(confirmRevised, 'Le prix reformulé s’enregistre sans rappel').toBeVisible();
+    expect(withoutSpaces(await mainText(page))).toContain(`${REVISED_PRICE}€?`);
+    await confirmRevised.click();
+  } else {
+    // Déjà donné : il se relit, sans champ de saisie, et « Passer » n'a plus lieu d'être.
+    await expect(revisedInput, 'Le prix reformulé se corrige encore après coup').toHaveCount(0);
+    expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(REVISED_PRICE));
+    await expect(page.getByRole('button', { name: 'Passer', exact: true })).toHaveCount(0);
+    await validate();
+  }
+
   // Analyse des prix
   await expect(page.getByRole('heading', { name: 'Analyse des prix', exact: true })).toBeVisible();
   // Le marché se révèle ici, face au prix donné en début de rendez-vous.
-  await expect(
-    page.getByText('Positionnement observé sur le marché concurrentiel', { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText('Votre prix en début de rendez-vous')).toBeVisible();
+  // Mission 94 — le chemin du vendeur : son prix du début, puis celui d'après le marché.
   expect(
-    await mainText(page),
-    'Le prix du vendeur en début de rendez-vous n’est pas rappelé sur « Analyse des prix »',
-  ).toContain(String(PERCEIVED_PRICE));
+    withoutSpaces(await page.locator('[data-seller-path]').innerText()),
+    '« Analyse des prix » ne montre pas le chemin 350 000 → 325 000',
+  ).toBe(`Audébut:${PERCEIVED_PRICE}€→Aprèsavoirvulemarché:${REVISED_PRICE}€`);
+  // Le « Prix des concurrents » dit sur quoi il porte ; plus de « observé sur le marché ».
+  await expect(
+    page.getByText(
+      `Calculé sur les ${COMPETITORS.length} concurrents retenus par votre conseiller`,
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/observé sur le marché/)).toHaveCount(0);
+  // La bande : un point par concurrent révélé, et les deux repères du vendeur.
+  const band = page.locator('[data-price-band]');
+  await expect(band.locator('[data-band-dot]')).toHaveCount(COMPETITORS.length);
+  await expect(band.locator('[data-band-marker]')).toHaveCount(2);
+  const analysisText = withoutSpaces(await mainText(page));
+  for (const bound of [
+    Math.min(...COMPETITORS.map((c) => c.price)),
+    Math.max(...COMPETITORS.map((c) => c.price)),
+  ]) {
+    expect(analysisText, 'Les prix affichés du marché manquent').toContain(String(bound));
+  }
+  if (tablet) await expectNoHorizontalScroll(page, 'Analyse des prix');
   await onScreen('Analyse des prix');
   await validate();
 
@@ -616,6 +666,10 @@ async function walkLive(
   const commercialization = page.locator('input[name="commercialization_price"]');
   await expect(commercialization, 'Le prix de commercialisation est pré-rempli').toHaveValue('');
   await commercialization.fill(String(COMMERCIALIZATION_PRICE));
+  // Mission 94 — le prix saisi est situé parmi les biens révélés : un repère, sans conseil.
+  await expect(page.locator('[data-price-position]')).toContainText(
+    `votre bien serait le plus cher des ${COMPETITORS.length + 1} biens comparés`,
+  );
   await page.getByRole('button', { name: 'Enregistrer le prix' }).click();
   await expect(page.getByText('Prix de commercialisation enregistré.')).toBeVisible();
   await validate();

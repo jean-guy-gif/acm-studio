@@ -169,3 +169,39 @@ describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
     expect(shell).toMatch(/onClick=\{retryFailedSaves\}/);
   });
 });
+
+describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () => {
+  it('l’écran du prix reformulé ne révèle rien et ne se corrige plus', () => {
+    const screen = shown('live-page-revised.tsx');
+    expect(screen).toContain(
+      'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
+    );
+    expect(screen).toContain('LiveLockedAnswer');
+    expect(screen).not.toMatch(/marketReading|priceGaps|competitiveMarketCentral|advisorRange/);
+  });
+
+  it('« Passer » n’envoie aucune réponse : un formulaire vide', () => {
+    const shell = shown('live-comparative-shell.tsx');
+    const skip = shell.slice(shell.indexOf('const skipRevisedPrice'));
+    const body = skip.slice(0, skip.indexOf('\n  };'));
+    expect(body).toContain('formData: new FormData()');
+    expect(body).not.toMatch(/harvest\(|persistLiveSellerSummary|seller_revised_property_price/);
+  });
+
+  it('« Analyse des prix » dit le chemin du vendeur, et plus « observé sur le marché »', () => {
+    const analysis = shown('live-page-analysis.tsx');
+    expect(analysis).toContain('Au début');
+    expect(analysis).toContain('Après avoir vu le marché');
+    expect(analysis).not.toMatch(/observé sur le marché/);
+    // La bande ne lit que la lecture venue du serveur (concurrents révélés), jamais la liste
+    // des concurrents elle-même.
+    expect(analysis).toContain('reading.prices');
+    expect(analysis).not.toMatch(/comparables|SellerComparable/);
+  });
+
+  it('la phrase qui situe le prix ne lit que des prix déjà révélés', () => {
+    expect(shown('live-page-conclusion.tsx')).toContain(
+      'comparedPrices={advisorRange?.marketReading.prices ?? []}',
+    );
+  });
+});

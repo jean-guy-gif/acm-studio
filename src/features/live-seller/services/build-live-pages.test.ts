@@ -53,14 +53,17 @@ describe('buildLivePages', () => {
       'seller_perceived_price',
       'comparable_competition',
     ]);
-    expect(pages.map((p) => p.type).slice(-4)).toEqual([
+    // Mission 94 — Acte 5 : le vendeur reformule son prix après le dernier écran sur les
+    // concurrents, AVANT que l'analyse ne s'affiche.
+    expect(pages.map((p) => p.type).slice(-5)).toEqual([
       'dangerous_competitor',
+      'seller_revised_price',
       'price_analysis',
       'conclusion',
       'closing_question',
     ]);
-    // intro + perceived + 2*4 + 4 tail
-    expect(pages).toHaveLength(1 + 1 + 8 + 4);
+    // intro + perceived + 2*4 + 5 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 5);
   });
 
   // Mission 82 — le vendeur dit son prix avant de voir le moindre concurrent.
@@ -106,8 +109,8 @@ describe('buildLivePages', () => {
     expect(pages[0].type).toBe('intro');
     expect(pages[1].type).toBe('subject_property');
     expect(pages[1].title).toBe('Votre bien');
-    // intro + subject_property + 2*4 + 5 tail
-    expect(pages).toHaveLength(1 + 1 + 8 + 5);
+    // intro + subject_property + 2*4 + 6 tail
+    expect(pages).toHaveLength(1 + 1 + 8 + 6);
   });
 
   it('omits the "Votre bien" slide when the dossier has no subject property', () => {
@@ -160,5 +163,9 @@ describe('buildLivePages', () => {
     ]);
     expect(types('avec')).toHaveLength(4);
     expect(types('inconnu')).toHaveLength(4);
+  });
+
+  it('has no "after the market" price screen when there is no competitor to have seen', () => {
+    expect(buildLivePages(live(0), true).map((p) => p.type)).not.toContain('seller_revised_price');
   });
 });

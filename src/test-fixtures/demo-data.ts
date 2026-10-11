@@ -210,6 +210,7 @@ export const demoAnsweredSummary: LiveSellerSummary = {
   seller_most_dangerous_reason: 'better_condition',
   seller_most_dangerous_comment: null,
   seller_perceived_property_price: 398000,
+  seller_revised_property_price: null,
   seller_property_confirmed: 'yes',
   seller_property_comment: null,
   seller_launch_readiness_first: null,

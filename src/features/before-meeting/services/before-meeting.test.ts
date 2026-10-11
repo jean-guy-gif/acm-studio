@@ -84,7 +84,7 @@ describe('buildMarketGlance', () => {
 describe('buildLiveSequence', () => {
   const six = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id, energyRating: 'D' }));
 
-  it('compte le déroulé de la maquette : 6 concurrents, 32 écrans, 40 à 55 min', () => {
+  it('compte le déroulé de la maquette : 6 concurrents, 33 écrans, 40 à 55 min', () => {
     const sequence = buildLiveSequence([...six.slice(0, 5), { id: 'f', energyRating: null }], true);
     expect(sequence.parts).toEqual([
       { key: 'opening', label: 'Introduction · Votre bien', screenCount: 2 },
@@ -93,8 +93,8 @@ describe('buildLiveSequence', () => {
       { key: 'dpe', label: 'Le DPE face au marché', screenCount: 1 },
       {
         key: 'market',
-        label: 'Le concurrent le plus dangereux · Analyse des prix',
-        screenCount: 2,
+        label: 'Le concurrent le plus dangereux · Votre prix après le marché · Analyse des prix',
+        screenCount: 3,
       },
       {
         key: 'closing',
@@ -102,7 +102,7 @@ describe('buildLiveSequence', () => {
         screenCount: 2,
       },
     ]);
-    expect(sequence.totalScreens).toBe(32);
+    expect(sequence.totalScreens).toBe(33);
     expect(durationLabel(sequence)).toBe('40 à 55 min environ');
     expect(sequence.competitorsWithoutDpe).toBe(1);
   });
@@ -202,7 +202,7 @@ describe('mission 92 — un Live sans écrans inutiles', () => {
   it('prévient au-delà de 6 concurrents, sans rien bloquer', () => {
     const sequence = buildLiveSequence(seven, true);
     expect(tooManyCompetitorsNote(sequence, 7)).toBe(
-      '7 concurrents : environ 60 minutes de Live. Nous conseillons 6 au plus.',
+      '7 concurrents : environ 65 minutes de Live. Nous conseillons 6 au plus.',
     );
     expect(tooManyCompetitorsNote(buildLiveSequence(seven.slice(0, 6), true), 6)).toBeNull();
   });

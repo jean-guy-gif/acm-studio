@@ -12,6 +12,7 @@ import {
   question,
   questionHint,
 } from '@/features/live-seller/components/live-stage';
+import { pricePositionSentence } from '@/features/live-seller/services/price-position';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { pendingCommercializationPrice } from '@/features/meeting-conclusion/services/pending-commercialization-price';
 
@@ -25,8 +26,12 @@ export function LiveCommercializationPrice({
   projectId,
   onPendingChange,
   onSaved,
+  comparedPrices = [],
 }: {
   projectId: string;
+  // Mission 94 — les prix affichés des concurrents déjà RÉVÉLÉS pendant le Live : ils situent
+  // le montant saisi. Rien d'autre que ce que vous avez déjà vu.
+  comparedPrices?: readonly number[];
   onPendingChange?: (typed: string | null) => void;
   onSaved?: (saved: string) => void;
 }) {
@@ -34,6 +39,8 @@ export function LiveCommercializationPrice({
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastSavedRef = useRef<string | null>(null);
+  const [typedPrice, setTypedPrice] = useState<number | null>(null);
+  const position = typedPrice == null ? null : pricePositionSentence(typedPrice, comparedPrices);
 
   // Le champ repart vide à chaque ouverture de l'écran : en le quittant, plus rien n'attend.
   useEffect(() => () => onPendingChange?.(null), [onPendingChange]);
@@ -76,15 +83,25 @@ export function LiveCommercializationPrice({
           placeholder="—"
           defaultValue=""
           autoComplete="off"
-          onChange={(event) =>
+          onChange={(event) => {
+            const value = Number(event.currentTarget.value);
+            setTypedPrice(
+              event.currentTarget.value.trim() !== '' && Number.isFinite(value) ? value : null,
+            );
             onPendingChange?.(
               pendingCommercializationPrice(event.currentTarget.value, lastSavedRef.current),
-            )
-          }
+            );
+          }}
           className={bigInput}
         />
         <span className={bigInputUnit}>€</span>
       </div>
+      {/* Mission 94 — un repère factuel : ni conseil, ni alerte, ni pression (M85). */}
+      {position ? (
+        <p className={questionHint} data-price-position aria-live="polite">
+          {position}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className={ctaPrimary} disabled={pending}>
           {pending ? 'Enregistrement…' : 'Enregistrer le prix'}

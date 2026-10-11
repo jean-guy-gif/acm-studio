@@ -2,6 +2,7 @@
 -- VÉRITÉ, en jouant le navigateur d'un conseiller (rôle authenticated, RLS active) :
 --   §1 la première écriture passe (devinette de prix, de durée, valeur perçue) ;
 --   §2 les réécrire — autre valeur ou vide — est refusé : la première valeur reste ;
+--   §2 bis le prix reformulé après le marché (mission 94) est facultatif, puis figé lui aussi ;
 --   §3 les autres réponses restent modifiables ;
 --   §4 ni suppression directe, ni rattachement à un autre concurrent ou dossier ;
 --   §5 supprimer le concurrent emporte toujours sa réponse.
@@ -92,6 +93,41 @@ begin
   if s.seller_perceived_property_price is distinct from 350000 then
     raise exception 'FAIL 2: valeur perçue réécrite (%)', s.seller_perceived_property_price;
   end if;
+end $$;
+
+-- §2 bis (mission 94) — le prix reformulé après le marché : facultatif, puis figé lui aussi.
+do $$
+declare s public.live_seller_summary%rowtype;
+begin
+  select * into s from public.live_seller_summary
+    where project_id = '92cccccc-0000-0000-0000-000000000001';
+  if s.seller_revised_property_price is not null then
+    raise exception 'FAIL 2bis: un prix reformulé existe sans avoir été donné';
+  end if;
+
+  update public.live_seller_summary set seller_revised_property_price = 325000
+    where project_id = '92cccccc-0000-0000-0000-000000000001';
+  update public.live_seller_summary set seller_revised_property_price = 340000
+    where project_id = '92cccccc-0000-0000-0000-000000000001';
+  update public.live_seller_summary set seller_revised_property_price = null
+    where project_id = '92cccccc-0000-0000-0000-000000000001';
+  select * into s from public.live_seller_summary
+    where project_id = '92cccccc-0000-0000-0000-000000000001';
+  if s.seller_revised_property_price is distinct from 325000 then
+    raise exception 'FAIL 2bis: prix reformulé réécrit (%)', s.seller_revised_property_price;
+  end if;
+  if s.seller_perceived_property_price is distinct from 350000 then
+    raise exception 'FAIL 2bis: la valeur perçue a bougé avec le prix reformulé';
+  end if;
+
+  begin
+    update public.live_seller_summary set seller_revised_property_price = 0
+      where project_id = '92cccccc-0000-0000-0000-000000000002';
+    insert into public.live_seller_summary (project_id, agency_id, seller_revised_property_price)
+      values ('92cccccc-0000-0000-0000-000000000002', '92aaaaaa-0000-0000-0000-000000000000', 0);
+    raise exception 'FAIL 2bis: un prix reformulé nul est accepté';
+  exception when check_violation then null;
+  end;
 end $$;
 
 -- §3 — le reste se modifie comme avant.
