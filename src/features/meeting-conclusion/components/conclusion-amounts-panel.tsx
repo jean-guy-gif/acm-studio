@@ -33,7 +33,7 @@ export function ConclusionAmountsPanel({ amounts }: { amounts: ConclusionAmounts
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className={`${card} flex flex-col gap-1 p-5`}>
-        <div className={`${metaLabel} mb-1`}>Les quatre repères</div>
+        <div className={`${metaLabel} mb-1`}>Les repères</div>
         {amountRows(amounts).map((row) => (
           <Row key={row.key} label={row.label} value={euro(row.value)} />
         ))}

@@ -173,8 +173,8 @@ export function PositioningDecisionForm({
             <span className="text-zinc-500 stage:text-white/60">€</span>
           </div>
           <span className="text-xs text-zinc-400 stage:text-white/40">
-            Affichée au vendeur à la fin du Live, à côté du marché calculé — jamais saisie devant
-            lui.
+            Affichée au vendeur à la fin du Live, à côté du prix des concurrents — jamais saisie
+            devant lui.
           </span>
         </label>
 

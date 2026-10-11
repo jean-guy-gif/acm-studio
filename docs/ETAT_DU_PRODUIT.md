@@ -82,7 +82,7 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
    3. **Ce prix vous paraît-il cohérent ?** — révélation du prix réel et des écarts.
    4. **Pourquoi toujours en vente ?** — durée devinée puis révélée, baisses, motif.
 5. **Le concurrent le plus dangereux** — lequel, et pourquoi (absent sans concurrent).
-6. **Analyse des prix** — rappel du prix du vendeur en début de rendez-vous, marché calculé révélé, analyse du conseiller, écarts.
+6. **Analyse des prix** — rappel du prix du vendeur en début de rendez-vous, prix des concurrents révélé, analyse du conseiller, écarts.
 7. **Conclusion** — les repères, puis « Sur quel prix partons-nous ? » (champ vide).
 
 Puis, hors Live : l'écran conseiller de conclusion (`/builder/[id]/conclusion`).
