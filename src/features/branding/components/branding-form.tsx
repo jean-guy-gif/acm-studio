@@ -8,6 +8,7 @@ import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 import { btnPrimary, card, errorText, fieldLabel, metaLabel, okText } from '@/components/ui/styles';
 import { saveBranding } from '@/features/branding/actions/save-branding';
 import { EMBEDDED_FONTS, embeddedFontCssVar } from '@/features/branding/fonts/font-registry';
+import { DOCUMENT_NAME_MAX_LENGTH } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 
 type LogoState = { file: File | null; url: string | null; isJpeg: boolean };
@@ -34,6 +35,8 @@ export function BrandingForm({
   initialSiteUrl,
   initialPostalAddress,
   initialProfessionalCard,
+  initialDocumentName,
+  agencyName,
 }: {
   initialPrimary: string;
   initialLogoLightUrl: string | null;
@@ -42,11 +45,15 @@ export function BrandingForm({
   initialSiteUrl: string;
   initialPostalAddress: string;
   initialProfessionalCard: string;
+  // Mission 87 — le nom imprimé sur les documents ; vide, c'est le nom de l'agence.
+  initialDocumentName: string;
+  agencyName: string;
 }) {
   const [primary, setPrimary] = useState(initialPrimary);
   const [light, setLight] = useLogo(initialLogoLightUrl);
   const [dark, setDark] = useLogo(initialLogoDarkUrl);
   const [font, setFont] = useState(initialFont);
+  const [documentName, setDocumentName] = useState(initialDocumentName);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -199,6 +206,30 @@ export function BrandingForm({
             />
             <span className="text-xs text-zinc-500">
               Imprimées en pied des dossiers de prospection.
+            </span>
+          </label>
+
+          {/* Mission 87 — un nom d'agence long ne tient pas sur un document : celui-ci le
+              remplace en tête, en pied et sur la carte de contact des dossiers. */}
+          <label className="flex flex-col gap-2">
+            <span className="flex items-baseline justify-between gap-3">
+              <span className={fieldLabel}>Nom sur les documents (facultatif)</span>
+              <span className="text-xs text-zinc-500 tabular-nums" aria-live="polite">
+                {documentName.length} / {DOCUMENT_NAME_MAX_LENGTH}
+              </span>
+            </span>
+            <input
+              type="text"
+              name="document_name"
+              maxLength={DOCUMENT_NAME_MAX_LENGTH}
+              value={documentName}
+              onChange={(event) => setDocumentName(event.target.value)}
+              placeholder={agencyName}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="text-xs text-zinc-500">
+              Vide, c’est le nom de l’agence{agencyName ? ` (« ${agencyName} »)` : ''} qui
+              s’imprime.
             </span>
           </label>
 

@@ -84,9 +84,13 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
   const mentions = agencyMentionsInputSchema.safeParse({
     postalAddress: formData.get('postal_address') ?? null,
     professionalCard: formData.get('professional_card') ?? null,
+    documentName: formData.get('document_name') ?? null,
   });
   if (!mentions.success) {
-    return { ok: false, error: 'Adresse ou carte professionnelle trop longue.' };
+    return {
+      ok: false,
+      error: 'Adresse, carte professionnelle ou nom sur les documents trop long.',
+    };
   }
 
   // Écritures via le client SERVICE ROLE, APRÈS authentification : le chemin est imposé par
@@ -126,6 +130,7 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     site_url: typography.data.siteUrl,
     postal_address: mentions.data.postalAddress,
     professional_card: mentions.data.professionalCard,
+    document_name: mentions.data.documentName,
     validated_at: now,
     updated_at: now,
     // Ne pas écraser un chemin de logo existant avec null si aucun fichier n'a été redéposé.

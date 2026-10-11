@@ -277,11 +277,24 @@ async function walkLive(
       .filter({ hasText: new RegExp(`^${label}$`) })
       .click();
 
+  // Mission 87 — le compte de test se voit dans l'espace conseiller…
+  await page.goto('/builder');
+  await expect(
+    page.getByTestId('test-account-banner'),
+    'Le bandeau du compte de test manque dans l’espace conseiller',
+  ).toHaveText('Compte de test automatique — ne préparez pas de vrai dossier ici');
+
   await page.goto(`/live/${projectId}`);
 
   // Introduction
   await expect(page.getByRole('button', { name: 'Démarrer la présentation' })).toBeVisible();
   await onScreen('Introduction');
+  // … et jamais dans le Live, que voit le vendeur.
+  await expect(
+    page.getByTestId('test-account-banner'),
+    'Le bandeau du compte de test s’affiche devant le vendeur',
+  ).toHaveCount(0);
+  await expect(page.getByText('Compte de test automatique')).toHaveCount(0);
   await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
 
   // Votre bien

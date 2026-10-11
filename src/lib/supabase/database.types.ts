@@ -45,6 +45,7 @@ export type Database = {
           brand_deep: string | null
           brand_soft: string | null
           created_at: string
+          document_name: string | null
           font_family: string | null
           id: string
           logo_dark_path: string | null
@@ -65,6 +66,7 @@ export type Database = {
           brand_deep?: string | null
           brand_soft?: string | null
           created_at?: string
+          document_name?: string | null
           font_family?: string | null
           id?: string
           logo_dark_path?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           brand_deep?: string | null
           brand_soft?: string | null
           created_at?: string
+          document_name?: string | null
           font_family?: string | null
           id?: string
           logo_dark_path?: string | null
@@ -501,6 +504,9 @@ export type Database = {
           proposal_2: string | null
           proposal_3: string | null
           show_prices: boolean | null
+          their_photo_mode: string | null
+          their_photo_path: string | null
+          their_photo_source_url: string | null
           title: string | null
           updated_at: string
           updated_by: string | null
@@ -520,6 +526,9 @@ export type Database = {
           proposal_2?: string | null
           proposal_3?: string | null
           show_prices?: boolean | null
+          their_photo_mode?: string | null
+          their_photo_path?: string | null
+          their_photo_source_url?: string | null
           title?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -539,6 +548,9 @@ export type Database = {
           proposal_2?: string | null
           proposal_3?: string | null
           show_prices?: boolean | null
+          their_photo_mode?: string | null
+          their_photo_path?: string | null
+          their_photo_source_url?: string | null
           title?: string | null
           updated_at?: string
           updated_by?: string | null
