@@ -14,7 +14,15 @@ export const MINUTES_PER_SCREEN_LOW = 1.25;
 export const MINUTES_PER_SCREEN_HIGH = 1.7;
 const DURATION_STEP_MINUTES = 5;
 
-export type SequenceCompetitor = { id: string; energyRating: string | null };
+export type SequenceCompetitor = {
+  id: string;
+  energyRating: string | null;
+  // Mission 92 — sans durée ni historique de prix, le Live saute l'étape « Durée ».
+  durationKnown?: boolean;
+};
+
+// Au-delà, le Live devient trop long : l'écran le dit au conseiller, sans rien bloquer.
+export const ADVISED_MAX_COMPETITORS = 6;
 
 export type SequencePart = { key: string; label: string; screenCount: number };
 
@@ -87,6 +95,7 @@ export function buildLiveSequence(
         id: competitor.id,
         response: null,
         energyRating: competitor.energyRating,
+        durationKnown: competitor.durationKnown,
       })),
     },
     hasSubjectProperty,
@@ -134,4 +143,16 @@ export function durationLabel(sequence: LiveSequence): string {
   return sequence.durationLowMinutes === sequence.durationHighMinutes
     ? `${sequence.durationLowMinutes} min environ`
     : `${sequence.durationLowMinutes} à ${sequence.durationHighMinutes} min environ`;
+}
+
+// Mission 92 — « 7 concurrents : environ 60 minutes de Live. Nous conseillons 6 au plus. »
+// La durée est la borne haute de l'estimation ; null tant qu'on reste dans le conseil.
+export function tooManyCompetitorsNote(
+  sequence: LiveSequence,
+  competitorCount: number,
+): string | null {
+  if (competitorCount <= ADVISED_MAX_COMPETITORS) {
+    return null;
+  }
+  return `${competitorCount} concurrents : environ ${sequence.durationHighMinutes} minutes de Live. Nous conseillons ${ADVISED_MAX_COMPETITORS} au plus.`;
 }

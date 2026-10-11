@@ -21,6 +21,8 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/[id]/prospection` — redirige vers `/prospection/tournee?bien=[id]`, la seule liste de tournée imprimable (A4).
 
 **Live** — `/live` : dossiers prêts seulement · `/live/[id]` : la scène face au vendeur.
+`/live/[id]/merci` et `/live/[id]/pause` : écrans neutres de fin et de pause (logo, une phrase,
+« Accès conseiller »), sans rien du dossier.
 
 **Suivi** — `/suivi` : dossiers conclus, filtre par issue, issue modifiable, recherche acheteur.
 

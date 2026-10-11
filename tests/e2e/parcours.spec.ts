@@ -111,6 +111,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await walkLive(page, projectId, { firstPass: true, tablet: false, dossierName });
   });
 
+  await test.step('La liste du Live ne propose plus de recommencer', async () => {
+    await page.goto('/live');
+    const item = page.locator('li').filter({ hasText: dossierName });
+    await expect(item.getByRole('link', { name: /Reprendre \(écran \d+ sur \d+\)/ })).toBeVisible();
+    await expect(page.getByText(/Recommencer/)).toHaveCount(0);
+  });
+
   await test.step('Live rejoué en tablette (768 × 1024)', async () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await walkLive(page, projectId, { firstPass: false, tablet: true, dossierName });
@@ -119,6 +126,15 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Conclusion « à relancer » avec un motif', async () => {
     await page.getByRole('link', { name: /Terminer le rendez-vous/ }).click();
+    // Mission 92 — la tablette est encore tournée vers le vendeur : un écran neutre d'abord.
+    await expect(page, '« Terminer » ne mène pas à l’écran « Merci »').toHaveURL(
+      new RegExp(`/live/${projectId}/merci$`),
+    );
+    await expect(page.getByRole('heading', { name: 'Merci pour cet échange' })).toBeVisible();
+    const thanks = await page.locator('body').innerText();
+    expect(thanks, 'L’écran « Merci » montre le nom du client').not.toContain(dossierName);
+    expect(thanks, 'L’écran « Merci » montre un montant').not.toMatch(/\d{3}\s?€|€/);
+    await page.getByRole('link', { name: 'Accès conseiller' }).click();
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/conclusion$`));
     await page
       .locator('label')
@@ -338,8 +354,28 @@ async function walkLive(
       await expectPriceHidden(page, competitor, 'Votre valeur perçue');
     }
   }
-  await page.locator('input[name="seller_perceived_property_price"]').fill(String(PERCEIVED_PRICE));
-  await validate();
+  const perceivedInput = page.locator('input[name="seller_perceived_property_price"]');
+  const lockedAnswer = page.locator('[data-locked-answer]');
+  if (firstPass) {
+    await perceivedInput.fill(String(PERCEIVED_PRICE));
+    await validate();
+    // Mission 92 — le montant est redit en grand avant d'être enregistré : une seule
+    // confirmation, dans l'écran.
+    const confirm = page.getByRole('button', { name: /Confirmer et continuer/ });
+    await expect(confirm, 'La valeur perçue s’enregistre sans confirmation').toBeVisible();
+    expect(
+      withoutSpaces(await mainText(page)),
+      'Le montant à confirmer n’est pas redit à l’écran',
+    ).toContain(`${PERCEIVED_PRICE}€?`);
+    await onScreen('Votre valeur perçue · confirmation');
+    await confirm.click();
+  } else {
+    // Mission 92 — déjà donnée : elle se relit, sans champ de saisie.
+    await expect(perceivedInput, 'La valeur perçue se corrige encore après coup').toHaveCount(0);
+    await expect(lockedAnswer).toContainText('Votre réponse');
+    expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(PERCEIVED_PRICE));
+    await validate();
+  }
 
   // Mission 82 — sauter les concurrents au clavier ne laisse pas « Analyse des prix » vide :
   // l'écran nomme ce qui reste à passer, sans aucun prix, et « Y aller » y mène.
@@ -372,7 +408,7 @@ async function walkLive(
     await expect(page.getByText(`${label} · Étape 1 sur 4`)).toBeVisible();
 
     // Mission 89 — rendez-vous interrompu au 2e concurrent : « Quitter » demande confirmation
-    // dans l'écran, mène à la liste du Live (sans aucun prix), et « Reprendre » rouvre ici.
+    // dans l'écran, ouvre l'écran de pause (mission 92), et « Reprendre » rouvre ici.
     if (firstPass && index === 1) {
       await page.getByRole('button', { name: 'Quitter', exact: true }).click();
       const dialog = page.getByRole('dialog');
@@ -384,15 +420,27 @@ async function walkLive(
       await page.getByRole('button', { name: 'Quitter', exact: true }).click();
       await expect(dialog.getByText('Vos réponses sont enregistrées.')).toBeVisible();
       await dialog.getByRole('button', { name: 'Quitter', exact: true }).click();
-      await expect(page, 'Quitter ne mène pas à la liste du Live').toHaveURL(/\/live$/);
+      // Mission 92 — un écran neutre, « Rendez-vous en pause » : ni la liste des autres
+      // clients, ni le nom de celui-ci, ni aucun prix.
+      await expect(page, 'Quitter ne mène pas à l’écran de pause').toHaveURL(
+        new RegExp(`/live/${projectId}/pause$`),
+      );
+      await expect(page.getByRole('heading', { name: 'Rendez-vous en pause' })).toBeVisible();
+      expect(
+        await page.locator('body').innerText(),
+        'L’écran de pause montre le nom d’un client',
+      ).not.toContain(dossierName);
+      await expect(page.locator('li')).toHaveCount(0);
       for (const other of COMPETITORS) {
-        await expectPriceHidden(page, other, 'liste du Live après « Quitter »');
+        await expectPriceHidden(page, other, '« Rendez-vous en pause »');
       }
-
-      const item = page.locator('li').filter({ hasText: dossierName });
-      const resume = item.getByRole('link', { name: /Reprendre \(écran \d+ sur \d+\)/ });
-      await expect(resume, 'Un Live commencé ne propose pas « Reprendre »').toBeVisible();
-      await expect(item.getByRole('link', { name: 'Recommencer depuis le début' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Accès conseiller' })).toHaveAttribute(
+        'href',
+        '/live',
+      );
+      // L'appareil a gardé l'écran où il s'est arrêté : « Reprendre » y ramène.
+      const resume = page.getByRole('link', { name: /Reprendre/ });
+      await expect(resume).toHaveAttribute('href', /fiche=\d+$/);
       await resume.click();
       await expect(page).toHaveURL(new RegExp(`/live/${projectId}\\?fiche=\\d+$`));
       await expect(
@@ -415,9 +463,14 @@ async function walkLive(
     await onScreen(`${label} · À quel prix ?`);
     if (firstPass) await expectPriceHidden(page, competitor, 'À quel prix ?');
     await expectAlone(page, others, `${label} · À quel prix ?`);
-    await page
-      .locator('input[name="seller_estimated_listing_price"]')
-      .fill(String(competitor.guess));
+    const guessInput = page.locator('input[name="seller_estimated_listing_price"]');
+    if (firstPass) {
+      await guessInput.fill(String(competitor.guess));
+    } else {
+      // Mission 92 — la devinette du premier passage ne se corrige plus.
+      await expect(guessInput, 'La devinette se corrige encore après coup').toHaveCount(0);
+      expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(competitor.guess));
+    }
     await validate();
 
     // 3. Révélation.
@@ -430,6 +483,22 @@ async function walkLive(
       `Le prix de ${competitor.title} n'est pas révélé après la devinette`,
     ).toContain(String(competitor.price));
     await expectAlone(page, others, `${label} · Ce prix vous paraît-il cohérent ?`);
+    // Mission 92 — après la révélation, « Précédent » montre la devinette en lecture seule :
+    // voir le prix ne permet plus de la corriger.
+    if (firstPass && index === 0) {
+      await page.getByRole('button', { name: /Précédent/ }).click();
+      await expect(
+        page.getByRole('heading', { name: 'À quel prix pensez-vous que ce bien est proposé ?' }),
+      ).toBeVisible();
+      await expect(guessInput, 'Après la révélation, la devinette reste modifiable').toHaveCount(0);
+      await expect(lockedAnswer).toContainText('Votre réponse');
+      expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(competitor.guess));
+      await onScreen(`${label} · devinette en lecture seule`);
+      await validate();
+      await expect(
+        page.getByRole('heading', { name: 'Ce prix vous paraît-il cohérent ?' }).first(),
+      ).toBeVisible();
+    }
     await choose('Oui, ce prix paraît cohérent');
     await page.locator('textarea[name="seller_price_coherence_comment"]').fill(COMMENT);
     await validate();
@@ -440,9 +509,15 @@ async function walkLive(
     ).toBeVisible();
     await onScreen(`${label} · Pourquoi toujours en vente ?`);
     await expectAlone(page, others, `${label} · Pourquoi toujours en vente ?`);
-    await page.locator('input[name="seller_estimated_days_on_market"]').fill('90');
-    const reveal = page.getByRole('button', { name: /Révéler la durée/ });
-    if (await reveal.isVisible()) await reveal.click();
+    const daysInput = page.locator('input[name="seller_estimated_days_on_market"]');
+    if (firstPass) {
+      await daysInput.fill('90');
+      await page.getByRole('button', { name: /Révéler la durée/ }).click();
+    } else {
+      // Mission 92 — la durée devinée ne se corrige plus : elle se relit, déjà révélée.
+      await expect(daysInput, 'La durée devinée se corrige encore après coup').toHaveCount(0);
+      expect(withoutSpaces(await lockedAnswer.innerText())).toContain('90jours');
+    }
     await expect(page.getByText('Durée observée sur le marché')).toBeVisible();
     await onScreen(`${label} · durée révélée`);
     await choose('Prix trop élevé');

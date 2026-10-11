@@ -17,7 +17,10 @@ import {
   SellerSequenceCard,
   type SequenceNote,
 } from '@/features/before-meeting/components/seller-sequence-card';
-import { buildLiveSequence } from '@/features/before-meeting/services/live-sequence';
+import {
+  buildLiveSequence,
+  tooManyCompetitorsNote,
+} from '@/features/before-meeting/services/live-sequence';
 import {
   buildMarketGlance,
   toGlanceCompetitor,
@@ -36,6 +39,7 @@ import { ComparableAnalysisOverview } from '@/features/comparable-analysis/compo
 import { ComparableAnalysisPrices } from '@/features/comparable-analysis/components/comparable-analysis-prices';
 import { ComparableAnalysisSurfaces } from '@/features/comparable-analysis/components/comparable-analysis-surfaces';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
+import { isDurationKnown } from '@/features/live-seller/services/project-live-for-seller';
 import { pricePerSquareMeter } from '@/features/comparables/services/calculate-comparable-summary';
 import { getMainPhotoUrl } from '@/features/comparables/utils/comparable-photos';
 import { deletePricePositioning } from '@/features/price-positioning/actions/delete-price-positioning';
@@ -130,12 +134,22 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   const ready = isReadyBadge(readiness, project.status);
 
   // Le Live ne montre des concurrents que s'il a un bien vendeur à leur comparer.
-  const sequence = buildLiveSequence(presentation.live?.comparables ?? [], property != null);
+  const liveCompetitors = (presentation.live?.comparables ?? []).map((competitor) => ({
+    id: competitor.id,
+    energyRating: competitor.energyRating,
+    durationKnown: isDurationKnown(competitor),
+  }));
+  const sequence = buildLiveSequence(liveCompetitors, property != null);
   const notes: SequenceNote[] = presentation.warnings.map((warning) => ({
     key: warning.code,
     severity: warning.severity,
     message: warning.message,
   }));
+  // Mission 92 — au-delà de 6 concurrents, le Live est long : on le dit, sans rien bloquer.
+  const tooMany = tooManyCompetitorsNote(sequence, liveCompetitors.length);
+  if (tooMany) {
+    notes.unshift({ key: 'too_many_competitors', severity: 'warning', message: tooMany });
+  }
   if (sequence.competitorsWithoutDpe > 0) {
     const many = sequence.competitorsWithoutDpe > 1;
     notes.push({

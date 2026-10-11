@@ -3,6 +3,7 @@
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
   bigInput,
   bigInputUnit,
@@ -45,7 +46,6 @@ export function LivePageDuration({
   const currentReason = response?.seller_market_duration_reason ?? '';
   const currentComment = response?.seller_market_duration_comment ?? '';
   const savedEstimatedDays = response?.seller_estimated_days_on_market ?? null;
-  const currentEstimatedDays = savedEstimatedDays ?? '';
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -100,21 +100,27 @@ export function LivePageDuration({
         </div>
 
         <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
-          <label className="flex flex-col gap-2">
-            <span className={statLabel}>La durée que vous imaginez</span>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                name="seller_estimated_days_on_market"
-                min={0}
-                step={1}
-                placeholder="90"
-                defaultValue={currentEstimatedDays}
-                className={bigInput}
-              />
-              <span className={bigInputUnit}>jours</span>
-            </div>
-          </label>
+          {/* Mission 92 — la durée devinée ne se donne qu'une fois : révélée, elle se relit. */}
+          {savedEstimatedDays != null ? (
+            <LiveLockedAnswer
+              value={`${formatNumber(savedEstimatedDays)}\u00A0jour${savedEstimatedDays > 1 ? 's' : ''}`}
+            />
+          ) : (
+            <label className="flex flex-col gap-2">
+              <span className={statLabel}>La durée que vous imaginez</span>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  name="seller_estimated_days_on_market"
+                  min={0}
+                  step={1}
+                  placeholder="90"
+                  className={bigInput}
+                />
+                <span className={bigInputUnit}>jours</span>
+              </div>
+            </label>
+          )}
 
           {durationRevealed ? (
             <div className="live-reveal-pop flex flex-col gap-4">

@@ -51,6 +51,10 @@ import type { SellerPresentationProperty } from '@/features/seller-presentation/
 
 export type LiveStageTheme = 'dark' | 'light';
 
+// Mission 92 — dit au conseiller, dans la barre, quand une réponse partie en fond n'est pas
+// arrivée : le passage à « Conclusion » attend, et le bouton relance.
+export const FAILED_SAVE_MESSAGE = 'Une réponse n’a pas pu être enregistrée — touchez Réessayer';
+
 // Live comparative reader — mode présentation. Client-only navigation state
 // (page courante, plein écran, thème scène sombre/clair au choix du conseiller).
 // Nothing about the source data is editable here; only the seller's Live answers
@@ -110,6 +114,9 @@ export function LiveComparativeShell({
   // Mission 82 — le prix du vendeur, enregistré en début de rendez-vous : gardé côté client
   // pour que la page le réaffiche si on y revient (la charge d'ouverture ne le porte pas).
   const [perceivedOverride, setPerceivedOverride] = useState<number | null>(null);
+  // Mission 92 — ce prix ne se donne qu'une fois : le montant tapé est redit en grand, et
+  // n'est enregistré qu'au second « Valider » (une faute de frappe se voit avant).
+  const [perceivedToConfirm, setPerceivedToConfirm] = useState<number | null>(null);
   // Le concurrent le plus dangereux, choisi pendant la séance : enregistré en fond, il n'est
   // pas dans la charge d'ouverture — « Conclusion » le lit ici.
   const [dangerousOverride, setDangerousOverride] = useState<DangerousChoice | null>(null);
@@ -190,6 +197,9 @@ export function LiveComparativeShell({
         () => setClosingSave('failed'),
       );
   };
+  // Mission 92 — la tablette est encore tournée vers le vendeur : la fin du Live ouvre un
+  // écran neutre (« Merci »), jamais l'écran conseiller de conclusion.
+  const thanksHref = `/live/${projectId}/merci`;
   const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (finishing) {
       event.preventDefault();
@@ -216,7 +226,7 @@ export function LiveComparativeShell({
       return;
     }
     void document.exitFullscreen?.().catch(() => {});
-    router.push(`/builder/${projectId}/conclusion`);
+    router.push(thanksHref);
   };
 
   // Concurrents EFFECTIFS : projetés, recouverts des fragments livrés et des réponses
@@ -281,6 +291,7 @@ export function LiveComparativeShell({
   const go = useCallback(
     (delta: number) => {
       setAwaitError(null);
+      setPerceivedToConfirm(null);
       setIndex((i) => {
         const target = Math.max(0, Math.min(pages.length - 1, i + delta));
         // Fin de séance bloquée tant qu'un enregistrement de fond a échoué.
@@ -383,6 +394,11 @@ export function LiveComparativeShell({
       return;
     }
     if (page.type === 'comparable_price' && entry) {
+      // Mission 92 — devinette déjà donnée et prix déjà livré : on avance, sans rien réécrire.
+      if (entry.authorized && entry.response?.seller_estimated_listing_price != null) {
+        go(1);
+        return;
+      }
       const r = await awaited(() =>
         deliverLiveFragment(projectId, {
           kind: 'comparable-reveal',
@@ -422,26 +438,37 @@ export function LiveComparativeShell({
       return;
     }
     if (page.type === 'seller_perceived_price') {
-      const raw = String(fd.get('seller_perceived_property_price') ?? '').trim();
-      const typed = raw === '' ? Number.NaN : Number(raw);
-      if (!Number.isFinite(typed)) {
-        setAwaitError('Indiquez le prix que vous avez en tête.');
+      // Mission 92 — déjà donné : il ne se réécrit pas. On avance (ou l'on demande la
+      // fourchette, plus bas, quand « Analyse des prix » suit directement).
+      const alreadyGiven = summary?.seller_perceived_property_price != null;
+      if (alreadyGiven && !(entersAnalysis && range == null && pendingSteps.length === 0)) {
+        go(1);
         return;
       }
-      // Sans concurrent, « Analyse des prix » suit directement : la fourchette se livre ici.
-      const r = await awaited(() =>
-        entersAnalysis ? deliverRange() : persistLiveSellerSummary(projectId, fd),
-      );
-      if (!r.ok) {
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      if (!alreadyGiven) {
+        const raw = String(fd.get('seller_perceived_property_price') ?? '').trim();
+        const typed = raw === '' ? Number.NaN : Number(raw);
+        if (!Number.isFinite(typed) || typed <= 0) {
+          setAwaitError('Indiquez le prix que vous avez en tête.');
+          return;
+        }
+        // Premier « Valider » : l'écran redit le montant en grand. Le second l'enregistre.
+        if (perceivedToConfirm !== typed) {
+          setPerceivedToConfirm(typed);
+          return;
+        }
+        // Sans concurrent, « Analyse des prix » suit directement : la fourchette se livre ici.
+        const r = await awaited(() =>
+          entersAnalysis ? deliverRange() : persistLiveSellerSummary(projectId, fd),
+        );
+        if (!r.ok) {
+          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          return;
+        }
+        setPerceivedOverride(typed);
+        go(1);
         return;
       }
-      // Un prix corrigé en revenant sur la page périme les écarts déjà livrés : ils seront
-      // redemandés à l'entrée de « Analyse des prix ».
-      if (!entersAnalysis && typed !== summary?.seller_perceived_property_price) setRange(null);
-      setPerceivedOverride(typed);
-      go(1);
-      return;
     }
     // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
     if (entersAnalysis && range == null && pendingSteps.length === 0) {
@@ -478,6 +505,7 @@ export function LiveComparativeShell({
     durationRevealed,
     range,
     summary,
+    perceivedToConfirm,
     comparables,
     pendingSteps,
     go,
@@ -526,12 +554,13 @@ export function LiveComparativeShell({
     return () => window.removeEventListener('beforeunload', warn);
   }, [hasUnsavedAnswers]);
 
-  // « Quitter » demande confirmation DANS l'écran (pas de boîte du navigateur), puis mène à la
-  // liste du Live — jamais à la page de préparation, qui montre tous les prix.
+  // « Quitter » demande confirmation DANS l'écran (pas de boîte du navigateur), puis ouvre un
+  // écran neutre, « Rendez-vous en pause » (mission 92) — jamais la liste du Live, qui montre
+  // les noms des autres vendeurs, ni la page de préparation, qui montre tous les prix.
   const [quitOpen, setQuitOpen] = useState(false);
   const quitMeeting = () => {
     void document.exitFullscreen?.().catch(() => {});
-    router.push('/live');
+    router.push(`/live/${projectId}/pause`);
   };
 
   // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
@@ -601,10 +630,19 @@ export function LiveComparativeShell({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [go, toggleFullscreen]);
 
+  // Mission 92 — un enregistrement de fond en échec retient avant « Conclusion » : la barre le
+  // dit et son bouton relance, au lieu d'un « Valider » qui ne ferait rien.
+  const blockedByFailedSave =
+    failedSaves.length > 0 && pages[currentIndex + 1]?.type === 'conclusion';
+  const retryFailedSaves = () => failedSaves.forEach(([, record]) => record.retry());
+
   const isIntro = page.type === 'intro';
   const stepLabel =
     page.comparableIndex != null && live
-      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur 4`
+      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur ${Math.max(
+          ...pages.filter((p) => p.comparableId === page.comparableId).map((p) => p.step ?? 0),
+          page.step ?? 0,
+        )}`
       : page.title;
 
   return (
@@ -777,7 +815,7 @@ export function LiveComparativeShell({
         ) : page.type === 'dangerous_competitor' && live ? (
           <LivePageDangerous comparables={authorizedComparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (
-          <LivePagePerceived summary={summary} />
+          <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
         ) : page.type === 'price_analysis' && effectiveRange ? (
           <LivePageAnalysis priceGaps={effectiveRange.priceGaps} />
         ) : page.type === 'price_analysis' ? (
@@ -833,29 +871,39 @@ export function LiveComparativeShell({
               ← Précédent
             </button>
             <span
-              className={`text-xs ${awaitError ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
+              className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
               aria-live="polite"
             >
               {busy
                 ? 'Enregistrement…'
-                : awaitError
-                  ? awaitError
-                  : currentSave?.status === 'pending'
-                    ? 'Enregistrement…'
-                    : currentSave?.status === 'ok'
-                      ? 'Réponse enregistrée'
-                      : ''}
+                : blockedByFailedSave
+                  ? FAILED_SAVE_MESSAGE
+                  : awaitError
+                    ? awaitError
+                    : currentSave?.status === 'pending'
+                      ? 'Enregistrement…'
+                      : currentSave?.status === 'ok'
+                        ? 'Réponse enregistrée'
+                        : ''}
             </span>
-            <button
-              type="button"
-              onClick={() => void onValidate()}
-              disabled={busy || index >= pages.length - 1}
-              className={ctaPrimary}
-            >
-              {page.type === 'comparable_duration' && !durationRevealed
-                ? 'Révéler la durée →'
-                : 'Valider et continuer →'}
-            </button>
+            {blockedByFailedSave ? (
+              <button type="button" onClick={retryFailedSaves} className={ctaPrimary}>
+                Réessayer
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void onValidate()}
+                disabled={busy || index >= pages.length - 1}
+                className={ctaPrimary}
+              >
+                {page.type === 'comparable_duration' && !durationRevealed
+                  ? 'Révéler la durée →'
+                  : perceivedToConfirm != null && page.type === 'seller_perceived_price'
+                    ? 'Confirmer et continuer →'
+                    : 'Valider et continuer →'}
+              </button>
+            )}
           </div>
         </div>
       ) : null}
@@ -915,7 +963,7 @@ export function LiveComparativeShell({
                 </span>
               ) : null}
               <Link
-                href={`/builder/${projectId}/conclusion`}
+                href={thanksHref}
                 onClick={finishMeeting}
                 aria-disabled={finishing}
                 className={ctaPrimary}

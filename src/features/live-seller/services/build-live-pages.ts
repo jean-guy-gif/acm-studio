@@ -11,6 +11,10 @@ export type LiveNavComparable = {
   id: string;
   response: LiveComparableResponse | null;
   energyRating?: string | null;
+  // MISSION 92 — a-t-on une durée ou un historique de prix à révéler ? Un simple oui/non (aucune
+  // donnée avant la devinette). `false` saute l'étape « Durée » : on ne fait pas deviner au
+  // vendeur ce qu'on ne saura pas lui dire. Absent = inconnu de l'appelant : l'étape reste.
+  durationKnown?: boolean;
 };
 export type LiveNavData = { comparables: LiveNavComparable[] };
 
@@ -93,7 +97,9 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
     const steps =
       comparable.response?.seller_serious_competitor === 'no'
         ? COMPARABLE_STEPS.filter((step) => step.step === 1)
-        : COMPARABLE_STEPS;
+        : comparable.durationKnown === false
+          ? COMPARABLE_STEPS.filter((step) => step.type !== 'comparable_duration')
+          : COMPARABLE_STEPS;
     for (const stepDef of steps) {
       pages.push({
         key: `${stepDef.type}:${comparable.id}`,
