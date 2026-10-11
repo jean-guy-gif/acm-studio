@@ -11,7 +11,7 @@ import {
   demoProject,
   demoProperty,
   demoSavedPositioning,
-} from '@/app/design-preview/demo-data';
+} from '@/test-fixtures/demo-data';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 
@@ -86,7 +86,6 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
     const SRC = join(process.cwd(), 'src');
     const SELLER_SIDE = [
       join('features', 'live-seller'),
-      join('features', 'live-presentation'),
       join('features', 'seller-presentation'),
       join('app', '(stage)'),
       join('app', '(protected)', 'live'),

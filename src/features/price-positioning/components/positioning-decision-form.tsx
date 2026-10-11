@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import {
   alertError,
@@ -9,30 +9,21 @@ import {
   btnDanger,
   btnPrimary,
   btnSecondary,
-  card,
   fieldLabel,
   inputBase,
-  sectionTitle,
 } from '@/components/ui/styles';
-import { AdvisorPrice } from '@/features/price-positioning/components/advisor-price';
-import { SellerPrice } from '@/features/price-positioning/components/seller-price';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
-import {
-  calculatePriceDeviation,
-  resolveMarketPosition,
-} from '@/features/price-positioning/services/calculate-price-deviation';
 import { MAX_JUSTIFICATION_LENGTH } from '@/features/price-positioning/types/saved-price-positioning';
-import type { RecommendedRange } from '@/features/price-positioning/types/price-positioning';
 
 type Props = {
-  range: RecommendedRange;
   defaultAdvisorPrice: number;
+  // D'où vient le montant proposé — « Prix médian au m² × 140 m² ».
+  formulaNote: string;
   hasSaved: boolean;
   isOutdated: boolean;
   initialAdvisorPrice: number;
-  initialSellerPrice: number | null;
   initialAdvisorAnalysis: number | null;
   initialJustification: string;
   saveAction: (formData: FormData) => Promise<SavePositioningResult>;
@@ -40,13 +31,22 @@ type Props = {
   projectId: string;
 };
 
+const shownToSeller = 'text-xs font-medium text-amber-700 stage:text-amber-300';
+
+function parseAmount(raw: string): number | null {
+  const trimmed = raw.trim();
+  const parsed = Number(trimmed);
+  return trimmed === '' || !Number.isFinite(parsed) ? null : parsed;
+}
+
+// Mission 91 — « Votre décision » : trois champs, un bouton. Le « prix souhaité vendeur »
+// n'est plus saisi ici (la valeur perçue recueillie au début du Live suffit, M82).
 export function PositioningDecisionForm({
-  range,
   defaultAdvisorPrice,
+  formulaNote,
   hasSaved,
   isOutdated,
   initialAdvisorPrice,
-  initialSellerPrice,
   initialAdvisorAnalysis,
   initialJustification,
   saveAction,
@@ -56,45 +56,27 @@ export function PositioningDecisionForm({
   const router = useRouter();
   const [becameReady, setBecameReady] = useState(false);
   const [advisorPrice, setAdvisorPrice] = useState<number | null>(initialAdvisorPrice);
-  const [sellerPrice, setSellerPrice] = useState<number | null>(initialSellerPrice);
   const [advisorAnalysis, setAdvisorAnalysis] = useState<number | null>(initialAdvisorAnalysis);
   const [justification, setJustification] = useState<string>(initialJustification);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const derived = useMemo(
-    () => ({
-      advisorDeviation: calculatePriceDeviation(advisorPrice, range.central),
-      advisorPosition: resolveMarketPosition(advisorPrice, range.low, range.high),
-      sellerDeviationFromCentral: calculatePriceDeviation(sellerPrice, range.central),
-      sellerDeviationFromAdvisor: calculatePriceDeviation(sellerPrice, advisorPrice),
-      sellerPosition: resolveMarketPosition(sellerPrice, range.low, range.high),
-    }),
-    [advisorPrice, sellerPrice, range.central, range.low, range.high],
-  );
-
-  function submit(values: {
-    advisor: number | null;
-    seller: number | null;
-    analysis: number | null;
-    justification: string;
-  }) {
+  function submit(values: { advisor: number | null; analysis: number | null; text: string }) {
     setError(null);
     setMessage(null);
     const formData = new FormData();
     formData.set('advisorPrice', values.advisor == null ? '' : String(values.advisor));
-    formData.set('sellerPrice', values.seller == null ? '' : String(values.seller));
     formData.set(
       'advisorComparativeMarketPrice',
       values.analysis == null ? '' : String(values.analysis),
     );
-    formData.set('justification', values.justification);
+    formData.set('justification', values.text);
     startTransition(async () => {
       const result = await saveAction(formData);
       if (result.ok) {
         setMessage('Décision enregistrée.');
-        // La validation de la fourchette peut avoir fait basculer le dossier (§2).
+        // La validation de la décision peut avoir fait basculer le dossier (M52).
         if (result.becameReady) {
           setBecameReady(true);
         }
@@ -107,10 +89,7 @@ export function PositioningDecisionForm({
 
   function handleReplace() {
     setAdvisorPrice(defaultAdvisorPrice);
-    setSellerPrice(null);
-    setAdvisorAnalysis(null);
-    setJustification('');
-    submit({ advisor: defaultAdvisorPrice, seller: null, analysis: null, justification: '' });
+    submit({ advisor: defaultAdvisorPrice, analysis: advisorAnalysis, text: justification });
   }
 
   function handleDelete() {
@@ -133,113 +112,96 @@ export function PositioningDecisionForm({
   return (
     <div className="flex flex-col gap-4">
       {becameReady ? <BasculeBanner projectId={projectId} /> : null}
-      <h2 className={sectionTitle}>Décision du conseiller</h2>
 
-      <AdvisorPrice
-        price={advisorPrice}
-        onChange={setAdvisorPrice}
-        deviationFromCentral={derived.advisorDeviation}
-        position={derived.advisorPosition}
-      />
-      <SellerPrice
-        price={sellerPrice}
-        onChange={setSellerPrice}
-        deviationFromCentral={derived.sellerDeviationFromCentral}
-        deviationFromAdvisor={derived.sellerDeviationFromAdvisor}
-        position={derived.sellerPosition}
-      />
-
-      <div className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
-        {/* Mission 58 — l'analyse du conseiller (avis de valeur) se prépare ICI, à froid,
-            un seul champ facultatif. Elle est ensuite AFFICHÉE dans le Live, jamais saisie
-            devant le vendeur. */}
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Analyse du conseiller — avis de valeur (facultatif)</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={0}
-              step="any"
-              inputMode="numeric"
-              placeholder="Votre avis de valeur"
-              value={advisorAnalysis == null ? '' : String(advisorAnalysis)}
-              onChange={(event) => {
-                const raw = event.target.value.trim();
-                const parsed = Number(raw);
-                setAdvisorAnalysis(raw === '' || !Number.isFinite(parsed) ? null : parsed);
-              }}
-              className={inputBase}
-            />
-            <span className="text-zinc-500 stage:text-white/60">€</span>
-          </div>
-          <span className="text-xs text-zinc-400 stage:text-white/40">
-            Affichée au vendeur à la fin du Live, à côté du prix des concurrents — jamais saisie
-            devant lui.
-          </span>
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Justification (facultative)</span>
-          <textarea
-            name="justification"
-            rows={3}
-            maxLength={MAX_JUSTIFICATION_LENGTH}
-            value={justification}
-            onChange={(event) => setJustification(event.target.value)}
+      {/* Mission 89 — calculé sur les concurrents retenus : il porte ce nom, et reste modifiable. */}
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Prix des concurrents (calculé, modifiable)</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            step="any"
+            inputMode="numeric"
+            value={advisorPrice ?? ''}
+            onChange={(event) => setAdvisorPrice(parseAmount(event.target.value))}
             className={inputBase}
           />
-          <span className="flex flex-wrap justify-between gap-x-3 text-xs text-zinc-400 stage:text-white/40">
-            {/* Mission 89 — ce texte est lu par le vendeur : le conseiller le sait en l'écrivant. */}
-            <span className="font-medium text-amber-700 stage:text-amber-300">
-              Affiché au vendeur à la fin du Live
-            </span>
-            <span>
-              {justification.length} / {MAX_JUSTIFICATION_LENGTH}
-            </span>
-          </span>
-        </label>
-
-        {error ? (
-          <p role="alert" className={alertError}>
-            {error}
-          </p>
-        ) : null}
-        {message ? <p className={alertOk}>{message}</p> : null}
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={btnPrimary}
-            disabled={pending}
-            onClick={() =>
-              submit({
-                advisor: advisorPrice,
-                seller: sellerPrice,
-                analysis: advisorAnalysis,
-                justification,
-              })
-            }
-          >
-            {hasSaved ? 'Mettre à jour la décision' : 'Enregistrer la décision'}
-          </button>
-
-          {hasSaved && isOutdated ? (
-            <button
-              type="button"
-              className={btnSecondary}
-              disabled={pending}
-              onClick={handleReplace}
-            >
-              Remplacer par le calcul courant
-            </button>
-          ) : null}
-
-          {hasSaved ? (
-            <button type="button" className={btnDanger} disabled={pending} onClick={handleDelete}>
-              Supprimer la décision
-            </button>
-          ) : null}
+          <span className="text-zinc-500 stage:text-white/60">€</span>
         </div>
+        <span className="text-xs text-zinc-500 stage:text-white/50">
+          {formulaNote} <span className={shownToSeller}>Affiché au vendeur.</span>
+        </span>
+      </label>
+
+      {/* Mission 58 — l'analyse du conseiller (avis de valeur) se prépare ICI, à froid. Elle est
+          ensuite AFFICHÉE dans le Live, jamais saisie devant le vendeur. */}
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Votre analyse de valeur (facultatif)</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            step="any"
+            inputMode="numeric"
+            placeholder="Votre avis, en euros"
+            value={advisorAnalysis == null ? '' : String(advisorAnalysis)}
+            onChange={(event) => setAdvisorAnalysis(parseAmount(event.target.value))}
+            className={inputBase}
+          />
+          <span className="text-zinc-500 stage:text-white/60">€</span>
+        </div>
+        <span className={shownToSeller}>Affiché au vendeur à la fin du Live</span>
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Justification (facultatif)</span>
+        <textarea
+          name="justification"
+          rows={3}
+          maxLength={MAX_JUSTIFICATION_LENGTH}
+          value={justification}
+          onChange={(event) => setJustification(event.target.value)}
+          className={inputBase}
+        />
+        <span className="flex flex-wrap justify-between gap-x-3 text-xs text-zinc-400 stage:text-white/40">
+          {/* Mission 89 — ce texte est lu par le vendeur : le conseiller le sait en l'écrivant. */}
+          <span className={shownToSeller}>Affiché au vendeur à la fin du Live</span>
+          <span>
+            {justification.length} / {MAX_JUSTIFICATION_LENGTH}
+          </span>
+        </span>
+      </label>
+
+      {error ? (
+        <p role="alert" className={alertError}>
+          {error}
+        </p>
+      ) : null}
+      {message ? <p className={alertOk}>{message}</p> : null}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={btnPrimary}
+          disabled={pending}
+          onClick={() =>
+            submit({ advisor: advisorPrice, analysis: advisorAnalysis, text: justification })
+          }
+        >
+          Enregistrer la décision
+        </button>
+
+        {hasSaved && isOutdated ? (
+          <button type="button" className={btnSecondary} disabled={pending} onClick={handleReplace}>
+            Reprendre le prix calculé
+          </button>
+        ) : null}
+
+        {hasSaved ? (
+          <button type="button" className={btnDanger} disabled={pending} onClick={handleDelete}>
+            Supprimer la décision
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import {
   demoProperty,
   demoSavedPositioning,
   DEMO_AT,
-} from '@/app/design-preview/demo-data';
+} from '@/test-fixtures/demo-data';
 import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 

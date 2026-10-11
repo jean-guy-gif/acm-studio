@@ -4,12 +4,9 @@ import type { SavedPricePositioning } from '@/features/price-positioning/types/s
 import type { Project } from '@/features/projects/types';
 import type { SubjectProperty } from '@/features/subject-property/types';
 
-// ---------------------------------------------------------------------------
-// Données de démonstration des aperçus design (« /design-preview »).
-// 100 % fictives et clairement identifiées comme telles (« Démo ») : aucune
-// donnée métier réelle. Partagées entre l'aperçu du Live vendeur et l'aperçu
-// du shell applicatif.
-// ---------------------------------------------------------------------------
+// Jeu de données de TEST, 100 % fictif et identifié comme tel (« Démo ») : aucune donnée
+// métier réelle. Il servait aux aperçus design (« /design-preview », supprimés à la mission 91)
+// et reste la matière des tests qui vérifient ce qui ne doit jamais passer côté vendeur.
 
 export const DEMO_AT = '2026-08-01T10:00:00.000Z';
 
@@ -34,7 +31,6 @@ export const demoProperty: SubjectProperty = {
   postal_code: '06000',
   advisor_price_min: null,
   advisor_price_max: null,
-  public_listing_url: null,
   property_type: 'apartment',
   surface_area: 72,
   land_area: null,

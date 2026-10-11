@@ -1,6 +1,7 @@
 'use client';
 
 import { useImperativeHandle, useState, type Ref } from 'react';
+import { createPortal } from 'react-dom';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
 import { dpeClass } from '@/features/dpe/services/dpe';
@@ -146,6 +147,7 @@ export function SubjectPropertyForm({
   imported,
   errors = {},
   onDirty,
+  complementsSlot,
   ref,
 }: {
   property: SubjectProperty | null;
@@ -157,6 +159,10 @@ export function SubjectPropertyForm({
   imported?: SubjectPropertyImportPrefill;
   errors?: Record<string, string>;
   onDirty?: () => void;
+  // Mission 91 — où se rangent données financières et argumentaire : dans le bloc
+  // « Compléments (facultatif) » de la fiche, que la page tient avec diagnostics et
+  // copropriété. Les valeurs restent ici ; seul leur emplacement à l'écran change.
+  complementsSlot: HTMLElement | null;
   ref?: Ref<SheetSectionHandle>;
 }) {
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
@@ -314,41 +320,49 @@ export function SubjectPropertyForm({
         onArray={setArray}
         errors={errors}
       />
-      <PropertyFinancialFields
-        monthlyCharges={scalars.monthly_charges}
-        propertyTax={scalars.property_tax}
-        onField={setField}
-        errors={errors}
-      />
-
-      <section className={formSection}>
-        <h2 className={formSectionTitle}>Argumentaire</h2>
-        <PropertyListField
-          label="Points forts"
-          items={strengths}
-          onChange={(items) => {
-            setStrengths(items);
-            onDirty?.();
-          }}
-          error={errors.strengths}
-        />
-        <PropertyListField
-          label="Points de vigilance"
-          items={watchPoints}
-          onChange={(items) => {
-            setWatchPoints(items);
-            onDirty?.();
-          }}
-          error={errors.watch_points}
-        />
-      </section>
-
+      {/* Mission 38 — la fourchette du conseiller, juste sous les champs essentiels. */}
       <PropertyPriceRangeStep
         advisorPriceMin={scalars.advisor_price_min}
         advisorPriceMax={scalars.advisor_price_max}
         onField={setField}
         errors={errors}
       />
+
+      {complementsSlot
+        ? createPortal(
+            <div className="flex max-w-3xl flex-col gap-5">
+              <PropertyFinancialFields
+                monthlyCharges={scalars.monthly_charges}
+                propertyTax={scalars.property_tax}
+                onField={setField}
+                errors={errors}
+              />
+
+              <section className={formSection}>
+                <h2 className={formSectionTitle}>Argumentaire</h2>
+                <PropertyListField
+                  label="Points forts"
+                  items={strengths}
+                  onChange={(items) => {
+                    setStrengths(items);
+                    onDirty?.();
+                  }}
+                  error={errors.strengths}
+                />
+                <PropertyListField
+                  label="Points de vigilance"
+                  items={watchPoints}
+                  onChange={(items) => {
+                    setWatchPoints(items);
+                    onDirty?.();
+                  }}
+                  error={errors.watch_points}
+                />
+              </section>
+            </div>,
+            complementsSlot,
+          )
+        : null}
     </div>
   );
 }

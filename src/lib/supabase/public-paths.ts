@@ -1,7 +1,5 @@
-// Routes that never require authentication. /design-preview is the design-review
-// harness: it renders ONLY fictional demo data and self-gates with notFound() in
-// production (see src/app/design-preview/page.tsx), so letting the middleware
-// pass it through exposes nothing.
+// Les chemins qui s'ouvrent sans connexion. Liste d'autorisation, chemins EXACTS : rien d'autre
+// ne s'ouvre, et aucun préfixe (mission 91 : le harnais /design-preview a été supprimé).
 //
 // Mission 60 — /auth/confirm est le point d'entrée PUBLIC du lien d'invitation : il vérifie le
 // jeton et ÉTABLIT la session. S'il était gardé, l'invité (pas encore authentifié) serait renvoyé
@@ -12,16 +10,8 @@
 //
 // Mission 88 — /mot-de-passe-oublie se demande sans être connecté, par définition. La page
 // « Choisir un nouveau mot de passe », elle, exige la session ouverte par le lien reçu.
-const PUBLIC_PATHS = [
-  '/login',
-  '/design-preview',
-  '/auth/confirm',
-  '/confidentialite',
-  '/mot-de-passe-oublie',
-];
+const PUBLIC_PATHS = ['/login', '/auth/confirm', '/confidentialite', '/mot-de-passe-oublie'];
 
-// /design-preview et ses sous-pages (ex. /design-preview/app) : harnais de
-// revue design auto-gardé en production (notFound sans ACM_DESIGN_PREVIEW=1).
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/design-preview/');
+  return PUBLIC_PATHS.includes(pathname);
 }

@@ -16,11 +16,9 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/[id]/comparables/new` — ajouter un concurrent : adresse (extension), page collée, saisie.
 - `/builder/[id]/comparables/find` — trouver des concurrents : « Chercher les concurrents » (Stream Estate, si clé), puis « Ouvrir / Lire mes recherches » sur les portails, validation en lot. Sans extension : un seul message d'installation (`NEXT_PUBLIC_EXTENSION_INSTALL_URL`).
 - `/builder/[id]/comparables/[comparableId]/edit` — modifier un concurrent.
-- `/builder/[id]/comparables/analysis` — analyse comparative, critère par critère.
-- `/builder/[id]/comparables/positioning` — positionnement : fourchette, prix des concurrents, analyse du conseiller.
-- `/builder/[id]/presentation` — présentation vendeur : relecture de la matière avant le rendez-vous.
+- `/builder/[id]/avant-rendez-vous` — avant le rendez-vous, sur un seul écran : pastilles d'avancement, le marché en un coup d'œil (analyse détaillée dépliable), la décision du conseiller, le déroulé du Live et sa durée estimée. Les anciennes adresses `comparables/analysis`, `comparables/positioning` et `presentation` y redirigent.
 - `/builder/[id]/conclusion` — écran conseiller : issue du rendez-vous et motif (dossier prêt ou conclu).
-- `/builder/[id]/prospection` — liste de tournée imprimable (A4) des concurrents à prospecter : dossier conclu « mandat signé » seulement. Chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier ».
+- `/builder/[id]/prospection` — redirige vers `/prospection/tournee?bien=[id]`, la seule liste de tournée imprimable (A4).
 
 **Live** — `/live` : dossiers prêts seulement · `/live/[id]` : la scène face au vendeur.
 
@@ -30,7 +28,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 `/admin/equipe` : vue manager, ce qui dort, invitations, rôles (404 pour un conseiller).
 
 **Accès** — `/login` · `/onboarding` (première agence) · `/accept-invitation` · `/auth/confirm`
-(route) · `/design-preview` (outil de développement, 404 en production sauf `ACM_DESIGN_PREVIEW=1`).
+(route).
 
 ## Features (`src/features`)
 
@@ -47,7 +45,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `comparable-analysis` — analyse comparative : caractéristiques, localisation, valeurs aberrantes.
 - `price-positioning` — positionnement : marché calculé, fourchette, prix des concurrents, analyse du conseiller.
 - `seller-presentation` — matière préparée pour le vendeur et ses avertissements.
-- `live-presentation` — sections et avertissements de la présentation.
+- `before-meeting` — l'écran « Avant le rendez-vous » : marché en un coup d'œil, pastilles, déroulé du Live.
 - `live-seller` — le Live : pages, verrous d'avancement, révélations, réponses du vendeur.
 - `meeting-conclusion` — prix de commercialisation, conclusion, issues, Suivi, recherche acheteur.
 - `branding` — identité de l'agence : palette, logos, police embarquée.
@@ -65,8 +63,6 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
 - `project_price_positionings` (fourchette, prix des concurrents, analyse du conseiller).
 - `live_seller_responses` (réponses par concurrent) ; `live_seller_summary` (réponses de fin de Live).
 - `project_meeting_conclusions` (issue, motif, neuf faits figés).
-- Créées au schéma initial et lues nulle part : `meeting_scripts`, `meeting_sessions`,
-  `seller_answers`, `perception_results`, `reports`, `exports`, `audit_logs`.
 - Buckets : `project-photos` (privé) et `agency-branding` (public, logos seulement).
 - Fonctions : `conclude_meeting`, `save_commercialization_price`, `change_meeting_outcome`,
   `accept_invitation`, `bootstrap_agency_owner`, `get_current_agency_id` (RLS par agence).

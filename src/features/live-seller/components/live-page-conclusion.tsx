@@ -82,10 +82,6 @@ export function LivePageConclusion({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         <div className={`${panelSoft} h-fit`}>
           <Line
-            label="Votre prix souhaité (enregistré)"
-            value={euro(decision?.sellerPrice ?? null)}
-          />
-          <Line
             label="Concurrent le plus dangereux"
             value={
               dangerous

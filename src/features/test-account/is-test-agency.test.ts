@@ -39,7 +39,6 @@ describe('le bandeau de test', () => {
     expect(
       users([
         join('features', 'live-seller'),
-        join('features', 'live-presentation'),
         join('features', 'seller-presentation'),
         join('app', '(stage)'),
       ]),

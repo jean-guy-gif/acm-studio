@@ -29,7 +29,11 @@ export function ProspectingSection({
           </p>
         </div>
         {rows.length > 0 ? (
-          <Link href={`/builder/${projectId}/prospection`} target="_blank" className={btnSecondary}>
+          <Link
+            href={`/prospection/tournee?bien=${projectId}`}
+            target="_blank"
+            className={btnSecondary}
+          >
             Imprimer la liste de tournée
           </Link>
         ) : null}

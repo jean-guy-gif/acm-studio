@@ -8,7 +8,7 @@ import {
   demoProject,
   demoProperty,
   demoSavedPositioning,
-} from '@/app/design-preview/demo-data';
+} from '@/test-fixtures/demo-data';
 import {
   authorizeAdvisorRange,
   authorizeComparableReveal,

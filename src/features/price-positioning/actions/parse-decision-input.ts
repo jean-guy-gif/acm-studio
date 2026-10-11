@@ -3,9 +3,10 @@ import { MAX_JUSTIFICATION_LENGTH } from '@/features/price-positioning/types/sav
 // The ONLY three values the browser is allowed to supply. Any other field present
 // in the FormData (range, confidence, snapshot, agency_id, …) is never read here,
 // so it can never influence what is persisted.
+// Mission 91 — le « prix souhaité vendeur » n'est plus saisi en préparation : il n'est plus lu
+// ici (la valeur perçue recueillie au début du Live suffit, M82).
 export type DecisionInput = {
   advisorPrice: number;
-  sellerPrice: number | null;
   // Mission 58 — l'analyse du conseiller (avis de valeur). Facultative : vide → null.
   advisorComparativeMarketPrice: number | null;
   justification: string | null;
@@ -20,16 +21,6 @@ export function parseDecisionInput(formData: FormData): DecisionInputResult {
   const advisorPrice = advisorRaw === '' ? Number.NaN : Number(advisorRaw);
   if (!Number.isFinite(advisorPrice) || advisorPrice <= 0) {
     return { ok: false, error: 'Le prix des concurrents doit être un montant positif.' };
-  }
-
-  const sellerRaw = String(formData.get('sellerPrice') ?? '').trim();
-  let sellerPrice: number | null = null;
-  if (sellerRaw !== '') {
-    const parsed = Number(sellerRaw);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return { ok: false, error: 'Le prix vendeur doit être vide ou un montant positif.' };
-    }
-    sellerPrice = parsed;
   }
 
   // Mission 58 — l'analyse du conseiller (avis de valeur), facultative : vide → null,
@@ -52,6 +43,6 @@ export function parseDecisionInput(formData: FormData): DecisionInputResult {
 
   return {
     ok: true,
-    input: { advisorPrice, sellerPrice, advisorComparativeMarketPrice, justification },
+    input: { advisorPrice, advisorComparativeMarketPrice, justification },
   };
 }

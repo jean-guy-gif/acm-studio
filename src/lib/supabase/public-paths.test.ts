@@ -10,8 +10,6 @@ describe('isPublicPath', () => {
   it('garde les chemins publics existants', () => {
     expect(isPublicPath('/login')).toBe(true);
     expect(isPublicPath('/auth/confirm')).toBe(true);
-    expect(isPublicPath('/design-preview')).toBe(true);
-    expect(isPublicPath('/design-preview/app')).toBe(true);
   });
 
   it('n’ouvre rien d’autre : chemins exacts, jamais un préfixe', () => {
@@ -22,6 +20,9 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/admin')).toBe(false);
     expect(isPublicPath('/confidentialite/autre')).toBe(false);
     expect(isPublicPath('/confidentialite-interne')).toBe(false);
+    // Mission 91 — le harnais de revue design n'existe plus : plus aucun préfixe public.
+    expect(isPublicPath('/design-preview')).toBe(false);
+    expect(isPublicPath('/design-preview/app')).toBe(false);
   });
 
   // Mission 88 — « Mot de passe oublié » se demande sans être connecté ; choisir le nouveau mot
