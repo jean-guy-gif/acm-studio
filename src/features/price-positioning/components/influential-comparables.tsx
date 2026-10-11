@@ -26,9 +26,9 @@ export function InfluentialComparablesView({
 }) {
   return (
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
-      <h2 className={sectionTitle}>Comparables influents</h2>
+      <h2 className={sectionTitle}>Concurrents influents</h2>
       {comparables.length === 0 ? (
-        <p className={hintText}>Aucun comparable influent disponible.</p>
+        <p className={hintText}>Aucun concurrent influent disponible.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable) => (

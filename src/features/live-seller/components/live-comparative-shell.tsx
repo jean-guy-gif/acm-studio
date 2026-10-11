@@ -31,6 +31,8 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
+import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
+import { livePositionKey } from '@/features/live-seller/services/live-resume';
 import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
@@ -60,6 +62,7 @@ export function LiveComparativeShell({
   logoLightUrl = null,
   logoDarkUrl = null,
   agencyName = null,
+  hasAgreedPrice = false,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -80,6 +83,9 @@ export function LiveComparativeShell({
   logoLightUrl?: string | null;
   logoDarkUrl?: string | null;
   agencyName?: string | null;
+  // Mission 89 — un prix de commercialisation est-il déjà enregistré pour ce dossier ? Un
+  // oui/non, jamais le montant : la question de 1 à 10 ne dit « à ce prix » que s'il y en a un.
+  hasAgreedPrice?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -132,19 +138,13 @@ export function LiveComparativeShell({
       go(1);
       return;
     }
-    setBusy(true);
     const formData = new FormData();
     formData.set('commercialization_price', typed);
-    let failure: string | null = null;
-    try {
-      const result = await saveCommercializationPrice(projectId, formData);
-      failure = result.ok ? null : result.error;
-    } catch {
-      failure = 'L’enregistrement du prix a échoué. Réessayez.';
-    }
-    setBusy(false);
-    if (failure) {
-      setAwaitError(failure);
+    const result = await guardedSave(() => saveCommercializationPrice(projectId, formData), {
+      setBusy,
+    });
+    if (!result.ok) {
+      setAwaitError(result.error);
       return;
     }
     pendingPriceRef.current = null;
@@ -193,23 +193,19 @@ export function LiveComparativeShell({
       return;
     }
     event.preventDefault();
-    setFinishing(true);
     setFinishError(null);
     const formData = new FormData();
     formData.set('seller_launch_readiness_first', String(closing.first));
     formData.set('seller_launch_readiness_last', String(closing.last));
     formData.set('seller_launch_readiness_missing', closing.missing);
-    let failure: string | null = null;
-    try {
-      await closingSavesRef.current;
-      const result = await persistLiveSellerSummary(projectId, formData);
-      failure = result.ok ? null : (result.error ?? 'L’enregistrement de la note a échoué.');
-    } catch {
-      failure = 'L’enregistrement de la note a échoué. Réessayez.';
-    }
-    if (failure) {
-      setFinishing(false);
-      setFinishError(failure);
+    // Les chiffres déjà partis en fond d'abord, puis l'état final. Protégé : un échec rend le
+    // bouton, avec son message.
+    const result = await guardedSave(
+      () => closingSavesRef.current.then(() => persistLiveSellerSummary(projectId, formData)),
+      { setBusy: setFinishing },
+    );
+    if (!result.ok) {
+      setFinishError(result.error ?? 'L’enregistrement de la note a échoué. Réessayez.');
       return;
     }
     void document.exitFullscreen?.().catch(() => {});
@@ -331,25 +327,25 @@ export function LiveComparativeShell({
     const entersAnalysis = pages[index + 1]?.type === 'price_analysis';
     // Enregistre le formulaire de l'écran, puis demande la fourchette : le serveur ne la
     // livre que si le prix du vendeur est en base et que chaque concurrent est estimé.
-    const deliverRange = async (): Promise<{ ok: boolean; error?: string }> => {
-      const r = await deliverLiveFragment(projectId, { kind: 'advisor-range', formData: fd });
-      if (!r.ok) return { ok: false, error: r.error };
-      if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
-      return { ok: true };
-    };
+    const deliverRange = (): Promise<SaveResult> =>
+      deliverLiveFragment(projectId, { kind: 'advisor-range', formData: fd }).then((r) => {
+        if (!r.ok) return { ok: false, error: r.error };
+        if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
+        return { ok: true };
+      });
+    // Mission 89 — tout enregistrement attendu par le bouton est protégé : quoi qu'il arrive,
+    // le bouton redevient actif, avec « Connexion perdue — touchez Valider pour réessayer ».
+    const awaited = <T extends SaveResult>(save: () => Promise<T>) =>
+      guardedSave(save, { setBusy });
 
     if (page.type === 'subject_property') {
-      setBusy(true);
-      const r = await persistLiveSellerSummary(projectId, fd);
-      setBusy(false);
+      const r = await awaited(() => persistLiveSellerSummary(projectId, fd));
       if (r.ok) go(1);
       else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
       return;
     }
     if (page.type === 'comparable_competition' && entry) {
-      setBusy(true);
-      const r = await persistLiveComparableResponse(projectId, entry.id, fd);
-      setBusy(false);
+      const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
       if (!r.ok) {
         setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
         return;
@@ -368,13 +364,13 @@ export function LiveComparativeShell({
       return;
     }
     if (page.type === 'comparable_price' && entry) {
-      setBusy(true);
-      const r = await deliverLiveFragment(projectId, {
-        kind: 'comparable-reveal',
-        comparableId: entry.id,
-        formData: fd,
-      });
-      setBusy(false);
+      const r = await awaited(() =>
+        deliverLiveFragment(projectId, {
+          kind: 'comparable-reveal',
+          comparableId: entry.id,
+          formData: fd,
+        }),
+      );
       if (!r.ok) {
         setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
         return;
@@ -389,9 +385,7 @@ export function LiveComparativeShell({
     }
     if (page.type === 'comparable_duration' && entry) {
       if (!durationRevealed) {
-        setBusy(true);
-        const r = await persistLiveComparableResponse(projectId, entry.id, fd);
-        setBusy(false);
+        const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
         if (r.ok) {
           setResponseOverrides((o) => ({
             ...o,
@@ -412,15 +406,13 @@ export function LiveComparativeShell({
       const raw = String(fd.get('seller_perceived_property_price') ?? '').trim();
       const typed = raw === '' ? Number.NaN : Number(raw);
       if (!Number.isFinite(typed)) {
-        setAwaitError('Indiquez le prix que le vendeur a en tête.');
+        setAwaitError('Indiquez le prix que vous avez en tête.');
         return;
       }
-      setBusy(true);
       // Sans concurrent, « Analyse des prix » suit directement : la fourchette se livre ici.
-      const r = entersAnalysis
-        ? await deliverRange()
-        : await persistLiveSellerSummary(projectId, fd);
-      setBusy(false);
+      const r = await awaited(() =>
+        entersAnalysis ? deliverRange() : persistLiveSellerSummary(projectId, fd),
+      );
       if (!r.ok) {
         setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
         return;
@@ -434,9 +426,7 @@ export function LiveComparativeShell({
     }
     // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
     if (entersAnalysis && range == null && pendingSteps.length === 0) {
-      setBusy(true);
-      const r = await deliverRange();
-      setBusy(false);
+      const r = await awaited(deliverRange);
       if (r.ok) go(1);
       else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
       return;
@@ -473,14 +463,48 @@ export function LiveComparativeShell({
   const showAnalysis = async () => {
     if (busy) return;
     setAwaitError(null);
-    setBusy(true);
-    const r = await deliverLiveFragment(projectId, {
-      kind: 'advisor-range',
-      formData: new FormData(),
-    });
-    setBusy(false);
+    const r = await guardedSave(
+      () => deliverLiveFragment(projectId, { kind: 'advisor-range', formData: new FormData() }),
+      { setBusy },
+    );
     if (r.ok && r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
     else if (!r.ok) setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+  };
+
+  // Mission 89 — l'appareil du conseiller garde le numéro de l'écran courant (rien du dossier) :
+  // « Reprendre », sur la liste du Live, rouvre exactement là. Le serveur borne de toute façon.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(livePositionKey(projectId), String(currentIndex));
+    } catch {
+      // Stockage refusé (navigation privée) : la reprise se fera d'après les réponses.
+    }
+  }, [projectId, currentIndex]);
+
+  // Mission 89 — une réponse qui n'est pas (encore) en base : enregistrement de fond en cours
+  // ou en échec, note de 1 à 10 comprise. Quitter ou recharger le dit avant de la perdre.
+  const hasUnsavedAnswers =
+    Object.values(saves).some((record) => record.status !== 'ok') ||
+    closingSave === 'pending' ||
+    closingSave === 'failed';
+  useEffect(() => {
+    if (!hasUnsavedAnswers) {
+      return;
+    }
+    // Rechargement ou fermeture de l'onglet : seul le navigateur peut demander confirmation.
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedAnswers]);
+
+  // « Quitter » demande confirmation DANS l'écran (pas de boîte du navigateur), puis mène à la
+  // liste du Live — jamais à la page de préparation, qui montre tous les prix.
+  const [quitOpen, setQuitOpen] = useState(false);
+  const quitMeeting = () => {
+    void document.exitFullscreen?.().catch(() => {});
+    router.push('/live');
   };
 
   // Chaque écran s'ouvre en haut (§3.5) — la fenêtre ET le conteneur plein écran.
@@ -588,6 +612,45 @@ export function LiveComparativeShell({
         </div>
       ) : null}
 
+      {/* MISSION 89 — la confirmation de sortie, dans la scène elle-même (elle reste visible en
+          plein écran) : sobre, sans rien du dossier. */}
+      {quitOpen ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="live-quit-title"
+        >
+          <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-6 text-zinc-900 shadow-2xl">
+            <h2 id="live-quit-title" className="font-title text-2xl font-bold text-brand-deep">
+              Quitter le rendez-vous&nbsp;?
+            </h2>
+            <p className="text-base text-zinc-600">
+              {hasUnsavedAnswers
+                ? 'Certaines réponses ne sont pas encore enregistrées. Restez un instant, ou relancez l’enregistrement avant de quitter.'
+                : 'Vos réponses sont enregistrées.'}
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setQuitOpen(false)}
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-deep"
+              >
+                Rester
+              </button>
+              <button
+                type="button"
+                onClick={quitMeeting}
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-2.5 font-title text-base font-semibold text-zinc-700 hover:border-brand hover:text-brand-deep"
+              >
+                {hasUnsavedAnswers ? 'Quitter quand même' : 'Quitter'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className={stageGlowLayer} aria-hidden>
         <div className={stageGlow} />
       </div>
@@ -620,9 +683,9 @@ export function LiveComparativeShell({
           <button type="button" onClick={toggleFullscreen} className={chromeBtn}>
             {isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
           </button>
-          <Link href={`/builder/${projectId}/presentation`} className={chromeBtn}>
+          <button type="button" onClick={() => setQuitOpen(true)} className={chromeBtn}>
             Quitter
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -712,6 +775,7 @@ export function LiveComparativeShell({
         ) : page.type === 'closing_question' ? (
           <LivePageClosing
             agreedPrice={agreedPrice}
+            hasAgreedPrice={hasAgreedPrice || agreedPrice != null}
             score={closing.last}
             missing={closing.missing}
             onScore={handleClosingScore}
@@ -719,8 +783,8 @@ export function LiveComparativeShell({
           />
         ) : (
           <p className="text-zinc-500 stage:text-white/60">
-            Contenu indisponible : préparez le dossier vendeur et ses concurrents dans la
-            Préparation.
+            {/* Mission 89 — neutre : aucune consigne au conseiller devant le vendeur. */}
+            Cet écran n’est pas disponible pour le moment.
           </p>
         )}
       </main>

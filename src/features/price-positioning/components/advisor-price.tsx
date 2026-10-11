@@ -37,9 +37,10 @@ export function AdvisorPrice({
 }) {
   return (
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
-      <h2 className={sectionTitle}>Prix conseillé</h2>
+      {/* Mission 89 — calculé sur les concurrents retenus : il porte ce nom, et reste modifiable. */}
+      <h2 className={sectionTitle}>Prix des concurrents</h2>
       <label className="flex flex-col gap-1.5">
-        <span className={fieldLabel}>Montant conseillé</span>
+        <span className={fieldLabel}>Montant (calculé, modifiable)</span>
         <input
           type="number"
           min={0}

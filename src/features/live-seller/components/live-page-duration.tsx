@@ -81,7 +81,7 @@ export function LivePageDuration({
               </div>
             </div>
             <div>
-              <div className={statLabel}>Estimation du vendeur</div>
+              <div className={statLabel}>Votre estimation</div>
               <div className={statValue}>
                 {euro(response?.seller_estimated_listing_price ?? null)}
               </div>
@@ -101,7 +101,7 @@ export function LivePageDuration({
 
         <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <label className="flex flex-col gap-2">
-            <span className={statLabel}>Durée imaginée par le vendeur</span>
+            <span className={statLabel}>La durée que vous imaginez</span>
             <div className="flex items-center gap-3">
               <input
                 type="number"
@@ -136,8 +136,8 @@ export function LivePageDuration({
                 entry.marketDuration.days !== savedEstimatedDays ? (
                   <div className="mt-1 text-sm font-medium text-zinc-600 stage:text-white/75">
                     {entry.marketDuration.days > savedEstimatedDays
-                      ? `Soit ${formatNumber(entry.marketDuration.days - savedEstimatedDays)} jours de plus que l’estimation du vendeur (${formatNumber(savedEstimatedDays)} jours).`
-                      : `Soit ${formatNumber(savedEstimatedDays - entry.marketDuration.days)} jours de moins que l’estimation du vendeur (${formatNumber(savedEstimatedDays)} jours).`}
+                      ? `Soit ${formatNumber(entry.marketDuration.days - savedEstimatedDays)} jours de plus que votre estimation (${formatNumber(savedEstimatedDays)} jours).`
+                      : `Soit ${formatNumber(savedEstimatedDays - entry.marketDuration.days)} jours de moins que votre estimation (${formatNumber(savedEstimatedDays)} jours).`}
                   </div>
                 ) : null}
               </div>
@@ -165,7 +165,7 @@ export function LivePageDuration({
               )}
 
               <fieldset className="flex flex-col gap-3">
-                <legend className={fieldLabel}>Selon le vendeur, pourquoi ?</legend>
+                <legend className={fieldLabel}>Selon vous, pourquoi ?</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {MARKET_DURATION_REASONS.map((reason) => (
                     <label

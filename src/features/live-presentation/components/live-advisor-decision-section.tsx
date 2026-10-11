@@ -34,7 +34,7 @@ export function LiveAdvisorDecisionSection({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <div className="text-sm text-zinc-500">Prix conseillé validé</div>
+        <div className="text-sm text-zinc-500">Prix des concurrents validé</div>
         <div className="text-3xl font-semibold">{euro(saved.advisorPrice)}</div>
       </div>
 

@@ -30,7 +30,7 @@ export function LivePagePerceived({ summary }: { summary: LiveSellerSummary | nu
 
       <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
         <label className="flex flex-col gap-2">
-          <span className={statLabel}>Valeur perçue par le vendeur</span>
+          <span className={statLabel}>Votre valeur perçue</span>
           <div className="flex items-center gap-3">
             <input
               type="number"

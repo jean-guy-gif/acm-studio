@@ -55,7 +55,7 @@ export function LiveSellerPriceSection({ saved }: { saved: SavedPricePositioning
       </div>
 
       {deviation(
-        'Écart avec le prix conseillé',
+        'Écart avec le prix des concurrents',
         calculatePriceDeviation(sellerPrice, saved.advisorPrice),
       )}
       {deviation(

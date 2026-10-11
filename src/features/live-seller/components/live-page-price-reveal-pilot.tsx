@@ -70,7 +70,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
       <div className="flex flex-col gap-3">
         <h2 className={question}>Ce prix vous paraît-il cohérent ?</h2>
         <p className={questionHint}>
-          Voici le prix réellement affiché. Qu’en pense le vendeur, face à son estimation ?
+          Voici le prix réellement affiché. Qu’en pensez-vous, face à votre estimation ?
         </p>
       </div>
 
@@ -127,7 +127,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
 
           <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
             <fieldset className="flex flex-col gap-3">
-              <legend className={fieldLabel}>Selon le vendeur, ce prix est…</legend>
+              <legend className={fieldLabel}>Selon vous, ce prix est…</legend>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {PRICE_COHERENCE_VALUES.map((value) => (
                   <label

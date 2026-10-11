@@ -40,16 +40,16 @@ export function calculateConfidence(input: ConfidenceInput): PositioningConfiden
 
   // 1. Number of comparables used.
   if (input.usedCount >= 8) {
-    positiveFactors.push('Au moins 8 comparables utilisés.');
+    positiveFactors.push('Au moins 8 concurrents utilisés.');
   } else if (input.usedCount >= 5) {
     score -= 10;
-    warningFactors.push('Entre 5 et 7 comparables utilisés.');
+    warningFactors.push('Entre 5 et 7 concurrents utilisés.');
   } else if (input.usedCount >= 3) {
     score -= 25;
-    warningFactors.push('Seulement 3 à 4 comparables utilisés.');
+    warningFactors.push('Seulement 3 à 4 concurrents utilisés.');
   } else {
     score -= 45;
-    warningFactors.push('Très peu de comparables utilisés (1 à 2).');
+    warningFactors.push('Très peu de concurrents utilisés (1 à 2).');
   }
 
   // 2. Dispersion of price/m².
@@ -66,15 +66,15 @@ export function calculateConfidence(input: ConfidenceInput): PositioningConfiden
   // 3. Atypical comparables — reintroduction penalty REPLACES the exclusion one.
   if (input.outliersReintroduced) {
     score -= 30;
-    warningFactors.push('Comparables atypiques réintégrés faute d’échantillon suffisant.');
+    warningFactors.push('Concurrents atypiques réintégrés faute d’échantillon suffisant.');
   } else if (input.excludedOutlierCount >= 2) {
     score -= 10;
-    warningFactors.push('Plusieurs comparables atypiques exclus.');
+    warningFactors.push('Plusieurs concurrents atypiques exclus.');
   } else if (input.excludedOutlierCount === 1) {
     score -= 5;
-    warningFactors.push('Un comparable atypique exclu.');
+    warningFactors.push('Un concurrent atypique exclu.');
   } else {
-    positiveFactors.push('Aucun comparable atypique détecté.');
+    positiveFactors.push('Aucun concurrent atypique détecté.');
   }
 
   // 4. Surface proximity (±10% of the seller surface).
@@ -99,7 +99,7 @@ export function calculateConfidence(input: ConfidenceInput): PositioningConfiden
     warningFactors.push('Homogénéité géographique moyenne.');
   } else {
     score -= 20;
-    warningFactors.push('Comparables géographiquement dispersés.');
+    warningFactors.push('Concurrents géographiquement dispersés.');
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));

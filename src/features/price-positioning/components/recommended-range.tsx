@@ -49,7 +49,7 @@ export function RecommendedRangeView({
       </div>
       <p className="text-sm text-zinc-600 stage:text-white/65">
         Dispersion : {DISPERSION_LABEL[range.dispersion]} (±{formatPercent(range.widthPercentage)})
-        · {usedCount} comparable{usedCount > 1 ? 's' : ''} utilisé{usedCount > 1 ? 's' : ''}
+        · {usedCount} concurrent{usedCount > 1 ? 's' : ''} utilisé{usedCount > 1 ? 's' : ''}
       </p>
     </section>
   );

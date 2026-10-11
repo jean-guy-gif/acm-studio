@@ -25,12 +25,20 @@ const SCORES = Array.from(
 const scoreButton =
   'flex min-h-16 cursor-pointer items-center justify-center rounded-xl border-2 border-zinc-200 bg-white font-title text-2xl font-bold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep aria-pressed:border-brand aria-pressed:bg-brand aria-pressed:text-white aria-pressed:shadow-lg aria-pressed:shadow-brand/30 sm:min-h-20 sm:text-3xl stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:aria-pressed:border-brand stage:aria-pressed:bg-brand stage:aria-pressed:text-white';
 
+// La question, selon qu'un prix de commercialisation est enregistré ou non (mission 89).
+export function closingQuestion(hasAgreedPrice: boolean): string {
+  return hasAgreedPrice
+    ? 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix\u00a0?'
+    : 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente\u00a0?';
+}
+
 // MISSION 85 — après le prix de commercialisation, le vendeur se situe de 1 à 10. En dessous
 // de 10, l'écran fait sortir ce qui manque encore ; à 10, on lance la vente. Aucun montant
 // ici, sauf le prix déjà décidé ; rien n'est pré-sélectionné et rien n'est obligatoire.
 // Écran contrôlé par le shell, qui enregistre la note et porte « Terminer le rendez-vous ».
 export function LivePageClosing({
   agreedPrice,
+  hasAgreedPrice,
   score,
   missing,
   onScore,
@@ -38,6 +46,8 @@ export function LivePageClosing({
 }: {
   // Le prix de commercialisation enregistré pendant cette séance, s'il y en a un.
   agreedPrice: number | null;
+  // Mission 89 — un prix de commercialisation est-il enregistré (cette séance ou une autre) ?
+  hasAgreedPrice: boolean;
   score: number | null;
   missing: string;
   onScore: (score: number) => void;
@@ -47,7 +57,8 @@ export function LivePageClosing({
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>
-          Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix&nbsp;?
+          {/* « à ce prix » seulement s'il y a un prix : sinon la phrase ne désigne rien. */}
+          {closingQuestion(hasAgreedPrice)}
         </h2>
         <p className={questionHint}>1&nbsp;: pas encore prêt · 10&nbsp;: on y va.</p>
       </div>
@@ -85,7 +96,7 @@ export function LivePageClosing({
         <div className={`${panel} live-fade-up flex flex-col gap-4`}>
           <h3 className={question}>Qu’est-ce qui vous manquerait pour être à 10&nbsp;?</h3>
           <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Réponse du vendeur (facultative)</span>
+            <span className={fieldLabel}>Votre réponse (facultative)</span>
             <textarea
               name="seller_launch_readiness_missing"
               rows={3}

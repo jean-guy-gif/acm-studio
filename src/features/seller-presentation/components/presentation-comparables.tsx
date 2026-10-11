@@ -16,7 +16,7 @@ export function PresentationComparables({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={sectionTitle}>Comparables retenus ({comparables.length})</h2>
       {comparables.length === 0 ? (
-        <p className={hintText}>Aucun comparable retenu.</p>
+        <p className={hintText}>Aucun concurrent retenu.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable) => (
@@ -25,7 +25,7 @@ export function PresentationComparables({
                 {comparable.photoUrl ? (
                   <RemoteImage
                     src={comparable.photoUrl}
-                    alt={comparable.title ?? 'Comparable'}
+                    alt={comparable.title ?? 'Concurrent'}
                     className="h-full w-full object-cover"
                     fallbackClassName="h-full w-full"
                   />

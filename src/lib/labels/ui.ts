@@ -43,7 +43,8 @@ export const UI = {
   observedPositioning: 'Marché calculé',
   advisorAnalysis: 'Analyse du conseiller',
   sellerPerceivedValue: 'Valeur perçue par le vendeur',
-  advisorPrice: 'Prix conseillé',
+  // Mission 89 — le prix calculé sur les biens en vente porte son vrai nom.
+  advisorPrice: 'Prix des concurrents',
   commercializationPrice: 'Prix de commercialisation',
 } as const;
 

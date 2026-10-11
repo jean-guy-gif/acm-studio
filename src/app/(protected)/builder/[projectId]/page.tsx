@@ -42,7 +42,7 @@ const STEPS = [
   {
     href: (id: string) => `/builder/${id}/comparables/positioning`,
     title: 'Positionnement prix',
-    description: 'Fourchette issue du marché, décision validée par le conseiller.',
+    description: 'Prix des concurrents, calculé sur le marché et validé par le conseiller.',
   },
   {
     href: (id: string) => `/builder/${id}/presentation`,

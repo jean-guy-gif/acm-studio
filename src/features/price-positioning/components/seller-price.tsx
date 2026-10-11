@@ -39,13 +39,17 @@ export function SellerPrice({
           }}
           className={inputClass}
         />
+        {/* Mission 89 — ce montant est rappelé au vendeur : le conseiller le sait en le saisissant. */}
+        <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
+          Affiché au vendeur à la fin du Live
+        </span>
       </label>
       {price == null ? (
         <p className={hintText}>Aucun prix vendeur renseigné.</p>
       ) : (
         <p className="text-sm text-zinc-600 stage:text-white/65">
           Écart avec la valeur centrale : {formatDeviation(deviationFromCentral)} · Écart avec le
-          prix conseillé : {formatDeviation(deviationFromAdvisor)} · Position :{' '}
+          prix des concurrents : {formatDeviation(deviationFromAdvisor)} · Position :{' '}
           {position ? POSITION_LABEL[position] : '—'}
         </p>
       )}

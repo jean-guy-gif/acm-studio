@@ -108,12 +108,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   });
 
   await test.step('Live, chaque écran avec une réponse', async () => {
-    await walkLive(page, projectId, { firstPass: true, tablet: false });
+    await walkLive(page, projectId, { firstPass: true, tablet: false, dossierName });
   });
 
   await test.step('Live rejoué en tablette (768 × 1024)', async () => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await walkLive(page, projectId, { firstPass: false, tablet: true });
+    await walkLive(page, projectId, { firstPass: false, tablet: true, dossierName });
     await page.setViewportSize({ width: 1280, height: 720 });
   });
 
@@ -264,7 +264,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 async function walkLive(
   page: Page,
   projectId: string,
-  { firstPass, tablet }: { firstPass: boolean; tablet: boolean },
+  { firstPass, tablet, dossierName }: { firstPass: boolean; tablet: boolean; dossierName: string },
 ): Promise<void> {
   const onScreen = async (screen: string) => {
     await expectFourchetteHidden(page, screen);
@@ -351,6 +351,37 @@ async function walkLive(
       page.getByRole('heading', { name: 'Est-il un sérieux concurrent pour votre bien ?' }),
     ).toBeVisible();
     await expect(page.getByText(`${label} · Étape 1 sur 4`)).toBeVisible();
+
+    // Mission 89 — rendez-vous interrompu au 2e concurrent : « Quitter » demande confirmation
+    // dans l'écran, mène à la liste du Live (sans aucun prix), et « Reprendre » rouvre ici.
+    if (firstPass && index === 1) {
+      await page.getByRole('button', { name: 'Quitter', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog.getByText('Quitter le rendez-vous ?')).toBeVisible();
+      await dialog.getByRole('button', { name: 'Rester' }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByText(`${label} · Étape 1 sur 4`)).toBeVisible();
+
+      await page.getByRole('button', { name: 'Quitter', exact: true }).click();
+      await expect(dialog.getByText('Vos réponses sont enregistrées.')).toBeVisible();
+      await dialog.getByRole('button', { name: 'Quitter', exact: true }).click();
+      await expect(page, 'Quitter ne mène pas à la liste du Live').toHaveURL(/\/live$/);
+      for (const other of COMPETITORS) {
+        await expectPriceHidden(page, other, 'liste du Live après « Quitter »');
+      }
+
+      const item = page.locator('li').filter({ hasText: dossierName });
+      const resume = item.getByRole('link', { name: /Reprendre \(écran \d+ sur \d+\)/ });
+      await expect(resume, 'Un Live commencé ne propose pas « Reprendre »').toBeVisible();
+      await expect(item.getByRole('link', { name: 'Recommencer depuis le début' })).toBeVisible();
+      await resume.click();
+      await expect(page).toHaveURL(new RegExp(`/live/${projectId}\\?fiche=\\d+$`));
+      await expect(
+        page.getByRole('heading', { name: 'Est-il un sérieux concurrent pour votre bien ?' }),
+        '« Reprendre » ne rouvre pas au 2e concurrent',
+      ).toBeVisible();
+      await expect(page.getByText(`${label} · Étape 1 sur 4`)).toBeVisible();
+    }
     await onScreen(`${label} · Un sérieux concurrent ?`);
     if (firstPass) await expectPriceHidden(page, competitor, 'Un sérieux concurrent ?');
     await expectAlone(page, others, `${label} · Un sérieux concurrent ?`);

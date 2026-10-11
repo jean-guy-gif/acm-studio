@@ -25,7 +25,7 @@ const DISPERSION_LABEL: Record<string, string> = {
 export function LiveMarketAnalysisSection({ analysis }: { analysis: ComparableAnalysis | null }) {
   if (analysis == null) {
     return (
-      <p className="text-lg text-zinc-500">Analyse indisponible : aucun comparable exploitable.</p>
+      <p className="text-lg text-zinc-500">Analyse indisponible : aucun concurrent exploitable.</p>
     );
   }
 
@@ -36,7 +36,7 @@ export function LiveMarketAnalysisSection({ analysis }: { analysis: ComparableAn
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        <Metric label="Comparables" value={String(statistics.count)} />
+        <Metric label="Concurrents" value={String(statistics.count)} />
         <Metric label="Prix médian" value={euro(statistics.medianPrice)} />
         <Metric label="Prix moyen" value={euro(statistics.averagePrice)} />
         <Metric label="Prix médian au m²" value={euro(statistics.medianPricePerSquareMeter)} />
@@ -49,7 +49,7 @@ export function LiveMarketAnalysisSection({ analysis }: { analysis: ComparableAn
           label="Dispersion prix/m²"
           value={priceAnalysis.dispersion ? DISPERSION_LABEL[priceAnalysis.dispersion] : '—'}
         />
-        <Metric label="Comparables atypiques" value={String(analysis.outliers.length)} />
+        <Metric label="Concurrents atypiques" value={String(analysis.outliers.length)} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
