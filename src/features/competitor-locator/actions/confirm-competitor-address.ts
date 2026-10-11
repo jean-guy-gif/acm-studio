@@ -6,6 +6,10 @@ import {
   advisorAddressPatch,
   type AdvisorAddressInput,
 } from '@/features/competitor-locator/services/advisor-address';
+import {
+  findCard,
+  getProspectingCards,
+} from '@/features/prospecting/queries/prospecting-card-store';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -17,6 +21,8 @@ const FAILURE = 'L’adresse n’a pas été enregistrée. Réessayez.';
 // Localisateur propose (« C'est la bonne adresse ») ou celle qu'il saisit. Le mode et le texte
 // viennent du navigateur : revalidés ici ; l'adresse proposée est relue en base, jamais reçue.
 // L'écriture est cadrée sur l'agence de l'appelant.
+// Mission 98 — une carte de Prospection, c'est UN bien : l'adresse confirmée ou corrigée vaut
+// pour toutes les copies de ce bien (le même concurrent retenu dans plusieurs mandats signés).
 export async function confirmCompetitorAddress(
   projectId: string,
   competitorId: string,
@@ -53,20 +59,26 @@ export async function confirmCompetitorAddress(
   if (!result.ok) {
     return result;
   }
+  const card = findCard(await getProspectingCards(), projectId, competitorId);
+  const ids = card ? card.copies.map((copy) => copy.row.id) : [competitorId];
   const { data, error } = await supabase
     .from('comparables')
     .update(result.patch)
-    .eq('id', competitorId)
-    .eq('project_id', projectId)
+    .in('id', ids)
     .eq('agency_id', profile.agency_id)
+    .eq('is_selected', true)
     .select('id');
-  if (error || !data || data.length === 0) {
+  if (error || !data || !data.some((updated) => updated.id === competitorId)) {
     return { ok: false, error: FAILURE };
   }
 
   revalidatePath(`/builder/${projectId}`);
   revalidatePath(`/builder/${projectId}/comparables`);
+  for (const seller of card?.sellers ?? []) {
+    revalidatePath(`/builder/${seller.projectId}`);
+  }
   revalidatePath('/prospection/tournee');
+  revalidatePath('/prospection/courriers');
   revalidatePath('/prospection');
   revalidatePath('/suivi');
   return { ok: true };

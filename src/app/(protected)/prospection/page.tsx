@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import {
+  btnPrimary,
   btnSecondary,
   emptyState,
   kickerLabel,
@@ -36,16 +37,22 @@ const tileLabel = 'text-xs text-zinc-500 stage:text-white/60';
 // Mission 86 — la page Prospection : tous les concurrents à prospecter de tous les mandats
 // signés de l'agence, rangés par étape. Écran CONSEILLER, jamais montré au vendeur : les
 // adresses des concurrents y figurent (M75).
+// Mission 98 — une carte par bien : le même bien retenu dans plusieurs mandats n'y figure, et
+// n'y est compté, qu'une fois. Une adresse « Ne plus solliciter » sort du tableau.
 export default async function ProspectionPage({ searchParams }: ProspectionPageProps) {
   const { bien, cible } = await searchParams;
 
-  const { sellers, entries } = await getAgencyProspecting(await getSuiviDossiers());
+  const { sellers, cards } = await getAgencyProspecting(await getSuiviDossiers());
   const sellerId = parseSellerFilter(bien, sellers);
   const target = parseProspectingTarget(cible);
-  const shown = filterProspecting(entries, sellerId, target);
-  const counters = prospectingCounters(shown.map((entry) => entry.row.status));
-  const board = shown.filter((entry) => entry.row.status !== 'declined');
-  const declined = shown.filter((entry) => entry.row.status === 'declined');
+  const shown = filterProspecting(cards, sellerId, target);
+  const opposed = shown.filter((card) => card.row.opposedOn != null);
+  const open = shown.filter((card) => card.row.opposedOn == null);
+  const counters = prospectingCounters(open.map((card) => card.row.status));
+  const board = open.filter((card) => card.row.status !== 'declined');
+  const declined = open.filter((card) => card.row.status === 'declined');
+  // « Préparer tous les courriers » : pour UN bien vendeur, dès qu'un dossier est prêt.
+  const lettersReady = sellerId != null && board.some((card) => card.row.status === 'ready');
   // La veille du Localisateur (M75) tourne pour chaque mandat affiché ; l'avis discret
   // (Localisateur absent, partage éteint) ne se dit qu'une fois.
   const watched = sellers.filter((seller) => sellerId == null || seller.projectId === sellerId);
@@ -64,6 +71,15 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
         {sellers.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <ProspectionFilters sellers={sellers} sellerId={sellerId} target={target} />
+            {lettersReady && sellerId ? (
+              <Link
+                href={`/prospection/courriers?bien=${sellerId}`}
+                target="_blank"
+                className={btnPrimary}
+              >
+                Préparer tous les courriers
+              </Link>
+            ) : null}
             {board.length > 0 ? (
               <Link
                 href={prospectionHref(sellerId, target).replace(
@@ -136,7 +152,7 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
               </p>
             </div>
           ) : (
-            <ProspectingBoard entries={board} />
+            <ProspectingBoard cards={board} sellerId={sellerId} />
           )}
 
           {/* « Pas intéressé » sort du tableau, sans disparaître : compté ici, annulable. */}
@@ -146,8 +162,22 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
                 Pas intéressés ({declined.length})
               </summary>
               <ul className="mt-3 grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-                {declined.map((entry) => (
-                  <ProspectingCard key={entry.row.id} entry={entry} />
+                {declined.map((card) => (
+                  <ProspectingCard key={card.row.id} card={card} sellerId={sellerId} />
+                ))}
+              </ul>
+            </details>
+          ) : null}
+
+          {/* Mission 98 — « Ne plus solliciter » : hors tableau et hors compteurs, mais visible. */}
+          {opposed.length > 0 ? (
+            <details className="rounded-2xl border border-zinc-200 bg-white p-4 stage:border-white/10 stage:bg-white/5">
+              <summary className="cursor-pointer text-sm font-semibold text-zinc-700 stage:text-white/80">
+                Ne plus solliciter ({opposed.length})
+              </summary>
+              <ul className="mt-3 grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+                {opposed.map((card) => (
+                  <ProspectingCard key={card.row.id} card={card} sellerId={sellerId} />
                 ))}
               </ul>
             </details>

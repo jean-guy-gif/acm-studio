@@ -1,7 +1,10 @@
+import { execFileSync } from 'node:child_process';
+
 import { expect, type Page } from '@playwright/test';
 
 // Mission 66 — outils du parcours de bout en bout. Rien ici ne touche la base
-// directement : tout passe par l'écran, comme le ferait le conseiller.
+// directement : tout passe par l'écran, comme le ferait le conseiller. Une seule exception,
+// écrite plus bas avec sa raison : `removeTestOppositions` (mission 98).
 
 export function requireEnv(name: 'E2E_EMAIL' | 'E2E_PASSWORD'): string {
   const value = process.env[name];
@@ -150,4 +153,42 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
       forcedShift: 0,
       offenders: [],
     });
+}
+
+// Mission 98 — la rue des adresses que le parcours inscrit sur la liste « Ne plus solliciter »,
+// telle que la clé d'adresse la range (`addressKey`). Aucune vraie adresse ne lui ressemble.
+export const TEST_OPPOSITION_STREET = 'rue du refus automatique 06600 antibes';
+
+// Mission 98 — EXCEPTION à « tout passe par l'écran » : une opposition ne se retire pas depuis
+// l'écran (c'est voulu, et prouvé par supabase/tests/prospecting_oppositions.sql). Pour que la
+// liste de l'agence de test ne grossisse pas d'une ligne par passage, le parcours retire les
+// siennes par la CLI Supabase du poste (`supabase db query --linked`, dépôt lié au projet) :
+// seulement les lignes de l'agence du compte de test, seulement celles de la rue du test.
+// Rend le nombre de lignes retirées ; échoue en le disant si la CLI ne répond pas.
+export function removeTestOppositions(): number {
+  const email = requireEnv('E2E_EMAIL').replace(/'/g, "''");
+  const sql = `with retirees as (
+    delete from public.prospecting_oppositions
+    where agency_id = (select agency_id from public.profiles where email = '${email}')
+      and address_key like '% ${TEST_OPPOSITION_STREET}'
+    returning 1
+  ) select count(*)::int as retirees from retirees`;
+  let output: string;
+  try {
+    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'Les oppositions du test n’ont pas pu être retirées : `supabase db query --linked` a échoué (CLI absente, non connectée, ou dépôt non lié).',
+    );
+  }
+  const count = /"retirees":\s*(\d+)/.exec(output)?.[1];
+  if (count === undefined) {
+    throw new Error(
+      'Réponse inattendue de `supabase db query` au retrait des oppositions du test.',
+    );
+  }
+  return Number(count);
 }

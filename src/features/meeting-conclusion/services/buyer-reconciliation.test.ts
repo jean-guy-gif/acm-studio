@@ -62,7 +62,7 @@ type CompetitorInput = {
 
 function competitor(id: string, sellerId: string, o: CompetitorInput = {}): ProspectingEntry {
   return {
-    seller: { projectId: sellerId, name: `Vendeur ${sellerId}`, label: null },
+    seller: { projectId: sellerId, name: `Vendeur ${sellerId}`, label: null, advisorId: null },
     row: {
       id,
       address: o.address === undefined ? `${id} rue des Pins, Antibes` : o.address,

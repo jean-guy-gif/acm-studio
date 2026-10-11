@@ -26,6 +26,9 @@ import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import { getProject } from '@/features/projects/queries/get-project';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
+import { opposedOn, oppositionBadge } from '@/features/prospecting/services/opposition';
+import { createClient } from '@/lib/supabase/server';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 
 type ComparablesPageProps = {
@@ -53,6 +56,17 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const selected = comparables.filter((comparable) => comparable.is_selected);
   const rejected = comparables.filter((comparable) => !comparable.is_selected);
   const subjectSurfaceArea = subjectProperty?.surface_area ?? null;
+
+  // Mission 98 — une adresse de la liste « Ne plus solliciter » de l'agence le dit dès la
+  // préparation d'un nouveau dossier, partout où elle apparaît.
+  const oppositions = await getOppositions(await createClient(), project.agency_id);
+  const oppositionNotes: Record<string, string> = {};
+  for (const comparable of selected) {
+    const requestedOn = opposedOn(comparable.locator_address, oppositions);
+    if (requestedOn != null) {
+      oppositionNotes[comparable.id] = oppositionBadge(requestedOn);
+    }
+  }
 
   const toggleAction = toggleComparableSelection.bind(null, projectId);
   const moveAction = moveSelectedComparable.bind(null, projectId);
@@ -106,6 +120,7 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
             comparables={selected}
             projectId={projectId}
             subjectSurfaceArea={subjectSurfaceArea}
+            oppositionNotes={oppositionNotes}
             toggleAction={toggleAction}
             moveAction={moveAction}
             deleteAction={deleteAction}

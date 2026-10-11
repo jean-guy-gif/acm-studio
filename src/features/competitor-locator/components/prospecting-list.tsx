@@ -3,6 +3,7 @@ import { CompetitorMandateLine } from '@/features/competitor-mandate/components/
 import { PROSPECTING_STEP_LABELS } from '@/features/competitor-mandate/services/mandate-columns';
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { PrepareFileLinks } from '@/features/prospecting-file/components/prepare-file-links';
+import { oppositionBadge } from '@/features/prospecting/services/opposition';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 75 — une ligne par concurrent à prospecter : l'adresse et l'étiquette du Localisateur,
@@ -11,12 +12,20 @@ import { formatEuro, formatSquareMeters } from '@/lib/format';
 //
 // Mission 84 — `filesProjectId` : sur la page du dossier, chaque ligne propose « Préparer le
 // dossier » dès le mandat signé ; absent (liste de tournée imprimable), rien.
+//
+// Mission 98 — une adresse de la liste « Ne plus solliciter » le dit, et ne propose plus de
+// dossier. `notes` ajoute une ligne par concurrent (« Pour : … » sur la tournée) ; `start`
+// poursuit la numérotation d'une liste découpée par commune.
 export function ProspectingList({
   rows,
   filesProjectId = null,
+  notes = {},
+  start = 1,
 }: {
   rows: ProspectingRow[];
   filesProjectId?: string | null;
+  notes?: Record<string, string>;
+  start?: number;
 }) {
   return (
     <ol className="flex flex-col divide-y divide-zinc-200 stage:divide-white/10 print:divide-zinc-300">
@@ -30,7 +39,7 @@ export function ProspectingList({
         return (
           <li key={row.id} className="flex break-inside-avoid gap-3 py-3 text-sm">
             <span className="w-6 shrink-0 font-semibold text-zinc-400 stage:text-white/40 print:text-zinc-500">
-              {index + 1}.
+              {index + start}.
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="font-semibold text-zinc-900 stage:text-white print:text-black">
@@ -39,6 +48,11 @@ export function ProspectingList({
               {row.label ? (
                 <span className="text-zinc-500 stage:text-white/60 print:text-zinc-700">
                   {row.label}
+                </span>
+              ) : null}
+              {row.opposedOn != null ? (
+                <span className="font-semibold text-red-700 stage:text-red-300 print:text-black">
+                  {oppositionBadge(row.opposedOn)}
                 </span>
               ) : null}
               {/* Mission 83 — à qui s'adresser. La correction d'un clic ne s'imprime pas. */}
@@ -57,7 +71,7 @@ export function ProspectingList({
                   confirmed={row.confirmed && row.address != null}
                 />
               ) : null}
-              {filesProjectId ? (
+              {filesProjectId && row.opposedOn == null ? (
                 <PrepareFileLinks
                   projectId={filesProjectId}
                   competitorId={row.id}
@@ -83,6 +97,11 @@ export function ProspectingList({
               {row.priceDrop ? (
                 <span className="text-zinc-500 stage:text-white/60 print:text-zinc-700">
                   {row.priceDrop}
+                </span>
+              ) : null}
+              {notes[row.id] ? (
+                <span className="text-zinc-500 stage:text-white/60 print:text-zinc-700">
+                  {notes[row.id]}
                 </span>
               ) : null}
             </div>

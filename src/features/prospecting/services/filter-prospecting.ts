@@ -1,6 +1,7 @@
 import {
   PROSPECTING_TARGETS,
   type ProspectingEntry,
+  type ProspectingSeller,
   type ProspectingTarget,
 } from '@/features/prospecting/types';
 
@@ -23,13 +24,16 @@ export function parseSellerFilter(
 
 // Un concurrent « à vérifier » (ACM ne sait pas à qui s'adresser) reste dans les deux listes :
 // l'écarter d'office reviendrait à décider à la place du conseiller.
-export function filterProspecting(
-  entries: ProspectingEntry[],
+// Mission 98 — une carte regroupe plusieurs biens vendeurs : elle reste affichée dès que l'un
+// d'eux est celui du filtre.
+export function filterProspecting<T extends ProspectingEntry & { sellers?: ProspectingSeller[] }>(
+  entries: T[],
   sellerId: string | null,
   target: ProspectingTarget,
-): ProspectingEntry[] {
+): T[] {
   return entries.filter((entry) => {
-    if (sellerId != null && entry.seller.projectId !== sellerId) {
+    const sellers = entry.sellers ?? [entry.seller];
+    if (sellerId != null && !sellers.some((seller) => seller.projectId === sellerId)) {
       return false;
     }
     if (target === 'colleagues') {

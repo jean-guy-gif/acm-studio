@@ -37,6 +37,7 @@ export function SelectedComparablesList({
   comparables,
   projectId,
   subjectSurfaceArea,
+  oppositionNotes = {},
   toggleAction,
   moveAction,
   deleteAction,
@@ -46,6 +47,9 @@ export function SelectedComparablesList({
   comparables: Comparable[];
   projectId: string;
   subjectSurfaceArea: number | null;
+  // Mission 98 — « Ne plus solliciter (demandé le JJ/MM) », par concurrent dont l'adresse est
+  // sur la liste d'opposition de l'agence.
+  oppositionNotes?: Record<string, string>;
   toggleAction: ServerAction;
   moveAction: ServerAction;
   deleteAction: ServerAction;
@@ -176,6 +180,7 @@ export function SelectedComparablesList({
               isFirst={index === 0}
               isLast={index === comparables.length - 1}
               locatorAvailability={locatorAvailability}
+              oppositionNote={oppositionNotes[comparable.id]}
               selection={{
                 checked: selected.has(comparable.id),
                 onToggle: () => toggle(comparable.id),

@@ -1063,6 +1063,51 @@ export type Database = {
           },
         ]
       }
+      prospecting_oppositions: {
+        Row: {
+          address_key: string
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          requested_at: string
+          source: string
+        }
+        Insert: {
+          address_key: string
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          requested_at?: string
+          source?: string
+        }
+        Update: {
+          address_key?: string
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          requested_at?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_oppositions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_oppositions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subject_properties: {
         Row: {
           address: string | null

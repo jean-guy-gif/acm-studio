@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-import { backLink } from '@/components/ui/styles';
+import { backLink, btnSecondary } from '@/components/ui/styles';
 import { PrintButton } from '@/features/competitor-locator/components/print-button';
 import { ProspectingList } from '@/features/competitor-locator/components/prospecting-list';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
+import { competitorFacts } from '@/features/prospecting/components/prospecting-card';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import {
   filterProspecting,
@@ -12,70 +14,160 @@ import {
   parseSellerFilter,
   prospectionHref,
 } from '@/features/prospecting/services/filter-prospecting';
-import { PROSPECTING_TARGET_LABELS } from '@/features/prospecting/types';
+import { sellersLabel } from '@/features/prospecting/services/group-prospecting';
+import {
+  TOUR_SCOPES,
+  TOUR_SCOPE_LABELS,
+  buildTour,
+  filterByScope,
+  parseTourScope,
+  type TourScope,
+} from '@/features/prospecting/services/tour';
+import { getProfile } from '@/lib/auth/get-profile';
 
 export const metadata: Metadata = { title: 'Ma tournée — ACM Studio' };
 
 type TourneePageProps = {
-  searchParams: Promise<{ bien?: string; cible?: string }>;
+  searchParams: Promise<{ bien?: string; cible?: string; qui?: string }>;
 };
 
 // Mission 86 — « Imprimer ma tournée » : la liste filtrée de la page Prospection, en A4, par
-// l'impression du navigateur (comme la liste de tournée d'un dossier, M75). Chaque groupe dit
-// pour quel bien vendeur. Les concurrents « pas intéressés » et les mandats rentrés n'y sont
-// plus : il n'y a plus à y passer. Document interne à l'agence.
+// l'impression du navigateur. Document interne à l'agence.
+// Mission 98 — la tournée ne garde que les portes où sonner : les propriétaires à adresse
+// confirmée, ni en rendez-vous, ni en mandat, ni « pas intéressés », ni sur la liste « Ne plus
+// solliciter », rangés par commune, puis par rue, puis par numéro. Les confrères sont listés à
+// part, en bas, à appeler. Elle s'ouvre sur les dossiers du conseiller connecté ; « Toute
+// l'agence » l'élargit. Filtrée sur un bien vendeur, elle est celle de ce bien, à qui qu'il soit.
 export default async function TourneePage({ searchParams }: TourneePageProps) {
-  const { bien, cible } = await searchParams;
+  const { bien, cible, qui } = await searchParams;
+  const profile = await getProfile();
+  if (!profile) {
+    redirect('/onboarding');
+  }
 
-  const { sellers, entries } = await getAgencyProspecting(await getSuiviDossiers());
+  const { sellers, cards } = await getAgencyProspecting(await getSuiviDossiers());
   const sellerId = parseSellerFilter(bien, sellers);
   const target = parseProspectingTarget(cible);
-  const toVisit = filterProspecting(entries, sellerId, target).filter(
-    (entry) => entry.row.status !== 'declined' && entry.row.status !== 'mandate',
-  );
-  const groups = sellers
-    .map((seller) => ({
-      seller,
-      rows: toVisit
-        .filter((entry) => entry.seller.projectId === seller.projectId)
-        .map((entry) => entry.row),
-    }))
-    .filter((group) => group.rows.length > 0);
+  const scope = parseTourScope(qui);
+  const filtered = filterProspecting(cards, sellerId, target);
+  const tour = buildTour(sellerId != null ? filtered : filterByScope(filtered, scope, profile.id));
+
+  const communes: { name: string; start: number; stops: typeof tour.owners }[] = [];
+  tour.owners.forEach((stop, index) => {
+    const name = stop.commune ?? 'Commune non renseignée';
+    const last = communes.at(-1);
+    if (last && last.name.toLowerCase() === name.toLowerCase()) {
+      last.stops.push(stop);
+    } else {
+      communes.push({ name, start: index + 1, stops: [stop] });
+    }
+  });
+  const scopeHref = (value: TourScope): string => {
+    const params = new URLSearchParams();
+    if (target !== 'all') {
+      params.set('cible', target);
+    }
+    if (value !== 'mine') {
+      params.set('qui', value);
+    }
+    const query = params.toString();
+    return query === '' ? '/prospection/tournee' : `/prospection/tournee?${query}`;
+  };
+  const seller = sellers.find((item) => item.projectId === sellerId);
+  const empty = tour.owners.length === 0 && tour.colleagues.length === 0;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[210mm] flex-col gap-5 bg-white px-6 py-8 text-zinc-900 print:max-w-none print:p-0">
       <style>{'@page { size: A4; margin: 15mm; }'}</style>
-      <div className="flex items-center justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={prospectionHref(sellerId, target)} className={backLink}>
           ← Retour à Prospection
         </Link>
-        <PrintButton />
+        <div className="flex flex-wrap items-center gap-2">
+          {sellerId == null
+            ? TOUR_SCOPES.map((value) => (
+                <Link
+                  key={value}
+                  href={scopeHref(value)}
+                  aria-current={value === scope ? 'true' : undefined}
+                  className={`${btnSecondary} ${value === scope ? 'border-brand font-semibold' : ''}`}
+                >
+                  {TOUR_SCOPE_LABELS[value]}
+                </Link>
+              ))
+            : null}
+          <PrintButton />
+        </div>
       </div>
 
       <header className="flex flex-col gap-1 border-b border-zinc-300 pb-3">
         <h1 className="text-xl font-bold text-black">Ma tournée de prospection</h1>
         <p className="text-sm text-zinc-700">
-          {PROSPECTING_TARGET_LABELS[target]} · liste éditée le{' '}
+          {seller ? `Pour : ${seller.name}` : TOUR_SCOPE_LABELS[scope]} · liste éditée le{' '}
           {new Date().toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}
         </p>
-        <p className="text-xs text-zinc-500">Document interne à l’agence.</p>
+        <p className="text-xs text-zinc-500">
+          Document interne à l’agence. Propriétaires à adresse confirmée, par commune et par rue.
+        </p>
       </header>
 
-      {groups.length > 0 ? (
-        groups.map(({ seller, rows }) => (
-          <section key={seller.projectId} className="flex flex-col gap-1">
-            <h2 className="break-after-avoid text-base font-bold text-black">
-              Pour : {seller.name}
-              {seller.label ? (
-                <span className="font-normal text-zinc-700"> · {seller.label}</span>
-              ) : null}
-            </h2>
-            <ProspectingList rows={rows} />
-          </section>
-        ))
-      ) : (
-        <p className="text-sm text-zinc-600">Aucun concurrent à aller voir pour ce filtre.</p>
-      )}
+      {empty ? (
+        <p className="text-sm text-zinc-600">
+          Aucune porte où sonner ni confrère à appeler pour ce filtre.
+          {sellerId == null && scope === 'mine' ? ' Voyez aussi « Toute l’agence ».' : ''}
+        </p>
+      ) : null}
+
+      {communes.map((commune) => (
+        <section
+          key={`${commune.name}-${commune.start}`}
+          data-testid="tour-commune"
+          className="flex flex-col gap-1"
+        >
+          <h2 className="break-after-avoid text-base font-bold text-black">{commune.name}</h2>
+          <ProspectingList
+            rows={commune.stops.map((stop) => stop.card.row)}
+            start={commune.start}
+            notes={Object.fromEntries(
+              commune.stops.map(({ card }) => [
+                card.row.id,
+                `Pour : ${sellersLabel(card.sellers)}`,
+              ]),
+            )}
+          />
+        </section>
+      ))}
+
+      {tour.colleagues.length > 0 ? (
+        <section
+          data-testid="tour-colleagues"
+          className="flex flex-col gap-1 border-t border-zinc-300 pt-3"
+        >
+          <h2 className="break-after-avoid text-base font-bold text-black">
+            Confrères à appeler (exclusivités)
+          </h2>
+          <ul className="flex flex-col divide-y divide-zinc-200 print:divide-zinc-300">
+            {tour.colleagues.map((card) => (
+              <li
+                key={card.row.id}
+                className="flex break-inside-avoid flex-col gap-0.5 py-3 text-sm"
+              >
+                <span className="font-semibold text-black">
+                  {card.row.listingNumber
+                    ? `Annonce n° ${card.row.listingNumber}`
+                    : 'Annonce sans numéro'}
+                  {card.row.portal ? ` · ${card.row.portal}` : ''}
+                </span>
+                <span className="text-zinc-800">{competitorFacts(card.row).join(' · ')}</span>
+                {card.row.address ? (
+                  <span className="text-zinc-700">{card.row.address}</span>
+                ) : null}
+                <span className="text-zinc-700">Pour : {sellersLabel(card.sellers)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }

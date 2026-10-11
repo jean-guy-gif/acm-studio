@@ -34,6 +34,8 @@ import {
   type ProspectingFileVersion,
   type ProspectingSender,
 } from '@/features/prospecting-file/types';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
+import { opposedOn } from '@/features/prospecting/services/opposition';
 import { readPhotoPaths } from '@/features/subject-property-photos/services/get-property-photos';
 import {
   signPropertyPhotos,
@@ -135,13 +137,19 @@ export async function getProspectingFile(
   }
 
   // Mission 90 — l'adresse de l'agence conditionne le courrier au propriétaire : lue avant.
-  const branding = await getAgencyBranding();
+  // Mission 98 — et la liste « Ne plus solliciter » de l'agence, sur l'adresse du bien.
+  const [branding, oppositions] = await Promise.all([
+    getAgencyBranding(),
+    getOppositions(supabase, agencyId),
+  ]);
+  const opposed = opposedOn(competitor.locator_address, oppositions) != null;
 
   const confirmedAddress =
     competitor.locator_confirmed === true ? competitor.locator_address?.trim() || null : null;
   const blockerFor = (version: ProspectingFileVersion): FileBlocker | null =>
     fileBlocker({
       version,
+      opposed,
       addressConfirmed: confirmedAddress != null,
       advisorPhone: profile.phone,
       agencyAddress: branding?.postalAddress ?? null,
