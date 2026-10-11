@@ -13,6 +13,10 @@ import {
 } from '@/features/subject-property/constants/property-options';
 import { formatEuro, formatNumber, formatSquareMeters } from '@/lib/format';
 
+// Mission 87 — dans le dossier, une surface se lit au m² entier (« 56,53 m² » → « 57 m² ») :
+// le formateur arrondit à l'affichage, aucun calcul ne change (M74).
+const squareMeters = (value: number): string => formatSquareMeters(value, { maxDecimals: 0 });
+
 // Mission 84 — notre bien face au leur. Pur. Deux règles tiennent tout le fichier :
 //   - une ligne ne s'affiche que si elle est connue des DEUX côtés (jamais « — ») ;
 //   - on énonce des faits, jamais un jugement (ni « mieux », ni « plus cher »).
@@ -139,12 +143,12 @@ export function comparedRows(
   if (!options.compact) {
     push(
       'Surface',
-      map(compared.surface, (value) => formatSquareMeters(value)),
+      map(compared.surface, (value) => squareMeters(value)),
     );
   }
   push(
     'Terrain',
-    map(compared.land, (value) => formatSquareMeters(value)),
+    map(compared.land, (value) => squareMeters(value)),
   );
   push('Extérieur', map(compared.outdoor, amenityValue));
   push('Stationnement', map(compared.parking, amenityValue));
@@ -189,7 +193,7 @@ export function cardTitles(
       parts[0] = `${parts[0]} ${rooms(compared.rooms[side])}`;
     }
     if (options.compact && compared.surface) {
-      parts.push(formatSquareMeters(compared.surface[side]));
+      parts.push(squareMeters(compared.surface[side]));
     }
     return parts.join(' · ');
   };
@@ -230,8 +234,8 @@ export function closeness(facts: ProspectingFileFacts, options: { showPrices: bo
   }
 
   if (compared.surface && surfacesClose(compared.surface.ours, compared.surface.theirs)) {
-    const ours = formatSquareMeters(compared.surface.ours);
-    const theirs = formatSquareMeters(compared.surface.theirs);
+    const ours = squareMeters(compared.surface.ours);
+    const theirs = squareMeters(compared.surface.theirs);
     items.push(
       ours === theirs ? `*Même surface* : ${ours}` : `*Surface proche* : ${ours} et ${theirs}`,
     );
@@ -263,9 +267,9 @@ export function distinctFacts(facts: ProspectingFileFacts): Pair<string[]> {
 
   differ(compared.rooms, rooms);
   if (compared.surface && !surfacesClose(compared.surface.ours, compared.surface.theirs)) {
-    differ(compared.surface, (value) => formatSquareMeters(value));
+    differ(compared.surface, (value) => squareMeters(value));
   }
-  differ(compared.land, (value) => `terrain de ${formatSquareMeters(value)}`);
+  differ(compared.land, (value) => `terrain de ${squareMeters(value)}`);
   onlyOne(compared.outdoor);
   onlyOne(compared.parking);
   differ(compared.dpe, (value) => `DPE ${value}`);

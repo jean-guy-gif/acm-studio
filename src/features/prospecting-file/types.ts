@@ -5,7 +5,7 @@ import type { PropertyType } from '@/features/subject-property/constants/propert
 // concurrent (recto-verso) ou au confrère qui l'a en exclusivité (une page). Il SORT de
 // l'agence : n'y entrent que les informations publiques de NOTRE annonce et ce que l'annonce
 // du concurrent publie. Jamais le nom du vendeur, sa valeur perçue, l'analyse ou la fourchette
-// du conseiller ; jamais une photo du concurrent.
+// du conseiller. Mission 87 — la photo du concurrent n'y entre que si le conseiller l'a choisie.
 
 export const PROSPECTING_FILE_VERSIONS = ['owner', 'colleague'] as const;
 export type ProspectingFileVersion = (typeof PROSPECTING_FILE_VERSIONS)[number];
@@ -62,11 +62,12 @@ export type ProspectingFile = {
   version: ProspectingFileVersion;
   kind: PropertyKind;
   pricesShown: boolean;
-  addressee: { lead: string; name: string; detail: string | null };
+  // Le nom du destinataire, ligne par ligne : une adresse ne se coupe pas au milieu (M87).
+  addressee: { lead: string; nameLines: string[]; detail: string | null };
   defaults: ProspectingFileTexts;
   ours: PropertyCard;
   theirs: PropertyCard;
-  // À la place de la photo du concurrent, qui n'est jamais reprise.
+  // Dans le cadre gris, quand le dossier ne montre pas de photo du concurrent.
   theirPlaceholder: string[];
   closeness: string[];
   differences: string[];
@@ -95,6 +96,8 @@ export type FixedTexts = {
 // Qui signe le dossier : le conseiller connecté et son agence.
 export type ProspectingSender = {
   advisorName: string;
+  // Mission 87 — `agencyName` est le nom IMPRIMÉ : « Nom sur les documents » s'il est rempli,
+  // sinon le nom de l'agence.
   email: string;
   phone: string | null;
   photoUrl: string | null;

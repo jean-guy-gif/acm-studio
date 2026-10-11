@@ -172,4 +172,22 @@ describe('distance', () => {
     expect(spaced(formatDistance(12))).toBe('50 m');
     expect(spaced(formatDistance(1840))).toBe('1,8 km');
   });
+
+  // Mission 87 — dans le dossier, une surface se lit au m² entier.
+  it('arrondit les surfaces au m² entier, partout dans le dossier', () => {
+    const facts = makeFacts({
+      ours: { ...OUR_HOUSE, surfaceArea: 56.53, landArea: 1200.4 },
+      theirs: { ...THEIR_HOUSE, surfaceArea: 58.49, landArea: 899.5 },
+    });
+    const cards = comparedRows(facts, { showPrices: true, compact: false });
+    const surface = cards.ours.find((row) => row.label === 'Surface');
+    const theirSurface = cards.theirs.find((row) => row.label === 'Surface');
+    expect(spaced(surface?.value ?? '')).toBe('57 m²');
+    expect(spaced(theirSurface?.value ?? '')).toBe('58 m²');
+    expect(spaced(cards.ours.find((row) => row.label === 'Terrain')?.value ?? '')).toBe('1 200 m²');
+    expect(spaced(cards.theirs.find((row) => row.label === 'Terrain')?.value ?? '')).toBe('900 m²');
+    expect(spaced(cardTitles(facts, { compact: true }).ours)).toContain('57 m²');
+    const everything = [...closeness(facts, { showPrices: true }), ...differences(facts)].join(' ');
+    expect(everything).not.toMatch(/\d,\d+\s*m²/);
+  });
 });

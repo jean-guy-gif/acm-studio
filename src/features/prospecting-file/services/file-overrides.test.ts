@@ -23,6 +23,7 @@ const input = (patch: Record<string, unknown> = {}) =>
     ...texts,
     showPrices: true,
     photoPath: 'a/p/property/1.jpg',
+    theirPhoto: { mode: 'none' },
     ...patch,
   });
 

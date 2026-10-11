@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
 
 import {
   backLink,
@@ -16,6 +16,7 @@ import {
   sectionTitle,
 } from '@/components/ui/styles';
 import { saveProspectingFile } from '@/features/prospecting-file/actions/save-prospecting-file';
+import { uploadTheirPhoto } from '@/features/prospecting-file/actions/upload-their-photo';
 import { ProspectingFileDocument } from '@/features/prospecting-file/components/prospecting-file-document';
 import {
   buildProspectingFile,
@@ -28,6 +29,12 @@ import {
 import { chosenPhotoPath } from '@/features/prospecting-file/services/file-overrides';
 import type { QrCode } from '@/features/prospecting-file/services/qr-code';
 import {
+  initialTheirPhotoChoice,
+  theirPhotoDisplayUrl,
+  type SavedTheirPhoto,
+  type TheirPhotoChoice,
+} from '@/features/prospecting-file/services/their-photo';
+import {
   PROSPECTING_FILE_VERSION_LABELS,
   type ProspectingFileFacts,
   type ProspectingFileOverrides,
@@ -37,6 +44,34 @@ import {
 } from '@/features/prospecting-file/types';
 
 type Photo = { path: string; url: string | null };
+
+// Ce que la page remet à l'éditeur pour la photo du bien concurrent (mission 87).
+type TheirPhotoProps = {
+  listing: string[];
+  saved: SavedTheirPhoto;
+  signed: Record<string, string | null>;
+  prefix: string;
+};
+
+const tile = (selected: boolean): string =>
+  `cursor-pointer overflow-hidden rounded-lg border-2 ${selected ? 'border-brand' : 'border-transparent'}`;
+
+// Une vignette d'annonce : si le portail ne la sert plus, elle le dit au lieu d'une image cassée.
+function ListingThumb({ url, index }: { url: string; index: number }) {
+  const [failed, setFailed] = useState(false);
+  return failed ? (
+    <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+      Indisponible
+    </span>
+  ) : (
+    <img
+      src={url}
+      alt={`Photo ${index + 1} de son annonce`}
+      className="h-16 w-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 const PROPOSAL_LABELS = ['Proposition — point 1', 'Proposition — point 2', 'Proposition — point 3'];
 
@@ -51,6 +86,7 @@ export function ProspectingFileEditor({
   sender,
   overrides,
   photos,
+  theirPhoto,
   qr,
 }: {
   projectId: string;
@@ -60,6 +96,7 @@ export function ProspectingFileEditor({
   sender: ProspectingSender;
   overrides: ProspectingFileOverrides;
   photos: Photo[];
+  theirPhoto: TheirPhotoProps;
   qr: QrCode;
 }) {
   const canShowPrices = pricesKnown(facts);
@@ -79,8 +116,47 @@ export function ProspectingFileEditor({
       photos.map((photo) => photo.path),
     ),
   );
+  // Mission 87 — la photo du bien concurrent : une photo de son annonce, « Ma photo », ou
+  // « Sans photo ». La photo importée pendant cette séance est gardée à part : elle n'est
+  // retenue qu'à l'enregistrement.
+  const [theirChoice, setTheirChoice] = useState<TheirPhotoChoice>(() =>
+    initialTheirPhotoChoice(theirPhoto.saved, theirPhoto.listing, theirPhoto.prefix),
+  );
+  const [uploaded, setUploaded] = useState<Photo | null>(() =>
+    theirPhoto.saved.mode === 'upload' && theirPhoto.saved.path
+      ? { path: theirPhoto.saved.path, url: theirPhoto.signed[theirPhoto.saved.path] ?? null }
+      : null,
+  );
+  const [uploading, startUpload] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const chooseTheirPhoto = (choice: TheirPhotoChoice) => {
+    setTheirChoice(choice);
+    setUploadError(null);
+    setState(null);
+  };
+  const importTheirPhoto = (file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+    setUploadError(null);
+    setState(null);
+    startUpload(async () => {
+      const formData = new FormData();
+      formData.set('version', version);
+      formData.set('photo', file);
+      const result = await uploadTheirPhoto(projectId, competitorId, formData);
+      if (!result.ok) {
+        setUploadError(result.error);
+        return;
+      }
+      setUploaded({ path: result.path, url: result.url });
+      setTheirChoice({ mode: 'upload', path: result.path });
+    });
+  };
 
   const set = (patch: Partial<ProspectingFileTexts>) => {
     setTexts((current) => ({ ...current, ...patch }));
@@ -100,12 +176,17 @@ export function ProspectingFileEditor({
         ...texts,
         showPrices,
         photoPath,
+        theirPhoto: theirChoice,
       });
       if (!result.ok) {
         setState({ ok: false, message: result.error });
         return;
       }
-      setState({ ok: true, message: 'Enregistré.' });
+      setState(
+        result.warning
+          ? { ok: false, message: `Enregistré. ${result.warning}` }
+          : { ok: true, message: 'Enregistré.' },
+      );
       if (thenPrint) {
         window.print();
       }
@@ -125,6 +206,10 @@ export function ProspectingFileEditor({
     contactHook: texts.contactHook.trim() || file.defaults.contactHook,
   };
   const photoUrl = photos.find((photo) => photo.path === photoPath)?.url ?? null;
+  const theirPhotoUrl = theirPhotoDisplayUrl(theirChoice, theirPhoto.saved, {
+    ...theirPhoto.signed,
+    ...(uploaded ? { [uploaded.path]: uploaded.url } : {}),
+  });
   const area = `${inputBase} w-full resize-y`;
 
   return (
@@ -266,6 +351,89 @@ export function ProspectingFileEditor({
           )}
         </fieldset>
 
+        <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
+          <span className={fieldLabel}>Photo de son bien</span>
+          <div className="grid grid-cols-4 gap-2">
+            {theirPhoto.listing.map((url, index) => {
+              const selected = theirChoice.mode === 'listing' && theirChoice.url === url;
+              return (
+                <label key={url} className={tile(selected)}>
+                  <input
+                    type="radio"
+                    name="their-photo"
+                    className="sr-only"
+                    checked={selected}
+                    onChange={() => chooseTheirPhoto({ mode: 'listing', url })}
+                  />
+                  <ListingThumb url={url} index={index} />
+                </label>
+              );
+            })}
+            {uploaded ? (
+              <label className={tile(theirChoice.mode === 'upload')}>
+                <input
+                  type="radio"
+                  name="their-photo"
+                  className="sr-only"
+                  checked={theirChoice.mode === 'upload'}
+                  onChange={() => chooseTheirPhoto({ mode: 'upload', path: uploaded.path })}
+                />
+                {uploaded.url ? (
+                  <img src={uploaded.url} alt="Ma photo" className="h-16 w-full object-cover" />
+                ) : (
+                  <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+                    Ma photo
+                  </span>
+                )}
+              </label>
+            ) : null}
+            <label className={tile(theirChoice.mode === 'none')}>
+              <input
+                type="radio"
+                name="their-photo"
+                className="sr-only"
+                checked={theirChoice.mode === 'none'}
+                onChange={() => chooseTheirPhoto({ mode: 'none' })}
+              />
+              <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
+                Sans photo
+              </span>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={`${btnSecondary} px-3 py-1.5 text-xs`}
+              disabled={uploading}
+              onClick={() => fileInput.current?.click()}
+            >
+              {uploading
+                ? 'Import en cours…'
+                : uploaded
+                  ? 'Ma photo : en importer une autre'
+                  : 'Ma photo : importer'}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              name="their-photo-file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              aria-label="Importer ma photo de son bien"
+              onChange={(event) => {
+                importTheirPhoto(event.target.files?.[0]);
+                event.target.value = '';
+              }}
+            />
+          </div>
+          <span className="text-xs text-zinc-500">
+            {theirPhoto.listing.length > 0
+              ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
+              : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
+          </span>
+          {uploadError ? <span className={errorText}>{uploadError}</span> : null}
+        </fieldset>
+
         <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4">
           <div className="flex flex-wrap gap-2">
             <button
@@ -299,6 +467,7 @@ export function ProspectingFileEditor({
           texts={shown}
           sender={sender}
           photoUrl={photoUrl}
+          theirPhotoUrl={theirPhotoUrl}
           qr={qr}
         />
       </div>

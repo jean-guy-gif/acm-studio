@@ -6,6 +6,7 @@ import { AppShell } from '@/components/app-shell/app-shell';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
 import { btnPrimary } from '@/components/ui/styles';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { TestAccountBanner } from '@/features/test-account/test-account-banner';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -51,16 +52,20 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
   return (
-    <AppShell
-      profileName={`${profile.first_name} ${profile.last_name}`}
-      profileEmail={profile.email}
-      agencyName={agency ? agency.name : 'Agence inconnue'}
-      initialTheme={theme}
-      signOutAction={signOut}
-      logoLightUrl={branding?.logoLightUrl ?? null}
-      logoDarkUrl={branding?.logoDarkUrl ?? null}
-    >
-      {children}
-    </AppShell>
+    <>
+      {/* Mission 87 — le compte de test se voit, en haut de chaque page. */}
+      <TestAccountBanner agencyName={agency?.name} />
+      <AppShell
+        profileName={`${profile.first_name} ${profile.last_name}`}
+        profileEmail={profile.email}
+        agencyName={agency ? agency.name : 'Agence inconnue'}
+        initialTheme={theme}
+        signOutAction={signOut}
+        logoLightUrl={branding?.logoLightUrl ?? null}
+        logoDarkUrl={branding?.logoDarkUrl ?? null}
+      >
+        {children}
+      </AppShell>
+    </>
   );
 }

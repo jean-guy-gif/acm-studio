@@ -40,6 +40,7 @@ export default async function ProspectingFilePage({
         sender={context.sender}
         overrides={context.overrides}
         photos={context.photos}
+        theirPhoto={context.theirPhoto}
         qr={context.qr}
       />
     );
