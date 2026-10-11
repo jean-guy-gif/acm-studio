@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 
+import { TestAccountBanner } from '@/features/test-account/test-account-banner';
+import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
 // Groupe de routes « impression » (mission 75) : une feuille A4 sobre, sans barre latérale ni
@@ -14,5 +16,12 @@ export default async function PrintLayout({ children }: { children: React.ReactN
     redirect('/');
   }
 
-  return children;
+  // Mission 87 — le bandeau du compte de test, à l'écran seulement : jamais sur la feuille.
+  const agency = await getAgency(profile.agency_id);
+  return (
+    <>
+      <TestAccountBanner agencyName={agency?.name} />
+      {children}
+    </>
+  );
 }

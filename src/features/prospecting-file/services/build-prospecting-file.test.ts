@@ -71,7 +71,7 @@ describe('destinataire', () => {
     const file = buildProspectingFile(makeFacts(), 'owner', { showPrices: true });
     expect(file.addressee).toEqual({
       lead: 'Au propriétaire du',
-      name: '14 chemin des Oliviers, 06800 Cagnes-sur-Mer',
+      nameLines: ['14 chemin des Oliviers', '06800 Cagnes-sur-Mer'],
       detail: null,
     });
   });
@@ -85,7 +85,7 @@ describe('destinataire', () => {
 
   it('confrère : pas d’adresse, l’exclusivité et le bien', () => {
     const file = buildProspectingFile(makeFacts(), 'colleague', { showPrices: true });
-    expect(file.addressee.name).toBe('Agence titulaire de l’exclusivité');
+    expect(file.addressee.nameLines).toEqual(['Agence titulaire de l’exclusivité']);
     expect(spaced(file.addressee.detail ?? '')).toBe(
       'Exclusivité · Maison 7 pièces · 201 m² · Cagnes sur Mer',
     );

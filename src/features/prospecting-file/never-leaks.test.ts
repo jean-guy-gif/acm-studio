@@ -13,11 +13,20 @@ import {
   THEIR_LISTING_SELECT,
   buildProspectingFacts,
 } from '@/features/prospecting-file/services/prospecting-facts';
+import {
+  NO_SAVED_THEIR_PHOTO,
+  initialTheirPhotoChoice,
+  listingPhotoUrls,
+  theirPhotoDisplayUrl,
+  theirPhotoPrefix,
+  validTheirPhotoChoice,
+} from '@/features/prospecting-file/services/their-photo';
 
 // Mission 84, critère 8 — le dossier de prospection SORT de l'agence. Un test par interdit :
 //   - seulement les informations publiques de NOTRE annonce : jamais le nom du vendeur, sa
 //     valeur perçue, l'analyse ni la fourchette du conseiller ;
-//   - jamais les photos du concurrent ;
+//   - la photo du concurrent seulement si le conseiller l'a choisie (mission 87, remplace
+//     « jamais les photos du concurrent ») ;
 //   - jamais le nom de son propriétaire, ni ce qu'ACM en sait par ailleurs (titre du portail,
 //     description, notes du conseiller, étiquette du Localisateur) ;
 //   - rien de tout cela ne passe côté vendeur (M75).
@@ -72,7 +81,7 @@ function payloads() {
 }
 
 describe('le dossier de prospection ne sort que ce qui est public', () => {
-  it('ni le vendeur, ni la fourchette, ni les photos ou le propriétaire du concurrent', () => {
+  it('ni le vendeur, ni la fourchette, ni le propriétaire du concurrent — et aucune photo de lui dans les faits', () => {
     for (const { facts, file, said } of payloads()) {
       const payload = `${JSON.stringify(facts)} ${JSON.stringify(file)} ${said}`;
       for (const leak of LEAKS) {
@@ -140,5 +149,54 @@ describe('le dossier de prospection ne sort que ce qui est public', () => {
       join('app', '(protected)', 'builder', '[projectId]', 'presentation'),
     ];
     expect(offenders(SELLER_SIDE, /prospecting-file|advisor-profile/)).toEqual([]);
+  });
+
+  // Mission 87 — la photo du concurrent est un CHOIX du conseiller, et rien d'autre.
+  describe('la photo du concurrent n’entre que par le choix du conseiller', () => {
+    const listing = listingPhotoUrls(THEIR_ROW.photo_urls);
+    const prefix = theirPhotoPrefix('agence', 'dossier', THEIR_ROW.id);
+
+    it('« Sans photo » ne montre rien, même si l’annonce a des photos', () => {
+      expect(listing).toEqual(['https://portail.example/PHOTO-CONCURRENT.jpg']);
+      expect(theirPhotoDisplayUrl({ mode: 'none' }, NO_SAVED_THEIR_PHOTO, {})).toBeNull();
+      expect(
+        initialTheirPhotoChoice({ mode: 'none', sourceUrl: null, path: null }, listing, prefix),
+      ).toEqual({ mode: 'none' });
+    });
+
+    it('seule une photo de SON annonce, ou un fichier de CE concurrent, peut être retenue', () => {
+      expect(validTheirPhotoChoice({ mode: 'listing', url: listing[0] }, listing, prefix)).toBe(
+        true,
+      );
+      expect(
+        validTheirPhotoChoice(
+          { mode: 'listing', url: 'https://portail.example/AUTRE-BIEN.jpg' },
+          listing,
+          prefix,
+        ),
+      ).toBe(false);
+      expect(
+        validTheirPhotoChoice(
+          { mode: 'upload', path: 'agence/dossier/property/PHOTO-VENDEUR.jpg' },
+          listing,
+          prefix,
+        ),
+      ).toBe(false);
+    });
+
+    it('les photos de l’annonce ne sont lues qu’à un endroit, et la feuille ne reçoit qu’une adresse', () => {
+      const FILE_SIDE = [join('features', 'prospecting-file')];
+      // `photo_urls` : la requête (photos de notre bien, photos de son annonce) et rien d'autre.
+      expect(offenders(FILE_SIDE, /photo_urls/)).toEqual([
+        join('features', 'prospecting-file', 'queries', 'get-prospecting-file.ts'),
+      ]);
+      // La feuille n'a aucun accès à l'annonce : elle affiche l'adresse qu'on lui remet.
+      const sheet = readFileSync(
+        join(SRC, 'features', 'prospecting-file', 'components', 'prospecting-file-document.tsx'),
+        'utf8',
+      );
+      expect(sheet).not.toMatch(/services\/their-photo|queries\/|photo_urls/);
+      expect(sheet).toContain('theirPhotoUrl');
+    });
   });
 });

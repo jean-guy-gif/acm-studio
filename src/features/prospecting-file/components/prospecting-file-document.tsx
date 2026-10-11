@@ -1,10 +1,16 @@
+'use client';
+
 // Le logo, la photo du bien et celle du conseiller viennent d'URL signées ou publiques de
 // Supabase, à imprimer telles quelles : <img> à dessein, comme pour l'aperçu de la charte.
 /* eslint-disable @next/next/no-img-element */
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 
 import { DPE_COLORS } from '@/features/dpe/services/dpe';
-import { agencyMentions } from '@/features/prospecting-file/services/build-prospecting-file';
+import { agencyMentionList } from '@/features/prospecting-file/services/build-prospecting-file';
+import {
+  contactAgencyLine,
+  headerNameFontPt,
+} from '@/features/prospecting-file/services/document-name';
 import { DOCUMENT_CSS } from '@/features/prospecting-file/components/document-styles';
 import { lines, paragraphs, parseEmphasis } from '@/features/prospecting-file/services/emphasis';
 import type { QrCode } from '@/features/prospecting-file/services/qr-code';
@@ -17,7 +23,8 @@ import type {
 
 // Mission 84 — le dossier de prospection tel qu'il s'imprime (A4). Composant d'affichage : tous
 // ses textes viennent de `buildProspectingFile` et des textes du conseiller. Il sort de
-// l'agence : aucune photo du concurrent, aucune donnée réservée au conseiller.
+// l'agence : aucune donnée réservée au conseiller, et la photo du concurrent seulement si le
+// conseiller l'a choisie (mission 87).
 
 // `*mot*` : couleur d'accent dans un titre (em), gras ailleurs (b).
 function Emphasis({ text, as: Tag }: { text: string; as: 'em' | 'b' }) {
@@ -54,15 +61,47 @@ function Header({ file, sender }: { file: ProspectingFile; sender: ProspectingSe
         {sender.logoUrl ? (
           <img src={sender.logoUrl} alt={sender.agencyName} />
         ) : (
-          <b>{sender.agencyName}</b>
+          // Deux lignes au plus : le texte se réduit, jamais sous la taille du texte courant.
+          <b style={{ fontSize: `${headerNameFontPt(sender.agencyName)}pt` }}>
+            {sender.agencyName}
+          </b>
         )}
       </div>
       <div className="pf-to">
         {file.addressee.lead}
-        <b>{file.addressee.name}</b>
+        {/* Une ligne par morceau d'adresse : elle ne se coupe pas au milieu. */}
+        {file.addressee.nameLines.map((line) => (
+          <b key={line}>{line}</b>
+        ))}
         {file.addressee.detail}
       </div>
     </header>
+  );
+}
+
+// Pied de page : le nom de l'agence sur une seule ligne, puis les mentions facultatives.
+function Mentions({ sender, withAddress }: { sender: ProspectingSender; withAddress: boolean }) {
+  const [name, ...others] = agencyMentionList(sender, { withAddress });
+  return (
+    <span>
+      <span className="pf-nw">{name}</span>
+      {others.map((mention) => ` · ${mention}`).join('')}
+    </span>
+  );
+}
+
+// La photo du bien concurrent choisie par le conseiller. Si elle ne se charge pas (lien expiré,
+// portail qui bloque), le cadre gris la remplace : jamais une image cassée sur la feuille.
+function TheirPhoto({ url, placeholder }: { url: string | null; placeholder: string[] }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <div className="pf-ph" data-testid="their-photo">
+      {url && failedUrl !== url ? (
+        <img src={url} alt="" onError={() => setFailedUrl(url)} />
+      ) : (
+        placeholder.map((line) => <span key={line}>{line}</span>)
+      )}
+    </div>
   );
 }
 
@@ -142,6 +181,8 @@ function Chain({ steps }: { steps: [string, string, string] }) {
 
 function Contact({ sender, hook, qr }: { sender: ProspectingSender; hook: string; qr: QrCode }) {
   const reach = [sender.phone, sender.email].filter(Boolean).join(' · ');
+  // « Conseiller · [agence] » tient sur une ligne, quel que soit le nom de l'agence.
+  const agencyLine = contactAgencyLine(sender.agencyName);
   return (
     <div className="pf-contact">
       {sender.photoUrl ? (
@@ -152,8 +193,9 @@ function Contact({ sender, hook, qr }: { sender: ProspectingSender; hook: string
       <div className="pf-who">
         <div className="pf-cta">{hook}</div>
         <b>{sender.advisorName}</b>
-        Conseiller · {sender.agencyName}
-        <br />
+        <span className="pf-nw" style={{ fontSize: `${agencyLine.fontPt}pt` }}>
+          {agencyLine.text}
+        </span>
         {reach}
       </div>
       <div className="pf-qr">
@@ -180,6 +222,7 @@ function OwnerPages({
   texts,
   sender,
   photoUrl,
+  theirPhotoUrl,
   qr,
 }: Omit<ProspectingFileDocumentProps, 'file'> & { file: ProspectingFile }) {
   const { fixed } = file;
@@ -202,11 +245,7 @@ function OwnerPages({
             ) : null}
           </Card>
           <Card card={file.theirs} side="yours">
-            <div className="pf-ph">
-              {file.theirPlaceholder.map((line) => (
-                <span key={line}>{line}</span>
-              ))}
-            </div>
+            <TheirPhoto url={theirPhotoUrl} placeholder={file.theirPlaceholder} />
           </Card>
         </div>
 
@@ -239,7 +278,7 @@ function OwnerPages({
 
         {texts.keyMessage ? <div className="pf-key">{texts.keyMessage}</div> : null}
         <footer className="pf-foot">
-          <span>{agencyMentions(sender, { withAddress: true })}</span>
+          <Mentions sender={sender} withAddress />
           <span>{fixed.turnPage}</span>
         </footer>
       </section>
@@ -289,7 +328,14 @@ function OwnerPages({
   );
 }
 
-function ColleaguePage({ file, texts, sender, photoUrl, qr }: ProspectingFileDocumentProps) {
+function ColleaguePage({
+  file,
+  texts,
+  sender,
+  photoUrl,
+  theirPhotoUrl,
+  qr,
+}: ProspectingFileDocumentProps) {
   return (
     <section className="pf-page compact">
       <Header file={file} sender={sender} />
@@ -299,8 +345,9 @@ function ColleaguePage({ file, texts, sender, photoUrl, qr }: ProspectingFileDoc
       <Letter text={texts.letter} />
 
       <div className="pf-duo">
-        {/* La photo de notre bien, et en face le bien du confrère sans photo. Sans photo de
-            notre côté, les deux cartes s'alignent sans bandeau. */}
+        {/* La photo de notre bien, et en face celle que le conseiller a choisie pour le bien
+            du confrère (ou le cadre gris). Sans aucune photo, les deux cartes s'alignent sans
+            bandeau. */}
         <Card card={file.ours} side="ours">
           {photoUrl ? (
             <div className="pf-ph">
@@ -309,12 +356,8 @@ function ColleaguePage({ file, texts, sender, photoUrl, qr }: ProspectingFileDoc
           ) : null}
         </Card>
         <Card card={file.theirs} side="yours">
-          {photoUrl ? (
-            <div className="pf-ph">
-              {file.theirPlaceholder.map((line) => (
-                <span key={line}>{line}</span>
-              ))}
-            </div>
+          {photoUrl || theirPhotoUrl ? (
+            <TheirPhoto url={theirPhotoUrl} placeholder={file.theirPlaceholder} />
           ) : null}
         </Card>
       </div>
@@ -323,7 +366,7 @@ function ColleaguePage({ file, texts, sender, photoUrl, qr }: ProspectingFileDoc
       <Proposal file={file} texts={texts} />
       <Contact sender={sender} hook={texts.contactHook} qr={qr} />
       <footer className="pf-foot">
-        <span>{agencyMentions(sender, { withAddress: false })}</span>
+        <Mentions sender={sender} withAddress={false} />
         <span>{file.fixed.information}</span>
       </footer>
     </section>
@@ -334,8 +377,10 @@ export type ProspectingFileDocumentProps = {
   file: ProspectingFile;
   texts: ProspectingFileTexts;
   sender: ProspectingSender;
-  // La photo de NOTRE bien, sur les deux versions ; jamais celle du concurrent.
+  // La photo de NOTRE bien, sur les deux versions.
   photoUrl: string | null;
+  // La photo du bien concurrent, seulement si le conseiller l'a choisie ; null = cadre gris.
+  theirPhotoUrl: string | null;
   qr: QrCode;
 };
 

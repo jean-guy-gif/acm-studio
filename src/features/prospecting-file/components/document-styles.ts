@@ -10,11 +10,12 @@ export const DOCUMENT_CSS = `
 .pf-page { width: 210mm; height: 297mm; padding: 16mm 17mm 14mm; position: relative; overflow: hidden; background: #fff; break-after: page; }
 .pf-page:last-child { break-after: auto; }
 .pf-head { display: flex; justify-content: space-between; align-items: center; gap: 6mm; border-bottom: 2px solid var(--p); padding-bottom: 5mm; }
-.pf-logo { display: flex; align-items: center; gap: 3mm; min-width: 0; }
+.pf-logo { display: flex; align-items: center; gap: 3mm; min-width: 0; flex: 1 1 auto; }
 .pf-logo img { max-height: 13mm; max-width: 60mm; width: auto; height: auto; object-fit: contain; }
-.pf-logo b { font-size: 12pt; color: var(--p); }
-.pf-to { font-size: 9pt; color: var(--mute); text-align: right; }
-.pf-to b { color: var(--ink); display: block; font-size: 10pt; }
+.pf-logo b { font-size: 12pt; line-height: 1.25; color: var(--p); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: normal; word-break: normal; hyphens: none; text-wrap: balance; }
+.pf-to { font-size: 9pt; color: var(--mute); text-align: right; flex: 0 0 auto; max-width: 95mm; }
+.pf-to b { color: var(--ink); display: block; font-size: 10pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-nw { white-space: nowrap; }
 .pf-h1 { font-family: var(--font-title); font-size: 20pt; line-height: 1.15; color: var(--p); margin: 7mm 0 4mm; font-weight: 700; letter-spacing: -.01em; }
 .pf-h1 em { font-style: normal; color: var(--a); }
 .pf-h2 { font-size: 8.5pt; letter-spacing: .14em; text-transform: uppercase; color: var(--a); margin: 0 0 3mm; font-weight: 700; }
@@ -64,7 +65,9 @@ export const DOCUMENT_CSS = `
 .pf-avatar { flex: 0 0 20mm; width: 20mm; height: 20mm; border-radius: 50%; overflow: hidden; }
 .pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .pf-who { flex: 1; font-size: 9.5pt; line-height: 1.6; }
+.pf-who { min-width: 0; }
 .pf-who b { font-size: 13pt; display: block; }
+.pf-who .pf-nw { display: block; overflow: hidden; }
 .pf-cta { font-size: 13pt; font-weight: 700; margin: 0 0 1mm; }
 .pf-qr { flex: 0 0 24mm; width: 24mm; height: 24mm; background: #fff; border-radius: 2mm; padding: 2mm; }
 .pf-qr svg { display: block; width: 100%; height: 100%; }

@@ -16,6 +16,7 @@ const EMPTY: AgencyBranding = {
   fontFamily: null,
   siteUrl: null,
   postalAddress: null,
+  documentName: null,
   professionalCard: null,
   validatedAt: null,
 };

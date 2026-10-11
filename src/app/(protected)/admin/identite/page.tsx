@@ -3,11 +3,15 @@ import Link from 'next/link';
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { BrandingForm } from '@/features/branding/components/branding-form';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { getAgency } from '@/lib/auth/get-agency';
+import { getProfile } from '@/lib/auth/get-profile';
 
 // Mission 55 jalon 1 — L'identité de l'agence. L'agence règle son logo et sa couleur ; la
 // charte s'applique à tout l'outil, et l'aperçu montre le Live tel que le vendeur le verra.
 export default async function AgencyIdentityPage() {
   const branding = await getAgencyBranding();
+  const profile = await getProfile();
+  const agency = profile ? await getAgency(profile.agency_id) : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -31,6 +35,8 @@ export default async function AgencyIdentityPage() {
         initialSiteUrl={branding?.siteUrl ?? ''}
         initialPostalAddress={branding?.postalAddress ?? ''}
         initialProfessionalCard={branding?.professionalCard ?? ''}
+        initialDocumentName={branding?.documentName ?? ''}
+        agencyName={agency?.name ?? ''}
       />
     </div>
   );

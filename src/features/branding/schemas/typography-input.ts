@@ -17,6 +17,8 @@ export const typographyInputSchema = z.object({
     .transform((value) => (value ? value : null)),
 });
 
+export const DOCUMENT_NAME_MAX_LENGTH = 40;
+
 // Mission 84 — l'adresse postale et la carte professionnelle de l'agence : deux textes courts,
 // imprimés en pied des dossiers de prospection. Vides → null → mention omise.
 const optionalText = (max: number) =>
@@ -27,6 +29,8 @@ const optionalText = (max: number) =>
 export const agencyMentionsInputSchema = z.object({
   postalAddress: optionalText(200),
   professionalCard: optionalText(80),
+  // Mission 87 — le nom imprimé sur les documents, quand celui de l'agence est trop long.
+  documentName: optionalText(DOCUMENT_NAME_MAX_LENGTH),
 });
 
 export type TypographyInput = z.infer<typeof typographyInputSchema>;

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { removeCompetitorPhotos } from '@/features/prospecting-file/services/remove-their-photos';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -31,6 +32,8 @@ export async function deleteComparable(projectId: string, formData: FormData): P
         )}`,
       );
     }
+    // Mission 87 — son dossier de prospection est parti avec lui (cascade) : ses photos aussi.
+    await removeCompetitorPhotos(supabase.storage, profile.agency_id, projectId, [comparableId]);
   }
 
   revalidatePath(`/builder/${projectId}/comparables`);

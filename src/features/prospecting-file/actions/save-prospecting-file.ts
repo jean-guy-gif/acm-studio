@@ -12,9 +12,19 @@ import {
   fileOverrides,
   ownerForbiddenWord,
 } from '@/features/prospecting-file/services/file-overrides';
+import {
+  copyListingPhoto,
+  removeTheirPhoto,
+} from '@/features/prospecting-file/services/store-their-photo';
+import {
+  validTheirPhotoChoice,
+  type SavedTheirPhoto,
+} from '@/features/prospecting-file/services/their-photo';
 import { createClient } from '@/lib/supabase/server';
 
-export type SaveProspectingFileResult = { ok: true } | { ok: false; error: string };
+// `warning` : le dossier est enregistré, mais un point demande l'attention du conseiller.
+export type SaveProspectingFileResult =
+  { ok: true; warning?: string } | { ok: false; error: string };
 
 const FAILURE = 'Le dossier n’a pas été enregistré. Réessayez.';
 
@@ -51,7 +61,40 @@ export async function saveProspectingFile(
     photoPaths,
   });
 
+  // Mission 87 — la photo du bien concurrent. Une photo d'annonce doit être l'une de celles de
+  // CETTE annonce, un fichier doit être dans le dossier de ce concurrent : sinon, refus.
+  const { listing, saved, prefix } = context.theirPhoto;
+  if (!validTheirPhotoChoice(input.theirPhoto, listing, prefix)) {
+    return { ok: false, error: 'Cette photo ne peut pas être retenue. Choisissez-en une autre.' };
+  }
   const supabase = await createClient();
+  let theirPhoto: SavedTheirPhoto;
+  let warning: string | undefined;
+  if (input.theirPhoto.mode === 'none') {
+    theirPhoto = { mode: 'none', sourceUrl: null, path: null };
+  } else if (input.theirPhoto.mode === 'upload') {
+    theirPhoto = { mode: 'upload', sourceUrl: null, path: input.theirPhoto.path };
+  } else if (
+    saved.mode === 'listing' &&
+    saved.sourceUrl === input.theirPhoto.url &&
+    saved.path != null
+  ) {
+    // Déjà copiée : rien à retélécharger.
+    theirPhoto = saved;
+  } else {
+    // Un lien de portail expire avec l'annonce : la photo choisie est copiée dans le stockage
+    // de l'agence. Si la copie échoue, le choix est gardé quand même, et l'écran le dit.
+    const copied = await copyListingPhoto(supabase, prefix, input.theirPhoto.url);
+    theirPhoto = {
+      mode: 'listing',
+      sourceUrl: input.theirPhoto.url,
+      path: copied.ok ? copied.path : null,
+    };
+    if (!copied.ok) {
+      warning = `La photo de l’annonce n’a pas pu être copiée (${copied.error}) : si elle ne s’affiche pas à l’impression, choisissez-en une autre ou « Ma photo ».`;
+    }
+  }
+
   const { error } = await supabase.from('competitor_prospecting_files').upsert(
     {
       agency_id: context.agencyId,
@@ -67,15 +110,26 @@ export async function saveProspectingFile(
       contact_hook: overrides.contactHook,
       show_prices: overrides.showPrices,
       photo_path: overrides.photoPath,
+      their_photo_mode: theirPhoto.mode,
+      their_photo_source_url: theirPhoto.sourceUrl,
+      their_photo_path: theirPhoto.path,
       updated_by: context.profileId,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'comparable_id,version' },
   );
   if (error) {
+    // Rien d'orphelin : la copie faite à l'instant est retirée.
+    if (theirPhoto.path && theirPhoto.path !== saved.path) {
+      await removeTheirPhoto(supabase, theirPhoto.path);
+    }
     return { ok: false, error: FAILURE };
+  }
+  // Le fichier que ce dossier ne montre plus est retiré du stockage.
+  if (saved.path && saved.path !== theirPhoto.path) {
+    await removeTheirPhoto(supabase, saved.path);
   }
 
   revalidatePath(`/builder/${projectId}/prospection/${competitorId}`);
-  return { ok: true };
+  return warning ? { ok: true, warning } : { ok: true };
 }

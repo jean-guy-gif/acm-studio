@@ -7,6 +7,8 @@ import {
   formatDistance,
   sameCity,
 } from '@/features/prospecting-file/services/compare-properties';
+import { addressLines } from '@/features/prospecting-file/services/addressee-lines';
+import { footerAgencyName } from '@/features/prospecting-file/services/document-name';
 import { capitalize, propertyWording } from '@/features/prospecting-file/services/property-wording';
 import type {
   FixedTexts,
@@ -165,14 +167,18 @@ function addressee(
     const city = facts.theirs.city?.trim();
     return {
       lead: 'À l’attention de',
-      name: 'Agence titulaire de l’exclusivité',
+      nameLines: ['Agence titulaire de l’exclusivité'],
       detail: ['Exclusivité', theirTitle, city].filter(Boolean).join(' · '),
     };
   }
   const address = facts.theirAddress?.trim() ?? '';
   // Un appartement : l'immeuble est connu, pas le lot — on écrit à ses copropriétaires.
   const who = facts.kind === 'apartment' ? 'Aux copropriétaires' : 'Au propriétaire';
-  return { lead: /^\d/.test(address) ? `${who} du` : who, name: address, detail: null };
+  return {
+    lead: /^\d/.test(address) ? `${who} du` : who,
+    nameLines: addressLines(address),
+    detail: null,
+  };
 }
 
 export function buildProspectingFile(
@@ -212,17 +218,23 @@ export function buildProspectingFile(
 
 // Pied de page : l'agence, puis son adresse et sa carte professionnelle quand elles sont
 // renseignées (Administration → Identité). Facultatives : vides, ces mentions sont omises.
+export function agencyMentionList(
+  sender: Pick<ProspectingSender, 'agencyName' | 'postalAddress' | 'professionalCard'>,
+  options: { withAddress: boolean },
+): string[] {
+  return [
+    // Mission 87 — le nom tient sur une ligne, jamais coupé au milieu d'un mot.
+    footerAgencyName(sender.agencyName),
+    options.withAddress ? sender.postalAddress?.trim() : null,
+    sender.professionalCard?.trim() ? `Carte pro ${sender.professionalCard.trim()}` : null,
+  ].filter((mention): mention is string => Boolean(mention));
+}
+
 export function agencyMentions(
   sender: Pick<ProspectingSender, 'agencyName' | 'postalAddress' | 'professionalCard'>,
   options: { withAddress: boolean },
 ): string {
-  return [
-    sender.agencyName,
-    options.withAddress ? sender.postalAddress?.trim() : null,
-    sender.professionalCard?.trim() ? `Carte pro ${sender.professionalCard.trim()}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  return agencyMentionList(sender, options).join(' · ');
 }
 
 // Tout ce que le document dit, à plat : c'est sur cette liste que les tests cherchent les
@@ -247,7 +259,7 @@ export function allTexts(file: ProspectingFile, texts: ProspectingFileTexts): st
     : [];
   return [
     file.addressee.lead,
-    file.addressee.name,
+    ...file.addressee.nameLines,
     file.addressee.detail,
     texts.title,
     texts.letter,

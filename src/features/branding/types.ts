@@ -18,5 +18,7 @@ export type AgencyBranding = {
   // dossiers de prospection ; null → la mention est omise.
   postalAddress: string | null;
   professionalCard: string | null;
+  // Mission 87 — le nom imprimé sur les documents ; null → le nom de l'agence.
+  documentName: string | null;
   validatedAt: string | null;
 };
