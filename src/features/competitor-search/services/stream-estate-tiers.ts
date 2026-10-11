@@ -129,7 +129,9 @@ export function tierSlices(criteria: CompetitorSearchCriteria): TierSlices {
   }
 
   const { advisorPriceMin: min, advisorPriceMax: max } = criteria;
-  const advisorPrices = min != null || max != null ? { min: min ?? max!, max: max ?? min! } : null;
+  // Mission 93 — une borne seule ne fait pas une fourchette : elle figeait la recherche sur un
+  // prix exact. Deux bornes, ou pas de filtre de prix.
+  const advisorPrices = min != null && max != null ? { min, max } : null;
   const outsidePrices = advisorPrices
     ? [
         { min: Math.floor(advisorPrices.min * 0.95), max: advisorPrices.min - 1 },

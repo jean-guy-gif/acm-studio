@@ -32,6 +32,10 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 **Accès** — `/login` · `/onboarding` (première agence) · `/accept-invitation` · `/auth/confirm`
 (route).
 
+**Hors écran** — `npm run sauvegarde` et `npm run sauvegarde:verifier` (`docs/SAUVEGARDE.md`) ;
+effacement sur demande : `docs/PROCEDURE_EFFACEMENT.md`. « Supprimer » un dossier l'archive
+(`archived`) : il n'apparaît plus nulle part et ne s'ouvre plus par son adresse.
+
 ## Features (`src/features`)
 
 - `projects` — création, suppression, readiness et bascule en prêt, carte de Préparation.

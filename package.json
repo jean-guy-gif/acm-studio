@@ -18,7 +18,9 @@
     "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
     "e2e": "playwright test",
     "extension:icons": "node scripts/extension-icons.mjs",
-    "extension:zip": "node scripts/extension-zip.mjs"
+    "extension:zip": "node scripts/extension-zip.mjs",
+    "sauvegarde": "node scripts/sauvegarde.mjs",
+    "sauvegarde:verifier": "node scripts/sauvegarde-verifier.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

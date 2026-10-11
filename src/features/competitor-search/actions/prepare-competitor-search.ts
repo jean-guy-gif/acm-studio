@@ -1,10 +1,14 @@
 'use server';
 
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
+import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
 
+// `fingerprint` (mission 93) : l'empreinte du bien vendeur et de la fourchette, lue en base. Un
+// résultat de recherche gardé dans l'onglet ne se réaffiche que si elle n'a pas changé.
 export type PrepareSearchResult =
-  { ok: true; criteria: CompetitorSearchCriteria } | { ok: false; error: string };
+  | { ok: true; criteria: CompetitorSearchCriteria; fingerprint: string }
+  | { ok: false; error: string };
 
 const GENERIC_ERROR = 'La recherche a échoué. Vous pouvez importer une annonce par son adresse.';
 const NO_CITY_ERROR =
@@ -18,5 +22,9 @@ export async function prepareCompetitorSearch(projectId: string): Promise<Prepar
   if (!loaded.ok) {
     return { ok: false, error: loaded.reason === 'no_city' ? NO_CITY_ERROR : GENERIC_ERROR };
   }
-  return { ok: true, criteria: loaded.criteria };
+  return {
+    ok: true,
+    criteria: loaded.criteria,
+    fingerprint: searchFingerprint(loaded.criteria, loaded.address),
+  };
 }

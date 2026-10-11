@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
@@ -58,6 +58,14 @@ import {
   resumeMemory,
   type StreamEstateSearchNote,
 } from '@/features/competitor-search/services/stream-estate-summary';
+import {
+  forgetSearch,
+  hasKeptSearch,
+  keepSearch,
+  recallSearch,
+  runPaidSearch,
+  STREAM_ESTATE_MAX_COST_LABEL,
+} from '@/features/competitor-search/services/paid-search-guard';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
@@ -469,14 +477,27 @@ export function CompetitorSearchPanel({
       return;
     }
     setError(null);
-    if (!more) setStreamNote(null);
+    setExtensionIssue(null);
     setStreamSearching(true);
     try {
-      const result = await streamEstateAction(
-        more && previousNote?.cursor && previousPortal
-          ? { cursor: previousNote.cursor, memory: resumeMemory(previousPortal.candidates) }
-          : null,
+      // Mission 93 — seule l'extension permet d'importer ce que la recherche trouve : sans elle,
+      // on ne paie pas. Le ping d'abord ; l'appel facturé ne part que s'il répond.
+      const outcome = await runPaidSearch(pingExtension, () =>
+        streamEstateAction(
+          more && previousNote?.cursor && previousPortal
+            ? { cursor: previousNote.cursor, memory: resumeMemory(previousPortal.candidates) }
+            : null,
+        ),
       );
+      if (!outcome.ran) {
+        setExtensionIssue('missing');
+        return;
+      }
+      const result = outcome.result;
+      if (!more) {
+        setStreamNote(null);
+        forgetSearch(window.sessionStorage, projectId);
+      }
       if (!result.ok) {
         setError(result.error);
         return;
@@ -489,32 +510,69 @@ export function CompetitorSearchPanel({
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
       const candidates = [...(previousPortal?.candidates ?? []), ...result.portal.candidates];
-      await refreshRanking([
-        ...others,
-        {
-          ...result.portal,
-          candidates,
-          status: candidates.length > 0 ? 'ok' : 'empty',
-          message: candidates.length > 0 ? null : result.portal.message,
-        },
-      ]);
-      setStreamNote(
-        mergeStreamEstateNote(previousNote, {
-          billed: result.billed,
-          stop: result.stop,
-          cursor: result.cursor,
-          tiers: result.tiers,
-          counts: result.counts,
-          newBuild: result.newBuild,
-          located: result.located,
-          communeName: result.communeName,
-          inseeCode: result.inseeCode,
-        }),
-      );
+      const streamPortal: PortalSearchResult = {
+        ...result.portal,
+        candidates,
+        status: candidates.length > 0 ? 'ok' : 'empty',
+        message: candidates.length > 0 ? null : result.portal.message,
+      };
+      await refreshRanking([...others, streamPortal]);
+      const note = mergeStreamEstateNote(previousNote, {
+        billed: result.billed,
+        stop: result.stop,
+        cursor: result.cursor,
+        tiers: result.tiers,
+        counts: result.counts,
+        newBuild: result.newBuild,
+        located: result.located,
+        communeName: result.communeName,
+        inseeCode: result.inseeCode,
+      });
+      setStreamNote(note);
+      // Mission 93 — gardé pour ce dossier, le temps de la séance : actualiser ou revenir en
+      // arrière le réaffiche sans repayer.
+      keepSearch(window.sessionStorage, projectId, {
+        fingerprint: prep.fingerprint,
+        portal: streamPortal,
+        note,
+      });
     } finally {
       setStreamSearching(false);
     }
   }
+
+  // Mission 93 — à l'ouverture, le dernier résultat gardé pour ce dossier se réaffiche sans
+  // nouvel appel — à condition que le bien vendeur et la fourchette n'aient pas changé (empreinte
+  // relue en base, gratuitement). Sinon il est jeté.
+  const recalled = useRef(false);
+  useEffect(() => {
+    if (recalled.current || !streamEstateAction) {
+      return;
+    }
+    recalled.current = true;
+    if (!hasKeptSearch(window.sessionStorage, projectId)) {
+      return;
+    }
+    void (async () => {
+      const prep = await prepareAction();
+      if (!prep.ok) {
+        return;
+      }
+      const kept = recallSearch<PortalSearchResult, StreamEstateSearchNote>(
+        window.sessionStorage,
+        projectId,
+        prep.fingerprint,
+      );
+      if (!kept) {
+        return;
+      }
+      setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      await refreshRanking([kept.portal]);
+      setStreamNote(kept.note);
+    })();
+    // Une seule fois, à l'ouverture de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mission 69 — « Ouvrir mes recherches » : le serveur construit les adresses filtrées depuis le
   // bien vendeur, l'extension les ouvre dans des onglets visibles.
@@ -840,9 +898,17 @@ export function CompetitorSearchPanel({
             disabled={busy}
             className={btnPrimary}
           >
-            {streamSearching ? 'Recherche en cours…' : STREAM_ESTATE_SEARCH_BUTTON}
+            {streamSearching
+              ? 'Recherche en cours…'
+              : streamNote
+                ? 'Relancer la recherche'
+                : STREAM_ESTATE_SEARCH_BUTTON}
           </button>
           <p className={hintText}>Critères : {criteriaLabel}</p>
+          {/* Mission 93 — le coût se dit avant de payer. */}
+          <p className="w-full text-xs text-zinc-500 stage:text-white/50">
+            {STREAM_ESTATE_MAX_COST_LABEL}
+          </p>
         </div>
       ) : null}
       {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
