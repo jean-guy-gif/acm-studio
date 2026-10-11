@@ -3,6 +3,7 @@
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
   bigInput,
   bigInputUnit,
@@ -12,6 +13,7 @@ import {
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { formatEuro } from '@/lib/format';
 
 // Screen 2 — "À quel prix ?" The seller commits a guess. The real price stays MASKED
 // here: it is revealed only on the next screen. Le verrou vit dans la navigation
@@ -20,6 +22,9 @@ import type { SellerComparable } from '@/features/live-seller/services/project-l
 // MISSION 51 §3.1 — écran CONTRÔLÉ : formulaire nu (valeur pré-remplie depuis la réponse
 // persistée), sans bouton propre. Le shell moissonne au « Valider et continuer » et
 // LIVRE la révélation (persistance + fragment autorisé) avant d'avancer.
+//
+// MISSION 92 — la devinette ne se donne qu'une fois : enregistrée, elle se relit ici, sans
+// champ de saisie (la base la fige de toute façon).
 export function LivePagePrice({ entry }: { entry: SellerComparable }) {
   const savedEstimate = entry.response?.seller_estimated_listing_price ?? null;
 
@@ -28,7 +33,9 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
       <div className="flex flex-col gap-3">
         <h2 className={question}>À quel prix pensez-vous que ce bien est proposé ?</h2>
         <p className={questionHint}>
-          Donnez votre estimation : le prix réel s’affichera à l’écran suivant.
+          {savedEstimate != null
+            ? 'Votre estimation est notée : elle ne se modifie plus.'
+            : 'Donnez votre estimation : le prix réel s’affichera à l’écran suivant.'}
         </p>
       </div>
 
@@ -45,26 +52,32 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
         </div>
 
         <div className="flex h-fit flex-col gap-4">
-          <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
-            <label className="flex flex-col gap-2">
-              <span className={statLabel}>Le prix que vous imaginez</span>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  name="seller_estimated_listing_price"
-                  min={0}
-                  step="any"
-                  placeholder="0"
-                  defaultValue={savedEstimate ?? ''}
-                  className={bigInput}
-                />
-                <span className={bigInputUnit}>€</span>
-              </div>
-            </label>
-            <p className="text-sm text-zinc-400 stage:text-white/50">
-              Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.
-            </p>
-          </form>
+          {savedEstimate != null ? (
+            <div className={`${panel} flex flex-col gap-4`}>
+              <LiveLockedAnswer value={formatEuro(savedEstimate)} />
+            </div>
+          ) : (
+            <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
+              <label className="flex flex-col gap-2">
+                <span className={statLabel}>Le prix que vous imaginez</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    name="seller_estimated_listing_price"
+                    min={0}
+                    step="any"
+                    placeholder="0"
+                    defaultValue={savedEstimate ?? ''}
+                    className={bigInput}
+                  />
+                  <span className={bigInputUnit}>€</span>
+                </div>
+              </label>
+              <p className="text-sm text-zinc-400 stage:text-white/50">
+                Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </div>

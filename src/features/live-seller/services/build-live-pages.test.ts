@@ -138,4 +138,27 @@ describe('buildLivePages', () => {
     expect(types).not.toContain('dpe_market');
     expect(buildLivePages(live(0), true).map((p) => p.type)).not.toContain('dpe_market');
   });
+
+  // Mission 92 — sans durée ni historique de prix, on ne fait pas deviner au vendeur ce qu'on
+  // ne saura pas lui dire : l'étape « Durée » est sautée pour ce concurrent, et pour lui seul.
+  it('skips the duration step for a competitor with nothing to reveal', () => {
+    const pages = buildLivePages(
+      {
+        comparables: [
+          { id: 'sans', response: null, durationKnown: false },
+          { id: 'avec', response: null, durationKnown: true },
+          { id: 'inconnu', response: null },
+        ],
+      },
+      true,
+    );
+    const types = (id: string) => pages.filter((p) => p.comparableId === id).map((p) => p.type);
+    expect(types('sans')).toEqual([
+      'comparable_competition',
+      'comparable_price',
+      'comparable_price_reveal',
+    ]);
+    expect(types('avec')).toHaveLength(4);
+    expect(types('inconnu')).toHaveLength(4);
+  });
 });

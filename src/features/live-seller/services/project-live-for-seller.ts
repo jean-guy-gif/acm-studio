@@ -47,6 +47,9 @@ export type NeutralSellerComparable = {
   featureComparison: FeatureComparison[];
   // Les réponses du vendeur lui appartiennent : rien à lui cacher.
   response: LiveComparableResponse | null;
+  // MISSION 92 — y aura-t-il une durée ou un historique de prix à révéler ? Un oui/non, jamais
+  // la donnée : il décide seulement si l'étape « Durée » existe pour ce concurrent.
+  durationKnown: boolean;
 };
 
 // Champs LIVRÉS après persistance de l'estimation (révélation autorisée) : le prix et
@@ -72,6 +75,13 @@ export function isComparableAuthorized(entry: LiveComparableEntry): boolean {
   return entry.response?.seller_estimated_listing_price != null;
 }
 
+// L'étape « Durée » n'a de sens que s'il y a quelque chose à révéler après la devinette.
+export function isDurationKnown(
+  entry: Pick<LiveComparableEntry, 'marketDuration' | 'priceHistory'>,
+): boolean {
+  return entry.marketDuration.available || entry.priceHistory.available;
+}
+
 export function projectComparableForSeller(entry: LiveComparableEntry): SellerComparable {
   const neutral: NeutralSellerComparable = {
     authorized: false,
@@ -90,6 +100,7 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
     photoUrls: entry.photoUrls,
     featureComparison: entry.featureComparison,
     response: entry.response,
+    durationKnown: isDurationKnown(entry),
   };
 
   if (!isComparableAuthorized(entry)) {
