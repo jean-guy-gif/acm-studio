@@ -92,6 +92,11 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
    3. **Ce prix vous paraît-il cohérent ?** — révélation du prix réel et des écarts.
    4. **Pourquoi toujours en vente ?** — durée devinée puis révélée, baisses, motif.
 5. **Le concurrent le plus dangereux** — lequel, et pourquoi (absent sans concurrent).
+   **Rythme du Live** (mission 95), choisi sur « Avant le rendez-vous » et figé une fois le Live
+   commencé : « accéléré » (par défaut) garde ces quatre écrans pour les trois premiers
+   concurrents, puis deux écrans par concurrent — la fiche, le sérieux et la devinette du prix ;
+   puis le prix révélé et la durée, devinée puis révélée à sa place. « Complet » : quatre écrans
+   pour tous. Le Live relève son heure de début et de fin (« Durée du Live », côté conseiller).
    Puis **Votre prix après le marché** (mission 94) : « Après avoir vu ces biens, à quel prix
    mettriez-vous votre bien en vente ? » — facultatif (« Passer »), figé une fois donné.
 6. **Analyse des prix** — le chemin du vendeur (au début → après avoir vu le marché), prix des concurrents et ce sur quoi il porte, analyse du conseiller, lecture du marché sur les concurrents révélés (prix affichés, médiane, baisses, ancienneté, bande des prix), écarts.

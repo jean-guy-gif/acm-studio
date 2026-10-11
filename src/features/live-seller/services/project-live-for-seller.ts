@@ -67,8 +67,10 @@ export type AuthorizedSellerComparable = Omit<NeutralSellerComparable, 'authoriz
   listingUrl: string | null;
   isOutlier: boolean;
   priceReveal: PriceReveal;
-  priceHistory: PriceHistory;
-  marketDuration: MarketDuration;
+  // MISSION 95 — la durée observée et l'historique de prix ne voyagent qu'une fois la durée
+  // DEVINÉE et enregistrée : null avant. Une garde de donnée, plus seulement de rendu (M51).
+  priceHistory: PriceHistory | null;
+  marketDuration: MarketDuration | null;
 };
 
 export type SellerComparable = NeutralSellerComparable | AuthorizedSellerComparable;
@@ -84,6 +86,12 @@ export function isDurationKnown(
   entry: Pick<LiveComparableEntry, 'marketDuration' | 'priceHistory'>,
 ): boolean {
   return entry.marketDuration.available || entry.priceHistory.available;
+}
+
+// La durée observée (et les baisses de prix, qui se montrent avec elle) n'est autorisée qu'une
+// fois la durée devinée PERSISTÉE — même principe que le prix : deviner, puis voir.
+export function isDurationAuthorized(entry: LiveComparableEntry): boolean {
+  return entry.response?.seller_estimated_days_on_market != null;
 }
 
 export function projectComparableForSeller(entry: LiveComparableEntry): SellerComparable {
@@ -110,6 +118,7 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
   if (!isComparableAuthorized(entry)) {
     return neutral;
   }
+  const durationRevealed = isDurationAuthorized(entry);
 
   return {
     ...neutral,
@@ -120,8 +129,8 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
     listingUrl: entry.listingUrl,
     isOutlier: entry.isOutlier,
     priceReveal: entry.priceReveal,
-    priceHistory: entry.priceHistory,
-    marketDuration: entry.marketDuration,
+    priceHistory: durationRevealed ? entry.priceHistory : null,
+    marketDuration: durationRevealed ? entry.marketDuration : null,
   };
 }
 

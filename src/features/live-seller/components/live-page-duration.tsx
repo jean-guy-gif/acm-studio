@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveDurationReveal } from '@/features/live-seller/components/live-duration-reveal';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
@@ -7,7 +8,6 @@ import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-
 import {
   bigInput,
   bigInputUnit,
-  bigValue,
   choice,
   fieldInput,
   fieldLabel,
@@ -15,7 +15,6 @@ import {
   panelSoft,
   question,
   questionHint,
-  revealValue,
   statLabel,
   statValue,
 } from '@/features/live-seller/components/live-stage';
@@ -26,7 +25,7 @@ import {
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
-import { formatEuro, formatEuroPerSquareMeter, formatNumber, formatPercent } from '@/lib/format';
+import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
 const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
@@ -46,6 +45,8 @@ export function LivePageDuration({
   const currentReason = response?.seller_market_duration_reason ?? '';
   const currentComment = response?.seller_market_duration_comment ?? '';
   const savedEstimatedDays = response?.seller_estimated_days_on_market ?? null;
+  // Mission 95 — la durée observée n'arrive du serveur qu'une fois la durée devinée enregistrée.
+  const marketDuration = entry.marketDuration;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -122,53 +123,13 @@ export function LivePageDuration({
             </label>
           )}
 
-          {durationRevealed ? (
+          {durationRevealed && marketDuration ? (
             <div className="live-reveal-pop flex flex-col gap-4">
-              <div>
-                <div className={statLabel}>Durée observée sur le marché</div>
-                <div className={revealValue}>
-                  {entry.marketDuration.available && entry.marketDuration.days != null
-                    ? `${formatNumber(entry.marketDuration.days)}\u00A0jours`
-                    : 'Non disponible'}
-                </div>
-                {entry.marketDuration.available ? (
-                  <div className="mt-1 text-sm text-zinc-500 stage:text-white/60">
-                    {entry.marketDuration.label}
-                  </div>
-                ) : null}
-                {entry.marketDuration.available &&
-                entry.marketDuration.days != null &&
-                savedEstimatedDays != null &&
-                entry.marketDuration.days !== savedEstimatedDays ? (
-                  <div className="mt-1 text-sm font-medium text-zinc-600 stage:text-white/75">
-                    {entry.marketDuration.days > savedEstimatedDays
-                      ? `Soit ${formatNumber(entry.marketDuration.days - savedEstimatedDays)} jours de plus que votre estimation (${formatNumber(savedEstimatedDays)} jours).`
-                      : `Soit ${formatNumber(savedEstimatedDays - entry.marketDuration.days)} jours de moins que votre estimation (${formatNumber(savedEstimatedDays)} jours).`}
-                  </div>
-                ) : null}
-              </div>
-
-              {entry.priceHistory.available ? (
-                <div className={`${panelSoft} flex flex-wrap items-baseline gap-x-6 gap-y-2`}>
-                  <div>
-                    <div className={statLabel}>Prix initial</div>
-                    <div className={bigValue}>{euro(entry.priceHistory.initialPrice)}</div>
-                  </div>
-                  <div>
-                    <div className={statLabel}>Baisse constatée</div>
-                    <div className={bigValue}>
-                      {euro(entry.priceHistory.totalDropAmount)}
-                      {entry.priceHistory.totalDropPercentage != null
-                        ? ` (${formatPercent(entry.priceHistory.totalDropPercentage)})`
-                        : ''}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-zinc-400 stage:text-white/50">
-                  Historique de prix non disponible.
-                </p>
-              )}
+              <LiveDurationReveal
+                marketDuration={marketDuration}
+                priceHistory={entry.priceHistory}
+                estimatedDays={savedEstimatedDays}
+              />
 
               <fieldset className="flex flex-col gap-3">
                 <legend className={fieldLabel}>Selon vous, pourquoi ?</legend>

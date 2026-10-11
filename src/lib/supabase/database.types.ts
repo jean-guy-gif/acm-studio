@@ -1018,6 +1018,9 @@ export type Database = {
           agency_id: string
           created_at: string
           id: string
+          live_ended_at: string | null
+          live_rhythm: string
+          live_started_at: string | null
           seller_email: string | null
           seller_name: string
           seller_phone: string | null
@@ -1029,6 +1032,9 @@ export type Database = {
           agency_id: string
           created_at?: string
           id?: string
+          live_ended_at?: string | null
+          live_rhythm?: string
+          live_started_at?: string | null
           seller_email?: string | null
           seller_name: string
           seller_phone?: string | null
@@ -1040,6 +1046,9 @@ export type Database = {
           agency_id?: string
           created_at?: string
           id?: string
+          live_ended_at?: string | null
+          live_rhythm?: string
+          live_started_at?: string | null
           seller_email?: string | null
           seller_name?: string
           seller_phone?: string | null

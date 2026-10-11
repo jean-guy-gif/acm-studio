@@ -68,3 +68,8 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/prospecting_oppositions.sql
+
+      - name: Rythme du Live et durée (début jamais remis à zéro, rythme figé en cours de Live)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_rhythm_and_duration.sql

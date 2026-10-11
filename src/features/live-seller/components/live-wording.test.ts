@@ -230,3 +230,34 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
     }
   });
 });
+
+describe('le rythme accéléré parle au vendeur comme le reste du Live (mission 95)', () => {
+  it('les deux nouveaux écrans sont couverts par le contrôle de vocabulaire', () => {
+    expect(SELLER_SCREENS).toContain('live-page-quick-guess.tsx');
+    expect(SELLER_SCREENS).toContain('live-page-quick-reveal.tsx');
+    expect(shown('live-page-quick-guess.tsx')).toContain('Le prix que vous imaginez');
+    expect(shown('live-page-quick-reveal.tsx')).toContain('Votre estimation');
+    expect(shown('live-page-quick-reveal.tsx')).toContain('La durée que vous imaginez');
+  });
+
+  it('l’écran 1 ne peut montrer aucun prix : il ne lit que la donnée projetée', () => {
+    const guess = shown('live-page-quick-guess.tsx');
+    expect(guess).toContain('entry: SellerComparable');
+    expect(guess).not.toMatch(/AuthorizedSellerComparable|entry\.price|entry\.title|priceReveal/);
+    expect(guess).toContain('neutralComparableLabel(entry)');
+    expect(guess).toContain('LiveLockedAnswer');
+  });
+
+  it('l’écran 2 n’affiche la durée observée que si le serveur l’a livrée', () => {
+    const reveal = shown('live-page-quick-reveal.tsx');
+    expect(reveal).toContain('entry: AuthorizedSellerComparable');
+    expect(reveal).toMatch(/durationRevealed && entry\.marketDuration \?/);
+  });
+
+  it('la durée du Live ne se montre jamais au vendeur', () => {
+    const offenders = SELLER_SCREENS.filter((file) =>
+      /liveDurationLabel|Durée du Live|live_started_at|live_ended_at/.test(shown(file)),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

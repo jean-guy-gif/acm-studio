@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { BrandStyle } from '@/features/branding/components/brand-style';
-import { embeddedFontClassNames } from '@/features/branding/fonts/embedded-fonts';
+import '@/features/branding/fonts/embedded-fonts';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function RootLayout({
   // Mission 57 — toutes les polices embarquées disponibles en var(--font-*) ; la charte de
   // l'agence (BrandStyle) désigne laquelle est active. Défaut : Montserrat + Rajdhani.
   return (
-    <html lang="fr" className={`${embeddedFontClassNames} h-full antialiased`}>
+    <html lang="fr" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         <BrandStyle />
         {children}

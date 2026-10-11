@@ -3,16 +3,24 @@ import {
   buildLivePages,
   type LivePage,
   type LivePageType,
+  type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
 
 // Mission 91 — « Ce que verra le vendeur » : le déroulé du Live de CE dossier, compté sur
 // le moteur du Live lui-même (`buildLivePages`) — jamais sur une liste recopiée, qui
 // dériverait à la première modification du Live. Pur et déterministe.
 
-// Estimation, à recaler sur les vrais rendez-vous : de 1,25 à 1,7 minute par écran.
-export const MINUTES_PER_SCREEN_LOW = 1.25;
-export const MINUTES_PER_SCREEN_HIGH = 1.7;
-const DURATION_STEP_MINUTES = 5;
+// MISSION 95 — LA FORMULE DE L'ESTIMATION, à recaler sur les durées réelles (le Live relève
+// désormais son heure de début et de fin) :
+//
+//     minutes = nombre d'écrans du Live × MINUTES_PER_SCREEN, arrondi à la minute
+//
+// Le nombre d'écrans est celui du moteur du Live pour ce dossier et ce rythme : les écrans
+// communs (introduction, votre bien, valeur perçue, DPE, concurrent le plus dangereux, prix
+// reformulé, analyse, prix de commercialisation, question de 1 à 10), plus, par concurrent,
+// 4 écrans (3 sans durée connue) — ou 2 à partir du 4e concurrent en rythme accéléré.
+// 1,475 est le milieu de la fourchette 1,25 – 1,7 utilisée jusqu'à la mission 94.
+export const MINUTES_PER_SCREEN = 1.475;
 
 export type SequenceCompetitor = {
   id: string;
@@ -28,9 +36,10 @@ export type SequencePart = { key: string; label: string; screenCount: number };
 
 export type LiveSequence = {
   parts: SequencePart[];
+  rhythm: LiveRhythm;
   totalScreens: number;
-  durationLowMinutes: number;
-  durationHighMinutes: number;
+  // « environ N min » : une estimation, pas une mesure.
+  estimatedMinutes: number;
   // Les titres des écrans, dans l'ordre, sans aucun montant.
   screenTitles: string[];
   // Concurrents retenus sans classe DPE, quand l'écran DPE existe : ils n'y figurent pas (M80).
@@ -42,6 +51,8 @@ const COMPETITOR_TYPES: readonly LivePageType[] = [
   'comparable_price',
   'comparable_price_reveal',
   'comparable_duration',
+  'comparable_quick_guess',
+  'comparable_quick_reveal',
 ];
 
 // Les parties, dans l'ordre du Live. Un libellé ne nomme que les écrans présents.
@@ -72,11 +83,8 @@ const PARTS: { key: string; members: { type: LivePageType; label: string }[] }[]
   },
 ];
 
-function roundToStep(minutes: number): number {
-  return Math.max(
-    DURATION_STEP_MINUTES,
-    Math.round(minutes / DURATION_STEP_MINUTES) * DURATION_STEP_MINUTES,
-  );
+export function estimateLiveMinutes(screenCount: number): number {
+  return Math.max(1, Math.round(screenCount * MINUTES_PER_SCREEN));
 }
 
 function screenTitle(page: LivePage): string {
@@ -88,8 +96,9 @@ function screenTitle(page: LivePage): string {
 export function buildLiveSequence(
   competitors: readonly SequenceCompetitor[],
   hasSubjectProperty: boolean,
+  rhythm: LiveRhythm = 'complete',
 ): LiveSequence {
-  // Aucune réponse du vendeur : le parcours complet, quatre écrans par concurrent.
+  // Aucune réponse du vendeur : le parcours entier, dans le rythme choisi.
   const pages = buildLivePages(
     {
       comparables: competitors.map((competitor) => ({
@@ -100,6 +109,7 @@ export function buildLiveSequence(
       })),
     },
     hasSubjectProperty,
+    rhythm,
   );
   const count = (types: readonly LivePageType[]) =>
     pages.filter((page) => types.includes(page.type)).length;
@@ -130,9 +140,9 @@ export function buildLiveSequence(
   const hasDpeScreen = pages.some((page) => page.type === 'dpe_market');
   return {
     parts,
+    rhythm,
     totalScreens: pages.length,
-    durationLowMinutes: roundToStep(pages.length * MINUTES_PER_SCREEN_LOW),
-    durationHighMinutes: roundToStep(pages.length * MINUTES_PER_SCREEN_HIGH),
+    estimatedMinutes: estimateLiveMinutes(pages.length),
     screenTitles: pages.map(screenTitle),
     competitorsWithoutDpe: hasDpeScreen
       ? competitors.filter((competitor) => dpeClass(competitor.energyRating) == null).length
@@ -140,20 +150,33 @@ export function buildLiveSequence(
   };
 }
 
-export function durationLabel(sequence: LiveSequence): string {
-  return sequence.durationLowMinutes === sequence.durationHighMinutes
-    ? `${sequence.durationLowMinutes} min environ`
-    : `${sequence.durationLowMinutes} à ${sequence.durationHighMinutes} min environ`;
+// « environ 40 min »
+export function durationLabel(sequence: Pick<LiveSequence, 'estimatedMinutes'>): string {
+  return `environ ${sequence.estimatedMinutes}\u00A0min`;
 }
 
-// Mission 92 — « 7 concurrents : environ 60 minutes de Live. Nous conseillons 6 au plus. »
-// La durée est la borne haute de l'estimation ; null tant qu'on reste dans le conseil.
+export const RHYTHM_LABELS: Record<LiveRhythm, string> = {
+  accelerated: 'Accéléré à partir du 4e concurrent',
+  complete: 'Complet pour tous les concurrents',
+};
+const RHYTHM_SHORT: Record<LiveRhythm, string> = { accelerated: 'Accéléré', complete: 'Complet' };
+
+// « Accéléré : environ 40 min · Complet : environ 49 min » — les deux estimations, côte à côte.
+export function bothRhythmsLabel(
+  accelerated: Pick<LiveSequence, 'estimatedMinutes'>,
+  complete: Pick<LiveSequence, 'estimatedMinutes'>,
+): string {
+  return `${RHYTHM_SHORT.accelerated} : ${durationLabel(accelerated)} · ${RHYTHM_SHORT.complete} : ${durationLabel(complete)}`;
+}
+
+// Mission 92 — « 7 concurrents : environ 46 minutes de Live. Nous conseillons 6 au plus. »
+// Mission 95 — la durée est celle du rythme choisi ; null tant qu'on reste dans le conseil.
 export function tooManyCompetitorsNote(
-  sequence: LiveSequence,
+  sequence: Pick<LiveSequence, 'estimatedMinutes'>,
   competitorCount: number,
 ): string | null {
   if (competitorCount <= ADVISED_MAX_COMPETITORS) {
     return null;
   }
-  return `${competitorCount} concurrents : environ ${sequence.durationHighMinutes} minutes de Live. Nous conseillons ${ADVISED_MAX_COMPETITORS} au plus.`;
+  return `${competitorCount} concurrents : environ ${sequence.estimatedMinutes} minutes de Live. Nous conseillons ${ADVISED_MAX_COMPETITORS} au plus.`;
 }

@@ -1,3 +1,4 @@
+import { liveRhythm } from '@/features/live-seller/services/build-live-pages';
 import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
 import { cleanDescription } from '@/features/comparable-import/utils/is-junk-description';
 import { calculateComparableAnalysis } from '@/features/comparable-analysis/services/calculate-comparable-analysis';
@@ -433,6 +434,9 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       id: project.id,
       name: project.seller_name,
       status: project.status,
+      liveRhythm: liveRhythm(project.live_rhythm),
+      liveStartedAt: project.live_started_at,
+      liveEndedAt: project.live_ended_at,
       createdAt: project.created_at,
       updatedAt: project.updated_at,
     },

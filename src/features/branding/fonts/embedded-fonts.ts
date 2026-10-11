@@ -1,75 +1,23 @@
-import {
-  Montserrat,
-  Nunito_Sans,
-  Poppins,
-  Rajdhani,
-  Source_Sans_3,
-  Work_Sans,
-} from 'next/font/google';
-
-// Mission 90 — Inter n'est plus téléchargée chez Google à la compilation (ce téléchargement
-// faisait échouer presque chaque déploiement) : ses fichiers sont dans le dépôt, et cette feuille
-// définit `--font-inter`. Les six autres familles passent toujours par next/font/google.
-import './inter/inter.css';
-
-// Mission 57 §5 — les polices EMBARQUÉES. next/font les télécharge et les auto-héberge À LA
-// COMPILATION : aucune requête vers un service extérieur pendant le Live, et la question de
-// licence est réglée d'avance (Google Fonts, licence ouverte). Le navigateur ne télécharge
-// une fonte que lorsqu'un texte rendu l'utilise réellement — embarquer six familles ne coûte
-// donc rien au runtime : seule la police active de l'agence part sur le réseau du vendeur.
+// Les polices EMBARQUÉES : leurs fichiers sont DANS le dépôt, une feuille par famille, et chaque
+// feuille définit sa variable `--font-*` sur `:root`.
 //
-// Les noms de variables ci-dessous DOIVENT rester alignés avec `cssVar` dans font-registry.ts
-// (next/font exige des littéraux ici, d'où le doublon assumé). Poids alignés partout :
-// régulier / medium / semibold / gras — les quatre dont l'interface a besoin.
+// Mission 57 §5 — aucune requête vers un service extérieur pendant le Live, et la question de
+// licence est réglée d'avance (SIL Open Font License, OFL.txt dans chaque dossier). Le
+// navigateur ne télécharge un fichier que lorsqu'un texte rendu en a besoin (unicode-range) :
+// embarquer sept familles ne coûte rien au vendeur, seule la police active de l'agence part.
+//
+// Mission 90 (Inter), puis mission 95 (les six autres) — plus AUCUNE police n'est téléchargée
+// à la compilation : le chargeur de polices Google de Next allait les chercher à chaque build, et ce
+// téléchargement a fait échouer plusieurs déploiements. Un test l'interdit désormais.
+// Pour ajouter une famille : scripts/embed-google-fonts.mjs, puis une ligne ici et dans
+// font-registry.ts (les noms de variables doivent rester alignés avec `cssVar`).
 
 // Défaut produit Start Academy : Montserrat (corps/interface) + Rajdhani (titres).
-const montserrat = Montserrat({
-  variable: '--font-montserrat',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
-const rajdhani = Rajdhani({
-  variable: '--font-rajdhani',
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-});
-
-// Les cinq autres de la liste embarquée (Montserrat y figure aussi, comme choix explicite).
-// `preload: false` : elles restent EMBARQUÉES (auto-hébergées, aucune requête extérieure) mais
-// ne sont pas préchargées par défaut — seule l'agence qui a choisi l'une d'elles la télécharge,
-// au moment où un texte la rend. Le défaut produit (Montserrat/Rajdhani) garde le préchargement.
-const poppins = Poppins({
-  variable: '--font-poppins',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
-});
-const sourceSans = Source_Sans_3({
-  variable: '--font-source-sans',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
-});
-const workSans = Work_Sans({
-  variable: '--font-work-sans',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
-});
-const nunitoSans = Nunito_Sans({
-  variable: '--font-nunito-sans',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
-});
-
-// Toutes les variables, à poser une fois sur <html> : chaque police devient disponible en
-// `var(--font-*)`, et la charte de l'agence désigne laquelle est active (voir brand-style).
-export const embeddedFontClassNames = [
-  montserrat.variable,
-  rajdhani.variable,
-  poppins.variable,
-  sourceSans.variable,
-  workSans.variable,
-  nunitoSans.variable,
-].join(' ');
+import './montserrat/montserrat.css';
+import './rajdhani/rajdhani.css';
+// Les cinq autres de la liste proposée à l'agence (Montserrat y figure aussi).
+import './inter/inter.css';
+import './poppins/poppins.css';
+import './source-sans/source-sans.css';
+import './work-sans/work-sans.css';
+import './nunito-sans/nunito-sans.css';
