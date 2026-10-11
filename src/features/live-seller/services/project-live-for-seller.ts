@@ -1,3 +1,7 @@
+import {
+  buildMarketReading,
+  type MarketReading,
+} from '@/features/live-seller/services/market-reading';
 import type {
   FeatureComparison,
   LiveComparableResponse,
@@ -173,6 +177,8 @@ export type AuthorizedAdvisorRange = {
   competitiveMarketCentral: number | null;
   priceGaps: LivePriceGaps;
   advisorDecision: LiveAdvisorDecision | null;
+  // Mission 94 — la lecture du marché, sur les seuls concurrents dont le prix a été révélé.
+  marketReading: MarketReading;
 };
 
 export type DeliveredFragment =
@@ -216,5 +222,9 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
     competitiveMarketCentral: live.competitiveMarketCentral,
     priceGaps: live.priceGaps,
     advisorDecision: live.advisorDecision,
+    marketReading: buildMarketReading(live.comparables, {
+      advisorPrice: live.advisorDecision?.advisorPrice ?? null,
+      marketComputed: live.competitiveMarketCentral,
+    }),
   };
 }

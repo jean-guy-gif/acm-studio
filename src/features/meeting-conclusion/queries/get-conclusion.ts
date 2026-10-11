@@ -23,12 +23,20 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   if (!data) {
     return null;
   }
+  // Mission 94 — le prix reformulé par le vendeur, figé dans le résumé du Live.
+  const { data: summary } = await supabase
+    .from('live_seller_summary')
+    .select('seller_revised_property_price')
+    .eq('project_id', projectId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
   return {
     marketComputed: data.frozen_market_computed,
     advisorAnalysis: data.frozen_advisor_analysis,
     advisorPrice: data.frozen_advisor_price,
     commercializationPrice: data.commercialization_price,
     sellerPerceivedPrice: data.frozen_seller_perceived_price,
+    sellerRevisedPrice: summary?.seller_revised_property_price ?? null,
     launchReadinessFirst: data.frozen_launch_readiness_first,
     launchReadinessLast: data.frozen_launch_readiness_last,
     launchReadinessMissing: data.frozen_launch_readiness_missing,

@@ -128,3 +128,30 @@ describe('validateLiveSellerSummary', () => {
     expect(validate({ seller_launch_readiness_missing: 'x'.repeat(2001) }).ok).toBe(false);
   });
 });
+
+describe('le prix reformulé après le marché (mission 94)', () => {
+  it('« Passer » n’enregistre rien : un champ absent du formulaire n’est pas dans l’écriture', () => {
+    const patch = normalizeLiveSellerSummary({});
+    expect(patch).not.toHaveProperty('seller_revised_property_price');
+    expect(Object.keys(patch)).toEqual([]);
+    // Une autre réponse du résumé, enregistrée seule, ne l'écrit pas non plus.
+    expect(
+      normalizeLiveSellerSummary({ seller_most_dangerous_comparable_id: ID }),
+    ).not.toHaveProperty('seller_revised_property_price');
+  });
+
+  it('donné, il est enregistré tel quel', () => {
+    const result = validate({ seller_revised_property_price: 325000 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.seller_revised_property_price).toBe(325000);
+      expect(result.value).not.toHaveProperty('seller_perceived_property_price');
+    }
+  });
+
+  it('refuse un montant négatif', () => {
+    const result = validate({ seller_revised_property_price: -1 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors).toHaveProperty('seller_revised_property_price');
+  });
+});

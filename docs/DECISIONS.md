@@ -11,6 +11,7 @@ chaque mission validée.
 - 28/08 · M38 · Le conseiller ne ressaisit rien : il importe l'annonce en ligne ou la fiche commerciale PDF du bien, puis relit la fiche pré-remplie avant d'enregistrer.
 - 28/08 · M38 · Un prix lu sur une annonce ou une fiche s'affiche « pour information » : il n'écrit aucun champ et ne pré-remplit jamais la fourchette.
 - 28/08 · M38 · La fourchette du conseiller se saisit juste après l'import ; elle cible la recherche de concurrents et n'apparaît jamais devant le vendeur.
+- 11/10 · M93 · La fourchette du conseiller a deux bornes ou n'existe pas : une borne seule affiche « Indiquez les deux montants » et n'est pas enregistrée, le reste de la fiche l'est ; la fiche reste « non enregistrée » et ne part pas vers la recherche (exception à M77, « tout est validé avant la première écriture »).
 - 03/09 · M42 · Fiche PDF : d'abord le lecteur générique « Libellé : valeur », ensuite la table de correspondance ; un libellé inconnu est ignoré, jamais deviné.
 - 03/09 · M42 · Les photos d'une fiche se déposent au clic du conseiller, jamais automatiquement ; à défaut, il les ajoute à la main.
 - 07/09 · M43 · Le PDF se lit dans le navigateur du conseiller et n'est téléversé nulle part ; seul le texte part au serveur, qui revalide tout (remplace M42, lecture côté serveur).
@@ -45,6 +46,7 @@ chaque mission validée.
 - 08/10 · M77 · « Trouver des concurrents → » et « ← Retour au dossier » vivent dans la barre et enregistrent avant de partir ; le lien de retour du haut de page est retiré.
 - 08/10 · M77 · La barre dit l'état de la fiche (« Modifications non enregistrées », « Enregistré », « 2 champs à corriger », « Il manque : type de bien ») ; un clic mène au champ.
 - 08/10 · M77 · Ville ou type manquant ne retient que le départ vers la recherche : « Enregistrer » et « Retour au dossier » enregistrent quand même.
+- 11/10 · M93 · Quitter la fiche du bien ou l'éditeur du dossier de prospection avec des modifications non enregistrées demande confirmation : actualisation, fermeture de l'onglet et liens de l'application, menu compris (confirmation du navigateur) ; les sorties de la barre, qui enregistrent d'abord, ne la demandent pas ; le bouton « Précédent » du navigateur n'est pas couvert.
 - 08/10 · M78 · Le chauffage lu sur une annonce est traduit dans la liste (une énergie, individuel ou collectif) ; non reconnu, le champ reste vide : deux énergies ne décident rien, la climatisation n'est jamais lue comme une pompe à chaleur.
 - 08/10 · M78 · « Gaz » ou « fioul » seul ne dit pas individuel ou collectif : vide pour un appartement, individuel pour une maison.
 - 08/10 · M78 · À l'import (annonce et fiche PDF), un champ à liste (chauffage, exposition, état, GES, extérieurs, stationnement) ne reçoit jamais une valeur hors liste ; un menu ne garde jamais une valeur qu'il ne sait pas afficher.
@@ -102,6 +104,10 @@ chaque mission validée.
 - 06/10 · M71 · Une carte Stream Estate élargie dit son écart (distance, commune voisine, plus grand, pièce de plus, prix hors fourchette).
 - 06/10 · M71 · Une seule comparaison des communes partout (accents, tirets, St/Ste) ; Stream Estate compare le code INSEE. Le bouton d'import groupé est visible dès qu'un candidat est affiché.
 - 06/10 · M73 · Stream Estate est la recherche par défaut : « Chercher les concurrents », bouton principal placé en premier, présent seulement si la clé est définie ; commune par code INSEE exact, sinon aucune recherche (remplace Stream Estate, « en essai »).
+- 11/10 · M93 · Stream Estate ne part jamais sans l'extension ACM : le ping d'abord, et sans réponse le message d'installation, aucun appel facturé — « Chercher encore » compris.
+- 11/10 · M93 · Le dernier résultat Stream Estate et son bilan sont gardés pour le dossier dans le stockage de l'onglet, le temps de la séance : actualiser ou revenir en arrière les réaffiche sans nouvel appel ; ils sont jetés dès que le bien vendeur (adresse comprise) ou la fourchette change, d'après une empreinte relue en base.
+- 11/10 · M93 · Un résultat affiché, le bouton dit « Relancer la recherche » ; sous le bouton, « Coût maximal : 0,60 € par recherche » (le plafond automatique de M71).
+- 11/10 · M93 · La recherche — Stream Estate, portails, classement — ne lit une fourchette que si elle a ses deux bornes ; une borne seule vaut « pas de fourchette » (elle figeait la recherche sur un prix exact).
 - 06/10 · M73 · « Ouvrir mes recherches » et « Lire mes recherches » sont secondaires, sous « Ou chercher vous-même sur les portails » ; le bilan et les cartes disent « Stream Estate », sans « (essai) ».
 - 06/10 · M73 · Extension 1.0.0, destinée au Chrome Web Store en « non répertorié » : `npm run extension:zip` fabrique le paquet (ce que Chrome charge, sans tests ni README) ; le dépôt est fait par Laurent, avec la fiche `docs/extension-store.md`.
 - 06/10 · M73 · Le manifeste fait foi pour les sites autorisés (cinq portails, pas Leboncoin) : la fiche du Store et le README le suivent ; sa description tient en 132 caractères et la fiche la reprend mot pour mot, un test le vérifie.
@@ -227,7 +233,9 @@ chaque mission validée.
 - 11/10 · M87 · La photo d'annonce choisie est copiée dans le stockage de l'agence à l'enregistrement, pour tous les portails : aucun ne bloque l'affichage, mais les liens expirent avec l'annonce (mesuré sur Bien'ici, 5 sur 12) ; si la copie échoue, le dossier s'enregistre quand même et l'écran le dit.
 - 11/10 · M87 · Une photo du concurrent qui ne se charge pas laisse le cadre gris, à l'écran comme à l'impression : jamais une image cassée ; une vignette morte dit « Indisponible ».
 - 11/10 · M87 · « Ma photo » est vérifiée par ses octets (JPEG, PNG, WebP) et rangée sous le dossier du concurrent dans le stockage de l'agence ; elle n'est retenue qu'à l'enregistrement ; le fichier que le dossier ne montre plus est retiré.
-- 11/10 · M87 · Supprimer un concurrent (un par un ou en lot) ou un dossier vendeur retire du stockage les photos de prospection de ses concurrents ; les photos de notre bien et celle du conseiller ne sont pas touchées.
+- 11/10 · M93 · Supprimer un concurrent (un par un ou en lot) retire du stockage ses photos de prospection ; supprimer un dossier vendeur ne retire plus rien, puisqu'il est archivé ; les photos de notre bien et celle du conseiller ne sont pas touchées (remplace M87).
+- 11/10 · M93 · « Supprimer » un dossier demande confirmation dans l'écran — « Supprimer le dossier [nom] ? Il disparaîtra de vos listes. », « Annuler » / « Supprimer » — puis l'archive (statut `archived`) : il disparaît de Préparation, Live, Suivi et Prospection et ne s'ouvre plus par son adresse ; rien n'est effacé, et cela vaut aussi pour un dossier qui a un bien et des concurrents.
+- 11/10 · M93 · L'archivage vaut pour tout dossier de l'agence ; le bouton « Supprimer » reste dans Préparation, sur les dossiers en cours ; il n'y a pas d'écran pour désarchiver.
 - 11/10 · M87 · En-tête du dossier : le logo s'il existe, sinon le nom sur deux lignes au plus, le texte se réduisant sans passer sous la taille du texte courant ; pied de page et carte de contact : le nom sur une seule ligne, raccourci au mot entier avec « … » s'il ne tient pas.
 - 11/10 · M87 · Destinataire, version propriétaire : la voie sur une ligne, le code postal et la suite sur la suivante (« Aux copropriétaires du » / « 8 avenue Docteur Hochet » / « 06160 Antibes · 2e étage ») ; sans code postal, coupe à la dernière virgule.
 - 11/10 · M87 · Dans le dossier de prospection, les surfaces s'écrivent au m² entier (formateur M74) ; aucun calcul ne change.
@@ -316,6 +324,8 @@ chaque mission validée.
 - 01/10 · M61 · Donnée absente portée par la provenance : n'écarte pas ; donnée absente qui est le critère : écarte, et se compte.
 - 06/10 · M73 · `/confidentialite` est publique, sans connexion : les chemins publics sont une liste d'autorisation de chemins exacts ; la page ne lit ni la session ni la base.
 - 06/10 · M73 · La page de confidentialité dit ce que le code fait réellement (ce que lit l'extension, ce qui est conservé, à qui partent les critères de recherche) ; elle n'annonce ni région d'hébergement ni durée de conservation ; éditeur SAS Start Academy, contact formation@start-academy.fr.
+- 11/10 · M93 · `/confidentialite` suit le code : mention légale du courrier (responsable, origine de l'adresse, opposition, CNIL) ; photo du concurrent au choix du conseiller, « Sans photo » par défaut, copiée dans le stockage de l'agence et retirée quand il en change ou supprime ce concurrent ; un dossier supprimé est archivé, effacé sur demande ; l'agence est responsable du traitement, Start Academy son sous-traitant ; on s'adresse d'abord à l'agence. Texte à faire relire par un juriste.
+- 11/10 · M93 · L'effacement réel (demande RGPD d'un vendeur ou du propriétaire d'un bien concurrent) suit `docs/PROCEDURE_EFFACEMENT.md` : exécuté par Claude Code sur demande de Laurent, jamais automatiquement, après sauvegarde, avec comptage avant et après ; pour un propriétaire, l'adresse, les dossiers de prospection et les photos copiées partent, le concurrent sort des retenus, l'annonce publique reste.
 - 06/10 · M74 · Un seul formateur de nombres (`src/lib/format`), en `fr-FR` : virgule décimale, espace des milliers, 2 décimales au plus, aucun zéro inutile, vrai signe moins, unité liée par une espace insécable ; seul l'affichage arrondit, aucun calcul ne change.
 - 06/10 · M74 · Montants et prix au m² à l'euro près ; surfaces et pourcentages jusqu'à 2 décimales ; un écart nul s'affiche sans signe.
 - 06/10 · M74 · Un test interdit `toFixed(` et `toLocaleString(` dans `src/` hors de `src/lib/format` (tests exclus).
@@ -336,6 +346,9 @@ chaque mission validée.
 - 16/09 · M48 · Les fixtures de portail se capturent par l'extension, jamais à la main ; prettier ne les reformate pas (M61).
 - 22/09 · M52 · L'essai à l'écran se fait d'une traite, sans recharger entre les étapes.
 - 23/09 · M56 · Migration sur données réelles : compter avant, énoncer la prédiction, comparer après.
+- 11/10 · M93 · Sauvegarde de la base partagée : `npm run sauvegarde` (structure, données, comptes et index du stockage, fichiers du stockage ; lecture seule ; rangée dans `~/acm-studio-sauvegardes/`, hors du dépôt, jamais commitée), avant chaque migration et chaque semaine pendant la bêta ; elle note le nombre de lignes par table et s'arrête si la base change pendant qu'elle tourne.
+- 11/10 · M93 · Une sauvegarde se vérifie : `npm run sauvegarde:verifier` restaure la dernière dans une base locale à part, créée puis supprimée, et compare les lignes table par table et les fichiers du stockage ; les tables de session ne sont pas comparées. Premier passage réussi le 11/10 : 21 tables, 288 lignes, 31 fichiers.
+- 11/10 · M93 · La vraie solution reste l'offre payante de Supabase avec sauvegardes quotidiennes : non activée (`docs/SAUVEGARDE.md`).
 - 01/10 · M62 · Intégration continue à chaque push : typecheck, lint, format:check, test, build.
 - 11/10 · M88 · Les règles d'accès de la base se prouvent dans la base : `supabase/tests/closed_doors.sql` joue le navigateur d'un conseiller, d'un manager, d'un membre retiré et d'un invité, et tourne dans la CI sur une base Supabase locale jetable (tâche `sql`), sans base partagée ni clé ; les anciens tests SQL n'y sont pas, trois sont à réparer.
 - 11/10 · M90 · La CI joue aussi `conclusion_that_measures.sql` (dates, type de mandat, prix, motif, compatibilité avec les appels du code précédent) et `launch_readiness.sql`.
@@ -364,6 +377,9 @@ chaque mission validée.
 - 11/10 · M92 · Les six autres polices ne sont toujours pas embarquées ; la CI a échoué une fois sur le téléchargement de Montserrat le 11/10 (passée à la relance) : les embarquer est à faire dans une mission à part (remplace M91, « aucun échec depuis la mission 90 »).
 - 11/10 · M91 · Hors périmètre, reportés après la bêta : « Chercher encore », biens neufs en complément, apprentissage par motif d'exclusion, rythme accéléré du Live, réglage des critères de recherche.
 - 11/10 · M92 · Corriger le Live pour qu'il soit infalsifiable et neutre devant le vendeur n'est pas une fonctionnalité : issue de l'audit n°2, la mission 92 ne lève pas le gel (comme M88).
+- 11/10 · M93 · Protéger ce qui existe (argent, saisies, dossiers, sauvegarde) n'est pas une fonctionnalité : la mission 93 ne lève pas le gel.
+- 11/10 · M93 · Le parcours e2e archive à chaque passage un dossier « TEST AUTOMATIQUE … à supprimer », créé pour cela (précise M66).
+- 11/10 · M93 · Hors périmètre, après la bêta : base Supabase séparée pour l'essai, plafond Stream Estate par agence, liste d'opposition commune.
 - 11/10 · M92 · Hors périmètre, après les premiers rendez-vous réels : rythme en 2 écrans par concurrent, reformulation du prix par le vendeur avant l'analyse.
 - 11/10 · M87 · Le compte de test se voit : quand le nom de l'agence commence par « TEST AUTOMATIQUE », un bandeau orange « Compte de test automatique — ne préparez pas de vrai dossier ici » s'affiche en haut de l'espace conseiller et de l'écran d'édition du dossier ; jamais imprimé, jamais dans le Live ; l'agence de test n'est pas renommée, l'e2e a besoin de son nom long.
 - 11/10 · M87 · Hors périmètre, notés pour plus tard : déplacer un dossier d'une agence à une autre, retoucher une photo.

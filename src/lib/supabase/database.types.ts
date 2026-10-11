@@ -682,6 +682,7 @@ export type Database = {
           seller_perceived_property_price: number | null
           seller_property_comment: string | null
           seller_property_confirmed: string | null
+          seller_revised_property_price: number | null
           updated_at: string
         }
         Insert: {
@@ -698,6 +699,7 @@ export type Database = {
           seller_perceived_property_price?: number | null
           seller_property_comment?: string | null
           seller_property_confirmed?: string | null
+          seller_revised_property_price?: number | null
           updated_at?: string
         }
         Update: {
@@ -714,6 +716,7 @@ export type Database = {
           seller_perceived_property_price?: number | null
           seller_property_comment?: string | null
           seller_property_confirmed?: string | null
+          seller_revised_property_price?: number | null
           updated_at?: string
         }
         Relationships: [

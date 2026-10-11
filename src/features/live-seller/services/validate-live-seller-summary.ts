@@ -81,6 +81,7 @@ export function validateLiveSellerSummary(
   }
 
   checkPrice(input.seller_perceived_property_price, 'seller_perceived_property_price', errors);
+  checkPrice(input.seller_revised_property_price, 'seller_revised_property_price', errors);
 
   if (
     input.seller_property_confirmed != null &&

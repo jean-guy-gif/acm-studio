@@ -83,6 +83,8 @@ export function SuiviRow({
   const concluded = conclusion?.concludedAt ?? project.updated_at;
   const price = conclusion?.commercializationPrice ?? null;
   const sellerStart = conclusion?.sellerPerceivedPrice ?? null;
+  // Mission 94 — le prix que le vendeur a reformulé après avoir vu le marché (s'il l'a donné).
+  const sellerRevised = conclusion?.sellerRevisedPrice ?? null;
   const journey = sellerJourneyGap(sellerStart, price);
   const readinessShort = launchReadinessShort(
     conclusion?.launchReadinessFirst ?? null,
@@ -147,6 +149,19 @@ export function SuiviRow({
               <span className="text-zinc-400 stage:text-white/40" aria-label="puis">
                 →
               </span>
+              {sellerRevised != null ? (
+                <>
+                  <span
+                    className="font-semibold whitespace-nowrap text-zinc-500 stage:text-white/60"
+                    title="Après avoir vu le marché"
+                  >
+                    {formatEuro(sellerRevised)}
+                  </span>
+                  <span className="text-zinc-400 stage:text-white/40" aria-label="puis">
+                    →
+                  </span>
+                </>
+              ) : null}
               <span className="whitespace-nowrap">{price != null ? formatEuro(price) : '—'}</span>
               {journey.percentage != null ? (
                 <span
@@ -264,6 +279,14 @@ export function SuiviRow({
                     label: 'Prix du vendeur en début de rendez-vous',
                     value: sellerStart != null ? formatEuro(sellerStart) : 'Non renseigné',
                   },
+                  ...(sellerRevised != null
+                    ? [
+                        {
+                          label: 'Prix du vendeur après avoir vu le marché',
+                          value: formatEuro(sellerRevised),
+                        },
+                      ]
+                    : []),
                   {
                     label: 'Prix de commercialisation',
                     value: price != null ? formatEuro(price) : 'Non convenu',

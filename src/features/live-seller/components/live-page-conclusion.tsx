@@ -135,6 +135,7 @@ export function LivePageConclusion({
         projectId={projectId}
         onPendingChange={onPendingPriceChange}
         onSaved={onPriceSaved}
+        comparedPrices={advisorRange?.marketReading.prices ?? []}
       />
     </div>
   );

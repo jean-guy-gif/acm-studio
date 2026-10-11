@@ -61,7 +61,16 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
         </div>
       ) : null}
 
-      <ConclusionAmountsPanel amounts={amounts} />
+      <ConclusionAmountsPanel
+        amounts={amounts}
+        sellerPath={{
+          start:
+            conclusion?.sellerPerceivedPrice ??
+            presentation?.live?.sellerSummary?.seller_perceived_property_price ??
+            null,
+          revised: presentation?.live?.sellerSummary?.seller_revised_property_price ?? null,
+        }}
+      />
 
       <div className={`${card} p-5 sm:p-6`}>
         <ConclusionDecisionForm

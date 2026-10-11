@@ -34,6 +34,7 @@ export type LivePageType =
   | 'dpe_market'
   | 'dangerous_competitor'
   | 'seller_perceived_price'
+  | 'seller_revised_price'
   | 'price_analysis'
   | 'conclusion'
   | 'closing_question';
@@ -130,6 +131,17 @@ export function buildLivePages(live: LiveNavData | null, hasSubjectProperty: boo
       key: 'dangerous_competitor',
       type: 'dangerous_competitor',
       title: 'Le concurrent le plus dangereux',
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+    });
+    // Mission 94 — Acte 5 : après avoir vu les biens, le vendeur reformule lui-même son prix,
+    // avant que l'analyse ne s'affiche. Facultatif (« Passer »). Sans concurrent, il n'y a rien
+    // « vu » : l'écran n'existe pas.
+    pages.push({
+      key: 'seller_revised_price',
+      type: 'seller_revised_price',
+      title: 'Votre prix après le marché',
       comparableId: null,
       comparableIndex: null,
       step: null,
