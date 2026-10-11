@@ -13,6 +13,7 @@ import {
   authorizeAdvisorRange,
   authorizeComparableReveal,
   isComparableAuthorized,
+  isDurationKnown,
   overlaySellerComparable,
   projectComparableForSeller,
   projectLiveForSeller,
@@ -59,6 +60,8 @@ const NEUTRAL_KEYS = [
   'photoUrls',
   'featureComparison',
   'response',
+  // Mission 92 — un oui/non : y aura-t-il une durée à révéler ? Jamais la durée elle-même.
+  'durationKnown',
 ].sort();
 
 const AMOUNT_KEYS = ['price', 'pricePerSquareMeter', 'title', 'listingUrl', 'priceReveal'];
@@ -230,5 +233,41 @@ describe('livraison — fourchette conseiller absente de la charge initiale (§ 
     expect(range?.priceGaps.sellerPerceivedPrice).toBe(
       base.sellerSummary?.seller_perceived_property_price,
     );
+  });
+});
+
+describe('isDurationKnown — l’étape « Durée » n’existe que s’il y a quelque chose à révéler', () => {
+  const none = {
+    marketDuration: { available: false, days: null, firstSeenAt: null, label: null },
+    priceHistory: {
+      available: false,
+      initialPrice: null,
+      currentPrice: null,
+      dropCount: null,
+      totalDropAmount: null,
+      totalDropPercentage: null,
+      source: null,
+      entries: [],
+    },
+  };
+
+  it('ni durée ni historique : rien à révéler', () => {
+    expect(isDurationKnown(none)).toBe(false);
+  });
+
+  it('une durée, ou une baisse de prix, suffit', () => {
+    expect(
+      isDurationKnown({ ...none, marketDuration: { ...none.marketDuration, available: true } }),
+    ).toBe(true);
+    expect(
+      isDurationKnown({ ...none, priceHistory: { ...none.priceHistory, available: true } }),
+    ).toBe(true);
+  });
+
+  it('ne voyage qu’en oui/non : la projection neutre ne porte ni jours ni historique', () => {
+    const projected = projectComparableForSeller(buildLive(false).comparables[0]);
+    expect(typeof projected.durationKnown).toBe('boolean');
+    expect(projected).not.toHaveProperty('marketDuration');
+    expect(projected).not.toHaveProperty('priceHistory');
   });
 });

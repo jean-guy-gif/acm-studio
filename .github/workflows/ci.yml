@@ -57,3 +57,8 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/launch_readiness.sql
+
+      - name: Réponses du vendeur figées (devinettes, valeur perçue)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/frozen_seller_answers.sql

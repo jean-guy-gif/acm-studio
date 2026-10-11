@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLiveSequence, durationLabel } from '@/features/before-meeting/services/live-sequence';
+import {
+  buildLiveSequence,
+  durationLabel,
+  tooManyCompetitorsNote,
+} from '@/features/before-meeting/services/live-sequence';
 import {
   buildMarketGlance,
   type GlanceCompetitor,
@@ -189,5 +193,30 @@ describe('decisionFormulaNote', () => {
     expect(plain(decisionFormulaNote(82.5, 1))).toBe(
       'Prix médian au m² × 82,5 m², hors 1 concurrent atypique.',
     );
+  });
+});
+
+describe('mission 92 — un Live sans écrans inutiles', () => {
+  const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) => ({ id, energyRating: 'D' }));
+
+  it('prévient au-delà de 6 concurrents, sans rien bloquer', () => {
+    const sequence = buildLiveSequence(seven, true);
+    expect(tooManyCompetitorsNote(sequence, 7)).toBe(
+      '7 concurrents : environ 60 minutes de Live. Nous conseillons 6 au plus.',
+    );
+    expect(tooManyCompetitorsNote(buildLiveSequence(seven.slice(0, 6), true), 6)).toBeNull();
+  });
+
+  it('ne compte pas l’étape « Durée » d’un concurrent sans durée ni historique', () => {
+    const withAll = buildLiveSequence(seven.slice(0, 2), true);
+    const withOneUnknown = buildLiveSequence(
+      [seven[0], { ...seven[1], durationKnown: false }],
+      true,
+    );
+    expect(withOneUnknown.totalScreens).toBe(withAll.totalScreens - 1);
+    expect(withOneUnknown.screenTitles).not.toContain(
+      'Concurrent 2 — Pourquoi toujours en vente ?',
+    );
+    expect(withOneUnknown.screenTitles).toContain('Concurrent 1 — Pourquoi toujours en vente ?');
   });
 });

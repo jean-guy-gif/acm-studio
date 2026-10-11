@@ -59,10 +59,12 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
     expect(shown('live-page-analysis.tsx')).toContain('Prix des concurrents');
   });
 
-  it('« Quitter » ne mène plus à la page de préparation', () => {
+  it('« Quitter » ne mène ni à la préparation ni à la liste des autres clients', () => {
     const shell = shown('live-comparative-shell.tsx');
     expect(shell).not.toMatch(/\/presentation/);
-    expect(shell).toContain("router.push('/live')");
+    // Mission 92 — un écran neutre, « Rendez-vous en pause » ; jamais la liste `/live`.
+    expect(shell).toContain('router.push(`/live/${projectId}/pause`)');
+    expect(shell).not.toContain("router.push('/live')");
     expect(shell).toContain('Quitter le rendez-vous');
     expect(shell).not.toMatch(/window\.confirm|confirm\(/);
   });
@@ -81,7 +83,9 @@ describe('la liste du Live (écran conseiller)', () => {
     expect(NO_COMPETITOR_REASON).toMatch(/^Aucun concurrent retenu/);
     const actions = shown('live-launch-actions.tsx');
     expect(actions).toContain('disabled');
-    expect(actions).toContain('Recommencer depuis le début');
+    // Mission 92 — les réponses sont figées : on ne « recommence » pas un rendez-vous.
+    expect(actions).not.toMatch(/Recommencer/);
+    expect(actions).toContain('resumeLabel');
   });
 });
 
@@ -91,5 +95,77 @@ describe('le « prix souhaité vendeur » a quitté le Live (mission 91)', () =>
       /souhaité|decision\??\.sellerPrice/.test(shown(file)),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
+  const SRC = join(process.cwd(), 'src');
+  const read = (...parts: string[]): string => readFileSync(join(SRC, ...parts), 'utf8');
+  // Les composants de `meeting-conclusion` que le Live affiche devant le vendeur : trouvés par
+  // les imports des écrans du Live, pas par une liste tenue à la main.
+  const borrowed = [
+    ...new Set(
+      SELLER_SCREENS.flatMap((file) =>
+        [
+          ...readFileSync(join(DIR, file), 'utf8').matchAll(
+            /from '@\/features\/meeting-conclusion\/components\/([a-z-]+)'/g,
+          ),
+        ].map((match) => `${match[1]}.tsx`),
+      ),
+    ),
+  ];
+  const shownBorrowed = (file: string): string =>
+    read('features', 'meeting-conclusion', 'components', file)
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('//'))
+      .join('\n');
+
+  it('couvre les composants de conclusion affichés dans le Live', () => {
+    expect(borrowed).toContain('live-commercialization-price.tsx');
+    const offenders = borrowed.filter((file) =>
+      /(du|le|par le|au|un) vendeur\b|Prix conseillé|Marché calculé/i.test(shownBorrowed(file)),
+    );
+    expect(offenders).toEqual([]);
+    expect(shownBorrowed('live-commercialization-price.tsx')).toContain(
+      'Le prix que nous retenons ensemble. Rien n’est pré-rempli.',
+    );
+  });
+
+  it('« Terminer le rendez-vous » ouvre l’écran neutre, jamais la conclusion du conseiller', () => {
+    const shell = shown('live-comparative-shell.tsx');
+    expect(shell).toContain('`/live/${projectId}/merci`');
+    expect(shell).not.toMatch(/\/builder\/\$\{projectId\}\/conclusion/);
+  });
+
+  it('les écrans neutres ne reçoivent rien du dossier', () => {
+    const screen = shown('live-neutral-screen.tsx');
+    expect(screen).not.toMatch(/projectName|seller_name|sellerName|price|formatEuro/i);
+    const context = read('features', 'live-seller', 'queries', 'get-neutral-screen-context.ts');
+    const returned = context.slice(context.lastIndexOf('return {'));
+    expect(returned).not.toMatch(/project\./);
+    for (const route of ['merci', 'pause']) {
+      const page = read('app', '(stage)', 'live', '[projectId]', route, 'page.tsx');
+      expect(page).not.toMatch(/getProject\b|loadLivePresentation|seller_name|getSuiviDossiers/);
+    }
+  });
+
+  it('une réponse déjà donnée se relit sans champ de saisie', () => {
+    expect(shown('live-locked-answer.tsx')).toContain('Votre réponse');
+    expect(shown('live-locked-answer.tsx')).not.toMatch(/<input|<textarea/);
+    for (const file of [
+      'live-page-price.tsx',
+      'live-page-perceived.tsx',
+      'live-page-duration.tsx',
+    ]) {
+      expect(shown(file)).toContain('LiveLockedAnswer');
+    }
+  });
+
+  it('dit quand une réponse n’a pas pu être enregistrée, avec un bouton qui relance', () => {
+    const shell = shown('live-comparative-shell.tsx');
+    expect(shell).toContain('Une réponse n’a pas pu être enregistrée — touchez Réessayer');
+    expect(shell).toMatch(/onClick=\{retryFailedSaves\}/);
   });
 });

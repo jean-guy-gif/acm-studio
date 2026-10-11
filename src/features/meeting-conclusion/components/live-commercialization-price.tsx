@@ -64,10 +64,7 @@ export function LiveCommercializationPrice({
     >
       <div className="flex flex-col gap-2">
         <h3 className={question}>Sur quel prix partons-nous&nbsp;?</h3>
-        <p className={questionHint}>
-          Le prix de commercialisation convenu. Rien n’est pré-rempli&nbsp;: le chiffre vient du
-          vendeur.
-        </p>
+        <p className={questionHint}>Le prix que nous retenons ensemble. Rien n’est pré-rempli.</p>
       </div>
       <div className="flex items-center gap-3">
         <input
