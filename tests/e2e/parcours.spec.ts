@@ -5,6 +5,7 @@ import {
   login,
   mainText,
   pagePayload,
+  removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
 } from './support';
@@ -394,6 +395,25 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(row.getByText('1 remis')).toBeVisible();
     expect(await overflow(), 'Le Suivi déborde sur tablette').toBeLessThanOrEqual(0);
     await page.setViewportSize({ width: 1280, height: 720 });
+  });
+
+  // Mission 98 — une opposition ne se retire pas depuis l'écran : le parcours retire la sienne
+  // (et celles qu'un passage interrompu aurait laissées) pour ne pas en accumuler sur l'agence
+  // de test. L'adresse redevient alors démarchable, à l'écran aussi.
+  await test.step('Le passage retire sa ligne « Ne plus solliciter »', async () => {
+    expect(
+      removeTestOppositions(),
+      'La ligne d’opposition de ce passage n’a pas été retrouvée',
+    ).toBeGreaterThanOrEqual(1);
+    expect(removeTestOppositions(), 'Il reste des oppositions du test').toBe(0);
+    await page.goto(`/prospection?bien=${projectId}`);
+    await expect(
+      page
+        .getByTestId('prospecting-column-ready')
+        .getByTestId('prospecting-card')
+        .filter({ hasText: OPPOSED_ADDRESS }),
+      'L’adresse retirée de la liste n’est pas redevenue « prête »',
+    ).toBeVisible();
   });
 });
 
