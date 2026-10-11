@@ -341,6 +341,17 @@ export function LiveComparativeShell({
         if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
         return { ok: true };
       });
+    // Le choix du concurrent le plus dangereux, reporté dans le résumé tenu par le navigateur.
+    const keepDangerousChoice = () => {
+      if (page.type === 'dangerous_competitor') {
+        setDangerousOverride(
+          dangerousChoiceFromForm(
+            fd,
+            comparables.map((c) => c.id),
+          ),
+        );
+      }
+    };
     // Mission 89 — tout enregistrement attendu par le bouton est protégé : quoi qu'il arrive,
     // le bouton redevient actif, avec « Connexion perdue — touchez Valider pour réessayer ».
     const awaited = <T extends SaveResult>(save: () => Promise<T>) =>
@@ -435,8 +446,12 @@ export function LiveComparativeShell({
     // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
     if (entersAnalysis && range == null && pendingSteps.length === 0) {
       const r = await awaited(deliverRange);
-      if (r.ok) go(1);
-      else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      if (r.ok) {
+        // « Le concurrent le plus dangereux » précède « Analyse des prix » : c'est par ici
+        // que son formulaire s'enregistre le plus souvent.
+        keepDangerousChoice();
+        go(1);
+      } else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
       return;
     }
     // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
@@ -448,14 +463,7 @@ export function LiveComparativeShell({
     if (entry)
       runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
     else {
-      if (page.type === 'dangerous_competitor') {
-        setDangerousOverride(
-          dangerousChoiceFromForm(
-            fd,
-            comparables.map((c) => c.id),
-          ),
-        );
-      }
+      keepDangerousChoice();
       runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
     }
     go(1);
