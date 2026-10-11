@@ -7,6 +7,7 @@ import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
 import {
   alertError,
+  alertOk,
   btnPrimary,
   card,
   fieldLabel,
@@ -16,16 +17,19 @@ import {
   pageSubtitle,
 } from '@/components/ui/styles';
 
+import { PASSWORD_RESET_SENT_MESSAGE, loginErrorMessage } from '@/lib/auth/auth-messages';
 import { PRIVACY_PATH } from '@/lib/legal';
 
 import { login } from './actions';
 
 type LoginPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; envoye?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const [{ error }, cookieStore] = await Promise.all([searchParams, cookies()]);
+  const [{ error: errorCode, envoye }, cookieStore] = await Promise.all([searchParams, cookies()]);
+  // Mission 88 — la page n'affiche que ses propres phrases, jamais un texte venu de l'adresse.
+  const error = loginErrorMessage(errorCode);
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
   return (
@@ -53,6 +57,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               {error}
             </p>
           ) : null}
+          {envoye ? (
+            <p role="status" className={alertOk}>
+              {PASSWORD_RESET_SENT_MESSAGE}
+            </p>
+          ) : null}
           <form action={login} className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
               <span className={fieldLabel}>Adresse e-mail</span>
@@ -77,6 +86,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <SubmitButton pendingLabel="Connexion…" className={`${btnPrimary} mt-1 w-full py-2.5`}>
               Se connecter
             </SubmitButton>
+            <Link href="/mot-de-passe-oublie" className={`${link} self-center text-sm`}>
+              Mot de passe oublié ?
+            </Link>
           </form>
           <footer className="border-t border-zinc-200/80 pt-4 text-center text-xs stage:border-white/10">
             <Link href={PRIVACY_PATH} className={link}>

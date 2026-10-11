@@ -1890,6 +1890,8 @@ export type Database = {
       }
       current_agency_id_text: { Args: never; Returns: string }
       get_current_agency_id: { Args: never; Returns: string }
+      has_pending_invitation: { Args: never; Returns: boolean }
+      is_current_manager: { Args: never; Returns: boolean }
       meeting_duration_seconds: {
         Args: { p_project_id: string }
         Returns: number

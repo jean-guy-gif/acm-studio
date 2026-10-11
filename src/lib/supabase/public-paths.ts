@@ -9,7 +9,16 @@
 //
 // Mission 73 — /confidentialite est la page de confidentialité que le Chrome Web Store exige :
 // elle se lit sans compte. Liste d'autorisation, chemins exacts : rien d'autre ne s'ouvre.
-const PUBLIC_PATHS = ['/login', '/design-preview', '/auth/confirm', '/confidentialite'];
+//
+// Mission 88 — /mot-de-passe-oublie se demande sans être connecté, par définition. La page
+// « Choisir un nouveau mot de passe », elle, exige la session ouverte par le lien reçu.
+const PUBLIC_PATHS = [
+  '/login',
+  '/design-preview',
+  '/auth/confirm',
+  '/confidentialite',
+  '/mot-de-passe-oublie',
+];
 
 // /design-preview et ses sous-pages (ex. /design-preview/app) : harnais de
 // revue design auto-gardé en production (notFound sans ACM_DESIGN_PREVIEW=1).

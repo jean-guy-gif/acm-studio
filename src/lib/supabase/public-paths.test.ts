@@ -23,4 +23,13 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/confidentialite/autre')).toBe(false);
     expect(isPublicPath('/confidentialite-interne')).toBe(false);
   });
+
+  // Mission 88 — « Mot de passe oublié » se demande sans être connecté ; choisir le nouveau mot
+  // de passe, accepter une invitation ou créer une agence exigent une session.
+  it('ouvre la demande de réinitialisation, et elle seule', () => {
+    expect(isPublicPath('/mot-de-passe-oublie')).toBe(true);
+    expect(isPublicPath('/nouveau-mot-de-passe')).toBe(false);
+    expect(isPublicPath('/accept-invitation')).toBe(false);
+    expect(isPublicPath('/onboarding')).toBe(false);
+  });
 });
