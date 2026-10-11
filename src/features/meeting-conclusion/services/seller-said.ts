@@ -1,3 +1,4 @@
+import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
 import { launchReadinessLabel } from '@/features/meeting-conclusion/services/launch-readiness';
 import { formatEuro, formatPercent } from '@/lib/format';
 
@@ -18,7 +19,8 @@ export type GuessSummary = {
   // Concurrents dont on connaît la devinette ET un prix à lui opposer.
   compared: number;
   under: number;
-  // Écart moyen des sous-estimations, en % du prix réel (« de 6 % en moyenne ») ; null si aucune.
+  // Écart moyen des sous-estimations (« de 6 % en moyenne »), mesuré comme dans le Live : en %
+  // de la devinette ; null si aucune.
   underAveragePercent: number | null;
   over: number;
   overAveragePercent: number | null;
@@ -29,6 +31,9 @@ export type GuessSummary = {
 const average = (values: number[]): number | null =>
   values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
 
+// L'écart d'un concurrent est CELUI DU LIVE (buildPriceReveal) : prix réel moins devinette, en %
+// de la devinette, arrondi au dixième. Le conseiller ne lit jamais deux pourcentages différents
+// pour la même devinette ; la moyenne porte sur ces écarts-là.
 export function summarizeGuesses(competitors: GuessedCompetitor[]): GuessSummary | null {
   const underGaps: number[] = [];
   const overGaps: number[] = [];
@@ -36,18 +41,28 @@ export function summarizeGuesses(competitors: GuessedCompetitor[]): GuessSummary
   let usesCurrentPrices = false;
   for (const competitor of competitors) {
     const real = competitor.revealedPrice ?? competitor.currentPrice;
-    if (competitor.guess == null || real == null || real <= 0) {
+    if (competitor.guess == null || real == null) {
+      continue;
+    }
+    const { gapAmount, gapPercentage } = buildPriceReveal({
+      price: real,
+      surfaceArea: null,
+      sellerEstimate: competitor.guess,
+      retainedPricesPerSquareMeter: [],
+      thisPricePerSquareMeter: null,
+    });
+    if (gapAmount == null || gapPercentage == null) {
       continue;
     }
     compared += 1;
     if (competitor.revealedPrice == null) {
       usesCurrentPrices = true;
     }
-    const gap = ((competitor.guess - real) / real) * 100;
-    if (gap < 0) {
-      underGaps.push(-gap);
-    } else if (gap > 0) {
-      overGaps.push(gap);
+    // Écart positif : le prix réel dépasse la devinette, le vendeur a sous-estimé.
+    if (gapAmount > 0) {
+      underGaps.push(gapPercentage);
+    } else if (gapAmount < 0) {
+      overGaps.push(-gapPercentage);
     }
   }
   if (compared === 0) {
@@ -64,19 +79,20 @@ export function summarizeGuesses(competitors: GuessedCompetitor[]): GuessSummary
 }
 
 const competitors = (count: number): string => `${count} concurrent${count > 1 ? 's' : ''}`;
-const wholePercent = (value: number): string => formatPercent(Math.max(1, Math.round(value)));
+// Au dixième, comme l'écart affiché par le Live.
+const averagePercent = (value: number): string => formatPercent(value, { maxDecimals: 1 });
 
 // « Il a sous-estimé 4 concurrents sur 6, de 6 % en moyenne ».
 export function guessLines(summary: GuessSummary): string[] {
   const lines: string[] = [];
   if (summary.under > 0 && summary.underAveragePercent != null) {
     lines.push(
-      `Il a sous-estimé ${competitors(summary.under)} sur ${summary.compared}, de ${wholePercent(summary.underAveragePercent)} en moyenne`,
+      `Il a sous-estimé ${competitors(summary.under)} sur ${summary.compared}, de ${averagePercent(summary.underAveragePercent)} en moyenne`,
     );
   }
   if (summary.over > 0 && summary.overAveragePercent != null) {
     lines.push(
-      `Il a surestimé ${competitors(summary.over)} sur ${summary.compared}, de ${wholePercent(summary.overAveragePercent)} en moyenne`,
+      `Il a surestimé ${competitors(summary.over)} sur ${summary.compared}, de ${averagePercent(summary.overAveragePercent)} en moyenne`,
     );
   }
   if (lines.length === 0) {

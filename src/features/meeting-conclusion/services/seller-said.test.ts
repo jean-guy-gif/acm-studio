@@ -10,6 +10,7 @@ import {
   type GuessedCompetitor,
   type SellerSaidInput,
 } from '@/features/meeting-conclusion/services/seller-said';
+import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
 
 // Les espaces de `formatEuro` (fine insécable des milliers, insécable avant « € ») ramenées à
 // des espaces simples, pour lire les attentes.
@@ -36,11 +37,11 @@ const NOTHING: SellerSaidInput = {
 describe('les devinettes face aux prix réels', () => {
   it('« sous-estimé 4 concurrents sur 6, de 6 % en moyenne »', () => {
     const summary = summarizeGuesses([
-      guessed(288_000, 300_000), // −4 %
-      guessed(282_000, 300_000), // −6 %
-      guessed(376_000, 400_000), // −6 %
-      guessed(184_000, 200_000), // −8 %
-      guessed(309_000, 300_000), // +3 %
+      guessed(300_000, 312_000), // +4 % au-dessus de sa devinette
+      guessed(300_000, 318_000), // +6 %
+      guessed(400_000, 424_000), // +6 %
+      guessed(200_000, 216_000), // +8 %
+      guessed(300_000, 291_000), // −3 % : surestimé
       guessed(250_000, 250_000), // juste
     ]);
     expect(summary).toMatchObject({ compared: 6, under: 4, over: 1, usesCurrentPrices: false });
@@ -52,10 +53,25 @@ describe('les devinettes face aux prix réels', () => {
     ]);
   });
 
-  it('l’écart se mesure au prix réel, pas à la devinette', () => {
-    // 270 000 pour 300 000 : 10 % sous le prix réel (et non 11,1 % de la devinette).
+  it('l’écart est exactement celui du Live : même calcul, même arrondi', () => {
+    // 270 000 deviné pour 300 000 : le Live affiche +11,1 % (en % de la devinette).
+    const live = buildPriceReveal({
+      price: 300_000,
+      surfaceArea: null,
+      sellerEstimate: 270_000,
+      retainedPricesPerSquareMeter: [],
+      thisPricePerSquareMeter: null,
+    });
+    expect(live.gapPercentage).toBe(11.1);
     const summary = summarizeGuesses([guessed(270_000, 300_000)]);
-    expect(summary?.underAveragePercent).toBeCloseTo(10, 10);
+    expect(summary?.underAveragePercent).toBe(live.gapPercentage);
+    expect(guessLines(summary!).map(plain)).toEqual([
+      'Il a sous-estimé 1 concurrent sur 1, de 11,1 % en moyenne',
+    ]);
+  });
+
+  it('une devinette à 0 € n’a pas d’écart en % dans le Live : elle ne compte pas', () => {
+    expect(summarizeGuesses([guessed(0, 300_000)])).toBeNull();
   });
 
   it('un concurrent sans devinette (écarté par « non ») ou sans prix ne compte pas', () => {
