@@ -413,10 +413,12 @@ export function LiveComparativeShell({
         return;
       }
       // BASE PUIS GRAPHE : réponse en base d'abord, graphe client ensuite.
+      // Seuls les champs de CET écran : une copie de toute la réponse figerait ici une durée
+      // ou un prix encore vides, qui écraseraient ensuite la révélation livrée par le serveur.
       setResponseOverrides((o) => ({
         ...o,
         [entry.id]: {
-          ...(entry.response ?? {}),
+          ...(o[entry.id] ?? {}),
           seller_serious_competitor: (fd.get('seller_serious_competitor') as string) || null,
           seller_serious_competitor_comment:
             (fd.get('seller_serious_competitor_comment') as string) || null,
@@ -493,10 +495,12 @@ export function LiveComparativeShell({
           return;
         }
         if (serious !== '') {
+          // Seul le champ de cet écran (voir plus haut) : en revenant ici après la révélation
+          // du prix, la durée encore vide ne doit pas être figée par-dessus sa révélation.
           setResponseOverrides((o) => ({
             ...o,
             [entry.id]: {
-              ...(entry.response ?? {}),
+              ...(o[entry.id] ?? {}),
               seller_serious_competitor: serious,
             } as LiveComparableResponse,
           }));
