@@ -70,7 +70,7 @@ export function PresentationPositioning({
           </div>
           {saved ? (
             <div className="text-sm text-zinc-600 stage:text-white/65">
-              <p>Prix conseillé validé : {euro(saved.advisorPrice)}</p>
+              <p>Prix des concurrents validé : {euro(saved.advisorPrice)}</p>
               <p>Prix vendeur : {euro(saved.sellerPrice)}</p>
               <p>
                 Fourchette : {euro(saved.rangeLow)} · {euro(saved.rangeCentral)} ·{' '}

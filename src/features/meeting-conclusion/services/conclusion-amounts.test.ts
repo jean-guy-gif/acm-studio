@@ -4,6 +4,7 @@ import {
   amountRows,
   conclusionGaps,
   sellerJourneyGap,
+  showsMarketComputed,
 } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
 
@@ -21,7 +22,7 @@ describe('conclusion-amounts — on stocke les faits, on calcule les écarts à 
     expect(new Set(labels).size).toBe(4);
     // « analyse » et « prix conseillé » ne se confondent pas.
     expect(labels).toContain('Analyse du conseiller (avis de valeur)');
-    expect(labels).toContain('Prix conseillé (validé)');
+    expect(labels).toContain('Prix des concurrents (validé)');
     expect(labels).toContain('Marché calculé (d’après les concurrents)');
     expect(labels).toContain('Prix de commercialisation (convenu)');
   });
@@ -50,7 +51,8 @@ describe('conclusion-amounts — on stocke les faits, on calcule les écarts à 
     const byKey = Object.fromEntries(gaps.map((g) => [g.key, g]));
     expect(byKey.vs_advisor_price.amount).toBeNull();
     expect(byKey.vs_advisor_price.percentage).toBeNull();
-    expect(byKey.vs_market_computed.amount).toBeNull();
+    // Sans marché calculé, il n'a pas de ligne du tout.
+    expect(byKey.vs_market_computed).toBeUndefined();
     // Le seul repère présent produit bien un écart.
     expect(byKey.vs_advisor_analysis.amount).toBe(108000);
   });
@@ -71,5 +73,44 @@ describe('conclusion-amounts — on stocke les faits, on calcule les écarts à 
     expect(sellerJourneyGap(null, 690000)).toMatchObject({ amount: null, percentage: null });
     expect(sellerJourneyGap(750000, null)).toMatchObject({ amount: null, percentage: null });
     expect(sellerJourneyGap(0, 690000)).toMatchObject({ amount: null, percentage: null });
+  });
+
+  // Mission 89 — « Marché calculé » et « Prix des concurrents » sont le même calcul tant que le
+  // conseiller ne l'a pas modifié : le marché calculé ne se montre que lorsqu'il diffère.
+  describe('le marché calculé ne s’affiche que s’il diffère du prix des concurrents', () => {
+    const SAME: ConclusionAmounts = { ...FULL, marketComputed: 303355, advisorPrice: 303355 };
+
+    it('identiques : une seule ligne, « Prix des concurrents », et un seul écart', () => {
+      expect(showsMarketComputed(SAME)).toBe(false);
+      expect(amountRows(SAME).map((row) => row.key)).toEqual([
+        'advisorPrice',
+        'advisorAnalysis',
+        'commercializationPrice',
+      ]);
+      expect(conclusionGaps(SAME).map((gap) => gap.key)).toEqual([
+        'vs_advisor_price',
+        'vs_advisor_analysis',
+      ]);
+    });
+
+    it('différents (prix ajusté par le conseiller) : les deux lignes, prix des concurrents d’abord', () => {
+      expect(showsMarketComputed(FULL)).toBe(true);
+      expect(amountRows(FULL).map((row) => row.key)).toEqual([
+        'advisorPrice',
+        'marketComputed',
+        'advisorAnalysis',
+        'commercializationPrice',
+      ]);
+      expect(conclusionGaps(FULL).map((gap) => gap.key)).toEqual([
+        'vs_advisor_price',
+        'vs_market_computed',
+        'vs_advisor_analysis',
+      ]);
+    });
+
+    it('aucune décision enregistrée : le marché calculé est le seul des deux, il s’affiche', () => {
+      expect(showsMarketComputed({ ...FULL, advisorPrice: null })).toBe(true);
+      expect(showsMarketComputed({ ...FULL, marketComputed: null })).toBe(false);
+    });
   });
 });

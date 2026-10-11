@@ -9,17 +9,30 @@ import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
 export const AMOUNT_LABELS: Record<keyof ConclusionAmounts, string> = {
   marketComputed: 'Marché calculé (d’après les concurrents)',
   advisorAnalysis: 'Analyse du conseiller (avis de valeur)',
-  advisorPrice: 'Prix conseillé (validé)',
+  advisorPrice: 'Prix des concurrents (validé)',
   commercializationPrice: 'Prix de commercialisation (convenu)',
 };
 
 export type AmountRow = { key: keyof ConclusionAmounts; label: string; value: number | null };
 
-// Les quatre montants, dans l'ordre de lecture : les trois repères, puis le prix convenu.
+// Mission 89 — « Marché calculé » et « Prix des concurrents » sont le même calcul tant que le
+// conseiller ne l'a pas modifié et que les concurrents n'ont pas changé. Côté conseiller, le
+// marché calculé ne s'affiche donc que lorsqu'il DIFFÈRE du prix des concurrents (ou qu'il est
+// le seul des deux à exister) ; côté vendeur, il ne s'affiche jamais.
+export function showsMarketComputed(amounts: ConclusionAmounts): boolean {
+  return amounts.marketComputed != null && amounts.marketComputed !== amounts.advisorPrice;
+}
+
+// Les repères, dans l'ordre de lecture : le prix des concurrents (et le marché calculé s'il en
+// diffère), l'analyse du conseiller, puis le prix convenu.
 export function amountRows(amounts: ConclusionAmounts): AmountRow[] {
-  return (
-    ['marketComputed', 'advisorAnalysis', 'advisorPrice', 'commercializationPrice'] as const
-  ).map((key) => ({ key, label: AMOUNT_LABELS[key], value: amounts[key] }));
+  const keys: (keyof ConclusionAmounts)[] = [
+    'advisorPrice',
+    ...(showsMarketComputed(amounts) ? (['marketComputed'] as const) : []),
+    'advisorAnalysis',
+    'commercializationPrice',
+  ];
+  return keys.map((key) => ({ key, label: AMOUNT_LABELS[key], value: amounts[key] }));
 }
 
 export type ConclusionGap = {
@@ -50,16 +63,21 @@ export function conclusionGaps(amounts: ConclusionAmounts): ConclusionGap[] {
   return [
     gap(
       'vs_advisor_price',
-      'Convenu vs prix conseillé',
+      'Convenu vs prix des concurrents',
       amounts.commercializationPrice,
       amounts.advisorPrice,
     ),
-    gap(
-      'vs_market_computed',
-      'Convenu vs marché calculé',
-      amounts.commercializationPrice,
-      amounts.marketComputed,
-    ),
+    // Le marché calculé n'a sa ligne que lorsqu'il diffère du prix des concurrents.
+    ...(showsMarketComputed(amounts)
+      ? [
+          gap(
+            'vs_market_computed',
+            'Convenu vs marché calculé',
+            amounts.commercializationPrice,
+            amounts.marketComputed,
+          ),
+        ]
+      : []),
     gap(
       'vs_advisor_analysis',
       'Convenu vs analyse conseiller',

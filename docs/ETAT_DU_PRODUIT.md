@@ -17,7 +17,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `/builder/[id]/comparables/find` — trouver des concurrents : « Chercher les concurrents » (Stream Estate, si clé), puis « Ouvrir / Lire mes recherches » sur les portails, validation en lot. Sans extension : un seul message d'installation (`NEXT_PUBLIC_EXTENSION_INSTALL_URL`).
 - `/builder/[id]/comparables/[comparableId]/edit` — modifier un concurrent.
 - `/builder/[id]/comparables/analysis` — analyse comparative, critère par critère.
-- `/builder/[id]/comparables/positioning` — positionnement : fourchette, prix conseillé, analyse du conseiller.
+- `/builder/[id]/comparables/positioning` — positionnement : fourchette, prix des concurrents, analyse du conseiller.
 - `/builder/[id]/presentation` — présentation vendeur : relecture de la matière avant le rendez-vous.
 - `/builder/[id]/conclusion` — écran conseiller : issue du rendez-vous et motif (dossier prêt ou conclu).
 - `/builder/[id]/prospection` — liste de tournée imprimable (A4) des concurrents à prospecter : dossier conclu « mandat signé » seulement. Chaque ligne dit « Exclusivité · appeler le confrère », « Mandat simple / particulier · aller voir le propriétaire » ou « À vérifier ».
@@ -45,7 +45,7 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 - `competitor-search` — adresses de recherche, lecture des cartes, filtres et desserrage, ordre de proximité, Stream Estate, apprentissage.
 - `browser-extension` — client de l'extension (détection, lecture de page et d'onglets).
 - `comparable-analysis` — analyse comparative : caractéristiques, localisation, valeurs aberrantes.
-- `price-positioning` — positionnement : marché calculé, fourchette, prix conseillé, analyse du conseiller.
+- `price-positioning` — positionnement : marché calculé, fourchette, prix des concurrents, analyse du conseiller.
 - `seller-presentation` — matière préparée pour le vendeur et ses avertissements.
 - `live-presentation` — sections et avertissements de la présentation.
 - `live-seller` — le Live : pages, verrous d'avancement, révélations, réponses du vendeur.
@@ -62,7 +62,7 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
 - `projects` ; `subject_properties`, `subject_property_diagnostics`, `subject_property_condominiums`.
 - `comparables` (les concurrents) ; `competitor_decisions` (apprentissage) ; `listing_observations`.
 - `portal_place_ids` (identifiant de commune par portail, commun à toutes les agences).
-- `project_price_positionings` (fourchette, prix conseillé, analyse du conseiller).
+- `project_price_positionings` (fourchette, prix des concurrents, analyse du conseiller).
 - `live_seller_responses` (réponses par concurrent) ; `live_seller_summary` (réponses de fin de Live).
 - `project_meeting_conclusions` (issue, motif, neuf faits figés).
 - Créées au schéma initial et lues nulle part : `meeting_scripts`, `meeting_sessions`,
@@ -82,7 +82,7 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
    3. **Ce prix vous paraît-il cohérent ?** — révélation du prix réel et des écarts.
    4. **Pourquoi toujours en vente ?** — durée devinée puis révélée, baisses, motif.
 5. **Le concurrent le plus dangereux** — lequel, et pourquoi (absent sans concurrent).
-6. **Analyse des prix** — rappel du prix du vendeur en début de rendez-vous, marché calculé révélé, analyse du conseiller, écarts.
+6. **Analyse des prix** — rappel du prix du vendeur en début de rendez-vous, prix des concurrents révélé, analyse du conseiller, écarts.
 7. **Conclusion** — les repères, puis « Sur quel prix partons-nous ? » (champ vide).
 
 Puis, hors Live : l'écran conseiller de conclusion (`/builder/[id]/conclusion`).

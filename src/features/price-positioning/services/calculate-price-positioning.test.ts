@@ -134,7 +134,7 @@ describe('calculatePricePositioning — outlier handling', () => {
       outliersReintroduced: false,
       usedCount: 4,
     });
-    expect(result.reasons).toContain('Un comparable atypique a été exclu du calcul.');
+    expect(result.reasons).toContain('Un concurrent atypique a été exclu du calcul.');
     expect(result.influentialComparables.map((c) => c.comparableId)).not.toContain('x');
   });
 
@@ -153,7 +153,7 @@ describe('calculatePricePositioning — outlier handling', () => {
     );
     expect(result.dataset.excludedOutlierCount).toBe(2);
     expect(result.dataset.usedCount).toBe(5);
-    expect(result.reasons).toContain('2 comparables atypiques ont été exclus du calcul.');
+    expect(result.reasons).toContain('2 concurrents atypiques ont été exclus du calcul.');
   });
 
   it('reintroduces outliers when exclusion would leave fewer than three', () => {
@@ -165,7 +165,7 @@ describe('calculatePricePositioning — outlier handling', () => {
       usedCount: 3,
     });
     expect(result.reasons).toContain(
-      'Les comparables atypiques ont été réintégrés afin de conserver un échantillon suffisant.',
+      'Les concurrents atypiques ont été réintégrés afin de conserver un échantillon suffisant.',
     );
     // A reintroduced outlier belongs to the official set → eligible for influence.
     expect(result.influentialComparables.map((c) => c.comparableId)).toContain('x');
@@ -236,7 +236,7 @@ describe('calculatePricePositioning — reasons and safety', () => {
   it('produces deterministic, duplicate-free reasons', () => {
     const result = positioning([comp('a', 5000), comp('b', 5100)], 50);
     expect(result.reasons.length).toBe(new Set(result.reasons).size);
-    expect(result.reasons.some((r) => r.includes('Peu de comparables'))).toBe(true);
+    expect(result.reasons.some((r) => r.includes('Peu de concurrents'))).toBe(true);
   });
 
   it('mentions strong dispersion and geographic dispersion when relevant', () => {

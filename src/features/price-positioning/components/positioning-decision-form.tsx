@@ -173,7 +173,8 @@ export function PositioningDecisionForm({
             <span className="text-zinc-500 stage:text-white/60">€</span>
           </div>
           <span className="text-xs text-zinc-400 stage:text-white/40">
-            Affichée dans le Live à côté du marché calculé — jamais saisie devant le vendeur.
+            Affichée au vendeur à la fin du Live, à côté du prix des concurrents — jamais saisie
+            devant lui.
           </span>
         </label>
 
@@ -187,8 +188,14 @@ export function PositioningDecisionForm({
             onChange={(event) => setJustification(event.target.value)}
             className={inputBase}
           />
-          <span className="text-xs text-zinc-400 stage:text-white/40">
-            {justification.length} / {MAX_JUSTIFICATION_LENGTH}
+          <span className="flex flex-wrap justify-between gap-x-3 text-xs text-zinc-400 stage:text-white/40">
+            {/* Mission 89 — ce texte est lu par le vendeur : le conseiller le sait en l'écrivant. */}
+            <span className="font-medium text-amber-700 stage:text-amber-300">
+              Affiché au vendeur à la fin du Live
+            </span>
+            <span>
+              {justification.length} / {MAX_JUSTIFICATION_LENGTH}
+            </span>
           </span>
         </label>
 

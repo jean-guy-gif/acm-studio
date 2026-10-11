@@ -55,7 +55,7 @@ l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
   `SellerResponse`. `comparable` reste dans le code existant (table `comparables`, features
   `comparable*`) ; le nouveau code dit `competitor`, jamais `dossier`, `diaporama`, `estimation`.
 - Écran : Dossier vendeur · Votre bien / Bien vendeur · toujours « Concurrent » · Rendez-vous
-  vendeur · Marché calculé, Analyse du conseiller, Prix conseillé, Prix de commercialisation.
+  vendeur · Marché calculé, Analyse du conseiller, Prix des concurrents, Prix de commercialisation.
 
 ## Stack (d'après `package.json`)
 

@@ -19,7 +19,7 @@ export function parseDecisionInput(formData: FormData): DecisionInputResult {
   const advisorRaw = String(formData.get('advisorPrice') ?? '').trim();
   const advisorPrice = advisorRaw === '' ? Number.NaN : Number(advisorRaw);
   if (!Number.isFinite(advisorPrice) || advisorPrice <= 0) {
-    return { ok: false, error: 'Le prix conseillé doit être un montant positif.' };
+    return { ok: false, error: 'Le prix des concurrents doit être un montant positif.' };
   }
 
   const sellerRaw = String(formData.get('sellerPrice') ?? '').trim();
