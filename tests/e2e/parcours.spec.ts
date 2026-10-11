@@ -100,7 +100,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   });
 
   await test.step('Fourchette validée : le dossier passe en « prêt »', async () => {
-    await page.goto(`/builder/${projectId}/comparables/positioning`);
+    await page.goto(`/builder/${projectId}/avant-rendez-vous`);
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     await page.goto('/builder?prets=1');
@@ -481,6 +481,20 @@ async function walkLive(
   // Conclusion — « Sur quel prix partons-nous ? », champ vide à l'ouverture.
   await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
   await onScreen('Conclusion');
+  // Le concurrent choisi deux écrans plus tôt se lit ici, sans attendre un rechargement — et
+  // il s'y lit encore après un rechargement, cette fois depuis la base.
+  const dangerousLine = page.getByText(`${COMPETITORS[0].title} — Meilleure localisation`);
+  await expect(
+    dangerousLine,
+    'Le concurrent le plus dangereux choisi n’apparaît pas sur « Conclusion »',
+  ).toBeVisible();
+  await expect(page.getByText('Non sélectionné')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
+  await expect(
+    dangerousLine,
+    'Après rechargement, le concurrent le plus dangereux n’apparaît plus sur « Conclusion »',
+  ).toBeVisible();
   const commercialization = page.locator('input[name="commercialization_price"]');
   await expect(commercialization, 'Le prix de commercialisation est pré-rempli').toHaveValue('');
   await commercialization.fill(String(COMMERCIALIZATION_PRICE));

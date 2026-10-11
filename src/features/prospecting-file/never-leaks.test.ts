@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { demoComparables, demoProperty } from '@/app/design-preview/demo-data';
+import { demoComparables, demoProperty } from '@/test-fixtures/demo-data';
 import {
   allTexts,
   buildProspectingFile,
@@ -142,7 +142,6 @@ describe('le dossier de prospection ne sort que ce qui est public', () => {
   it('aucun code montré au vendeur n’importe le dossier de prospection (M75)', () => {
     const SELLER_SIDE = [
       join('features', 'live-seller'),
-      join('features', 'live-presentation'),
       join('features', 'seller-presentation'),
       join('app', '(stage)'),
       join('app', '(protected)', 'live'),

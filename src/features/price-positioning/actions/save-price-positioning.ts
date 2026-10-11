@@ -18,7 +18,7 @@ export type SavePositioningResult =
 
 type PositioningInsert = Database['public']['Tables']['project_price_positionings']['Insert'];
 
-// The client may only send advisorPrice, sellerPrice and justification. Every
+// The client may only send advisorPrice, the advisor analysis and justification. Every
 // other persisted value (agency_id, range, confidence, snapshot, validated_by,
 // validated_at, updated_at) is imposed by the server. Authentication and agency /
 // project authorisation run with the USER client (RLS); only the final UPSERT
@@ -37,7 +37,7 @@ export async function savePricePositioning(
   if (!parsed.ok) {
     return { ok: false, error: parsed.error };
   }
-  const { advisorPrice, sellerPrice, advisorComparativeMarketPrice, justification } = parsed.input;
+  const { advisorPrice, advisorComparativeMarketPrice, justification } = parsed.input;
 
   // Authorisation: the project must belong to the caller's agency (RLS-scoped).
   const userClient = await createClient();
@@ -60,7 +60,6 @@ export async function savePricePositioning(
     comparables,
     sellerProperty: { surfaceArea: subjectProperty?.surface_area ?? null },
     advisorPrice,
-    sellerPrice,
   });
   const snapshot = buildPositioningSnapshot(positioning);
   if (positioning.status !== 'ready' || positioning.recommendedRange == null || snapshot == null) {
@@ -75,7 +74,8 @@ export async function savePricePositioning(
     project_id: projectId,
     agency_id: profile.agency_id, // server-imposed
     advisor_price: advisorPrice,
-    seller_price: sellerPrice,
+    // Mission 91 — `seller_price` n'est plus écrit : absent de l'UPSERT, il garde la valeur
+    // déjà en base (la colonne reste, les valeurs saisies avant ne sont pas effacées).
     // Mission 58 — l'analyse du conseiller, décidée à froid, à côté du prix conseillé.
     advisor_comparative_market_price: advisorComparativeMarketPrice,
     range_low: positioning.recommendedRange.low, // server-imposed
@@ -106,7 +106,7 @@ export async function savePricePositioning(
   // l'écran (becameReady) et on rafraîchit les deux listes.
   const becameReady = await maybePromoteToReady(userClient, projectId, profile.agency_id);
 
-  revalidatePath(`/builder/${projectId}/comparables/positioning`);
+  revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
   revalidatePath(`/builder/${projectId}`);
   revalidatePath('/builder');
   revalidatePath('/live');

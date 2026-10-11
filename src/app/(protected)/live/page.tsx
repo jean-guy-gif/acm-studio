@@ -65,7 +65,7 @@ export default async function LivePage() {
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <Link href={`/builder/${project.id}/presentation`} className={link}>
+                <Link href={`/builder/${project.id}/avant-rendez-vous`} className={link}>
                   Vérifier la préparation
                 </Link>
                 <LiveLaunchActions

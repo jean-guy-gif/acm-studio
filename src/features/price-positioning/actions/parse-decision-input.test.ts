@@ -11,11 +11,10 @@ function form(entries: Record<string, string>): FormData {
 }
 
 describe('parseDecisionInput', () => {
-  it('accepts advisorPrice, sellerPrice, advisor analysis and justification', () => {
+  it('accepts advisorPrice, advisor analysis and justification', () => {
     const result = parseDecisionInput(
       form({
         advisorPrice: '300000',
-        sellerPrice: '320000',
         advisorComparativeMarketPrice: '310000',
         justification: 'Marché tendu',
       }),
@@ -24,20 +23,18 @@ describe('parseDecisionInput', () => {
       ok: true,
       input: {
         advisorPrice: 300000,
-        sellerPrice: 320000,
         advisorComparativeMarketPrice: 310000,
         justification: 'Marché tendu',
       },
     });
   });
 
-  it('treats an empty seller price, advisor analysis and justification as null', () => {
+  it('treats an empty advisor analysis and justification as null', () => {
     const result = parseDecisionInput(form({ advisorPrice: '300000' }));
     expect(result).toEqual({
       ok: true,
       input: {
         advisorPrice: 300000,
-        sellerPrice: null,
         advisorComparativeMarketPrice: null,
         justification: null,
       },
@@ -62,9 +59,14 @@ describe('parseDecisionInput', () => {
     expect(parseDecisionInput(form({ advisorPrice: 'abc' })).ok).toBe(false);
   });
 
-  it('rejects a non-positive seller price', () => {
-    expect(parseDecisionInput(form({ advisorPrice: '300000', sellerPrice: '0' })).ok).toBe(false);
-    expect(parseDecisionInput(form({ advisorPrice: '300000', sellerPrice: '-1' })).ok).toBe(false);
+  // Mission 91 — le prix souhaité vendeur n'est plus saisi en préparation : envoyé quand même,
+  // il n'est ni lu ni validé.
+  it('never reads a seller price', () => {
+    const result = parseDecisionInput(form({ advisorPrice: '300000', sellerPrice: '320000' }));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.input).not.toHaveProperty('sellerPrice');
+    }
   });
 
   it('rejects a justification longer than 1000 characters', () => {
@@ -93,7 +95,7 @@ describe('parseDecisionInput', () => {
     if (result.ok) {
       // Only the permitted decision fields are ever present.
       expect(Object.keys(result.input).sort()).toEqual(
-        ['advisorComparativeMarketPrice', 'advisorPrice', 'justification', 'sellerPrice'].sort(),
+        ['advisorComparativeMarketPrice', 'advisorPrice', 'justification'].sort(),
       );
     }
   });

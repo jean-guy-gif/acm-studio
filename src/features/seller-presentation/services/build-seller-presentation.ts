@@ -260,7 +260,6 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     positioningReady,
     positioningStatus,
     hasSavedDecision: savedPositioning != null,
-    hasSellerPrice,
     propertyMainDataIncomplete,
     propertyHasPhoto,
     anyComparablePhoto,

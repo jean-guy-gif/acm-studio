@@ -8,6 +8,10 @@ import { Logo } from '@/components/brand/logo';
 import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
+import {
+  dangerousChoiceFromForm,
+  type DangerousChoice,
+} from '@/features/live-seller/services/dangerous-choice';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
@@ -106,6 +110,9 @@ export function LiveComparativeShell({
   // Mission 82 — le prix du vendeur, enregistré en début de rendez-vous : gardé côté client
   // pour que la page le réaffiche si on y revient (la charge d'ouverture ne le porte pas).
   const [perceivedOverride, setPerceivedOverride] = useState<number | null>(null);
+  // Le concurrent le plus dangereux, choisi pendant la séance : enregistré en fond, il n'est
+  // pas dans la charge d'ouverture — « Conclusion » le lit ici.
+  const [dangerousOverride, setDangerousOverride] = useState<DangerousChoice | null>(null);
   // Réponse concurrent mise à jour côté client APRÈS persistance : écran 2 (base puis
   // graphe — 'no' retire les étapes suivantes) et écran 5 (durée révélée).
   const [responseOverrides, setResponseOverrides] = useState<
@@ -220,14 +227,15 @@ export function LiveComparativeShell({
   }, [live, delivered, responseOverrides]);
   const summary = useMemo<LiveSellerSummary | null>(() => {
     const base = live?.sellerSummary ?? null;
-    if (perceivedOverride == null) {
+    if (perceivedOverride == null && dangerousOverride == null) {
       return base;
     }
     return {
       ...(base ?? {}),
-      seller_perceived_property_price: perceivedOverride,
+      ...(perceivedOverride == null ? {} : { seller_perceived_property_price: perceivedOverride }),
+      ...(dangerousOverride ?? {}),
     } as LiveSellerSummary;
-  }, [live, perceivedOverride]);
+  }, [live, perceivedOverride, dangerousOverride]);
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
 
   const pages = useMemo(
@@ -333,6 +341,17 @@ export function LiveComparativeShell({
         if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
         return { ok: true };
       });
+    // Le choix du concurrent le plus dangereux, reporté dans le résumé tenu par le navigateur.
+    const keepDangerousChoice = () => {
+      if (page.type === 'dangerous_competitor') {
+        setDangerousOverride(
+          dangerousChoiceFromForm(
+            fd,
+            comparables.map((c) => c.id),
+          ),
+        );
+      }
+    };
     // Mission 89 — tout enregistrement attendu par le bouton est protégé : quoi qu'il arrive,
     // le bouton redevient actif, avec « Connexion perdue — touchez Valider pour réessayer ».
     const awaited = <T extends SaveResult>(save: () => Promise<T>) =>
@@ -427,8 +446,12 @@ export function LiveComparativeShell({
     // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
     if (entersAnalysis && range == null && pendingSteps.length === 0) {
       const r = await awaited(deliverRange);
-      if (r.ok) go(1);
-      else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      if (r.ok) {
+        // « Le concurrent le plus dangereux » précède « Analyse des prix » : c'est par ici
+        // que son formulaire s'enregistre le plus souvent.
+        keepDangerousChoice();
+        go(1);
+      } else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
       return;
     }
     // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
@@ -439,7 +462,10 @@ export function LiveComparativeShell({
     // OPTIMISTE : révélation, concurrent le plus dangereux (fourchette déjà livrée), analyse.
     if (entry)
       runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
-    else runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
+    else {
+      keepDangerousChoice();
+      runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
+    }
     go(1);
   }, [
     busy,
@@ -452,6 +478,7 @@ export function LiveComparativeShell({
     durationRevealed,
     range,
     summary,
+    comparables,
     pendingSteps,
     go,
     runBackground,

@@ -10,7 +10,6 @@ export type PresentationWarningContext = {
   positioningReady: boolean;
   positioningStatus: PositioningStatus;
   hasSavedDecision: boolean;
-  hasSellerPrice: boolean;
   propertyMainDataIncomplete: boolean;
   propertyHasPhoto: boolean;
   anyComparablePhoto: boolean;
@@ -86,12 +85,6 @@ export function buildPresentationWarnings(
       code: 'decision_outdated',
       severity: 'warning',
       message: 'La décision enregistrée diffère du calcul courant.',
-    },
-    {
-      include: !context.hasSellerPrice,
-      code: 'seller_price_missing',
-      severity: 'warning',
-      message: 'Aucun prix souhaité par le vendeur n’est renseigné.',
     },
     {
       include: context.hasProperty && context.propertyMainDataIncomplete,

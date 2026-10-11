@@ -24,6 +24,10 @@ import type { ComparableImportResult } from '@/features/comparable-import/types'
 import type { SaveSubjectPropertySheetResult } from '@/features/subject-property/actions/save-subject-property-sheet';
 import { PropertySaveBar } from '@/features/subject-property/components/property-save-bar';
 import { SubjectPropertyForm } from '@/features/subject-property/components/subject-property-form';
+import {
+  errorsInComplements,
+  hasComplements,
+} from '@/features/subject-property/services/complements';
 import { saveBarStatus } from '@/features/subject-property/services/save-bar-status';
 import {
   missingForSearch,
@@ -126,6 +130,15 @@ export function SubjectPropertyImportForm({
   const [missing, setMissing] = useState<SearchRequirement[]>([]);
   const [becameReady, setBecameReady] = useState(false);
   const [pending, startTransition] = useTransition();
+  // Mission 91 — « Compléments (facultatif) » : replié tant que rien n'y est rempli.
+  const [complementsSlot, setComplementsSlot] = useState<HTMLDivElement | null>(null);
+  const [complementsOpen, setComplementsOpen] = useState(() =>
+    hasComplements({
+      property,
+      hasDiagnostics: diagnostics != null,
+      hasCondominium: condominium != null,
+    }),
+  );
 
   // Arrivée depuis la recherche de concurrents (« il manque la ville ») : l'adresse désigne le
   // champ, la fiche s'ouvre dessus.
@@ -162,6 +175,10 @@ export function SubjectPropertyImportForm({
     if (!result.ok) {
       const fieldErrors = result.fieldErrors ?? NO_SHEET_ERRORS;
       setErrors(fieldErrors);
+      // Un champ à corriger dans les compléments : le bloc s'ouvre, la barre peut y mener.
+      if (errorsInComplements(fieldErrors)) {
+        setComplementsOpen(true);
+      }
       setSaveError(
         countSheetErrors(fieldErrors) > 0 ? null : (result.error ?? 'L’enregistrement a échoué.'),
       );
@@ -237,6 +254,9 @@ export function SubjectPropertyImportForm({
           setImported(prefill);
           setPropertyKey((value) => value + 1);
           markDirty('property');
+          if (hasComplements({ property: prefill, hasDiagnostics: false, hasCondominium: false })) {
+            setComplementsOpen(true);
+          }
         }}
       />
       <BrochureImportPanel
@@ -250,6 +270,9 @@ export function SubjectPropertyImportForm({
           setDiagnosticsKey((value) => value + 1);
           setCondominiumKey((value) => value + 1);
           markDirty('property', 'diagnostics', 'condominium');
+          // Une fiche PDF remplit des compléments (charges, taxe, diagnostics, copropriété) :
+          // le bloc s'ouvre, le conseiller relit ce qui a été lu.
+          setComplementsOpen(true);
         }}
       />
       <SubjectPropertyForm
@@ -262,23 +285,49 @@ export function SubjectPropertyImportForm({
         imported={imported ?? undefined}
         errors={errors.property}
         onDirty={() => markDirty('property')}
+        complementsSlot={complementsSlot}
       />
-      <DiagnosticsForm
-        key={`diagnostics-${diagnosticsKey}`}
-        ref={diagnosticsRef}
-        diagnostics={diagnostics}
-        imported={importedDiagnostics ?? undefined}
-        errors={errors.diagnostics}
-        onDirty={() => markDirty('diagnostics')}
-      />
-      <CondominiumForm
-        key={`condominium-${condominiumKey}`}
-        ref={condominiumRef}
-        condominium={condominium}
-        imported={importedCondominium ?? undefined}
-        errors={errors.condominium}
-        onDirty={() => markDirty('condominium')}
-      />
+      <details
+        className="group flex max-w-3xl flex-col"
+        open={complementsOpen}
+        onToggle={(event) => setComplementsOpen(event.currentTarget.open)}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white px-5 py-4 shadow-card stage:border-white/10 stage:bg-white/5 [&::-webkit-details-marker]:hidden">
+          <span className="flex flex-col gap-0.5">
+            <span className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+              Compléments (facultatif)
+            </span>
+            <span className="text-sm text-zinc-500 stage:text-white/55">
+              Données financières, argumentaire, diagnostics, copropriété.
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className="text-zinc-400 transition-transform group-open:rotate-180"
+          >
+            ▾
+          </span>
+        </summary>
+        <div className="flex flex-col gap-5 pt-5">
+          <div ref={setComplementsSlot} />
+          <DiagnosticsForm
+            key={`diagnostics-${diagnosticsKey}`}
+            ref={diagnosticsRef}
+            diagnostics={diagnostics}
+            imported={importedDiagnostics ?? undefined}
+            errors={errors.diagnostics}
+            onDirty={() => markDirty('diagnostics')}
+          />
+          <CondominiumForm
+            key={`condominium-${condominiumKey}`}
+            ref={condominiumRef}
+            condominium={condominium}
+            imported={importedCondominium ?? undefined}
+            errors={errors.condominium}
+            onDirty={() => markDirty('condominium')}
+          />
+        </div>
+      </details>
 
       <PropertySaveBar
         status={status}
