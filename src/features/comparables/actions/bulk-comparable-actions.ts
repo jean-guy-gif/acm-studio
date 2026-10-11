@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { removeCompetitorPhotos } from '@/features/prospecting-file/services/remove-their-photos';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -73,6 +74,8 @@ export async function bulkDeleteComparables(
   if (error) {
     return { ok: false, error: 'La suppression des biens a échoué.' };
   }
+  // Mission 87 — leurs dossiers de prospection sont partis avec eux (cascade) : leurs photos aussi.
+  await removeCompetitorPhotos(supabase.storage, profile.agency_id, projectId, targets);
 
   revalidatePath(`/builder/${projectId}/comparables`);
   return { ok: true, count: targets.length };
