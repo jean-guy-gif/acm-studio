@@ -31,14 +31,14 @@ const STEPS = [
   },
   {
     href: (id: string) => `/builder/${id}/comparables`,
-    title: 'Biens concurrents',
-    description: 'Importer depuis les portails, rechercher, accepter ou écarter.',
+    title: 'Concurrents',
+    description: 'Chercher les biens en vente qui ressemblent au vôtre, les retenir ou les écarter.',
   },
   // Mission 91 — analyse, positionnement et présentation vendeur tiennent sur un seul écran.
   {
     href: (id: string) => `/builder/${id}/avant-rendez-vous`,
     title: 'Avant le rendez-vous',
-    description: 'Le marché en un coup d’œil, votre décision, ce que verra le vendeur.',
+    description: 'Le marché en un coup d’œil, votre décision de prix, ce que verra le vendeur.',
   },
 ];
 

@@ -254,7 +254,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
           <>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-col gap-1">
-                <h2 className={sectionTitle}>Votre décision</h2>
+                <h2 className={sectionTitle}>Votre décision de prix</h2>
                 <p className={hintText}>Ce que vous direz au vendeur à la fin du Live.</p>
               </div>
               {saved ? (

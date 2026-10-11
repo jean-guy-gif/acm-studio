@@ -21,9 +21,9 @@ export function RejectedComparablesList({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className={sectionTitle}>Biens écartés ({comparables.length})</h2>
+      <h2 className={sectionTitle}>Concurrents écartés ({comparables.length})</h2>
       {comparables.length === 0 ? (
-        <p className={hintText}>Aucun bien écarté.</p>
+        <p className={hintText}>Aucun concurrent écarté.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable) => (

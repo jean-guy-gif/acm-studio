@@ -65,7 +65,7 @@ export function buildPresentationWarnings(
       include: !context.positioningReady,
       code: 'positioning_unavailable',
       severity: 'blocking',
-      message: 'Le positionnement prix ne peut pas être calculé avec les données actuelles.',
+      message: 'Le prix des concurrents ne peut pas être calculé avec les données actuelles.',
     },
     // Vigilance.
     {
@@ -78,7 +78,7 @@ export function buildPresentationWarnings(
       include: !context.hasSavedDecision,
       code: 'decision_not_saved',
       severity: 'warning',
-      message: 'La décision de positionnement n’a pas encore été enregistrée.',
+      message: 'La décision de prix n’a pas encore été enregistrée.',
     },
     {
       include: context.positioningStatus === 'outdated',
@@ -207,7 +207,7 @@ export function buildPresentationWarnings(
       include: context.lowConfidence,
       code: 'low_confidence',
       severity: 'info',
-      message: 'Le niveau de confiance du positionnement est faible.',
+      message: 'Le niveau de confiance du prix des concurrents est faible.',
     },
     {
       include: context.highDispersion,
