@@ -54,7 +54,8 @@ export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
           <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
         <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
-          <div className={statLabel}>Marché calculé</div>
+          {/* Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ». */}
+          <div className={statLabel}>Prix des concurrents</div>
           <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
           <div className="text-sm text-zinc-500 stage:text-white/60">
             Positionnement observé sur le marché concurrentiel
@@ -68,9 +69,9 @@ export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
 
       <div className={`${panelSoft} h-fit`}>
         <div className={`${statLabel} mb-2`}>Écarts observés</div>
-        <GapRow label="Valeur perçue vs marché calculé" gap={gaps.sellerVsMarket} />
-        <GapRow label="Valeur perçue vs analyse du conseiller" gap={gaps.sellerVsAdvisor} />
-        <GapRow label="Marché calculé vs analyse du conseiller" gap={gaps.marketVsAdvisor} />
+        <GapRow label="Votre valeur perçue vs prix des concurrents" gap={gaps.sellerVsMarket} />
+        <GapRow label="Votre valeur perçue vs analyse du conseiller" gap={gaps.sellerVsAdvisor} />
+        <GapRow label="Prix des concurrents vs analyse du conseiller" gap={gaps.marketVsAdvisor} />
       </div>
     </div>
   );

@@ -52,6 +52,13 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
     expect(SELLER_SCREENS.filter((file) => /Prix conseillé/i.test(shown(file)))).toEqual([]);
   });
 
+  it('ne montre qu’un prix calculé au vendeur : jamais « Marché calculé »', () => {
+    expect(
+      SELLER_SCREENS.filter((file) => /Marché calculé|marché calculé/.test(shown(file))),
+    ).toEqual([]);
+    expect(shown('live-page-analysis.tsx')).toContain('Prix des concurrents');
+  });
+
   it('« Quitter » ne mène plus à la page de préparation', () => {
     const shell = shown('live-comparative-shell.tsx');
     expect(shell).not.toMatch(/\/presentation/);

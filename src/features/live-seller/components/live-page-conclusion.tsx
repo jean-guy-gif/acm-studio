@@ -15,6 +15,7 @@ import type {
   AuthorizedAdvisorRange,
   AuthorizedSellerComparable,
 } from '@/features/live-seller/services/project-live-for-seller';
+import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
 import { formatEuro } from '@/lib/format';
 
 const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
@@ -59,22 +60,22 @@ export function LivePageConclusion({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Mission 89 — devant le vendeur, un seul prix calculé : « Prix des concurrents ». Le
+          « Marché calculé » brut ne s'affiche plus ici. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Votre valeur perçue</div>
           <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Marché calculé</div>
-          <div className={bigValue}>{euro(competitiveMarketCentral)}</div>
+          <div className={statLabel}>Prix des concurrents</div>
+          <div className={bigValue}>
+            {euro(sellerFacingCompetitorPrice(decision?.advisorPrice, competitiveMarketCentral))}
+          </div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse du conseiller</div>
           <div className={bigValue}>{euro(decision?.advisorComparativeMarketPrice ?? null)}</div>
-        </div>
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Prix des concurrents</div>
-          <div className={bigValue}>{euro(decision?.advisorPrice ?? null)}</div>
         </div>
       </div>
 
@@ -128,8 +129,8 @@ export function LivePageConclusion({
       </div>
 
       <p className="max-w-3xl text-base text-zinc-600 stage:text-white/70">
-        Le marché calculé montre à quels biens votre logement sera comparé. L’analyse du conseiller
-        détermine le positionnement professionnel proposé.
+        Le prix des concurrents montre à quels biens votre logement sera comparé. L’analyse du
+        conseiller détermine le positionnement professionnel proposé.
       </p>
 
       {/* Mission 53 §1 — la seule question qui vient après l'analyse. Repères au-dessus (déjà
