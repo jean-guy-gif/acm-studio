@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { loginErrorCode } from '@/lib/auth/auth-messages';
 import { createClient } from '@/lib/supabase/server';
 
 export async function login(formData: FormData): Promise<void> {
@@ -14,7 +15,8 @@ export async function login(formData: FormData): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    // Mission 88 — un CODE dans l'adresse, jamais le message brut (en anglais) de Supabase.
+    redirect(`/login?error=${loginErrorCode(error)}`);
   }
 
   revalidatePath('/', 'layout');

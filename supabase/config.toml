@@ -244,6 +244,12 @@ otp_expiry = 3600
 subject = "Vous êtes invité·e sur ACM Studio"
 content_path = "./supabase/templates/invite.html"
 
+# Mission 88 — « Mot de passe oublié ? » : même lien par /auth/confirm que l'invitation, en
+# français. En ligne, ce modèle se colle à la main (Authentication → Emails → Reset password).
+[auth.email.template.recovery]
+subject = "Votre nouveau mot de passe ACM Studio"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

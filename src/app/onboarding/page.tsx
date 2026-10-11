@@ -15,6 +15,7 @@ import {
   pageSubtitle,
 } from '@/components/ui/styles';
 import { getProfile } from '@/lib/auth/get-profile';
+import { hasPendingInvitation } from '@/lib/onboarding/bootstrap-agency-owner';
 
 import { bootstrapAgencyOwner } from './actions';
 
@@ -26,6 +27,10 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
   const profile = await getProfile();
   if (profile) {
     redirect('/builder');
+  }
+  // Mission 88 — un invité ne se perd pas dans une agence fantôme : son agence l'attend.
+  if (await hasPendingInvitation()) {
+    redirect('/accept-invitation?invite=1');
   }
 
   const [{ error }, cookieStore] = await Promise.all([searchParams, cookies()]);

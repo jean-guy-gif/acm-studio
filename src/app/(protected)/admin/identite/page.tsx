@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { BrandingForm } from '@/features/branding/components/branding-form';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { isManagerRole } from '@/features/team/services/role';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -37,6 +38,8 @@ export default async function AgencyIdentityPage() {
         initialProfessionalCard={branding?.professionalCard ?? ''}
         initialDocumentName={branding?.documentName ?? ''}
         agencyName={agency?.name ?? ''}
+        // Mission 88 — un conseiller (ou un membre retiré) voit l'identité, sans la modifier.
+        readOnly={!profile || Boolean(profile.removed_at) || !isManagerRole(profile.role)}
       />
     </div>
   );

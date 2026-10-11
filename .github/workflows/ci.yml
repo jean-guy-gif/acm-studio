@@ -26,3 +26,23 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+
+  # Mission 88 — les règles d'accès de la base se prouvent dans la base : une base Supabase
+  # locale, jetable, reconstruite à partir des migrations du dépôt (aucune base partagée, aucune
+  # clé). Le test joue le navigateur d'un conseiller, d'un manager, d'un membre retiré et d'un
+  # invité, et échoue à la première porte restée ouverte.
+  sql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.101.0
+
+      - run: supabase db start
+
+      - name: Portes fermées (profils, agence, invitations)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/closed_doors.sql

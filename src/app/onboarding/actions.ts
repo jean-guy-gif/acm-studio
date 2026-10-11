@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { bootstrapAgencyOwner as runBootstrap } from '@/lib/onboarding/bootstrap-agency-owner';
+import {
+  PendingInvitationError,
+  bootstrapAgencyOwner as runBootstrap,
+} from '@/lib/onboarding/bootstrap-agency-owner';
 
 export async function bootstrapAgencyOwner(formData: FormData): Promise<void> {
   const agencyName = String(formData.get('agencyName') ?? '').trim();
@@ -17,7 +20,12 @@ export async function bootstrapAgencyOwner(formData: FormData): Promise<void> {
 
   try {
     await runBootstrap({ agencyName, firstName, lastName });
-  } catch {
+  } catch (error) {
+    // Mission 88 — une invitation attend cette adresse : on finalise l'inscription, on ne
+    // crée pas d'agence.
+    if (error instanceof PendingInvitationError) {
+      redirect('/accept-invitation?invite=1');
+    }
     redirect(`/onboarding?error=${encodeURIComponent("La création de l'agence a échoué.")}`);
   }
 

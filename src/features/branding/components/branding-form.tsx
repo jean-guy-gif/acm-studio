@@ -7,6 +7,7 @@ import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 
 import { btnPrimary, card, errorText, fieldLabel, metaLabel, okText } from '@/components/ui/styles';
 import { saveBranding } from '@/features/branding/actions/save-branding';
+import { IDENTITY_MANAGER_ONLY_MESSAGE } from '@/features/branding/constants';
 import { EMBEDDED_FONTS, embeddedFontCssVar } from '@/features/branding/fonts/font-registry';
 import { DOCUMENT_NAME_MAX_LENGTH } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
@@ -37,6 +38,7 @@ export function BrandingForm({
   initialProfessionalCard,
   initialDocumentName,
   agencyName,
+  readOnly = false,
 }: {
   initialPrimary: string;
   initialLogoLightUrl: string | null;
@@ -48,6 +50,8 @@ export function BrandingForm({
   // Mission 87 — le nom imprimé sur les documents ; vide, c'est le nom de l'agence.
   initialDocumentName: string;
   agencyName: string;
+  // Mission 88 — lecture seule pour qui n'est pas manager : tout se voit, rien ne se modifie.
+  readOnly?: boolean;
 }) {
   const [primary, setPrimary] = useState(initialPrimary);
   const [light, setLight] = useLogo(initialLogoLightUrl);
@@ -82,6 +86,9 @@ export function BrandingForm({
       className="flex flex-col gap-6"
       onSubmit={(event) => {
         event.preventDefault();
+        if (readOnly) {
+          return;
+        }
         const formData = new FormData(event.currentTarget);
         setState(null);
         startTransition(async () => {
@@ -94,231 +101,247 @@ export function BrandingForm({
         });
       }}
     >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Colonne saisie */}
-        <div className="flex flex-col gap-5">
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Couleur de marque</span>
-            <span className="flex items-center gap-3">
-              <input
-                type="color"
-                name="primary_color"
-                value={isValidHex(primary) ? primary : '#3ea9ff'}
-                onChange={(e) => setPrimary(e.target.value.toLowerCase())}
-                className="h-11 w-16 cursor-pointer rounded-lg border border-zinc-300"
-              />
-              <span className="font-title text-lg font-semibold text-zinc-800 stage:text-white">
-                {primary}
+      {readOnly ? (
+        <p
+          role="status"
+          data-testid="identity-read-only"
+          className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-700"
+        >
+          {IDENTITY_MANAGER_ONLY_MESSAGE}
+        </p>
+      ) : null}
+      {/* Un <fieldset disabled> éteint d'un coup tous les champs qu'il contient. */}
+      <fieldset disabled={readOnly} className="contents">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Colonne saisie */}
+          <div className="flex flex-col gap-5">
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Couleur de marque</span>
+              <span className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="primary_color"
+                  value={isValidHex(primary) ? primary : '#3ea9ff'}
+                  onChange={(e) => setPrimary(e.target.value.toLowerCase())}
+                  className="h-11 w-16 cursor-pointer rounded-lg border border-zinc-300"
+                />
+                <span className="font-title text-lg font-semibold text-zinc-800 stage:text-white">
+                  {primary}
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
 
-          {palette?.textContrastAdjusted ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Votre couleur serait illisible en texte : elle a été assombrie pour le texte, et reste
-              exacte pour les aplats et les accents.
-            </p>
-          ) : null}
+            {palette?.textContrastAdjusted ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Votre couleur serait illisible en texte : elle a été assombrie pour le texte, et
+                reste exacte pour les aplats et les accents.
+              </p>
+            ) : null}
 
-          {/* Mission 57 — la police de marque : une liste courte, chaque nom rendu dans sa
+            {/* Mission 57 — la police de marque : une liste courte, chaque nom rendu dans sa
               propre fonte. « Par défaut » = la typo produit. Le choix (name="font_family")
               part au serveur, qui n'accepte qu'une clé embarquée. */}
-          <fieldset className="flex flex-col gap-2">
-            <span className={fieldLabel}>Police de marque</span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <label
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm ${
-                  font === '' ? 'border-brand bg-brand-soft' : 'border-zinc-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="font_family"
-                  value=""
-                  checked={font === ''}
-                  onChange={() => setFont('')}
-                />
-                <span className="text-zinc-800">Par défaut</span>
-              </label>
-              {EMBEDDED_FONTS.map((embedded) => (
+            <fieldset className="flex flex-col gap-2">
+              <span className={fieldLabel}>Police de marque</span>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label
-                  key={embedded.key}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 ${
-                    font === embedded.key ? 'border-brand bg-brand-soft' : 'border-zinc-300'
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm ${
+                    font === '' ? 'border-brand bg-brand-soft' : 'border-zinc-300'
                   }`}
                 >
                   <input
                     type="radio"
                     name="font_family"
-                    value={embedded.key}
-                    checked={font === embedded.key}
-                    onChange={() => setFont(embedded.key)}
+                    value=""
+                    checked={font === ''}
+                    onChange={() => setFont('')}
                   />
-                  <span
-                    className="text-base text-zinc-800"
-                    style={{ fontFamily: `var(${embedded.cssVar})` }}
-                  >
-                    {embedded.label}
-                  </span>
+                  <span className="text-zinc-800">Par défaut</span>
                 </label>
-              ))}
-            </div>
-          </fieldset>
+                {EMBEDDED_FONTS.map((embedded) => (
+                  <label
+                    key={embedded.key}
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 ${
+                      font === embedded.key ? 'border-brand bg-brand-soft' : 'border-zinc-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="font_family"
+                      value={embedded.key}
+                      checked={font === embedded.key}
+                      onChange={() => setFont(embedded.key)}
+                    />
+                    <span
+                      className="text-base text-zinc-800"
+                      style={{ fontFamily: `var(${embedded.cssVar})` }}
+                    >
+                      {embedded.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          {/* L'adresse du site : conservée, jamais ouverte (option B). Elle ouvre la porte à
+            {/* L'adresse du site : conservée, jamais ouverte (option B). Elle ouvre la porte à
               une extraction plus tard, pas maintenant. */}
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Adresse de votre site (facultatif)</span>
-            <input
-              type="url"
-              name="site_url"
-              defaultValue={initialSiteUrl}
-              placeholder="https://votre-agence.fr"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <span className="text-xs text-zinc-500">
-              Conservée pour plus tard — nous ne l’ouvrons pas. Votre police se choisit ci-dessus.
-            </span>
-          </label>
-
-          {/* Mission 84 — les mentions de l'agence en pied des dossiers de prospection.
-              Facultatives : absentes, elles sont omises du document. */}
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Adresse postale de l’agence (facultatif)</span>
-            <input
-              type="text"
-              name="postal_address"
-              maxLength={200}
-              defaultValue={initialPostalAddress}
-              placeholder="1 rue Exemple, 06800 Cagnes-sur-Mer"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Carte professionnelle (facultatif)</span>
-            <input
-              type="text"
-              name="professional_card"
-              maxLength={80}
-              defaultValue={initialProfessionalCard}
-              placeholder="CPI 0000 0000 000 000 000"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <span className="text-xs text-zinc-500">
-              Imprimées en pied des dossiers de prospection.
-            </span>
-          </label>
-
-          {/* Mission 87 — un nom d'agence long ne tient pas sur un document : celui-ci le
-              remplace en tête, en pied et sur la carte de contact des dossiers. */}
-          <label className="flex flex-col gap-2">
-            <span className="flex items-baseline justify-between gap-3">
-              <span className={fieldLabel}>Nom sur les documents (facultatif)</span>
-              <span className="text-xs text-zinc-500 tabular-nums" aria-live="polite">
-                {documentName.length} / {DOCUMENT_NAME_MAX_LENGTH}
-              </span>
-            </span>
-            <input
-              type="text"
-              name="document_name"
-              maxLength={DOCUMENT_NAME_MAX_LENGTH}
-              value={documentName}
-              onChange={(event) => setDocumentName(event.target.value)}
-              placeholder={agencyName}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <span className="text-xs text-zinc-500">
-              Vide, c’est le nom de l’agence{agencyName ? ` (« ${agencyName} »)` : ''} qui
-              s’imprime.
-            </span>
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Logo — fond clair (écrans de travail)</span>
-            <input
-              type="file"
-              name="logo_light"
-              accept="image/svg+xml,image/png,image/webp,image/jpeg"
-              onChange={(e) => setLight(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
-            {light.isJpeg ? (
-              <span className="text-xs text-amber-700">
-                JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
-                transparent.
-              </span>
-            ) : null}
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Logo — fond sombre (le Live)</span>
-            <input
-              type="file"
-              name="logo_dark"
-              accept="image/svg+xml,image/png,image/webp,image/jpeg"
-              onChange={(e) => setDark(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
-            {dark.isJpeg ? (
-              <span className="text-xs text-amber-700">
-                JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
-                transparent.
-              </span>
-            ) : null}
-          </label>
-        </div>
-
-        {/* Colonne aperçu — le Live tel que le vendeur le verra */}
-        <div className="flex flex-col gap-3">
-          <span className={metaLabel}>Aperçu — le Live tel que votre vendeur le verra</span>
-          <div
-            style={previewStyle}
-            className="flex flex-col gap-5 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-6 text-white"
-          >
-            {dark.url ? (
-              <img
-                src={dark.url}
-                alt="Logo agence"
-                className="h-9 w-auto self-start object-contain"
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Adresse de votre site (facultatif)</span>
+              <input
+                type="url"
+                name="site_url"
+                defaultValue={initialSiteUrl}
+                placeholder="https://votre-agence.fr"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
-            ) : (
-              <span className="font-title text-lg font-semibold">Votre logo ici</span>
-            )}
-            <p className="font-title text-2xl font-bold">Rendez-vous vendeur</p>
-            <button
-              type="button"
-              className="w-fit rounded-md px-5 py-2.5 font-medium"
-              style={{ backgroundColor: 'var(--color-brand)', color: 'var(--color-on-brand)' }}
-            >
-              Commencer
-            </button>
-            {/* Preuve : les couleurs sémantiques de la grille ne bougent pas. */}
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-md bg-emerald-400/15 px-2 py-1 text-emerald-300">
-                Avantage concurrent
+              <span className="text-xs text-zinc-500">
+                Conservée pour plus tard — nous ne l’ouvrons pas. Votre police se choisit ci-dessus.
               </span>
-              <span className="rounded-md bg-amber-400/15 px-2 py-1 text-amber-300">Faiblesse</span>
-              <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">Équivalent</span>
+            </label>
+
+            {/* Mission 84 — les mentions de l'agence en pied des dossiers de prospection.
+              Facultatives : absentes, elles sont omises du document. */}
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Adresse postale de l’agence (facultatif)</span>
+              <input
+                type="text"
+                name="postal_address"
+                maxLength={200}
+                defaultValue={initialPostalAddress}
+                placeholder="1 rue Exemple, 06800 Cagnes-sur-Mer"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Carte professionnelle (facultatif)</span>
+              <input
+                type="text"
+                name="professional_card"
+                maxLength={80}
+                defaultValue={initialProfessionalCard}
+                placeholder="CPI 0000 0000 000 000 000"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-zinc-500">
+                Imprimées en pied des dossiers de prospection.
+              </span>
+            </label>
+
+            {/* Mission 87 — un nom d'agence long ne tient pas sur un document : celui-ci le
+              remplace en tête, en pied et sur la carte de contact des dossiers. */}
+            <label className="flex flex-col gap-2">
+              <span className="flex items-baseline justify-between gap-3">
+                <span className={fieldLabel}>Nom sur les documents (facultatif)</span>
+                <span className="text-xs text-zinc-500 tabular-nums" aria-live="polite">
+                  {documentName.length} / {DOCUMENT_NAME_MAX_LENGTH}
+                </span>
+              </span>
+              <input
+                type="text"
+                name="document_name"
+                maxLength={DOCUMENT_NAME_MAX_LENGTH}
+                value={documentName}
+                onChange={(event) => setDocumentName(event.target.value)}
+                placeholder={agencyName}
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-zinc-500">
+                Vide, c’est le nom de l’agence{agencyName ? ` (« ${agencyName} »)` : ''} qui
+                s’imprime.
+              </span>
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Logo — fond clair (écrans de travail)</span>
+              <input
+                type="file"
+                name="logo_light"
+                accept="image/svg+xml,image/png,image/webp,image/jpeg"
+                onChange={(e) => setLight(e.target.files?.[0] ?? null)}
+                className="text-sm"
+              />
+              {light.isJpeg ? (
+                <span className="text-xs text-amber-700">
+                  JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
+                  transparent.
+                </span>
+              ) : null}
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Logo — fond sombre (le Live)</span>
+              <input
+                type="file"
+                name="logo_dark"
+                accept="image/svg+xml,image/png,image/webp,image/jpeg"
+                onChange={(e) => setDark(e.target.files?.[0] ?? null)}
+                className="text-sm"
+              />
+              {dark.isJpeg ? (
+                <span className="text-xs text-amber-700">
+                  JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
+                  transparent.
+                </span>
+              ) : null}
+            </label>
+          </div>
+
+          {/* Colonne aperçu — le Live tel que le vendeur le verra */}
+          <div className="flex flex-col gap-3">
+            <span className={metaLabel}>Aperçu — le Live tel que votre vendeur le verra</span>
+            <div
+              style={previewStyle}
+              className="flex flex-col gap-5 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-6 text-white"
+            >
+              {dark.url ? (
+                <img
+                  src={dark.url}
+                  alt="Logo agence"
+                  className="h-9 w-auto self-start object-contain"
+                />
+              ) : (
+                <span className="font-title text-lg font-semibold">Votre logo ici</span>
+              )}
+              <p className="font-title text-2xl font-bold">Rendez-vous vendeur</p>
+              <button
+                type="button"
+                className="w-fit rounded-md px-5 py-2.5 font-medium"
+                style={{ backgroundColor: 'var(--color-brand)', color: 'var(--color-on-brand)' }}
+              >
+                Commencer
+              </button>
+              {/* Preuve : les couleurs sémantiques de la grille ne bougent pas. */}
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-md bg-emerald-400/15 px-2 py-1 text-emerald-300">
+                  Avantage concurrent
+                </span>
+                <span className="rounded-md bg-amber-400/15 px-2 py-1 text-amber-300">
+                  Faiblesse
+                </span>
+                <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">Équivalent</span>
+              </div>
+            </div>
+
+            {/* Le logo sur fond clair aussi (écrans de travail). */}
+            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4">
+              {light.url ? (
+                <img src={light.url} alt="Logo agence" className="h-8 w-auto object-contain" />
+              ) : (
+                <span className="text-sm text-zinc-400">Logo (fond clair)</span>
+              )}
             </div>
           </div>
-
-          {/* Le logo sur fond clair aussi (écrans de travail). */}
-          <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4">
-            {light.url ? (
-              <img src={light.url} alt="Logo agence" className="h-8 w-auto object-contain" />
-            ) : (
-              <span className="text-sm text-zinc-400">Logo (fond clair)</span>
-            )}
-          </div>
         </div>
-      </div>
+      </fieldset>
 
-      <div className={`${card} flex flex-wrap items-center gap-3 p-4`}>
-        <button type="submit" className={btnPrimary} disabled={pending || !isValidHex(primary)}>
-          {pending ? 'Validation…' : 'Valider la charte'}
-        </button>
-        {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
-      </div>
+      {readOnly ? null : (
+        <div className={`${card} flex flex-wrap items-center gap-3 p-4`}>
+          <button type="submit" className={btnPrimary} disabled={pending || !isValidHex(primary)}>
+            {pending ? 'Validation…' : 'Valider la charte'}
+          </button>
+          {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
+        </div>
+      )}
     </form>
   );
 }
