@@ -4,6 +4,8 @@ import { readDecisionForm } from '@/features/meeting-conclusion/schemas/conclusi
 import {
   MANDATE_TYPE_REQUIRED_MESSAGE,
   OUTCOME_REQUIRED_MESSAGE,
+  MOTIVE_DETAIL_REQUIRED_MESSAGE,
+  MOTIVE_REQUIRED_MESSAGE,
   PRICE_REQUIRED_MESSAGE,
   checkDecision,
 } from '@/features/meeting-conclusion/services/conclusion-requirements';
@@ -46,7 +48,14 @@ describe('« Mandat signé » exige exclusif ou simple (mission 90)', () => {
       });
       expect(result).toEqual({
         ok: true,
-        value: { outcome: 'signed', reason: null, mandateType: type, price: 315000 },
+        value: {
+          outcome: 'signed',
+          reason: null,
+          motive: null,
+          motiveDetail: null,
+          mandateType: type,
+          price: 315000,
+        },
       });
     }
   });
@@ -75,7 +84,14 @@ describe('« Mandat signé » exige un prix quand il manque', () => {
       ),
     ).toEqual({
       ok: true,
-      value: { outcome: 'signed', reason: null, mandateType: 'simple', price: null },
+      value: {
+        outcome: 'signed',
+        reason: null,
+        motive: null,
+        motiveDetail: null,
+        mandateType: 'simple',
+        price: null,
+      },
     });
   });
 
@@ -97,12 +113,29 @@ describe('« Mandat signé » exige un prix quand il manque', () => {
 });
 
 describe('les trois autres issues', () => {
-  it('« À relancer » : prix facultatif, motif gardé', () => {
-    expect(decide({ outcome: 'follow_up', follow_up_reason: ' le délai ' })).toEqual({
+  it('« À relancer » : prix facultatif, note gardée', () => {
+    expect(
+      decide({
+        outcome: 'follow_up',
+        follow_up_motive: 'thinking_price',
+        follow_up_reason: ' le délai ',
+      }),
+    ).toEqual({
       ok: true,
-      value: { outcome: 'follow_up', reason: 'le délai', mandateType: null, price: null },
+      value: {
+        outcome: 'follow_up',
+        reason: 'le délai',
+        motive: 'thinking_price',
+        motiveDetail: null,
+        mandateType: null,
+        price: null,
+      },
     });
-    const withPrice = decide({ outcome: 'follow_up', commercialization_price: '300000' });
+    const withPrice = decide({
+      outcome: 'follow_up',
+      follow_up_motive: 'thinking_price',
+      commercialization_price: '300000',
+    });
     expect(withPrice.ok && withPrice.value.price).toBe(300000);
   });
 
@@ -110,7 +143,14 @@ describe('les trois autres issues', () => {
     for (const outcome of ['sold_elsewhere', 'withdrawn']) {
       expect(decide({ outcome, follow_up_reason: 'chez un confrère' })).toEqual({
         ok: true,
-        value: { outcome, reason: 'chez un confrère', mandateType: null, price: null },
+        value: {
+          outcome,
+          reason: 'chez un confrère',
+          motive: null,
+          motiveDetail: null,
+          mandateType: null,
+          price: null,
+        },
       });
       expect(decide({ outcome }).ok).toBe(true);
     }
@@ -129,6 +169,73 @@ describe('les trois autres issues', () => {
       follow_up_reason: 'reste d’un ancien « à relancer »',
     });
     expect(result.ok && result.value.reason).toBeNull();
+  });
+});
+
+describe('« À relancer » exige un motif de relance (mission 96)', () => {
+  it('refusé sans motif, même avec une note libre', () => {
+    expect(decide({ outcome: 'follow_up' })).toEqual({ ok: false, error: MOTIVE_REQUIRED_MESSAGE });
+    expect(decide({ outcome: 'follow_up', follow_up_reason: 'réfléchit' })).toEqual({
+      ok: false,
+      error: MOTIVE_REQUIRED_MESSAGE,
+    });
+    expect(decide({ outcome: 'follow_up', follow_up_motive: '' })).toEqual({
+      ok: false,
+      error: MOTIVE_REQUIRED_MESSAGE,
+    });
+  });
+
+  it('un motif hors liste est refusé à la lecture du formulaire', () => {
+    expect(decide({ outcome: 'follow_up', follow_up_motive: 'hésite' }).ok).toBe(false);
+  });
+
+  it('accepté avec chacun des cinq motifs de la liste', () => {
+    for (const motive of [
+      'price_accepted',
+      'thinking_price',
+      'consulting_relative',
+      'awaiting_estimate',
+      'undated_project',
+    ]) {
+      const result = decide({ outcome: 'follow_up', follow_up_motive: motive });
+      expect(result.ok && result.value.motive).toBe(motive);
+    }
+  });
+
+  it('« Autre » se précise d’une ligne', () => {
+    expect(decide({ outcome: 'follow_up', follow_up_motive: 'other' })).toEqual({
+      ok: false,
+      error: MOTIVE_DETAIL_REQUIRED_MESSAGE,
+    });
+    expect(
+      decide({ outcome: 'follow_up', follow_up_motive: 'other', follow_up_motive_detail: '   ' }),
+    ).toEqual({ ok: false, error: MOTIVE_DETAIL_REQUIRED_MESSAGE });
+    const result = decide({
+      outcome: 'follow_up',
+      follow_up_motive: 'other',
+      follow_up_motive_detail: ' attend\nla succession ',
+    });
+    expect(result.ok && result.value.motiveDetail).toBe('attend la succession');
+  });
+
+  it('la précision ne suit qu’« Autre », et le motif ne suit que « à relancer »', () => {
+    const listed = decide({
+      outcome: 'follow_up',
+      follow_up_motive: 'thinking_price',
+      follow_up_motive_detail: 'reste d’un ancien « Autre »',
+    });
+    expect(listed.ok && listed.value.motiveDetail).toBeNull();
+    for (const outcome of ['sold_elsewhere', 'withdrawn']) {
+      const result = decide({ outcome, follow_up_motive: 'thinking_price' });
+      expect(result.ok && result.value.motive).toBeNull();
+    }
+    const signed = decide({
+      outcome: 'signed',
+      mandate_type: 'simple',
+      commercialization_price: '1',
+      follow_up_motive: 'thinking_price',
+    });
+    expect(signed.ok && signed.value.motive).toBeNull();
   });
 });
 

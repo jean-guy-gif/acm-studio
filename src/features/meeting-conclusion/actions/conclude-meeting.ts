@@ -86,6 +86,8 @@ export async function concludeMeeting(
     // Un prix saisi ici remplace celui du Live ; null = la fonction garde l'existant.
     p_price: decision.value.price as number,
     p_mandate_type: decision.value.mandateType as string,
+    p_follow_up_motive: decision.value.motive as string,
+    p_follow_up_motive_detail: decision.value.motiveDetail as string,
     p_market_computed: amounts.marketComputed as number,
     p_advisor_analysis: amounts.advisorAnalysis as number,
     p_advisor_price: amounts.advisorPrice as number,

@@ -1,5 +1,9 @@
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
-import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import {
+  isFollowUpMotive,
+  type ConclusionOutcome,
+  type FollowUpMotive,
+} from '@/features/meeting-conclusion/types';
 
 // Mission 86 — le Suivi se lit en TROIS groupes : mandats signés, à relancer, et « vendus
 // ailleurs · retirés » réunis (pour le conseiller, c'est le même geste : plus rien à faire
@@ -108,22 +112,65 @@ const concludedTime = (dossier: SuiviDossier): number => {
   return Number.isNaN(time) ? 0 : time;
 };
 
-// Mission 90 — les vendeurs « à relancer » se lisent du plus ANCIEN au plus récent : celui qui
-// attend depuis le plus longtemps d'abord. Les autres dossiers gardent leur ordre et leur place ;
-// seuls les « à relancer » sont réordonnés entre eux.
-export function sortSuivi(dossiers: SuiviDossier[]): SuiviDossier[] {
+// Mission 96 — les vendeurs « à relancer » se lisent du plus ANCIEN contact au plus récent :
+// celui qu'on n'a pas contacté depuis le plus longtemps d'abord. Le dernier contact est la
+// relance la plus récente, sinon la conclusion du rendez-vous (seule connue avant la mission).
+// Les autres dossiers gardent leur ordre et leur place ; seuls les « à relancer » sont
+// réordonnés entre eux (remplace M90, « du plus ancien rendez-vous au plus récent »).
+export function sortSuivi(
+  dossiers: SuiviDossier[],
+  lastContactByProject: ReadonlyMap<string, string | null> = new Map(),
+): SuiviDossier[] {
+  const contactTime = (dossier: SuiviDossier): number => {
+    const last = lastContactByProject.get(dossier.project.id);
+    const time = last ? new Date(last).getTime() : Number.NaN;
+    return Number.isNaN(time) ? concludedTime(dossier) : time;
+  };
   const followUps = dossiers
     .filter((dossier) => dossier.conclusion?.outcome === 'follow_up')
-    .sort((a, b) => concludedTime(a) - concludedTime(b));
+    .sort((a, b) => contactTime(a) - contactTime(b));
   let next = 0;
   return dossiers.map((dossier) =>
     dossier.conclusion?.outcome === 'follow_up' ? followUps[next++] : dossier,
   );
 }
 
+// Mission 96 — le filtre par motif de relance. Il ne porte que sur les « à relancer » : un motif
+// choisi ne montre qu'eux, et l'écran le dit (pastille active). `null` = pas de filtre.
+export function parseFollowUpMotive(raw: string | undefined): FollowUpMotive | null {
+  return isFollowUpMotive(raw) ? raw : null;
+}
+
+export function filterSuiviByMotive(
+  dossiers: SuiviDossier[],
+  motive: FollowUpMotive | null,
+): SuiviDossier[] {
+  if (motive == null) {
+    return dossiers;
+  }
+  return dossiers.filter(
+    (dossier) =>
+      dossier.conclusion?.outcome === 'follow_up' && dossier.conclusion.followUpMotive === motive,
+  );
+}
+
+// Les motifs réellement portés par des dossiers « à relancer », avec leur nombre : seuls
+// ceux-là sont proposés au filtre.
+export function followUpMotiveCounts(dossiers: SuiviDossier[]): Map<FollowUpMotive, number> {
+  const counts = new Map<FollowUpMotive, number>();
+  for (const dossier of dossiers) {
+    const motive =
+      dossier.conclusion?.outcome === 'follow_up' ? dossier.conclusion.followUpMotive : null;
+    if (motive != null) {
+      counts.set(motive, (counts.get(motive) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// « conclu il y a N jours » : le nombre de jours pleins écoulés ; null sans date lisible.
+// Le nombre de jours pleins écoulés depuis une date ; null sans date lisible.
 export function daysSince(iso: string | null | undefined, now: Date): number | null {
   if (!iso) {
     return null;
@@ -133,11 +180,4 @@ export function daysSince(iso: string | null | undefined, now: Date): number | n
     return null;
   }
   return Math.max(0, Math.floor((now.getTime() - time) / DAY_MS));
-}
-
-export function concludedAgoLabel(days: number): string {
-  if (days === 0) {
-    return 'conclu aujourd’hui';
-  }
-  return `conclu il y a ${days} jour${days > 1 ? 's' : ''}`;
 }

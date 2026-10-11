@@ -41,6 +41,8 @@ function dossier(id: string, o: DossierInput): SuiviDossier {
       launchReadinessMissing: null,
       outcome: o.outcome,
       followUpReason: null,
+      followUpMotive: null,
+      followUpMotiveDetail: null,
       mandateType: null,
       signedAt: null,
       concludedAt: null,

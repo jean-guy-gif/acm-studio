@@ -5,7 +5,11 @@ import { useState, useTransition } from 'react';
 import { btnSecondary, errorText, link } from '@/components/ui/styles';
 import { changeMeetingOutcome } from '@/features/meeting-conclusion/actions/change-meeting-outcome';
 import { OutcomeChoice } from '@/features/meeting-conclusion/components/outcome-choice';
-import type { ConclusionOutcome, MandateType } from '@/features/meeting-conclusion/types';
+import type {
+  ConclusionOutcome,
+  FollowUpMotive,
+  MandateType,
+} from '@/features/meeting-conclusion/types';
 
 // Mission 54 §1 — changer l'issue depuis le Suivi, l'acte NORMAL du suivi. Replié par
 // défaut (« Changer l'issue ») ; ouvert, il propose les quatre issues + motif. Le
@@ -15,6 +19,8 @@ export function SuiviIssueForm({
   currentOutcome,
   currentReason,
   currentMandateType = null,
+  currentMotive = null,
+  currentMotiveDetail = null,
   knownPrice = null,
   openLabel = 'Changer l’issue',
 }: {
@@ -24,6 +30,9 @@ export function SuiviIssueForm({
   // Mission 90 — le type et le prix déjà enregistrés ; et le libellé du bouton (« Compléter »
   // pour un mandat signé sans type).
   currentMandateType?: MandateType | null;
+  // Mission 96 — le motif de relance déjà enregistré.
+  currentMotive?: FollowUpMotive | null;
+  currentMotiveDetail?: string | null;
   knownPrice?: number | null;
   openLabel?: string;
 }) {
@@ -62,6 +71,8 @@ export function SuiviIssueForm({
         onOutcomeChange={setOutcome}
         initialReason={currentReason}
         initialMandateType={currentMandateType}
+        initialMotive={currentMotive}
+        initialMotiveDetail={currentMotiveDetail}
         knownPrice={knownPrice}
         legend="Nouvelle issue"
       />

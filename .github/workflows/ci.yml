@@ -73,3 +73,9 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/live_rhythm_and_duration.sql
+
+      # Mission 96 — les relances : une agence ne lit pas celles d'une autre ; le prix révélé se fige.
+      - name: Relance (motif, historique cloisonné par agence, prix révélé figé)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/follow_up_that_pays.sql
