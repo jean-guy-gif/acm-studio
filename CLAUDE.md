@@ -111,14 +111,15 @@ Le parcours : **Préparation → Live → Suivi** — `draft` → `ready_for_mee
 - Le passage en `meeting_completed` et l'écriture de l'issue sont UNE SEULE transaction
   (fonction `conclude_meeting`) : un `meeting_completed` sans conclusion serait « en Suivi
   sans issue » — l'équivalent du dossier invisible.
-- Le runtime n'écrit que `draft` (en préparation), `ready_for_meeting` (prêt) et
-  `meeting_completed` (conclu). La readiness (bien vendeur, au moins 3 concurrents
+- Le runtime n'écrit que `draft` (en préparation), `ready_for_meeting` (prêt),
+  `meeting_completed` (conclu) et `archived` (« Supprimer », mission 93). La readiness (bien vendeur, au moins 3 concurrents
   exploitables et fourchette) DÉCLENCHE l'écriture de `ready_for_meeting`, sans la remplacer.
 - Une donnée retirée ensuite ne dé-prête RIEN : on n'écrit jamais `draft`
   automatiquement.
 - Un backfill ne falsifie JAMAIS un état terminal (`meeting_completed`, `archived`) :
   il ne les repousse pas vers `draft`/`ready_for_meeting`.
-- `archived` = soft delete : invisible par conception.
+- `archived` = soft delete : invisible par conception, dans les listes comme par son adresse.
+  L'effacement réel suit `docs/PROCEDURE_EFFACEMENT.md`.
 - Aucun dossier NON terminal ne doit devenir invisible. Si un jour `meeting_completed`
   ou `archived` sont réellement produits, c'est l'écran qui les montre quelque part —
   jamais le backfill qui les normalise.
