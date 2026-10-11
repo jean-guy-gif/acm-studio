@@ -37,7 +37,13 @@ const REVISED_PRICE = 325_000;
 const COMMERCIALIZATION_PRICE = 315_000;
 const COMMENT = 'Réponse saisie par le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
-const PROSPECTING_ADDRESS = '12 avenue du Test Automatique, 06600 Antibes';
+// Mission 98 — une adresse confirmée regroupe les concurrents qui la partagent, d'un dossier à
+// l'autre : chaque passage a donc SES adresses, sinon la carte hériterait du statut « remis »
+// laissé par le passage précédent.
+const RUN_NUMBER = (Date.now() % 90_000) + 1_000;
+const PROSPECTING_ADDRESS = `${RUN_NUMBER} avenue du Test Automatique, 06600 Antibes`;
+const OPPOSED_ADDRESS = `${RUN_NUMBER} rue du Refus Automatique, 06600 Antibes`;
+const TOUR_ADDRESS = `${RUN_NUMBER} boulevard de la Tournée, 06160 Juan-les-Pins`;
 
 test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   const dossierName = uniqueDossierName();
@@ -321,6 +327,58 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
         .getByTestId('prospecting-card')
         .filter({ hasText: PROSPECTING_ADDRESS }),
     ).toBeVisible();
+  });
+
+  // Mission 98 — « Ne plus solliciter » bloque l'adresse pour toute l'agence ; « Préparer tous
+  // les courriers » réunit les dossiers prêts d'un bien vendeur ; la tournée ne garde que les
+  // portes où sonner.
+  await test.step('Ne plus solliciter, courriers en une fois, tournée', async () => {
+    const toConfirm = page.getByTestId('prospecting-column-to_confirm');
+    const ready = page.getByTestId('prospecting-column-ready');
+    const confirmAddress = async (address: string) => {
+      const card = toConfirm.getByTestId('prospecting-card').first();
+      await card.getByRole('button', { name: 'Saisir l’adresse' }).click();
+      await card.getByLabel('Adresse du bien concurrent').fill(address);
+      await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
+      const moved = ready.getByTestId('prospecting-card').filter({ hasText: address });
+      await expect(moved, `« ${address} » n’est pas passée dans « Prêt à envoyer »`).toBeVisible();
+      return moved;
+    };
+
+    const refused = await confirmAddress(OPPOSED_ADDRESS);
+    await refused.getByRole('button', { name: 'Ne plus solliciter', exact: true }).click();
+    await refused.getByRole('button', { name: 'Confirmer : ne plus solliciter' }).click();
+    await expect(
+      ready.getByTestId('prospecting-card').filter({ hasText: OPPOSED_ADDRESS }),
+      'Une adresse « Ne plus solliciter » est restée dans le tableau',
+    ).toHaveCount(0);
+    await page.getByText(/^Ne plus solliciter \(\d+\)$/).click();
+    const opposed = page.getByTestId('prospecting-card').filter({ hasText: OPPOSED_ADDRESS });
+    await expect(opposed.getByText(/Ne plus solliciter \(demandé le \d{2}\/\d{2}\)/)).toBeVisible();
+    await expect(opposed.getByRole('link', { name: /Préparer le dossier/ })).toHaveCount(0);
+
+    // Un dossier prêt : le bouton apparaît, et ouvre un seul document pour ce bien vendeur.
+    await confirmAddress(TOUR_ADDRESS);
+    const letters = page.getByRole('link', { name: 'Préparer tous les courriers' });
+    await expect(letters).toHaveAttribute('href', `/prospection/courriers?bien=${projectId}`);
+    await page.goto(`/prospection/courriers?bien=${projectId}`);
+    await expect(page.getByRole('heading', { name: 'Courriers de prospection' })).toBeVisible();
+    // Le concurrent du test n'est ni en exclusivité ni chez un particulier : ACM ne sait pas à
+    // qui écrire. Il est listé en tête avec sa raison, et n'est pas imprimé.
+    await expect(page.getByText(TOUR_ADDRESS)).toBeVisible();
+    await expect(page.getByText(/À qui s’adresser \?/)).toBeVisible();
+    await expect(page.getByText(OPPOSED_ADDRESS)).toHaveCount(0);
+
+    // La tournée de ce bien : la porte encore à voir et le dossier remis, jamais l'adresse
+    // « Ne plus solliciter ».
+    await page.goto(`/prospection/tournee?bien=${projectId}`);
+    await expect(page.getByRole('heading', { name: 'Ma tournée de prospection' })).toBeVisible();
+    await expect(page.getByText(TOUR_ADDRESS)).toBeVisible();
+    await expect(page.getByText(PROSPECTING_ADDRESS)).toBeVisible();
+    await expect(page.getByText(OPPOSED_ADDRESS)).toHaveCount(0);
+    await expect(page.getByTestId('tour-commune').first()).toContainText('Antibes');
+
+    await page.goto(`/prospection?bien=${projectId}`);
   });
 
   await test.step('Suivi et Prospection tiennent sur tablette (768 × 1024)', async () => {

@@ -6,11 +6,22 @@ export type ProspectingSeller = {
   projectId: string;
   name: string;
   label: string | null;
+  // Mission 98 — le conseiller du dossier : la tournée s'ouvre sur « Mes dossiers ».
+  advisorId: string | null;
 };
 
 export type ProspectingEntry = {
   row: ProspectingRow;
   seller: ProspectingSeller;
+};
+
+// Mission 98 — une carte par BIEN. Le même bien retenu dans plusieurs mandats (même annonce, ou
+// même adresse confirmée) n'est démarché qu'une fois : `row` porte le statut commun à toutes
+// les copies, `sellers` tous les biens vendeurs concernés, `copies` les concurrents regroupés.
+// `seller` est celui de la copie de référence (`row.id`).
+export type ProspectingCard = ProspectingEntry & {
+  sellers: ProspectingSeller[];
+  copies: ProspectingEntry[];
 };
 
 // Le filtre « Confrères et propriétaires / Confrères / Propriétaires » de la page.

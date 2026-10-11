@@ -15,6 +15,11 @@ import {
   type ProspectingStep,
 } from '@/features/competitor-mandate/services/mandate-columns';
 import {
+  NO_OPPOSITIONS,
+  opposedOn,
+  type Oppositions,
+} from '@/features/prospecting/services/opposition';
+import {
   prospectingStatus,
   type ProspectingStatus,
 } from '@/features/prospecting/services/prospecting-status';
@@ -55,6 +60,12 @@ export type ProspectingRow = {
   onlineSince: string | null;
   priceDrop: string | null;
   listingUrl: string | null;
+  // Mission 98 — l'identité publiée de l'annonce (portail + numéro) : deux concurrents qui la
+  // partagent sont le même bien ; le numéro se lit sur la tournée, pour appeler le confrère.
+  listingKey: string | null;
+  listingNumber: string | null;
+  // Mission 98 — la date de la demande si l'adresse est sur la liste « Ne plus solliciter ».
+  opposedOn: string | null;
   // Mission 86 — ce que la carte de Prospection et le rapprochement acheteur lisent en plus :
   // le type et la commune de l'annonce, son portail, et où en est la prospection.
   propertyType: string | null;
@@ -133,6 +144,7 @@ export function buildProspectingRows(
   competitors: Comparable[],
   observations: ProspectingObservation[],
   now: Date = new Date(),
+  oppositions: Oppositions = NO_OPPOSITIONS,
 ): ProspectingRow[] {
   return competitors
     .filter((competitor) => competitor.is_selected)
@@ -177,6 +189,9 @@ export function buildProspectingRows(
         onlineSince: describeOnlineSince(age),
         priceDrop: describePriceDrop(competitor, own),
         listingUrl: clean(competitor.listing_url),
+        listingKey: identity ? `${identity.portal}:${identity.listingKey}` : null,
+        listingNumber: identity?.listingKey ?? null,
+        opposedOn: opposedOn(competitor.locator_address, oppositions),
         propertyType: clean(competitor.property_type),
         city: clean(competitor.city),
         portal: identity

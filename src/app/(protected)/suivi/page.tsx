@@ -55,7 +55,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const group = parseSuiviGroup(issue);
 
   const allDossiers = await getSuiviDossiers();
-  const { entries } = await getAgencyProspecting(allDossiers);
+  const { cards } = await getAgencyProspecting(allDossiers);
   // Mission 90 — les « à relancer » du plus ancien au plus récent.
   const dossiers = sortSuivi(filterSuiviByGroup(allDossiers, group));
   const exclusives = exclusiveSignedCount(allDossiers);
@@ -63,12 +63,19 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const counts = suiviCounts(allDossiers);
   const averageGap = averageJourneyGap(allDossiers);
 
+  // Mission 98 — le statut est celui de la carte (commun à toutes les copies d'un même bien) ;
+  // une adresse « Ne plus solliciter » n'est plus à prospecter.
   const statusesByProject = new Map<string, ProspectingStatus[]>();
-  for (const { row, seller } of entries) {
-    statusesByProject.set(seller.projectId, [
-      ...(statusesByProject.get(seller.projectId) ?? []),
-      row.status,
-    ]);
+  for (const card of cards) {
+    if (card.row.opposedOn != null) {
+      continue;
+    }
+    for (const seller of card.sellers) {
+      statusesByProject.set(seller.projectId, [
+        ...(statusesByProject.get(seller.projectId) ?? []),
+        card.row.status,
+      ]);
+    }
   }
 
   return (
@@ -126,7 +133,12 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
             ) : null}
           </div>
 
-          <BuyerSearchPanel dossiers={allDossiers} entries={entries} />
+          <BuyerSearchPanel
+            dossiers={allDossiers}
+            entries={cards
+              .filter((card) => card.row.opposedOn == null)
+              .map(({ row, seller }) => ({ row, seller }))}
+          />
 
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/suivi" className={group === null ? chipActive : chipIdle}>

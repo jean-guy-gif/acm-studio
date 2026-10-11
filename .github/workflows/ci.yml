@@ -62,3 +62,9 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/frozen_seller_answers.sql
+
+      # Mission 98 — la liste « Ne plus solliciter » : une agence ne lit pas celle d'une autre.
+      - name: Liste d'opposition (cloisonnement par agence, ajout seul)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/prospecting_oppositions.sql

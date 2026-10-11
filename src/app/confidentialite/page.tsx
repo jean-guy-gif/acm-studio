@@ -102,6 +102,15 @@ export default function ConfidentialitePage() {
               lui-même aucun courrier.
             </li>
             <li>
+              La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
+              contacté, le conseiller inscrit l’adresse du bien sur la liste d’opposition de son
+              agence. ACM Studio en conserve l’adresse, sous une forme simplifiée, et la date de la
+              demande — ni nom, ni autre donnée. Cette adresse ne reçoit plus de courrier et ne
+              figure plus dans les tournées, dans aucun dossier de l’agence, présent ou futur. Une
+              demande d’effacement y inscrit aussi l’adresse : c’est ce qui permet de ne plus la
+              solliciter.
+            </li>
+            <li>
               Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la
               conclusion notée par le conseiller.
             </li>

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 
 import { btnPrimary, btnSecondary, link } from '@/components/ui/styles';
 import { setProspectingStatus } from '@/features/prospecting/actions/set-prospecting-status';
+import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
 import type {
   ProspectingMove,
   ProspectingStatus,
@@ -24,23 +25,35 @@ const MOVES: Record<ProspectingStatus, { move: ProspectingMove; label: string }[
 };
 const CAN_UNDO: ProspectingStatus[] = ['handed', 'meeting', 'mandate', 'declined'];
 
+// Mission 98 — un confrère se contacte par téléphone, sans attendre l'adresse du bien :
+// « Marquer contacté » pose le même fait daté que « Marquer remis ».
+const CONTACTED = { move: 'handed', label: 'Marquer contacté' } as const;
+function movesFor(status: ProspectingStatus, step: ProspectingStep) {
+  if (step === 'colleague' && (status === 'to_confirm' || status === 'ready')) {
+    return [CONTACTED, DECLINE];
+  }
+  return MOVES[status];
+}
+
 // Mission 86 — faire avancer la prospection d'un concurrent depuis sa carte. Le serveur relit le
 // statut et refuse un saut de cran ; son message s'affiche ici.
 export function ProspectingStatusActions({
   projectId,
   competitorId,
   status,
+  step,
   primary = false,
 }: {
   projectId: string;
   competitorId: string;
   status: ProspectingStatus;
+  step: ProspectingStep;
   // Vrai quand ce geste est l'action principale de la carte (aucune autre avant lui).
   primary?: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const moves = MOVES[status];
+  const moves = movesFor(status, step);
   const canUndo = CAN_UNDO.includes(status);
   if (moves.length === 0 && !canUndo) {
     return null;

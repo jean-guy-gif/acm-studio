@@ -100,6 +100,11 @@ Ce qui part : **son adresse dans tous les dossiers**, les **dossiers de prospect
 son bien, et les **photos copiées** de son annonce. L'annonce publique elle-même (prix, surface,
 pièces) reste : elle sert au Live du vendeur, sans adresse.
 
+Ce qui **entre** : son adresse, sous sa forme normalisée, dans la liste « Ne plus solliciter » de
+chaque agence concernée (mission 98). C'est elle qui empêche qu'un conseiller le démarche de
+nouveau si la même annonce est retenue dans un futur dossier. La liste ne garde que cette clé
+d'adresse et la date de la demande — ni nom, ni lien vers un concurrent.
+
 ### 1. Retrouver son bien, dans tous les dossiers
 
 Par l'adresse et, si on l'a, par l'adresse de l'annonce :
@@ -138,7 +143,34 @@ supabase storage ls -r --experimental --linked "ss:///project-photos/:agence/:do
 Prédiction : `concurrents` inchangé ; `avec_adresse`, `dossiers_prospection` et `retenus` à 0 ;
 chaque dossier `prospecting/:concurrent/` vide.
 
-### 3. Effacer (après « ok effacement »)
+### 3. Inscrire l'adresse sur la liste « Ne plus solliciter » (après « ok effacement »)
+
+À faire **avant** d'effacer : après, l'adresse n'est plus en base. Pour chaque adresse distincte
+relevée au point 1 (`locator_address`, et `address` si elle diffère), calculer sa clé avec la
+normalisation de l'application — jamais à la main :
+
+```sh
+npm run cle-adresse -- "8 avenue du Docteur Hochet, 06160 Antibes"
+# → 8 avenue du docteur hochet 06160 antibes
+```
+
+Compter avant (`select count(*) from prospecting_oppositions where agency_id = ':agence';`), puis
+inscrire la clé pour chaque agence concernée. Une adresse déjà inscrite (par le bouton « Ne plus
+solliciter » d'une carte) ne l'est pas deux fois :
+
+```sql
+insert into prospecting_oppositions (agency_id, address_key, source)
+values (':agence', ':cle', 'erasure')
+on conflict (agency_id, address_key) do nothing;
+```
+
+Prédiction : le compte de l'agence monte de 1 par adresse nouvelle, de 0 pour une adresse déjà
+inscrite. Compter après.
+
+Si le concurrent n'a aucune adresse en base, il n'y a rien à inscrire : le dire à Laurent, qui
+prévient l'agence.
+
+### 4. Effacer
 
 ```sql
 begin;
@@ -163,18 +195,23 @@ Puis, pour chaque concurrent :
 supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
 ```
 
-### 4. Compter après
+### 5. Compter après
 
 Relancer la requête du point 2 et les `storage ls`. Vérifier aussi qu'il n'est plus sur la page
-Prospection de l'agence.
+Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositions`.
 
 ### Les limites, à dire à Laurent
 
 - Si un dossier où il figurait est déjà conclu, les réponses du vendeur à son sujet restent (elles
   ne portent ni son nom ni son adresse).
-- Rien n'empêche aujourd'hui un autre conseiller de retenir de nouveau la même annonce dans un
-  nouveau dossier : la liste d'opposition commune est prévue après la bêta. D'ici là, Laurent
-  prévient l'agence concernée.
+- Un autre conseiller de l'agence peut retenir de nouveau la même annonce dans un nouveau
+  dossier : dès que son adresse est connue, la carte porte « Ne plus solliciter (demandé le
+  JJ/MM) », le courrier au propriétaire est refusé et l'adresse sort de la tournée. La liste vaut
+  par agence : il n'existe pas de liste commune à toutes les agences.
+- La liste reconnaît une adresse écrite autrement (abréviations, accents, ponctuation), pas une
+  adresse différente : un numéro ou un étage en plus, et ce n'est plus la même clé.
+- Retirer une adresse de la liste (erreur de saisie) ne se fait pas depuis l'écran : c'est une
+  requête, sur demande de Laurent, avec comptage avant et après.
 - Un courrier déjà imprimé et remis ne peut pas être repris.
 - Les sauvegardes déjà faites contiennent encore l'adresse : les supprimer ou les refaire.
 

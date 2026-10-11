@@ -116,6 +116,8 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
     const { isPublicPath } = await import('@/lib/supabase/public-paths');
     expect(isPublicPath('/prospection')).toBe(false);
     expect(isPublicPath('/prospection/tournee')).toBe(false);
+    // Mission 98 — les courriers imprimés d'un bien vendeur portent les adresses des concurrents.
+    expect(isPublicPath('/prospection/courriers')).toBe(false);
 
     const APP = join(process.cwd(), 'src', 'app');
     const routes = (dir: string): string[] =>
@@ -129,6 +131,7 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
       join('(print)', 'builder', '[projectId]', 'prospection'),
       join('(print)', 'builder', '[projectId]', 'prospection', '[comparableId]'),
       join('(print)', 'prospection'),
+      join('(print)', 'prospection', 'courriers'),
       join('(print)', 'prospection', 'tournee'),
       join('(protected)', 'prospection'),
     ]);

@@ -7,6 +7,7 @@ import {
   type ProspectingObservation,
   type ProspectingRow,
 } from '@/features/competitor-locator/services/build-prospecting-rows';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -34,9 +35,9 @@ export async function getProspectingRows(projectId: string): Promise<Prospecting
     ),
   ];
 
+  const supabase = await createClient();
   let observations: ProspectingObservation[] = [];
   if (listingKeys.length > 0) {
-    const supabase = await createClient();
     const { data } = await supabase
       .from('listing_observations')
       .select('portal, listing_key, observed_on, price, published_bound_label')
@@ -51,5 +52,7 @@ export async function getProspectingRows(projectId: string): Promise<Prospecting
     }));
   }
 
-  return buildProspectingRows(competitors, observations);
+  // Mission 98 — une adresse de la liste « Ne plus solliciter » le dit sur chaque ligne.
+  const oppositions = await getOppositions(supabase, profile.agency_id);
+  return buildProspectingRows(competitors, observations, new Date(), oppositions);
 }
