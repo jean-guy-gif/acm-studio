@@ -296,7 +296,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       said.getByText(/Il a (sous-estimé|surestimé|donné le prix affiché de) \d+/).first(),
     ).toBeVisible();
     await expect(said.getByText(/Le concurrent le plus dangereux, selon lui/)).toBeVisible();
-    await expect(said.getByText(/Prêt à lancer : 7\/10 → 10\/10/)).toBeVisible();
+    await expect(said.getByText('Prêt à lancer : 7/10 → 10/10')).toBeVisible();
     await expect(said.getByText(/Durée du Live : \d+\smin/)).toBeVisible();
     // Les prix viennent d'être révélés et figés : aucune comparaison « à aujourd'hui ».
     await expect(said.getByText(/face aux prix affichés aujourd’hui/)).toHaveCount(0);
