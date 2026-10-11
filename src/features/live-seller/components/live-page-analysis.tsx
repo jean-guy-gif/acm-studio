@@ -50,7 +50,7 @@ export function LivePageAnalysis({ priceGaps }: { priceGaps: LivePriceGaps }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Valeur perçue par le vendeur</div>
+          <div className={statLabel}>Votre valeur perçue</div>
           <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
         <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>

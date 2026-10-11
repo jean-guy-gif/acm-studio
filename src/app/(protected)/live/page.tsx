@@ -2,7 +2,6 @@ import Link from 'next/link';
 
 import {
   badgeNeutral,
-  btnPrimary,
   card,
   emptyState,
   kickerLabel,
@@ -10,6 +9,8 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { getReadyProjects } from '@/features/projects/queries/get-ready-projects';
 import { statusLabel } from '@/features/projects/status-label';
 
@@ -17,6 +18,8 @@ import { statusLabel } from '@/features/projects/status-label';
 // MISSION 52 — que des dossiers PRÊTS (filtre sur status), jamais de brouillon.
 export default async function LivePage() {
   const projects = await getReadyProjects();
+  // Mission 89 — pour chaque dossier prêt : a-t-il des concurrents, et où en est son Live ?
+  const launchInfos = await Promise.all(projects.map((project) => getLiveLaunchInfo(project.id)));
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -45,7 +48,7 @@ export default async function LivePage() {
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <li
               key={project.id}
               className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand sm:flex-row sm:items-center sm:justify-between sm:p-5 stage:hover:border-brand`}
@@ -65,9 +68,11 @@ export default async function LivePage() {
                 <Link href={`/builder/${project.id}/presentation`} className={link}>
                   Vérifier la préparation
                 </Link>
-                <Link href={`/live/${project.id}`} className={btnPrimary}>
-                  Lancer le Live →
-                </Link>
+                <LiveLaunchActions
+                  projectId={project.id}
+                  competitorCount={launchInfos[index]?.competitorCount ?? 0}
+                  resume={launchInfos[index]?.resume ?? { started: false, index: 0, total: 0 }}
+                />
               </div>
             </li>
           ))}

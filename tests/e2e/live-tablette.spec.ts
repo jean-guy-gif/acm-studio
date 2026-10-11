@@ -22,13 +22,9 @@ const VIEWPORTS = [
 async function openLive(page: Page): Promise<void> {
   await login(page);
   await page.goto('/live');
-  const launch = page
-    .locator('li')
-    .filter({ hasText: DOSSIER })
-    .getByRole('link', { name: /Lancer le Live/ })
-    .first();
+  const item = () => page.locator('li').filter({ hasText: DOSSIER }).first();
 
-  if ((await launch.count()) === 0) {
+  if ((await item().count()) === 0) {
     await page.goto('/builder/new');
     await page.getByLabel('Nom du vendeur').fill(DOSSIER);
     await page.getByRole('button', { name: 'Créer le dossier' }).click();
@@ -43,8 +39,18 @@ async function openLive(page: Page): Promise<void> {
     await page.goto('/live');
   }
 
-  await expect(launch, `Le dossier « ${DOSSIER} » n'est pas dans la liste du Live`).toBeVisible();
-  await launch.click();
+  await expect(item(), `Le dossier « ${DOSSIER} » n'est pas dans la liste du Live`).toBeVisible();
+  // Mission 89 — ce dossier n'a aucun concurrent : la liste ne le lance pas (bouton désactivé,
+  // raison dite au conseiller). On l'ouvre par son adresse : la scène reste neutre.
+  await expect(item().getByRole('button', { name: /Lancer le Live/ })).toBeDisabled();
+  await expect(item().getByText(/Aucun concurrent retenu/)).toBeVisible();
+  const href = await item()
+    .getByRole('link', { name: 'Vérifier la préparation' })
+    .getAttribute('href');
+  const projectId = /\/builder\/([0-9a-f-]{36})\//.exec(href ?? '')?.[1];
+  expect(projectId, 'Identifiant du dossier introuvable dans la liste du Live').toBeTruthy();
+  await page.goto(`/live/${projectId}`);
+  await expect(page.getByText(/Aucun bien concurrent|Préparation/)).toHaveCount(0);
   await expect(page).toHaveURL(/\/live\/[0-9a-f-]{36}/);
   await expect(page.locator('[data-stage] > header')).toBeVisible();
 }

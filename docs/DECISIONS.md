@@ -248,6 +248,19 @@ chaque mission validée.
 - 09/10 · M84 · Administration → Identité : adresse postale et carte professionnelle de l'agence, facultatives ; vides, ces mentions sont omises du pied des dossiers de prospection.
 - 11/10 · M87 · Administration → Identité : « Nom sur les documents », facultatif, 40 caractères au plus avec compteur ; vide, c'est le nom de l'agence ; il s'imprime en tête, en pied et sur la carte de contact des dossiers de prospection, et dans la carte de contact du QR code.
 - 09/10 · M84 · Le dossier de prospection est aux couleurs, logo et police de l'agence : variante lisible pour le texte, couleur exacte pour les aplats ; les couleurs du DPE restent sémantiques (M55).
+- 11/10 · M88 · Depuis le navigateur, un membre ne modifie que son propre profil, et seulement prénom, nom, téléphone, photo ; rôle, retrait, e-mail et agence sont refusés par la base, manager compris ; ni création ni suppression de profil ; la gestion d'équipe passe par les actions serveur, après le garde de rôle.
+- 11/10 · M88 · Les colonnes modifiables d'un profil sont une liste d'autorisation posée par migration : une colonne ajoutée plus tard n'est pas modifiable sans décision.
+- 11/10 · M88 · La lecture ne change pas : chacun lit les profils de son agence ; un membre retiré lit encore son propre profil, et ne modifie plus rien.
+- 11/10 · M88 · La ligne de l'agence n'est modifiable que par un manager non retiré de cette agence ; ni création ni suppression depuis le navigateur ; l'isolation entre agences n'est pas touchée.
+- 11/10 · M88 · L'identité de l'agence (logo, couleurs, police, mentions, nom sur les documents) et les seuils « ce qui dort » exigent un manager non retiré, à l'action comme à l'écran : « Seul un manager de l'agence peut modifier son identité. » ; pour un conseiller, Administration → Identité s'affiche en lecture seule avec cette phrase.
+- 11/10 · M88 · Une personne invitée ne crée pas d'agence : la base le refuse tant qu'une invitation attend son adresse, et `/onboarding` la renvoie vers `/accept-invitation` avec « Vous avez été invité par une agence : finalisez votre inscription. ».
+- 11/10 · M88 · Une invitation « attend » tant qu'elle n'est pas acceptée ; annulée, elle est supprimée ; il n'y a pas de date d'expiration.
+- 11/10 · M88 · À l'acceptation, le profil est créé avant le mot de passe : jamais un compte avec mot de passe mais sans profil ; si le mot de passe échoue ensuite, l'invité est conduit sur « Choisir un nouveau mot de passe ».
+- 11/10 · M88 · L'inscription libre est fermée dans la console Supabase (geste de Laurent) : on entre par invitation ; une nouvelle agence s'ouvre par un compte créé dans la console (« Create new user », confirmé d'office), qui passe ensuite par `/onboarding` ; « Send invitation » de la console ne s'utilise pas.
+- 11/10 · M88 · « Mot de passe oublié ? » sur `/login` : la réponse est toujours « Si un compte existe pour cette adresse, un e-mail vient de partir. » ; le lien, à usage unique, revient par `/auth/confirm` et ouvre « Choisir un nouveau mot de passe » (saisi deux fois, 8 caractères au moins), puis `/builder`, connecté.
+- 11/10 · M88 · Le modèle d'e-mail de réinitialisation est en français (`supabase/templates/recovery.html`), part par le SMTP des invitations et se colle à la main dans le projet en ligne (Authentication → Emails → Reset password), comme celui des invitations (M64).
+- 11/10 · M88 · Les erreurs de connexion sont en français et voyagent par code dans l'adresse (identifiants, e-mail non confirmé, trop de tentatives, lien expiré) ; un code inconnu donne « momentanément indisponible », jamais un texte venu de l'adresse ni le message de Supabase.
+- 11/10 · M88 · Pages d'erreur, d'adresse introuvable et d'erreur globale en français, aux couleurs par défaut de l'app, avec « Revenir à mes dossiers » ; aucun détail technique, aucune donnée de dossier — Live compris.
 
 ## Données & provenance
 
@@ -279,6 +292,8 @@ chaque mission validée.
 - 22/09 · M52 · L'essai à l'écran se fait d'une traite, sans recharger entre les étapes.
 - 23/09 · M56 · Migration sur données réelles : compter avant, énoncer la prédiction, comparer après.
 - 01/10 · M62 · Intégration continue à chaque push : typecheck, lint, format:check, test, build.
+- 11/10 · M88 · Les règles d'accès de la base se prouvent dans la base : `supabase/tests/closed_doors.sql` joue le navigateur d'un conseiller, d'un manager, d'un membre retiré et d'un invité, et tourne dans la CI sur une base Supabase locale jetable (tâche `sql`), sans base partagée ni clé ; les anciens tests SQL n'y sont pas, trois sont à réparer.
+- 11/10 · M88 · Une correction de sécurité issue de l'audit avant bêta n'est pas une fonctionnalité : elle ne lève pas le gel (M63).
 - 06/10 · M63 · Rapport conseiller et export PowerPoint sortent du MVP : la Conclusion et le Suivi en tiennent lieu.
 - 06/10 · M63 · `comparable` reste dans le code existant ; `competitor` pour le nouveau code ; « Concurrent » à l'écran.
 - 06/10 · M63 · Une mission jamais exécutée (ni branche ni commit) n'entre pas ici ; quand le commit contredit la mission, le commit fait foi.

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
+import {
+  canAdvanceLivePage,
+  livePageHasAnswer,
+} from '@/features/live-seller/services/can-advance-live-page';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
 
@@ -13,8 +16,14 @@ function summary(fields: Record<string, unknown>): LiveSellerSummary {
 }
 
 describe('canAdvanceLivePage', () => {
-  it('requires a persisted competitor answer before leaving competition', () => {
-    expect(canAdvanceLivePage('comparable_competition', entry(null), null)).toBe(false);
+  // Mission 89 — la reprise n'exige pas plus que le bouton : « Un sérieux concurrent ? »
+  // s'enregistre sans réponse obligatoire, la garde ne renvoie donc plus en arrière pour elle.
+  it('does not send back for the competition answer, which the button never required', () => {
+    expect(canAdvanceLivePage('comparable_competition', entry(null), null)).toBe(true);
+    expect(livePageHasAnswer('comparable_competition', entry(null), null)).toBe(false);
+    expect(
+      livePageHasAnswer('comparable_competition', entry({ seller_serious_competitor: 'no' }), null),
+    ).toBe(true);
     expect(
       canAdvanceLivePage(
         'comparable_competition',
@@ -79,9 +88,13 @@ describe('canAdvanceLivePage', () => {
     ).toBe(true);
   });
 
-  it('requires the persisted property confirmation before leaving "Votre bien"', () => {
-    expect(canAdvanceLivePage('subject_property', null, null)).toBe(false);
-    expect(canAdvanceLivePage('subject_property', null, summary({}))).toBe(false);
+  it('does not send back for "Votre bien", which the button never required', () => {
+    expect(canAdvanceLivePage('subject_property', null, null)).toBe(true);
+    expect(canAdvanceLivePage('subject_property', null, summary({}))).toBe(true);
+    expect(livePageHasAnswer('subject_property', null, summary({}))).toBe(false);
+    expect(
+      livePageHasAnswer('subject_property', null, summary({ seller_property_confirmed: 'yes' })),
+    ).toBe(true);
     expect(
       canAdvanceLivePage('subject_property', null, summary({ seller_property_confirmed: 'yes' })),
     ).toBe(true);
@@ -95,5 +108,16 @@ describe('canAdvanceLivePage', () => {
     expect(canAdvanceLivePage('conclusion', null, null)).toBe(true);
     // Mission 85 — sans prix ni note, le rendez-vous se termine quand même (M81).
     expect(canAdvanceLivePage('closing_question', null, null)).toBe(true);
+  });
+
+  // Mission 89 — les trois verrous que la reprise garde, quoi qu'il arrive.
+  it('keeps the three locks: seller price, price guess, duration guess', () => {
+    expect(canAdvanceLivePage('seller_perceived_price', null, summary({}))).toBe(false);
+    expect(
+      canAdvanceLivePage('comparable_price', entry({ seller_serious_competitor: 'yes' }), null),
+    ).toBe(false);
+    expect(
+      canAdvanceLivePage('comparable_duration', entry({ seller_estimated_listing_price: 1 }), null),
+    ).toBe(false);
   });
 });

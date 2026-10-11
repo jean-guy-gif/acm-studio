@@ -46,25 +46,22 @@ export function LivePageIntro({
           </div>
         </div>
 
-        {count > 0 ? (
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              onClick={onStart}
-              className="rounded-md bg-brand px-6 py-3 text-base font-medium text-white shadow-sm transition-colors hover:bg-white hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              Démarrer la présentation
-            </button>
+        {/* Mission 89 — l'écran est tourné vers le vendeur : sans concurrent retenu, il reste
+            neutre, sans consigne au conseiller (la liste du Live, elle, le lui dit). */}
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={onStart}
+            className="rounded-md bg-brand px-6 py-3 text-base font-medium text-white shadow-sm transition-colors hover:bg-white hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Démarrer la présentation
+          </button>
+          {count > 0 ? (
             <span className="text-sm text-white/70">
               {count} bien{count > 1 ? 's' : ''} concurrent{count > 1 ? 's' : ''} à examiner
             </span>
-          </div>
-        ) : (
-          <p className="text-sm text-amber-300">
-            Aucun bien concurrent retenu : préparez le dossier dans la Préparation avant le
-            rendez-vous.
-          </p>
-        )}
+          ) : null}
+        </div>
       </div>
     </section>
   );

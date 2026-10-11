@@ -47,7 +47,7 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
         <div className="flex h-fit flex-col gap-4">
           <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
             <label className="flex flex-col gap-2">
-              <span className={statLabel}>Le prix imaginé par le vendeur</span>
+              <span className={statLabel}>Le prix que vous imaginez</span>
               <div className="flex items-center gap-3">
                 <input
                   type="number"

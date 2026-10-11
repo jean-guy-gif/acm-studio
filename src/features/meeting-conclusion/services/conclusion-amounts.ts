@@ -9,7 +9,7 @@ import type { ConclusionAmounts } from '@/features/meeting-conclusion/types';
 export const AMOUNT_LABELS: Record<keyof ConclusionAmounts, string> = {
   marketComputed: 'Marché calculé (d’après les concurrents)',
   advisorAnalysis: 'Analyse du conseiller (avis de valeur)',
-  advisorPrice: 'Prix conseillé (validé)',
+  advisorPrice: 'Prix des concurrents (validé)',
   commercializationPrice: 'Prix de commercialisation (convenu)',
 };
 
@@ -50,7 +50,7 @@ export function conclusionGaps(amounts: ConclusionAmounts): ConclusionGap[] {
   return [
     gap(
       'vs_advisor_price',
-      'Convenu vs prix conseillé',
+      'Convenu vs prix des concurrents',
       amounts.commercializationPrice,
       amounts.advisorPrice,
     ),

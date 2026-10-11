@@ -21,7 +21,7 @@ describe('conclusion-amounts — on stocke les faits, on calcule les écarts à 
     expect(new Set(labels).size).toBe(4);
     // « analyse » et « prix conseillé » ne se confondent pas.
     expect(labels).toContain('Analyse du conseiller (avis de valeur)');
-    expect(labels).toContain('Prix conseillé (validé)');
+    expect(labels).toContain('Prix des concurrents (validé)');
     expect(labels).toContain('Marché calculé (d’après les concurrents)');
     expect(labels).toContain('Prix de commercialisation (convenu)');
   });

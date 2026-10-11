@@ -61,7 +61,7 @@ export function LivePageConclusion({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Valeur perçue par le vendeur</div>
+          <div className={statLabel}>Votre valeur perçue</div>
           <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
@@ -73,7 +73,7 @@ export function LivePageConclusion({
           <div className={bigValue}>{euro(decision?.advisorComparativeMarketPrice ?? null)}</div>
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Prix conseillé</div>
+          <div className={statLabel}>Prix des concurrents</div>
           <div className={bigValue}>{euro(decision?.advisorPrice ?? null)}</div>
         </div>
       </div>
@@ -81,7 +81,7 @@ export function LivePageConclusion({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         <div className={`${panelSoft} h-fit`}>
           <Line
-            label="Prix souhaité par le vendeur (enregistré)"
+            label="Votre prix souhaité (enregistré)"
             value={euro(decision?.sellerPrice ?? null)}
           />
           <Line

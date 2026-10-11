@@ -34,7 +34,7 @@ export function SavedPositioningCard({
 
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
         <div>
-          <div className={metaLabel}>Prix conseillé validé</div>
+          <div className={metaLabel}>Prix des concurrents validé</div>
           <div className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
             {euro(saved.advisorPrice)}
           </div>

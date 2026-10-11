@@ -52,7 +52,7 @@ export function LivePageCompetition({ entry }: { entry: SellerComparable }) {
 
         <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
           <fieldset className="flex flex-col gap-3">
-            <legend className={fieldLabel}>La réponse du vendeur</legend>
+            <legend className={fieldLabel}>Votre réponse</legend>
             <div className="flex flex-col gap-3">
               {SERIOUS_COMPETITOR_VALUES.map((value) => (
                 <label key={value} className={choice}>

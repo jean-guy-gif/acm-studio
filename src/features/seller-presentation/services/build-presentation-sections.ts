@@ -30,14 +30,14 @@ const SECTION_DEFINITIONS: SectionDefinition[] = [
   },
   {
     key: 'comparables',
-    title: 'Comparables retenus',
-    reasonUnavailable: 'Aucun comparable retenu.',
+    title: 'Concurrents retenus',
+    reasonUnavailable: 'Aucun concurrent retenu.',
     isAvailable: (a) => a.comparables,
   },
   {
     key: 'market_analysis',
     title: 'Analyse du marché',
-    reasonUnavailable: 'Aucun comparable exploitable pour analyser le marché.',
+    reasonUnavailable: 'Aucun concurrent exploitable pour analyser le marché.',
     isAvailable: (a) => a.marketAnalysis,
   },
   {

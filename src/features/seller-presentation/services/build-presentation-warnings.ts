@@ -60,7 +60,7 @@ export function buildPresentationWarnings(
       include: context.exploitableCount === 0,
       code: 'no_comparable',
       severity: 'blocking',
-      message: 'Aucun comparable retenu exploitable n’est disponible.',
+      message: 'Aucun concurrent retenu exploitable n’est disponible.',
     },
     {
       include: !context.positioningReady,
@@ -73,7 +73,7 @@ export function buildPresentationWarnings(
       include: context.exploitableCount > 0 && context.exploitableCount < 3,
       code: 'few_comparables',
       severity: 'warning',
-      message: 'Moins de trois comparables exploitables sont disponibles.',
+      message: 'Moins de trois concurrents exploitables sont disponibles.',
     },
     {
       include: !context.hasSavedDecision,
@@ -109,7 +109,7 @@ export function buildPresentationWarnings(
       include: context.exploitableCount > 0 && !context.anyComparablePhoto,
       code: 'comparables_no_photo',
       severity: 'warning',
-      message: 'Aucun visuel n’est disponible pour les comparables retenus.',
+      message: 'Aucun visuel n’est disponible pour les concurrents retenus.',
     },
     // Vigilance — diagnostics.
     {
@@ -202,13 +202,13 @@ export function buildPresentationWarnings(
       include: context.excludedOutlierCount > 0,
       code: 'outliers_excluded',
       severity: 'info',
-      message: 'Des comparables atypiques ont été exclus du calcul.',
+      message: 'Des concurrents atypiques ont été exclus du calcul.',
     },
     {
       include: context.outliersReintroduced,
       code: 'outliers_reintroduced',
       severity: 'info',
-      message: 'Des comparables atypiques ont été réintégrés pour conserver un échantillon.',
+      message: 'Des concurrents atypiques ont été réintégrés pour conserver un échantillon.',
     },
     {
       include: context.lowConfidence,

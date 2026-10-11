@@ -91,7 +91,7 @@ function buildReasons(params: {
   const reasons: string[] = [];
   const plural = params.usedCount > 1 ? 's' : '';
   reasons.push(
-    `Le positionnement repose sur ${params.usedCount} comparable${plural} exploitable${plural}.`,
+    `Le positionnement repose sur ${params.usedCount} concurrent${plural} exploitable${plural}.`,
   );
 
   if (params.dispersion === 'low') {
@@ -104,30 +104,30 @@ function buildReasons(params: {
 
   if (params.outliersReintroduced) {
     reasons.push(
-      'Les comparables atypiques ont été réintégrés afin de conserver un échantillon suffisant.',
+      'Les concurrents atypiques ont été réintégrés afin de conserver un échantillon suffisant.',
     );
   } else if (params.excludedOutlierCount === 1) {
-    reasons.push('Un comparable atypique a été exclu du calcul.');
+    reasons.push('Un concurrent atypique a été exclu du calcul.');
   } else if (params.excludedOutlierCount >= 2) {
-    reasons.push(`${params.excludedOutlierCount} comparables atypiques ont été exclus du calcul.`);
+    reasons.push(`${params.excludedOutlierCount} concurrents atypiques ont été exclus du calcul.`);
   }
 
   if (params.surfaceProximityRatio >= 0.6) {
-    reasons.push('La majorité des comparables présente une surface proche du bien vendeur.');
+    reasons.push('La majorité des concurrents présente une surface proche du bien vendeur.');
   } else if (params.surfaceProximityRatio < 0.3) {
-    reasons.push('Peu de comparables présentent une surface proche du bien vendeur.');
+    reasons.push('Peu de concurrents présentent une surface proche du bien vendeur.');
   }
 
   if (params.geographicMajorityRatio == null) {
-    reasons.push('Aucune localisation exploitable pour les comparables.');
+    reasons.push('Aucune localisation exploitable pour les concurrents.');
   } else if (params.geographicMajorityRatio >= 0.75) {
-    reasons.push('Les comparables sont principalement situés dans la même localisation.');
+    reasons.push('Les concurrents sont principalement situés dans la même localisation.');
   } else if (params.geographicMajorityRatio < 0.5) {
     reasons.push('Les données disponibles sont géographiquement dispersées.');
   }
 
   if (params.usedCount < MIN_USED) {
-    reasons.push('Peu de comparables exploitables sont disponibles.');
+    reasons.push('Peu de concurrents exploitables sont disponibles.');
   }
 
   return [...new Set(reasons)];
@@ -157,7 +157,7 @@ export function calculatePricePositioning(input: CalculatePricePositioningInput)
     reasons.push('La surface du bien vendeur est inconnue ou invalide.');
   }
   if (eligible.length < 1) {
-    reasons.push('Aucun comparable retenu ne possède un prix et une surface valides.');
+    reasons.push('Aucun concurrent retenu ne possède un prix et une surface valides.');
   }
   if (eligibleMedian == null || eligibleMedian <= 0) {
     reasons.push('La médiane de prix au m² ne peut pas être calculée.');

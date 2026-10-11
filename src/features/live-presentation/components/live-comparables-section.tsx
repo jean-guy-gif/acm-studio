@@ -12,7 +12,7 @@ export function LiveComparablesSection({
   comparables: SellerPresentationComparable[];
 }) {
   if (comparables.length === 0) {
-    return <p className="text-lg text-zinc-500">Aucun comparable retenu.</p>;
+    return <p className="text-lg text-zinc-500">Aucun concurrent retenu.</p>;
   }
 
   return (
@@ -27,7 +27,7 @@ export function LiveComparablesSection({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={comparable.photoUrl}
-                alt={comparable.title ?? 'Comparable'}
+                alt={comparable.title ?? 'Concurrent'}
                 className="h-full w-full object-cover"
               />
             ) : (
