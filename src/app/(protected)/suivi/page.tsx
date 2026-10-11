@@ -3,29 +3,49 @@ import Link from 'next/link';
 import { emptyState, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { BuyerSearchPanel } from '@/features/meeting-conclusion/components/buyer-search-panel';
 import { SuiviRow } from '@/features/meeting-conclusion/components/suivi-row';
+import {
+  emptySellerInsights,
+  getSellerInsights,
+} from '@/features/meeting-conclusion/queries/get-seller-insights';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
+import {
+  buildDossierFollowUp,
+  type DossierFollowUp,
+} from '@/features/meeting-conclusion/services/dossier-follow-up';
+import { dueTodayLabel } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import {
   SUIVI_GROUPS,
   SUIVI_GROUP_LABELS,
   averageJourneyGap,
-  daysSince,
   exclusiveLabel,
   exclusiveSignedCount,
   filterSuiviByGroup,
+  filterSuiviByMotive,
+  followUpMotiveCounts,
+  parseFollowUpMotive,
   parseSuiviGroup,
   sortSuivi,
   suiviCounts,
   type SuiviGroup,
 } from '@/features/meeting-conclusion/services/filter-suivi';
+import {
+  FOLLOW_UP_MOTIVES,
+  FOLLOW_UP_MOTIVE_LABELS,
+  type FollowUpMotive,
+} from '@/features/meeting-conclusion/types';
+import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import {
   prospectingProgress,
   type ProspectingStatus,
 } from '@/features/prospecting/services/prospecting-status';
+import { getAgency } from '@/lib/auth/get-agency';
+import { getProfile } from '@/lib/auth/get-profile';
 import { formatPercent } from '@/lib/format';
 
 type SuiviPageProps = {
-  searchParams: Promise<{ issue?: string }>;
+  searchParams: Promise<{ issue?: string; motif?: string }>;
 };
 
 const chip =
@@ -47,19 +67,63 @@ const COUNT_COLOR: Record<SuiviGroup, string> = {
 const groupHref = (group: SuiviGroup | null): string =>
   group == null ? '/suivi' : `/suivi?issue=${group}`;
 
+// Mission 96 — le filtre par motif ne porte que sur les « à relancer » : l'adresse le dit.
+const motiveHref = (motive: FollowUpMotive): string => `/suivi?issue=follow_up&motif=${motive}`;
+
 // Mission 54 — le Suivi qui sert : filtrer, rapprocher un acheteur, faire évoluer l'issue.
 // Mission 86 — il se lit d'un coup d'œil : des compteurs qui filtrent, une ligne courte par
 // dossier, une seule action selon l'issue. « Tous » ne masque rien (règle M52).
 export default async function SuiviPage({ searchParams }: SuiviPageProps) {
-  const { issue } = await searchParams;
-  const group = parseSuiviGroup(issue);
+  const { issue, motif } = await searchParams;
+  const motive = parseFollowUpMotive(motif);
+  // Un motif choisi ne montre que des « à relancer ».
+  const group = motive != null ? 'follow_up' : parseSuiviGroup(issue);
 
   const allDossiers = await getSuiviDossiers();
-  const { cards } = await getAgencyProspecting(allDossiers);
-  // Mission 90 — les « à relancer » du plus ancien au plus récent.
-  const dossiers = sortSuivi(filterSuiviByGroup(allDossiers, group));
-  const exclusives = exclusiveSignedCount(allDossiers);
+  const [{ cards }, insights, profile, branding] = await Promise.all([
+    getAgencyProspecting(allDossiers),
+    getSellerInsights(allDossiers.map((dossier) => dossier.project.id)),
+    getProfile(),
+    getAgencyBranding(),
+  ]);
+  const agency = profile ? await getAgency(profile.agency_id) : null;
+  const signature = {
+    advisorFirstName: profile?.first_name ?? null,
+    agencyName: documentAgencyName(branding?.documentName, agency?.name) || null,
+  };
   const now = new Date();
+
+  // Mission 96 — pour chaque dossier : ce que le vendeur a dit, ses relances, le délai depuis
+  // le dernier contact et le message proposé. Calculé ici, côté serveur.
+  const followUps = new Map<string, DossierFollowUp>();
+  for (const dossier of allDossiers) {
+    const own = insights.get(dossier.project.id) ?? emptySellerInsights();
+    followUps.set(
+      dossier.project.id,
+      buildDossierFollowUp({
+        conclusion: dossier.conclusion,
+        liveStartedAt: dossier.project.live_started_at,
+        liveEndedAt: dossier.project.live_ended_at,
+        competitors: own.competitors,
+        dangerous: own.dangerous,
+        contacts: own.contacts,
+        now,
+        signature,
+      }),
+    );
+  }
+  const lastContacts = new Map(
+    [...followUps].map(([projectId, followUp]) => [projectId, followUp.lastContactAt]),
+  );
+  const dueLabel = dueTodayLabel([...followUps.values()].filter((followUp) => followUp.due).length);
+  const motiveCounts = followUpMotiveCounts(allDossiers);
+
+  // Les « à relancer » du plus ancien contact au plus récent.
+  const dossiers = sortSuivi(
+    filterSuiviByMotive(filterSuiviByGroup(allDossiers, group), motive),
+    lastContacts,
+  );
+  const exclusives = exclusiveSignedCount(allDossiers);
   const counts = suiviCounts(allDossiers);
   const averageGap = averageJourneyGap(allDossiers);
 
@@ -113,6 +177,15 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 <span className="text-xs whitespace-nowrap text-zinc-500 stage:text-white/60">
                   {SUIVI_GROUP_LABELS[value]}
                 </span>
+                {/* Mission 96 — combien attendent depuis plus de 7 jours. */}
+                {value === 'follow_up' && dueLabel ? (
+                  <span
+                    data-testid="follow-up-due-count"
+                    className="text-xs font-semibold whitespace-nowrap text-amber-700 stage:text-amber-300"
+                  >
+                    {dueLabel}
+                  </span>
+                ) : null}
                 {/* Mission 90 — la mesure de la bêta : dont combien d'exclusifs. */}
                 {value === 'signed' && counts.signed > 0 ? (
                   <span className="text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand">
@@ -148,12 +221,34 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               <Link
                 key={value}
                 href={groupHref(value)}
-                className={group === value ? chipActive : chipIdle}
+                className={group === value && motive == null ? chipActive : chipIdle}
               >
                 {SUIVI_GROUP_LABELS[value]}
               </Link>
             ))}
           </div>
+
+          {/* Mission 96 — le filtre par motif de relance : seuls les motifs portés par un dossier. */}
+          {motiveCounts.size > 0 ? (
+            <div
+              className="flex flex-wrap items-center gap-2"
+              data-testid="follow-up-motive-filter"
+            >
+              <span className="text-xs font-semibold text-zinc-500 stage:text-white/60">
+                À relancer, par motif&nbsp;:
+              </span>
+              {FOLLOW_UP_MOTIVES.filter((value) => motiveCounts.has(value)).map((value) => (
+                <Link
+                  key={value}
+                  href={motive === value ? groupHref('follow_up') : motiveHref(value)}
+                  aria-current={motive === value ? 'true' : undefined}
+                  className={motive === value ? chipActive : chipIdle}
+                >
+                  {FOLLOW_UP_MOTIVE_LABELS[value]} · {motiveCounts.get(value)}
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
           {dossiers.length === 0 ? (
             <div className={emptyState}>
@@ -169,14 +264,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                   <SuiviRow
                     key={dossier.project.id}
                     dossier={dossier}
-                    concludedDaysAgo={
-                      dossier.conclusion?.outcome === 'follow_up'
-                        ? daysSince(
-                            dossier.conclusion.concludedAt ?? dossier.project.updated_at,
-                            now,
-                          )
-                        : null
-                    }
+                    followUp={followUps.get(dossier.project.id)!}
                     prospecting={
                       dossier.conclusion?.outcome === 'signed'
                         ? { count: statuses.length, progress: prospectingProgress(statuses) }

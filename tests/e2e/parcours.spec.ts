@@ -5,6 +5,8 @@ import {
   login,
   mainText,
   pagePayload,
+  TEST_PRICE_DROP,
+  ageTestFollowUp,
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
@@ -40,6 +42,7 @@ const PERCEIVED_PRICE = 350_000;
 const REVISED_PRICE = 325_000;
 const COMMERCIALIZATION_PRICE = 315_000;
 const COMMENT = 'Réponse saisie par le test automatique';
+const FOLLOW_UP_NOTE = 'Message laissé, d’après le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
 // Mission 98 — une adresse confirmée regroupe les concurrents qui la partagent, d'un dossier à
 // l'autre : chaque passage a donc SES adresses, sinon la carte hériterait du statut « remis »
@@ -207,6 +210,15 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .filter({ hasText: /^À relancer$/ })
       .click();
     await page.locator('textarea[name="follow_up_reason"]').fill(COMMENT);
+    // Mission 96 — « à relancer » demande un motif : sans lui, rien ne s'enregistre.
+    await page.getByRole('button', { name: 'Conclure le rendez-vous' }).click();
+    await expect(page, 'Un « à relancer » s’est enregistré sans motif').toHaveURL(
+      new RegExp(`/builder/${projectId}/conclusion$`),
+    );
+    await page
+      .locator('label')
+      .filter({ hasText: /^Réfléchit au prix$/ })
+      .click();
     await page.getByRole('button', { name: 'Conclure le rendez-vous' }).click();
   });
 
@@ -252,14 +264,153 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     );
 
     // Mission 85 — la note donnée après le prix : la première, la dernière, et ce qui manquait.
+    // (Mission 96 — le bloc « Ce que le vendeur a dit », au-dessus, la redit : on lit la dernière.)
     await expect(
-      row.getByText('Prêt à lancer : 7/10 → 10/10'),
+      row.getByText('Prêt à lancer : 7/10 → 10/10').last(),
       'La note du vendeur manque au Suivi',
     ).toBeVisible();
     await expect(
       row.getByText(`Ce qui manquait pour être à 10 : ${MISSING_FOR_TEN}`),
       'Ce qui manquait pour être à 10 manque au Suivi',
     ).toBeVisible();
+  });
+
+  // Mission 96 — la relance : ce que le vendeur a dit, le motif, le dernier contact, une relance
+  // consignée, et le message proposé (jamais envoyé, jamais enregistré).
+  await test.step('La relance : motif, bloc, « Relancé aujourd’hui », message', async () => {
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await expect(row.getByTestId('follow-up-motive')).toHaveText('Réfléchit au prix');
+    await expect(row.getByText('Dernier contact aujourd’hui')).toBeVisible();
+    await expect(
+      row.getByTestId('follow-up-due'),
+      'La pastille « À relancer aujourd’hui » apparaît avant 7 jours',
+    ).toHaveCount(0);
+
+    // Le détail est resté ouvert : le bloc reprend le chemin des prix, les devinettes, le
+    // concurrent le plus dangereux, la note et la durée.
+    const said = row.getByTestId('seller-said');
+    await expect(said, 'Le bloc « Ce que le vendeur a dit » manque').toBeVisible();
+    const saidText = withoutSpaces(await said.innerText());
+    for (const amount of [PERCEIVED_PRICE, REVISED_PRICE, COMMERCIALIZATION_PRICE]) {
+      expect(saidText, `Le bloc ne reprend pas ${amount}`).toContain(String(amount));
+    }
+    await expect(
+      said.getByText(/Il a (sous-estimé|surestimé|donné le prix affiché de) \d+/).first(),
+    ).toBeVisible();
+    await expect(said.getByText(/Le concurrent le plus dangereux, selon lui/)).toBeVisible();
+    await expect(said.getByText('Prêt à lancer : 7/10 → 10/10')).toBeVisible();
+    await expect(said.getByText(/Durée du Live : \d+\smin/)).toBeVisible();
+    // Les prix viennent d'être révélés et figés : aucune comparaison « à aujourd'hui ».
+    await expect(said.getByText(/face aux prix affichés aujourd’hui/)).toHaveCount(0);
+
+    // Le filtre par motif ne montre que ce motif, et le dossier y est.
+    await page
+      .getByTestId('follow-up-motive-filter')
+      .getByRole('link', { name: /Réfléchit au prix/ })
+      .click();
+    await expect(page).toHaveURL(/motif=thinking_price/);
+    await expect(row).toBeVisible();
+    for (const motive of await page.getByTestId('follow-up-motive').allInnerTexts()) {
+      expect(motive, 'Le filtre par motif laisse passer un autre motif').toBe('Réfléchit au prix');
+    }
+
+    // « Relancé aujourd'hui », avec une note : l'historique la montre, datée et signée.
+    await row.getByRole('button', { name: 'Relancé aujourd’hui' }).click();
+    await row.getByLabel('Note de relance (facultative)').fill(FOLLOW_UP_NOTE);
+    await row.getByRole('button', { name: 'Enregistrer la relance' }).click();
+    await expect(row.getByRole('button', { name: 'Relancé aujourd’hui' })).toBeVisible();
+    const details = row.getByRole('button', { name: /le détail des prix/ });
+    if ((await details.getAttribute('aria-expanded')) !== 'true') {
+      await details.click();
+    }
+    const history = row.getByTestId('follow-up-history');
+    await expect(history, 'L’historique des relances manque').toContainText(FOLLOW_UP_NOTE);
+    await expect(row.getByText('Dernier contact aujourd’hui')).toBeVisible();
+
+    // « Préparer un message » : il reprend le prix dit par le vendeur, se modifie, se copie.
+    await row.getByRole('button', { name: 'Préparer un message' }).click();
+    const message = row.locator('textarea');
+    const proposed = await message.inputValue();
+    expect(withoutSpaces(proposed), 'Le message ne reprend pas le prix du vendeur').toContain(
+      String(REVISED_PRICE),
+    );
+    expect(proposed, 'Le message nomme un concurrent').not.toMatch(/concurrent/i);
+    for (const competitor of COMPETITORS) {
+      expect(withoutSpaces(proposed), 'Le message contient le prix d’un concurrent').not.toContain(
+        String(competitor.price),
+      );
+    }
+    await message.fill(`${proposed}\nPS : test`);
+    await expect(row.getByRole('button', { name: 'Copier' })).toBeVisible();
+    await row.getByRole('button', { name: 'Fermer' }).click();
+    await page.goto('/suivi');
+  });
+
+  // Mission 96 — huit jours plus tard, et un concurrent a baissé : le dossier du test est vieilli
+  // en base (agence de test seulement), vérifié à l'écran, puis remis exactement comme il était.
+  await test.step('Huit jours sans contact : pastille, compteur, baisse, « Copier »', async () => {
+    const touched = { conclusions: 1, relances: 1, concurrents: 1 };
+    expect(ageTestFollowUp(projectId, 'age'), 'Le dossier du test n’a pas été vieilli').toEqual(
+      touched,
+    );
+    try {
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.goto('/suivi');
+      const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+      await expect(row.getByText('Dernier contact il y a 8 jours')).toBeVisible();
+      await expect(
+        row.getByTestId('follow-up-due'),
+        'La pastille manque après 8 jours sans contact',
+      ).toHaveText('À relancer aujourd’hui');
+      await expect(
+        page.getByTestId('follow-up-due-count'),
+        'Le compteur « à relancer aujourd’hui » manque',
+      ).toHaveText(/^\d+ vendeurs? à relancer aujourd’hui$/);
+
+      await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+      await expect(
+        row.getByTestId('seller-said').getByText('1 concurrent a baissé son prix'),
+        'La baisse de prix depuis le rendez-vous manque au bloc',
+      ).toBeVisible();
+
+      await row.getByRole('button', { name: 'Préparer un message' }).click();
+      const message = row.locator('textarea');
+      const proposed = await message.inputValue();
+      expect(proposed, 'Le message ne dit pas la baisse').toContain(
+        'Depuis notre rendez-vous, 1 des biens que nous avions vus a baissé son prix.',
+      );
+      for (const competitor of COMPETITORS) {
+        for (const price of [competitor.price, competitor.price - TEST_PRICE_DROP]) {
+          expect(
+            withoutSpaces(proposed),
+            'Le message contient le prix d’un concurrent',
+          ).not.toContain(String(price));
+        }
+      }
+      // Le texte modifié est celui qui est copié ; rien n'est envoyé ni enregistré.
+      const edited = `${proposed}\nPS : test`;
+      await message.fill(edited);
+      await row.getByRole('button', { name: 'Copier' }).click();
+      await expect(row.getByText('Message copié.')).toBeVisible();
+      expect(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        'Le presse-papiers ne porte pas le message modifié',
+      ).toBe(edited);
+    } finally {
+      expect(ageTestFollowUp(projectId, 'back'), 'Le dossier du test n’a pas été remis').toEqual(
+        touched,
+      );
+    }
+
+    // Remis en état : le contact est de nouveau d'aujourd'hui, plus de pastille, plus de baisse.
+    await page.goto('/suivi');
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await expect(row.getByText('Dernier contact aujourd’hui')).toBeVisible();
+    await expect(row.getByTestId('follow-up-due')).toHaveCount(0);
+    await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+    await expect(row.getByTestId('seller-said')).toBeVisible();
+    await expect(row.getByTestId('seller-said').getByText(/baissé/)).toHaveCount(0);
+    await page.goto('/suivi');
   });
 
   // Mission 86 — Suivi → « Prospecter » → page Prospection filtrée sur le bien → « Marquer

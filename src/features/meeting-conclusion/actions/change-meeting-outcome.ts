@@ -68,6 +68,8 @@ export async function changeMeetingOutcome(
     p_outcome: decision.value.outcome,
     p_reason: decision.value.reason as string,
     p_mandate_type: decision.value.mandateType as string,
+    p_follow_up_motive: decision.value.motive as string,
+    p_follow_up_motive_detail: decision.value.motiveDetail as string,
     p_price: decision.value.price as number,
   };
   const { error } = await serviceClient.rpc('change_meeting_outcome', args);

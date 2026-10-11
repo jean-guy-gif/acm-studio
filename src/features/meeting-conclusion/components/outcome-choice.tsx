@@ -1,13 +1,21 @@
 'use client';
 
+import { useState } from 'react';
+
 import { fieldLabel, inputBase } from '@/components/ui/styles';
 import {
   CONCLUSION_OUTCOMES,
+  FOLLOW_UP_MOTIVES,
+  FOLLOW_UP_MOTIVE_LABELS,
   MANDATE_TYPES,
   MANDATE_TYPE_LABELS,
   OUTCOME_LABELS,
 } from '@/features/meeting-conclusion/types';
-import type { ConclusionOutcome, MandateType } from '@/features/meeting-conclusion/types';
+import type {
+  ConclusionOutcome,
+  FollowUpMotive,
+  MandateType,
+} from '@/features/meeting-conclusion/types';
 
 const choiceBase =
   'flex cursor-pointer items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-colors';
@@ -26,7 +34,8 @@ const REASON_LABELS: Record<Exclude<ConclusionOutcome, 'signed'>, string> = {
 // Mission 90 — et ce que chaque issue demande :
 //   • « Mandat signé » : exclusif ou simple (obligatoire), et le prix de commercialisation —
 //     obligatoire s'il manque, affiché et modifiable s'il existe ;
-//   • « À relancer » : le motif, et un prix facultatif ;
+//   • « À relancer » : un motif de relance à choisir parmi des boutons (mission 96, obligatoire ;
+//     « Autre » se précise d'une ligne), une note libre et un prix facultatifs ;
 //   • « Vendu ailleurs », « Retiré de la vente » : un motif facultatif.
 // Le serveur revérifie tout (conclusion-requirements.ts).
 export function OutcomeChoice({
@@ -34,6 +43,8 @@ export function OutcomeChoice({
   onOutcomeChange,
   initialReason,
   initialMandateType = null,
+  initialMotive = null,
+  initialMotiveDetail = null,
   knownPrice = null,
   legend,
 }: {
@@ -43,8 +54,12 @@ export function OutcomeChoice({
   // Le type déjà enregistré (correction d'un mandat signé), et le prix déjà enregistré.
   initialMandateType?: MandateType | null;
   knownPrice?: number | null;
+  // Mission 96 — le motif de relance déjà enregistré, et la ligne de « Autre ».
+  initialMotive?: FollowUpMotive | null;
+  initialMotiveDetail?: string | null;
   legend: string;
 }) {
+  const [motive, setMotive] = useState<FollowUpMotive | null>(initialMotive);
   const priceRequired = outcome === 'signed' && knownPrice == null;
 
   return (
@@ -92,6 +107,43 @@ export function OutcomeChoice({
               </label>
             ))}
           </div>
+        </fieldset>
+      ) : null}
+
+      {outcome === 'follow_up' ? (
+        <fieldset className="flex flex-col gap-2">
+          <legend className={`${fieldLabel} mb-1`}>Motif de relance (obligatoire)</legend>
+          <div className="flex flex-wrap gap-2.5">
+            {FOLLOW_UP_MOTIVES.map((value) => (
+              <label
+                key={value}
+                className={`${choiceBase} ${motive === value ? choiceActive : choiceIdle}`}
+              >
+                <input
+                  type="radio"
+                  name="follow_up_motive"
+                  value={value}
+                  required
+                  checked={motive === value}
+                  onChange={() => setMotive(value)}
+                  className="accent-brand"
+                />
+                {FOLLOW_UP_MOTIVE_LABELS[value]}
+              </label>
+            ))}
+          </div>
+          {motive === 'other' ? (
+            <input
+              type="text"
+              name="follow_up_motive_detail"
+              required
+              maxLength={200}
+              aria-label="Précisez le motif"
+              placeholder="Précisez en une ligne"
+              defaultValue={initialMotiveDetail ?? ''}
+              className={inputBase}
+            />
+          ) : null}
         </fieldset>
       ) : null}
 

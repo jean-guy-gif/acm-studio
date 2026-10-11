@@ -529,6 +529,58 @@ export type Database = {
           },
         ]
       }
+      follow_up_contacts: {
+        Row: {
+          agency_id: string
+          author_id: string | null
+          contacted_at: string
+          created_at: string
+          id: string
+          note: string | null
+          project_id: string
+        }
+        Insert: {
+          agency_id: string
+          author_id?: string | null
+          contacted_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          project_id: string
+        }
+        Update: {
+          agency_id?: string
+          author_id?: string | null
+          contacted_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_contacts_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_contacts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_contacts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_observations: {
         Row: {
           agency_id: string
@@ -601,6 +653,7 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          revealed_listing_price: number | null
           seller_estimated_days_on_market: number | null
           seller_estimated_listing_price: number | null
           seller_market_duration_comment: string | null
@@ -617,6 +670,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id: string
+          revealed_listing_price?: number | null
           seller_estimated_days_on_market?: number | null
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
@@ -633,6 +687,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string
+          revealed_listing_price?: number | null
           seller_estimated_days_on_market?: number | null
           seller_estimated_listing_price?: number | null
           seller_market_duration_comment?: string | null
@@ -843,6 +898,8 @@ export type Database = {
           commercialization_price: number | null
           concluded_at: string | null
           created_at: string
+          follow_up_motive: string | null
+          follow_up_motive_detail: string | null
           follow_up_reason: string | null
           frozen_advisor_analysis: number | null
           frozen_advisor_price: number | null
@@ -868,6 +925,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          follow_up_motive?: string | null
+          follow_up_motive_detail?: string | null
           follow_up_reason?: string | null
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
@@ -893,6 +952,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          follow_up_motive?: string | null
+          follow_up_motive_detail?: string | null
           follow_up_reason?: string | null
           frozen_advisor_analysis?: number | null
           frozen_advisor_price?: number | null
@@ -1433,6 +1494,8 @@ export type Database = {
       change_meeting_outcome: {
         Args: {
           p_agency_id: string
+          p_follow_up_motive?: string
+          p_follow_up_motive_detail?: string
           p_mandate_type?: string
           p_outcome: string
           p_price?: number
@@ -1447,6 +1510,8 @@ export type Database = {
           p_advisor_price: number
           p_agency_id: string
           p_exploitable?: number
+          p_follow_up_motive?: string
+          p_follow_up_motive_detail?: string
           p_mandate_type?: string
           p_market_computed: number
           p_outcome: string
