@@ -26,6 +26,14 @@ Relevé dans le code de `main` le 6 octobre 2026 (routes `src/app`, features `sr
 
 **Suivi** — `/suivi` : dossiers conclus, filtre par issue, issue modifiable, recherche acheteur.
 
+**Prospection** — `/prospection` : les concurrents retenus des mandats signés, **une carte par
+bien** (même annonce ou même adresse confirmée : une seule carte, « Pour : … ; … », un seul
+statut), « Ne plus solliciter » (liste d'opposition de l'agence, par adresse), « Marquer
+contacté » pour un confrère sans adresse · `/prospection/courriers?bien=[id]` : tous les courriers
+prêts d'un bien vendeur en un document, puis « Marquer tous remis » · `/prospection/tournee` : les
+propriétaires à adresse confirmée, par commune, rue et numéro, les confrères à appeler en bas,
+« Mes dossiers / Toute l'agence ».
+
 **Administration** — `/admin` · `/admin/identite` : logo, couleur, police, aperçu du Live ·
 `/admin/equipe` : vue manager, ce qui dort, invitations, rôles (404 pour un conseiller).
 

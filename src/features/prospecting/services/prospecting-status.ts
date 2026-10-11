@@ -7,6 +7,8 @@
 // rendez-vous sans mandat — et garde les faits d'avant : l'annuler rend le concurrent là où il
 // en était.
 
+import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
+
 export type ProspectingStatus =
   'to_confirm' | 'ready' | 'handed' | 'meeting' | 'mandate' | 'declined';
 
@@ -48,15 +50,22 @@ export type ProspectingMoveResult =
 
 const refuse = (error: string): ProspectingMoveResult => ({ ok: false, error });
 
+// Mission 98 — un confrère (exclusivité) se contacte par téléphone : « Marquer contacté » ne
+// demande pas l'adresse du bien. C'est le même fait daté que « remis », et la suite est la même.
+export function canMarkHanded(status: ProspectingStatus, step: ProspectingStep): boolean {
+  return status === 'ready' || (status === 'to_confirm' && step === 'colleague');
+}
+
 // Le changement demandé, depuis le statut COURANT (relu en base par l'action) : la date du
 // fait qui arrive, ou null pour celui qu'on annule. Un saut de cran est refusé.
 export function applyProspectingMove(
   status: ProspectingStatus,
   move: ProspectingMove,
   now: string,
+  step: ProspectingStep = 'check',
 ): ProspectingMoveResult {
   if (move === 'handed') {
-    return status === 'ready'
+    return canMarkHanded(status, step)
       ? { ok: true, patch: { prospecting_handed_at: now } }
       : refuse('Seul un dossier prêt à envoyer peut être marqué remis.');
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyProspectingMove,
+  canMarkHanded,
   followUpDate,
   isProspectingMove,
   prospectingCounters,
@@ -80,6 +81,34 @@ describe('applyProspectingMove', () => {
       const undo = applyProspectingMove('declined', 'back', NOW);
       expect(undo).toEqual({ ok: true, patch: { prospecting_declined_at: null } });
       if (undo.ok) expect(prospectingStatus({ ...dates, ...undo.patch }, address)).toBe(expected);
+    }
+  });
+
+  // Mission 98 — un confrère se contacte sans attendre l'adresse du bien ; la suite est la même.
+  it('un confrère est « contacté » sans adresse, puis suit les mêmes étapes', () => {
+    expect(applyProspectingMove('to_confirm', 'handed', NOW, 'colleague')).toEqual({
+      ok: true,
+      patch: { prospecting_handed_at: NOW },
+    });
+    expect(canMarkHanded('to_confirm', 'colleague')).toBe(true);
+    expect(canMarkHanded('ready', 'colleague')).toBe(true);
+    // Contacté sans adresse : le statut tient, et le rendez-vous puis le mandat se notent.
+    const contacted = { ...NONE, prospecting_handed_at: NOW };
+    expect(prospectingStatus(contacted, false)).toBe('handed');
+    expect(applyProspectingMove('handed', 'meeting', NOW, 'colleague').ok).toBe(true);
+    expect(applyProspectingMove('meeting', 'mandate', NOW, 'colleague').ok).toBe(true);
+    expect(prospectingCounters(['handed', 'meeting', 'mandate'])).toMatchObject({
+      handed: 3,
+      meetings: 2,
+      mandates: 1,
+    });
+  });
+
+  it('un propriétaire, ou un concurrent « à vérifier », attend toujours son adresse', () => {
+    for (const step of ['owner', 'check'] as const) {
+      expect(applyProspectingMove('to_confirm', 'handed', NOW, step).ok).toBe(false);
+      expect(canMarkHanded('to_confirm', step)).toBe(false);
+      expect(canMarkHanded('ready', step)).toBe(true);
     }
   });
 

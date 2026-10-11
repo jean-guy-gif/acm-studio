@@ -45,6 +45,8 @@ type ComparableCardProps = {
   // Mission 75 — présent pour les biens retenus : l'adresse rendue par le Localisateur.
   // `undefined` = carte sans ligne d'adresse (biens écartés).
   locatorAvailability?: LocatorAvailability | null;
+  // Mission 98 — l'adresse de ce concurrent est sur la liste « Ne plus solliciter » de l'agence.
+  oppositionNote?: string;
 };
 
 const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
@@ -66,6 +68,7 @@ export function ComparableCard({
   isLast,
   selection,
   locatorAvailability,
+  oppositionNote,
 }: ComparableCardProps) {
   const photos = getComparablePhotoUrls(comparable);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -178,6 +181,9 @@ export function ComparableCard({
 
         {locatorAvailability !== undefined ? (
           <CompetitorLocationLine competitor={comparable} availability={locatorAvailability} />
+        ) : null}
+        {oppositionNote ? (
+          <p className="text-sm font-semibold text-red-700 stage:text-red-300">{oppositionNote}</p>
         ) : null}
 
         <CompetitorMandateLine competitor={comparable} />

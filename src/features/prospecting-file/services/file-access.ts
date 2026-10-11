@@ -1,4 +1,5 @@
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
+import { OPPOSED_MESSAGE } from '@/features/prospecting/services/opposition';
 import {
   PROSPECTING_FILE_VERSIONS,
   type ProspectingFileVersion,
@@ -44,9 +45,12 @@ export const PHONE_MISSING_MESSAGE =
 export const AGENCY_ADDRESS_MISSING_MESSAGE =
   'Ajoutez l’adresse de l’agence dans Administration → Identité pour préparer ce courrier.';
 
-export type FileBlocker = 'address_unconfirmed' | 'phone_missing' | 'agency_address_missing';
+// Mission 98 — une adresse de la liste « Ne plus solliciter » ne reçoit plus de courrier.
+export type FileBlocker =
+  'opposed' | 'address_unconfirmed' | 'phone_missing' | 'agency_address_missing';
 
 export const FILE_BLOCKER_MESSAGES: Record<FileBlocker, string> = {
+  opposed: OPPOSED_MESSAGE,
   address_unconfirmed: ADDRESS_TO_CONFIRM_MESSAGE,
   phone_missing: PHONE_MISSING_MESSAGE,
   agency_address_missing: AGENCY_ADDRESS_MISSING_MESSAGE,
@@ -54,15 +58,22 @@ export const FILE_BLOCKER_MESSAGES: Record<FileBlocker, string> = {
 
 // Ce qui retient un dossier, dans l'ordre où le conseiller peut le lever. Le dossier s'ouvre dès
 // le mandat signé ; aucun dossier propriétaire sans adresse confirmée, ni sans le téléphone qui
-// permet de s'opposer à un nouveau contact, ni sans l'adresse de l'agence (mission 90).
+// permet de s'opposer à un nouveau contact, ni sans l'adresse de l'agence (mission 90). Et
+// d'abord : aucun courrier à un propriétaire qui a demandé à ne plus être sollicité (mission 98)
+// — rien de ce que le conseiller peut renseigner ne lève ce refus.
 export function fileBlocker(input: {
   version: ProspectingFileVersion;
+  // L'adresse du bien est sur la liste « Ne plus solliciter » de l'agence.
+  opposed: boolean;
   addressConfirmed: boolean;
   advisorPhone: string | null;
   // L'adresse postale de l'agence (Administration → Identité).
   agencyAddress: string | null;
 }): FileBlocker | null {
   if (input.version === 'owner') {
+    if (input.opposed) {
+      return 'opposed';
+    }
     if (!input.addressConfirmed) {
       return 'address_unconfirmed';
     }

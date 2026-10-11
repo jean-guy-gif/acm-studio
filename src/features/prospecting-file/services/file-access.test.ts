@@ -27,6 +27,7 @@ describe('la version se choisit seule', () => {
 describe('ce qui retient un dossier', () => {
   const ready = {
     version: 'owner' as const,
+    opposed: false,
     addressConfirmed: true,
     advisorPhone: '06 12 34 56 78',
     agencyAddress: '12 avenue de la Libération, 06600 Antibes',
@@ -39,11 +40,24 @@ describe('ce qui retient un dossier', () => {
   it('le dossier s’ouvre dès le mandat signé, sans lien d’annonce à renseigner', () => {
     expect(Object.keys(ready)).toEqual([
       'version',
+      'opposed',
       'addressConfirmed',
       'advisorPhone',
       'agencyAddress',
     ]);
     expect(fileBlocker({ ...ready, version: 'colleague' })).toBeNull();
+  });
+
+  // Mission 98 — la liste « Ne plus solliciter » bloque le courrier au propriétaire, avant tout
+  // le reste : rien de ce que le conseiller renseigne ne lève ce refus.
+  it('aucun courrier à un propriétaire qui a demandé à ne plus être sollicité', () => {
+    expect(fileBlocker({ ...ready, opposed: true })).toBe('opposed');
+    expect(
+      fileBlocker({ ...ready, opposed: true, addressConfirmed: false, advisorPhone: null }),
+    ).toBe('opposed');
+    expect(FILE_BLOCKER_MESSAGES.opposed).toBe(
+      'Ce propriétaire a demandé à ne plus être sollicité',
+    );
   });
 
   it('pas de dossier propriétaire sans adresse confirmée', () => {

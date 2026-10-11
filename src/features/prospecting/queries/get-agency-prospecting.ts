@@ -2,7 +2,12 @@ import 'server-only';
 
 import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
-import type { ProspectingEntry, ProspectingSeller } from '@/features/prospecting/types';
+import { groupProspecting } from '@/features/prospecting/services/group-prospecting';
+import type {
+  ProspectingCard,
+  ProspectingEntry,
+  ProspectingSeller,
+} from '@/features/prospecting/types';
 import { propertyLabel } from '@/features/projects/services/property-label';
 
 export type AgencyProspecting = {
@@ -10,6 +15,9 @@ export type AgencyProspecting = {
   sellers: ProspectingSeller[];
   // Tous leurs concurrents à prospecter, chacun avec son bien vendeur.
   entries: ProspectingEntry[];
+  // Mission 98 — les mêmes, regroupés : une carte par bien, quel que soit le nombre de mandats
+  // qui l'ont retenu.
+  cards: ProspectingCard[];
 };
 
 // Mission 86 — la page Prospection : les concurrents à prospecter de TOUS les mandats signés de
@@ -21,6 +29,7 @@ export async function getAgencyProspecting(dossiers: SuiviDossier[]): Promise<Ag
     projectId: dossier.project.id,
     name: dossier.project.seller_name ?? 'Dossier vendeur',
     label: propertyLabel(dossier.property),
+    advisorId: dossier.project.advisor_id,
   }));
   const rowsBySeller = await Promise.all(
     sellers.map((seller) => getProspectingRows(seller.projectId)),
@@ -28,5 +37,5 @@ export async function getAgencyProspecting(dossiers: SuiviDossier[]): Promise<Ag
   const entries = sellers.flatMap((seller, index) =>
     rowsBySeller[index].map((row) => ({ row, seller })),
   );
-  return { sellers, entries };
+  return { sellers, entries, cards: groupProspecting(entries) };
 }
