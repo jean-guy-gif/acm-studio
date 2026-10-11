@@ -35,6 +35,7 @@ function dossier(id: string, o: DossierInput): SuiviDossier {
       advisorPrice: o.advisorPrice ?? null,
       commercializationPrice: o.price === undefined ? 320000 : o.price,
       sellerPerceivedPrice: null,
+      sellerRevisedPrice: null,
       launchReadinessFirst: null,
       launchReadinessLast: null,
       launchReadinessMissing: null,

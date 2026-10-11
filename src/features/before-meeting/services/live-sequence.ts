@@ -59,6 +59,7 @@ const PARTS: { key: string; members: { type: LivePageType; label: string }[] }[]
     key: 'market',
     members: [
       { type: 'dangerous_competitor', label: 'Le concurrent le plus dangereux' },
+      { type: 'seller_revised_price', label: 'Votre prix après le marché' },
       { type: 'price_analysis', label: 'Analyse des prix' },
     ],
   },

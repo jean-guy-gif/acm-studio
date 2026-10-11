@@ -29,6 +29,7 @@ const SUMMARY_ANSWERS = [
   'seller_property_confirmed',
   'seller_perceived_property_price',
   'seller_most_dangerous_comparable_id',
+  'seller_revised_property_price',
   'seller_launch_readiness_last',
 ] as const;
 

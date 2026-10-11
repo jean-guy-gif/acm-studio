@@ -30,6 +30,7 @@ function dossier(
       advisorPrice: null,
       commercializationPrice: prices.end ?? null,
       sellerPerceivedPrice: prices.start ?? null,
+      sellerRevisedPrice: null,
       launchReadinessFirst: null,
       launchReadinessLast: null,
       launchReadinessMissing: null,

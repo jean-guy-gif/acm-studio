@@ -94,12 +94,27 @@ describe('liveResume — on reprend après la dernière réponse du vendeur', ()
     }
   });
 
-  it('tout répondu jusqu’au concurrent le plus dangereux : on rouvre sur l’analyse des prix', () => {
+  it('tout répondu jusqu’au concurrent le plus dangereux : on rouvre sur le prix à reformuler', () => {
     const source = live(
       {
         seller_property_confirmed: 'yes',
         seller_perceived_property_price: 330000,
         seller_most_dangerous_comparable_id: 'c0',
+      },
+      [FULL],
+    );
+    const pages = buildLivePages(source, true);
+    // Mission 94 — l'écran qui suit est celui où le vendeur reformule son prix.
+    expect(typeAt(source, liveResume(pages, source).index)).toBe('seller_revised_price');
+  });
+
+  it('prix reformulé donné : on rouvre sur l’analyse des prix', () => {
+    const source = live(
+      {
+        seller_property_confirmed: 'yes',
+        seller_perceived_property_price: 350000,
+        seller_most_dangerous_comparable_id: 'c0',
+        seller_revised_property_price: 325000,
       },
       [FULL],
     );

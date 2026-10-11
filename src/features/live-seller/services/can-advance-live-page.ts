@@ -64,6 +64,8 @@ export function livePageHasAnswer(
       return response?.seller_estimated_days_on_market != null;
     case 'dangerous_competitor':
       return summary?.seller_most_dangerous_comparable_id != null;
+    case 'seller_revised_price':
+      return summary?.seller_revised_property_price != null;
     case 'closing_question':
       return summary?.seller_launch_readiness_last != null;
     default:

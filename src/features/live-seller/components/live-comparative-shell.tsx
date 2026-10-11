@@ -21,6 +21,7 @@ import { LivePageDangerous } from '@/features/live-seller/components/live-page-d
 import { LivePageDpe } from '@/features/live-seller/components/live-page-dpe';
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
+import { LivePageRevised } from '@/features/live-seller/components/live-page-revised';
 import { LivePagePerceived } from '@/features/live-seller/components/live-page-perceived';
 import { LivePageProperty } from '@/features/live-seller/components/live-page-property';
 import { LivePagePrice } from '@/features/live-seller/components/live-page-price';
@@ -117,6 +118,10 @@ export function LiveComparativeShell({
   // Mission 92 — ce prix ne se donne qu'une fois : le montant tapé est redit en grand, et
   // n'est enregistré qu'au second « Valider » (une faute de frappe se voit avant).
   const [perceivedToConfirm, setPerceivedToConfirm] = useState<number | null>(null);
+  // Mission 94 — le prix que le vendeur reformule après avoir vu le marché : même rappel en
+  // grand avant d'enregistrer, et gardé côté client une fois en base.
+  const [revisedOverride, setRevisedOverride] = useState<number | null>(null);
+  const [revisedToConfirm, setRevisedToConfirm] = useState<number | null>(null);
   // Le concurrent le plus dangereux, choisi pendant la séance : enregistré en fond, il n'est
   // pas dans la charge d'ouverture — « Conclusion » le lit ici.
   const [dangerousOverride, setDangerousOverride] = useState<DangerousChoice | null>(null);
@@ -237,15 +242,16 @@ export function LiveComparativeShell({
   }, [live, delivered, responseOverrides]);
   const summary = useMemo<LiveSellerSummary | null>(() => {
     const base = live?.sellerSummary ?? null;
-    if (perceivedOverride == null && dangerousOverride == null) {
+    if (perceivedOverride == null && dangerousOverride == null && revisedOverride == null) {
       return base;
     }
     return {
       ...(base ?? {}),
       ...(perceivedOverride == null ? {} : { seller_perceived_property_price: perceivedOverride }),
+      ...(revisedOverride == null ? {} : { seller_revised_property_price: revisedOverride }),
       ...(dangerousOverride ?? {}),
     } as LiveSellerSummary;
-  }, [live, perceivedOverride, dangerousOverride]);
+  }, [live, perceivedOverride, dangerousOverride, revisedOverride]);
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
 
   const pages = useMemo(
@@ -292,6 +298,7 @@ export function LiveComparativeShell({
     (delta: number) => {
       setAwaitError(null);
       setPerceivedToConfirm(null);
+      setRevisedToConfirm(null);
       setIndex((i) => {
         const target = Math.max(0, Math.min(pages.length - 1, i + delta));
         // Fin de séance bloquée tant qu'un enregistrement de fond a échoué.
@@ -470,6 +477,39 @@ export function LiveComparativeShell({
         return;
       }
     }
+    // Mission 94 — Acte 5 : le vendeur reformule son prix avant l'analyse. Facultatif ; donné,
+    // il est redit en grand, puis enregistré avec la demande de fourchette (ou seul, s'il reste
+    // une étape à passer). Déjà donné : on avance sans rien réécrire.
+    if (page.type === 'seller_revised_price') {
+      const alreadyGiven = summary?.seller_revised_property_price != null;
+      const canDeliver = entersAnalysis && range == null && pendingSteps.length === 0;
+      if (!alreadyGiven) {
+        const raw = String(fd.get('seller_revised_property_price') ?? '').trim();
+        const typed = raw === '' ? Number.NaN : Number(raw);
+        if (!Number.isFinite(typed) || typed <= 0) {
+          setAwaitError('Indiquez votre prix, ou touchez « Passer ».');
+          return;
+        }
+        if (revisedToConfirm !== typed) {
+          setRevisedToConfirm(typed);
+          return;
+        }
+        const r = await awaited(() =>
+          canDeliver ? deliverRange() : persistLiveSellerSummary(projectId, fd),
+        );
+        if (!r.ok) {
+          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          return;
+        }
+        setRevisedOverride(typed);
+        go(1);
+        return;
+      }
+      if (!canDeliver) {
+        go(1);
+        return;
+      }
+    }
     // Une étape sautée : on n'insiste pas ici, « Analyse des prix » dira ce qui reste à passer.
     if (entersAnalysis && range == null && pendingSteps.length === 0) {
       const r = await awaited(deliverRange);
@@ -506,12 +546,32 @@ export function LiveComparativeShell({
     range,
     summary,
     perceivedToConfirm,
+    revisedToConfirm,
     comparables,
     pendingSteps,
     go,
     runBackground,
     harvest,
   ]);
+
+  // Mission 94 — « Passer » : le vendeur ne reformule pas son prix. Rien n'est enregistré ; la
+  // fourchette se demande quand même (formulaire vide), puisque « Analyse des prix » suit.
+  const skipRevisedPrice = async () => {
+    if (busy) return;
+    setAwaitError(null);
+    if (range == null && pendingSteps.length === 0) {
+      const r = await guardedSave(
+        () => deliverLiveFragment(projectId, { kind: 'advisor-range', formData: new FormData() }),
+        { setBusy },
+      );
+      if (!r.ok) {
+        setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+        return;
+      }
+      if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
+    }
+    go(1);
+  };
 
   // Arrivée sur « Analyse des prix » sans passer par « Valider et continuer » alors que tout
   // est passé : la fourchette se demande ici, par la même voie gardée côté serveur.
@@ -816,8 +876,14 @@ export function LiveComparativeShell({
           <LivePageDangerous comparables={authorizedComparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (
           <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
+        ) : page.type === 'seller_revised_price' ? (
+          <LivePageRevised summary={summary} confirming={revisedToConfirm} />
         ) : page.type === 'price_analysis' && effectiveRange ? (
-          <LivePageAnalysis priceGaps={effectiveRange.priceGaps} />
+          <LivePageAnalysis
+            priceGaps={effectiveRange.priceGaps}
+            reading={effectiveRange.marketReading}
+            revisedPrice={summary?.seller_revised_property_price ?? null}
+          />
         ) : page.type === 'price_analysis' ? (
           <LivePageAnalysisPending
             steps={pendingSteps}
@@ -886,6 +952,18 @@ export function LiveComparativeShell({
                         ? 'Réponse enregistrée'
                         : ''}
             </span>
+            {/* Mission 94 — le prix reformulé est facultatif : « Passer » n'enregistre rien. */}
+            {page.type === 'seller_revised_price' &&
+            summary?.seller_revised_property_price == null ? (
+              <button
+                type="button"
+                onClick={() => void skipRevisedPrice()}
+                disabled={busy}
+                className={navBtn}
+              >
+                Passer
+              </button>
+            ) : null}
             {blockedByFailedSave ? (
               <button type="button" onClick={retryFailedSaves} className={ctaPrimary}>
                 Réessayer
@@ -899,7 +977,8 @@ export function LiveComparativeShell({
               >
                 {page.type === 'comparable_duration' && !durationRevealed
                   ? 'Révéler la durée →'
-                  : perceivedToConfirm != null && page.type === 'seller_perceived_price'
+                  : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
+                      (revisedToConfirm != null && page.type === 'seller_revised_price')
                     ? 'Confirmer et continuer →'
                     : 'Valider et continuer →'}
               </button>

@@ -44,7 +44,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
   }
 
   const ids = list.map((p) => p.id);
-  const [propertiesRes, conclusionsRes] = await Promise.all([
+  const [propertiesRes, conclusionsRes, revisedRes] = await Promise.all([
     supabase
       .from('subject_properties')
       .select('project_id, property_type, rooms_count, surface_area, city')
@@ -57,7 +57,16 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       )
       .in('project_id', ids)
       .eq('agency_id', agencyId),
+    // Mission 94 — le prix reformulé par le vendeur, figé dans le résumé du Live.
+    supabase
+      .from('live_seller_summary')
+      .select('project_id, seller_revised_property_price')
+      .in('project_id', ids)
+      .eq('agency_id', agencyId),
   ]);
+  const revisedByProject = new Map(
+    (revisedRes.data ?? []).map((row) => [row.project_id, row.seller_revised_property_price]),
+  );
 
   const propertyByProject = new Map<string, PreparationProperty>();
   for (const row of propertiesRes.data ?? []) {
@@ -77,6 +86,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       advisorPrice: row.frozen_advisor_price,
       commercializationPrice: row.commercialization_price,
       sellerPerceivedPrice: row.frozen_seller_perceived_price,
+      sellerRevisedPrice: revisedByProject.get(row.project_id) ?? null,
       launchReadinessFirst: row.frozen_launch_readiness_first,
       launchReadinessLast: row.frozen_launch_readiness_last,
       launchReadinessMissing: row.frozen_launch_readiness_missing,
