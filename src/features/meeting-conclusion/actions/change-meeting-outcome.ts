@@ -2,7 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { changeOutcomeSchema } from '@/features/meeting-conclusion/schemas/conclusion-input';
+import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import { readDecisionForm } from '@/features/meeting-conclusion/schemas/conclusion-input';
+import {
+  OUTCOME_REQUIRED_MESSAGE,
+  PRICE_INVALID_MESSAGE,
+  checkDecision,
+} from '@/features/meeting-conclusion/services/conclusion-requirements';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -13,8 +19,9 @@ type ChangeArgs = Database['public']['Functions']['change_meeting_outcome']['Arg
 export type ChangeOutcomeResult = { ok: true } | { ok: false; error: string };
 
 // Mission 54 §1 — l'acte NORMAL du suivi : changer l'issue d'un dossier conclu (un « à
-// relancer » qui signe, un « vendu ailleurs » qui se clôt). N'écrit QUE l'issue, le motif
-// et la date de changement. Ne touche jamais les montants figés (l'histoire du rendez-vous
+// relancer » qui signe, un « vendu ailleurs » qui se clôt). Écrit l'issue, le motif, la date de
+// changement et — mission 90 — le type de mandat et le prix de commercialisation d'un mandat
+// qui se signe. Ne touche jamais les montants figés (l'histoire du rendez-vous
 // ne se réécrit pas), ni `projects.status` (règle M53 : le statut porte la position).
 export async function changeMeetingOutcome(
   projectId: string,
@@ -25,12 +32,12 @@ export async function changeMeetingOutcome(
     return { ok: false, error: 'Vous devez être connecté.' };
   }
 
-  const parsed = changeOutcomeSchema.safeParse({
-    outcome: formData.get('outcome'),
-    follow_up_reason: formData.get('follow_up_reason') ?? undefined,
-  });
+  const parsed = readDecisionForm(formData);
   if (!parsed.success) {
-    return { ok: false, error: 'Choisissez une issue valide.' };
+    const priceIssue = parsed.error.issues.some(
+      (issue) => issue.path[0] === 'commercialization_price',
+    );
+    return { ok: false, error: priceIssue ? PRICE_INVALID_MESSAGE : OUTCOME_REQUIRED_MESSAGE };
   }
 
   // Autorisation + garde de position : on ne change l'issue que d'un dossier en Suivi.
@@ -42,12 +49,26 @@ export async function changeMeetingOutcome(
     return { ok: false, error: 'Ce dossier n’est pas encore dans le Suivi.' };
   }
 
+  // Mission 90 — mêmes exigences qu'à la conclusion : un « à relancer » qui signe dit exclusif
+  // ou simple, et son prix s'il manque.
+  const known = await getConclusion(projectId);
+  const decision = checkDecision(parsed.data, {
+    commercializationPrice: known?.commercializationPrice ?? null,
+    mandateType: known?.mandateType ?? null,
+  });
+  if (!decision.ok) {
+    return { ok: false, error: decision.error };
+  }
+
   const serviceClient = createServiceRoleClient();
+  // null accepté en base pour les trois derniers (cast de typage seulement).
   const args: ChangeArgs = {
     p_project_id: projectId,
     p_agency_id: profile.agency_id,
-    p_outcome: parsed.data.outcome,
-    p_reason: parsed.data.followUpReason as string, // null accepté en base (cast de typage).
+    p_outcome: decision.value.outcome,
+    p_reason: decision.value.reason as string,
+    p_mandate_type: decision.value.mandateType as string,
+    p_price: decision.value.price as number,
   };
   const { error } = await serviceClient.rpc('change_meeting_outcome', args);
   if (error) {

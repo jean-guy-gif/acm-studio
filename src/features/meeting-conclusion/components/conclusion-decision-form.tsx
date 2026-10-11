@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { btnPrimary, errorText } from '@/components/ui/styles';
 import { concludeMeeting } from '@/features/meeting-conclusion/actions/conclude-meeting';
 import { OutcomeChoice } from '@/features/meeting-conclusion/components/outcome-choice';
-import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import type { ConclusionOutcome, MandateType } from '@/features/meeting-conclusion/types';
 
 // Mission 53/54 — écran conseiller, jamais vu du vendeur : « Comment s'est conclu ce
 // rendez-vous ? ». L'issue + le passage en Suivi sont écrits en une transaction
@@ -14,10 +14,15 @@ export function ConclusionDecisionForm({
   projectId,
   initialOutcome,
   initialReason,
+  initialMandateType,
+  knownPrice,
 }: {
   projectId: string;
   initialOutcome: ConclusionOutcome | null;
   initialReason: string | null;
+  // Mission 90 — le type déjà enregistré et le prix déjà enregistré (saisi au Live).
+  initialMandateType: MandateType | null;
+  knownPrice: number | null;
 }) {
   const [outcome, setOutcome] = useState<ConclusionOutcome | null>(initialOutcome);
   const [pending, startTransition] = useTransition();
@@ -43,6 +48,8 @@ export function ConclusionDecisionForm({
         outcome={outcome}
         onOutcomeChange={setOutcome}
         initialReason={initialReason}
+        initialMandateType={initialMandateType}
+        knownPrice={knownPrice}
         legend={'Comment s’est conclu ce rendez-vous ?'}
       />
 

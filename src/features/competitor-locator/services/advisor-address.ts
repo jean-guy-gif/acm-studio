@@ -40,10 +40,6 @@ export function confirmedByAdvisor(row: AddressRow): boolean {
   return row.locator_confirmed === true && row.locator_source === ADVISOR_SOURCE;
 }
 
-export function canAdvisorSetAddress(row: AddressRow): boolean {
-  return row.locator_confirmed !== true || confirmedByAdvisor(row);
-}
-
 // « C'est la bonne adresse » n'existe que si le Localisateur en propose une, non confirmée.
 export function canAcceptProposedAddress(row: AddressRow): boolean {
   return row.locator_confirmed !== true && (row.locator_address?.trim() ?? '') !== '';
@@ -69,9 +65,8 @@ export function advisorAddressPatch(
       },
     };
   }
-  if (!canAdvisorSetAddress(row)) {
-    return { ok: false, error: 'Cette adresse est déjà confirmée par le Localisateur.' };
-  }
+  // Mission 90 — une adresse saisie remplace TOUJOURS la précédente, même confirmée par le
+  // Localisateur : un courrier ne doit pas partir à une adresse fausse impossible à corriger.
   const address =
     typeof input.address === 'string' ? input.address.replace(/\s+/g, ' ').trim() : '';
   if (address.length < ADDRESS_MIN_LENGTH || address.length > ADDRESS_MAX_LENGTH) {

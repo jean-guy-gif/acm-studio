@@ -1196,9 +1196,11 @@ export type Database = {
           frozen_seller_perceived_price: number | null
           frozen_seller_wanted_price: number | null
           id: string
+          mandate_type: string | null
           outcome: string | null
           outcome_changed_at: string
           project_id: string
+          signed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1219,9 +1221,11 @@ export type Database = {
           frozen_seller_perceived_price?: number | null
           frozen_seller_wanted_price?: number | null
           id?: string
+          mandate_type?: string | null
           outcome?: string | null
           outcome_changed_at?: string
           project_id: string
+          signed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1242,9 +1246,11 @@ export type Database = {
           frozen_seller_perceived_price?: number | null
           frozen_seller_wanted_price?: number | null
           id?: string
+          mandate_type?: string | null
           outcome?: string | null
           outcome_changed_at?: string
           project_id?: string
+          signed_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1865,7 +1871,9 @@ export type Database = {
       change_meeting_outcome: {
         Args: {
           p_agency_id: string
+          p_mandate_type?: string
           p_outcome: string
+          p_price?: number
           p_project_id: string
           p_reason: string
         }
@@ -1877,6 +1885,7 @@ export type Database = {
           p_advisor_price: number
           p_agency_id: string
           p_exploitable?: number
+          p_mandate_type?: string
           p_market_computed: number
           p_outcome: string
           p_price: number

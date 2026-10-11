@@ -8,8 +8,12 @@ import {
   SUIVI_GROUPS,
   SUIVI_GROUP_LABELS,
   averageJourneyGap,
+  daysSince,
+  exclusiveLabel,
+  exclusiveSignedCount,
   filterSuiviByGroup,
   parseSuiviGroup,
+  sortSuivi,
   suiviCounts,
   type SuiviGroup,
 } from '@/features/meeting-conclusion/services/filter-suivi';
@@ -52,7 +56,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
 
   const allDossiers = await getSuiviDossiers();
   const { entries } = await getAgencyProspecting(allDossiers);
-  const dossiers = filterSuiviByGroup(allDossiers, group);
+  // Mission 90 — les « à relancer » du plus ancien au plus récent.
+  const dossiers = sortSuivi(filterSuiviByGroup(allDossiers, group));
+  const exclusives = exclusiveSignedCount(allDossiers);
+  const now = new Date();
   const counts = suiviCounts(allDossiers);
   const averageGap = averageJourneyGap(allDossiers);
 
@@ -99,6 +106,12 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 <span className="text-xs whitespace-nowrap text-zinc-500 stage:text-white/60">
                   {SUIVI_GROUP_LABELS[value]}
                 </span>
+                {/* Mission 90 — la mesure de la bêta : dont combien d'exclusifs. */}
+                {value === 'signed' && counts.signed > 0 ? (
+                  <span className="text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand">
+                    {exclusiveLabel(exclusives)}
+                  </span>
+                ) : null}
               </Link>
             ))}
             {averageGap != null ? (
@@ -144,6 +157,14 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                   <SuiviRow
                     key={dossier.project.id}
                     dossier={dossier}
+                    concludedDaysAgo={
+                      dossier.conclusion?.outcome === 'follow_up'
+                        ? daysSince(
+                            dossier.conclusion.concludedAt ?? dossier.project.updated_at,
+                            now,
+                          )
+                        : null
+                    }
                     prospecting={
                       dossier.conclusion?.outcome === 'signed'
                         ? { count: statuses.length, progress: prospectingProgress(statuses) }

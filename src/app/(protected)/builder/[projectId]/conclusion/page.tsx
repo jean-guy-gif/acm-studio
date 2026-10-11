@@ -68,6 +68,8 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
           projectId={projectId}
           initialOutcome={conclusion?.outcome ?? null}
           initialReason={conclusion?.followUpReason ?? null}
+          initialMandateType={conclusion?.mandateType ?? null}
+          knownPrice={conclusion?.commercializationPrice ?? null}
         />
       </div>
     </div>

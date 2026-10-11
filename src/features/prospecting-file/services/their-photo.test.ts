@@ -34,10 +34,11 @@ describe('listingPhotoUrls', () => {
 });
 
 describe('le choix à l’ouverture', () => {
-  it('propose la première photo de l’annonce, sinon « Sans photo »', () => {
+  // Mission 90 — « Sans photo » par défaut (question de droits) : la photo d'une annonce est
+  // un choix du conseiller, jamais un défaut.
+  it('rien de choisi : « Sans photo », même si l’annonce a des photos', () => {
     expect(initialTheirPhotoChoice(NO_SAVED_THEIR_PHOTO, LISTING, PREFIX)).toEqual({
-      mode: 'listing',
-      url: LISTING[0],
+      mode: 'none',
     });
     expect(initialTheirPhotoChoice(NO_SAVED_THEIR_PHOTO, [], PREFIX)).toEqual({ mode: 'none' });
   });
@@ -65,7 +66,7 @@ describe('le choix à l’ouverture', () => {
         LISTING,
         PREFIX,
       ),
-    ).toEqual({ mode: 'listing', url: LISTING[0] });
+    ).toEqual({ mode: 'none' });
     expect(
       initialTheirPhotoChoice(
         { mode: 'upload', sourceUrl: null, path: 'agence/dossier/prospecting/autre/x.jpg' },

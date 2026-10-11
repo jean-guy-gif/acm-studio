@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   advisorAddressPatch,
   canAcceptProposedAddress,
-  canAdvisorSetAddress,
   confirmedByAdvisor,
 } from '@/features/competitor-locator/services/advisor-address';
 import { needsLocatorQuery } from '@/features/competitor-locator/services/location-action';
@@ -70,15 +69,42 @@ describe('« Saisir l’adresse »', () => {
     }
   });
 
-  it('le conseiller corrige sa propre adresse, jamais celle confirmée par le Localisateur', () => {
-    expect(canAdvisorSetAddress(row('1 rue A', true, 'vous'))).toBe(true);
-    expect(canAdvisorSetAddress(row('1 rue A', true, 'dpe'))).toBe(false);
+  // Mission 90 — un courrier ne part pas à une adresse fausse impossible à corriger : une
+  // adresse venue du Localisateur, même confirmée, se corrige.
+  it('le conseiller corrige une adresse confirmée par le Localisateur : elle devient « saisie par vous »', () => {
+    const result = advisorAddressPatch(row('1 rue A, Nice', true, 'dpe'), {
+      mode: 'typed',
+      address: '  2 rue B,   06000 Nice ',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.patch).toMatchObject({
+      locator_address: '2 rue B, 06000 Nice',
+      locator_confirmed: true,
+      locator_source: 'vous',
+      locator_label: 'Adresse saisie par vous',
+      // L'ancienne position n'est plus celle de la nouvelle adresse.
+      locator_latitude: null,
+      locator_longitude: null,
+    });
+    // Une fois corrigée, c'est la sienne : aucune relecture du Localisateur ne la réécrit.
+    expect(confirmedByAdvisor({ ...row('1 rue A', true, 'dpe'), ...result.patch })).toBe(true);
+  });
+
+  it('il corrige aussi sa propre adresse, et une correction vide est refusée', () => {
     expect(
-      advisorAddressPatch(row('1 rue A', true, 'dpe'), { mode: 'typed', address: '2 rue B, Nice' })
+      advisorAddressPatch(row('1 rue A', true, 'vous'), { mode: 'typed', address: '2 rue B, Nice' })
         .ok,
+    ).toBe(true);
+    expect(
+      advisorAddressPatch(row('1 rue A', true, 'dpe'), { mode: 'typed', address: ' ' }).ok,
     ).toBe(false);
     expect(confirmedByAdvisor(row('1 rue A', true, 'vous'))).toBe(true);
     expect(confirmedByAdvisor(row('1 rue A', true, 'dpe'))).toBe(false);
+  });
+
+  it('« C’est la bonne adresse » ne vaut que pour une adresse proposée, pas encore confirmée', () => {
+    expect(advisorAddressPatch(row('1 rue A', true, 'dpe'), { mode: 'accept' }).ok).toBe(false);
   });
 });
 

@@ -14,15 +14,14 @@ const OPEN_COOLDOWN_MS = 2_000;
 
 // Mission 84 — sur une ligne de la liste de tournée, de quoi confirmer l'adresse sans quitter
 // ACM : valider celle que le Localisateur propose, l'ouvrir dans le Localisateur (ACM relit au
-// retour sur l'onglet), ou la saisir. Une fois confirmée par le conseiller, seul « Corriger
-// l'adresse » reste. Rien ne s'imprime.
+// retour sur l'onglet), ou la saisir. Une fois confirmée — par le conseiller ou par le
+// Localisateur (mission 90) — « Corriger l'adresse » reste toujours disponible. Rien ne s'imprime.
 export function ConfirmAddressActions({
   projectId,
   competitorId,
   listingUrl,
   canAccept,
   confirmed,
-  confirmedByAdvisor,
 }: {
   projectId: string;
   competitorId: string;
@@ -30,18 +29,12 @@ export function ConfirmAddressActions({
   // Le Localisateur propose une adresse, pas encore confirmée.
   canAccept: boolean;
   confirmed: boolean;
-  confirmedByAdvisor: boolean;
 }) {
   const [typing, setTyping] = useState(false);
   const [address, setAddress] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [cooling, setCooling] = useState(false);
   const [pending, startTransition] = useTransition();
-
-  // Confirmée par le Localisateur : rien à faire ici.
-  if (confirmed && !confirmedByAdvisor) {
-    return null;
-  }
 
   const submit = (input: { mode: 'accept' } | { mode: 'typed'; address: string }) => {
     setMessage(null);

@@ -1,5 +1,4 @@
 import {
-  Inter,
   Montserrat,
   Nunito_Sans,
   Poppins,
@@ -7,6 +6,11 @@ import {
   Source_Sans_3,
   Work_Sans,
 } from 'next/font/google';
+
+// Mission 90 — Inter n'est plus téléchargée chez Google à la compilation (ce téléchargement
+// faisait échouer presque chaque déploiement) : ses fichiers sont dans le dépôt, et cette feuille
+// définit `--font-inter`. Les six autres familles passent toujours par next/font/google.
+import './inter/inter.css';
 
 // Mission 57 §5 — les polices EMBARQUÉES. next/font les télécharge et les auto-héberge À LA
 // COMPILATION : aucune requête vers un service extérieur pendant le Live, et la question de
@@ -34,12 +38,6 @@ const rajdhani = Rajdhani({
 // `preload: false` : elles restent EMBARQUÉES (auto-hébergées, aucune requête extérieure) mais
 // ne sont pas préchargées par défaut — seule l'agence qui a choisi l'une d'elles la télécharge,
 // au moment où un texte la rend. Le défaut produit (Montserrat/Rajdhani) garde le préchargement.
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
-});
 const poppins = Poppins({
   variable: '--font-poppins',
   subsets: ['latin'],
@@ -70,7 +68,6 @@ const nunitoSans = Nunito_Sans({
 export const embeddedFontClassNames = [
   montserrat.variable,
   rajdhani.variable,
-  inter.variable,
   poppins.variable,
   sourceSans.variable,
   workSans.variable,

@@ -55,7 +55,6 @@ export function ProspectingList({
                   listingUrl={row.listingUrl}
                   canAccept={row.canAcceptAddress}
                   confirmed={row.confirmed && row.address != null}
-                  confirmedByAdvisor={row.confirmedByAdvisor}
                 />
               ) : null}
               {filesProjectId ? (

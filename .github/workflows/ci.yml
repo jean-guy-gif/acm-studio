@@ -46,3 +46,14 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/closed_doors.sql
+
+      # Mission 90 — la date du rendez-vous ne se réécrit plus, la signature se date une fois.
+      - name: Conclusion (dates, type de mandat, prix, motif)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/conclusion_that_measures.sql
+
+      - name: Note de closing figée à la conclusion
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/launch_readiness.sql

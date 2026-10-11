@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
-import type { MeetingConclusion } from '@/features/meeting-conclusion/types';
+import { isMandateType, type MeetingConclusion } from '@/features/meeting-conclusion/types';
 
 // Lecture de la conclusion d'un dossier (RLS cadré sur l'agence). Null si aucune
 // conclusion n'a encore été enregistrée. Les montants sont ceux FIGÉS en base.
@@ -15,7 +15,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   const { data } = await supabase
     .from('project_meeting_conclusions')
     .select(
-      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, concluded_at, outcome_changed_at',
+      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, mandate_type, signed_at, concluded_at, outcome_changed_at',
     )
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
@@ -34,6 +34,8 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
     launchReadinessMissing: data.frozen_launch_readiness_missing,
     outcome: (data.outcome as MeetingConclusion['outcome']) ?? null,
     followUpReason: data.follow_up_reason,
+    mandateType: isMandateType(data.mandate_type) ? data.mandate_type : null,
+    signedAt: data.signed_at,
     concludedAt: data.concluded_at,
     outcomeChangedAt: data.outcome_changed_at,
   };

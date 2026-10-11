@@ -88,9 +88,9 @@ export type FixedTexts = {
     together: { label: string; visits: number; caption: string; note: string };
   } | null;
   turnPage: string | null;
-  information: string;
-  // « Pour ne plus être sollicité » : le téléphone du conseiller y est ajouté à l'affichage.
-  optOut: string | null;
+  // Pied de la version confrère. La version propriétaire porte à la place la mention sur le
+  // traitement de l'adresse (legal-mention.ts), composée avec l'expéditeur : null ici.
+  information: string | null;
 };
 
 // Qui signe le dossier : le conseiller connecté et son agence.
