@@ -5,13 +5,18 @@ import { AcceptForm } from '@/app/accept-invitation/accept-form';
 import { AppLogo } from '@/components/theme/app-logo';
 import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
-import { card, kickerLabel, pageSubtitle } from '@/components/ui/styles';
+import { alertOk, card, kickerLabel, pageSubtitle } from '@/components/ui/styles';
+import { PENDING_INVITATION_MESSAGE } from '@/lib/auth/auth-messages';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getUser } from '@/lib/auth/get-user';
 
 // Mission 60 — l'écran d'acceptation, ouvert par le lien e-mail (via /auth/confirm, qui a établi
 // la session). Sans session → connexion. Déjà un profil → l'agence (il a déjà rejoint).
-export default async function AcceptInvitationPage() {
+type AcceptInvitationPageProps = {
+  searchParams: Promise<{ invite?: string }>;
+};
+
+export default async function AcceptInvitationPage({ searchParams }: AcceptInvitationPageProps) {
   const user = await getUser();
   if (!user) {
     redirect('/login');
@@ -21,6 +26,7 @@ export default async function AcceptInvitationPage() {
     redirect('/builder');
   }
 
+  const { invite } = await searchParams;
   const cookieStore = await cookies();
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
@@ -42,6 +48,12 @@ export default async function AcceptInvitationPage() {
               vous attendent déjà.
             </p>
           </div>
+          {/* Mission 88 — renvoyé ici depuis /onboarding : on lui dit pourquoi. */}
+          {invite ? (
+            <p role="status" className={alertOk}>
+              {PENDING_INVITATION_MESSAGE}
+            </p>
+          ) : null}
           <AcceptForm email={user.email ?? ''} />
         </div>
       </div>

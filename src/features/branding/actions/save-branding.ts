@@ -2,12 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { IDENTITY_MANAGER_ONLY_MESSAGE } from '@/features/branding/constants';
 import {
   agencyMentionsInputSchema,
   typographyInputSchema,
 } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
-import { getProfile } from '@/lib/auth/get-profile';
+import { requireManagerProfile } from '@/features/team/services/require-manager';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -56,11 +57,13 @@ async function uploadLogo(
 // couleur PRIMAIRE et les fichiers de logo ; la palette est RE-DÉRIVÉE côté serveur (jamais
 // on ne fait confiance à une palette venue du client), chaque couleur reste un #RRGGBB.
 export async function saveBranding(formData: FormData): Promise<SaveBrandingResult> {
-  const profile = await getProfile();
-  if (!profile) {
-    return { ok: false, error: 'Vous devez être connecté.' };
+  // Mission 88 — l'identité de l'agence est vue par les vendeurs, et l'écriture passe par la
+  // clé service : le garde est ICI. Seul un manager non retiré de l'agence la modifie.
+  const guard = await requireManagerProfile();
+  if (!guard.ok) {
+    return { ok: false, error: IDENTITY_MANAGER_ONLY_MESSAGE };
   }
-  const agencyId = profile.agency_id;
+  const agencyId = guard.profile.agency_id;
 
   const rawPrimary = formData.get('primary_color');
   const primary = typeof rawPrimary === 'string' ? rawPrimary.trim().toLowerCase() : '';

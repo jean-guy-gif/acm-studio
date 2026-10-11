@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { siteUrl } from '@/lib/site-url';
 import type { Database } from '@/lib/supabase/database.types';
 
 type Service = SupabaseClient<Database>;
@@ -9,10 +10,6 @@ type Service = SupabaseClient<Database>;
 export type DeliveryResult =
   | { ok: true; authUserId: string | null }
   | { ok: false; alreadyRegistered: boolean; error: string };
-
-function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-}
 
 async function findAuthUserId(service: Service, email: string): Promise<string | null> {
   // Base locale/petite : une page suffit. On cherche un compte auth SANS profil (invitation
