@@ -43,6 +43,7 @@ export const DOCUMENT_CSS = `
 .pf-key { margin-top: 4mm; border-left: 3px solid var(--flat); padding: 2mm 0 2mm 5mm; font-size: 12pt; font-weight: 600; color: var(--p); line-height: 1.35; }
 .pf-foot { position: absolute; left: 17mm; right: 17mm; bottom: 9mm; font-size: 7pt; color: var(--mute); border-top: 1px solid var(--line); padding-top: 2.5mm; display: flex; justify-content: space-between; gap: 6mm; }
 .pf-foot span:last-child { text-align: right; white-space: nowrap; }
+.pf-foot.pf-legal { display: block; font-size: 6.5pt; line-height: 1.4; text-wrap: pretty; }
 .pf-scheme { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin: 5mm 0 4mm; }
 .pf-col { border: 1px solid var(--line); border-radius: 3mm; padding: 5mm; }
 .pf-col.together { border-color: var(--flat); }

@@ -4,8 +4,14 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
-import { conclusionDecisionSchema } from '@/features/meeting-conclusion/schemas/conclusion-input';
+import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import { readDecisionForm } from '@/features/meeting-conclusion/schemas/conclusion-input';
 import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
+import {
+  OUTCOME_REQUIRED_MESSAGE,
+  PRICE_INVALID_MESSAGE,
+  checkDecision,
+} from '@/features/meeting-conclusion/services/conclusion-requirements';
 import {
   liveCapturedFacts,
   liveDerivedAmounts,
@@ -32,12 +38,13 @@ export async function concludeMeeting(
     return { ok: false, error: 'Vous devez être connecté.' };
   }
 
-  const parsed = conclusionDecisionSchema.safeParse({
-    outcome: formData.get('outcome'),
-    follow_up_reason: formData.get('follow_up_reason') ?? undefined,
-  });
+  const parsed = readDecisionForm(formData);
   if (!parsed.success) {
-    return { ok: false, error: 'Choisissez « Mandat signé » ou « À relancer ».' };
+    // Mission 90 — le message cite les quatre issues ; un prix mal formé le dit.
+    const priceIssue = parsed.error.issues.some(
+      (issue) => issue.path[0] === 'commercialization_price',
+    );
+    return { ok: false, error: priceIssue ? PRICE_INVALID_MESSAGE : OUTCOME_REQUIRED_MESSAGE };
   }
 
   // Autorisation + garde de position : on conclut un dossier prêt, déjà conclu (pour corriger
@@ -51,6 +58,17 @@ export async function concludeMeeting(
     return { ok: false, error: 'Ce dossier ne peut pas être conclu.' };
   }
 
+  // Mission 90 — un mandat signé exige exclusif ou simple, et un prix : celui déjà enregistré
+  // (saisi au Live), ou celui du formulaire s'il manque.
+  const known = await getConclusion(projectId);
+  const decision = checkDecision(parsed.data, {
+    commercializationPrice: known?.commercializationPrice ?? null,
+    mandateType: known?.mandateType ?? null,
+  });
+  if (!decision.ok) {
+    return { ok: false, error: decision.error };
+  }
+
   // Les valeurs COURANTES, au cas où l'étape 1 (prix au Live) ne les a pas déjà figées.
   // La fonction fige au premier passage (COALESCE) et ne réécrit jamais.
   const presentation = await loadLivePresentation(projectId);
@@ -62,10 +80,12 @@ export async function concludeMeeting(
   const args: ConcludeArgs = {
     p_project_id: projectId,
     p_agency_id: profile.agency_id,
-    p_outcome: parsed.data.outcome,
+    p_outcome: decision.value.outcome,
     // Les paramètres nullables acceptent null en base ; cast de typage seulement.
-    p_reason: parsed.data.followUpReason as string,
-    p_price: null as unknown as number, // le prix vient du Live ; la fonction garde l'existant.
+    p_reason: decision.value.reason as string,
+    // Un prix saisi ici remplace celui du Live ; null = la fonction garde l'existant.
+    p_price: decision.value.price as number,
+    p_mandate_type: decision.value.mandateType as string,
     p_market_computed: amounts.marketComputed as number,
     p_advisor_analysis: amounts.advisorAnalysis as number,
     p_advisor_price: amounts.advisorPrice as number,

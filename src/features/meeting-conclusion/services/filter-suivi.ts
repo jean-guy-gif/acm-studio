@@ -85,3 +85,59 @@ export function whatHoldsBack(
 ): string | null {
   return conclusion?.launchReadinessMissing?.trim() || conclusion?.followUpReason?.trim() || null;
 }
+
+// Mission 90 — « Mandats signés : 6, dont 4 exclusifs ». Seuls les mandats dont le type est
+// renseigné comptent : un mandat signé avant la mission, sans type, n'est pas réputé simple.
+export function exclusiveSignedCount(dossiers: SuiviDossier[]): number {
+  return dossiers.filter(
+    (dossier) =>
+      dossier.conclusion?.outcome === 'signed' && dossier.conclusion.mandateType === 'exclusive',
+  ).length;
+}
+
+// « dont 1 exclusif », « dont 4 exclusifs », « dont aucun exclusif ».
+export function exclusiveLabel(count: number): string {
+  if (count === 0) {
+    return 'dont aucun exclusif';
+  }
+  return `dont ${count} exclusif${count > 1 ? 's' : ''}`;
+}
+
+const concludedTime = (dossier: SuiviDossier): number => {
+  const time = new Date(dossier.conclusion?.concludedAt ?? dossier.project.updated_at).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+// Mission 90 — les vendeurs « à relancer » se lisent du plus ANCIEN au plus récent : celui qui
+// attend depuis le plus longtemps d'abord. Les autres dossiers gardent leur ordre et leur place ;
+// seuls les « à relancer » sont réordonnés entre eux.
+export function sortSuivi(dossiers: SuiviDossier[]): SuiviDossier[] {
+  const followUps = dossiers
+    .filter((dossier) => dossier.conclusion?.outcome === 'follow_up')
+    .sort((a, b) => concludedTime(a) - concludedTime(b));
+  let next = 0;
+  return dossiers.map((dossier) =>
+    dossier.conclusion?.outcome === 'follow_up' ? followUps[next++] : dossier,
+  );
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// « conclu il y a N jours » : le nombre de jours pleins écoulés ; null sans date lisible.
+export function daysSince(iso: string | null | undefined, now: Date): number | null {
+  if (!iso) {
+    return null;
+  }
+  const time = new Date(iso).getTime();
+  if (Number.isNaN(time)) {
+    return null;
+  }
+  return Math.max(0, Math.floor((now.getTime() - time) / DAY_MS));
+}
+
+export function concludedAgoLabel(days: number): string {
+  if (days === 0) {
+    return 'conclu aujourd’hui';
+  }
+  return `conclu il y a ${days} jour${days > 1 ? 's' : ''}`;
+}

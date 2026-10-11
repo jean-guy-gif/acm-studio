@@ -183,7 +183,26 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .locator('label')
       .filter({ hasText: /^Mandat signé$/ })
       .click();
+    // Mission 90 — un mandat signé dit s'il est exclusif ou simple : sans ce choix, rien ne
+    // s'enregistre. Le prix du Live est déjà là, affiché et modifiable.
+    await expect(row.locator('input[name="commercialization_price"]')).toHaveValue(
+      String(COMMERCIALIZATION_PRICE),
+    );
     await row.getByRole('button', { name: 'Enregistrer l’issue' }).click();
+    await expect(
+      row.getByRole('link', { name: /Prospecter/ }),
+      'Un mandat signé s’est enregistré sans exclusif ni simple',
+    ).toHaveCount(0);
+    await row
+      .locator('label')
+      .filter({ hasText: /^Exclusif$/ })
+      .click();
+    await row.getByRole('button', { name: 'Enregistrer l’issue' }).click();
+    await expect(
+      row.getByTestId('mandate-type-badge'),
+      'Le badge du type de mandat manque sur la ligne',
+    ).toHaveText('Exclusif');
+    await expect(page.getByText(/dont \d+ exclusifs?/)).toBeVisible();
     await expect(
       row.getByRole('link', { name: `Prospecter · ${COMPETITORS.length} concurrents →` }),
       'Un mandat signé ne propose pas de prospecter ses concurrents',

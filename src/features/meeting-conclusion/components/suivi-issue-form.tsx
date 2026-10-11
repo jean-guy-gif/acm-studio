@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { btnSecondary, errorText, link } from '@/components/ui/styles';
 import { changeMeetingOutcome } from '@/features/meeting-conclusion/actions/change-meeting-outcome';
 import { OutcomeChoice } from '@/features/meeting-conclusion/components/outcome-choice';
-import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import type { ConclusionOutcome, MandateType } from '@/features/meeting-conclusion/types';
 
 // Mission 54 §1 — changer l'issue depuis le Suivi, l'acte NORMAL du suivi. Replié par
 // défaut (« Changer l'issue ») ; ouvert, il propose les quatre issues + motif. Le
@@ -14,10 +14,18 @@ export function SuiviIssueForm({
   projectId,
   currentOutcome,
   currentReason,
+  currentMandateType = null,
+  knownPrice = null,
+  openLabel = 'Changer l’issue',
 }: {
   projectId: string;
   currentOutcome: ConclusionOutcome | null;
   currentReason: string | null;
+  // Mission 90 — le type et le prix déjà enregistrés ; et le libellé du bouton (« Compléter »
+  // pour un mandat signé sans type).
+  currentMandateType?: MandateType | null;
+  knownPrice?: number | null;
+  openLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [outcome, setOutcome] = useState<ConclusionOutcome | null>(currentOutcome);
@@ -26,8 +34,8 @@ export function SuiviIssueForm({
 
   if (!open) {
     return (
-      <button type="button" className={link} onClick={() => setOpen(true)}>
-        Changer l’issue
+      <button type="button" className={`${link} text-xs`} onClick={() => setOpen(true)}>
+        {openLabel}
       </button>
     );
   }
@@ -53,6 +61,8 @@ export function SuiviIssueForm({
         outcome={outcome}
         onOutcomeChange={setOutcome}
         initialReason={currentReason}
+        initialMandateType={currentMandateType}
+        knownPrice={knownPrice}
         legend="Nouvelle issue"
       />
       <div className="flex flex-wrap items-center gap-3">

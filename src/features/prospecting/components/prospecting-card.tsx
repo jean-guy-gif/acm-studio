@@ -101,15 +101,16 @@ export function ProspectingCard({ entry }: { entry: ProspectingEntry }) {
         <CompetitorMandateLine competitor={row.mandate} />
       ) : null}
 
-      {/* Tant que l'adresse n'est pas confirmée : la confirmer, la localiser ou la saisir (M84). */}
-      {row.status === 'to_confirm' ? (
+      {/* Tant que l'adresse n'est pas confirmée : la confirmer, la localiser ou la saisir (M84).
+          Mission 90 — et ensuite, « Corriger l'adresse » reste toujours disponible, même quand
+          elle vient du Localisateur : un courrier ne part pas à une adresse fausse. */}
+      {row.status !== 'declined' ? (
         <ConfirmAddressActions
           projectId={seller.projectId}
           competitorId={row.id}
           listingUrl={row.listingUrl}
           canAccept={row.canAcceptAddress}
           confirmed={addressConfirmed}
-          confirmedByAdvisor={row.confirmedByAdvisor}
         />
       ) : null}
 

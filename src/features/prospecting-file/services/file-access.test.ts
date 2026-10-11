@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  FILE_BLOCKER_MESSAGES,
   fileBlocker,
   fileVersions,
   resolveFileVersion,
@@ -28,6 +29,7 @@ describe('ce qui retient un dossier', () => {
     version: 'owner' as const,
     addressConfirmed: true,
     advisorPhone: '06 12 34 56 78',
+    agencyAddress: '12 avenue de la Libération, 06600 Antibes',
   };
 
   it('rien quand tout est là', () => {
@@ -35,7 +37,12 @@ describe('ce qui retient un dossier', () => {
   });
 
   it('le dossier s’ouvre dès le mandat signé, sans lien d’annonce à renseigner', () => {
-    expect(Object.keys(ready)).toEqual(['version', 'addressConfirmed', 'advisorPhone']);
+    expect(Object.keys(ready)).toEqual([
+      'version',
+      'addressConfirmed',
+      'advisorPhone',
+      'agencyAddress',
+    ]);
     expect(fileBlocker({ ...ready, version: 'colleague' })).toBeNull();
   });
 
@@ -47,9 +54,35 @@ describe('ce qui retient un dossier', () => {
     expect(fileBlocker({ ...ready, advisorPhone: null })).toBe('phone_missing');
   });
 
-  it('le confrère n’attend ni adresse ni téléphone', () => {
+  // Mission 90 — le courrier au propriétaire porte l'adresse de l'agence, responsable du
+  // traitement : sans elle, pas de PDF.
+  it('PDF propriétaire refusé sans adresse d’agence, avec le message qui dit où la saisir', () => {
+    for (const agencyAddress of [null, '', '   ']) {
+      expect(fileBlocker({ ...ready, agencyAddress })).toBe('agency_address_missing');
+    }
+    expect(FILE_BLOCKER_MESSAGES.agency_address_missing).toBe(
+      'Ajoutez l’adresse de l’agence dans Administration → Identité pour préparer ce courrier.',
+    );
+  });
+
+  it('ce qui se lève en premier se dit en premier : adresse du bien, téléphone, adresse d’agence', () => {
+    const nothing = { ...ready, addressConfirmed: false, advisorPhone: null, agencyAddress: null };
+    expect(fileBlocker(nothing)).toBe('address_unconfirmed');
+    expect(fileBlocker({ ...nothing, addressConfirmed: true })).toBe('phone_missing');
+    expect(fileBlocker({ ...nothing, addressConfirmed: true, advisorPhone: '06' })).toBe(
+      'agency_address_missing',
+    );
+  });
+
+  it('le confrère n’attend ni adresse, ni téléphone, ni adresse d’agence', () => {
     expect(
-      fileBlocker({ ...ready, version: 'colleague', addressConfirmed: false, advisorPhone: null }),
+      fileBlocker({
+        ...ready,
+        version: 'colleague',
+        addressConfirmed: false,
+        advisorPhone: null,
+        agencyAddress: null,
+      }),
     ).toBeNull();
   });
 });

@@ -39,20 +39,28 @@ export const ADDRESS_TO_CONFIRM_MESSAGE = 'Adresse à confirmer avant d’envoye
 export const PHONE_MISSING_MESSAGE =
   'Renseignez votre téléphone dans « Mon profil » : il figure dans la mention « Pour ne plus être sollicité ».';
 
-export type FileBlocker = 'address_unconfirmed' | 'phone_missing';
+// Mission 90 — le courrier à un propriétaire porte l'adresse de l'agence (responsable du
+// traitement) : sans elle, il ne se prépare pas.
+export const AGENCY_ADDRESS_MISSING_MESSAGE =
+  'Ajoutez l’adresse de l’agence dans Administration → Identité pour préparer ce courrier.';
+
+export type FileBlocker = 'address_unconfirmed' | 'phone_missing' | 'agency_address_missing';
 
 export const FILE_BLOCKER_MESSAGES: Record<FileBlocker, string> = {
   address_unconfirmed: ADDRESS_TO_CONFIRM_MESSAGE,
   phone_missing: PHONE_MISSING_MESSAGE,
+  agency_address_missing: AGENCY_ADDRESS_MISSING_MESSAGE,
 };
 
 // Ce qui retient un dossier, dans l'ordre où le conseiller peut le lever. Le dossier s'ouvre dès
-// le mandat signé ; aucun dossier propriétaire sans adresse confirmée par le Localisateur, ni
-// sans le téléphone qui permet de ne plus être sollicité.
+// le mandat signé ; aucun dossier propriétaire sans adresse confirmée, ni sans le téléphone qui
+// permet de s'opposer à un nouveau contact, ni sans l'adresse de l'agence (mission 90).
 export function fileBlocker(input: {
   version: ProspectingFileVersion;
   addressConfirmed: boolean;
   advisorPhone: string | null;
+  // L'adresse postale de l'agence (Administration → Identité).
+  agencyAddress: string | null;
 }): FileBlocker | null {
   if (input.version === 'owner') {
     if (!input.addressConfirmed) {
@@ -60,6 +68,9 @@ export function fileBlocker(input: {
     }
     if (!input.advisorPhone?.trim()) {
       return 'phone_missing';
+    }
+    if (!input.agencyAddress?.trim()) {
+      return 'agency_address_missing';
     }
   }
   return null;

@@ -13,6 +13,7 @@ import {
 } from '@/features/prospecting-file/services/document-name';
 import { DOCUMENT_CSS } from '@/features/prospecting-file/components/document-styles';
 import { lines, paragraphs, parseEmphasis } from '@/features/prospecting-file/services/emphasis';
+import { ownerLegalMention } from '@/features/prospecting-file/services/legal-mention';
 import type { QrCode } from '@/features/prospecting-file/services/qr-code';
 import type {
   PropertyCard,
@@ -316,11 +317,10 @@ function OwnerPages({
 
           <Proposal file={file} texts={texts} />
           <Contact sender={sender} hook={texts.contactHook} qr={qr} />
-          <footer className="pf-foot">
-            <span>{fixed.information}</span>
-            <span>
-              {fixed.optOut} : {sender.phone}
-            </span>
+          {/* Mission 90 — la mention sur le traitement de l'adresse : responsable, opposition,
+              CNIL. Deux lignes au plus. */}
+          <footer className="pf-foot pf-legal" data-testid="legal-mention">
+            {ownerLegalMention(sender)}
           </footer>
         </section>
       ) : null}
