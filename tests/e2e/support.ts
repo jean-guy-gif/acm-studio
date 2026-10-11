@@ -192,3 +192,74 @@ export function removeTestOppositions(): number {
   }
   return Number(count);
 }
+
+// Mission 96 — EXCEPTION à « tout passe par l'écran », comme les oppositions (M98) : la pastille
+// « À relancer aujourd'hui » n'apparaît qu'après 7 jours sans contact, et « ont baissé leur
+// prix » qu'après une baisse postérieure au Live. Le parcours ne peut pas attendre huit jours :
+// il vieillit SON dossier par la CLI Supabase du poste, puis remet tout comme c'était.
+// Seulement le dossier nommé « TEST AUTOMATIQUE … » de l'agence du compte de test :
+//   • le rendez-vous recule de 9 jours et sa relance de 8 jours et 1 heure ;
+//   • le premier concurrent retenu baisse de 5 000 €.
+// `back` défait exactement ces trois écritures. Rend le nombre de lignes touchées.
+export const TEST_PRICE_DROP = 5_000;
+
+export type AgedFollowUp = { conclusions: number; relances: number; concurrents: number };
+
+export function ageTestFollowUp(projectId: string, direction: 'age' | 'back'): AgedFollowUp {
+  if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(projectId)) {
+    throw new Error('Identifiant de dossier inattendu : la base n’est pas touchée.');
+  }
+  const email = requireEnv('E2E_EMAIL').replace(/'/g, "''");
+  const sign = direction === 'age' ? '-' : '+';
+  const sql = `with dossier as (
+    select id from public.projects
+    where id = '${projectId}'
+      and agency_id = (select agency_id from public.profiles where email = '${email}')
+      and seller_name like 'TEST AUTOMATIQUE %'
+  ), conclusions as (
+    update public.project_meeting_conclusions
+    set concluded_at = concluded_at ${sign} interval '9 days'
+    where project_id in (select id from dossier)
+    returning 1
+  ), relances as (
+    update public.follow_up_contacts
+    set contacted_at = contacted_at ${sign} interval '8 days 1 hour'
+    where project_id in (select id from dossier)
+    returning 1
+  ), concurrents as (
+    update public.comparables
+    set price = price ${sign} ${TEST_PRICE_DROP}
+    where id = (
+      select id from public.comparables
+      where project_id in (select id from dossier) and is_selected
+      order by display_order, id
+      limit 1
+    )
+    returning 1
+  ) select (select count(*)::int from conclusions) as conclusions,
+           (select count(*)::int from relances) as relances,
+           (select count(*)::int from concurrents) as concurrents`;
+  let output: string;
+  try {
+    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'Le dossier du test n’a pas pu être vieilli ou remis en état : `supabase db query --linked` a échoué (CLI absente, non connectée, ou dépôt non lié).',
+    );
+  }
+  const read = (name: string): number => {
+    const count = new RegExp(`"${name}":\\s*(\\d+)`).exec(output)?.[1];
+    if (count === undefined) {
+      throw new Error('Réponse inattendue de `supabase db query` au vieillissement du dossier.');
+    }
+    return Number(count);
+  };
+  return {
+    conclusions: read('conclusions'),
+    relances: read('relances'),
+    concurrents: read('concurrents'),
+  };
+}

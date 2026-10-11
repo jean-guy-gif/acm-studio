@@ -5,6 +5,8 @@ import {
   login,
   mainText,
   pagePayload,
+  TEST_PRICE_DROP,
+  ageTestFollowUp,
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
@@ -341,6 +343,73 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await message.fill(`${proposed}\nPS : test`);
     await expect(row.getByRole('button', { name: 'Copier' })).toBeVisible();
     await row.getByRole('button', { name: 'Fermer' }).click();
+    await page.goto('/suivi');
+  });
+
+  // Mission 96 — huit jours plus tard, et un concurrent a baissé : le dossier du test est vieilli
+  // en base (agence de test seulement), vérifié à l'écran, puis remis exactement comme il était.
+  await test.step('Huit jours sans contact : pastille, compteur, baisse, « Copier »', async () => {
+    const touched = { conclusions: 1, relances: 1, concurrents: 1 };
+    expect(ageTestFollowUp(projectId, 'age'), 'Le dossier du test n’a pas été vieilli').toEqual(
+      touched,
+    );
+    try {
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.goto('/suivi');
+      const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+      await expect(row.getByText('Dernier contact il y a 8 jours')).toBeVisible();
+      await expect(
+        row.getByTestId('follow-up-due'),
+        'La pastille manque après 8 jours sans contact',
+      ).toHaveText('À relancer aujourd’hui');
+      await expect(
+        page.getByTestId('follow-up-due-count'),
+        'Le compteur « à relancer aujourd’hui » manque',
+      ).toHaveText(/^\d+ vendeurs? à relancer aujourd’hui$/);
+
+      await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+      await expect(
+        row.getByTestId('seller-said').getByText('1 concurrent a baissé son prix'),
+        'La baisse de prix depuis le rendez-vous manque au bloc',
+      ).toBeVisible();
+
+      await row.getByRole('button', { name: 'Préparer un message' }).click();
+      const message = row.locator('textarea');
+      const proposed = await message.inputValue();
+      expect(proposed, 'Le message ne dit pas la baisse').toContain(
+        'Depuis notre rendez-vous, 1 des biens que nous avions vus a baissé son prix.',
+      );
+      for (const competitor of COMPETITORS) {
+        for (const price of [competitor.price, competitor.price - TEST_PRICE_DROP]) {
+          expect(
+            withoutSpaces(proposed),
+            'Le message contient le prix d’un concurrent',
+          ).not.toContain(String(price));
+        }
+      }
+      // Le texte modifié est celui qui est copié ; rien n'est envoyé ni enregistré.
+      const edited = `${proposed}\nPS : test`;
+      await message.fill(edited);
+      await row.getByRole('button', { name: 'Copier' }).click();
+      await expect(row.getByText('Message copié.')).toBeVisible();
+      expect(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        'Le presse-papiers ne porte pas le message modifié',
+      ).toBe(edited);
+    } finally {
+      expect(ageTestFollowUp(projectId, 'back'), 'Le dossier du test n’a pas été remis').toEqual(
+        touched,
+      );
+    }
+
+    // Remis en état : le contact est de nouveau d'aujourd'hui, plus de pastille, plus de baisse.
+    await page.goto('/suivi');
+    const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
+    await expect(row.getByText('Dernier contact aujourd’hui')).toBeVisible();
+    await expect(row.getByTestId('follow-up-due')).toHaveCount(0);
+    await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+    await expect(row.getByTestId('seller-said')).toBeVisible();
+    await expect(row.getByTestId('seller-said').getByText(/baissé/)).toHaveCount(0);
     await page.goto('/suivi');
   });
 
