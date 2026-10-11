@@ -40,6 +40,8 @@ function dossier(id: string, o: DossierInput): SuiviDossier {
       launchReadinessMissing: null,
       outcome: o.outcome,
       followUpReason: null,
+      mandateType: null,
+      signedAt: null,
       concludedAt: null,
       outcomeChangedAt: null,
     },

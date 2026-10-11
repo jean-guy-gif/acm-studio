@@ -134,6 +134,9 @@ export async function getProspectingFile(
     return { status: 'not_found' };
   }
 
+  // Mission 90 — l'adresse de l'agence conditionne le courrier au propriétaire : lue avant.
+  const branding = await getAgencyBranding();
+
   const confirmedAddress =
     competitor.locator_confirmed === true ? competitor.locator_address?.trim() || null : null;
   const blockerFor = (version: ProspectingFileVersion): FileBlocker | null =>
@@ -141,6 +144,7 @@ export async function getProspectingFile(
       version,
       addressConfirmed: confirmedAddress != null,
       advisorPhone: profile.phone,
+      agencyAddress: branding?.postalAddress ?? null,
     });
 
   const step = prospectingStep(competitor);
@@ -178,9 +182,8 @@ export async function getProspectingFile(
   }
 
   const photoPaths = readPhotoPaths(property.photo_urls);
-  const [agency, branding, saved, photos, advisorPhoto] = await Promise.all([
+  const [agency, saved, photos, advisorPhoto] = await Promise.all([
     getAgency(agencyId),
-    getAgencyBranding(),
     supabase
       .from('competitor_prospecting_files')
       .select(

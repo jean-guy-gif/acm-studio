@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
+import { MANDATE_TYPES } from '@/features/meeting-conclusion/types';
+
 // Mission 53 — validation des saisies de conclusion. Le navigateur ne fournit jamais un
-// montant figé ni le status : seulement le prix convenu, l'issue et le motif.
+// montant figé ni le status : seulement le prix convenu, l'issue, le motif et — mission 90 —
+// le type de mandat.
 
 // Un prix « à la française » : espaces fines, séparateur virgule tolérés.
 const priceFromForm = z
@@ -16,22 +19,51 @@ export const commercializationPriceSchema = z.object({
 // Mission 54 — quatre issues posables.
 const outcomeEnum = z.enum(['signed', 'follow_up', 'sold_elsewhere', 'withdrawn']);
 
-const followUpReason = z
+const reason = z
   .string()
   .trim()
   .max(2000)
   .optional()
-  // Motif seulement pour « à relancer » (contrainte base pmc_reason_only_follow_up).
   .transform((value) => (value && value.length > 0 ? value : null));
 
+// Champ absent, vide, ou valeur : « vide » n'est pas une erreur, c'est « pas de saisie ».
+const optionalPrice = z
+  .union([z.string(), z.undefined(), z.null()])
+  .transform((raw) => (typeof raw === 'string' && raw.trim() !== '' ? raw : null))
+  .pipe(z.union([z.null(), priceFromForm]));
+
+const optionalMandateType = z
+  .union([z.enum(MANDATE_TYPES), z.literal(''), z.undefined(), z.null()])
+  .transform((value) => (value ? value : null));
+
+// Ce que le formulaire d'issue envoie (conclusion et « Changer l'issue » : mêmes champs).
+// Ce qui est EXIGÉ selon l'issue se décide ensuite, avec ce que la base sait déjà du dossier
+// (conclusion-requirements.ts) : ici on ne vérifie que la forme.
 export const conclusionDecisionSchema = z
-  .object({ outcome: outcomeEnum, follow_up_reason: followUpReason })
+  .object({
+    outcome: outcomeEnum,
+    follow_up_reason: reason,
+    mandate_type: optionalMandateType,
+    commercialization_price: optionalPrice,
+  })
   .transform((input) => ({
     outcome: input.outcome,
-    followUpReason: input.outcome === 'follow_up' ? input.follow_up_reason : null,
+    reason: input.follow_up_reason,
+    mandateType: input.mandate_type,
+    price: input.commercialization_price,
   }));
 
 // Le changement d'issue depuis le Suivi : mêmes règles que la conclusion.
 export const changeOutcomeSchema = conclusionDecisionSchema;
 
 export type ConclusionDecision = z.infer<typeof conclusionDecisionSchema>;
+
+// Les champs du formulaire, tels que les deux actions les lisent.
+export function readDecisionForm(formData: FormData) {
+  return conclusionDecisionSchema.safeParse({
+    outcome: formData.get('outcome'),
+    follow_up_reason: formData.get('follow_up_reason') ?? undefined,
+    mandate_type: formData.get('mandate_type') ?? undefined,
+    commercialization_price: formData.get('commercialization_price') ?? undefined,
+  });
+}

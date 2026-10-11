@@ -109,13 +109,11 @@ describe('version propriétaire', () => {
     ]);
   });
 
-  it('recto-verso, avec « Pour ne plus être sollicité » et l’origine de l’adresse', () => {
+  it('recto-verso ; le pied du verso porte la mention sur le traitement de l’adresse (M90)', () => {
     const file = buildProspectingFile(makeFacts(), 'owner', { showPrices: true });
     expect(file.fixed.back).not.toBeNull();
-    expect(file.fixed.optOut).toBe('Pour ne plus être sollicité');
-    expect(file.fixed.information).toContain(
-      'Votre adresse a été repérée à partir d’une annonce publiée.',
-    );
+    // La mention se compose avec l'expéditeur (legal-mention.ts), pas dans les textes fixes.
+    expect(file.fixed.information).toBeNull();
     expect(said('house', 'owner').join(' ')).not.toContain('collectée ni conservée');
   });
 
@@ -137,7 +135,7 @@ describe('version confrère', () => {
   it('une seule page, honoraires partagés par accord écrit, sans taux', () => {
     const file = buildProspectingFile(makeFacts(), 'colleague', { showPrices: true });
     expect(file.fixed.back).toBeNull();
-    expect(file.fixed.optOut).toBeNull();
+    expect(file.fixed.information).toBe('Proposition de collaboration entre professionnels');
     const proposal = file.defaults.proposals.map(plainText).join(' ');
     expect(proposal).toContain('Honoraires partagés selon un accord inter-cabinet écrit');
     expect(proposal).not.toMatch(/%|\d\s*(pour cent|€)/);

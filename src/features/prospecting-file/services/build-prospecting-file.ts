@@ -142,9 +142,7 @@ const OWNER_FIXED: FixedTexts = {
     },
   },
   turnPage: 'Tournez la page →',
-  information:
-    'Document remis à titre d’information. Votre adresse a été repérée à partir d’une annonce publiée.',
-  optOut: 'Pour ne plus être sollicité',
+  information: null,
 };
 
 const COLLEAGUE_FIXED: FixedTexts = {
@@ -155,7 +153,6 @@ const COLLEAGUE_FIXED: FixedTexts = {
   back: null,
   turnPage: null,
   information: 'Proposition de collaboration entre professionnels',
-  optOut: null,
 };
 
 function addressee(
@@ -277,6 +274,5 @@ export function allTexts(file: ProspectingFile, texts: ProspectingFileTexts): st
     ...back,
     fixed.turnPage,
     fixed.information,
-    fixed.optOut,
   ].filter((text): text is string => typeof text === 'string' && text !== '');
 }

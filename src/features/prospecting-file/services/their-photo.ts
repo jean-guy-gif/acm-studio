@@ -3,8 +3,9 @@
 //   • une photo de son annonce ;
 //   • « Ma photo » : une photo importée par le conseiller (la façade prise sur place) ;
 //   • « Sans photo » : le cadre gris.
-// Tant que le conseiller n'a rien choisi, l'écran propose la première photo de l'annonce, sinon
-// « Sans photo ». Rien d'autre ne peut afficher une photo du concurrent.
+// Tant que le conseiller n'a rien choisi, c'est « Sans photo » (mission 90, question de droits) :
+// les photos de l'annonce et « Ma photo » restent à son choix. Rien d'autre ne peut afficher une
+// photo du concurrent.
 
 export const THEIR_PHOTO_MODES = ['listing', 'upload', 'none'] as const;
 export type TheirPhotoMode = (typeof THEIR_PHOTO_MODES)[number];
@@ -49,8 +50,7 @@ export function theirPhotoPrefix(
   return `${agencyId}/${projectId}/prospecting/${competitorId}/`;
 }
 
-// Le choix à l'ouverture : celui qui est enregistré s'il tient encore, sinon la première photo
-// de l'annonce, sinon « Sans photo ». Une photo d'annonce retirée de l'annonce depuis, ou un
+// Le choix à l'ouverture : celui qui est enregistré s'il tient encore, sinon « Sans photo ». Une photo d'annonce retirée de l'annonce depuis, ou un
 // fichier hors du dossier de ce concurrent, ne se choisit plus.
 export function initialTheirPhotoChoice(
   saved: SavedTheirPhoto,
@@ -66,7 +66,9 @@ export function initialTheirPhotoChoice(
   if (saved.mode === 'listing' && saved.sourceUrl && listing.includes(saved.sourceUrl)) {
     return { mode: 'listing', url: saved.sourceUrl };
   }
-  return listing.length > 0 ? { mode: 'listing', url: listing[0] } : { mode: 'none' };
+  // Mission 90 — rien de choisi : « Sans photo ». Une photo d'annonce appartient à son auteur ;
+  // la montrer est une décision du conseiller, jamais un défaut.
+  return { mode: 'none' };
 }
 
 // Ce que le serveur accepte d'enregistrer : une photo d'annonce doit être l'une de CELLES de

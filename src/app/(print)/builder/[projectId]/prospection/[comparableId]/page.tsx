@@ -57,6 +57,11 @@ export default async function ProspectingFilePage({
           <p className="text-sm font-medium text-amber-700">
             {FILE_BLOCKER_MESSAGES[context.blocker]}
           </p>
+          {context.blocker === 'agency_address_missing' ? (
+            <Link href="/admin/identite" className={`${btnSecondary} self-start`}>
+              Ouvrir Administration → Identité
+            </Link>
+          ) : null}
           {context.blocker === 'phone_missing' ? (
             <Link href="/profil" className={`${btnSecondary} self-start`}>
               Ouvrir « Mon profil »

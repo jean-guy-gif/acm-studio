@@ -20,6 +20,21 @@ export const OUTCOME_LABELS: Record<ConclusionOutcome, string> = {
   withdrawn: 'Retiré de la vente',
 };
 
+// Mission 90 — le type de NOTRE mandat, quand l'issue est « mandat signé ». À ne pas confondre
+// avec l'exclusivité d'un concurrent (M83). C'est ce qui permet de mesurer la promesse du
+// produit : combien de rendez-vous finissent en mandat, dont combien en exclusif.
+export const MANDATE_TYPES = ['exclusive', 'simple'] as const;
+export type MandateType = (typeof MANDATE_TYPES)[number];
+
+export const MANDATE_TYPE_LABELS: Record<MandateType, string> = {
+  exclusive: 'Exclusif',
+  simple: 'Simple',
+};
+
+export function isMandateType(value: unknown): value is MandateType {
+  return (MANDATE_TYPES as readonly unknown[]).includes(value);
+}
+
 // Les QUATRE montants, figés à l'instant de la conclusion (copies, jamais recalculées).
 export type ConclusionAmounts = {
   marketComputed: number | null; // ① le marché CALCULÉ à partir des concurrents
@@ -38,7 +53,12 @@ export type MeetingConclusion = ConclusionAmounts & {
   launchReadinessLast: number | null;
   launchReadinessMissing: string | null;
   outcome: ConclusionOutcome | null;
+  // Mission 90 — le motif vaut pour « à relancer », « vendu ailleurs » et « retiré ».
   followUpReason: string | null;
+  // Mission 90 — exclusif ou simple, pour un mandat signé ; null = non renseigné (dossiers
+  // signés avant la mission : aucun type n'est inventé). Et la date de signature, écrite une fois.
+  mandateType: MandateType | null;
+  signedAt: string | null;
   concludedAt: string | null; // la date du rendez-vous
   outcomeChangedAt: string | null; // la date du dernier changement d'issue
 };

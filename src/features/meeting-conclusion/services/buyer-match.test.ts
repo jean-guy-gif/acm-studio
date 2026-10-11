@@ -33,6 +33,8 @@ function dossier(id: string, o: Overrides): SuiviDossier {
     launchReadinessMissing: null,
     outcome: o.outcome ?? 'signed',
     followUpReason: null,
+    mandateType: null,
+    signedAt: null,
     concludedAt: null,
     outcomeChangedAt: null,
   };

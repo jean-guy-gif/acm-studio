@@ -18,6 +18,7 @@ import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-i
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import {
+  concludedAgoLabel,
   suiviGroup,
   whatHoldsBack,
   type SuiviGroup,
@@ -26,7 +27,11 @@ import {
   launchReadinessLabel,
   launchReadinessShort,
 } from '@/features/meeting-conclusion/services/launch-readiness';
-import { OUTCOME_LABELS, type ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import {
+  MANDATE_TYPE_LABELS,
+  OUTCOME_LABELS,
+  type ConclusionOutcome,
+} from '@/features/meeting-conclusion/types';
 import { shortDate } from '@/features/prospecting/services/prospecting-status';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { formatEuro, formatPercent } from '@/lib/format';
@@ -62,9 +67,13 @@ export type SuiviProspecting = { count: number; progress: string | null };
 export function SuiviRow({
   dossier,
   prospecting,
+  concludedDaysAgo = null,
 }: {
   dossier: SuiviDossier;
   prospecting: SuiviProspecting | null;
+  // Mission 90 — pour un vendeur « à relancer » : depuis combien de jours le rendez-vous est
+  // conclu (calculé par la page, côté serveur).
+  concludedDaysAgo?: number | null;
 }) {
   const [open, setOpen] = useState(false);
   const { project, property, conclusion } = dossier;
@@ -88,6 +97,7 @@ export function SuiviRow({
   const meetingDate = longDate(conclusion?.concludedAt ?? project.updated_at);
   const changedDate = longDate(conclusion?.outcomeChangedAt ?? null);
   const detailsId = `suivi-details-${project.id}`;
+  const missingMandateType = outcome === 'signed' && conclusion?.mandateType == null;
 
   return (
     <li
@@ -107,11 +117,24 @@ export function SuiviRow({
                   {OUTCOME_LABELS[outcome]}
                 </span>
               ) : null}
+              {/* Mission 90 — exclusif ou simple, pour un mandat signé. */}
+              {outcome === 'signed' && conclusion?.mandateType ? (
+                <span
+                  data-testid="mandate-type-badge"
+                  className={`${conclusion.mandateType === 'exclusive' ? badgeBrand : badgeNeutral} whitespace-nowrap`}
+                >
+                  {MANDATE_TYPE_LABELS[conclusion.mandateType]}
+                </span>
+              ) : null}
             </div>
             <span className="text-sm text-zinc-500 stage:text-white/60">
-              {[bien ?? 'Bien vendeur non renseigné', `conclu le ${shortDate(concluded)}`].join(
-                ' · ',
-              )}
+              {[
+                bien ?? 'Bien vendeur non renseigné',
+                // Un vendeur à relancer : ce qui compte, c'est depuis quand il attend.
+                group === 'follow_up' && concludedDaysAgo != null
+                  ? concludedAgoLabel(concludedDaysAgo)
+                  : `conclu le ${shortDate(concluded)}`,
+              ].join(' · ')}
             </span>
           </div>
 
@@ -209,6 +232,25 @@ export function SuiviRow({
           </div>
         </div>
 
+        {/* Mission 90 — « Changer l'issue » se voit sur la ligne, sans ouvrir le détail des prix.
+            Un mandat signé avant la mission n'a pas de type : on le dit, et on propose de le
+            compléter — aucun type n'est inventé. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3">
+          {missingMandateType ? (
+            <span className="text-xs font-semibold text-amber-700 stage:text-amber-300">
+              Type de mandat non renseigné
+            </span>
+          ) : null}
+          <SuiviIssueForm
+            projectId={project.id}
+            currentOutcome={outcome}
+            currentReason={conclusion?.followUpReason ?? null}
+            currentMandateType={conclusion?.mandateType ?? null}
+            knownPrice={price}
+            openLabel={missingMandateType ? 'Compléter' : 'Changer l’issue'}
+          />
+        </div>
+
         {open ? (
           <div
             id={detailsId}
@@ -276,16 +318,9 @@ export function SuiviRow({
                 : null}
             </span>
 
-            <div className="flex flex-wrap items-start gap-x-5 gap-y-3">
-              <Link href={`/builder/${project.id}`} className={link}>
-                Ouvrir le dossier
-              </Link>
-              <SuiviIssueForm
-                projectId={project.id}
-                currentOutcome={outcome}
-                currentReason={conclusion?.followUpReason ?? null}
-              />
-            </div>
+            <Link href={`/builder/${project.id}`} className={`${link} self-start`}>
+              Ouvrir le dossier
+            </Link>
           </div>
         ) : null}
       </div>
