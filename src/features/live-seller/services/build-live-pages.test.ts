@@ -169,3 +169,76 @@ describe('buildLivePages', () => {
     expect(buildLivePages(live(0), true).map((p) => p.type)).not.toContain('seller_revised_price');
   });
 });
+
+// Mission 95 — le rythme accéléré : les trois premiers concurrents gardent leurs quatre écrans,
+// les suivants en ont deux. « Complet » rend le déroulé d'avant.
+describe('buildLivePages — rythme du Live', () => {
+  const five = { comparables: ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, response: null })) };
+  const types = (pages: ReturnType<typeof buildLivePages>, id: string) =>
+    pages.filter((p) => p.comparableId === id).map((p) => p.type);
+  const FOUR = [
+    'comparable_competition',
+    'comparable_price',
+    'comparable_price_reveal',
+    'comparable_duration',
+  ];
+
+  it('jusqu’au 3e concurrent, le déroulé accéléré est inchangé', () => {
+    const accelerated = buildLivePages(five, true, 'accelerated');
+    const complete = buildLivePages(five, true, 'complete');
+    for (const id of ['a', 'b', 'c']) {
+      expect(types(accelerated, id)).toEqual(FOUR);
+      expect(types(accelerated, id)).toEqual(types(complete, id));
+    }
+    // Tout ce qui précède le 4e concurrent est identique, écran pour écran.
+    const cut = accelerated.findIndex((p) => p.comparableId === 'd');
+    expect(accelerated.slice(0, cut)).toEqual(complete.slice(0, cut));
+  });
+
+  it('à partir du 4e concurrent, deux écrans : devinette, puis révélation', () => {
+    const pages = buildLivePages(five, true, 'accelerated');
+    for (const id of ['d', 'e']) {
+      expect(types(pages, id)).toEqual(['comparable_quick_guess', 'comparable_quick_reveal']);
+      expect(pages.filter((p) => p.comparableId === id).map((p) => p.step)).toEqual([1, 2]);
+    }
+    // L'ordre de passage ne change pas.
+    expect([...new Set(pages.flatMap((p) => (p.comparableId ? [p.comparableId] : [])))]).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+    ]);
+  });
+
+  it('le rythme « Complet » rend le déroulé actuel, et c’est le défaut de la fonction', () => {
+    const complete = buildLivePages(five, true, 'complete');
+    for (const id of ['a', 'b', 'c', 'd', 'e']) {
+      expect(types(complete, id)).toEqual(FOUR);
+    }
+    expect(buildLivePages(five, true)).toEqual(complete);
+    expect(complete.map((p) => p.type)).not.toContain('comparable_quick_guess');
+  });
+
+  it('accéléré : un concurrent écarté par « non » n’a que son premier écran', () => {
+    const pages = buildLivePages(
+      {
+        comparables: [
+          ...five.comparables.slice(0, 3),
+          { id: 'd', response: { seller_serious_competitor: 'no' } as never },
+        ],
+      },
+      true,
+      'accelerated',
+    );
+    expect(types(pages, 'd')).toEqual(['comparable_quick_guess']);
+  });
+
+  it('le reste du Live ne change pas avec le rythme', () => {
+    const tail = (rhythm: 'accelerated' | 'complete') =>
+      buildLivePages(five, true, rhythm)
+        .filter((p) => p.comparableId == null)
+        .map((p) => p.type);
+    expect(tail('accelerated')).toEqual(tail('complete'));
+  });
+});

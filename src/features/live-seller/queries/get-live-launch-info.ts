@@ -20,7 +20,11 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     return null;
   }
   const projected = presentation.live ? projectLiveForSeller(presentation.live) : null;
-  const pages = buildLivePages(projected, presentation.property != null);
+  const pages = buildLivePages(
+    projected,
+    presentation.property != null,
+    presentation.project.liveRhythm,
+  );
   return {
     competitorCount: projected?.comparables.length ?? 0,
     resume: liveResume(pages, projected),

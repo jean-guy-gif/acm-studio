@@ -121,3 +121,54 @@ describe('canAdvanceLivePage', () => {
     ).toBe(false);
   });
 });
+
+// Mission 95 — rythme accéléré : les mêmes verrous, sur deux écrans.
+describe('canAdvanceLivePage — rythme accéléré', () => {
+  it('écran 1 : pas de révélation sans la devinette du prix enregistrée', () => {
+    expect(canAdvanceLivePage('comparable_quick_guess', entry(null), null)).toBe(false);
+    expect(
+      canAdvanceLivePage(
+        'comparable_quick_guess',
+        entry({ seller_serious_competitor: 'yes' }),
+        null,
+      ),
+    ).toBe(false);
+    expect(
+      canAdvanceLivePage(
+        'comparable_quick_guess',
+        entry({ seller_serious_competitor: 'yes', seller_estimated_listing_price: 300000 }),
+        null,
+      ),
+    ).toBe(true);
+  });
+
+  it('écran 1 : « non » dispense de deviner (il n’y a alors rien à révéler)', () => {
+    expect(
+      canAdvanceLivePage(
+        'comparable_quick_guess',
+        entry({ seller_serious_competitor: 'no' }),
+        null,
+      ),
+    ).toBe(true);
+  });
+
+  it('écran 2 : quand une durée est à révéler, on ne le quitte qu’avec la durée devinée', () => {
+    const guessed = { seller_estimated_listing_price: 300000 };
+    expect(canAdvanceLivePage('comparable_quick_reveal', entry(guessed), null)).toBe(false);
+    expect(
+      canAdvanceLivePage(
+        'comparable_quick_reveal',
+        entry({ ...guessed, seller_estimated_days_on_market: 90 }),
+        null,
+      ),
+    ).toBe(true);
+    // Sans durée connue, l'écran n'a que le prix à montrer.
+    expect(
+      canAdvanceLivePage(
+        'comparable_quick_reveal',
+        { ...entry(guessed), durationKnown: false } as never,
+        null,
+      ),
+    ).toBe(true);
+  });
+});

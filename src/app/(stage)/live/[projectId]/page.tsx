@@ -49,7 +49,8 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   // avant, elle n'entre donc pas dans la charge tant que le vendeur ne s'est pas prononcé.
   const advisorRange = presentation.live ? authorizeAdvisorRange(presentation.live) : null;
 
-  const pages = buildLivePages(projectedLive, presentation.property != null);
+  const rhythm = presentation.project.liveRhythm;
+  const pages = buildLivePages(projectedLive, presentation.property != null, rhythm);
   const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
   // Mission 89 — un prix de commercialisation est-il déjà enregistré ? Seul le oui/non part
   // vers la scène, jamais le montant.
@@ -68,6 +69,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       projectName={presentation.project.name}
       advisorRange={advisorRange}
       initialIndex={initialIndex}
+      rhythm={rhythm}
       logoLightUrl={branding?.logoLightUrl ?? null}
       logoDarkUrl={branding?.logoDarkUrl ?? null}
       agencyName={agency?.name ?? null}

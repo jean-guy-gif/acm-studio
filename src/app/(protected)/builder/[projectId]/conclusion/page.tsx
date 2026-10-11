@@ -1,3 +1,4 @@
+import { liveDurationLabel } from '@/features/live-seller/services/live-timing';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -42,6 +43,8 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
   ]);
   const amounts = resolveConclusionAmounts(conclusion, presentation?.live ?? null);
   const alreadyConcluded = project.status === 'meeting_completed';
+  // Mission 95 — la durée mesurée du Live (début → « Terminer »), quand elle l'a été.
+  const liveDuration = liveDurationLabel(project.live_started_at, project.live_ended_at);
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +55,10 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
       <div className="flex flex-col gap-1.5">
         <span className={kickerLabel}>Conclusion du rendez-vous</span>
         <h1 className={pageTitle}>{project.seller_name ?? 'Dossier vendeur'}</h1>
-        <p className={pageSubtitle}>Écran conseiller — le vendeur ne le voit pas.</p>
+        <p className={pageSubtitle}>
+          Écran conseiller — le vendeur ne le voit pas.
+          {liveDuration ? ` ${liveDuration}.` : ''}
+        </p>
       </div>
 
       {alreadyConcluded ? (

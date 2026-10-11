@@ -1,5 +1,6 @@
 'use client';
 
+import { liveDurationLabel } from '@/features/live-seller/services/live-timing';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -82,6 +83,7 @@ export function SuiviRow({
   const bien = propertyLabel(property);
   const concluded = conclusion?.concludedAt ?? project.updated_at;
   const price = conclusion?.commercializationPrice ?? null;
+  const liveDuration = liveDurationLabel(project.live_started_at, project.live_ended_at);
   const sellerStart = conclusion?.sellerPerceivedPrice ?? null;
   // Mission 94 — le prix que le vendeur a reformulé après avoir vu le marché (s'il l'a donné).
   const sellerRevised = conclusion?.sellerRevisedPrice ?? null;
@@ -136,6 +138,8 @@ export function SuiviRow({
                 group === 'follow_up' && concludedDaysAgo != null
                   ? concludedAgoLabel(concludedDaysAgo)
                   : `conclu le ${shortDate(concluded)}`,
+                // Mission 95 — la durée mesurée du Live, quand elle l'a été. Écran conseiller.
+                ...(liveDuration ? [liveDuration] : []),
               ].join(' · ')}
             </span>
           </div>

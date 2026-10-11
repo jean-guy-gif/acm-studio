@@ -7,10 +7,10 @@
 // jure pas avec la charte.
 //
 // La clé est un SLUG. Elle ne devient JAMAIS une valeur libre dans une feuille de style :
-// elle mappe vers `cssVar`, une variable CSS définie par next/font (voir embedded-fonts.ts),
-// codée en dur ici. Une clé inconnue ne mappe vers rien → l'outil garde sa typo produit.
-// Aucune n'est chargée depuis l'extérieur pendant le Live (§5) : next/font les auto-héberge
-// à la compilation.
+// elle mappe vers `cssVar`, une variable CSS définie par la feuille de la police (voir
+// embedded-fonts.ts), codée en dur ici. Une clé inconnue ne mappe vers rien → l'outil garde sa
+// typo produit. Aucune n'est chargée depuis l'extérieur, ni pendant le Live (§5) ni à la
+// compilation : leurs fichiers sont dans le dépôt (missions 90 et 95).
 export const EMBEDDED_FONTS = [
   { key: 'montserrat', label: 'Montserrat', cssVar: '--font-montserrat' },
   { key: 'inter', label: 'Inter', cssVar: '--font-inter' },

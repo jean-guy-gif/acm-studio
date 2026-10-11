@@ -88,9 +88,9 @@ export function LivePageDangerous({
                     <span className="font-title text-2xl font-bold text-brand-deep stage:text-white">
                       {euro(entry.price)}
                     </span>
-                    {entry.marketDuration.available ? (
+                    {entry.marketDuration?.available ? (
                       <span className="text-xs text-zinc-400 stage:text-white/50">
-                        {entry.marketDuration.label}
+                        {entry.marketDuration?.label}
                       </span>
                     ) : null}
                   </div>

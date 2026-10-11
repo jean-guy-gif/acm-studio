@@ -28,6 +28,9 @@ const COMPETITORS: Competitor[] = [
   { title: 'TEST concurrent A', surface: 62, price: 291_500, daysOnMarket: 45, guess: 280_000 },
   { title: 'TEST concurrent B', surface: 64, price: 298_700, daysOnMarket: 120, guess: 290_000 },
   { title: 'TEST concurrent C', surface: 67, price: 312_400, daysOnMarket: 200, guess: 305_000 },
+  // Mission 95 — cinq concurrents : les deux derniers passent en rythme accéléré (2 écrans).
+  { title: 'TEST concurrent D', surface: 63, price: 301_300, daysOnMarket: 60, guess: 295_000 },
+  { title: 'TEST concurrent E', surface: 66, price: 305_900, daysOnMarket: 150, guess: 300_000 },
 ];
 
 // La fourchette du conseiller : écran conseiller seulement, jamais devant le vendeur.
@@ -153,6 +156,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Fourchette validée : le dossier passe en « prêt »', async () => {
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+    // Mission 95 — le rythme du Live : accéléré par défaut, les deux durées estimées côte à côte.
+    const rhythmSetting = page.locator('[data-live-rhythm]');
+    await expect(
+      rhythmSetting.getByRole('radio', { name: 'Accéléré à partir du 4e concurrent' }),
+    ).toBeChecked();
+    await expect(
+      rhythmSetting.getByRole('radio', { name: 'Complet pour tous les concurrents' }),
+    ).toBeEnabled();
+    await expect(rhythmSetting).toContainText(
+      /Accéléré : environ \d+\smin · Complet : environ \d+\smin/,
+    );
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     await page.goto('/builder?prets=1');
@@ -202,6 +216,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
     await expect(row, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
     await expect(row.getByText('À relancer', { exact: true })).toBeVisible();
+    // Mission 95 — la durée mesurée du Live, du premier écran au « Terminer », pause comprise.
+    await expect(row.getByText(/Durée du Live : \d+\smin/)).toBeVisible();
     await expect(
       row.getByText('7 → 10/10'),
       'La note du vendeur manque sur la ligne',
@@ -528,6 +544,69 @@ async function walkLive(
   for (const [index, competitor] of COMPETITORS.entries()) {
     const label = `Concurrent ${index + 1} sur ${COMPETITORS.length}`;
     const others = COMPETITORS.filter((other) => other !== competitor);
+
+    // Mission 95 — rythme accéléré, à partir du 4e concurrent : deux écrans au lieu de quatre.
+    if (index >= 3) {
+      // Écran 1 : la fiche, le sérieux et la devinette — toujours sans aucun prix.
+      await expect(
+        page.getByRole('heading', { name: 'Un sérieux concurrent ? Et à quel prix, selon vous ?' }),
+      ).toBeVisible();
+      await expect(page.getByText(`${label} · Étape 1 sur 2`)).toBeVisible();
+      await onScreen(`${label} · accéléré, écran 1`);
+      if (firstPass) await expectPriceHidden(page, competitor, 'rythme accéléré, écran 1');
+      await expectAlone(page, others, `${label} · accéléré, écran 1`);
+      await choose('Oui, un concurrent sérieux');
+      const quickGuess = page.locator('input[name="seller_estimated_listing_price"]');
+      if (firstPass) {
+        if (index === 3) {
+          // Sur tablette, la devinette reste à l'écran à côté de la fiche, sans défilement.
+          await page.setViewportSize({ width: 768, height: 1024 });
+          await expect(quickGuess, 'La devinette sort de l’écran sur tablette').toBeInViewport({
+            ratio: 1,
+          });
+          await expectNoHorizontalScroll(page, `${label} · accéléré, écran 1`);
+          await page.setViewportSize({ width: 1280, height: 720 });
+        }
+        await quickGuess.fill(String(competitor.guess));
+      } else {
+        await expect(quickGuess, 'La devinette se corrige encore après coup').toHaveCount(0);
+        expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(competitor.guess));
+      }
+      await validate();
+
+      // Écran 2 : le prix révélé, puis la durée devinée et révélée à sa place.
+      const revealHeading = page.getByRole('heading', { name: 'Voici son prix.' });
+      await expect(revealHeading).toBeVisible();
+      await expect(page.getByText(`${label} · Étape 2 sur 2`)).toBeVisible();
+      expect(
+        await mainText(page),
+        `Le prix de ${competitor.title} n'est pas révélé après la devinette`,
+      ).toContain(String(competitor.price));
+      await expectAlone(page, others, `${label} · accéléré, écran 2`);
+      if (firstPass && index === 3) {
+        // Après la révélation, « Précédent » montre la devinette en lecture seule.
+        await page.getByRole('button', { name: /Précédent/ }).click();
+        await expect(quickGuess, 'Après la révélation, la devinette reste modifiable').toHaveCount(
+          0,
+        );
+        expect(withoutSpaces(await lockedAnswer.innerText())).toContain(String(competitor.guess));
+        await validate();
+        await expect(revealHeading).toBeVisible();
+      }
+      const quickDays = page.locator('input[name="seller_estimated_days_on_market"]');
+      const observed = page.getByText('Durée observée sur le marché');
+      if (firstPass) {
+        // La durée observée n'est pas à l'écran avant sa devinette.
+        await expect(observed, 'La durée est montrée avant sa devinette').toHaveCount(0);
+        await quickDays.fill('90');
+        await page.getByRole('button', { name: /Révéler la durée/ }).click();
+      }
+      await expect(observed).toBeVisible();
+      await expect(quickDays, 'La durée devinée se corrige encore après coup').toHaveCount(0);
+      await onScreen(`${label} · accéléré, écran 2`);
+      await validate();
+      continue;
+    }
 
     // 1. Un sérieux concurrent ? — sans prix.
     await expect(

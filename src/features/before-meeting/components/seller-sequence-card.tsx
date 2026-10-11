@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { btnPrimary, btnSecondary, card, hintText, sectionTitle } from '@/components/ui/styles';
 import { durationLabel, type LiveSequence } from '@/features/before-meeting/services/live-sequence';
@@ -25,10 +25,13 @@ export function SellerSequenceCard({
   sequence,
   notes,
   projectId,
+  rhythmSetting = null,
 }: {
   sequence: LiveSequence;
   notes: SequenceNote[];
   projectId: string;
+  // Mission 95 — le réglage « Rythme du Live », au-dessus du déroulé qu'il commande.
+  rhythmSetting?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const total = sequence.totalScreens;
@@ -38,6 +41,8 @@ export function SellerSequenceCard({
         <h2 className={sectionTitle}>Ce que verra le vendeur</h2>
         <p className={hintText}>Le déroulé du Live avec ce dossier.</p>
       </div>
+
+      {rhythmSetting}
 
       <ol className="grid grid-cols-1 gap-x-4 gap-y-1.5 @3xl:grid-cols-2">
         {sequence.parts.map((part) => (
