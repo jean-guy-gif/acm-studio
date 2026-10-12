@@ -10,21 +10,21 @@ const EXAMPLE_NAME = 'Exemple — M. et Mme Démo';
 
 async function archiveExamples(page: Page): Promise<void> {
   // Un exemple prêt repasse d'abord en préparation ; « Supprimer » l'archive ensuite (M93).
+  // Après chaque geste, on attend que la ligne ait quitté la liste avant de regarder la suivante.
   await page.goto('/builder?prets=1');
-  for (;;) {
-    const ready = page.locator('li').filter({ hasText: EXAMPLE_NAME }).first();
-    if ((await ready.count()) === 0) break;
-    await ready.getByRole('button', { name: 'Remettre en préparation' }).click();
-    await expect(page).toHaveURL(/\/builder\?prets=1$/);
+  await expect(page.getByRole('heading', { name: 'Préparation' })).toBeVisible();
+  const ready = page.locator('li').filter({ hasText: EXAMPLE_NAME });
+  for (let left = await ready.count(); left > 0; left -= 1) {
+    await ready.first().getByRole('button', { name: 'Remettre en préparation' }).click();
+    await expect(ready).toHaveCount(left - 1);
   }
   await page.goto('/builder');
-  for (;;) {
-    const draft = page.locator('li').filter({ hasText: EXAMPLE_NAME }).first();
-    if ((await draft.count()) === 0) break;
-    await draft.getByRole('button', { name: 'Supprimer' }).click();
+  await expect(page.getByRole('heading', { name: 'Préparation' })).toBeVisible();
+  const drafts = page.locator('li').filter({ hasText: EXAMPLE_NAME });
+  for (let left = await drafts.count(); left > 0; left -= 1) {
+    await drafts.first().getByRole('button', { name: 'Supprimer' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.goto('/builder');
+    await expect(drafts).toHaveCount(left - 1);
   }
 }
 
