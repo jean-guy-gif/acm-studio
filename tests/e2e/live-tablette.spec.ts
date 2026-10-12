@@ -31,11 +31,18 @@ async function openLive(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/builder\/[0-9a-f-]{36}$/);
     const projectId = page.url().split('/').pop() ?? '';
     await page.goto('/builder');
-    await page
+    const dossierForm = page
       .locator('form')
-      .filter({ has: page.locator(`input[name="projectId"][value="${projectId}"]`) })
-      .getByRole('button', { name: 'Déclarer prêt' })
-      .click();
+      .filter({ has: page.locator(`input[name="projectId"][value="${projectId}"]`) });
+    await dossierForm.getByRole('button', { name: 'Déclarer prêt' }).click();
+    // Mission 101 — le dossier est recréé à chaque passage (M100) : on attend que la déclaration
+    // soit ENREGISTRÉE — l'onglet « Prêts » le montre avec « Remettre en préparation » — avant de
+    // partir. Pendant l'envoi le bouton dit « … » : sa disparition ne prouve rien, et partir trop
+    // tôt interrompait l'enregistrement.
+    await expect(
+      dossierForm.getByRole('button', { name: 'Remettre en préparation' }),
+      'Le dossier n’a pas été déclaré prêt',
+    ).toBeVisible();
     await page.goto('/live');
   }
 
