@@ -16,6 +16,7 @@ import {
   describeSearchCriteria,
   SEARCH_RADIUS_CHOICES,
   sectorLabel,
+  wholeCommuneLabel,
   type SearchDefaults,
   type SearchSettings,
   type SearchSettingsInput,
@@ -161,8 +162,11 @@ export function SearchSettingsBlock({
           <div className="flex flex-wrap gap-2">
             {(
               [
-                ['auto', `Automatique (${sectorLabel(null, defaults.located).toLowerCase()})`],
-                ['commune', 'Toute la commune'],
+                [
+                  'auto',
+                  `Automatique (${sectorLabel(null, defaults.located, defaults.arrondissement).toLowerCase()})`,
+                ],
+                ['commune', wholeCommuneLabel(defaults.arrondissement ?? false)],
                 ...SEARCH_RADIUS_CHOICES.map(
                   (km) => [String(km), `Rayon ${km} km autour du bien`] as const,
                 ),

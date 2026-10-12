@@ -601,6 +601,7 @@ export function CompetitorSearchPanel({
         inseeCode: result.inseeCode,
         criteriaUsed: result.criteriaUsed,
         customSettings: result.customSettings,
+        arrondissement: result.arrondissement,
       });
       setStreamNote(note);
       // Mission 93 — gardé pour ce dossier, le temps de la séance : actualiser ou revenir en

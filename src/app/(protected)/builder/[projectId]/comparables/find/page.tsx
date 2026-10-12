@@ -14,6 +14,7 @@ import { searchStreamEstate } from '@/features/competitor-search/actions/search-
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
 import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { searchDefaults } from '@/features/competitor-search/services/stream-estate-tiers';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -76,13 +77,20 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
     );
     searchSettings = {
       saved: loaded.settings,
-      defaults: searchDefaults(loaded.criteria, geocode.ok),
+      defaults: searchDefaults(
+        loaded.criteria,
+        geocode.ok,
+        commune.ok && commune.arrondissement != null,
+      ),
       saveAction: saveSearchSettings.bind(null, projectId),
     };
   }
 
   const criteriaLabel = hasCity
-    ? [property?.city, property?.postal_code].filter(Boolean).join(' ')
+    ? // Mission 99 — « Paris 15e 75015 » : l'arrondissement se lit dans le code postal.
+      [displayCommune(property?.city, property?.postal_code), property?.postal_code]
+        .filter(Boolean)
+        .join(' ')
     : '—';
 
   return (

@@ -87,8 +87,11 @@ export type TierSlice = { rooms: OpenRange | null; surface: OpenRange | null };
 
 // Où chercher : toute la commune (code INSEE), ou un cercle autour d'un point. `withinCommune` :
 // le cercle est privé des communes voisines (crans 1 à 6) ; sinon il les comprend (crans 7 et 8).
+// Mission 99 — `codes` : plusieurs codes INSEE à la fois (l'arrondissement du bien et ses voisins,
+// additionnés par l'API — mesuré le 12/10) ; absent, c'est la commune du bien.
 export type TierArea =
-  { kind: 'commune' } | { kind: 'circle'; radiusKm: number; withinCommune: boolean };
+  | { kind: 'commune'; codes?: string[] }
+  | { kind: 'circle'; radiusKm: number; withinCommune: boolean };
 
 export type TierPlan = {
   tier: StreamEstateTier;
@@ -163,11 +166,29 @@ export function tierSlices(criteria: CompetitorSearchCriteria): TierSlices {
 // plus » ni de pièces libres ; surface réglée : plus de « plus grand » ; prix réglé : plus de
 // ±5 %), et les élargissements qui restent gardent ce critère tel que réglé. Les tranches restent
 // disjointes : rien n'est facturé deux fois. « Élargir : non » ne garde que la première recherche.
+//
+// MISSION 99 — PARIS, LYON, MARSEILLE (`arrondissement`). La « commune » du bien est son
+// arrondissement : l'ordre de la mission 71 y est gardé (identique, plus grand, une pièce de plus,
+// à 1 km dans l'arrondissement), puis l'arrondissement ET SES VOISINS remplacent les cercles de 2
+// et 5 km (jamais toute la ville d'un coup), les pièces libres portent sur ce même périmètre, et
+// le rayon de 10 km et le prix à ±5 % ne changent pas. L'étape des voisins existe même sans
+// adresse géocodée.
 export function planTiers(
   criteria: CompetitorSearchCriteria,
-  options: { located: boolean; hasCentre: boolean },
+  options: {
+    located: boolean;
+    hasCentre: boolean;
+    arrondissement?: { code: string; neighbours: string[] } | null;
+  },
   settings: SearchSettings | null = null,
 ): TierPlan[] {
+  const withNeighbours: TierArea | null =
+    options.arrondissement != null && options.arrondissement.neighbours.length > 0
+      ? {
+          kind: 'commune',
+          codes: [options.arrondissement.code, ...options.arrondissement.neighbours],
+        }
+      : null;
   const custom = isDefaultSettings(settings) ? null : settings;
   const fixedArea: TierArea | null =
     custom?.sector == null
@@ -254,7 +275,17 @@ export function planTiers(
       acceptsUnverifiedPosition: wholeCommune,
     });
   }
-  if (options.located && !fixedArea) {
+  if (withNeighbours && !fixedArea) {
+    plans.push({
+      tier: 4,
+      area: withNeighbours,
+      surface: fixedSurface ?? surfaceAny,
+      rooms: fixedRooms ?? roomsAny,
+      prices: inRange,
+      originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
+      acceptsUnverifiedPosition: true,
+    });
+  } else if (options.located && !fixedArea) {
     plans.push(
       {
         tier: 4,
@@ -293,6 +324,7 @@ export function planTiers(
       tier: 6,
       area:
         fixedArea ??
+        withNeighbours ??
         (options.located
           ? { kind: 'circle', radiusKm: 5, withinCommune: true }
           : { kind: 'commune' }),
@@ -350,10 +382,12 @@ export function planTiers(
 export function searchDefaults(
   criteria: CompetitorSearchCriteria,
   located: boolean,
+  arrondissement = false,
 ): SearchDefaults {
   const s = tierSlices(criteria);
   return {
     located,
+    ...(arrondissement ? { arrondissement } : {}),
     price: s.advisorPrices,
     rooms: s.rooms,
     surface: s.identicalSurface,
@@ -362,20 +396,27 @@ export function searchDefaults(
 
 // Les communes du département qui peuvent toucher un cercle de `radiusKm` autour du bien : leur
 // centre est à moins de rayon + 8 km. La commune du bien n'en fait jamais partie.
+// Mission 99 — pour un arrondissement (`siblings`) : les autres arrondissements de la ville
+// s'ajoutent aux communes à exclure — c'est ce qui garde le cercle DANS l'arrondissement (mesuré
+// le 12/10 : 958 biens dans 1 km autour du 12 rue Lecourbe, 726 une fois le 7e, le 6e et le 14e
+// exclus) — et le code de la ville entière (`cityCode`) n'est pas envoyé : il est sans effet.
 export function neighbourInseeCodes(
   communes: GeoCommune[],
   inseeCode: string,
   point: GeoPoint,
   radiusKm: number,
+  arrondissement: { cityCode: string; siblings: string[] } | null = null,
 ): string[] {
   const limit = (radiusKm + NEIGHBOUR_MARGIN_KM) * 1000;
-  return communes
-    .filter((commune) => commune.code !== inseeCode)
+  const around = communes
+    .filter((commune) => commune.code !== inseeCode && commune.code !== arrondissement?.cityCode)
     .filter((commune) => {
       const centre = communeCentre(commune);
       return centre != null && distanceMeters(point, centre) < limit;
     })
-    .map((commune) => commune.code)
+    .map((commune) => commune.code);
+  return [...new Set([...around, ...(arrondissement?.siblings ?? [])])]
+    .filter((code) => code !== inseeCode)
     .sort();
 }
 
@@ -398,7 +439,9 @@ export function tierQueryParams(
 ): URLSearchParams {
   const params = new URLSearchParams(base);
   if (plan.area.kind === 'commune') {
-    params.append('includedInseeCodes[]', context.inseeCode);
+    for (const code of plan.area.codes ?? [context.inseeCode]) {
+      params.append('includedInseeCodes[]', code);
+    }
   } else if (context.origin) {
     params.append('lat', String(context.origin.lat));
     params.append('lon', String(context.origin.lon));
@@ -542,6 +585,10 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
       else report.fallback = true;
     }
     const verifyCommune = plan.area.kind === 'commune' || excludeNeighbours;
+    // Les communes admises à cette étape : celle du bien, ou l'arrondissement et ses voisins.
+    const allowed =
+      plan.area.kind === 'commune' && plan.area.codes ? plan.area.codes : [input.context.inseeCode];
+    const isAllowed = (code: string | null): boolean => code != null && allowed.includes(code);
     // Les requêtes du cran : chaque tranche de pièces et de surface, pour chaque tranche de prix.
     const slices: TierSlice[] = plan.slices ?? [{ rooms: plan.rooms, surface: plan.surface }];
     const prices = slices.flatMap((slice) =>
@@ -601,7 +648,7 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
           if (keys.has(candidate.key!)) continue; // déjà trouvé à un cran précédent
           const insee = candidate.streamEstate?.inseeCode ?? null;
           // Commune absente : portée par la provenance seulement quand on a cherché PAR la commune.
-          if (verifyCommune && insee !== input.context.inseeCode) {
+          if (verifyCommune && !isAllowed(insee)) {
             if (!(plan.area.kind === 'commune' && insee == null)) {
               otherCommune.add(candidate.key!);
               continue;
@@ -613,7 +660,7 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
           if (
             !plan.acceptsUnverifiedPosition &&
             candidate.features?.location == null &&
-            insee !== input.context.inseeCode
+            !isAllowed(insee)
           ) {
             unverifiedPosition.add(candidate.key!);
             continue;

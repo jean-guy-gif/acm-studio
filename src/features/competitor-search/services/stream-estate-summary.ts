@@ -34,6 +34,8 @@ export type StreamEstateSearchNote = {
   // si le conseiller en a réglé au moins un. Absents d'un résultat gardé avant la mission.
   criteriaUsed?: string[];
   customSettings?: boolean;
+  // Mission 99 — Paris, Lyon, Marseille : la recherche porte sur l'arrondissement, puis ses voisins.
+  arrondissement?: boolean;
 };
 
 const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
@@ -47,16 +49,30 @@ const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
   8: ['prix hors fourchette (±5 %)', 'prix hors fourchette (±5 %)'],
 };
 
+// Mission 99 — dans une ville à arrondissements, l'étape qui suit le quartier n'est pas un cercle
+// de 2 km : c'est l'arrondissement et ses voisins, et les pièces libres portent sur ce périmètre.
+const ARRONDISSEMENT_TIER_LABELS: Partial<Record<StreamEstateTier, [string, string]>> = {
+  4: ['dans l’arrondissement ou un voisin', 'dans l’arrondissement ou un voisin'],
+  6: [
+    'arrondissements voisins compris, pièces libres',
+    'arrondissements voisins compris, pièces libres',
+  ],
+};
+
+function labelsOf(tier: StreamEstateTier, arrondissement: boolean | undefined): [string, string] {
+  return (arrondissement ? ARRONDISSEMENT_TIER_LABELS[tier] : undefined) ?? TIER_LABELS[tier];
+}
+
 // Mission 97 — un seul mot : « élargissement ». La première recherche est « à l'identique » ;
 // chaque étape suivante l'élargit une fois de plus.
 export function widenedTimes(tiers: readonly StreamEstateTier[]): number {
   return new Set(tiers.filter((tier) => tier > 1)).size;
 }
 
-function resumePoint(tier: StreamEstateTier): string {
+function resumePoint(tier: StreamEstateTier, arrondissement: boolean | undefined): string {
   return tier === 1
     ? 'la recherche à l’identique'
-    : `à l’élargissement « ${TIER_LABELS[tier][0]} »`;
+    : `à l’élargissement « ${labelsOf(tier, arrondissement)[0]} »`;
 }
 
 const plural = (count: number, one: string, many: string): string =>
@@ -128,7 +144,9 @@ export function describeStreamEstateSearch(
   // Mission 99 — avec des réglages, la première recherche n'est plus « à l'identique » du bien :
   // elle est ce que le conseiller a réglé.
   const tierLabel = (tier: StreamEstateTier, count: number): string =>
-    tier === 1 && note.customSettings ? 'selon vos réglages' : TIER_LABELS[tier][count > 1 ? 1 : 0];
+    tier === 1 && note.customSettings
+      ? 'selon vos réglages'
+      : labelsOf(tier, note.arrondissement)[count > 1 ? 1 : 0];
   const composition = [...byTier]
     .sort(([a], [b]) => a - b)
     .map(([tier, count]) => `${count} ${tierLabel(tier, count)}`);
@@ -156,7 +174,7 @@ export function describeStreamEstateSearch(
       note.stop === 'cap'
         ? `Moins de ${STREAM_ESTATE_TARGET} : plafond atteint, la recherche s’arrête là${
             note.cursor
-              ? ` — « Chercher encore » reprend ${resumePoint(note.cursor.tier)}, page suivante.`
+              ? ` — « Chercher encore » reprend ${resumePoint(note.cursor.tier, note.arrondissement)}, page suivante.`
               : '.'
           }`
         : note.stop === 'error'
@@ -169,7 +187,9 @@ export function describeStreamEstateSearch(
                     ? 'rayon de 10 km, prix à ±5 % hors fourchette'
                     : lastTier === 7
                       ? 'rayon de 10 km'
-                      : 'toute la commune'
+                      : note.arrondissement
+                        ? 'l’arrondissement et ses voisins'
+                        : 'toute la commune'
               }).`
             : `Moins de ${STREAM_ESTATE_TARGET} : ${plural(
                 STREAM_ESTATE_TARGET - proposed.length,
@@ -180,7 +200,9 @@ export function describeStreamEstateSearch(
   }
   if (!note.located) {
     details.push(
-      'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
+      note.arrondissement
+        ? 'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur tout l’arrondissement, puis sur ses voisins ; le rayon de 10 km part du centre de l’arrondissement.'
+        : 'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
     );
   }
   const fallback = [
@@ -188,7 +210,7 @@ export function describeStreamEstateSearch(
   ];
   if (fallback.length > 0) {
     details.push(
-      `Pour ${fallback.map((tier) => `« ${TIER_LABELS[tier][0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,
+      `Pour ${fallback.map((tier) => `« ${labelsOf(tier, note.arrondissement)[0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,
     );
   }
   const { counts } = note;

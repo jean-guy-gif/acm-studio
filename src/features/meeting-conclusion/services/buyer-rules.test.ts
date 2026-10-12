@@ -196,3 +196,55 @@ describe('alias de communes', () => {
     expect(requestedCommuneKeys(' , ')).toEqual([]);
   });
 });
+
+// Mission 99 — « Paris » chez l'acquéreur couvre tous les arrondissements ; « Paris 15e » ne
+// couvre que le 15e. Même chose pour Lyon et Marseille.
+describe('Paris, Lyon, Marseille : la ville couvre ses arrondissements', () => {
+  const in15: BuyerFacts = { ...FITS, city: 'Paris 15e' };
+
+  it('lit la ville et l’arrondissement d’un texte d’acquéreur', () => {
+    expect(buyerCommuneKey('Paris')).toBe('paris');
+    expect(buyerCommuneKey('Paris 15e')).toBe('paris 15');
+    expect(buyerCommuneKey('paris 15ème arrondissement')).toBe('paris 15');
+    expect(buyerCommuneKey('Paris 75015')).toBe('paris 15');
+    expect(buyerCommuneKey('Lyon 3e')).toBe('lyon 3');
+    expect(buyerCommuneKey('Marseille 8e')).toBe('marseille 8');
+    expect(requestedCommuneKeys('Paris 15e, Paris 16e ; Lyon')).toEqual([
+      'paris 15',
+      'paris 16',
+      'lyon',
+    ]);
+    // Les communes ordinaires et leurs alias (M86) ne changent pas.
+    expect(buyerCommuneKey('Juan-les-Pins')).toBe('antibes');
+    expect(buyerCommuneKey('Antibes 06600')).toBe('antibes');
+  });
+
+  it('« Paris » voit un bien du 15e, « Paris 15e » aussi, « Paris 16e » non', () => {
+    expect(matches({ ...BUYER, city: 'Paris' }, in15)).toBe(true);
+    expect(matches({ ...BUYER, city: 'Paris 15e' }, in15)).toBe(true);
+    expect(details({ ...BUYER, city: 'Paris 16e' }, in15)).toEqual(['Autre commune : Paris 15e']);
+    expect(matches({ ...BUYER, city: 'Paris 14e, Paris 15e' }, in15)).toBe(true);
+    expect(matches({ ...BUYER, city: 'Lyon' }, in15)).toBe(false);
+  });
+
+  it('vaut pour Lyon et Marseille', () => {
+    expect(matches({ ...BUYER, city: 'Lyon' }, { ...FITS, city: 'Lyon 3e' })).toBe(true);
+    expect(matches({ ...BUYER, city: 'Lyon 6e' }, { ...FITS, city: 'Lyon 3e' })).toBe(false);
+    expect(matches({ ...BUYER, city: 'Marseille' }, { ...FITS, city: 'Marseille 8e' })).toBe(true);
+    expect(matches({ ...BUYER, city: 'Marseille 8e' }, { ...FITS, city: 'Marseille 9e' })).toBe(
+      false,
+    );
+  });
+
+  it('un bien dont on ne connaît que « Paris » : vu par « Paris », pas par « Paris 15e »', () => {
+    const anywhere: BuyerFacts = { ...FITS, city: 'Paris' };
+    expect(matches({ ...BUYER, city: 'Paris' }, anywhere)).toBe(true);
+    expect(details({ ...BUYER, city: 'Paris 15e' }, anywhere)).toEqual([
+      'Arrondissement non renseigné',
+    ]);
+  });
+
+  it('« Paris » ne couvre pas une commune dont le nom commence pareil', () => {
+    expect(matches({ ...BUYER, city: 'Paris' }, { ...FITS, city: 'Parisot' })).toBe(false);
+  });
+});

@@ -4,6 +4,10 @@ import { useImperativeHandle, useState, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
+import {
+  arrondissementLabel,
+  resolveArrondissement,
+} from '@/features/competitor-search/utils/arrondissements';
 import { dpeClass } from '@/features/dpe/services/dpe';
 import {
   VerifyBanner,
@@ -178,6 +182,7 @@ export function SubjectPropertyForm({
   ref?: Ref<SheetSectionHandle>;
 }) {
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
+  const arrondissement = resolveArrondissement(scalars.city, scalars.postal_code);
   const [outdoorSpaces, setOutdoorSpaces] = useState<string[]>(() =>
     initialArray(imported?.outdoor_spaces, property?.outdoor_spaces),
   );
@@ -309,6 +314,13 @@ export function SubjectPropertyForm({
               error={errors.city}
             />
           </div>
+          {/* Mission 99 — Paris, Lyon, Marseille : le bien est rattaché à son arrondissement, lu dans
+              le code postal ou dans la ville. */}
+          {arrondissement ? (
+            <p className="text-sm text-zinc-500 stage:text-white/60" data-arrondissement>
+              Arrondissement : {arrondissementLabel(arrondissement)}
+            </p>
+          ) : null}
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>
               Description

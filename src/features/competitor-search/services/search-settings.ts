@@ -90,6 +90,8 @@ export function settingsToStore(settings: SearchSettings): SearchSettings | null
 // (stream-estate-tiers.ts) : c'est ce que le bloc « Réglages de la recherche » affiche replié.
 export type SearchDefaults = {
   located: boolean; // l'adresse du bien est-elle géocodée sûrement ?
+  // Paris, Lyon, Marseille : la « commune » du bien est son arrondissement.
+  arrondissement?: boolean;
   price: SettingRange | null; // null : pas de fourchette sur la fiche
   rooms: number | null;
   surface: SettingRange | null;
@@ -106,11 +108,20 @@ const surfaceLabel = (surface: SettingRange): string =>
 const priceLabel = (price: SettingRange): string =>
   `${formatNumber(price.min)} – ${formatEuro(price.max)}`;
 
-export function sectorLabel(sector: SearchSector | null, located: boolean): string {
+export const wholeCommuneLabel = (arrondissement: boolean): string =>
+  arrondissement ? 'Tout l’arrondissement' : 'Toute la commune';
+
+export function sectorLabel(
+  sector: SearchSector | null,
+  located: boolean,
+  arrondissement = false,
+): string {
   if (sector == null) {
-    return located ? '1 km autour du bien, puis élargi' : 'Toute la commune, puis élargi';
+    return located
+      ? '1 km autour du bien, puis élargi'
+      : `${wholeCommuneLabel(arrondissement)}, puis élargi`;
   }
-  return sector.kind === 'commune' ? 'Toute la commune' : `Rayon ${sector.km} km`;
+  return sector.kind === 'commune' ? wholeCommuneLabel(arrondissement) : `Rayon ${sector.km} km`;
 }
 
 // Les critères de départ de la recherche, tels que le bilan et le bloc replié les disent :
@@ -126,7 +137,7 @@ export function describeSearchCriteria(
     (defaults.rooms != null ? { min: defaults.rooms, max: defaults.rooms } : null);
   const surface = settings.surface ?? defaults.surface;
   return [
-    sectorLabel(settings.sector, defaults.located),
+    sectorLabel(settings.sector, defaults.located, defaults.arrondissement ?? false),
     price ? priceLabel(price) : null,
     rooms ? roomsLabel(rooms) : null,
     surface ? surfaceLabel(surface) : null,

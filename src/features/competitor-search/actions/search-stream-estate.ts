@@ -20,6 +20,12 @@ import {
 } from '@/features/competitor-search/services/search-settings';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import {
+  arrondissementCityInsee,
+  arrondissementInsee,
+  neighbourArrondissements,
+  siblingArrondissements,
+} from '@/features/competitor-search/utils/arrondissements';
+import {
   neighbourInseeCodes,
   planTiers,
   runTieredSearch,
@@ -58,6 +64,8 @@ export type StreamEstateSearchResult =
       // le conseiller en a réglé au moins un.
       criteriaUsed: string[];
       customSettings: boolean;
+      // Mission 99 — le bien est dans un arrondissement de Paris, Lyon ou Marseille.
+      arrondissement: boolean;
     }
   | { ok: false; error: string };
 
@@ -131,7 +139,7 @@ export async function searchStreamEstate(
     const reasons: Record<typeof commune.reason, string> = {
       unavailable:
         'Le code INSEE de la commune n’a pas pu être obtenu (geo.api.gouv.fr). Réessayez.',
-      arrondissements: `${criteria.city} est découpée en arrondissements chez Stream Estate : l’essai ne sait pas encore chercher par arrondissement. Aucune recherche lancée.`,
+      arrondissements: `${criteria.city} se cherche par arrondissement : indiquez le code postal du bien vendeur (75015, 69003, 13008…) ou son arrondissement dans la ville (« Paris 15e »), et vérifiez qu’ils disent le même. Aucune recherche lancée.`,
       ambiguous: `Pas de code INSEE fiable pour « ${where} » (plusieurs communes possibles). Vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
       not_found: `Pas de code INSEE fiable pour « ${where} » (commune introuvable). Vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
     };
@@ -168,10 +176,19 @@ export async function searchStreamEstate(
     subjectPoint != null && commune.departement != null
       ? await fetchDepartmentCommunes(commune.departement)
       : null;
+  // Mission 99 — dans une ville à arrondissements, les autres arrondissements sont exclus du
+  // cercle comme des communes voisines, et l'élargissement « arrondissements voisins » les ajoute.
+  const { arrondissement } = commune;
+  const siblings = arrondissement
+    ? {
+        cityCode: arrondissementCityInsee(arrondissement.city),
+        siblings: siblingArrondissements(arrondissement).map(arrondissementInsee),
+      }
+    : null;
   const neighbours =
     subjectPoint != null && departmentCommunes != null
       ? (radiusKm: number) =>
-          neighbourInseeCodes(departmentCommunes, commune.code, subjectPoint, radiusKm)
+          neighbourInseeCodes(departmentCommunes, commune.code, subjectPoint, radiusKm, siblings)
       : null;
 
   const fetchPage: FetchStreamEstatePage = async (params) => {
@@ -199,7 +216,16 @@ export async function searchStreamEstate(
   // 4. Les crans, du plus proche au plus large — ou la reprise, 20 annonces de plus.
   const plans = planTiers(
     criteria,
-    { located: subjectPoint != null, hasCentre: origin != null },
+    {
+      located: subjectPoint != null,
+      hasCentre: origin != null,
+      arrondissement: arrondissement
+        ? {
+            code: commune.code,
+            neighbours: neighbourArrondissements(arrondissement).map(arrondissementInsee),
+          }
+        : null,
+    },
     settings,
   );
   const resumeFrom = parsedResume?.data ?? null;
@@ -261,9 +287,13 @@ export async function searchStreamEstate(
     counts: outcome.counts,
     newBuild: candidates.filter((candidate) => candidate.isNewBuild).length,
     located: subjectPoint != null,
-    communeName: commune.name,
+    communeName: commune.display,
     inseeCode: commune.code,
-    criteriaUsed: describeSearchCriteria(settings, searchDefaults(criteria, subjectPoint != null)),
+    arrondissement: arrondissement != null,
+    criteriaUsed: describeSearchCriteria(
+      settings,
+      searchDefaults(criteria, subjectPoint != null, arrondissement != null),
+    ),
     customSettings: !isDefaultSettings(settings),
   };
 }

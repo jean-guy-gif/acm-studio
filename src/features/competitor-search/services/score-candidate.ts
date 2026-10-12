@@ -1,3 +1,4 @@
+import { compareArrondissements } from '@/features/competitor-search/utils/arrondissements';
 import { communeKey } from '@/features/competitor-search/utils/commune-name';
 
 // Classement des annonces candidates par ressemblance avec le bien du vendeur.
@@ -13,6 +14,8 @@ import { communeKey } from '@/features/competitor-search/utils/commune-name';
 
 export type ScoringCriteria = {
   city: string | null;
+  // Mission 99 — le code postal dit l'arrondissement à Paris, Lyon et Marseille.
+  postalCode?: string | null;
   district: string | null;
   propertyType: string | null;
   surfaceArea: number | null;
@@ -149,7 +152,15 @@ function scoreDistrict(criteria: ScoringCriteria, facts: CandidateFacts): Scored
   const candidateCity = communeKey(facts.city);
   if (refCity != null && candidateCity != null) {
     const half = Math.round(WEIGHTS.district / 2);
-    return refCity === candidateCity
+    // Mission 99 — « Paris 15e » et « Paris » + 75015 sont la même commune ; deux arrondissements
+    // différents n'en sont pas une.
+    const arrondissements = compareArrondissements(
+      { city: criteria.city, postalCode: criteria.postalCode },
+      { city: facts.city },
+    );
+    const same =
+      arrondissements === 'not_applicable' ? refCity === candidateCity : arrondissements === 'same';
+    return same
       ? { weight: half, earned: half, label: 'Même commune', positive: true }
       : { weight: half, earned: 0, label: 'Autre commune', positive: false };
   }

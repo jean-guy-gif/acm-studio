@@ -1,3 +1,4 @@
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { deriveListingAge } from '@/features/comparable-import/services/derive-listing-age';
 import { derivePriceChange } from '@/features/comparable-import/services/derive-price-change';
 import type { ListingAge } from '@/features/comparable-import/types';
@@ -193,7 +194,8 @@ export function buildProspectingRows(
         listingNumber: identity?.listingKey ?? null,
         opposedOn: opposedOn(competitor.locator_address, oppositions),
         propertyType: clean(competitor.property_type),
-        city: clean(competitor.city),
+        // Mission 99 — « Paris 15e » sur la carte, la tournée et le rapprochement acquéreur.
+        city: displayCommune(clean(competitor.city), competitor.postal_code),
         portal: identity
           ? (LISTING_PORTAL_LABELS[identity.portal] ?? identity.portal)
           : clean(competitor.source),

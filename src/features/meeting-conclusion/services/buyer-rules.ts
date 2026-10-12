@@ -1,6 +1,9 @@
 import type { BuyerCriteria } from '@/features/meeting-conclusion/services/buyer-match';
 import {
   buyerCommuneKey,
+  communeCovered,
+  communeDisplay,
+  missingArrondissement,
   requestedCommuneKeys,
 } from '@/features/meeting-conclusion/services/commune-alias';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
@@ -47,8 +50,13 @@ export function buyerRuleGaps(criteria: BuyerCriteria, facts: BuyerFacts): Buyer
     const commune = buyerCommuneKey(facts.city);
     if (commune == null) {
       gaps.push({ criterion: 'city', detail: 'Commune non renseignée' });
-    } else if (!communes.includes(commune)) {
-      gaps.push({ criterion: 'city', detail: `Autre commune : ${facts.city?.trim()}` });
+    } else if (!communeCovered(communes, commune)) {
+      gaps.push({
+        criterion: 'city',
+        detail: missingArrondissement(communes, facts.city)
+          ? 'Arrondissement non renseigné'
+          : `Autre commune : ${communeDisplay(facts.city)}`,
+      });
     }
   }
 
