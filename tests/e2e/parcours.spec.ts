@@ -157,7 +157,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText('Coût maximal : 0,60 € par recherche')).toBeVisible();
 
     await summary.click();
-    await block.getByLabel('Toute la commune').check();
+    await block.getByLabel('Toute la commune', { exact: true }).check();
     await block.getByLabel('Pièces : de').fill('3');
     await block.getByLabel('Pièces : à').fill('4');
     await expect(block.getByText('Réglages non enregistrés')).toBeVisible();
