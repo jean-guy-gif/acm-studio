@@ -15,6 +15,7 @@ import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
+import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -98,44 +99,31 @@ export async function importAndCreateComparable(
   // Type canonique écrit en base (apartment/house/…) ; jamais le texte libre.
   const canonicalType = normalizePropertyType(propertyType);
 
-  // display_order = max + 1, recalculé à chaque tentative ; sur collision (contrainte
-  // unique différée, 23505) on réessaie. Même logique que createComparable.
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const { data: last } = await supabase
-      .from('comparables')
-      .select('display_order')
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id)
-      .order('display_order', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const nextOrder = (last?.display_order ?? 0) + 1;
-
-    const { error } = await supabase.from('comparables').insert({
-      ...input,
-      // Mission 83 — vendeur et exclusivité tels que l'annonce les dit, avec leur provenance.
-      ...importedMandateColumns(data),
-      property_type: canonicalType,
-      // Mission 97 — tout ce que l'import vient de remplir reste « à vérifier » jusqu'à relecture.
-      fields_to_verify: importedFields(input, COMPETITOR_VERIFIABLE_FIELDS),
-      project_id: projectId,
-      agency_id: profile.agency_id,
-      display_order: nextOrder,
-      is_selected: true,
-    });
-    if (!error) {
-      // MISSION 52 — un concurrent importé peut compléter le dernier critère → bascule
-      // automatique du dossier dans le Live (draft → ready).
-      const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
-      revalidatePath(`/builder/${projectId}/comparables`);
-      revalidatePath(`/builder/${projectId}`);
-      revalidatePath('/builder');
-      revalidatePath('/live');
-      return { ok: true, name: input.title, becameReady };
-    }
-    if (error.code !== '23505') {
-      return { ok: false, error: GENERIC_ERROR };
-    }
+  const created = await insertCompetitor(supabase, projectId, profile.agency_id, {
+    ...input,
+    // Mission 83 — vendeur et exclusivité tels que l'annonce les dit, avec leur provenance.
+    ...importedMandateColumns(data),
+    property_type: canonicalType,
+    // Mission 97 — tout ce que l'import vient de remplir reste « à vérifier » jusqu'à relecture.
+    fields_to_verify: importedFields(input, COMPETITOR_VERIFIABLE_FIELDS),
+    is_selected: true,
+  });
+  if (!created) {
+    return { ok: false, error: GENERIC_ERROR };
   }
-  return { ok: false, error: GENERIC_ERROR };
+  // Mission 101 — le bien n'est plus « en attente d'import » : sa ligne part avec sa création.
+  await supabase
+    .from('pending_competitor_imports')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('agency_id', profile.agency_id)
+    .eq('listing_url', url.href);
+  // MISSION 52 — un concurrent importé peut compléter le dernier critère → bascule
+  // automatique du dossier dans le Live (draft → ready).
+  const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
+  revalidatePath(`/builder/${projectId}/comparables`);
+  revalidatePath(`/builder/${projectId}`);
+  revalidatePath('/builder');
+  revalidatePath('/live');
+  return { ok: true, name: input.title, becameReady };
 }

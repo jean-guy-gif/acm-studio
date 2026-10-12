@@ -138,12 +138,25 @@ export type CompetitorCandidate = {
 // retenue comme ORIGINE (celle que l'import relira, toujours sur un site de la liste blanche),
 // depuis quand le bien est en ligne,
 // et ses baisses de prix. Rien n'est recalculé : ce sont les valeurs de l'API.
+// Une baisse de prix selon Stream Estate : sa date (AAAA-MM-JJ), l'ancien et le nouveau prix quand
+// l'API les donne, et la variation en % (négative).
+export type StreamEstatePriceChange = {
+  at: string | null;
+  from: number | null;
+  to: number | null;
+  percent: number;
+};
+
 export type StreamEstateFacts = {
   propertyId: string; // identifiant du bien chez Stream Estate (base de déduplication)
   originSite: string; // site de l'annonce d'origine (« SeLoger », « leboncoin.fr »…)
   onlineSince: string | null; // createdAt du bien (ISO)
   lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
   priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
+  // Mission 101 — gardés pour créer le concurrent quand la page de l'annonce reste illisible :
+  // les chambres, et les baisses datées avec leurs montants. Absents d'une recherche d'avant.
+  bedrooms?: number | null;
+  priceChanges?: StreamEstatePriceChange[];
   // Mission 71 — la commune du bien selon l'API (code INSEE + nom) : c'est le code, pas le nom,
   // qui dit « même commune ». null si l'API ne le donne pas.
   inseeCode?: string | null;

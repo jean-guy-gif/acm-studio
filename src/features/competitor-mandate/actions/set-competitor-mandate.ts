@@ -6,6 +6,7 @@ import {
   advisorCorrection,
   type MandateField,
 } from '@/features/competitor-mandate/services/mandate-columns';
+import { withoutField } from '@/features/imported-fields/services/fields-to-verify';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -35,9 +36,21 @@ export async function setCompetitorMandate(
   }
 
   const supabase = await createClient();
+  // Mission 101 — indiquer le vendeur ou l'exclusivité, c'est l'avoir vérifié : la pastille
+  // « À vérifier » de ce champ (posée par une création depuis la recherche) part avec la réponse.
+  const { data: current } = await supabase
+    .from('comparables')
+    .select('fields_to_verify')
+    .eq('id', competitorId)
+    .eq('project_id', projectId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  const stillToVerify = current?.fields_to_verify?.includes(field)
+    ? { fields_to_verify: withoutField(current.fields_to_verify, field) }
+    : {};
   const { data, error } = await supabase
     .from('comparables')
-    .update(patch)
+    .update({ ...patch, ...stillToVerify })
     .eq('id', competitorId)
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)

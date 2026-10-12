@@ -27,6 +27,7 @@ const CLEANED = [
   'listing_observations',
   'live_seller_responses',
   'live_seller_summary',
+  'pending_competitor_imports',
   'project_meeting_conclusions',
   'project_price_positionings',
   'projects',

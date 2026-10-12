@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { setCompetitorMandate } from '@/features/competitor-mandate/actions/set-competitor-mandate';
+import { VERIFY_LABEL } from '@/features/imported-fields/services/fields-to-verify';
 import type { MandateField } from '@/features/competitor-mandate/services/mandate-columns';
 import {
   EXCLUSIVITY_LABELS,
@@ -43,7 +44,15 @@ const chipOff =
 // Mission 83 — « Vendu par » et « Exclusivité » d'un concurrent, côté conseiller : la valeur
 // connue est allumée, sa provenance est dite, et un clic sur une autre la corrige. Jamais montré
 // au vendeur.
-export function CompetitorMandateLine({ competitor }: { competitor: CompetitorMandateFields }) {
+export function CompetitorMandateLine({
+  competitor,
+  toVerify = [],
+}: {
+  competitor: CompetitorMandateFields;
+  // Mission 101 — les champs encore « À vérifier » (un concurrent créé depuis la recherche ne
+  // sait pas qui vend) : la pastille part dès que le conseiller répond.
+  toVerify?: readonly string[];
+}) {
   const [stored, setStored] = useState({
     sold_by: competitor.sold_by,
     sold_by_source: competitor.sold_by_source,
@@ -75,6 +84,15 @@ export function CompetitorMandateLine({ competitor }: { competitor: CompetitorMa
     return (
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label}>
         <span className="text-zinc-600 stage:text-white/70">{label}&nbsp;:</span>
+        {toVerify.includes(field) && source !== 'advisor' ? (
+          <span
+            data-testid="verify-mark"
+            data-field={field}
+            className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-amber-800 stage:bg-amber-400/20 stage:text-amber-200"
+          >
+            {VERIFY_LABEL}
+          </span>
+        ) : null}
         {choices.map((choice) => {
           const on = stored[field] === choice.value;
           return (

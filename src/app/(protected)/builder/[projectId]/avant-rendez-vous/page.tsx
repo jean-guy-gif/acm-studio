@@ -64,6 +64,8 @@ import { PositioningReasons } from '@/features/price-positioning/components/posi
 import { PositioningStatus } from '@/features/price-positioning/components/positioning-status';
 import { RecommendedRangeView } from '@/features/price-positioning/components/recommended-range';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
+import { PendingImportsBanner } from '@/features/competitor-search/components/pending-imports-banner';
+import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getProject } from '@/features/projects/queries/get-project';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
@@ -215,8 +217,12 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   const range = positioning?.status === 'ready' ? positioning.recommendedRange : null;
   const sellerSurface = property?.surface_area ?? null;
 
+  // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
+  const pendingImports = await getPendingImports(projectId);
+
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      <PendingImportsBanner projectId={projectId} pending={pendingImports} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-2">
           <Link href={`/builder/${projectId}`} className={backLink}>

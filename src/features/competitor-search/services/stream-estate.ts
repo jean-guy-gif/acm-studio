@@ -17,6 +17,7 @@ import type {
   CompetitorCandidate,
   CompetitorSearchCriteria,
   GeoPoint,
+  StreamEstatePriceChange,
 } from '@/features/competitor-search/types';
 
 // ESSAI STREAM ESTATE — la partie PURE (aucun réseau, aucune clé) : construire la requête depuis
@@ -137,6 +138,10 @@ const advertSchema = z.object({
         createdAt: nullableString,
         fieldName: nullableString,
         percentVariation: nullableNumber,
+        // Mission 101 — l'ancien et le nouveau prix d'un changement (chaînes ou nombres selon
+        // l'annonce) : une forme inattendue ne rend pas le bien illisible.
+        fieldOldValue: z.union([z.string(), z.number()]).nullable().optional().catch(null),
+        fieldNewValue: z.union([z.string(), z.number()]).nullable().optional().catch(null),
       }),
     )
     .nullable()
@@ -151,6 +156,8 @@ const propertySchema = z.object({
   surface: nullableNumber,
   landSurface: nullableNumber,
   room: nullableNumber,
+  // Mission 101 — les chambres, gardées pour créer le concurrent quand la page reste illisible.
+  bedroom: nullableNumber.catch(null),
   pricePerMeter: nullableNumber,
   createdAt: nullableString,
   lastCrawledAt: nullableString,
@@ -259,6 +266,35 @@ export function pickOriginAdvert(
   return [...usable].sort((a, b) => b.lastCrawledAt!.localeCompare(a.lastCrawledAt!))[0];
 }
 
+// Mission 101 — les BAISSES de prix datées, avec l'ancien et le nouveau montant quand l'API les
+// donne : de la plus ancienne à la plus récente, une même baisse relevée sur deux annonces du bien
+// n'étant comptée qu'une fois. Un montant illisible reste absent, jamais deviné.
+export function priceChanges(adverts: StreamEstateAdvert[]): StreamEstatePriceChange[] {
+  const amount = (value: string | number | null | undefined): number | null => {
+    const parsed = typeof value === 'number' ? value : Number(String(value ?? '').trim());
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
+  const seen = new Set<string>();
+  const changes: StreamEstatePriceChange[] = [];
+  for (const advert of adverts) {
+    for (const event of advert.events ?? []) {
+      const percent = event.percentVariation;
+      if (event.fieldName !== 'price' || percent == null || percent >= 0) continue;
+      const at = (event.createdAt ?? '').slice(0, 10);
+      const id = `${at}|${percent}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      changes.push({
+        at: at === '' ? null : at,
+        from: amount(event.fieldOldValue),
+        to: amount(event.fieldNewValue),
+        percent,
+      });
+    }
+  }
+  return changes.sort((a, b) => (a.at ?? '').localeCompare(b.at ?? ''));
+}
+
 // Le bien a-t-il au moins une annonce lisible ? Sinon il est illisible (compté à part de la liste
 // blanche : ce n'est pas le même motif).
 function hasUsableAdvert(property: StreamEstateProperty): boolean {
@@ -363,6 +399,8 @@ export function toCandidate(
       onlineSince: property.createdAt ?? null,
       lastSeenAt: origin.lastCrawledAt ?? property.lastCrawledAt ?? null,
       priceDrops: priceDrops(property.adverts),
+      bedrooms: positive(property.bedroom),
+      priceChanges: priceChanges(property.adverts),
       inseeCode: property.city?.insee?.trim() || null,
       ...(stale != null ? { staleOriginDays: stale } : {}),
     },

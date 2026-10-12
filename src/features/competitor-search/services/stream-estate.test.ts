@@ -104,6 +104,9 @@ describe('parseStreamEstateResponse', () => {
         onlineSince: '2026-09-21T16:53:52+02:00',
         lastSeenAt: '2026-09-28T17:24:40+02:00',
         priceDrops: [-4.45],
+        // Mission 101 — les chambres et la baisse datée, gardées de la même réponse.
+        bedrooms: 3,
+        priceChanges: [{ at: '2026-09-22', from: 449000, to: 429000, percent: -4.45 }],
         inseeCode: '06088',
       },
       // Cette fixture ne porte ni position ni équipements : tout reste inconnu, donc neutre.

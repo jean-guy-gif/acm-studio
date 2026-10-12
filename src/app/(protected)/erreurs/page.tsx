@@ -12,7 +12,10 @@ import {
 import { setAgencySearchCap } from '@/features/operations/actions/set-agency-search-cap';
 import { AgencyCapForm } from '@/features/operations/components/agency-cap-form';
 import { getAgencyBudgets } from '@/features/operations/queries/get-agency-budgets';
-import { getErrorReport } from '@/features/operations/queries/get-error-report';
+import {
+  getErrorReport,
+  getImportFailureReport,
+} from '@/features/operations/queries/get-error-report';
 import { ERRORS_WINDOW_DAYS, errorSourceLabel } from '@/features/operations/services/group-errors';
 import { requireOperator } from '@/features/operations/services/require-operator';
 import {
@@ -31,7 +34,11 @@ export default async function ErrorsPage() {
     notFound();
   }
 
-  const [report, budgets] = await Promise.all([getErrorReport(), getAgencyBudgets()]);
+  const [report, budgets, importFailures] = await Promise.all([
+    getErrorReport(),
+    getAgencyBudgets(),
+    getImportFailureReport(),
+  ]);
 
   return (
     <div className="flex flex-col gap-8 md:gap-10">
@@ -94,6 +101,47 @@ export default async function ErrorsPage() {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Mission 101 — pas des pannes : comptés à part, et hors de la pastille du menu. */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className={sectionTitle}>Échecs de lecture par portail</h2>
+          <p className={hintText}>
+            Sur {ERRORS_WINDOW_DAYS} jours : les annonces retenues dont la page n’a pas pu être lue
+            après trois essais, face à celles importées depuis leur page. Aucune adresse d’annonce
+            n’est gardée. Le concurrent est alors créé depuis les données de la recherche.
+          </p>
+        </div>
+        {importFailures.length === 0 ? (
+          <p className={hintText}>Aucun import sur la période.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {importFailures.map((portal) => (
+              <li key={portal.host} className={`${card} flex flex-col gap-1.5 p-4`}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-title font-semibold text-zinc-900 stage:text-white">
+                    {portal.host}
+                  </span>
+                  <span className={badgeNeutral}>
+                    {portal.failed} échec{portal.failed > 1 ? 's' : ''} sur{' '}
+                    {portal.failed + portal.read}
+                    {portal.failureRate != null ? ` · ${portal.failureRate} %` : ''}
+                  </span>
+                </div>
+                {portal.causes.length > 0 ? (
+                  <ul className="flex flex-col text-sm text-zinc-600 stage:text-white/65">
+                    {portal.causes.map((cause) => (
+                      <li key={cause.cause}>
+                        {cause.count} × {cause.label}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
