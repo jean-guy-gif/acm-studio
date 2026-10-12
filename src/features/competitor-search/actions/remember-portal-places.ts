@@ -6,6 +6,7 @@ import { placeCityKey } from '@/features/competitor-search/services/build-filter
 import { learnablePlaceId } from '@/features/competitor-search/services/learn-place-id';
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 
 // Une recherche lue : l'adresse de l'onglet et les communes écrites sur ses cartes.
 const readPageSchema = z.object({
@@ -74,11 +75,11 @@ export async function rememberPortalPlaces(
       .from('portal_place_ids')
       .upsert(rows, { onConflict: 'portal,city_key' });
     if (error) {
-      console.error('[rememberPortalPlaces] écriture', error.message);
+      await reportServerError('rememberPortalPlaces', error);
       return { ok: false };
     }
   } catch (error) {
-    console.error('[rememberPortalPlaces]', error instanceof Error ? error.message : error);
+    await reportServerError('rememberPortalPlaces', error);
     return { ok: false };
   }
   return { ok: true, learned: rows.map((row) => row.portal) };

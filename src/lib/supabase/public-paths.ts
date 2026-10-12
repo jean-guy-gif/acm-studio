@@ -10,7 +10,16 @@
 //
 // Mission 88 — /mot-de-passe-oublie se demande sans être connecté, par définition. La page
 // « Choisir un nouveau mot de passe », elle, exige la session ouverte par le lien reçu.
-const PUBLIC_PATHS = ['/login', '/auth/confirm', '/confidentialite', '/mot-de-passe-oublie'];
+//
+// Mission 100 — /api/version ne dit que le commit déployé : `npm run verifier:production`
+// l'interroge sans compte.
+const PUBLIC_PATHS = [
+  '/login',
+  '/auth/confirm',
+  '/confidentialite',
+  '/mot-de-passe-oublie',
+  '/api/version',
+];
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.includes(pathname);
