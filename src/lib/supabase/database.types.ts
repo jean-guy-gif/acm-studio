@@ -1086,6 +1086,7 @@ export type Database = {
           live_ended_at: string | null
           live_rhythm: string
           live_started_at: string | null
+          search_settings: Json | null
           seller_email: string | null
           seller_name: string
           seller_phone: string | null
@@ -1101,6 +1102,7 @@ export type Database = {
           live_ended_at?: string | null
           live_rhythm?: string
           live_started_at?: string | null
+          search_settings?: Json | null
           seller_email?: string | null
           seller_name: string
           seller_phone?: string | null
@@ -1116,6 +1118,7 @@ export type Database = {
           live_ended_at?: string | null
           live_rhythm?: string
           live_started_at?: string | null
+          search_settings?: Json | null
           seller_email?: string | null
           seller_name?: string
           seller_phone?: string | null

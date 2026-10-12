@@ -48,7 +48,16 @@ import {
   readPageViaExtension,
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
+import type { SaveSearchSettingsResult } from '@/features/competitor-search/actions/save-search-settings';
+import { SearchSettingsBlock } from '@/features/competitor-search/components/search-settings-block';
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
+import {
+  settingsToInput,
+  type SearchDefaults,
+  type SearchSettings,
+  type SearchSettingsInput,
+  type SettingRange,
+} from '@/features/competitor-search/services/search-settings';
 import { showBatchImport } from '@/features/competitor-search/services/batch-import-visibility';
 import {
   canSearchMore,
@@ -142,6 +151,13 @@ type Props = {
   // absent, le bouton n'existe pas.
   // Mission 71 — `resume` : « Chercher encore », reprise au plafond.
   streamEstateAction?: (resume?: StreamEstateResume | null) => Promise<StreamEstateSearchResult>;
+  // Mission 99 — « Réglages de la recherche » : ce qui est enregistré sur le dossier, ce que
+  // l'outil utiliserait seul, et l'action qui enregistre. Fourni avec la recherche Stream Estate.
+  searchSettings?: {
+    saved: SearchSettings;
+    defaults: SearchDefaults;
+    saveAction: (input: SearchSettingsInput) => Promise<SaveSearchSettingsResult>;
+  };
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -352,6 +368,7 @@ export function CompetitorSearchPanel({
   prepareOpenAction,
   rememberPlacesAction,
   streamEstateAction,
+  searchSettings,
 }: Props) {
   const [pending, startTransition] = useTransition();
   // Mission 75 — après chaque import, ACM demande l'adresse du concurrent au Localisateur.
@@ -394,7 +411,23 @@ export function CompetitorSearchPanel({
   // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
   const [streamSearching, setStreamSearching] = useState(false);
   const [streamNote, setStreamNote] = useState<StreamEstateSearchNote | null>(null);
-  const busy = pending || importing || reading || opening || streamSearching;
+  // Mission 99 — les réglages : ce qui est enregistré, ce qui est en cours de saisie.
+  const [savedSettings, setSavedSettings] = useState<SearchSettings | null>(
+    searchSettings?.saved ?? null,
+  );
+  const [settingsInput, setSettingsInput] = useState<SearchSettingsInput | null>(
+    searchSettings ? settingsToInput(searchSettings.saved) : null,
+  );
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  // Le prix réglé pour la recherche Stream Estate : c'est lui, pas la fourchette de la fiche, qui
+  // dit si un bien Stream Estate est « dans la fourchette » de la liste principale.
+  const [streamRange, setStreamRange] = useState<SettingRange | null>(null);
+  const settingsDirty =
+    savedSettings != null &&
+    settingsInput != null &&
+    JSON.stringify(settingsInput) !== JSON.stringify(settingsToInput(savedSettings));
+  const busy = pending || importing || reading || opening || streamSearching || savingSettings;
 
   // Les biens de Stream Estate restent à côté des portails quand on relit les onglets.
   const withStreamEstate = (next: PortalSearchResult[]): PortalSearchResult[] => [
@@ -407,19 +440,22 @@ export function CompetitorSearchPanel({
   // Ce qui est au-dessus/en dessous bascule dans le repli — rien n'est masqué, mais la
   // liste que le conseiller regarde reste dans sa fourchette. Sans fourchette saisie,
   // on retombe sur le seuil de ressemblance.
-  const hasRange = advisorRange.min != null || advisorRange.max != null;
+  const rangeFor = (entry: RankedCandidate): { min: number | null; max: number | null } =>
+    entry.portal === STREAM_ESTATE_SOURCE && streamRange != null ? streamRange : advisorRange;
   const inRange = (entry: RankedCandidate): boolean => {
     const price = entry.candidate.price;
     if (price == null) {
       return false; // sans prix, on ne peut pas confirmer la fourchette → repli
     }
-    return (
-      (advisorRange.min == null || price >= advisorRange.min) &&
-      (advisorRange.max == null || price <= advisorRange.max)
-    );
+    const range = rangeFor(entry);
+    return (range.min == null || price >= range.min) && (range.max == null || price <= range.max);
   };
-  const inMainList = (entry: RankedCandidate): boolean =>
-    hasRange ? inRange(entry) : entry.score >= SIMILARITY_THRESHOLD;
+  const inMainList = (entry: RankedCandidate): boolean => {
+    const range = rangeFor(entry);
+    return range.min != null || range.max != null
+      ? inRange(entry)
+      : entry.score >= SIMILARITY_THRESHOLD;
+  };
 
   // Étape 2 — l'ordre « les plus proches » : les 10 premiers non tranchés sont montrés, le reste
   // attend derrière « Voir les N autres ». Seuls les 5 premiers sont cochés d'office ; on
@@ -465,8 +501,43 @@ export function CompetitorSearchPanel({
   // Essai Stream Estate — une recherche côté serveur (la clé n'arrive jamais ici), par crans. Ses
   // biens rejoignent les portails dans le MÊME classement. `more` : « Chercher encore » — reprend
   // exactement où la recherche s'est arrêtée au plafond, et ajoute ses biens aux précédents.
+  // Mission 99 — enregistrer les réglages sur le dossier. Des réglages qui changent annulent le
+  // résultat gardé (M93) et retirent les biens Stream Estate affichés : ils ont été cherchés avec
+  // d'autres critères. Renvoie false si l'enregistrement a échoué (rien n'a changé).
+  async function saveSettings(): Promise<boolean> {
+    if (!searchSettings || settingsInput == null) {
+      return true;
+    }
+    setSettingsError(null);
+    setSavingSettings(true);
+    try {
+      const result = await searchSettings.saveAction(settingsInput);
+      if (!result.ok) {
+        setSettingsError(result.error);
+        return false;
+      }
+      setSavedSettings(result.settings);
+      setSettingsInput(settingsToInput(result.settings));
+      forgetSearch(window.sessionStorage, projectId);
+      if (streamNote != null) {
+        setStreamNote(null);
+        await refreshRanking(
+          (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
+        );
+      }
+      return true;
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
   async function searchViaStreamEstate(more = false) {
     if (!streamEstateAction) {
+      return;
+    }
+    // Mission 99 — des réglages saisis mais pas enregistrés le sont d'abord : la recherche lit les
+    // réglages en base, jamais ceux de l'écran. Un réglage refusé retient la recherche.
+    if (!more && settingsDirty && !(await saveSettings())) {
       return;
     }
     const previousPortal = more
@@ -508,6 +579,7 @@ export function CompetitorSearchPanel({
         return;
       }
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      setStreamRange(prep.settings.price);
       const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
       const candidates = [...(previousPortal?.candidates ?? []), ...result.portal.candidates];
       const streamPortal: PortalSearchResult = {
@@ -527,6 +599,9 @@ export function CompetitorSearchPanel({
         located: result.located,
         communeName: result.communeName,
         inseeCode: result.inseeCode,
+        criteriaUsed: result.criteriaUsed,
+        customSettings: result.customSettings,
+        arrondissement: result.arrondissement,
       });
       setStreamNote(note);
       // Mission 93 — gardé pour ce dossier, le temps de la séance : actualiser ou revenir en
@@ -567,6 +642,7 @@ export function CompetitorSearchPanel({
         return;
       }
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
+      setStreamRange(prep.settings.price);
       await refreshRanking([kept.portal]);
       setStreamNote(kept.note);
     })();
@@ -890,6 +966,19 @@ export function CompetitorSearchPanel({
     <div className="flex flex-col gap-4">
       {/* Mission 73 — la recherche Stream Estate est la recherche par défaut : bouton principal,
           en premier. Absent sans clé (décision Stream Estate), les portails restent alors seuls. */}
+      {streamEstateAction && searchSettings && savedSettings && settingsInput ? (
+        <SearchSettingsBlock
+          saved={savedSettings}
+          input={settingsInput}
+          defaults={searchSettings.defaults}
+          dirty={settingsDirty}
+          saving={savingSettings}
+          disabled={busy}
+          error={settingsError}
+          onChange={setSettingsInput}
+          onSave={() => void saveSettings()}
+        />
+      ) : null}
       {streamEstateAction ? (
         <div className="flex flex-wrap items-center gap-3">
           <button

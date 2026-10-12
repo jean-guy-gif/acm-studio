@@ -14,6 +14,11 @@ import {
   distanceMeters,
 } from '@/features/competitor-search/services/proximity';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
+import {
+  isDefaultSettings,
+  type SearchSettings,
+} from '@/features/competitor-search/services/search-settings';
+import { compareArrondissements } from '@/features/competitor-search/utils/arrondissements';
 import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
@@ -75,6 +80,24 @@ const LEVELS: Bounds[] = [
 // vendeur écrit « St Laurent du Var » écartait tous les biens « Saint-Laurent-du-Var ».
 const normCity = communeKey;
 
+// MISSION 99 — Paris, Lyon, Marseille : le secteur du bien est son ARRONDISSEMENT. Une carte qui
+// nomme un autre arrondissement est ailleurs ; une carte qui ne dit que « Paris » ne dit pas
+// lequel — elle reste dans le périmètre, portée par la provenance (M61), comme une carte sans
+// ville. Ailleurs, la comparaison de la mission 71 ne change pas.
+function namesAnotherCommune(
+  criteria: CompetitorSearchCriteria,
+  candidateCity: string | null,
+  refCity: string | null,
+): boolean {
+  const city = normCity(candidateCity);
+  if (refCity == null || city == null) return false;
+  const verdict = compareArrondissements(
+    { city: criteria.city, postalCode: criteria.postalCode },
+    { city: candidateCity },
+  );
+  return verdict === 'not_applicable' ? city !== refCity : verdict === 'different';
+}
+
 // MISSION 71 — Stream Estate desserre, les portails non. Un bien Stream Estate a été cherché par
 // crans (stream-estate-tiers.ts) ; le classement revalide ici, côté serveur, les bornes LES PLUS
 // LARGES de ces crans : surface de −10 % (±3 m² au moins) à +25 %, pièces identiques ou une de
@@ -85,6 +108,8 @@ const normCity = communeKey;
 // écartée : ce n'est plus le critère) et la surface n'a plus de plafond ; elle reste « jamais
 // plus petite » (−10 % au plus), et le prix ne bouge pas.
 const STREAM_ESTATE_BIGGER = 1.25;
+// Mission 99 — l'étape qui ajoute les arrondissements voisins (à la place des cercles de 2 et 5 km).
+const ARRONDISSEMENT_NEIGHBOUR_TIER = 4;
 const STREAM_ESTATE_PRICE_MARGIN = 0.05;
 
 type PriceBounds = { low: number; high: number } | null;
@@ -119,8 +144,7 @@ function admit(
     // la commune, pas la vignette (une donnée absente mais portée par la provenance n'écarte pas).
     // On n'écarte que ce qui NOMME une AUTRE commune. ⚠️ Cette confiance ne tient QUE parce que la
     // commune ne se desserre JAMAIS : si un jour le desserrage touchait la commune, elle tomberait.
-    const city = normCity(candidate.city);
-    if (city != null && city !== refCity) return { ok: false, kind: 'out' };
+    if (namesAnotherCommune(criteria, candidate.city, refCity)) return { ok: false, kind: 'out' };
   }
   if (prices != null) {
     if (candidate.price == null || candidate.price <= 0)
@@ -144,6 +168,7 @@ function admit(
 }
 
 function sameCommuneAs(
+  criteria: CompetitorSearchCriteria,
   candidate: CompetitorCandidate,
   refCity: string | null,
   subjectInseeCode: string | null,
@@ -152,24 +177,35 @@ function sameCommuneAs(
   if (candidate.streamEstate && subjectInseeCode != null && insee != null) {
     return insee === subjectInseeCode;
   }
-  const city = normCity(candidate.city);
   // Une carte sans ville est dans le périmètre (portée par la provenance, mission 61).
-  return refCity == null || city == null || city === refCity;
+  return !namesAnotherCommune(criteria, candidate.city, refCity);
 }
 
+// MISSION 99 — un critère RÉGLÉ par le conseiller se revalide contre SON réglage, à tous les
+// élargissements : un rayon réglé comprend les communes voisines (le nom de la commune ne filtre
+// plus), « Toute la commune » ne les comprend jamais ; un prix, des pièces ou une surface réglés
+// sont des bornes strictes. Un critère laissé automatique garde les bornes ci-dessus.
 function admitStreamEstate(
   criteria: CompetitorSearchCriteria,
   candidate: CompetitorCandidate,
   prices: PriceBounds,
   sameCommune: boolean,
   subjectType: string | null,
+  settings: SearchSettings | null,
 ): Admission {
   const tier = candidate.streamEstate?.tier ?? 1;
   const freed = tier >= ROOMS_FREED_TIER;
-  if (!sameCommune && tier < NEIGHBOUR_TIER) {
+  if (settings?.sector != null) {
+    if (settings.sector.kind === 'commune' && !sameCommune) return { ok: false, kind: 'out' };
+  } else if (!sameCommune && tier < NEIGHBOUR_TIER) {
     return { ok: false, kind: 'out' };
   }
-  if (prices != null) {
+  if (settings?.price != null) {
+    if (candidate.price == null || candidate.price <= 0)
+      return { ok: false, kind: 'missing', field: 'price' };
+    if (candidate.price < settings.price.min || candidate.price > settings.price.max)
+      return { ok: false, kind: 'out' };
+  } else if (prices != null) {
     if (candidate.price == null || candidate.price <= 0)
       return { ok: false, kind: 'missing', field: 'price' };
     if (
@@ -178,7 +214,11 @@ function admitStreamEstate(
     )
       return { ok: false, kind: 'out' };
   }
-  if (criteria.roomsCount != null && !freed) {
+  if (settings?.rooms != null) {
+    if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
+    if (candidate.roomsCount < settings.rooms.min || candidate.roomsCount > settings.rooms.max)
+      return { ok: false, kind: 'out' };
+  } else if (criteria.roomsCount != null && !freed) {
     if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
     const extra = candidate.roomsCount - criteria.roomsCount;
     if (extra < 0 || extra > 1) return { ok: false, kind: 'out' };
@@ -187,6 +227,7 @@ function admitStreamEstate(
   // le haut pour un appartement (jamais moins de pièces que le bien vendeur). Une carte sans
   // nombre de pièces reste acceptée.
   if (
+    settings?.rooms == null &&
     freed &&
     subjectType !== 'house' &&
     criteria.roomsCount != null &&
@@ -195,7 +236,16 @@ function admitStreamEstate(
   ) {
     return { ok: false, kind: 'out' };
   }
-  if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
+  if (settings?.surface != null) {
+    if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
+      return { ok: false, kind: 'missing', field: 'surface' };
+    // Bornes entières côté API : 80,4 m² est dans « jusqu'à 80 m² ».
+    if (
+      Math.ceil(candidate.surfaceArea) < settings.surface.min ||
+      Math.floor(candidate.surfaceArea) > settings.surface.max
+    )
+      return { ok: false, kind: 'out' };
+  } else if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
     if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
       return { ok: false, kind: 'missing', field: 'surface' };
     const ref = criteria.surfaceArea;
@@ -234,8 +284,26 @@ export function rankCandidates(
   // Étape 2 — position du bien vendeur, seulement si son adresse est géocodée précisément.
   // Mission 71 — code INSEE de la commune du bien : c'est lui qui dit « même commune » pour un
   // bien Stream Estate (le nom ne sert qu'à défaut).
-  options: { subjectLocation?: GeoPoint | null; subjectInseeCode?: string | null } = {},
+  // Mission 99 — les réglages du conseiller : ils ne touchent que les biens Stream Estate.
+  options: {
+    subjectLocation?: GeoPoint | null;
+    subjectInseeCode?: string | null;
+    settings?: SearchSettings | null;
+    // Mission 99 — les arrondissements voisins de celui du bien (codes INSEE) : admis à partir de
+    // l'élargissement « arrondissements voisins », jamais avant.
+    neighbourInseeCodes?: string[];
+  } = {},
 ): RankedSearch {
+  const neighbourInseeCodes = options.neighbourInseeCodes ?? [];
+  const inNeighbourArrondissement = (candidate: CompetitorCandidate): boolean => {
+    const insee = candidate.streamEstate?.inseeCode ?? null;
+    return (
+      insee != null &&
+      (candidate.streamEstate?.tier ?? 1) >= ARRONDISSEMENT_NEIGHBOUR_TIER &&
+      neighbourInseeCodes.includes(insee)
+    );
+  };
+  const settings = isDefaultSettings(options.settings) ? null : (options.settings ?? null);
   const subjectLocation = options.subjectLocation ?? null;
   const subjectInseeCode = options.subjectInseeCode ?? null;
   const subjectType = normalizePropertyType(criteria.propertyType);
@@ -311,8 +379,10 @@ export function rankCandidates(
           criteria,
           entry.candidate,
           prices,
-          sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
+          sameCommuneAs(criteria, entry.candidate, refCity, subjectInseeCode) ||
+            (settings?.sector == null && inNeighbourArrondissement(entry.candidate)),
           subjectType,
+          settings,
         )
       : admit(criteria, entry.candidate, chosen, prices, refCity);
 
@@ -354,7 +424,7 @@ export function rankCandidates(
         subjectLocation != null && location != null
           ? distanceMeters(subjectLocation, location)
           : null,
-      sameCommune: sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
+      sameCommune: sameCommuneAs(criteria, entry.candidate, refCity, subjectInseeCode),
     };
     const base = scoreCandidate(scoringCriteria, facts);
     const adjusted = applyLearning(

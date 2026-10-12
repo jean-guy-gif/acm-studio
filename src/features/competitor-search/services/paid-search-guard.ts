@@ -2,6 +2,10 @@ import {
   STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
 } from '@/features/competitor-search/services/stream-estate-tiers';
+import {
+  isDefaultSettings,
+  type SearchSettings,
+} from '@/features/competitor-search/services/search-settings';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
 import { formatEuro } from '@/lib/format';
 
@@ -12,7 +16,8 @@ import { formatEuro } from '@/lib/format';
 //   2. Le dernier résultat est gardé pour ce dossier, le temps de la séance, dans le stockage de
 //      l'onglet : une actualisation ou un retour arrière le réaffiche sans nouvel appel.
 //   3. Il est jeté dès que le bien vendeur ou la fourchette change (l'empreinte ne correspond
-//      plus) : un résultat périmé ne s'affiche jamais.
+//      plus) : un résultat périmé ne s'affiche jamais. Mission 99 — un réglage de la recherche
+//      qui change le jette aussi : on ne relit pas le résultat d'autres critères.
 
 // --- 1. Pas d'appel payant sans extension --------------------------------------------------
 
@@ -40,14 +45,18 @@ export const STREAM_ESTATE_MAX_COST_LABEL = `Coût maximal : ${formatEuro(
 
 // Ce dont dépend une recherche : le bien vendeur (adresse comprise, elle fixe le secteur) et la
 // fourchette. Calculée côté serveur, depuis la base — jamais depuis ce que l'écran affiche.
+// Sans réglage, l'empreinte est celle d'avant la mission 99 : ce qui était gardé le reste.
 export function searchFingerprint(
   criteria: CompetitorSearchCriteria,
   address: string | null,
+  settings: SearchSettings | null = null,
 ): string {
   const entries = Object.entries({ ...criteria, address: address?.trim() || null }).sort(
     ([a], [b]) => a.localeCompare(b),
   );
-  return JSON.stringify(entries);
+  return isDefaultSettings(settings)
+    ? JSON.stringify(entries)
+    : JSON.stringify([...entries, ['settings', settings]]);
 }
 
 export type KeptSearch<P, N> = { fingerprint: string; portal: P; note: N };

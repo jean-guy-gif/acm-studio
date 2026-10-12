@@ -1,5 +1,6 @@
 'use client';
 
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import {
   COMPETITOR_VERIFIABLE_FIELDS,
   VERIFY_LABEL,
@@ -167,7 +168,7 @@ export function ComparableCard({
         </div>
 
         <div className="text-sm text-zinc-500 stage:text-white/55">
-          <span>{comparable.city?.trim() || 'Ville inconnue'}</span>
+          <span>{displayCommune(comparable.city, comparable.postal_code) ?? 'Ville inconnue'}</span>
           {comparable.district?.trim() ? <span> · {comparable.district.trim()}</span> : null}
           {' · '}
           <span>Origine : {originLabel(comparable)}</span>
