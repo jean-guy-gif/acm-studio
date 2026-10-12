@@ -263,12 +263,14 @@ export type Database = {
           ges_rating: string | null
           heating_type: string | null
           id: string
+          imported_from_search: boolean
           is_selected: boolean
           land_area: number | null
           listing_description: string | null
           listing_features: Json
           listing_published_at: string | null
           listing_url: string | null
+          listing_withdrawn: boolean
           locator_address: string | null
           locator_analyzed_at: string | null
           locator_confirmed: boolean | null
@@ -323,12 +325,14 @@ export type Database = {
           ges_rating?: string | null
           heating_type?: string | null
           id?: string
+          imported_from_search?: boolean
           is_selected?: boolean
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
           listing_published_at?: string | null
           listing_url?: string | null
+          listing_withdrawn?: boolean
           locator_address?: string | null
           locator_analyzed_at?: string | null
           locator_confirmed?: boolean | null
@@ -383,12 +387,14 @@ export type Database = {
           ges_rating?: string | null
           heating_type?: string | null
           id?: string
+          imported_from_search?: boolean
           is_selected?: boolean
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
           listing_published_at?: string | null
           listing_url?: string | null
+          listing_withdrawn?: boolean
           locator_address?: string | null
           locator_analyzed_at?: string | null
           locator_confirmed?: boolean | null
@@ -873,6 +879,70 @@ export type Database = {
             columns: ["seller_most_dangerous_comparable_id"]
             isOneToOne: false
             referencedRelation: "comparables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_competitor_imports: {
+        Row: {
+          agency_id: string
+          attempts: number
+          created_at: string
+          created_by: string | null
+          id: string
+          last_cause: string | null
+          listing_host: string
+          listing_url: string
+          project_id: string
+          snapshot: Json
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_cause?: string | null
+          listing_host: string
+          listing_url: string
+          project_id: string
+          snapshot: Json
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_cause?: string | null
+          listing_host?: string
+          listing_url?: string
+          project_id?: string
+          snapshot?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_competitor_imports_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_competitor_imports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_competitor_imports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

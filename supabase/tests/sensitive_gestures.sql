@@ -9,6 +9,8 @@
 --   §5 consommation Stream Estate : chacun lit celle de son agence, personne ne l'écrit ni ne
 --      l'efface depuis le navigateur ; la somme du mois ne mélange pas les agences ;
 --   §6 plafond : lu par l'agence, réglé par personne depuis le navigateur — pas même son manager ;
+--   §8 (mission 101) « retenu, import en attente » : enregistré par l'agence sur ses dossiers, une
+--      fois par bien, invisible aux autres agences ; le journal admet l'origine « import » ;
 --   §7 journal des erreurs : ni lu ni écrit depuis le navigateur ; les bornes de la base tiennent ;
 --      il se vide seul au-delà de 90 jours, chaque nuit, et le navigateur ne déclenche pas la purge.
 --
@@ -73,6 +75,7 @@ begin
 exception
   when insufficient_privilege then return 'refus';
   when check_violation then return 'invalide';
+  when unique_violation then return 'doublon';
 end $$;
 grant execute on function pg_temp.attempt(text) to authenticated;
 
@@ -303,6 +306,56 @@ select pg_temp.expect('§5 la consommation survit au dossier',
      from public.stream_estate_usage
     where agency_id = '101aaaaa-0000-0000-0000-000000000000'),
   '3 ligne(s), dont 1 avec dossier');
+
+-- =====================================================================
+-- §8 (mission 101) — « retenu, import en attente » et l'origine « import » du journal.
+-- =====================================================================
+select pg_temp.act_as('10100000-0000-0000-0000-0000000000a1');
+
+select pg_temp.expect('§8 enregistrer un bien retenu sur un dossier de son agence',
+  pg_temp.attempt($$insert into public.pending_competitor_imports
+                      (agency_id, project_id, listing_url, listing_host, snapshot)
+                    values ('101aaaaa-0000-0000-0000-000000000000', '101ccccc-0000-0000-0000-000000000002',
+                            'https://www.seloger.com/annonces/1.htm', 'www.seloger.com', '{"source":"portal"}')$$), '1');
+select pg_temp.expect('§8 le même bien deux fois sur le même dossier',
+  pg_temp.attempt($$insert into public.pending_competitor_imports
+                      (agency_id, project_id, listing_url, listing_host, snapshot)
+                    values ('101aaaaa-0000-0000-0000-000000000000', '101ccccc-0000-0000-0000-000000000002',
+                            'https://www.seloger.com/annonces/1.htm', 'www.seloger.com', '{}')$$), 'doublon');
+select pg_temp.expect('§8 rattacher son bien en attente au dossier d''une autre agence',
+  pg_temp.attempt($$insert into public.pending_competitor_imports
+                      (agency_id, project_id, listing_url, listing_host, snapshot)
+                    values ('101aaaaa-0000-0000-0000-000000000000', '101ccccc-0000-0000-0000-0000000000b1',
+                            'https://www.seloger.com/annonces/2.htm', 'www.seloger.com', '{}')$$), 'refus');
+select pg_temp.expect('§8 une cause hors liste',
+  pg_temp.attempt($$update public.pending_competitor_imports set last_cause = 'inventee'$$), 'invalide');
+select pg_temp.expect('§8 des données qui ne sont pas un objet',
+  pg_temp.attempt($$update public.pending_competitor_imports set snapshot = '[1]'$$), 'invalide');
+select pg_temp.expect('§8 noter la cause du dernier essai',
+  pg_temp.attempt($$update public.pending_competitor_imports set last_cause = 'robots', attempts = 1$$), '1');
+
+select pg_temp.act_as('10100000-0000-0000-0000-0000000000b1');
+select pg_temp.expect('§8 une autre agence ne lit pas les biens en attente',
+  pg_temp.read_count($$select count(*) from public.pending_competitor_imports$$), '0');
+select pg_temp.expect('§8 une autre agence ne les retire pas',
+  pg_temp.attempt($$delete from public.pending_competitor_imports$$), '0');
+
+select pg_temp.act_as('10100000-0000-0000-0000-0000000000a1');
+select pg_temp.expect('§8 y renoncer retire la ligne',
+  pg_temp.attempt($$delete from public.pending_competitor_imports$$), '1');
+
+reset role;
+select pg_temp.expect('§8 le journal admet l''origine « import »',
+  pg_temp.attempt($$insert into public.app_errors (source, page, message)
+                    values ('import', '/builder/[id]/comparables/find', 'seloger.com · robots')$$), '1');
+-- Supprimer le dossier emporte ses biens en attente.
+insert into public.pending_competitor_imports (agency_id, project_id, listing_url, listing_host, snapshot)
+values ('101aaaaa-0000-0000-0000-000000000000', '101ccccc-0000-0000-0000-000000000002',
+        'https://www.seloger.com/annonces/3.htm', 'www.seloger.com', '{}');
+delete from public.projects where id = '101ccccc-0000-0000-0000-000000000002';
+select pg_temp.expect('§8 les biens en attente partent avec leur dossier',
+  (select count(*)::text from public.pending_competitor_imports
+    where agency_id = '101aaaaa-0000-0000-0000-000000000000'), '0');
 
 select 'sensitive_gestures : OK' as resultat;
 
