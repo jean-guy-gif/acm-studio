@@ -63,6 +63,11 @@ export const COMPETITOR_VERIFIABLE_FIELDS = [
   'price_drop_amount',
   'price_drop_percentage',
   'listing_description',
+  // Mission 101 — un concurrent créé depuis la recherche ne sait pas qui vend ni si le mandat
+  // est exclusif (seule la page de l'annonce le dit) : les deux restent à vérifier, et la pastille
+  // part quand le conseiller l'indique sur la carte.
+  'sold_by',
+  'exclusivity',
 ] as const;
 
 const isFilled = (value: unknown): boolean => {

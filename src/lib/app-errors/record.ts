@@ -4,7 +4,8 @@ import { sanitizeErrorMessage, sanitizeErrorPage } from '@/lib/app-errors/saniti
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import { deployedCommit } from '@/lib/version';
 
-export type AppErrorSource = 'server' | 'browser' | 'live';
+// « import » (mission 101) : un échec de lecture d'annonce — pas une panne, compté à part.
+export type AppErrorSource = 'server' | 'browser' | 'live' | 'import';
 
 export type AppErrorEntry = {
   source: AppErrorSource;

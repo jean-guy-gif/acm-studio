@@ -45,8 +45,8 @@ describe('la page d’une annonce, du navigateur à l’action d’import', () =
 
   it('l’écran envoie un formulaire, et l’action ne reçoit plus la page en argument', () => {
     const read = (path: string) => readFileSync(join(process.cwd(), 'src', path), 'utf8');
-    expect(read('features/competitor-search/components/competitor-search-panel.tsx')).toContain(
-      'importAction(listingPayload(url, read.html, candidate.propertyType))',
+    expect(read('features/competitor-search/services/listing-import-deps.ts')).toContain(
+      'listingPayload(url, html, propertyType)',
     );
     const action = read('features/competitor-search/actions/import-and-create-competitor.ts');
     expect(action).toContain('readListingPayload(payload)');

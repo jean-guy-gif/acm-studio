@@ -25,6 +25,8 @@ import { DpeCountLine } from '@/features/dpe/components/dpe-count-line';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { calculateComparableSummary } from '@/features/comparables/services/calculate-comparable-summary';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
+import { PendingImportsBanner } from '@/features/competitor-search/components/pending-imports-banner';
+import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { opposedOn, oppositionBadge } from '@/features/prospecting/services/opposition';
@@ -74,8 +76,12 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const rejectSelectedAction = bulkRejectComparables.bind(null, projectId);
   const deleteSelectedAction = bulkDeleteComparables.bind(null, projectId);
 
+  // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
+  const pendingImports = await getPendingImports(projectId);
+
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      <PendingImportsBanner projectId={projectId} pending={pendingImports} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <Link href={`/builder/${projectId}`} className={backLink}>

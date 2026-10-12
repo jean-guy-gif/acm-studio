@@ -18,14 +18,25 @@ import {
   BUDGET_REACHED_LABEL,
 } from '@/features/search-budget/services/budget';
 
-import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
+import { registerPendingImports } from '@/features/competitor-search/actions/pending-imports';
 import {
-  BATCH_CRASH_REASON,
   batchProgressLabel,
   runBatchImport,
   type BatchProgress,
 } from '@/features/competitor-search/services/batch-import';
-import { listingPayload } from '@/features/competitor-search/services/listing-payload';
+import {
+  importListing,
+  isRetained,
+  READ_FAILURE_LABELS,
+  type ImportListingOutcome,
+} from '@/features/competitor-search/services/import-listing';
+import { listingImportDeps } from '@/features/competitor-search/services/listing-import-deps';
+import {
+  LISTING_WITHDRAWN_LABEL,
+  PENDING_IMPORTS_HINT,
+  pendingImportsTitle,
+} from '@/features/competitor-search/services/pending-import-labels';
+import { candidateSnapshot } from '@/features/competitor-search/services/search-snapshot';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
 import type { PrepareOpenSearchesResult } from '@/features/competitor-search/actions/prepare-open-searches';
 import type {
@@ -52,14 +63,7 @@ import {
   StreamEstateFactsLine,
   type DecisionPayload,
 } from '@/features/competitor-search/components/ranked-candidate-card';
-import {
-  redirectedAwayFromListing,
-  withdrawnReason,
-} from '@/features/competitor-search/services/stream-estate-import';
-import {
-  readPageViaExtension,
-  type PortalRobotsCache,
-} from '@/features/competitor-search/services/read-page-via-extension';
+import { type PortalRobotsCache } from '@/features/competitor-search/services/read-page-via-extension';
 import type { SaveSearchSettingsResult } from '@/features/competitor-search/actions/save-search-settings';
 import { SearchSettingsBlock } from '@/features/competitor-search/components/search-settings-block';
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
@@ -149,8 +153,6 @@ type Props = {
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   // §8 — import d'un concurrent depuis le HTML lu par l'extension, et écriture des
   // décisions du lot (retenues + écartées) en un appel.
-  // La page voyage dans un formulaire (`listingPayload`), jamais en argument.
-  importAction: (payload: FormData) => Promise<ImportAndCreateResult>;
   recordDecisionsAction: (decisions: BatchDecision[]) => Promise<RecordDecisionResult>;
   // Mission 69 — « Ouvrir mes recherches » (adresses déjà filtrées) et l'apprentissage des
   // identifiants de commune relevés dans les onglets lus.
@@ -370,13 +372,22 @@ function PortalBlock({
   );
 }
 
+// Mission 101 — une fiche du lot : trois lectures de 30 s, leurs pauses, puis la création depuis
+// la recherche. Au-delà, le lot passe à la suivante ; le bien, lui, reste enregistré en attente.
+const BATCH_ITEM_SAFETY_MS = 200_000;
+const RETAINED_NOT_SAVED_MESSAGE =
+  'Les concurrents retenus n’ont pas pu être enregistrés : rien n’a été lancé. Réessayez.';
+const RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE =
+  'Vos concurrents retenus sont enregistrés, en attente d’import : ils sont listés sur la page des concurrents, où « Réessayer » les importera';
+const pendingReason = (cause: keyof typeof READ_FAILURE_LABELS): string =>
+  `en attente d’import — ${READ_FAILURE_LABELS[cause]}`;
+
 export function CompetitorSearchPanel({
   projectId,
   criteriaLabel,
   prepareAction,
   rankAction,
   recordDecisionAction,
-  importAction,
   recordDecisionsAction,
   prepareOpenAction,
   rememberPlacesAction,
@@ -410,6 +421,8 @@ export function CompetitorSearchPanel({
   const [selection, setSelection] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<BatchProgress | null>(null);
+  // Mission 101 — annonces trouvées retirées, entrées dans le dossier sans être retenues.
+  const [withdrawnImported, setWithdrawnImported] = useState(0);
   // La fiche en échec ET sa cause réelle (robots ? prix ? fenêtre ?), affichée.
   const [importFailures, setImportFailures] = useState<
     { entry: RankedCandidate; reason: string }[]
@@ -766,52 +779,48 @@ export function CompetitorSearchPanel({
   // catch qui détruit l'information est la leçon de la mission 46 §2.4. La cause réelle
   // est journalisée ET rendue visible sur la fiche en échec. `windowId` réutilise la
   // fenêtre unique du lot ; absent = fenêtre one-off (relance d'une seule fiche).
+  // Mission 101 — les biens que le conseiller retient sont ENREGISTRÉS côté serveur avant toute
+  // lecture (« retenu, import en attente ») : ils survivent à un rechargement, à une fermeture
+  // d'onglet, à une extension absente. Faux : rien n'a pu être enregistré.
+  async function registerRetained(candidates: CompetitorCandidate[]): Promise<boolean> {
+    try {
+      const result = await registerPendingImports(
+        projectId,
+        candidates.map((candidate) => ({
+          url: candidate.url,
+          snapshot: candidateSnapshot(candidate),
+        })),
+      );
+      return result.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // L'import d'UNE annonce retenue, de bout en bout (services/import-listing.ts) : trois lectures
+  // de la page, sinon le concurrent est créé depuis les données de la recherche, sinon le bien
+  // reste en attente. Ne lève jamais ; ne rend jamais « rien ».
   async function importOne(
     candidate: CompetitorCandidate,
     robotsCache: PortalRobotsCache,
     windowId?: number,
-  ): Promise<{ ok: true } | { ok: false; reason: string }> {
-    const url = candidate.url;
-    const stream = candidate.streamEstate;
-    // Essai Stream Estate : l'annonce d'ORIGINE (toujours sur un site de la liste blanche) est
-    // relue par l'import existant.
-    const read = await readPageViaExtension(url, { windowId, robotsCache });
-    if (!read.ok) {
-      const reason =
-        read.reason === 'robots'
-          ? 'le robots.txt de l’annonce refuse la lecture automatique'
-          : read.reason === 'invalid'
-            ? 'adresse d’annonce invalide'
-            : 'la fiche n’a pas répondu (réseau ou fenêtre fermée)';
-      console.warn(`[import] ${url} — ${reason}`);
-      return { ok: false, reason };
+  ): Promise<ImportListingOutcome> {
+    const outcome = await importListing(
+      candidate.url,
+      listingImportDeps({
+        projectId,
+        propertyType: candidate.propertyType,
+        fromStreamEstate: candidate.streamEstate != null,
+        robotsCache,
+        windowId,
+      }),
+    );
+    if (outcome.status === 'pending') {
+      console.warn(`[import] ${candidate.url} — en attente (${outcome.cause})`);
+    } else {
+      refreshLocator();
     }
-    // Essai Stream Estate : renvoyé hors de l'annonce (liste, accueil) = annonce retirée.
-    if (stream && redirectedAwayFromListing(url, read.finalUrl)) {
-      console.warn(`[import] ${url} — redirigée vers ${read.finalUrl}`);
-      return { ok: false, reason: withdrawnReason(stream) };
-    }
-    // Le type lu sur la CARTE de recherche voyage jusqu'à la création : la page
-    // d'annonce ne le porte pas de façon fiable, la carte oui.
-    // Un appel qui rejette (réseau, refus du serveur avant l'action) est un échec de CETTE fiche,
-    // dit comme tel : il ne remonte ni dans le lot ni dans l'import d'une carte.
-    let result: ImportAndCreateResult;
-    try {
-      result = await importAction(listingPayload(url, read.html, candidate.propertyType));
-    } catch (cause) {
-      console.warn(`[import] ${url} — appel rejeté`, cause);
-      return { ok: false, reason: BATCH_CRASH_REASON };
-    }
-    if (!result.ok) {
-      console.warn(`[import] ${url} — ${result.error}`);
-      // Essai Stream Estate : une page sans prix ni donnée = annonce introuvable ou retirée.
-      if (stream && result.code === 'listing_empty') {
-        return { ok: false, reason: withdrawnReason(stream) };
-      }
-      return { ok: false, reason: result.error };
-    }
-    refreshLocator();
-    return { ok: true };
+    return outcome;
   }
 
   // §8 — la validation en lot. Au clic (le geste humain), et pas avant : les cochées
@@ -829,10 +838,17 @@ export function CompetitorSearchPanel({
     setError(null);
     setExtensionIssue(null);
     setImportFailures([]);
+    setWithdrawnImported(0);
 
+    // Mission 101 — enregistrés d'abord : quoi qu'il arrive ensuite, aucun bien retenu n'est perdu.
+    if (!(await registerRetained(checked.map((entry) => entry.candidate)))) {
+      setError(RETAINED_NOT_SAVED_MESSAGE);
+      return;
+    }
     const ping = await pingExtension();
     if (!ping.available) {
       setExtensionIssue('missing');
+      setError(RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE);
       return;
     }
     const win = await openSearchWindowViaExtension();
@@ -844,36 +860,49 @@ export function CompetitorSearchPanel({
     setImporting(true);
     setImportProgress({ done: 0, failed: 0, total: checked.length });
     const robotsCache: PortalRobotsCache = new Map();
-    let importedOk: RankedCandidate[] = [];
+    // Entrés dans le dossier (retenus, ou « Annonce retirée » non retenue) ; retenus seulement ;
+    // restés en attente, avec leur cause.
+    const entered: RankedCandidate[] = [];
+    const retained: RankedCandidate[] = [];
+    let withdrawn = 0;
     let failures: { entry: RankedCandidate; reason: string }[] = [];
     try {
-      // Correctif du 12/10 — chaque fiche est isolée (erreur, 30 secondes sans réponse) : le lot
-      // va au bout, et le compteur dit les fiches traitées.
+      // Chaque fiche est isolée : le lot va au bout, et le compteur dit les fiches traitées.
       const result = await runBatchImport({
         items: checked,
-        importItem: (entry) => importOne(entry.candidate, robotsCache, win.windowId),
+        timeoutMs: BATCH_ITEM_SAFETY_MS,
+        importItem: async (entry) => {
+          const outcome = await importOne(entry.candidate, robotsCache, win.windowId);
+          if (outcome.status === 'pending') {
+            return { ok: false, reason: pendingReason(outcome.cause) };
+          }
+          entered.push(entry);
+          if (isRetained(outcome)) retained.push(entry);
+          else withdrawn += 1;
+          return { ok: true };
+        },
         onProgress: setImportProgress,
       });
-      importedOk = result.imported;
       failures = result.failures.map(({ item, reason }) => ({ entry: item, reason }));
     } catch {
-      setError('L’import a été interrompu. Les fiches déjà entrées sont gardées.');
+      setError('L’import a été interrompu. Les concurrents retenus restent enregistrés.');
     } finally {
-      // Quoi qu'il arrive : la fenêtre se ferme, les décisions des fiches entrées s'écrivent
-      // (les importées seulement, comme retenues), et l'écran rend la main.
+      // Quoi qu'il arrive : la fenêtre se ferme, les décisions des biens RETENUS s'écrivent, et
+      // l'écran rend la main. Une annonce retirée entre sans décision : c'est au conseiller.
       await closeSearchWindowViaExtension(win.windowId).catch(() => undefined);
-      const decisions = batchDecisions(importedOk);
+      const decisions = batchDecisions(retained);
       if (decisions.length > 0) {
         await recordDecisionsAction(decisions).catch(() => undefined);
       }
       setDecided((current) => {
         const next = { ...current };
-        for (const entry of importedOk) {
+        for (const entry of entered) {
           next[entry.candidate.url] = 'accepted';
         }
         return next;
       });
-      // Les échecs restent à trancher : nommés, relançables seuls.
+      setWithdrawnImported(withdrawn);
+      // Les biens en attente restent visibles ici, et sur la page des concurrents.
       setImportFailures(failures);
       setImporting(false);
     }
@@ -883,14 +912,32 @@ export function CompetitorSearchPanel({
   // comme le refus : un clic, l'import se fait (fenêtre one-off), la décision est
   // écrite, la carte quitte la liste. Aucune navigation, aucun formulaire à revalider.
   async function importFromPortal(candidate: CompetitorCandidate): Promise<string | null> {
+    if (!(await registerRetained([candidate]))) {
+      return RETAINED_NOT_SAVED_MESSAGE;
+    }
     const ping = await pingExtension();
     if (!ping.available) {
       setExtensionIssue('missing');
-      return 'l’extension ACM Studio n’a pas répondu';
+      return RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE;
     }
     const outcome = await importOne(candidate, new Map());
-    if (!outcome.ok) {
-      return outcome.reason;
+    if (outcome.status === 'pending') {
+      return pendingReason(outcome.cause);
+    }
+    // La carte quitte l'affichage du portail (comme un refus la retire).
+    const leave = () =>
+      setPortals((current) =>
+        (current ?? []).map((portal) => ({
+          ...portal,
+          candidates: portal.candidates.filter((c) => c.url !== candidate.url),
+        })),
+      );
+    if (!isRetained(outcome)) {
+      // Annonce retirée : entrée dans le dossier, non retenue, sans décision.
+      setDecided((current) => ({ ...current, [candidate.url]: 'accepted' }));
+      setWithdrawnImported((count) => count + 1);
+      leave();
+      return null;
     }
     await recordDecisionsAction([
       {
@@ -904,36 +951,32 @@ export function CompetitorSearchPanel({
       },
     ]);
     setDecided((current) => ({ ...current, [candidate.url]: 'accepted' }));
-    // La carte quitte aussi l'affichage du portail (comme un refus la retire).
-    setPortals((current) =>
-      (current ?? []).map((portal) => ({
-        ...portal,
-        candidates: portal.candidates.filter((c) => c.url !== candidate.url),
-      })),
-    );
+    leave();
     return null;
   }
 
   // Relance d'UNE fiche en échec, seule (fenêtre one-off). Réussie → retenue.
   async function retryImportOne(entry: RankedCandidate) {
     setError(null);
-    const ping = await pingExtension();
-    if (!ping.available) {
-      setExtensionIssue('missing');
-      return;
-    }
     setImporting(true);
     try {
+      // Sans l'extension, la page ne se lit pas : le concurrent est alors créé depuis la recherche.
       const outcome = await importOne(entry.candidate, new Map());
-      if (outcome.ok) {
-        await recordDecisionsAction([decisionOf(entry, 'accepted')]);
-        setDecided((current) => ({ ...current, [entry.candidate.url]: 'accepted' }));
-        setImportFailures((current) =>
-          current.filter((f) => f.entry.candidate.url !== entry.candidate.url),
+      if (outcome.status === 'pending') {
+        setError(
+          `« ${entry.candidate.title ?? entry.candidate.url} » : ${pendingReason(outcome.cause)}.`,
         );
-      } else {
-        setError(`« ${entry.candidate.title ?? entry.candidate.url} » : ${outcome.reason}.`);
+        return;
       }
+      if (isRetained(outcome)) {
+        await recordDecisionsAction([decisionOf(entry, 'accepted')]);
+      } else {
+        setWithdrawnImported((count) => count + 1);
+      }
+      setDecided((current) => ({ ...current, [entry.candidate.url]: 'accepted' }));
+      setImportFailures((current) =>
+        current.filter((f) => f.entry.candidate.url !== entry.candidate.url),
+      );
     } finally {
       setImporting(false);
     }
@@ -1267,12 +1310,20 @@ export function CompetitorSearchPanel({
               </p>
             )
           ) : null}
+          {withdrawnImported > 0 ? (
+            <p role="status" className={hintText}>
+              {withdrawnImported} annonce{withdrawnImported > 1 ? 's' : ''} n’
+              {withdrawnImported > 1 ? 'étaient' : 'était'} plus en ligne : importée
+              {withdrawnImported > 1 ? 's' : ''} avec la mention « {LISTING_WITHDRAWN_LABEL} », sans
+              être retenue{withdrawnImported > 1 ? 's' : ''}. À vous de{' '}
+              {withdrawnImported > 1 ? 'les' : 'la'} retenir sur la page des concurrents.
+            </p>
+          ) : null}
           {importFailures.length > 0 ? (
             <div className={`${card} flex flex-col gap-2 p-3.5`}>
-              <span className="text-sm font-semibold text-amber-700 stage:text-amber-300">
-                {importFailures.length} fiche{importFailures.length > 1 ? 's' : ''} n’
-                {importFailures.length > 1 ? 'ont' : 'a'} pas pu être importée
-                {importFailures.length > 1 ? 's' : ''} — les autres sont bien entrées.
+              <span className="text-sm font-semibold text-red-700 stage:text-red-300">
+                {pendingImportsTitle(importFailures.length)} — {PENDING_IMPORTS_HINT} Ils sont aussi
+                listés sur la page des concurrents.
               </span>
               {importFailures.map(({ entry, reason }) => (
                 <div

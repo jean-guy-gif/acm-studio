@@ -124,7 +124,7 @@ describe('validateBatch (écran)', () => {
     const afterFinally = body.slice(body.indexOf('} finally {'));
     expect(body).toContain('runBatchImport({');
     expect(afterFinally).toContain('recordDecisionsAction(decisions)');
-    expect(afterFinally).toContain('batchDecisions(importedOk)');
+    expect(afterFinally).toContain('batchDecisions(retained)');
     expect(afterFinally).toContain('setImporting(false)');
     expect(afterFinally).toContain('closeSearchWindowViaExtension(win.windowId)');
     // Plus rien après le finally : rien ne dépend d'un lot arrivé au bout.

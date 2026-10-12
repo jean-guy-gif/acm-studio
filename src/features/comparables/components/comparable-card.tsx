@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  IMPORTED_FROM_SEARCH_LABEL,
+  LISTING_WITHDRAWN_LABEL,
+} from '@/features/competitor-search/services/pending-import-labels';
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import {
   COMPETITOR_VERIFIABLE_FIELDS,
@@ -12,6 +16,7 @@ import { useState } from 'react';
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
   badgeNeutral,
+  badgeRejected,
   badgeSelected,
   btnDangerGhost,
   btnSecondary,
@@ -161,6 +166,18 @@ export function ComparableCard({
                 {VERIFY_LABEL} · {toVerify}
               </Link>
             ) : null}
+            {/* Mission 101 — créé depuis les données de la recherche (page illisible), et annonce
+                trouvée retirée : dits sur la carte, côté conseiller seulement. */}
+            {comparable.imported_from_search ? (
+              <span data-testid="imported-from-search" className={badgeNeutral}>
+                {IMPORTED_FROM_SEARCH_LABEL}
+              </span>
+            ) : null}
+            {comparable.listing_withdrawn ? (
+              <span data-testid="listing-withdrawn" className={badgeRejected}>
+                {LISTING_WITHDRAWN_LABEL}
+              </span>
+            ) : null}
             <span className={comparable.is_selected ? badgeSelected : badgeNeutral}>
               {comparable.is_selected ? 'Retenu' : 'Écarté'}
             </span>
@@ -208,7 +225,10 @@ export function ComparableCard({
           <p className="text-sm font-semibold text-red-700 stage:text-red-300">{oppositionNote}</p>
         ) : null}
 
-        <CompetitorMandateLine competitor={comparable} />
+        <CompetitorMandateLine
+          competitor={comparable}
+          toVerify={comparable.fields_to_verify ?? []}
+        />
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
           <form action={toggleAction}>
