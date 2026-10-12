@@ -10,6 +10,7 @@ import {
 } from '@/features/competitor-search/services/build-filtered-search-urls';
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
 import { createClient } from '@/lib/supabase/server';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 
 export type PrepareOpenSearchesResult =
   { ok: true; city: string; links: FilteredSearchLink[] } | { ok: false; error: string };
@@ -39,7 +40,7 @@ export async function prepareOpenSearches(projectId: string): Promise<PrepareOpe
       .select('portal, place_id')
       .eq('city_key', cityKey);
     if (error) {
-      console.error('[prepareOpenSearches] lecture portal_place_ids', error.message);
+      await reportServerError('prepareOpenSearches', error);
     }
     for (const row of data ?? []) {
       if ((PLACE_PORTALS as readonly string[]).includes(row.portal)) {

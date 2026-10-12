@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 import { ErrorScreen } from '@/components/error-screen';
+import { signalClientError } from '@/lib/app-errors/signal-client-error';
 import './globals.css';
 
 // Mission 88 — le dernier filet : une erreur dans la structure même de l'application. Cette page
@@ -11,6 +12,8 @@ import './globals.css';
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
     console.error('[acm] erreur globale', error);
+    // Mission 100 — et au journal des erreurs, sans rien en montrer ici.
+    signalClientError('browser', error);
   }, [error]);
 
   return (

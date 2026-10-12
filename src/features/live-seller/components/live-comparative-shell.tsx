@@ -52,6 +52,7 @@ import type {
 } from '@/features/live-seller/services/project-live-for-seller';
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
+import { signalClientError } from '@/lib/app-errors/signal-client-error';
 
 export type LiveStageTheme = 'dark' | 'light';
 
@@ -343,7 +344,14 @@ export function LiveComparativeShell({
         setSaves((s) => ({ ...s, [key]: { status: 'pending', retry: attempt } }));
         void save()
           .then((r) => {
-            if (!r.ok) console.error('[live] enregistrement échoué', { key, error: r.error });
+            if (!r.ok) {
+              console.error('[live] enregistrement échoué', { key, error: r.error });
+              // Mission 100 — au journal des erreurs ; l'écran du vendeur ne change pas (M92).
+              signalClientError(
+                'live',
+                `Enregistrement de fond échoué (${key}) : ${r.error ?? ''}`,
+              );
+            }
             setSaves((s) => ({
               ...s,
               [key]: { status: r.ok ? 'ok' : 'failed', retry: attempt, error: r.error },
@@ -351,6 +359,10 @@ export function LiveComparativeShell({
           })
           .catch((cause) => {
             console.error('[live] enregistrement injoignable', { key, cause });
+            signalClientError(
+              'live',
+              `Enregistrement de fond injoignable (${key}) : ${cause instanceof Error ? cause.message : ''}`,
+            );
             setSaves((s) => ({
               ...s,
               [key]: { status: 'failed', retry: attempt, error: 'Réseau indisponible.' },

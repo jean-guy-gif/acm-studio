@@ -79,3 +79,15 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/follow_up_that_pays.sql
+
+      # Mission 100 — toutes les tables publiques, lues dans le catalogue : un membre d'une agence
+      # ne lit ni n'écrit rien d'une autre. Une nouvelle table sans cloisonnement échoue ici.
+      - name: Cloisonnement entre agences (toutes les tables)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/agency_isolation_all_tables.sql
+
+      - name: Gestes sensibles (conclusion, archivage, invitations, réglages, budget, journal)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/sensitive_gestures.sql

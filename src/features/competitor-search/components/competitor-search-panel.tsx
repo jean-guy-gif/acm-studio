@@ -11,7 +11,12 @@ import {
   formSectionTitle,
   hintText,
   link as linkCls,
+  softPanel,
 } from '@/components/ui/styles';
+import {
+  BUDGET_REACHED_HINT,
+  BUDGET_REACHED_LABEL,
+} from '@/features/search-budget/services/budget';
 
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
@@ -151,6 +156,10 @@ type Props = {
   // absent, le bouton n'existe pas.
   // Mission 71 — `resume` : « Chercher encore », reprise au plafond.
   streamEstateAction?: (resume?: StreamEstateResume | null) => Promise<StreamEstateSearchResult>;
+  // Mission 100 — le budget de recherche du mois est atteint : le bouton est remplacé.
+  budgetReached?: boolean;
+  // Mission 100 — « 80 % du budget de recherche du mois utilisé », pour le manager seulement.
+  budgetNotice?: string | null;
   // Mission 99 — « Réglages de la recherche » : ce qui est enregistré sur le dossier, ce que
   // l'outil utiliserait seul, et l'action qui enregistre. Fourni avec la recherche Stream Estate.
   searchSettings?: {
@@ -368,6 +377,8 @@ export function CompetitorSearchPanel({
   prepareOpenAction,
   rememberPlacesAction,
   streamEstateAction,
+  budgetReached = false,
+  budgetNotice = null,
   searchSettings,
 }: Props) {
   const [pending, startTransition] = useTransition();
@@ -998,6 +1009,23 @@ export function CompetitorSearchPanel({
           <p className="w-full text-xs text-zinc-500 stage:text-white/50">
             {STREAM_ESTATE_MAX_COST_LABEL}
           </p>
+          {budgetNotice ? (
+            <p
+              role="status"
+              className="w-full text-sm font-medium text-amber-700 stage:text-amber-300"
+            >
+              {budgetNotice}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {/* Mission 100 — plafond mensuel atteint : plus de bouton, aucun appel ; les portails restent. */}
+      {budgetReached ? (
+        <div className={`${softPanel} flex flex-col gap-1 p-4`}>
+          <p className="font-title text-base font-semibold text-zinc-900 stage:text-white">
+            {BUDGET_REACHED_LABEL}
+          </p>
+          <p className={hintText}>{BUDGET_REACHED_HINT}</p>
         </div>
       ) : null}
       {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques

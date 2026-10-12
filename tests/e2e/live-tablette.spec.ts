@@ -6,9 +6,9 @@ import { expectNoHorizontalScroll, login } from './support';
 // à part du parcours complet : la scène ne peut être décalée dans aucune taille (fenêtre et
 // plein écran), et un nom d'agence long ne pousse jamais les boutons de l'en-tête.
 //
-// Le test réutilise l'agence de test et un seul dossier prêt, toujours le même : il le crée
-// la première fois (déclaré prêt à la main, sans bien ni concurrent) et le retrouve ensuite
-// dans la liste du Live.
+// Le test crée dans l'agence de test un dossier prêt (déclaré prêt à la main, sans bien ni
+// concurrent), que ses deux vérifications se partagent. Mission 100 : il n'est plus permanent —
+// le nettoyage de fin de passage le supprime, et le passage suivant le recrée.
 
 const DOSSIER = 'TEST AUTOMATIQUE — Live tablette';
 const LONG_NAME_LENGTH = 60;

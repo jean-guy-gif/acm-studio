@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 import { ErrorScreen } from '@/components/error-screen';
+import { signalClientError } from '@/lib/app-errors/signal-client-error';
 
 // Mission 88 — une erreur inattendue, n'importe où dans l'application (Live compris). L'écran
 // ne montre aucun détail technique et rien du dossier ; le détail part au journal du navigateur,
@@ -10,6 +11,8 @@ import { ErrorScreen } from '@/components/error-screen';
 export default function AppError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
     console.error('[acm] erreur inattendue', error);
+    // Mission 100 — et au journal des erreurs, sans rien en montrer ici.
+    signalClientError('browser', error);
   }, [error]);
 
   return (

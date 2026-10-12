@@ -122,6 +122,19 @@ export default function ConfidentialitePage() {
               jamais montré au vendeur. ACM Studio n’envoie lui-même aucun message au vendeur : il
               propose un texte, que le conseiller copie et envoie par ses propres moyens.
             </li>
+            <li>
+              Un journal technique : quand une erreur inattendue survient, ACM Studio enregistre sa
+              date, la page concernée, un message technique, la version de l’outil et les
+              identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
+              d’être enregistré : il ne contient ni texte saisi, ni prix, ni adresse. Ce journal
+              n’est lu que par l’éditeur, pour corriger l’outil. Il est conservé 90 jours : chaque
+              nuit, les lignes plus anciennes sont supprimées automatiquement.
+            </li>
+            <li>
+              Le compte des recherches de concurrents : pour chaque recherche lancée auprès de
+              Stream Estate, le nombre d’annonces reçues, sa date, le dossier et le conseiller. Il
+              sert à tenir le budget de recherche mensuel de l’agence.
+            </li>
           </ul>
           <p className={paragraph}>
             Un dossier vendeur supprimé par le conseiller est archivé : il disparaît de l’outil,

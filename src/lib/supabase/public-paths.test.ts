@@ -25,6 +25,13 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/design-preview/app')).toBe(false);
   });
 
+  it('ouvre /api/version, et rien d’autre sous /api (mission 100)', () => {
+    expect(isPublicPath('/api/version')).toBe(true);
+    expect(isPublicPath('/api')).toBe(false);
+    expect(isPublicPath('/api/version/autre')).toBe(false);
+    expect(isPublicPath('/erreurs')).toBe(false);
+  });
+
   // Mission 88 — « Mot de passe oublié » se demande sans être connecté ; choisir le nouveau mot
   // de passe, accepter une invitation ou créer une agence exigent une session.
   it('ouvre la demande de réinitialisation, et elle seule', () => {

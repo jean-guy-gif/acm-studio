@@ -3,8 +3,9 @@ import { execFileSync } from 'node:child_process';
 import { expect, type Page } from '@playwright/test';
 
 // Mission 66 — outils du parcours de bout en bout. Rien ici ne touche la base
-// directement : tout passe par l'écran, comme le ferait le conseiller. Une seule exception,
-// écrite plus bas avec sa raison : `removeTestOppositions` (mission 98).
+// directement : tout passe par l'écran, comme le ferait le conseiller. Exceptions, écrites
+// avec leur raison : `removeTestOppositions` (mission 98) et `ageTestFollowUp` (mission 96)
+// plus bas, et le nettoyage de fin de passage (mission 100, `global-teardown.ts`).
 
 export function requireEnv(name: 'E2E_EMAIL' | 'E2E_PASSWORD'): string {
   const value = process.env[name];

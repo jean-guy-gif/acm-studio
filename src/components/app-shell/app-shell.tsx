@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { SidebarNav } from '@/components/app-shell/sidebar-nav';
+import { SidebarNav, type ErrorsBadge } from '@/components/app-shell/sidebar-nav';
 import { AppLogo } from '@/components/theme/app-logo';
 import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
@@ -17,6 +17,7 @@ export function AppShell({
   signOutAction,
   logoLightUrl = null,
   logoDarkUrl = null,
+  errorsBadge = null,
   children,
 }: {
   profileName: string;
@@ -26,6 +27,8 @@ export function AppShell({
   signOutAction: () => Promise<void>;
   logoLightUrl?: string | null;
   logoDarkUrl?: string | null;
+  // Mission 100 — seulement pour les comptes autorisés ; null pour tous les autres.
+  errorsBadge?: ErrorsBadge | null;
   children: React.ReactNode;
 }) {
   return (
@@ -50,7 +53,7 @@ export function AppShell({
                 <AppThemeToggle />
               </span>
             </div>
-            <SidebarNav />
+            <SidebarNav errorsBadge={errorsBadge} />
           </div>
 
           <div className="hidden flex-col gap-3 md:flex">

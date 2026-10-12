@@ -458,3 +458,12 @@ export function isSameStreamEstateProperty(
   const cityA = communeKey(a.city);
   return cityA != null && cityA === communeKey(b.city);
 }
+
+// Mission 100 — ce qu'une réponse de l'API a facturé : chaque annonce renvoyée, lisible ou non.
+// Compté sur la réponse brute, pour que la consommation soit enregistrée même quand la recherche
+// échoue ensuite.
+export function billedAdverts(json: unknown): number {
+  if (typeof json !== 'object' || json === null) return 0;
+  const members = (json as Record<string, unknown>)['hydra:member'];
+  return Array.isArray(members) ? members.length : 0;
+}

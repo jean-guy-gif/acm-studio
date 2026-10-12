@@ -12,6 +12,7 @@ import {
   type GeoCommune,
   type InseeResolution,
 } from '@/features/competitor-search/services/resolve-insee-code';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 
 // Les services publics et gratuits de géographie (geo.api.gouv.fr, api-adresse.data.gouv.fr), lus
 // côté serveur. Partagés par le classement (secteur, code INSEE) et la recherche Stream Estate
@@ -29,8 +30,6 @@ async function getJson(url: string): Promise<unknown> {
   return response.json();
 }
 
-const message = (error: unknown): unknown => (error instanceof Error ? error.message : error);
-
 // Étape 2 — le secteur : l'adresse du bien vendeur géocodée (Base Adresse Nationale). Un échec
 // réseau ne bloque rien : le secteur devient neutre et l'écran le dit.
 export async function geocodeSubject(
@@ -45,7 +44,7 @@ export async function geocodeSubject(
   try {
     return judgeGeocode(await getJson(url), city);
   } catch (error) {
-    console.error('[geocodeSubject]', message(error));
+    await reportServerError('geocodeSubject', error);
     return { ok: false, sector: { status: 'neutral', reason: 'unavailable' } };
   }
 }
@@ -61,7 +60,7 @@ export async function resolveCommune(
     if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
     return pickInseeCode(communes as GeoCommune[], city, postalCode);
   } catch (error) {
-    console.error('[resolveCommune]', message(error));
+    await reportServerError('resolveCommune', error);
     return { ok: false, reason: 'unavailable' };
   }
 }
@@ -74,7 +73,7 @@ export async function fetchDepartmentCommunes(departement: string): Promise<GeoC
     if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
     return communes as GeoCommune[];
   } catch (error) {
-    console.error('[fetchDepartmentCommunes]', message(error));
+    await reportServerError('fetchDepartmentCommunes', error);
     return null;
   }
 }
