@@ -11,6 +11,7 @@ import {
 import { buyerRuleGaps, negotiationNote } from '@/features/meeting-conclusion/services/buyer-rules';
 import {
   buyerCommuneKey,
+  communeCovered,
   requestedCommuneKeys,
 } from '@/features/meeting-conclusion/services/commune-alias';
 import type { ProspectingEntry } from '@/features/prospecting/types';
@@ -158,7 +159,7 @@ export function reconcileBuyer(
     const scoringCity =
       communes.length === 0
         ? null
-        : commune != null && communes.includes(commune)
+        : commune != null && communeCovered(communes, commune)
           ? candidate.city
           : (criteria.city?.split(/[,;\n]/)[0]?.trim() ?? null);
     const scored = scoreCandidate(

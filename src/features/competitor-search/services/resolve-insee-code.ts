@@ -4,6 +4,15 @@
 // proposer des concurrents d'ailleurs.
 
 import type { GeoPoint } from '@/features/competitor-search/types';
+import {
+  arrondissementCityName,
+  arrondissementCityOfInsee,
+  arrondissementInsee,
+  arrondissementLabel,
+  readArrondissementName,
+  resolveArrondissement,
+  type Arrondissement,
+} from '@/features/competitor-search/utils/arrondissements';
 import { normalizeCommuneName } from '@/features/competitor-search/utils/commune-name';
 
 export { normalizeCommuneName };
@@ -28,6 +37,11 @@ export type InseeResolution =
       name: string;
       centre: GeoPoint | null;
       departement: string | null;
+      // Mission 99 — Paris, Lyon, Marseille : `code` est celui de l'ARRONDISSEMENT (75115), `name`
+      // reste la ville entière (« Paris », pour le géocodage), `display` dit « Paris 15e ».
+      // Ailleurs : `display` est le nom de la commune, `arrondissement` est null.
+      display: string;
+      arrondissement: Arrondissement | null;
     }
   | { ok: false; reason: 'not_found' | 'ambiguous' | 'arrondissements' };
 
@@ -39,16 +53,18 @@ export function communeCentre(commune: Pick<GeoCommune, 'centre'>): GeoPoint | n
 }
 
 // Paris, Lyon, Marseille : l'API Stream Estate range les biens par ARRONDISSEMENT (75118 pour
-// Paris 18e, relevé le 05/10), jamais sous le code de la commune entière. Sans arrondissement
-// connu, la recherche serait vide : on le dit plutôt que de la lancer.
-const CITIES_WITH_ARRONDISSEMENTS = new Set(['75056', '69123', '13055']);
-
+// Paris 18e, relevé le 05/10 ; 75115 et 13208 mesurés le 12/10), jamais sous le code de la commune
+// entière. MISSION 99 — le bien est donc rattaché à son arrondissement, lu dans le code postal ou
+// dans le nom (utils/arrondissements.ts). Sans arrondissement connu (« Paris » sans code postal,
+// ou nom et code postal en désaccord), la recherche serait vide : on le dit plutôt que de la lancer.
 export function pickInseeCode(
   communes: GeoCommune[],
   city: string,
   postalCode: string | null,
 ): InseeResolution {
-  const wanted = normalizeCommuneName(city);
+  // « Paris 15e » se cherche sous le nom de la ville entière.
+  const named = readArrondissementName(city);
+  const wanted = normalizeCommuneName(named ? arrondissementCityName(named.city) : city);
   const postal = postalCode?.trim() || null;
   const matches = communes.filter(
     (commune) =>
@@ -57,25 +73,45 @@ export function pickInseeCode(
   );
   if (matches.length === 0) return { ok: false, reason: 'not_found' };
   if (matches.length > 1) return { ok: false, reason: 'ambiguous' };
-  if (CITIES_WITH_ARRONDISSEMENTS.has(matches[0].code)) {
-    return { ok: false, reason: 'arrondissements' };
+  const [match] = matches;
+  if (arrondissementCityOfInsee(match.code) != null) {
+    const arrondissement = resolveArrondissement(city, postal);
+    if (arrondissement == null) return { ok: false, reason: 'arrondissements' };
+    const code = arrondissementInsee(arrondissement);
+    // Le centre de l'arrondissement quand la réponse le porte, sinon celui de la ville.
+    const own = communes.find((commune) => commune.code === code);
+    return {
+      ok: true,
+      code,
+      name: match.nom,
+      centre: (own ? communeCentre(own) : null) ?? communeCentre(match),
+      departement: match.codeDepartement ?? null,
+      display: arrondissementLabel(arrondissement),
+      arrondissement,
+    };
   }
   return {
     ok: true,
-    code: matches[0].code,
-    name: matches[0].nom,
-    centre: communeCentre(matches[0]),
-    departement: matches[0].codeDepartement ?? null,
+    code: match.code,
+    name: match.nom,
+    centre: communeCentre(match),
+    departement: match.codeDepartement ?? null,
+    display: match.nom,
+    arrondissement: null,
   };
 }
 
 // Mission 71 — avec un code postal, on demande TOUTES les communes de ce code postal et c'est
 // pickInseeCode qui compare les noms (St/Saint, tirets) : geo.api.gouv.fr ne trouve pas
 // « St Laurent du Var » par son nom (mesuré le 06/10 : réponse vide). Sans code postal, par le nom.
+// Mission 99 — les arrondissements municipaux sont demandés avec les communes : la même réponse
+// porte « Lyon » (69123) et « Lyon 3e Arrondissement » (69383) avec son centre (mesuré le 12/10).
 export function geoCommunesUrl(city: string, postalCode: string | null): string {
   const params = new URLSearchParams();
+  const named = readArrondissementName(city);
   if (postalCode?.trim()) params.set('codePostal', postalCode.trim());
-  else params.set('nom', city);
+  else params.set('nom', named ? arrondissementCityName(named.city) : city);
+  params.set('type', 'commune-actuelle,arrondissement-municipal');
   params.set('fields', 'nom,code,codesPostaux,centre,codeDepartement');
   params.set('format', 'json');
   return `${GEO_COMMUNES_ENDPOINT}?${params}`;

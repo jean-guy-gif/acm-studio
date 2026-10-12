@@ -2,12 +2,14 @@
 
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
 import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
+import type { SearchSettings } from '@/features/competitor-search/services/search-settings';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
 
 // `fingerprint` (mission 93) : l'empreinte du bien vendeur et de la fourchette, lue en base. Un
 // résultat de recherche gardé dans l'onglet ne se réaffiche que si elle n'a pas changé.
 export type PrepareSearchResult =
-  | { ok: true; criteria: CompetitorSearchCriteria; fingerprint: string }
+  // `settings` (mission 99) : les réglages enregistrés sur le dossier, compris dans l'empreinte.
+  | { ok: true; criteria: CompetitorSearchCriteria; fingerprint: string; settings: SearchSettings }
   | { ok: false; error: string };
 
 const GENERIC_ERROR = 'La recherche a échoué. Vous pouvez importer une annonce par son adresse.';
@@ -25,6 +27,7 @@ export async function prepareCompetitorSearch(projectId: string): Promise<Prepar
   return {
     ok: true,
     criteria: loaded.criteria,
-    fingerprint: searchFingerprint(loaded.criteria, loaded.address),
+    fingerprint: searchFingerprint(loaded.criteria, loaded.address, loaded.settings),
+    settings: loaded.settings,
   };
 }

@@ -1,3 +1,4 @@
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import type { Project } from '@/features/projects/types';
 import { MIN_READY_COMPARABLES } from '@/features/projects/services/project-readiness';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -62,7 +63,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
   const [properties, comparables, positionings] = await Promise.all([
     supabase
       .from('subject_properties')
-      .select('project_id, property_type, rooms_count, surface_area, city')
+      .select('project_id, property_type, rooms_count, surface_area, city, postal_code')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
     supabase
@@ -111,7 +112,8 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
             propertyType: propertyRow.property_type,
             roomsCount: propertyRow.rooms_count,
             surfaceArea: propertyRow.surface_area,
-            city: propertyRow.city,
+            // Mission 99 — « Paris 15e » : l'arrondissement se lit dans le code postal.
+            city: displayCommune(propertyRow.city, propertyRow.postal_code),
           }
         : null,
       fourchette:

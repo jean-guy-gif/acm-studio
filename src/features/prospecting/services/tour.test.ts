@@ -4,6 +4,7 @@ import { groupProspecting } from '@/features/prospecting/services/group-prospect
 import { addressed, entry, row } from '@/features/prospecting/services/test-cards';
 import {
   buildTour,
+  communeSortKey,
   filterByScope,
   parseTourAddress,
   parseTourScope,
@@ -69,6 +70,59 @@ describe('buildTour — les portes où sonner', () => {
       'Vence',
       'Vence',
     ]);
+  });
+
+  // Mission 99 — Paris, Lyon, Marseille : par arrondissement (dans l'ordre : 2e avant 10e, jamais
+  // l'ordre alphabétique), puis par rue, puis par numéro.
+  it('trie par arrondissement, puis par rue, puis par numéro', () => {
+    const cards = groupProspecting([
+      entry('m', addressed('p15-lecourbe-40', '40 rue Lecourbe, 75015 Paris', { surfaceArea: 40 })),
+      entry(
+        'm',
+        addressed('p10-magenta-5', '5 boulevard de Magenta, 75010 Paris', { surfaceArea: 45 }),
+      ),
+      entry('m', addressed('p2-reaumur-80', '80 rue Réaumur, 75002 Paris', { surfaceArea: 50 })),
+      entry('m', addressed('p15-lecourbe-12', '12 rue Lecourbe, 75015 Paris', { surfaceArea: 55 })),
+      entry(
+        'm',
+        addressed('p15-cambronne-3', '3 rue Cambronne, 75015 Paris 15e Arrondissement', {
+          surfaceArea: 60,
+        }),
+      ),
+      entry(
+        'm',
+        addressed('l3-lafayette-10', '10 cours Lafayette, 69003 Lyon', { surfaceArea: 65 }),
+      ),
+      entry('m', addressed('pau-1', '1 rue Serviez, 64000 Pau', { surfaceArea: 70 })),
+    ]);
+    const tour = buildTour(cards);
+    expect(tour.owners.map((stop) => stop.card.row.id)).toEqual([
+      'l3-lafayette-10',
+      'p2-reaumur-80',
+      'p10-magenta-5',
+      'p15-cambronne-3',
+      'p15-lecourbe-12',
+      'p15-lecourbe-40',
+      'pau-1',
+    ]);
+    expect(tour.owners.map((stop) => stop.commune)).toEqual([
+      'Lyon 3e',
+      'Paris 2e',
+      'Paris 10e',
+      'Paris 15e',
+      'Paris 15e',
+      'Paris 15e',
+      'Pau',
+    ]);
+  });
+
+  it('lit l’arrondissement dans le code postal de l’adresse, sinon dans la ville de l’annonce', () => {
+    expect(parseTourAddress('12 rue Lecourbe, 75015 Paris', null).commune).toBe('Paris 15e');
+    expect(parseTourAddress('50 avenue du Prado, 13008 Marseille', null).commune).toBe(
+      'Marseille 8e',
+    );
+    expect(parseTourAddress('Rue Lecourbe', 'Paris 15e').commune).toBe('Paris 15e');
+    expect(communeSortKey('Paris 2e') < communeSortKey('Paris 10e')).toBe(true);
   });
 
   it('ne garde que les propriétaires à adresse confirmée, encore à voir', () => {

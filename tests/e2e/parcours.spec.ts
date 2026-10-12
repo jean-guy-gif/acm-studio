@@ -114,8 +114,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .selectOption('Appartement');
     await field('Surface').fill('65');
     await field('Pièces').fill('3');
+    // Mission 99 — Paris, Lyon, Marseille : la fiche dit l'arrondissement lu dans le code postal.
+    await field('Code postal').fill('75015');
+    await field('Ville').fill('Paris');
+    await expect(page.getByText('Arrondissement : Paris 15e')).toBeVisible();
     await field('Code postal').fill('06000');
     await field('Ville').fill('Nice');
+    await expect(page.getByText(/^Arrondissement :/)).toHaveCount(0);
     await field('De').fill(String(FOURCHETTE.min));
     // Mission 77 — un seul bouton, dans la barre fixée, qui dit où en est la fiche.
     await expect(page.getByText('Modifications non enregistrées')).toBeVisible();
@@ -137,6 +142,51 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
     await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
     await expect(page.getByText('Indiquez les deux montants')).toHaveCount(0);
+  });
+
+  // Mission 99 — les réglages de la recherche : affichés, enregistrés sur le dossier, remis par
+  // défaut. « Chercher les concurrents » n'est JAMAIS cliqué ici : aucun appel payant.
+  await test.step('Réglages de la recherche : défaut, « réglé par vous », remise par défaut', async () => {
+    await page.goto(`/builder/${projectId}/comparables/find`);
+    const block = page.locator('[data-search-settings]');
+    const summary = block.locator('summary');
+    await expect(summary).toContainText('Réglages de la recherche');
+    // Replié : les valeurs que l'outil utiliserait seul, rien de réglé.
+    await expect(summary).toContainText('3 pièces');
+    await expect(summary).not.toContainText('réglé par vous');
+    await expect(page.getByText('Coût maximal : 0,60 € par recherche')).toBeVisible();
+
+    await summary.click();
+    await block.getByLabel('Toute la commune', { exact: true }).check();
+    await block.getByLabel('Pièces : de').fill('3');
+    await block.getByLabel('Pièces : à').fill('4');
+    await expect(block.getByText('Réglages non enregistrés')).toBeVisible();
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(block.getByText('Réglages enregistrés sur ce dossier.')).toBeVisible();
+    await expect(summary).toContainText('Toute la commune · ');
+    await expect(summary).toContainText('3 à 4 pièces');
+    await expect(summary).toContainText('réglé par vous');
+
+    // Enregistrés sur le dossier : ils survivent à une actualisation.
+    await page.reload();
+    await expect(summary).toContainText('3 à 4 pièces · ');
+    await expect(summary).toContainText('réglé par vous');
+    await summary.click();
+    await expect(block.locator('[data-setting-custom="true"]')).toHaveCount(2);
+
+    // Une borne seule est refusée, rien n'est enregistré.
+    await block.getByLabel('Pièces : à').fill('');
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(block.getByRole('alert')).toContainText('indiquez les deux valeurs');
+
+    // Remis par défaut : la mention disparaît.
+    for (let left = 2; left > 0; left -= 1) {
+      await block.getByRole('button', { name: 'Remettre par défaut' }).first().click();
+    }
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(block.getByText('Réglages enregistrés sur ce dossier.')).toBeVisible();
+    await expect(summary).not.toContainText('réglé par vous');
+    await expect(block.locator('[data-setting-custom="true"]')).toHaveCount(0);
   });
 
   await test.step('Trois concurrents saisis à la main', async () => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { useState } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
@@ -263,7 +264,7 @@ export function RankedCandidateCard({
           {candidate.landArea != null
             ? ` · ${formatSquareMeters(candidate.landArea)} de terrain`
             : ''}
-          {candidate.city ? ` · ${candidate.city}` : ''}
+          {candidate.city ? ` · ${displayCommune(candidate.city)}` : ''}
           {` · ${ranked.portalLabel}`}
         </div>
 

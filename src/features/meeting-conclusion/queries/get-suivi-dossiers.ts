@@ -1,3 +1,4 @@
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import 'server-only';
 
 import type { PreparationProperty } from '@/features/projects/queries/get-preparation-dossiers';
@@ -51,7 +52,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
   const [propertiesRes, conclusionsRes, revisedRes] = await Promise.all([
     supabase
       .from('subject_properties')
-      .select('project_id, property_type, rooms_count, surface_area, city')
+      .select('project_id, property_type, rooms_count, surface_area, city, postal_code')
       .in('project_id', ids)
       .eq('agency_id', agencyId),
     supabase
@@ -78,7 +79,8 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       propertyType: row.property_type,
       roomsCount: row.rooms_count,
       surfaceArea: row.surface_area,
-      city: row.city,
+      // Mission 99 — « Paris 15e » : l'arrondissement se lit dans le code postal.
+      city: displayCommune(row.city, row.postal_code),
     });
   }
 
