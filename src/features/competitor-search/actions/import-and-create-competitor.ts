@@ -15,6 +15,7 @@ import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
+import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -35,18 +36,24 @@ const MAX_HTML_BYTES = 4 * 1024 * 1024;
 // Ne redirige pas et ne jette pas : renvoie un résultat, pour que le lot isole chaque
 // fiche — une qui échoue n'emporte pas les autres. Rien n'est écrit tant que le
 // conseiller n'a pas cliqué : cet appel EST déclenché par ce clic.
+//
+// Correctif du 12/10 — l'adresse, la page et le type arrivent dans un FORMULAIRE
+// (`listingPayload`) : une page de plus d'un million de caractères passée en argument faisait
+// rejeter l'appel par React avant d'arriver ici. Le type est celui lu sur la CARTE de recherche
+// (déjà canonique), normalisé ici par sécurité ; absent = inconnu.
 export async function importAndCreateComparable(
   projectId: string,
-  rawUrl: string,
-  html: string,
-  // Type lu sur la CARTE de recherche (déjà canonique). Normalisé ici par sécurité —
-  // la colonne exige le vocabulaire canonique, jamais du texte libre. Null = inconnu.
-  propertyType: string | null = null,
+  payload: FormData,
 ): Promise<ImportAndCreateResult> {
   const profile = await getProfile();
   if (!profile) {
     return { ok: false, error: GENERIC_ERROR };
   }
+  const listing = readListingPayload(payload);
+  if (!listing) {
+    return { ok: false, error: GENERIC_ERROR };
+  }
+  const { url: rawUrl, html, propertyType } = listing;
 
   const supabase = await createClient();
   const { data: project } = await supabase

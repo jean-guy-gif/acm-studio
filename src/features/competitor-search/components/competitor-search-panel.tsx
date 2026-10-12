@@ -19,6 +19,13 @@ import {
 } from '@/features/search-budget/services/budget';
 
 import type { ImportAndCreateResult } from '@/features/competitor-search/actions/import-and-create-competitor';
+import {
+  BATCH_CRASH_REASON,
+  batchProgressLabel,
+  runBatchImport,
+  type BatchProgress,
+} from '@/features/competitor-search/services/batch-import';
+import { listingPayload } from '@/features/competitor-search/services/listing-payload';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
 import type { PrepareOpenSearchesResult } from '@/features/competitor-search/actions/prepare-open-searches';
 import type {
@@ -142,11 +149,8 @@ type Props = {
   recordDecisionAction: (formData: FormData) => Promise<RecordDecisionResult>;
   // §8 — import d'un concurrent depuis le HTML lu par l'extension, et écriture des
   // décisions du lot (retenues + écartées) en un appel.
-  importAction: (
-    url: string,
-    html: string,
-    propertyType: string | null,
-  ) => Promise<ImportAndCreateResult>;
+  // La page voyage dans un formulaire (`listingPayload`), jamais en argument.
+  importAction: (payload: FormData) => Promise<ImportAndCreateResult>;
   recordDecisionsAction: (decisions: BatchDecision[]) => Promise<RecordDecisionResult>;
   // Mission 69 — « Ouvrir mes recherches » (adresses déjà filtrées) et l'apprentissage des
   // identifiants de commune relevés dans les onglets lus.
@@ -405,9 +409,7 @@ export function CompetitorSearchPanel({
   // décochée sinon (en dessous du seuil, ou type non précisé quel que soit le score).
   const [selection, setSelection] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(
-    null,
-  );
+  const [importProgress, setImportProgress] = useState<BatchProgress | null>(null);
   // La fiche en échec ET sa cause réelle (robots ? prix ? fenêtre ?), affichée.
   const [importFailures, setImportFailures] = useState<
     { entry: RankedCandidate; reason: string }[]
@@ -791,7 +793,15 @@ export function CompetitorSearchPanel({
     }
     // Le type lu sur la CARTE de recherche voyage jusqu'à la création : la page
     // d'annonce ne le porte pas de façon fiable, la carte oui.
-    const result = await importAction(url, read.html, candidate.propertyType);
+    // Un appel qui rejette (réseau, refus du serveur avant l'action) est un échec de CETTE fiche,
+    // dit comme tel : il ne remonte ni dans le lot ni dans l'import d'une carte.
+    let result: ImportAndCreateResult;
+    try {
+      result = await importAction(listingPayload(url, read.html, candidate.propertyType));
+    } catch (cause) {
+      console.warn(`[import] ${url} — appel rejeté`, cause);
+      return { ok: false, reason: BATCH_CRASH_REASON };
+    }
     if (!result.ok) {
       console.warn(`[import] ${url} — ${result.error}`);
       // Essai Stream Estate : une page sans prix ni donnée = annonce introuvable ou retirée.
@@ -832,43 +842,41 @@ export function CompetitorSearchPanel({
     }
 
     setImporting(true);
-    setImportProgress({ done: 0, total: checked.length });
+    setImportProgress({ done: 0, failed: 0, total: checked.length });
     const robotsCache: PortalRobotsCache = new Map();
-    const importedOk: RankedCandidate[] = [];
-    const failures: { entry: RankedCandidate; reason: string }[] = [];
+    let importedOk: RankedCandidate[] = [];
+    let failures: { entry: RankedCandidate; reason: string }[] = [];
     try {
-      for (let i = 0; i < checked.length; i += 1) {
-        if (i > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-        const outcome = await importOne(checked[i].candidate, robotsCache, win.windowId);
-        if (outcome.ok) {
-          importedOk.push(checked[i]);
-        } else {
-          failures.push({ entry: checked[i], reason: outcome.reason });
-        }
-        setImportProgress({ done: importedOk.length, total: checked.length });
-      }
+      // Correctif du 12/10 — chaque fiche est isolée (erreur, 30 secondes sans réponse) : le lot
+      // va au bout, et le compteur dit les fiches traitées.
+      const result = await runBatchImport({
+        items: checked,
+        importItem: (entry) => importOne(entry.candidate, robotsCache, win.windowId),
+        onProgress: setImportProgress,
+      });
+      importedOk = result.imported;
+      failures = result.failures.map(({ item, reason }) => ({ entry: item, reason }));
+    } catch {
+      setError('L’import a été interrompu. Les fiches déjà entrées sont gardées.');
     } finally {
-      await closeSearchWindowViaExtension(win.windowId);
-    }
-
-    // Décisions écrites d'un coup : les importées seulement, comme retenues.
-    const decisions = batchDecisions(importedOk);
-    if (decisions.length > 0) {
-      await recordDecisionsAction(decisions);
-    }
-
-    setDecided((current) => {
-      const next = { ...current };
-      for (const entry of importedOk) {
-        next[entry.candidate.url] = 'accepted';
+      // Quoi qu'il arrive : la fenêtre se ferme, les décisions des fiches entrées s'écrivent
+      // (les importées seulement, comme retenues), et l'écran rend la main.
+      await closeSearchWindowViaExtension(win.windowId).catch(() => undefined);
+      const decisions = batchDecisions(importedOk);
+      if (decisions.length > 0) {
+        await recordDecisionsAction(decisions).catch(() => undefined);
       }
-      return next;
-    });
-    // Les échecs restent à trancher : nommés, relançables seuls.
-    setImportFailures(failures);
-    setImporting(false);
+      setDecided((current) => {
+        const next = { ...current };
+        for (const entry of importedOk) {
+          next[entry.candidate.url] = 'accepted';
+        }
+        return next;
+      });
+      // Les échecs restent à trancher : nommés, relançables seuls.
+      setImportFailures(failures);
+      setImporting(false);
+    }
   }
 
   // §3 (revue) — « Retenir et importer » d'une carte de portail se fait EN PLACE,
@@ -1226,7 +1234,7 @@ export function CompetitorSearchPanel({
             className={btnPrimary}
           >
             {importing && importProgress
-              ? `Import en cours… ${importProgress.done} sur ${importProgress.total}`
+              ? `Import en cours… ${batchProgressLabel(importProgress)}`
               : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
           </button>
           <p className={hintText}>
