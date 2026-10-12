@@ -1,7 +1,8 @@
 -- Mission 100 — Le socle pro : savoir quand ça casse, ne jamais dépenser sans limite.
 --
 -- Trois tables NOUVELLES, aucune ligne écrite, rien de modifié dans l'existant : le code de
--- `main` ne les connaît pas et continue de tourner tel quel.
+-- `main` ne les connaît pas et continue de tourner tel quel. S'y ajoute l'extension pg_cron,
+-- pour une seule tâche : la purge nocturne du journal des erreurs (90 jours).
 --
 --   1. app_errors            — le journal des erreurs inattendues (serveur, navigateur, Live) ;
 --   2. stream_estate_usage   — chaque recherche Stream Estate, avec le nombre d'annonces facturées ;
@@ -113,3 +114,34 @@ $$;
 revoke all on function public.stream_estate_usage_since(timestamptz) from public, anon;
 grant execute on function public.stream_estate_usage_since(timestamptz)
   to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------------------------
+-- Conservation du journal des erreurs : 90 jours. Chaque nuit, les lignes plus anciennes sont
+-- supprimées par la base elle-même (pg_cron), sans dépendre d'un serveur ni d'un passage à
+-- l'écran. La fonction rend le nombre de lignes supprimées ; le navigateur ne peut pas l'appeler.
+-- ---------------------------------------------------------------------------------------------
+create function public.purge_old_app_errors()
+returns integer
+language sql
+security invoker
+set search_path = public
+as $$
+  with gone as (
+    delete from public.app_errors
+    where created_at < now() - interval '90 days'
+    returning 1
+  )
+  select count(*)::integer from gone
+$$;
+
+revoke all on function public.purge_old_app_errors() from public, anon, authenticated;
+grant execute on function public.purge_old_app_errors() to service_role;
+
+create extension if not exists pg_cron;
+
+-- Tous les jours à 3 h 17 (UTC). `cron.schedule` remplace une tâche du même nom.
+select cron.schedule(
+  'purge-app-errors',
+  '17 3 * * *',
+  $$select public.purge_old_app_errors()$$
+);

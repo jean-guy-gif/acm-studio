@@ -1674,6 +1674,7 @@ export type Database = {
         Args: { p_comparable_id: string; p_direction: string }
         Returns: undefined
       }
+      purge_old_app_errors: { Args: never; Returns: number }
       save_commercialization_price: {
         Args: {
           p_advisor_analysis: number

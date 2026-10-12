@@ -9,7 +9,8 @@
 --   §5 consommation Stream Estate : chacun lit celle de son agence, personne ne l'écrit ni ne
 --      l'efface depuis le navigateur ; la somme du mois ne mélange pas les agences ;
 --   §6 plafond : lu par l'agence, réglé par personne depuis le navigateur — pas même son manager ;
---   §7 journal des erreurs : ni lu ni écrit depuis le navigateur ; les bornes de la base tiennent.
+--   §7 journal des erreurs : ni lu ni écrit depuis le navigateur ; les bornes de la base tiennent ;
+--      il se vide seul au-delà de 90 jours, chaque nuit, et le navigateur ne déclenche pas la purge.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/sensitive_gestures.sql
@@ -276,6 +277,24 @@ select pg_temp.expect('§7 un message de plus de 300 caractères',
 select pg_temp.expect('§7 une origine hors liste',
   pg_temp.attempt($$insert into public.app_errors (source, page, message)
                     values ('ailleurs', '/x', 'a')$$), 'invalide');
+
+-- §7 — conservation : 90 jours. Une ligne de 91 jours part, une de 89 jours reste.
+insert into public.app_errors (agency_id, source, page, message, created_at) values
+  ('101aaaaa-0000-0000-0000-000000000000', 'server', '/x', 'vieille de 91 jours', now() - interval '91 days'),
+  ('101aaaaa-0000-0000-0000-000000000000', 'server', '/x', 'vieille de 89 jours', now() - interval '89 days');
+select pg_temp.expect('§7 la purge supprime ce qui a plus de 90 jours, et cela seul',
+  (select public.purge_old_app_errors()::text), '1');
+select pg_temp.expect('§7 ce qui reste après la purge',
+  (select string_agg(message, ' | ' order by message) from public.app_errors
+    where agency_id = '101aaaaa-0000-0000-0000-000000000000'),
+  'fetch failed | vieille de 89 jours');
+select pg_temp.expect('§7 la purge est planifiée chaque nuit, une seule fois',
+  (select string_agg(schedule || ' ' || command, ' ; ') from cron.job
+    where jobname = 'purge-app-errors' and active),
+  '17 3 * * * select public.purge_old_app_errors()');
+select pg_temp.expect('§7 le navigateur ne déclenche pas la purge',
+  (has_function_privilege('authenticated', 'public.purge_old_app_errors()', 'execute')
+   or has_function_privilege('anon', 'public.purge_old_app_errors()', 'execute'))::text, 'false');
 
 -- Supprimer un dossier (le nettoyage de l'agence de test) garde la consommation, sans dossier.
 delete from public.projects where id = '101ccccc-0000-0000-0000-000000000001';

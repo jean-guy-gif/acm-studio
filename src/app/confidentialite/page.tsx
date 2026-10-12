@@ -127,7 +127,8 @@ export default function ConfidentialitePage() {
               date, la page concernée, un message technique, la version de l’outil et les
               identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
               d’être enregistré : il ne contient ni texte saisi, ni prix, ni adresse. Ce journal
-              n’est lu que par l’éditeur, pour corriger l’outil.
+              n’est lu que par l’éditeur, pour corriger l’outil. Il est conservé 90 jours : chaque
+              nuit, les lignes plus anciennes sont supprimées automatiquement.
             </li>
             <li>
               Le compte des recherches de concurrents : pour chaque recherche lancée auprès de
