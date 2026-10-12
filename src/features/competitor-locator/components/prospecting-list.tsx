@@ -62,7 +62,8 @@ export function ProspectingList({
               <div className="py-0.5 print:hidden">
                 <CompetitorMandateLine competitor={row.mandate} />
               </div>
-              {filesProjectId ? (
+              {/* Mission 102 — un bien « Ne plus solliciter » ne se corrige plus : son adresse reste. */}
+              {filesProjectId && row.opposedOn == null ? (
                 <ConfirmAddressActions
                   projectId={filesProjectId}
                   competitorId={row.id}

@@ -36,6 +36,8 @@ export function BrandingForm({
   initialSiteUrl,
   initialPostalAddress,
   initialProfessionalCard,
+  initialProfessionalCardIssuer,
+  initialFinancialGuarantee,
   initialDocumentName,
   agencyName,
   readOnly = false,
@@ -47,6 +49,8 @@ export function BrandingForm({
   initialSiteUrl: string;
   initialPostalAddress: string;
   initialProfessionalCard: string;
+  initialProfessionalCardIssuer: string;
+  initialFinancialGuarantee: string;
   // Mission 87 — le nom imprimé sur les documents ; vide, c'est le nom de l'agence.
   initialDocumentName: string;
   agencyName: string;
@@ -200,9 +204,10 @@ export function BrandingForm({
             </label>
 
             {/* Mission 84 — les mentions de l'agence en pied des dossiers de prospection.
-              Facultatives : absentes, elles sont omises du document. */}
+              Mission 102 — la carte professionnelle et qui l'a délivrée sont exigées pour
+              imprimer un courrier ; l'adresse l'est pour le courrier à un propriétaire (M90). */}
             <label className="flex flex-col gap-2">
-              <span className={fieldLabel}>Adresse postale de l’agence (facultatif)</span>
+              <span className={fieldLabel}>Adresse postale de l’agence</span>
               <input
                 type="text"
                 name="postal_address"
@@ -213,7 +218,7 @@ export function BrandingForm({
               />
             </label>
             <label className="flex flex-col gap-2">
-              <span className={fieldLabel}>Carte professionnelle (facultatif)</span>
+              <span className={fieldLabel}>Carte professionnelle (numéro)</span>
               <input
                 type="text"
                 name="professional_card"
@@ -222,8 +227,35 @@ export function BrandingForm({
                 placeholder="CPI 0000 0000 000 000 000"
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Carte délivrée par</span>
+              <input
+                type="text"
+                name="professional_card_issuer"
+                maxLength={80}
+                defaultValue={initialProfessionalCardIssuer}
+                placeholder="la CCI Nice Côte d’Azur"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
               <span className="text-xs text-zinc-500">
-                Imprimées en pied des dossiers de prospection.
+                La CCI ou la préfecture qui a délivré la carte. Sans le numéro et cette mention,
+                aucun courrier de prospection ne s’imprime.
+              </span>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className={fieldLabel}>Garantie financière (facultatif)</span>
+              <input
+                type="text"
+                name="financial_guarantee"
+                maxLength={160}
+                defaultValue={initialFinancialGuarantee}
+                placeholder="Galian, 89 rue La Boétie, 75008 Paris — 120 000 €"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-zinc-500">
+                Vide, les courriers portent « Ne peut recevoir aucun fonds ». Ces mentions sont
+                imprimées en pied des dossiers de prospection.
               </span>
             </label>
 

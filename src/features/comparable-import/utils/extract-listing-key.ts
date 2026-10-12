@@ -58,3 +58,9 @@ export function extractListingKey(rawUrl: string): ListingIdentity | null {
 
   return { portal, listingKey, canonicalUrl: url.toString() };
 }
+
+// « seloger:26ZEJMLWB13Y » : l'identité publiée en une clé (regroupement M98, opposition M102).
+export function listingIdentityKey(rawUrl: string | null | undefined): string | null {
+  const identity = rawUrl ? extractListingKey(rawUrl) : null;
+  return identity ? `${identity.portal}:${identity.listingKey}` : null;
+}

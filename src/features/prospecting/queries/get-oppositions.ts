@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { Oppositions } from '@/features/prospecting/services/opposition';
+import { buildOppositions, type Oppositions } from '@/features/prospecting/services/opposition';
 import type { createClient } from '@/lib/supabase/server';
 
 type Client = Awaited<ReturnType<typeof createClient>>;
@@ -11,10 +11,10 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 export async function getOppositions(supabase: Client, agencyId: string): Promise<Oppositions> {
   const { data, error } = await supabase
     .from('prospecting_oppositions')
-    .select('address_key, requested_at')
+    .select('address_key, listing_key, requested_at')
     .eq('agency_id', agencyId);
   if (error) {
     throw new Error('La liste « Ne plus solliciter » n’a pas pu être lue.');
   }
-  return new Map(data.map((row) => [row.address_key, row.requested_at]));
+  return buildOppositions(data);
 }

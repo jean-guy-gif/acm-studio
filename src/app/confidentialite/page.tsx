@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { OWNER_ADDRESS_RETENTION_YEARS } from '@/features/prospecting-file/services/legal-mention';
+
 import { card, hintText, kickerLabel, link, pageTitle, sectionTitle } from '@/components/ui/styles';
 import { PRIVACY_CONTACT_EMAIL, PUBLISHER_NAME } from '@/lib/legal';
 
@@ -65,7 +67,8 @@ export default function ConfidentialitePage() {
             <li>
               Le compte du conseiller : adresse e-mail, nom, agence et rôle et, s’il les renseigne,
               son téléphone et sa photo. L’identité de l’agence : nom, logo, couleurs et, si elles
-              sont renseignées, adresse postale et carte professionnelle.
+              sont renseignées, adresse postale, carte professionnelle (numéro, autorité qui l’a
+              délivrée) et garantie financière.
             </li>
             <li>
               Les dossiers vendeur : le nom du vendeur et, si le conseiller les saisit, son e-mail
@@ -84,7 +87,12 @@ export default function ConfidentialitePage() {
               Studio lui transmet l’adresse des annonces des concurrents retenus et conserve ce
               qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Le
               conseiller peut aussi confirmer cette adresse lui-même, ou la saisir. Usage de
-              prospection par l’agence : ces adresses ne sont jamais montrées au vendeur.
+              prospection par l’agence : ces adresses ne sont jamais montrées au vendeur. Durée de
+              conservation : {OWNER_ADDRESS_RETENTION_YEARS} ans. Une adresse pour laquelle rien ne
+              s’est passé depuis {OWNER_ADDRESS_RETENTION_YEARS} ans — ni dossier remis, ni
+              rendez-vous, ni réponse du propriétaire, ni correction de l’adresse — est effacée
+              automatiquement, chaque nuit, avec sa position ; l’annonce publique et ses
+              caractéristiques restent.
             </li>
             <li>
               Les dossiers de prospection : quand un mandat est signé, le conseiller peut préparer
@@ -92,23 +100,32 @@ export default function ConfidentialitePage() {
               confirmée de ce bien — ou au confrère qui le vend. L’adresse sort donc d’ACM Studio
               sur ce courrier, remis par le conseiller. Le courrier adressé à un propriétaire porte
               une mention légale : le responsable du traitement (l’agence, avec son adresse),
-              l’origine de l’adresse (une annonce publiée), le moyen de s’opposer à tout nouveau
-              contact (le téléphone ou l’e-mail du conseiller) et le droit de saisir la CNIL. Il ne
-              reprend ni le nom du propriétaire, ni rien du vendeur. Une photo du bien concurrent
-              n’y figure que si le conseiller le choisit (« Sans photo » par défaut) : une photo de
-              l’annonce, ou une photo qu’il importe lui-même. Elle est alors copiée dans le stockage
-              de l’agence, et retirée quand le conseiller en choisit une autre ou supprime ce
-              concurrent. ACM Studio conserve les textes que le conseiller a réécrits ; il n’envoie
-              lui-même aucun courrier.
+              l’origine réelle de l’adresse (déterminée à partir de données publiques — diagnostic
+              de performance énergétique, registre des copropriétés ou cadastre — et de l’annonce,
+              ou relevée par le conseiller), la finalité (proposer les services de l’agence pour la
+              vente du bien), la durée de conservation, les droits d’accès, d’opposition et
+              d’effacement avec le moyen de les exercer (le téléphone ou l’e-mail du conseiller), le
+              droit de saisir la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte
+              professionnelle de l’agence et l’autorité qui l’a délivrée, puis sa garantie
+              financière ou la mention « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du
+              propriétaire, ni rien du vendeur. Une photo du bien concurrent n’y figure que si le
+              conseiller le choisit (« Sans photo » par défaut) : une photo de l’annonce, ou une
+              photo qu’il importe lui-même. Elle est alors copiée dans le stockage de l’agence, et
+              retirée quand le conseiller en choisit une autre ou supprime ce concurrent. ACM Studio
+              conserve les textes que le conseiller a réécrits ; il n’envoie lui-même aucun
+              courrier.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
-              contacté, le conseiller inscrit l’adresse du bien sur la liste d’opposition de son
-              agence. ACM Studio en conserve l’adresse, sous une forme simplifiée, et la date de la
-              demande — ni nom, ni autre donnée. Cette adresse ne reçoit plus de courrier et ne
-              figure plus dans les tournées, dans aucun dossier de l’agence, présent ou futur. Une
-              demande d’effacement y inscrit aussi l’adresse : c’est ce qui permet de ne plus la
-              solliciter.
+              contacté, le conseiller inscrit le bien sur la liste d’opposition de son agence —
+              depuis sa carte, ou en saisissant son adresse. ACM Studio en conserve l’adresse de
+              l’immeuble, sous une forme simplifiée (sans étage ni appartement), le portail et le
+              numéro de son annonce quand elle est connue, et la date de la demande — ni nom, ni
+              autre donnée. Ce bien ne reçoit plus de courrier et ne figure plus dans les tournées,
+              dans aucun dossier de l’agence, présent ou futur, et son adresse ne peut plus y être
+              corrigée. Une demande d’effacement y inscrit aussi l’adresse. Cette liste n’est pas
+              effacée au terme des {OWNER_ADDRESS_RETENTION_YEARS} ans : c’est elle qui permet de ne
+              plus solliciter.
             </li>
             <li>
               Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la

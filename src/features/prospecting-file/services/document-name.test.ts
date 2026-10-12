@@ -76,10 +76,16 @@ describe('pied de page et carte de contact : une seule ligne', () => {
     expect(footerAgencyName(TEST_AGENCY)).toBe(TEST_AGENCY);
     expect(
       agencyMentionList(
-        { agencyName: TEST_AGENCY, postalAddress: null, professionalCard: null },
+        {
+          agencyName: TEST_AGENCY,
+          postalAddress: null,
+          professionalCard: null,
+          professionalCardIssuer: null,
+          financialGuarantee: null,
+        },
         { withAddress: true },
       ),
-    ).toEqual([TEST_AGENCY]);
+    ).toEqual([TEST_AGENCY, 'Ne peut recevoir aucun fonds']);
   });
 
   it('un nom plus long encore est raccourci au mot entier', () => {
@@ -89,13 +95,24 @@ describe('pied de page et carte de contact : une seule ligne', () => {
     expect(fitted.endsWith('…')).toBe(true);
   });
 
-  it('les mentions facultatives suivent le nom', () => {
+  it('les mentions de l’agence suivent le nom', () => {
     expect(
       agencyMentionList(
-        { agencyName: 'Start', postalAddress: ' 1 rue Exemple ', professionalCard: 'CPI 1' },
+        {
+          agencyName: 'Start',
+          postalAddress: ' 1 rue Exemple ',
+          professionalCard: 'CPI 1',
+          professionalCardIssuer: 'la CCI de Nice',
+          financialGuarantee: null,
+        },
         { withAddress: true },
       ),
-    ).toEqual(['Start', '1 rue Exemple', 'Carte pro CPI 1']);
+    ).toEqual([
+      'Start',
+      '1 rue Exemple',
+      'Carte professionnelle CPI 1 délivrée par la CCI de Nice',
+      'Ne peut recevoir aucun fonds',
+    ]);
   });
 
   it('« Conseiller · agence » garde sa taille pour un nom court', () => {

@@ -87,6 +87,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/agency_isolation_all_tables.sql
 
+      # Mission 102 — une adresse sans contact ni statut depuis 3 ans est effacée chaque nuit ;
+      # la liste « Ne plus solliciter » reste, et l'opposition tient.
+      - name: Durée de conservation des adresses de propriétaires
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/owner_address_retention.sql
+
       - name: Gestes sensibles (conclusion, archivage, invitations, réglages, budget, journal)
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \

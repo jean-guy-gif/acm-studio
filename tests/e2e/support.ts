@@ -165,7 +165,8 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
 
 // Mission 98 — la rue des adresses que le parcours inscrit sur la liste « Ne plus solliciter »,
 // telle que la clé d'adresse la range (`addressKey`). Aucune vraie adresse ne lui ressemble.
-export const TEST_OPPOSITION_STREET = 'rue du refus automatique 06600 antibes';
+// Mission 102 — la clé ne porte plus le code postal : le motif accepte les deux écritures.
+export const TEST_OPPOSITION_STREET = 'rue du refus automatique';
 
 // Mission 98 — EXCEPTION à « tout passe par l'écran » : une opposition ne se retire pas depuis
 // l'écran (c'est voulu, et prouvé par supabase/tests/prospecting_oppositions.sql). Pour que la
@@ -178,7 +179,7 @@ export function removeTestOppositions(): number {
   const sql = `with retirees as (
     delete from public.prospecting_oppositions
     where agency_id = (select agency_id from public.profiles where email = '${email}')
-      and address_key like '% ${TEST_OPPOSITION_STREET}'
+      and address_key like '% ${TEST_OPPOSITION_STREET} %antibes'
     returning 1
   ) select count(*)::int as retirees from retirees`;
   let output: string;

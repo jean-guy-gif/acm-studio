@@ -1,6 +1,8 @@
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { dpeClass } from '@/features/dpe/services/dpe';
+import { ADVISOR_SOURCE } from '@/features/competitor-locator/services/advisor-address';
 import type {
+  AddressSource,
   ListedProperty,
   PropertyKind,
   ProspectingFileFacts,
@@ -65,6 +67,11 @@ function propertyKind(...types: (string | null)[]): PropertyKind {
   return 'unknown';
 }
 
+// Seul le conseiller écrit « vous » ; toute autre adresse vient du Localisateur.
+export function addressSource(locatorSource: string | null): AddressSource {
+  return locatorSource === ADVISOR_SOURCE ? 'advisor' : 'locator';
+}
+
 export function buildProspectingFacts(input: {
   ours: OurListingRow;
   // Notre prix : le prix de commercialisation de la conclusion, ou null.
@@ -72,6 +79,8 @@ export function buildProspectingFacts(input: {
   theirs: TheirListingRow;
   // Adresse du Localisateur, à ne passer que si elle est confirmée.
   theirAddress: string | null;
+  // `comparables.locator_source` : « vous » quand le conseiller a saisi ou confirmé l'adresse.
+  theirAddressSource: string | null;
   distanceMeters: number | null;
 }): ProspectingFileFacts {
   return {
@@ -81,6 +90,7 @@ export function buildProspectingFacts(input: {
     ours: listed(input.ours, input.ourPrice),
     theirs: listed(input.theirs, input.theirs.price),
     theirAddress: text(input.theirAddress),
+    theirAddressSource: addressSource(input.theirAddressSource),
     distanceMeters:
       input.distanceMeters != null && Number.isFinite(input.distanceMeters)
         ? input.distanceMeters

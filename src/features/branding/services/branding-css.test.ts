@@ -18,6 +18,8 @@ const EMPTY: AgencyBranding = {
   postalAddress: null,
   documentName: null,
   professionalCard: null,
+  professionalCardIssuer: null,
+  financialGuarantee: null,
   validatedAt: null,
 };
 

@@ -39,6 +39,8 @@ export function makeComparable(overrides: Partial<Comparable> = {}): Comparable 
     listing_url: null,
     locator_address: null,
     locator_analyzed_at: null,
+    locator_address_at: null,
+    locator_purged_at: null,
     locator_confirmed: null,
     locator_label: null,
     locator_label_key: null,

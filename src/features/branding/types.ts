@@ -18,6 +18,10 @@ export type AgencyBranding = {
   // dossiers de prospection ; null → la mention est omise.
   postalAddress: string | null;
   professionalCard: string | null;
+  // Mission 102 — qui a délivré la carte (CCI ou préfecture), exigé avec elle pour imprimer un
+  // courrier ; et la garantie financière, sinon « Ne peut recevoir aucun fonds ».
+  professionalCardIssuer: string | null;
+  financialGuarantee: string | null;
   // Mission 87 — le nom imprimé sur les documents ; null → le nom de l'agence.
   documentName: string | null;
   validatedAt: string | null;
