@@ -72,7 +72,14 @@ export async function login(page: Page): Promise<void> {
   await page.getByLabel('Adresse e-mail').fill(requireEnv('E2E_EMAIL'));
   await page.getByLabel('Mot de passe').fill(requireEnv('E2E_PASSWORD'));
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page, 'La connexion du compte de test a échoué').toHaveURL(/\/builder$/);
+  // Mission 100 — l'agence de test est vidée à la fin de chaque passage : un conseiller sans
+  // dossier arrive sur « Bienvenue » (M97), avec des dossiers sur ses dossiers. Les parcours
+  // partent tous de la liste des dossiers.
+  await expect(page, 'La connexion du compte de test a échoué').toHaveURL(/\/(builder|bienvenue)$/);
+  if (!/\/builder$/.test(page.url())) {
+    await page.goto('/builder');
+    await expect(page).toHaveURL(/\/builder$/);
+  }
 }
 
 // Aucun défilement horizontal : la page ne défile pas de côté, et aucun contenu ne dépasse
