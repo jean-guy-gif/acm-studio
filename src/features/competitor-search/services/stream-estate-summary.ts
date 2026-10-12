@@ -30,6 +30,10 @@ export type StreamEstateSearchNote = {
   located: boolean;
   communeName: string;
   inseeCode: string;
+  // Mission 99 — les critères de départ de la recherche (« Rayon 2 km », « 3 à 4 pièces »…) et
+  // si le conseiller en a réglé au moins un. Absents d'un résultat gardé avant la mission.
+  criteriaUsed?: string[];
+  customSettings?: boolean;
 };
 
 const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
@@ -121,16 +125,29 @@ export function describeStreamEstateSearch(
     const tier = entry.candidate.streamEstate?.tier;
     if (tier != null) byTier.set(tier, (byTier.get(tier) ?? 0) + 1);
   }
+  // Mission 99 — avec des réglages, la première recherche n'est plus « à l'identique » du bien :
+  // elle est ce que le conseiller a réglé.
+  const tierLabel = (tier: StreamEstateTier, count: number): string =>
+    tier === 1 && note.customSettings ? 'selon vos réglages' : TIER_LABELS[tier][count > 1 ? 1 : 0];
   const composition = [...byTier]
     .sort(([a], [b]) => a - b)
-    .map(([tier, count]) => `${count} ${TIER_LABELS[tier][count > 1 ? 1 : 0]}`);
+    .map(([tier, count]) => `${count} ${tierLabel(tier, count)}`);
   const headline = `${plural(proposed.length, 'concurrent', 'concurrents')}${
     composition.length > 0 ? ` : ${composition.join(', ')}` : ''
   } — ${plural(note.billed, 'annonce facturée', 'annonces facturées')} (${euroCost(note.billed)})`;
 
   const details: string[] = [];
   const widenings = widenedTimes(note.tiers.map((report) => report.tier));
-  if (widenings > 0) {
+  if (note.criteriaUsed != null && note.criteriaUsed.length > 0) {
+    // Mission 99 — le bilan dit quels critères ont servi : « Rayon 2 km · 300 000 – 380 000 € ·
+    // 3 à 4 pièces · 60 à 80 m² · élargie 1 fois ».
+    details.push(
+      [
+        ...note.criteriaUsed,
+        widenings > 0 ? `élargie ${widenings} fois` : 'sans élargissement',
+      ].join(' · '),
+    );
+  } else if (widenings > 0) {
     details.push(`La recherche a été élargie ${widenings} fois.`);
   }
   if (proposed.length < STREAM_ESTATE_TARGET) {
@@ -146,11 +163,13 @@ export function describeStreamEstateSearch(
           ? `Moins de ${STREAM_ESTATE_TARGET} : Stream Estate n’a plus répondu en cours de recherche ; voici ce qui a été trouvé avant.`
           : note.stop === 'exhausted'
             ? `Moins de ${STREAM_ESTATE_TARGET} : plus aucun bien après le dernier élargissement (${
-                lastTier === 8
-                  ? 'rayon de 10 km, prix à ±5 % hors fourchette'
-                  : lastTier === 7
-                    ? 'rayon de 10 km'
-                    : 'toute la commune'
+                note.customSettings
+                  ? 'dans les limites de vos réglages'
+                  : lastTier === 8
+                    ? 'rayon de 10 km, prix à ±5 % hors fourchette'
+                    : lastTier === 7
+                      ? 'rayon de 10 km'
+                      : 'toute la commune'
               }).`
             : `Moins de ${STREAM_ESTATE_TARGET} : ${plural(
                 STREAM_ESTATE_TARGET - proposed.length,

@@ -14,6 +14,10 @@ import {
   distanceMeters,
 } from '@/features/competitor-search/services/proximity';
 import { scoreCandidate } from '@/features/competitor-search/services/score-candidate';
+import {
+  isDefaultSettings,
+  type SearchSettings,
+} from '@/features/competitor-search/services/search-settings';
 import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { typesConflict } from '@/features/competitor-search/utils/property-type-guard';
@@ -157,19 +161,31 @@ function sameCommuneAs(
   return refCity == null || city == null || city === refCity;
 }
 
+// MISSION 99 — un critère RÉGLÉ par le conseiller se revalide contre SON réglage, à tous les
+// élargissements : un rayon réglé comprend les communes voisines (le nom de la commune ne filtre
+// plus), « Toute la commune » ne les comprend jamais ; un prix, des pièces ou une surface réglés
+// sont des bornes strictes. Un critère laissé automatique garde les bornes ci-dessus.
 function admitStreamEstate(
   criteria: CompetitorSearchCriteria,
   candidate: CompetitorCandidate,
   prices: PriceBounds,
   sameCommune: boolean,
   subjectType: string | null,
+  settings: SearchSettings | null,
 ): Admission {
   const tier = candidate.streamEstate?.tier ?? 1;
   const freed = tier >= ROOMS_FREED_TIER;
-  if (!sameCommune && tier < NEIGHBOUR_TIER) {
+  if (settings?.sector != null) {
+    if (settings.sector.kind === 'commune' && !sameCommune) return { ok: false, kind: 'out' };
+  } else if (!sameCommune && tier < NEIGHBOUR_TIER) {
     return { ok: false, kind: 'out' };
   }
-  if (prices != null) {
+  if (settings?.price != null) {
+    if (candidate.price == null || candidate.price <= 0)
+      return { ok: false, kind: 'missing', field: 'price' };
+    if (candidate.price < settings.price.min || candidate.price > settings.price.max)
+      return { ok: false, kind: 'out' };
+  } else if (prices != null) {
     if (candidate.price == null || candidate.price <= 0)
       return { ok: false, kind: 'missing', field: 'price' };
     if (
@@ -178,7 +194,11 @@ function admitStreamEstate(
     )
       return { ok: false, kind: 'out' };
   }
-  if (criteria.roomsCount != null && !freed) {
+  if (settings?.rooms != null) {
+    if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
+    if (candidate.roomsCount < settings.rooms.min || candidate.roomsCount > settings.rooms.max)
+      return { ok: false, kind: 'out' };
+  } else if (criteria.roomsCount != null && !freed) {
     if (candidate.roomsCount == null) return { ok: false, kind: 'missing', field: 'rooms' };
     const extra = candidate.roomsCount - criteria.roomsCount;
     if (extra < 0 || extra > 1) return { ok: false, kind: 'out' };
@@ -187,6 +207,7 @@ function admitStreamEstate(
   // le haut pour un appartement (jamais moins de pièces que le bien vendeur). Une carte sans
   // nombre de pièces reste acceptée.
   if (
+    settings?.rooms == null &&
     freed &&
     subjectType !== 'house' &&
     criteria.roomsCount != null &&
@@ -195,7 +216,16 @@ function admitStreamEstate(
   ) {
     return { ok: false, kind: 'out' };
   }
-  if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
+  if (settings?.surface != null) {
+    if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
+      return { ok: false, kind: 'missing', field: 'surface' };
+    // Bornes entières côté API : 80,4 m² est dans « jusqu'à 80 m² ».
+    if (
+      Math.ceil(candidate.surfaceArea) < settings.surface.min ||
+      Math.floor(candidate.surfaceArea) > settings.surface.max
+    )
+      return { ok: false, kind: 'out' };
+  } else if (criteria.surfaceArea != null && criteria.surfaceArea > 0) {
     if (candidate.surfaceArea == null || candidate.surfaceArea <= 0)
       return { ok: false, kind: 'missing', field: 'surface' };
     const ref = criteria.surfaceArea;
@@ -234,8 +264,14 @@ export function rankCandidates(
   // Étape 2 — position du bien vendeur, seulement si son adresse est géocodée précisément.
   // Mission 71 — code INSEE de la commune du bien : c'est lui qui dit « même commune » pour un
   // bien Stream Estate (le nom ne sert qu'à défaut).
-  options: { subjectLocation?: GeoPoint | null; subjectInseeCode?: string | null } = {},
+  // Mission 99 — les réglages du conseiller : ils ne touchent que les biens Stream Estate.
+  options: {
+    subjectLocation?: GeoPoint | null;
+    subjectInseeCode?: string | null;
+    settings?: SearchSettings | null;
+  } = {},
 ): RankedSearch {
+  const settings = isDefaultSettings(options.settings) ? null : (options.settings ?? null);
   const subjectLocation = options.subjectLocation ?? null;
   const subjectInseeCode = options.subjectInseeCode ?? null;
   const subjectType = normalizePropertyType(criteria.propertyType);
@@ -313,6 +349,7 @@ export function rankCandidates(
           prices,
           sameCommuneAs(entry.candidate, refCity, subjectInseeCode),
           subjectType,
+          settings,
         )
       : admit(criteria, entry.candidate, chosen, prices, refCity);
 

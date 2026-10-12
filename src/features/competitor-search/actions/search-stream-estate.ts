@@ -14,11 +14,16 @@ import {
   baseStreamEstateQuery,
   STREAM_ESTATE_ENDPOINT,
 } from '@/features/competitor-search/services/stream-estate';
+import {
+  describeSearchCriteria,
+  isDefaultSettings,
+} from '@/features/competitor-search/services/search-settings';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import {
   neighbourInseeCodes,
   planTiers,
   runTieredSearch,
+  searchDefaults,
   STREAM_ESTATE_MORE_CAP,
   type FetchStreamEstatePage,
   type TierCursor,
@@ -49,6 +54,10 @@ export type StreamEstateSearchResult =
       located: boolean;
       communeName: string;
       inseeCode: string;
+      // Mission 99 — les critères de départ de cette recherche, tels que le bilan les dit, et si
+      // le conseiller en a réglé au moins un.
+      criteriaUsed: string[];
+      customSettings: boolean;
     }
   | { ok: false; error: string };
 
@@ -113,7 +122,7 @@ export async function searchStreamEstate(
           : GENERIC_ERROR,
     };
   }
-  const { criteria } = loaded;
+  const { criteria, settings } = loaded;
 
   // 1. La commune (code INSEE, centre, département) — sans code fiable, on ne cherche pas.
   const commune = await resolveCommune(criteria.city, criteria.postalCode);
@@ -144,6 +153,15 @@ export async function searchStreamEstate(
   const geocode = await geocodeSubject(loaded.address, criteria.postalCode, commune.name);
   const subjectPoint = geocode.ok ? geocode.point : null;
   const origin = subjectPoint ?? commune.centre;
+  // Mission 99 — un rayon réglé se mesure « autour du bien » : sans adresse reconnue, pas de
+  // centre — on le dit plutôt que de mesurer depuis le centre de la commune. Aucun appel payant.
+  if (settings.sector?.kind === 'radius' && subjectPoint == null) {
+    return {
+      ok: false,
+      error:
+        'Le rayon se mesure autour du bien : son adresse n’a pas été reconnue avec certitude. Précisez-la sur la fiche (numéro et rue), ou choisissez « Toute la commune » dans les réglages. Aucune recherche lancée.',
+    };
+  }
 
   // 3. Les communes voisines, pour retirer du cercle ce qui n'est pas la commune du bien.
   const departmentCommunes =
@@ -179,7 +197,11 @@ export async function searchStreamEstate(
   };
 
   // 4. Les crans, du plus proche au plus large — ou la reprise, 20 annonces de plus.
-  const plans = planTiers(criteria, { located: subjectPoint != null, hasCentre: origin != null });
+  const plans = planTiers(
+    criteria,
+    { located: subjectPoint != null, hasCentre: origin != null },
+    settings,
+  );
   const resumeFrom = parsedResume?.data ?? null;
   if (
     resumeFrom != null &&
@@ -241,5 +263,7 @@ export async function searchStreamEstate(
     located: subjectPoint != null,
     communeName: commune.name,
     inseeCode: commune.code,
+    criteriaUsed: describeSearchCriteria(settings, searchDefaults(criteria, subjectPoint != null)),
+    customSettings: !isDefaultSettings(settings),
   };
 }

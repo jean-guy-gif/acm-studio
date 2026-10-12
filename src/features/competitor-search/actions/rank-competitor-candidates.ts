@@ -8,6 +8,7 @@ import {
 } from '@/features/competitor-search/services/learn-from-decisions';
 import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
 import {
   type CompetitorSearchCriteria,
   type PortalSearchResult,
@@ -41,7 +42,7 @@ export async function rankCompetitorCandidates(
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, search_settings')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
@@ -114,6 +115,9 @@ export async function rankCompetitorCandidates(
   const search = rankCandidates(criteria, portals ?? [], preferences, {
     subjectLocation: geocode.ok ? geocode.point : null,
     subjectInseeCode: commune.ok ? commune.code : null,
+    // Mission 99 — les réglages du dossier, relus en base : le classement revalide les biens
+    // Stream Estate contre ce que le conseiller a réglé, pas contre les bornes automatiques.
+    settings: parseSearchSettings(project.search_settings),
   });
   return { ok: true, ...search, learnedNotes: preferences.notes, sector: geocode.sector };
 }

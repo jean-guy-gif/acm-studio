@@ -17,6 +17,11 @@ import type {
   GeoPoint,
   StreamEstateTier,
 } from '@/features/competitor-search/types';
+import {
+  isDefaultSettings,
+  type SearchDefaults,
+  type SearchSettings,
+} from '@/features/competitor-search/services/search-settings';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 
@@ -151,11 +156,38 @@ export function tierSlices(criteria: CompetitorSearchCriteria): TierSlices {
 // Le plan des crans. `located` : l'adresse du bien est géocodée sûrement (règle de
 // geocode-subject) — sinon il n'y a pas de quartier : les crans 1 à 3 prennent toute la commune,
 // les crans 4 et 5 sautent, et le rayon de 10 km part du centre de la commune (`hasCentre`).
+//
+// MISSION 99 — `settings` : les réglages du conseiller. Sans réglage (null, ou tout automatique),
+// le plan est EXACTEMENT celui d'avant la mission. Un critère réglé est fixe : son élargissement
+// disparaît du plan (rayon réglé : plus de 2, 5 ni 10 km ; pièces réglées : plus de « pièce de
+// plus » ni de pièces libres ; surface réglée : plus de « plus grand » ; prix réglé : plus de
+// ±5 %), et les élargissements qui restent gardent ce critère tel que réglé. Les tranches restent
+// disjointes : rien n'est facturé deux fois. « Élargir : non » ne garde que la première recherche.
 export function planTiers(
   criteria: CompetitorSearchCriteria,
   options: { located: boolean; hasCentre: boolean },
+  settings: SearchSettings | null = null,
 ): TierPlan[] {
-  const s = tierSlices(criteria);
+  const custom = isDefaultSettings(settings) ? null : settings;
+  const fixedArea: TierArea | null =
+    custom?.sector == null
+      ? null
+      : custom.sector.kind === 'commune'
+        ? { kind: 'commune' }
+        : { kind: 'circle', radiusKm: custom.sector.km, withinCommune: false };
+  const fixedRooms: Range | null = custom?.rooms ?? null;
+  const fixedSurface: Range | null = custom?.surface ?? null;
+  const fixedPrice: Range | null = custom?.price ?? null;
+  // Un bien sans position fiable n'entre dans un cercle réglé qu'à partir de 5 km (comme
+  // l'élargissement « 5 km ») ; en dessous, seulement si son code INSEE confirme la commune.
+  const fixedAreaAcceptsUnverified =
+    fixedArea != null && (fixedArea.kind === 'commune' || fixedArea.radiusKm >= 5);
+
+  const s = tierSlices(
+    fixedPrice
+      ? { ...criteria, advisorPriceMin: fixedPrice.min, advisorPriceMax: fixedPrice.max }
+      : criteria,
+  );
   const surfaceAny: Range | null =
     s.identicalSurface && s.biggerSurface
       ? { min: s.identicalSurface.min, max: s.biggerSurface.max }
@@ -184,47 +216,51 @@ export function planTiers(
   const neighbourhood: TierArea = options.located
     ? { kind: 'circle', radiusKm: 1, withinCommune: true }
     : { kind: 'commune' };
-  const wholeCommune = !options.located;
+  const wholeCommune = fixedArea ? fixedAreaAcceptsUnverified : !options.located;
+  const nearArea = fixedArea ?? neighbourhood;
   const plans: TierPlan[] = [
     {
       tier: 1,
-      area: neighbourhood,
-      surface: s.identicalSurface,
-      rooms: sameRooms,
+      area: nearArea,
+      surface: fixedSurface ?? s.identicalSurface,
+      rooms: fixedRooms ?? sameRooms,
       prices: inRange,
       originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     },
   ];
-  if (s.biggerSurface) {
+  if (custom != null && !custom.autoWiden) {
+    return plans;
+  }
+  if (s.biggerSurface && !fixedSurface) {
     plans.push({
       tier: 2,
-      area: neighbourhood,
+      area: nearArea,
       surface: s.biggerSurface,
-      rooms: sameRooms,
+      rooms: fixedRooms ?? sameRooms,
       prices: inRange,
       originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     });
   }
-  if (plusOneRoom) {
+  if (plusOneRoom && !fixedRooms) {
     plans.push({
       tier: 3,
-      area: neighbourhood,
-      surface: surfaceAny,
+      area: nearArea,
+      surface: fixedSurface ?? surfaceAny,
       rooms: plusOneRoom,
       prices: inRange,
       originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
       acceptsUnverifiedPosition: wholeCommune,
     });
   }
-  if (options.located) {
+  if (options.located && !fixedArea) {
     plans.push(
       {
         tier: 4,
         area: { kind: 'circle', radiusKm: 2, withinCommune: true },
-        surface: surfaceAny,
-        rooms: roomsAny,
+        surface: fixedSurface ?? surfaceAny,
+        rooms: fixedRooms ?? roomsAny,
         prices: inRange,
         originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
         acceptsUnverifiedPosition: false,
@@ -232,29 +268,35 @@ export function planTiers(
       {
         tier: 5,
         area: { kind: 'circle', radiusKm: 5, withinCommune: true },
-        surface: surfaceAny,
-        rooms: roomsAny,
+        surface: fixedSurface ?? surfaceAny,
+        rooms: fixedRooms ?? roomsAny,
         prices: inRange,
         originWithinDays: ORIGIN_SEEN_WITHIN_DAYS,
         acceptsUnverifiedPosition: true,
       },
     );
   }
-  if (s.rooms != null) {
+  if (s.rooms != null && !fixedRooms) {
     // Cran 6 — même ville, pièces libres : le cercle de 5 km dans la commune (toute la commune
     // sans quartier), privé de ce que les crans 1 à 5 y ont déjà demandé (mêmes pièces ou une de
     // plus, jusqu'à +25 %).
+    // Mission 99 — surface réglée : elle ne se libère pas, la tranche « plus grand » n'existe pas.
+    const sixthSurface: OpenRange | null = fixedSurface ?? freedSurface;
     const slices: TierSlice[] = [
-      ...(bothWays && s.rooms > 1 ? [{ rooms: { max: s.rooms - 1 }, surface: freedSurface }] : []),
-      { rooms: { min: s.rooms + 2 }, surface: freedSurface },
-      ...(surfaceAny ? [{ rooms: roomsAny, surface: { min: surfaceAny.max + 1 } }] : []),
+      ...(bothWays && s.rooms > 1 ? [{ rooms: { max: s.rooms - 1 }, surface: sixthSurface }] : []),
+      { rooms: { min: s.rooms + 2 }, surface: sixthSurface },
+      ...(surfaceAny && !fixedSurface
+        ? [{ rooms: roomsAny, surface: { min: surfaceAny.max + 1 } }]
+        : []),
     ];
     plans.push({
       tier: 6,
-      area: options.located
-        ? { kind: 'circle', radiusKm: 5, withinCommune: true }
-        : { kind: 'commune' },
-      surface: freedSurface,
+      area:
+        fixedArea ??
+        (options.located
+          ? { kind: 'circle', radiusKm: 5, withinCommune: true }
+          : { kind: 'commune' }),
+      surface: sixthSurface,
       rooms: wideRooms,
       slices,
       prices: inRange,
@@ -262,22 +304,38 @@ export function planTiers(
       acceptsUnverifiedPosition: true,
     });
   }
+  if (fixedArea) {
+    // Mission 99 — secteur réglé : on ne s'éloigne pas. Reste le prix à ±5 %, dans ce secteur,
+    // s'il n'est pas réglé lui aussi.
+    if (s.outsidePrices.length > 0 && !fixedPrice) {
+      plans.push({
+        tier: 8,
+        area: fixedArea,
+        surface: fixedSurface ?? wideSurface,
+        rooms: fixedRooms ?? wideRooms,
+        prices: s.outsidePrices,
+        originWithinDays: wideOrigin,
+        acceptsUnverifiedPosition: fixedAreaAcceptsUnverified,
+      });
+    }
+    return plans;
+  }
   if (options.located || options.hasCentre) {
     plans.push({
       tier: 7,
       area: { kind: 'circle', radiusKm: 10, withinCommune: false },
-      surface: wideSurface,
-      rooms: wideRooms,
+      surface: fixedSurface ?? wideSurface,
+      rooms: fixedRooms ?? wideRooms,
       prices: inRange,
       originWithinDays: wideOrigin,
       acceptsUnverifiedPosition: true,
     });
-    if (s.outsidePrices.length > 0) {
+    if (s.outsidePrices.length > 0 && !fixedPrice) {
       plans.push({
         tier: 8,
         area: { kind: 'circle', radiusKm: 10, withinCommune: false },
-        surface: wideSurface,
-        rooms: wideRooms,
+        surface: fixedSurface ?? wideSurface,
+        rooms: fixedRooms ?? wideRooms,
         prices: s.outsidePrices,
         originWithinDays: wideOrigin,
         acceptsUnverifiedPosition: true,
@@ -285,6 +343,21 @@ export function planTiers(
     }
   }
   return plans;
+}
+
+// Mission 99 — ce que l'outil utiliserait seul, pour le bloc « Réglages de la recherche » et le
+// bilan : les bornes de la première recherche, lues dans le plan lui-même.
+export function searchDefaults(
+  criteria: CompetitorSearchCriteria,
+  located: boolean,
+): SearchDefaults {
+  const s = tierSlices(criteria);
+  return {
+    located,
+    price: s.advisorPrices,
+    rooms: s.rooms,
+    surface: s.identicalSurface,
+  };
 }
 
 // Les communes du département qui peuvent toucher un cercle de `radiusKm` autour du bien : leur

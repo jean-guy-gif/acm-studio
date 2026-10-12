@@ -9,9 +9,13 @@ import { rememberPortalPlaces } from '@/features/competitor-search/actions/remem
 import { rankCompetitorCandidates } from '@/features/competitor-search/actions/rank-competitor-candidates';
 import { recordCompetitorDecision } from '@/features/competitor-search/actions/record-competitor-decision';
 import { recordCompetitorDecisions } from '@/features/competitor-search/actions/record-competitor-decisions';
+import { saveSearchSettings } from '@/features/competitor-search/actions/save-search-settings';
 import { searchStreamEstate } from '@/features/competitor-search/actions/search-stream-estate';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
+import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
+import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
+import { searchDefaults } from '@/features/competitor-search/services/stream-estate-tiers';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import {
@@ -56,6 +60,27 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
       ? searchStreamEstate.bind(null, projectId)
       : undefined;
 
+  // Mission 99 — « Réglages de la recherche » : ce qui est enregistré sur le dossier, et les
+  // valeurs que l'outil utiliserait seul (les bornes de la première recherche). L'adresse est
+  // géocodée comme le fera la recherche (services publics gratuits, en cache un jour) pour dire
+  // si le secteur automatique part du quartier ou de toute la commune.
+  const loaded =
+    streamEstateAction != null && missing.length === 0 ? await loadSearchCriteria(projectId) : null;
+  let searchSettings: Parameters<typeof CompetitorSearchPanel>[0]['searchSettings'];
+  if (loaded?.ok) {
+    const commune = await resolveCommune(loaded.criteria.city, loaded.criteria.postalCode);
+    const geocode = await geocodeSubject(
+      loaded.address,
+      loaded.criteria.postalCode,
+      commune.ok ? commune.name : loaded.criteria.city,
+    );
+    searchSettings = {
+      saved: loaded.settings,
+      defaults: searchDefaults(loaded.criteria, geocode.ok),
+      saveAction: saveSearchSettings.bind(null, projectId),
+    };
+  }
+
   const criteriaLabel = hasCity
     ? [property?.city, property?.postal_code].filter(Boolean).join(' ')
     : '—';
@@ -82,6 +107,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           prepareOpenAction={prepareOpenAction}
           rememberPlacesAction={rememberPlacesAction}
           streamEstateAction={streamEstateAction}
+          searchSettings={searchSettings}
         />
       ) : (
         <div
