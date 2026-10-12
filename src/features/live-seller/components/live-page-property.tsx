@@ -1,5 +1,6 @@
 'use client';
 
+import { propertyTypeDisplay } from '@/features/subject-property/services/property-type-display';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
   choice,
@@ -69,7 +70,7 @@ export function LivePageProperty({
 
   // Recognition characteristics only — deliberately no price, charges or tax.
   const stats: { label: string; value: string | null }[] = [
-    { label: 'Type', value: property.propertyType },
+    { label: 'Type', value: propertyTypeDisplay(property.propertyType) },
     {
       label: 'Surface',
       value: property.surfaceArea != null ? formatSquareMeters(property.surfaceArea) : null,

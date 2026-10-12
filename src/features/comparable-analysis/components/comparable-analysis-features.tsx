@@ -10,7 +10,7 @@ export function ComparableAnalysisFeatures({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={sectionTitle}>Analyse des caractéristiques</h2>
       {featureAnalysis.features.length === 0 ? (
-        <p className={hintText}>Aucune caractéristique renseignée sur les biens retenus.</p>
+        <p className={hintText}>Aucune caractéristique renseignée sur les concurrents retenus.</p>
       ) : (
         <ul className="text-sm text-zinc-600 stage:text-white/65">
           {featureAnalysis.features.map((feature) => (

@@ -182,6 +182,7 @@ export type Database = {
           exclusivity: string | null
           exclusivity_source: string | null
           exposure: string | null
+          fields_to_verify: string[]
           general_condition: string | null
           ges_rating: string | null
           heating_type: string | null
@@ -241,6 +242,7 @@ export type Database = {
           exclusivity?: string | null
           exclusivity_source?: string | null
           exposure?: string | null
+          fields_to_verify?: string[]
           general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
@@ -300,6 +302,7 @@ export type Database = {
           exclusivity?: string | null
           exclusivity_source?: string | null
           exposure?: string | null
+          fields_to_verify?: string[]
           general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
@@ -1079,6 +1082,7 @@ export type Database = {
           agency_id: string
           created_at: string
           id: string
+          is_example: boolean
           live_ended_at: string | null
           live_rhythm: string
           live_started_at: string | null
@@ -1093,6 +1097,7 @@ export type Database = {
           agency_id: string
           created_at?: string
           id?: string
+          is_example?: boolean
           live_ended_at?: string | null
           live_rhythm?: string
           live_started_at?: string | null
@@ -1107,6 +1112,7 @@ export type Database = {
           agency_id?: string
           created_at?: string
           id?: string
+          is_example?: boolean
           live_ended_at?: string | null
           live_rhythm?: string
           live_started_at?: string | null
@@ -1194,6 +1200,7 @@ export type Database = {
           district: string | null
           energy_rating: string | null
           exposure: string | null
+          fields_to_verify: string[]
           floor: number | null
           general_condition: string | null
           ges_rating: string | null
@@ -1232,6 +1239,7 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           exposure?: string | null
+          fields_to_verify?: string[]
           floor?: number | null
           general_condition?: string | null
           ges_rating?: string | null
@@ -1270,6 +1278,7 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           exposure?: string | null
+          fields_to_verify?: string[]
           floor?: number | null
           general_condition?: string | null
           ges_rating?: string | null

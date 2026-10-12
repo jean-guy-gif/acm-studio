@@ -25,7 +25,11 @@ export async function getManagerOverview(): Promise<ManagerOverview | null> {
   const [{ data: profiles }, { data: projects }, { data: conclusions }, { data: agency }] =
     await Promise.all([
       supabase.from('profiles').select('id, first_name, last_name, role, removed_at'),
-      supabase.from('projects').select('id, advisor_id, seller_name, status, updated_at'),
+      // Mission 97 — un dossier d'exemple ne compte dans aucune mesure de l'agence.
+      supabase
+        .from('projects')
+        .select('id, advisor_id, seller_name, status, updated_at')
+        .eq('is_example', false),
       supabase
         .from('project_meeting_conclusions')
         .select('project_id, outcome, outcome_changed_at'),

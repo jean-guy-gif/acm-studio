@@ -35,6 +35,7 @@ import {
 } from '@/features/meeting-conclusion/types';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
+import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import {
   prospectingProgress,
@@ -80,8 +81,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const group = motive != null ? 'follow_up' : parseSuiviGroup(issue);
 
   const allDossiers = await getSuiviDossiers();
+  // Mission 97 — un dossier d'exemple se voit dans la liste (badge « Exemple »), mais ne compte
+  // nulle part : tuiles, écart moyen, « à relancer aujourd'hui », motifs, rapprochement acheteur.
+  const counted = withoutExamples(allDossiers);
   const [{ cards }, insights, profile, branding] = await Promise.all([
-    getAgencyProspecting(allDossiers),
+    getAgencyProspecting(counted),
     getSellerInsights(allDossiers.map((dossier) => dossier.project.id)),
     getProfile(),
     getAgencyBranding(),
@@ -115,17 +119,19 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const lastContacts = new Map(
     [...followUps].map(([projectId, followUp]) => [projectId, followUp.lastContactAt]),
   );
-  const dueLabel = dueTodayLabel([...followUps.values()].filter((followUp) => followUp.due).length);
-  const motiveCounts = followUpMotiveCounts(allDossiers);
+  const dueLabel = dueTodayLabel(
+    counted.filter((dossier) => followUps.get(dossier.project.id)?.due).length,
+  );
+  const motiveCounts = followUpMotiveCounts(counted);
 
   // Les « à relancer » du plus ancien contact au plus récent.
   const dossiers = sortSuivi(
     filterSuiviByMotive(filterSuiviByGroup(allDossiers, group), motive),
     lastContacts,
   );
-  const exclusives = exclusiveSignedCount(allDossiers);
-  const counts = suiviCounts(allDossiers);
-  const averageGap = averageJourneyGap(allDossiers);
+  const exclusives = exclusiveSignedCount(counted);
+  const counts = suiviCounts(counted);
+  const averageGap = averageJourneyGap(counted);
 
   // Mission 98 — le statut est celui de la carte (commun à toutes les copies d'un même bien) ;
   // une adresse « Ne plus solliciter » n'est plus à prospecter.
@@ -207,7 +213,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
           </div>
 
           <BuyerSearchPanel
-            dossiers={allDossiers}
+            dossiers={counted}
             entries={cards
               .filter((card) => card.row.opposedOn == null)
               .map(({ row, seller }) => ({ row, seller }))}
@@ -266,7 +272,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                     dossier={dossier}
                     followUp={followUps.get(dossier.project.id)!}
                     prospecting={
-                      dossier.conclusion?.outcome === 'signed'
+                      dossier.conclusion?.outcome === 'signed' && !dossier.project.is_example
                         ? { count: statuses.length, progress: prospectingProgress(statuses) }
                         : null
                     }

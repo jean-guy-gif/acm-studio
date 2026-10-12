@@ -1,6 +1,7 @@
 'use client';
 
 import { checkChip, errorText, fieldLabel, inputBase } from '@/components/ui/styles';
+import { VerifyMark } from '@/features/imported-fields/components/verify-fields';
 
 // Small shared presentational input primitives for the seller-property form.
 // Errors are rendered near their field.
@@ -19,17 +20,23 @@ export function TextField({
   value,
   onChange,
   error,
+  field,
   id,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
   id?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className={fieldLabel}>{label}</span>
+      <span className={fieldLabel}>
+        {label}
+        <VerifyMark field={field} />
+      </span>
       <input
         id={id}
         type="text"
@@ -47,6 +54,7 @@ export function NumberField({
   value,
   onChange,
   error,
+  field,
   step = 'any',
   min,
   suffix,
@@ -55,13 +63,18 @@ export function NumberField({
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
   step?: string | number;
   min?: number;
   suffix?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className={fieldLabel}>{label}</span>
+      <span className={fieldLabel}>
+        {label}
+        <VerifyMark field={field} />
+      </span>
       <span className="flex items-center gap-2">
         <input
           type="number"
@@ -85,15 +98,21 @@ export function DateField({
   value,
   onChange,
   error,
+  field,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className={fieldLabel}>{label}</span>
+      <span className={fieldLabel}>
+        {label}
+        <VerifyMark field={field} />
+      </span>
       <input
         type="date"
         value={value}
@@ -110,17 +129,23 @@ export function TextareaField({
   value,
   onChange,
   error,
+  field,
   maxLength,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
   maxLength?: number;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className={fieldLabel}>{label}</span>
+      <span className={fieldLabel}>
+        {label}
+        <VerifyMark field={field} />
+      </span>
       <textarea
         rows={3}
         value={value}
@@ -139,6 +164,7 @@ export function SelectField({
   onChange,
   options,
   error,
+  field,
   id,
 }: {
   label: string;
@@ -146,11 +172,16 @@ export function SelectField({
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
   id?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className={fieldLabel}>{label}</span>
+      <span className={fieldLabel}>
+        {label}
+        <VerifyMark field={field} />
+      </span>
       <select
         id={id}
         value={value}
@@ -175,19 +206,25 @@ export function MultiCheckField({
   onChange,
   options,
   error,
+  field,
 }: {
   label: string;
   values: string[];
   onChange: (values: string[]) => void;
   options: { value: string; label: string }[];
   error?: string;
+  // Mission 97 — le nom du champ : il porte la pastille « À vérifier » après un import.
+  field?: string;
 }) {
   const toggle = (value: string) => {
     onChange(values.includes(value) ? values.filter((v) => v !== value) : [...values, value]);
   };
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className={`${fieldLabel} mb-1.5`}>{label}</legend>
+      <legend className={`${fieldLabel} mb-1.5`}>
+        {label}
+        <VerifyMark field={field} />
+      </legend>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <label key={option.value} className={checkChip}>

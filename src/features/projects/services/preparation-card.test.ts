@@ -55,7 +55,7 @@ describe('preparation-card — aucune valeur inventée (§1 / §5)', () => {
     expect(steps).toEqual([
       { label: 'Bien vendeur', done: true },
       { label: '2/3 concurrents', done: false },
-      { label: 'Fourchette', done: false },
+      { label: 'Décision de prix', done: false },
     ]);
 
     const ready = advancementSteps({

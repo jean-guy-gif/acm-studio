@@ -1,3 +1,4 @@
+import { ExampleBadge } from '@/features/welcome/components/example-badge';
 import Link from 'next/link';
 
 import {
@@ -39,7 +40,7 @@ export default async function LivePage() {
           </p>
           <p>
             Un dossier apparaît ici dès qu&apos;il est prêt : bien vendeur, au moins trois
-            concurrents exploitables et fourchette validée. Terminez-en un dans la{' '}
+            concurrents exploitables et décision de prix enregistrée. Terminez-en un dans la{' '}
             <Link href="/builder" className={link}>
               Préparation
             </Link>
@@ -59,6 +60,7 @@ export default async function LivePage() {
                     {project.seller_name}
                   </span>
                   <span className={badgeNeutral}>{statusLabel(project.status)}</span>
+                  {project.is_example ? <ExampleBadge /> : null}
                 </div>
                 <span className="text-xs text-zinc-400 stage:text-white/40">
                   Dossier créé le {new Date(project.created_at).toLocaleDateString('fr-FR')}

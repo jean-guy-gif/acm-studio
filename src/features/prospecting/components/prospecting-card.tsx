@@ -1,3 +1,4 @@
+import { competitorFacts } from '@/features/prospecting/services/competitor-facts';
 import Link from 'next/link';
 
 import { badgeBrand, badgeNeutral, badgeRejected, badgeSelected } from '@/components/ui/styles';
@@ -10,8 +11,7 @@ import { ProspectingStatusActions } from '@/features/prospecting/components/pros
 import { cardCopy } from '@/features/prospecting/services/group-prospecting';
 import { OPPOSED_MESSAGE, oppositionBadge } from '@/features/prospecting/services/opposition';
 import { followUpDate, shortDate } from '@/features/prospecting/services/prospecting-status';
-import type { ProspectingCard as Card, ProspectingEntry } from '@/features/prospecting/types';
-import { formatEuro, formatSquareMeters } from '@/lib/format';
+import type { ProspectingCard as Card } from '@/features/prospecting/types';
 
 // Mission 86 — à qui s'adresser (M83), en badge court sur la carte.
 export const STEP_BADGES: Record<ProspectingStep, { label: string; className: string }> = {
@@ -20,17 +20,7 @@ export const STEP_BADGES: Record<ProspectingStep, { label: string; className: st
   check: { label: 'À vérifier', className: badgeNeutral },
 };
 
-// « Appartement · 3 p · 62 m² · 339 000 € · SeLoger » — chaque morceau tient sur sa ligne :
-// un prix ne se coupe jamais.
-export function competitorFacts(row: ProspectingEntry['row']): string[] {
-  return [
-    row.propertyType,
-    row.roomsCount != null ? `${row.roomsCount} p` : null,
-    row.surfaceArea != null ? formatSquareMeters(row.surfaceArea) : null,
-    row.price != null ? formatEuro(row.price) : null,
-    row.portal,
-  ].filter((fact): fact is string => fact != null && fact !== '');
-}
+export { competitorFacts };
 
 // Mission 86 — une carte de la page Prospection : l'adresse, à qui s'adresser, le concurrent,
 // le geste du moment, et TOUJOURS le bien vendeur pour lequel on prospecte. Écran conseiller,

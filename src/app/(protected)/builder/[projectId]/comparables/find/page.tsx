@@ -51,7 +51,10 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   // Essai Stream Estate : seulement si la clé est définie côté serveur. On transmet une action
   // liée, jamais la clé.
   const streamEstateAction =
-    streamEstateApiKey() != null ? searchStreamEstate.bind(null, projectId) : undefined;
+    // Mission 97 — jamais sur un dossier d'exemple : rien n'est facturé pour une démonstration.
+    streamEstateApiKey() != null && !project.is_example
+      ? searchStreamEstate.bind(null, projectId)
+      : undefined;
 
   const criteriaLabel = hasCity
     ? [property?.city, property?.postal_code].filter(Boolean).join(' ')

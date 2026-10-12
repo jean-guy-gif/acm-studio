@@ -8,6 +8,7 @@ import type {
   ProspectingEntry,
   ProspectingSeller,
 } from '@/features/prospecting/types';
+import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { propertyLabel } from '@/features/projects/services/property-label';
 
 export type AgencyProspecting = {
@@ -24,7 +25,10 @@ export type AgencyProspecting = {
 // l'agence. Aucun calcul en double : chaque mandat passe par getProspectingRows (M75), cadré sur
 // l'agence de l'appelant. Le Suivi est déjà chargé par la page : on le reçoit, on ne le relit pas.
 export async function getAgencyProspecting(dossiers: SuiviDossier[]): Promise<AgencyProspecting> {
-  const signed = dossiers.filter((dossier) => dossier.conclusion?.outcome === 'signed');
+  // Mission 97 — un dossier d'exemple n'a rien à prospecter : ses concurrents sont fictifs.
+  const signed = withoutExamples(dossiers).filter(
+    (dossier) => dossier.conclusion?.outcome === 'signed',
+  );
   const sellers: ProspectingSeller[] = signed.map((dossier) => ({
     projectId: dossier.project.id,
     name: dossier.project.seller_name ?? 'Dossier vendeur',

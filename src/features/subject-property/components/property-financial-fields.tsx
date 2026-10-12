@@ -27,6 +27,7 @@ export function PropertyFinancialFields({
           min={0}
           suffix="€/mois"
           onChange={(value) => onField('monthly_charges', value)}
+          field="monthly_charges"
           error={errors.monthly_charges}
         />
         <NumberField
@@ -35,6 +36,7 @@ export function PropertyFinancialFields({
           min={0}
           suffix="€/an"
           onChange={(value) => onField('property_tax', value)}
+          field="property_tax"
           error={errors.property_tax}
         />
       </div>

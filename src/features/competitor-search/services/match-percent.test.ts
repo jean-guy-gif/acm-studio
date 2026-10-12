@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
 import {
+  MATCH_SUMMARY_LINE,
   gapLine,
+  matchDetail,
   matchPercent,
   type MatchPlace,
 } from '@/features/competitor-search/services/match-percent';
@@ -138,7 +140,7 @@ describe('gapLine', () => {
       features: { ...FEATURES, location: SUBJECT },
     });
     expect(gapLine(CRITERIA, wider, place(1600))).toBe(
-      'Même ville, à 1,6 km · Plus grand : 78,4\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
+      'Même ville, à 1,6 km · Plus grand : 78\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
     );
   });
 
@@ -381,5 +383,115 @@ describe('mission 78 : pièces libres', () => {
       house('c', 7, { price: 695000, surfaceArea: 195 }),
     ]);
     expect(search.ranked.map((entry) => entry.candidate.key).sort()).toEqual(['a', 'c']);
+  });
+});
+
+// Mission 97 — le détail du % se lit sur le calcul existant (M71, M80), sans le changer.
+describe('matchDetail — ce qui a pesé dans le %', () => {
+  const plain = (text: string): string => text.replace(/[\u00a0\u202f]/g, ' ');
+  const percentOf = (lines: { earned: number; possible: number }[]): number =>
+    Math.round(
+      (lines.reduce((sum, line) => sum + line.earned, 0) /
+        lines.reduce((sum, line) => sum + line.possible, 0)) *
+        100,
+    );
+
+  it('reprend le calcul : la somme des lignes redonne le même pourcentage', () => {
+    const cases: [CompetitorCandidate, ProximityReason[], MatchPlace][] = [
+      [candidate(), [], place(300)],
+      [candidate({ surfaceArea: 78, price: 465000, roomsCount: 5 }), [], place(1600)],
+      [candidate({ surfaceArea: null, price: 380000 }), [known('parking', 1)], place(null, true)],
+      [
+        candidate({ roomsCount: null }),
+        [known('parking', 0), known('outdoor', 2), known('pool', 0)],
+        place(null, false),
+      ],
+    ];
+    for (const [competitor, reasons, where] of cases) {
+      const detail = matchDetail(CRITERIA, competitor, reasons, where);
+      expect(percentOf(detail)).toBe(matchPercent(CRITERIA, competitor, reasons, where));
+    }
+  });
+
+  it('dit chaque critère compté, avec ses valeurs', () => {
+    const detail = matchDetail(
+      CRITERIA,
+      candidate({ surfaceArea: 68.4, price: 465000 }),
+      [],
+      place(1600),
+    );
+    expect(detail.map((line) => `${line.label} : ${plain(line.text)} ${line.verdict}`)).toEqual([
+      'Secteur : à 1,6 km partial',
+      'Surface : 68 m² pour 70 m² full',
+      'Prix : hors fourchette (+3 %) partial',
+      'Pièces : 4 pièces pour 4 pièces full',
+    ]);
+  });
+
+  it('un prix loin de la fourchette ne gagne aucun point : ✗', () => {
+    const detail = matchDetail(CRITERIA, candidate({ price: 520000 }), [], place(300));
+    expect(detail.find((line) => line.label === 'Prix')).toMatchObject({
+      verdict: 'none',
+      earned: 0,
+    });
+  });
+
+  it('un critère inconnu sort du calcul, donc du détail', () => {
+    const detail = matchDetail(
+      CRITERIA,
+      candidate({ surfaceArea: null, roomsCount: null }),
+      [{ ...known('parking', 1), known: false }],
+      place(300),
+    );
+    expect(detail.map((line) => line.label)).toEqual(['Secteur', 'Prix']);
+  });
+
+  it('les équipements reprennent le verdict de l’ordre (proximity)', () => {
+    const detail = matchDetail(
+      CRITERIA,
+      candidate(),
+      [
+        { ...known('parking', 1), label: 'garage des deux côtés' },
+        { ...known('elevator', 0), label: 'pas d’ascenseur' },
+      ],
+      place(300),
+    );
+    expect(detail.slice(-2)).toEqual([
+      {
+        label: 'Stationnement',
+        text: 'garage des deux côtés',
+        verdict: 'full',
+        earned: 5,
+        possible: 5,
+      },
+      { label: 'Ascenseur', text: 'pas d’ascenseur', verdict: 'none', earned: 0, possible: 2 },
+    ]);
+  });
+
+  it('la ligne d’explication nomme ce que le % compare', () => {
+    expect(MATCH_SUMMARY_LINE).toBe(
+      'Ressemblance avec votre bien : secteur, surface, prix, pièces et équipements',
+    );
+  });
+
+  it('chaque candidat classé porte son détail', () => {
+    const search = rankCandidates(
+      CRITERIA,
+      [
+        {
+          portal: 'seloger',
+          label: 'SeLoger',
+          searchUrl: '',
+          status: 'ok',
+          message: null,
+          candidates: [candidate()],
+        },
+      ],
+      learnFromDecisions([]),
+    );
+    for (const entry of search.ranked) {
+      expect(entry.matchDetail.length).toBeGreaterThan(0);
+      expect(percentOf(entry.matchDetail)).toBe(entry.matchPercent);
+    }
   });
 });

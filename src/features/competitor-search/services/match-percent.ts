@@ -107,24 +107,122 @@ function fromProximity(reasons: ProximityReason[]): Facet[] {
     });
 }
 
+// Mission 97 — ce qui a pesé dans le % : une ligne par critère, tirée des MÊMES facettes que le
+// pourcentage. Le calcul ne change pas ; il se lit. « Surface : 68 m² pour 72 m² ✓ ».
+export type MatchDetailLine = {
+  label: string;
+  text: string;
+  // ✓ tous les points du critère, ~ une partie, ✗ aucun.
+  verdict: 'full' | 'partial' | 'none';
+  earned: number;
+  possible: number;
+};
+
+export const MATCH_SUMMARY_LINE =
+  'Ressemblance avec votre bien : secteur, surface, prix, pièces et équipements';
+
+const PROXIMITY_LABELS: Record<string, string> = {
+  parking: 'Stationnement',
+  outdoor: 'Extérieur',
+  condition: 'État',
+  floor: 'Étage',
+  elevator: 'Ascenseur',
+  year: 'Année de construction',
+  pool: 'Piscine',
+  exposure: 'Exposition',
+};
+
+type LabeledFacet = Facet & { label: string; text: string };
+
+const pieces = (count: number): string => `${count} pièce${count > 1 ? 's' : ''}`;
+
+function labeledFacets(
+  criteria: CompetitorSearchCriteria,
+  candidate: CompetitorCandidate,
+  reasons: ProximityReason[],
+  place: MatchPlace,
+): LabeledFacet[] {
+  const d = place.distanceMeters;
+  const priceGap = priceOutsideRange(criteria, candidate.price);
+  const facets: LabeledFacet[] = [
+    {
+      ...sector(place),
+      label: 'Secteur',
+      text:
+        d != null
+          ? `à ${d < 1000 ? `${fr(Math.round(d / 10) * 10)} m` : km(d)}`
+          : place.sameCommune
+            ? 'même commune'
+            : 'autre commune',
+    },
+    {
+      ...surface(criteria, candidate),
+      label: 'Surface',
+      text: `${formatSquareMeters(candidate.surfaceArea ?? 0)} pour ${formatSquareMeters(criteria.surfaceArea ?? 0)}`,
+    },
+    {
+      ...price(criteria, candidate),
+      label: 'Prix',
+      text:
+        priceGap === 0
+          ? 'dans votre fourchette'
+          : `hors fourchette (${formatPercent((priceGap ?? 0) * 100, { maxDecimals: 0, signed: true })})`,
+    },
+    {
+      ...rooms(criteria, candidate),
+      label: 'Pièces',
+      text: `${pieces(candidate.roomsCount ?? 0)} pour ${pieces(criteria.roomsCount ?? 0)}`,
+    },
+    {
+      ...energy(criteria, candidate),
+      label: 'DPE',
+      text: `${dpeClass(candidate.energyClass) ?? ''} pour ${dpeClass(criteria.energyClass) ?? ''}`,
+    },
+  ];
+  const known = reasons.filter(
+    (reason) => reason.known && FROM_PROXIMITY[reason.criterion] != null,
+  );
+  fromProximity(reasons).forEach((facet, index) => {
+    const reason = known[index];
+    facets.push({
+      ...facet,
+      label: PROXIMITY_LABELS[reason.criterion] ?? reason.criterion,
+      text: reason.label,
+    });
+  });
+  return facets;
+}
+
 export function matchPercent(
   criteria: CompetitorSearchCriteria,
   candidate: CompetitorCandidate,
   reasons: ProximityReason[],
   place: MatchPlace,
 ): number | null {
-  const facets = [
-    sector(place),
-    surface(criteria, candidate),
-    price(criteria, candidate),
-    rooms(criteria, candidate),
-    energy(criteria, candidate),
-    ...fromProximity(reasons),
-  ];
+  const facets = labeledFacets(criteria, candidate, reasons, place);
   const possible = facets.reduce((total, facet) => total + facet.possible, 0);
   if (possible === 0) return null;
   const earned = facets.reduce((total, facet) => total + facet.earned, 0);
   return Math.round((earned / possible) * 100);
+}
+
+// Le détail du % : seuls les critères qui ont compté (un critère inconnu sort du calcul, donc
+// du détail), dans l'ordre du barème.
+export function matchDetail(
+  criteria: CompetitorSearchCriteria,
+  candidate: CompetitorCandidate,
+  reasons: ProximityReason[],
+  place: MatchPlace,
+): MatchDetailLine[] {
+  return labeledFacets(criteria, candidate, reasons, place)
+    .filter((facet) => facet.possible > 0)
+    .map((facet) => ({
+      label: facet.label,
+      text: facet.text,
+      verdict: facet.earned >= facet.possible ? 'full' : facet.earned > 0 ? 'partial' : 'none',
+      earned: facet.earned,
+      possible: facet.possible,
+    }));
 }
 
 const fr = (value: number, digits = 0): string => formatNumber(value, { maxDecimals: digits });
@@ -161,7 +259,7 @@ export function gapLine(
   const value = candidate.surfaceArea;
   if (ref != null && ref > 0 && value != null && value > ref + identicalSurfaceTolerance(ref)) {
     parts.push(
-      `Plus grand : ${formatSquareMeters(value, { maxDecimals: 1 })} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
+      `Plus grand : ${formatSquareMeters(value)} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
     );
   }
   if (criteria.roomsCount != null) {

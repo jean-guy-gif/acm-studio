@@ -3,6 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import {
+  COMPETITOR_VERIFIABLE_FIELDS,
+  sanitizeFieldsToVerify,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { parseComparableForm } from '@/features/comparables/utils/comparable-input';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -32,7 +36,14 @@ export async function updateComparable(
 
   const { error } = await supabase
     .from('comparables')
-    .update(parsed.input)
+    // Mission 97 — ce qu'il reste à vérifier repart avec la fiche, revalidé ici.
+    .update({
+      ...parsed.input,
+      fields_to_verify: sanitizeFieldsToVerify(
+        formData.get('fields_to_verify'),
+        COMPETITOR_VERIFIABLE_FIELDS,
+      ),
+    })
     .eq('id', comparableId)
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id);

@@ -1,4 +1,10 @@
 import { checkChip, errorText, hintText, inputBase } from '@/components/ui/styles';
+import { VerifyMark, VerifyScope } from '@/features/imported-fields/components/verify-fields';
+import {
+  COMPETITOR_VERIFIABLE_FIELDS,
+  importedFields,
+  sanitizeFieldsToVerify,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { PhotoUrlsField } from '@/features/comparables/components/photo-urls-field';
 import type { Comparable } from '@/features/comparables/types';
 import {
@@ -147,8 +153,17 @@ export function ComparableFormFields({
     </div>
   );
 
+  // Mission 97 — ce qui vient d'un import se vérifie : les champs encore à relire (ceux de la
+  // base pour un concurrent existant, ceux que l'import vient de remplir pour un nouveau).
+  const fieldsToVerify =
+    values?.fields_to_verify != null
+      ? sanitizeFieldsToVerify(values.fields_to_verify, COMPETITOR_VERIFIABLE_FIELDS)
+      : comparable
+        ? sanitizeFieldsToVerify(comparable.fields_to_verify, COMPETITOR_VERIFIABLE_FIELDS)
+        : importedFields(initial, COMPETITOR_VERIFIABLE_FIELDS);
+
   return (
-    <>
+    <VerifyScope key={fieldsToVerify.join(',')} initialFields={fieldsToVerify}>
       <div className={labelWide}>
         <span>Photos</span>
         <PhotoUrlsField
@@ -159,7 +174,10 @@ export function ComparableFormFields({
         />
       </div>
       <label className={labelWide}>
-        Titre ou référence
+        <span>
+          Titre ou référence
+          <VerifyMark field="title" />
+        </span>
         <input
           type="text"
           name="title"
@@ -168,7 +186,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelWide}>
-        Lien de l’annonce
+        <span>
+          Lien de l’annonce
+          <VerifyMark field="listing_url" />
+        </span>
         <input
           type="url"
           name="listing_url"
@@ -177,7 +198,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Source
+        <span>
+          Source
+          <VerifyMark field="source" />
+        </span>
         <input
           type="text"
           name="source"
@@ -186,7 +210,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelWide}>
-        Adresse
+        <span>
+          Adresse
+          <VerifyMark field="address" />
+        </span>
         <input
           type="text"
           name="address"
@@ -195,7 +222,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Code postal
+        <span>
+          Code postal
+          <VerifyMark field="postal_code" />
+        </span>
         <input
           type="text"
           name="postal_code"
@@ -204,7 +234,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Ville
+        <span>
+          Ville
+          <VerifyMark field="city" />
+        </span>
         <input
           type="text"
           name="city"
@@ -213,7 +246,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Quartier
+        <span>
+          Quartier
+          <VerifyMark field="district" />
+        </span>
         <input
           type="text"
           name="district"
@@ -222,7 +258,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Surface
+        <span>
+          Surface
+          <VerifyMark field="surface_area" />
+        </span>
         <input
           type="number"
           name="surface_area"
@@ -234,7 +273,10 @@ export function ComparableFormFields({
         {fieldError('surface_area')}
       </label>
       <label className={labelClass}>
-        Terrain
+        <span>
+          Terrain
+          <VerifyMark field="land_area" />
+        </span>
         <input
           type="number"
           name="land_area"
@@ -246,7 +288,10 @@ export function ComparableFormFields({
         {fieldError('land_area')}
       </label>
       <label className={labelClass}>
-        Nombre de pièces
+        <span>
+          Nombre de pièces
+          <VerifyMark field="rooms_count" />
+        </span>
         <input
           type="number"
           name="rooms_count"
@@ -258,7 +303,10 @@ export function ComparableFormFields({
         {fieldError('rooms_count')}
       </label>
       <label className={labelClass}>
-        Chambres
+        <span>
+          Chambres
+          <VerifyMark field="bedrooms_count" />
+        </span>
         <input
           type="number"
           name="bedrooms_count"
@@ -270,7 +318,10 @@ export function ComparableFormFields({
         {fieldError('bedrooms_count')}
       </label>
       <label className={labelClass}>
-        Salles de bains
+        <span>
+          Salles de bains
+          <VerifyMark field="bathrooms_count" />
+        </span>
         <input
           type="number"
           name="bathrooms_count"
@@ -285,7 +336,10 @@ export function ComparableFormFields({
         {fieldError('bathrooms_count')}
       </label>
       <label className={labelClass}>
-        Classe DPE
+        <span>
+          Classe DPE
+          <VerifyMark field="energy_rating" />
+        </span>
         <input
           type="text"
           name="energy_rating"
@@ -294,7 +348,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Classe GES
+        <span>
+          Classe GES
+          <VerifyMark field="ges_rating" />
+        </span>
         <input
           type="text"
           name="ges_rating"
@@ -303,7 +360,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        État général
+        <span>
+          État général
+          <VerifyMark field="general_condition" />
+        </span>
         <select
           name="general_condition"
           defaultValue={dv(
@@ -322,7 +382,10 @@ export function ComparableFormFields({
         {fieldError('general_condition')}
       </label>
       <label className={labelClass}>
-        Exposition
+        <span>
+          Exposition
+          <VerifyMark field="exposure" />
+        </span>
         <select
           name="exposure"
           defaultValue={dv('exposure', comparable?.exposure ?? initial?.exposure)}
@@ -366,7 +429,10 @@ export function ComparableFormFields({
         {fieldError('parking_types')}
       </fieldset>
       <label className={labelClass}>
-        Année de construction
+        <span>
+          Année de construction
+          <VerifyMark field="construction_year" />
+        </span>
         <input
           type="number"
           name="construction_year"
@@ -381,7 +447,10 @@ export function ComparableFormFields({
         {fieldError('construction_year')}
       </label>
       <label className={labelClass}>
-        Chauffage
+        <span>
+          Chauffage
+          <VerifyMark field="heating_type" />
+        </span>
         <input
           type="text"
           name="heating_type"
@@ -390,7 +459,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Source d’énergie
+        <span>
+          Source d’énergie
+          <VerifyMark field="energy_source" />
+        </span>
         <input
           type="text"
           name="energy_source"
@@ -399,7 +471,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelClass}>
-        Prix
+        <span>
+          Prix
+          <VerifyMark field="price" />
+        </span>
         <input
           type="number"
           name="price"
@@ -412,7 +487,10 @@ export function ComparableFormFields({
         {fieldError('price')}
       </label>
       <label className={labelClass}>
-        Prix au m² (portail)
+        <span>
+          Prix au m² (portail)
+          <VerifyMark field="portal_price_per_square_meter" />
+        </span>
         <input
           type="number"
           name="portal_price_per_square_meter"
@@ -427,7 +505,10 @@ export function ComparableFormFields({
         {fieldError('portal_price_per_square_meter')}
       </label>
       <label className={labelClass}>
-        Délai de commercialisation (jours)
+        <span>
+          Délai de commercialisation (jours)
+          <VerifyMark field="days_on_market" />
+        </span>
         <input
           type="number"
           name="days_on_market"
@@ -456,7 +537,10 @@ export function ComparableFormFields({
         {fieldError('days_on_market')}
       </label>
       <label className={labelClass}>
-        Montant de baisse
+        <span>
+          Montant de baisse
+          <VerifyMark field="price_drop_amount" />
+        </span>
         <input
           type="number"
           name="price_drop_amount"
@@ -468,7 +552,10 @@ export function ComparableFormFields({
         {fieldError('price_drop_amount')}
       </label>
       <label className={labelClass}>
-        Pourcentage de baisse
+        <span>
+          Pourcentage de baisse
+          <VerifyMark field="price_drop_percentage" />
+        </span>
         <input
           type="number"
           name="price_drop_percentage"
@@ -480,7 +567,10 @@ export function ComparableFormFields({
         {fieldError('price_drop_percentage')}
       </label>
       <label className={labelWide}>
-        Description de l’annonce
+        <span>
+          Description de l’annonce
+          <VerifyMark field="listing_description" />
+        </span>
         <textarea
           name="listing_description"
           rows={5}
@@ -492,7 +582,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelWide}>
-        Caractéristiques (une par ligne)
+        <span>
+          Caractéristiques (une par ligne)
+          <VerifyMark field="listing_features" />
+        </span>
         <textarea
           name="listing_features"
           rows={5}
@@ -501,7 +594,10 @@ export function ComparableFormFields({
         />
       </label>
       <label className={labelWide}>
-        Notes conseiller
+        <span>
+          Notes conseiller
+          <VerifyMark field="advisor_notes" />
+        </span>
         <textarea
           name="advisor_notes"
           rows={3}
@@ -509,6 +605,6 @@ export function ComparableFormFields({
           className={inputClass}
         />
       </label>
-    </>
+    </VerifyScope>
   );
 }

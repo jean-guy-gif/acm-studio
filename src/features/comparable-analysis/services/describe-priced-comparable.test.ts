@@ -16,20 +16,20 @@ const BASE = {
 describe('describePricedComparable', () => {
   it('décrit le bien par ses champs : pièces, surface, quartier, prix, prix au m²', () => {
     expect(plain(describePricedComparable(BASE))).toBe(
-      '3 pièces · 64,7 m² · Les Vespins — 306 600 € (4 739 €/m²)',
+      '3 pièces · 65 m² · Les Vespins — 306 600 € (4 739 €/m²)',
     );
   });
 
   it('retombe sur la commune sans quartier', () => {
     expect(plain(describePricedComparable({ ...BASE, district: '  ' }))).toBe(
-      '3 pièces · 64,7 m² · Saint-Laurent-du-Var — 306 600 € (4 739 €/m²)',
+      '3 pièces · 65 m² · Saint-Laurent-du-Var — 306 600 € (4 739 €/m²)',
     );
   });
 
   it('omet un champ absent, sans tiret ni titre d’annonce', () => {
     expect(
       plain(describePricedComparable({ ...BASE, roomsCount: null, district: null, city: null })),
-    ).toBe('64,7 m² — 306 600 € (4 739 €/m²)');
+    ).toBe('65 m² — 306 600 € (4 739 €/m²)');
     expect(plain(describePricedComparable({ ...BASE, roomsCount: 1 }))).toContain('1 pièce ·');
   });
 });

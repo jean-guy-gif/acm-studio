@@ -43,6 +43,18 @@ const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
   8: ['prix hors fourchette (±5 %)', 'prix hors fourchette (±5 %)'],
 };
 
+// Mission 97 — un seul mot : « élargissement ». La première recherche est « à l'identique » ;
+// chaque étape suivante l'élargit une fois de plus.
+export function widenedTimes(tiers: readonly StreamEstateTier[]): number {
+  return new Set(tiers.filter((tier) => tier > 1)).size;
+}
+
+function resumePoint(tier: StreamEstateTier): string {
+  return tier === 1
+    ? 'la recherche à l’identique'
+    : `à l’élargissement « ${TIER_LABELS[tier][0]} »`;
+}
+
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
@@ -112,24 +124,28 @@ export function describeStreamEstateSearch(
   const composition = [...byTier]
     .sort(([a], [b]) => a - b)
     .map(([tier, count]) => `${count} ${TIER_LABELS[tier][count > 1 ? 1 : 0]}`);
-  const headline = `${plural(proposed.length, 'comparable', 'comparables')}${
+  const headline = `${plural(proposed.length, 'concurrent', 'concurrents')}${
     composition.length > 0 ? ` : ${composition.join(', ')}` : ''
   } — ${plural(note.billed, 'annonce facturée', 'annonces facturées')} (${euroCost(note.billed)})`;
 
   const details: string[] = [];
+  const widenings = widenedTimes(note.tiers.map((report) => report.tier));
+  if (widenings > 0) {
+    details.push(`La recherche a été élargie ${widenings} fois.`);
+  }
   if (proposed.length < STREAM_ESTATE_TARGET) {
     const lastTier = note.tiers.at(-1)?.tier;
     details.push(
       note.stop === 'cap'
         ? `Moins de ${STREAM_ESTATE_TARGET} : plafond atteint, la recherche s’arrête là${
             note.cursor
-              ? ` — « Chercher encore » reprend au cran ${note.cursor.tier}, page suivante.`
+              ? ` — « Chercher encore » reprend ${resumePoint(note.cursor.tier)}, page suivante.`
               : '.'
           }`
         : note.stop === 'error'
           ? `Moins de ${STREAM_ESTATE_TARGET} : Stream Estate n’a plus répondu en cours de recherche ; voici ce qui a été trouvé avant.`
           : note.stop === 'exhausted'
-            ? `Moins de ${STREAM_ESTATE_TARGET} : plus aucun bien après le dernier cran (${
+            ? `Moins de ${STREAM_ESTATE_TARGET} : plus aucun bien après le dernier élargissement (${
                 lastTier === 8
                   ? 'rayon de 10 km, prix à ±5 % hors fourchette'
                   : lastTier === 7
@@ -145,7 +161,7 @@ export function describeStreamEstateSearch(
   }
   if (!note.located) {
     details.push(
-      'Adresse du bien non localisée avec certitude : pas de quartier. Les premiers crans cherchent dans toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
+      'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
     );
   }
   const fallback = [
@@ -153,19 +169,19 @@ export function describeStreamEstateSearch(
   ];
   if (fallback.length > 0) {
     details.push(
-      `${fallback.length > 1 ? 'Crans' : 'Cran'} ${fallback.join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,
+      `Pour ${fallback.map((tier) => `« ${TIER_LABELS[tier][0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,
     );
   }
   const { counts } = note;
   const excluded = [
     counts.otherCommune > 0
-      ? `${plural(counts.otherCommune, 'bien', 'biens')} hors de ${note.communeName} à un cran « même ville »`
+      ? `${plural(counts.otherCommune, 'bien', 'biens')} hors de ${note.communeName} à un élargissement « même ville »`
       : null,
     counts.unverifiedPosition > 0
-      ? `${plural(counts.unverifiedPosition, 'bien', 'biens')} sans position fiable aux crans de quartier`
+      ? `${plural(counts.unverifiedPosition, 'bien', 'biens')} sans position fiable aux élargissements de quartier`
       : null,
     counts.expiredOrigin > 0
-      ? `${plural(counts.expiredOrigin, 'annonce d’origine expirée', 'annonces d’origine expirées')} ou plus revue${counts.expiredOrigin > 1 ? 's' : ''} depuis 7 jours (21 aux crans à pièces libres)`
+      ? `${plural(counts.expiredOrigin, 'annonce d’origine expirée', 'annonces d’origine expirées')} ou plus revue${counts.expiredOrigin > 1 ? 's' : ''} depuis 7 jours (21 aux élargissements à pièces libres)`
       : null,
     counts.duplicates > 0
       ? `${plural(counts.duplicates, 'doublon', 'doublons')} (le même bien sous un second identifiant)`

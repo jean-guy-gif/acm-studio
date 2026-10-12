@@ -5,6 +5,18 @@ import { createPortal } from 'react-dom';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
 import { dpeClass } from '@/features/dpe/services/dpe';
+import {
+  VerifyBanner,
+  VerifyMark,
+  VerifyProvider,
+} from '@/features/imported-fields/components/verify-fields';
+import {
+  SUBJECT_VERIFIABLE_FIELDS,
+  addImportedFields,
+  importedFields,
+  sanitizeFieldsToVerify,
+  withoutField,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { PropertyCharacteristicsFields } from '@/features/subject-property/components/property-characteristics-fields';
 import { PropertyEnergyFields } from '@/features/subject-property/components/property-energy-fields';
 import { PropertyFinancialFields } from '@/features/subject-property/components/property-financial-fields';
@@ -179,13 +191,27 @@ export function SubjectPropertyForm({
   // flag weaknesses honestly (Mission 44 §4).
   const [watchPoints, setWatchPoints] = useState<string[]>(property?.watch_points ?? []);
 
+  // Mission 97 — ce qui vient d'un import se vérifie : ce qui restait à relire (en base), plus ce
+  // que l'import affiché vient de remplir. Un champ modifié est un champ relu.
+  const [toVerify, setToVerify] = useState<string[]>(() =>
+    addImportedFields(
+      sanitizeFieldsToVerify(property?.fields_to_verify ?? [], SUBJECT_VERIFIABLE_FIELDS),
+      importedFields(imported, SUBJECT_VERIFIABLE_FIELDS),
+      SUBJECT_VERIFIABLE_FIELDS,
+    ),
+  );
+  const reviewed = (name: string) =>
+    setToVerify((current) => (current.includes(name) ? withoutField(current, name) : current));
+
   const setField = (name: string, value: string) => {
     setScalars((previous) => ({ ...previous, [name]: value }));
+    reviewed(name);
     onDirty?.();
   };
   const setArray = (name: string, value: string[]) => {
     if (name === 'outdoor_spaces') setOutdoorSpaces(value);
     else if (name === 'parking_types') setParkingTypes(value);
+    reviewed(name);
     onDirty?.();
   };
 
@@ -196,173 +222,202 @@ export function SubjectPropertyForm({
       ...parkingTypes.map((value): [string, string] => ['parking_types', value]),
       ...strengths.map((value): [string, string] => ['strengths', value]),
       ...watchPoints.map((value): [string, string] => ['watch_points', value]),
+      ...toVerify.map((value): [string, string] => ['fields_to_verify', value]),
     ],
   }));
 
   return (
-    <div className="flex max-w-3xl flex-col gap-5">
-      <section className={formSection}>
-        <h2 className={formSectionTitle}>Informations générales</h2>
-        <SelectField
-          id={propertyFieldId('property_type')}
-          label="Type de bien"
-          value={scalars.property_type}
-          onChange={(v) => setField('property_type', v)}
-          options={propertyTypeOptions(scalars.property_type)}
-          error={errors.property_type}
+    <VerifyProvider fields={toVerify}>
+      <div className="flex max-w-3xl flex-col gap-5">
+        <VerifyBanner
+          count={toVerify.length}
+          onAllCorrect={() => {
+            setToVerify([]);
+            onDirty?.();
+          }}
         />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <NumberField
-            label="Surface"
-            value={scalars.surface_area}
-            min={0}
-            suffix="m²"
-            onChange={(v) => setField('surface_area', v)}
-            error={errors.surface_area}
+        <section className={formSection}>
+          <h2 className={formSectionTitle}>Informations générales</h2>
+          <SelectField
+            id={propertyFieldId('property_type')}
+            label="Type de bien"
+            value={scalars.property_type}
+            onChange={(v) => setField('property_type', v)}
+            field="property_type"
+            options={propertyTypeOptions(scalars.property_type)}
+            error={errors.property_type}
           />
-          <NumberField
-            label="Terrain"
-            value={scalars.land_area}
-            min={0}
-            suffix="m²"
-            onChange={(v) => setField('land_area', v)}
-            error={errors.land_area}
-          />
-          <NumberField
-            label="Pièces"
-            value={scalars.rooms_count}
-            step={1}
-            min={0}
-            onChange={(v) => setField('rooms_count', v)}
-            error={errors.rooms_count}
-          />
-          <NumberField
-            label="Chambres"
-            value={scalars.bedrooms_count}
-            step={1}
-            min={0}
-            onChange={(v) => setField('bedrooms_count', v)}
-            error={errors.bedrooms_count}
-          />
-          <NumberField
-            label="Salles de bains"
-            value={scalars.bathrooms_count}
-            step={1}
-            min={0}
-            onChange={(v) => setField('bathrooms_count', v)}
-            error={errors.bathrooms_count}
-          />
-        </div>
-        <TextField
-          label="Adresse"
-          value={scalars.address}
-          onChange={(v) => setField('address', v)}
-          error={errors.address}
-        />
-        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <NumberField
+              label="Surface"
+              value={scalars.surface_area}
+              min={0}
+              suffix="m²"
+              onChange={(v) => setField('surface_area', v)}
+              field="surface_area"
+              error={errors.surface_area}
+            />
+            <NumberField
+              label="Terrain"
+              value={scalars.land_area}
+              min={0}
+              suffix="m²"
+              onChange={(v) => setField('land_area', v)}
+              field="land_area"
+              error={errors.land_area}
+            />
+            <NumberField
+              label="Pièces"
+              value={scalars.rooms_count}
+              step={1}
+              min={0}
+              onChange={(v) => setField('rooms_count', v)}
+              field="rooms_count"
+              error={errors.rooms_count}
+            />
+            <NumberField
+              label="Chambres"
+              value={scalars.bedrooms_count}
+              step={1}
+              min={0}
+              onChange={(v) => setField('bedrooms_count', v)}
+              field="bedrooms_count"
+              error={errors.bedrooms_count}
+            />
+          </div>
           <TextField
-            label="Code postal"
-            value={scalars.postal_code}
-            onChange={(v) => setField('postal_code', v)}
-            error={errors.postal_code}
+            label="Adresse"
+            value={scalars.address}
+            onChange={(v) => setField('address', v)}
+            field="address"
+            error={errors.address}
           />
-          <TextField
-            id={propertyFieldId('city')}
-            label="Ville"
-            value={scalars.city}
-            onChange={(v) => setField('city', v)}
-            error={errors.city}
-          />
-        </div>
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Description</span>
-          <textarea
-            rows={4}
-            value={scalars.description}
-            onChange={(event) => setField('description', event.target.value)}
-            className={inputBase}
-          />
-        </label>
-      </section>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextField
+              label="Code postal"
+              value={scalars.postal_code}
+              onChange={(v) => setField('postal_code', v)}
+              field="postal_code"
+              error={errors.postal_code}
+            />
+            <TextField
+              id={propertyFieldId('city')}
+              label="Ville"
+              value={scalars.city}
+              onChange={(v) => setField('city', v)}
+              field="city"
+              error={errors.city}
+            />
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>
+              Description
+              <VerifyMark field="description" />
+            </span>
+            <textarea
+              rows={4}
+              value={scalars.description}
+              onChange={(event) => setField('description', event.target.value)}
+              className={inputBase}
+            />
+          </label>
+        </section>
 
-      <section className={formSection}>
-        <h2 className={formSectionTitle}>Photos du bien vendeur</h2>
-        <SubjectPropertyPhotosField
-          photos={photos}
-          uploadAction={uploadPhotosAction}
-          updateAction={updatePhotosAction}
+        <section className={formSection}>
+          <h2 className={formSectionTitle}>Photos du bien vendeur</h2>
+          <SubjectPropertyPhotosField
+            photos={photos}
+            uploadAction={uploadPhotosAction}
+            updateAction={updatePhotosAction}
+          />
+        </section>
+
+        <PropertyLocationFields
+          district={scalars.district}
+          floor={scalars.floor}
+          buildingFloors={scalars.building_floors}
+          onField={setField}
+          errors={errors}
         />
-      </section>
+        <PropertyEnergyFields
+          energyRating={scalars.energy_rating}
+          gesRating={scalars.ges_rating}
+          heatingType={scalars.heating_type}
+          onField={setField}
+          errors={errors}
+        />
+        <PropertyCharacteristicsFields
+          exposure={scalars.exposure}
+          constructionYear={scalars.construction_year}
+          generalCondition={scalars.general_condition}
+          hasElevator={scalars.has_elevator}
+          hasPool={scalars.has_pool}
+          outdoorSpaces={outdoorSpaces}
+          parkingTypes={parkingTypes}
+          onField={setField}
+          onArray={setArray}
+          errors={errors}
+        />
+        {/* Mission 38 — la fourchette du conseiller, juste sous les champs essentiels. */}
+        <PropertyPriceRangeStep
+          advisorPriceMin={scalars.advisor_price_min}
+          advisorPriceMax={scalars.advisor_price_max}
+          onField={setField}
+          errors={errors}
+        />
 
-      <PropertyLocationFields
-        district={scalars.district}
-        floor={scalars.floor}
-        buildingFloors={scalars.building_floors}
-        onField={setField}
-        errors={errors}
-      />
-      <PropertyEnergyFields
-        energyRating={scalars.energy_rating}
-        gesRating={scalars.ges_rating}
-        heatingType={scalars.heating_type}
-        onField={setField}
-        errors={errors}
-      />
-      <PropertyCharacteristicsFields
-        exposure={scalars.exposure}
-        constructionYear={scalars.construction_year}
-        generalCondition={scalars.general_condition}
-        hasElevator={scalars.has_elevator}
-        hasPool={scalars.has_pool}
-        outdoorSpaces={outdoorSpaces}
-        parkingTypes={parkingTypes}
-        onField={setField}
-        onArray={setArray}
-        errors={errors}
-      />
-      {/* Mission 38 — la fourchette du conseiller, juste sous les champs essentiels. */}
-      <PropertyPriceRangeStep
-        advisorPriceMin={scalars.advisor_price_min}
-        advisorPriceMax={scalars.advisor_price_max}
-        onField={setField}
-        errors={errors}
-      />
-
-      {complementsSlot
-        ? createPortal(
-            <div className="flex max-w-3xl flex-col gap-5">
-              <PropertyFinancialFields
-                monthlyCharges={scalars.monthly_charges}
-                propertyTax={scalars.property_tax}
-                onField={setField}
-                errors={errors}
-              />
-
-              <section className={formSection}>
-                <h2 className={formSectionTitle}>Argumentaire</h2>
-                <PropertyListField
-                  label="Points forts"
-                  items={strengths}
-                  onChange={(items) => {
-                    setStrengths(items);
-                    onDirty?.();
-                  }}
-                  error={errors.strengths}
+        {complementsSlot
+          ? createPortal(
+              <div className="flex max-w-3xl flex-col gap-5">
+                {/* Mission 97 — ni la recherche, ni le Live, ni les courriers ne lisent ce champ :
+                  il vit dans les compléments. Rien n'est supprimé en base. */}
+                <section className={formSection}>
+                  <h2 className={formSectionTitle}>Autres caractéristiques</h2>
+                  <NumberField
+                    label="Salles de bains"
+                    value={scalars.bathrooms_count}
+                    step={1}
+                    min={0}
+                    onChange={(v) => setField('bathrooms_count', v)}
+                    field="bathrooms_count"
+                    error={errors.bathrooms_count}
+                  />
+                </section>
+                <PropertyFinancialFields
+                  monthlyCharges={scalars.monthly_charges}
+                  propertyTax={scalars.property_tax}
+                  onField={setField}
+                  errors={errors}
                 />
-                <PropertyListField
-                  label="Points de vigilance"
-                  items={watchPoints}
-                  onChange={(items) => {
-                    setWatchPoints(items);
-                    onDirty?.();
-                  }}
-                  error={errors.watch_points}
-                />
-              </section>
-            </div>,
-            complementsSlot,
-          )
-        : null}
-    </div>
+
+                <section className={formSection}>
+                  <h2 className={formSectionTitle}>Argumentaire</h2>
+                  <PropertyListField
+                    label="Points forts"
+                    items={strengths}
+                    onChange={(items) => {
+                      setStrengths(items);
+                      reviewed('strengths');
+                      onDirty?.();
+                    }}
+                    field="strengths"
+                    error={errors.strengths}
+                  />
+                  <PropertyListField
+                    label="Points de vigilance"
+                    items={watchPoints}
+                    onChange={(items) => {
+                      setWatchPoints(items);
+                      onDirty?.();
+                    }}
+                    error={errors.watch_points}
+                  />
+                </section>
+              </div>,
+              complementsSlot,
+            )
+          : null}
+      </div>
+    </VerifyProvider>
   );
 }
