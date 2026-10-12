@@ -100,10 +100,19 @@ Ce qui part : **son adresse dans tous les dossiers**, les **dossiers de prospect
 son bien, et les **photos copiées** de son annonce. L'annonce publique elle-même (prix, surface,
 pièces) reste : elle sert au Live du vendeur, sans adresse.
 
-Ce qui **entre** : son adresse, sous sa forme normalisée, dans la liste « Ne plus solliciter » de
-chaque agence concernée (mission 98). C'est elle qui empêche qu'un conseiller le démarche de
-nouveau si la même annonce est retenue dans un futur dossier. La liste ne garde que cette clé
-d'adresse et la date de la demande — ni nom, ni lien vers un concurrent.
+Ce qui **entre** : son adresse, sous sa forme normalisée, et l'identité de son annonce (portail +
+numéro), dans la liste « Ne plus solliciter » de chaque agence concernée (missions 98 et 102).
+C'est elle qui empêche qu'un conseiller le démarche de nouveau si la même annonce est retenue dans
+un futur dossier. La liste ne garde que ces clés et la date de la demande — ni nom, ni lien vers
+une ligne de concurrent.
+
+**Sans demande, la base efface seule** (mission 102) : chaque nuit, l'adresse d'un bien concurrent
+pour lequel rien ne s'est passé depuis **3 ans** — ni adresse connue ou corrigée, ni dossier remis,
+ni rendez-vous, ni mandat, ni « pas intéressé » — est effacée avec sa position
+(`purge_stale_owner_addresses`, tâche `purge-stale-owner-addresses` de `pg_cron`). Le concurrent
+reste retenu, l'annonce reste, et le Localisateur n'est plus interrogé pour lui
+(`locator_purged_at`). La liste « Ne plus solliciter » n'est jamais purgée. Vérifier la tâche :
+`select jobname, schedule, active from cron.job;`.
 
 ### 1. Retrouver son bien, dans tous les dossiers
 
@@ -150,9 +159,13 @@ relevée au point 1 (`locator_address`, et `address` si elle diffère), calculer
 normalisation de l'application — jamais à la main :
 
 ```sh
-npm run cle-adresse -- "8 avenue du Docteur Hochet, 06160 Antibes"
-# → 8 avenue du docteur hochet 06160 antibes
+npm run cle-adresse -- "8 avenue du Docteur Hochet, 2e étage, 06160 Juan-les-Pins"
+# → 8 avenue du docteur hochet antibes
 ```
+
+La clé désigne l'**immeuble** (mission 102) : ni code postal, ni étage, ni bâtiment, ni
+appartement, ni « bis » ou « ter » ; le nom d'usage d'une commune vaut la commune, et un
+arrondissement s'écrit « paris 15 ».
 
 Compter avant (`select count(*) from prospecting_oppositions where agency_id = ':agence';`), puis
 inscrire la clé pour chaque agence concernée. Une adresse déjà inscrite (par le bouton « Ne plus
@@ -164,8 +177,20 @@ values (':agence', ':cle', 'erasure')
 on conflict (agency_id, address_key) do nothing;
 ```
 
-Prédiction : le compte de l'agence monte de 1 par adresse nouvelle, de 0 pour une adresse déjà
-inscrite. Compter après.
+Si le concurrent a une annonce reconnue (SeLoger, Bien'ici, Green Acres, Maisons et Appartements),
+inscrire aussi son identité, `portail:numéro` — le numéro est le dernier segment du chemin de
+`listing_url` (`seloger`, `bienici`, `greenacres`, `maisonsetappartements`). Une ligne porte l'une
+des deux clés, jamais les deux :
+
+```sql
+insert into prospecting_oppositions (agency_id, listing_key, source)
+select ':agence', ':portail:numero', 'erasure'
+where not exists (select 1 from prospecting_oppositions
+                  where agency_id = ':agence' and listing_key = ':portail:numero');
+```
+
+Prédiction : le compte de l'agence monte de 1 par clé nouvelle (adresse ou annonce), de 0 pour une
+clé déjà inscrite. Compter après.
 
 Si le concurrent n'a aucune adresse en base, il n'y a rien à inscrire : le dire à Laurent, qui
 prévient l'agence.
@@ -205,11 +230,14 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
 - Si un dossier où il figurait est déjà conclu, les réponses du vendeur à son sujet restent (elles
   ne portent ni son nom ni son adresse).
 - Un autre conseiller de l'agence peut retenir de nouveau la même annonce dans un nouveau
-  dossier : dès que son adresse est connue, la carte porte « Ne plus solliciter (demandé le
-  JJ/MM) », le courrier au propriétaire est refusé et l'adresse sort de la tournée. La liste vaut
-  par agence : il n'existe pas de liste commune à toutes les agences.
-- La liste reconnaît une adresse écrite autrement (abréviations, accents, ponctuation), pas une
-  adresse différente : un numéro ou un étage en plus, et ce n'est plus la même clé.
+  dossier : dès que son annonce ou son adresse est connue, la carte porte « Ne plus solliciter
+  (demandé le JJ/MM) », le courrier au propriétaire est refusé, l'adresse ne se corrige plus et
+  elle sort de la tournée. La liste vaut par agence : il n'existe pas de liste commune à toutes
+  les agences.
+- La liste reconnaît une adresse écrite autrement (abréviations, accents, ponctuation, code
+  postal, nom d'usage de la commune, arrondissement, étage, bâtiment, appartement, « bis »), pas
+  une adresse différente : un autre numéro ou une autre rue, et ce n'est plus la même clé. Elle
+  vaut donc pour tout l'immeuble.
 - Retirer une adresse de la liste (erreur de saisie) ne se fait pas depuis l'écran : c'est une
   requête, sur demande de Laurent, avec comptage avant et après.
 - Un courrier déjà imprimé et remis ne peut pas être repris.

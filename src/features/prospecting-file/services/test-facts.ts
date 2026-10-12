@@ -31,6 +31,7 @@ export function makeFacts(overrides: Partial<ProspectingFileFacts> = {}): Prospe
     ours: OUR_HOUSE,
     theirs: THEIR_HOUSE,
     theirAddress: '14 chemin des Oliviers, 06800 Cagnes-sur-Mer',
+    theirAddressSource: 'locator',
     distanceMeters: 640,
     ...overrides,
   };

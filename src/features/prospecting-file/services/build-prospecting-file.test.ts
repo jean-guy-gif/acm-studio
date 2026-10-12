@@ -156,25 +156,41 @@ describe('mentions de l’agence en pied de page', () => {
     agencyName: 'Agence du Port',
     postalAddress: '1 rue Exemple, 06800 Cagnes-sur-Mer',
     professionalCard: 'CPI 0000 0000 000 000 000',
+    professionalCardIssuer: 'la CCI Nice Côte d’Azur',
+    financialGuarantee: null,
   };
+  const CARD =
+    'Carte professionnelle CPI 0000 0000 000 000 000 délivrée par la CCI Nice Côte d’Azur';
 
-  it('renseignées : nom, adresse, carte professionnelle', () => {
+  // Mission 102 — la carte, qui l'a délivrée, et « Ne peut recevoir aucun fonds » sans garantie.
+  it('nom, adresse, carte professionnelle et qui l’a délivrée, aucun fonds', () => {
     expect(agencyMentions(agency, { withAddress: true })).toBe(
-      'Agence du Port · 1 rue Exemple, 06800 Cagnes-sur-Mer · Carte pro CPI 0000 0000 000 000 000',
+      `Agence du Port · 1 rue Exemple, 06800 Cagnes-sur-Mer · ${CARD} · Ne peut recevoir aucun fonds`,
     );
     expect(agencyMentions(agency, { withAddress: false })).toBe(
-      'Agence du Port · Carte pro CPI 0000 0000 000 000 000',
+      `Agence du Port · ${CARD} · Ne peut recevoir aucun fonds`,
     );
   });
 
-  it('facultatives : vides, elles sont omises, sans séparateur ni libellé orphelin', () => {
+  it('la garantie financière, quand elle est renseignée, remplace « aucun fonds »', () => {
+    const mentions = agencyMentions(
+      { ...agency, financialGuarantee: ' Galian, 89 rue La Boétie, 75008 Paris — 120 000 € ' },
+      { withAddress: false },
+    );
+    expect(mentions).toBe(
+      `Agence du Port · ${CARD} · Garantie financière : Galian, 89 rue La Boétie, 75008 Paris — 120 000 €`,
+    );
+    expect(mentions).not.toContain('aucun fonds');
+  });
+
+  it('une mention vide est omise, sans séparateur ni libellé orphelin', () => {
     for (const empty of [null, '', '  ']) {
       expect(
         agencyMentions(
           { ...agency, postalAddress: empty, professionalCard: empty },
           { withAddress: true },
         ),
-      ).toBe('Agence du Port');
+      ).toBe('Agence du Port · Ne peut recevoir aucun fonds');
     }
   });
 });

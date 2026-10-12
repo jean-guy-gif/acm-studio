@@ -41,9 +41,15 @@ export type ProspectingFileFacts = {
   theirs: ListedProperty;
   // Adresse du bien concurrent rendue par le Localisateur, seulement si elle est confirmée.
   theirAddress: string | null;
+  // Mission 102 — d'où vient cette adresse : le courrier le dit, et dit vrai.
+  theirAddressSource: AddressSource;
   // Distance entre les deux biens, seulement entre deux positions sûres ; sinon null.
   distanceMeters: number | null;
 };
+
+// Qui a établi l'adresse du bien concurrent : le Localisateur (données publiques : DPE,
+// registre des copropriétés, cadastre), ou le conseiller qui l'a saisie ou confirmée.
+export type AddressSource = 'locator' | 'advisor';
 
 // Les textes que le conseiller peut réécrire. `*mot*` met en valeur.
 export type ProspectingFileTexts = {
@@ -64,6 +70,8 @@ export type ProspectingFile = {
   pricesShown: boolean;
   // Le nom du destinataire, ligne par ligne : une adresse ne se coupe pas au milieu (M87).
   addressee: { lead: string; nameLines: string[]; detail: string | null };
+  // Mission 102 — l'origine de l'adresse, pour la mention légale du courrier propriétaire.
+  addressSource: AddressSource;
   defaults: ProspectingFileTexts;
   ours: PropertyCard;
   theirs: PropertyCard;
@@ -104,7 +112,14 @@ export type ProspectingSender = {
   agencyName: string;
   logoUrl: string | null;
   postalAddress: string | null;
+  // Mission 102 — la carte professionnelle et qui l'a délivrée (CCI ou préfecture) : exigées
+  // pour imprimer. La garantie financière si l'agence en a une ; sinon le document dit « Ne
+  // peut recevoir aucun fonds ».
   professionalCard: string | null;
+  professionalCardIssuer: string | null;
+  financialGuarantee: string | null;
+  // L'adresse de la page de confidentialité, telle qu'elle s'imprime (sans « https:// »).
+  privacyUrl: string;
 };
 
 // Ce que le conseiller a réécrit et qui est gardé ; null = le texte ou le choix proposé.

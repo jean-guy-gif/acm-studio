@@ -41,8 +41,10 @@ import {
   signPropertyPhotos,
   type SignedPhoto,
 } from '@/features/subject-property-photos/services/property-photo-storage';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
+import { siteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 84 — tout ce qu'il faut pour afficher ou enregistrer le dossier d'un concurrent.
@@ -112,7 +114,7 @@ export async function getProspectingFile(
       supabase
         .from('comparables')
         .select(
-          `id, is_selected, sold_by, exclusivity, locator_address, locator_confirmed, locator_latitude, locator_longitude, photo_urls, ${THEIR_LISTING_SELECT}`,
+          `id, is_selected, sold_by, exclusivity, listing_url, locator_address, locator_confirmed, locator_source, locator_latitude, locator_longitude, photo_urls, ${THEIR_LISTING_SELECT}`,
         )
         .eq('id', competitorId)
         .eq('project_id', projectId)
@@ -142,7 +144,15 @@ export async function getProspectingFile(
     getAgencyBranding(),
     getOppositions(supabase, agencyId),
   ]);
-  const opposed = opposedOn(competitor.locator_address, oppositions) != null;
+  // Mission 102 — par l'adresse du bien ou par son annonce.
+  const opposed =
+    opposedOn(
+      {
+        address: competitor.locator_address,
+        listingKey: listingIdentityKey(competitor.listing_url),
+      },
+      oppositions,
+    ) != null;
 
   const confirmedAddress =
     competitor.locator_confirmed === true ? competitor.locator_address?.trim() || null : null;
@@ -153,6 +163,8 @@ export async function getProspectingFile(
       addressConfirmed: confirmedAddress != null,
       advisorPhone: profile.phone,
       agencyAddress: branding?.postalAddress ?? null,
+      professionalCard: branding?.professionalCard ?? null,
+      professionalCardIssuer: branding?.professionalCardIssuer ?? null,
     });
 
   const step = prospectingStep(competitor);
@@ -235,6 +247,7 @@ export async function getProspectingFile(
       ourPrice: conclusion?.commercialization_price ?? null,
       theirs: competitor,
       theirAddress: confirmedAddress,
+      theirAddressSource: competitor.locator_source,
       distanceMeters: distance,
     }),
     sender: {
@@ -246,6 +259,11 @@ export async function getProspectingFile(
       logoUrl: branding?.logoLightUrl ?? null,
       postalAddress: branding?.postalAddress ?? null,
       professionalCard: branding?.professionalCard ?? null,
+      professionalCardIssuer: branding?.professionalCardIssuer ?? null,
+      financialGuarantee: branding?.financialGuarantee ?? null,
+      privacyUrl: `${siteUrl()
+        .replace(/^https?:\/\//, '')
+        .replace(/\/+$/, '')}/confidentialite`,
     },
     overrides: row
       ? {

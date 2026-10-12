@@ -13,7 +13,10 @@ const SENDER: ProspectingSender = {
   agencyName: 'Agence du Port',
   logoUrl: null,
   postalAddress: '1 place de la Mairie, 06160 Antibes',
-  professionalCard: null,
+  professionalCard: 'CPI 0605 2018 000 123 456',
+  professionalCardIssuer: 'la CCI Nice Côte d’Azur',
+  financialGuarantee: null,
+  privacyUrl: 'acm.test/confidentialite',
 };
 const PHOTOS = [
   { path: 'a/p/1.jpg', url: 'https://stockage.test/1' },

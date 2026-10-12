@@ -45,22 +45,34 @@ export const PHONE_MISSING_MESSAGE =
 export const AGENCY_ADDRESS_MISSING_MESSAGE =
   'Ajoutez l’adresse de l’agence dans Administration → Identité pour préparer ce courrier.';
 
+// Mission 102 — tout courrier porte la carte professionnelle de l'agence et qui l'a délivrée :
+// sans elles, aucune version ne se prépare.
+export const PROFESSIONAL_CARD_MISSING_MESSAGE =
+  'Renseignez la carte professionnelle de l’agence (Administration → Identité)';
+
 // Mission 98 — une adresse de la liste « Ne plus solliciter » ne reçoit plus de courrier.
 export type FileBlocker =
-  'opposed' | 'address_unconfirmed' | 'phone_missing' | 'agency_address_missing';
+  | 'opposed'
+  | 'address_unconfirmed'
+  | 'phone_missing'
+  | 'agency_address_missing'
+  | 'professional_card_missing';
 
 export const FILE_BLOCKER_MESSAGES: Record<FileBlocker, string> = {
   opposed: OPPOSED_MESSAGE,
   address_unconfirmed: ADDRESS_TO_CONFIRM_MESSAGE,
   phone_missing: PHONE_MISSING_MESSAGE,
   agency_address_missing: AGENCY_ADDRESS_MISSING_MESSAGE,
+  professional_card_missing: PROFESSIONAL_CARD_MISSING_MESSAGE,
 };
 
 // Ce qui retient un dossier, dans l'ordre où le conseiller peut le lever. Le dossier s'ouvre dès
 // le mandat signé ; aucun dossier propriétaire sans adresse confirmée, ni sans le téléphone qui
 // permet de s'opposer à un nouveau contact, ni sans l'adresse de l'agence (mission 90). Et
 // d'abord : aucun courrier à un propriétaire qui a demandé à ne plus être sollicité (mission 98)
-// — rien de ce que le conseiller peut renseigner ne lève ce refus.
+// — rien de ce que le conseiller peut renseigner ne lève ce refus. Enfin, pour les DEUX
+// versions : pas de courrier sans le numéro de carte professionnelle ni l'autorité qui l'a
+// délivrée (mission 102).
 export function fileBlocker(input: {
   version: ProspectingFileVersion;
   // L'adresse du bien est sur la liste « Ne plus solliciter » de l'agence.
@@ -69,6 +81,9 @@ export function fileBlocker(input: {
   advisorPhone: string | null;
   // L'adresse postale de l'agence (Administration → Identité).
   agencyAddress: string | null;
+  // La carte professionnelle de l'agence et la CCI ou la préfecture qui l'a délivrée.
+  professionalCard: string | null;
+  professionalCardIssuer: string | null;
 }): FileBlocker | null {
   if (input.version === 'owner') {
     if (input.opposed) {
@@ -83,6 +98,9 @@ export function fileBlocker(input: {
     if (!input.agencyAddress?.trim()) {
       return 'agency_address_missing';
     }
+  }
+  if (!input.professionalCard?.trim() || !input.professionalCardIssuer?.trim()) {
+    return 'professional_card_missing';
   }
   return null;
 }

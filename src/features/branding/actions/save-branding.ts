@@ -87,12 +87,15 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
   const mentions = agencyMentionsInputSchema.safeParse({
     postalAddress: formData.get('postal_address') ?? null,
     professionalCard: formData.get('professional_card') ?? null,
+    professionalCardIssuer: formData.get('professional_card_issuer') ?? null,
+    financialGuarantee: formData.get('financial_guarantee') ?? null,
     documentName: formData.get('document_name') ?? null,
   });
   if (!mentions.success) {
     return {
       ok: false,
-      error: 'Adresse, carte professionnelle ou nom sur les documents trop long.',
+      error:
+        'Adresse, carte professionnelle, garantie financière ou nom sur les documents trop long.',
     };
   }
 
@@ -133,6 +136,8 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     site_url: typography.data.siteUrl,
     postal_address: mentions.data.postalAddress,
     professional_card: mentions.data.professionalCard,
+    professional_card_issuer: mentions.data.professionalCardIssuer,
+    financial_guarantee: mentions.data.financialGuarantee,
     document_name: mentions.data.documentName,
     validated_at: now,
     updated_at: now,

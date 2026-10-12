@@ -13,6 +13,8 @@ export type StoredLocation = {
   listing_url: string | null;
   locator_state: string | null;
   locator_confirmed: boolean | null;
+  // Mission 102 — l'adresse a été effacée par la purge (3 ans sans contact) : on ne la redemande pas.
+  locator_purged_at?: string | null;
 };
 
 export function hasListingUrl(listingUrl: string | null): listingUrl is string {
@@ -40,6 +42,12 @@ export function locationAction(competitor: StoredLocation): LocationAction {
 }
 
 // Une adresse confirmée ne se redemande plus ; un concurrent sans annonce n'a rien à demander.
+// Mission 102 — une adresse effacée au terme de sa durée de conservation non plus : la
+// redemander au Localisateur la ferait revenir. Le conseiller peut toujours la saisir.
 export function needsLocatorQuery(competitor: StoredLocation): boolean {
-  return hasListingUrl(competitor.listing_url) && competitor.locator_confirmed !== true;
+  return (
+    hasListingUrl(competitor.listing_url) &&
+    competitor.locator_confirmed !== true &&
+    competitor.locator_purged_at == null
+  );
 }

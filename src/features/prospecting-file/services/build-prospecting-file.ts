@@ -196,6 +196,7 @@ export function buildProspectingFile(
     kind: facts.kind,
     pricesShown: options.showPrices,
     addressee: addressee(facts, version, titles.theirs),
+    addressSource: facts.theirAddressSource,
     defaults: defaultTexts(facts, version),
     ours: { label: compact ? 'Notre mandat' : 'Notre bien', title: titles.ours, rows: rows.ours },
     theirs: {
@@ -213,24 +214,58 @@ export function buildProspectingFile(
   };
 }
 
-// Pied de page : l'agence, puis son adresse et sa carte professionnelle quand elles sont
-// renseignées (Administration → Identité). Facultatives : vides, ces mentions sont omises.
+export const NO_FUNDS_MENTION = 'Ne peut recevoir aucun fonds';
+
+type MentionSender = Pick<
+  ProspectingSender,
+  | 'agencyName'
+  | 'postalAddress'
+  | 'professionalCard'
+  | 'professionalCardIssuer'
+  | 'financialGuarantee'
+>;
+
+// « Carte professionnelle CPI 0605 2018 000 123 456 délivrée par la CCI Nice Côte d'Azur »
+function professionalCardMention(
+  sender: Pick<MentionSender, 'professionalCard' | 'professionalCardIssuer'>,
+): string | null {
+  const card = sender.professionalCard?.trim();
+  if (!card) {
+    return null;
+  }
+  const issuer = sender.professionalCardIssuer?.trim();
+  return `Carte professionnelle ${card}${issuer ? ` délivrée par ${issuer}` : ''}`;
+}
+
+// Les mentions professionnelles de l'agence (mission 102) : sa carte et qui l'a délivrée, puis
+// sa garantie financière — ou, sans garantie, « Ne peut recevoir aucun fonds ». Le courrier ne
+// s'imprime pas sans la carte (file-access.ts).
+export function professionalMentions(
+  sender: Pick<MentionSender, 'professionalCard' | 'professionalCardIssuer' | 'financialGuarantee'>,
+): string[] {
+  const guarantee = sender.financialGuarantee?.trim();
+  return [
+    professionalCardMention(sender),
+    guarantee ? `Garantie financière : ${guarantee}` : NO_FUNDS_MENTION,
+  ].filter((mention): mention is string => Boolean(mention));
+}
+
+// Pied de page : l'agence (nom sur les documents, M87), son adresse, puis ses mentions
+// professionnelles. Le recto du courrier propriétaire les laisse au verso (`withCard: false`),
+// où elles précèdent la mention légale : le pied du recto reste sur une ligne ou deux.
 export function agencyMentionList(
-  sender: Pick<ProspectingSender, 'agencyName' | 'postalAddress' | 'professionalCard'>,
-  options: { withAddress: boolean },
+  sender: MentionSender,
+  options: { withAddress: boolean; withCard?: boolean },
 ): string[] {
   return [
     // Mission 87 — le nom tient sur une ligne, jamais coupé au milieu d'un mot.
     footerAgencyName(sender.agencyName),
     options.withAddress ? sender.postalAddress?.trim() : null,
-    sender.professionalCard?.trim() ? `Carte pro ${sender.professionalCard.trim()}` : null,
+    ...(options.withCard === false ? [] : professionalMentions(sender)),
   ].filter((mention): mention is string => Boolean(mention));
 }
 
-export function agencyMentions(
-  sender: Pick<ProspectingSender, 'agencyName' | 'postalAddress' | 'professionalCard'>,
-  options: { withAddress: boolean },
-): string {
+export function agencyMentions(sender: MentionSender, options: { withAddress: boolean }): string {
   return agencyMentionList(sender, options).join(' · ');
 }
 

@@ -46,6 +46,7 @@ export type Database = {
           brand_soft: string | null
           created_at: string
           document_name: string | null
+          financial_guarantee: string | null
           font_family: string | null
           id: string
           logo_dark_path: string | null
@@ -53,6 +54,7 @@ export type Database = {
           on_brand_text: string | null
           postal_address: string | null
           professional_card: string | null
+          professional_card_issuer: string | null
           site_url: string | null
           text_contrast_adjusted: boolean
           updated_at: string
@@ -67,6 +69,7 @@ export type Database = {
           brand_soft?: string | null
           created_at?: string
           document_name?: string | null
+          financial_guarantee?: string | null
           font_family?: string | null
           id?: string
           logo_dark_path?: string | null
@@ -74,6 +77,7 @@ export type Database = {
           on_brand_text?: string | null
           postal_address?: string | null
           professional_card?: string | null
+          professional_card_issuer?: string | null
           site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
@@ -88,6 +92,7 @@ export type Database = {
           brand_soft?: string | null
           created_at?: string
           document_name?: string | null
+          financial_guarantee?: string | null
           font_family?: string | null
           id?: string
           logo_dark_path?: string | null
@@ -95,6 +100,7 @@ export type Database = {
           on_brand_text?: string | null
           postal_address?: string | null
           professional_card?: string | null
+          professional_card_issuer?: string | null
           site_url?: string | null
           text_contrast_adjusted?: boolean
           updated_at?: string
@@ -272,6 +278,7 @@ export type Database = {
           listing_url: string | null
           listing_withdrawn: boolean
           locator_address: string | null
+          locator_address_at: string | null
           locator_analyzed_at: string | null
           locator_confirmed: boolean | null
           locator_label: string | null
@@ -279,6 +286,7 @@ export type Database = {
           locator_latitude: number | null
           locator_longitude: number | null
           locator_property_id: string | null
+          locator_purged_at: string | null
           locator_source: string | null
           locator_state: string | null
           outdoor_spaces: string[]
@@ -334,6 +342,7 @@ export type Database = {
           listing_url?: string | null
           listing_withdrawn?: boolean
           locator_address?: string | null
+          locator_address_at?: string | null
           locator_analyzed_at?: string | null
           locator_confirmed?: boolean | null
           locator_label?: string | null
@@ -341,6 +350,7 @@ export type Database = {
           locator_latitude?: number | null
           locator_longitude?: number | null
           locator_property_id?: string | null
+          locator_purged_at?: string | null
           locator_source?: string | null
           locator_state?: string | null
           outdoor_spaces?: string[]
@@ -396,6 +406,7 @@ export type Database = {
           listing_url?: string | null
           listing_withdrawn?: boolean
           locator_address?: string | null
+          locator_address_at?: string | null
           locator_analyzed_at?: string | null
           locator_confirmed?: boolean | null
           locator_label?: string | null
@@ -403,6 +414,7 @@ export type Database = {
           locator_latitude?: number | null
           locator_longitude?: number | null
           locator_property_id?: string | null
+          locator_purged_at?: string | null
           locator_source?: string | null
           locator_state?: string | null
           outdoor_spaces?: string[]
@@ -1290,29 +1302,32 @@ export type Database = {
       }
       prospecting_oppositions: {
         Row: {
-          address_key: string
+          address_key: string | null
           agency_id: string
           created_at: string
           created_by: string | null
           id: string
+          listing_key: string | null
           requested_at: string
           source: string
         }
         Insert: {
-          address_key: string
+          address_key?: string | null
           agency_id: string
           created_at?: string
           created_by?: string | null
           id?: string
+          listing_key?: string | null
           requested_at?: string
           source?: string
         }
         Update: {
-          address_key?: string
+          address_key?: string | null
           agency_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          listing_key?: string | null
           requested_at?: string
           source?: string
         }
@@ -1745,6 +1760,7 @@ export type Database = {
         Returns: undefined
       }
       purge_old_app_errors: { Args: never; Returns: number }
+      purge_stale_owner_addresses: { Args: never; Returns: number }
       save_commercialization_price: {
         Args: {
           p_advisor_analysis: number

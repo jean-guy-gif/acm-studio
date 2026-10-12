@@ -6,7 +6,7 @@ import { PrintButton } from '@/features/competitor-locator/components/print-butt
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { ProspectingFileDocument } from '@/features/prospecting-file/components/prospecting-file-document';
 import { getProspectingFile } from '@/features/prospecting-file/queries/get-prospecting-file';
-import { FILE_BLOCKER_MESSAGES } from '@/features/prospecting-file/services/file-access';
+import { splitBatchLetters } from '@/features/prospecting-file/services/batch-letters';
 import { savedDocument } from '@/features/prospecting-file/services/saved-document';
 import { MarkLettersHanded } from '@/features/prospecting/components/mark-letters-handed';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
@@ -26,9 +26,6 @@ type LettersPageProps = {
 // Les documents se suivent : chacun commence sur une feuille neuve.
 const BATCH_CSS =
   '@media print { .pf-batch .pf-doc { break-after: page; } .pf-batch .pf-doc:last-child { break-after: auto; } } @media screen { .pf-batch { display: flex; flex-direction: column; gap: 8mm; } }';
-
-const CHOOSE_MESSAGE =
-  'À qui s’adresser ? Précisez sur la carte si ce bien est en exclusivité (confrère) ou non (propriétaire).';
 
 // Mission 98 — « Préparer tous les courriers » d'un bien vendeur : UN document à imprimer, avec
 // le courrier de chaque concurrent « prêt à envoyer », dans sa version (propriétaire ou
@@ -69,21 +66,13 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
       return { row, context: await getProspectingFile(sellerId, row.id, undefined) };
     }),
   );
-  const letters = prepared.flatMap(({ row, context }) =>
-    context.status === 'ready' ? [{ row, document: savedDocument(context) }] : [],
-  );
-  const held = prepared.flatMap(({ row, context }) => {
-    if (context.status === 'ready') {
-      return [];
-    }
-    const reason =
-      context.status === 'blocked'
-        ? FILE_BLOCKER_MESSAGES[context.blocker]
-        : context.status === 'choose'
-          ? CHOOSE_MESSAGE
-          : 'Ce dossier ne peut pas être préparé.';
-    return [{ row, reason }];
-  });
+  // Mission 102 — les mêmes blocages que le courrier unitaire, carte professionnelle comprise.
+  const split = splitBatchLetters(prepared);
+  const letters = split.letters.map(({ row, context }) => ({
+    row,
+    document: savedDocument(context),
+  }));
+  const { held } = split;
 
   return (
     <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:p-6 print:block print:bg-white print:p-0">

@@ -10,6 +10,9 @@ import {
   findCard,
   getProspectingCards,
 } from '@/features/prospecting/queries/prospecting-card-store';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
+import { OPPOSED_MESSAGE, opposedOn } from '@/features/prospecting/services/opposition';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -45,7 +48,7 @@ export async function confirmCompetitorAddress(
   const supabase = await createClient();
   const { data: row } = await supabase
     .from('comparables')
-    .select('locator_address, locator_confirmed, locator_source')
+    .select('locator_address, locator_confirmed, locator_source, listing_url')
     .eq('id', competitorId)
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
@@ -55,11 +58,25 @@ export async function confirmCompetitorAddress(
     return { ok: false, error: FAILURE };
   }
 
+  // Mission 102 — l'adresse d'un bien « Ne plus solliciter » ne se confirme ni ne se corrige :
+  // une autre écriture changerait sa clé et le ferait revenir dans les courriers. Le refus porte
+  // sur le BIEN — ce concurrent (son adresse, son annonce) ou n'importe quelle copie de sa carte.
+  const card = findCard(await getProspectingCards(), projectId, competitorId);
+  const oppositions = await getOppositions(supabase, profile.agency_id);
+  const opposed =
+    card?.row.opposedOn != null ||
+    opposedOn(
+      { address: row.locator_address, listingKey: listingIdentityKey(row.listing_url) },
+      oppositions,
+    ) != null;
+  if (opposed) {
+    return { ok: false, error: `${OPPOSED_MESSAGE}.` };
+  }
+
   const result = advisorAddressPatch(row, input);
   if (!result.ok) {
     return result;
   }
-  const card = findCard(await getProspectingCards(), projectId, competitorId);
   const ids = card ? card.copies.map((copy) => copy.row.id) : [competitorId];
   const { data, error } = await supabase
     .from('comparables')
