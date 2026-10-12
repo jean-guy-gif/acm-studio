@@ -197,10 +197,18 @@ describe('archiver un dossier', () => {
 });
 
 describe('« Ne plus solliciter »', () => {
-  const card = (confirmed: boolean) => ({
-    row: { confirmed, address: '8 avenue du Docteur Hochet, 06160 Antibes' },
+  const LISTING = 'seloger:26ZEJMLWB13Y';
+  const card = (confirmed: boolean, opposedOn: string | null = null) => ({
+    row: { confirmed, address: '8 avenue du Docteur Hochet, 06160 Antibes', opposedOn },
     sellers: [{ projectId: PROJECT }],
+    copies: [
+      { row: { id: 'c1', listingKey: LISTING } },
+      { row: { id: 'c2', listingKey: LISTING } },
+      { row: { id: 'c3', listingKey: null } },
+    ],
   });
+  const inserts = () =>
+    server.calls.filter((call) => call.method === 'insert').map((call) => call.args[0]);
 
   it('refuse un membre retiré, un concurrent hors agence et une adresse non confirmée', async () => {
     const { addProspectingOpposition } =
@@ -224,11 +232,117 @@ describe('« Ne plus solliciter »', () => {
       await import('@/features/prospecting/actions/add-prospecting-opposition');
     state.card = card(true);
     expect(await addProspectingOpposition(PROJECT, 'c1')).toEqual({ ok: true });
-    expect(server.writes()).toEqual(['insert prospecting_oppositions']);
-    expect(server.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
-      agency_id: AGENCY,
-      address_key: '8 avenue du docteur hochet 06160 antibes',
-      created_by: 'u-advisor',
+    // Mission 102 — la clé de l'immeuble, et l'identité de l'annonce de la carte (une fois).
+    expect(server.writes()).toEqual([
+      'insert prospecting_oppositions',
+      'insert prospecting_oppositions',
+    ]);
+    expect(inserts()).toEqual([
+      {
+        agency_id: AGENCY,
+        created_by: 'u-advisor',
+        address_key: '8 avenue du docteur hochet antibes',
+      },
+      { agency_id: AGENCY, created_by: 'u-advisor', listing_key: LISTING },
+    ]);
+  });
+
+  // Mission 102 — une opposition inscrite à la main, pour une adresse qui n'est sur aucune carte.
+  it('à la main : refuse un membre retiré et une adresse incomplète, sans rien écrire', async () => {
+    const { addManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    state.profile = removed;
+    expect((await addManualOpposition('8 avenue Hochet, 06160 Antibes')).ok).toBe(false);
+    state.profile = advisor;
+    for (const address of [null, '', 'rue des Pins', 'Antibes', '8', 'x'.repeat(201)]) {
+      expect(await addManualOpposition(address)).toEqual({
+        ok: false,
+        error: 'Saisissez l’adresse complète : numéro, rue, code postal, ville.',
+      });
+    }
+    noWrite();
+  });
+
+  it('à la main : inscrit la seule clé de l’adresse tapée, pour l’agence de la session', async () => {
+    const { addManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    expect(await addManualOpposition('8 bis av. Hochet, 2e étage — 06160 Juan-les-Pins')).toEqual({
+      ok: true,
+    });
+    expect(inserts()).toEqual([
+      { agency_id: AGENCY, created_by: 'u-advisor', address_key: '8 avenue hochet antibes' },
+    ]);
+  });
+
+  // Mission 102 — l'adresse d'un bien opposé ne se confirme ni ne se corrige : l'action refuse,
+  // que l'opposition soit sur la carte, sur l'adresse du concurrent ou sur son annonce.
+  describe('corriger l’adresse d’un bien « Ne plus solliciter »', () => {
+    const REFUSED = { ok: false, error: 'Ce propriétaire a demandé à ne plus être sollicité.' };
+    const competitor = {
+      locator_address: '8 avenue du Docteur Hochet, 06160 Antibes',
+      locator_confirmed: true,
+      locator_source: 'dpe',
+      listing_url: 'https://www.seloger.com/annonces/achat/maison/antibes-06/26ZEJMLWB13Y',
+    };
+    const typed = { mode: 'typed', address: '10 avenue Foch, 06160 Juan-les-Pins' };
+    const withList = (rows: Record<string, unknown>[]) => {
+      state.respond = (table) => (table === 'comparables' ? { data: competitor } : { data: rows });
+    };
+
+    it('refusé quand la carte est opposée', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      state.card = card(true, '2026-10-11T09:00:00.000Z');
+      withList([]);
+      expect(await confirmCompetitorAddress(PROJECT, 'c1', typed)).toEqual(REFUSED);
+      expect(await confirmCompetitorAddress(PROJECT, 'c1', { mode: 'accept' })).toEqual(REFUSED);
+      noWrite();
+    });
+
+    it('refusé hors carte : par l’adresse du concurrent, écrite autrement', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      withList([
+        {
+          address_key: '8 avenue du docteur hochet 2e etage 06160 juan les pins',
+          listing_key: null,
+          requested_at: '2026-10-11T09:00:00.000Z',
+        },
+      ]);
+      expect(await confirmCompetitorAddress(PROJECT, 'c1', typed)).toEqual(REFUSED);
+      noWrite();
+    });
+
+    it('refusé hors carte : par l’annonce du concurrent', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      withList([
+        { address_key: null, listing_key: LISTING, requested_at: '2026-10-11T09:00:00.000Z' },
+      ]);
+      expect(await confirmCompetitorAddress(PROJECT, 'c1', typed)).toEqual(REFUSED);
+      noWrite();
+    });
+
+    it('une liste illisible n’est pas une liste vide : rien n’est écrit', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      state.respond = (table) =>
+        table === 'comparables' ? { data: competitor } : { data: null, error: { code: 'X' } };
+      await expect(confirmCompetitorAddress(PROJECT, 'c1', typed)).rejects.toThrow();
+      noWrite();
+    });
+
+    it('un bien libre se corrige toujours', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      state.respond = (table, method) =>
+        table === 'comparables'
+          ? method === 'update'
+            ? { data: [{ id: 'c1' }] }
+            : { data: competitor }
+          : { data: [] };
+      expect(await confirmCompetitorAddress(PROJECT, 'c1', typed)).toEqual({ ok: true });
+      expect(server.writes()).toEqual(['update comparables']);
     });
   });
 

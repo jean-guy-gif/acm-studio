@@ -574,6 +574,21 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const opposed = page.getByTestId('prospecting-card').filter({ hasText: OPPOSED_ADDRESS });
     await expect(opposed.getByText(/Ne plus solliciter \(demandé le \d{2}\/\d{2}\)/)).toBeVisible();
     await expect(opposed.getByRole('link', { name: /Préparer le dossier/ })).toHaveCount(0);
+    // Mission 102 — l'adresse d'un bien opposé ne se corrige plus : une autre écriture le
+    // ferait revenir dans les courriers.
+    await expect(
+      opposed.getByRole('button', { name: 'Corriger l’adresse' }),
+      'Une carte « Ne plus solliciter » propose encore de corriger son adresse',
+    ).toHaveCount(0);
+
+    // Mission 102 — une opposition s'inscrit aussi à la main, pour une adresse sans carte :
+    // écrite « Juan-les-Pins », avec un étage, elle vaut pour l'immeuble d'Antibes.
+    await page.getByText('Inscrire une adresse « Ne plus solliciter »').click();
+    await page
+      .getByLabel('Adresse à ne plus solliciter')
+      .fill(`${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, 06160 Juan-les-Pins`);
+    await page.getByRole('button', { name: 'Ne plus solliciter cette adresse' }).click();
+    await expect(page.getByText(/^Adresse inscrite/)).toBeVisible();
 
     // Un dossier prêt : le bouton apparaît, et ouvre un seul document pour ce bien vendeur.
     await confirmAddress(TOUR_ADDRESS);

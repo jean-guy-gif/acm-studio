@@ -6,7 +6,9 @@
 --   §4 personne ne modifie ni ne retire une ligne depuis le navigateur ;
 --   §5 l'ajout ne choisit ni la date ni l'origine, et ne signe pas à la place d'un collègue ;
 --   §6 un membre retiré ne lit plus la liste et n'y ajoute rien ;
---   §7 une clé qui n'est pas une adresse normalisée est refusée.
+--   §7 une clé qui n'est pas une adresse normalisée est refusée ;
+--   §8 (mission 102) l'opposition suit le bien : une ligne porte la clé d'adresse OU l'identité
+--      de l'annonce, jamais les deux ni aucune ; une annonce ne s'inscrit qu'une fois par agence.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/prospecting_oppositions.sql
@@ -130,6 +132,34 @@ select pg_temp.expect('§7 une clé non normalisée',
   pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, address_key, created_by)
                     values ('98aaaaaa-0000-0000-0000-000000000000', '8, Avenue du Dr Hochet',
                             '98000000-0000-0000-0000-0000000000c1')$$), 'invalide');
+
+-- §8 — mission 102 : l'identité de l'annonce (portail:numéro).
+select pg_temp.expect('§8 inscrire une annonce',
+  pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, listing_key, created_by)
+                    values ('98aaaaaa-0000-0000-0000-000000000000', 'seloger:26ZEJMLWB13Y',
+                            '98000000-0000-0000-0000-0000000000c1')$$), '1');
+select pg_temp.expect('§8 la même annonce deux fois',
+  pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, listing_key, created_by)
+                    values ('98aaaaaa-0000-0000-0000-000000000000', 'seloger:26ZEJMLWB13Y',
+                            '98000000-0000-0000-0000-0000000000c1')$$), 'doublon');
+select pg_temp.expect('§8 une ligne ne porte pas les deux clés',
+  pg_temp.attempt($$insert into public.prospecting_oppositions
+                      (agency_id, address_key, listing_key, created_by)
+                    values ('98aaaaaa-0000-0000-0000-000000000000', '9 rue du port antibes',
+                            'bienici:apimo-85508663', '98000000-0000-0000-0000-0000000000c1')$$),
+  'invalide');
+select pg_temp.expect('§8 une ligne porte au moins une clé',
+  pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, created_by)
+                    values ('98aaaaaa-0000-0000-0000-000000000000',
+                            '98000000-0000-0000-0000-0000000000c1')$$), 'invalide');
+select pg_temp.expect('§8 une annonce sans portail est refusée',
+  pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, listing_key, created_by)
+                    values ('98aaaaaa-0000-0000-0000-000000000000', '26ZEJMLWB13Y',
+                            '98000000-0000-0000-0000-0000000000c1')$$), 'invalide');
+select pg_temp.expect('§8 l''annonce d''une autre agence est refusée',
+  pg_temp.attempt($$insert into public.prospecting_oppositions (agency_id, listing_key, created_by)
+                    values ('98bbbbbb-0000-0000-0000-000000000000', 'seloger:26ZEJMLWB13Y',
+                            '98000000-0000-0000-0000-0000000000c1')$$), 'refus');
 
 -- =====================================================================
 -- Le collègue C2 lit la même liste : elle vaut pour toute l'agence.

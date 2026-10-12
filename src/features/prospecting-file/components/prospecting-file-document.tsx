@@ -6,7 +6,10 @@
 import { Fragment, useState } from 'react';
 
 import { DPE_COLORS } from '@/features/dpe/services/dpe';
-import { agencyMentionList } from '@/features/prospecting-file/services/build-prospecting-file';
+import {
+  agencyMentionList,
+  professionalMentions,
+} from '@/features/prospecting-file/services/build-prospecting-file';
 import {
   contactAgencyLine,
   headerNameFontPt,
@@ -81,8 +84,16 @@ function Header({ file, sender }: { file: ProspectingFile; sender: ProspectingSe
 }
 
 // Pied de page : le nom de l'agence sur une seule ligne, puis les mentions facultatives.
-function Mentions({ sender, withAddress }: { sender: ProspectingSender; withAddress: boolean }) {
-  const [name, ...others] = agencyMentionList(sender, { withAddress });
+function Mentions({
+  sender,
+  withAddress,
+  withCard = true,
+}: {
+  sender: ProspectingSender;
+  withAddress: boolean;
+  withCard?: boolean;
+}) {
+  const [name, ...others] = agencyMentionList(sender, { withAddress, withCard });
   return (
     <span>
       <span className="pf-nw">{name}</span>
@@ -279,7 +290,9 @@ function OwnerPages({
 
         {texts.keyMessage ? <div className="pf-key">{texts.keyMessage}</div> : null}
         <footer className="pf-foot">
-          <Mentions sender={sender} withAddress />
+          {/* Mission 102 — la carte professionnelle et la garantie sont au verso, avec la
+              mention légale : le pied du recto reste court. */}
+          <Mentions sender={sender} withAddress withCard={false} />
           <span>{fixed.turnPage}</span>
         </footer>
       </section>
@@ -317,10 +330,12 @@ function OwnerPages({
 
           <Proposal file={file} texts={texts} />
           <Contact sender={sender} hook={texts.contactHook} qr={qr} />
-          {/* Mission 90 — la mention sur le traitement de l'adresse : responsable, opposition,
-              CNIL. Deux lignes au plus. */}
+          {/* Mission 90 — la mention sur le traitement de l'adresse. Mission 102 — elle dit la
+              vraie origine de l'adresse, la finalité, la durée, les droits, la CNIL et la page
+              de confidentialité. */}
           <footer className="pf-foot pf-legal" data-testid="legal-mention">
-            {ownerLegalMention(sender)}
+            {professionalMentions(sender).join(' · ')}.{' '}
+            {ownerLegalMention(sender, file.addressSource)}
           </footer>
         </section>
       ) : null}

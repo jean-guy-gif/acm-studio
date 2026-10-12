@@ -29,6 +29,9 @@ const optionalText = (max: number) =>
 export const agencyMentionsInputSchema = z.object({
   postalAddress: optionalText(200),
   professionalCard: optionalText(80),
+  // Mission 102 — la CCI ou la préfecture qui a délivré la carte, et la garantie financière.
+  professionalCardIssuer: optionalText(80),
+  financialGuarantee: optionalText(160),
   // Mission 87 — le nom imprimé sur les documents, quand celui de l'agence est trop long.
   documentName: optionalText(DOCUMENT_NAME_MAX_LENGTH),
 });

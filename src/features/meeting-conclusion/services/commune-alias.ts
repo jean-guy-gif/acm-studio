@@ -8,7 +8,7 @@ import { communeKey } from '@/features/competitor-search/utils/commune-name';
 // tenue à la main et complétée pendant le pilote : il n'existe pas de table des quartiers
 // (chantier « identifiants de lieu par portail », en suspens). Clés et valeurs sont écrites
 // comme communeKey les rend (M71 : sans accent, sans tiret, en minuscules, St → Saint).
-const COMMUNE_ALIASES: Record<string, string> = {
+export const COMMUNE_ALIASES: Record<string, string> = {
   'juan les pins': 'antibes',
   'cap d antibes': 'antibes',
   'golfe juan': 'vallauris',

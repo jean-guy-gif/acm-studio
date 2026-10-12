@@ -31,6 +31,8 @@ describe('ce qui retient un dossier', () => {
     addressConfirmed: true,
     advisorPhone: '06 12 34 56 78',
     agencyAddress: '12 avenue de la Libération, 06600 Antibes',
+    professionalCard: 'CPI 0605 2018 000 123 456',
+    professionalCardIssuer: 'la CCI Nice Côte d’Azur',
   };
 
   it('rien quand tout est là', () => {
@@ -44,6 +46,8 @@ describe('ce qui retient un dossier', () => {
       'addressConfirmed',
       'advisorPhone',
       'agencyAddress',
+      'professionalCard',
+      'professionalCardIssuer',
     ]);
     expect(fileBlocker({ ...ready, version: 'colleague' })).toBeNull();
   });
@@ -86,6 +90,31 @@ describe('ce qui retient un dossier', () => {
     expect(fileBlocker({ ...nothing, addressConfirmed: true, advisorPhone: '06' })).toBe(
       'agency_address_missing',
     );
+  });
+
+  // Mission 102 — tout courrier porte la carte professionnelle et qui l'a délivrée : sans l'une
+  // ou l'autre, aucune version ne s'imprime, et le message dit où les saisir.
+  it('courrier refusé sans carte professionnelle ou sans l’autorité qui l’a délivrée', () => {
+    for (const version of ['owner', 'colleague'] as const) {
+      for (const missing of [null, '', '  ']) {
+        expect(fileBlocker({ ...ready, version, professionalCard: missing })).toBe(
+          'professional_card_missing',
+        );
+        expect(fileBlocker({ ...ready, version, professionalCardIssuer: missing })).toBe(
+          'professional_card_missing',
+        );
+      }
+    }
+    expect(FILE_BLOCKER_MESSAGES.professional_card_missing).toBe(
+      'Renseignez la carte professionnelle de l’agence (Administration → Identité)',
+    );
+  });
+
+  it('la carte se dit en dernier : l’opposition, l’adresse, le téléphone passent avant', () => {
+    const noCard = { ...ready, professionalCard: null };
+    expect(fileBlocker({ ...noCard, opposed: true })).toBe('opposed');
+    expect(fileBlocker({ ...noCard, addressConfirmed: false })).toBe('address_unconfirmed');
+    expect(fileBlocker({ ...noCard, agencyAddress: null })).toBe('agency_address_missing');
   });
 
   it('le confrère n’attend ni adresse, ni téléphone, ni adresse d’agence', () => {

@@ -28,6 +28,7 @@ import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import { PendingImportsBanner } from '@/features/competitor-search/components/pending-imports-banner';
 import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getProject } from '@/features/projects/queries/get-project';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { opposedOn, oppositionBadge } from '@/features/prospecting/services/opposition';
 import { createClient } from '@/lib/supabase/server';
@@ -64,7 +65,13 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const oppositions = await getOppositions(await createClient(), project.agency_id);
   const oppositionNotes: Record<string, string> = {};
   for (const comparable of selected) {
-    const requestedOn = opposedOn(comparable.locator_address, oppositions);
+    const requestedOn = opposedOn(
+      {
+        address: comparable.locator_address,
+        listingKey: listingIdentityKey(comparable.listing_url),
+      },
+      oppositions,
+    );
     if (requestedOn != null) {
       oppositionNotes[comparable.id] = oppositionBadge(requestedOn);
     }

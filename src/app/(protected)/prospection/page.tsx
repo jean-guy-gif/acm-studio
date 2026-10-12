@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/styles';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
+import { ManualOppositionForm } from '@/features/prospecting/components/manual-opposition-form';
 import { ProspectingBoard } from '@/features/prospecting/components/prospecting-board';
 import { ProspectingCard } from '@/features/prospecting/components/prospecting-card';
 import { ProspectionFilters } from '@/features/prospecting/components/prospection-filters';
@@ -184,6 +185,9 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
           ) : null}
         </>
       )}
+
+      {/* Mission 102 — une opposition se note aussi pour une adresse qui n'est sur aucune carte. */}
+      <ManualOppositionForm />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
-import { addressKey } from '@/features/prospecting/services/address-key';
+import { unitAddressKey } from '@/features/prospecting/services/address-key';
 import {
   prospectingStatus,
   type ProspectingDates,
@@ -17,11 +17,13 @@ import type {
 // seulement proposée ne regroupe rien. Deux appartements d'un même immeuble partagent leur
 // adresse sans être le même bien : quand les surfaces (à 2 m² près) ou les pièces, connues des
 // deux côtés, diffèrent, l'adresse ne regroupe pas — une fausse fusion est pire qu'un doublon.
+// Mission 102 — pour la même raison, le regroupement garde l'étage, le bâtiment et « bis » dans
+// sa comparaison (`unitAddressKey`) : seule l'opposition porte sur l'immeuble entier.
 
 const SURFACE_TOLERANCE = 2;
 
 const confirmedAddressKey = (row: ProspectingRow): string | null =>
-  row.confirmed ? addressKey(row.address) : null;
+  row.confirmed ? unitAddressKey(row.address) : null;
 
 export function sameAddressedProperty(a: ProspectingRow, b: ProspectingRow): boolean {
   const key = confirmedAddressKey(a);

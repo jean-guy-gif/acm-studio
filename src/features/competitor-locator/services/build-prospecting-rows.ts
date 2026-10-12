@@ -176,6 +176,8 @@ export function buildProspectingRows(
         now,
       );
 
+      const listingKey = identity ? `${identity.portal}:${identity.listingKey}` : null;
+
       return {
         id: competitor.id,
         title: clean(competitor.title),
@@ -190,9 +192,10 @@ export function buildProspectingRows(
         onlineSince: describeOnlineSince(age),
         priceDrop: describePriceDrop(competitor, own),
         listingUrl: clean(competitor.listing_url),
-        listingKey: identity ? `${identity.portal}:${identity.listingKey}` : null,
+        listingKey,
         listingNumber: identity?.listingKey ?? null,
-        opposedOn: opposedOn(competitor.locator_address, oppositions),
+        // Mission 102 — par l'adresse ou par l'annonce : l'opposition suit le bien.
+        opposedOn: opposedOn({ address: competitor.locator_address, listingKey }, oppositions),
         propertyType: clean(competitor.property_type),
         // Mission 99 — « Paris 15e » sur la carte, la tournée et le rapprochement acquéreur.
         city: displayCommune(clean(competitor.city), competitor.postal_code),

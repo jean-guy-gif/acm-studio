@@ -27,10 +27,11 @@ type StoredRow = {
   locator_latitude: number | null;
   locator_longitude: number | null;
   locator_analyzed_at: string | null;
+  locator_purged_at: string | null;
 };
 
 const COLUMNS =
-  'id, listing_url, locator_state, locator_label, locator_label_key, locator_address, locator_source, locator_confirmed, locator_property_id, locator_latitude, locator_longitude, locator_analyzed_at';
+  'id, listing_url, locator_state, locator_label, locator_label_key, locator_address, locator_source, locator_confirmed, locator_property_id, locator_latitude, locator_longitude, locator_analyzed_at, locator_purged_at';
 
 // Les concurrents RETENUS du dossier, cadrés sur l'agence de l'appelant. [] pour un dossier
 // étranger ou absent.

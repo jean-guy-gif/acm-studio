@@ -36,6 +36,8 @@ export default async function AgencyIdentityPage() {
         initialSiteUrl={branding?.siteUrl ?? ''}
         initialPostalAddress={branding?.postalAddress ?? ''}
         initialProfessionalCard={branding?.professionalCard ?? ''}
+        initialProfessionalCardIssuer={branding?.professionalCardIssuer ?? ''}
+        initialFinancialGuarantee={branding?.financialGuarantee ?? ''}
         initialDocumentName={branding?.documentName ?? ''}
         agencyName={agency?.name ?? ''}
         // Mission 88 — un conseiller (ou un membre retiré) voit l'identité, sans la modifier.
