@@ -6,6 +6,8 @@ import type { SheetFieldErrors } from '@/features/subject-property/services/shee
 
 // Les champs du bien vendeur rangés dans les compléments.
 export const COMPLEMENT_PROPERTY_FIELDS = [
+  // Mission 97 — lu ni par la recherche, ni par le Live, ni par les courriers.
+  'bathrooms_count',
   'monthly_charges',
   'property_tax',
   'strengths',
@@ -13,6 +15,7 @@ export const COMPLEMENT_PROPERTY_FIELDS = [
 ] as const;
 
 type ComplementValues = {
+  bathrooms_count?: number | null;
   monthly_charges?: number | null;
   property_tax?: number | null;
   strengths?: readonly string[] | null;
@@ -22,7 +25,8 @@ type ComplementValues = {
 function filled(values: ComplementValues | null | undefined): boolean {
   return (
     values != null &&
-    (values.monthly_charges != null ||
+    (values.bathrooms_count != null ||
+      values.monthly_charges != null ||
       values.property_tax != null ||
       (values.strengths?.length ?? 0) > 0 ||
       (values.watch_points?.length ?? 0) > 0)

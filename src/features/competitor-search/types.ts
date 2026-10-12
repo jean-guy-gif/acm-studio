@@ -2,6 +2,7 @@
 // Suggestions éphémères : rien n'est persisté tant que le conseiller n'a pas
 // importé puis enregistré un bien via la création existante.
 
+import type { MatchDetailLine } from '@/features/competitor-search/services/match-percent';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 
 // Figaro a été retiré (septembre 2026) : il n'est plus proposé au conseiller.
@@ -221,6 +222,8 @@ export type RankedCandidate = {
   // Mission 71 — % de correspondance (points obtenus ÷ points possibles). null si aucun critère
   // n'est comparable. La liste est triée par ce % décroissant.
   matchPercent: number | null;
+  // Mission 97 — ce qui a pesé dans ce % : une ligne par critère compté, dans l'ordre du barème.
+  matchDetail: MatchDetailLine[];
   // Mission 71 — Stream Estate seulement : ce qui écarte ce bien de l'identique (« Même ville, à
   // 1,6 km · Plus grand : 78 m² (+12 %) »). null pour un bien identique ou venu d'un portail.
   gapLine: string | null;

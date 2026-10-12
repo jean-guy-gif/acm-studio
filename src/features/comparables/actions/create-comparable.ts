@@ -6,6 +6,10 @@ import { redirect } from 'next/navigation';
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 
 import type { CreateComparableState } from '@/features/comparables/actions/create-comparable-state';
+import {
+  COMPETITOR_VERIFIABLE_FIELDS,
+  sanitizeFieldsToVerify,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { parseImportedMandateForm } from '@/features/competitor-mandate/services/mandate-columns';
 import { parseComparableForm } from '@/features/comparables/utils/comparable-input';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -97,6 +101,11 @@ export async function createComparable(
       // Mission 83 — ce que l'annonce importée disait du vendeur et de l'exclusivité (champs
       // cachés, revalidés). Une saisie à la main n'en porte pas : inconnu.
       ...parseImportedMandateForm(formData),
+      // Mission 97 — les champs remplis par l'import et pas encore relus (champ caché, revalidé).
+      fields_to_verify: sanitizeFieldsToVerify(
+        formData.get('fields_to_verify'),
+        COMPETITOR_VERIFIABLE_FIELDS,
+      ),
       project_id: projectId,
       agency_id: profile.agency_id,
       display_order: nextOrder,

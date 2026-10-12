@@ -1065,8 +1065,8 @@ export function CompetitorSearchPanel({
                 {admissibility.belowMinimum ? (
                   <p>
                     Trop peu de concurrents comparables ({admissibility.rankedCount}), même après le
-                    dernier cran d’élargissement. On ne complète pas avec des biens hors bornes :
-                    une liste courte et juste vaut mieux qu’une liste pleine et fausse.
+                    dernier élargissement. On ne complète pas avec des biens hors bornes : une liste
+                    courte et juste vaut mieux qu’une liste pleine et fausse.
                   </p>
                 ) : null}
                 {excludedLines.length > 0 ? (
@@ -1075,8 +1075,8 @@ export function CompetitorSearchPanel({
                 {admissibility.newBuildAdded > 0 ? (
                   <p>
                     {plural(admissibility.newBuildAdded, 'bien neuf ajouté', 'biens neufs ajoutés')}{' '}
-                    en fin de liste, faute de 3 concurrents dans l’ancien même après le dernier cran
-                    d’élargissement.
+                    en fin de liste, faute de 3 concurrents dans l’ancien même après le dernier
+                    élargissement.
                   </p>
                 ) : null}
                 {admissibility.newBuildHeld > 0 ? (

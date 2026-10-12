@@ -196,7 +196,7 @@ describe('decisionFormulaNote', () => {
   it('dit d’où vient le montant proposé', () => {
     expect(plain(decisionFormulaNote(140, 0))).toBe('Prix médian au m² × 140 m².');
     expect(plain(decisionFormulaNote(82.5, 1))).toBe(
-      'Prix médian au m² × 82,5 m², hors 1 concurrent atypique.',
+      'Prix médian au m² × 83 m², hors 1 concurrent atypique.',
     );
   });
 });

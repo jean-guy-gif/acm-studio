@@ -15,7 +15,7 @@ import { formatEuro, formatNumber, formatSquareMeters } from '@/lib/format';
 
 // Mission 87 — dans le dossier, une surface se lit au m² entier (« 56,53 m² » → « 57 m² ») :
 // le formateur arrondit à l'affichage, aucun calcul ne change (M74).
-const squareMeters = (value: number): string => formatSquareMeters(value, { maxDecimals: 0 });
+const squareMeters = (value: number): string => formatSquareMeters(value);
 
 // Mission 84 — notre bien face au leur. Pur. Deux règles tiennent tout le fichier :
 //   - une ligne ne s'affiche que si elle est connue des DEUX côtés (jamais « — ») ;

@@ -1,5 +1,9 @@
 'use server';
 
+import {
+  COMPETITOR_VERIFIABLE_FIELDS,
+  importedFields,
+} from '@/features/imported-fields/services/fields-to-verify';
 import { revalidatePath } from 'next/cache';
 
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
@@ -105,6 +109,8 @@ export async function importAndCreateComparable(
       // Mission 83 — vendeur et exclusivité tels que l'annonce les dit, avec leur provenance.
       ...importedMandateColumns(data),
       property_type: canonicalType,
+      // Mission 97 — tout ce que l'import vient de remplir reste « à vérifier » jusqu'à relecture.
+      fields_to_verify: importedFields(input, COMPETITOR_VERIFIABLE_FIELDS),
       project_id: projectId,
       agency_id: profile.agency_id,
       display_order: nextOrder,

@@ -1,3 +1,4 @@
+import { propertyTypeDisplay } from '@/features/subject-property/services/property-type-display';
 import type { PreparationProperty } from '@/features/projects/queries/get-preparation-dossiers';
 import { formatEuro, formatNumber, formatSquareMeters } from '@/lib/format';
 
@@ -13,8 +14,10 @@ export function propertyLabel(property: PreparationProperty | null): string | nu
     return null;
   }
   const parts: string[] = [];
-  if (property.propertyType?.trim()) {
-    parts.push(property.propertyType.trim());
+  // Mission 97 — jamais le vocabulaire d'une source (« apartment ») : le type se lit en français.
+  const type = propertyTypeDisplay(property.propertyType);
+  if (type) {
+    parts.push(type);
   }
   if (property.roomsCount != null && property.roomsCount > 0) {
     parts.push(`${property.roomsCount} pièce${property.roomsCount > 1 ? 's' : ''}`);

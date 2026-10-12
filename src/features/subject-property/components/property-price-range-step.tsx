@@ -36,6 +36,7 @@ export function PropertyPriceRangeStep({
           min={0}
           suffix="€"
           onChange={(value) => onField('advisor_price_min', value)}
+          field="advisor_price_min"
           error={errors.advisor_price_min}
         />
         <NumberField
@@ -44,6 +45,7 @@ export function PropertyPriceRangeStep({
           min={0}
           suffix="€"
           onChange={(value) => onField('advisor_price_max', value)}
+          field="advisor_price_max"
           error={errors.advisor_price_max}
         />
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { btnGhost, btnSecondary, errorText, fieldLabel, inputBase } from '@/components/ui/styles';
+import { VerifyMark } from '@/features/imported-fields/components/verify-fields';
 import {
   MAX_LIST_ITEM_LENGTH,
   MAX_LIST_ITEMS,
@@ -13,11 +14,13 @@ export function PropertyListField({
   items,
   onChange,
   error,
+  field,
 }: {
   label: string;
   items: string[];
   onChange: (items: string[]) => void;
   error?: string;
+  field?: string;
 }) {
   const updateAt = (index: number, value: string) => {
     onChange(items.map((item, i) => (i === index ? value : item)));
@@ -33,7 +36,10 @@ export function PropertyListField({
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className={`${fieldLabel} mb-1.5`}>{label}</legend>
+      <legend className={`${fieldLabel} mb-1.5`}>
+        {label}
+        <VerifyMark field={field} />
+      </legend>
       {items.map((item, index) => (
         <div key={index} className="flex items-center gap-2">
           <input

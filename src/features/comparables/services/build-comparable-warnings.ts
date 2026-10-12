@@ -20,12 +20,12 @@ export function buildComparableWarnings(
   if (count > 0 && count < MIN_COMPARABLES) {
     warnings.push({
       type: 'too_few_comparables',
-      message: 'Moins de 3 comparables retenus : la sélection est trop faible.',
+      message: 'Moins de 3 concurrents retenus : c’est trop peu pour lire le marché.',
     });
   } else if (count > MAX_COMPARABLES) {
     warnings.push({
       type: 'too_many_comparables',
-      message: 'Plus de 8 comparables retenus : la sélection est trop large.',
+      message: 'Plus de 8 concurrents retenus : c’est trop pour un rendez-vous.',
     });
   }
 
@@ -40,7 +40,7 @@ export function buildComparableWarnings(
     if (dispersion > DISPERSION_THRESHOLD) {
       warnings.push({
         type: 'high_price_dispersion',
-        message: 'Les comparables présentent une forte dispersion de prix.',
+        message: 'Les concurrents retenus présentent une forte dispersion de prix.',
       });
     }
   }

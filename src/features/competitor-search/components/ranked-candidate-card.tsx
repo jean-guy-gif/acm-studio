@@ -18,6 +18,10 @@ import {
   DECISION_REASON_LABELS,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
+import {
+  MATCH_SUMMARY_LINE,
+  type MatchDetailLine,
+} from '@/features/competitor-search/services/match-percent';
 import { NEW_BUILD_COMPLEMENT_MENTION } from '@/features/competitor-search/services/new-build';
 import { formatFrenchDate } from '@/features/competitor-search/services/stream-estate-import';
 import type {
@@ -108,6 +112,20 @@ export type DecisionPayload = {
 // Principe (MISSION 36) : le conseiller doit pouvoir CONTESTER le classement.
 // D'où l'affichage systématique de ce qui rapproche l'annonce du bien du
 // vendeur, de ce qui l'en éloigne, et de ce que l'outil croit avoir appris.
+const VERDICT: Record<MatchDetailLine['verdict'], { sign: string; label: string; tone: string }> = {
+  full: {
+    sign: '✓',
+    label: 'correspond',
+    tone: 'font-bold text-emerald-600 stage:text-emerald-300',
+  },
+  partial: { sign: '~', label: 'proche', tone: 'font-bold text-amber-600 stage:text-amber-300' },
+  none: {
+    sign: '✗',
+    label: 'ne correspond pas',
+    tone: 'font-bold text-zinc-400 stage:text-white/40',
+  },
+};
+
 export function RankedCandidateCard({
   ranked,
   position,
@@ -131,6 +149,7 @@ export function RankedCandidateCard({
   const [reason, setReason] = useState<DecisionReason>('surface_too_different');
   const [comment, setComment] = useState('');
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const { candidate } = ranked;
   // On classe et on tranche sur les seules données de la CARTE de résultat, déjà lues,
@@ -198,15 +217,44 @@ export function RankedCandidateCard({
             </span>
             {/* Mission 71 — % de correspondance : points obtenus ÷ points possibles. */}
             {ranked.matchPercent != null ? (
-              <span
-                className="text-sm font-semibold text-brand-deep stage:text-white"
+              <button
+                type="button"
+                data-testid="match-percent"
+                aria-expanded={detailOpen}
+                onClick={() => setDetailOpen((open) => !open)}
+                className="text-sm font-semibold text-brand-deep underline decoration-dotted underline-offset-4 stage:text-white"
                 title="Correspondance avec le bien du vendeur (un critère non indiqué sort du calcul)"
               >
                 {formatPercent(ranked.matchPercent)}
-              </span>
+              </button>
             ) : null}
           </span>
         </div>
+
+        {/* Mission 97 — ce que veut dire le %, et, d'un toucher, ce qui a pesé (calcul M71). */}
+        {ranked.matchPercent != null ? (
+          <div className="flex flex-col gap-1 text-xs text-zinc-500 stage:text-white/60">
+            <span>{MATCH_SUMMARY_LINE}.</span>
+            {detailOpen ? (
+              <ul data-testid="match-detail" className="flex flex-col gap-0.5">
+                {(ranked.matchDetail ?? []).map((line) => (
+                  <li key={line.label}>
+                    <span className="font-semibold text-zinc-700 stage:text-white/80">
+                      {line.label}&nbsp;:
+                    </span>{' '}
+                    {line.text}{' '}
+                    <span
+                      aria-label={VERDICT[line.verdict].label}
+                      className={VERDICT[line.verdict].tone}
+                    >
+                      {VERDICT[line.verdict].sign}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="text-sm text-zinc-500 stage:text-white/60">
           <span className="font-semibold text-brand-deep stage:text-white">{euro(price)}</span>

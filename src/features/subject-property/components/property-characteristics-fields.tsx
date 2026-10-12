@@ -54,6 +54,7 @@ export function PropertyCharacteristicsFields({
           label="Exposition"
           value={exposure}
           onChange={(value) => onField('exposure', value)}
+          field="exposure"
           options={EXPOSURES.map((value) => ({ value, label: EXPOSURE_LABELS[value] }))}
           error={errors.exposure}
         />
@@ -63,12 +64,14 @@ export function PropertyCharacteristicsFields({
           step={1}
           min={1500}
           onChange={(value) => onField('construction_year', value)}
+          field="construction_year"
           error={errors.construction_year}
         />
         <SelectField
           label="État général"
           value={generalCondition}
           onChange={(value) => onField('general_condition', value)}
+          field="general_condition"
           options={GENERAL_CONDITIONS.map((value) => ({
             value,
             label: GENERAL_CONDITION_LABELS[value],
@@ -79,6 +82,7 @@ export function PropertyCharacteristicsFields({
           label="Ascenseur"
           value={hasElevator}
           onChange={(value) => onField('has_elevator', value)}
+          field="has_elevator"
           options={YES_NO}
           error={errors.has_elevator}
         />
@@ -86,6 +90,7 @@ export function PropertyCharacteristicsFields({
           label="Piscine"
           value={hasPool}
           onChange={(value) => onField('has_pool', value)}
+          field="has_pool"
           options={YES_NO}
           error={errors.has_pool}
         />
@@ -94,6 +99,7 @@ export function PropertyCharacteristicsFields({
         label="Extérieurs"
         values={outdoorSpaces}
         onChange={(values) => onArray('outdoor_spaces', values)}
+        field="outdoor_spaces"
         options={OUTDOOR_SPACES.map((value) => ({ value, label: OUTDOOR_SPACE_LABELS[value] }))}
         error={errors.outdoor_spaces}
       />
@@ -101,6 +107,7 @@ export function PropertyCharacteristicsFields({
         label="Stationnements"
         values={parkingTypes}
         onChange={(values) => onArray('parking_types', values)}
+        field="parking_types"
         options={PARKING_TYPES.map((value) => ({ value, label: PARKING_TYPE_LABELS[value] }))}
         error={errors.parking_types}
       />

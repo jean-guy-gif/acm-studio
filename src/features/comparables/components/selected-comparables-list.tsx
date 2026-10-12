@@ -103,7 +103,7 @@ export function SelectedComparablesList({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className={sectionTitle}>Biens retenus ({comparables.length})</h2>
+      <h2 className={sectionTitle}>Concurrents retenus ({comparables.length})</h2>
       {comparables.length > 0 ? <LocatorNotice availability={locatorAvailability} /> : null}
 
       {count > 0 ? (
@@ -165,7 +165,9 @@ export function SelectedComparablesList({
       ) : null}
 
       {comparables.length === 0 ? (
-        <p className={hintText}>Aucun bien retenu. Retenez les biens pertinents ci-dessous.</p>
+        <p className={hintText}>
+          Aucun concurrent retenu. Retenez les concurrents pertinents ci-dessous.
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {comparables.map((comparable, index) => (

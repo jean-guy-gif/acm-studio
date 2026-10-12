@@ -43,13 +43,13 @@ const SECTION_DEFINITIONS: SectionDefinition[] = [
   {
     key: 'price_positioning',
     title: 'Positionnement prix',
-    reasonUnavailable: 'Le positionnement ne peut pas être calculé (données insuffisantes).',
+    reasonUnavailable: 'Le prix des concurrents ne peut pas être calculé (données insuffisantes).',
     isAvailable: (a) => a.pricePositioning,
   },
   {
     key: 'advisor_decision',
     title: 'Décision du conseiller',
-    reasonUnavailable: 'Aucune décision de positionnement enregistrée.',
+    reasonUnavailable: 'Aucune décision de prix enregistrée.',
     isAvailable: (a) => a.advisorDecision,
   },
   {

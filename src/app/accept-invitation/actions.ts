@@ -52,5 +52,5 @@ export async function acceptInvitation(formData: FormData): Promise<AcceptResult
     redirect('/nouveau-mot-de-passe?raison=invitation');
   }
 
-  redirect('/builder');
+  redirect('/');
 }

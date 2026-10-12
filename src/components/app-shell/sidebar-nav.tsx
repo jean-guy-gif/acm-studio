@@ -12,6 +12,8 @@ const NAV = [
   { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
   { href: '/admin', label: 'Administration', hint: 'Agence et équipe' },
+  // Mission 97 — « Bienvenue », où l'on revient quand on veut.
+  { href: '/bienvenue', label: 'Aide', hint: 'Premiers pas' },
 ];
 
 export function SidebarNav() {

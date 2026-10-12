@@ -20,7 +20,8 @@ export async function login(formData: FormData): Promise<void> {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/builder');
+  // Mission 97 — l'entrée décide : « Bienvenue » sans dossier, sinon la Préparation.
+  redirect('/');
 }
 
 export async function signOut(): Promise<void> {

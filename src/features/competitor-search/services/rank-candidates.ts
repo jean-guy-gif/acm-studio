@@ -3,7 +3,11 @@ import {
   applyLearning,
   type LearnedPreferences,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import { gapLine, matchPercent } from '@/features/competitor-search/services/match-percent';
+import {
+  gapLine,
+  matchDetail,
+  matchPercent,
+} from '@/features/competitor-search/services/match-percent';
 import {
   assessProximity,
   compareProximity,
@@ -373,6 +377,7 @@ export function rankCandidates(
       newBuildComplement,
       proximity,
       matchPercent: matchPercent(criteria, entry.candidate, proximity.reasons, place),
+      matchDetail: matchDetail(criteria, entry.candidate, proximity.reasons, place),
       gapLine: isStream(entry) ? gapLine(criteria, entry.candidate, place) : null,
       dpe: candidateDpe(criteria, entry.candidate),
     };

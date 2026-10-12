@@ -1,5 +1,7 @@
 'use server';
 
+import { getProject } from '@/features/projects/queries/get-project';
+import { EXAMPLE_SEARCH_MESSAGE } from '@/features/welcome/services/example-exclusion';
 import { z } from 'zod';
 
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
@@ -93,6 +95,12 @@ export async function searchStreamEstate(
   const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
   if (parsedResume != null && !parsedResume.success) {
     return { ok: false, error: GENERIC_ERROR };
+  }
+
+  // Mission 97 — un dossier d'exemple ne déclenche aucun appel facturé, même par appel direct.
+  const project = await getProject(projectId);
+  if (project?.is_example) {
+    return { ok: false, error: EXAMPLE_SEARCH_MESSAGE };
   }
 
   const loaded = await loadSearchCriteria(projectId);
