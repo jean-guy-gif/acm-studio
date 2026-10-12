@@ -1,6 +1,13 @@
 import Link from 'next/link';
 
 import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
+import {
+  BUDGET_REACHED_HINT,
+  BUDGET_REACHED_LABEL,
+  budgetUsageLabel,
+  budgetWarningLabel,
+} from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -9,6 +16,9 @@ export default async function AdminPage() {
   // reste gardée par rôle, écran ET adresse). Un conseiller ne le voit pas.
   const profile = await getProfile();
   const isManager = isManagerRole(profile?.role);
+  // Mission 100 — la consommation Stream Estate du mois, pour le manager : il la voit, il ne
+  // règle pas le plafond (ce n'est pas un réglage d'agence).
+  const budgetRead = profile && isManager ? await getSearchBudget(profile.agency_id) : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -54,6 +64,40 @@ export default async function AdminPage() {
           </span>
         </Link>
       </div>
+
+      {budgetRead ? (
+        <div className={`${card} flex flex-col gap-1.5 p-5`}>
+          <span className={kickerLabel}>Recherche de concurrents · ce mois-ci</span>
+          {budgetRead.ok ? (
+            <>
+              <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
+                {budgetUsageLabel(budgetRead.budget)}
+              </p>
+              {budgetRead.budget.reached ? (
+                <p role="status" className="text-sm font-medium text-red-600 stage:text-red-300">
+                  {BUDGET_REACHED_LABEL}. {BUDGET_REACHED_HINT}
+                </p>
+              ) : null}
+              {budgetRead.budget.warning ? (
+                <p
+                  role="status"
+                  className="text-sm font-medium text-amber-700 stage:text-amber-300"
+                >
+                  {budgetWarningLabel(budgetRead.budget)}
+                </p>
+              ) : null}
+              <p className="text-sm text-zinc-500 stage:text-white/55">
+                Ce que les recherches « Chercher les concurrents » ont coûté ce mois-ci, sur le
+                plafond mensuel de l’agence. Le compteur repart à zéro le 1er du mois.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-zinc-500 stage:text-white/55">
+              La consommation du mois n’a pas pu être lue. Rechargez la page.
+            </p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

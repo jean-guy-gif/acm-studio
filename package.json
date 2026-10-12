@@ -21,6 +21,8 @@
     "extension:zip": "node scripts/extension-zip.mjs",
     "sauvegarde": "node scripts/sauvegarde.mjs",
     "sauvegarde:verifier": "node scripts/sauvegarde-verifier.mjs",
+    "nettoyer:test": "node scripts/nettoyer-test.mjs",
+    "verifier:production": "node scripts/verifier-production.mjs",
     "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs"
   },
   "dependencies": {

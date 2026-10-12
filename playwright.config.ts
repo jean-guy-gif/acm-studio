@@ -32,6 +32,8 @@ if (!process.env.E2E_BASE_URL) {
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // Mission 100 — à la fin de chaque passage, réussi ou non : l'agence de test est vidée.
+  globalTeardown: './tests/e2e/global-teardown.ts',
   // Un seul dossier, un seul parcours : aucun parallélisme, aucune relance automatique
   // (une relance masquerait une régression intermittente).
   fullyParallel: false,

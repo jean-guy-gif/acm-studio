@@ -12,6 +12,7 @@ import {
 } from '@/features/competitor-search/services/fetch-geo';
 import {
   baseStreamEstateQuery,
+  billedAdverts,
   STREAM_ESTATE_ENDPOINT,
 } from '@/features/competitor-search/services/stream-estate';
 import {
@@ -30,6 +31,7 @@ import {
   planTiers,
   runTieredSearch,
   searchDefaults,
+  STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_MORE_CAP,
   type FetchStreamEstatePage,
   type TierCursor,
@@ -43,6 +45,16 @@ import {
   STREAM_ESTATE_SOURCE,
   type PortalSearchResult,
 } from '@/features/competitor-search/types';
+import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
+import {
+  advertsAllowed,
+  BUDGET_REACHED_HINT,
+  BUDGET_REACHED_LABEL,
+  BUDGET_UNREADABLE_MESSAGE,
+} from '@/features/search-budget/services/budget';
+import { recordStreamEstateUsage } from '@/features/search-budget/services/record-usage';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
+import { getProfile } from '@/lib/auth/get-profile';
 
 export type StreamEstateSearchResult =
   | {
@@ -120,6 +132,23 @@ export async function searchStreamEstate(
     return { ok: false, error: EXAMPLE_SEARCH_MESSAGE };
   }
 
+  // Mission 100 — le plafond mensuel de l'agence, vérifié AVANT tout appel payant. Un budget
+  // illisible n'est pas un budget libre : la recherche ne part pas.
+  const profile = await getProfile();
+  if (!profile || profile.removed_at) {
+    return { ok: false, error: 'Vous devez être connecté.' };
+  }
+  const budgetRead = await getSearchBudget(profile.agency_id);
+  if (!budgetRead.ok) {
+    return { ok: false, error: BUDGET_UNREADABLE_MESSAGE };
+  }
+  if (budgetRead.budget.reached) {
+    return {
+      ok: false,
+      error: `${BUDGET_REACHED_LABEL}. Aucune recherche lancée. ${BUDGET_REACHED_HINT}`,
+    };
+  }
+
   const loaded = await loadSearchCriteria(projectId);
   if (!loaded.ok) {
     return {
@@ -191,6 +220,8 @@ export async function searchStreamEstate(
           neighbourInseeCodes(departmentCommunes, commune.code, subjectPoint, radiusKm, siblings)
       : null;
 
+  // Mission 100 — ce que cette recherche a réellement facturé, compté sur chaque réponse.
+  let billed = 0;
   const fetchPage: FetchStreamEstatePage = async (params) => {
     try {
       const response = await fetch(`${STREAM_ESTATE_ENDPOINT}?${params}`, {
@@ -199,16 +230,18 @@ export async function searchStreamEstate(
         cache: 'no-store',
       });
       if (response.status === 401 || response.status === 403) {
-        console.error('[searchStreamEstate] refus de l’API', response.status);
+        await reportServerError(
+          'searchStreamEstate',
+          new Error(`refus de l’API (${response.status})`),
+        );
         return { ok: false, refused: true };
       }
       if (!response.ok) throw new Error(`Stream Estate ${response.status}`);
-      return { ok: true, json: await response.json() };
+      const json: unknown = await response.json();
+      billed += billedAdverts(json);
+      return { ok: true, json };
     } catch (error) {
-      console.error(
-        '[searchStreamEstate] appel API',
-        error instanceof Error ? error.message : error,
-      );
+      await reportServerError('searchStreamEstate', error);
       return { ok: false, refused: false };
     }
   };
@@ -248,15 +281,26 @@ export async function searchStreamEstate(
     neighbours,
     fetchPage,
     now,
+    // Mission 100 — jamais plus que ce qu'il reste du budget du mois.
+    cap: advertsAllowed(
+      resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP,
+      budgetRead.budget,
+    ),
     ...(resumeFrom != null
       ? {
-          cap: STREAM_ESTATE_MORE_CAP,
           resume: {
             cursor: { ...resumeFrom.cursor, tier: plans[resumeFrom.cursor.plan].tier },
             memory: resumeFrom.memory,
           },
         }
       : {}),
+  });
+  // Comptée que la recherche ait abouti ou non : ce qui est facturé est dépensé.
+  await recordStreamEstateUsage({
+    agencyId: profile.agency_id,
+    projectId,
+    userId: profile.id,
+    adverts: billed,
   });
   if (!outcome.ok) {
     return {

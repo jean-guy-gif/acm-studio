@@ -16,12 +16,20 @@ const NAV = [
   { href: '/bienvenue', label: 'Aide', hint: 'Premiers pas' },
 ];
 
-export function SidebarNav() {
+// Mission 100 — « Erreurs » n'apparaît qu'aux comptes autorisés : le layout ne transmet
+// `errorsBadge` que pour eux (la page, elle, se garde seule). La pastille dit le nombre d'erreurs
+// depuis hier ; elle se tait à zéro.
+export type ErrorsBadge = { count: number; label: string };
+
+export function SidebarNav({ errorsBadge = null }: { errorsBadge?: ErrorsBadge | null }) {
   const pathname = usePathname();
+  const items = errorsBadge
+    ? [...NAV, { href: '/erreurs', label: 'Erreurs', hint: 'Ce qui casse' }]
+    : NAV;
 
   return (
     <nav className="flex flex-wrap gap-1 md:flex-col md:gap-1.5">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
@@ -42,6 +50,11 @@ export function SidebarNav() {
               }
             >
               {item.label}
+              {item.href === '/erreurs' && errorsBadge && errorsBadge.count > 0 ? (
+                <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 align-middle font-sans text-xs font-semibold text-white">
+                  {errorsBadge.label}
+                </span>
+              ) : null}
             </span>
             <span
               className={

@@ -15,4 +15,7 @@ J'ai essayé la mission **$ARGUMENTS** : elle est validée.
 4. Si `docs/DECISIONS.md` existe, ajoute-y les décisions de la mission (une ligne datée par
    décision, avec le numéro de mission) et commite.
 5. Pousse `main` (je validerai la permission). Supprime ensuite la branche locale.
-6. Dis-moi en 3 lignes ce qui vient de partir en ligne.
+6. Lance `npm run verifier:production` : la commande attend que la production serve le commit de
+   `main` (10 minutes au plus). Rapporte ce qu'elle répond — « production à jour », ou son échec
+   tel quel. Ne dis plus « je n'ai pas vérifié le déploiement ».
+7. Dis-moi en 3 lignes ce qui vient de partir en ligne.

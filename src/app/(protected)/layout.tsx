@@ -6,6 +6,10 @@ import { AppShell } from '@/components/app-shell/app-shell';
 import { APP_THEME_COOKIE, type AppTheme } from '@/components/theme/theme';
 import { btnPrimary } from '@/components/ui/styles';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { countErrorsSinceYesterday } from '@/features/operations/queries/get-error-report';
+import { errorsBadgeLabel } from '@/features/operations/services/group-errors';
+import { isOperatorEmail } from '@/features/operations/services/operators';
+import { requireOperator } from '@/features/operations/services/require-operator';
 import { TestAccountBanner } from '@/features/test-account/test-account-banner';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -49,6 +53,16 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     cookies(),
     getAgencyBranding(),
   ]);
+  // Mission 100 — la pastille « N erreurs depuis hier », pour les seuls comptes autorisés : le
+  // garde précède le comptage (clé service). Un comptage illisible n'affiche aucun chiffre.
+  // L'adresse du profil ne sert qu'à éviter une vérification inutile à tous les autres comptes :
+  // c'est `requireOperator` (la session) qui décide.
+  const isOperator = isOperatorEmail(profile.email) && (await requireOperator()).ok;
+  const errorsCount = isOperator ? await countErrorsSinceYesterday() : null;
+  const errorsBadge = isOperator
+    ? { count: errorsCount ?? 0, label: errorsBadgeLabel(errorsCount ?? 0) }
+    : null;
+
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
   return (
@@ -63,6 +77,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         signOutAction={signOut}
         logoLightUrl={branding?.logoLightUrl ?? null}
         logoDarkUrl={branding?.logoDarkUrl ?? null}
+        errorsBadge={errorsBadge}
       >
         {children}
       </AppShell>

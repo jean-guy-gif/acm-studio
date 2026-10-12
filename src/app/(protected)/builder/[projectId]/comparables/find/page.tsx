@@ -18,12 +18,16 @@ import { displayCommune } from '@/features/competitor-search/utils/arrondissemen
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { searchDefaults } from '@/features/competitor-search/services/stream-estate-tiers';
 import { getProject } from '@/features/projects/queries/get-project';
+import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
+import { budgetWarningLabel } from '@/features/search-budget/services/budget';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import {
   missingForSearch,
   propertyFieldId,
   SEARCH_REQUIREMENT_LABELS,
 } from '@/features/subject-property/services/search-requirements';
+import { isManagerRole } from '@/features/team/services/role';
+import { getProfile } from '@/lib/auth/get-profile';
 
 type FindCompetitorsPageProps = {
   params: Promise<{ projectId: string }>;
@@ -55,11 +59,21 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   const rememberPlacesAction = rememberPortalPlaces.bind(null, projectId);
   // Essai Stream Estate : seulement si la clé est définie côté serveur. On transmet une action
   // liée, jamais la clé.
-  const streamEstateAction =
+  const streamEstateAvailable =
     // Mission 97 — jamais sur un dossier d'exemple : rien n'est facturé pour une démonstration.
-    streamEstateApiKey() != null && !project.is_example
+    streamEstateApiKey() != null && !project.is_example;
+  // Mission 100 — le budget de recherche du mois. Atteint : le bouton est remplacé, aucun appel
+  // ne part (l'action le refuse aussi). À 80 %, le manager de l'agence est prévenu. Un budget
+  // illisible ne retire pas le bouton : c'est l'action qui refusera, en le disant.
+  const profile = streamEstateAvailable ? await getProfile() : null;
+  const budgetRead = profile ? await getSearchBudget(profile.agency_id) : null;
+  const budget = budgetRead?.ok ? budgetRead.budget : null;
+  const streamEstateAction =
+    streamEstateAvailable && !budget?.reached
       ? searchStreamEstate.bind(null, projectId)
       : undefined;
+  const budgetNotice =
+    budget != null && isManagerRole(profile?.role) ? budgetWarningLabel(budget) : null;
 
   // Mission 99 — « Réglages de la recherche » : ce qui est enregistré sur le dossier, et les
   // valeurs que l'outil utiliserait seul (les bornes de la première recherche). L'adresse est
@@ -115,6 +129,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           prepareOpenAction={prepareOpenAction}
           rememberPlacesAction={rememberPlacesAction}
           streamEstateAction={streamEstateAction}
+          budgetReached={streamEstateAvailable && budget?.reached === true}
+          budgetNotice={budgetNotice}
           searchSettings={searchSettings}
         />
       ) : (

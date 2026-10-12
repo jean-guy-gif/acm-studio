@@ -164,6 +164,82 @@ export type Database = {
           },
         ]
       }
+      agency_search_budgets: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          monthly_cap_cents: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          monthly_cap_cents: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          monthly_cap_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_search_budgets_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_errors: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          id: string
+          message: string
+          page: string
+          source: string
+          user_id: string | null
+          version: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          page: string
+          source: string
+          user_id?: string | null
+          version?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          page?: string
+          source?: string
+          user_id?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_errors_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comparables: {
         Row: {
           address: string | null
@@ -1187,6 +1263,48 @@ export type Database = {
           },
         ]
       }
+      stream_estate_usage: {
+        Row: {
+          adverts: number
+          agency_id: string
+          created_at: string
+          id: string
+          project_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          adverts: number
+          agency_id: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          adverts?: number
+          agency_id?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_estate_usage_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_estate_usage_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subject_properties: {
         Row: {
           address: string | null
@@ -1556,6 +1674,7 @@ export type Database = {
         Args: { p_comparable_id: string; p_direction: string }
         Returns: undefined
       }
+      purge_old_app_errors: { Args: never; Returns: number }
       save_commercialization_price: {
         Args: {
           p_advisor_analysis: number
@@ -1566,6 +1685,13 @@ export type Database = {
           p_project_id: string
         }
         Returns: undefined
+      }
+      stream_estate_usage_since: {
+        Args: { p_since: string }
+        Returns: {
+          adverts: number
+          agency_id: string
+        }[]
       }
     }
     Enums: {
