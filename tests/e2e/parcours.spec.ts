@@ -7,6 +7,7 @@ import {
   pagePayload,
   TEST_PRICE_DROP,
   ageTestFollowUp,
+  readTestOppositions,
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
@@ -50,6 +51,9 @@ const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
 const RUN_NUMBER = (Date.now() % 90_000) + 1_000;
 const PROSPECTING_ADDRESS = `${RUN_NUMBER} avenue du Test Automatique, 06600 Antibes`;
 const OPPOSED_ADDRESS = `${RUN_NUMBER} rue du Refus Automatique, 06600 Antibes`;
+// 06530 couvre cinq communes : l'inscription à la main doit demander laquelle.
+const CHOSEN_STREET = `${RUN_NUMBER + 2} rue du Refus Automatique`;
+const CHOSEN_ADDRESS = `${CHOSEN_STREET}, 06530 Peymeinade`;
 const TOUR_ADDRESS = `${RUN_NUMBER} boulevard de la Tournée, 06160 Juan-les-Pins`;
 
 test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
@@ -629,6 +633,81 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.goto(`/prospection?bien=${projectId}`);
   });
 
+  // Une opposition annoncée doit être une opposition ÉCRITE, et qui bloque. Le parcours inscrit
+  // une adresse à la main, avec choix de la commune, pour un bien qui EST sur une carte : la base
+  // doit porter la ligne de la carte opposée plus haut et celle-ci, le courrier doit être refusé,
+  // et l'adresse sortir de la tournée.
+  await test.step('Opposition à la main avec choix de la commune : en base, et elle bloque', async () => {
+    const ready = page.getByTestId('prospecting-column-ready');
+    const card = ready.getByTestId('prospecting-card').filter({ hasText: TOUR_ADDRESS });
+    await card.getByRole('button', { name: 'Corriger l’adresse' }).click();
+    await card.getByLabel('Adresse du bien concurrent').fill(CHOSEN_ADDRESS);
+    await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
+    const moved = ready.getByTestId('prospecting-card').filter({ hasText: CHOSEN_ADDRESS });
+    await expect(moved).toBeVisible();
+    const href = await moved
+      .getByRole('link', { name: /Préparer le dossier/ })
+      .first()
+      .getAttribute('href');
+    const letter = `${(href ?? '').split('?')[0]}?version=owner`;
+    expect(letter, 'Le lien du courrier est introuvable').toMatch(/\/prospection\/[0-9a-f-]{36}\?/);
+    await page.goto(`/prospection/tournee?bien=${projectId}`);
+    await expect(page.getByText(CHOSEN_ADDRESS)).toBeVisible();
+    await page.goto(`/prospection?bien=${projectId}`);
+
+    const cardKey = `${RUN_NUMBER} rue du refus automatique antibes`;
+    const chosenKey = `${RUN_NUMBER + 2} rue du refus automatique peymeinade`;
+    const before = readTestOppositions();
+    console.log(`Oppositions en base AVANT l’inscription à la main : ${before.length}`, before);
+    expect(before, 'La ligne inscrite depuis la carte n’est pas en base').toContain(cardKey);
+    expect(before).not.toContain(chosenKey);
+
+    await page.getByText('Inscrire une adresse « Ne plus solliciter »').click();
+    await page.getByLabel('Adresse à ne plus solliciter').fill(`${CHOSEN_STREET} 06530`);
+    await page.getByRole('button', { name: 'Ne plus solliciter cette adresse' }).click();
+    await page.getByLabel('Commune de l’adresse').selectOption({ label: 'Peymeinade' });
+    await expect(page.getByTestId('manual-opposition-understood')).toHaveText(
+      `${CHOSEN_STREET}, Peymeinade`,
+    );
+    // Rien n'est écrit avant « Inscrire ».
+    expect(readTestOppositions()).toEqual(before);
+    await page.getByRole('button', { name: 'Inscrire', exact: true }).click();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Inscrit : plus aucun courrier' }).first(),
+    ).toBeVisible();
+
+    const during = readTestOppositions();
+    console.log(`Oppositions en base APRÈS l’inscription à la main : ${during.length}`, during);
+    expect(during, 'L’opposition à la main n’est pas en base').toContain(chosenKey);
+    expect(during, 'La ligne de la carte a disparu').toContain(cardKey);
+    expect(during).toHaveLength(before.length + 1);
+
+    // Elle bloque : la carte quitte le tableau, son courrier est refusé, la tournée l'ignore.
+    await expect(
+      ready.getByTestId('prospecting-card').filter({ hasText: CHOSEN_ADDRESS }),
+      'L’adresse inscrite à la main est restée « prête »',
+    ).toHaveCount(0);
+    await page.goto(letter);
+    await expect(
+      page.getByText('Ce propriétaire a demandé à ne plus être sollicité'),
+      'Le courrier d’une adresse « Ne plus solliciter » n’est pas refusé',
+    ).toBeVisible();
+    await page.goto(`/prospection/courriers?bien=${projectId}`);
+    await expect(page.getByRole('heading', { name: 'Courriers de prospection' })).toBeVisible();
+    await expect(
+      page.getByText(CHOSEN_ADDRESS),
+      'L’adresse « Ne plus solliciter » est restée dans les courriers à imprimer',
+    ).toHaveCount(0);
+    await page.goto(`/prospection/tournee?bien=${projectId}`);
+    await expect(page.getByRole('heading', { name: 'Ma tournée de prospection' })).toBeVisible();
+    await expect(page.getByText(PROSPECTING_ADDRESS)).toBeVisible();
+    await expect(
+      page.getByText(CHOSEN_ADDRESS),
+      'L’adresse « Ne plus solliciter » est restée dans la tournée',
+    ).toHaveCount(0);
+    await page.goto(`/prospection?bien=${projectId}`);
+  });
+
   await test.step('Suivi et Prospection tiennent sur tablette (768 × 1024)', async () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     const overflow = () =>
@@ -651,8 +730,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(
       removeTestOppositions(),
       'La ligne d’opposition de ce passage n’a pas été retrouvée',
-    ).toBeGreaterThanOrEqual(1);
+    ).toBeGreaterThanOrEqual(3);
     expect(removeTestOppositions(), 'Il reste des oppositions du test').toBe(0);
+    const after = readTestOppositions();
+    console.log(`Oppositions en base APRÈS le nettoyage : ${after.length}`, after);
+    expect(after).toEqual([]);
     await page.goto(`/prospection?bien=${projectId}`);
     await expect(
       page
