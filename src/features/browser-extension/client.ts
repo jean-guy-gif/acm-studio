@@ -17,6 +17,9 @@
 // renvoyé : 4 essais d'une seconde, soit 4 secondes avant de conclure.
 export const PING_ATTEMPTS = 4;
 export const PING_ATTEMPT_TIMEOUT_MS = 1_000;
+// Ouvrir et fermer la fenêtre de recherche : inchangés (4,8 s et 2,8 s).
+const OPEN_WINDOW_TIMEOUT_MS = 4_800;
+const CLOSE_WINDOW_TIMEOUT_MS = 2_800;
 const FETCH_TIMEOUT_MS = 50_000;
 const ROBOTS_TIMEOUT_MS = 8_000;
 // Ouvrir quatre onglets : rapide. Tout lire : jusqu'à 15 s d'attente par onglet (mission 46).
@@ -162,7 +165,7 @@ export async function openSearchWindowViaExtension(): Promise<{ ok: boolean; win
   try {
     const response = await send<{ ok?: boolean; windowId?: number }>(
       { kind: 'openSearchWindow' },
-      PING_TIMEOUT_MS + 4_000,
+      OPEN_WINDOW_TIMEOUT_MS,
     );
     return { ok: response.ok === true, windowId: response.windowId };
   } catch {
@@ -186,7 +189,7 @@ export async function fetchInSearchWindowViaExtension(
 
 export async function closeSearchWindowViaExtension(windowId: number): Promise<void> {
   try {
-    await send<{ ok?: boolean }>({ kind: 'closeSearchWindow', windowId }, PING_TIMEOUT_MS + 2_000);
+    await send<{ ok?: boolean }>({ kind: 'closeSearchWindow', windowId }, CLOSE_WINDOW_TIMEOUT_MS);
   } catch {
     // La fenêtre se ferme d'elle-même si l'extension ne répond pas ; rien à forcer.
   }
