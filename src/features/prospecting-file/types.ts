@@ -48,8 +48,10 @@ export type ProspectingFileFacts = {
 };
 
 // Qui a établi l'adresse du bien concurrent : le Localisateur (données publiques : DPE,
-// registre des copropriétés, cadastre), ou le conseiller qui l'a saisie ou confirmée.
-export type AddressSource = 'locator' | 'advisor';
+// registre des copropriétés, cadastre) — que le conseiller l'ait confirmée ou non —, ou le
+// conseiller qui l'a saisie ou corrigée. Mission 103 — `verified` : la source d'origine n'est
+// plus connue (adresse confirmée avant la mission, ou dans le Localisateur lui-même).
+export type AddressSource = 'locator' | 'advisor' | 'verified';
 
 // Les textes que le conseiller peut réécrire. `*mot*` met en valeur.
 export type ProspectingFileTexts = {

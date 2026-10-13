@@ -62,6 +62,40 @@ type ComparableCardProps = {
 
 const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
 
+// Mission 103 — retenir une annonce retirée reste le choix du conseiller, mais il le fait en le
+// sachant : devant le vendeur, rien ne distingue ce bien d'un bien en vente.
+export const WITHDRAWN_REINTEGRATE_WARNING =
+  'Cette annonce n’est plus en ligne : elle sera présentée au vendeur comme un bien en vente. Continuer ?';
+
+// On confirme dans l'écran, sans boîte du navigateur ; « Continuer » est le geste qui réintègre.
+export function WithdrawnReintegrateWarning({
+  comparableId,
+  toggleAction,
+  onCancel,
+}: {
+  comparableId: string;
+  toggleAction: ServerAction;
+  onCancel: () => void;
+}) {
+  return (
+    <form
+      action={toggleAction}
+      className="flex w-full flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
+    >
+      <input type="hidden" name="comparableId" value={comparableId} />
+      <p role="alert">{WITHDRAWN_REINTEGRATE_WARNING}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className={smallBtn} onClick={onCancel}>
+          Annuler
+        </button>
+        <button type="submit" className={smallBtn}>
+          Continuer
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // Origin is derived deterministically from existing data: an imported comparable
 // always carries the source listing URL, a manual one does not.
 function originLabel(comparable: Comparable): 'Import URL' | 'Manuel' {
@@ -87,6 +121,8 @@ export function ComparableCard({
     COMPETITOR_VERIFIABLE_FIELDS,
   ).length;
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [confirmingWithdrawn, setConfirmingWithdrawn] = useState(false);
+  const warnBeforeReintegrate = comparable.listing_withdrawn && !comparable.is_selected;
   const acmPricePerSquareMeter = pricePerSquareMeter(comparable.price, comparable.surface_area);
   const gap = surfaceComparison(comparable.surface_area, subjectSurfaceArea);
 
@@ -231,12 +267,24 @@ export function ComparableCard({
         />
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-          <form action={toggleAction}>
-            <input type="hidden" name="comparableId" value={comparable.id} />
-            <button type="submit" className={smallBtn}>
-              {comparable.is_selected ? 'Écarter' : 'Réintégrer'}
+          {warnBeforeReintegrate && !confirmingWithdrawn ? (
+            <button type="button" className={smallBtn} onClick={() => setConfirmingWithdrawn(true)}>
+              Réintégrer
             </button>
-          </form>
+          ) : warnBeforeReintegrate ? (
+            <WithdrawnReintegrateWarning
+              comparableId={comparable.id}
+              toggleAction={toggleAction}
+              onCancel={() => setConfirmingWithdrawn(false)}
+            />
+          ) : (
+            <form action={toggleAction}>
+              <input type="hidden" name="comparableId" value={comparable.id} />
+              <button type="submit" className={smallBtn}>
+                {comparable.is_selected ? 'Écarter' : 'Réintégrer'}
+              </button>
+            </form>
+          )}
 
           {moveAction ? (
             <>

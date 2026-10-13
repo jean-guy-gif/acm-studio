@@ -32,7 +32,7 @@ describe('ownerLegalMention — le pied du courrier au propriétaire', () => {
     expect(mention).not.toContain('relevée par notre conseiller');
   });
 
-  it('adresse saisie ou confirmée par le conseiller : relevée par lui', () => {
+  it('adresse saisie ou corrigée par le conseiller : relevée par lui', () => {
     const typed = ownerLegalMention(SENDER, 'advisor');
     expect(typed).toContain(
       'Votre adresse a été relevée par notre conseiller à partir de l’annonce de votre bien.',
@@ -41,13 +41,23 @@ describe('ownerLegalMention — le pied du courrier au propriétaire', () => {
   });
 
   it('ne dit plus jamais que l’adresse « provient d’une annonce publiée »', () => {
-    for (const source of ['locator', 'advisor'] as const) {
+    for (const source of ['locator', 'advisor', 'verified'] as const) {
       expect(ownerLegalMention(SENDER, source)).not.toContain('provient d’une annonce publiée');
     }
   });
 
-  it('la variante suit `locator_source` : « vous » est le conseiller, tout le reste le Localisateur', () => {
-    expect(addressSource('vous')).toBe('advisor');
+  // Mission 103 — l'ancien cas : une adresse confirmée avant la mission (source « vous », mais
+  // position du Localisateur). La formule est vraie que l'adresse vienne de lui ou du conseiller.
+  it('source d’origine inconnue : une formule vraie dans les deux cas', () => {
+    const verified = ownerLegalMention(SENDER, 'verified');
+    expect(verified).toContain(
+      'Votre adresse a été déterminée à partir de l’annonce de votre bien et de données publiques, puis vérifiée par notre conseiller.',
+    );
+    expect(verified).not.toContain('relevée par notre conseiller');
+    expect(verified.length).toBeLessThanOrEqual(5 * 170);
+  });
+
+  it('la variante suit la source D’ORIGINE : confirmer ne la change pas, saisir ou corriger oui', () => {
     for (const source of [
       'dpe',
       'copropriete',
@@ -57,9 +67,15 @@ describe('ownerLegalMention — le pied du courrier au propriétaire', () => {
       'cercle',
       null,
     ]) {
-      expect(addressSource(source)).toBe('locator');
+      // Proposée, confirmée par le Localisateur ou par le conseiller : c'est la même source.
+      expect(addressSource(source, true)).toBe('locator');
+      expect(addressSource(source, false)).toBe('locator');
     }
-    expect(Object.keys(ADDRESS_SOURCE_MENTIONS)).toEqual(['locator', 'advisor']);
+    // Saisie ou corrigée : « vous », sans position.
+    expect(addressSource('vous', false)).toBe('advisor');
+    // Confirmée avant la mission 103 : « vous », avec la position du Localisateur.
+    expect(addressSource('vous', true)).toBe('verified');
+    expect(Object.keys(ADDRESS_SOURCE_MENTIONS)).toEqual(['locator', 'advisor', 'verified']);
   });
 
   it('dit la finalité et la durée de conservation : 3 ans', () => {

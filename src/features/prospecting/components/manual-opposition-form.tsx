@@ -2,31 +2,68 @@
 
 import { useState, useTransition } from 'react';
 
-import { btnSecondary, inputBase } from '@/components/ui/styles';
-import { addManualOpposition } from '@/features/prospecting/actions/add-prospecting-opposition';
-import { MANUAL_OPPOSITION_MAX_LENGTH } from '@/features/prospecting/services/manual-opposition';
+import { btnPrimary, btnSecondary, inputBase } from '@/components/ui/styles';
+import {
+  addManualOpposition,
+  checkManualOpposition,
+} from '@/features/prospecting/actions/add-prospecting-opposition';
+import { OPPOSITION_RECORDED_MESSAGE } from '@/features/prospecting/components/opposition-notice';
+import {
+  MANUAL_OPPOSITION_CHOOSE,
+  MANUAL_OPPOSITION_MAX_LENGTH,
+  type ManualCommune,
+} from '@/features/prospecting/services/manual-opposition';
+
+const small = 'px-3 py-1.5 text-xs';
 
 // Mission 102 — inscrire À LA MAIN une adresse sur la liste « Ne plus solliciter » : un
 // propriétaire appelle, son bien n'est sur aucune carte. L'adresse est bloquée pour toute
 // l'agence, dans tous les dossiers, présents et futurs ; le geste ne s'annule pas d'ici.
+// Mission 103 — en deux temps : l'écran montre d'abord l'adresse COMPRISE, avec sa commune
+// (déduite du code postal, ou choisie quand il en couvre plusieurs), puis inscrit.
 export function ManualOppositionForm() {
   const [address, setAddress] = useState('');
+  const [communes, setCommunes] = useState<ManualCommune[]>([]);
+  const [communeCode, setCommuneCode] = useState('');
+  const [understood, setUnderstood] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const submit = () => {
+  const reset = () => {
+    setCommunes([]);
+    setCommuneCode('');
+    setUnderstood(null);
+  };
+
+  const check = (code: string) => {
     setMessage(null);
     startTransition(async () => {
-      const result = await addManualOpposition(address);
+      const result = await checkManualOpposition(address, code || undefined);
+      if (!result.ok) {
+        reset();
+        setMessage({ ok: false, text: result.error });
+        return;
+      }
+      if (result.status === 'choose') {
+        setCommunes(result.communes);
+        setUnderstood(null);
+        return;
+      }
+      setUnderstood(result.display);
+    });
+  };
+
+  const record = () => {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await addManualOpposition(address, communeCode || undefined);
       if (!result.ok) {
         setMessage({ ok: false, text: result.error });
         return;
       }
       setAddress('');
-      setMessage({
-        ok: true,
-        text: 'Adresse inscrite : plus de courrier, plus de tournée, dans aucun dossier.',
-      });
+      reset();
+      setMessage({ ok: true, text: OPPOSITION_RECORDED_MESSAGE });
     });
   };
 
@@ -39,7 +76,7 @@ export function ManualOppositionForm() {
         className="mt-3 flex flex-col gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          check(communeCode);
         }}
       >
         <p className="text-xs text-zinc-500 stage:text-white/60">
@@ -53,19 +90,77 @@ export function ManualOppositionForm() {
             required
             maxLength={MANUAL_OPPOSITION_MAX_LENGTH}
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
+            onChange={(event) => {
+              setAddress(event.target.value);
+              reset();
+            }}
             placeholder="14 chemin des Oliviers, 06800 Cagnes-sur-Mer"
             aria-label="Adresse à ne plus solliciter"
             className={`${inputBase} min-w-0 flex-1`}
           />
-          <button
-            type="submit"
-            disabled={pending}
-            className={`${btnSecondary} px-3 py-1.5 text-xs`}
-          >
-            {pending ? 'Inscription…' : 'Ne plus solliciter cette adresse'}
-          </button>
+          {understood == null ? (
+            <button type="submit" disabled={pending} className={`${btnSecondary} ${small}`}>
+              {pending ? 'Vérification…' : 'Ne plus solliciter cette adresse'}
+            </button>
+          ) : null}
         </div>
+
+        {communes.length > 0 && understood == null ? (
+          <label className="flex flex-wrap items-center gap-2 text-xs text-zinc-700 stage:text-white/80">
+            {MANUAL_OPPOSITION_CHOOSE}
+            <select
+              value={communeCode}
+              aria-label="Commune de l’adresse"
+              disabled={pending}
+              onChange={(event) => {
+                setCommuneCode(event.target.value);
+                if (event.target.value) {
+                  check(event.target.value);
+                }
+              }}
+              className={`${inputBase} w-auto`}
+            >
+              <option value="">Choisir…</option>
+              {communes.map((commune) => (
+                <option key={commune.code} value={commune.code}>
+                  {commune.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        {understood != null ? (
+          <div
+            role="group"
+            aria-label="Adresse comprise"
+            className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
+          >
+            <p>
+              <strong data-testid="manual-opposition-understood">{understood}</strong> —
+              Inscrire&nbsp;?
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={reset}
+                className={`${btnSecondary} ${small}`}
+              >
+                Modifier
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={record}
+                className={`${btnPrimary} ${small}`}
+              >
+                {pending ? 'Inscription…' : 'Inscrire'}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {message ? (
           <p
             role={message.ok ? 'status' : 'alert'}

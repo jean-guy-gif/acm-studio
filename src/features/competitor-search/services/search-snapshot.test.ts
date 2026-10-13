@@ -212,6 +212,20 @@ describe('le taux d’échec de lecture par portail', () => {
       { host: 'green-acres.fr', failed: 0, read: 1, failureRate: 0, causes: [] },
     ]);
   });
+
+  // Mission 103 — une page sans prix ni preuve de retrait se compte à part : un pic sur un
+  // portail signale un captcha ou un changement de gabarit.
+  it('compte les pages sans données sous leur propre cause', () => {
+    expect(importFailureStats(['seloger.com · empty', 'seloger.com · empty'], [])).toEqual([
+      {
+        host: 'seloger.com',
+        failed: 2,
+        read: 0,
+        failureRate: 100,
+        causes: [{ cause: 'empty', label: 'page sans données (captcha ?)', count: 2 }],
+      },
+    ]);
+  });
 });
 
 // L'import en attente, « Importé depuis la recherche » et « Annonce retirée » sont des faits de

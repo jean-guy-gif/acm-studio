@@ -123,3 +123,16 @@ export function geoDepartmentCommunesUrl(departement: string): string {
   const params = new URLSearchParams({ fields: 'nom,code,centre', format: 'json' });
   return `https://geo.api.gouv.fr/departements/${encodeURIComponent(departement)}/communes?${params}`;
 }
+
+// Mission 103 — les communes d'un code postal, ou celles d'un nom : de quoi reconnaître la commune
+// d'une adresse tapée (opposition inscrite à la main). Les communes seulement, sans les
+// arrondissements municipaux : « 75015 » rend « Paris », et l'arrondissement se lit ailleurs.
+export function geoCommuneLookupUrl(query: { postalCode: string } | { name: string }): string {
+  const params = new URLSearchParams();
+  if ('postalCode' in query) params.set('codePostal', query.postalCode);
+  else params.set('nom', query.name);
+  params.set('type', 'commune-actuelle');
+  params.set('fields', 'nom,code,codesPostaux');
+  params.set('format', 'json');
+  return `${GEO_COMMUNES_ENDPOINT}?${params}`;
+}

@@ -201,8 +201,8 @@ describe('importListing — une annonce retirée entre quand même, sans être r
   it.each([
     ['la page renvoie ailleurs que sur l’annonce', { withdrawn: true }],
     [
-      'la page ne porte plus ni prix ni donnée',
-      { imports: [{ ok: false, code: 'listing_empty' }] },
+      'la page prouve le retrait (404, mention explicite du portail)',
+      { imports: [{ ok: false, code: 'listing_withdrawn' }] },
     ],
   ] as [string, Script][])('%s', async (_name, script) => {
     const { deps, log } = harness(script);
@@ -212,6 +212,27 @@ describe('importListing — une annonce retirée entre quand même, sans être r
     expect(isRetained(outcome)).toBe(false);
     expect(log.search).toEqual([true]);
     expect(log.reported).toEqual([{ cause: 'withdrawn', attempts: 1 }]);
+  });
+});
+
+// Mission 103 — une page sans prix ni donnée, SANS preuve de retrait : une page captcha, un
+// gabarit de portail modifié. Ce n'est pas une annonce retirée : le concurrent reste retenu.
+describe('importListing — une page sans données n’écarte pas un concurrent retenu', () => {
+  it('relue trois fois, puis créée depuis la recherche, retenue', async () => {
+    const { deps, log } = harness({ imports: [{ ok: false, code: 'listing_empty' }] });
+    const outcome = await importListing(URL, deps);
+    expect(outcome).toEqual({ status: 'imported_from_search', cause: 'empty', attempts: 3 });
+    expect(isRetained(outcome)).toBe(true);
+    expect(log.search).toEqual([false]);
+    expect(log.reported).toEqual([{ cause: 'empty', attempts: 3 }]);
+  });
+
+  it('la page revient à la deuxième lecture : importée depuis sa page', async () => {
+    const { deps, log } = harness({
+      imports: [{ ok: false, code: 'listing_empty' }, { ok: true }],
+    });
+    expect(await importListing(URL, deps)).toEqual({ status: 'imported', attempts: 2 });
+    expect(log.search).toEqual([]);
   });
 });
 

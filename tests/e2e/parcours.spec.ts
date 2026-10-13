@@ -566,6 +566,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const refused = await confirmAddress(OPPOSED_ADDRESS);
     await refused.getByRole('button', { name: 'Ne plus solliciter', exact: true }).click();
     await refused.getByRole('button', { name: 'Confirmer : ne plus solliciter' }).click();
+    // Mission 103 — la carte quitte le tableau, et la page le dit.
+    await expect(
+      page.getByTestId('opposition-notice'),
+      'Rien ne confirme l’inscription « Ne plus solliciter »',
+    ).toHaveText('Inscrit : plus aucun courrier pour cette adresse');
     await expect(
       ready.getByTestId('prospecting-card').filter({ hasText: OPPOSED_ADDRESS }),
       'Une adresse « Ne plus solliciter » est restée dans le tableau',
@@ -581,14 +586,24 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'Une carte « Ne plus solliciter » propose encore de corriger son adresse',
     ).toHaveCount(0);
 
-    // Mission 102 — une opposition s'inscrit aussi à la main, pour une adresse sans carte :
-    // écrite « Juan-les-Pins », avec un étage, elle vaut pour l'immeuble d'Antibes.
+    // Mission 102 — une opposition s'inscrit aussi à la main, pour une adresse sans carte.
+    // Mission 103 — sans commune, elle ne bloquerait rien : elle est refusée ; avec le seul code
+    // postal, la commune est déduite, et l'écran montre l'adresse comprise avant d'inscrire.
     await page.getByText('Inscrire une adresse « Ne plus solliciter »').click();
-    await page
-      .getByLabel('Adresse à ne plus solliciter')
-      .fill(`${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, 06160 Juan-les-Pins`);
-    await page.getByRole('button', { name: 'Ne plus solliciter cette adresse' }).click();
-    await expect(page.getByText(/^Adresse inscrite/)).toBeVisible();
+    const manual = page.getByLabel('Adresse à ne plus solliciter');
+    const submitManual = page.getByRole('button', { name: 'Ne plus solliciter cette adresse' });
+    await manual.fill(`${RUN_NUMBER + 1} rue du Refus Automatique`);
+    await submitManual.click();
+    await expect(page.getByText(/^Ajoutez le code postal/)).toBeVisible();
+    await manual.fill(`${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage 06160`);
+    await submitManual.click();
+    await expect(page.getByTestId('manual-opposition-understood')).toHaveText(
+      `${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, Antibes`,
+    );
+    await page.getByRole('button', { name: 'Inscrire', exact: true }).click();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Inscrit : plus aucun courrier' }).first(),
+    ).toBeVisible();
 
     // Un dossier prêt : le bouton apparaît, et ouvre un seul document pour ce bien vendeur.
     await confirmAddress(TOUR_ADDRESS);

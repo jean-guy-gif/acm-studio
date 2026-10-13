@@ -1,0 +1,68 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+
+// La carte est isolée des Server Actions de ses lignes (chaîne server-only) : le test ne porte
+// que sur ce que l'écran propose.
+vi.mock('@/features/competitor-mandate/actions/set-competitor-mandate', () => ({
+  setCompetitorMandate: async () => ({ ok: true }),
+}));
+
+import { makeComparable } from '@/features/comparable-analysis/services/test-helpers';
+import {
+  ComparableCard,
+  WITHDRAWN_REINTEGRATE_WARNING,
+  WithdrawnReintegrateWarning,
+} from '@/features/comparables/components/comparable-card';
+
+const noop = () => {};
+
+const card = (overrides: Parameters<typeof makeComparable>[0]) =>
+  renderToStaticMarkup(
+    createElement(ComparableCard, {
+      comparable: makeComparable({ id: 'c1', ...overrides }),
+      editHref: '/builder/p1/comparables/c1/edit',
+      subjectSurfaceArea: null,
+      toggleAction: noop,
+      deleteAction: noop,
+    }),
+  );
+
+// Le formulaire qui bascule « retenu / écarté » d'un seul clic.
+const DIRECT_TOGGLE =
+  /<form[^>]*><input type="hidden" name="comparableId" value="c1"\/><button type="submit"[^>]*>(Réintégrer|Écarter)<\/button><\/form>/;
+
+// Mission 103 — recocher une annonce retirée reste le choix du conseiller, mais pas d'un clic.
+describe('réintégrer une annonce retirée', () => {
+  it('ne part pas d’un seul clic : « Réintégrer » ouvre d’abord l’avertissement', () => {
+    const html = card({ is_selected: false, listing_withdrawn: true });
+    expect(html).toContain('Annonce retirée');
+    expect(html).toContain('<button type="button"');
+    expect(html).toMatch(/<button type="button"[^>]*>Réintégrer<\/button>/);
+    expect(html).not.toMatch(DIRECT_TOGGLE);
+  });
+
+  it('l’avertissement dit ce que verra le vendeur, et laisse le choix', () => {
+    const html = renderToStaticMarkup(
+      createElement(WithdrawnReintegrateWarning, {
+        comparableId: 'c1',
+        toggleAction: noop,
+        onCancel: noop,
+      }),
+    );
+    expect(WITHDRAWN_REINTEGRATE_WARNING).toBe(
+      'Cette annonce n’est plus en ligne : elle sera présentée au vendeur comme un bien en vente. Continuer ?',
+    );
+    expect(html).toContain(WITHDRAWN_REINTEGRATE_WARNING);
+    expect(html).toContain('name="comparableId" value="c1"');
+    expect(html).toMatch(/<button type="button"[^>]*>Annuler<\/button>/);
+    expect(html).toMatch(/<button type="submit"[^>]*>Continuer<\/button>/);
+  });
+
+  it('un bien en ligne se réintègre et s’écarte d’un clic, comme avant', () => {
+    expect(card({ is_selected: false, listing_withdrawn: false })).toMatch(DIRECT_TOGGLE);
+    expect(card({ is_selected: true, listing_withdrawn: false })).toMatch(DIRECT_TOGGLE);
+    // Écarter une annonce retirée déjà retenue ne demande rien.
+    expect(card({ is_selected: true, listing_withdrawn: true })).toMatch(DIRECT_TOGGLE);
+  });
+});
