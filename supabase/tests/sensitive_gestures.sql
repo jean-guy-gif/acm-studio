@@ -331,6 +331,9 @@ select pg_temp.expect('§8 une cause hors liste',
   pg_temp.attempt($$update public.pending_competitor_imports set last_cause = 'inventee'$$), 'invalide');
 select pg_temp.expect('§8 des données qui ne sont pas un objet',
   pg_temp.attempt($$update public.pending_competitor_imports set snapshot = '[1]'$$), 'invalide');
+-- Mission 103 — une page sans données, sans preuve de retrait : une cause à part entière.
+select pg_temp.expect('§8 noter une page sans données (captcha ?)',
+  pg_temp.attempt($$update public.pending_competitor_imports set last_cause = 'empty', attempts = 3$$), '1');
 select pg_temp.expect('§8 noter la cause du dernier essai',
   pg_temp.attempt($$update public.pending_competitor_imports set last_cause = 'robots', attempts = 1$$), '1');
 

@@ -248,6 +248,8 @@ export async function getProspectingFile(
       theirs: competitor,
       theirAddress: confirmedAddress,
       theirAddressSource: competitor.locator_source,
+      theirAddressHasPosition:
+        competitor.locator_latitude != null && competitor.locator_longitude != null,
       distanceMeters: distance,
     }),
     sender: {

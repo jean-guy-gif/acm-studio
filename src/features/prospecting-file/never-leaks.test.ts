@@ -73,6 +73,7 @@ function payloads() {
     theirs: THEIR_ROW,
     theirAddress: '14 chemin des Oliviers, 06800 Cagnes-sur-Mer',
     theirAddressSource: 'LOCALISATEUR',
+    theirAddressHasPosition: true,
     distanceMeters: 640,
   });
   return (['owner', 'colleague'] as const).map((version) => {

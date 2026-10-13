@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   project: null as Record<string, unknown> | null,
   conclusion: null as Record<string, unknown> | null,
   card: null as Record<string, unknown> | null,
+  // Ce que rend le référentiel des communes (geo.api.gouv.fr) ; null : il ne répond pas.
+  communes: [] as { nom: string; code: string }[] | null,
   respond: (() => ({})) as (table: string, method: string) => FakeResponse,
 }));
 
@@ -51,6 +53,9 @@ vi.mock('@/features/prospecting/queries/prospecting-card-store', () => ({
   getProspectingCards: async () => [],
   findCard: () => state.card,
 }));
+vi.mock('@/features/competitor-search/services/fetch-geo', () => ({
+  fetchCommunes: async () => state.communes,
+}));
 vi.mock('@/features/team/services/deliver-invitation', () => ({
   deliverInvitation: async () => ({ ok: true, authUserId: 'auth-1' }),
 }));
@@ -77,6 +82,7 @@ beforeEach(() => {
   state.project = null;
   state.conclusion = null;
   state.card = null;
+  state.communes = [{ nom: 'Antibes', code: '06004' }];
   state.respond = () => ({});
   delete process.env.ACM_OPERATOR_EMAILS;
 });
@@ -261,6 +267,59 @@ describe('« Ne plus solliciter »', () => {
       });
     }
     noWrite();
+  });
+
+  // Mission 103 — sans commune reconnue, la clé ne rejoindrait aucune carte : rien n'est inscrit.
+  it('à la main : sans commune reconnue, rien n’est écrit', async () => {
+    const { addManualOpposition, checkManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    // Ni code postal ni commune.
+    expect((await addManualOpposition('8 avenue Hochet')).ok).toBe(false);
+    // Le référentiel ne répond pas : une panne n'est pas « aucune commune », et n'inscrit rien.
+    state.communes = null;
+    expect(await addManualOpposition('8 avenue Hochet 06160')).toEqual({
+      ok: false,
+      error: 'Le référentiel des communes ne répond pas : l’adresse n’est pas inscrite. Réessayez.',
+    });
+    // Un code postal à plusieurs communes : il faut choisir, et un choix hors liste ne vaut rien.
+    state.communes = [
+      { nom: 'Cabris', code: '06026' },
+      { nom: 'Peymeinade', code: '06095' },
+    ];
+    expect(await checkManualOpposition('3 route de Grasse 06530')).toEqual({
+      ok: true,
+      status: 'choose',
+      communes: [
+        { code: '06026', name: 'Cabris' },
+        { code: '06095', name: 'Peymeinade' },
+      ],
+    });
+    expect((await addManualOpposition('3 route de Grasse 06530')).ok).toBe(false);
+    expect((await addManualOpposition('3 route de Grasse 06530', '06004')).ok).toBe(false);
+    // Vérifier n'écrit jamais, et un membre retiré ne vérifie rien.
+    expect(await checkManualOpposition('3 route de Grasse 06530', '06095')).toEqual({
+      ok: true,
+      status: 'ready',
+      display: '3 route de Grasse, Peymeinade',
+    });
+    state.profile = removed;
+    expect((await checkManualOpposition('3 route de Grasse 06530', '06095')).ok).toBe(false);
+    noWrite();
+  });
+
+  it('à la main : la commune déduite du code postal entre dans la clé, comme sur une carte', async () => {
+    const { addManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    expect(await addManualOpposition('8 avenue Hochet 06160')).toEqual({ ok: true });
+    state.communes = [
+      { nom: 'Cabris', code: '06026' },
+      { nom: 'Peymeinade', code: '06095' },
+    ];
+    expect(await addManualOpposition('3 route de Grasse 06530', '06095')).toEqual({ ok: true });
+    expect(inserts()).toEqual([
+      { agency_id: AGENCY, created_by: 'u-advisor', address_key: '8 avenue hochet antibes' },
+      { agency_id: AGENCY, created_by: 'u-advisor', address_key: '3 route de grasse peymeinade' },
+    ]);
   });
 
   it('à la main : inscrit la seule clé de l’adresse tapée, pour l’agence de la session', async () => {

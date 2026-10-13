@@ -6,6 +6,9 @@ import type { AddressSource, ProspectingSender } from '@/features/prospecting-fi
 //   • qui est responsable du traitement : l'agence, avec son adresse ;
 //   • d'où vient son adresse : déduite par le Localisateur de données publiques, ou relevée par
 //     le conseiller — jamais « d'une annonce publiée », qui ne donne pas l'adresse ;
+//     (mission 103) c'est la source D'ORIGINE qui parle : une adresse du Localisateur que le
+//     conseiller a seulement confirmée reste « déterminée à partir de données publiques », et
+//     une adresse dont l'origine n'est plus connue prend une formule vraie dans les deux cas ;
 //   • à quoi elle sert, et combien de temps elle est gardée ;
 //   • ses droits d'accès, d'opposition et d'effacement, et comment les exercer : le téléphone ou
 //     l'e-mail du conseiller ;
@@ -23,6 +26,8 @@ export const ADDRESS_SOURCE_MENTIONS: Record<AddressSource, string> = {
   locator:
     'Votre adresse a été déterminée à partir de données publiques (diagnostic de performance énergétique, registre des copropriétés ou cadastre) et de l’annonce de votre bien.',
   advisor: 'Votre adresse a été relevée par notre conseiller à partir de l’annonce de votre bien.',
+  verified:
+    'Votre adresse a été déterminée à partir de l’annonce de votre bien et de données publiques, puis vérifiée par notre conseiller.',
 };
 
 export function ownerLegalMention(

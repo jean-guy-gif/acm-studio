@@ -6,6 +6,7 @@ import {
   type SubjectGeocode,
 } from '@/features/competitor-search/services/geocode-subject';
 import {
+  geoCommuneLookupUrl,
   geoCommunesUrl,
   geoDepartmentCommunesUrl,
   pickInseeCode,
@@ -74,6 +75,21 @@ export async function fetchDepartmentCommunes(departement: string): Promise<GeoC
     return communes as GeoCommune[];
   } catch (error) {
     await reportServerError('fetchDepartmentCommunes', error);
+    return null;
+  }
+}
+
+// Mission 103 — les communes d'un code postal, ou celles qui portent un nom. null : le service
+// n'a pas répondu — une panne n'est jamais lue comme « aucune commune ».
+export async function fetchCommunes(
+  query: { postalCode: string } | { name: string },
+): Promise<GeoCommune[] | null> {
+  try {
+    const communes = await getJson(geoCommuneLookupUrl(query));
+    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
+    return communes as GeoCommune[];
+  } catch (error) {
+    await reportServerError('fetchCommunes', error);
     return null;
   }
 }
