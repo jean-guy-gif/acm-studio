@@ -179,7 +179,7 @@ export function removeTestOppositions(): number {
   const sql = `with retirees as (
     delete from public.prospecting_oppositions
     where agency_id = (select agency_id from public.profiles where email = '${email}')
-      and address_key like '% ${TEST_OPPOSITION_STREET} %antibes'
+      and address_key like '% ${TEST_OPPOSITION_STREET} %'
     returning 1
   ) select count(*)::int as retirees from retirees`;
   let output: string;
@@ -200,6 +200,33 @@ export function removeTestOppositions(): number {
     );
   }
   return Number(count);
+}
+
+// Ce que la liste « Ne plus solliciter » de l'agence de test contient VRAIMENT, lu en base par la
+// même CLI : les clés d'adresse de la rue du test. Un message à l'écran ne prouve pas une ligne
+// écrite — c'est la base qui le dit. Lecture seule.
+export function readTestOppositions(): string[] {
+  const email = requireEnv('E2E_EMAIL').replace(/'/g, "''");
+  const sql = `select coalesce(json_agg(address_key order by address_key), '[]'::json)::text as cles
+    from public.prospecting_oppositions
+    where agency_id = (select agency_id from public.profiles where email = '${email}')
+      and address_key like '% ${TEST_OPPOSITION_STREET} %'`;
+  let output: string;
+  try {
+    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'La liste d’opposition du test n’a pas pu être lue : `supabase db query --linked` a échoué.',
+    );
+  }
+  const keys = /"cles":\s*"((?:[^"\\]|\\.)*)"/.exec(output)?.[1];
+  if (keys === undefined) {
+    throw new Error('Réponse inattendue de `supabase db query` à la lecture des oppositions.');
+  }
+  return JSON.parse(JSON.parse(`"${keys}"`)) as string[];
 }
 
 // Mission 96 — EXCEPTION à « tout passe par l'écran », comme les oppositions (M98) : la pastille

@@ -11,7 +11,12 @@
 // server-side BEFORE asking for a page, and re-validates the returned HTML with the
 // existing import parser. This module only moves bytes.
 
-const PING_TIMEOUT_MS = 800;
+// Correctif du 13/10 — UN signal attendu 800 ms concluait « absente » à tort avec la version du
+// Chrome Web Store : le script de contenu n'est injecté qu'à `document_idle`, après le premier
+// signal de la page, et le service worker de l'extension peut être en veille. Le signal est donc
+// renvoyé : 4 essais d'une seconde, soit 4 secondes avant de conclure.
+export const PING_ATTEMPTS = 4;
+export const PING_ATTEMPT_TIMEOUT_MS = 1_000;
 const FETCH_TIMEOUT_MS = 50_000;
 const ROBOTS_TIMEOUT_MS = 8_000;
 // Ouvrir quatre onglets : rapide. Tout lire : jusqu'à 15 s d'attente par onglet (mission 46).
@@ -90,17 +95,35 @@ function send<T>(request: Pending, timeoutMs: number): Promise<T> {
   });
 }
 
-// "Es-tu là ?" — resolves { available: false } when no extension answers in time.
-export async function pingExtension(): Promise<ExtensionPing> {
-  try {
-    const response = await send<{ ok?: boolean; version?: string }>(
-      { kind: 'ping' },
-      PING_TIMEOUT_MS,
-    );
-    return { available: response.ok === true, version: response.version };
-  } catch {
-    return { available: false };
+// Le signal, réessayé. `attempt` rend la réponse de l'extension, ou null quand rien n'a répondu
+// à temps. La première réponse décide — même un refus : une extension qui répond est là — ;
+// « absente » ne se conclut qu'après le dernier essai resté sans réponse.
+export async function pingWithRetries(
+  attempt: () => Promise<ExtensionPing | null>,
+  attempts: number = PING_ATTEMPTS,
+): Promise<ExtensionPing> {
+  for (let index = 0; index < attempts; index += 1) {
+    const answer = await attempt().catch(() => null);
+    if (answer != null) {
+      return answer;
+    }
   }
+  return { available: false };
+}
+
+// "Es-tu là ?" — resolves { available: false } when no extension answers in time.
+export function pingExtension(): Promise<ExtensionPing> {
+  return pingWithRetries(async () => {
+    try {
+      const response = await send<{ ok?: boolean; version?: string }>(
+        { kind: 'ping' },
+        PING_ATTEMPT_TIMEOUT_MS,
+      );
+      return { available: response.ok === true, version: response.version };
+    } catch {
+      return null;
+    }
+  });
 }
 
 // Asks the extension to read a robots.txt from the advisor's browser (same address
