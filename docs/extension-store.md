@@ -5,6 +5,17 @@ Prête à copier dans le tableau de bord développeur du Chrome Web Store. Visib
 `npm run extension:zip` → `dist/acm-studio-extension-<version>.zip`. Le dépôt est fait par
 Laurent, avec son compte développeur.
 
+## Publication
+
+- **État** : publiée sur le Chrome Web Store, en **non répertorié**, version **1.0.0** — elle
+  n'est plus en examen (constaté le 13/10/2026).
+- **Identifiant** : `podbdogdackjabnpnngndpkdnhfakfgb`
+- **Lien d'installation** :
+  https://chromewebstore.google.com/detail/podbdogdackjabnpnngndpkdnhfakfgb — c'est la valeur de
+  `NEXT_PUBLIC_EXTENSION_INSTALL_URL` (bouton « Installer l'extension », M74).
+- **On ne modifie pas `extension/`** : la version publiée est celle du dossier (`manifest.json`,
+  1.0.0). Toute modification — code, permissions, fiche — repasse par la validation de Google.
+
 ## Fiche
 
 **Nom**
@@ -117,4 +128,4 @@ ACM Studio, et seulement sur une action du conseiller.
 
 L'identifiant de l'extension publiée diffère de celui du mode développeur : l'ancienne extension
 non empaquetée se retire de `chrome://extensions` avant d'installer celle du Store. Toute
-modification des permissions relance la validation de Google.
+modification de l'extension relance la validation de Google.

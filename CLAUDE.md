@@ -65,6 +65,11 @@ Next.js 16 (App Router, server actions) · React 19 · TypeScript 5 · Tailwind 
 shadcn/ui, React Hook Form, OpenAI, PptxGenJS, Playwright. À éviter : Redux, contexte global
 inutile, machines à états prématurées, microservices.
 
+L'extension Chrome est **publiée** sur le Chrome Web Store (non répertoriée, version 1.0.0,
+identifiant `podbdogdackjabnpnngndpkdnhfakfgb`, depuis le 13/10/2026 ; fiche et lien :
+`docs/extension-store.md`). **On ne modifie pas `extension/`** : toute modification repasse par la
+validation de Google, et se décide avec Laurent.
+
 ## Règles de code
 
 - `src/app` (routes), `src/features/<feature>/`, `src/lib`. TypeScript sans `any`, construit du bas
