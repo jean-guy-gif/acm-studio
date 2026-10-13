@@ -67,9 +67,17 @@ function propertyKind(...types: (string | null)[]): PropertyKind {
   return 'unknown';
 }
 
-// Seul le conseiller écrit « vous » ; toute autre adresse vient du Localisateur.
-export function addressSource(locatorSource: string | null): AddressSource {
-  return locatorSource === ADVISOR_SOURCE ? 'advisor' : 'locator';
+// Mission 103 — la source D'ORIGINE de l'adresse. Toute source autre que « vous » vient du
+// Localisateur, confirmée par le conseiller ou non. « vous » sans position : le conseiller l'a
+// saisie ou corrigée (une adresse saisie n'a pas de position, advisor-address.ts). « vous » AVEC
+// une position : une adresse proposée puis confirmée avant la mission 103, ou placée par le
+// conseiller dans le Localisateur — la source d'origine n'est plus connue, et la mention retombe
+// sur une formule vraie dans les deux cas.
+export function addressSource(locatorSource: string | null, hasPosition: boolean): AddressSource {
+  if (locatorSource !== ADVISOR_SOURCE) {
+    return 'locator';
+  }
+  return hasPosition ? 'verified' : 'advisor';
 }
 
 export function buildProspectingFacts(input: {
@@ -79,8 +87,10 @@ export function buildProspectingFacts(input: {
   theirs: TheirListingRow;
   // Adresse du Localisateur, à ne passer que si elle est confirmée.
   theirAddress: string | null;
-  // `comparables.locator_source` : « vous » quand le conseiller a saisi ou confirmé l'adresse.
+  // `comparables.locator_source` : « vous » quand le conseiller a saisi ou corrigé l'adresse.
   theirAddressSource: string | null;
+  // L'adresse a-t-elle une position (latitude et longitude) ?
+  theirAddressHasPosition: boolean;
   distanceMeters: number | null;
 }): ProspectingFileFacts {
   return {
@@ -90,7 +100,7 @@ export function buildProspectingFacts(input: {
     ours: listed(input.ours, input.ourPrice),
     theirs: listed(input.theirs, input.theirs.price),
     theirAddress: text(input.theirAddress),
-    theirAddressSource: addressSource(input.theirAddressSource),
+    theirAddressSource: addressSource(input.theirAddressSource, input.theirAddressHasPosition),
     distanceMeters:
       input.distanceMeters != null && Number.isFinite(input.distanceMeters)
         ? input.distanceMeters

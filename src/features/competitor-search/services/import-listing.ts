@@ -2,6 +2,10 @@
 //   1. jusqu'à trois lectures de la page (après 2 s, puis 5 s ; la dernière dans une fenêtre
 //      neuve) — sauf quand réessayer ne changerait rien (robots.txt, adresse invalide, page trop
 //      lourde, annonce retirée) ;
+//      Mission 103 — « annonce retirée » ne se dit que sur une preuve (redirection hors de
+//      l'annonce, page 404, mention explicite du portail). Une page sans prix NI preuve — une page
+//      captcha, un gabarit modifié — est un échec de lecture ordinaire : relue, puis créée
+//      depuis la recherche, RETENUE ;
 //   2. si la page reste illisible, le concurrent est créé depuis les données de la recherche ;
 //   3. si cela aussi échoue (carte sans prix, serveur injoignable), le bien reste « en attente »,
 //      enregistré côté serveur, visible et relançable.
@@ -21,7 +25,8 @@ export const READ_FAILURE_CAUSES = [
   'network', // l'extension n'a pas obtenu la page (réseau, fenêtre fermée)
   'timeout', // aucune réponse en 30 secondes
   'too_large', // la page dépasse ce que l'import accepte
-  'withdrawn', // la page ne montre plus l'annonce (retirée, redirigée)
+  'withdrawn', // la page PROUVE que l'annonce n'est plus en ligne (redirection, 404, mention)
+  'empty', // la page ne porte ni prix ni donnée, sans preuve de retrait (captcha, gabarit modifié)
   'server', // l'import a échoué côté serveur
 ] as const;
 export type ReadFailureCause = (typeof READ_FAILURE_CAUSES)[number];
@@ -36,6 +41,7 @@ export const READ_FAILURE_LABELS: Record<ReadFailureCause | 'no_price', string> 
   timeout: 'la page de l’annonce n’a pas répondu en 30 secondes',
   too_large: 'la page de l’annonce est trop lourde pour être lue',
   withdrawn: 'l’annonce n’est plus en ligne',
+  empty: 'page sans données (captcha ?)',
   server: 'l’import a échoué côté serveur',
   no_price: 'la recherche ne donne pas le prix de ce bien',
 };
@@ -46,7 +52,8 @@ export type PageRead =
   // robots.txt, ni une adresse invalide, ni un délai est une page qui n'a pas répondu.
   | { ok: false; reason: string };
 
-export type PageImportResult = { ok: true } | { ok: false; code?: 'listing_empty' };
+export type PageImportResult =
+  { ok: true } | { ok: false; code?: 'listing_empty' | 'listing_withdrawn' };
 
 export type SearchImportResult = { ok: true } | { ok: false; code?: 'no_price' };
 
@@ -125,8 +132,9 @@ async function attempt(
   } as PageImportResult);
   if (imported === 'timeout') return 'timeout';
   if (imported.ok) return null;
-  // Une page sans prix ni donnée : c'est ce que montre une annonce retirée ou introuvable.
-  return imported.code === 'listing_empty' ? 'withdrawn' : 'server';
+  // Une page sans prix ni donnée n'est une annonce retirée que si elle le prouve.
+  if (imported.code === 'listing_withdrawn') return 'withdrawn';
+  return imported.code === 'listing_empty' ? 'empty' : 'server';
 }
 
 export async function importListing(

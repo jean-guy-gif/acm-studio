@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  geoCommuneLookupUrl,
   geoCommunesUrl,
   pickInseeCode,
   type GeoCommune,
@@ -156,6 +157,23 @@ describe('pickInseeCode', () => {
 
   it('ne trouve rien dans une réponse vide', () => {
     expect(pickInseeCode([], 'Nice', '06000')).toEqual({ ok: false, reason: 'not_found' });
+  });
+});
+
+// Mission 103 — reconnaître la commune d'une adresse tapée : par le code postal, ou par le nom.
+describe('geoCommuneLookupUrl', () => {
+  it('interroge les communes seules, par le code postal ou par le nom', () => {
+    const byPostal = new URL(geoCommuneLookupUrl({ postalCode: '06530' }));
+    expect(byPostal.origin + byPostal.pathname).toBe('https://geo.api.gouv.fr/communes');
+    expect(Object.fromEntries(byPostal.searchParams)).toEqual({
+      codePostal: '06530',
+      type: 'commune-actuelle',
+      fields: 'nom,code,codesPostaux',
+      format: 'json',
+    });
+    const byName = new URL(geoCommuneLookupUrl({ name: 'saint laurent du var' })).searchParams;
+    expect(byName.get('nom')).toBe('saint laurent du var');
+    expect(byName.has('codePostal')).toBe(false);
   });
 });
 

@@ -14,7 +14,9 @@ const row = (
 ) => ({ locator_address: address, locator_confirmed: confirmed, locator_source: source });
 
 describe('« C’est la bonne adresse »', () => {
-  it('confirme l’adresse proposée, provenance « vous », position gardée', () => {
+  // Mission 103 — confirmer n'est pas saisir : la source d'origine reste, seule l'étiquette
+  // dit « confirmée par vous ». Le courrier dira « déterminée à partir de données publiques ».
+  it('confirme l’adresse proposée : source d’origine gardée, position gardée', () => {
     const result = advisorAddressPatch(
       row(' 14 chemin des Oliviers, 06800 Cagnes-sur-Mer ', false, 'dpe'),
       {
@@ -26,12 +28,26 @@ describe('« C’est la bonne adresse »', () => {
       patch: {
         locator_address: '14 chemin des Oliviers, 06800 Cagnes-sur-Mer',
         locator_confirmed: true,
-        locator_source: 'vous',
+        locator_source: 'dpe',
         locator_label_key: 'vous',
         locator_label: 'Adresse confirmée par vous',
         locator_state: 'pret',
       },
     });
+    // Elle reste la sienne : confirmée par lui, aucune relecture du Localisateur ne la réécrit.
+    if (!result.ok) return;
+    const confirmed = {
+      ...row('x', false, 'dpe'),
+      ...result.patch,
+      listing_url: 'https://a.test/1',
+    };
+    expect(confirmedByAdvisor(confirmed)).toBe(true);
+    expect(needsLocatorQuery({ ...confirmed, locator_purged_at: null })).toBe(false);
+  });
+
+  it('une proposition sans source connue se confirme sans en inventer une', () => {
+    const result = advisorAddressPatch(row('1 rue A, Nice', false, null), { mode: 'accept' });
+    expect(result.ok && result.patch.locator_source).toBeNull();
   });
 
   it('rien à confirmer sans adresse proposée, ou si elle est déjà confirmée', () => {

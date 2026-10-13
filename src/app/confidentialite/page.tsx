@@ -102,18 +102,18 @@ export default function ConfidentialitePage() {
               une mention légale : le responsable du traitement (l’agence, avec son adresse),
               l’origine réelle de l’adresse (déterminée à partir de données publiques — diagnostic
               de performance énergétique, registre des copropriétés ou cadastre — et de l’annonce,
-              ou relevée par le conseiller), la finalité (proposer les services de l’agence pour la
-              vente du bien), la durée de conservation, les droits d’accès, d’opposition et
-              d’effacement avec le moyen de les exercer (le téléphone ou l’e-mail du conseiller), le
-              droit de saisir la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte
-              professionnelle de l’agence et l’autorité qui l’a délivrée, puis sa garantie
-              financière ou la mention « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du
-              propriétaire, ni rien du vendeur. Une photo du bien concurrent n’y figure que si le
-              conseiller le choisit (« Sans photo » par défaut) : une photo de l’annonce, ou une
-              photo qu’il importe lui-même. Elle est alors copiée dans le stockage de l’agence, et
-              retirée quand le conseiller en choisit une autre ou supprime ce concurrent. ACM Studio
-              conserve les textes que le conseiller a réécrits ; il n’envoie lui-même aucun
-              courrier.
+              que le conseiller l’ait confirmée ou non, ou relevée par le conseiller quand il l’a
+              saisie ou corrigée), la finalité (proposer les services de l’agence pour la vente du
+              bien), la durée de conservation, les droits d’accès, d’opposition et d’effacement avec
+              le moyen de les exercer (le téléphone ou l’e-mail du conseiller), le droit de saisir
+              la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte professionnelle
+              de l’agence et l’autorité qui l’a délivrée, puis sa garantie financière ou la mention
+              « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du propriétaire, ni rien du
+              vendeur. Une photo du bien concurrent n’y figure que si le conseiller le choisit («
+              Sans photo » par défaut) : une photo de l’annonce, ou une photo qu’il importe
+              lui-même. Elle est alors copiée dans le stockage de l’agence, et retirée quand le
+              conseiller en choisit une autre ou supprime ce concurrent. ACM Studio conserve les
+              textes que le conseiller a réécrits ; il n’envoie lui-même aucun courrier.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
@@ -188,6 +188,11 @@ export default function ConfidentialitePage() {
               services publics de géographie de l’État (api-adresse.data.gouv.fr, geo.api.gouv.fr)
               pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
               transmis.
+            </li>
+            <li>
+              Pour inscrire à la main une adresse « Ne plus solliciter », ACM Studio demande à
+              geo.api.gouv.fr la commune d’un code postal, ou vérifie le nom d’une commune : seul ce
+              code postal ou ce nom lui est transmis, jamais la rue ni le numéro.
             </li>
             <li>Les e-mails d’invitation sont envoyés par Google (messagerie de l’éditeur).</li>
           </ul>

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 
 import { btnSecondary, link } from '@/components/ui/styles';
 import { addProspectingOpposition } from '@/features/prospecting/actions/add-prospecting-opposition';
+import { announceOppositionRecorded } from '@/features/prospecting/components/opposition-notice';
 
 const small = 'px-3 py-1.5 text-xs';
 
@@ -30,6 +31,8 @@ export function OppositionButton({
         return;
       }
       setAsking(false);
+      // La carte quitte le tableau : la page confirme l'enregistrement (mission 103).
+      announceOppositionRecorded();
     });
   };
 

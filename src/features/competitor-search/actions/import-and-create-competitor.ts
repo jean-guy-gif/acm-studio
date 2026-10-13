@@ -17,15 +17,17 @@ import { importedToComparableInput } from '@/features/comparables/utils/imported
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
+import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type ImportAndCreateResult =
   | { ok: true; name: string | null; becameReady?: boolean }
-  // `listing_empty` : la page relue ne porte plus d'annonce (ni prix, ni donnée) — c'est ce que
-  // montre une annonce retirée ou introuvable (essai Stream Estate : « annonce retirée depuis »).
-  | { ok: false; error: string; code?: 'listing_empty' };
+  // La page relue ne porte ni prix ni donnée. Mission 103 — ce n'est une annonce retirée que sur
+  // une PREUVE (`listing_withdrawn` : page 404, mention explicite du portail) ; sans preuve
+  // (`listing_empty`), c'est un échec de lecture ordinaire — une page captcha se présente ainsi.
+  | { ok: false; error: string; code?: 'listing_empty' | 'listing_withdrawn' };
 
 const GENERIC_ERROR = 'L’import de cette annonce a échoué.';
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
@@ -83,13 +85,17 @@ export async function importAndCreateComparable(
   if (input == null) {
     // Sans prix, un concurrent n'a pas de sens (et le prix est requis en base). On
     // n'invente pas : la fiche est signalée en échec, relançable seule.
-    return { ok: false, error: 'Prix introuvable sur la fiche.', code: 'listing_empty' };
+    return {
+      ok: false,
+      error: 'Prix introuvable sur la fiche.',
+      code: emptyPageCode(html, url.hostname),
+    };
   }
   if (foundFields.length === 0) {
     return {
       ok: false,
       error: 'Aucune information exploitable n’a été détectée.',
-      code: 'listing_empty',
+      code: emptyPageCode(html, url.hostname),
     };
   }
 
