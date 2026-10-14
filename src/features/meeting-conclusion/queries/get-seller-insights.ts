@@ -50,7 +50,7 @@ export async function getSellerInsights(
       .eq('agency_id', agencyId),
     supabase
       .from('follow_up_contacts')
-      .select('id, project_id, contacted_at, note, author_id')
+      .select('id, project_id, contacted_at, note, author_id, next_follow_up_on')
       .in('project_id', projectIds)
       .eq('agency_id', agencyId),
     supabase.from('profiles').select('id, first_name, last_name').eq('agency_id', agencyId),
@@ -130,6 +130,7 @@ export async function getSellerInsights(
       contactedAt: row.contacted_at,
       note: row.note,
       author: row.author_id ? (authorById.get(row.author_id) ?? null) : null,
+      nextFollowUpOn: row.next_follow_up_on,
     });
   }
   for (const insights of result.values()) {

@@ -48,7 +48,8 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
         <div className="flex flex-col gap-3">
           <h2 className={question}>Ce prix vous paraît-il cohérent ?</h2>
           <p className={questionHint}>
-            Donnez d’abord votre estimation à l’écran précédent : le prix réel s’affichera ensuite.
+            Donnez d’abord le prix que vous imaginez, à l’écran précédent : le prix réel s’affichera
+            ensuite.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
@@ -70,7 +71,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
       <div className="flex flex-col gap-3">
         <h2 className={question}>Ce prix vous paraît-il cohérent ?</h2>
         <p className={questionHint}>
-          Voici le prix réellement affiché. Qu’en pensez-vous, face à votre estimation ?
+          Voici le prix réellement affiché. Qu’en pensez-vous, face au prix que vous imaginiez ?
         </p>
       </div>
 

@@ -7,6 +7,9 @@ import { link } from '@/components/ui/styles';
 import {
   EXTENSION_INSTALL_FALLBACK,
   EXTENSION_INSTALL_LABEL,
+  EXTENSION_ALREADY_INSTALLED_HINT,
+  EXTENSION_NO_SITE_ACCESS_STEPS,
+  EXTENSION_NO_SITE_ACCESS_TITLE,
   extensionInstallUrl,
 } from '@/features/browser-extension/install-url';
 import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
@@ -99,15 +102,25 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
         title="L’extension ACM Studio"
       >
         {extension.available === false ? (
-          installUrl ? (
-            <>
-              Elle lit les annonces et vos recherches sur les portails.{' '}
-              <a href={installUrl} target="_blank" rel="noreferrer noopener" className={link}>
-                {EXTENSION_INSTALL_LABEL}
-              </a>
-            </>
+          extension.noSiteAccess ? (
+            // Mission 105 — installée, mais Chrome ne lui laisse pas lire ACM Studio.
+            <span data-testid="extension-no-site-access">
+              {EXTENSION_NO_SITE_ACCESS_TITLE} : {EXTENSION_NO_SITE_ACCESS_STEPS}.
+            </span>
           ) : (
-            `${EXTENSION_INSTALL_FALLBACK}.`
+            <>
+              {installUrl ? (
+                <>
+                  Elle lit les annonces et vos recherches sur les portails.{' '}
+                  <a href={installUrl} target="_blank" rel="noreferrer noopener" className={link}>
+                    {EXTENSION_INSTALL_LABEL}
+                  </a>
+                </>
+              ) : (
+                `${EXTENSION_INSTALL_FALLBACK}.`
+              )}{' '}
+              <span className="block text-xs">{EXTENSION_ALREADY_INSTALLED_HINT}.</span>
+            </>
           )
         ) : null}
       </Item>

@@ -75,7 +75,7 @@ describe('le message de relance (mission 96)', () => {
     );
     expect(closing('thinking_price')).toContain('Où en est votre réflexion sur le prix ?');
     expect(closing('consulting_relative')).toContain('Avez-vous pu en parler autour de vous ?');
-    expect(closing('awaiting_estimate')).toContain('l’autre estimation que vous attendiez');
+    expect(closing('awaiting_estimate')).toContain('l’autre avis de valeur que vous attendiez');
     expect(closing('undated_project')).toContain('Votre projet de vente a-t-il avancé ?');
     expect(closing('other')).toContain('Où en êtes-vous de votre projet ?');
     expect(closing(null)).toContain('Où en êtes-vous de votre projet ?');

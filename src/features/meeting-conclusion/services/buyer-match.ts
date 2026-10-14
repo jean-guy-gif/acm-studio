@@ -60,13 +60,20 @@ const eur = (value: number): string => formatEuro(value);
 // (fallback sûr) — jamais un chiffre contradictoire.
 const PRICE_ABOVE = 'Au-dessus de la fourchette';
 const PRICE_BELOW = 'Sous la fourchette';
+// Mission 105 — « fourchette » ne désigne que celle du conseiller (M97) : pour un acquéreur, le
+// libellé du score se dit « budget ».
+const BUDGET_LABELS: Record<string, string> = {
+  [PRICE_ABOVE]: 'Au-dessus du budget',
+  [PRICE_BELOW]: 'Sous le budget',
+};
 const SURFACE_FAR = new Set(['Surface assez différente', 'Surface très différente']);
 
-function enrichGap(label: string, criteria: ScoringCriteria, facts: CandidateFacts): BuyerGap {
+function enrichGap(scoreLabel: string, criteria: ScoringCriteria, facts: CandidateFacts): BuyerGap {
+  const label = BUDGET_LABELS[scoreLabel] ?? scoreLabel;
   // Prix hors budget : le score l'a classé DEHORS → on chiffre l'écart au budget, sur les
   // mêmes bornes que le score.
   if (
-    (label === PRICE_ABOVE || label === PRICE_BELOW) &&
+    (scoreLabel === PRICE_ABOVE || scoreLabel === PRICE_BELOW) &&
     facts.price != null &&
     (criteria.advisorPriceMin != null || criteria.advisorPriceMax != null)
   ) {
@@ -80,7 +87,7 @@ function enrichGap(label: string, criteria: ScoringCriteria, facts: CandidateFac
     }
   }
   // Surface éloignée → l'écart en m² au bien recherché.
-  if (SURFACE_FAR.has(label) && facts.surfaceArea != null && criteria.surfaceArea != null) {
+  if (SURFACE_FAR.has(scoreLabel) && facts.surfaceArea != null && criteria.surfaceArea != null) {
     const gap = facts.surfaceArea - criteria.surfaceArea;
     return {
       label,

@@ -67,6 +67,8 @@ export type ProspectingRow = {
   listingNumber: string | null;
   // Mission 98 — la date de la demande si l'adresse est sur la liste « Ne plus solliciter ».
   opposedOn: string | null;
+  // Mission 105 — l'annonce a disparu depuis le rendez-vous (relecture des prix, sur preuve).
+  goneSinceMeeting: boolean;
   // Mission 86 — ce que la carte de Prospection et le rapprochement acheteur lisent en plus :
   // le type et la commune de l'annonce, son portail, et où en est la prospection.
   propertyType: string | null;
@@ -196,6 +198,7 @@ export function buildProspectingRows(
         listingNumber: identity?.listingKey ?? null,
         // Mission 102 — par l'adresse ou par l'annonce : l'opposition suit le bien.
         opposedOn: opposedOn({ address: competitor.locator_address, listingKey }, oppositions),
+        goneSinceMeeting: competitor.listing_gone_at != null,
         propertyType: clean(competitor.property_type),
         // Mission 99 — « Paris 15e » sur la carte, la tournée et le rapprochement acquéreur.
         city: displayCommune(clean(competitor.city), competitor.postal_code),

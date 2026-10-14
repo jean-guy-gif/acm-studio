@@ -16,6 +16,7 @@ export function row(id: string, overrides: Partial<ProspectingRow> = {}): Prospe
     confirmed: false,
     canAcceptAddress: false,
     confirmedByAdvisor: false,
+    goneSinceMeeting: false,
     price: 300000,
     surfaceArea: 62,
     roomsCount: 3,

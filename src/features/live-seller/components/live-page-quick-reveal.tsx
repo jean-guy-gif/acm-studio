@@ -39,7 +39,7 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
         <h2 className={question}>Voici son prix.</h2>
         <p className={questionHint}>
           {!entry.durationKnown
-            ? 'Le prix réellement affiché, face à votre estimation.'
+            ? 'Le prix réellement affiché, face au prix que vous imaginiez.'
             : durationRevealed
               ? 'Et voici depuis combien de temps il est en vente.'
               : 'Et selon vous, depuis combien de temps est-il en vente ?'}
@@ -60,7 +60,7 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className={statLabel}>Votre estimation</div>
+                <div className={statLabel}>Votre réponse</div>
                 <div className={bigValue}>{euro(savedEstimate)}</div>
               </div>
               <div>

@@ -3,10 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
   FOLLOW_UP_DUE_AFTER_DAYS,
   daysSinceLastContact,
+  defaultNextFollowUpOn,
   dueTodayLabel,
   isFollowUpDue,
+  isFollowUpDueNow,
   lastContactAt,
   lastContactLabel,
+  nextFollowUpLabel,
+  parseNextFollowUpOn,
   sortContacts,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 
@@ -89,5 +93,50 @@ describe('l’historique', () => {
       '2026-10-15T09:00:00Z',
       '2026-10-12T09:00:00Z',
     ]);
+  });
+});
+
+// Mission 105 — la date de prochaine relance : le dossier ne revient dans la pastille qu'à elle.
+describe('la date de prochaine relance', () => {
+  // 14/10/2026, 10 h à Paris.
+  const NOW = new Date('2026-10-14T08:00:00Z');
+
+  it('se propose selon le motif : 1 mois si le vendeur réfléchit au prix, 7 jours sinon', () => {
+    expect(defaultNextFollowUpOn('thinking_price', NOW)).toBe('2026-11-14');
+    for (const motive of ['price_accepted', 'undated_project', 'other', null] as const) {
+      expect(defaultNextFollowUpOn(motive, NOW)).toBe('2026-10-21');
+    }
+  });
+
+  it('se relit : un vrai jour, d’aujourd’hui à un an ; vide, la date proposée', () => {
+    expect(parseNextFollowUpOn('2027-03-01', 'undated_project', NOW)).toEqual({
+      ok: true,
+      day: '2027-03-01',
+    });
+    expect(parseNextFollowUpOn('', 'thinking_price', NOW)).toEqual({ ok: true, day: '2026-11-14' });
+    for (const raw of ['2026-10-13', '2027-10-16', '2026-02-30', '14/11/2026', 'demain']) {
+      expect(parseNextFollowUpOn(raw, null, NOW).ok).toBe(false);
+    }
+  });
+
+  it('le dossier n’attend pas avant la date posée, même au-delà de 7 jours', () => {
+    const contacts = [
+      { contactedAt: '2026-09-01T09:00:00Z', nextFollowUpOn: null },
+      { contactedAt: '2026-10-01T09:00:00Z', nextFollowUpOn: '2026-11-01' },
+    ];
+    expect(isFollowUpDueNow('2026-08-20T09:00:00Z', contacts, NOW)).toBe(false);
+    expect(
+      isFollowUpDueNow('2026-08-20T09:00:00Z', contacts, new Date('2026-11-01T08:00:00Z')),
+    ).toBe(true);
+  });
+
+  it('sans date posée (relances d’avant), la règle des 7 jours vaut', () => {
+    const old = [{ contactedAt: '2026-10-01T09:00:00Z', nextFollowUpOn: null }];
+    expect(isFollowUpDueNow('2026-09-20T09:00:00Z', old, NOW)).toBe(true);
+    expect(isFollowUpDueNow('2026-10-10T09:00:00Z', [], NOW)).toBe(false);
+  });
+
+  it('se dit dans l’historique', () => {
+    expect(nextFollowUpLabel('2026-11-14')).toBe('Prochaine relance le 14/11');
   });
 });

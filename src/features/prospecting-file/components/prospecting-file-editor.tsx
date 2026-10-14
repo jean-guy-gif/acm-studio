@@ -31,6 +31,7 @@ import { chosenPhotoPath } from '@/features/prospecting-file/services/file-overr
 import type { QrCode } from '@/features/prospecting-file/services/qr-code';
 import {
   initialTheirPhotoChoice,
+  LISTING_PHOTOS_OFFERED,
   theirPhotoDisplayUrl,
   type SavedTheirPhoto,
   type TheirPhotoChoice,
@@ -359,88 +360,92 @@ export function ProspectingFileEditor({
           )}
         </fieldset>
 
-        <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
-          <span className={fieldLabel}>Photo de son bien</span>
-          <div className="grid grid-cols-4 gap-2">
-            {theirPhoto.listing.map((url, index) => {
-              const selected = theirChoice.mode === 'listing' && theirChoice.url === url;
-              return (
-                <label key={url} className={tile(selected)}>
+        {/* Mission 105 — la photo d'une annonce appartient à son auteur : pendant la bêta,
+            l'option « Photo de son bien » est retirée de l'éditeur. */}
+        {LISTING_PHOTOS_OFFERED ? (
+          <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
+            <span className={fieldLabel}>Photo de son bien</span>
+            <div className="grid grid-cols-4 gap-2">
+              {theirPhoto.listing.map((url, index) => {
+                const selected = theirChoice.mode === 'listing' && theirChoice.url === url;
+                return (
+                  <label key={url} className={tile(selected)}>
+                    <input
+                      type="radio"
+                      name="their-photo"
+                      className="sr-only"
+                      checked={selected}
+                      onChange={() => chooseTheirPhoto({ mode: 'listing', url })}
+                    />
+                    <ListingThumb url={url} index={index} />
+                  </label>
+                );
+              })}
+              {uploaded ? (
+                <label className={tile(theirChoice.mode === 'upload')}>
                   <input
                     type="radio"
                     name="their-photo"
                     className="sr-only"
-                    checked={selected}
-                    onChange={() => chooseTheirPhoto({ mode: 'listing', url })}
+                    checked={theirChoice.mode === 'upload'}
+                    onChange={() => chooseTheirPhoto({ mode: 'upload', path: uploaded.path })}
                   />
-                  <ListingThumb url={url} index={index} />
+                  {uploaded.url ? (
+                    <img src={uploaded.url} alt="Ma photo" className="h-16 w-full object-cover" />
+                  ) : (
+                    <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+                      Ma photo
+                    </span>
+                  )}
                 </label>
-              );
-            })}
-            {uploaded ? (
-              <label className={tile(theirChoice.mode === 'upload')}>
+              ) : null}
+              <label className={tile(theirChoice.mode === 'none')}>
                 <input
                   type="radio"
                   name="their-photo"
                   className="sr-only"
-                  checked={theirChoice.mode === 'upload'}
-                  onChange={() => chooseTheirPhoto({ mode: 'upload', path: uploaded.path })}
+                  checked={theirChoice.mode === 'none'}
+                  onChange={() => chooseTheirPhoto({ mode: 'none' })}
                 />
-                {uploaded.url ? (
-                  <img src={uploaded.url} alt="Ma photo" className="h-16 w-full object-cover" />
-                ) : (
-                  <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
-                    Ma photo
-                  </span>
-                )}
+                <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
+                  Sans photo
+                </span>
               </label>
-            ) : null}
-            <label className={tile(theirChoice.mode === 'none')}>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`${btnSecondary} px-3 py-1.5 text-xs`}
+                disabled={uploading}
+                onClick={() => fileInput.current?.click()}
+              >
+                {uploading
+                  ? 'Import en cours…'
+                  : uploaded
+                    ? 'Ma photo : en importer une autre'
+                    : 'Ma photo : importer'}
+              </button>
               <input
-                type="radio"
-                name="their-photo"
+                ref={fileInput}
+                type="file"
+                name="their-photo-file"
+                accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
-                checked={theirChoice.mode === 'none'}
-                onChange={() => chooseTheirPhoto({ mode: 'none' })}
+                aria-label="Importer ma photo de son bien"
+                onChange={(event) => {
+                  importTheirPhoto(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
               />
-              <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
-                Sans photo
-              </span>
-            </label>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-              disabled={uploading}
-              onClick={() => fileInput.current?.click()}
-            >
-              {uploading
-                ? 'Import en cours…'
-                : uploaded
-                  ? 'Ma photo : en importer une autre'
-                  : 'Ma photo : importer'}
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              name="their-photo-file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              aria-label="Importer ma photo de son bien"
-              onChange={(event) => {
-                importTheirPhoto(event.target.files?.[0]);
-                event.target.value = '';
-              }}
-            />
-          </div>
-          <span className="text-xs text-zinc-500">
-            {theirPhoto.listing.length > 0
-              ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
-              : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
-          </span>
-          {uploadError ? <span className={errorText}>{uploadError}</span> : null}
-        </fieldset>
+            </div>
+            <span className="text-xs text-zinc-500">
+              {theirPhoto.listing.length > 0
+                ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
+                : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
+            </span>
+            {uploadError ? <span className={errorText}>{uploadError}</span> : null}
+          </fieldset>
+        ) : null}
 
         <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4">
           <div className="flex flex-wrap gap-2">

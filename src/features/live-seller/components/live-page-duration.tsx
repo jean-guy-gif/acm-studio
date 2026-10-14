@@ -82,7 +82,7 @@ export function LivePageDuration({
               </div>
             </div>
             <div>
-              <div className={statLabel}>Votre estimation</div>
+              <div className={statLabel}>Votre réponse</div>
               <div className={statValue}>
                 {euro(response?.seller_estimated_listing_price ?? null)}
               </div>
@@ -164,7 +164,7 @@ export function LivePageDuration({
             </div>
           ) : (
             <p className="text-sm text-zinc-400 stage:text-white/50">
-              Donnez d’abord votre estimation : la durée réellement observée s’affichera ensuite.
+              Donnez d’abord votre réponse : la durée réellement observée s’affichera ensuite.
             </p>
           )}
         </form>

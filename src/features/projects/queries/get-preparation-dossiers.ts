@@ -63,7 +63,9 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
   const [properties, comparables, positionings] = await Promise.all([
     supabase
       .from('subject_properties')
-      .select('project_id, property_type, rooms_count, surface_area, city, postal_code')
+      .select(
+        'project_id, property_type, rooms_count, surface_area, city, postal_code, advisor_price_min, advisor_price_max',
+      )
       .eq('agency_id', agencyId)
       .in('project_id', ids),
     supabase
@@ -73,7 +75,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
       .in('project_id', ids),
     supabase
       .from('project_price_positionings')
-      .select('project_id, range_low, range_high')
+      .select('project_id')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
   ]);
@@ -116,9 +118,11 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
             city: displayCommune(propertyRow.city, propertyRow.postal_code),
           }
         : null,
+      // Mission 105 — la fourchette DU CONSEILLER (M38, deux bornes ou rien, M93), jamais la plage
+      // calculée par l'outil.
       fourchette:
-        positioningRow != null
-          ? { low: positioningRow.range_low, high: positioningRow.range_high }
+        propertyRow?.advisor_price_min != null && propertyRow.advisor_price_max != null
+          ? { low: propertyRow.advisor_price_min, high: propertyRow.advisor_price_max }
           : null,
       readiness: {
         hasProperty,

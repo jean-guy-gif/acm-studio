@@ -148,3 +148,46 @@ describe('les surfaces s’affichent au m² près', () => {
     expect(facts.map((fact) => fact.replace(/[  ]/g, ' '))).toEqual(['62 m²']);
   });
 });
+
+// Mission 105 — des mots qu'un junior comprend, partout (Suivi et conclusion compris) :
+//   • jamais « estimation » à l'écran — l'outil n'estime pas le bien (CLAUDE.md) ; la devinette
+//     du vendeur est « votre réponse », « le prix que vous imaginez » ;
+//   • « fourchette » ne désigne que celle du conseiller : la plage calculée est la « Plage des
+//     prix des concurrents », l'acquéreur a un « budget », la recherche des « Prix recherchés » ;
+//   • aucun terme technique dans un message : « code INSEE », « console », « URL », « HTML »…
+describe('des mots qu’un junior comprend (mission 105)', () => {
+  const EVERYWHERE = files(SRC)
+    .map((path) => relative(SRC, path))
+    .filter((path) => !path.startsWith('test-fixtures'));
+  // Les chaînes du code affiché, pas les identifiants (`awaiting_estimate`, `estimatedDays`).
+  const strings = (path: string): string =>
+    (shown(join(SRC, path)).match(/'[^'\n]*'|`[^`]*`|"[^"\n]*"|>[^<>{}\n]+</g) ?? []).join('\n');
+  const offendersEverywhere = (pattern: RegExp): string[] =>
+    EVERYWHERE.filter((path) => pattern.test(strings(path)));
+
+  it('jamais « estimation » à l’écran', () => {
+    expect(offendersEverywhere(/[Ee]stimation/)).toEqual([]);
+  });
+
+  it('« Fourchette recommandée » et la fourchette de l’acquéreur ont disparu', () => {
+    expect(
+      offendersEverywhere(/Fourchette recommandée|(Au-dessus|Sous) de la fourchette/).sort(),
+    ).toEqual(
+      // Le seul « sous / au-dessus de la fourchette » restant parle de celle du conseiller : un
+      // concurrent comparé à sa fourchette.
+      // buyer-match.ts relit ces libellés du score pour les dire « budget » à l'écran.
+      [
+        join('features', 'competitor-search', 'services', 'score-candidate.ts'),
+        join('features', 'meeting-conclusion', 'services', 'buyer-match.ts'),
+      ].sort(),
+    );
+  });
+
+  it('aucun terme technique dans un message à l’écran', () => {
+    expect(
+      offendersEverywhere(
+        /code INSEE|console Stream Estate|URL invalide|[Cc]lé invalide|page HTML/,
+      ),
+    ).toEqual([]);
+  });
+});

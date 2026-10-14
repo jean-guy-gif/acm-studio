@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import { parseNextFollowUpOn } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -51,12 +52,27 @@ export async function recordFollowUpContact(
     return { ok: false, error: 'Ce dossier n’est plus « à relancer ».' };
   }
 
+  // Mission 105 — la date de prochaine relance : celle de l'écran, relue ; vide, la date proposée
+  // (1 mois si le vendeur réfléchit au prix, 7 jours sinon).
+  const next = parseNextFollowUpOn(
+    formData.get('next_follow_up_on'),
+    conclusion.followUpMotive,
+    new Date(),
+  );
+  if (!next.ok) {
+    return {
+      ok: false,
+      error: 'Choisissez une date de prochaine relance, d’aujourd’hui à dans un an.',
+    };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from('follow_up_contacts').insert({
     project_id: projectId,
     agency_id: profile.agency_id,
     author_id: profile.id,
     note: note.data,
+    next_follow_up_on: next.day,
   });
   if (error) {
     return { ok: false, error: 'La relance n’a pas pu être enregistrée. Réessayez.' };

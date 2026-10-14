@@ -150,7 +150,9 @@ export function SubjectPropertyImportPanel({
         Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
         d’enregistrer.
       </p>
-      {extension.available === false ? <ExtensionRequiredNotice reason="missing" /> : null}
+      {extension.available === false ? (
+        <ExtensionRequiredNotice reason={extension.noSiteAccess ? 'no_site_access' : 'missing'} />
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
