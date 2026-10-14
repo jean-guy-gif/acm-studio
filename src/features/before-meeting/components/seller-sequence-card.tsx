@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
-import { btnPrimary, btnSecondary, card, hintText, sectionTitle } from '@/components/ui/styles';
+import { btnSecondary, card, hintText, sectionTitle } from '@/components/ui/styles';
 import { durationLabel, type LiveSequence } from '@/features/before-meeting/services/live-sequence';
 
 export type SequenceNote = {
@@ -24,14 +23,15 @@ const NOTE_CLASS: Record<SequenceNote['severity'], string> = {
 export function SellerSequenceCard({
   sequence,
   notes,
-  projectId,
   rhythmSetting = null,
+  launch,
 }: {
   sequence: LiveSequence;
   notes: SequenceNote[];
-  projectId: string;
   // Mission 95 — le réglage « Rythme du Live », au-dessus du déroulé qu'il commande.
   rhythmSetting?: ReactNode;
+  // Mission 104 — le bouton « Lancer le Live » commun, qui vérifie avant d'ouvrir.
+  launch: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const total = sequence.totalScreens;
@@ -83,9 +83,7 @@ export function SellerSequenceCard({
           >
             Aperçu côté vendeur
           </button>
-          <Link href={`/live/${projectId}`} className={btnPrimary}>
-            Lancer le Live →
-          </Link>
+          {launch}
         </div>
       </div>
 

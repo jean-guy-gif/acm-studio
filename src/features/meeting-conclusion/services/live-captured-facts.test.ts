@@ -23,6 +23,7 @@ function live(overrides: {
             seller_perceived_property_price: overrides.perceived,
           } as LiveComparativeData['sellerSummary']),
     competitiveMarketCentral: null,
+    calculationCount: 0,
     advisorDecision:
       overrides.sellerPrice === undefined
         ? null

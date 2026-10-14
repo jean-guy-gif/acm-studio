@@ -8,6 +8,7 @@ function live(comparableCount: number): LiveComparativeData {
     comparables: Array.from({ length: comparableCount }, (_v, i) => ({ id: `c${i}` }) as never),
     sellerSummary: null,
     competitiveMarketCentral: null,
+    calculationCount: 0,
     advisorDecision: null,
     priceGaps: {
       sellerPerceivedPrice: null,

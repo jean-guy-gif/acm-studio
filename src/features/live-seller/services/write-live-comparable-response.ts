@@ -78,6 +78,15 @@ export async function writeLiveComparableResponse(
     }),
   });
 
+  // Mission 104 — « Non » à « Un sérieux concurrent ? » dispense de deviner : un prix ou une
+  // durée tapés avant « Non » ne s'enregistrent pas. Sinon la base figerait la devinette ET le
+  // prix révélé (M92, M96) d'un concurrent que le vendeur a écarté — faussant la bande des prix,
+  // la médiane et le Suivi.
+  if (normalized.seller_serious_competitor === 'no') {
+    delete normalized.seller_estimated_listing_price;
+    delete normalized.seller_estimated_days_on_market;
+  }
+
   const validation = validateLiveComparableResponse(normalized);
   if (!validation.ok) {
     return {

@@ -53,9 +53,10 @@ describe('la lecture du marché ne porte que sur les concurrents révélés (mis
         entry('c', 312_400, { days: 200, dropped: true }),
       ],
       NO_ADJUST,
+      3,
     );
     expect(reading).toMatchObject({
-      retainedCount: 3,
+      calculationCount: 3,
       revealedCount: 3,
       prices: [291_500, 298_700, 312_400],
       lowestPrice: 291_500,
@@ -71,9 +72,10 @@ describe('la lecture du marché ne porte que sur les concurrents révélés (mis
     const reading = buildMarketReading(
       [entry('a', 300_000, { days: 100 }), hidden, entry('b', 320_000, { days: 200 })],
       NO_ADJUST,
+      3,
     );
     expect(reading.revealedCount).toBe(2);
-    expect(reading.retainedCount).toBe(3);
+    expect(reading.calculationCount).toBe(3);
     expect(reading.prices).toEqual([300_000, 320_000]);
     expect(reading.highestPrice).toBe(320_000);
     expect(reading.medianDaysOnMarket).toBe(150);
@@ -86,14 +88,14 @@ describe('la lecture du marché ne porte que sur les concurrents révélés (mis
       ...entry('non', 280_000, { guessed: false }),
       response: { seller_estimated_listing_price: null },
     };
-    expect(buildMarketReading([refused], NO_ADJUST).prices).toEqual([]);
+    expect(buildMarketReading([refused], NO_ADJUST, 1).prices).toEqual([]);
   });
 
   it('ne montre pas un chiffre inconnu, et n’invente rien', () => {
-    const reading = buildMarketReading([entry('a', 300_000), entry('b', 320_000)], NO_ADJUST);
+    const reading = buildMarketReading([entry('a', 300_000), entry('b', 320_000)], NO_ADJUST, 2);
     expect(reading.medianDaysOnMarket).toBeNull();
     expect(reading.droppedCount).toBeNull();
-    const empty = buildMarketReading([], NO_ADJUST);
+    const empty = buildMarketReading([], NO_ADJUST, 0);
     expect(empty).toMatchObject({
       prices: [],
       lowestPrice: null,
@@ -111,30 +113,39 @@ describe('la lecture du marché ne porte que sur les concurrents révélés (mis
 });
 
 describe('ce sur quoi porte le « Prix des concurrents »', () => {
-  it('calculé : il le dit, avec le nombre de concurrents retenus', () => {
-    const reading = buildMarketReading([entry('a', 300_000), entry('b', 310_000)], {
-      advisorPrice: 300_000,
-      marketComputed: 300_000,
-    });
+  // Mission 104 — le nombre dit les concurrents qui ENTRENT dans le calcul.
+  it('calculé : il le dit, avec le nombre de concurrents du calcul', () => {
+    const reading = buildMarketReading(
+      [entry('a', 300_000), entry('b', 310_000)],
+      {
+        advisorPrice: 300_000,
+        marketComputed: 300_000,
+      },
+      2,
+    );
     expect(reading.competitorPriceBasis).toBe('computed');
-    expect(competitorPriceBasisLabel({ ...reading, retainedCount: 6 })).toBe(
-      'Calculé sur les 6 concurrents retenus par votre conseiller',
+    expect(competitorPriceBasisLabel({ ...reading, calculationCount: 5 })).toBe(
+      'Calculé sur 5 concurrents',
+    );
+    expect(competitorPriceBasisLabel({ ...reading, calculationCount: 1 })).toBe(
+      'Calculé sur 1 concurrent',
     );
   });
 
   it('ajusté par le conseiller : jamais « observé sur le marché »', () => {
-    const reading = buildMarketReading([entry('a', 300_000)], {
-      advisorPrice: 320_000,
-      marketComputed: 300_000,
-    });
+    const reading = buildMarketReading(
+      [entry('a', 300_000)],
+      { advisorPrice: 320_000, marketComputed: 300_000 },
+      1,
+    );
     expect(reading.competitorPriceBasis).toBe('advisor');
-    const label = competitorPriceBasisLabel({ ...reading, retainedCount: 6 });
-    expect(label).toBe('Prix retenu par votre conseiller à partir des 6 concurrents');
+    const label = competitorPriceBasisLabel({ ...reading, calculationCount: 5 });
+    expect(label).toBe('Prix retenu par votre conseiller à partir de 5 concurrents');
     expect(label).not.toMatch(/observé/);
   });
 
   it('sans décision enregistrée, c’est le calcul', () => {
-    expect(buildMarketReading([entry('a', 300_000)], NO_ADJUST).competitorPriceBasis).toBe(
+    expect(buildMarketReading([entry('a', 300_000)], NO_ADJUST, 1).competitorPriceBasis).toBe(
       'computed',
     );
   });

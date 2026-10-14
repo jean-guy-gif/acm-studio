@@ -1095,16 +1095,15 @@ async function walkLive(
     '« Analyse des prix » ne montre pas le chemin 350 000 → 325 000',
   ).toBe(`Audébut:${PERCEIVED_PRICE}€→Aprèsavoirvulemarché:${REVISED_PRICE}€`);
   // Le « Prix des concurrents » dit sur quoi il porte ; plus de « observé sur le marché ».
-  await expect(
-    page.getByText(
-      `Calculé sur les ${COMPETITORS.length} concurrents retenus par votre conseiller`,
-    ),
-  ).toBeVisible();
+  // Mission 104 — le nombre dit les concurrents qui entrent dans le calcul.
+  await expect(page.getByText(`Calculé sur ${COMPETITORS.length} concurrents`)).toBeVisible();
   await expect(page.getByText(/observé sur le marché/)).toHaveCount(0);
   // La bande : un point par concurrent révélé, et les deux repères du vendeur.
   const band = page.locator('[data-price-band]');
   await expect(band.locator('[data-band-dot]')).toHaveCount(COMPETITORS.length);
-  await expect(band.locator('[data-band-marker]')).toHaveCount(2);
+  // Mission 104 — et le « Prix des concurrents », placé sur la bande comme les prix du vendeur.
+  await expect(band.locator('[data-band-marker]')).toHaveCount(3);
+  await expect(band.locator('[data-band-marker="competitors"]')).toHaveCount(1);
   const analysisText = withoutSpaces(await mainText(page));
   for (const bound of [
     Math.min(...COMPETITORS.map((c) => c.price)),

@@ -78,3 +78,9 @@ export function decisionFormulaNote(sellerSurface: number, excludedOutlierCount:
   }
   return `${base}, hors ${excludedOutlierCount} concurrent${plural(excludedOutlierCount)} atypique${plural(excludedOutlierCount)}.`;
 }
+
+// Mission 104 — « 2 écartés : prix au m² trop éloigné » : les concurrents retenus qui n'entrent
+// pas dans le « Prix des concurrents ». Côté conseiller ; le vendeur lit « Calculé sur N ».
+export function excludedOutliersLabel(count: number): string {
+  return `${count} écarté${plural(count)} : prix au m² trop éloigné`;
+}

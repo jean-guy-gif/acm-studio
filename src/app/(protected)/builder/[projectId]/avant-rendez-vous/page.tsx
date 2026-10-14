@@ -1,6 +1,8 @@
 import {
+  competitorsWithPriceOrSurfaceToVerify,
   countFieldsToVerify,
   importedToVerifyLabel,
+  priceOrSurfaceToVerifyLabel,
 } from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -29,6 +31,9 @@ import {
   tooManyCompetitorsNote,
 } from '@/features/before-meeting/services/live-sequence';
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
+import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
+import { REAL_DOSSIER_NOTE } from '@/features/live-seller/services/live-launch';
 import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
 import { canChangeLiveRhythm } from '@/features/live-seller/services/live-timing';
 import {
@@ -38,6 +43,7 @@ import {
 import {
   buildReadinessChecks,
   decisionFormulaNote,
+  excludedOutliersLabel,
   isReadyBadge,
   type ReadinessCheck,
 } from '@/features/before-meeting/services/readiness-checks';
@@ -219,6 +225,12 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
 
   // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
   const pendingImports = await getPendingImports(projectId);
+  // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
+  // sont nommés ; les concurrents écartés du calcul sont comptés.
+  const launch = await getLiveLaunchInfo(projectId);
+  const priceOrSurfaceToVerify = competitorsWithPriceOrSurfaceToVerify(retained);
+  const priceOrSurfaceLabel = priceOrSurfaceToVerifyLabel(priceOrSurfaceToVerify.length);
+  const excludedOutliers = positioning?.dataset.excludedOutlierCount ?? 0;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -271,6 +283,26 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
               .
             </p>
           ) : null}
+          {priceOrSurfaceLabel ? (
+            <p
+              data-testid="price-surface-to-verify"
+              className="text-sm text-amber-700 stage:text-amber-300"
+            >
+              {priceOrSurfaceLabel} :{' '}
+              {priceOrSurfaceToVerify.map((competitor, index) => (
+                <span key={competitor.id}>
+                  {index > 0 ? ', ' : ''}
+                  <Link
+                    href={`/builder/${projectId}/comparables/${competitor.id}/edit`}
+                    className={link}
+                  >
+                    {competitor.title?.trim() || `concurrent ${index + 1}`}
+                  </Link>
+                </span>
+              ))}
+              .
+            </p>
+          ) : null}
         </div>
         <span className={`${ready ? badgeSelected : badgeRejected} px-3 py-1 text-sm`}>
           {ready ? 'Prêt' : 'Presque prêt'}
@@ -319,6 +351,15 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 <PositioningReasons reasons={positioning?.reasons ?? []} />
               </div>
             )}
+            {/* Mission 104 — côté conseiller seulement : qui n'entre pas dans le calcul. */}
+            {excludedOutliers > 0 ? (
+              <p
+                data-testid="excluded-outliers"
+                className="text-sm text-zinc-600 stage:text-white/70"
+              >
+                {excludedOutliersLabel(excludedOutliers)}
+              </p>
+            ) : null}
             {saved ? (
               <p className="text-xs text-zinc-500 stage:text-white/50">
                 Décision enregistrée le {formatDateTime(saved.validatedAt)}.
@@ -366,7 +407,28 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       <SellerSequenceCard
         sequence={sequence}
         notes={notes}
-        projectId={projectId}
+        launch={
+          launch ? (
+            <div className="flex flex-col items-end gap-1.5">
+              <LiveLaunchActions
+                projectId={projectId}
+                competitorCount={launch.competitorCount}
+                resume={launch.resume}
+                isExample={launch.isExample}
+                toVerifyCount={launch.toVerifyCount}
+              />
+              {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
+              {!launch.isExample && !launch.resume.started ? (
+                <p
+                  data-testid="real-dossier-note"
+                  className="max-w-xs text-right text-xs text-zinc-500 stage:text-white/55"
+                >
+                  {REAL_DOSSIER_NOTE}
+                </p>
+              ) : null}
+            </div>
+          ) : null
+        }
         rhythmSetting={
           <LiveRhythmSetting
             rhythm={rhythm}

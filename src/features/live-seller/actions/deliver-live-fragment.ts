@@ -1,5 +1,7 @@
 'use server';
 
+import { redirect } from 'next/navigation';
+
 import {
   authorizeAdvisorRange,
   authorizeComparableReveal,
@@ -41,7 +43,8 @@ export async function deliverLiveFragment(
     }
     const presentation = await loadLivePresentation(projectId);
     if (!presentation?.live) {
-      return { ok: false, error: 'Dossier indisponible.' };
+      // Mission 104 — plus de concurrent retenu en pleine séance : l'écran neutre de pause.
+      redirect(`/live/${projectId}/pause`);
     }
     const comparable = authorizeComparableReveal(presentation.live, request.comparableId);
     if (!comparable) {
@@ -57,7 +60,8 @@ export async function deliverLiveFragment(
   }
   const presentation = await loadLivePresentation(projectId);
   if (!presentation?.live) {
-    return { ok: false, error: 'Dossier indisponible.' };
+    // Mission 104 — plus de concurrent retenu en pleine séance : l'écran neutre de pause.
+    redirect(`/live/${projectId}/pause`);
   }
   const advisorRange = authorizeAdvisorRange(presentation.live);
   if (!advisorRange) {

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { closingQuestion } from '@/features/live-seller/components/live-page-closing';
-import { NO_COMPETITOR_REASON } from '@/features/live-seller/components/live-launch-actions';
+import { NO_COMPETITOR_REASON } from '@/features/live-seller/services/live-launch';
 
 const DIR = join(process.cwd(), 'src', 'features', 'live-seller', 'components');
 // Ce qui s'affiche : le code sans ses commentaires.
@@ -80,7 +80,7 @@ describe('la question de 1 à 10', () => {
 
 describe('la liste du Live (écran conseiller)', () => {
   it('dit pourquoi un dossier sans concurrent ne se lance pas', () => {
-    expect(NO_COMPETITOR_REASON).toMatch(/^Aucun concurrent retenu/);
+    expect(NO_COMPETITOR_REASON).toBe('Retenez au moins un concurrent pour lancer le Live');
     const actions = shown('live-launch-actions.tsx');
     expect(actions).toContain('disabled');
     // Mission 92 — les réponses sont figées : on ne « recommence » pas un rendez-vous.
