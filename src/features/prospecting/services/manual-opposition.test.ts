@@ -5,11 +5,13 @@ import {
   MANUAL_OPPOSITION_ARRONDISSEMENT,
   MANUAL_OPPOSITION_MISMATCH,
   MANUAL_OPPOSITION_NO_COMMUNE,
+  MANUAL_OPPOSITION_UNAVAILABLE,
   MANUAL_OPPOSITION_UNKNOWN_COMMUNE,
   MANUAL_OPPOSITION_UNKNOWN_POSTAL_CODE,
   decideManualOpposition,
   manualCommuneLookupName,
   parseManualAddress,
+  unverifiedManualOpposition,
   type ManualCommune,
 } from '@/features/prospecting/services/manual-opposition';
 import { buildOppositions, opposedOn } from '@/features/prospecting/services/opposition';
@@ -80,6 +82,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       status: 'ready',
       key: '14 chemin des oliviers cagnes sur mer',
       display: '14 chemin des Oliviers, Cagnes-sur-Mer',
+      verified: true,
     });
   });
 
@@ -94,6 +97,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       status: 'ready',
       key: '3 route de grasse peymeinade',
       display: '3 route de Grasse, Peymeinade',
+      verified: true,
     });
     // La commune tapée choisit d'elle-même.
     expect(decide('3 rte de Grasse, 06530 Le Tignet', POSTAL_06530)).toMatchObject({
@@ -135,6 +139,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       status: 'ready',
       key: '12 rue lecourbe paris 15',
       display: '12 rue Lecourbe, Paris 15e',
+      verified: true,
     });
     expect(decide('12 rue Lecourbe, Paris 15ème', [PARIS])).toMatchObject({
       key: '12 rue lecourbe paris 15',
@@ -183,5 +188,42 @@ describe('la même adresse, à la main et sur une carte, donne la même clé', (
       opposedOn({ address: '14 ch des Oliviers · 1er étage, 06800 Cagnes-sur-Mer' }, list),
     ).toBe('2026-10-12T08:00:00.000Z');
     expect(opposedOn({ address: '16 chemin des Oliviers, 06800 Cagnes-sur-Mer' }, list)).toBeNull();
+  });
+});
+
+// Mission 104 — le service des communes ne répond pas, même au second essai.
+describe('service des communes indisponible', () => {
+  const fallback = (raw: string) => {
+    const parts = parseManualAddress(raw);
+    if (!parts) throw new Error(`adresse non lue : ${raw}`);
+    return unverifiedManualOpposition(parts);
+  };
+
+  it('code postal seul : il faut taper la commune', () => {
+    expect(fallback('14 chemin des Oliviers 06800')).toEqual({
+      status: 'error',
+      error: MANUAL_OPPOSITION_UNAVAILABLE,
+    });
+    expect(MANUAL_OPPOSITION_UNAVAILABLE).toBe(
+      'Service des communes indisponible : tapez le nom de la commune.',
+    );
+  });
+
+  it('commune tapée : la même clé que la carte, alias et arrondissement compris, non vérifiée', () => {
+    const cases: [string, string][] = [
+      ['14 chemin des Oliviers, 06800 Cagnes-sur-Mer', '14 ch des Oliviers, 06800 Cagnes-sur-Mer'],
+      ['14 chemin des Oliviers, Cros-de-Cagnes', '14 chemin des Oliviers, Cagnes-sur-Mer'],
+      ['8 avenue Hochet, Juan-les-Pins', '8 av Hochet, 06160 Antibes'],
+      ['12 rue Lecourbe, 75015 Paris', '12 rue Lecourbe, Paris 15e Arrondissement'],
+    ];
+    for (const [typed, card] of cases) {
+      const decision = fallback(typed);
+      expect(decision).toMatchObject({ status: 'ready', verified: false });
+      expect(decision.status === 'ready' && decision.key).toBe(addressKey(card));
+    }
+  });
+
+  it('Paris sans arrondissement ne se devine pas', () => {
+    expect(fallback('12 rue Lecourbe, Paris').status).toBe('error');
   });
 });

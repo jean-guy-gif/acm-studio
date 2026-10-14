@@ -1352,6 +1352,7 @@ export type Database = {
         Row: {
           address_key: string | null
           agency_id: string
+          commune_unverified: boolean
           created_at: string
           created_by: string | null
           id: string
@@ -1362,6 +1363,7 @@ export type Database = {
         Insert: {
           address_key?: string | null
           agency_id: string
+          commune_unverified?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1372,6 +1374,7 @@ export type Database = {
         Update: {
           address_key?: string | null
           agency_id?: string
+          commune_unverified?: boolean
           created_at?: string
           created_by?: string | null
           id?: string

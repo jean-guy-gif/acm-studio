@@ -32,8 +32,10 @@ export const MANUAL_OPPOSITION_ARRONDISSEMENT =
   'Indiquez l’arrondissement, ou le code postal : la ville seule ne bloquerait rien.';
 export const MANUAL_OPPOSITION_CHOOSE =
   'Ce code postal couvre plusieurs communes : choisissez la commune.';
+// Mission 104 — le service ne répond pas, et seule la commune manquait : il faut la taper.
 export const MANUAL_OPPOSITION_UNAVAILABLE =
-  'Le référentiel des communes ne répond pas : l’adresse n’est pas inscrite. Réessayez.';
+  'Service des communes indisponible : tapez le nom de la commune.';
+export const COMMUNE_UNVERIFIED_LABEL = 'commune non vérifiée';
 
 export type ManualAddressParts = {
   // « 14 chemin des Oliviers » — le numéro et la voie, tels que tapés.
@@ -47,8 +49,9 @@ export type ManualAddressParts = {
 export type ManualCommune = { code: string; name: string };
 
 export type ManualOppositionDecision =
-  // `display` : l'adresse comprise, montrée avant d'inscrire.
-  | { status: 'ready'; key: string; display: string }
+  // `display` : l'adresse comprise, montrée avant d'inscrire. `verified` : la commune a été
+  // reconnue par le référentiel (faux : il ne répondait pas, la commune est celle tapée).
+  | { status: 'ready'; key: string; display: string; verified: boolean }
   // Le code postal couvre plusieurs communes : le conseiller choisit.
   | { status: 'choose'; communes: ManualCommune[] }
   | { status: 'error'; error: string };
@@ -158,5 +161,30 @@ export function decideManualOpposition(
   if (key == null || !/^\d/.test(key)) {
     return { status: 'error', error: MANUAL_OPPOSITION_INCOMPLETE };
   }
-  return { status: 'ready', key, display: `${parts.street}, ${communeName}` };
+  return { status: 'ready', key, display: `${parts.street}, ${communeName}`, verified: true };
+}
+
+// Mission 104 — le référentiel ne répond pas, même au second essai. Une demande d'opposition ne
+// doit pas se perdre pour autant : la commune TAPÉE suffit, et la clé est construite par la même
+// fonction que les cartes (`addressKey` : alias, arrondissement lu dans le code postal). La
+// ligne est marquée « commune non vérifiée ». Sans commune tapée — le code postal seul —, rien
+// n'est deviné : le conseiller la tape.
+export function unverifiedManualOpposition(parts: ManualAddressParts): ManualOppositionDecision {
+  if (parts.commune == null) {
+    return { status: 'error', error: MANUAL_OPPOSITION_UNAVAILABLE };
+  }
+  const named = readArrondissementName(parts.commune);
+  let communeName = parts.commune;
+  if (named != null) {
+    const arrondissement = resolveArrondissement(parts.commune, parts.postalCode);
+    if (arrondissement == null) {
+      return { status: 'error', error: MANUAL_OPPOSITION_ARRONDISSEMENT };
+    }
+    communeName = arrondissementLabel(arrondissement);
+  }
+  const key = addressKey(`${parts.street}, ${communeName}`);
+  if (key == null || !/^\d/.test(key)) {
+    return { status: 'error', error: MANUAL_OPPOSITION_INCOMPLETE };
+  }
+  return { status: 'ready', key, display: `${parts.street}, ${communeName}`, verified: false };
 }
