@@ -1,0 +1,130 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
+import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
+import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
+import { detectSource } from '@/features/comparable-import/utils/detect-source';
+import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
+import {
+  priceCheckOutcome,
+  type PriceCheckOutcome,
+} from '@/features/competitor-refresh/services/price-refresh';
+import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
+import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
+import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
+
+const MAX_HTML_BYTES = 4 * 1024 * 1024;
+
+export type CompetitorToRefresh = { id: string; listingUrl: string };
+
+async function scope(projectId: string) {
+  const profile = await getProfile();
+  if (!profile || profile.removed_at || !z.uuid().safeParse(projectId).success) return null;
+  const supabase = await createClient();
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, status')
+    .eq('id', projectId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  // Le Suivi : un dossier conclu.
+  if (!project || project.status !== 'meeting_completed') return null;
+  return { supabase, agencyId: profile.agency_id };
+}
+
+// Mission 105 — les annonces à relire : les concurrents retenus du dossier qui en ont une.
+export async function listCompetitorsToRefresh(projectId: string): Promise<CompetitorToRefresh[]> {
+  const s = await scope(projectId);
+  if (!s) return [];
+  const { data } = await s.supabase
+    .from('comparables')
+    .select('id, listing_url')
+    .eq('project_id', projectId)
+    .eq('agency_id', s.agencyId)
+    .eq('is_selected', true)
+    .not('listing_url', 'is', null);
+  return (data ?? [])
+    .filter((row) => (row.listing_url ?? '').trim() !== '')
+    .map((row) => ({ id: row.id, listingUrl: row.listing_url as string }));
+}
+
+// Une annonce relue par l'extension : la page arrive dans un formulaire (jamais en argument,
+// correctif du 12/10), et tout est relu ici. `gone` : l'extension a constaté une redirection
+// hors de l'annonce. Aucun appel payant.
+export async function refreshCompetitorPrice(
+  projectId: string,
+  competitorId: string,
+  payload: FormData,
+): Promise<PriceCheckOutcome> {
+  const s = await scope(projectId);
+  if (!s || !z.uuid().safeParse(competitorId).success) return { status: 'unreadable' };
+  const { supabase, agencyId } = s;
+  const { data: competitor } = await supabase
+    .from('comparables')
+    .select('id, price, listing_url, listing_gone_at')
+    .eq('id', competitorId)
+    .eq('project_id', projectId)
+    .eq('agency_id', agencyId)
+    .eq('is_selected', true)
+    .maybeSingle();
+  const listing = readListingPayload(payload);
+  const url = listing ? normalizeUrl(listing.url) : null;
+  if (!competitor || !listing || !url || !isAllowedProtocol(url)) return { status: 'unreadable' };
+  if (url.href !== normalizeUrl(competitor.listing_url ?? '')?.href)
+    return { status: 'unreadable' };
+
+  const markGone = async (): Promise<PriceCheckOutcome> => {
+    if (competitor.listing_gone_at == null) {
+      await supabase
+        .from('comparables')
+        .update({ listing_gone_at: new Date().toISOString() })
+        .eq('id', competitor.id)
+        .eq('agency_id', agencyId);
+    }
+    return { status: 'gone' };
+  };
+
+  if (payload.get('gone') === 'redirect') return markGone();
+  const html = listing.html;
+  if (html.trim() === '' || Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
+    return { status: 'unreadable' };
+  }
+  const { data } = normalizeListingData(
+    extractListingData(html, url.href),
+    url.href,
+    detectSource(url.hostname),
+  );
+  const input = importedToComparableInput(data);
+  if (input == null) {
+    // Sans prix : retirée seulement sur preuve (M103) ; sinon, rien ne change.
+    return emptyPageCode(html, url.hostname) === 'listing_withdrawn'
+      ? markGone()
+      : { status: 'unreadable' };
+  }
+
+  // Le constat daté (M47), puis le prix du concurrent s'il a changé.
+  await observeListing(supabase, agencyId, url.href, data);
+  const outcome = priceCheckOutcome(competitor.price, { price: input.price });
+  const patch: { price?: number; listing_gone_at?: null } = {};
+  if (outcome.status === 'changed') patch.price = input.price;
+  if (competitor.listing_gone_at != null) patch.listing_gone_at = null;
+  if (Object.keys(patch).length > 0) {
+    await supabase
+      .from('comparables')
+      .update(patch)
+      .eq('id', competitor.id)
+      .eq('agency_id', agencyId);
+  }
+  return outcome;
+}
+
+export async function finishPriceRefresh(projectId: string): Promise<void> {
+  revalidatePath('/suivi');
+  revalidatePath(`/builder/${projectId}`);
+  revalidatePath('/prospection');
+}

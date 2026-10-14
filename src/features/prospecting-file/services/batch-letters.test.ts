@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  excludedFromBatch,
   CHOOSE_MESSAGE,
   splitBatchLetters,
   type BatchContext,
@@ -73,6 +74,23 @@ describe('courriers en lot : ce qui s’imprime, ce qui est retenu', () => {
       },
       { row: 'a-preciser', reason: CHOOSE_MESSAGE },
       { row: 'ferme', reason: 'Ce dossier ne peut pas être préparé.' },
+    ]);
+  });
+});
+
+// Mission 105 — chaque adresse exclue des courriers en lot est listée en tête, avec sa raison.
+describe('les adresses écartées avant la préparation', () => {
+  it('« Ne plus solliciter » et « adresse à confirmer » sont dites ; le reste ne l’est pas', () => {
+    expect(
+      excludedFromBatch([
+        { row: 'opposée', status: 'ready', opposed: true },
+        { row: 'à confirmer', status: 'to_confirm', opposed: false },
+        { row: 'prête', status: 'ready', opposed: false },
+        { row: 'remise', status: 'handed', opposed: false },
+      ]),
+    ).toEqual([
+      { row: 'opposée', reason: 'Ce propriétaire a demandé à ne plus être sollicité' },
+      { row: 'à confirmer', reason: 'Adresse à confirmer avant d’envoyer' },
     ]);
   });
 });

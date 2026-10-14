@@ -65,7 +65,7 @@ function motiveLine(input: FollowUpMessageInput): string {
     case 'consulting_relative':
       return 'Avez-vous pu en parler autour de vous ? Je peux reprendre les éléments avec vous et vos proches si vous le souhaitez.';
     case 'awaiting_estimate':
-      return 'Avez-vous reçu l’autre estimation que vous attendiez ? Je suis disponible pour la regarder avec vous.';
+      return 'Avez-vous reçu l’autre avis de valeur que vous attendiez ? Je suis disponible pour le regarder avec vous.';
     case 'undated_project':
       return 'Votre projet de vente a-t-il avancé ? Je reste à votre disposition quand vous le souhaiterez.';
     default:

@@ -1,6 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+
+import { isDuplicateListing } from '@/features/competitor-search/services/insert-competitor';
 import { redirect } from 'next/navigation';
 
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
@@ -112,7 +114,8 @@ export async function createComparable(
       is_selected: true,
     });
 
-    if (!error) {
+    // Mission 105 — la même annonce a déjà sa fiche dans ce dossier : c'est elle qui vaut.
+    if (!error || isDuplicateListing(error)) {
       inserted = true;
       break;
     }

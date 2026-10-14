@@ -371,6 +371,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // « Relancé aujourd'hui », avec une note : l'historique la montre, datée et signée.
     await row.getByRole('button', { name: 'Relancé aujourd’hui' }).click();
     await row.getByLabel('Note de relance (facultative)').fill(FOLLOW_UP_NOTE);
+    // Mission 105 — la date de prochaine relance est proposée selon le motif, et modifiable.
+    await expect(row.getByLabel('Prochaine relance')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
     await row.getByRole('button', { name: 'Enregistrer la relance' }).click();
     await expect(row.getByRole('button', { name: 'Relancé aujourd’hui' })).toBeVisible();
     const details = row.getByRole('button', { name: /le détail des prix/ });
@@ -379,6 +381,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     }
     const history = row.getByTestId('follow-up-history');
     await expect(history, 'L’historique des relances manque').toContainText(FOLLOW_UP_NOTE);
+    await expect(history).toContainText(/Prochaine relance le \d{2}\/\d{2}/);
     await expect(row.getByText('Dernier contact aujourd’hui')).toBeVisible();
 
     // « Préparer un message » : il reprend le prix dit par le vendeur, se modifie, se copie.
@@ -624,7 +627,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // qui écrire. Il est listé en tête avec sa raison, et n'est pas imprimé.
     await expect(page.getByText(TOUR_ADDRESS)).toBeVisible();
     await expect(page.getByText(/À qui s’adresser \?/)).toBeVisible();
-    await expect(page.getByText(OPPOSED_ADDRESS)).toHaveCount(0);
+    // Mission 105 — l'adresse « Ne plus solliciter » est listée en tête avec sa raison, et jamais
+    // imprimée.
+    await expect(page.locator('li').filter({ hasText: OPPOSED_ADDRESS })).toContainText(
+      'Ce propriétaire a demandé à ne plus être sollicité',
+    );
+    await expect(page.locator('.pf-doc').filter({ hasText: OPPOSED_ADDRESS })).toHaveCount(0);
 
     // La tournée de ce bien : la porte encore à voir et le dossier remis, jamais l'adresse
     // « Ne plus solliciter ».
@@ -702,9 +710,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.goto(`/prospection/courriers?bien=${projectId}`);
     await expect(page.getByRole('heading', { name: 'Courriers de prospection' })).toBeVisible();
     await expect(
-      page.getByText(CHOSEN_ADDRESS),
+      page.locator('.pf-doc').filter({ hasText: CHOSEN_ADDRESS }),
       'L’adresse « Ne plus solliciter » est restée dans les courriers à imprimer',
     ).toHaveCount(0);
+    // Mission 105 — elle est listée en tête, avec sa raison.
+    await expect(page.locator('li').filter({ hasText: CHOSEN_ADDRESS })).toContainText(
+      'Ce propriétaire a demandé à ne plus être sollicité',
+    );
     await page.goto(`/prospection/tournee?bien=${projectId}`);
     await expect(page.getByRole('heading', { name: 'Ma tournée de prospection' })).toBeVisible();
     await expect(page.getByText(PROSPECTING_ADDRESS)).toBeVisible();

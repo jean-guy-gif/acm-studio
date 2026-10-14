@@ -274,6 +274,7 @@ export type Database = {
           land_area: number | null
           listing_description: string | null
           listing_features: Json
+          listing_gone_at: string | null
           listing_published_at: string | null
           listing_url: string | null
           listing_withdrawn: boolean
@@ -338,6 +339,7 @@ export type Database = {
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
+          listing_gone_at?: string | null
           listing_published_at?: string | null
           listing_url?: string | null
           listing_withdrawn?: boolean
@@ -402,6 +404,7 @@ export type Database = {
           land_area?: number | null
           listing_description?: string | null
           listing_features?: Json
+          listing_gone_at?: string | null
           listing_published_at?: string | null
           listing_url?: string | null
           listing_withdrawn?: boolean
@@ -633,6 +636,7 @@ export type Database = {
           contacted_at: string
           created_at: string
           id: string
+          next_follow_up_on: string | null
           note: string | null
           project_id: string
         }
@@ -642,6 +646,7 @@ export type Database = {
           contacted_at?: string
           created_at?: string
           id?: string
+          next_follow_up_on?: string | null
           note?: string | null
           project_id: string
         }
@@ -651,6 +656,7 @@ export type Database = {
           contacted_at?: string
           created_at?: string
           id?: string
+          next_follow_up_on?: string | null
           note?: string | null
           project_id?: string
         }
@@ -1352,6 +1358,9 @@ export type Database = {
         Row: {
           address_key: string | null
           agency_id: string
+          commune_checked_at: string | null
+          commune_typed: string | null
+          commune_unknown: boolean
           commune_unverified: boolean
           created_at: string
           created_by: string | null
@@ -1363,6 +1372,9 @@ export type Database = {
         Insert: {
           address_key?: string | null
           agency_id: string
+          commune_checked_at?: string | null
+          commune_typed?: string | null
+          commune_unknown?: boolean
           commune_unverified?: boolean
           created_at?: string
           created_by?: string | null
@@ -1374,6 +1386,9 @@ export type Database = {
         Update: {
           address_key?: string | null
           agency_id?: string
+          commune_checked_at?: string | null
+          commune_typed?: string | null
+          commune_unknown?: boolean
           commune_unverified?: boolean
           created_at?: string
           created_by?: string | null
@@ -1399,6 +1414,61 @@ export type Database = {
           },
         ]
       }
+      stream_estate_results: {
+        Row: {
+          agency_id: string
+          created_at: string
+          fingerprint: string
+          id: string
+          project_id: string
+          result: Json
+          saved_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          fingerprint: string
+          id?: string
+          project_id: string
+          result: Json
+          saved_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          project_id?: string
+          result?: Json
+          saved_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_estate_results_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_estate_results_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_estate_results_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stream_estate_usage: {
         Row: {
           adverts: number
@@ -1406,6 +1476,7 @@ export type Database = {
           created_at: string
           id: string
           project_id: string | null
+          reserved: boolean
           user_id: string | null
         }
         Insert: {
@@ -1414,6 +1485,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string | null
+          reserved?: boolean
           user_id?: string | null
         }
         Update: {
@@ -1422,6 +1494,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string | null
+          reserved?: boolean
           user_id?: string | null
         }
         Relationships: [
@@ -1821,6 +1894,20 @@ export type Database = {
         }
         Returns: Json
       }
+      reserve_stream_estate_budget: {
+        Args: {
+          p_agency_id: string
+          p_default_cap_cents: number
+          p_project_id: string
+          p_since: string
+          p_user_id: string
+          p_wanted: number
+        }
+        Returns: {
+          adverts: number
+          reservation_id: string
+        }[]
+      }
       save_commercialization_price: {
         Args: {
           p_advisor_analysis: number
@@ -1830,6 +1917,10 @@ export type Database = {
           p_price: number
           p_project_id: string
         }
+        Returns: undefined
+      }
+      settle_stream_estate_budget: {
+        Args: { p_billed: number; p_reservation_id: string }
         Returns: undefined
       }
       stream_estate_usage_since: {

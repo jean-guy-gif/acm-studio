@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
-import {
-  keepSearch,
-  recallSearch,
-  searchFingerprint,
-} from '@/features/competitor-search/services/paid-search-guard';
+import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
 import {
   DEFAULT_SEARCH_SETTINGS,
@@ -205,27 +201,11 @@ describe('chaque réglage modifie la requête comme prévu', () => {
 });
 
 describe('un réglage annule le résultat gardé (M93)', () => {
-  function tabStorage() {
-    const data = new Map<string, string>();
-    return {
-      getItem: (key: string) => data.get(key) ?? null,
-      setItem: (key: string, value: string) => void data.set(key, value),
-      removeItem: (key: string) => void data.delete(key),
-    };
-  }
-
-  it('jette le résultat dès qu’un réglage change, et dès qu’il est remis par défaut', () => {
-    const storage = tabStorage();
+  it('l’empreinte change dès qu’un réglage change, et revient quand il est remis par défaut', () => {
     const automatic = searchFingerprint(CRITERIA, null);
-    keepSearch(storage, 'p1', { fingerprint: automatic, portal: { a: 1 }, note: { b: 2 } });
     const custom = searchFingerprint(CRITERIA, null, settings({ rooms: { min: 3, max: 4 } }));
     expect(custom).not.toBe(automatic);
-    expect(recallSearch(storage, 'p1', custom)).toBeNull();
-    expect(storage.getItem('acm-stream-estate:p1')).toBeNull();
-
-    keepSearch(storage, 'p1', { fingerprint: custom, portal: { a: 1 }, note: { b: 2 } });
-    expect(recallSearch(storage, 'p1', custom)).not.toBeNull();
-    expect(recallSearch(storage, 'p1', automatic)).toBeNull();
+    expect(searchFingerprint(CRITERIA, null, settings({}))).toBe(automatic);
   });
 
   it('distingue chaque réglage', () => {

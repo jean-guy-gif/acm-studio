@@ -19,6 +19,8 @@ import {
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
 import { buildQrCode, type QrCode } from '@/features/prospecting-file/services/qr-code';
 import {
+  LISTING_PHOTOS_OFFERED,
+  withoutListingPhoto,
   NO_SAVED_THEIR_PHOTO,
   THEIR_PHOTO_MODES,
   listingPhotoUrls,
@@ -224,16 +226,21 @@ export async function getProspectingFile(
   const row = saved.data;
 
   const prefix = theirPhotoPrefix(agencyId, projectId, competitorId);
-  const savedTheirPhoto: SavedTheirPhoto = row
-    ? {
-        mode: (THEIR_PHOTO_MODES as readonly string[]).includes(row.their_photo_mode ?? '')
-          ? (row.their_photo_mode as TheirPhotoMode)
-          : null,
-        sourceUrl: row.their_photo_source_url,
-        // Un chemin hors du dossier de ce concurrent n'est jamais signé.
-        path: row.their_photo_path?.startsWith(prefix) ? row.their_photo_path : null,
-      }
-    : NO_SAVED_THEIR_PHOTO;
+  // Mission 105 — la photo d'une annonce appartient à son auteur : pendant la bêta, elle n'est
+  // plus proposée ni imprimée. Un courrier déjà préparé avec une photo d'annonce s'imprime sans
+  // elle ; rien n'est effacé en base.
+  const savedTheirPhoto: SavedTheirPhoto = withoutListingPhoto(
+    row
+      ? {
+          mode: (THEIR_PHOTO_MODES as readonly string[]).includes(row.their_photo_mode ?? '')
+            ? (row.their_photo_mode as TheirPhotoMode)
+            : null,
+          sourceUrl: row.their_photo_source_url,
+          // Un chemin hors du dossier de ce concurrent n'est jamais signé.
+          path: row.their_photo_path?.startsWith(prefix) ? row.their_photo_path : null,
+        }
+      : NO_SAVED_THEIR_PHOTO,
+  );
   const theirSigned = savedTheirPhoto.path
     ? await signPropertyPhotos(supabase, [savedTheirPhoto.path], PHOTO_URL_TTL_SECONDS)
     : [];
@@ -280,7 +287,8 @@ export async function getProspectingFile(
       : NO_OVERRIDES,
     photos,
     theirPhoto: {
-      listing: listingPhotoUrls(competitor.photo_urls),
+      // Mission 105 — plus aucune photo d'annonce proposée pendant la bêta.
+      listing: LISTING_PHOTOS_OFFERED ? listingPhotoUrls(competitor.photo_urls) : [],
       saved: savedTheirPhoto,
       signed: Object.fromEntries(theirSigned.map((photo) => [photo.path, photo.url])),
       prefix,

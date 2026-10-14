@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   IMPORT_RETRY_DELAYS_MS,
   MAX_LISTING_HTML_BYTES,
+  READ_FAILURE_LABELS,
   importListing,
   isImported,
   isRetained,
@@ -233,6 +234,22 @@ describe('importListing — une page sans données n’écarte pas un concurrent
     });
     expect(await importListing(URL, deps)).toEqual({ status: 'imported', attempts: 2 });
     expect(log.search).toEqual([]);
+  });
+});
+
+// Mission 105 — l'extension n'a pas répondu : une cause à part, jamais « le site refuse ». Relire
+// ne changerait rien ; le concurrent est créé depuis la recherche, retenu.
+describe('importListing — extension absente ou désactivée', () => {
+  it('une seule lecture, la vraie cause, puis créé depuis la recherche, retenu', async () => {
+    const { deps, log } = harness({ reads: [{ ok: false, reason: 'no_extension' }] });
+    const outcome = await importListing(URL, deps);
+    expect(outcome).toEqual({ status: 'imported_from_search', cause: 'no_extension', attempts: 1 });
+    expect(isRetained(outcome)).toBe(true);
+    expect(log.reported).toEqual([{ cause: 'no_extension', attempts: 1 }]);
+    expect(READ_FAILURE_LABELS.no_extension).toContain(
+      'installez ou activez l’extension ACM, puis réessayez',
+    );
+    expect(READ_FAILURE_LABELS.no_extension).not.toMatch(/refuse/);
   });
 });
 

@@ -187,8 +187,10 @@ export function SearchSettingsBlock({
             ))}
           </div>
         </Row>
+        {/* Mission 105 — les bornes envoyées à la recherche : « Prix recherchés ». « Fourchette »
+            ne désigne que celle du conseiller (M97). */}
         <Row
-          label="Prix"
+          label="Prix recherchés"
           custom={input.priceMin !== '' || input.priceMax !== ''}
           onReset={() => set({ priceMin: '', priceMax: '' })}
           disabled={locked}
@@ -198,7 +200,7 @@ export function SearchSettingsBlock({
             'priceMax',
             [text(defaults.price?.min), text(defaults.price?.max)],
             '€',
-            'Prix',
+            'Prix recherchés',
           )}
           <p className="text-xs text-zinc-500 stage:text-white/50">
             {defaults.price

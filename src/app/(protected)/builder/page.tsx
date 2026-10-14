@@ -26,6 +26,7 @@ import { getPreparationDossiers } from '@/features/projects/queries/get-preparat
 import {
   advancementSteps,
   fourchetteLabel,
+  PRICE_DECISION_PENDING,
   propertyLabel,
 } from '@/features/projects/services/preparation-card';
 
@@ -133,12 +134,16 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                   {/* La décision de prix enregistrée (« Avant le rendez-vous ») — écran conseiller,
                       jamais le vendeur. */}
                   <span className="text-sm text-zinc-500 stage:text-white/60">
+                    {/* Mission 105 — la fourchette du conseiller, ou « À décider ». */}
                     {fourchetteText ? (
                       <>Décision de prix : {fourchetteText}</>
                     ) : (
-                      <span className="text-amber-700 stage:text-amber-300">
-                        Décision de prix à enregistrer
-                      </span>
+                      <>
+                        Décision de prix :{' '}
+                        <span className="text-amber-700 stage:text-amber-300">
+                          {PRICE_DECISION_PENDING}
+                        </span>
+                      </>
                     )}
                   </span>
 

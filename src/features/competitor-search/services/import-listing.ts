@@ -27,12 +27,19 @@ export const READ_FAILURE_CAUSES = [
   'too_large', // la page dépasse ce que l'import accepte
   'withdrawn', // la page PROUVE que l'annonce n'est plus en ligne (redirection, 404, mention)
   'empty', // la page ne porte ni prix ni donnée, sans preuve de retrait (captcha, gabarit modifié)
+  'no_extension', // l'extension ACM n'a pas répondu : absente ou désactivée (M105)
   'server', // l'import a échoué côté serveur
 ] as const;
 export type ReadFailureCause = (typeof READ_FAILURE_CAUSES)[number];
 
 // Les causes que le temps ne répare pas : une seule lecture, puis les données de la recherche.
-const PERMANENT: readonly ReadFailureCause[] = ['robots', 'invalid', 'too_large', 'withdrawn'];
+const PERMANENT: readonly ReadFailureCause[] = [
+  'robots',
+  'invalid',
+  'too_large',
+  'withdrawn',
+  'no_extension',
+];
 
 export const READ_FAILURE_LABELS: Record<ReadFailureCause | 'no_price', string> = {
   robots: 'le site refuse la lecture automatique de cette annonce',
@@ -42,6 +49,8 @@ export const READ_FAILURE_LABELS: Record<ReadFailureCause | 'no_price', string> 
   too_large: 'la page de l’annonce est trop lourde pour être lue',
   withdrawn: 'l’annonce n’est plus en ligne',
   empty: 'page sans données (captcha ?)',
+  no_extension:
+    'extension absente ou désactivée : installez ou activez l’extension ACM, puis réessayez',
   server: 'l’import a échoué côté serveur',
   no_price: 'la recherche ne donne pas le prix de ce bien',
 };
@@ -120,7 +129,10 @@ async function attempt(
   } as PageRead);
   if (read === 'timeout') return 'timeout';
   if (!read.ok) {
-    return read.reason === 'robots' || read.reason === 'invalid' || read.reason === 'timeout'
+    return read.reason === 'robots' ||
+      read.reason === 'invalid' ||
+      read.reason === 'timeout' ||
+      read.reason === 'no_extension'
       ? read.reason
       : 'network';
   }

@@ -83,6 +83,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       key: '14 chemin des oliviers cagnes sur mer',
       display: '14 chemin des Oliviers, Cagnes-sur-Mer',
       verified: true,
+      commune: 'Cagnes-sur-Mer',
     });
   });
 
@@ -98,6 +99,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       key: '3 route de grasse peymeinade',
       display: '3 route de Grasse, Peymeinade',
       verified: true,
+      commune: 'Peymeinade',
     });
     // La commune tapée choisit d'elle-même.
     expect(decide('3 rte de Grasse, 06530 Le Tignet', POSTAL_06530)).toMatchObject({
@@ -140,6 +142,7 @@ describe('une opposition à la main exige une commune reconnue', () => {
       key: '12 rue lecourbe paris 15',
       display: '12 rue Lecourbe, Paris 15e',
       verified: true,
+      commune: 'Paris 15e',
     });
     expect(decide('12 rue Lecourbe, Paris 15ème', [PARIS])).toMatchObject({
       key: '12 rue lecourbe paris 15',

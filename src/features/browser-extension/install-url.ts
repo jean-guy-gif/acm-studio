@@ -23,3 +23,9 @@ export function parseExtensionInstallUrl(raw: string | undefined): string | null
 export function extensionInstallUrl(): string | null {
   return parseExtensionInstallUrl(process.env.NEXT_PUBLIC_EXTENSION_INSTALL_URL);
 }
+
+// Mission 105 — l'extension est installée mais Chrome ne lui laisse pas lire ACM Studio.
+export const EXTENSION_NO_SITE_ACCESS_TITLE = 'Extension installée, mais sans accès à ACM Studio';
+export const EXTENSION_NO_SITE_ACCESS_STEPS =
+  'Chrome → Extensions → ACM Studio → Détails → Accès aux sites → Sur tous les sites';
+export const EXTENSION_ALREADY_INSTALLED_HINT = 'Déjà installée ? Vérifiez l’accès aux sites';

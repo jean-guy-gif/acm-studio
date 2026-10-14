@@ -16,7 +16,14 @@ const UNIQUE_VIOLATION = '23505';
 export async function insertOppositions(
   supabase: Client,
   author: { agencyId: string; profileId: string },
-  keys: { addressKey: string | null; listingKeys: string[]; communeUnverified?: boolean },
+  keys: {
+    addressKey: string | null;
+    listingKeys: string[];
+    communeUnverified?: boolean;
+    // Mission 105 — la commune tapée, gardée pour la revérification de la nuit (un nom de
+    // commune, jamais l'adresse).
+    communeTyped?: string | null;
+  },
 ): Promise<boolean> {
   const listingKeys = [...new Set(keys.listingKeys)];
   const rows = [
@@ -24,7 +31,12 @@ export async function insertOppositions(
       ? [
           {
             address_key: keys.addressKey,
-            ...(keys.communeUnverified ? { commune_unverified: true } : {}),
+            ...(keys.communeUnverified
+              ? {
+                  commune_unverified: true,
+                  commune_typed: keys.communeTyped?.slice(0, 120) ?? null,
+                }
+              : {}),
           },
         ]
       : []),

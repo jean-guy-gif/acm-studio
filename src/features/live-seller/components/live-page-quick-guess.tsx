@@ -42,8 +42,8 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
         <h2 className={question}>Un sérieux concurrent ? Et à quel prix, selon vous ?</h2>
         <p className={questionHint}>
           {savedEstimate != null
-            ? 'Votre estimation est notée : elle ne se modifie plus.'
-            : 'Regardez ce bien comme le ferait un acheteur, puis donnez votre estimation de son prix.'}
+            ? 'Votre réponse est notée : elle ne se modifie plus.'
+            : 'Regardez ce bien comme le ferait un acheteur, puis donnez le prix que vous imaginez.'}
         </p>
       </div>
 

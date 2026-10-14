@@ -19,6 +19,9 @@ const PUBLIC_PATHS = [
   '/confidentialite',
   '/mot-de-passe-oublie',
   '/api/version',
+  // Mission 105 — la tâche planifiée de la nuit : elle n'a pas de session, son jeton (CRON_SECRET)
+  // est vérifié par la route elle-même.
+  '/api/cron/verifier-oppositions',
 ];
 
 export function isPublicPath(pathname: string): boolean {

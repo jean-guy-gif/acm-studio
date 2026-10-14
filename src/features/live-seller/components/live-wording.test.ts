@@ -236,7 +236,7 @@ describe('le rythme accéléré parle au vendeur comme le reste du Live (mission
     expect(SELLER_SCREENS).toContain('live-page-quick-guess.tsx');
     expect(SELLER_SCREENS).toContain('live-page-quick-reveal.tsx');
     expect(shown('live-page-quick-guess.tsx')).toContain('Le prix que vous imaginez');
-    expect(shown('live-page-quick-reveal.tsx')).toContain('Votre estimation');
+    expect(shown('live-page-quick-reveal.tsx')).toContain('Votre réponse');
     expect(shown('live-page-quick-reveal.tsx')).toContain('La durée que vous imaginez');
   });
 

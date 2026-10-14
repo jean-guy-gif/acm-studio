@@ -1,7 +1,7 @@
 import { liveDurationLabel } from '@/features/live-seller/services/live-timing';
 import {
   daysSinceLastContact,
-  isFollowUpDue,
+  isFollowUpDueNow,
   lastContactAt,
   type FollowUpContact,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
@@ -79,7 +79,8 @@ export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollow
     contacts: input.contacts,
     lastContactAt: lastContactAt(conclusion.concludedAt, input.contacts),
     lastContactDays: days,
-    due: isFollowUpDue(days),
+    // Mission 105 — la date de prochaine relance décide, sinon la règle des 7 jours.
+    due: isFollowUpDueNow(conclusion.concludedAt, input.contacts, input.now),
     message: buildFollowUpMessage({
       motive: conclusion.followUpMotive,
       meetingDate: meetingDay(conclusion.concludedAt),

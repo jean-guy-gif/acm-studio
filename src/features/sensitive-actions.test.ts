@@ -341,6 +341,8 @@ describe('« Ne plus solliciter »', () => {
         created_by: 'u-advisor',
         address_key: '8 avenue hochet antibes',
         commune_unverified: true,
+        // Mission 105 — la commune tapée, gardée pour la revérification de la nuit.
+        commune_typed: 'Juan-les-Pins',
       },
     ]);
     // Paris sans arrondissement ne se devine pas, même en panne.
@@ -512,7 +514,23 @@ describe('relance', () => {
       agency_id: AGENCY,
       author_id: 'u-advisor',
       note: 'Rappelé : il réfléchit',
+      // Mission 105 — sans date choisie : celle proposée (7 jours, sans motif « réfléchit »).
+      next_follow_up_on: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
+  });
+
+  // Mission 105 — la date de prochaine relance : celle de l'écran, relue ; jamais dans le passé.
+  it('la date de prochaine relance se relit : passée ou au-delà d’un an, rien n’est écrit', async () => {
+    const { recordFollowUpContact } =
+      await import('@/features/meeting-conclusion/actions/record-follow-up-contact');
+    state.project = { id: PROJECT, status: 'meeting_completed' };
+    state.conclusion = { outcome: 'follow_up', followUpMotive: 'thinking_price' };
+    for (const day of ['2020-01-01', '2099-01-01', 'demain']) {
+      expect((await recordFollowUpContact(PROJECT, form({ next_follow_up_on: day }))).ok).toBe(
+        false,
+      );
+    }
+    noWrite();
   });
 });
 

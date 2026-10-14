@@ -34,8 +34,8 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
         <h2 className={question}>À quel prix pensez-vous que ce bien est proposé ?</h2>
         <p className={questionHint}>
           {savedEstimate != null
-            ? 'Votre estimation est notée : elle ne se modifie plus.'
-            : 'Donnez votre estimation : le prix réel s’affichera à l’écran suivant.'}
+            ? 'Votre réponse est notée : elle ne se modifie plus.'
+            : 'Donnez le prix que vous imaginez : le prix réel s’affichera à l’écran suivant.'}
         </p>
       </div>
 
