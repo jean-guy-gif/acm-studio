@@ -63,6 +63,8 @@ export type LiveComparativeData = {
   // "Positionnement observé sur le marché concurrentiel" — the existing engine's
   // central value. Never labelled "vraie valeur du marché".
   competitiveMarketCentral: number | null;
+  // Mission 104 — les concurrents qui entrent dans ce calcul (valeurs aberrantes exclues).
+  calculationCount: number;
   advisorDecision: LiveAdvisorDecision | null;
   priceGaps: LivePriceGaps;
 };

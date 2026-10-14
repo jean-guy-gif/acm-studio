@@ -231,9 +231,13 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
     competitiveMarketCentral: live.competitiveMarketCentral,
     priceGaps: live.priceGaps,
     advisorDecision: live.advisorDecision,
-    marketReading: buildMarketReading(live.comparables, {
-      advisorPrice: live.advisorDecision?.advisorPrice ?? null,
-      marketComputed: live.competitiveMarketCentral,
-    }),
+    marketReading: buildMarketReading(
+      live.comparables,
+      {
+        advisorPrice: live.advisorDecision?.advisorPrice ?? null,
+        marketComputed: live.competitiveMarketCentral,
+      },
+      live.calculationCount,
+    ),
   };
 }

@@ -25,7 +25,10 @@ export function OppositionButton({
   const confirm = () => {
     setError(null);
     startTransition(async () => {
-      const result = await addProspectingOpposition(projectId, competitorId);
+      const result = await addProspectingOpposition(projectId, competitorId).catch(() => ({
+        ok: false as const,
+        error: 'L’inscription n’a pas été confirmée : vérifiez la connexion, puis réessayez.',
+      }));
       if (!result.ok) {
         setError(result.error);
         return;

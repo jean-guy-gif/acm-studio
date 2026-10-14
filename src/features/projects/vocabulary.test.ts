@@ -50,7 +50,16 @@ describe('un seul mot par notion (mission 97)', () => {
     expect(SCREENS.length).toBeGreaterThan(200);
     expect(SCREENS).toContain(
       join('features', 'competitor-search', 'services', 'stream-estate-summary.ts'),
-    );
+    ); // Mission 104 — les textes du lancement du Live, de la réouverture et d'« Avant le
+    // rendez-vous » sont dans le périmètre.
+    for (const path of [
+      join('features', 'live-seller', 'services', 'live-launch.ts'),
+      join('features', 'live-seller', 'components', 'live-launch-actions.tsx'),
+      join('features', 'live-reopening', 'components', 'reopen-live-panel.tsx'),
+      join('features', 'before-meeting', 'services', 'readiness-checks.ts'),
+    ]) {
+      expect(SCREENS).toContain(path);
+    }
   });
 
   it('ni « cran » ni « palier » : la recherche s’« élargit »', () => {

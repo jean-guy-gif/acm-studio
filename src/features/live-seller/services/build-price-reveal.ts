@@ -7,12 +7,13 @@ function round1(value: number): number {
 
 // Pure. Builds the Page-2 reveal for a single comparable. The gap is relative to
 // the seller's own estimate (never NaN); the relative position ranks this
-// comparable among the retained set by price/m² (1 = cheapest).
+// comparable by price/m² (1 = cheapest) among the comparables it is given —
+// mission 104 : only those already revealed at its screen, itself included.
 export function buildPriceReveal(input: {
   price: number;
   surfaceArea: number | null;
   sellerEstimate: number | null;
-  retainedPricesPerSquareMeter: number[]; // all retained (incl. this one), unsorted
+  retainedPricesPerSquareMeter: number[]; // revealed so far (incl. this one), unsorted
   thisPricePerSquareMeter: number | null;
 }): PriceReveal {
   const ppsm = pricePerSquareMeter(input.price, input.surfaceArea);

@@ -49,6 +49,8 @@ select
   (select count(*) from competitor_prospecting_files where project_id = ':dossier') as dossiers_prospection,
   (select count(*) from live_seller_responses where project_id = ':dossier') as reponses_live,
   (select count(*) from live_seller_summary where project_id = ':dossier') as resume_live,
+  -- Mission 104 : la trace des réouvertures garde les réponses effacées ; elle part avec le dossier.
+  (select count(*) from live_reopenings where project_id = ':dossier') as reouvertures_live,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

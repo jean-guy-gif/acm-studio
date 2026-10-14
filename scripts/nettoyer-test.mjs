@@ -25,6 +25,7 @@ const CLEANED = [
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
+  'live_reopenings',
   'live_seller_responses',
   'live_seller_summary',
   'pending_competitor_imports',
@@ -174,6 +175,8 @@ begin
   ) then
     raise exception 'Agence de test introuvable : rien n''est supprime.';
   end if;
+  -- Mission 104 — la trace des réouvertures part avec ses dossiers.
+  delete from public.live_reopenings where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;

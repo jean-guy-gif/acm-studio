@@ -19,16 +19,39 @@ import { reportServerError } from '@/lib/app-errors/report-server-error';
 // côté serveur. Partagés par le classement (secteur, code INSEE) et la recherche Stream Estate
 // (crans, communes voisines). Une même question a la même réponse : mise en cache un jour.
 
-const TIMEOUT_MS = 5_000;
+// Mission 104 — depuis Vercel, le service dépassait souvent 5 s (5 fois le 14/10 au matin) :
+// 8 s d'attente, et un second essai quand le premier n'a pas abouti (délai, réseau, erreur du
+// service). Une adresse refusée par le service (4xx) n'est pas redemandée : la réponse ne
+// changerait pas.
+export const GEO_TIMEOUT_MS = 8_000;
+export const GEO_ATTEMPTS = 2;
 const ONE_DAY = 86_400;
 
-async function getJson(url: string): Promise<unknown> {
+class GeoRefused extends Error {}
+
+async function getJsonOnce(url: string): Promise<unknown> {
   const response = await fetch(url, {
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(GEO_TIMEOUT_MS),
     next: { revalidate: ONE_DAY },
   });
-  if (!response.ok) throw new Error(`${new URL(url).hostname} ${response.status}`);
+  if (!response.ok) {
+    const message = `${new URL(url).hostname} ${response.status}`;
+    throw response.status < 500 ? new GeoRefused(message) : new Error(message);
+  }
   return response.json();
+}
+
+export async function getJson(url: string): Promise<unknown> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < GEO_ATTEMPTS; attempt += 1) {
+    try {
+      return await getJsonOnce(url);
+    } catch (error) {
+      lastError = error;
+      if (error instanceof GeoRefused) break;
+    }
+  }
+  throw lastError;
 }
 
 // Étape 2 — le secteur : l'adresse du bien vendeur géocodée (Base Adresse Nationale). Un échec

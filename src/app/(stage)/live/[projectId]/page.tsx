@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { getAgency } from '@/lib/auth/get-agency';
@@ -37,6 +37,12 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   const presentation = await loadLivePresentation(projectId);
   if (!presentation) {
     notFound();
+  }
+  // Mission 104 — sans concurrent retenu (ou sans bien vendeur), il n'y a pas de Live : un ancien
+  // lien, un onglet resté ouvert. Devant le vendeur, jamais un message d'erreur : l'écran neutre
+  // de pause (M92). Le conseiller lit la raison sur la liste du Live, où mène « Accès conseiller ».
+  if (!presentation.live) {
+    redirect(`/live/${projectId}/pause`);
   }
 
   // MISSION 51 §2.2 — le vendeur ne reçoit qu'une charge PROJETÉE : chaque concurrent est

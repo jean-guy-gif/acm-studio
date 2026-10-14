@@ -33,18 +33,29 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
 
 // Mission 94 — la bande des prix : chaque concurrent révélé en point, et les deux repères du
 // vendeur. Aucun prix non révélé n'y figure (la lecture vient du serveur, sur les seuls révélés).
-function PriceBand({
+// Mission 104 — le « Prix des concurrents » y est placé aussi, comme les prix du vendeur : le
+// vendeur voit où il tombe parmi les biens qu'il a vus.
+const MARKER_COLORS: Record<string, string> = {
+  start: 'bg-zinc-900 stage:bg-white',
+  revised: 'bg-brand',
+  competitors: 'bg-amber-500',
+};
+
+export function PriceBand({
   reading,
   startPrice,
   revisedPrice,
+  competitorPrice,
 }: {
   reading: MarketReading;
   startPrice: number | null;
   revisedPrice: number | null;
+  competitorPrice: number | null;
 }) {
   const markers = [
     { key: 'start', label: 'Votre prix de départ', value: startPrice },
     { key: 'revised', label: 'Votre prix après le marché', value: revisedPrice },
+    { key: 'competitors', label: 'Prix des concurrents', value: competitorPrice },
   ].filter(
     (marker): marker is { key: string; label: string; value: number } => marker.value != null,
   );
@@ -72,9 +83,7 @@ function PriceBand({
             <span
               key={marker.key}
               data-band-marker={marker.key}
-              className={`absolute h-full w-1 -translate-x-1/2 rounded-full ${
-                marker.key === 'start' ? 'bg-zinc-900 stage:bg-white' : 'bg-brand'
-              }`}
+              className={`absolute h-full w-1 -translate-x-1/2 rounded-full ${MARKER_COLORS[marker.key]}`}
               style={{ left: left(marker.value) }}
               title={`${marker.label} : ${formatEuro(marker.value)}`}
             />
@@ -92,10 +101,7 @@ function PriceBand({
         </li>
         {markers.map((marker) => (
           <li key={marker.key} className="flex items-center gap-2">
-            <span
-              className={`h-4 w-1 rounded-full ${marker.key === 'start' ? 'bg-zinc-900 stage:bg-white' : 'bg-brand'}`}
-              aria-hidden
-            />
+            <span className={`h-4 w-1 rounded-full ${MARKER_COLORS[marker.key]}`} aria-hidden />
             {marker.label} : {formatEuro(marker.value)}
           </li>
         ))}
@@ -202,6 +208,7 @@ export function LivePageAnalysis({
             reading={reading}
             startPrice={gaps.sellerPerceivedPrice}
             revisedPrice={revisedPrice}
+            competitorPrice={gaps.competitiveMarketCentral}
           />
         </div>
       ) : null}
