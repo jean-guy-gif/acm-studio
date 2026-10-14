@@ -599,10 +599,15 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await manual.fill(`${RUN_NUMBER + 1} rue du Refus Automatique`);
     await submitManual.click();
     await expect(page.getByText(/^Ajoutez le code postal/)).toBeVisible();
-    await manual.fill(`${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage 06160`);
+    // Mission 104 — la commune est TAPÉE : le parcours ne dépend pas de geo.api.gouv.fr. Le
+    // service répond, la commune officielle s'affiche (Juan-les-Pins = Antibes) ; il ne répond
+    // pas, la commune tapée vaut, marquée « non vérifiée ». La clé est la même.
+    await manual.fill(`${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, 06160 Juan-les-Pins`);
     await submitManual.click();
     await expect(page.getByTestId('manual-opposition-understood')).toHaveText(
-      `${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, Antibes`,
+      new RegExp(
+        `^${RUN_NUMBER + 1} rue du Refus Automatique · 2e étage, (Antibes|Juan-les-Pins)$`,
+      ),
     );
     await page.getByRole('button', { name: 'Inscrire', exact: true }).click();
     await expect(
@@ -634,10 +639,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   });
 
   // Une opposition annoncée doit être une opposition ÉCRITE, et qui bloque. Le parcours inscrit
-  // une adresse à la main, avec choix de la commune, pour un bien qui EST sur une carte : la base
+  // une adresse à la main, commune tapée (M104), pour un bien qui EST sur une carte : la base
   // doit porter la ligne de la carte opposée plus haut et celle-ci, le courrier doit être refusé,
   // et l'adresse sortir de la tournée.
-  await test.step('Opposition à la main avec choix de la commune : en base, et elle bloque', async () => {
+  await test.step('Opposition à la main, commune tapée : en base, et elle bloque', async () => {
     const ready = page.getByTestId('prospecting-column-ready');
     const card = ready.getByTestId('prospecting-card').filter({ hasText: TOUR_ADDRESS });
     await card.getByRole('button', { name: 'Corriger l’adresse' }).click();
@@ -663,9 +668,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(before).not.toContain(chosenKey);
 
     await page.getByText('Inscrire une adresse « Ne plus solliciter »').click();
-    await page.getByLabel('Adresse à ne plus solliciter').fill(`${CHOSEN_STREET} 06530`);
+    // Mission 104 — la commune est tapée (06530 en couvre cinq) : sans dépendre du service.
+    await page
+      .getByLabel('Adresse à ne plus solliciter')
+      .fill(`${CHOSEN_STREET}, 06530 Peymeinade`);
     await page.getByRole('button', { name: 'Ne plus solliciter cette adresse' }).click();
-    await page.getByLabel('Commune de l’adresse').selectOption({ label: 'Peymeinade' });
     await expect(page.getByTestId('manual-opposition-understood')).toHaveText(
       `${CHOSEN_STREET}, Peymeinade`,
     );

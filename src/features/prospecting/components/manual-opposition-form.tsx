@@ -9,12 +9,17 @@ import {
 } from '@/features/prospecting/actions/add-prospecting-opposition';
 import { OPPOSITION_RECORDED_MESSAGE } from '@/features/prospecting/components/opposition-notice';
 import {
+  COMMUNE_UNVERIFIED_LABEL,
   MANUAL_OPPOSITION_CHOOSE,
   MANUAL_OPPOSITION_MAX_LENGTH,
   type ManualCommune,
 } from '@/features/prospecting/services/manual-opposition';
 
 const small = 'px-3 py-1.5 text-xs';
+
+// Mission 104 — l'appel lui-même a échoué (réseau, serveur) : rien n'est confirmé, on le dit.
+export const OPPOSITION_NOT_CONFIRMED =
+  'L’inscription n’a pas été confirmée : vérifiez la connexion, puis réessayez.';
 
 // Mission 102 — inscrire À LA MAIN une adresse sur la liste « Ne plus solliciter » : un
 // propriétaire appelle, son bien n'est sur aucune carte. L'adresse est bloquée pour toute
@@ -25,7 +30,7 @@ export function ManualOppositionForm() {
   const [address, setAddress] = useState('');
   const [communes, setCommunes] = useState<ManualCommune[]>([]);
   const [communeCode, setCommuneCode] = useState('');
-  const [understood, setUnderstood] = useState<string | null>(null);
+  const [understood, setUnderstood] = useState<{ display: string; verified: boolean } | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -38,7 +43,10 @@ export function ManualOppositionForm() {
   const check = (code: string) => {
     setMessage(null);
     startTransition(async () => {
-      const result = await checkManualOpposition(address, code || undefined);
+      const result = await checkManualOpposition(address, code || undefined).catch(() => ({
+        ok: false as const,
+        error: OPPOSITION_NOT_CONFIRMED,
+      }));
       if (!result.ok) {
         reset();
         setMessage({ ok: false, text: result.error });
@@ -49,14 +57,17 @@ export function ManualOppositionForm() {
         setUnderstood(null);
         return;
       }
-      setUnderstood(result.display);
+      setUnderstood({ display: result.display, verified: result.verified });
     });
   };
 
   const record = () => {
     setMessage(null);
     startTransition(async () => {
-      const result = await addManualOpposition(address, communeCode || undefined);
+      const result = await addManualOpposition(address, communeCode || undefined).catch(() => ({
+        ok: false as const,
+        error: OPPOSITION_NOT_CONFIRMED,
+      }));
       if (!result.ok) {
         setMessage({ ok: false, text: result.error });
         return;
@@ -137,8 +148,14 @@ export function ManualOppositionForm() {
             className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
           >
             <p>
-              <strong data-testid="manual-opposition-understood">{understood}</strong> —
-              Inscrire&nbsp;?
+              <strong data-testid="manual-opposition-understood">{understood.display}</strong>
+              {understood.verified ? null : (
+                <span data-testid="manual-opposition-unverified">
+                  {' '}
+                  ({COMMUNE_UNVERIFIED_LABEL} : le service des communes ne répond pas)
+                </span>
+              )}{' '}
+              — Inscrire&nbsp;?
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <button

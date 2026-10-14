@@ -190,5 +190,20 @@ select pg_temp.expect('§6 un membre retiré n''ajoute rien',
                     values ('98aaaaaa-0000-0000-0000-000000000000', '5 rue du port 06160 antibes',
                             '98000000-0000-0000-0000-0000000000d1')$$), 'refus');
 
+-- =====================================================================
+-- §7 — Mission 104 : une ligne à commune non vérifiée (conseiller de l'agence A).
+-- =====================================================================
+select pg_temp.act_as('98000000-0000-0000-0000-0000000000c1');
+-- Mission 104 — inscrite à la main sans réponse du service des communes : la ligne le dit.
+select pg_temp.expect('§7 ajouter une adresse à commune non vérifiée',
+  pg_temp.attempt($$insert into public.prospecting_oppositions
+                      (agency_id, address_key, created_by, commune_unverified)
+                    values ('98aaaaaa-0000-0000-0000-000000000000',
+                            '14 chemin des oliviers cagnes sur mer',
+                            '98000000-0000-0000-0000-0000000000c1', true)$$), '1');
+select pg_temp.expect('§7 la marque est gardée',
+  (select commune_unverified::text from public.prospecting_oppositions
+    where address_key = '14 chemin des oliviers cagnes sur mer'), 'true');
+
 reset role;
 rollback;

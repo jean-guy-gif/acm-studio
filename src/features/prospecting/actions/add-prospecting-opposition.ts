@@ -13,10 +13,10 @@ import {
   MANUAL_OPPOSITION_CHOOSE,
   MANUAL_OPPOSITION_INCOMPLETE,
   MANUAL_OPPOSITION_NO_COMMUNE,
-  MANUAL_OPPOSITION_UNAVAILABLE,
   decideManualOpposition,
   manualCommuneLookupName,
   parseManualAddress,
+  unverifiedManualOpposition,
   type ManualCommune,
   type ManualOppositionDecision,
 } from '@/features/prospecting/services/manual-opposition';
@@ -25,7 +25,9 @@ import { createClient } from '@/lib/supabase/server';
 
 export type AddProspectingOppositionResult = { ok: true } | { ok: false; error: string };
 
-const FAILURE = 'L’adresse n’a pas été ajoutée à la liste. Réessayez.';
+// Mission 104 — dit quand l'écriture n'est pas confirmée en base : rien n'est promis.
+const FAILURE =
+  'L’inscription n’a pas été confirmée : l’adresse n’est pas sur la liste « Ne plus solliciter ». Réessayez.';
 
 // Mission 98 — « Ne plus solliciter » : l'adresse confirmée de cette carte entre dans la liste
 // d'opposition de l'agence. L'adresse n'est jamais reçue du navigateur : elle est relue en base.
@@ -75,7 +77,7 @@ export async function addProspectingOpposition(
 }
 
 export type ManualOppositionCheck =
-  | { ok: true; status: 'ready'; display: string }
+  | { ok: true; status: 'ready'; display: string; verified: boolean }
   | { ok: true; status: 'choose'; communes: ManualCommune[] }
   | { ok: false; error: string };
 
@@ -98,7 +100,8 @@ async function resolveManualOpposition(
       : { name: manualCommuneLookupName(parts.commune ?? '') },
   );
   if (found == null) {
-    return { status: 'error', error: MANUAL_OPPOSITION_UNAVAILABLE };
+    // Mission 104 — le service ne répond pas, même au second essai : la commune tapée suffit.
+    return unverifiedManualOpposition(parts);
   }
   const communes = found
     .filter((commune) => typeof commune.code === 'string' && typeof commune.nom === 'string')
@@ -126,7 +129,7 @@ export async function checkManualOpposition(
     return { ok: false, error: decision.error };
   }
   return decision.status === 'ready'
-    ? { ok: true, status: 'ready', display: decision.display }
+    ? { ok: true, status: 'ready', display: decision.display, verified: decision.verified }
     : { ok: true, status: 'choose', communes: decision.communes };
 }
 
@@ -152,7 +155,7 @@ export async function addManualOpposition(
   const inserted = await insertOppositions(
     await createClient(),
     { agencyId: profile.agency_id, profileId: profile.id },
-    { addressKey: decision.key, listingKeys: [] },
+    { addressKey: decision.key, listingKeys: [], communeUnverified: !decision.verified },
   );
   if (!inserted) {
     return { ok: false, error: FAILURE };

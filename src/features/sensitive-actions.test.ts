@@ -215,6 +215,17 @@ describe('« Ne plus solliciter »', () => {
   });
   const inserts = () =>
     server.calls.filter((call) => call.method === 'insert').map((call) => call.args[0]);
+  // Mission 104 — la base relue après l'écriture : elle porte ce qui a été inséré.
+  const stored = () =>
+    (inserts() as { address_key?: string; listing_key?: string }[]).map((row) => ({
+      address_key: row.address_key ?? null,
+      listing_key: row.listing_key ?? null,
+    }));
+  const database = (table: string, method: string): FakeResponse =>
+    table === 'prospecting_oppositions' && method === 'select' ? { data: stored() } : {};
+  beforeEach(() => {
+    state.respond = database;
+  });
 
   it('refuse un membre retiré, un concurrent hors agence et une adresse non confirmée', async () => {
     const { addProspectingOpposition } =
@@ -275,11 +286,12 @@ describe('« Ne plus solliciter »', () => {
       await import('@/features/prospecting/actions/add-prospecting-opposition');
     // Ni code postal ni commune.
     expect((await addManualOpposition('8 avenue Hochet')).ok).toBe(false);
-    // Le référentiel ne répond pas : une panne n'est pas « aucune commune », et n'inscrit rien.
+    // Mission 104 — le référentiel ne répond pas, et seul le code postal est donné : la commune
+    // doit être tapée. Une panne n'est jamais lue comme « aucune commune ».
     state.communes = null;
     expect(await addManualOpposition('8 avenue Hochet 06160')).toEqual({
       ok: false,
-      error: 'Le référentiel des communes ne répond pas : l’adresse n’est pas inscrite. Réessayez.',
+      error: 'Service des communes indisponible : tapez le nom de la commune.',
     });
     // Un code postal à plusieurs communes : il faut choisir, et un choix hors liste ne vaut rien.
     state.communes = [
@@ -301,10 +313,38 @@ describe('« Ne plus solliciter »', () => {
       ok: true,
       status: 'ready',
       display: '3 route de Grasse, Peymeinade',
+      verified: true,
     });
     state.profile = removed;
     expect((await checkManualOpposition('3 route de Grasse 06530', '06095')).ok).toBe(false);
     noWrite();
+  });
+
+  // Mission 104 — le référentiel ne répond pas, mais la commune est tapée : l'opposition est
+  // inscrite, sa clé construite comme celle des cartes (alias compris), et marquée.
+  it('à la main, service des communes en panne : la commune tapée suffit, ligne marquée', async () => {
+    const { addManualOpposition, checkManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    state.communes = null;
+    expect(await checkManualOpposition('8 bis av. Hochet, 06160 Juan-les-Pins')).toEqual({
+      ok: true,
+      status: 'ready',
+      display: '8 bis av. Hochet, Juan-les-Pins',
+      verified: false,
+    });
+    expect(await addManualOpposition('8 bis av. Hochet, 06160 Juan-les-Pins')).toEqual({
+      ok: true,
+    });
+    expect(inserts()).toEqual([
+      {
+        agency_id: AGENCY,
+        created_by: 'u-advisor',
+        address_key: '8 avenue hochet antibes',
+        commune_unverified: true,
+      },
+    ]);
+    // Paris sans arrondissement ne se devine pas, même en panne.
+    expect((await addManualOpposition('12 rue Lecourbe, Paris')).ok).toBe(false);
   });
 
   it('à la main : la commune déduite du code postal entre dans la clé, comme sur une carte', async () => {
@@ -409,9 +449,31 @@ describe('« Ne plus solliciter »', () => {
     const { addProspectingOpposition } =
       await import('@/features/prospecting/actions/add-prospecting-opposition');
     state.card = card(true);
-    state.respond = () => ({ error: { code: '23505' } });
+    // Déjà inscrite : l'insertion bute sur la clé, la relecture la trouve.
+    state.respond = (_table, method) =>
+      method === 'insert'
+        ? { error: { code: '23505' } }
+        : { data: [{ address_key: 'x', listing_key: 'seloger:26ZEJMLWB13Y' }] };
     expect(await addProspectingOpposition(PROJECT, 'c1')).toEqual({ ok: true });
     state.respond = () => ({ error: { code: '42501' } });
+    expect((await addProspectingOpposition(PROJECT, 'c1')).ok).toBe(false);
+  });
+
+  // Mission 104 — « Inscrit » seulement sur une écriture confirmée en base.
+  it('une écriture que la relecture ne retrouve pas n’est pas « inscrite »', async () => {
+    const { addProspectingOpposition, addManualOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    state.card = card(true);
+    state.respond = () => ({ data: [] });
+    const refused = await addProspectingOpposition(PROJECT, 'c1');
+    expect(refused).toEqual({
+      ok: false,
+      error:
+        'L’inscription n’a pas été confirmée : l’adresse n’est pas sur la liste « Ne plus solliciter ». Réessayez.',
+    });
+    expect((await addManualOpposition('8 avenue Hochet 06160')).ok).toBe(false);
+    // La relecture qui échoue elle-même ne vaut pas confirmation.
+    state.respond = (_table, method) => (method === 'select' ? { error: { code: 'X' } } : {});
     expect((await addProspectingOpposition(PROJECT, 'c1')).ok).toBe(false);
   });
 });
