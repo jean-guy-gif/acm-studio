@@ -260,8 +260,9 @@ export function ageTestFollowUp(projectId: string, direction: 'age' | 'back'): A
   ), relances as (
     update public.follow_up_contacts
     set contacted_at = contacted_at ${sign} interval '8 days 1 hour',
-        -- Mission 105 — la date de prochaine relance recule d'autant : le dossier est dû.
-        next_follow_up_on = next_follow_up_on ${sign} 8
+        -- Mission 105 — la date de prochaine relance recule de 40 jours (elle est à 1 mois quand
+        -- le vendeur réfléchit au prix) : le dossier est dû ; « back » l'avance d'autant.
+        next_follow_up_on = next_follow_up_on ${sign} 40
     where project_id in (select id from dossier)
     returning 1
   ), concurrents as (
