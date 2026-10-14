@@ -107,3 +107,12 @@ export function theirPhotoDisplayUrl(
       : null;
   return copied ?? choice.url;
 }
+
+// Mission 105 — la photo d'une annonce appartient à son auteur : pendant la bêta, l'option est
+// retirée de l'éditeur, et une photo d'annonce déjà choisie ne s'imprime plus (rien n'est effacé
+// en base). La photo prise par le conseiller lui-même (« Ma photo ») n'est pas concernée.
+export const LISTING_PHOTOS_OFFERED = false;
+
+export function withoutListingPhoto(saved: SavedTheirPhoto): SavedTheirPhoto {
+  return saved.mode === 'listing' ? { mode: 'none', sourceUrl: null, path: null } : saved;
+}

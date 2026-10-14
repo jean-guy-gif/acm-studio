@@ -2,6 +2,7 @@ import {
   FILE_BLOCKER_MESSAGES,
   type FileBlocker,
 } from '@/features/prospecting-file/services/file-access';
+import { OPPOSED_MESSAGE } from '@/features/prospecting/services/opposition';
 
 // Mission 98 — « Préparer tous les courriers » : ce qui s'imprime, et ce qui est retenu avec sa
 // raison. Mission 102 — les blocages sont ceux du courrier unitaire (opposition, adresse,
@@ -40,4 +41,18 @@ export function splitBatchLetters<Row, Context extends BatchContext>(
     }
   }
   return { letters, held };
+}
+
+// Mission 105 — les adresses écartées AVANT la préparation, dites elles aussi : « Ne plus
+// solliciter », et l'adresse encore à confirmer. Elles ne s'impriment pas ; le conseiller sait
+// pourquoi. Les cartes déjà remises, en rendez-vous ou « pas intéressé » ne sont pas concernées.
+export function excludedFromBatch<Row>(
+  cards: { row: Row; status: string; opposed: boolean }[],
+): { row: Row; reason: string }[] {
+  return cards.flatMap(({ row, status, opposed }) => {
+    if (opposed) return [{ row, reason: OPPOSED_MESSAGE }];
+    if (status === 'to_confirm')
+      return [{ row, reason: FILE_BLOCKER_MESSAGES.address_unconfirmed }];
+    return [];
+  });
 }

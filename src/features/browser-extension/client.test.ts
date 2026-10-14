@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PING_ATTEMPT_TIMEOUT_MS,
   PING_ATTEMPTS,
+  detectExtension,
   pingExtension,
   pingWithRetries,
   type ExtensionPing,
@@ -113,5 +114,60 @@ describe('pingExtension — sur la page', () => {
     expect(settled).toEqual({ available: false });
     expect(page.requests()).toBe(4);
     expect(page.listeners.size).toBe(0);
+  });
+});
+
+// Mission 105 — la détection, plus claire.
+describe('detectExtension', () => {
+  const memory = () => {
+    const data = new Map<string, string>();
+    return {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => void data.set(key, value),
+      removeItem: (key: string) => void data.delete(key),
+    };
+  };
+
+  it('une fois détectée, l’onglet s’en souvient : un seul signal, plus les 4 secondes', async () => {
+    const tab = memory();
+    let calls = 0;
+    const present = async () => {
+      calls += 1;
+      return { available: true, version: '1.0.0' };
+    };
+    await detectExtension({ relay: present, direct: async () => null, memory: tab });
+    calls = 0;
+    // Le relais ne répond qu'au deuxième essai : un onglet qui se souvient n'en fait qu'un.
+    const silent = async () => {
+      calls += 1;
+      return null;
+    };
+    const result = await detectExtension({ relay: silent, direct: async () => null, memory: tab });
+    expect(calls).toBe(1);
+    expect(result).toEqual({ available: false });
+    // Et il oublie : la fois suivante, de nouveau les quatre essais.
+    calls = 0;
+    await detectExtension({ relay: silent, direct: async () => null, memory: tab });
+    expect(calls).toBe(PING_ATTEMPTS);
+  });
+
+  it('le relais muet, l’appel direct répond : installée, mais sans accès au site', async () => {
+    expect(
+      await detectExtension({
+        relay: async () => null,
+        direct: async () => ({ version: '1.0.0' }),
+        memory: memory(),
+      }),
+    ).toEqual({ available: false, version: '1.0.0', noSiteAccess: true });
+  });
+
+  it('ni relais ni appel direct : à installer', async () => {
+    expect(
+      await detectExtension({
+        relay: async () => null,
+        direct: async () => null,
+        memory: null,
+      }),
+    ).toEqual({ available: false });
   });
 });

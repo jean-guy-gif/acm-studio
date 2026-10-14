@@ -52,7 +52,10 @@ import {
   BUDGET_REACHED_LABEL,
   BUDGET_UNREADABLE_MESSAGE,
 } from '@/features/search-budget/services/budget';
-import { recordStreamEstateUsage } from '@/features/search-budget/services/record-usage';
+import {
+  reserveSearchBudget,
+  settleSearchBudget,
+} from '@/features/search-budget/services/reserve-budget';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -119,7 +122,10 @@ export async function searchStreamEstate(
 ): Promise<StreamEstateSearchResult> {
   const apiKey = streamEstateApiKey();
   if (apiKey == null) {
-    return { ok: false, error: 'L’essai Stream Estate n’est pas activé.' };
+    return {
+      ok: false,
+      error: 'La recherche de concurrents n’est pas activée : prévenez l’équipe ACM Studio.',
+    };
   }
   const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
   if (parsedResume != null && !parsedResume.success) {
@@ -167,10 +173,10 @@ export async function searchStreamEstate(
     const where = [criteria.city, criteria.postalCode].filter(Boolean).join(' ');
     const reasons: Record<typeof commune.reason, string> = {
       unavailable:
-        'Le code INSEE de la commune n’a pas pu être obtenu (geo.api.gouv.fr). Réessayez.',
+        'Le service des communes ne répond pas : réessayez dans un instant. Aucune recherche lancée.',
       arrondissements: `${criteria.city} se cherche par arrondissement : indiquez le code postal du bien vendeur (75015, 69003, 13008…) ou son arrondissement dans la ville (« Paris 15e »), et vérifiez qu’ils disent le même. Aucune recherche lancée.`,
-      ambiguous: `Pas de code INSEE fiable pour « ${where} » (plusieurs communes possibles). Vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
-      not_found: `Pas de code INSEE fiable pour « ${where} » (commune introuvable). Vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
+      ambiguous: `Plusieurs communes répondent à « ${where} » : vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
+      not_found: `Commune introuvable (« ${where} ») : vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
     };
     return { ok: false, error: reasons[commune.reason] };
   }
@@ -180,7 +186,7 @@ export async function searchStreamEstate(
     return {
       ok: false,
       error:
-        'L’essai Stream Estate ne cherche que des appartements et des maisons : précisez le type du bien vendeur.',
+        'La recherche ne trouve que des appartements et des maisons : précisez le type du bien vendeur.',
     };
   }
 
@@ -274,6 +280,26 @@ export async function searchStreamEstate(
       error: `Le bien vendeur a changé depuis la recherche : relancez « ${STREAM_ESTATE_SEARCH_BUTTON} ».`,
     };
   }
+  // Mission 105 — le coût maximal est réservé AVANT l'appel payant, compteur de l'agence
+  // verrouillé : deux recherches simultanées ne franchissent pas le plafond.
+  const reservation = await reserveSearchBudget({
+    agencyId: profile.agency_id,
+    projectId,
+    userId: profile.id,
+    wanted: advertsAllowed(
+      resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP,
+      budgetRead.budget,
+    ),
+  });
+  if (!reservation.ok) {
+    return {
+      ok: false,
+      error:
+        reservation.reason === 'reached'
+          ? `${BUDGET_REACHED_LABEL}. Aucune recherche lancée. ${BUDGET_REACHED_HINT}`
+          : BUDGET_UNREADABLE_MESSAGE,
+    };
+  }
   const outcome = await runTieredSearch({
     criteria,
     plans,
@@ -281,11 +307,8 @@ export async function searchStreamEstate(
     neighbours,
     fetchPage,
     now,
-    // Mission 100 — jamais plus que ce qu'il reste du budget du mois.
-    cap: advertsAllowed(
-      resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP,
-      budgetRead.budget,
-    ),
+    // Mission 105 — jamais plus que ce qui vient d'être réservé sur le budget du mois.
+    cap: reservation.adverts,
     ...(resumeFrom != null
       ? {
           resume: {
@@ -295,19 +318,15 @@ export async function searchStreamEstate(
         }
       : {}),
   });
-  // Comptée que la recherche ait abouti ou non : ce qui est facturé est dépensé.
-  await recordStreamEstateUsage({
-    agencyId: profile.agency_id,
-    projectId,
-    userId: profile.id,
-    adverts: billed,
-  });
+  // Comptée que la recherche ait abouti ou non : ce qui est facturé est dépensé ; le reste de la
+  // réservation est rendu.
+  await settleSearchBudget(reservation.reservationId, billed);
   if (!outcome.ok) {
     return {
       ok: false,
       error:
         outcome.reason === 'refused'
-          ? 'Stream Estate a refusé la recherche (clé invalide ou crédits épuisés). Vérifiez le solde dans la console Stream Estate.'
+          ? 'La recherche a été refusée par le fournisseur des annonces : prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
           : GENERIC_ERROR,
     };
   }

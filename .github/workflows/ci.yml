@@ -80,6 +80,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/follow_up_that_pays.sql
 
+      # Mission 105 — membre retiré refusé partout, budget réservé sous le plafond, une annonce
+      # par dossier, résultat payé cloisonné, date de prochaine relance.
+      - name: Finitions (membre retiré, budget, unicité des annonces)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/finitions.sql
+
       # Mission 104 — rouvrir un Live figé par erreur : le serveur seul, avec un motif, tracé.
       - name: Réouverture d'un Live (opérateur seul, trace, réponses gardées)
         run: |

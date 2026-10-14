@@ -18,6 +18,11 @@ import {
   BUDGET_REACHED_LABEL,
 } from '@/features/search-budget/services/budget';
 
+import {
+  forgetStreamEstateResult,
+  keepStreamEstateResult,
+  recallStreamEstateResult,
+} from '@/features/competitor-search/actions/kept-result';
 import { registerPendingImports } from '@/features/competitor-search/actions/pending-imports';
 import {
   batchProgressLabel,
@@ -56,7 +61,11 @@ import {
   pingExtension,
   readSearchTabsViaExtension,
 } from '@/features/browser-extension/client';
-import { ExtensionRequiredNotice } from '@/features/browser-extension/extension-required-notice';
+import {
+  ExtensionRequiredNotice,
+  type ExtensionIssue,
+} from '@/features/browser-extension/extension-required-notice';
+import { missingExtensionIssue } from '@/features/browser-extension/extension-issue';
 import { useCompetitorLocator } from '@/features/competitor-locator/use-competitor-locator';
 import {
   RankedCandidateCard,
@@ -84,13 +93,11 @@ import {
   type StreamEstateSearchNote,
 } from '@/features/competitor-search/services/stream-estate-summary';
 import {
-  forgetSearch,
-  hasKeptSearch,
-  keepSearch,
-  recallSearch,
   runPaidSearch,
+  STREAM_ESTATE_MAX_COST,
   STREAM_ESTATE_MAX_COST_LABEL,
 } from '@/features/competitor-search/services/paid-search-guard';
+import { relaunchConfirmText } from '@/features/competitor-search/services/kept-result';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
@@ -401,7 +408,7 @@ export function CompetitorSearchPanel({
   const { refresh: refreshLocator } = useCompetitorLocator(projectId, false);
   const [error, setError] = useState<string | null>(null);
   // Mission 74 — l'extension manque ou est trop ancienne : un seul message, sans repli.
-  const [extensionIssue, setExtensionIssue] = useState<'missing' | 'outdated' | null>(null);
+  const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
   const [portals, setPortals] = useState<PortalSearchResult[] | null>(null);
   // §1 (revue) — la fourchette du bien vendeur : la liste principale n'en sort pas.
   const [advisorRange, setAdvisorRange] = useState<{ min: number | null; max: number | null }>({
@@ -544,7 +551,7 @@ export function CompetitorSearchPanel({
       }
       setSavedSettings(result.settings);
       setSettingsInput(settingsToInput(result.settings));
-      forgetSearch(window.sessionStorage, projectId);
+      void forgetStreamEstateResult(projectId);
       if (streamNote != null) {
         setStreamNote(null);
         await refreshRanking(
@@ -587,13 +594,13 @@ export function CompetitorSearchPanel({
         ),
       );
       if (!outcome.ran) {
-        setExtensionIssue('missing');
+        setExtensionIssue(missingExtensionIssue());
         return;
       }
       const result = outcome.result;
       if (!more) {
         setStreamNote(null);
-        forgetSearch(window.sessionStorage, projectId);
+        void forgetStreamEstateResult(projectId);
       }
       if (!result.ok) {
         setError(result.error);
@@ -632,11 +639,9 @@ export function CompetitorSearchPanel({
       setStreamNote(note);
       // Mission 93 — gardé pour ce dossier, le temps de la séance : actualiser ou revenir en
       // arrière le réaffiche sans repayer.
-      keepSearch(window.sessionStorage, projectId, {
-        fingerprint: prep.fingerprint,
-        portal: streamPortal,
-        note,
-      });
+      // Mission 105 — gardé sur le dossier, côté serveur : il se rouvre sur un autre appareil ou
+      // le lendemain, sans nouvel appel.
+      void keepStreamEstateResult(projectId, { portal: streamPortal, note });
     } finally {
       setStreamSearching(false);
     }
@@ -645,26 +650,24 @@ export function CompetitorSearchPanel({
   // Mission 93 — à l'ouverture, le dernier résultat gardé pour ce dossier se réaffiche sans
   // nouvel appel — à condition que le bien vendeur et la fourchette n'aient pas changé (empreinte
   // relue en base, gratuitement). Sinon il est jeté.
+  // Mission 105 — « Relancer la recherche » repaie : confirmé dans l'écran d'abord.
+  const [confirmingRelaunch, setConfirmingRelaunch] = useState(false);
   const recalled = useRef(false);
   useEffect(() => {
     if (recalled.current || !streamEstateAction) {
       return;
     }
     recalled.current = true;
-    if (!hasKeptSearch(window.sessionStorage, projectId)) {
-      return;
-    }
     void (async () => {
-      const prep = await prepareAction();
-      if (!prep.ok) {
+      const kept = (await recallStreamEstateResult(projectId)) as {
+        portal: PortalSearchResult;
+        note: StreamEstateSearchNote;
+      } | null;
+      if (!kept) {
         return;
       }
-      const kept = recallSearch<PortalSearchResult, StreamEstateSearchNote>(
-        window.sessionStorage,
-        projectId,
-        prep.fingerprint,
-      );
-      if (!kept) {
+      const prep = await prepareAction();
+      if (!prep.ok) {
         return;
       }
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
@@ -693,7 +696,7 @@ export function CompetitorSearchPanel({
       }
       const ping = await pingExtension();
       if (!ping.available) {
-        setExtensionIssue('missing');
+        setExtensionIssue(missingExtensionIssue());
         return;
       }
       const opened = await openSearchTabsViaExtension(prep.links.map((link) => link.url));
@@ -724,7 +727,7 @@ export function CompetitorSearchPanel({
     try {
       const ping = await pingExtension();
       if (!ping.available) {
-        setExtensionIssue('missing');
+        setExtensionIssue(missingExtensionIssue());
         return;
       }
       const result = await readSearchTabsViaExtension();
@@ -847,7 +850,7 @@ export function CompetitorSearchPanel({
     }
     const ping = await pingExtension();
     if (!ping.available) {
-      setExtensionIssue('missing');
+      setExtensionIssue(missingExtensionIssue());
       setError(RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE);
       return;
     }
@@ -917,7 +920,7 @@ export function CompetitorSearchPanel({
     }
     const ping = await pingExtension();
     if (!ping.available) {
-      setExtensionIssue('missing');
+      setExtensionIssue(missingExtensionIssue());
       return RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE;
     }
     const outcome = await importOne(candidate, new Map());
@@ -1043,18 +1046,52 @@ export function CompetitorSearchPanel({
       ) : null}
       {streamEstateAction ? (
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => searchViaStreamEstate()}
-            disabled={busy}
-            className={btnPrimary}
-          >
-            {streamSearching
-              ? 'Recherche en cours…'
-              : streamNote
-                ? 'Relancer la recherche'
-                : STREAM_ESTATE_SEARCH_BUTTON}
-          </button>
+          {/* Mission 105 — relancer repaie : on le confirme dans l'écran, avec le montant. */}
+          {confirmingRelaunch && streamNote ? (
+            <div
+              role="group"
+              aria-label="Relancer la recherche"
+              data-testid="relaunch-confirm"
+              className="flex w-full flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
+            >
+              <p>{relaunchConfirmText(STREAM_ESTATE_MAX_COST)}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className={btnSecondary}
+                  onClick={() => setConfirmingRelaunch(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  disabled={busy}
+                  onClick={() => {
+                    setConfirmingRelaunch(false);
+                    void searchViaStreamEstate();
+                  }}
+                >
+                  Relancer et payer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                streamNote ? setConfirmingRelaunch(true) : void searchViaStreamEstate()
+              }
+              disabled={busy}
+              className={btnPrimary}
+            >
+              {streamSearching
+                ? 'Recherche en cours…'
+                : streamNote
+                  ? 'Relancer la recherche'
+                  : STREAM_ESTATE_SEARCH_BUTTON}
+            </button>
+          )}
           <p className={hintText}>Critères : {criteriaLabel}</p>
           {/* Mission 93 — le coût se dit avant de payer. */}
           <p className="w-full text-xs text-zinc-500 stage:text-white/50">

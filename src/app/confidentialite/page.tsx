@@ -109,11 +109,9 @@ export default function ConfidentialitePage() {
               la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte professionnelle
               de l’agence et l’autorité qui l’a délivrée, puis sa garantie financière ou la mention
               « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du propriétaire, ni rien du
-              vendeur. Une photo du bien concurrent n’y figure que si le conseiller le choisit («
-              Sans photo » par défaut) : une photo de l’annonce, ou une photo qu’il importe
-              lui-même. Elle est alors copiée dans le stockage de l’agence, et retirée quand le
-              conseiller en choisit une autre ou supprime ce concurrent. ACM Studio conserve les
-              textes que le conseiller a réécrits ; il n’envoie lui-même aucun courrier.
+              vendeur. Pendant la bêta, aucune photo de l’annonce d’un concurrent n’y figure : elle
+              appartient à son auteur. ACM Studio conserve les textes que le conseiller a réécrits ;
+              il n’envoie lui-même aucun courrier.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
@@ -187,12 +185,19 @@ export default function ConfidentialitePage() {
               (coordonnées), pour chercher autour de lui) à Stream Estate, et l’adresse du bien aux
               services publics de géographie de l’État (api-adresse.data.gouv.fr, geo.api.gouv.fr)
               pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
-              transmis.
+              transmis. Le dernier résultat d’une recherche est gardé sur le dossier, pour être
+              rouvert sans nouvel appel ; il part avec le dossier.
+            </li>
+            <li>
+              Sur le Suivi, « Mettre à jour les prix des concurrents » relit, par l’extension, les
+              annonces des concurrents retenus : seuls le prix et la date du constat sont gardés.
             </li>
             <li>
               Pour inscrire à la main une adresse « Ne plus solliciter », ACM Studio demande à
               geo.api.gouv.fr la commune d’un code postal, ou vérifie le nom d’une commune : seul ce
-              code postal ou ce nom lui est transmis, jamais la rue ni le numéro.
+              code postal ou ce nom lui est transmis, jamais la rue ni le numéro. Si le service ne
+              répond pas, le nom de la commune tapé est gardé avec l’opposition, et revérifié la
+              nuit suivante.
             </li>
             <li>Les e-mails d’invitation sont envoyés par Google (messagerie de l’éditeur).</li>
           </ul>

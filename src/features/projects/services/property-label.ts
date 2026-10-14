@@ -33,6 +33,9 @@ export function propertyLabel(property: PreparationProperty | null): string | nu
 
 const euro = (value: number): string => formatEuro(value);
 
+// Mission 105 — sur la liste des dossiers, sans fourchette du conseiller.
+export const PRICE_DECISION_PENDING = 'À décider';
+
 // « 320 000 – 390 000 € », ou null quand la fourchette n'est pas saisie.
 export function fourchetteLabel(fourchette: { low: number; high: number } | null): string | null {
   if (!fourchette) {

@@ -51,7 +51,7 @@ export type ManualCommune = { code: string; name: string };
 export type ManualOppositionDecision =
   // `display` : l'adresse comprise, montrée avant d'inscrire. `verified` : la commune a été
   // reconnue par le référentiel (faux : il ne répondait pas, la commune est celle tapée).
-  | { status: 'ready'; key: string; display: string; verified: boolean }
+  | { status: 'ready'; key: string; display: string; verified: boolean; commune: string }
   // Le code postal couvre plusieurs communes : le conseiller choisit.
   | { status: 'choose'; communes: ManualCommune[] }
   | { status: 'error'; error: string };
@@ -161,7 +161,13 @@ export function decideManualOpposition(
   if (key == null || !/^\d/.test(key)) {
     return { status: 'error', error: MANUAL_OPPOSITION_INCOMPLETE };
   }
-  return { status: 'ready', key, display: `${parts.street}, ${communeName}`, verified: true };
+  return {
+    status: 'ready',
+    key,
+    display: `${parts.street}, ${communeName}`,
+    verified: true,
+    commune: communeName,
+  };
 }
 
 // Mission 104 — le référentiel ne répond pas, même au second essai. Une demande d'opposition ne
@@ -186,5 +192,11 @@ export function unverifiedManualOpposition(parts: ManualAddressParts): ManualOpp
   if (key == null || !/^\d/.test(key)) {
     return { status: 'error', error: MANUAL_OPPOSITION_INCOMPLETE };
   }
-  return { status: 'ready', key, display: `${parts.street}, ${communeName}`, verified: false };
+  return {
+    status: 'ready',
+    key,
+    display: `${parts.street}, ${communeName}`,
+    verified: false,
+    commune: parts.commune,
+  };
 }

@@ -26,7 +26,10 @@ const ROBOTS_TIMEOUT_MS = 8_000;
 const OPEN_TABS_TIMEOUT_MS = 10_000;
 const READ_TABS_TIMEOUT_MS = 120_000;
 
-export type ExtensionPing = { available: boolean; version?: string };
+// Mission 105 — `noSiteAccess` : l'extension est installée (elle répond à l'appel direct) mais
+// Chrome ne lui laisse pas lire ACM Studio (« Accès aux sites » restreint) : le relais de la page
+// n'est pas injecté.
+export type ExtensionPing = { available: boolean; version?: string; noSiteAccess?: true };
 // The size + duration let the app say, when the parser finds nothing, whether it
 // received a full page (~286 000 chars for a complete Bien'ici fiche) or a shell
 // (< 50 000). The real cause is kept in the extension's service-worker log.
@@ -35,7 +38,10 @@ export type ExtensionFetchResult =
   | { ok: false; error: string; size?: number; durationMs?: number };
 // A robots.txt read by the extension: the real HTTP status lets the app tell a
 // genuine 404 (allowed) from a refusal (not allowed). `{ ok: false }` = read failed.
-export type ExtensionRobotsResult = { ok: true; status: number; text: string } | { ok: false };
+// Mission 105 — `unreachable` : aucune extension n'a répondu (absente, désactivée, ou sans
+// accès au site) — à distinguer d'une lecture du robots.txt qui a échoué.
+export type ExtensionRobotsResult =
+  { ok: true; status: number; text: string } | { ok: false; unreachable?: true };
 
 // MISSION 69 — « Lire mes recherches » : chaque onglet de recherche lu, ou la raison pour laquelle
 // il ne l'a pas été — `waiting` : resté sur l'écran d'attente du portail (cliquer une fois dessus).
@@ -114,19 +120,96 @@ export async function pingWithRetries(
   return { available: false };
 }
 
-// "Es-tu là ?" — resolves { available: false } when no extension answers in time.
-export function pingExtension(): Promise<ExtensionPing> {
-  return pingWithRetries(async () => {
+// Mission 105 — une fois l'extension détectée, l'onglet s'en souvient : les clics suivants ne
+// font plus qu'UN essai (elle répond en quelques millisecondes), plus les 4 secondes du correctif.
+const DETECTED_KEY = 'acm-extension-detected';
+type TabMemory = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+function tabMemory(): TabMemory | null {
+  try {
+    return typeof window !== 'undefined' ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+// L'appel direct au service worker de l'extension (son manifeste l'autorise depuis ACM Studio,
+// `externally_connectable`), par l'identifiant du Store, lu dans l'environnement.
+type ChromeRuntime = {
+  sendMessage: (id: string, message: unknown, callback: (response: unknown) => void) => void;
+  lastError?: unknown;
+};
+
+export async function pingDirect(
+  extensionId: string | undefined = process.env.NEXT_PUBLIC_EXTENSION_ID,
+  timeoutMs: number = PING_ATTEMPT_TIMEOUT_MS,
+): Promise<{ version?: string } | null> {
+  const runtime = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime;
+  if (!extensionId || !runtime?.sendMessage) return null;
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), timeoutMs);
     try {
-      const response = await send<{ ok?: boolean; version?: string }>(
-        { kind: 'ping' },
-        PING_ATTEMPT_TIMEOUT_MS,
-      );
-      return { available: response.ok === true, version: response.version };
+      runtime.sendMessage(extensionId, { kind: 'ping' }, (response) => {
+        clearTimeout(timer);
+        const answer = response as { ok?: boolean; version?: string } | undefined;
+        resolve(runtime.lastError || answer?.ok !== true ? null : { version: answer.version });
+      });
     } catch {
-      return null;
+      clearTimeout(timer);
+      resolve(null);
     }
   });
+}
+
+export async function detectExtension(deps: {
+  relay: () => Promise<ExtensionPing | null>;
+  direct: () => Promise<{ version?: string } | null>;
+  memory: TabMemory | null;
+}): Promise<ExtensionPing> {
+  let remembered = false;
+  try {
+    remembered = deps.memory?.getItem(DETECTED_KEY) === '1';
+  } catch {
+    remembered = false;
+  }
+  const result = await pingWithRetries(deps.relay, remembered ? 1 : PING_ATTEMPTS);
+  try {
+    if (result.available) deps.memory?.setItem(DETECTED_KEY, '1');
+    else deps.memory?.removeItem(DETECTED_KEY);
+  } catch {
+    // Mémoire refusée : on redétectera, c'est tout.
+  }
+  if (result.available) return result;
+  // Le relais de la page n'a pas répondu : l'extension est-elle là, mais sans accès au site ?
+  const direct = await deps.direct().catch(() => null);
+  return direct ? { available: false, version: direct.version, noSiteAccess: true } : result;
+}
+
+let lastPing: ExtensionPing | null = null;
+
+// La dernière détection, pour dire LE bon message (« sans accès » ou « à installer »).
+export function lastExtensionPing(): ExtensionPing | null {
+  return lastPing;
+}
+
+// "Es-tu là ?" — resolves { available: false } when no extension answers in time.
+export async function pingExtension(): Promise<ExtensionPing> {
+  lastPing = await detectExtension({
+    relay: async () => {
+      try {
+        const response = await send<{ ok?: boolean; version?: string }>(
+          { kind: 'ping' },
+          PING_ATTEMPT_TIMEOUT_MS,
+        );
+        return { available: response.ok === true, version: response.version };
+      } catch {
+        return null;
+      }
+    },
+    direct: () => pingDirect(),
+    memory: tabMemory(),
+  });
+  return lastPing;
 }
 
 // Asks the extension to read a robots.txt from the advisor's browser (same address
@@ -143,7 +226,8 @@ export async function fetchRobotsViaExtension(url: string): Promise<ExtensionRob
     }
     return { ok: false };
   } catch {
-    return { ok: false };
+    // Pas de réponse du tout : l'extension n'est pas là pour lire.
+    return { ok: false, unreachable: true };
   }
 }
 

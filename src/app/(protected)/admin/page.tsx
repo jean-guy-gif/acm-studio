@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { getUnknownCommuneOppositions } from '@/features/prospecting/queries/get-unknown-commune-oppositions';
+import { UNKNOWN_COMMUNE_NOTICE } from '@/features/prospecting/services/opposition-recheck';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import {
   BUDGET_REACHED_HINT,
@@ -19,6 +21,9 @@ export default async function AdminPage() {
   // Mission 100 — la consommation Stream Estate du mois, pour le manager : il la voit, il ne
   // règle pas le plafond (ce n'est pas un réglage d'agence).
   const budgetRead = profile && isManager ? await getSearchBudget(profile.agency_id) : null;
+  // Mission 105 — les oppositions dont la commune est restée inconnue après la revérification.
+  const unknownCommunes =
+    profile && isManager ? await getUnknownCommuneOppositions(profile.agency_id) : [];
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -64,6 +69,23 @@ export default async function AdminPage() {
           </span>
         </Link>
       </div>
+
+      {unknownCommunes.length > 0 ? (
+        <div
+          role="status"
+          data-testid="unknown-commune-oppositions"
+          className={`${card} flex flex-col gap-1 border-amber-300 p-5 text-sm text-amber-900 stage:text-amber-200`}
+        >
+          <p className="font-semibold">
+            {UNKNOWN_COMMUNE_NOTICE}
+            {unknownCommunes.length > 1 ? ` (${unknownCommunes.length})` : ''}
+          </p>
+          <p>
+            Commune tapée : {unknownCommunes.map((commune) => `« ${commune} »`).join(', ')}. Une
+            opposition n’est jamais retirée : réinscrivez l’adresse avec la bonne commune.
+          </p>
+        </div>
+      ) : null}
 
       {budgetRead ? (
         <div className={`${card} flex flex-col gap-1.5 p-5`}>

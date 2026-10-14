@@ -24,7 +24,7 @@ export function RecommendedRangeView({
 }) {
   return (
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
-      <h2 className={sectionTitle}>Fourchette recommandée</h2>
+      <h2 className={sectionTitle}>Plage des prix des concurrents</h2>
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         <div className={`${softPanel} flex flex-col gap-0.5 p-3.5`}>
           <span className={metaLabel}>Borne basse</span>

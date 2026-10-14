@@ -51,7 +51,7 @@ export const FOLLOW_UP_MOTIVE_LABELS: Record<FollowUpMotive, string> = {
   price_accepted: 'Prix accepté, signature à venir',
   thinking_price: 'Réfléchit au prix',
   consulting_relative: 'Veut en parler à un proche',
-  awaiting_estimate: 'Attend une autre estimation',
+  awaiting_estimate: 'Attend un autre avis de valeur',
   undated_project: 'Projet pas encore daté',
   other: 'Autre',
 };

@@ -51,6 +51,8 @@ select
   (select count(*) from live_seller_summary where project_id = ':dossier') as resume_live,
   -- Mission 104 : la trace des réouvertures garde les réponses effacées ; elle part avec le dossier.
   (select count(*) from live_reopenings where project_id = ':dossier') as reouvertures_live,
+  -- Mission 105 : le dernier résultat payé d'une recherche ; il part avec le dossier.
+  (select count(*) from stream_estate_results where project_id = ':dossier') as resultat_recherche,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

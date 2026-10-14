@@ -16,6 +16,9 @@ const state = vi.hoisted(() => ({
   budget: null as unknown,
   usage: [] as unknown[],
   errors: [] as string[],
+  // Mission 105 — ce que la base accepte de réserver (null : tout ce qui est demandé).
+  grant: null as number | null,
+  reserved: [] as number[],
 }));
 
 vi.mock('@/features/competitor-search/services/stream-estate-config', () => ({
@@ -28,9 +31,17 @@ vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile
 vi.mock('@/features/search-budget/queries/get-search-budget', () => ({
   getSearchBudget: async () => state.budget,
 }));
-vi.mock('@/features/search-budget/services/record-usage', () => ({
-  recordStreamEstateUsage: async (usage: { adverts: number }) => {
-    if (usage.adverts > 0) state.usage.push(usage);
+// Mission 105 — la réservation du budget (en base, compteur verrouillé) : la base accorde ce qui
+// reste ; après l'appel, la réservation prend le nombre facturé, ou disparaît.
+vi.mock('@/features/search-budget/services/reserve-budget', () => ({
+  reserveSearchBudget: async (input: { wanted: number; agencyId: string; userId: string }) => {
+    const adverts = Math.min(input.wanted, state.grant ?? input.wanted);
+    if (adverts <= 0) return { ok: false, reason: 'reached' };
+    state.reserved.push(adverts);
+    return { ok: true, reservationId: 'r-1', adverts };
+  },
+  settleSearchBudget: async (_id: string, billed: number) => {
+    if (billed > 0) state.usage.push({ adverts: billed });
   },
 }));
 vi.mock('@/lib/app-errors/report-server-error', () => ({
@@ -101,6 +112,8 @@ beforeEach(() => {
   pages.length = 0;
   state.usage = [];
   state.errors = [];
+  state.grant = null;
+  state.reserved = [];
   state.profile = { id: 'u-advisor', agency_id: AGENCY, role: 'advisor', removed_at: null };
   state.budget = { ok: true, budget: searchBudget(0, null) };
   stubApi();
@@ -142,9 +155,27 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
     const billed = pages.reduce((sum, size) => sum + size, 0);
     expect(billed).toBe(60);
     expect(result.ok && result.billed).toBe(60);
-    expect(state.usage).toEqual([
-      { agencyId: AGENCY, projectId: PROJECT, userId: 'u-advisor', adverts: 60 },
-    ]);
+    expect(state.reserved).toEqual([60]);
+    expect(state.usage).toEqual([{ adverts: 60 }]);
+  });
+
+  // Mission 105 — la base n'accorde que ce qui reste, compteur verrouillé : la recherche ne
+  // facture jamais plus que ce qui lui a été réservé, et rien ne part sans réservation.
+  it('la recherche ne facture jamais plus que sa réservation', async () => {
+    state.grant = 20;
+    await search();
+    const billed = pages.reduce((sum, size) => sum + size, 0);
+    expect(billed).toBeGreaterThan(0);
+    expect(billed).toBeLessThanOrEqual(20);
+    expect(state.usage).toEqual([{ adverts: billed }]);
+  });
+
+  it('plus rien à réserver (une autre recherche vient de tout prendre) : aucun appel', async () => {
+    state.grant = 0;
+    const result = await search();
+    expect(result.ok ? '' : result.error).toContain(BUDGET_REACHED_LABEL);
+    expect(pages).toEqual([]);
+    expect(state.usage).toEqual([]);
   });
 
   it('il reste 15 centimes : la recherche ne facture pas une annonce de plus', async () => {
@@ -153,9 +184,7 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
     const billed = pages.reduce((sum, size) => sum + size, 0);
     expect(billed).toBeGreaterThan(0);
     expect(billed).toBeLessThanOrEqual(15);
-    expect(state.usage).toEqual([
-      { agencyId: AGENCY, projectId: PROJECT, userId: 'u-advisor', adverts: billed },
-    ]);
+    expect(state.usage).toEqual([{ adverts: billed }]);
   });
 
   it('l’API tombe en panne : rien n’est compté, et la panne entre au journal des erreurs', async () => {
@@ -168,7 +197,9 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
   it('l’API refuse la clé : la panne entre au journal des erreurs', async () => {
     stubApi(401);
     const result = await search();
-    expect(result.ok ? '' : result.error).toContain('refusé la recherche');
+    expect(result.ok ? '' : result.error).toContain('refusée par le fournisseur des annonces');
+    // Le détail technique part au journal, pas à l'écran.
+    expect(result.ok ? '' : result.error).not.toMatch(/clé|console|401/);
     expect(state.errors).toEqual(['searchStreamEstate']);
   });
 });

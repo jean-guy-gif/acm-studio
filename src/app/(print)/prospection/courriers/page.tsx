@@ -6,7 +6,10 @@ import { PrintButton } from '@/features/competitor-locator/components/print-butt
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { ProspectingFileDocument } from '@/features/prospecting-file/components/prospecting-file-document';
 import { getProspectingFile } from '@/features/prospecting-file/queries/get-prospecting-file';
-import { splitBatchLetters } from '@/features/prospecting-file/services/batch-letters';
+import {
+  splitBatchLetters,
+  excludedFromBatch,
+} from '@/features/prospecting-file/services/batch-letters';
 import { savedDocument } from '@/features/prospecting-file/services/saved-document';
 import { MarkLettersHanded } from '@/features/prospecting/components/mark-letters-handed';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
@@ -72,7 +75,19 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
     row,
     document: savedDocument(context),
   }));
-  const { held } = split;
+  // Mission 105 — avec, en tête, les adresses écartées avant la préparation, et leur raison.
+  const held = [
+    ...excludedFromBatch(
+      cards
+        .filter((card) => card.sellers.some((item) => item.projectId === sellerId))
+        .map((card) => ({
+          row: cardCopy(card, sellerId).row,
+          status: card.row.status,
+          opposed: card.row.opposedOn != null,
+        })),
+    ),
+    ...split.held,
+  ];
 
   return (
     <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:p-6 print:block print:bg-white print:p-0">

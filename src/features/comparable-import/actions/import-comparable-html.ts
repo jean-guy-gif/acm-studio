@@ -1,5 +1,7 @@
 'use server';
 
+import { FETCH_MESSAGES } from '@/features/comparable-import/services/fetch-listing-page';
+
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
@@ -46,7 +48,7 @@ export async function importComparableHtml(
   const rawUrl = String(formData.get('url') ?? '').trim();
   const url = normalizeUrl(rawUrl);
   if (!url || !isAllowedProtocol(url)) {
-    return { ok: false, error: 'URL invalide.' };
+    return { ok: false, error: FETCH_MESSAGES.invalid };
   }
 
   const html = String(formData.get('html') ?? '');

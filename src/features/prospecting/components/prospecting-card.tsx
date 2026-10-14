@@ -2,6 +2,7 @@ import { competitorFacts } from '@/features/prospecting/services/competitor-fact
 import Link from 'next/link';
 
 import { badgeBrand, badgeNeutral, badgeRejected, badgeSelected } from '@/components/ui/styles';
+import { GONE_SINCE_MEETING_LABEL } from '@/features/competitor-refresh/services/price-refresh';
 import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
@@ -66,6 +67,11 @@ export function ProspectingCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {row.goneSinceMeeting ? (
+          <span data-testid="gone-since-meeting" className={badgeNeutral}>
+            {GONE_SINCE_MEETING_LABEL}
+          </span>
+        ) : null}
         {shared.opposedOn != null ? (
           <span className={badgeRejected}>{oppositionBadge(shared.opposedOn)}</span>
         ) : (

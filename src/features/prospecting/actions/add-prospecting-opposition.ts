@@ -155,7 +155,12 @@ export async function addManualOpposition(
   const inserted = await insertOppositions(
     await createClient(),
     { agencyId: profile.agency_id, profileId: profile.id },
-    { addressKey: decision.key, listingKeys: [], communeUnverified: !decision.verified },
+    {
+      addressKey: decision.key,
+      listingKeys: [],
+      communeUnverified: !decision.verified,
+      communeTyped: decision.verified ? null : decision.commune,
+    },
   );
   if (!inserted) {
     return { ok: false, error: FAILURE };

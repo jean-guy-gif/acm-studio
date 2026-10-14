@@ -49,7 +49,7 @@ export async function deliverLiveFragment(
     const comparable = authorizeComparableReveal(presentation.live, request.comparableId);
     if (!comparable) {
       // Ne devrait pas arriver après une écriture réussie de l'estimation ; garde serveur.
-      return { ok: false, error: 'Révélation non autorisée : estimation manquante.' };
+      return { ok: false, error: 'Indiquez d’abord le prix que vous imaginez.' };
     }
     return { ok: true, fragment: { kind: 'comparable', comparable } };
   }
@@ -67,7 +67,8 @@ export async function deliverLiveFragment(
   if (!advisorRange) {
     return {
       ok: false,
-      error: 'Analyse indisponible : il manque le prix du vendeur ou l’estimation d’un concurrent.',
+      error:
+        'Il manque votre prix, ou votre réponse sur un concurrent : revenez-y avant l’analyse.',
     };
   }
   return { ok: true, fragment: { kind: 'advisor-range', advisorRange } };

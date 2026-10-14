@@ -13,6 +13,7 @@ export function makeComparable(overrides: Partial<Comparable> = {}): Comparable 
     is_selected: true,
     imported_from_search: false,
     listing_withdrawn: false,
+    listing_gone_at: null,
     fields_to_verify: [],
     title: 'Bien',
     address: null,

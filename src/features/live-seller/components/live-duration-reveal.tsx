@@ -37,8 +37,8 @@ export function LiveDurationReveal({
         {observed != null && estimatedDays != null && observed !== estimatedDays ? (
           <div className="mt-1 text-sm font-medium text-zinc-600 stage:text-white/75">
             {observed > estimatedDays
-              ? `Soit ${formatNumber(observed - estimatedDays)} jours de plus que votre estimation (${formatNumber(estimatedDays)} jours).`
-              : `Soit ${formatNumber(estimatedDays - observed)} jours de moins que votre estimation (${formatNumber(estimatedDays)} jours).`}
+              ? `Soit ${formatNumber(observed - estimatedDays)} jours de plus que votre réponse (${formatNumber(estimatedDays)} jours).`
+              : `Soit ${formatNumber(estimatedDays - observed)} jours de moins que votre réponse (${formatNumber(estimatedDays)} jours).`}
           </div>
         ) : null}
       </div>

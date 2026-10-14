@@ -15,6 +15,7 @@ import {
   metaLabel,
 } from '@/components/ui/styles';
 import { FollowUpContactForm } from '@/features/meeting-conclusion/components/follow-up-contact-form';
+import { RefreshPricesButton } from '@/features/competitor-refresh/components/refresh-prices-button';
 import { FollowUpHistory } from '@/features/meeting-conclusion/components/follow-up-history';
 import { FollowUpMessage } from '@/features/meeting-conclusion/components/follow-up-message';
 import { SellerSaidBlock } from '@/features/meeting-conclusion/components/seller-said-block';
@@ -311,10 +312,17 @@ export function SuiviRow({
             openLabel={missingMandateType || missingMotive ? 'Compléter' : 'Changer l’issue'}
           />
           {/* Mission 96 — consigner une relance, préparer le message : « à relancer » seulement. */}
-          {outcome === 'follow_up' ? <FollowUpContactForm projectId={project.id} /> : null}
+          {outcome === 'follow_up' ? (
+            <FollowUpContactForm
+              projectId={project.id}
+              motive={conclusion?.followUpMotive ?? null}
+            />
+          ) : null}
           {outcome === 'follow_up' && followUp.message ? (
             <FollowUpMessage proposed={followUp.message} />
           ) : null}
+          {/* Mission 105 — relire les annonces des concurrents, par l'extension, sans payer. */}
+          <RefreshPricesButton projectId={project.id} />
         </div>
 
         {open ? (
