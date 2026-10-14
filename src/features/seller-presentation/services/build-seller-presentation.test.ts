@@ -633,7 +633,54 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(entry.priceReveal.sellerEstimate).toBe(240000);
     expect(entry.priceReveal.gapAmount).toBe(10000); // 250000 - 240000
     expect(entry.response?.seller_estimated_days_on_market).toBe(30);
-    expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 3 });
+    // Mission 104 — le premier révélé : rien d'autre n'a encore été montré.
+    expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 1 });
+  });
+
+  // Mission 104 — le rang ne se lit que parmi les concurrents déjà révélés à cet écran.
+  it('ranks a comparable only among those already revealed at its screen', () => {
+    const comparables = [comp('a', 7000), comp('b', 5000), comp('c', 6000), comp('d', 4000)];
+    const guessed = (id: string) => response({ id: `r-${id}`, comparable_id: id });
+    const rank = (responses: never[]) => {
+      const live = buildSellerPresentation(
+        input({ comparables, sellerResponses: responses }),
+      ).live!;
+      return Object.fromEntries(
+        live.comparables.map((entry) => [entry.id, entry.priceReveal.relativePosition]),
+      );
+    };
+    // a, b, c révélés tour à tour ; d pas encore : il ne compte pour personne.
+    const positions = rank([guessed('a'), guessed('b'), guessed('c')]);
+    expect(positions.a).toEqual({ rank: 1, total: 1 });
+    expect(positions.b).toEqual({ rank: 1, total: 2 });
+    expect(positions.c).toEqual({ rank: 2, total: 3 });
+    // Un concurrent écarté par « non » n'a pas été révélé : il ne compte pas pour la suite.
+    const skipped = rank([
+      guessed('a'),
+      response({
+        id: 'r-b',
+        comparable_id: 'b',
+        seller_serious_competitor: 'no',
+        seller_estimated_listing_price: null,
+      }),
+      guessed('c'),
+    ]);
+    expect(skipped.c).toEqual({ rank: 1, total: 2 });
+  });
+
+  // Mission 104 — « Calculé sur N concurrents » : N sans les valeurs aberrantes exclues.
+  it('counts only the comparables that enter the competitor price', () => {
+    const comparables = [
+      comp('a', 5000),
+      comp('b', 5100),
+      comp('c', 5200),
+      comp('d', 5300),
+      comp('e', 15000),
+    ];
+    const live = buildSellerPresentation(input({ comparables })).live!;
+    expect(live.comparables).toHaveLength(5);
+    expect(live.calculationCount).toBe(4);
+    expect(buildSellerPresentation(input()).live!.calculationCount).toBe(3);
   });
 
   it('computes final price gaps from the seller perception and the advisor analysis (prepared at positioning)', () => {

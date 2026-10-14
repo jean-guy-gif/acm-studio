@@ -80,6 +80,12 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/follow_up_that_pays.sql
 
+      # Mission 104 — rouvrir un Live figé par erreur : le serveur seul, avec un motif, tracé.
+      - name: Réouverture d'un Live (opérateur seul, trace, réponses gardées)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_reopening.sql
+
       # Mission 100 — toutes les tables publiques, lues dans le catalogue : un membre d'une agence
       # ne lit ni n'écrit rien d'une autre. Une nouvelle table sans cloisonnement échoue ici.
       - name: Cloisonnement entre agences (toutes les tables)

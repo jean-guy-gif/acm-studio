@@ -743,6 +743,54 @@ export type Database = {
           },
         ]
       }
+      live_reopenings: {
+        Row: {
+          agency_id: string
+          created_at: string
+          erased: Json
+          id: string
+          operator_email: string
+          operator_id: string | null
+          project_id: string
+          reason: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          erased: Json
+          id?: string
+          operator_email: string
+          operator_id?: string | null
+          project_id: string
+          reason: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          erased?: Json
+          id?: string
+          operator_email?: string
+          operator_id?: string | null
+          project_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_reopenings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_reopenings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_seller_responses: {
         Row: {
           agency_id: string
@@ -1761,6 +1809,15 @@ export type Database = {
       }
       purge_old_app_errors: { Args: never; Returns: number }
       purge_stale_owner_addresses: { Args: never; Returns: number }
+      reopen_live: {
+        Args: {
+          p_operator_email: string
+          p_operator_id: string
+          p_project_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       save_commercialization_price: {
         Args: {
           p_advisor_analysis: number

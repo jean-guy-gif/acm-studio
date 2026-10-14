@@ -7,7 +7,8 @@ import { expectNoHorizontalScroll, login } from './support';
 // plein écran), et un nom d'agence long ne pousse jamais les boutons de l'en-tête.
 //
 // Le test crée dans l'agence de test un dossier prêt (déclaré prêt à la main, sans bien ni
-// concurrent), que ses deux vérifications se partagent. Mission 100 : il n'est plus permanent —
+// concurrent), que ses deux vérifications se partagent. Mission 104 — sans concurrent, le Live
+// ne s'ouvre pas (écran de pause) : le test le vérifie, puis lui donne un bien et un concurrent. Mission 100 : il n'est plus permanent —
 // le nettoyage de fin de passage le supprime, et le passage suivant le recrée.
 
 const DOSSIER = 'TEST AUTOMATIQUE — Live tablette';
@@ -47,18 +48,72 @@ async function openLive(page: Page): Promise<void> {
   }
 
   await expect(item(), `Le dossier « ${DOSSIER} » n'est pas dans la liste du Live`).toBeVisible();
-  // Mission 89 — ce dossier n'a aucun concurrent : la liste ne le lance pas (bouton désactivé,
-  // raison dite au conseiller). On l'ouvre par son adresse : la scène reste neutre.
-  await expect(item().getByRole('button', { name: /Lancer le Live/ })).toBeDisabled();
-  await expect(item().getByText(/Aucun concurrent retenu/)).toBeVisible();
   const href = await item()
     .getByRole('link', { name: 'Vérifier la préparation' })
     .getAttribute('href');
   const projectId = /\/builder\/([0-9a-f-]{36})\//.exec(href ?? '')?.[1];
   expect(projectId, 'Identifiant du dossier introuvable dans la liste du Live').toBeTruthy();
-  await page.goto(`/live/${projectId}`);
-  await expect(page.getByText(/Aucun bien concurrent|Préparation/)).toHaveCount(0);
-  await expect(page).toHaveURL(/\/live\/[0-9a-f-]{36}/);
+
+  if (
+    await item()
+      .getByRole('button', { name: /Lancer le Live/ })
+      .isDisabled()
+  ) {
+    // Mission 89, 104 — sans concurrent retenu, la liste ne lance pas le Live : bouton
+    // désactivé, la raison et le chemin vers les concurrents. Ouvert par son adresse, le vendeur
+    // voit l'écran neutre de pause, jamais un message d'erreur.
+    await expect(
+      item().getByText(/Retenez au moins un concurrent pour lancer le Live/),
+    ).toBeVisible();
+    await expect(item().getByRole('link', { name: 'choisir les concurrents' })).toHaveAttribute(
+      'href',
+      `/builder/${projectId}/comparables`,
+    );
+    await page.goto(`/live/${projectId}`);
+    await expect(page).toHaveURL(new RegExp(`/live/${projectId}/pause$`));
+    await expect(page.getByText('Rendez-vous en pause')).toBeVisible();
+    await expect(page.getByText(/indisponible|erreur|introuvable/i)).toHaveCount(0);
+
+    // Un bien vendeur et UN concurrent : de quoi ouvrir la scène.
+    await page.goto(`/builder/${projectId}/property`);
+    const field = (label: string) =>
+      page
+        .locator('label')
+        .filter({ has: page.locator('span', { hasText: new RegExp(`^${label}$`) }) })
+        .locator('input');
+    await page
+      .locator('label')
+      .filter({ has: page.locator('span', { hasText: /^Type de bien$/ }) })
+      .locator('select')
+      .selectOption('Appartement');
+    await field('Surface').fill('65');
+    await field('Ville').fill('Nice');
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+    await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
+    await page.goto(`/builder/${projectId}/comparables/new`);
+    const form = page
+      .locator('form')
+      .filter({ has: page.getByRole('button', { name: 'Enregistrer le bien concurrent' }) });
+    await form.locator('input[name="title"]').fill('Concurrent tablette');
+    await form.locator('input[name="city"]').fill('Nice');
+    await form.locator('input[name="surface_area"]').fill('60');
+    await form.locator('input[name="price"]').fill('300000');
+    await form.getByRole('button', { name: 'Enregistrer le bien concurrent' }).click();
+    await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/comparables(\\?.*)?$`));
+    await page.goto('/live');
+  }
+
+  // Mission 104 — un vrai dossier, un seul concurrent : « Lancer le Live » le dit, puis demande
+  // si l'on est devant le vendeur, avant d'ouvrir la scène.
+  await item()
+    .getByRole('button', { name: /Lancer le Live/ })
+    .click();
+  const confirm = item().getByTestId('live-launch-confirm');
+  await expect(confirm).toContainText('Peu de concurrents : la lecture du marché sera fragile.');
+  await expect(confirm).toContainText('Vous êtes devant le vendeur ?');
+  await expect(confirm.getByRole('button', { name: 'Ouvrir le dossier d’exemple' })).toBeVisible();
+  await confirm.getByRole('link', { name: 'Lancer devant le vendeur' }).click();
+  await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
   await expect(page.locator('[data-stage] > header')).toBeVisible();
 }
 

@@ -501,6 +501,10 @@ export function LiveComparativeShell({
       const alreadyGuessed =
         entry.authorized && entry.response?.seller_estimated_listing_price != null;
       if (alreadyGuessed || serious === 'no') {
+        // Mission 104 — « Non » : le prix tapé n'est pas envoyé (le serveur l'ignore aussi).
+        if (serious === 'no') {
+          fd.delete('seller_estimated_listing_price');
+        }
         const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
         if (!r.ok) {
           setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');

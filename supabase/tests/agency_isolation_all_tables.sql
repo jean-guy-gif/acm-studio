@@ -47,7 +47,7 @@ $$;
 
 -- Les tables à `agency_id` que PERSONNE ne lit depuis le navigateur, pas même leur agence.
 create function pg_temp.closed_to_browser(p_table text) returns boolean language sql immutable as $$
-  select p_table in ('app_errors')
+  select p_table in ('app_errors', 'live_reopenings')
 $$;
 
 -- Une valeur d'essai imposée par une contrainte CHECK, que le générateur ne peut pas deviner.

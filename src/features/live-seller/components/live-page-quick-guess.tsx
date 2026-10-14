@@ -70,6 +70,14 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
                     value={value}
                     defaultChecked={currentAnswer === value}
                     className="sr-only"
+                    onChange={(event) => {
+                      // Mission 104 — « Non » dispense de deviner : un prix déjà tapé s'efface.
+                      if (value !== 'no') return;
+                      const price = event.currentTarget.form?.elements.namedItem(
+                        'seller_estimated_listing_price',
+                      );
+                      if (price instanceof HTMLInputElement) price.value = '';
+                    }}
                   />
                   {SERIOUS_COMPETITOR_LABELS[value]}
                 </label>

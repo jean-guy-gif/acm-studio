@@ -148,3 +148,29 @@ export function countFieldsToVerify(
       )
   );
 }
+
+// Mission 104 — un prix ou une surface « à vérifier » entre tel quel dans le prix au m², donc dans
+// le « Prix des concurrents » : les concurrents retenus concernés sont nommés, jamais en silence.
+const PRICE_OR_SURFACE: readonly string[] = ['price', 'surface_area'];
+
+export function competitorsWithPriceOrSurfaceToVerify<
+  T extends { is_selected: boolean; fields_to_verify?: readonly string[] | null },
+>(competitors: readonly T[]): T[] {
+  return competitors.filter(
+    (competitor) =>
+      competitor.is_selected &&
+      sanitizeFieldsToVerify(competitor.fields_to_verify ?? [], COMPETITOR_VERIFIABLE_FIELDS).some(
+        (field) => PRICE_OR_SURFACE.includes(field),
+      ),
+  );
+}
+
+// « 2 concurrents retenus ont un prix ou une surface à vérifier » ; null quand il n'y en a pas.
+export function priceOrSurfaceToVerifyLabel(count: number): string | null {
+  if (count <= 0) {
+    return null;
+  }
+  return count === 1
+    ? '1 concurrent retenu a un prix ou une surface à vérifier'
+    : `${count} concurrents retenus ont un prix ou une surface à vérifier`;
+}

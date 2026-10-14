@@ -1,16 +1,23 @@
 import 'server-only';
 
+import { getComparables } from '@/features/comparables/queries/get-comparables';
+import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-fields/services/fields-to-verify';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { liveResume, type LiveResume } from '@/features/live-seller/services/live-resume';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
+import { getProject } from '@/features/projects/queries/get-project';
 
 // Mission 89 — ce que la liste du Live dit d'un dossier avant de le lancer : combien de
 // concurrents retenus (aucun = on ne lance pas), et où en est le rendez-vous s'il a commencé.
 // Rien d'autre ne sort d'ici : ni prix, ni réponse du vendeur.
+// Mission 104 — et, pour la confirmation avant de lancer : est-ce le dossier d'exemple, et
+// combien de concurrents retenus ont un prix ou une surface encore à vérifier.
 export type LiveLaunchInfo = {
   competitorCount: number;
   resume: LiveResume;
+  isExample: boolean;
+  toVerifyCount: number;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -25,8 +32,14 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     presentation.property != null,
     presentation.project.liveRhythm,
   );
+  const [project, comparables] = await Promise.all([
+    getProject(projectId),
+    getComparables(projectId),
+  ]);
   return {
     competitorCount: projected?.comparables.length ?? 0,
     resume: liveResume(pages, projected),
+    isExample: project?.is_example === true,
+    toVerifyCount: competitorsWithPriceOrSurfaceToVerify(comparables).length,
   };
 }

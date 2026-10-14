@@ -300,9 +300,20 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       .filter((response) => response.comparable_id != null)
       .map((response) => [response.comparable_id as string, response]),
   );
-  const retainedPricesPerSquareMeter = retained
-    .map((comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area))
-    .filter((value): value is number => value != null);
+  // Mission 104 — le rang « Position (prix/m²) n/N » d'un concurrent se lit parmi les seuls
+  // concurrents DÉJÀ RÉVÉLÉS à son écran : ceux qui le précèdent dans le Live et dont le vendeur
+  // a deviné le prix, plus lui-même. Comme la bande et la phrase de position (M94), il ne dit
+  // rien d'un concurrent à venir, et grandit à chaque concurrent révélé.
+  const revealedPricesPerSquareMeterUpTo = (index: number): number[] =>
+    retained
+      .filter(
+        (comparable, position) =>
+          position === index ||
+          (position < index &&
+            responseByComparable.get(comparable.id)?.seller_estimated_listing_price != null),
+      )
+      .map((comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area))
+      .filter((value): value is number => value != null);
   const emptyBundle: FeatureBundle = {
     surfaceArea: null,
     roomsCount: null,
@@ -383,7 +394,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
         price: comparable.price,
         surfaceArea: comparable.surface_area,
         sellerEstimate: response?.seller_estimated_listing_price ?? null,
-        retainedPricesPerSquareMeter,
+        retainedPricesPerSquareMeter: revealedPricesPerSquareMeterUpTo(index),
         thisPricePerSquareMeter: ppsm,
       }),
       priceHistory: storedFieldsPriceHistoryProvider.getPriceHistory(historySource),
@@ -401,6 +412,10 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
           comparables: liveComparables,
           sellerSummary,
           competitiveMarketCentral,
+          calculationCount:
+            currentPositioning.dataset.usedCount > 0
+              ? currentPositioning.dataset.usedCount
+              : retained.length,
           advisorDecision: savedPositioning
             ? {
                 advisorPrice: savedPositioning.advisorPrice,

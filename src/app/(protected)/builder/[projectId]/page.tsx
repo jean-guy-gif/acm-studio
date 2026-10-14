@@ -13,6 +13,10 @@ import { CompetitorLocatorWatcher } from '@/features/competitor-locator/componen
 import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
 import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
+import { ReopenLivePanel } from '@/features/live-reopening/components/reopen-live-panel';
+import { getLiveReopenings } from '@/features/live-reopening/queries/get-live-reopenings';
+import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { statusLabel } from '@/features/projects/status-label';
@@ -53,6 +57,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
   const conclusion = project.status === 'meeting_completed' ? await getConclusion(projectId) : null;
+  const launch = await getLiveLaunchInfo(projectId);
+  // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
+  const reopenings = await getLiveReopenings(projectId);
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
@@ -96,21 +103,28 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Link>
         ))}
 
-        {/* L'accès à la scène : le rendez-vous lui-même. */}
-        <Link
-          href={`/live/${projectId}`}
-          className="group flex items-start gap-4 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-5 text-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/25"
-        >
-          <span className="font-title text-3xl leading-none font-bold text-brand transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
-          <span className="flex min-w-0 flex-col gap-1">
-            <span className="font-title text-lg leading-snug font-semibold">Lancer le Live</span>
-            <span className="text-sm text-white/65">
-              Le rendez-vous vendeur en mode présentation, plein écran.
+        {/* L'accès à la scène : le rendez-vous lui-même. Mission 104 — le même bouton que la
+            liste du Live : il vérifie avant d'ouvrir (concurrents, « à vérifier », vrai dossier). */}
+        <div className="flex items-start gap-4 rounded-2xl bg-gradient-to-br from-brand-deep via-brand-darker to-brand-darkest p-5 text-white shadow-card">
+          <span className="font-title text-3xl leading-none font-bold text-brand">→</span>
+          <span className="flex min-w-0 flex-col gap-3">
+            <span className="flex flex-col gap-1">
+              <span className="font-title text-lg leading-snug font-semibold">Le Live</span>
+              <span className="text-sm text-white/65">
+                Le rendez-vous vendeur en mode présentation, plein écran.
+              </span>
             </span>
+            {launch ? (
+              <LiveLaunchActions
+                projectId={projectId}
+                competitorCount={launch.competitorCount}
+                resume={launch.resume}
+                isExample={launch.isExample}
+                toVerifyCount={launch.toVerifyCount}
+              />
+            ) : null}
           </span>
-        </Link>
+        </div>
 
         {/* Mission 53 — l'issue du rendez-vous, côté conseiller. Disponible dès que le
             dossier est prêt (dans le Live) ; reste accessible une fois conclu (Suivi). */}
@@ -141,6 +155,17 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       ) : (
         <CompetitorLocatorWatcher projectId={projectId} />
       )}
+
+      {reopenings ? (
+        <ReopenLivePanel
+          projectId={projectId}
+          canReopen={
+            (project.status === 'draft' || project.status === 'ready_for_meeting') &&
+            (launch?.resume.started === true || project.live_started_at != null)
+          }
+          history={reopenings}
+        />
+      ) : null}
     </div>
   );
 }

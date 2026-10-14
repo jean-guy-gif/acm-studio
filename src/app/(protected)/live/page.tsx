@@ -74,6 +74,8 @@ export default async function LivePage() {
                   projectId={project.id}
                   competitorCount={launchInfos[index]?.competitorCount ?? 0}
                   resume={launchInfos[index]?.resume ?? { started: false, index: 0, total: 0 }}
+                  isExample={project.is_example === true}
+                  toVerifyCount={launchInfos[index]?.toVerifyCount ?? 0}
                 />
               </div>
             </li>

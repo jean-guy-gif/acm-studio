@@ -10,8 +10,9 @@ import type { LiveComparableEntry } from '@/features/seller-presentation/types/s
 // côté SERVEUR, sur la donnée complète ; seuls ces nombres voyagent.
 
 export type MarketReading = {
-  // Les concurrents retenus par le conseiller (tous), et ceux dont le prix a été révélé.
-  retainedCount: number;
+  // Mission 104 — les concurrents qui ENTRENT dans le calcul du « Prix des concurrents » (les
+  // valeurs aberrantes écartées n'y sont pas), et ceux dont le prix a été révélé.
+  calculationCount: number;
   revealedCount: number;
   // Les prix affichés des concurrents révélés, du moins cher au plus cher : la bande.
   prices: number[];
@@ -39,6 +40,7 @@ const revealed = (entry: ReadingEntry): boolean =>
 export function buildMarketReading(
   comparables: readonly ReadingEntry[],
   prices: { advisorPrice: number | null; marketComputed: number | null },
+  calculationCount: number,
 ): MarketReading {
   const shown = comparables.filter(revealed);
   const listed = shown
@@ -53,7 +55,7 @@ export function buildMarketReading(
   const medianPrice = median(listed);
 
   return {
-    retainedCount: comparables.length,
+    calculationCount,
     revealedCount: shown.length,
     prices: listed,
     lowestPrice: listed.length > 0 ? listed[0] : null,
@@ -70,21 +72,18 @@ export function buildMarketReading(
   };
 }
 
-// « Calculé sur les 6 concurrents retenus par votre conseiller » — ou, quand le conseiller a
-// retenu un autre montant que le calcul, « Prix retenu par votre conseiller à partir des 6
-// concurrents ». Jamais « observé sur le marché » pour un prix ajusté.
+// « Calculé sur 5 concurrents » — ou, quand le conseiller a retenu un autre montant que le
+// calcul, « Prix retenu par votre conseiller à partir de 5 concurrents ». Jamais « observé sur le
+// marché » pour un prix ajusté. Mission 104 — le nombre est celui des concurrents qui entrent
+// dans le calcul : un concurrent écarté pour un prix au m² trop éloigné n'y est pas compté.
 export function competitorPriceBasisLabel(
-  reading: Pick<MarketReading, 'retainedCount' | 'competitorPriceBasis'>,
+  reading: Pick<MarketReading, 'calculationCount' | 'competitorPriceBasis'>,
 ): string {
-  const count = reading.retainedCount;
-  if (reading.competitorPriceBasis === 'advisor') {
-    return count > 1
-      ? `Prix retenu par votre conseiller à partir des ${count} concurrents`
-      : 'Prix retenu par votre conseiller à partir du concurrent';
-  }
-  return count > 1
-    ? `Calculé sur les ${count} concurrents retenus par votre conseiller`
-    : 'Calculé sur le concurrent retenu par votre conseiller';
+  const count = reading.calculationCount;
+  const competitors = `${count} concurrent${count > 1 ? 's' : ''}`;
+  return reading.competitorPriceBasis === 'advisor'
+    ? `Prix retenu par votre conseiller à partir de ${competitors}`
+    : `Calculé sur ${competitors}`;
 }
 
 // Où placer un prix sur la bande, de 0 à 1 — repères du vendeur compris, pour qu'ils y tiennent.
