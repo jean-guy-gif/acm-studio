@@ -64,8 +64,6 @@ chaque mission validée.
 - 08/10 · M78 · À l'import (annonce et fiche PDF), un champ à liste (chauffage, exposition, état, GES, extérieurs, stationnement) ne reçoit jamais une valeur hors liste ; un menu ne garde jamais une valeur qu'il ne sait pas afficher.
 - 08/10 · M80 · « Classe DPE » du bien vendeur est une liste A à G, saisie par le conseiller ; vide = pas encore de DPE ; la base ADEME n'est pas interrogée (mission 79 abandonnée).
 - 08/10 · M80 · Sous les concurrents retenus : « DPE de vos concurrents : 2 C, 4 D, 1 E, 3 non indiqués » ; une valeur hors A à G compte comme non indiquée.
-
-
 - 14/10 · M104 · « Avant le rendez-vous » dit, côté conseiller, les concurrents qui n'entrent pas dans le prix des concurrents : « 2 écartés : prix au m² trop éloigné » ; le vendeur lit « Calculé sur N concurrents ».
 - 14/10 · M104 · Un prix ou une surface « À vérifier » entre tel quel dans le prix au m² : « Avant le rendez-vous » dit « 2 concurrents retenus ont un prix ou une surface à vérifier », avec un lien vers chacun, en plus du compteur de M97 ; rien n'est bloqué (précise M97, M101).
 - 14/10 · M104 · Près du bouton du Live, sur un vrai dossier pas encore lancé : « Devant le vendeur, ses réponses sont enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d'exemple. »
