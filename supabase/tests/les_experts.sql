@@ -4,7 +4,9 @@
 --     navigateur ne les écrit pas ;
 --   • le mode expert n'est pas modifiable par le navigateur (M88) ;
 --   • l'ordre des concurrents se réordonne d'un coup, par la liste exacte des retenus, et ne bouge
---     plus une fois le Live commencé — ni par la fonction, ni par une écriture directe.
+--     plus une fois le Live commencé — ni par la fonction, ni par une écriture directe ;
+--   • ce verrou ne bloque aucune suppression (leçon de la migration 20261028) : un concurrent, un
+--     dossier (effacement A), l'effacement B, un compte, et le nettoyage de l'agence de test.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/les_experts.sql
@@ -206,6 +208,110 @@ begin
     raise exception 'FAIL 6b: l''ordre a bougé après le début du Live';
   end if;
 end $$;
+
+-- 7. Leçon de la migration 20261028 : le verrou de l'ordre ne bloque AUCUNE suppression ni
+--    aucun effacement sur un dossier dont le Live a commencé. Le dossier A a commencé (§6), et
+--    porte une réponse du vendeur.
+insert into public.live_seller_responses (agency_id, project_id, comparable_id, seller_estimated_listing_price) values
+  ('110aaaaa-0000-0000-0000-000000000000', '110ccccc-0000-0000-0000-00000000000a',
+   '110dddd0-0000-0000-0000-000000000001', 290000);
+
+-- 7a. Supprimer un concurrent, depuis le navigateur du conseiller.
+select pg_temp.act_as('11011111-1111-1111-1111-111111111111');
+delete from public.comparables where id = '110dddd0-0000-0000-0000-000000000003';
+reset role;
+do $$
+begin
+  if exists (select 1 from public.comparables where id = '110dddd0-0000-0000-0000-000000000003') then
+    raise exception 'FAIL 7a: un concurrent n''a pas pu être supprimé après le début du Live';
+  end if;
+end $$;
+
+-- 7b. Effacement B (PROCEDURE_EFFACEMENT.md) : le concurrent sort des retenus, son adresse part.
+update public.comparables set
+  address = null, locator_address = null, locator_confirmed = null, locator_source = null,
+  is_selected = false, updated_at = now()
+where id = '110dddd0-0000-0000-0000-000000000004';
+do $$
+begin
+  if (select is_selected from public.comparables where id = '110dddd0-0000-0000-0000-000000000004') then
+    raise exception 'FAIL 7b: l''effacement B n''a pas sorti le concurrent des retenus';
+  end if;
+end $$;
+
+-- 7c. Effacement A : le dossier entier, dans l'ordre de la procédure.
+delete from public.seller_synthesis_links where project_id = '110ccccc-0000-0000-0000-00000000000a';
+delete from public.comparables where project_id = '110ccccc-0000-0000-0000-00000000000a';
+delete from public.subject_properties where project_id = '110ccccc-0000-0000-0000-00000000000a';
+delete from public.projects where id = '110ccccc-0000-0000-0000-00000000000a';
+do $$
+begin
+  if exists (select 1 from public.projects where id = '110ccccc-0000-0000-0000-00000000000a')
+     or exists (select 1 from public.live_seller_responses where project_id = '110ccccc-0000-0000-0000-00000000000a') then
+    raise exception 'FAIL 7c: le dossier commencé n''a pas été effacé entièrement';
+  end if;
+end $$;
+
+-- 7d. Un compte supprimé (RGPD) : ses recherches nommées partent avec lui.
+delete from public.profiles where id = '11044444-4444-4444-4444-444444444444';
+do $$
+begin
+  if exists (select 1 from public.saved_searches where owner_id = '11044444-4444-4444-4444-444444444444') then
+    raise exception 'FAIL 7d: les recherches d''un compte supprimé sont restées';
+  end if;
+end $$;
+
+-- 7e. npm run nettoyer:test : le même bloc que le script, sur une agence de test dont un Live a
+--     commencé, avec une réponse du vendeur et une recherche nommée.
+insert into auth.users (id) values ('11055555-5555-5555-5555-555555555555');
+insert into public.agencies (id, name) values
+  ('110eeeee-0000-0000-0000-000000000000', 'TEST AUTOMATIQUE 110');
+insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
+  ('11055555-5555-5555-5555-555555555555', '110eeeee-0000-0000-0000-000000000000', 'Te', 'St', 't110@t.l', 'advisor');
+insert into public.projects (id, agency_id, advisor_id, seller_name, status, live_started_at) values
+  ('110ccccc-0000-0000-0000-00000000000e', '110eeeee-0000-0000-0000-000000000000',
+   '11055555-5555-5555-5555-555555555555', 'TEST', 'ready_for_meeting', now());
+insert into public.comparables (id, agency_id, project_id, title, price, is_selected, display_order) values
+  ('110dddd0-0000-0000-0000-00000000000e', '110eeeee-0000-0000-0000-000000000000',
+   '110ccccc-0000-0000-0000-00000000000e', 'c', 300000, true, 1);
+insert into public.live_seller_responses (agency_id, project_id, comparable_id, seller_estimated_listing_price) values
+  ('110eeeee-0000-0000-0000-000000000000', '110ccccc-0000-0000-0000-00000000000e',
+   '110dddd0-0000-0000-0000-00000000000e', 290000);
+insert into public.saved_searches (agency_id, owner_id, name, settings) values
+  ('110eeeee-0000-0000-0000-000000000000', '11055555-5555-5555-5555-555555555555', 'test',
+   '{"sector":null,"autoWiden":true}');
+do $$
+declare
+  v_agency constant uuid := '110eeeee-0000-0000-0000-000000000000';
+begin
+  delete from public.live_reopenings where agency_id = v_agency;
+  delete from public.stream_estate_results where agency_id = v_agency;
+  delete from public.comparables where agency_id = v_agency;
+  delete from public.subject_properties where agency_id = v_agency;
+  delete from public.projects where agency_id = v_agency;
+  delete from public.listing_observations where agency_id = v_agency;
+  delete from public.prospecting_oppositions where agency_id = v_agency;
+  delete from public.saved_searches where agency_id = v_agency;
+  if exists (select 1 from public.projects where agency_id = v_agency)
+     or exists (select 1 from public.comparables where agency_id = v_agency)
+     or exists (select 1 from public.live_seller_responses where agency_id = v_agency)
+     or exists (select 1 from public.saved_searches where agency_id = v_agency) then
+    raise exception 'FAIL 7e: le nettoyage de l''agence de test a laissé des lignes';
+  end if;
+end $$;
+
+-- 8. Un manager ne lit pas les recherches de ses conseillers : chacune reste à son conseiller.
+insert into auth.users (id) values ('11066666-6666-6666-6666-666666666666');
+insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
+  ('11066666-6666-6666-6666-666666666666', '110aaaaa-0000-0000-0000-000000000000', 'Ma', 'Nager', 'm110@t.l', 'manager');
+select pg_temp.act_as('11066666-6666-6666-6666-666666666666');
+do $$
+begin
+  if (select count(*) from public.saved_searches) <> 0 then
+    raise exception 'FAIL 8: un manager lit les recherches d''un conseiller';
+  end if;
+end $$;
+reset role;
 
 do $$ begin raise notice 'les_experts : OK'; end $$;
 

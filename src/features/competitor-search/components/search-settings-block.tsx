@@ -24,6 +24,8 @@ import {
 } from '@/features/competitor-search/services/search-settings';
 import { STREAM_ESTATE_TARGET } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
+  DPE_FILTER_HINT,
+  DPE_NO_FILTER_HINT,
   isDefaultFilters,
   OUTDOOR_CHOICE_LABELS,
   OUTDOOR_CHOICES,
@@ -345,9 +347,8 @@ export function SearchSettingsBlock({
               </label>
             ))}
           </div>
-          <p className="text-xs text-zinc-500 stage:text-white/50">
-            Aucune classe cochée : toutes, et les biens sans DPE. Cochées : seuls les biens qui
-            affichent l’une d’elles.
+          <p className="text-xs text-zinc-500 stage:text-white/50" data-testid="dpe-filter-hint">
+            {DPE_FILTER_HINT} {DPE_NO_FILTER_HINT}
           </p>
         </Row>
         <Row
