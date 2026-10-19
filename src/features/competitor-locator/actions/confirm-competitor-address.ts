@@ -56,9 +56,10 @@ async function recognizedTypedAddress(
   }
   return {
     ok: true,
+    // Mission 109 — avec ou sans code postal, la commune tapée reste celle du courrier.
     address: parts.postalCode
       ? `${parts.street}, ${parts.postalCode} ${commune}`
-      : decision.display,
+      : `${parts.street}, ${commune}`,
   };
 }
 

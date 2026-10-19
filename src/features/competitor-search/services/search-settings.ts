@@ -228,3 +228,10 @@ export function settingsToInput(settings: SearchSettings): SearchSettingsInput {
     autoWiden: settings.autoWiden,
   };
 }
+
+// Mission 109 — ce qui vaut pour TOUS les biens d'un conseiller : le secteur et l'élargissement
+// automatique. Jamais un prix, des pièces ni une surface : ils sont propres à un bien (une villa
+// ne se cherche pas avec les critères d'un appartement).
+export function advisorDefaultSettings(settings: SearchSettings): SearchSettings {
+  return { ...DEFAULT_SEARCH_SETTINGS, sector: settings.sector, autoWiden: settings.autoWiden };
+}

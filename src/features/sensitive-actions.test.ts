@@ -467,12 +467,20 @@ describe('« Ne plus solliciter »', () => {
   it('une adresse déjà inscrite est une demande tenue, pas une erreur', async () => {
     const { addProspectingOpposition } =
       await import('@/features/prospecting/actions/add-prospecting-opposition');
+    const { addressKey } = await import('@/features/prospecting/services/address-key');
     state.card = card(true);
     // Déjà inscrite : l'insertion bute sur la clé, la relecture la trouve.
     state.respond = (_table, method) =>
       method === 'insert'
         ? { error: { code: '23505' } }
-        : { data: [{ address_key: 'x', listing_key: 'seloger:26ZEJMLWB13Y' }] };
+        : {
+            data: [
+              {
+                address_key: addressKey('8 avenue du Docteur Hochet, 06160 Antibes'),
+                listing_key: 'seloger:26ZEJMLWB13Y',
+              },
+            ],
+          };
     expect(await addProspectingOpposition(PROJECT, 'c1')).toEqual({ ok: true });
     state.respond = () => ({ error: { code: '42501' } });
     expect((await addProspectingOpposition(PROJECT, 'c1')).ok).toBe(false);
@@ -1114,5 +1122,152 @@ describe('Mission 108', () => {
       surface: null,
       autoWiden: true,
     });
+  });
+});
+
+// Mission 109 — cinq corrections avant l'invitation.
+describe('Mission 109', () => {
+  it('les réglages par défaut ne gardent ni prix, ni pièces, ni surface', async () => {
+    const { saveSearchDefaults } =
+      await import('@/features/competitor-search/actions/save-search-defaults');
+    const { DEFAULT_SEARCH_SETTINGS, settingsToInput } =
+      await import('@/features/competitor-search/services/search-settings');
+    state.respond = (table) => (table === 'profiles' ? { data: { id: advisor.id } } : {});
+    await saveSearchDefaults(
+      settingsToInput({
+        ...DEFAULT_SEARCH_SETTINGS,
+        sector: { kind: 'radius', km: 2 },
+        price: { min: 300_000, max: 380_000 },
+        rooms: { min: 3, max: 4 },
+        surface: { min: 60, max: 80 },
+        autoWiden: false,
+      }),
+    );
+    const patch = service.calls.find((call) => call.method === 'update')?.args[0];
+    expect(patch).toEqual({
+      search_defaults: {
+        sector: { kind: 'radius', km: 2 },
+        price: null,
+        rooms: null,
+        surface: null,
+        autoWiden: false,
+      },
+    });
+  });
+
+  it('un nouveau dossier ne reprend jamais prix, pièces ni surface, même gardés en base', async () => {
+    const { createProject } = await import('@/features/projects/actions/create-project');
+    state.profile = {
+      ...advisor,
+      search_defaults: {
+        sector: { kind: 'radius', km: 2 },
+        price: { min: 300_000, max: 380_000 },
+        rooms: { min: 3, max: 4 },
+        surface: { min: 60, max: 80 },
+        autoWiden: true,
+      },
+    };
+    state.respond = (table) => (table === 'projects' ? { data: { id: PROJECT } } : {});
+    await expect(createProject(form({ sellerName: 'TEST Vendeur' }))).rejects.toThrow(/REDIRECT/);
+    const row = server.calls.find((call) => call.method === 'insert')?.args[0] as {
+      search_settings: unknown;
+    };
+    expect(row.search_settings).toEqual({
+      sector: { kind: 'radius', km: 2 },
+      price: null,
+      rooms: null,
+      surface: null,
+      autoWiden: true,
+    });
+  });
+
+  it.each(['meeting_completed', 'archived'])(
+    'une réponse du Live est refusée sur un dossier %s, rien n’est écrit',
+    async (status) => {
+      const { writeLiveComparableResponse } =
+        await import('@/features/live-seller/services/write-live-comparable-response');
+      const { writeLiveSellerSummary } =
+        await import('@/features/live-seller/services/write-live-seller-summary');
+      state.respond = (table) =>
+        table === 'projects' ? { data: { id: PROJECT, status } } : { data: { id: COMPETITOR } };
+      const serious = form({ seller_serious_competitor: 'no' });
+      expect(await writeLiveComparableResponse(PROJECT, COMPETITOR, serious)).toEqual({
+        ok: false,
+        error: 'Rendez-vous terminé : la réponse n’est pas enregistrée.',
+      });
+      expect(
+        (
+          await writeLiveSellerSummary(
+            PROJECT,
+            form({ seller_most_dangerous_comparable_id: COMPETITOR }),
+          )
+        ).ok,
+      ).toBe(false);
+      noWrite();
+    },
+  );
+
+  it('« Ne plus solliciter » sur une carte regroupée : la clé de chaque adresse confirmée', async () => {
+    const { addProspectingOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    const { addressKey } = await import('@/features/prospecting/services/address-key');
+    const first = '8 avenue du Docteur Hochet, 06160 Antibes';
+    const second = '10 avenue du Docteur Hochet, 06160 Antibes';
+    state.card = {
+      row: { confirmed: true, address: first, opposedOn: null },
+      sellers: [{ projectId: PROJECT }],
+      copies: [
+        { row: { id: 'c1', confirmed: true, address: first, listingKey: null } },
+        { row: { id: 'c2', confirmed: true, address: second, listingKey: null } },
+        {
+          row: {
+            id: 'c3',
+            confirmed: false,
+            address: '12 rue proposée, Antibes',
+            listingKey: null,
+          },
+        },
+      ],
+    };
+    const keys = [addressKey(first), addressKey(second)];
+    state.respond = (table, method) =>
+      table === 'prospecting_oppositions' && method === 'select'
+        ? { data: keys.map((address_key) => ({ address_key, listing_key: null })) }
+        : {};
+    expect(await addProspectingOpposition(PROJECT, 'c1')).toEqual({ ok: true });
+    const inserted = server.calls
+      .filter((call) => call.method === 'insert')
+      .map((call) => (call.args[0] as { address_key?: string }).address_key);
+    expect(inserted).toEqual(keys);
+  });
+
+  it('« 12 bd X, Juan-les-Pins », sans code postal : le courrier garde Juan-les-Pins, la clé vaut Antibes', async () => {
+    const { confirmCompetitorAddress } =
+      await import('@/features/competitor-locator/actions/confirm-competitor-address');
+    const { addressKey } = await import('@/features/prospecting/services/address-key');
+    state.respond = (table, method) =>
+      table === 'comparables'
+        ? method === 'update'
+          ? { data: [{ id: 'c1' }] }
+          : {
+              data: {
+                locator_address: null,
+                locator_confirmed: false,
+                locator_source: null,
+                listing_url: null,
+              },
+            }
+        : { data: [] };
+    expect(
+      await confirmCompetitorAddress(PROJECT, 'c1', {
+        mode: 'typed',
+        address: '12 boulevard Wilson, Juan-les-Pins',
+      }),
+    ).toEqual({ ok: true });
+    const patch = server.calls.find((call) => call.method === 'update')?.args[0] as {
+      locator_address: string;
+    };
+    expect(patch.locator_address).toBe('12 boulevard Wilson, Juan-les-Pins');
+    expect(addressKey(patch.locator_address)).toBe(addressKey('12 boulevard Wilson, Antibes'));
   });
 });

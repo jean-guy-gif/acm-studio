@@ -419,6 +419,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 isExample={launch.isExample}
                 toVerifyCount={launch.toVerifyCount}
                 decisionOutdated={launch.decisionOutdated}
+                decisionMissing={launch.decisionMissing}
               />
               {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
               {!launch.isExample && !launch.resume.started ? (

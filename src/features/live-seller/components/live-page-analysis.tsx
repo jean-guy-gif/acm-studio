@@ -177,18 +177,19 @@ export function LivePageAnalysis({
           <div className={statLabel}>Votre valeur perçue</div>
           <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
         </div>
-        <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
-          {/* Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ». */}
-          <div className={statLabel}>Prix des concurrents</div>
-          <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
-          {/* Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ». */}
-          {/* Mission 108 — sous un tiret (calcul impossible), aucun « Calculé sur N ». */}
-          {gaps.competitiveMarketCentral != null ? (
+        {/* Mission 109 — sans prix des concurrents (aucune décision, ou calcul impossible),
+            ni le panneau ni « Calculé sur N ». */}
+        {gaps.competitiveMarketCentral != null ? (
+          <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
+            {/* Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ». */}
+            <div className={statLabel}>Prix des concurrents</div>
+            <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
+            {/* Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ». */}
             <div className="text-sm text-zinc-500 stage:text-white/60">
               {competitorPriceBasisLabel(reading)}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse du conseiller</div>
           <div className={bigValue}>{euro(gaps.advisorComparativePrice)}</div>
@@ -218,9 +219,16 @@ export function LivePageAnalysis({
 
       <div className={`${panelSoft} h-fit`}>
         <div className={`${statLabel} mb-2`}>Écarts observés</div>
-        <GapRow label="Votre valeur perçue vs prix des concurrents" gap={gaps.sellerVsMarket} />
+        {gaps.competitiveMarketCentral != null ? (
+          <GapRow label="Votre valeur perçue vs prix des concurrents" gap={gaps.sellerVsMarket} />
+        ) : null}
         <GapRow label="Votre valeur perçue vs analyse du conseiller" gap={gaps.sellerVsAdvisor} />
-        <GapRow label="Prix des concurrents vs analyse du conseiller" gap={gaps.marketVsAdvisor} />
+        {gaps.competitiveMarketCentral != null ? (
+          <GapRow
+            label="Prix des concurrents vs analyse du conseiller"
+            gap={gaps.marketVsAdvisor}
+          />
+        ) : null}
       </div>
     </div>
   );
