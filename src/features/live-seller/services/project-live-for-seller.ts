@@ -59,12 +59,13 @@ export type NeutralSellerComparable = {
 // Champs LIVRÉS après persistance de l'estimation (révélation autorisée) : le prix et
 // tout ce qui le porte. `priceReveal` ne contient que des nombres déjà calculés serveur
 // (rang, écart) — pas la liste des prix/m² retenus.
+// Mission 107 — ni le titre de l'annonce ni son adresse : un titre peut dire « EXCLUSIVITÉ », le
+// nom d'une agence, une référence ou une rue, et le domaine d'une annonce dit qui vend (M75, M83).
+// Le concurrent reste désigné par son libellé neutre, avant comme après la révélation.
 export type AuthorizedSellerComparable = Omit<NeutralSellerComparable, 'authorized'> & {
   authorized: true;
-  title: string | null;
   price: number;
   pricePerSquareMeter: number | null;
-  listingUrl: string | null;
   isOutlier: boolean;
   priceReveal: PriceReveal;
   // MISSION 95 — la durée observée et l'historique de prix ne voyagent qu'une fois la durée
@@ -123,10 +124,8 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
   return {
     ...neutral,
     authorized: true,
-    title: entry.title,
     price: entry.price,
     pricePerSquareMeter: entry.pricePerSquareMeter,
-    listingUrl: entry.listingUrl,
     isOutlier: entry.isOutlier,
     priceReveal: entry.priceReveal,
     priceHistory: durationRevealed ? entry.priceHistory : null,

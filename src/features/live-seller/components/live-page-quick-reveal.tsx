@@ -31,7 +31,7 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const savedDays = response?.seller_estimated_days_on_market ?? null;
   const durationRevealed = savedDays != null && entry.marketDuration != null;
-  const title = entry.title ?? 'Bien concurrent';
+  const title = entry.neutralLabel;
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6">

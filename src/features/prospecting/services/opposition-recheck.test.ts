@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { addressKey } from '@/features/prospecting/services/address-key';
 import {
+  correctedOppositionKey,
   isCronAuthorized,
   recheckDecision,
   UNKNOWN_COMMUNE_NOTICE,
@@ -31,5 +33,50 @@ describe('la revérification de la nuit', () => {
     // Sans secret configuré (ou trop court), personne n'entre.
     expect(isCronAuthorized('Bearer ', undefined)).toBe(false);
     expect(isCronAuthorized('Bearer court', 'court')).toBe(false);
+  });
+});
+
+// Mission 107 — corriger la commune d'une alerte : la clé rejoint celle de la carte.
+describe('corriger la commune d’une opposition « commune inconnue »', () => {
+  it('la clé reconstruite est celle de la carte, alias compris', () => {
+    const key = correctedOppositionKey({
+      addressKey: '14 chemin des oliviers cagnes sur mere',
+      communeTyped: 'Cagnes sur Mère',
+      correctedCommune: 'Cagnes-sur-Mer',
+      found: [{ nom: 'Cagnes-sur-Mer' }],
+    });
+    expect(key).toBe(addressKey('14 ch. des Oliviers, 06800 Cagnes-sur-Mer'));
+    expect(
+      correctedOppositionKey({
+        addressKey: '8 avenue hochet juans les pins',
+        communeTyped: 'Juans les Pins',
+        correctedCommune: 'Juan-les-Pins',
+        found: [{ nom: 'Antibes' }],
+      }),
+    ).toBe(addressKey('8 av Hochet, 06160 Antibes'));
+  });
+
+  it('commune non reconnue, ou rue introuvable dans la clé : rien n’est deviné', () => {
+    const base = { addressKey: '14 chemin des oliviers nullepart', communeTyped: 'Nullepart' };
+    expect(
+      correctedOppositionKey({ ...base, correctedCommune: 'Antibes', found: [{ nom: 'Cannes' }] }),
+    ).toBeNull();
+    expect(
+      correctedOppositionKey({
+        addressKey: '14 chemin des oliviers ailleurs',
+        communeTyped: 'Nullepart',
+        correctedCommune: 'Antibes',
+        found: [{ nom: 'Antibes' }],
+      }),
+    ).toBeNull();
+    // Paris sans arrondissement ne se devine pas.
+    expect(
+      correctedOppositionKey({
+        addressKey: '12 rue lecourbe pariss',
+        communeTyped: 'Pariss',
+        correctedCommune: 'Paris',
+        found: [{ nom: 'Paris' }],
+      }),
+    ).toBeNull();
   });
 });

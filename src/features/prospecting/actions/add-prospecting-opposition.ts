@@ -46,11 +46,15 @@ export async function addProspectingOpposition(
   if (!card) {
     return { ok: false, error: 'Concurrent introuvable pour votre agence.' };
   }
+  // Mission 107 — toujours possible : sans adresse confirmée, l'opposition porte sur les annonces
+  // de la carte (le bien est bloqué partout où elles apparaissent) ; la clé d'adresse s'y
+  // ajoutera quand le Localisateur la confirmera (competitor-locations.ts).
   const key = card.row.confirmed ? addressKey(card.row.address) : null;
-  if (key == null) {
+  const listingKeys = card.copies.flatMap((copy) => copy.row.listingKey ?? []);
+  if (key == null && listingKeys.length === 0) {
     return {
       ok: false,
-      error: 'Confirmez d’abord l’adresse : la liste porte sur l’adresse du bien.',
+      error: 'Ni adresse confirmée ni annonce : saisissez l’adresse du bien pour l’inscrire.',
     };
   }
 
@@ -59,7 +63,7 @@ export async function addProspectingOpposition(
     { agencyId: profile.agency_id, profileId: profile.id },
     {
       addressKey: key,
-      listingKeys: card.copies.flatMap((copy) => copy.row.listingKey ?? []),
+      listingKeys,
     },
   );
   if (!inserted) {

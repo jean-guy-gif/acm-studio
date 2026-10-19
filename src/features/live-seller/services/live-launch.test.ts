@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/features/welcome/actions/open-example-dossier', () => ({
   openExampleDossier: async () => undefined,
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: () => undefined }) }));
 
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {
@@ -131,5 +132,48 @@ describe('le bouton « Lancer le Live »', () => {
     expect(REAL_DOSSIER_CONFIRMATION).toBe(
       'Vous êtes devant le vendeur ? Ses réponses seront enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.',
     );
+  });
+});
+
+// Mission 107 — l'onglet « Live » et le bandeau « prêt » passent par le même contrôle.
+describe('l’étape « Lancer le Live »', () => {
+  const step = (props: { competitorCount: number; isExample: boolean }) =>
+    renderToStaticMarkup(
+      createElement(LiveLaunchActions, {
+        projectId: 'p1',
+        competitorCount: props.competitorCount,
+        resume: NOT_STARTED,
+        isExample: props.isExample,
+        toVerifyCount: 0,
+        proceed: true,
+      }),
+    );
+
+  it('un vrai dossier : la confirmation « devant le vendeur » s’affiche d’emblée', () => {
+    const html = step({ competitorCount: 3, isExample: false });
+    expect(html).toContain('data-testid="live-launch-confirm"');
+    expect(html).toContain('Vous êtes devant le vendeur ?');
+  });
+
+  it('le dossier d’exemple prêt : pas de confirmation, la scène s’ouvre', () => {
+    const html = step({ competitorCount: 3, isExample: true });
+    expect(html).not.toContain('live-launch-confirm');
+    expect(html).toContain('href="/live/p1"');
+  });
+
+  it('l’onglet « Live » et le bandeau mènent à cette étape, jamais droit au Live', async () => {
+    const { dossierSteps, launchLiveHref } =
+      await import('@/features/projects/services/dossier-steps');
+    expect(dossierSteps('p1').find((s) => s.key === 'live')?.href).toBe(
+      '/builder/p1/lancer-le-live',
+    );
+    expect(launchLiveHref('p1')).toBe('/builder/p1/lancer-le-live');
+    const { readFileSync } = await import('node:fs');
+    const banner = readFileSync(
+      `${process.cwd()}/src/features/projects/components/bascule-banner.tsx`,
+      'utf8',
+    );
+    expect(banner).toContain('href={launchLiveHref(projectId)}');
+    expect(banner).not.toContain('`/live/${projectId}`');
   });
 });

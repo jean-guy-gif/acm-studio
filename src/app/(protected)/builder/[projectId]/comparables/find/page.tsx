@@ -125,6 +125,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           recordDecisionsAction={recordDecisionsAction}
           prepareOpenAction={prepareOpenAction}
           rememberPlacesAction={rememberPlacesAction}
+          keptResultAvailable={streamEstateAvailable}
           streamEstateAction={streamEstateAction}
           budgetReached={streamEstateAvailable && budget?.reached === true}
           budgetNotice={budgetNotice}

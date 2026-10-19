@@ -12,7 +12,11 @@ import {
   demoProperty,
   demoSavedPositioning,
 } from '@/test-fixtures/demo-data';
-import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
+import {
+  authorizeAdvisorRange,
+  authorizeComparableReveal,
+  projectLiveForSeller,
+} from '@/features/live-seller/services/project-live-for-seller';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 
 // Mission 75, critère 4 — l'adresse d'un concurrent n'arrive JAMAIS côté vendeur : ni dans le
@@ -135,5 +139,65 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
       join('(print)', 'prospection', 'tournee'),
       join('(protected)', 'prospection'),
     ]);
+  });
+});
+
+// Mission 107 — ni le titre de l'annonce ni son adresse ne passent côté vendeur : un titre peut
+// dire « EXCLUSIVITÉ », le nom d'une agence ou une rue, et le domaine de l'annonce dit qui vend.
+describe('le titre et l’adresse de l’annonce ne passent jamais côté vendeur', () => {
+  const TRAP_TITLE = 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas';
+  const TRAP_URL = 'https://www.agence-dupont-immobilier.fr/annonce/vente-12-rue-des-lilas';
+
+  const live = () => {
+    const presentation = buildSellerPresentation({
+      project: demoProject,
+      property: demoProperty,
+      diagnostics: null,
+      condominium: null,
+      comparables: demoComparables.map((competitor) => ({
+        ...competitor,
+        title: TRAP_TITLE,
+        listing_url: TRAP_URL,
+      })),
+      savedPositioning: demoSavedPositioning,
+      sellerResponses: demoAnsweredResponses,
+      sellerSummary: demoAnsweredSummary,
+      generatedAt: DEMO_AT,
+      propertyPhotoUrls: [],
+    });
+    if (!presentation.live) throw new Error('fixture sans live');
+    return presentation.live;
+  };
+
+  it('ni dans la charge projetée, ni dans une révélation livrée, ni dans l’analyse', () => {
+    const full = live();
+    const projected = projectLiveForSeller(full);
+    const revealed = full.comparables.map((entry) => authorizeComparableReveal(full, entry.id));
+    expect(revealed.some((entry) => entry != null)).toBe(true);
+    const payload = JSON.stringify({ projected, revealed, range: authorizeAdvisorRange(full) });
+    for (const leak of [
+      'EXCLUSIVITÉ',
+      'Dupont',
+      'Lilas',
+      'agence-dupont',
+      'listingUrl',
+      '"title"',
+    ]) {
+      expect(payload, leak).not.toContain(leak);
+    }
+    // Le concurrent reste désigné par son libellé neutre.
+    expect(projected.comparables[0].neutralLabel).not.toContain('Lilas');
+  });
+
+  it('aucun écran du Live ne lit le titre ou l’adresse d’une annonce', () => {
+    const DIR = join(process.cwd(), 'src', 'features', 'live-seller', 'components');
+    const offenders = readdirSync(DIR)
+      .filter((file) => /\.tsx$/.test(file) && !/\.test\.tsx?$/.test(file))
+      .filter((file) =>
+        /\b(entry|dangerous|comparable|competitor)\.(title|listingUrl)\b/.test(
+          readFileSync(join(DIR, file), 'utf8'),
+        ),
+      );
+    expect(offenders).toEqual([]);
   });
 });

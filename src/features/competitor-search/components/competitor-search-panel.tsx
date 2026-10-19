@@ -171,6 +171,9 @@ type Props = {
   streamEstateAction?: (resume?: StreamEstateResume | null) => Promise<StreamEstateSearchResult>;
   // Mission 100 — le budget de recherche du mois est atteint : le bouton est remplacé.
   budgetReached?: boolean;
+  // Mission 107 — la recherche Stream Estate existe pour ce dossier (clé définie, pas un
+  // exemple), même quand le budget du mois est atteint : le résultat gardé se rouvre.
+  keptResultAvailable?: boolean;
   // Mission 100 — « 80 % du budget de recherche du mois utilisé », pour le manager seulement.
   budgetNotice?: string | null;
   // Mission 99 — « Réglages de la recherche » : ce qui est enregistré sur le dossier, ce que
@@ -400,6 +403,7 @@ export function CompetitorSearchPanel({
   rememberPlacesAction,
   streamEstateAction,
   budgetReached = false,
+  keptResultAvailable = false,
   budgetNotice = null,
   searchSettings,
 }: Props) {
@@ -598,10 +602,8 @@ export function CompetitorSearchPanel({
         return;
       }
       const result = outcome.result;
-      if (!more) {
-        setStreamNote(null);
-        void forgetStreamEstateResult(projectId);
-      }
+      // Mission 107 — l'ancien résultat payé n'est remplacé qu'après une recherche RÉUSSIE :
+      // budget atteint, service des communes en panne ou refus du fournisseur ne font rien perdre.
       if (!result.ok) {
         setError(result.error);
         return;
@@ -654,7 +656,8 @@ export function CompetitorSearchPanel({
   const [confirmingRelaunch, setConfirmingRelaunch] = useState(false);
   const recalled = useRef(false);
   useEffect(() => {
-    if (recalled.current || !streamEstateAction) {
+    // Mission 107 — même budget atteint (plus de bouton de recherche), le résultat gardé se rouvre.
+    if (recalled.current || !keptResultAvailable) {
       return;
     }
     recalled.current = true;

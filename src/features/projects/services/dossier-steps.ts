@@ -14,8 +14,14 @@ export function dossierSteps(projectId: string): DossierStep[] {
     { key: 'property', label: 'Bien vendeur', href: `${base}/property` },
     { key: 'competitors', label: 'Concurrents', href: `${base}/comparables` },
     { key: 'before', label: 'Avant le rendez-vous', href: `${base}/avant-rendez-vous` },
-    { key: 'live', label: 'Live', href: `/live/${projectId}` },
+    // Mission 107 — par l'étape de lancement : le même contrôle que « Lancer le Live » (M104).
+    { key: 'live', label: 'Live', href: launchLiveHref(projectId) },
   ];
+}
+
+// Mission 107 — l'étape qui ouvre le Live d'un dossier : le contrôle « devant le vendeur » d'abord.
+export function launchLiveHref(projectId: string): string {
+  return `/builder/${projectId}/lancer-le-live`;
 }
 
 // L'onglet de l'écran affiché ; null sur un écran qui n'est aucune étape (conclusion).
@@ -29,6 +35,9 @@ export function activeDossierStep(pathname: string, projectId: string): DossierS
   }
   if (pathname.startsWith(`${base}/comparables`)) {
     return 'competitors';
+  }
+  if (pathname.startsWith(`${base}/lancer-le-live`)) {
+    return 'live';
   }
   if (
     pathname.startsWith(`${base}/avant-rendez-vous`) ||
