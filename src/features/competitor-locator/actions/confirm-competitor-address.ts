@@ -44,7 +44,10 @@ async function recognizedTypedAddress(
   if (!parts) {
     return { ok: false, error: MANUAL_OPPOSITION_INCOMPLETE };
   }
-  const commune = decision.display.slice(parts.street.length + 2);
+  // La commune telle que le conseiller l'a tapée (« Juan-les-Pins » : c'est elle que le
+  // propriétaire lit sur le courrier) ; le nom officiel seulement quand il n'a donné que le code
+  // postal. La clé est la même : `addressKey` lit le nom d'usage comme la commune (M86).
+  const commune = parts.commune ?? decision.display.slice(parts.street.length + 2);
   if (!decision.verified) {
     await reportServerError(
       'adresse saisie par le conseiller',
