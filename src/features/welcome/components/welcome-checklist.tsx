@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { link } from '@/components/ui/styles';
 import {
@@ -13,7 +13,13 @@ import {
   extensionInstallUrl,
 } from '@/features/browser-extension/install-url';
 import { useBrowserExtension } from '@/features/browser-extension/use-browser-extension';
-import { isChromeBrowser } from '@/features/welcome/services/welcome';
+import { pingLocator } from '@/features/competitor-locator/client';
+import type { LocatorAvailability } from '@/features/competitor-locator/types';
+import {
+  isChromeBrowser,
+  LOCALISATEUR_STORE_URL,
+  locatorInstalled,
+} from '@/features/welcome/services/welcome';
 
 type CheckState = 'done' | 'todo' | 'unknown' | 'optional';
 
@@ -84,6 +90,17 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
     () => null,
   );
   const installUrl = extensionInstallUrl();
+  // Mission 106 — un Localisateur répond-il (celui du Store ou celui du mode développeur) ?
+  const [locator, setLocator] = useState<LocatorAvailability | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void pingLocator().then((availability) => {
+      if (!cancelled) setLocator(availability);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <ul className="flex flex-col gap-3.5">
@@ -138,8 +155,25 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
           </>
         )}
       </Item>
-      <Item testId="need-locator" state="optional" title="Facultatif : Localisateur Academia">
+      <Item
+        testId="need-locator"
+        state={locatorInstalled(locator) ? 'done' : 'optional'}
+        title="Facultatif : Localisateur Academia"
+      >
         Pour retrouver l’adresse d’un bien.
+        {locatorInstalled(locator) ? null : (
+          <>
+            {' '}
+            <a
+              href={LOCALISATEUR_STORE_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              className={link}
+            >
+              L’installer depuis le Chrome Web Store
+            </a>
+          </>
+        )}
       </Item>
     </ul>
   );

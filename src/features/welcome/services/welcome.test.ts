@@ -19,7 +19,13 @@ import {
   exampleHasNoRealAddress,
 } from '@/features/welcome/services/example-dossier';
 import { isExampleDossier, withoutExamples } from '@/features/welcome/services/example-exclusion';
-import { WELCOME_STEPS, homeHref, isChromeBrowser } from '@/features/welcome/services/welcome';
+import {
+  LOCALISATEUR_STORE_URL,
+  locatorInstalled,
+  WELCOME_STEPS,
+  homeHref,
+  isChromeBrowser,
+} from '@/features/welcome/services/welcome';
 
 const SRC = join(process.cwd(), 'src');
 const read = (...path: string[]): string => readFileSync(join(SRC, ...path), 'utf8');
@@ -65,6 +71,21 @@ describe('« Bienvenue » (mission 97)', () => {
     expect(checklist).toContain('Facultatif : Localisateur Academia');
     expect(checklist).toContain('Pour retrouver l’adresse d’un bien.');
     expect(checklist).not.toMatch(/acm1|3\.1\.1/i);
+  });
+
+  // Mission 106 — la ligne mène à la page du Store, et se coche quand un Localisateur répond.
+  it('mène au Localisateur du Store, et se coche quand un Localisateur répond', () => {
+    expect(LOCALISATEUR_STORE_URL).toBe(
+      'https://chromewebstore.google.com/detail/fpnimjhhiagpfjodphjddobegnelckeg',
+    );
+    expect(locatorInstalled('ready')).toBe(true);
+    expect(locatorInstalled('sharing_off')).toBe(true);
+    expect(locatorInstalled('unavailable')).toBe(false);
+    expect(locatorInstalled(null)).toBe(false);
+    const checklist = read('features', 'welcome', 'components', 'welcome-checklist.tsx');
+    expect(checklist).toContain('href={LOCALISATEUR_STORE_URL}');
+    expect(checklist).toContain("state={locatorInstalled(locator) ? 'done' : 'optional'}");
+    expect(checklist).toContain('pingLocator()');
   });
 
   it('« Aide » ramène à « Bienvenue » depuis le menu', () => {
