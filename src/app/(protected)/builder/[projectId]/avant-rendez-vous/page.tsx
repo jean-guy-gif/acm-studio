@@ -32,6 +32,9 @@ import {
 } from '@/features/before-meeting/services/live-sequence';
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import { LiveShortlistPicker } from '@/features/live-seller/components/live-shortlist-picker';
+import { getLiveShortlist } from '@/features/live-seller/queries/get-live-shortlist';
+import { LIVE_SHORTLIST_SIZE } from '@/features/live-seller/services/live-shortlist';
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { REAL_DOSSIER_NOTE } from '@/features/live-seller/services/live-launch';
 import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
@@ -230,6 +233,10 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
   // sont nommés ; les concurrents écartés du calcul sont comptés.
   const launch = await getLiveLaunchInfo(projectId);
+  const shortlist =
+    launch && !launch.resume.started && retained.length > LIVE_SHORTLIST_SIZE
+      ? await getLiveShortlist(projectId)
+      : null;
   const priceOrSurfaceToVerify = competitorsWithPriceOrSurfaceToVerify(retained);
   const priceOrSurfaceLabel = priceOrSurfaceToVerifyLabel(priceOrSurfaceToVerify.length);
   const excludedOutliers = positioning?.dataset.excludedOutlierCount ?? 0;
@@ -406,6 +413,16 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         }
       />
 
+      {/* Mission 110 — au-delà de 6 retenus : les concurrents montrés au Live, modifiables tant
+          que le Live n'a pas commencé. */}
+      {shortlist ? (
+        <LiveShortlistPicker
+          projectId={projectId}
+          shortlist={shortlist}
+          pending={shortlist.pending}
+        />
+      ) : null}
+
       <SellerSequenceCard
         sequence={sequence}
         notes={notes}
@@ -420,6 +437,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 toVerifyCount={launch.toVerifyCount}
                 decisionOutdated={launch.decisionOutdated}
                 decisionMissing={launch.decisionMissing}
+                shortlistPending={launch.shortlistPending}
+                secondary
               />
               {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
               {!launch.isExample && !launch.resume.started ? (

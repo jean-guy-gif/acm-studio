@@ -340,7 +340,10 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     : null;
   const competitiveMarketCentral = currentPositioning.recommendedRange?.central ?? null;
 
-  const liveComparables: LiveComparableEntry[] = retained.map((comparable, index) => {
+  // Mission 110 — au-delà de 6, le conseiller choisit ceux que le Live montre : les autres restent
+  // retenus (prix des concurrents, Prospection) mais ne passent pas devant le vendeur.
+  const shownInLive = retained.filter((comparable) => comparable.excluded_from_live !== true);
+  const liveComparables: LiveComparableEntry[] = shownInLive.map((comparable, index) => {
     const ppsm = pricePerSquareMeter(comparable.price, comparable.surface_area);
     const response = responseByComparable.get(comparable.id) ?? null;
     const comparableFeatures: FeatureBundle = {
@@ -407,7 +410,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
   });
 
   const live: LiveComparativeData | null =
-    property != null && retained.length >= 1
+    property != null && shownInLive.length >= 1
       ? {
           comparables: liveComparables,
           sellerSummary,

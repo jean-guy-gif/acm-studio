@@ -15,7 +15,10 @@ export function PropertyEnergyFields({
   heatingType,
   onField,
   errors,
+  withDpe = true,
 }: {
+  // Mission 110 — la classe DPE est dans l'essentiel de la fiche : ici, GES et chauffage seuls.
+  withDpe?: boolean;
   energyRating: string;
   gesRating: string;
   heatingType: string;
@@ -27,14 +30,16 @@ export function PropertyEnergyFields({
       <h2 className={formSectionTitle}>Énergie et chauffage</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {/* Mission 80 — une liste A à G ; vide = pas encore de DPE. */}
-        <SelectField
-          label="Classe DPE"
-          value={energyRating}
-          onChange={(value) => onField('energy_rating', value)}
-          field="energy_rating"
-          options={DPE_CLASSES.map((value) => ({ value, label: value }))}
-          error={errors.energy_rating}
-        />
+        {withDpe ? (
+          <SelectField
+            label="Classe DPE"
+            value={energyRating}
+            onChange={(value) => onField('energy_rating', value)}
+            field="energy_rating"
+            options={DPE_CLASSES.map((value) => ({ value, label: value }))}
+            error={errors.energy_rating}
+          />
+        ) : null}
         <SelectField
           label="Classe GES"
           value={gesRating}

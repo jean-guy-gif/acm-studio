@@ -123,6 +123,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 toVerifyCount={launch.toVerifyCount}
                 decisionOutdated={launch.decisionOutdated}
                 decisionMissing={launch.decisionMissing}
+                shortlistPending={launch.shortlistPending}
+                secondary
               />
             ) : null}
           </span>

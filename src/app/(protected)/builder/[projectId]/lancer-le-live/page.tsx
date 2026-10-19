@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 
 import { backLink, card, pageTitle } from '@/components/ui/styles';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import { LiveShortlistPicker } from '@/features/live-seller/components/live-shortlist-picker';
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
+import { getLiveShortlist } from '@/features/live-seller/queries/get-live-shortlist';
 
 // Mission 107 — l'onglet « Live » de la barre d'étapes et le bandeau « Ouvrir dans le Live »
 // passent par ici : le même contrôle que le bouton « Lancer le Live » (M104). Rien à demander
@@ -19,24 +21,31 @@ export default async function LaunchLivePage({
   if (!launch) {
     notFound();
   }
+  // Mission 110 — au-delà de 6 retenus, d'abord le choix des concurrents montrés.
+  const shortlist = launch.shortlistPending ? await getLiveShortlist(projectId) : null;
   return (
     <div className="flex flex-col gap-4">
       <Link href={`/builder/${projectId}`} className={backLink}>
         ← Retour au dossier
       </Link>
       <h1 className={pageTitle}>Lancer le Live</h1>
-      <div className={`${card} flex flex-col gap-3 p-5`} data-testid="launch-live-step">
-        <LiveLaunchActions
-          projectId={projectId}
-          competitorCount={launch.competitorCount}
-          resume={launch.resume}
-          isExample={launch.isExample}
-          toVerifyCount={launch.toVerifyCount}
-          decisionOutdated={launch.decisionOutdated}
-          decisionMissing={launch.decisionMissing}
-          proceed
-        />
-      </div>
+      {shortlist ? (
+        <LiveShortlistPicker projectId={projectId} shortlist={shortlist} pending />
+      ) : (
+        <div className={`${card} flex flex-col gap-3 p-5`} data-testid="launch-live-step">
+          <LiveLaunchActions
+            projectId={projectId}
+            competitorCount={launch.competitorCount}
+            resume={launch.resume}
+            isExample={launch.isExample}
+            toVerifyCount={launch.toVerifyCount}
+            decisionOutdated={launch.decisionOutdated}
+            decisionMissing={launch.decisionMissing}
+            shortlistPending={launch.shortlistPending}
+            proceed
+          />
+        </div>
+      )}
     </div>
   );
 }

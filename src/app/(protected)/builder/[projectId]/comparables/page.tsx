@@ -98,7 +98,11 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           <h1 className={pageTitle}>Biens concurrents</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/builder/${projectId}/comparables/find`} className={btnPrimary}>
+          {/* Mission 110 — principal tant que les concurrents sont l'étape à faire. */}
+          <Link
+            href={`/builder/${projectId}/comparables/find`}
+            className={selected.length < 3 ? btnPrimary : btnSecondary}
+          >
             Trouver des concurrents
           </Link>
           <Link href={`/builder/${projectId}/comparables/new`} className={btnSecondary}>

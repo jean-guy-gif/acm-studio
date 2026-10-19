@@ -34,7 +34,10 @@ export function PropertyCharacteristicsFields({
   onField,
   onArray,
   errors,
+  withOutdoor = true,
 }: {
+  // Mission 110 — les extérieurs sont dans l'essentiel de la fiche.
+  withOutdoor?: boolean;
   exposure: string;
   constructionYear: string;
   generalCondition: string;
@@ -95,14 +98,16 @@ export function PropertyCharacteristicsFields({
           error={errors.has_pool}
         />
       </div>
-      <MultiCheckField
-        label="Extérieurs"
-        values={outdoorSpaces}
-        onChange={(values) => onArray('outdoor_spaces', values)}
-        field="outdoor_spaces"
-        options={OUTDOOR_SPACES.map((value) => ({ value, label: OUTDOOR_SPACE_LABELS[value] }))}
-        error={errors.outdoor_spaces}
-      />
+      {withOutdoor ? (
+        <MultiCheckField
+          label="Extérieurs"
+          values={outdoorSpaces}
+          onChange={(values) => onArray('outdoor_spaces', values)}
+          field="outdoor_spaces"
+          options={OUTDOOR_SPACES.map((value) => ({ value, label: OUTDOOR_SPACE_LABELS[value] }))}
+          error={errors.outdoor_spaces}
+        />
+      ) : null}
       <MultiCheckField
         label="Stationnements"
         values={parkingTypes}

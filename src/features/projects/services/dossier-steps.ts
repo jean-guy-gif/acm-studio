@@ -74,3 +74,57 @@ export function nextDossierStepHref(
   const key = nextDossierStep(input);
   return dossierSteps(projectId).find((step) => step.key === key)?.href ?? `/builder/${projectId}`;
 }
+
+// Mission 110 — « Étape suivante » : un seul bouton principal par écran du dossier, qui dit quoi
+// faire maintenant. Pur : l'état du dossier décide, dans l'ordre du parcours.
+export type NextDossierAction = { key: string; label: string; href: string };
+
+export function nextDossierAction(
+  projectId: string,
+  input: {
+    status: string;
+    hasProperty: boolean;
+    exploitableCount: number;
+    hasDecision: boolean;
+    liveStarted: boolean;
+    liveEnded: boolean;
+  },
+): NextDossierAction {
+  const base = `/builder/${projectId}`;
+  if (input.status === 'meeting_completed') {
+    return { key: 'suivi', label: 'Voir le Suivi', href: '/suivi' };
+  }
+  if (input.liveEnded) {
+    return { key: 'conclude', label: 'Conclure le rendez-vous', href: `${base}/conclusion` };
+  }
+  if (input.liveStarted) {
+    return { key: 'resume', label: 'Reprendre le Live', href: launchLiveHref(projectId) };
+  }
+  if (!input.hasProperty) {
+    return { key: 'property', label: 'Saisir le bien vendeur', href: `${base}/property` };
+  }
+  if (input.exploitableCount < MIN_COMPETITORS) {
+    return {
+      key: 'competitors',
+      label: 'Chercher les concurrents',
+      href: `${base}/comparables/find`,
+    };
+  }
+  if (!input.hasDecision) {
+    return { key: 'decision', label: 'Décider votre prix', href: `${base}/avant-rendez-vous` };
+  }
+  return { key: 'launch', label: 'Lancer le Live', href: launchLiveHref(projectId) };
+}
+
+// L'en-tête ne répète pas l'écran où l'on est déjà, ni la fiche du bien, dont la barre fixée porte
+// l'enregistrement et « Trouver des concurrents » (M77).
+export function showsNextAction(
+  pathname: string,
+  projectId: string,
+  action: NextDossierAction,
+): boolean {
+  const base = `/builder/${projectId}`;
+  if (pathname.startsWith(`${base}/property`)) return false;
+  const target = action.href.split('#')[0];
+  return !(pathname === target || (target !== base && pathname.startsWith(`${target}/`)));
+}
