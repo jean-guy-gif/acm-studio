@@ -23,17 +23,82 @@ type ChromeRuntime = {
 };
 
 // `process.env.NEXT_PUBLIC_…` doit être écrit en toutes lettres pour être inscrit dans le
-// paquet du navigateur. L'identifiant vient de l'environnement, jamais du code.
-export function locatorExtensionId(): string | null {
-  const value = process.env.NEXT_PUBLIC_LOCALISATEUR_ID?.trim() ?? '';
-  return /^[a-p]{32}$/.test(value) ? value : null;
+// paquet du navigateur. Les identifiants viennent de l'environnement, jamais du code.
+//
+// Mission 106 — une LISTE, séparée par des virgules : le Localisateur du Store et celui du mode
+// développeur (« fpnim…,bjoap… », le Store d'abord). Un identifiant malformé est ignoré ; une seule
+// valeur, comme avant, marche toujours.
+export function locatorExtensionIds(
+  raw: string | undefined = process.env.NEXT_PUBLIC_LOCALISATEUR_ID,
+): string[] {
+  const ids = (raw ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => /^[a-p]{32}$/.test(value));
+  return [...new Set(ids)];
 }
 
-function send(message: Record<string, unknown>, timeoutMs: number): Promise<unknown> {
+// Mission 106 — le Localisateur qui a répondu, gardé pour l'onglet : les messages suivants vont
+// à lui seul. Au premier besoin, ACM_PING part vers chaque identifiant, dans l'ordre de la liste.
+const CHOSEN_KEY = 'acm-localisateur-id';
+let chosenInMemory: string | null = null;
+
+function rememberedId(ids: string[]): string | null {
+  let value = chosenInMemory;
+  try {
+    value = value ?? globalThis.sessionStorage?.getItem(CHOSEN_KEY) ?? null;
+  } catch {
+    // Mémoire de l'onglet refusée : on garde ce qu'on a.
+  }
+  return value != null && ids.includes(value) ? value : null;
+}
+
+function remember(id: string | null): void {
+  chosenInMemory = id;
+  try {
+    if (id) globalThis.sessionStorage?.setItem(CHOSEN_KEY, id);
+    else globalThis.sessionStorage?.removeItem(CHOSEN_KEY);
+  } catch {
+    // Rien de plus à faire : la mémoire de la page suffit.
+  }
+}
+
+// Pour les tests : l'onglet oublie le Localisateur choisi.
+export function forgetChosenLocator(): void {
+  remember(null);
+}
+
+// Le Localisateur à qui parler, et sa réponse au ping. Le gardé d'abord ; muet, il est oublié et
+// la liste est reprise dans l'ordre. Aucun ne répond : null (Localisateur absent, M75).
+async function resolveLocator(): Promise<{ id: string; ping: unknown } | null> {
+  const ids = locatorExtensionIds();
+  const kept = rememberedId(ids);
+  const order = kept ? [kept, ...ids.filter((id) => id !== kept)] : ids;
+  for (const id of order) {
+    const ping = await sendTo(id, { type: 'ACM_PING' }, PING_TIMEOUT_MS);
+    if (ping != null) {
+      remember(id);
+      return { id, ping };
+    }
+  }
+  remember(null);
+  return null;
+}
+
+async function send(message: Record<string, unknown>, timeoutMs: number): Promise<unknown> {
+  const kept = rememberedId(locatorExtensionIds());
+  const id = kept ?? (await resolveLocator())?.id ?? null;
+  return id ? sendTo(id, message, timeoutMs) : null;
+}
+
+function sendTo(
+  extensionId: string,
+  message: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<unknown> {
   return new Promise((resolve) => {
-    const extensionId = locatorExtensionId();
     const runtime = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime;
-    if (!extensionId || typeof runtime?.sendMessage !== 'function') {
+    if (typeof runtime?.sendMessage !== 'function') {
       resolve(null);
       return;
     }
@@ -71,7 +136,7 @@ export function readPing(response: unknown): LocatorAvailability {
 }
 
 export async function pingLocator(): Promise<LocatorAvailability> {
-  return readPing(await send({ type: 'ACM_PING' }, PING_TIMEOUT_MS));
+  return readPing((await resolveLocator())?.ping ?? null);
 }
 
 export type LocatorPropertiesResult =
