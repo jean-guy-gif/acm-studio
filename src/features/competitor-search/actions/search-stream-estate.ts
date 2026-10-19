@@ -309,6 +309,7 @@ export async function searchStreamEstate(
     now,
     // Mission 105 — jamais plus que ce qui vient d'être réservé sur le budget du mois.
     cap: reservation.adverts,
+    filters: settings.filters,
     ...(resumeFrom != null
       ? {
           resume: {

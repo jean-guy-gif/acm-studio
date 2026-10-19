@@ -22,6 +22,12 @@ import {
   type SearchDefaults,
   type SearchSettings,
 } from '@/features/competitor-search/services/search-settings';
+import {
+  appendFilterParams,
+  checkFilters,
+  isDefaultFilters,
+  type SearchFilters,
+} from '@/features/competitor-search/services/search-filters';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 
@@ -486,6 +492,9 @@ export type TieredSearchCounts = {
   unverifiedPosition: number; // sans position fiable à un cran de quartier : écartés, facturés
   // Mission 78 — le même bien renvoyé sous un second identifiant : montré une fois, facturé deux.
   duplicates: number;
+  // Mission 110 — hors des critères réglés (étage, extérieur, terrain, piscine, DPE) : écartés,
+  // facturés. Absent d'une recherche d'avant la mission.
+  outsideCriteria?: number;
 };
 
 // Où reprendre une recherche arrêtée au plafond : le cran (index dans le plan), la requête du cran
@@ -534,6 +543,8 @@ export type TieredSearchInput = {
   cap?: number;
   // Reprise : là où la recherche précédente s'est arrêtée, et ce qu'elle avait trouvé.
   resume?: { cursor: TierCursor; memory: TieredSearchMemory } | null;
+  // Mission 110 — les critères réglés : le DPE part dans la requête, le reste trie la réponse.
+  filters?: SearchFilters | null;
 };
 
 export async function runTieredSearch(input: TieredSearchInput): Promise<TieredSearchOutcome> {
@@ -541,6 +552,8 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
   const cap = input.cap ?? STREAM_ESTATE_BILLING_CAP;
   const base = baseStreamEstateQuery(input.criteria, input.now);
   if (!base.ok) return { ok: false, reason: 'failed' };
+  const filters = isDefaultFilters(input.filters) ? null : input.filters!;
+  appendFilterParams(base.params, filters);
   const start = input.resume?.cursor ?? null;
   const memory = input.resume?.memory ?? null;
 
@@ -556,6 +569,7 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
     otherCommune: 0,
     unverifiedPosition: 0,
     duplicates: 0,
+    outsideCriteria: 0,
   };
   // Écartés par bien distinct : un bien écarté à un cran peut entrer à un cran plus large.
   const otherCommune = new Set<string>();
@@ -665,6 +679,14 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
             unverifiedPosition.add(candidate.key!);
             continue;
           }
+          // Mission 110 — un critère réglé que le bien ne remplit pas l'écarte, partout (il ne le
+          // remplira pas plus à un élargissement) ; une donnée absente le garde, et la carte le dit.
+          const verdict = filters ? checkFilters(filters, candidate) : null;
+          if (verdict?.kind === 'fails') {
+            keys.add(candidate.key!);
+            counts.outsideCriteria = (counts.outsideCriteria ?? 0) + 1;
+            continue;
+          }
           // Mission 78 — le même bien sous un second identifiant : une seule carte, un seul compte.
           if (candidates.some((kept) => isSameStreamEstateProperty(kept, candidate))) {
             keys.add(candidate.key!);
@@ -674,7 +696,11 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
           keys.add(candidate.key!);
           candidates.push({
             ...candidate,
-            streamEstate: { ...candidate.streamEstate!, tier: plan.tier },
+            streamEstate: {
+              ...candidate.streamEstate!,
+              tier: plan.tier,
+              ...(verdict?.kind === 'unknown' ? { criteriaUnknown: verdict.unknown } : {}),
+            },
           });
           report.kept += 1;
         }

@@ -1376,3 +1376,133 @@ describe('Mission 110 — les concurrents montrés au Live', () => {
     expect(ins).toContainEqual(['id', [B]]);
   });
 });
+
+// Mission 110, partie C — les experts.
+describe('les experts (mission 110)', () => {
+  const SEARCH = '55555555-5555-4555-8555-555555555555';
+
+  it('une recherche nommée ne s’écrit jamais avec un prix, des pièces ni une surface', async () => {
+    const { saveNamedSearch } = await import('@/features/competitor-search/actions/saved-searches');
+    const { DEFAULT_SEARCH_SETTINGS, settingsToInput } =
+      await import('@/features/competitor-search/services/search-settings');
+    const input = settingsToInput({
+      ...DEFAULT_SEARCH_SETTINGS,
+      sector: { kind: 'radius', km: 5 },
+      price: { min: 800_000, max: 1_200_000 },
+      rooms: { min: 5, max: 7 },
+      surface: { min: 140, max: 220 },
+      filters: { dpe: ['A', 'B'], minFloor: null, outdoor: null, minLand: 1000, pool: true },
+    });
+
+    state.profile = removed;
+    expect((await saveNamedSearch('Villas Vence', input)).ok).toBe(false);
+    noWrite();
+
+    state.profile = advisor;
+    expect((await saveNamedSearch('   ', input)).ok).toBe(false);
+    noWrite();
+
+    state.respond = (table, method) =>
+      table === 'saved_searches' && method === 'select' ? { data: [] } : {};
+    expect((await saveNamedSearch('Villas Vence', input)).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert saved_searches']);
+    const row = service.calls.find((call) => call.method === 'insert')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(row).toMatchObject({ agency_id: AGENCY, owner_id: advisor.id, name: 'Villas Vence' });
+    expect(Object.keys(row.settings as object).sort()).toEqual(['autoWiden', 'filters', 'sector']);
+    expect(JSON.stringify(row.settings)).not.toMatch(/price|rooms|surface|800000|140/);
+  });
+
+  it('rappeler une recherche : celle de l’appelant, sur un dossier de son agence', async () => {
+    const { applyNamedSearch } =
+      await import('@/features/competitor-search/actions/saved-searches');
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'saved_searches'
+        ? { data: null }
+        : table === 'projects'
+          ? { data: { search_settings: null } }
+          : {};
+    expect((await applyNamedSearch(PROJECT, SEARCH)).ok).toBe(false);
+    noWrite();
+
+    state.respond = (table, method) =>
+      table === 'saved_searches'
+        ? {
+            data: {
+              settings: {
+                sector: { kind: 'commune' },
+                autoWiden: false,
+                filters: { dpe: null, minFloor: 2, outdoor: null, minLand: null, pool: false },
+              },
+            },
+          }
+        : table === 'projects' && method === 'select'
+          ? {
+              data: {
+                search_settings: {
+                  sector: null,
+                  price: { min: 300_000, max: 380_000 },
+                  rooms: null,
+                  surface: null,
+                  autoWiden: true,
+                },
+              },
+            }
+          : { data: { id: PROJECT } };
+    const applied = await applyNamedSearch(PROJECT, SEARCH);
+    expect(applied.ok).toBe(true);
+    const eqs = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(eqs).toContainEqual(['owner_id', advisor.id]);
+    expect(eqs).toContainEqual(['agency_id', AGENCY]);
+    const patch = service.calls.find((call) => call.method === 'update')?.args[0] as {
+      search_settings: Record<string, unknown>;
+    };
+    // Le prix réglé sur CE dossier reste le sien.
+    expect(patch.search_settings.price).toEqual({ min: 300_000, max: 380_000 });
+    expect(patch.search_settings.sector).toEqual({ kind: 'commune' });
+  });
+
+  it('le mode expert : le profil de l’appelant, une vraie valeur, et rien pour un membre retiré', async () => {
+    const { setExpertMode } = await import('@/features/expert-mode/actions/set-expert-mode');
+    state.profile = advisor;
+    expect((await setExpertMode('oui')).ok).toBe(false);
+    noWrite();
+    state.profile = removed;
+    expect((await setExpertMode(true)).ok).toBe(false);
+    noWrite();
+
+    state.profile = advisor;
+    state.respond = (table) => (table === 'profiles' ? { data: { expert_mode: true } } : {});
+    expect(await setExpertMode(true)).toEqual({ ok: true, expert: true });
+    expect(service.writes()).toEqual(['update profiles']);
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
+      expert_mode: true,
+    });
+    const eqs = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(eqs).toContainEqual(['id', advisor.id]);
+  });
+
+  it('l’ordre du Live : refusé une fois le Live commencé, sans autre écriture', async () => {
+    const { reorderLiveCompetitors } =
+      await import('@/features/live-seller/actions/reorder-live-competitors');
+    const { LIVE_ORDER_LOCKED } = await import('@/features/live-seller/services/live-timing');
+    state.profile = advisor;
+    expect((await reorderLiveCompetitors(PROJECT, ['pas-un-identifiant'])).ok).toBe(false);
+    noWrite();
+
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT } }
+        : table === 'reorder_retained_comparables'
+          ? { error: { message: 'live_started' } }
+          : {};
+    expect(await reorderLiveCompetitors(PROJECT, [COMPETITOR])).toEqual({
+      ok: false,
+      error: LIVE_ORDER_LOCKED,
+    });
+    expect(server.writes()).toEqual(['rpc reorder_retained_comparables']);
+  });
+});

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { ExpertModeToggle } from '@/features/expert-mode/components/expert-mode-toggle';
 import { AdvisorProfileForm } from '@/features/advisor-profile/components/advisor-profile-form';
 import { PROPERTY_PHOTO_BUCKET } from '@/features/subject-property-photos/constants';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -36,6 +37,7 @@ export default async function ProfilePage() {
         </p>
       </div>
       <AdvisorProfileForm initialPhone={profile.phone ?? ''} initialPhotoUrl={photoUrl} />
+      <ExpertModeToggle initial={profile.expert_mode} />
     </div>
   );
 }

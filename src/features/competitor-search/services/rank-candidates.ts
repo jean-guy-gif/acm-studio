@@ -459,8 +459,13 @@ export function rankCandidates(
   const closestFirst = (a: RankedCandidate, b: RankedCandidate): number => {
     const judgedA = a.alreadyJudged == null ? 0 : 1;
     const judgedB = b.alreadyJudged == null ? 0 : 1;
+    // Mission 110 — un bien dont un critère réglé n'est pas indiqué vient après ceux qui le
+    // remplissent (décision de Laurent, 19/10).
+    const unknownA = (a.candidate.streamEstate?.criteriaUnknown?.length ?? 0) > 0 ? 1 : 0;
+    const unknownB = (b.candidate.streamEstate?.criteriaUnknown?.length ?? 0) > 0 ? 1 : 0;
     return (
       judgedA - judgedB ||
+      unknownA - unknownB ||
       (b.matchPercent ?? -1) - (a.matchPercent ?? -1) ||
       compareProximity(a.proximity, b.proximity) ||
       b.score - a.score

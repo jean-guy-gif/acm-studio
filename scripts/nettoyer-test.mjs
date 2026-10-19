@@ -34,6 +34,8 @@ const CLEANED = [
   'project_price_positionings',
   'projects',
   'prospecting_oppositions',
+  // Mission 110 — les recherches nommées des comptes de test.
+  'saved_searches',
   // Mission 110 — les liens de la synthèse au vendeur partent avec leurs dossiers.
   'seller_synthesis_links',
   'subject_properties',
@@ -187,6 +189,8 @@ begin
   delete from public.projects where agency_id = v_agency;
   delete from public.listing_observations where agency_id = v_agency;
   delete from public.prospecting_oppositions where agency_id = v_agency;
+  -- Mission 110 — les recherches nommées des comptes de test (les comptes restent).
+  delete from public.saved_searches where agency_id = v_agency;
 end $$`);
 
 const after = countByTable(agency.id);

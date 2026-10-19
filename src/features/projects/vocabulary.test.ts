@@ -3,6 +3,10 @@ import { join, relative } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import {
+  DPE_FILTER_HINT,
+  DPE_NO_FILTER_HINT,
+} from '@/features/competitor-search/services/search-filters';
 import { competitorFacts } from '@/features/prospecting/services/competitor-facts';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { propertyTypeDisplay } from '@/features/subject-property/services/property-type-display';
@@ -196,5 +200,38 @@ describe('des mots qu’un junior comprend (mission 105)', () => {
         /code INSEE|console Stream Estate|URL invalide|Import URL|[Cc]lé invalide|page HTML/,
       ),
     ).toEqual([]);
+  });
+});
+
+// Mission 110, partie C — les textes des experts sont dans le périmètre, et la phrase sous le
+// critère DPE parle comme le reste de l'outil.
+describe('les textes des experts (mission 110)', () => {
+  it('sont lus par le test de vocabulaire', () => {
+    for (const path of [
+      join('features', 'competitor-search', 'services', 'search-filters.ts'),
+      join('features', 'competitor-search', 'services', 'saved-searches.ts'),
+      join('features', 'competitor-search', 'components', 'search-settings-block.tsx'),
+      join('features', 'expert-mode', 'components', 'expert-mode-toggle.tsx'),
+      join('features', 'expert-mode', 'services', 'export-labels.ts'),
+      join('features', 'expert-mode', 'services', 'comparison-csv.ts'),
+      join('features', 'live-seller', 'components', 'live-order-editor.tsx'),
+    ]) {
+      expect(SCREENS).toContain(path);
+    }
+  });
+
+  it('« Les annonces sans DPE publié ne sont pas proposées avec ce critère »', () => {
+    expect(DPE_FILTER_HINT).toBe(
+      'Les annonces sans DPE publié ne sont pas proposées avec ce critère.',
+    );
+    for (const text of [DPE_FILTER_HINT, DPE_NO_FILTER_HINT]) {
+      expect(text).not.toMatch(
+        /[Ee]stimation|comparables|\bcran\b|palier|[Ff]ourchette|Stream Estate/,
+      );
+    }
+    const block = shown(
+      join(SRC, 'features', 'competitor-search', 'components', 'search-settings-block.tsx'),
+    );
+    expect(block).toContain('{DPE_FILTER_HINT}');
   });
 });

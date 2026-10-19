@@ -1,3 +1,4 @@
+import { DEFAULT_SEARCH_FILTERS } from '@/features/competitor-search/services/search-filters';
 import { describe, expect, it } from 'vitest';
 
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
@@ -249,6 +250,8 @@ describe('ce que l’écran envoie est relu', () => {
         rooms: { min: 3, max: 4 },
         surface: { min: 60, max: 80 },
         autoWiden: false,
+        // Mission 110 — un appel sans critères n'en règle aucun.
+        filters: DEFAULT_SEARCH_FILTERS,
       },
     });
     if (read.ok) expect(readSearchSettingsInput(settingsToInput(read.settings))).toEqual(read);

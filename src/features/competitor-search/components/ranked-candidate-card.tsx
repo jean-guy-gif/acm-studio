@@ -134,7 +134,10 @@ export function RankedCandidateCard({
   onToggleSelect,
   onDecision,
   pending,
+  hideHints = false,
 }: {
+  // Mission 110 — le mode expert masque l'explication du pourcentage.
+  hideHints?: boolean;
   ranked: RankedCandidate;
   // Étape 2 — la place de l'annonce dans l'ordre « les plus proches » (1 = la plus proche).
   position: number;
@@ -235,7 +238,7 @@ export function RankedCandidateCard({
         {/* Mission 97 — ce que veut dire le %, et, d'un toucher, ce qui a pesé (calcul M71). */}
         {ranked.matchPercent != null ? (
           <div className="flex flex-col gap-1 text-xs text-zinc-500 stage:text-white/60">
-            <span>{MATCH_SUMMARY_LINE}.</span>
+            {hideHints ? null : <span>{MATCH_SUMMARY_LINE}.</span>}
             {detailOpen ? (
               <ul data-testid="match-detail" className="flex flex-col gap-0.5">
                 {(ranked.matchDetail ?? []).map((line) => (
