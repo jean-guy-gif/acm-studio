@@ -1,3 +1,9 @@
+import {
+  applyNamedSearch,
+  deleteNamedSearch,
+  saveNamedSearch,
+} from '@/features/competitor-search/actions/saved-searches';
+import { getSavedSearches } from '@/features/competitor-search/queries/get-saved-searches';
 import { saveSearchDefaults } from '@/features/competitor-search/actions/save-search-defaults';
 import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
 import Link from 'next/link';
@@ -99,6 +105,10 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
       saveAction: saveSearchSettings.bind(null, projectId),
       advisorDefaults: parseSearchSettings((await getProfile())?.search_defaults),
       saveDefaultsAction: saveSearchDefaults,
+      savedSearches: await getSavedSearches(),
+      saveNamedAction: saveNamedSearch,
+      applyNamedAction: applyNamedSearch.bind(null, projectId),
+      deleteNamedAction: deleteNamedSearch,
     };
   }
 
@@ -134,6 +144,7 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           budgetReached={streamEstateAvailable && budget?.reached === true}
           budgetNotice={budgetNotice}
           searchSettings={searchSettings}
+          expertMode={(await getProfile())?.expert_mode === true}
         />
       ) : (
         <div

@@ -199,6 +199,56 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(block.locator('[data-setting-custom="true"]')).toHaveCount(0);
   });
 
+  // Mission 110 — des critères de plus, et une recherche nommée qui ne garde jamais le prix, les
+  // pièces ni la surface. Toujours sans cliquer « Chercher les concurrents ».
+  await test.step('Critères DPE et étage, recherche nommée enregistrée puis rappelée', async () => {
+    const block = page.locator('[data-search-settings]');
+    const summary = block.locator('summary');
+    const dpe = block.getByTestId('search-filter-dpe');
+    await dpe.getByLabel('C', { exact: true }).check();
+    await dpe.getByLabel('D', { exact: true }).check();
+    await block.getByLabel('Étage minimum').fill('2');
+    await block.getByLabel('Pièces : de').fill('3');
+    await block.getByLabel('Pièces : à').fill('4');
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(block.getByText('Réglages enregistrés sur ce dossier.')).toBeVisible();
+    await expect(summary).toContainText('DPE C, D');
+    await expect(summary).toContainText('2e étage ou plus');
+
+    const named = block.getByTestId('named-searches');
+    await named.getByLabel('Nom de la recherche').fill(`Appartements Nice ${RUN_NUMBER}`);
+    await named.getByRole('button', { name: 'Enregistrer cette recherche' }).click();
+    const saved = named.locator('li').filter({ hasText: `Appartements Nice ${RUN_NUMBER}` });
+    await expect(saved).toContainText('DPE C, D');
+    await expect(saved).toContainText('2e étage ou plus');
+    // Ni prix, ni pièces, ni surface dans ce qu'elle garde.
+    await expect(saved).not.toContainText(/pièce|m²|€/);
+
+    // Remis par défaut, puis rappelée : ses critères reviennent, pas les pièces du dossier.
+    for (let left = 3; left > 0; left -= 1) {
+      await block.getByRole('button', { name: 'Remettre par défaut' }).first().click();
+    }
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(summary).not.toContainText('réglé par vous');
+    await saved.getByRole('button', { name: 'Appliquer à ce dossier' }).click();
+    await expect(
+      named.getByText('Recherche appliquée et enregistrée sur ce dossier.'),
+    ).toBeVisible();
+    await expect(summary).toContainText('DPE C, D');
+    await expect(summary).toContainText('3 pièces');
+    await expect(summary).not.toContainText('3 à 4 pièces');
+
+    // Retirée, et les réglages remis par défaut pour la suite du parcours.
+    await saved.getByRole('button', { name: 'Retirer' }).click();
+    await expect(named.getByText('Recherche retirée.')).toBeVisible();
+    await expect(saved).toHaveCount(0);
+    for (let left = 2; left > 0; left -= 1) {
+      await block.getByRole('button', { name: 'Remettre par défaut' }).first().click();
+    }
+    await block.getByRole('button', { name: 'Enregistrer les réglages' }).click();
+    await expect(summary).not.toContainText('réglé par vous');
+  });
+
   await test.step('Trois concurrents saisis à la main', async () => {
     for (const competitor of COMPETITORS) {
       await page.goto(`/builder/${projectId}/comparables/new`);
@@ -239,6 +289,59 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
+  });
+
+  // Mission 110 — le mode expert, allumé dans « Mon profil » puis éteint, quoi qu'il arrive.
+  await test.step('Mode expert : rappels masqués, ordre du Live, export du comparatif', async () => {
+    const toggle = async (on: boolean) => {
+      await page.goto('/profil');
+      const box = page.getByTestId('expert-mode').getByRole('checkbox');
+      if ((await box.isChecked()) !== on) {
+        await box.click();
+        await expect(page.getByTestId('expert-mode').getByText('Enregistrement…')).toHaveCount(0);
+      }
+      await expect(box).toBeChecked({ checked: on });
+    };
+    await toggle(true);
+    try {
+      await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+      await expect(page.getByTestId('real-dossier-note')).toHaveCount(0);
+      const order = page.getByTestId('live-order');
+      const entries = order.getByTestId('live-order-entry');
+      await expect(entries).toHaveCount(COMPETITORS.length);
+      const labels = order.getByTestId('live-order-label');
+      const before = await labels.allInnerTexts();
+      await order
+        .getByRole('button', { name: /^Descendre / })
+        .first()
+        .click();
+      await expect(order.getByText('Ordre enregistré.')).toBeVisible();
+      await page.reload();
+      expect(await labels.allInnerTexts()).toEqual([before[1], before[0], ...before.slice(2)]);
+      // Remis dans l'ordre d'origine : le Live du parcours compte sur lui.
+      await order
+        .getByRole('button', { name: /^Monter / })
+        .nth(0)
+        .click();
+      await expect(order.getByText('Ordre enregistré.')).toBeVisible();
+
+      const href = await page.getByTestId('export-comparison').getAttribute('href');
+      const response = await page.request.get(href!);
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toContain('text/csv');
+      const csv = await response.text();
+      expect(csv).toContain('Rang;Au Live;Type');
+      expect(csv.trim().split('\r\n')).toHaveLength(COMPETITORS.length + 2);
+      for (const competitor of COMPETITORS) expect(csv).not.toContain(competitor.title);
+    } finally {
+      await toggle(false);
+    }
+    // Hors mode expert : ni ordre, ni export, et le rappel revient.
+    await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+    await expect(page.getByTestId('live-order')).toHaveCount(0);
+    await expect(page.getByTestId('export-comparison')).toHaveCount(0);
+    await expect(page.getByTestId('real-dossier-note')).toBeVisible();
+    expect((await page.request.get(`/builder/${projectId}/export-comparatif`)).status()).toBe(404);
   });
 
   await test.step('Live, chaque écran avec une réponse', async () => {

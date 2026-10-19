@@ -27,8 +27,9 @@ export function isChromeBrowser(userAgent: string): boolean {
 }
 
 // Où mène l'entrée de l'application : « Bienvenue » tant que le conseiller n'a aucun dossier.
-export function homeHref(ownDossierCount: number): string {
-  return ownDossierCount === 0 ? '/bienvenue' : '/builder';
+// Mission 110 — jamais en mode expert : ses dossiers (« Aide » reste au menu).
+export function homeHref(ownDossierCount: number, expert = false): string {
+  return ownDossierCount === 0 && !expert ? '/bienvenue' : '/builder';
 }
 
 // Mission 106 — la page du Localisateur Academia sur le Chrome Web Store : c'est la version

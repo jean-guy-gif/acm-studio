@@ -92,7 +92,10 @@ export default function ConfidentialitePage() {
               s’est passé depuis {OWNER_ADDRESS_RETENTION_YEARS} ans — ni dossier remis, ni
               rendez-vous, ni réponse du propriétaire, ni correction de l’adresse — est effacée
               automatiquement, chaque nuit, avec sa position ; l’annonce publique et ses
-              caractéristiques restent.
+              caractéristiques restent. En mode expert, le conseiller peut exporter le comparatif
+              d’un dossier dans un tableur, pour son propre usage : l’adresse d’un concurrent n’y
+              figure que s’il l’a lui-même confirmée ou saisie, et ce fichier, une fois enregistré
+              sur son ordinateur, relève de l’agence.
             </li>
             <li>
               Les dossiers de prospection : quand un mandat est signé, le conseiller peut préparer

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import {
   alertError,
@@ -23,6 +23,14 @@ import {
   type SearchSettingsInput,
 } from '@/features/competitor-search/services/search-settings';
 import { STREAM_ESTATE_TARGET } from '@/features/competitor-search/services/stream-estate-tiers';
+import {
+  isDefaultFilters,
+  OUTDOOR_CHOICE_LABELS,
+  OUTDOOR_CHOICES,
+  type SearchFiltersInput,
+} from '@/features/competitor-search/services/search-filters';
+import type { SavedSearch } from '@/features/competitor-search/services/saved-searches';
+import { DPE_CLASSES } from '@/features/dpe/services/dpe';
 
 const option =
   'flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand-deep has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 border-zinc-200 text-zinc-700 stage:border-white/15 stage:text-white/80 stage:has-[:checked]:bg-brand/15 stage:has-[:checked]:text-white';
@@ -35,6 +43,18 @@ export const KEEP_AS_DEFAULTS_LABEL =
   'Garder ce secteur et l’élargissement pour mes prochains dossiers';
 export const SEARCH_DEFAULTS_SAVED =
   'Secteur et élargissement gardés : ils s’appliqueront à vos prochains dossiers.';
+// Mission 110 — une recherche nommée ne garde ni prix, ni pièces, ni surface : le libellé le dit.
+export const SAVE_NAMED_SEARCH_LABEL = 'Enregistrer cette recherche';
+export const NAMED_SEARCH_HINT =
+  'Garde le secteur, l’élargissement et les critères ci-dessus — jamais le prix, les pièces ni la surface, propres à chaque bien.';
+
+const NO_FILTERS: SearchFiltersInput = {
+  dpe: [],
+  minFloor: '',
+  outdoor: [],
+  minLand: '',
+  pool: false,
+};
 
 type Props = {
   // Ce qui est enregistré sur le dossier, et ce que le conseiller est en train de saisir.
@@ -51,6 +71,12 @@ type Props = {
   advisorDefaults?: SearchSettings | null;
   defaultsNote?: string | null;
   onSaveDefaults?: () => void;
+  // Mission 110 — les recherches nommées du conseiller.
+  savedSearches?: SavedSearch[];
+  namedNote?: string | null;
+  onSaveNamed?: (name: string) => void;
+  onApplyNamed?: (id: string) => void;
+  onDeleteNamed?: (id: string) => void;
 };
 
 function Row({
@@ -106,15 +132,27 @@ export function SearchSettingsBlock({
   advisorDefaults = null,
   defaultsNote = null,
   onSaveDefaults,
+  savedSearches = [],
+  namedNote = null,
+  onSaveNamed,
+  onApplyNamed,
+  onDeleteNamed,
 }: Props) {
   const set = (patch: Partial<SearchSettingsInput>) => onChange({ ...input, ...patch });
+  const filters = input.filters ?? NO_FILTERS;
+  const setFilters = (patch: Partial<SearchFiltersInput>) =>
+    set({ filters: { ...filters, ...patch } });
+  const toggle = (list: string[], value: string): string[] =>
+    list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+  const [searchName, setSearchName] = useState('');
   const locked = disabled || saving;
   const anyCustom =
     saved.sector != null ||
     saved.price != null ||
     saved.rooms != null ||
     saved.surface != null ||
-    !saved.autoWiden;
+    !saved.autoWiden ||
+    !isDefaultFilters(saved.filters);
   // Mission 108 — des réglages enregistrés identiques à ceux que le conseiller garde par défaut.
   const fromAdvisorDefaults =
     anyCustom &&
@@ -284,6 +322,113 @@ export function SearchSettingsBlock({
             ))}
           </div>
         </Row>
+        {/* Mission 110 — des critères de plus. Le DPE se filtre chez Stream Estate ; l'étage,
+            l'extérieur, le terrain et la piscine trient les biens reçus, sans repayer : un bien
+            dont la donnée manque est gardé, après les autres, et sa carte le dit. */}
+        <Row
+          label="DPE"
+          custom={filters.dpe.length > 0}
+          onReset={() => setFilters({ dpe: [] })}
+          disabled={locked}
+        >
+          <div className="flex flex-wrap gap-2" data-testid="search-filter-dpe">
+            {DPE_CLASSES.map((value) => (
+              <label key={value} className={option}>
+                <input
+                  type="checkbox"
+                  checked={filters.dpe.includes(value)}
+                  disabled={locked}
+                  onChange={() => setFilters({ dpe: toggle(filters.dpe, value) })}
+                  className="accent-brand"
+                />
+                {value}
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500 stage:text-white/50">
+            Aucune classe cochée : toutes, et les biens sans DPE. Cochées : seuls les biens qui
+            affichent l’une d’elles.
+          </p>
+        </Row>
+        <Row
+          label="Étage minimum (appartement)"
+          custom={filters.minFloor !== ''}
+          onReset={() => setFilters({ minFloor: '' })}
+          disabled={locked}
+        >
+          <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-600 stage:text-white/70">
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label="Étage minimum"
+              value={filters.minFloor}
+              placeholder="—"
+              disabled={locked}
+              onChange={(event) => setFilters({ minFloor: event.target.value })}
+              className={`${inputBase} w-20`}
+            />
+            <span>e étage ou plus (0 : rez-de-chaussée)</span>
+          </div>
+        </Row>
+        <Row
+          label="Extérieur"
+          custom={filters.outdoor.length > 0}
+          onReset={() => setFilters({ outdoor: [] })}
+          disabled={locked}
+        >
+          <div className="flex flex-wrap gap-2">
+            {OUTDOOR_CHOICES.map((value) => (
+              <label key={value} className={option}>
+                <input
+                  type="checkbox"
+                  checked={filters.outdoor.includes(value)}
+                  disabled={locked}
+                  onChange={() => setFilters({ outdoor: toggle(filters.outdoor, value) })}
+                  className="accent-brand"
+                />
+                {OUTDOOR_CHOICE_LABELS[value]}
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500 stage:text-white/50">Au moins l’un des cochés.</p>
+        </Row>
+        <Row
+          label="Terrain minimum (maison)"
+          custom={filters.minLand !== ''}
+          onReset={() => setFilters({ minLand: '' })}
+          disabled={locked}
+        >
+          <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-600 stage:text-white/70">
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label="Terrain minimum"
+              value={filters.minLand}
+              placeholder="—"
+              disabled={locked}
+              onChange={(event) => setFilters({ minLand: event.target.value })}
+              className={`${inputBase} w-28`}
+            />
+            <span>m² ou plus</span>
+          </div>
+        </Row>
+        <Row
+          label="Piscine"
+          custom={filters.pool}
+          onReset={() => setFilters({ pool: false })}
+          disabled={locked}
+        >
+          <label className={`${option} w-fit`}>
+            <input
+              type="checkbox"
+              checked={filters.pool}
+              disabled={locked}
+              onChange={() => setFilters({ pool: !filters.pool })}
+              className="accent-brand"
+            />
+            Avec piscine
+          </label>
+        </Row>
         <p className={hintText}>
           Un critère réglé ne s’élargit plus : la recherche n’élargit que ce que vous laissez
           automatique. Les réglages valent pour « Chercher les concurrents », pas pour vos
@@ -324,6 +469,70 @@ export function SearchSettingsBlock({
           <p role="status" className={hintText}>
             {defaultsNote}
           </p>
+        ) : null}
+        {onSaveNamed ? (
+          <div
+            className="flex flex-col gap-2 border-t border-zinc-200/80 pt-4 stage:border-white/10"
+            data-testid="named-searches"
+          >
+            <span className={fieldLabel}>Mes recherches</span>
+            {savedSearches.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {savedSearches.map((search) => (
+                  <li key={search.id} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-medium text-zinc-800 stage:text-white">
+                      {search.name}
+                    </span>
+                    <span className={hintText}>— {search.summary}</span>
+                    <button
+                      type="button"
+                      disabled={locked}
+                      onClick={() => onApplyNamed?.(search.id)}
+                      className={`${btnSecondary} px-2.5 py-1 text-xs`}
+                    >
+                      Appliquer à ce dossier
+                    </button>
+                    <button
+                      type="button"
+                      disabled={locked}
+                      onClick={() => onDeleteNamed?.(search.id)}
+                      className={`${link} text-xs hover:underline`}
+                    >
+                      Retirer
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={hintText}>Aucune recherche enregistrée.</p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                aria-label="Nom de la recherche"
+                value={searchName}
+                maxLength={60}
+                placeholder="Villas Vence"
+                disabled={locked}
+                onChange={(event) => setSearchName(event.target.value)}
+                className={`${inputBase} w-56`}
+              />
+              <button
+                type="button"
+                disabled={locked || searchName.trim() === ''}
+                onClick={() => onSaveNamed(searchName)}
+                className={`${btnSecondary} px-3 py-1.5 text-sm`}
+              >
+                {SAVE_NAMED_SEARCH_LABEL}
+              </button>
+            </div>
+            <p className="text-xs text-zinc-500 stage:text-white/50">{NAMED_SEARCH_HINT}</p>
+            {namedNote ? (
+              <p role="status" className={hintText}>
+                {namedNote}
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </details>

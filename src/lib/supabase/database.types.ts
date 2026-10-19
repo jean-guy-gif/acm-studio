@@ -1065,6 +1065,7 @@ export type Database = {
           agency_id: string
           created_at: string
           email: string
+          expert_mode: boolean
           first_name: string
           id: string
           last_name: string
@@ -1079,6 +1080,7 @@ export type Database = {
           agency_id: string
           created_at?: string
           email: string
+          expert_mode?: boolean
           first_name: string
           id: string
           last_name: string
@@ -1093,6 +1095,7 @@ export type Database = {
           agency_id?: string
           created_at?: string
           email?: string
+          expert_mode?: boolean
           first_name?: string
           id?: string
           last_name?: string
@@ -1432,6 +1435,51 @@ export type Database = {
           {
             foreignKeyName: "prospecting_oppositions_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_searches: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          settings: Json
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_searches_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_searches_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1975,6 +2023,10 @@ export type Database = {
           p_reason: string
         }
         Returns: Json
+      }
+      reorder_retained_comparables: {
+        Args: { p_ids: string[]; p_project_id: string }
+        Returns: undefined
       }
       reserve_stream_estate_budget: {
         Args: {

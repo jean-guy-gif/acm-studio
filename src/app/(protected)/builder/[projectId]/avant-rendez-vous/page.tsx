@@ -11,6 +11,7 @@ import {
   backLink,
   badgeRejected,
   badgeSelected,
+  btnSecondary,
   hintText,
   kickerLabel,
   pageSubtitle,
@@ -32,10 +33,17 @@ import {
 } from '@/features/before-meeting/services/live-sequence';
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
+import {
+  EXPORT_COMPARISON_HINT,
+  EXPORT_COMPARISON_LABEL,
+} from '@/features/expert-mode/services/export-labels';
+import { LiveOrderEditor } from '@/features/live-seller/components/live-order-editor';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { LiveShortlistPicker } from '@/features/live-seller/components/live-shortlist-picker';
 import { getLiveShortlist } from '@/features/live-seller/queries/get-live-shortlist';
 import { LIVE_SHORTLIST_SIZE } from '@/features/live-seller/services/live-shortlist';
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
+import { getProfile } from '@/lib/auth/get-profile';
 import { REAL_DOSSIER_NOTE } from '@/features/live-seller/services/live-launch';
 import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
 import { canChangeLiveRhythm } from '@/features/live-seller/services/live-timing';
@@ -233,6 +241,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
   // sont nommés ; les concurrents écartés du calcul sont comptés.
   const launch = await getLiveLaunchInfo(projectId);
+  // Mission 110 — le mode expert masque les rappels d'entraînement, et choisit l'ordre du Live.
+  const expert = (await getProfile())?.expert_mode === true;
   const shortlist =
     launch && !launch.resume.started && retained.length > LIVE_SHORTLIST_SIZE
       ? await getLiveShortlist(projectId)
@@ -423,6 +433,42 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         />
       ) : null}
 
+      {/* Mission 110 — mode expert : le comparatif en tableur, pour le conseiller seul. */}
+      {expert && retained.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href={`/builder/${projectId}/export-comparatif`}
+            download
+            className={`${btnSecondary} px-3 py-1.5 text-sm`}
+            data-testid="export-comparison"
+          >
+            {EXPORT_COMPARISON_LABEL}
+          </a>
+          <span className="text-xs text-zinc-500 stage:text-white/55">
+            {EXPORT_COMPARISON_HINT}
+          </span>
+        </div>
+      ) : null}
+
+      {/* Mission 110 — mode expert : l'ordre de passage des concurrents au Live, par
+          glisser-déposer, tant que le Live n'a pas commencé. */}
+      {expert && !rhythmLocked && retained.length > 1 ? (
+        <LiveOrderEditor
+          projectId={projectId}
+          entries={retained.map((comparable) => ({
+            id: comparable.id,
+            label: neutralComparableLabel({
+              propertyType: comparable.property_type,
+              roomsCount: comparable.rooms_count,
+              surfaceArea: comparable.surface_area,
+              city: comparable.city,
+              district: comparable.district,
+            }),
+            shown: comparable.excluded_from_live !== true,
+          }))}
+        />
+      ) : null}
+
       <SellerSequenceCard
         sequence={sequence}
         notes={notes}
@@ -441,7 +487,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 secondary
               />
               {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
-              {!launch.isExample && !launch.resume.started ? (
+              {!launch.isExample && !launch.resume.started && !expert ? (
                 <p
                   data-testid="real-dossier-note"
                   className="max-w-xs text-right text-xs text-zinc-500 stage:text-white/55"

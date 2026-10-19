@@ -34,6 +34,8 @@ const CLEANED = [
   'project_price_positionings',
   'projects',
   'prospecting_oppositions',
+  // Mission 110 — les recherches nommées des comptes de test.
+  'saved_searches',
   // Mission 110 — les liens de la synthèse au vendeur partent avec leurs dossiers.
   'seller_synthesis_links',
   'subject_properties',

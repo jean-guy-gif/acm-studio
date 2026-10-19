@@ -1,3 +1,4 @@
+import type { FilterName } from '@/features/competitor-search/services/search-filters';
 // Mission 27 — Recherche de concurrents sur les portails.
 // Suggestions éphémères : rien n'est persisté tant que le conseiller n'a pas
 // importé puis enregistré un bien via la création existante.
@@ -166,6 +167,9 @@ export type StreamEstateFacts = {
   // Mission 78 — l'annonce d'origine a été revue il y a plus de 7 jours (admise jusqu'à 21 jours
   // aux crans à pièces libres) : nombre de jours entiers, que la carte dit. Absent sinon.
   staleOriginDays?: number;
+  // Mission 110 — les critères réglés dont la donnée manque sur ce bien : il est gardé, après les
+  // autres, et la carte dit « Étage non indiqué ». Absent quand tout est connu.
+  criteriaUnknown?: FilterName[];
 };
 
 // Mission 71 — les crans de la recherche Stream Estate, dans l'ordre (décision de Laurent, 06/10) :

@@ -1,3 +1,4 @@
+import { UNKNOWN_LABELS } from '@/features/competitor-search/services/search-filters';
 import { DPE_MATCH_POINTS, dpeClass, dpeMatchPoints } from '@/features/dpe/services/dpe';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 import type {
@@ -284,5 +285,9 @@ export function gapLine(
   // crans à pièces libres) : la carte le dit.
   const stale = candidate.streamEstate?.staleOriginDays;
   if (stale != null) parts.push(`Annonce vue il y a ${stale} jours`);
+  // Mission 110 — un critère réglé dont la donnée manque : « Étage non indiqué ».
+  for (const name of candidate.streamEstate?.criteriaUnknown ?? []) {
+    if (name in UNKNOWN_LABELS) parts.push(UNKNOWN_LABELS[name]);
+  }
   return parts.length > 0 ? parts.join(' · ') : null;
 }

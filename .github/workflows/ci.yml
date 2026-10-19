@@ -137,6 +137,12 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/live_plus_court.sql
 
+      # Mission 110 — les experts : recherches nommées, mode expert, ordre du Live.
+      - name: Les experts
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/les_experts.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes
