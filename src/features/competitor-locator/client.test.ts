@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  locatorExtensionId,
+  fetchLocatorProperties,
+  forgetChosenLocator,
+  locatorExtensionIds,
   pingLocator,
   readOpen,
   readPing,
@@ -79,12 +81,22 @@ describe('identifiant du Localisateur', () => {
 
   it('vient de NEXT_PUBLIC_LOCALISATEUR_ID ; absent ou malformé : pas de Localisateur', async () => {
     vi.stubEnv('NEXT_PUBLIC_LOCALISATEUR_ID', '');
-    expect(locatorExtensionId()).toBeNull();
+    expect(locatorExtensionIds()).toEqual([]);
     expect(await pingLocator()).toBe('unavailable');
     vi.stubEnv('NEXT_PUBLIC_LOCALISATEUR_ID', 'pas-un-identifiant');
-    expect(locatorExtensionId()).toBeNull();
+    expect(locatorExtensionIds()).toEqual([]);
+    // Une seule valeur, comme avant la mission 106.
     vi.stubEnv('NEXT_PUBLIC_LOCALISATEUR_ID', 'abcdefghijklmnopabcdefghijklmnop');
-    expect(locatorExtensionId()).toBe('abcdefghijklmnopabcdefghijklmnop');
+    expect(locatorExtensionIds()).toEqual(['abcdefghijklmnopabcdefghijklmnop']);
+  });
+
+  // Mission 106 — une liste : le Store d'abord, puis le mode développeur.
+  it('accepte une liste, ignore un identifiant malformé et les doublons', () => {
+    expect(
+      locatorExtensionIds(
+        ' pppppppppppppppppppppppppppppppp , mal-forme, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,pppppppppppppppppppppppppppppppp',
+      ),
+    ).toEqual(['pppppppppppppppppppppppppppppppp', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']);
   });
 
   it('n’est écrit en dur nulle part dans src/', () => {
@@ -102,5 +114,85 @@ describe('identifiant du Localisateur', () => {
       EXTENSION_ID.test(readFileSync(path, 'utf8')),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+// Mission 106 — ACM parle au Localisateur installé, qu'il vienne du Store ou du mode développeur.
+describe('plusieurs Localisateurs possibles', () => {
+  const STORE = 'pppppppppppppppppppppppppppppppp';
+  const DEV = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  const sent: { id: string; type: unknown }[] = [];
+
+  // Chrome factice : seuls les identifiants « installés » répondent ; les autres renseignent
+  // `lastError`, comme une extension absente.
+  function installed(...ids: string[]) {
+    const runtime: { lastError?: unknown; sendMessage: unknown } = {
+      sendMessage: (id: string, message: { type: unknown }, callback: (r: unknown) => void) => {
+        sent.push({ id, type: message.type });
+        if (ids.includes(id)) {
+          runtime.lastError = undefined;
+          callback(
+            message.type === 'ACM_PING' ? { ok: true, partage: true } : { ok: true, biens: {} },
+          );
+        } else {
+          runtime.lastError = { message: 'Could not establish connection' };
+          callback(undefined);
+        }
+      },
+    };
+    vi.stubGlobal('chrome', { runtime });
+  }
+
+  beforeEach(() => {
+    sent.length = 0;
+    forgetChosenLocator();
+    vi.stubEnv('NEXT_PUBLIC_LOCALISATEUR_ID', `${STORE},${DEV}`);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('le premier ne répond pas, le second répond : il est gardé pour la suite', async () => {
+    installed(DEV);
+    expect(await pingLocator()).toBe('ready');
+    expect(sent).toEqual([
+      { id: STORE, type: 'ACM_PING' },
+      { id: DEV, type: 'ACM_PING' },
+    ]);
+    sent.length = 0;
+    expect(await fetchLocatorProperties(['https://www.seloger.com/annonces/1.htm'])).toEqual({
+      ok: true,
+      properties: {},
+    });
+    // Le message suivant va au seul Localisateur qui a répondu.
+    expect(sent).toEqual([{ id: DEV, type: 'ACM_BIENS_PAR_URL' }]);
+  });
+
+  it('le Store répond : c’est lui, le développeur n’est pas interrogé', async () => {
+    installed(STORE, DEV);
+    expect(await pingLocator()).toBe('ready');
+    expect(sent).toEqual([{ id: STORE, type: 'ACM_PING' }]);
+  });
+
+  it('aucun ne répond : Localisateur absent, comme avant', async () => {
+    installed();
+    expect(await pingLocator()).toBe('unavailable');
+    expect(await fetchLocatorProperties(['https://www.seloger.com/annonces/1.htm'])).toEqual({
+      ok: false,
+      reason: 'error',
+    });
+  });
+
+  it('un Localisateur gardé qui devient muet est oublié, et la liste est reprise', async () => {
+    installed(DEV);
+    await pingLocator();
+    installed(STORE);
+    sent.length = 0;
+    expect(await pingLocator()).toBe('ready');
+    expect(sent).toEqual([
+      { id: DEV, type: 'ACM_PING' },
+      { id: STORE, type: 'ACM_PING' },
+    ]);
   });
 });

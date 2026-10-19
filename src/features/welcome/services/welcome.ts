@@ -30,3 +30,16 @@ export function isChromeBrowser(userAgent: string): boolean {
 export function homeHref(ownDossierCount: number): string {
   return ownDossierCount === 0 ? '/bienvenue' : '/builder';
 }
+
+// Mission 106 — la page du Localisateur Academia sur le Chrome Web Store : c'est la version
+// distribuée aux conseillers, pont vers ACM compris (jamais le build propre à ACM). Une adresse
+// publique de page ; l'identifiant qui sert à lui parler reste lu dans l'environnement (M75).
+export const LOCALISATEUR_STORE_URL =
+  'https://chromewebstore.google.com/detail/fpnimjhhiagpfjodphjddobegnelckeg';
+
+// La ligne se coche dès qu'un Localisateur répond, partage allumé ou non.
+export function locatorInstalled(
+  availability: 'ready' | 'sharing_off' | 'unavailable' | null,
+): boolean {
+  return availability === 'ready' || availability === 'sharing_off';
+}
