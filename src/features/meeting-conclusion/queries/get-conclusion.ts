@@ -1,3 +1,4 @@
+import { parseObjections } from '@/features/meeting-conclusion/services/objections';
 import 'server-only';
 
 import { getProfile } from '@/lib/auth/get-profile';
@@ -19,7 +20,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   const { data } = await supabase
     .from('project_meeting_conclusions')
     .select(
-      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, mandate_type, signed_at, concluded_at, outcome_changed_at',
+      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, objections, objection_note, mandate_type, signed_at, concluded_at, outcome_changed_at',
     )
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
@@ -49,6 +50,8 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
     followUpMotive: isFollowUpMotive(data.follow_up_motive) ? data.follow_up_motive : null,
     followUpMotiveDetail: data.follow_up_motive_detail,
     nextFollowUpOn: data.next_follow_up_on,
+    objections: parseObjections(data.objections),
+    objectionNote: data.objection_note,
     mandateType: isMandateType(data.mandate_type) ? data.mandate_type : null,
     signedAt: data.signed_at,
     concludedAt: data.concluded_at,

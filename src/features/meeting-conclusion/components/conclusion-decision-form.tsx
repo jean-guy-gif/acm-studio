@@ -9,6 +9,7 @@ import type {
   ConclusionOutcome,
   FollowUpMotive,
   MandateType,
+  Objection,
 } from '@/features/meeting-conclusion/types';
 
 // Mission 53/54 — écran conseiller, jamais vu du vendeur : « Comment s'est conclu ce
@@ -21,6 +22,8 @@ export function ConclusionDecisionForm({
   initialMandateType,
   initialMotive,
   initialMotiveDetail,
+  initialObjections = [],
+  initialObjectionNote = null,
   knownPrice,
 }: {
   projectId: string;
@@ -31,6 +34,8 @@ export function ConclusionDecisionForm({
   // Mission 96 — le motif de relance déjà enregistré.
   initialMotive: FollowUpMotive | null;
   initialMotiveDetail: string | null;
+  initialObjections?: Objection[];
+  initialObjectionNote?: string | null;
   knownPrice: number | null;
 }) {
   const [outcome, setOutcome] = useState<ConclusionOutcome | null>(initialOutcome);
@@ -60,6 +65,8 @@ export function ConclusionDecisionForm({
         initialMandateType={initialMandateType}
         initialMotive={initialMotive}
         initialMotiveDetail={initialMotiveDetail}
+        initialObjections={initialObjections}
+        initialObjectionNote={initialObjectionNote}
         knownPrice={knownPrice}
         legend={'Comment s’est conclu ce rendez-vous ?'}
       />

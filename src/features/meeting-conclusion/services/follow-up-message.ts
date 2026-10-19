@@ -1,4 +1,4 @@
-import type { FollowUpMotive } from '@/features/meeting-conclusion/types';
+import type { FollowUpMotive, Objection } from '@/features/meeting-conclusion/types';
 import { formatEuro } from '@/lib/format';
 
 // Mission 96 — le message de relance : un texte court, prêt à copier pour un SMS ou un e-mail.
@@ -18,6 +18,8 @@ export type FollowUpMessageInput = {
   commercializationPrice: number | null;
   // Ce qui lui manquait pour être à 10 (M85) : sa réponse, telle qu'il l'a donnée.
   launchReadinessMissing: string | null;
+  // Mission 110 — ce qui freine le vendeur, coché à la conclusion : le message en part.
+  objections?: Objection[];
   // Combien des concurrents vus ensemble ont baissé leur prix depuis (prix révélé → prix actuel).
   priceDropsSinceMeeting: number;
   advisorFirstName: string | null;
@@ -43,6 +45,23 @@ function sellerWords(input: FollowUpMessageInput): string[] {
     );
   }
   return lines;
+}
+
+// Mission 110 — une phrase par frein coché, factuelle, sans pression ni urgence (M85, M96). La
+// ligne libre du conseiller n'y entre pas : c'est sa note de travail.
+const OBJECTION_LINES: Record<Objection, string> = {
+  price:
+    'Sur le prix, je peux reprendre avec vous les biens que nous avons vus ensemble, à tête reposée.',
+  exclusivity:
+    'Si l’exclusivité vous fait hésiter, je peux vous expliquer ce qu’elle change concrètement pour la vente de votre bien.',
+  timing: 'Pour le calendrier, nous pouvons caler la mise en vente sur votre projet.',
+  other_agency:
+    'Si vous rencontrez d’autres agences, je reste disponible pour répondre à vos questions.',
+  not_ready: 'Rien ne presse : je reste à votre disposition quand votre projet sera prêt.',
+};
+
+function objectionLines(objections: Objection[] | undefined): string[] {
+  return (objections ?? []).map((objection) => OBJECTION_LINES[objection]);
 }
 
 function priceDropsLine(count: number): string | null {
@@ -80,6 +99,7 @@ export function buildFollowUpMessage(input: FollowUpMessageInput): string {
   const body = [
     opening,
     ...sellerWords(input),
+    ...objectionLines(input.objections),
     priceDropsLine(input.priceDropsSinceMeeting),
     motiveLine(input),
   ].filter((line): line is string => Boolean(line));

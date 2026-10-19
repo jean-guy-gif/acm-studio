@@ -14,12 +14,16 @@ import {
   FOLLOW_UP_MOTIVE_LABELS,
   MANDATE_TYPES,
   MANDATE_TYPE_LABELS,
+  OBJECTION_LABELS,
+  OBJECTION_NOTE_MAX,
+  OBJECTIONS,
   OUTCOME_LABELS,
 } from '@/features/meeting-conclusion/types';
 import type {
   ConclusionOutcome,
   FollowUpMotive,
   MandateType,
+  Objection,
 } from '@/features/meeting-conclusion/types';
 
 const choiceBase =
@@ -51,6 +55,8 @@ export function OutcomeChoice({
   initialMotive = null,
   initialMotiveDetail = null,
   initialNextFollowUpOn = null,
+  initialObjections = [],
+  initialObjectionNote = null,
   knownPrice = null,
   legend,
 }: {
@@ -65,6 +71,9 @@ export function OutcomeChoice({
   initialMotiveDetail?: string | null;
   // Mission 108 — la date de première relance déjà posée, s'il y en a une.
   initialNextFollowUpOn?: string | null;
+  // Mission 110 — ce qui freine le vendeur, déjà coché.
+  initialObjections?: Objection[];
+  initialObjectionNote?: string | null;
   legend: string;
 }) {
   const [motive, setMotive] = useState<FollowUpMotive | null>(initialMotive);
@@ -204,6 +213,40 @@ export function OutcomeChoice({
             </span>
           ) : null}
         </label>
+      ) : null}
+
+      {/* Mission 110 — ce qui freine le vendeur : plusieurs cases, une ligne libre. Ça s'ajoute au
+          motif de relance, qui reste obligatoire pour « à relancer ». */}
+      {outcome != null && outcome !== 'signed' ? (
+        <fieldset className="flex flex-col gap-2" data-testid="objections">
+          <legend className={`${fieldLabel} mb-1`}>Ce qui freine le vendeur (facultatif)</legend>
+          <div className="flex flex-wrap gap-2.5">
+            {OBJECTIONS.map((value) => (
+              <label
+                key={value}
+                className={`${choiceBase} ${choiceIdle} has-[:checked]:border-brand`}
+              >
+                <input
+                  type="checkbox"
+                  name="objections"
+                  value={value}
+                  defaultChecked={initialObjections.includes(value)}
+                  className="accent-brand"
+                />
+                {OBJECTION_LABELS[value]}
+              </label>
+            ))}
+          </div>
+          <input
+            type="text"
+            name="objection_note"
+            maxLength={OBJECTION_NOTE_MAX}
+            aria-label="Autre frein, en une ligne"
+            placeholder="Autre frein, en une ligne (facultatif)"
+            defaultValue={initialObjectionNote ?? ''}
+            className={inputBase}
+          />
+        </fieldset>
       ) : null}
 
       {outcome != null && outcome !== 'signed' ? (

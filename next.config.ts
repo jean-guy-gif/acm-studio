@@ -11,6 +11,19 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '8mb',
     },
   },
+  // Mission 110 — la synthèse laissée au vendeur n'est jamais indexée ni gardée en cache partagé.
+  async headers() {
+    return [
+      {
+        source: '/synthese/:token',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+        ],
+      },
+    ];
+  },
   // Mission 43 : pdfjs tourne désormais dans le navigateur du conseiller. Plus rien
   // à externaliser ni à tracer côté serveur — la config redevient lisible.
 };

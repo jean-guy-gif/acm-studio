@@ -1271,3 +1271,60 @@ describe('Mission 109', () => {
     expect(addressKey(patch.locator_address)).toBe(addressKey('12 boulevard Wilson, Antibes'));
   });
 });
+
+// Mission 110 — les objections partent avec la conclusion, relues par le serveur.
+describe('Mission 110 — les objections à la conclusion', () => {
+  it('« à relancer » : les objections cochées, le motif reste obligatoire', async () => {
+    const { concludeMeeting } =
+      await import('@/features/meeting-conclusion/actions/conclude-meeting');
+    state.project = { id: PROJECT, status: 'ready_for_meeting' };
+    state.respond = (table) => (table === 'conclude_meeting' ? { data: true } : {});
+    // Sans motif : refusé, rien n'est écrit, objections ou pas.
+    const noMotive = form({ outcome: 'follow_up' });
+    noMotive.append('objections', 'price');
+    expect((await concludeMeeting(PROJECT, noMotive)).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+
+    const followUp = form({
+      outcome: 'follow_up',
+      follow_up_motive: 'thinking_price',
+      objection_note: 'Attend la vente de sa mère',
+    });
+    for (const value of ['timing', 'price', 'pirate']) followUp.append('objections', value);
+    await expect(concludeMeeting(PROJECT, followUp)).rejects.toThrow(/REDIRECT/);
+    const args = service.calls.find((call) => call.method === 'rpc')?.args[1];
+    expect(args).toMatchObject({
+      p_objections: ['price', 'timing'],
+      p_objection_note: 'Attend la vente de sa mère',
+    });
+  });
+});
+
+describe('Mission 110 — « Retirer le lien » de la synthèse', () => {
+  const LINK = '55555555-5555-4555-8555-555555555555';
+  it('refusé à un membre retiré ou sur un lien hors de son agence, sans rien écrire de faux', async () => {
+    const { removeSynthesisLink } =
+      await import('@/features/seller-synthesis/actions/remove-synthesis-link');
+    state.profile = removed;
+    expect((await removeSynthesisLink(PROJECT, LINK)).ok).toBe(false);
+    noWrite();
+    state.profile = advisor;
+    // Rien de supprimé (lien d'une autre agence, ou déjà retiré) : refus.
+    state.respond = () => ({ data: [] });
+    expect((await removeSynthesisLink(PROJECT, LINK)).ok).toBe(false);
+  });
+
+  it('supprime le lien, cadré sur le dossier et l’agence de la session', async () => {
+    const { removeSynthesisLink } =
+      await import('@/features/seller-synthesis/actions/remove-synthesis-link');
+    state.respond = (table) => (table === 'seller_synthesis_links' ? { data: [{ id: LINK }] } : {});
+    expect(await removeSynthesisLink(PROJECT, LINK)).toEqual({ ok: true });
+    expect(service.writes()).toEqual(['delete seller_synthesis_links']);
+    const scoped = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(scoped).toEqual([
+      ['id', LINK],
+      ['project_id', PROJECT],
+      ['agency_id', AGENCY],
+    ]);
+  });
+});

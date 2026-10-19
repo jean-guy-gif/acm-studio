@@ -94,6 +94,7 @@ export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollow
       sellerRevisedPrice: conclusion.sellerRevisedPrice,
       commercializationPrice: conclusion.commercializationPrice,
       launchReadinessMissing: conclusion.launchReadinessMissing,
+      objections: conclusion.objections ?? [],
       priceDropsSinceMeeting: priceDropsSinceMeeting(input.competitors),
       advisorFirstName: input.signature.advisorFirstName,
       agencyName: input.signature.agencyName,

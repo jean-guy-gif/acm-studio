@@ -42,6 +42,7 @@ import {
   OUTCOME_LABELS,
   followUpMotiveLabel,
   type ConclusionOutcome,
+  OBJECTION_LABELS,
 } from '@/features/meeting-conclusion/types';
 import { ExampleBadge } from '@/features/welcome/components/example-badge';
 import { shortDate } from '@/features/prospecting/services/prospecting-status';
@@ -156,6 +157,18 @@ export function SuiviRow({
               {motiveLabel ? (
                 <span data-testid="follow-up-motive" className={badgeNeutral}>
                   {motiveLabel}
+                </span>
+              ) : null}
+              {/* Mission 110 — ce qui freine le vendeur, coché à la conclusion. */}
+              {(conclusion?.objections ?? []).length > 0 ? (
+                <span
+                  data-testid="objections-line"
+                  className="text-xs text-zinc-500 stage:text-white/60"
+                >
+                  Freins :{' '}
+                  {(conclusion?.objections ?? [])
+                    .map((value) => OBJECTION_LABELS[value])
+                    .join(' · ')}
                 </span>
               ) : null}
               {followUp.due ? (
@@ -308,6 +321,8 @@ export function SuiviRow({
             currentMandateType={conclusion?.mandateType ?? null}
             currentMotive={conclusion?.followUpMotive ?? null}
             currentMotiveDetail={conclusion?.followUpMotiveDetail ?? null}
+            currentObjections={conclusion?.objections ?? []}
+            currentObjectionNote={conclusion?.objectionNote ?? null}
             knownPrice={price}
             openLabel={missingMandateType || missingMotive ? 'Compléter' : 'Changer l’issue'}
           />

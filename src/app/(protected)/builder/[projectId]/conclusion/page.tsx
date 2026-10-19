@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import {
   alertOk,
   backLink,
+  btnSecondary,
   card,
   kickerLabel,
   pageSubtitle,
@@ -84,6 +85,17 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
         </p>
       </div>
 
+      {/* Mission 110 — la synthèse à laisser au vendeur, après le Live. */}
+      {presentation?.live?.sellerSummary ? (
+        <Link
+          href={`/builder/${projectId}/synthese`}
+          className={`${btnSecondary} self-start`}
+          data-testid="open-seller-synthesis"
+        >
+          Synthèse pour le vendeur
+        </Link>
+      ) : null}
+
       {alreadyConcluded ? (
         <div className={alertOk}>
           Ce dossier est dans le Suivi. Vous pouvez corriger son issue ci-dessous.
@@ -116,6 +128,8 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
           initialMandateType={conclusion?.mandateType ?? null}
           initialMotive={conclusion?.followUpMotive ?? null}
           initialMotiveDetail={conclusion?.followUpMotiveDetail ?? null}
+          initialObjections={conclusion?.objections ?? []}
+          initialObjectionNote={conclusion?.objectionNote ?? null}
           knownPrice={conclusion?.commercializationPrice ?? null}
         />
       </div>
