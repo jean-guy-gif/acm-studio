@@ -1271,3 +1271,31 @@ describe('Mission 109', () => {
     expect(addressKey(patch.locator_address)).toBe(addressKey('12 boulevard Wilson, Antibes'));
   });
 });
+
+// Mission 110 — les objections partent avec la conclusion, relues par le serveur.
+describe('Mission 110 — les objections à la conclusion', () => {
+  it('« à relancer » : les objections cochées, le motif reste obligatoire', async () => {
+    const { concludeMeeting } =
+      await import('@/features/meeting-conclusion/actions/conclude-meeting');
+    state.project = { id: PROJECT, status: 'ready_for_meeting' };
+    state.respond = (table) => (table === 'conclude_meeting' ? { data: true } : {});
+    // Sans motif : refusé, rien n'est écrit, objections ou pas.
+    const noMotive = form({ outcome: 'follow_up' });
+    noMotive.append('objections', 'price');
+    expect((await concludeMeeting(PROJECT, noMotive)).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+
+    const followUp = form({
+      outcome: 'follow_up',
+      follow_up_motive: 'thinking_price',
+      objection_note: 'Attend la vente de sa mère',
+    });
+    for (const value of ['timing', 'price', 'pirate']) followUp.append('objections', value);
+    await expect(concludeMeeting(PROJECT, followUp)).rejects.toThrow(/REDIRECT/);
+    const args = service.calls.find((call) => call.method === 'rpc')?.args[1];
+    expect(args).toMatchObject({
+      p_objections: ['price', 'timing'],
+      p_objection_note: 'Attend la vente de sa mère',
+    });
+  });
+});

@@ -62,6 +62,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'project_price_positionings.confidence_level' then $v$'medium'$v$
     when 'projects.status' then $v$'draft'$v$
     when 'prospecting_oppositions.address_key' then $v$'1 rue du test ' || substr(md5(random()::text), 1, 8)$v$
+    -- Mission 110 — le condensat d'un jeton de synthèse : 64 caractères hexadécimaux.
+    when 'seller_synthesis_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
     else null
   end
 $$;

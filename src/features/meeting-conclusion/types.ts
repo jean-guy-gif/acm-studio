@@ -60,6 +60,25 @@ export function isFollowUpMotive(value: unknown): value is FollowUpMotive {
   return (FOLLOW_UP_MOTIVES as readonly unknown[]).includes(value);
 }
 
+// Mission 110 — ce qui freine le vendeur, coché à la conclusion (plusieurs possibles), avec une
+// ligne libre. Les objections s'ajoutent au motif de relance (M96), qui reste obligatoire.
+export const OBJECTIONS = ['price', 'exclusivity', 'timing', 'other_agency', 'not_ready'] as const;
+export type Objection = (typeof OBJECTIONS)[number];
+
+export const OBJECTION_LABELS: Record<Objection, string> = {
+  price: 'Le prix',
+  exclusivity: 'L’exclusivité',
+  timing: 'Le délai',
+  other_agency: 'Une autre agence',
+  not_ready: 'Projet pas mûr',
+};
+
+export const OBJECTION_NOTE_MAX = 200;
+
+export function isObjection(value: unknown): value is Objection {
+  return (OBJECTIONS as readonly unknown[]).includes(value);
+}
+
 // Ce que dit la ligne du Suivi : le libellé du motif, ou la ligne saisie pour « Autre ».
 export function followUpMotiveLabel(
   motive: FollowUpMotive | null,
@@ -100,6 +119,9 @@ export type MeetingConclusion = ConclusionAmounts & {
   followUpMotiveDetail: string | null;
   // Mission 108 — la date de première relance, posée à la conclusion « à relancer ».
   nextFollowUpOn?: string | null;
+  // Mission 110 — ce qui freine le vendeur, et la ligne libre.
+  objections?: Objection[];
+  objectionNote?: string | null;
   // Mission 90 — exclusif ou simple, pour un mandat signé ; null = non renseigné (dossiers
   // signés avant la mission : aucun type n'est inventé). Et la date de signature, écrite une fois.
   mandateType: MandateType | null;

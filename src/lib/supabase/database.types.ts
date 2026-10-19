@@ -1133,6 +1133,8 @@ export type Database = {
           id: string
           mandate_type: string | null
           next_follow_up_on: string | null
+          objection_note: string | null
+          objections: string[]
           outcome: string | null
           outcome_changed_at: string
           project_id: string
@@ -1161,6 +1163,8 @@ export type Database = {
           id?: string
           mandate_type?: string | null
           next_follow_up_on?: string | null
+          objection_note?: string | null
+          objections?: string[]
           outcome?: string | null
           outcome_changed_at?: string
           project_id: string
@@ -1189,6 +1193,8 @@ export type Database = {
           id?: string
           mandate_type?: string | null
           next_follow_up_on?: string | null
+          objection_note?: string | null
+          objections?: string[]
           outcome?: string | null
           outcome_changed_at?: string
           project_id?: string
@@ -1416,6 +1422,58 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_synthesis_links: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          project_id: string
+          token_hash: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          project_id: string
+          token_hash: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          project_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_synthesis_links_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_synthesis_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_synthesis_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1843,6 +1901,8 @@ export type Database = {
           p_follow_up_motive_detail?: string
           p_mandate_type?: string
           p_next_follow_up_on?: string
+          p_objection_note?: string
+          p_objections?: string[]
           p_outcome: string
           p_price?: number
           p_project_id: string
@@ -1861,6 +1921,8 @@ export type Database = {
           p_mandate_type?: string
           p_market_computed: number
           p_next_follow_up_on?: string
+          p_objection_note?: string
+          p_objections?: string[]
           p_outcome: string
           p_price: number
           p_project_id: string

@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/styles';
 import { ManagerOverviewView } from '@/features/team/components/manager-overview';
 import { TeamManagement } from '@/features/team/components/team-management';
+import { MandateDashboardView } from '@/features/team/components/mandate-dashboard';
+import { getMandateDashboard } from '@/features/team/queries/get-mandate-dashboard';
 import { getManagerOverview } from '@/features/team/queries/get-manager-overview';
 import { getTeam } from '@/features/team/queries/get-team';
 import { isManagerRole } from '@/features/team/services/role';
@@ -25,7 +27,11 @@ export default async function ManagerViewPage() {
     notFound();
   }
 
-  const [overview, team] = await Promise.all([getManagerOverview(), getTeam()]);
+  const [overview, team, dashboard] = await Promise.all([
+    getManagerOverview(),
+    getTeam(),
+    getMandateDashboard(),
+  ]);
   if (!overview || !team) {
     notFound();
   }
@@ -47,6 +53,14 @@ export default async function ManagerViewPage() {
         <h2 className={sectionTitle}>Équipe et invitations</h2>
         <TeamManagement team={team} />
       </div>
+
+      {/* Mission 110 — la prise de mandat, pour l'agence et par conseiller. */}
+      {dashboard ? (
+        <div className="flex flex-col gap-5">
+          <h2 className={sectionTitle}>Prise de mandat</h2>
+          <MandateDashboardView dashboard={dashboard} />
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-5">
         <h2 className={sectionTitle}>Activité</h2>

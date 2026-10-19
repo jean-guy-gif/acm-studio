@@ -14,6 +14,7 @@ import {
   FIRST_FOLLOW_UP_INVALID,
   readFirstFollowUpOn,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { readObjections } from '@/features/meeting-conclusion/services/objections';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -73,6 +74,7 @@ export async function changeMeetingOutcome(
   if (!firstFollowUp.ok) {
     return { ok: false, error: FIRST_FOLLOW_UP_INVALID };
   }
+  const objections = readObjections(formData);
 
   const serviceClient = createServiceRoleClient();
   // null accepté en base pour les trois derniers (cast de typage seulement).
@@ -85,6 +87,13 @@ export async function changeMeetingOutcome(
     p_follow_up_motive: decision.value.motive as string,
     p_follow_up_motive_detail: decision.value.motiveDetail as string,
     p_next_follow_up_on: firstFollowUp.day as string,
+    // Mission 110 — ce qui freine le vendeur ; un mandat signé n'en change pas les objections.
+    ...(decision.value.outcome === 'signed'
+      ? {}
+      : {
+          p_objections: objections.objections,
+          p_objection_note: objections.note as string,
+        }),
     p_price: decision.value.price as number,
   };
   const { error } = await serviceClient.rpc('change_meeting_outcome', args);
