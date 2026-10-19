@@ -1,6 +1,6 @@
 'use client';
 
-import { useImperativeHandle, useState, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useState, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 
 import { fieldLabel, formSection, formSectionTitle, inputBase } from '@/components/ui/styles';
@@ -45,6 +45,7 @@ import {
   propertyTypeLabel,
   propertyTypeOptions,
 } from '@/features/subject-property/services/property-type-choice';
+import { countPropertyComplements } from '@/features/subject-property/services/complements';
 import { propertyFieldId } from '@/features/subject-property/services/search-requirements';
 import type {
   SheetEntries,
@@ -167,6 +168,7 @@ export function SubjectPropertyForm({
   errors = {},
   onDirty,
   complementsSlot,
+  onComplementsCount,
   ref,
 }: {
   property: SubjectProperty | null;
@@ -182,6 +184,8 @@ export function SubjectPropertyForm({
   // « Compléments (facultatif) » de la fiche, que la page tient avec diagnostics et
   // copropriété. Les valeurs restent ici ; seul leur emplacement à l'écran change.
   complementsSlot: HTMLElement | null;
+  // Mission 110 — ce que la ligne de résumé des compléments compte, tenu à jour à la saisie.
+  onComplementsCount?: (counts: { filled: number; toVerify: number }) => void;
   ref?: Ref<SheetSectionHandle>;
 }) {
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
@@ -222,6 +226,14 @@ export function SubjectPropertyForm({
     reviewed(name);
     onDirty?.();
   };
+
+  const { filled: complementsFilled, toVerify: complementsToVerify } = countPropertyComplements(
+    { ...scalars, parking_types: parkingTypes, strengths, watch_points: watchPoints },
+    toVerify,
+  );
+  useEffect(() => {
+    onComplementsCount?.({ filled: complementsFilled, toVerify: complementsToVerify });
+  }, [onComplementsCount, complementsFilled, complementsToVerify]);
 
   useImperativeHandle(ref, () => ({
     entries: (): SheetEntries => [

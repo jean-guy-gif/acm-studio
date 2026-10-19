@@ -150,6 +150,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('essential-fields')).toBeVisible();
     await expect(field('Chambres')).toBeHidden();
     await expect(field('Terrain')).toBeHidden();
+    // Fermés par défaut, résumés en une ligne.
+    await expect(page.getByTestId('complements-summary')).toHaveText(/^Compléments : /);
   });
 
   // Mission 99 — les réglages de la recherche : affichés, enregistrés sur le dossier, remis par

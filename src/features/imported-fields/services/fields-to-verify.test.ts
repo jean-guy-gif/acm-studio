@@ -12,7 +12,7 @@ import {
 } from '@/features/imported-fields/services/fields-to-verify';
 import {
   COMPLEMENT_PROPERTY_FIELDS,
-  hasComplements,
+  countPropertyComplements,
 } from '@/features/subject-property/services/complements';
 
 describe('ce qui vient d’un import se vérifie (mission 97)', () => {
@@ -130,21 +130,9 @@ describe('« Avant le rendez-vous » compte ce qui reste à vérifier', () => {
 });
 
 describe('« Salles de bains » vit dans les compléments (mission 97)', () => {
-  it('le champ est rangé avec les compléments, et les ouvre s’il est rempli', () => {
+  it('le champ est rangé avec les compléments, et compte dans leur résumé s’il est rempli', () => {
     expect(COMPLEMENT_PROPERTY_FIELDS).toContain('bathrooms_count');
-    expect(
-      hasComplements({
-        property: { bathrooms_count: 2 },
-        hasDiagnostics: false,
-        hasCondominium: false,
-      }),
-    ).toBe(true);
-    expect(
-      hasComplements({
-        property: { bathrooms_count: null },
-        hasDiagnostics: false,
-        hasCondominium: false,
-      }),
-    ).toBe(false);
+    expect(countPropertyComplements({ bathrooms_count: 2 }, []).filled).toBe(1);
+    expect(countPropertyComplements({ bathrooms_count: null }, []).filled).toBe(0);
   });
 });

@@ -25,8 +25,9 @@ import type { SaveSubjectPropertySheetResult } from '@/features/subject-property
 import { PropertySaveBar } from '@/features/subject-property/components/property-save-bar';
 import { SubjectPropertyForm } from '@/features/subject-property/components/subject-property-form';
 import {
+  complementsSummary,
+  countFilledRecordFields,
   errorsInComplements,
-  hasComplements,
 } from '@/features/subject-property/services/complements';
 import { saveBarStatus } from '@/features/subject-property/services/save-bar-status';
 import {
@@ -131,15 +132,18 @@ export function SubjectPropertyImportForm({
   const [missing, setMissing] = useState<SearchRequirement[]>([]);
   const [becameReady, setBecameReady] = useState(false);
   const [pending, startTransition] = useTransition();
-  // Mission 91 — « Compléments (facultatif) » : replié tant que rien n'y est rempli.
+  // Mission 110 — « Compléments (facultatif) » reste fermé par défaut, même rempli (remplace
+  // M91) : une ligne le résume. Seule une saisie à corriger l'ouvre (M77).
   const [complementsSlot, setComplementsSlot] = useState<HTMLDivElement | null>(null);
-  const [complementsOpen, setComplementsOpen] = useState(() =>
-    hasComplements({
-      property,
-      hasDiagnostics: diagnostics != null,
-      hasCondominium: condominium != null,
-    }),
-  );
+  const [complementsOpen, setComplementsOpen] = useState(false);
+  const [propertyComplements, setPropertyComplements] = useState({ filled: 0, toVerify: 0 });
+  const complementsLine = complementsSummary({
+    filled:
+      propertyComplements.filled +
+      countFilledRecordFields(importedDiagnostics ?? diagnostics) +
+      countFilledRecordFields(importedCondominium ?? condominium),
+    toVerify: propertyComplements.toVerify,
+  });
 
   // Arrivée depuis la recherche de concurrents (« il manque la ville ») : l'adresse désigne le
   // champ, la fiche s'ouvre dessus.
@@ -269,9 +273,6 @@ export function SubjectPropertyImportForm({
           setImported(prefill);
           setPropertyKey((value) => value + 1);
           markDirty('property');
-          if (hasComplements({ property: prefill, hasDiagnostics: false, hasCondominium: false })) {
-            setComplementsOpen(true);
-          }
         }}
       />
       <BrochureImportPanel
@@ -285,9 +286,6 @@ export function SubjectPropertyImportForm({
           setDiagnosticsKey((value) => value + 1);
           setCondominiumKey((value) => value + 1);
           markDirty('property', 'diagnostics', 'condominium');
-          // Une fiche PDF remplit des compléments (charges, taxe, diagnostics, copropriété) :
-          // le bloc s'ouvre, le conseiller relit ce qui a été lu.
-          setComplementsOpen(true);
         }}
       />
       <SubjectPropertyForm
@@ -301,6 +299,7 @@ export function SubjectPropertyImportForm({
         errors={errors.property}
         onDirty={() => markDirty('property')}
         complementsSlot={complementsSlot}
+        onComplementsCount={setPropertyComplements}
       />
       <details
         className="group flex max-w-3xl flex-col"
@@ -312,8 +311,15 @@ export function SubjectPropertyImportForm({
             <span className="font-title text-lg font-semibold text-brand-deep stage:text-white">
               Compléments (facultatif)
             </span>
+            <span
+              className="text-sm text-zinc-600 stage:text-white/70"
+              data-testid="complements-summary"
+            >
+              {complementsLine}
+            </span>
             <span className="text-sm text-zinc-500 stage:text-white/55">
-              Données financières, argumentaire, diagnostics, copropriété.
+              Le bien en détail, situation, énergie, caractéristiques, données financières,
+              argumentaire, diagnostics, copropriété.
             </span>
           </span>
           <span
