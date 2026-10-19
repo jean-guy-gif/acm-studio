@@ -223,6 +223,120 @@ insert into public.live_seller_responses (project_id, comparable_id, agency_id, 
           '109aaaaa-0000-0000-0000-000000000000', 'yes');
 reset role;
 
+-- =====================================================================
+-- Mission 109 (suite) — les suppressions légitimes passent le verrou, une par lien recensé :
+--   §8  supprimer le concurrent le plus dangereux d'un dossier conclu (`on delete set null`),
+--       depuis le navigateur du conseiller ; vider ce choix À LA MAIN reste refusé ;
+--   §9  supprimer un concurrent d'un dossier conclu emporte ses réponses (`cascade`) ;
+--   §10 effacer un dossier conclu entier selon PROCEDURE_EFFACEMENT.md (A) ;
+--   §11 effacer le bien d'un propriétaire selon PROCEDURE_EFFACEMENT.md (B), dossier conclu ;
+--   §12 supprimer un dossier archivé entier.
+-- =====================================================================
+insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
+  ('109ccccc-0000-0000-0000-000000000011', '109aaaaa-0000-0000-0000-000000000000',
+   '10911111-1111-1111-1111-111111111111', 'dangereux', 'ready_for_meeting'),
+  ('109ccccc-0000-0000-0000-000000000012', '109aaaaa-0000-0000-0000-000000000000',
+   '10911111-1111-1111-1111-111111111111', 'à effacer', 'ready_for_meeting'),
+  ('109ccccc-0000-0000-0000-000000000013', '109aaaaa-0000-0000-0000-000000000000',
+   '10911111-1111-1111-1111-111111111111', 'archivé à supprimer', 'ready_for_meeting');
+insert into public.subject_properties (agency_id, project_id) values
+  ('109aaaaa-0000-0000-0000-000000000000', '109ccccc-0000-0000-0000-000000000012');
+insert into public.comparables (id, agency_id, project_id, title, price, is_selected, display_order, locator_address, locator_confirmed) values
+  ('109dddd0-0000-0000-0000-000000000011', '109aaaaa-0000-0000-0000-000000000000',
+   '109ccccc-0000-0000-0000-000000000011', 'dangereux', 300000, true, 1, '8 rue A, Antibes', true),
+  ('109dddd0-0000-0000-0000-000000000111', '109aaaaa-0000-0000-0000-000000000000',
+   '109ccccc-0000-0000-0000-000000000011', 'autre', 310000, true, 2, '10 rue B, Antibes', true),
+  ('109dddd0-0000-0000-0000-000000000012', '109aaaaa-0000-0000-0000-000000000000',
+   '109ccccc-0000-0000-0000-000000000012', 'c', 300000, true, 1, null, null),
+  ('109dddd0-0000-0000-0000-000000000013', '109aaaaa-0000-0000-0000-000000000000',
+   '109ccccc-0000-0000-0000-000000000013', 'c', 300000, true, 1, null, null);
+
+-- Le Live de chacun : réponses, et le concurrent le plus dangereux.
+select pg_temp.act_as('10911111-1111-1111-1111-111111111111');
+insert into public.live_seller_responses (project_id, comparable_id, agency_id, seller_serious_competitor)
+  values ('109ccccc-0000-0000-0000-000000000011', '109dddd0-0000-0000-0000-000000000011', '109aaaaa-0000-0000-0000-000000000000', 'yes'),
+         ('109ccccc-0000-0000-0000-000000000011', '109dddd0-0000-0000-0000-000000000111', '109aaaaa-0000-0000-0000-000000000000', 'yes'),
+         ('109ccccc-0000-0000-0000-000000000012', '109dddd0-0000-0000-0000-000000000012', '109aaaaa-0000-0000-0000-000000000000', 'yes'),
+         ('109ccccc-0000-0000-0000-000000000013', '109dddd0-0000-0000-0000-000000000013', '109aaaaa-0000-0000-0000-000000000000', 'yes');
+insert into public.live_seller_summary (project_id, agency_id, seller_perceived_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason)
+  values ('109ccccc-0000-0000-0000-000000000011', '109aaaaa-0000-0000-0000-000000000000', 350000, '109dddd0-0000-0000-0000-000000000011', 'better_value'),
+         ('109ccccc-0000-0000-0000-000000000012', '109aaaaa-0000-0000-0000-000000000000', 350000, '109dddd0-0000-0000-0000-000000000012', 'better_value'),
+         ('109ccccc-0000-0000-0000-000000000013', '109aaaaa-0000-0000-0000-000000000000', 350000, '109dddd0-0000-0000-0000-000000000013', 'better_value');
+reset role;
+do $$
+declare v_id uuid;
+begin
+  foreach v_id in array array['109ccccc-0000-0000-0000-000000000011', '109ccccc-0000-0000-0000-000000000012']::uuid[] loop
+    perform public.conclude_meeting(
+      p_project_id => v_id, p_agency_id => '109aaaaa-0000-0000-0000-000000000000',
+      p_outcome => 'signed', p_reason => null, p_price => 320000,
+      p_market_computed => null, p_advisor_analysis => null, p_advisor_price => null);
+  end loop;
+end $$;
+update public.projects set status = 'archived' where id = '109ccccc-0000-0000-0000-000000000013';
+
+-- §8 — vider le choix à la main : refusé ; supprimer le concurrent : passe, le choix se vide seul.
+select pg_temp.act_as('10911111-1111-1111-1111-111111111111');
+do $$
+declare s public.live_seller_summary%rowtype;
+begin
+  begin
+    update public.live_seller_summary set seller_most_dangerous_comparable_id = null
+      where project_id = '109ccccc-0000-0000-0000-000000000011';
+    raise exception 'FAIL 8: le choix du plus dangereux vidé à la main sur un dossier conclu';
+  exception when insufficient_privilege then null;
+  end;
+  delete from public.comparables where id = '109dddd0-0000-0000-0000-000000000011';
+  select * into s from public.live_seller_summary where project_id = '109ccccc-0000-0000-0000-000000000011';
+  if s.seller_most_dangerous_comparable_id is not null
+     or s.seller_most_dangerous_reason is distinct from 'better_value'
+     or s.seller_perceived_property_price is distinct from 350000 then
+    raise exception 'FAIL 8: le résumé a changé au-delà du concurrent supprimé';
+  end if;
+  -- §9 — ses réponses sont parties, celles de l'autre concurrent restent.
+  if exists (select 1 from public.live_seller_responses where comparable_id = '109dddd0-0000-0000-0000-000000000011')
+     or not exists (select 1 from public.live_seller_responses where comparable_id = '109dddd0-0000-0000-0000-000000000111') then
+    raise exception 'FAIL 9: réponses mal emportées';
+  end if;
+end $$;
+reset role;
+
+-- §11 — effacement B (propriétaire), sur un dossier conclu : le concurrent sort des retenus, son
+-- adresse part ; ses réponses du Live restent (l'annonce publique sert au Live).
+delete from public.competitor_prospecting_files where comparable_id in ('109dddd0-0000-0000-0000-000000000111');
+update public.comparables set
+  address = null,
+  locator_address = null, locator_latitude = null, locator_longitude = null,
+  locator_property_id = null, locator_label = null, locator_label_key = null,
+  locator_source = null, locator_state = null, locator_confirmed = null,
+  locator_analyzed_at = null,
+  is_selected = false,
+  updated_at = now()
+where id in ('109dddd0-0000-0000-0000-000000000111');
+do $$
+begin
+  if (select locator_address from public.comparables where id = '109dddd0-0000-0000-0000-000000000111') is not null
+     or not exists (select 1 from public.live_seller_responses where comparable_id = '109dddd0-0000-0000-0000-000000000111') then
+    raise exception 'FAIL 11: effacement B incomplet, ou réponses du Live perdues';
+  end if;
+end $$;
+
+-- §10 — effacement A (vendeur), dossier conclu ENTIER, dans l'ordre de la procédure.
+delete from public.comparables where project_id = '109ccccc-0000-0000-0000-000000000012' and agency_id = '109aaaaa-0000-0000-0000-000000000000';
+delete from public.subject_properties where project_id = '109ccccc-0000-0000-0000-000000000012' and agency_id = '109aaaaa-0000-0000-0000-000000000000';
+delete from public.projects where id = '109ccccc-0000-0000-0000-000000000012' and agency_id = '109aaaaa-0000-0000-0000-000000000000';
+-- §12 — un dossier archivé entier, concurrents d'abord, comme le nettoyage de l'agence de test.
+delete from public.comparables where project_id = '109ccccc-0000-0000-0000-000000000013';
+delete from public.projects where id = '109ccccc-0000-0000-0000-000000000013';
+do $$
+begin
+  if exists (select 1 from public.live_seller_responses where project_id in ('109ccccc-0000-0000-0000-000000000012', '109ccccc-0000-0000-0000-000000000013'))
+     or exists (select 1 from public.live_seller_summary where project_id in ('109ccccc-0000-0000-0000-000000000012', '109ccccc-0000-0000-0000-000000000013'))
+     or exists (select 1 from public.project_meeting_conclusions where project_id = '109ccccc-0000-0000-0000-000000000012') then
+    raise exception 'FAIL 10/12: il reste du Live ou de la conclusion d''un dossier effacé';
+  end if;
+end $$;
+
 do $$ begin raise notice 'live_closed_after_conclusion : OK'; end $$;
 
 rollback;
