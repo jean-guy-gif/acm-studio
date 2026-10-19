@@ -13,6 +13,7 @@ import { listingIdentityKey } from '@/features/comparable-import/utils/extract-l
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { insertOppositions } from '@/features/prospecting/queries/insert-oppositions';
 import { addressKey } from '@/features/prospecting/services/address-key';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -159,11 +160,19 @@ export async function saveCompetitorLocations(
     for (const confirmed of confirmedNow) {
       const listingKey = listingIdentityKey(confirmed.listingUrl);
       if (listingKey != null && oppositions.listings.has(listingKey)) {
-        await insertOppositions(
+        // Mission 109 — le résultat est vérifié : un échec part au journal, et la tâche de la nuit
+        // rattrape l'adresse manquante (api/cron/verifier-oppositions).
+        const added = await insertOppositions(
           supabase,
           { agencyId: profile.agency_id, profileId: profile.id },
           { addressKey: addressKey(confirmed.address), listingKeys: [] },
         );
+        if (!added) {
+          await reportServerError(
+            'oppositionParAnnonce',
+            new Error('adresse confirmée d’une annonce opposée non ajoutée à la liste'),
+          );
+        }
       }
     }
   }

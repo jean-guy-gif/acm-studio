@@ -95,13 +95,18 @@ begin
   end if;
 end $$;
 
--- §4 — après la conclusion, le résumé bouge, on conclut à nouveau : le figé ne bouge pas.
+-- §4 — après la conclusion, le résumé ne bouge plus (M109 : refusé par la base) ; on conclut à
+-- nouveau : le figé ne bouge pas.
 do $$
 declare r public.project_meeting_conclusions%rowtype;
 begin
-  update public.live_seller_summary
-    set seller_launch_readiness_last = 3, seller_launch_readiness_missing = 'autre chose'
-    where project_id = 'cccccccc-0000-0000-0000-000000000001';
+  begin
+    update public.live_seller_summary
+      set seller_launch_readiness_last = 3, seller_launch_readiness_missing = 'autre chose'
+      where project_id = 'cccccccc-0000-0000-0000-000000000001';
+    raise exception 'FAIL 4: le résumé d''un dossier conclu a changé';
+  exception when insufficient_privilege then null;
+  end;
   perform public.conclude_meeting(
     'cccccccc-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000000',
     'follow_up', 'motif', null, null, null, null);

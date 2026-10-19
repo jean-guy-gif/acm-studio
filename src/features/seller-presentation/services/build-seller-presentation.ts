@@ -434,11 +434,12 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
           priceGaps: calculateLivePriceGaps({
             sellerPerceivedPrice: sellerSummary?.seller_perceived_property_price ?? null,
             // Mission 108 — même périmée, c'est la décision du conseiller : jamais le calcul du jour
-            // à sa place.
-            competitiveMarketCentral: sellerFacingCompetitorPrice(
-              savedPositioning?.advisorPrice,
-              competitiveMarketCentral,
-            ),
+            // à sa place. Mission 109 — sans décision enregistrée, AUCUN prix final devant le
+            // vendeur : le calcul brut n'a pas été validé par le conseiller (remplace M89, « sinon
+            // le calcul courant »).
+            competitiveMarketCentral: savedPositioning
+              ? sellerFacingCompetitorPrice(savedPositioning.advisorPrice, competitiveMarketCentral)
+              : null,
             advisorComparativePrice: savedPositioning?.advisorComparativeMarketPrice ?? null,
           }),
         }

@@ -12,6 +12,8 @@ const ADDRESS = '8 avenue du Docteur Hochet, 06160 Antibes';
 const state = vi.hoisted(() => ({
   opposedListings: [] as string[],
   inserted: [] as unknown[],
+  insertSucceeds: true,
+  reported: [] as string[],
 }));
 
 const server = fakeSupabase((calls) =>
@@ -70,7 +72,12 @@ vi.mock('@/features/prospecting/queries/get-oppositions', () => ({
 vi.mock('@/features/prospecting/queries/insert-oppositions', () => ({
   insertOppositions: async (_s: unknown, _a: unknown, keys: unknown) => {
     state.inserted.push(keys);
-    return true;
+    return state.insertSucceeds;
+  },
+}));
+vi.mock('@/lib/app-errors/report-server-error', () => ({
+  reportServerError: async (scope: string) => {
+    state.reported.push(scope);
   },
 }));
 
@@ -80,6 +87,19 @@ beforeEach(() => {
   server.reset();
   state.opposedListings = [];
   state.inserted = [];
+  state.insertSucceeds = true;
+  state.reported = [];
+});
+
+// Mission 109 — le résultat de l'ajout est vérifié : un échec part au journal (la nuit rattrape).
+describe('l’ajout de la clé d’adresse qui échoue', () => {
+  it('part au journal, sans faire échouer la confirmation', async () => {
+    state.opposedListings = [LISTING_KEY];
+    state.insertSucceeds = false;
+    const result = await saveCompetitorLocations('p1', [{ listingUrl: LISTING_URL, raw: {} }]);
+    expect(result).toEqual({ ok: true, changed: 1 });
+    expect(state.reported).toEqual(['oppositionParAnnonce']);
+  });
 });
 
 // Mission 107 — « Ne plus solliciter » avant l'adresse : l'opposition porte sur l'annonce ; quand

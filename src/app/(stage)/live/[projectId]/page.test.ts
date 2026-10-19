@@ -11,6 +11,10 @@ vi.mock('next/navigation', () => ({
     throw new Error(`REDIRECT ${path}`);
   },
 }));
+const status = vi.hoisted(() => ({ value: 'ready_for_meeting' as string | null }));
+vi.mock('@/features/live-seller/queries/get-live-project-status', () => ({
+  getLiveProjectStatus: async () => status.value,
+}));
 vi.mock('@/features/live-seller/services/load-live-presentation', () => ({
   loadLivePresentation: async () => ({ live: null, property: null, project: { name: 'x' } }),
 }));
@@ -36,6 +40,21 @@ describe('un Live sans concurrent retenu', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toThrow('REDIRECT /live/p1/pause');
+  });
+
+  // Mission 109 — un dossier conclu ou archivé ne se rejoue pas : l'écran neutre de pause.
+  it.each(['meeting_completed', 'archived'])('dossier %s : l’écran de pause', async (closed) => {
+    status.value = closed;
+    try {
+      await expect(
+        LiveProjectPage({
+          params: Promise.resolve({ projectId: 'p1' }),
+          searchParams: Promise.resolve({}),
+        }),
+      ).rejects.toThrow('REDIRECT /live/p1/pause');
+    } finally {
+      status.value = 'ready_for_meeting';
+    }
   });
 
   it('aucun texte technique ne peut plus partir vers la scène', () => {

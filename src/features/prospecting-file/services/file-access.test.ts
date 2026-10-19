@@ -129,3 +129,41 @@ describe('ce qui retient un dossier', () => {
     ).toBeNull();
   });
 });
+
+// Mission 109 — pendant la bêta, aucun courrier sur un bien « Ne plus solliciter », confrère compris.
+describe('le courrier au confrère, sur un bien opposé', () => {
+  const colleague = {
+    version: 'colleague' as const,
+    opposed: true,
+    addressConfirmed: false,
+    advisorPhone: null,
+    agencyAddress: null,
+    professionalCard: '123',
+    professionalCardIssuer: 'CCI',
+  };
+  it('est refusé, avec le message du propriétaire', () => {
+    expect(fileBlocker(colleague)).toBe('opposed');
+    expect(FILE_BLOCKER_MESSAGES.opposed).toBe(
+      'Ce propriétaire a demandé à ne plus être sollicité',
+    );
+    expect(fileBlocker({ ...colleague, opposed: false })).toBeNull();
+  });
+
+  it('ni en lot, ni dans la tournée', async () => {
+    const { isBatchPreparable } =
+      await import('@/features/prospecting-file/services/batch-letters');
+    const { buildTour } = await import('@/features/prospecting/services/tour');
+    const { groupProspecting } = await import('@/features/prospecting/services/group-prospecting');
+    const { entry, row } = await import('@/features/prospecting/services/test-cards');
+    expect(isBatchPreparable({ status: 'to_confirm', step: 'colleague', opposed: true })).toBe(
+      false,
+    );
+    const tour = buildTour(
+      groupProspecting([
+        entry('m', row('confrere-oppose', { step: 'colleague', opposedOn: '2026-10-19' })),
+        entry('m', row('confrere', { step: 'colleague', surfaceArea: 30 })),
+      ]),
+    );
+    expect(tour.colleagues.map((card) => card.row.id)).toEqual(['confrere']);
+  });
+});

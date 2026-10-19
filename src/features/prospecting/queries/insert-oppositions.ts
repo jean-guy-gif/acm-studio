@@ -18,6 +18,8 @@ export async function insertOppositions(
   author: { agencyId: string; profileId: string },
   keys: {
     addressKey: string | null;
+    // Mission 109 — une carte regroupée : la clé de CHAQUE copie dont l'adresse est confirmée.
+    addressKeys?: string[];
     listingKeys: string[];
     communeUnverified?: boolean;
     // Mission 105 — la commune tapée, gardée pour la revérification de la nuit (un nom de
@@ -26,20 +28,22 @@ export async function insertOppositions(
   },
 ): Promise<boolean> {
   const listingKeys = [...new Set(keys.listingKeys)];
+  const addressKeys = [
+    ...new Set([
+      ...(keys.addressKey != null ? [keys.addressKey] : []),
+      ...(keys.addressKeys ?? []),
+    ]),
+  ];
   const rows = [
-    ...(keys.addressKey != null
-      ? [
-          {
-            address_key: keys.addressKey,
-            ...(keys.communeUnverified
-              ? {
-                  commune_unverified: true,
-                  commune_typed: keys.communeTyped?.slice(0, 120) ?? null,
-                }
-              : {}),
-          },
-        ]
-      : []),
+    ...addressKeys.map((addressKey) => ({
+      address_key: addressKey,
+      ...(keys.communeUnverified && addressKey === keys.addressKey
+        ? {
+            commune_unverified: true,
+            commune_typed: keys.communeTyped?.slice(0, 120) ?? null,
+          }
+        : {}),
+    })),
     ...listingKeys.map((listingKey) => ({ listing_key: listingKey })),
   ];
   if (rows.length === 0) {
@@ -58,12 +62,12 @@ export async function insertOppositions(
 
   // Relire : chaque clé doit être dans la liste de l'agence.
   const [byAddress, byListing] = await Promise.all([
-    keys.addressKey != null
+    addressKeys.length > 0
       ? supabase
           .from('prospecting_oppositions')
           .select('address_key')
           .eq('agency_id', author.agencyId)
-          .eq('address_key', keys.addressKey)
+          .in('address_key', addressKeys)
       : Promise.resolve({ data: [], error: null }),
     listingKeys.length > 0
       ? supabase
@@ -77,7 +81,10 @@ export async function insertOppositions(
     await reportServerError('insertOppositions', byAddress.error ?? byListing.error);
     return false;
   }
-  const addressFound = keys.addressKey == null || (byAddress.data ?? []).length > 0;
+  const addressesFound = new Set(
+    (byAddress.data ?? []).map((row) => (row as { address_key: string | null }).address_key),
+  );
+  const addressFound = addressKeys.every((key) => addressesFound.has(key));
   const listingsFound = new Set(
     (byListing.data ?? []).map((row) => (row as { listing_key: string | null }).listing_key),
   );

@@ -67,12 +67,15 @@ export function LivePageConclusion({
           <div className={statLabel}>Votre valeur perçue</div>
           <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
         </div>
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Prix des concurrents</div>
-          <div className={bigValue}>
-            {euro(sellerFacingCompetitorPrice(decision?.advisorPrice, competitiveMarketCentral))}
+        {/* Mission 109 — sans décision de prix enregistrée, aucun prix final devant le vendeur. */}
+        {decision ? (
+          <div className={`${panel} flex flex-col gap-1.5`}>
+            <div className={statLabel}>Prix des concurrents</div>
+            <div className={bigValue}>
+              {euro(sellerFacingCompetitorPrice(decision.advisorPrice, competitiveMarketCentral))}
+            </div>
           </div>
-        </div>
+        ) : null}
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse du conseiller</div>
           <div className={bigValue}>{euro(decision?.advisorComparativeMarketPrice ?? null)}</div>
