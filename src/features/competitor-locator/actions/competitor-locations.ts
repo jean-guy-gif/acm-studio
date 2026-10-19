@@ -9,6 +9,10 @@ import type {
   CompetitorToLocate,
   RawLocatorEntry,
 } from '@/features/competitor-locator/types';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
+import { insertOppositions } from '@/features/prospecting/queries/insert-oppositions';
+import { addressKey } from '@/features/prospecting/services/address-key';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -113,6 +117,7 @@ export async function saveCompetitorLocations(
   const supabase = await createClient();
   let changed = 0;
   let ok = true;
+  const confirmedNow: { address: string; listingUrl: string | null }[] = [];
 
   for (const row of rows) {
     const location = locationByUrl.get((row.listing_url ?? '').trim());
@@ -140,6 +145,26 @@ export async function saveCompetitorLocations(
       ok = false;
     } else {
       changed += 1;
+      if (location.confirmed && location.address) {
+        confirmedNow.push({ address: location.address, listingUrl: row.listing_url });
+      }
+    }
+  }
+
+  // Mission 107 — un bien déjà opposé par son annonce (« Ne plus solliciter » avant l'adresse) :
+  // l'adresse que le Localisateur vient de confirmer s'ajoute à l'opposition, pour bloquer aussi
+  // l'immeuble. L'opposition n'est jamais retirée ni affaiblie.
+  if (confirmedNow.length > 0) {
+    const oppositions = await getOppositions(supabase, profile.agency_id);
+    for (const confirmed of confirmedNow) {
+      const listingKey = listingIdentityKey(confirmed.listingUrl);
+      if (listingKey != null && oppositions.listings.has(listingKey)) {
+        await insertOppositions(
+          supabase,
+          { agencyId: profile.agency_id, profileId: profile.id },
+          { addressKey: addressKey(confirmed.address), listingKeys: [] },
+        );
+      }
     }
   }
 

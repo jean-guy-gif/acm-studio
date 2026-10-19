@@ -158,10 +158,9 @@ export function ProspectingCard({
             />
           </div>
 
-          {/* « Ne plus solliciter » porte sur l'adresse : il attend qu'elle soit confirmée. */}
-          {shared.confirmed && shared.address != null ? (
-            <OppositionButton projectId={card.seller.projectId} competitorId={shared.id} />
-          ) : null}
+          {/* Mission 107 — « Ne plus solliciter » sur toute carte : sans adresse confirmée, il
+              porte sur ses annonces (M102). */}
+          <OppositionButton projectId={card.seller.projectId} competitorId={shared.id} />
         </>
       )}
 

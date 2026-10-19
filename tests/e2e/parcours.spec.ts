@@ -778,6 +778,8 @@ async function walkLive(
 ): Promise<void> {
   const onScreen = async (screen: string) => {
     await expectFourchetteHidden(page, screen);
+    // Mission 107 — le titre d'une annonce n'est jamais livré à l'écran du vendeur.
+    await expectNoListingTitle(page, screen);
     if (tablet) await expectNoHorizontalScroll(page, screen);
   };
   const validate = () => page.getByRole('button', { name: /Valider et continuer/ }).click();
@@ -1072,7 +1074,7 @@ async function walkLive(
   await page
     .locator('label')
     .filter({ has: page.locator('input[name="seller_most_dangerous_comparable_id"]') })
-    .filter({ hasText: COMPETITORS[0].title })
+    .filter({ hasText: neutralLabel(COMPETITORS[0]) })
     .click();
   await choose('Meilleure localisation');
   await page.locator('textarea[name="seller_most_dangerous_comment"]').fill(COMMENT);
@@ -1139,7 +1141,10 @@ async function walkLive(
   await onScreen('Conclusion');
   // Le concurrent choisi deux écrans plus tôt se lit ici, sans attendre un rechargement — et
   // il s'y lit encore après un rechargement, cette fois depuis la base.
-  const dangerousLine = page.getByText(`${COMPETITORS[0].title} — Meilleure localisation`);
+  // Mission 107 — par son libellé neutre, jamais par le titre de l'annonce.
+  const dangerousLine = page.getByText(
+    new RegExp(`${neutralLabel(COMPETITORS[0]).source} — Meilleure localisation`),
+  );
   await expect(
     dangerousLine,
     'Le concurrent le plus dangereux choisi n’apparaît pas sur « Conclusion »',
@@ -1230,6 +1235,22 @@ async function expectAlone(page: Page, others: Competitor[], screen: string) {
     );
   }
 }
+
+// Mission 107 — ni le titre d'une annonce (« EXCLUSIVITÉ », une agence, une rue…) ni son adresse
+// ne passent côté vendeur : un concurrent s'y nomme par son libellé neutre.
+async function expectNoListingTitle(page: Page, screen: string) {
+  const payload = await pagePayload(page);
+  for (const competitor of COMPETITORS) {
+    expect(
+      payload,
+      `Le titre « ${competitor.title} » est dans la page vendeur « ${screen} »`,
+    ).not.toContain(competitor.title);
+  }
+}
+
+// Le libellé neutre d'un concurrent saisi à la main : pièces · surface · commune (M51).
+const neutralLabel = (competitor: Competitor): RegExp =>
+  new RegExp(`3 pièces · ${competitor.surface}\\s?m² · Nice`);
 
 // Règle absolue : la fourchette du conseiller n'est jamais montrée côté vendeur.
 async function expectFourchetteHidden(page: Page, screen: string) {

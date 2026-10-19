@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getUnknownCommuneOppositions } from '@/features/prospecting/queries/get-unknown-commune-oppositions';
-import { UNKNOWN_COMMUNE_NOTICE } from '@/features/prospecting/services/opposition-recheck';
+import { UnknownCommuneAlerts } from '@/features/prospecting/components/unknown-commune-alerts';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import {
   BUDGET_REACHED_HINT,
@@ -70,22 +70,8 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      {unknownCommunes.length > 0 ? (
-        <div
-          role="status"
-          data-testid="unknown-commune-oppositions"
-          className={`${card} flex flex-col gap-1 border-amber-300 p-5 text-sm text-amber-900 stage:text-amber-200`}
-        >
-          <p className="font-semibold">
-            {UNKNOWN_COMMUNE_NOTICE}
-            {unknownCommunes.length > 1 ? ` (${unknownCommunes.length})` : ''}
-          </p>
-          <p>
-            Commune tapée : {unknownCommunes.map((commune) => `« ${commune} »`).join(', ')}. Une
-            opposition n’est jamais retirée : réinscrivez l’adresse avec la bonne commune.
-          </p>
-        </div>
-      ) : null}
+      {/* Mission 107 — chaque alerte avec l'adresse, l'auteur et la date ; elle se corrige. */}
+      {unknownCommunes.length > 0 ? <UnknownCommuneAlerts alerts={unknownCommunes} /> : null}
 
       {budgetRead ? (
         <div className={`${card} flex flex-col gap-1.5 p-5`}>

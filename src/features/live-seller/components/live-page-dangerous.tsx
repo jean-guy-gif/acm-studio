@@ -71,12 +71,12 @@ export function LivePageDangerous({
                 <LivePhoto
                   photoUrl={entry.photoUrl}
                   photoUrls={[]}
-                  alt={entry.title ?? 'Bien concurrent'}
+                  alt={entry.neutralLabel}
                   compact
                 />
                 <div className="flex flex-col gap-2 p-4">
                   <div className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
-                    {entry.title ?? 'Bien concurrent'}
+                    {entry.neutralLabel}
                   </div>
                   <div className="text-sm text-zinc-500 stage:text-white/60">
                     {[entry.district, entry.city].filter(Boolean).join(', ') ||

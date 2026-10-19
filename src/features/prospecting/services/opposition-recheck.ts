@@ -1,4 +1,10 @@
+import {
+  arrondissementLabel,
+  readArrondissementName,
+  resolveArrondissement,
+} from '@/features/competitor-search/utils/arrondissements';
 import { normalizeCommuneName } from '@/features/competitor-search/utils/commune-name';
+import { addressKey } from '@/features/prospecting/services/address-key';
 import { manualCommuneLookupName } from '@/features/prospecting/services/manual-opposition';
 
 // Mission 105 — les oppositions « commune non vérifiée » (M104), revérifiées chaque nuit dès que
@@ -30,4 +36,33 @@ export function isCronAuthorized(
   secret: string | undefined,
 ): boolean {
   return secret != null && secret.length >= 16 && authorization === `Bearer ${secret}`;
+}
+
+// Mission 107 — le manager corrige la commune d'une opposition « commune inconnue ». La rue est
+// la clé gardée moins la commune tapée ; la nouvelle clé est construite par la fonction des
+// cartes (`addressKey`), avec la commune reconnue. null : rien à corriger sûrement (commune non
+// reconnue, rue introuvable dans la clé, arrondissement manquant).
+export function correctedOppositionKey(input: {
+  addressKey: string;
+  communeTyped: string | null;
+  correctedCommune: string;
+  found: { nom: string }[];
+}): string | null {
+  const typed = input.communeTyped ? addressKey(input.communeTyped) : null;
+  const key = addressKey(input.addressKey);
+  if (!typed || !key || !key.endsWith(` ${typed}`)) return null;
+  const street = key.slice(0, key.length - typed.length - 1);
+  const wanted = manualCommuneLookupName(input.correctedCommune);
+  const commune = input.found.find((candidate) => normalizeCommuneName(candidate.nom) === wanted);
+  if (!commune || !/^\d/.test(street)) return null;
+  let name = commune.nom;
+  if (
+    readArrondissementName(input.correctedCommune) != null ||
+    readArrondissementName(name) != null
+  ) {
+    const arrondissement = resolveArrondissement(input.correctedCommune, null);
+    if (arrondissement == null) return null;
+    name = arrondissementLabel(arrondissement);
+  }
+  return addressKey(`${street}, ${name}`);
 }

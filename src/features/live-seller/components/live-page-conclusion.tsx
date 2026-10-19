@@ -85,7 +85,7 @@ export function LivePageConclusion({
             label="Concurrent le plus dangereux"
             value={
               dangerous
-                ? `${dangerous.title ?? 'Bien concurrent'}${
+                ? `${dangerous.neutralLabel}${
                     summary?.seller_most_dangerous_reason
                       ? ` — ${DANGEROUS_REASON_LABELS[summary.seller_most_dangerous_reason as DangerousReason]}`
                       : ''
@@ -110,11 +110,11 @@ export function LivePageConclusion({
               <LivePhoto
                 photoUrl={dangerous.photoUrl}
                 photoUrls={[]}
-                alt={dangerous.title ?? 'Bien concurrent'}
+                alt={dangerous.neutralLabel}
                 compact
               />
               <div className="flex items-baseline justify-between gap-3 bg-white p-4 stage:bg-white/5">
-                <span className={statValue}>{dangerous.title ?? 'Bien concurrent'}</span>
+                <span className={statValue}>{dangerous.neutralLabel}</span>
                 <span className="font-title text-xl font-bold text-brand-deep stage:text-white">
                   {euro(dangerous.price)}
                 </span>
