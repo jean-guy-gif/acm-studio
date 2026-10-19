@@ -18,6 +18,7 @@ import {
   initialCreateComparableState,
   type CreateComparableState,
 } from '@/features/comparables/actions/create-comparable-state';
+import { DismissedDuplicates } from '@/features/comparables/components/dismissed-duplicates';
 import { ListingHistorySummary } from '@/features/comparable-import/components/listing-history-summary';
 import type {
   ComparableImportResult,
@@ -100,6 +101,7 @@ function acmPricePerSquareMeter(data: ImportedComparableData): number | null {
 }
 
 type Props = {
+  projectId: string;
   createAction: (
     state: CreateComparableState,
     formData: FormData,
@@ -111,6 +113,7 @@ type Props = {
 };
 
 export function NewComparablePanel({
+  projectId,
   createAction,
   importAction,
   importHtmlAction,
@@ -202,7 +205,10 @@ export function NewComparablePanel({
           caractéristiques sont aspirés pour vous.
         </p>
         {extension.available === false ? (
-          <ExtensionRequiredNotice reason={extension.noSiteAccess ? 'no_site_access' : 'missing'} />
+          <ExtensionRequiredNotice
+            reason={extension.noSiteAccess ? 'no_site_access' : 'missing'}
+            onRetry={extension.recheck}
+          />
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
@@ -316,6 +322,15 @@ export function NewComparablePanel({
           <p role="alert" className={`${alertError} sm:col-span-2`}>
             {createState.error}
           </p>
+        ) : null}
+        {/* Mission 108 — déjà dans le dossier, écartée : « la retenir ? ». */}
+        {createState.duplicate && !createState.duplicate.selected ? (
+          <div className="sm:col-span-2">
+            <DismissedDuplicates
+              projectId={projectId}
+              items={[{ id: createState.duplicate.id, label: '' }]}
+            />
+          </div>
         ) : null}
         <input type="hidden" name="__importGen" value={String(importKey)} />
         {/* Mission 83 — vendeur et exclusivité lus sur l'annonce importée : ils suivent la fiche

@@ -52,6 +52,7 @@ export function LiveLaunchActions({
   resume,
   isExample,
   toVerifyCount,
+  decisionOutdated = false,
   proceed = false,
 }: {
   projectId: string;
@@ -59,6 +60,7 @@ export function LiveLaunchActions({
   resume: LiveResume;
   isExample: boolean;
   toVerifyCount: number;
+  decisionOutdated?: boolean;
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
   // rien à demander s'ouvre tout de suite ; ce qui demande s'affiche déjà ouvert.
   proceed?: boolean;
@@ -66,7 +68,12 @@ export function LiveLaunchActions({
   const router = useRouter();
   const stored = useStoredLivePosition(projectId);
   const [asking, setAsking] = useState(proceed);
-  const check = liveLaunchCheck({ competitorCount, isExample, toVerifyCount });
+  const check = liveLaunchCheck({
+    competitorCount,
+    isExample,
+    toVerifyCount,
+    decisionOutdated,
+  });
   const href = `/live/${projectId}`;
   const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
   const direct =

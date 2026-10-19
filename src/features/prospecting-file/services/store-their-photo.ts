@@ -9,6 +9,7 @@ import {
   PROPERTY_PHOTO_BUCKET,
 } from '@/features/subject-property-photos/constants';
 import { validatePhotoBytes } from '@/features/subject-property-photos/services/validate-photo-upload';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
 
 // Mission 87 — une photo du bien concurrent entre dans le stockage de l'agence, sous le dossier
@@ -55,6 +56,13 @@ export async function copyListingPhoto(
   return storeTheirPhotoBytes(supabase, prefix, fetched.bytes);
 }
 
-export async function removeTheirPhoto(supabase: Client, path: string): Promise<void> {
-  await supabase.storage.from(PROPERTY_PHOTO_BUCKET).remove([path]);
+// Mission 108 — un fichier que le stockage refuse de retirer ne passe plus en silence : le journal
+// le note (la photo d'annonce appartient à son auteur, M105).
+export async function removeTheirPhoto(supabase: Client, path: string): Promise<boolean> {
+  const { error } = await supabase.storage.from(PROPERTY_PHOTO_BUCKET).remove([path]);
+  if (error) {
+    await reportServerError('retrait de la photo d’un courrier', error);
+    return false;
+  }
+  return true;
 }

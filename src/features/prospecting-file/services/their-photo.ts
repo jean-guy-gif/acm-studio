@@ -116,3 +116,10 @@ export const LISTING_PHOTOS_OFFERED = false;
 export function withoutListingPhoto(saved: SavedTheirPhoto): SavedTheirPhoto {
   return saved.mode === 'listing' ? { mode: 'none', sourceUrl: null, path: null } : saved;
 }
+
+// Mission 108 — après un enregistrement, le fichier gardé que le courrier ne montre plus : il est
+// retiré du stockage. `storedPath` est le fichier RÉELLEMENT gardé, photo d'annonce comprise
+// (masquée à l'écran depuis M105) — sinon elle restait dans le stockage pour toujours.
+export function staleTheirPhotoPath(storedPath: string | null, kept: string | null): string | null {
+  return storedPath && storedPath !== kept ? storedPath : null;
+}

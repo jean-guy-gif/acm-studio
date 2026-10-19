@@ -182,9 +182,12 @@ export function LivePageAnalysis({
           <div className={statLabel}>Prix des concurrents</div>
           <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
           {/* Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ». */}
-          <div className="text-sm text-zinc-500 stage:text-white/60">
-            {competitorPriceBasisLabel(reading)}
-          </div>
+          {/* Mission 108 — sous un tiret (calcul impossible), aucun « Calculé sur N ». */}
+          {gaps.competitiveMarketCentral != null ? (
+            <div className="text-sm text-zinc-500 stage:text-white/60">
+              {competitorPriceBasisLabel(reading)}
+            </div>
+          ) : null}
         </div>
         <div className={`${panel} flex flex-col gap-1.5`}>
           <div className={statLabel}>Analyse du conseiller</div>

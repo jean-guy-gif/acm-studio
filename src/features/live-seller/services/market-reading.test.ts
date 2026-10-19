@@ -183,3 +183,47 @@ describe('la lecture voyage avec la fourchette, jamais avant', () => {
     expect(JSON.stringify(range?.marketReading)).not.toContain('777777');
   });
 });
+
+// Mission 108 — ce que le vendeur lit est juste.
+describe('« Analyse des prix » — Mission 108', () => {
+  it('un « Non » dit APRÈS la révélation sort de la bande et de la médiane', () => {
+    const late = {
+      ...entry('late', 900_000),
+      response: { seller_estimated_listing_price: 880_000, seller_serious_competitor: 'no' },
+    };
+    const reading = buildMarketReading(
+      [entry('a', 300_000), entry('b', 320_000), late],
+      NO_ADJUST,
+      3,
+    );
+    expect(reading.prices).toEqual([300_000, 320_000]);
+    expect(reading.revealedCount).toBe(2);
+    expect(reading.medianPrice).toBe(310_000);
+  });
+
+  const decided = (outdated: boolean): LiveComparativeData =>
+    ({
+      comparables: [],
+      sellerSummary: { seller_perceived_property_price: 350_000 },
+      competitiveMarketCentral: 305_000,
+      calculationCount: 4,
+      advisorDecision: {
+        advisorPrice: 330_000,
+        sellerPrice: null,
+        advisorComparativeMarketPrice: null,
+        justification: null,
+      },
+      positioningOutdated: outdated,
+      priceGaps: {},
+    }) as unknown as LiveComparativeData;
+
+  it('une décision périmée reste « Prix retenu par votre conseiller », sans « à partir de N »', () => {
+    const fresh = authorizeAdvisorRange(decided(false))?.marketReading;
+    expect(competitorPriceBasisLabel(fresh!)).toBe(
+      'Prix retenu par votre conseiller à partir de 4 concurrents',
+    );
+    const reading = authorizeAdvisorRange(decided(true))?.marketReading;
+    expect(reading?.competitorPriceBasis).toBe('advisor_only');
+    expect(competitorPriceBasisLabel(reading!)).toBe('Prix retenu par votre conseiller');
+  });
+});

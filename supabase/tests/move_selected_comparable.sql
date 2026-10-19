@@ -1,7 +1,7 @@
 -- Verification of public.move_selected_comparable().
 -- Run against the local stack:
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
---     -f - < supabase/tests/move_selected_comparable.sql
+--     -v ON_ERROR_STOP=1 < supabase/tests/move_selected_comparable.sql
 --
 -- Everything runs in one transaction and is ROLLED BACK at the end, so it leaves
 -- no data behind. Each assertion RAISEs EXCEPTION on failure; the final NOTICE is
@@ -22,7 +22,7 @@ insert into public.profiles (id, agency_id, first_name, last_name, email, role)
 values (
   '22222222-2222-2222-2222-222222222222',
   '11111111-1111-1111-1111-111111111111',
-  'Test', 'Advisor', 'advisor@test.local', 'owner'
+  'Test', 'Advisor', 'advisor@test.local', 'manager'
 );
 
 insert into public.projects (id, agency_id, advisor_id, seller_name, status)

@@ -121,8 +121,13 @@ export async function pingWithRetries(
 }
 
 // Mission 105 — une fois l'extension détectée, l'onglet s'en souvient : les clics suivants ne
-// font plus qu'UN essai (elle répond en quelques millisecondes), plus les 4 secondes du correctif.
+// font plus les 4 secondes du correctif. Mission 108 — DEUX essais, plus un : le service worker de
+// l'extension peut être en veille, et un seul signal manqué la disait « absente » à tort.
 const DETECTED_KEY = 'acm-extension-detected';
+export const REMEMBERED_PING_ATTEMPTS = 2;
+// Mission 108 — sans extension, l'attente n'a lieu qu'UNE fois par onglet : les clics suivants
+// disent tout de suite le message d'installation ; « Réessayer » refait la détection complète.
+const ABSENT_KEY = 'acm-extension-absent';
 type TabMemory = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 function tabMemory(): TabMemory | null {
@@ -161,28 +166,59 @@ export async function pingDirect(
   });
 }
 
+function remember(memory: TabMemory | null, write: (memory: TabMemory) => void): void {
+  try {
+    if (memory) write(memory);
+  } catch {
+    // Mémoire refusée : on redétectera, c'est tout.
+  }
+}
+
 export async function detectExtension(deps: {
   relay: () => Promise<ExtensionPing | null>;
   direct: () => Promise<{ version?: string } | null>;
   memory: TabMemory | null;
+  // « Réessayer » : la détection complète, sans tenir compte de ce que l'onglet a retenu.
+  force?: boolean;
 }): Promise<ExtensionPing> {
   let remembered = false;
+  let absent: string | null = null;
   try {
     remembered = deps.memory?.getItem(DETECTED_KEY) === '1';
+    absent = deps.memory?.getItem(ABSENT_KEY) ?? null;
   } catch {
     remembered = false;
   }
-  const result = await pingWithRetries(deps.relay, remembered ? 1 : PING_ATTEMPTS);
-  try {
-    if (result.available) deps.memory?.setItem(DETECTED_KEY, '1');
-    else deps.memory?.removeItem(DETECTED_KEY);
-  } catch {
-    // Mémoire refusée : on redétectera, c'est tout.
+  if (!deps.force && !remembered && absent != null) {
+    return absent === 'no_site_access'
+      ? { available: false, noSiteAccess: true }
+      : { available: false };
   }
-  if (result.available) return result;
+  const result = await pingWithRetries(
+    deps.relay,
+    remembered && !deps.force ? REMEMBERED_PING_ATTEMPTS : PING_ATTEMPTS,
+  );
+  if (result.available) {
+    remember(deps.memory, (memory) => {
+      memory.setItem(DETECTED_KEY, '1');
+      memory.removeItem(ABSENT_KEY);
+    });
+    return result;
+  }
+  remember(deps.memory, (memory) => memory.removeItem(DETECTED_KEY));
   // Le relais de la page n'a pas répondu : l'extension est-elle là, mais sans accès au site ?
   const direct = await deps.direct().catch(() => null);
-  return direct ? { available: false, version: direct.version, noSiteAccess: true } : result;
+  const missing: ExtensionPing = direct
+    ? { available: false, version: direct.version, noSiteAccess: true }
+    : result;
+  // Retenu seulement après une détection COMPLÈTE : un service worker en veille, après une
+  // première détection réussie, n'est pas une extension absente.
+  if (!remembered || deps.force) {
+    remember(deps.memory, (memory) =>
+      memory.setItem(ABSENT_KEY, missing.noSiteAccess ? 'no_site_access' : 'absent'),
+    );
+  }
+  return missing;
 }
 
 let lastPing: ExtensionPing | null = null;
@@ -193,8 +229,9 @@ export function lastExtensionPing(): ExtensionPing | null {
 }
 
 // "Es-tu là ?" — resolves { available: false } when no extension answers in time.
-export async function pingExtension(): Promise<ExtensionPing> {
+export async function pingExtension(options: { force?: boolean } = {}): Promise<ExtensionPing> {
   lastPing = await detectExtension({
+    force: options.force,
     relay: async () => {
       try {
         const response = await send<{ ok?: boolean; version?: string }>(

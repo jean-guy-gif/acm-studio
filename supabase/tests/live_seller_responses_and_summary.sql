@@ -15,8 +15,8 @@ insert into public.agencies (id, name) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'Agence A'),
   ('bbbbbbbb-0000-0000-0000-000000000000', 'Agence B');
 insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
-  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Al', 'A', 'a@t.l', 'owner'),
-  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bo', 'B', 'b@t.l', 'owner');
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Al', 'A', 'a@t.l', 'manager'),
+  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bo', 'B', 'b@t.l', 'manager');
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
   ('33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000000',
    '11111111-1111-1111-1111-111111111111', 'Vendeur A', 'draft'),
@@ -138,7 +138,11 @@ begin
 
   -- A7: cannot update / delete B's response (USING hides it -> 0 rows).
   update public.live_seller_responses set seller_serious_competitor = 'no' where project_id = proj_b;
-  delete from public.live_seller_responses where project_id = proj_b;
+  -- Mission 92 — supprimer une réponse depuis le navigateur est refusé, même la sienne.
+  failed := false;
+  begin delete from public.live_seller_responses where project_id = proj_b;
+  exception when insufficient_privilege then failed := true; end;
+  if not failed then raise exception 'A7: browser delete of a response accepted'; end if;
 
   -- A8: summary for own project OK; forged dangerous comparable (B's) -> denied.
   insert into public.live_seller_summary (project_id, agency_id, seller_perceived_property_price)

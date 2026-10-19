@@ -83,6 +83,9 @@ export type ProspectingFileContext =
         saved: SavedTheirPhoto;
         signed: Record<string, string | null>;
         prefix: string;
+        // Mission 108 — le fichier réellement gardé pour ce courrier, photo d'annonce comprise
+        // (`saved` la masque depuis M105) : c'est lui que le réenregistrement retire.
+        storedPath: string | null;
       };
       qr: QrCode;
     };
@@ -292,6 +295,7 @@ export async function getProspectingFile(
       saved: savedTheirPhoto,
       signed: Object.fromEntries(theirSigned.map((photo) => [photo.path, photo.url])),
       prefix,
+      storedPath: row?.their_photo_path?.startsWith(prefix) ? row.their_photo_path : null,
     },
     qr: buildQrCode(
       buildVCard({

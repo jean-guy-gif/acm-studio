@@ -8,7 +8,15 @@ import { isManagerRole } from '@/features/team/services/role';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
-export type InviteResult = { ok: true } | { ok: false; error: string };
+export type InviteResult =
+  | { ok: true }
+  // Mission 108 — l'adresse est celle d'un membre retiré de cette agence : « Réintégrer ».
+  | { ok: false; error: string; reinstateMemberId?: string };
+
+// Les jokers de `ilike` (`%`, `_`, `\`) pris à la lettre.
+function literal(pattern: string): string {
+  return pattern.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
 
 // Mission 60 §1 — inviter. Réservé au manager (écran ET adresse : le garde est ici). L'agence et
 // le rôle voyagent avec l'invitation. L'ÉCHEC DE LIVRAISON est une issue de première classe :
@@ -34,12 +42,26 @@ export async function inviteMember(formData: FormData): Promise<InviteResult> {
 
   // Cette adresse a déjà un compte dans une agence : un profil appartient à une seule agence, on
   // ne déplace personne en silence. On le dit, on n'invite pas (§1).
-  const { data: existing } = await service
+  // Mission 108 — l'adresse est comparée À L'IDENTIQUE, sans joker (`a_b@x.fr` n'est pas
+  // `axb@x.fr`), en minuscules des deux côtés ; une lecture en échec n'invite pas.
+  const { data: candidates, error: readError } = await service
     .from('profiles')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle();
+    .select('id, agency_id, removed_at, email')
+    .ilike('email', literal(email));
+  if (readError) {
+    return { ok: false, error: 'La vérification de l’adresse a échoué. Réessayez.' };
+  }
+  const existing = (candidates ?? []).find(
+    (candidate) => (candidate.email ?? '').trim().toLowerCase() === email,
+  );
   if (existing) {
+    if (existing.agency_id === profile.agency_id && existing.removed_at != null) {
+      return {
+        ok: false,
+        error: 'Cette personne a été retirée de votre agence : vous pouvez la réintégrer.',
+        reinstateMemberId: existing.id,
+      };
+    }
     return { ok: false, error: 'Cette adresse a déjà un compte dans une agence.' };
   }
 

@@ -234,6 +234,8 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
       live.comparables,
       {
         advisorPrice: live.advisorDecision?.advisorPrice ?? null,
+        // Mission 108 — une décision périmée ne se dit plus « à partir de N concurrents ».
+        advisorOutdated: live.positioningOutdated,
         marketComputed: live.competitiveMarketCentral,
       },
       live.calculationCount,

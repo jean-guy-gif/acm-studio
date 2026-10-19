@@ -8,6 +8,7 @@ import {
   DEMO_AT,
 } from '@/test-fixtures/demo-data';
 import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
+import type { SavedPricePositioning } from '@/features/price-positioning/types/saved-price-positioning';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 
 describe('sellerFacingCompetitorPrice — un seul « Prix des concurrents » devant le vendeur', () => {
@@ -19,19 +20,47 @@ describe('sellerFacingCompetitorPrice — un seul « Prix des concurrents » dev
 });
 
 describe('les écarts montrés au vendeur se mesurent au prix des concurrents', () => {
-  const build = (advisorPrice: number | null) =>
+  const present = (savedPositioning: SavedPricePositioning | null) =>
     buildSellerPresentation({
       project: demoProject,
       property: demoProperty,
       diagnostics: null,
       condominium: null,
       comparables: demoComparables,
-      savedPositioning: advisorPrice == null ? null : { ...demoSavedPositioning, advisorPrice },
+      savedPositioning,
       sellerResponses: [],
       sellerSummary: null,
       generatedAt: DEMO_AT,
       propertyPhotoUrls: [],
-    }).live;
+    });
+  // Une décision À JOUR : enregistrée sur le calcul courant (Mission 108 — une décision périmée
+  // ne se montre plus au vendeur).
+  const computed = present(null).currentPositioning;
+  if (!computed) throw new Error('fixture sans positionnement');
+  const current = computed;
+  const upToDate: SavedPricePositioning = {
+    ...demoSavedPositioning,
+    rangeLow: current.recommendedRange?.low ?? 0,
+    rangeCentral: current.recommendedRange?.central ?? 0,
+    rangeHigh: current.recommendedRange?.high ?? 0,
+    confidenceScore: current.confidence.score,
+    confidenceLevel: current.confidence.level,
+    snapshot: {
+      ...demoSavedPositioning.snapshot,
+      usedCount: current.dataset.usedCount,
+      influentialComparableIds: current.influentialComparables.map((c) => c.comparableId),
+    },
+  };
+  const build = (advisorPrice: number | null) =>
+    present(advisorPrice == null ? null : { ...upToDate, advisorPrice }).live;
+
+  it('Mission 108 — une décision périmée : le vendeur voit toujours le prix décidé', () => {
+    const outdated = present({ ...upToDate, advisorPrice: 111111, rangeCentral: 1 });
+    expect(outdated.positioningStatus).toBe('outdated');
+    expect(outdated.live?.positioningOutdated).toBe(true);
+    // Jamais le calcul du jour à sa place.
+    expect(outdated.live?.priceGaps.competitiveMarketCentral).toBe(111111);
+  });
 
   it('prix ajusté par le conseiller : c’est lui que voit le vendeur, le calcul brut reste à part', () => {
     const live = build(111111);

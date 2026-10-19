@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { fetchCommunes } from '@/features/competitor-search/services/fetch-geo';
 import {
   findCard,
   getProspectingCards,
@@ -11,15 +10,9 @@ import { insertOppositions } from '@/features/prospecting/queries/insert-opposit
 import { addressKey } from '@/features/prospecting/services/address-key';
 import {
   MANUAL_OPPOSITION_CHOOSE,
-  MANUAL_OPPOSITION_INCOMPLETE,
-  MANUAL_OPPOSITION_NO_COMMUNE,
-  decideManualOpposition,
-  manualCommuneLookupName,
-  parseManualAddress,
-  unverifiedManualOpposition,
   type ManualCommune,
-  type ManualOppositionDecision,
 } from '@/features/prospecting/services/manual-opposition';
+import { resolveManualOpposition } from '@/features/prospecting/services/resolve-typed-address';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -84,38 +77,6 @@ export type ManualOppositionCheck =
   | { ok: true; status: 'ready'; display: string; verified: boolean }
   | { ok: true; status: 'choose'; communes: ManualCommune[] }
   | { ok: false; error: string };
-
-// L'adresse tapée, relue ici : sa commune est reconnue par le référentiel des communes
-// (geo.api.gouv.fr), jamais crue sur parole. Une panne du référentiel n'inscrit rien.
-async function resolveManualOpposition(
-  raw: unknown,
-  rawCommuneCode: unknown,
-): Promise<ManualOppositionDecision> {
-  const parts = parseManualAddress(raw);
-  if (!parts) {
-    return { status: 'error', error: MANUAL_OPPOSITION_INCOMPLETE };
-  }
-  if (parts.postalCode == null && parts.commune == null) {
-    return { status: 'error', error: MANUAL_OPPOSITION_NO_COMMUNE };
-  }
-  const found = await fetchCommunes(
-    parts.postalCode != null
-      ? { postalCode: parts.postalCode }
-      : { name: manualCommuneLookupName(parts.commune ?? '') },
-  );
-  if (found == null) {
-    // Mission 104 — le service ne répond pas, même au second essai : la commune tapée suffit.
-    return unverifiedManualOpposition(parts);
-  }
-  const communes = found
-    .filter((commune) => typeof commune.code === 'string' && typeof commune.nom === 'string')
-    .map((commune) => ({ code: commune.code, name: commune.nom }));
-  const chosenCode =
-    typeof rawCommuneCode === 'string' && /^[0-9AB]{5}$/.test(rawCommuneCode)
-      ? rawCommuneCode
-      : null;
-  return decideManualOpposition(parts, communes, chosenCode);
-}
 
 // Mission 103 — AVANT d'inscrire, l'écran montre l'adresse comprise (« 14 chemin des Oliviers,
 // Cagnes-sur-Mer — Inscrire ? »), ou demande la commune quand le code postal en couvre plusieurs.

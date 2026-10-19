@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
+import {
+  DismissedDuplicates,
+  type DismissedDuplicate,
+} from '@/features/comparables/components/dismissed-duplicates';
 import { dismissPendingImport } from '@/features/competitor-search/actions/pending-imports';
 import type { PendingImportView } from '@/features/competitor-search/queries/get-pending-imports';
 import {
@@ -32,9 +36,13 @@ export function PendingImportsBanner({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  // Mission 108 — déjà dans le dossier, écartée : la question reste après le rafraîchissement.
+  const [dismissed, setDismissed] = useState<DismissedDuplicate[]>([]);
 
   if (pending.length === 0) {
-    return null;
+    return dismissed.length > 0 ? (
+      <DismissedDuplicates projectId={projectId} items={dismissed} />
+    ) : null;
   }
 
   const note = (id: string, text: string) => setNotes((current) => ({ ...current, [id]: text }));
@@ -54,6 +62,13 @@ export function PendingImportsBanner({
       );
       if (outcome.status === 'pending') {
         note(item.id, `Toujours en attente : ${READ_FAILURE_LABELS[outcome.cause]}.`);
+      } else if (outcome.status === 'already_dismissed') {
+        const comparableId = outcome.comparableId;
+        setDismissed((current) =>
+          current.some((entry) => entry.id === comparableId)
+            ? current
+            : [...current, { id: comparableId, label: item.label }],
+        );
       }
     } catch {
       note(item.id, 'Toujours en attente : l’import a été interrompu.');
@@ -86,6 +101,7 @@ export function PendingImportsBanner({
         <p className="font-title text-base font-semibold">{pendingImportsTitle(pending.length)}</p>
         <p>{PENDING_IMPORTS_HINT}</p>
       </div>
+      <DismissedDuplicates projectId={projectId} items={dismissed} />
       <ul className="flex flex-col gap-2">
         {pending.map((item) => (
           <li

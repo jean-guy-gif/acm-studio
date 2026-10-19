@@ -177,3 +177,16 @@ describe('l’étape « Lancer le Live »', () => {
     expect(banner).not.toContain('`/live/${projectId}`');
   });
 });
+
+describe('Mission 108 — une décision de prix périmée', () => {
+  it('est rappelée au lancement, sans bloquer', () => {
+    const check = liveLaunchCheck({
+      competitorCount: 4,
+      isExample: true,
+      toVerifyCount: 0,
+      decisionOutdated: true,
+    });
+    expect(check.status).toBe('ask');
+    expect(check.status === 'ask' && check.notices[0]).toMatch(/^Décision de prix à actualiser/);
+  });
+});

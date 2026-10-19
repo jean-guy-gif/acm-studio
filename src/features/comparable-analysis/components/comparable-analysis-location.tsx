@@ -43,7 +43,7 @@ export function ComparableAnalysisLocation({
       </div>
 
       <p className="text-sm text-zinc-600 stage:text-white/65">
-        Origine — Manuel : {locationAnalysis.sources.manual} · Import URL:{' '}
+        Saisis à la main : {locationAnalysis.sources.manual} · Importés depuis l’annonce :{' '}
         {locationAnalysis.sources.url}
       </p>
     </section>

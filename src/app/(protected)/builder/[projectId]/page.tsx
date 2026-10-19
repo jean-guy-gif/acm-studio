@@ -121,6 +121,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 resume={launch.resume}
                 isExample={launch.isExample}
                 toVerifyCount={launch.toVerifyCount}
+                decisionOutdated={launch.decisionOutdated}
               />
             ) : null}
           </span>

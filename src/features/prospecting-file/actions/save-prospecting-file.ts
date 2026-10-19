@@ -17,6 +17,7 @@ import {
   removeTheirPhoto,
 } from '@/features/prospecting-file/services/store-their-photo';
 import {
+  staleTheirPhotoPath,
   validTheirPhotoChoice,
   type SavedTheirPhoto,
 } from '@/features/prospecting-file/services/their-photo';
@@ -63,7 +64,7 @@ export async function saveProspectingFile(
 
   // Mission 87 — la photo du bien concurrent. Une photo d'annonce doit être l'une de celles de
   // CETTE annonce, un fichier doit être dans le dossier de ce concurrent : sinon, refus.
-  const { listing, saved, prefix } = context.theirPhoto;
+  const { listing, saved, prefix, storedPath } = context.theirPhoto;
   if (!validTheirPhotoChoice(input.theirPhoto, listing, prefix)) {
     return { ok: false, error: 'Cette photo ne peut pas être retenue. Choisissez-en une autre.' };
   }
@@ -125,9 +126,11 @@ export async function saveProspectingFile(
     }
     return { ok: false, error: FAILURE };
   }
-  // Le fichier que ce dossier ne montre plus est retiré du stockage.
-  if (saved.path && saved.path !== theirPhoto.path) {
-    await removeTheirPhoto(supabase, saved.path);
+  // Le fichier que ce dossier ne montre plus est retiré du stockage. Mission 108 — y compris la
+  // photo d'annonce d'un courrier préparé avant M105, que `saved` ne montre plus.
+  const stale = staleTheirPhotoPath(storedPath, theirPhoto.path);
+  if (stale) {
+    await removeTheirPhoto(supabase, stale);
   }
 
   revalidatePath(`/builder/${projectId}/prospection/${competitorId}`);

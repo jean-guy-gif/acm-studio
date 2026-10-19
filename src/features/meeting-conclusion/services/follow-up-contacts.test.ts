@@ -12,6 +12,7 @@ import {
   nextFollowUpLabel,
   parseNextFollowUpOn,
   sortContacts,
+  readFirstFollowUpOn,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 
 const NOW = new Date('2026-10-20T12:00:00Z');
@@ -138,5 +139,39 @@ describe('la date de prochaine relance', () => {
 
   it('se dit dans l’historique', () => {
     expect(nextFollowUpLabel('2026-11-14')).toBe('Prochaine relance le 14/11');
+  });
+});
+
+// Mission 108 — la date de première relance, posée dès la conclusion « à relancer ».
+describe('la première relance, dès la conclusion', () => {
+  const now = new Date('2026-10-19T10:00:00+02:00');
+  const concluded = '2026-10-01T10:00:00+02:00';
+
+  it('avant toute relance, la date posée à la conclusion décide (plus les 7 jours)', () => {
+    expect(isFollowUpDueNow(concluded, [], now)).toBe(true); // 18 jours, règle des 7 jours
+    expect(isFollowUpDueNow(concluded, [], now, '2026-11-01')).toBe(false);
+    expect(isFollowUpDueNow(concluded, [], now, '2026-10-19')).toBe(true);
+  });
+
+  it('une relance enregistrée reprend la main', () => {
+    const contacts = [{ contactedAt: '2026-10-18T10:00:00+02:00', nextFollowUpOn: '2026-10-19' }];
+    expect(isFollowUpDueNow(concluded, contacts, now, '2026-12-01')).toBe(true);
+  });
+
+  it('proposée selon le motif, relue, et seulement pour « à relancer »', () => {
+    expect(readFirstFollowUpOn('', 'follow_up', 'thinking_price', now)).toEqual({
+      ok: true,
+      day: '2026-11-19',
+    });
+    expect(readFirstFollowUpOn('', 'follow_up', 'consulting_relative', now)).toEqual({
+      ok: true,
+      day: '2026-10-26',
+    });
+    expect(readFirstFollowUpOn('2026-10-25', 'follow_up', null, now)).toEqual({
+      ok: true,
+      day: '2026-10-25',
+    });
+    expect(readFirstFollowUpOn('2026-10-18', 'follow_up', null, now)).toEqual({ ok: false });
+    expect(readFirstFollowUpOn('2026-10-25', 'signed', null, now)).toEqual({ ok: true, day: null });
   });
 });

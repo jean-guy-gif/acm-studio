@@ -1,3 +1,5 @@
+import { saveSearchDefaults } from '@/features/competitor-search/actions/save-search-defaults';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -95,6 +97,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
         commune.ok && commune.arrondissement != null,
       ),
       saveAction: saveSearchSettings.bind(null, projectId),
+      advisorDefaults: parseSearchSettings((await getProfile())?.search_defaults),
+      saveDefaultsAction: saveSearchDefaults,
     };
   }
 

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   advancementSteps,
+  FOURCHETTE_LABEL,
   fourchetteLabel,
+  pendingImportLabel,
   propertyLabel,
 } from '@/features/projects/services/preparation-card';
 
@@ -50,6 +52,7 @@ describe('preparation-card — aucune valeur inventée (§1 / §5)', () => {
       hasProperty: true,
       exploitableCount: 2,
       hasPositioning: false,
+      pendingImportCount: 0,
       ready: false,
     });
     expect(steps).toEqual([
@@ -62,8 +65,29 @@ describe('preparation-card — aucune valeur inventée (§1 / §5)', () => {
       hasProperty: true,
       exploitableCount: 6,
       hasPositioning: true,
+      pendingImportCount: 0,
       ready: true,
     });
     expect(ready.every((s) => s.done)).toBe(true);
+  });
+});
+
+// Mission 108 — un dossier « Prêt » est vraiment prêt, et sa carte ne dit qu'une « Décision de prix ».
+describe('Mission 108 — la carte d’un dossier', () => {
+  it('un concurrent retenu en attente d’import retient le dossier, et se dit', async () => {
+    const { isProjectReady } = await import('@/features/projects/services/project-readiness');
+    const base = { hasProperty: true, exploitableCount: 5, hasPositioning: true };
+    expect(isProjectReady(base)).toBe(true);
+    expect(isProjectReady({ ...base, pendingImportCount: 1 })).toBe(false);
+    expect(pendingImportLabel(2)).toBe('2 en attente d’import');
+    expect(pendingImportLabel(0)).toBeNull();
+  });
+
+  it('la ligne de la fourchette dit « Votre fourchette », plus « Décision de prix »', async () => {
+    const { readFileSync } = await import('node:fs');
+    const page = readFileSync('src/app/(protected)/builder/page.tsx', 'utf8');
+    expect(page).not.toContain('Décision de prix :');
+    expect(page).toContain('{FOURCHETTE_LABEL} :');
+    expect(FOURCHETTE_LABEL).toBe('Votre fourchette');
   });
 });

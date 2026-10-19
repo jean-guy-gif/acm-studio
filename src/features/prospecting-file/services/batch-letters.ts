@@ -46,13 +46,26 @@ export function splitBatchLetters<Row, Context extends BatchContext>(
 // Mission 105 — les adresses écartées AVANT la préparation, dites elles aussi : « Ne plus
 // solliciter », et l'adresse encore à confirmer. Elles ne s'impriment pas ; le conseiller sait
 // pourquoi. Les cartes déjà remises, en rendez-vous ou « pas intéressé » ne sont pas concernées.
+// Mission 108 — un confrère (exclusivité) dont l'adresse n'est pas confirmée n'est plus écarté :
+// le courrier au confrère n'en a pas besoin (M90, M98).
 export function excludedFromBatch<Row>(
-  cards: { row: Row; status: string; opposed: boolean }[],
+  cards: { row: Row; status: string; step?: string | null; opposed: boolean }[],
 ): { row: Row; reason: string }[] {
-  return cards.flatMap(({ row, status, opposed }) => {
+  return cards.flatMap(({ row, status, step, opposed }) => {
     if (opposed) return [{ row, reason: OPPOSED_MESSAGE }];
-    if (status === 'to_confirm')
+    if (status === 'to_confirm' && step !== 'colleague')
       return [{ row, reason: FILE_BLOCKER_MESSAGES.address_unconfirmed }];
     return [];
   });
+}
+
+// Ce que « Préparer tous les courriers » prépare : les cartes prêtes, et les confrères encore sans
+// adresse confirmée. Jamais une adresse « Ne plus solliciter ».
+export function isBatchPreparable(card: {
+  status: string;
+  step?: string | null;
+  opposed: boolean;
+}): boolean {
+  if (card.opposed) return false;
+  return card.status === 'ready' || (card.status === 'to_confirm' && card.step === 'colleague');
 }

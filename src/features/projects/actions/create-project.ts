@@ -1,5 +1,9 @@
 'use server';
 
+import {
+  parseSearchSettings,
+  settingsToStore,
+} from '@/features/competitor-search/services/search-settings';
 import { redirect } from 'next/navigation';
 
 import { getProfile } from '@/lib/auth/get-profile';
@@ -31,6 +35,8 @@ export async function createProject(formData: FormData): Promise<void> {
       seller_email: sellerEmail || null,
       seller_phone: sellerPhone || null,
       status: 'draft',
+      // Mission 108 — les réglages de recherche gardés par défaut par le conseiller (relus).
+      search_settings: settingsToStore(parseSearchSettings(profile.search_defaults)),
     })
     .select('id')
     .single();

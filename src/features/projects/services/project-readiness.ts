@@ -19,19 +19,27 @@ export type ProjectReadiness = {
   hasProperty: boolean;
   exploitableCount: number;
   hasPositioning: boolean;
+  // Mission 108 — concurrents retenus qui attendent encore leur import (M101).
+  pendingImportCount: number;
   ready: boolean;
 };
 
 // Le critère de « prêt », PUR et unique : bien vendeur saisi, ≥ 3 concurrents exploitables
 // retenus, fourchette validée. La bascule automatique (maybePromoteToReady) et le rattrapage
 // (migration) s'appuient tous deux dessus.
+// Mission 108 — et aucun concurrent retenu n'attend son import : un dossier « Prêt » est
+// vraiment prêt.
 export function isProjectReady(counts: {
   hasProperty: boolean;
   exploitableCount: number;
   hasPositioning: boolean;
+  pendingImportCount?: number;
 }): boolean {
   return (
-    counts.hasProperty && counts.exploitableCount >= MIN_READY_COMPARABLES && counts.hasPositioning
+    counts.hasProperty &&
+    counts.exploitableCount >= MIN_READY_COMPARABLES &&
+    counts.hasPositioning &&
+    (counts.pendingImportCount ?? 0) === 0
   );
 }
 
@@ -44,7 +52,7 @@ export async function evaluateProjectReadiness(
   projectId: string,
   agencyId: string,
 ): Promise<ProjectReadiness> {
-  const [property, comparables, positioning] = await Promise.all([
+  const [property, comparables, positioning, pending] = await Promise.all([
     supabase
       .from('subject_properties')
       .select('id')
@@ -62,6 +70,11 @@ export async function evaluateProjectReadiness(
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
       .maybeSingle(),
+    supabase
+      .from('pending_competitor_imports')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId),
   ]);
 
   const exploitableCount = (comparables.data ?? []).filter(
@@ -75,12 +88,15 @@ export async function evaluateProjectReadiness(
 
   const hasProperty = property.data != null;
   const hasPositioning = positioning.data != null;
+  // Une lecture en échec ne vaut pas « rien en attente » : le dossier ne bascule pas.
+  const pendingImportCount = pending.error ? Number.POSITIVE_INFINITY : (pending.count ?? 0);
 
   return {
     hasProperty,
     exploitableCount,
     hasPositioning,
-    ready: isProjectReady({ hasProperty, exploitableCount, hasPositioning }),
+    pendingImportCount,
+    ready: isProjectReady({ hasProperty, exploitableCount, hasPositioning, pendingImportCount }),
   };
 }
 

@@ -48,13 +48,21 @@ export const STREAM_ESTATE_MAX_COST_LABEL = `Coût maximal : ${STREAM_ESTATE_MAX
 // Ce dont dépend une recherche : le bien vendeur (adresse comprise, elle fixe le secteur) et la
 // fourchette. Calculée côté serveur, depuis la base — jamais depuis ce que l'écran affiche.
 // Sans réglage, l'empreinte est celle d'avant la mission 99 : ce qui était gardé le reste.
+// Mission 108 — des « Prix recherchés » réglés à part remplacent la fourchette de la fiche dans la
+// recherche : la fourchette n'entre alors plus dans l'empreinte, et la changer ne jette plus le
+// résultat payé.
 export function searchFingerprint(
   criteria: CompetitorSearchCriteria,
   address: string | null,
   settings: SearchSettings | null = null,
 ): string {
-  const entries = Object.entries({ ...criteria, address: address?.trim() || null }).sort(
-    ([a], [b]) => a.localeCompare(b),
+  const used: Partial<CompetitorSearchCriteria> = { ...criteria };
+  if (settings?.price != null) {
+    delete used.advisorPriceMin;
+    delete used.advisorPriceMax;
+  }
+  const entries = Object.entries({ ...used, address: address?.trim() || null }).sort(([a], [b]) =>
+    a.localeCompare(b),
   );
   return isDefaultSettings(settings)
     ? JSON.stringify(entries)

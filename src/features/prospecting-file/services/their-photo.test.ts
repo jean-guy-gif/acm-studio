@@ -144,3 +144,29 @@ describe('la photo affichée sur le dossier', () => {
     ).toBeNull();
   });
 });
+
+// Mission 108 — réenregistrer un courrier qui portait une photo d'annonce retire son fichier.
+describe('le fichier que le courrier ne montre plus', () => {
+  it('une photo d’annonce gardée, masquée depuis M105, est retirée au réenregistrement', async () => {
+    const { staleTheirPhotoPath, withoutListingPhoto } =
+      await import('@/features/prospecting-file/services/their-photo');
+    const stored = 'agence/projet/concurrent/annonce.jpg';
+    // L'écran ne la voit plus…
+    expect(
+      withoutListingPhoto({ mode: 'listing', sourceUrl: 'https://x', path: stored }).path,
+    ).toBeNull();
+    // … mais le réenregistrement « Sans photo » retire bien le fichier gardé.
+    expect(staleTheirPhotoPath(stored, null)).toBe(stored);
+    expect(staleTheirPhotoPath(stored, stored)).toBeNull();
+    expect(staleTheirPhotoPath(null, null)).toBeNull();
+  });
+
+  it('l’enregistrement retire le fichier réellement gardé, pas celui que l’écran voit', async () => {
+    const { readFileSync } = await import('node:fs');
+    const action = readFileSync(
+      'src/features/prospecting-file/actions/save-prospecting-file.ts',
+      'utf8',
+    );
+    expect(action).toContain('staleTheirPhotoPath(storedPath, theirPhoto.path)');
+  });
+});

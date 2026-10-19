@@ -42,6 +42,11 @@ import {
   pendingImportsTitle,
 } from '@/features/competitor-search/services/pending-import-labels';
 import { candidateSnapshot } from '@/features/competitor-search/services/search-snapshot';
+import { pendingImportLabel } from '@/features/competitor-search/services/pending-import-labels';
+import {
+  DismissedDuplicates,
+  type DismissedDuplicate,
+} from '@/features/comparables/components/dismissed-duplicates';
 import type { PrepareSearchResult } from '@/features/competitor-search/actions/prepare-competitor-search';
 import type { PrepareOpenSearchesResult } from '@/features/competitor-search/actions/prepare-open-searches';
 import type {
@@ -74,7 +79,11 @@ import {
 } from '@/features/competitor-search/components/ranked-candidate-card';
 import { type PortalRobotsCache } from '@/features/competitor-search/services/read-page-via-extension';
 import type { SaveSearchSettingsResult } from '@/features/competitor-search/actions/save-search-settings';
-import { SearchSettingsBlock } from '@/features/competitor-search/components/search-settings-block';
+import {
+  SEARCH_DEFAULTS_SAVED,
+  SearchSettingsBlock,
+} from '@/features/competitor-search/components/search-settings-block';
+import type { SaveSearchDefaultsResult } from '@/features/competitor-search/actions/save-search-defaults';
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import {
   settingsToInput,
@@ -182,6 +191,9 @@ type Props = {
     saved: SearchSettings;
     defaults: SearchDefaults;
     saveAction: (input: SearchSettingsInput) => Promise<SaveSearchSettingsResult>;
+    // Mission 108 — les réglages gardés par défaut par le conseiller, et l'action qui les garde.
+    advisorDefaults: SearchSettings;
+    saveDefaultsAction: (input: SearchSettingsInput) => Promise<SaveSearchDefaultsResult>;
   };
 };
 
@@ -434,6 +446,23 @@ export function CompetitorSearchPanel({
   const [importProgress, setImportProgress] = useState<BatchProgress | null>(null);
   // Mission 101 — annonces trouvées retirées, entrées dans le dossier sans être retenues.
   const [withdrawnImported, setWithdrawnImported] = useState(0);
+  // Mission 108 — « Réessayer » sous le message d'installation : la détection complète.
+  const retryExtension = async () => {
+    const ping = await pingExtension({ force: true });
+    setExtensionIssue(ping.available ? null : missingExtensionIssue());
+    if (ping.available) setError(null);
+  };
+  // Mission 108 — annonces déjà dans le dossier, écartées : « la retenir ? ».
+  const [dismissedDuplicates, setDismissedDuplicates] = useState<DismissedDuplicate[]>([]);
+  const noteDismissedDuplicate = (candidate: CompetitorCandidate, comparableId: string) =>
+    setDismissedDuplicates((current) =>
+      current.some((item) => item.id === comparableId)
+        ? current
+        : [
+            ...current,
+            { id: comparableId, label: pendingImportLabel(candidateSnapshot(candidate)) },
+          ],
+    );
   // La fiche en échec ET sa cause réelle (robots ? prix ? fenêtre ?), affichée.
   const [importFailures, setImportFailures] = useState<
     { entry: RankedCandidate; reason: string }[]
@@ -457,6 +486,10 @@ export function CompetitorSearchPanel({
   );
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [advisorDefaults, setAdvisorDefaults] = useState<SearchSettings | null>(
+    searchSettings?.advisorDefaults ?? null,
+  );
+  const [defaultsNote, setDefaultsNote] = useState<string | null>(null);
   // Le prix réglé pour la recherche Stream Estate : c'est lui, pas la fourchette de la fiche, qui
   // dit si un bien Stream Estate est « dans la fourchette » de la liste principale.
   const [streamRange, setStreamRange] = useState<SettingRange | null>(null);
@@ -541,6 +574,28 @@ export function CompetitorSearchPanel({
   // Mission 99 — enregistrer les réglages sur le dossier. Des réglages qui changent annulent le
   // résultat gardé (M93) et retirent les biens Stream Estate affichés : ils ont été cherchés avec
   // d'autres critères. Renvoie false si l'enregistrement a échoué (rien n'a changé).
+  // Mission 108 — « Garder comme mes réglages par défaut » : pour les nouveaux dossiers du
+  // conseiller ; ce dossier et les autres ne changent pas.
+  async function saveDefaults(): Promise<void> {
+    if (!searchSettings || settingsInput == null) {
+      return;
+    }
+    setSettingsError(null);
+    setDefaultsNote(null);
+    setSavingSettings(true);
+    try {
+      const result = await searchSettings.saveDefaultsAction(settingsInput);
+      if (!result.ok) {
+        setSettingsError(result.error);
+        return;
+      }
+      setAdvisorDefaults(result.defaults);
+      setDefaultsNote(SEARCH_DEFAULTS_SAVED);
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
   async function saveSettings(): Promise<boolean> {
     if (!searchSettings || settingsInput == null) {
       return true;
@@ -845,6 +900,7 @@ export function CompetitorSearchPanel({
     setExtensionIssue(null);
     setImportFailures([]);
     setWithdrawnImported(0);
+    setDismissedDuplicates([]);
 
     // Mission 101 — enregistrés d'abord : quoi qu'il arrive ensuite, aucun bien retenu n'est perdu.
     if (!(await registerRetained(checked.map((entry) => entry.candidate)))) {
@@ -881,6 +937,10 @@ export function CompetitorSearchPanel({
           const outcome = await importOne(entry.candidate, robotsCache, win.windowId);
           if (outcome.status === 'pending') {
             return { ok: false, reason: pendingReason(outcome.cause) };
+          }
+          if (outcome.status === 'already_dismissed') {
+            noteDismissedDuplicate(entry.candidate, outcome.comparableId);
+            return { ok: true };
           }
           entered.push(entry);
           if (isRetained(outcome)) retained.push(entry);
@@ -938,6 +998,11 @@ export function CompetitorSearchPanel({
           candidates: portal.candidates.filter((c) => c.url !== candidate.url),
         })),
       );
+    if (outcome.status === 'already_dismissed') {
+      noteDismissedDuplicate(candidate, outcome.comparableId);
+      leave();
+      return null;
+    }
     if (!isRetained(outcome)) {
       // Annonce retirée : entrée dans le dossier, non retenue, sans décision.
       setDecided((current) => ({ ...current, [candidate.url]: 'accepted' }));
@@ -974,7 +1039,9 @@ export function CompetitorSearchPanel({
         );
         return;
       }
-      if (isRetained(outcome)) {
+      if (outcome.status === 'already_dismissed') {
+        noteDismissedDuplicate(entry.candidate, outcome.comparableId);
+      } else if (isRetained(outcome)) {
         await recordDecisionsAction([decisionOf(entry, 'accepted')]);
       } else {
         setWithdrawnImported((count) => count + 1);
@@ -1045,6 +1112,9 @@ export function CompetitorSearchPanel({
           error={settingsError}
           onChange={setSettingsInput}
           onSave={() => void saveSettings()}
+          advisorDefaults={advisorDefaults}
+          defaultsNote={defaultsNote}
+          onSaveDefaults={() => void saveDefaults()}
         />
       ) : null}
       {streamEstateAction ? (
@@ -1183,7 +1253,7 @@ export function CompetitorSearchPanel({
             return (
               <div className={`${card} flex flex-col gap-1 p-3.5`}>
                 <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-                  {STREAM_ESTATE_LABEL} — {streamNote.communeName} ({streamNote.inseeCode})
+                  {STREAM_ESTATE_LABEL} — {streamNote.communeName}
                 </span>
                 <p className="text-sm font-medium text-zinc-800 stage:text-white">
                   {summary.headline}
@@ -1225,7 +1295,9 @@ export function CompetitorSearchPanel({
           {error}
         </p>
       ) : null}
-      {extensionIssue ? <ExtensionRequiredNotice reason={extensionIssue} /> : null}
+      {extensionIssue ? (
+        <ExtensionRequiredNotice reason={extensionIssue} onRetry={retryExtension} />
+      ) : null}
       {learnedNotes.length > 0 ? (
         <div className={`${card} flex flex-col gap-1 p-3.5`}>
           <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
@@ -1350,6 +1422,7 @@ export function CompetitorSearchPanel({
               </p>
             )
           ) : null}
+          <DismissedDuplicates projectId={projectId} items={dismissedDuplicates} />
           {withdrawnImported > 0 ? (
             <p role="status" className={hintText}>
               {withdrawnImported} annonce{withdrawnImported > 1 ? 's' : ''} n’
