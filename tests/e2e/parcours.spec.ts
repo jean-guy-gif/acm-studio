@@ -781,6 +781,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     } finally {
       await stranger.close();
     }
+    // L'étape suivante part de la Prospection filtrée sur le bien, comme avant cette étape.
+    await page.goto(`/prospection?bien=${projectId}`);
   });
 
   await test.step('Suivi et Prospection tiennent sur tablette (768 × 1024)', async () => {
