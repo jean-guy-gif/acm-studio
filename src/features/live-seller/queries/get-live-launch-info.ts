@@ -5,6 +5,7 @@ import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-field
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { liveResume, type LiveResume } from '@/features/live-seller/services/live-resume';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
+import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
 import { getProject } from '@/features/projects/queries/get-project';
 
@@ -22,6 +23,8 @@ export type LiveLaunchInfo = {
   decisionOutdated: boolean;
   // Mission 109 — aucune décision de prix enregistrée : rappelé au lancement, sans bloquer.
   decisionMissing: boolean;
+  // Mission 110 — au-delà de 6 retenus, le choix des concurrents montrés reste à faire.
+  shortlistPending: boolean;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -47,5 +50,9 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     toVerifyCount: competitorsWithPriceOrSurfaceToVerify(comparables).length,
     decisionOutdated: presentation.positioningStatus === 'outdated',
     decisionMissing: presentation.positioningStatus === 'not_saved',
+    shortlistPending: needsLiveShortlist(
+      comparables.filter((comparable) => comparable.is_selected).length,
+      project?.live_shortlist_at ?? null,
+    ),
   };
 }

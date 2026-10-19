@@ -8,7 +8,7 @@ import {
   arrondissementLabel,
   resolveArrondissement,
 } from '@/features/competitor-search/utils/arrondissements';
-import { dpeClass } from '@/features/dpe/services/dpe';
+import { DPE_CLASSES, dpeClass } from '@/features/dpe/services/dpe';
 import {
   VerifyBanner,
   VerifyMark,
@@ -28,6 +28,7 @@ import { PropertyListField } from '@/features/subject-property/components/proper
 import { PropertyLocationFields } from '@/features/subject-property/components/property-location-fields';
 import { PropertyPriceRangeStep } from '@/features/subject-property/components/property-price-range-step';
 import {
+  MultiCheckField,
   NumberField,
   SelectField,
   TextField,
@@ -36,6 +37,8 @@ import {
   EXPOSURES,
   GENERAL_CONDITIONS,
   HEATING_TYPES,
+  OUTDOOR_SPACE_LABELS,
+  OUTDOOR_SPACES,
 } from '@/features/subject-property/constants/property-options';
 import { gesListValue, listValue } from '@/features/subject-property/services/list-values';
 import {
@@ -241,8 +244,11 @@ export function SubjectPropertyForm({
             onDirty?.();
           }}
         />
-        <section className={formSection}>
-          <h2 className={formSectionTitle}>Informations générales</h2>
+        {/* Mission 110 — une fiche courte : 8 champs au plus au premier affichage (type, surface,
+            pièces, commune et code postal, adresse, fourchette, DPE, extérieurs) ; le reste est
+            dans « Compléments (facultatif) ». */}
+        <section className={formSection} data-testid="essential-fields">
+          <h2 className={formSectionTitle}>L’essentiel</h2>
           <SelectField
             id={propertyFieldId('property_type')}
             label="Type de bien"
@@ -263,15 +269,6 @@ export function SubjectPropertyForm({
               error={errors.surface_area}
             />
             <NumberField
-              label="Terrain"
-              value={scalars.land_area}
-              min={0}
-              suffix="m²"
-              onChange={(v) => setField('land_area', v)}
-              field="land_area"
-              error={errors.land_area}
-            />
-            <NumberField
               label="Pièces"
               value={scalars.rooms_count}
               step={1}
@@ -279,15 +276,6 @@ export function SubjectPropertyForm({
               onChange={(v) => setField('rooms_count', v)}
               field="rooms_count"
               error={errors.rooms_count}
-            />
-            <NumberField
-              label="Chambres"
-              value={scalars.bedrooms_count}
-              step={1}
-              min={0}
-              onChange={(v) => setField('bedrooms_count', v)}
-              field="bedrooms_count"
-              error={errors.bedrooms_count}
             />
           </div>
           <TextField
@@ -321,19 +309,30 @@ export function SubjectPropertyForm({
               Arrondissement : {arrondissementLabel(arrondissement)}
             </p>
           ) : null}
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>
-              Description
-              <VerifyMark field="description" />
-            </span>
-            <textarea
-              rows={4}
-              value={scalars.description}
-              onChange={(event) => setField('description', event.target.value)}
-              className={inputBase}
-            />
-          </label>
+          <SelectField
+            label="Classe DPE"
+            value={scalars.energy_rating}
+            onChange={(v) => setField('energy_rating', v)}
+            field="energy_rating"
+            options={DPE_CLASSES.map((value) => ({ value, label: value }))}
+            error={errors.energy_rating}
+          />
+          <MultiCheckField
+            label="Extérieurs"
+            values={outdoorSpaces}
+            onChange={(values) => setArray('outdoor_spaces', values)}
+            field="outdoor_spaces"
+            options={OUTDOOR_SPACES.map((value) => ({ value, label: OUTDOOR_SPACE_LABELS[value] }))}
+            error={errors.outdoor_spaces}
+          />
         </section>
+        {/* Mission 38 — la fourchette du conseiller, juste sous les champs essentiels. */}
+        <PropertyPriceRangeStep
+          advisorPriceMin={scalars.advisor_price_min}
+          advisorPriceMax={scalars.advisor_price_max}
+          onField={setField}
+          errors={errors}
+        />
 
         <section className={formSection}>
           <h2 className={formSectionTitle}>Photos du bien vendeur</h2>
@@ -344,43 +343,73 @@ export function SubjectPropertyForm({
           />
         </section>
 
-        <PropertyLocationFields
-          district={scalars.district}
-          floor={scalars.floor}
-          buildingFloors={scalars.building_floors}
-          onField={setField}
-          errors={errors}
-        />
-        <PropertyEnergyFields
-          energyRating={scalars.energy_rating}
-          gesRating={scalars.ges_rating}
-          heatingType={scalars.heating_type}
-          onField={setField}
-          errors={errors}
-        />
-        <PropertyCharacteristicsFields
-          exposure={scalars.exposure}
-          constructionYear={scalars.construction_year}
-          generalCondition={scalars.general_condition}
-          hasElevator={scalars.has_elevator}
-          hasPool={scalars.has_pool}
-          outdoorSpaces={outdoorSpaces}
-          parkingTypes={parkingTypes}
-          onField={setField}
-          onArray={setArray}
-          errors={errors}
-        />
-        {/* Mission 38 — la fourchette du conseiller, juste sous les champs essentiels. */}
-        <PropertyPriceRangeStep
-          advisorPriceMin={scalars.advisor_price_min}
-          advisorPriceMax={scalars.advisor_price_max}
-          onField={setField}
-          errors={errors}
-        />
-
         {complementsSlot
           ? createPortal(
               <div className="flex max-w-3xl flex-col gap-5">
+                {/* Mission 110 — déplacés de la première vue de la fiche ; rien n'est supprimé. */}
+                <section className={formSection}>
+                  <h2 className={formSectionTitle}>Le bien en détail</h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <NumberField
+                      label="Terrain"
+                      value={scalars.land_area}
+                      min={0}
+                      suffix="m²"
+                      onChange={(v) => setField('land_area', v)}
+                      field="land_area"
+                      error={errors.land_area}
+                    />
+                    <NumberField
+                      label="Chambres"
+                      value={scalars.bedrooms_count}
+                      step={1}
+                      min={0}
+                      onChange={(v) => setField('bedrooms_count', v)}
+                      field="bedrooms_count"
+                      error={errors.bedrooms_count}
+                    />
+                  </div>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={fieldLabel}>
+                      Description
+                      <VerifyMark field="description" />
+                    </span>
+                    <textarea
+                      rows={4}
+                      value={scalars.description}
+                      onChange={(event) => setField('description', event.target.value)}
+                      className={inputBase}
+                    />
+                  </label>
+                </section>
+                <PropertyLocationFields
+                  district={scalars.district}
+                  floor={scalars.floor}
+                  buildingFloors={scalars.building_floors}
+                  onField={setField}
+                  errors={errors}
+                />
+                <PropertyEnergyFields
+                  withDpe={false}
+                  energyRating={scalars.energy_rating}
+                  gesRating={scalars.ges_rating}
+                  heatingType={scalars.heating_type}
+                  onField={setField}
+                  errors={errors}
+                />
+                <PropertyCharacteristicsFields
+                  withOutdoor={false}
+                  exposure={scalars.exposure}
+                  constructionYear={scalars.construction_year}
+                  generalCondition={scalars.general_condition}
+                  hasElevator={scalars.has_elevator}
+                  hasPool={scalars.has_pool}
+                  outdoorSpaces={outdoorSpaces}
+                  parkingTypes={parkingTypes}
+                  onField={setField}
+                  onArray={setArray}
+                  errors={errors}
+                />
                 {/* Mission 97 — ni la recherche, ni le Live, ni les courriers ne lisent ce champ :
                   il vit dans les compléments. Rien n'est supprimé en base. */}
                 <section className={formSection}>

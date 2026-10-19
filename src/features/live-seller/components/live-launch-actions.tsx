@@ -55,7 +55,9 @@ export function LiveLaunchActions({
   toVerifyCount,
   decisionOutdated = false,
   decisionMissing = false,
+  shortlistPending = false,
   proceed = false,
+  secondary = false,
 }: {
   projectId: string;
   competitorCount: number;
@@ -64,11 +66,17 @@ export function LiveLaunchActions({
   toVerifyCount: number;
   decisionOutdated?: boolean;
   decisionMissing?: boolean;
+  // Mission 110 — au-delà de 6 retenus, le choix des concurrents montrés reste à faire : le
+  // lancement mène d'abord à ce choix (l'étape « Lancer le Live »).
+  shortlistPending?: boolean;
+  // Mission 110 — sur un écran où « Étape suivante » porte déjà le bouton principal.
+  secondary?: boolean;
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
   // rien à demander s'ouvre tout de suite ; ce qui demande s'affiche déjà ouvert.
   proceed?: boolean;
 }) {
   const router = useRouter();
+  const primary = secondary ? btnSecondary : btnPrimary;
   const stored = useStoredLivePosition(projectId);
   const [asking, setAsking] = useState(proceed);
   const check = liveLaunchCheck({
@@ -91,8 +99,8 @@ export function LiveLaunchActions({
           ? href
           : null;
   useEffect(() => {
-    if (proceed && direct) router.replace(direct);
-  }, [proceed, direct, router]);
+    if (proceed && direct && !shortlistPending) router.replace(direct);
+  }, [proceed, direct, shortlistPending, router]);
 
   if (check.status === 'blocked') {
     return (
@@ -101,7 +109,7 @@ export function LiveLaunchActions({
           type="button"
           disabled
           aria-describedby={`live-blocked-${projectId}`}
-          className={btnPrimary}
+          className={primary}
         >
           Lancer le Live →
         </button>
@@ -119,10 +127,18 @@ export function LiveLaunchActions({
     );
   }
 
+  if (shortlistPending && !resume.started && !proceed) {
+    return (
+      <Link href={`/builder/${projectId}/lancer-le-live`} className={primary}>
+        Lancer le Live →
+      </Link>
+    );
+  }
+
   if (resume.started) {
     const index = resumeIndexFor(resume, stored);
     return (
-      <Link href={index > 0 ? `${href}?fiche=${index}` : href} className={btnPrimary}>
+      <Link href={index > 0 ? `${href}?fiche=${index}` : href} className={primary}>
         {resumeLabel({ ...resume, index })} →
       </Link>
     );
@@ -130,7 +146,7 @@ export function LiveLaunchActions({
 
   if (check.status === 'go') {
     return (
-      <Link href={href} className={btnPrimary}>
+      <Link href={href} className={primary}>
         Lancer le Live →
       </Link>
     );
@@ -138,7 +154,7 @@ export function LiveLaunchActions({
 
   if (!asking) {
     return (
-      <button type="button" className={btnPrimary} onClick={() => setAsking(true)}>
+      <button type="button" className={primary} onClick={() => setAsking(true)}>
         Lancer le Live →
       </button>
     );
@@ -167,7 +183,7 @@ export function LiveLaunchActions({
       )}
       {check.confirm ? <p className="font-semibold">{REAL_DOSSIER_CONFIRMATION}</p> : null}
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={href} className={btnPrimary}>
+        <Link href={href} className={primary}>
           {check.confirm ? LAUNCH_FOR_REAL_LABEL : 'Lancer le Live'}
         </Link>
         {check.confirm ? (

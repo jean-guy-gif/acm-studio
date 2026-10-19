@@ -9,13 +9,16 @@ import {
   EXAMPLE_PROPERTY,
   EXAMPLE_SELLER_NAME,
 } from '@/features/welcome/services/example-dossier';
+import { exampleDecisionRow } from '@/features/welcome/services/example-decision';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 const FAILED = `/bienvenue?error=${encodeURIComponent('Le dossier d’exemple n’a pas pu être créé. Réessayez.')}`;
 
 // Mission 97 — « Ouvrir le dossier d'exemple » : celui du conseiller s'il en a déjà un qui n'est
 // pas conclu, sinon un neuf, créé à la demande — bien et concurrents fictifs, prêt pour le Live.
+// Mission 110 — avec sa décision de prix d'exemple : un parcours complet, synthèse comprise.
 // Un exemple archivé ou déjà mené jusqu'à la conclusion n'est pas rouvert : on en crée un autre,
 // c'est ce qui permet de s'entraîner de nouveau (les réponses d'un Live sont figées, M92).
 export async function openExampleDossier(): Promise<void> {
@@ -62,22 +65,42 @@ export async function openExampleDossier(): Promise<void> {
     project_id: project.id,
     agency_id: agencyId,
   });
-  const { error: competitorsError } = propertyError
-    ? { error: propertyError }
-    : await supabase.from('comparables').insert(
-        EXAMPLE_COMPETITORS.map((competitor, index) => ({
-          ...competitor,
-          property_type: 'apartment',
-          city: EXAMPLE_PROPERTY.city,
-          district: EXAMPLE_PROPERTY.district,
-          source: 'Exemple',
-          display_order: index + 1,
-          is_selected: true,
-          project_id: project.id,
-          agency_id: agencyId,
-        })),
-      );
-  if (competitorsError) {
+  const { data: competitors, error: competitorsError } = propertyError
+    ? { data: null, error: propertyError }
+    : await supabase
+        .from('comparables')
+        .insert(
+          EXAMPLE_COMPETITORS.map((competitor, index) => ({
+            ...competitor,
+            property_type: 'apartment',
+            city: EXAMPLE_PROPERTY.city,
+            district: EXAMPLE_PROPERTY.district,
+            source: 'Exemple',
+            display_order: index + 1,
+            is_selected: true,
+            project_id: project.id,
+            agency_id: agencyId,
+          })),
+        )
+        .select('*');
+  // Mission 110 — livré avec une décision de prix d'exemple, calculée par le moteur de l'outil.
+  const decision =
+    competitorsError || !competitors
+      ? null
+      : exampleDecisionRow({
+          projectId: project.id,
+          agencyId,
+          validatedBy: profile.id,
+          sellerSurface: EXAMPLE_PROPERTY.surface_area,
+          comparables: competitors,
+          now: new Date(),
+        });
+  const { error: decisionError } = decision
+    ? await createServiceRoleClient()
+        .from('project_price_positionings')
+        .upsert(decision, { onConflict: 'project_id' })
+    : { error: competitorsError ?? new Error('décision d’exemple impossible') };
+  if (competitorsError || decisionError) {
     // Un exemple à moitié créé ne reste pas dans les listes : il est archivé (M93).
     await supabase
       .from('projects')

@@ -146,6 +146,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
     await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
     await expect(page.getByText('Indiquez les deux montants')).toHaveCount(0);
+    // Mission 110 — une fiche courte : le reste est replié dans « Compléments (facultatif) ».
+    await expect(page.getByTestId('essential-fields')).toBeVisible();
+    await expect(field('Chambres')).toBeHidden();
+    await expect(field('Terrain')).toBeHidden();
   });
 
   // Mission 99 — les réglages de la recherche : affichés, enregistrés sur le dossier, remis par
@@ -224,8 +228,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(rhythmSetting).toContainText(
       /Accéléré : environ \d+\smin · Complet : environ \d+\smin/,
     );
+    // Mission 110 — avant la décision, pas d'« Étape suivante » ici : c'est cet écran qui l'est.
+    await expect(page.getByTestId('next-step')).toHaveCount(0);
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
+    // Puis l'étape suivante dit quoi faire : lancer le Live.
+    await page.goto(`/builder/${projectId}`);
+    await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
   });
