@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { btnPrimary, btnSecondary, link } from '@/components/ui/styles';
 import {
@@ -51,17 +52,36 @@ export function LiveLaunchActions({
   resume,
   isExample,
   toVerifyCount,
+  proceed = false,
 }: {
   projectId: string;
   competitorCount: number;
   resume: LiveResume;
   isExample: boolean;
   toVerifyCount: number;
+  // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
+  // rien à demander s'ouvre tout de suite ; ce qui demande s'affiche déjà ouvert.
+  proceed?: boolean;
 }) {
+  const router = useRouter();
   const stored = useStoredLivePosition(projectId);
-  const [asking, setAsking] = useState(false);
+  const [asking, setAsking] = useState(proceed);
   const check = liveLaunchCheck({ competitorCount, isExample, toVerifyCount });
   const href = `/live/${projectId}`;
+  const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
+  const direct =
+    check.status === 'blocked'
+      ? null
+      : resume.started
+        ? resumeIndex > 0
+          ? `${href}?fiche=${resumeIndex}`
+          : href
+        : check.status === 'go'
+          ? href
+          : null;
+  useEffect(() => {
+    if (proceed && direct) router.replace(direct);
+  }, [proceed, direct, router]);
 
   if (check.status === 'blocked') {
     return (

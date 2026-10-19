@@ -61,9 +61,9 @@ export function LivePageDuration({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={entry.title ?? 'Bien concurrent'} />
+          <LiveGallery photos={entry.photoUrls} alt={entry.neutralLabel} />
           <LiveComparableHeader
-            heading={entry.title ?? 'Bien concurrent'}
+            heading={entry.neutralLabel}
             city={entry.city}
             district={entry.district}
           />

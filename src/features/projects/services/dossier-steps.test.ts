@@ -19,7 +19,8 @@ describe('la barre des étapes d’un dossier (mission 97)', () => {
       'Live',
     ]);
     expect(dossierSteps(ID)[0].href).toBe(`/builder/${ID}`);
-    expect(dossierSteps(ID).at(-1)?.href).toBe(`/live/${ID}`);
+    // Mission 107 — par l'étape de lancement, jamais droit au Live.
+    expect(dossierSteps(ID).at(-1)?.href).toBe(`/builder/${ID}/lancer-le-live`);
   });
 
   it('désigne l’onglet de l’écran affiché, sous-écrans compris', () => {

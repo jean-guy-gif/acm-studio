@@ -175,7 +175,8 @@ export function ComparableFormFields({
       </div>
       <label className={labelWide}>
         <span>
-          Titre ou référence
+          {/* Mission 107 — jamais montré au vendeur : il voit le libellé neutre. */}
+          Titre (pour vous seul)
           <VerifyMark field="title" />
         </span>
         <input

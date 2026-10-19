@@ -239,9 +239,25 @@ describe('« Ne plus solliciter »', () => {
       ok: false,
       error: 'Concurrent introuvable pour votre agence.',
     });
-    state.card = card(false);
+    // Mission 107 — sans adresse confirmée ni annonce, il n'y a rien à inscrire.
+    state.card = {
+      ...card(false),
+      copies: [{ row: { id: 'c1', listingKey: null } }],
+    };
     expect((await addProspectingOpposition(PROJECT, 'c1')).ok).toBe(false);
     noWrite();
+  });
+
+  // Mission 107 — « Ne plus solliciter » avant l'adresse confirmée : l'opposition porte sur les
+  // annonces de la carte, et la bloque partout où elles apparaissent.
+  it('sans adresse confirmée : inscrit les annonces de la carte, sans clé d’adresse', async () => {
+    const { addProspectingOpposition } =
+      await import('@/features/prospecting/actions/add-prospecting-opposition');
+    state.card = card(false);
+    expect(await addProspectingOpposition(PROJECT, 'c1')).toEqual({ ok: true });
+    expect(inserts()).toEqual([
+      { agency_id: AGENCY, created_by: 'u-advisor', listing_key: LISTING },
+    ]);
   });
 
   it('inscrit la clé de l’adresse RELUE en base, pour l’agence et l’auteur de la session', async () => {
@@ -773,5 +789,51 @@ describe('rouvrir un Live figé par erreur', () => {
     const result = await reopenLive(PROJECT, MOTIF);
     expect(result.ok).toBe(false);
     expect(!result.ok && result.error).toMatch(/ne se rouvre pas/);
+  });
+});
+
+// Mission 107 — une opposition « commune inconnue » se corrige, par un manager seulement ; rien
+// n'est retiré : une ligne s'ajoute, l'alerte de l'ancienne est levée.
+describe('corriger une alerte « commune inconnue »', () => {
+  const ALERT = '55555555-5555-4555-8555-555555555555';
+  const row = {
+    id: ALERT,
+    address_key: '14 chemin des oliviers cagnes sur mere',
+    commune_typed: 'Cagnes sur Mère',
+  };
+
+  it('refusé à un conseiller et à un membre retiré, sans rien écrire', async () => {
+    const { correctOppositionCommune, markOppositionAlertTreated } =
+      await import('@/features/prospecting/actions/resolve-unknown-commune');
+    state.respond = () => ({ data: row });
+    for (const profile of [advisor, { ...manager, removed_at: '2026-10-01T00:00:00Z' }]) {
+      state.profile = profile;
+      expect((await correctOppositionCommune(ALERT, 'Cagnes-sur-Mer')).ok).toBe(false);
+      expect((await markOppositionAlertTreated(ALERT)).ok).toBe(false);
+    }
+    noWrite();
+  });
+
+  it('un manager corrige : la clé de la carte s’ajoute, l’alerte est levée, rien n’est retiré', async () => {
+    const { correctOppositionCommune } =
+      await import('@/features/prospecting/actions/resolve-unknown-commune');
+    state.profile = manager;
+    state.communes = [{ nom: 'Cagnes-sur-Mer', code: '06027' }];
+    state.respond = (_table, method) => (method === 'select' ? { data: row } : {});
+    expect(await correctOppositionCommune(ALERT, 'Cagnes-sur-Mer')).toEqual({ ok: true });
+    expect(service.writes()).toEqual([
+      'insert prospecting_oppositions',
+      'update prospecting_oppositions',
+    ]);
+    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
+      agency_id: AGENCY,
+      created_by: 'u-manager',
+      address_key: '14 chemin des oliviers cagnes sur mer',
+    });
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toMatchObject({
+      commune_unknown: false,
+      commune_unverified: false,
+    });
+    expect(service.writes()).not.toContain('delete prospecting_oppositions');
   });
 });
