@@ -10,6 +10,10 @@ import {
   checkDecision,
 } from '@/features/meeting-conclusion/services/conclusion-requirements';
 import { getProject } from '@/features/projects/queries/get-project';
+import {
+  FIRST_FOLLOW_UP_INVALID,
+  readFirstFollowUpOn,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -59,6 +63,16 @@ export async function changeMeetingOutcome(
   if (!decision.ok) {
     return { ok: false, error: decision.error };
   }
+  // Mission 108 — « à relancer » : la date de première relance, proposée par l'écran et relue ici.
+  const firstFollowUp = readFirstFollowUpOn(
+    formData.get('next_follow_up_on'),
+    decision.value.outcome,
+    decision.value.motive,
+    new Date(),
+  );
+  if (!firstFollowUp.ok) {
+    return { ok: false, error: FIRST_FOLLOW_UP_INVALID };
+  }
 
   const serviceClient = createServiceRoleClient();
   // null accepté en base pour les trois derniers (cast de typage seulement).
@@ -70,6 +84,7 @@ export async function changeMeetingOutcome(
     p_mandate_type: decision.value.mandateType as string,
     p_follow_up_motive: decision.value.motive as string,
     p_follow_up_motive_detail: decision.value.motiveDetail as string,
+    p_next_follow_up_on: firstFollowUp.day as string,
     p_price: decision.value.price as number,
   };
   const { error } = await serviceClient.rpc('change_meeting_outcome', args);

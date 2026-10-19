@@ -12,7 +12,8 @@ import { extractListingData } from '@/features/comparable-import/services/extrac
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
-import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
+import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
@@ -23,7 +24,8 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type ImportAndCreateResult =
-  | { ok: true; name: string | null; becameReady?: boolean }
+  // Mission 108 — `dismissedExisting` : l'annonce avait déjà sa fiche, écartée ; rien n'est créé.
+  | { ok: true; name: string | null; becameReady?: boolean; dismissedExisting?: string }
   // La page relue ne porte ni prix ni donnée. Mission 103 — ce n'est une annonce retirée que sur
   // une PREUVE (`listing_withdrawn` : page 404, mention explicite du portail) ; sans preuve
   // (`listing_empty`), c'est un échec de lecture ordinaire — une page captcha se présente ainsi.
@@ -69,7 +71,7 @@ export async function importAndCreateComparable(
     return { ok: false, error: GENERIC_ERROR };
   }
 
-  const url = normalizeUrl(rawUrl);
+  const url = parseListingUrl(rawUrl);
   if (!url || !isAllowedProtocol(url)) {
     return { ok: false, error: 'Adresse d’annonce invalide.' };
   }
@@ -114,7 +116,7 @@ export async function importAndCreateComparable(
     fields_to_verify: importedFields(input, COMPETITOR_VERIFIABLE_FIELDS),
     is_selected: true,
   });
-  if (!created) {
+  if (created.status === 'failed') {
     return { ok: false, error: GENERIC_ERROR };
   }
   // Mission 101 — le bien n'est plus « en attente d'import » : sa ligne part avec sa création.
@@ -131,5 +133,12 @@ export async function importAndCreateComparable(
   revalidatePath(`/builder/${projectId}`);
   revalidatePath('/builder');
   revalidatePath('/live');
-  return { ok: true, name: input.title, becameReady };
+  return {
+    ok: true,
+    name: input.title,
+    becameReady,
+    ...(created.status === 'existing' && !created.selected
+      ? { dismissedExisting: created.id }
+      : {}),
+  };
 }

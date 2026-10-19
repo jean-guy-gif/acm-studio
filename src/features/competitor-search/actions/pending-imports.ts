@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
+import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import {
   READ_FAILURE_CAUSES,
   type ReadFailureCause,
@@ -32,7 +33,8 @@ import { createClient } from '@/lib/supabase/server';
 
 export type PendingActionResult = { ok: true } | { ok: false; error: string };
 export type CreateFromSearchResult =
-  { ok: true; retained: boolean } | { ok: false; error: string; code?: 'no_price' };
+  | { ok: true; retained: boolean; dismissedExisting?: string }
+  | { ok: false; error: string; code?: 'no_price' };
 
 const FAILURE = 'L’import en attente n’a pas pu être enregistré.';
 const MAX_BATCH = 60;
@@ -58,8 +60,9 @@ async function scopeFor(projectId: string): Promise<Scope | null> {
   return project ? { supabase, agencyId: profile.agency_id, profileId: profile.id } : null;
 }
 
+// Mission 108 — la même adresse nettoyée que partout ailleurs (`parseListingUrl`).
 function listingUrl(raw: unknown): URL | null {
-  const url = typeof raw === 'string' ? normalizeUrl(raw) : null;
+  const url = typeof raw === 'string' ? parseListingUrl(raw) : null;
   return url && isAllowedProtocol(url) ? url : null;
 }
 
@@ -153,7 +156,14 @@ export async function createCompetitorFromSearch(
     .eq('listing_url', url.href)
     .limit(1)
     .maybeSingle();
-  if (existing) return done(existing.is_selected);
+  if (existing) {
+    // Mission 108 — déjà dans le dossier, écartée : rien n'est créé, le conseiller décide.
+    if (!existing.is_selected) {
+      await clearPending();
+      return { ok: true, retained: false, dismissedExisting: existing.id };
+    }
+    return done(true);
+  }
 
   const snapshot = parseSearchSnapshot(pending.snapshot);
   const input = snapshot ? snapshotToComparableInput(snapshot, url) : null;
@@ -181,7 +191,14 @@ export async function createCompetitorFromSearch(
       COMPETITOR_VERIFIABLE_FIELDS,
     ),
   });
-  if (!created) return { ok: false, error: FAILURE };
+  if (created.status === 'failed') return { ok: false, error: FAILURE };
+  if (created.status === 'existing') {
+    if (!created.selected) {
+      await clearPending();
+      return { ok: true, retained: false, dismissedExisting: created.id };
+    }
+    return done(true);
+  }
   return done(!withdrawn);
 }
 
@@ -237,6 +254,8 @@ export async function dismissPendingImport(
     .eq('agency_id', scope.agencyId)
     .select('id');
   if (error || !data || data.length === 0) return { ok: false, error: FAILURE };
+  // Mission 108 — plus rien n'attend : le dossier peut devenir prêt.
+  await maybePromoteToReady(scope.supabase, projectId, scope.agencyId);
   revalidatePath(`/builder/${projectId}/comparables`);
   revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
   return { ok: true };

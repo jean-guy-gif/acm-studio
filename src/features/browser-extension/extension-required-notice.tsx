@@ -1,10 +1,15 @@
-import { btnPrimary, card, hintText } from '@/components/ui/styles';
+'use client';
+
+import { useState } from 'react';
+
+import { btnPrimary, btnSecondary, card, hintText } from '@/components/ui/styles';
 import {
   EXTENSION_ALREADY_INSTALLED_HINT,
   EXTENSION_INSTALL_FALLBACK,
   EXTENSION_INSTALL_LABEL,
   EXTENSION_NO_SITE_ACCESS_STEPS,
   EXTENSION_NO_SITE_ACCESS_TITLE,
+  EXTENSION_RETRY_LABEL,
   extensionInstallUrl,
 } from '@/features/browser-extension/install-url';
 
@@ -13,7 +18,32 @@ import {
 // Mission 105 — `no_site_access` : installée, mais sans accès au site ; on dit où le rétablir.
 export type ExtensionIssue = 'missing' | 'outdated' | 'no_site_access';
 
-export function ExtensionRequiredNotice({ reason }: { reason: ExtensionIssue }) {
+// Mission 108 — « Réessayer » : la détection complète, refaite à la demande (sans extension,
+// l'onglet ne refait plus les 5 secondes d'attente à chaque clic).
+function RetryButton({ onRetry }: { onRetry: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`${btnSecondary} self-start`}
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        void onRetry().finally(() => setBusy(false));
+      }}
+    >
+      {busy ? 'Vérification…' : EXTENSION_RETRY_LABEL}
+    </button>
+  );
+}
+
+export function ExtensionRequiredNotice({
+  reason,
+  onRetry,
+}: {
+  reason: ExtensionIssue;
+  onRetry?: () => Promise<void>;
+}) {
   const installUrl = extensionInstallUrl();
   if (reason === 'no_site_access') {
     return (
@@ -22,6 +52,7 @@ export function ExtensionRequiredNotice({ reason }: { reason: ExtensionIssue }) 
           {EXTENSION_NO_SITE_ACCESS_TITLE}
         </span>
         <p className={hintText}>{EXTENSION_NO_SITE_ACCESS_STEPS}</p>
+        {onRetry ? <RetryButton onRetry={onRetry} /> : null}
       </div>
     );
   }
@@ -52,6 +83,7 @@ export function ExtensionRequiredNotice({ reason }: { reason: ExtensionIssue }) 
       {reason === 'missing' ? (
         <p className={hintText}>{EXTENSION_ALREADY_INSTALLED_HINT}.</p>
       ) : null}
+      {onRetry ? <RetryButton onRetry={onRetry} /> : null}
     </div>
   );
 }

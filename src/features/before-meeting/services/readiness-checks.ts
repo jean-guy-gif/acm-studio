@@ -19,6 +19,7 @@ export type ReadinessInput = {
   retainedCount: number;
   exploitableCount: number;
   hasDecision: boolean;
+  pendingImportCount?: number;
 };
 
 function plural(count: number): string {
@@ -66,6 +67,7 @@ export function isReadyBadge(input: ReadinessInput, projectStatus: string | null
       hasProperty: input.hasProperty,
       exploitableCount: input.exploitableCount,
       hasPositioning: input.hasDecision,
+      pendingImportCount: input.pendingImportCount,
     })
   );
 }

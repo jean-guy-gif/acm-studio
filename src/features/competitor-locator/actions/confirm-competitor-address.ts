@@ -13,10 +13,51 @@ import {
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { OPPOSED_MESSAGE, opposedOn } from '@/features/prospecting/services/opposition';
+import {
+  MANUAL_OPPOSITION_INCOMPLETE,
+  TYPED_ADDRESS_CHOOSE_COMMUNE,
+  parseManualAddress,
+} from '@/features/prospecting/services/manual-opposition';
+import { resolveManualOpposition } from '@/features/prospecting/services/resolve-typed-address';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 export type ConfirmCompetitorAddressResult = { ok: true } | { ok: false; error: string };
+
+// L'adresse tapée, sa commune reconnue par le référentiel des communes. Écrite « rue, code postal
+// commune » (le courrier a besoin du code postal) : `addressKey` en tire la même clé que celle
+// d'une opposition inscrite à la main. Service des communes en panne : la commune tapée suffit
+// (M104), et le journal le note — la commune seule, jamais l'adresse (M100) ; l'agence, l'auteur
+// et l'heure y sont, et la fiche se retrouve par la date de son adresse (`locator_address_at`).
+async function recognizedTypedAddress(
+  raw: unknown,
+): Promise<{ ok: true; address: string } | { ok: false; error: string }> {
+  const decision = await resolveManualOpposition(raw, null);
+  if (decision.status === 'error') {
+    return { ok: false, error: decision.error };
+  }
+  if (decision.status === 'choose') {
+    return { ok: false, error: TYPED_ADDRESS_CHOOSE_COMMUNE };
+  }
+  const parts = parseManualAddress(raw);
+  if (!parts) {
+    return { ok: false, error: MANUAL_OPPOSITION_INCOMPLETE };
+  }
+  const commune = decision.display.slice(parts.street.length + 2);
+  if (!decision.verified) {
+    await reportServerError(
+      'adresse saisie par le conseiller',
+      new Error(`commune non vérifiée (service des communes indisponible) : ${decision.commune}`),
+    );
+  }
+  return {
+    ok: true,
+    address: parts.postalCode
+      ? `${parts.street}, ${parts.postalCode} ${commune}`
+      : decision.display,
+  };
+}
 
 const FAILURE = 'L’adresse n’a pas été enregistrée. Réessayez.';
 
@@ -71,6 +112,16 @@ export async function confirmCompetitorAddress(
     ) != null;
   if (opposed) {
     return { ok: false, error: `${OPPOSED_MESSAGE}.` };
+  }
+
+  // Mission 108 — une adresse saisie exige une commune reconnue, comme une opposition à la main :
+  // sa clé est celle des oppositions (`addressKey` sur « rue, commune »).
+  if (input.mode === 'typed') {
+    const typed = await recognizedTypedAddress(input.address);
+    if (!typed.ok) {
+      return typed;
+    }
+    input = { mode: 'typed', address: typed.address };
   }
 
   const result = advisorAddressPatch(row, input);

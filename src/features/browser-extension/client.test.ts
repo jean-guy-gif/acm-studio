@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PING_ATTEMPT_TIMEOUT_MS,
   PING_ATTEMPTS,
+  REMEMBERED_PING_ATTEMPTS,
   detectExtension,
   pingExtension,
   pingWithRetries,
@@ -128,7 +129,7 @@ describe('detectExtension', () => {
     };
   };
 
-  it('une fois détectée, l’onglet s’en souvient : un seul signal, plus les 4 secondes', async () => {
+  it('une fois détectée, l’onglet s’en souvient : deux signaux (M108), plus les 4 secondes', async () => {
     const tab = memory();
     let calls = 0;
     const present = async () => {
@@ -137,13 +138,14 @@ describe('detectExtension', () => {
     };
     await detectExtension({ relay: present, direct: async () => null, memory: tab });
     calls = 0;
-    // Le relais ne répond qu'au deuxième essai : un onglet qui se souvient n'en fait qu'un.
+    // Le relais reste muet : un onglet qui se souvient fait deux essais (M108), pas quatre.
     const silent = async () => {
       calls += 1;
       return null;
     };
     const result = await detectExtension({ relay: silent, direct: async () => null, memory: tab });
-    expect(calls).toBe(1);
+    expect(calls).toBe(REMEMBERED_PING_ATTEMPTS);
+    expect(REMEMBERED_PING_ATTEMPTS).toBe(2);
     expect(result).toEqual({ available: false });
     // Et il oublie : la fois suivante, de nouveau les quatre essais.
     calls = 0;
@@ -169,5 +171,69 @@ describe('detectExtension', () => {
         memory: null,
       }),
     ).toEqual({ available: false });
+  });
+
+  // Mission 108 — le service worker en veille : il répond au deuxième signal, rien n'est perdu.
+  it('détectée, puis en veille : le deuxième signal suffit', async () => {
+    const tab = memory();
+    await detectExtension({
+      relay: async () => ({ available: true }),
+      direct: async () => null,
+      memory: tab,
+    });
+    let calls = 0;
+    const sleepy = async () => {
+      calls += 1;
+      return calls === 2 ? { available: true } : null;
+    };
+    expect(await detectExtension({ relay: sleepy, direct: async () => null, memory: tab })).toEqual(
+      {
+        available: true,
+      },
+    );
+  });
+
+  it('sans extension, l’attente n’a lieu qu’une fois par onglet ; « Réessayer » la refait', async () => {
+    const tab = memory();
+    let calls = 0;
+    const silent = async () => {
+      calls += 1;
+      return null;
+    };
+    await detectExtension({ relay: silent, direct: async () => null, memory: tab });
+    expect(calls).toBe(PING_ATTEMPTS);
+    calls = 0;
+    // Le clic suivant : aucun signal, le message tout de suite.
+    expect(await detectExtension({ relay: silent, direct: async () => null, memory: tab })).toEqual(
+      {
+        available: false,
+      },
+    );
+    expect(calls).toBe(0);
+    // « Réessayer » : la détection complète, et l'extension installée entre-temps est trouvée.
+    const installed = async () => {
+      calls += 1;
+      return { available: true };
+    };
+    expect(
+      await detectExtension({
+        relay: installed,
+        direct: async () => null,
+        memory: tab,
+        force: true,
+      }),
+    ).toEqual({ available: true });
+    expect(calls).toBe(1);
+  });
+
+  it('installée sans accès au site : retenu aussi, et redit tout de suite', async () => {
+    const tab = memory();
+    await detectExtension({ relay: async () => null, direct: async () => ({}), memory: tab });
+    expect(
+      await detectExtension({ relay: async () => null, direct: async () => null, memory: tab }),
+    ).toEqual({
+      available: false,
+      noSiteAccess: true,
+    });
   });
 });

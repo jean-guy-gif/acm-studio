@@ -10,6 +10,7 @@ function live(comparableCount: number): LiveComparativeData {
     competitiveMarketCentral: null,
     calculationCount: 0,
     advisorDecision: null,
+    positioningOutdated: false,
     priceGaps: {
       sellerPerceivedPrice: null,
       competitiveMarketCentral: null,

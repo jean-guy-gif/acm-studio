@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
 import { pingExtension } from '@/features/browser-extension/client';
+import { EXTENSION_RETRY_LABEL } from '@/features/browser-extension/install-url';
 import {
   finishPriceRefresh,
   listCompetitorsToRefresh,
@@ -30,14 +31,18 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // Mission 108 — sans extension, le message vient tout de suite ; « Réessayer » redétecte.
+  const [missingExtension, setMissingExtension] = useState(false);
 
-  const run = async () => {
+  const run = async (force = false) => {
     setBusy(true);
     setMessage(null);
+    setMissingExtension(false);
     try {
-      const ping = await pingExtension();
+      const ping = await pingExtension({ force });
       if (!ping.available) {
         setMessage(NO_EXTENSION_FOR_REFRESH);
+        setMissingExtension(true);
         return;
       }
       const competitors = await listCompetitorsToRefresh(projectId);
@@ -85,6 +90,16 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
         <p role="status" data-testid="price-refresh-summary" className="text-xs text-zinc-600">
           {message}
         </p>
+      ) : null}
+      {missingExtension ? (
+        <button
+          type="button"
+          className={`${btnSecondary} self-start text-xs`}
+          disabled={busy}
+          onClick={() => void run(true)}
+        >
+          {EXTENSION_RETRY_LABEL}
+        </button>
       ) : null}
     </div>
   );

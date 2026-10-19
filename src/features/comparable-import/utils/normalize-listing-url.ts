@@ -82,3 +82,29 @@ export function normalizeListingUrl(rawUrl: string): string {
   url.hash = ''; // a fragment is a UI anchor, never part of the canonical address
   return url.toString();
 }
+
+// Mission 108 — UNE adresse par annonce, sur tous les chemins d'import (recherche, adresse
+// collée, saisie à la main) : l'adresse lue, puis nettoyée par portail (ci-dessus). C'est elle
+// qui est enregistrée, et sur elle que joue l'unicité « une annonce, une fiche ». null : ce
+// n'est pas une adresse web.
+export function parseListingUrl(raw: string): URL | null {
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return null;
+  }
+  try {
+    return new URL(normalizeListingUrl(new URL(trimmed).href));
+  } catch {
+    return null;
+  }
+}
+
+// La forme enregistrée : l'adresse nettoyée, ou le texte tel quel s'il n'est pas une adresse
+// (une saisie à la main garde ce que le conseiller a écrit).
+export function storedListingUrl(raw: string | null | undefined): string | null {
+  const trimmed = raw?.trim() ?? '';
+  if (trimmed === '') {
+    return null;
+  }
+  return parseListingUrl(trimmed)?.href ?? trimmed;
+}

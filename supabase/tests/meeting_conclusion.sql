@@ -16,7 +16,7 @@ insert into auth.users (id) values ('11111111-1111-1111-1111-111111111111');
 insert into public.agencies (id, name) values ('aaaaaaaa-0000-0000-0000-000000000000', 'A');
 insert into public.profiles (id, agency_id, first_name, last_name, email, role)
   values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000',
-          'Al', 'A', 'a@t.l', 'owner');
+          'Al', 'A', 'a@t.l', 'manager');
 
 -- Trois dossiers PRÊTS (dans le Live).
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values

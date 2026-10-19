@@ -63,6 +63,7 @@ vi.mock('@/features/team/services/deliver-invitation', () => ({
 const AGENCY = '11111111-1111-4111-8111-111111111111';
 const OTHER_AGENCY = '22222222-2222-4222-8222-222222222222';
 const PROJECT = '33333333-3333-4333-8333-333333333333';
+const COMPETITOR = '44444444-4444-4444-8444-444444444444';
 const advisor = { id: 'u-advisor', agency_id: AGENCY, role: 'advisor', removed_at: null };
 const manager = { id: 'u-manager', agency_id: AGENCY, role: 'manager', removed_at: null };
 const removed = { ...advisor, removed_at: '2026-10-01T00:00:00Z' };
@@ -583,12 +584,96 @@ describe('invitations', () => {
   it('une adresse qui a déjà un compte n’est pas invitée', async () => {
     const { inviteMember } = await import('@/features/team/actions/invite-member');
     state.profile = manager;
-    state.respond = (table) => (table === 'profiles' ? { data: { id: 'déjà-là' } } : {});
+    state.respond = (table) =>
+      table === 'profiles'
+        ? {
+            data: [
+              {
+                id: 'déjà-là',
+                agency_id: OTHER_AGENCY,
+                removed_at: null,
+                email: 'Nouveau@Agence.fr',
+              },
+            ],
+          }
+        : {};
     expect(await inviteMember(invite)).toEqual({
       ok: false,
       error: 'Cette adresse a déjà un compte dans une agence.',
     });
     expect(service.writes()).toEqual([]);
+  });
+
+  // Mission 108 — l'adresse se compare à l'identique, sans joker ; un membre retiré de l'agence se
+  // réintègre ; une lecture en échec n'invite pas.
+  it('une adresse voisine (joker « _ ») n’est pas une adresse déjà inscrite', async () => {
+    const { inviteMember } = await import('@/features/team/actions/invite-member');
+    state.profile = manager;
+    state.respond = (table) =>
+      table === 'profiles'
+        ? {
+            data: [
+              {
+                id: 'autre',
+                agency_id: OTHER_AGENCY,
+                removed_at: null,
+                email: 'nouveauxagence@agence.fr',
+              },
+            ],
+          }
+        : table === 'agency_invitations'
+          ? { data: { id: 'inv-9' } }
+          : {};
+    await inviteMember(form({ email: 'nouveau_agence@agence.fr', role: 'advisor' }));
+    expect(service.writes()).toContain('insert agency_invitations');
+    const filter = service.calls.find((call) => call.method === 'ilike');
+    expect(filter?.args[1]).toBe('nouveau\\_agence@agence.fr');
+  });
+
+  it('un membre retiré de l’agence : « Réintégrer » est proposé, rien n’est écrit', async () => {
+    const { inviteMember } = await import('@/features/team/actions/invite-member');
+    state.profile = manager;
+    state.respond = (table) =>
+      table === 'profiles'
+        ? {
+            data: [
+              {
+                id: 'ancien',
+                agency_id: AGENCY,
+                removed_at: '2026-10-01',
+                email: 'nouveau@agence.fr',
+              },
+            ],
+          }
+        : {};
+    expect(await inviteMember(invite)).toEqual({
+      ok: false,
+      error: 'Cette personne a été retirée de votre agence : vous pouvez la réintégrer.',
+      reinstateMemberId: 'ancien',
+    });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('une lecture en échec n’invite pas', async () => {
+    const { inviteMember } = await import('@/features/team/actions/invite-member');
+    state.profile = manager;
+    state.respond = (table) => (table === 'profiles' ? { error: { message: 'down' } } : {});
+    expect((await inviteMember(invite)).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('réintégrer : manager seulement, membre retiré de SON agence seulement', async () => {
+    const { reinstateMember } = await import('@/features/team/actions/reinstate-member');
+    state.profile = { ...manager, role: 'advisor' };
+    expect((await reinstateMember('ancien')).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+
+    state.profile = manager;
+    state.respond = (table) => (table === 'profiles' ? { data: [{ id: 'ancien' }] } : {});
+    expect(await reinstateMember('ancien')).toEqual({ ok: true });
+    const scoped = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(scoped).toContainEqual(['agency_id', AGENCY]);
+    expect(service.calls.some((call) => call.method === 'not')).toBe(true);
   });
 
   it('un manager ne relance ni n’annule l’invitation d’une AUTRE agence, ni une invitation acceptée', async () => {
@@ -835,5 +920,182 @@ describe('corriger une alerte « commune inconnue »', () => {
       commune_unverified: false,
     });
     expect(service.writes()).not.toContain('delete prospecting_oppositions');
+  });
+});
+
+// Mission 108 — les finitions de l'audit n°5, éprouvées sur les actions elles-mêmes.
+describe('Mission 108', () => {
+  it('conclure « à relancer » pose la date de première relance (un mois pour « Réfléchit au prix »)', async () => {
+    const { concludeMeeting } =
+      await import('@/features/meeting-conclusion/actions/conclude-meeting');
+    const { defaultNextFollowUpOn } =
+      await import('@/features/meeting-conclusion/services/follow-up-contacts');
+    state.project = { id: PROJECT, status: 'ready_for_meeting' };
+    state.respond = (table) => (table === 'conclude_meeting' ? { data: true } : {});
+    const followUp = { outcome: 'follow_up', follow_up_motive: 'thinking_price' };
+    await expect(concludeMeeting(PROJECT, form(followUp))).rejects.toThrow(/REDIRECT/);
+    const args = service.calls.find((call) => call.method === 'rpc')?.args[1];
+    expect(args).toMatchObject({
+      p_next_follow_up_on: defaultNextFollowUpOn('thinking_price', new Date()),
+    });
+
+    // Une date impossible est refusée, rien n'est écrit.
+    service.reset();
+    expect(
+      await concludeMeeting(PROJECT, form({ ...followUp, next_follow_up_on: '2001-01-01' })),
+    ).toMatchObject({ ok: false });
+    expect(service.writes()).toEqual([]);
+  });
+
+  describe('l’adresse saisie par le conseiller exige une commune reconnue', () => {
+    const competitor = {
+      locator_address: null,
+      locator_confirmed: false,
+      locator_source: null,
+      listing_url: null,
+    };
+    const respond = () => {
+      state.respond = (table, method) =>
+        table === 'comparables'
+          ? method === 'update'
+            ? { data: [{ id: 'c1' }] }
+            : { data: competitor }
+          : { data: [] };
+    };
+    const written = () =>
+      server.calls.find((call) => call.method === 'update')?.args[0] as
+        { locator_address?: string } | undefined;
+
+    it('sans commune : refusée, rien n’est écrit', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      respond();
+      const result = await confirmCompetitorAddress(PROJECT, 'c1', {
+        mode: 'typed',
+        address: '14 chemin des Oliviers',
+      });
+      expect(result.ok).toBe(false);
+      expect(server.writes()).toEqual([]);
+    });
+
+    it('commune reconnue par le code postal : écrite « rue, code postal commune »', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      const { addressKey } = await import('@/features/prospecting/services/address-key');
+      respond();
+      expect(
+        await confirmCompetitorAddress(PROJECT, 'c1', {
+          mode: 'typed',
+          address: '14 chemin des Oliviers 06600',
+        }),
+      ).toEqual({ ok: true });
+      expect(written()?.locator_address).toBe('14 chemin des Oliviers, 06600 Antibes');
+      // Sa clé est celle d'une opposition inscrite à la main pour la même adresse.
+      expect(addressKey(written()?.locator_address ?? '')).toBe(
+        addressKey('14 chemin des Oliviers, Antibes'),
+      );
+    });
+
+    it('service des communes en panne : la commune tapée suffit, et le journal le note', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      respond();
+      state.communes = null;
+      expect(
+        await confirmCompetitorAddress(PROJECT, 'c1', {
+          mode: 'typed',
+          address: '14 chemin des Oliviers, Cagnes-sur-Mer',
+        }),
+      ).toEqual({ ok: true });
+      expect(written()?.locator_address).toBe('14 chemin des Oliviers, Cagnes-sur-Mer');
+      const logged = service.calls.find((call) => call.method === 'insert')?.args[0] as {
+        message: string;
+      };
+      expect(service.writes()).toContain('insert app_errors');
+      expect(logged.message).toContain('commune non vérifiée');
+      expect(logged.message).toContain('Cagnes-sur-Mer');
+      // Jamais l'adresse elle-même (M100).
+      expect(logged.message).not.toContain('Oliviers');
+    });
+  });
+
+  it('relecture des prix : une écriture refusée compte « illisible » et part au journal', async () => {
+    const { refreshCompetitorPrice } =
+      await import('@/features/competitor-refresh/actions/refresh-competitor-price');
+    const { listingPayload } =
+      await import('@/features/competitor-search/services/listing-payload');
+    const url = 'https://www.seloger.com/annonces/achat/maison/antibes-06/26ZEJMLWB13Y.htm';
+    state.respond = (table, method) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed' } }
+        : table === 'comparables'
+          ? method === 'update'
+            ? { error: { message: 'refusé' } }
+            : { data: { id: COMPETITOR, price: 300_000, listing_url: url, listing_gone_at: null } }
+          : {};
+    const payload = listingPayload(url, '<html><body>Annonce retirée</body></html>', null);
+    payload.set('gone', 'redirect');
+    expect(await refreshCompetitorPrice(PROJECT, COMPETITOR, payload)).toEqual({
+      status: 'unreadable',
+    });
+    expect(service.writes()).toContain('insert app_errors');
+  });
+
+  it('« Garder comme mes réglages par défaut » : sur son profil seulement, relu par le serveur', async () => {
+    const { saveSearchDefaults } =
+      await import('@/features/competitor-search/actions/save-search-defaults');
+    const { DEFAULT_SEARCH_SETTINGS, settingsToInput } =
+      await import('@/features/competitor-search/services/search-settings');
+    const input = settingsToInput({
+      ...DEFAULT_SEARCH_SETTINGS,
+      sector: { kind: 'radius', km: 2 },
+    });
+    state.profile = removed;
+    expect((await saveSearchDefaults(input)).ok).toBe(false);
+    noWrite();
+
+    state.profile = advisor;
+    state.respond = (table) => (table === 'profiles' ? { data: { id: advisor.id } } : {});
+    const saved = await saveSearchDefaults(input);
+    expect(saved.ok).toBe(true);
+    expect(service.writes()).toEqual(['update profiles']);
+    const eqs = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(eqs).toContainEqual(['id', advisor.id]);
+    const patch = service.calls.find((call) => call.method === 'update')?.args[0];
+    expect(patch).toEqual({
+      search_defaults: {
+        sector: { kind: 'radius', km: 2 },
+        price: null,
+        rooms: null,
+        surface: null,
+        autoWiden: true,
+      },
+    });
+  });
+
+  it('un nouveau dossier reprend les réglages par défaut du conseiller', async () => {
+    const { createProject } = await import('@/features/projects/actions/create-project');
+    state.profile = {
+      ...advisor,
+      search_defaults: {
+        sector: { kind: 'radius', km: 2 },
+        price: null,
+        rooms: null,
+        surface: null,
+        autoWiden: true,
+      },
+    };
+    state.respond = (table) => (table === 'projects' ? { data: { id: PROJECT } } : {});
+    await expect(createProject(form({ sellerName: 'TEST Vendeur' }))).rejects.toThrow(/REDIRECT/);
+    const row = server.calls.find((call) => call.method === 'insert')?.args[0] as {
+      search_settings: unknown;
+    };
+    expect(row.search_settings).toEqual({
+      sector: { kind: 'radius', km: 2 },
+      price: null,
+      rooms: null,
+      surface: null,
+      autoWiden: true,
+    });
   });
 });

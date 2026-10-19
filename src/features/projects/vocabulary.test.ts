@@ -160,8 +160,15 @@ describe('des mots qu’un junior comprend (mission 105)', () => {
     .map((path) => relative(SRC, path))
     .filter((path) => !path.startsWith('test-fixtures'));
   // Les chaînes du code affiché, pas les identifiants (`awaiting_estimate`, `estimatedDays`).
+  // Mission 108 — le texte JSX écrit sur plusieurs lignes est lu aussi.
+  const SHOWN_TEXT = /'[^'\n]*'|`[^`]*`|"[^"\n]*"|>[^<>{}]+</g;
   const strings = (path: string): string =>
-    (shown(join(SRC, path)).match(/'[^'\n]*'|`[^`]*`|"[^"\n]*"|>[^<>{}\n]+</g) ?? []).join('\n');
+    (shown(join(SRC, path)).match(SHOWN_TEXT) ?? []).join('\n');
+
+  it('lit aussi le texte écrit sur plusieurs lignes (mission 108)', () => {
+    const jsx = `<p className={hint}>\n  Votre avis, jamais montré —\n  l’outil ne produit aucune estimation.\n</p>`;
+    expect((jsx.match(SHOWN_TEXT) ?? []).join('\n')).toMatch(/aucune estimation/);
+  });
   const offendersEverywhere = (pattern: RegExp): string[] =>
     EVERYWHERE.filter((path) => pattern.test(strings(path)));
 
@@ -186,7 +193,7 @@ describe('des mots qu’un junior comprend (mission 105)', () => {
   it('aucun terme technique dans un message à l’écran', () => {
     expect(
       offendersEverywhere(
-        /code INSEE|console Stream Estate|URL invalide|[Cc]lé invalide|page HTML/,
+        /code INSEE|console Stream Estate|URL invalide|Import URL|[Cc]lé invalide|page HTML/,
       ),
     ).toEqual([]);
   });

@@ -13,7 +13,7 @@ insert into auth.users (id) values ('11111111-1111-1111-1111-111111111111');
 insert into public.agencies (id, name) values ('aaaaaaaa-0000-0000-0000-000000000000', 'A');
 insert into public.profiles (id, agency_id, first_name, last_name, email, role)
   values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000',
-          'Al', 'A', 'a@t.l', 'owner');
+          'Al', 'A', 'a@t.l', 'manager');
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
   ('cccccccc-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000000',
    '11111111-1111-1111-1111-111111111111', 'P1', 'ready_for_meeting'),
@@ -54,9 +54,9 @@ begin
   if after_row.outcome is distinct from 'sold_elsewhere' then
     raise exception 'FAIL 6.1: l''issue n''a pas été changée';
   end if;
-  -- « vendu ailleurs » n'a pas de motif : la fonction annule tout motif.
-  if after_row.follow_up_reason is not null then
-    raise exception 'FAIL 6.1: un motif a été conservé hors « à relancer »';
+  -- Mission 90 — le motif vaut aussi pour « vendu ailleurs » (seul un mandat signé n'en porte pas).
+  if after_row.follow_up_reason is distinct from 'motif à ignorer' then
+    raise exception 'FAIL 6.1: le motif de « vendu ailleurs » n''a pas été gardé';
   end if;
   -- Deux dates distinctes : le changement d'issue a sa propre date.
   if after_row.outcome_changed_at <= after_row.concluded_at then
@@ -88,7 +88,7 @@ begin
     end if;
   end loop;
 
-  -- Le motif ne survit qu'à « à relancer » : après le passage final « withdrawn », il est nul.
+  -- « withdrawn » posé sans motif : aucun motif ne reste.
   if (select follow_up_reason from public.project_meeting_conclusions
       where project_id = 'cccccccc-0000-0000-0000-000000000001') is not null then
     raise exception 'FAIL 6.2: un motif survit hors « à relancer »';

@@ -23,23 +23,30 @@ export type MarketReading = {
   droppedCount: number | null;
   medianDaysOnMarket: number | null;
   // Le « Prix des concurrents » montré est-il le calcul, ou un montant retenu par le conseiller ?
-  competitorPriceBasis: 'computed' | 'advisor';
+  // Mission 108 — `advisor_only` : la décision du conseiller, périmée depuis (le marché a bougé) ;
+  // elle reste montrée, sans dire sur combien de concurrents elle porte.
+  competitorPriceBasis: 'computed' | 'advisor' | 'advisor_only';
 };
 
 type ReadingEntry = Pick<
   LiveComparableEntry,
   'id' | 'price' | 'priceHistory' | 'marketDuration'
 > & {
-  response: { seller_estimated_listing_price?: number | null } | null;
+  response: {
+    seller_estimated_listing_price?: number | null;
+    seller_serious_competitor?: string | null;
+  } | null;
 };
 
-// Même garde que la révélation elle-même : l'estimation du vendeur est PERSISTÉE.
+// Même garde que la révélation elle-même : l'estimation du vendeur est PERSISTÉE. Mission 108 —
+// un « Non » à « Un sérieux concurrent ? » écarte le concurrent, même dit après la révélation.
 const revealed = (entry: ReadingEntry): boolean =>
-  entry.response?.seller_estimated_listing_price != null;
+  entry.response?.seller_estimated_listing_price != null &&
+  entry.response.seller_serious_competitor !== 'no';
 
 export function buildMarketReading(
   comparables: readonly ReadingEntry[],
-  prices: { advisorPrice: number | null; marketComputed: number | null },
+  prices: { advisorPrice: number | null; marketComputed: number | null; advisorOutdated?: boolean },
   calculationCount: number,
 ): MarketReading {
   const shown = comparables.filter(revealed);
@@ -64,11 +71,13 @@ export function buildMarketReading(
     droppedCount: dropped > 0 ? dropped : null,
     medianDaysOnMarket: medianDays == null ? null : Math.round(medianDays),
     competitorPriceBasis:
-      prices.advisorPrice != null &&
-      prices.marketComputed != null &&
-      Math.round(prices.advisorPrice) !== Math.round(prices.marketComputed)
-        ? 'advisor'
-        : 'computed',
+      prices.advisorPrice != null && prices.advisorOutdated
+        ? 'advisor_only'
+        : prices.advisorPrice != null &&
+            prices.marketComputed != null &&
+            Math.round(prices.advisorPrice) !== Math.round(prices.marketComputed)
+          ? 'advisor'
+          : 'computed',
   };
 }
 
@@ -79,6 +88,9 @@ export function buildMarketReading(
 export function competitorPriceBasisLabel(
   reading: Pick<MarketReading, 'calculationCount' | 'competitorPriceBasis'>,
 ): string {
+  if (reading.competitorPriceBasis === 'advisor_only') {
+    return 'Prix retenu par votre conseiller';
+  }
   const count = reading.calculationCount;
   const competitors = `${count} concurrent${count > 1 ? 's' : ''}`;
   return reading.competitorPriceBasis === 'advisor'

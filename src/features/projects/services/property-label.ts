@@ -33,8 +33,15 @@ export function propertyLabel(property: PreparationProperty | null): string | nu
 
 const euro = (value: number): string => formatEuro(value);
 
-// Mission 105 — sur la liste des dossiers, sans fourchette du conseiller.
-export const PRICE_DECISION_PENDING = 'À décider';
+// Mission 108 — sur la carte d'un dossier, « Votre fourchette : non saisie ». « Décision de prix »
+// ne désigne plus que le prix décidé dans « Avant le rendez-vous » (remplace M105, « À décider »).
+export const FOURCHETTE_LABEL = 'Votre fourchette';
+export const FOURCHETTE_PENDING = 'non saisie';
+
+// « 2 en attente d'import » : des concurrents retenus dont l'import n'a pas abouti (M101).
+export function pendingImportLabel(count: number): string | null {
+  return count > 0 ? `${count} en attente d’import` : null;
+}
 
 // « 320 000 – 390 000 € », ou null quand la fourchette n'est pas saisie.
 export function fourchetteLabel(fourchette: { low: number; high: number } | null): string | null {

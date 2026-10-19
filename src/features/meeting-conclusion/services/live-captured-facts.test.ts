@@ -33,6 +33,7 @@ function live(overrides: {
             advisorComparativeMarketPrice: overrides.analysis ?? null,
             justification: null,
           },
+    positioningOutdated: false,
     priceGaps: {} as LiveComparativeData['priceGaps'],
   };
 }

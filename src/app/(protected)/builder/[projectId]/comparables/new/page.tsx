@@ -37,6 +37,7 @@ export default async function NewComparablePage({ params, searchParams }: NewCom
         <h1 className={pageTitle}>Ajouter un bien concurrent</h1>
       </div>
       <NewComparablePanel
+        projectId={projectId}
         createAction={create}
         importAction={importAction}
         importHtmlAction={importHtmlAction}

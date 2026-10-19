@@ -61,10 +61,14 @@ export type PageRead =
   // robots.txt, ni une adresse invalide, ni un délai est une page qui n'a pas répondu.
   | { ok: false; reason: string };
 
+// Mission 108 — `dismissedExisting` : l'annonce avait déjà sa fiche dans le dossier, ÉCARTÉE. Rien
+// n'est créé ; l'écran demande « Déjà dans le dossier (écartée) : la retenir ? ».
 export type PageImportResult =
-  { ok: true } | { ok: false; code?: 'listing_empty' | 'listing_withdrawn' };
+  | { ok: true; dismissedExisting?: string }
+  | { ok: false; code?: 'listing_empty' | 'listing_withdrawn' };
 
-export type SearchImportResult = { ok: true } | { ok: false; code?: 'no_price' };
+export type SearchImportResult =
+  { ok: true; dismissedExisting?: string } | { ok: false; code?: 'no_price' };
 
 export type ImportListingOutcome =
   // La page a été lue : le concurrent porte tout ce que l'annonce publie.
@@ -73,6 +77,9 @@ export type ImportListingOutcome =
   | { status: 'imported_from_search'; cause: ReadFailureCause; attempts: number }
   // L'annonce n'est plus en ligne : créé depuis la recherche, NON retenu (le conseiller décide).
   | { status: 'imported_withdrawn'; attempts: number }
+  // Mission 108 — l'annonce était déjà dans le dossier, écartée : rien n'est créé, le conseiller
+  // décide de la retenir.
+  | { status: 'already_dismissed'; comparableId: string; attempts: number }
   // Rien n'a pu être créé : le bien reste « retenu, import en attente » côté serveur.
   | { status: 'pending'; cause: ReadFailureCause | 'no_price'; attempts: number };
 
@@ -116,13 +123,13 @@ async function guarded<T, E>(
   }
 }
 
-// Une tentative : la page est lue puis importée. `null` = le concurrent est créé.
+// Une tentative : la page est lue puis importée. `{ ok: true }` = le concurrent est dans le dossier.
 async function attempt(
   url: string,
   freshWindow: boolean,
   deps: ImportListingDeps,
   timeoutMs: number,
-): Promise<ReadFailureCause | null> {
+): Promise<ReadFailureCause | { ok: true; dismissedExisting?: string }> {
   const read = await guarded(() => deps.readPage(url, { freshWindow }), timeoutMs, {
     ok: false,
     reason: 'network',
@@ -143,7 +150,7 @@ async function attempt(
     ok: false,
   } as PageImportResult);
   if (imported === 'timeout') return 'timeout';
-  if (imported.ok) return null;
+  if (imported.ok) return imported;
   // Une page sans prix ni donnée n'est une annonce retirée que si elle le prouve.
   if (imported.code === 'listing_withdrawn') return 'withdrawn';
   return imported.code === 'listing_empty' ? 'empty' : 'server';
@@ -161,7 +168,11 @@ export async function importListing(
     if (index > 0) await wait(IMPORT_RETRY_DELAYS_MS[index - 1]);
     attempts += 1;
     const failure = await attempt(url, index === IMPORT_ATTEMPTS - 1, deps, timeoutMs);
-    if (failure == null) return { status: 'imported', attempts };
+    if (typeof failure !== 'string') {
+      return failure.dismissedExisting
+        ? { status: 'already_dismissed', comparableId: failure.dismissedExisting, attempts }
+        : { status: 'imported', attempts };
+    }
     cause = failure;
     if (PERMANENT.includes(failure)) break;
   }
@@ -179,6 +190,9 @@ export async function importListing(
     ok: false,
   } as SearchImportResult);
   if (created !== 'timeout' && created.ok) {
+    if (created.dismissedExisting) {
+      return { status: 'already_dismissed', comparableId: created.dismissedExisting, attempts };
+    }
     return withdrawn
       ? { status: 'imported_withdrawn', attempts }
       : { status: 'imported_from_search', cause, attempts };

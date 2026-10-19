@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { pingExtension } from '@/features/browser-extension/client';
 
@@ -9,8 +9,17 @@ import { pingExtension } from '@/features/browser-extension/client';
 // or false — callers keep every existing gesture when it is false.
 type ExtensionState = { available: boolean | null; version?: string; noSiteAccess?: boolean };
 
-export function useBrowserExtension(): ExtensionState {
+// Mission 108 — `recheck` : « Réessayer », la détection complète refaite à la demande.
+export function useBrowserExtension(): ExtensionState & { recheck: () => Promise<void> } {
   const [state, setState] = useState<ExtensionState>({ available: null });
+  const recheck = useCallback(async () => {
+    const result = await pingExtension({ force: true });
+    setState({
+      available: result.available,
+      version: result.version,
+      noSiteAccess: result.noSiteAccess === true,
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,5 +37,5 @@ export function useBrowserExtension(): ExtensionState {
     };
   }, []);
 
-  return state;
+  return { ...state, recheck };
 }

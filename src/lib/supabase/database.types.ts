@@ -1069,6 +1069,7 @@ export type Database = {
           photo_path: string | null
           removed_at: string | null
           role: string
+          search_defaults: Json | null
           updated_at: string
         }
         Insert: {
@@ -1082,6 +1083,7 @@ export type Database = {
           photo_path?: string | null
           removed_at?: string | null
           role: string
+          search_defaults?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1095,6 +1097,7 @@ export type Database = {
           photo_path?: string | null
           removed_at?: string | null
           role?: string
+          search_defaults?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -1129,6 +1132,7 @@ export type Database = {
           frozen_seller_wanted_price: number | null
           id: string
           mandate_type: string | null
+          next_follow_up_on: string | null
           outcome: string | null
           outcome_changed_at: string
           project_id: string
@@ -1156,6 +1160,7 @@ export type Database = {
           frozen_seller_wanted_price?: number | null
           id?: string
           mandate_type?: string | null
+          next_follow_up_on?: string | null
           outcome?: string | null
           outcome_changed_at?: string
           project_id: string
@@ -1183,6 +1188,7 @@ export type Database = {
           frozen_seller_wanted_price?: number | null
           id?: string
           mandate_type?: string | null
+          next_follow_up_on?: string | null
           outcome?: string | null
           outcome_changed_at?: string
           project_id?: string
@@ -1836,6 +1842,7 @@ export type Database = {
           p_follow_up_motive?: string
           p_follow_up_motive_detail?: string
           p_mandate_type?: string
+          p_next_follow_up_on?: string
           p_outcome: string
           p_price?: number
           p_project_id: string
@@ -1853,6 +1860,7 @@ export type Database = {
           p_follow_up_motive_detail?: string
           p_mandate_type?: string
           p_market_computed: number
+          p_next_follow_up_on?: string
           p_outcome: string
           p_price: number
           p_project_id: string

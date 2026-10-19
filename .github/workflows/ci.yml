@@ -111,3 +111,26 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/sensitive_gestures.sql
+
+      # Mission 108 — le dossier de la même agence, les réglages par défaut écrits par le serveur
+      # seul, la date de première relance.
+      - name: Finitions de l'audit n°5
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/finitions_audit_5.sql
+
+      # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
+      # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
+      - name: Tests SQL des missions précédentes
+        run: |
+          for test in capture_meeting_facts comparables_structured_characteristics \
+            listing_observations live_seller_price_coherence live_seller_property_confirmation \
+            live_seller_responses_and_summary meeting_conclusion meeting_outcomes \
+            move_selected_comparable project_photos_storage project_price_positioning \
+            project_readiness_bascule subject_property_diagnostics_and_condominium \
+            subject_property_structured_fields; do
+            echo "::group::$test"
+            docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+              -v ON_ERROR_STOP=1 < "supabase/tests/$test.sql"
+            echo "::endgroup::"
+          done
