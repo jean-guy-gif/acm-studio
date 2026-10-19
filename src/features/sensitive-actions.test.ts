@@ -1299,3 +1299,32 @@ describe('Mission 110 — les objections à la conclusion', () => {
     });
   });
 });
+
+describe('Mission 110 — « Retirer le lien » de la synthèse', () => {
+  const LINK = '55555555-5555-4555-8555-555555555555';
+  it('refusé à un membre retiré ou sur un lien hors de son agence, sans rien écrire de faux', async () => {
+    const { removeSynthesisLink } =
+      await import('@/features/seller-synthesis/actions/remove-synthesis-link');
+    state.profile = removed;
+    expect((await removeSynthesisLink(PROJECT, LINK)).ok).toBe(false);
+    noWrite();
+    state.profile = advisor;
+    // Rien de supprimé (lien d'une autre agence, ou déjà retiré) : refus.
+    state.respond = () => ({ data: [] });
+    expect((await removeSynthesisLink(PROJECT, LINK)).ok).toBe(false);
+  });
+
+  it('supprime le lien, cadré sur le dossier et l’agence de la session', async () => {
+    const { removeSynthesisLink } =
+      await import('@/features/seller-synthesis/actions/remove-synthesis-link');
+    state.respond = (table) => (table === 'seller_synthesis_links' ? { data: [{ id: LINK }] } : {});
+    expect(await removeSynthesisLink(PROJECT, LINK)).toEqual({ ok: true });
+    expect(service.writes()).toEqual(['delete seller_synthesis_links']);
+    const scoped = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(scoped).toEqual([
+      ['id', LINK],
+      ['project_id', PROJECT],
+      ['agency_id', AGENCY],
+    ]);
+  });
+});

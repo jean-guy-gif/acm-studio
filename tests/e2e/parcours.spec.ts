@@ -773,6 +773,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       expect(response?.headers()['x-robots-tag']).toContain('noindex');
       await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
       await check(await visitor.getByTestId('seller-synthesis').innerText(), 'Le lien public');
+      // « Retirer le lien » : il ne s'ouvre plus, tout de suite.
+      await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+      await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+      const after = await visitor.goto(link);
+      expect(after?.status(), 'Un lien retiré s’ouvre encore').toBe(404);
     } finally {
       await stranger.close();
     }

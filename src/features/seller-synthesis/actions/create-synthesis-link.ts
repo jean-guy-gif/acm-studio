@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { loadSellerSynthesis } from '@/features/seller-synthesis/queries/load-seller-synthesis';
@@ -13,7 +14,8 @@ import { siteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
-export type CreateSynthesisLinkResult = { ok: true; url: string } | { ok: false; error: string };
+export type CreateSynthesisLinkResult =
+  { ok: true; url: string; linkId: string; expiresAt: string } | { ok: false; error: string };
 
 const FAILURE = 'Le lien n’a pas pu être créé. Réessayez.';
 
@@ -30,16 +32,24 @@ export async function createSynthesisLink(projectId: string): Promise<CreateSynt
     return { ok: false, error: 'Pas de synthèse sans Live mené avec le vendeur.' };
   }
   const token = newSynthesisToken();
-  const { error } = await createServiceRoleClient()
+  const { data, error } = await createServiceRoleClient()
     .from('seller_synthesis_links')
     .insert({
       agency_id: profile.agency_id,
       project_id: projectId,
       created_by: profile.id,
       token_hash: hashSynthesisToken(token),
-    });
-  if (error) {
+    })
+    .select('id, expires_at')
+    .single();
+  if (error || !data) {
     return { ok: false, error: FAILURE };
   }
-  return { ok: true, url: `${siteUrl()}${synthesisPath(token)}` };
+  revalidatePath(`/builder/${projectId}/synthese`);
+  return {
+    ok: true,
+    url: `${siteUrl()}${synthesisPath(token)}`,
+    linkId: data.id,
+    expiresAt: data.expires_at,
+  };
 }

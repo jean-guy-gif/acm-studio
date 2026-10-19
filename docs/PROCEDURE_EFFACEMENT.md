@@ -53,6 +53,8 @@ select
   (select count(*) from live_reopenings where project_id = ':dossier') as reouvertures_live,
   -- Mission 105 : le dernier résultat payé d'une recherche ; il part avec le dossier.
   (select count(*) from stream_estate_results where project_id = ':dossier') as resultat_recherche,
+  -- Mission 110 : les liens de la synthèse laissée au vendeur ; ils partent avec le dossier.
+  (select count(*) from seller_synthesis_links where project_id = ':dossier') as liens_synthese,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;
@@ -74,6 +76,8 @@ cascade depuis le dossier, ils partent d'abord ; tout le reste suit le dossier.
 
 ```sql
 begin;
+-- Mission 110 : les liens de la synthèse d'abord — plus aucun lien envoyé ne s'ouvre.
+delete from seller_synthesis_links where project_id = ':dossier' and agency_id = ':agence';
 delete from comparables where project_id = ':dossier' and agency_id = ':agence';
 delete from subject_properties where project_id = ':dossier' and agency_id = ':agence';
 delete from projects where id = ':dossier' and agency_id = ':agence';

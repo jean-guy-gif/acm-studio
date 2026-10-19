@@ -120,6 +120,54 @@ begin
 end $$;
 reset role;
 
+-- §3 — « Retirer le lien » : refusé depuis le navigateur, fait par le serveur ; le lien n'existe
+-- plus. Puis l'effacement A (PROCEDURE_EFFACEMENT.md) emporte les liens du dossier.
+select pg_temp.act_as('11011111-1111-1111-1111-111111111111');
+do $$
+begin
+  delete from public.seller_synthesis_links where token_hash = repeat('a', 64);
+  if not exists (select 1 from public.seller_synthesis_links where token_hash = repeat('a', 64)) then
+    raise exception 'FAIL 3: le navigateur a retiré un lien';
+  end if;
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+delete from public.seller_synthesis_links where token_hash = repeat('a', 64);
+do $$
+begin
+  if exists (select 1 from public.seller_synthesis_links where token_hash = repeat('a', 64)) then
+    raise exception 'FAIL 3: le lien retiré existe encore';
+  end if;
+end $$;
+
+insert into public.seller_synthesis_links (agency_id, project_id, token_hash)
+  values ('110aaaaa-0000-0000-0000-000000000000', '110ccccc-0000-0000-0000-00000000000a', repeat('c', 64));
+-- Effacement A, dans l'ordre de la procédure.
+delete from public.seller_synthesis_links where project_id = '110ccccc-0000-0000-0000-00000000000a' and agency_id = '110aaaaa-0000-0000-0000-000000000000';
+delete from public.comparables where project_id = '110ccccc-0000-0000-0000-00000000000a' and agency_id = '110aaaaa-0000-0000-0000-000000000000';
+delete from public.subject_properties where project_id = '110ccccc-0000-0000-0000-00000000000a' and agency_id = '110aaaaa-0000-0000-0000-000000000000';
+delete from public.projects where id = '110ccccc-0000-0000-0000-00000000000a' and agency_id = '110aaaaa-0000-0000-0000-000000000000';
+do $$
+begin
+  if exists (select 1 from public.seller_synthesis_links where project_id = '110ccccc-0000-0000-0000-00000000000a')
+     or exists (select 1 from public.project_meeting_conclusions where project_id = '110ccccc-0000-0000-0000-00000000000a') then
+    raise exception 'FAIL 3: l''effacement laisse un lien ou la conclusion';
+  end if;
+end $$;
+-- Et même sans la ligne explicite, supprimer le dossier emporte ses liens.
+insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
+  ('110ccccc-0000-0000-0000-00000000000b', '110aaaaa-0000-0000-0000-000000000000',
+   '11011111-1111-1111-1111-111111111111', 'dossier B', 'draft');
+insert into public.seller_synthesis_links (agency_id, project_id, token_hash)
+  values ('110aaaaa-0000-0000-0000-000000000000', '110ccccc-0000-0000-0000-00000000000b', repeat('d', 64));
+delete from public.projects where id = '110ccccc-0000-0000-0000-00000000000b';
+do $$
+begin
+  if exists (select 1 from public.seller_synthesis_links where token_hash = repeat('d', 64)) then
+    raise exception 'FAIL 3: un dossier supprimé laisse son lien';
+  end if;
+end $$;
+
 do $$ begin raise notice 'prise_de_mandat : OK'; end $$;
 
 rollback;
