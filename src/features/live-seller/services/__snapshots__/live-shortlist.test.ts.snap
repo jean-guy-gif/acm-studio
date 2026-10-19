@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`les 6 plus pertinents, au-delà de 6 > nombre d’écrans du Live pour 8 concurrents, avant et après (rythme accéléré) 1`] = `
+{
+  "after": 23,
+  "before": 27,
+}
+`;

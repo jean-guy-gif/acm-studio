@@ -78,6 +78,7 @@ export default async function LivePage() {
                   toVerifyCount={launchInfos[index]?.toVerifyCount ?? 0}
                   decisionOutdated={launchInfos[index]?.decisionOutdated ?? false}
                   decisionMissing={launchInfos[index]?.decisionMissing ?? false}
+                  shortlistPending={launchInfos[index]?.shortlistPending ?? false}
                 />
               </div>
             </li>

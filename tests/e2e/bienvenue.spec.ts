@@ -97,6 +97,9 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
         page.getByTestId('dossier-steps').getByRole('link', { name: 'Avant le rendez-vous' }),
       ).toHaveAttribute('aria-current', 'page');
       await expect(page.getByRole('heading', { name: 'Votre décision de prix' })).toBeVisible();
+      // Mission 110 — livré avec sa décision de prix d'exemple : prêt, et dans la liste du Live.
+      await page.goto('/live');
+      await expect(page.locator('li').filter({ hasText: EXAMPLE_NAME })).toHaveCount(1);
 
       // Ni la Prospection ni les compteurs du Suivi ne le connaissent.
       await page.goto('/prospection');
@@ -117,15 +120,8 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
     await test.step('Le mener jusqu’au Live', async () => {
       await page.goto(projectUrl);
       await page.getByTestId('dossier-steps').getByRole('link', { name: 'Live' }).click();
-      // Mission 109 — le dossier d'exemple n'a pas de décision de prix : l'étape « Lancer le Live »
-      // le rappelle, avec le lien vers « Avant le rendez-vous », et le lancement reste possible.
-      const notice = page.getByTestId('no-decision-notice');
-      await expect(notice).toContainText('Aucune décision de prix');
-      await expect(notice.getByRole('link', { name: 'Avant le rendez-vous' })).toBeVisible();
-      await page
-        .getByTestId('launch-live-step')
-        .getByRole('link', { name: 'Lancer le Live' })
-        .click();
+      // Mission 110 — le dossier d'exemple est livré avec sa décision de prix : rien à rappeler,
+      // l'étape « Lancer le Live » ouvre la scène aussitôt (M107).
       await expect(page).toHaveURL(/\/live\/[0-9a-f-]{36}/);
       await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
       await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();

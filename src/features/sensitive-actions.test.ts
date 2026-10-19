@@ -1328,3 +1328,51 @@ describe('Mission 110 — « Retirer le lien » de la synthèse', () => {
     ]);
   });
 });
+
+// Mission 110, partie B.
+describe('Mission 110 — les concurrents montrés au Live', () => {
+  const A = '66666666-6666-4666-8666-666666666661';
+  const B = '66666666-6666-4666-8666-666666666662';
+  const OTHER = '66666666-6666-4666-8666-666666666669';
+  const respondWith = (live: { started: string | null; answers: number }) => {
+    state.respond = (table, method) => {
+      if (table === 'projects' && method === 'select')
+        return { data: { id: PROJECT, live_started_at: live.started } };
+      if (table === 'live_seller_responses' || table === 'live_seller_summary')
+        return { count: live.answers };
+      if (table === 'comparables' && method === 'select') return { data: [{ id: A }, { id: B }] };
+      return {};
+    };
+  };
+
+  it('refusé une fois le Live commencé, sans rien écrire', async () => {
+    const { saveLiveShortlist } =
+      await import('@/features/live-seller/actions/save-live-shortlist');
+    respondWith({ started: '2026-10-19T10:00:00.000Z', answers: 0 });
+    expect(await saveLiveShortlist(PROJECT, [A])).toEqual({
+      ok: false,
+      error: 'Le Live a commencé : les concurrents montrés ne se modifient plus.',
+    });
+    noWrite();
+  });
+
+  it('ne garde que des concurrents retenus du dossier, au moins un', async () => {
+    const { saveLiveShortlist } =
+      await import('@/features/live-seller/actions/save-live-shortlist');
+    respondWith({ started: null, answers: 0 });
+    expect((await saveLiveShortlist(PROJECT, [OTHER])).ok).toBe(false);
+    noWrite();
+    expect(await saveLiveShortlist(PROJECT, [A, OTHER])).toEqual({ ok: true });
+    const updates = server.calls
+      .filter((call) => call.method === 'update')
+      .map((call) => call.args[0]);
+    expect(updates).toEqual([
+      { excluded_from_live: false },
+      { excluded_from_live: true },
+      expect.objectContaining({ live_shortlist_at: expect.any(String) }),
+    ]);
+    const ins = server.calls.filter((call) => call.method === 'in').map((call) => call.args);
+    expect(ins).toContainEqual(['id', [A]]);
+    expect(ins).toContainEqual(['id', [B]]);
+  });
+});

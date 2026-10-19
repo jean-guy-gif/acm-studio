@@ -261,6 +261,7 @@ export type Database = {
           district: string | null
           energy_rating: string | null
           energy_source: string | null
+          excluded_from_live: boolean
           exclusivity: string | null
           exclusivity_source: string | null
           exposure: string | null
@@ -326,6 +327,7 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          excluded_from_live?: boolean
           exclusivity?: string | null
           exclusivity_source?: string | null
           exposure?: string | null
@@ -391,6 +393,7 @@ export type Database = {
           district?: string | null
           energy_rating?: string | null
           energy_source?: string | null
+          excluded_from_live?: boolean
           exclusivity?: string | null
           exclusivity_source?: string | null
           exposure?: string | null
@@ -1315,6 +1318,7 @@ export type Database = {
           is_example: boolean
           live_ended_at: string | null
           live_rhythm: string
+          live_shortlist_at: string | null
           live_started_at: string | null
           search_settings: Json | null
           seller_email: string | null
@@ -1331,6 +1335,7 @@ export type Database = {
           is_example?: boolean
           live_ended_at?: string | null
           live_rhythm?: string
+          live_shortlist_at?: string | null
           live_started_at?: string | null
           search_settings?: Json | null
           seller_email?: string | null
@@ -1347,6 +1352,7 @@ export type Database = {
           is_example?: boolean
           live_ended_at?: string | null
           live_rhythm?: string
+          live_shortlist_at?: string | null
           live_started_at?: string | null
           search_settings?: Json | null
           seller_email?: string | null

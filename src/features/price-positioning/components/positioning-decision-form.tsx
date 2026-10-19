@@ -182,7 +182,8 @@ export function PositioningDecisionForm({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={btnPrimary}
+          // Mission 110 — principal tant qu'aucune décision n'est enregistrée : c'est l'étape à faire.
+          className={hasSaved ? btnSecondary : btnPrimary}
           disabled={pending}
           onClick={() =>
             submit({ advisor: advisorPrice, analysis: advisorAnalysis, text: justification })

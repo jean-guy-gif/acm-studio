@@ -6,6 +6,7 @@ import {
   nextDossierStep,
   nextDossierStepHref,
 } from '@/features/projects/services/dossier-steps';
+import { nextDossierAction, showsNextAction } from '@/features/projects/services/dossier-steps';
 
 const ID = '11111111-1111-1111-1111-111111111111';
 
@@ -68,5 +69,51 @@ describe('un clic dans la liste mène à l’étape à faire', () => {
     expect(href(false, 0)).toBe(`/builder/${ID}/property`);
     expect(href(true, 1)).toBe(`/builder/${ID}/comparables`);
     expect(href(true, 3)).toBe(`/builder/${ID}/avant-rendez-vous`);
+  });
+});
+
+// Mission 110 — « Étape suivante » : un seul bouton principal, qui dit quoi faire maintenant.
+describe('l’étape suivante', () => {
+  const state = {
+    status: 'draft',
+    hasProperty: true,
+    exploitableCount: 5,
+    hasDecision: true,
+    liveStarted: false,
+    liveEnded: false,
+  };
+  it('suit le parcours, dans l’ordre', () => {
+    expect(nextDossierAction('p1', { ...state, hasProperty: false }).label).toBe(
+      'Saisir le bien vendeur',
+    );
+    expect(nextDossierAction('p1', { ...state, exploitableCount: 2 }).label).toBe(
+      'Chercher les concurrents',
+    );
+    expect(nextDossierAction('p1', { ...state, hasDecision: false }).label).toBe(
+      'Décider votre prix',
+    );
+    expect(nextDossierAction('p1', state)).toEqual({
+      key: 'launch',
+      label: 'Lancer le Live',
+      href: '/builder/p1/lancer-le-live',
+    });
+    expect(nextDossierAction('p1', { ...state, liveStarted: true }).label).toBe(
+      'Reprendre le Live',
+    );
+    expect(nextDossierAction('p1', { ...state, liveStarted: true, liveEnded: true }).label).toBe(
+      'Conclure le rendez-vous',
+    );
+    expect(nextDossierAction('p1', { ...state, status: 'meeting_completed' }).label).toBe(
+      'Voir le Suivi',
+    );
+  });
+  it('ne se répète pas sur l’écran de l’étape, ni sur la fiche du bien', () => {
+    const decide = nextDossierAction('p1', { ...state, hasDecision: false });
+    expect(showsNextAction('/builder/p1/avant-rendez-vous', 'p1', decide)).toBe(false);
+    expect(showsNextAction('/builder/p1', 'p1', decide)).toBe(true);
+    expect(showsNextAction('/builder/p1/property', 'p1', decide)).toBe(false);
+    const find = nextDossierAction('p1', { ...state, exploitableCount: 0 });
+    expect(showsNextAction('/builder/p1/comparables/find', 'p1', find)).toBe(false);
+    expect(showsNextAction('/builder/p1/comparables', 'p1', find)).toBe(true);
   });
 });
