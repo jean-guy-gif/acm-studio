@@ -321,9 +321,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       // Remis dans l'ordre d'origine : le Live du parcours compte sur lui.
       await order
         .getByRole('button', { name: /^Monter / })
-        .nth(0)
+        // Le premier ne monte pas ; celui descendu est désormais le deuxième.
+        .nth(1)
         .click();
       await expect(order.getByText('Ordre enregistré.')).toBeVisible();
+      await page.reload();
+      expect(await labels.allInnerTexts()).toEqual(before);
 
       const href = await page.getByTestId('export-comparison').getAttribute('href');
       const response = await page.request.get(href!);
