@@ -205,3 +205,27 @@ describe('le message ne contient aucune adresse ni aucun prix de concurrent', ()
     expect(signed.lastContactDays).toBeNull();
   });
 });
+
+// Mission 110 — le message de relance part des objections cochées à la conclusion.
+describe('le message part des objections', () => {
+  const base = {
+    motive: 'thinking_price' as const,
+    meetingDate: '19 octobre',
+    sellerPerceivedPrice: null,
+    sellerRevisedPrice: null,
+    commercializationPrice: null,
+    launchReadinessMissing: null,
+    priceDropsSinceMeeting: 0,
+    advisorFirstName: 'Jeanne',
+    agencyName: 'Agence Test',
+  };
+  it('une phrase factuelle par frein, sans pression', () => {
+    const message = buildFollowUpMessage({ ...base, objections: ['price', 'exclusivity'] });
+    expect(message).toContain('Sur le prix, je peux reprendre avec vous les biens');
+    expect(message).toContain('Si l’exclusivité vous fait hésiter');
+    expect(message).not.toMatch(/urgent|vite|dernière chance|[Ee]stimation/);
+  });
+  it('sans objection, le message d’avant', () => {
+    expect(buildFollowUpMessage({ ...base, objections: [] })).toBe(buildFollowUpMessage(base));
+  });
+});

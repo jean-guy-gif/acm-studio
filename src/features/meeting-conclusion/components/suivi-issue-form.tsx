@@ -9,6 +9,7 @@ import type {
   ConclusionOutcome,
   FollowUpMotive,
   MandateType,
+  Objection,
 } from '@/features/meeting-conclusion/types';
 
 // Mission 54 §1 — changer l'issue depuis le Suivi, l'acte NORMAL du suivi. Replié par
@@ -21,6 +22,8 @@ export function SuiviIssueForm({
   currentMandateType = null,
   currentMotive = null,
   currentMotiveDetail = null,
+  currentObjections = [],
+  currentObjectionNote = null,
   knownPrice = null,
   openLabel = 'Changer l’issue',
 }: {
@@ -33,6 +36,8 @@ export function SuiviIssueForm({
   // Mission 96 — le motif de relance déjà enregistré.
   currentMotive?: FollowUpMotive | null;
   currentMotiveDetail?: string | null;
+  currentObjections?: Objection[];
+  currentObjectionNote?: string | null;
   knownPrice?: number | null;
   openLabel?: string;
 }) {
@@ -73,6 +78,8 @@ export function SuiviIssueForm({
         initialMandateType={currentMandateType}
         initialMotive={currentMotive}
         initialMotiveDetail={currentMotiveDetail}
+        initialObjections={currentObjections}
+        initialObjectionNote={currentObjectionNote}
         knownPrice={knownPrice}
         legend="Nouvelle issue"
       />

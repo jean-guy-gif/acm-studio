@@ -138,6 +138,19 @@ export default function ConfidentialitePage() {
               propose un texte, que le conseiller copie et envoie par ses propres moyens.
             </li>
             <li>
+              Les freins notés à la conclusion (le prix, l’exclusivité, le délai…) et une ligne
+              libre : ils servent au conseiller pour sa relance et au manager de l’agence pour
+              suivre la prise de mandat ; jamais à d’autres agences.
+            </li>
+            <li>
+              La synthèse du rendez-vous laissée au vendeur : ce qu’il a dit, le marché vu ensemble
+              — sans aucune adresse ni annonce de bien concurrent — et le prix proposé. Le
+              conseiller peut l’imprimer ou créer un lien pour la lui envoyer : ce lien s’ouvre sans
+              compte, n’est jamais indexé par les moteurs de recherche et expire après 30 jours. ACM
+              Studio ne garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
+              d’expiration.
+            </li>
+            <li>
               Un journal technique : quand une erreur inattendue survient, ACM Studio enregistre sa
               date, la page concernée, un message technique, la version de l’outil et les
               identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant

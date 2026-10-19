@@ -21,6 +21,7 @@ import {
   FIRST_FOLLOW_UP_INVALID,
   readFirstFollowUpOn,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { readObjections } from '@/features/meeting-conclusion/services/objections';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -82,6 +83,7 @@ export async function concludeMeeting(
   if (!firstFollowUp.ok) {
     return { ok: false, error: FIRST_FOLLOW_UP_INVALID };
   }
+  const objections = readObjections(formData);
 
   // Les valeurs COURANTES, au cas où l'étape 1 (prix au Live) ne les a pas déjà figées.
   // La fonction fige au premier passage (COALESCE) et ne réécrit jamais.
@@ -103,6 +105,13 @@ export async function concludeMeeting(
     p_follow_up_motive: decision.value.motive as string,
     p_follow_up_motive_detail: decision.value.motiveDetail as string,
     p_next_follow_up_on: firstFollowUp.day as string,
+    // Mission 110 — ce qui freine le vendeur ; un mandat signé n'en change pas les objections.
+    ...(decision.value.outcome === 'signed'
+      ? {}
+      : {
+          p_objections: objections.objections,
+          p_objection_note: objections.note as string,
+        }),
     p_market_computed: amounts.marketComputed as number,
     p_advisor_analysis: amounts.advisorAnalysis as number,
     p_advisor_price: amounts.advisorPrice as number,

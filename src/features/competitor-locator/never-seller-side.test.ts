@@ -94,6 +94,10 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
       join('app', '(stage)'),
       join('app', '(protected)', 'live'),
       join('app', '(protected)', 'builder', '[projectId]', 'presentation'),
+      // Mission 110 — la synthèse laissée au vendeur, et sa page publique.
+      join('features', 'seller-synthesis'),
+      join('app', 'synthese'),
+      join('app', '(print)', 'builder', '[projectId]', 'synthese'),
     ];
     const files = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

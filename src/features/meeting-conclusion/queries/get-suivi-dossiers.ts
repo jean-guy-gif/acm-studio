@@ -1,3 +1,4 @@
+import { parseObjections } from '@/features/meeting-conclusion/services/objections';
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import 'server-only';
 
@@ -58,7 +59,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
     supabase
       .from('project_meeting_conclusions')
       .select(
-        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, mandate_type, signed_at, concluded_at, outcome_changed_at',
+        'project_id, commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, objections, objection_note, mandate_type, signed_at, concluded_at, outcome_changed_at',
       )
       .in('project_id', ids)
       .eq('agency_id', agencyId),
@@ -101,6 +102,8 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       followUpMotive: isFollowUpMotive(row.follow_up_motive) ? row.follow_up_motive : null,
       followUpMotiveDetail: row.follow_up_motive_detail,
       nextFollowUpOn: row.next_follow_up_on,
+      objections: parseObjections(row.objections),
+      objectionNote: row.objection_note,
       mandateType: isMandateType(row.mandate_type) ? row.mandate_type : null,
       signedAt: row.signed_at,
       concludedAt: row.concluded_at,

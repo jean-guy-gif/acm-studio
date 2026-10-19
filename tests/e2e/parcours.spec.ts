@@ -281,6 +281,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       firstFollowUp,
       'La date ne suit pas « Réfléchit au prix » (un mois)',
     ).not.toHaveValue(weekLater);
+    // Mission 110 — ce qui freine le vendeur : deux objections cochées.
+    const objections = page.getByTestId('objections');
+    await objections.locator('label').filter({ hasText: 'Le prix' }).click();
+    await objections.locator('label').filter({ hasText: 'Le délai' }).click();
     await page.getByRole('button', { name: 'Conclure le rendez-vous' }).click();
   });
 
@@ -289,6 +293,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Mission 86 — une ligne courte par dossier : l'issue, la note, ce qui retient le vendeur.
     const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
     await expect(row, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
+    // Mission 110 — les objections cochées à la conclusion.
+    await expect(row.getByTestId('objections-line')).toHaveText('Freins : Le prix · Le délai');
     await expect(row.getByText('À relancer', { exact: true })).toBeVisible();
     // Mission 95 — la durée mesurée du Live, du premier écran au « Terminer », pause comprise.
     await expect(row.getByText(/Durée du Live : \d+\smin/)).toBeVisible();
@@ -732,6 +738,50 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       page.getByText(CHOSEN_ADDRESS),
       'L’adresse « Ne plus solliciter » est restée dans la tournée',
     ).toHaveCount(0);
+    await page.goto(`/prospection?bien=${projectId}`);
+  });
+
+  // Mission 110 — la synthèse laissée au vendeur : jamais un titre ni une adresse de concurrent,
+  // jamais « Vendu par » ; son lien s'ouvre sans compte.
+  await test.step('La synthèse au vendeur, à imprimer ou par lien', async () => {
+    await page.goto(`/builder/${projectId}/synthese`);
+    const synthesis = page.getByTestId('seller-synthesis');
+    await expect(synthesis.getByText('Ce que vous nous avez dit')).toBeVisible();
+    await expect(synthesis.getByText('Le marché vu ensemble')).toBeVisible();
+    const check = async (text: string, where: string) => {
+      for (const competitor of COMPETITORS) {
+        expect(text, `${where} : le titre « ${competitor.title} »`).not.toContain(competitor.title);
+      }
+      expect(text, `${where} : « Vendu par »`).not.toMatch(/Vendu par|Exclusivité|[Ee]stimation/);
+      expect(text, `${where} : une adresse de prospection`).not.toContain(
+        'boulevard de la Tournée',
+      );
+    };
+    await check(await synthesis.innerText(), 'La synthèse');
+    await page.getByRole('button', { name: /Créer un lien pour le vendeur/ }).click();
+    const link = (await page.getByTestId('synthesis-link').innerText()).trim();
+    expect(link).toMatch(/\/synthese\/[A-Za-z0-9_-]{43}$/);
+    // Sans compte, dans un navigateur neuf : la synthèse s'ouvre, et n'est pas indexable.
+    const bypass = process.env.E2E_VERCEL_BYPASS;
+    const stranger = await page
+      .context()
+      .browser()!
+      .newContext(bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {});
+    try {
+      const visitor = await stranger.newPage();
+      const response = await visitor.goto(link);
+      expect(response?.headers()['x-robots-tag']).toContain('noindex');
+      await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
+      await check(await visitor.getByTestId('seller-synthesis').innerText(), 'Le lien public');
+      // « Retirer le lien » : il ne s'ouvre plus, tout de suite.
+      await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+      await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+      const after = await visitor.goto(link);
+      expect(after?.status(), 'Un lien retiré s’ouvre encore').toBe(404);
+    } finally {
+      await stranger.close();
+    }
+    // L'étape suivante part de la Prospection filtrée sur le bien, comme avant cette étape.
     await page.goto(`/prospection?bien=${projectId}`);
   });
 

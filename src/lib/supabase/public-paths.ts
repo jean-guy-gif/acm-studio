@@ -24,6 +24,10 @@ const PUBLIC_PATHS = [
   '/api/cron/verifier-oppositions',
 ];
 
+// Mission 110 — la synthèse laissée au vendeur, ouverte par son lien sans compte : un chemin de la
+// forme EXACTE « /synthese/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
+const PUBLIC_SYNTHESIS = /^\/synthese\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname);
+  return PUBLIC_PATHS.includes(pathname) || PUBLIC_SYNTHESIS.test(pathname);
 }
