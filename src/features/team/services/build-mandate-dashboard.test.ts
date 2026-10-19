@@ -11,6 +11,8 @@ const projects = [
   { id: 'a2', advisorId: 'anne', isExample: false },
   { id: 'b1', advisorId: 'bruno', isExample: false },
   { id: 'b2', advisorId: 'bruno', isExample: false },
+  { id: 'b3', advisorId: 'bruno', isExample: false },
+  { id: 'b4', advisorId: 'bruno', isExample: false },
   // Le dossier d'exemple : jamais compté, même conclu « signé ».
   { id: 'ex', advisorId: 'anne', isExample: true },
 ];
@@ -21,6 +23,7 @@ const conclusions = [
     mandateType: 'exclusive',
     concludedAt: T0,
     signedAt: T0,
+    firstOutcome: 'signed',
     objections: [],
   },
   {
@@ -29,6 +32,7 @@ const conclusions = [
     mandateType: 'simple',
     concludedAt: T0,
     signedAt: at(10),
+    firstOutcome: 'follow_up',
     objections: ['price'],
   },
   {
@@ -37,15 +41,38 @@ const conclusions = [
     mandateType: null,
     concludedAt: T0,
     signedAt: null,
+    firstOutcome: 'follow_up',
     objections: ['price', 'timing'],
   },
+  // Première issue « vendu ailleurs », puis signé : après relance (tout sauf « signé »).
   {
     projectId: 'b2',
     outcome: 'signed',
     mandateType: null,
     concludedAt: T0,
     signedAt: at(20),
+    firstOutcome: 'sold_elsewhere',
     objections: ['nimporte'],
+  },
+  // Signé quelques heures après une première issue « à relancer » : après relance.
+  {
+    projectId: 'b3',
+    outcome: 'signed',
+    mandateType: 'exclusive',
+    concludedAt: T0,
+    signedAt: at(0.1),
+    firstOutcome: 'follow_up',
+    objections: [],
+  },
+  // Parcours inconnu : compté à part.
+  {
+    projectId: 'b4',
+    outcome: 'signed',
+    mandateType: null,
+    concludedAt: T0,
+    signedAt: T0,
+    firstOutcome: null,
+    objections: [],
   },
   {
     projectId: 'ex',
@@ -53,6 +80,7 @@ const conclusions = [
     mandateType: 'exclusive',
     concludedAt: T0,
     signedAt: T0,
+    firstOutcome: 'signed',
     objections: ['exclusivity'],
   },
   // Une conclusion d'un dossier inconnu (autre agence, archivé) : ignorée.
@@ -62,6 +90,7 @@ const conclusions = [
     mandateType: 'exclusive',
     concludedAt: T0,
     signedAt: T0,
+    firstOutcome: 'signed',
     objections: [],
   },
 ];
@@ -76,14 +105,15 @@ describe('le tableau de la prise de mandat', () => {
 
   it('pour l’agence : sans l’exemple, ni un dossier qui n’est pas le sien', () => {
     expect(dashboard.agency).toMatchObject({
-      meetings: 4,
-      signed: 3,
+      meetings: 6,
+      signed: 5,
       signedAtMeeting: 1,
-      signedAfterFollowUp: 2,
-      // 1 exclusif sur 2 mandats typés.
-      exclusiveShare: 0.5,
-      // 10 et 20 jours après le rendez-vous.
-      medianDaysToSignature: 15,
+      signedAfterFollowUp: 3,
+      signedUnknownPath: 1,
+      // 2 exclusifs sur 3 mandats typés.
+      exclusiveShare: 2 / 3,
+      // 0,1, 10 et 20 jours après le rendez-vous : médiane 10.
+      medianDaysToSignature: 10,
     });
     expect(dashboard.agency.objections).toEqual([
       { objection: 'price', label: 'Le prix', count: 2 },
@@ -95,9 +125,9 @@ describe('le tableau de la prise de mandat', () => {
     expect(
       dashboard.advisors.map((advisor) => [advisor.name, advisor.meetings, advisor.signed]),
     ).toEqual([
+      ['Bruno', 4, 3],
       ['Anne', 2, 2],
-      ['Bruno', 2, 1],
     ]);
-    expect(dashboard.advisors[0].exclusiveShare).toBe(0.5);
+    expect(dashboard.advisors[1].exclusiveShare).toBe(0.5);
   });
 });

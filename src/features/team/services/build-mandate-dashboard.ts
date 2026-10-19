@@ -7,8 +7,10 @@ import { OBJECTION_LABELS, type Objection } from '@/features/meeting-conclusion/
 // de comparaison entre agences (M59). Le dossier d'exemple n'y entre jamais (M97). Pur.
 //
 // Un rendez-vous mené = un dossier conclu (une conclusion, quelle que soit l'issue). Un mandat est
-// signé « au rendez-vous » quand il l'est dans les 24 heures de la conclusion, « après relance »
-// sinon. Le délai médian de signature porte sur les mandats signés après relance.
+// signé « au rendez-vous » quand la PREMIÈRE issue enregistrée est « Mandat signé », « après
+// relance » sinon (décision de Laurent, 19/10) ; une conclusion dont la première issue n'est pas
+// connue est comptée à part, « parcours inconnu ». Le délai médian porte sur les seuls mandats
+// signés après relance, compté depuis le rendez-vous (la conclusion).
 
 export type DashboardProject = { id: string; advisorId: string | null; isExample: boolean };
 export type DashboardConclusion = {
@@ -17,6 +19,8 @@ export type DashboardConclusion = {
   mandateType: string | null;
   concludedAt: string | null;
   signedAt: string | null;
+  // La première issue enregistrée ; null = parcours inconnu.
+  firstOutcome: string | null;
   objections: unknown;
 };
 export type DashboardAdvisor = { id: string; name: string };
@@ -26,6 +30,8 @@ export type MandateFigures = {
   signed: number;
   signedAtMeeting: number;
   signedAfterFollowUp: number;
+  // Mandats signés dont la première issue n'est pas connue.
+  signedUnknownPath: number;
   // Part d'exclusifs parmi les mandats signés dont le type est connu ; null sans mandat typé.
   exclusiveShare: number | null;
   // En jours entiers ; null sans mandat signé après relance.
@@ -40,15 +46,18 @@ export type MandateDashboard = {
 };
 
 const DAY_MS = 86_400_000;
-const AT_MEETING_MS = DAY_MS;
 
 function figures(conclusions: DashboardConclusion[]): MandateFigures {
   const signed = conclusions.filter((c) => c.outcome === 'signed');
-  const delays = signed.map((c) =>
-    c.concludedAt && c.signedAt ? Date.parse(c.signedAt) - Date.parse(c.concludedAt) : Number.NaN,
+  const atMeeting = signed.filter((c) => c.firstOutcome === 'signed').length;
+  const afterFollowUpRows = signed.filter(
+    (c) => c.firstOutcome != null && c.firstOutcome !== 'signed',
   );
-  const atMeeting = delays.filter((ms) => Number.isFinite(ms) && ms <= AT_MEETING_MS).length;
-  const afterFollowUp = delays.filter((ms) => Number.isFinite(ms) && ms > AT_MEETING_MS);
+  const afterFollowUp = afterFollowUpRows
+    .map((c) =>
+      c.concludedAt && c.signedAt ? Date.parse(c.signedAt) - Date.parse(c.concludedAt) : Number.NaN,
+    )
+    .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const typed = signed.filter((c) => c.mandateType === 'exclusive' || c.mandateType === 'simple');
   const days = median(afterFollowUp.map((ms) => ms / DAY_MS));
   const counts = new Map<Objection, number>();
@@ -61,7 +70,8 @@ function figures(conclusions: DashboardConclusion[]): MandateFigures {
     meetings: conclusions.length,
     signed: signed.length,
     signedAtMeeting: atMeeting,
-    signedAfterFollowUp: afterFollowUp.length,
+    signedAfterFollowUp: afterFollowUpRows.length,
+    signedUnknownPath: signed.filter((c) => c.firstOutcome == null).length,
     exclusiveShare:
       typed.length > 0
         ? typed.filter((c) => c.mandateType === 'exclusive').length / typed.length

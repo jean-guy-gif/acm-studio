@@ -120,6 +120,67 @@ begin
 end $$;
 reset role;
 
+-- §4 — le parcours : la première issue, jamais réécrite ; le passage par « à relancer », jamais effacé.
+do $$
+declare r public.project_meeting_conclusions%rowtype;
+begin
+  -- Le dossier A, conclu « à relancer » au §1 puis « à relancer » encore : première issue « à relancer ».
+  perform public.change_meeting_outcome(
+    p_project_id => '110ccccc-0000-0000-0000-00000000000a',
+    p_agency_id => '110aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null, p_mandate_type => 'exclusive');
+  select * into r from public.project_meeting_conclusions
+    where project_id = '110ccccc-0000-0000-0000-00000000000a';
+  if r.first_outcome is distinct from 'follow_up' or not r.went_through_follow_up then
+    raise exception 'FAIL 4: parcours « à relancer → signé » perdu (% / %)', r.first_outcome, r.went_through_follow_up;
+  end if;
+  -- Corriger la conclusion ne réécrit pas la première issue.
+  perform public.conclude_meeting(
+    p_project_id => '110ccccc-0000-0000-0000-00000000000a',
+    p_agency_id => '110aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null, p_price => null,
+    p_market_computed => null, p_advisor_analysis => null, p_advisor_price => null);
+  select * into r from public.project_meeting_conclusions
+    where project_id = '110ccccc-0000-0000-0000-00000000000a';
+  if r.first_outcome is distinct from 'follow_up' then
+    raise exception 'FAIL 4: la première issue a été réécrite';
+  end if;
+end $$;
+
+insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
+  ('110ccccc-0000-0000-0000-00000000000e', '110aaaaa-0000-0000-0000-000000000000',
+   '11011111-1111-1111-1111-111111111111', 'signé au rendez-vous', 'ready_for_meeting');
+do $$
+declare r public.project_meeting_conclusions%rowtype;
+begin
+  perform public.conclude_meeting(
+    p_project_id => '110ccccc-0000-0000-0000-00000000000e',
+    p_agency_id => '110aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null, p_price => 300000,
+    p_market_computed => null, p_advisor_analysis => null, p_advisor_price => null,
+    p_mandate_type => 'simple');
+  -- Signé, puis « à relancer », puis signé de nouveau : la première issue reste « signé ».
+  perform public.change_meeting_outcome(
+    p_project_id => '110ccccc-0000-0000-0000-00000000000e',
+    p_agency_id => '110aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'follow_up', p_reason => null, p_follow_up_motive => 'thinking_price');
+  perform public.change_meeting_outcome(
+    p_project_id => '110ccccc-0000-0000-0000-00000000000e',
+    p_agency_id => '110aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null);
+  select * into r from public.project_meeting_conclusions
+    where project_id = '110ccccc-0000-0000-0000-00000000000e';
+  if r.first_outcome is distinct from 'signed' or not r.went_through_follow_up then
+    raise exception 'FAIL 4: parcours « signé → à relancer → signé » (% / %)', r.first_outcome, r.went_through_follow_up;
+  end if;
+  begin
+    update public.project_meeting_conclusions set first_outcome = 'pirate'
+      where project_id = '110ccccc-0000-0000-0000-00000000000e';
+    raise exception 'FAIL 4: une première issue hors liste acceptée';
+  exception when check_violation then null;
+  end;
+end $$;
+
 -- §3 — « Retirer le lien » : refusé depuis le navigateur, fait par le serveur ; le lien n'existe
 -- plus. Puis l'effacement A (PROCEDURE_EFFACEMENT.md) emporte les liens du dossier.
 select pg_temp.act_as('11011111-1111-1111-1111-111111111111');

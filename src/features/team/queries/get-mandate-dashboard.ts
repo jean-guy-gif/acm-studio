@@ -24,7 +24,9 @@ export async function getMandateDashboard(): Promise<MandateDashboard | null> {
       .neq('status', 'archived'),
     supabase
       .from('project_meeting_conclusions')
-      .select('project_id, outcome, mandate_type, concluded_at, signed_at, objections')
+      .select(
+        'project_id, outcome, mandate_type, concluded_at, signed_at, first_outcome, objections',
+      )
       .eq('agency_id', profile.agency_id),
     supabase
       .from('profiles')
@@ -46,6 +48,7 @@ export async function getMandateDashboard(): Promise<MandateDashboard | null> {
       mandateType: row.mandate_type,
       concludedAt: row.concluded_at,
       signedAt: row.signed_at,
+      firstOutcome: row.first_outcome,
       objections: row.objections,
     })),
     advisors: (profiles.data ?? []).map((row) => ({

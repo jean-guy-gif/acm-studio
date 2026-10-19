@@ -85,9 +85,17 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
       ) : (
         <p className={hintText}>Aucun rendez-vous conclu pour l’instant.</p>
       )}
+      {agency.signedUnknownPath > 0 ? (
+        <p className={hintText} data-testid="unknown-path">
+          Parcours inconnu : {formatNumber(agency.signedUnknownPath)} mandat
+          {agency.signedUnknownPath > 1 ? 's' : ''} signé{agency.signedUnknownPath > 1 ? 's' : ''}{' '}
+          avant que l’outil ne garde la première issue.
+        </p>
+      ) : null}
       <p className={hintText}>
-        Un mandat est « signé au rendez-vous » dans les 24 heures de la conclusion. Le dossier
-        d’exemple n’est jamais compté.
+        « Au rendez-vous » : la première issue enregistrée est « Mandat signé ». « Après relance » :
+        signé ensuite ; le délai médian se compte depuis le rendez-vous. Le dossier d’exemple n’est
+        jamais compté.
       </p>
     </div>
   );

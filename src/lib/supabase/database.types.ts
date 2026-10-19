@@ -1116,6 +1116,7 @@ export type Database = {
           commercialization_price: number | null
           concluded_at: string | null
           created_at: string
+          first_outcome: string | null
           follow_up_motive: string | null
           follow_up_motive_detail: string | null
           follow_up_reason: string | null
@@ -1140,12 +1141,14 @@ export type Database = {
           project_id: string
           signed_at: string | null
           updated_at: string
+          went_through_follow_up: boolean
         }
         Insert: {
           agency_id: string
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          first_outcome?: string | null
           follow_up_motive?: string | null
           follow_up_motive_detail?: string | null
           follow_up_reason?: string | null
@@ -1170,12 +1173,14 @@ export type Database = {
           project_id: string
           signed_at?: string | null
           updated_at?: string
+          went_through_follow_up?: boolean
         }
         Update: {
           agency_id?: string
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          first_outcome?: string | null
           follow_up_motive?: string | null
           follow_up_motive_detail?: string | null
           follow_up_reason?: string | null
@@ -1200,6 +1205,7 @@ export type Database = {
           project_id?: string
           signed_at?: string | null
           updated_at?: string
+          went_through_follow_up?: boolean
         }
         Relationships: [
           {
