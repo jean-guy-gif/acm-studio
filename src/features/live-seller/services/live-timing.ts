@@ -39,5 +39,6 @@ export function canChangeLiveRhythm(state: {
 }
 
 export const RHYTHM_LOCKED_MESSAGE = 'Le Live a commencé : le rythme ne se modifie plus.';
-// Mission 110 — l'ordre des concurrents suit la même règle.
-export const LIVE_ORDER_LOCKED = 'Le Live a commencé : l’ordre des concurrents ne se modifie plus.';
+// Mission 110 — l'ordre des concurrents suit la même règle : une fois le Live commencé, les
+// flèches et le glisser-déposer sont désactivés, et l'écran le dit.
+export const LIVE_ORDER_FROZEN = 'Ordre figé : le Live a commencé';

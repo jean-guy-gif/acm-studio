@@ -27,6 +27,7 @@ import { calculateComparableSummary } from '@/features/comparables/services/calc
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import { PendingImportsBanner } from '@/features/competitor-search/components/pending-imports-banner';
 import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
+import { isLiveOrderFrozen } from '@/features/live-seller/queries/is-live-order-frozen';
 import { getProject } from '@/features/projects/queries/get-project';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
@@ -59,6 +60,8 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const selected = comparables.filter((comparable) => comparable.is_selected);
   const rejected = comparables.filter((comparable) => !comparable.is_selected);
   const subjectSurfaceArea = subjectProperty?.surface_area ?? null;
+  // Mission 110 — une fois le Live commencé, l'ordre des concurrents est figé.
+  const orderFrozen = await isLiveOrderFrozen(await createClient(), project);
 
   // Mission 98 — une adresse de la liste « Ne plus solliciter » de l'agence le dit dès la
   // préparation d'un nouveau dossier, partout où elle apparaît.
@@ -143,6 +146,7 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
             deleteAction={deleteAction}
             rejectSelectedAction={rejectSelectedAction}
             deleteSelectedAction={deleteSelectedAction}
+            orderFrozen={orderFrozen}
           />
           <DpeCountLine energyRatings={selected.map((comparable) => comparable.energy_rating)} />
           <RejectedComparablesList

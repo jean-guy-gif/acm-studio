@@ -66,3 +66,35 @@ describe('réintégrer une annonce retirée', () => {
     expect(card({ is_selected: true, listing_withdrawn: true })).toMatch(DIRECT_TOGGLE);
   });
 });
+
+// Mission 110 — une fois le Live commencé, l'ordre est figé : les flèches sont désactivées.
+describe('les flèches de l’ordre', () => {
+  const withArrows = (orderFrozen: boolean) =>
+    renderToStaticMarkup(
+      createElement(ComparableCard, {
+        comparable: makeComparable({ id: 'c1' }),
+        editHref: '/builder/p1/comparables/c1/edit',
+        subjectSurfaceArea: null,
+        toggleAction: noop,
+        deleteAction: noop,
+        moveAction: noop,
+        isFirst: false,
+        isLast: false,
+        orderFrozen,
+      }),
+    );
+  const arrow = (html: string, label: string) =>
+    html.match(new RegExp(`<button[^>]*>${label}</button>`))?.[0] ?? '';
+
+  it('actives tant que le Live n’a pas commencé', () => {
+    const html = withArrows(false);
+    expect(arrow(html, '↑ Monter')).not.toContain('disabled=""');
+    expect(arrow(html, '↓ Descendre')).not.toContain('disabled=""');
+  });
+
+  it('désactivées une fois le Live commencé', () => {
+    const html = withArrows(true);
+    expect(arrow(html, '↑ Monter')).toContain('disabled=""');
+    expect(arrow(html, '↓ Descendre')).toContain('disabled=""');
+  });
+});

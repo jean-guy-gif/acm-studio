@@ -452,9 +452,10 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
 
       {/* Mission 110 — mode expert : l'ordre de passage des concurrents au Live, par
           glisser-déposer, tant que le Live n'a pas commencé. */}
-      {expert && !rhythmLocked && retained.length > 1 ? (
+      {expert && retained.length > 1 ? (
         <LiveOrderEditor
           projectId={projectId}
+          frozen={rhythmLocked}
           entries={retained.map((comparable) => ({
             id: comparable.id,
             label: neutralComparableLabel({

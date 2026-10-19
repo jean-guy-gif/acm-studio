@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { LIVE_ORDER_LOCKED } from '@/features/live-seller/services/live-timing';
+import { LIVE_ORDER_FROZEN } from '@/features/live-seller/services/live-timing';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -45,7 +45,7 @@ export async function reorderLiveCompetitors(
   if (error) {
     return {
       ok: false,
-      error: error.message.includes('live_started') ? LIVE_ORDER_LOCKED : FAILURE,
+      error: error.message.includes('live_started') ? LIVE_ORDER_FROZEN : FAILURE,
     };
   }
   revalidatePath(`/builder/${projectId}`, 'layout');
