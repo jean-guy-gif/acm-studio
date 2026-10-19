@@ -1488,7 +1488,7 @@ describe('les experts (mission 110)', () => {
   it('l’ordre du Live : refusé une fois le Live commencé, sans autre écriture', async () => {
     const { reorderLiveCompetitors } =
       await import('@/features/live-seller/actions/reorder-live-competitors');
-    const { LIVE_ORDER_LOCKED } = await import('@/features/live-seller/services/live-timing');
+    const { LIVE_ORDER_FROZEN } = await import('@/features/live-seller/services/live-timing');
     state.profile = advisor;
     expect((await reorderLiveCompetitors(PROJECT, ['pas-un-identifiant'])).ok).toBe(false);
     noWrite();
@@ -1501,8 +1501,60 @@ describe('les experts (mission 110)', () => {
           : {};
     expect(await reorderLiveCompetitors(PROJECT, [COMPETITOR])).toEqual({
       ok: false,
-      error: LIVE_ORDER_LOCKED,
+      error: LIVE_ORDER_FROZEN,
     });
     expect(server.writes()).toEqual(['rpc reorder_retained_comparables']);
+  });
+});
+
+// Mission 110 — les flèches de la page Concurrents : refusées une fois le Live commencé.
+describe('l’ordre figé une fois le Live commencé (mission 110)', () => {
+  it('les flèches ne déplacent rien et disent « Ordre figé »', async () => {
+    const { moveSelectedComparable } =
+      await import('@/features/comparables/actions/move-selected-comparable');
+    const { LIVE_ORDER_FROZEN } = await import('@/features/live-seller/services/live-timing');
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, agency_id: AGENCY, live_started_at: '2026-10-19T10:00:00Z' } }
+        : {};
+    await expect(
+      moveSelectedComparable(PROJECT, form({ comparableId: COMPETITOR, direction: 'down' })),
+    ).rejects.toThrow(
+      `REDIRECT /builder/${PROJECT}/comparables?error=${encodeURIComponent(LIVE_ORDER_FROZEN)}`,
+    );
+    noWrite();
+  });
+
+  it('une réponse du vendeur suffit à figer l’ordre', async () => {
+    const { moveSelectedComparable } =
+      await import('@/features/comparables/actions/move-selected-comparable');
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, agency_id: AGENCY, live_started_at: null } }
+        : table === 'live_seller_responses'
+          ? { count: 1 }
+          : {};
+    await expect(
+      moveSelectedComparable(PROJECT, form({ comparableId: COMPETITOR, direction: 'up' })),
+    ).rejects.toThrow(/Ordre%20fig/);
+    noWrite();
+  });
+
+  it('avant le Live, le déplacement part', async () => {
+    const { moveSelectedComparable } =
+      await import('@/features/comparables/actions/move-selected-comparable');
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, agency_id: AGENCY, live_started_at: null } }
+        : table === 'live_seller_responses'
+          ? { count: 0 }
+          : {};
+    await expect(
+      moveSelectedComparable(PROJECT, form({ comparableId: COMPETITOR, direction: 'up' })),
+    ).rejects.toThrow(`REDIRECT /builder/${PROJECT}/comparables`);
+    expect(server.writes()).toEqual(['rpc move_selected_comparable']);
   });
 });

@@ -351,6 +351,21 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await walkLive(page, projectId, { firstPass: true, tablet: false, dossierName });
   });
 
+  // Mission 110 — une fois le Live commencé, l'ordre des concurrents est figé.
+  await test.step('Après le Live : « Ordre figé », flèches désactivées', async () => {
+    await page.goto(`/builder/${projectId}/comparables`);
+    await expect(page.getByTestId('order-frozen')).toHaveText('Ordre figé : le Live a commencé');
+    for (const name of ['↑ Monter', '↓ Descendre']) {
+      const arrows = page.getByRole('button', { name, exact: true });
+      await expect(arrows.first()).toBeDisabled();
+      expect(
+        await arrows.evaluateAll((buttons) =>
+          buttons.every((b) => (b as HTMLButtonElement).disabled),
+        ),
+      ).toBe(true);
+    }
+  });
+
   await test.step('La liste du Live ne propose plus de recommencer', async () => {
     await page.goto('/live');
     const item = page.locator('li').filter({ hasText: dossierName });

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { alertError, btnSecondary, card, sectionTitle, hintText } from '@/components/ui/styles';
+import { LIVE_ORDER_FROZEN } from '@/features/live-seller/services/live-timing';
 import { reorderLiveCompetitors } from '@/features/live-seller/actions/reorder-live-competitors';
 
 export type LiveOrderEntry = { id: string; label: string; shown: boolean };
@@ -22,9 +23,12 @@ function move<T>(list: T[], from: number, to: number): T[] {
 export function LiveOrderEditor({
   projectId,
   entries,
+  frozen = false,
 }: {
   projectId: string;
   entries: LiveOrderEntry[];
+  // Le Live a commencé : ni glisser-déposer, ni flèches, et l'écran le dit.
+  frozen?: boolean;
 }) {
   const [order, setOrder] = useState(entries);
   const [dragged, setDragged] = useState<number | null>(null);
@@ -54,22 +58,26 @@ export function LiveOrderEditor({
   return (
     <section className={`${card} flex flex-col gap-3 p-5`} data-testid="live-order">
       <h2 className={sectionTitle}>{LIVE_ORDER_TITLE}</h2>
-      <p className={hintText}>Faites glisser un concurrent, ou utilisez les flèches.</p>
+      <p className={hintText} data-testid={frozen ? 'order-frozen' : undefined}>
+        {frozen ? LIVE_ORDER_FROZEN : 'Faites glisser un concurrent, ou utilisez les flèches.'}
+      </p>
       <ol className="flex flex-col gap-2">
         {order.map((entry, index) => (
           <li
             key={entry.id}
-            draggable={!pending}
-            onDragStart={() => setDragged(index)}
-            onDragOver={(event) => event.preventDefault()}
+            draggable={!pending && !frozen}
+            onDragStart={() => !frozen && setDragged(index)}
+            onDragOver={(event) => !frozen && event.preventDefault()}
             onDrop={(event) => {
               event.preventDefault();
-              if (dragged != null && dragged !== index) commit(move(order, dragged, index));
+              if (!frozen && dragged != null && dragged !== index) {
+                commit(move(order, dragged, index));
+              }
               setDragged(null);
             }}
             onDragEnd={() => setDragged(null)}
             data-testid="live-order-entry"
-            className={`flex cursor-grab items-center gap-3 rounded-xl border px-3 py-2 text-sm ${
+            className={`flex ${frozen ? 'cursor-default' : 'cursor-grab'} items-center gap-3 rounded-xl border px-3 py-2 text-sm ${
               dragged === index ? 'border-brand bg-brand-soft' : 'border-zinc-200 bg-white'
             }`}
           >
@@ -84,7 +92,7 @@ export function LiveOrderEditor({
             <button
               type="button"
               aria-label={`Monter ${entry.label}`}
-              disabled={pending || index === 0}
+              disabled={frozen || pending || index === 0}
               onClick={() => commit(move(order, index, index - 1))}
               className={`${btnSecondary} px-2 py-0.5 text-xs`}
             >
@@ -93,7 +101,7 @@ export function LiveOrderEditor({
             <button
               type="button"
               aria-label={`Descendre ${entry.label}`}
-              disabled={pending || index === order.length - 1}
+              disabled={frozen || pending || index === order.length - 1}
               onClick={() => commit(move(order, index, index + 1))}
               className={`${btnSecondary} px-2 py-0.5 text-xs`}
             >
