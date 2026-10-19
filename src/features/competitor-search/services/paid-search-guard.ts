@@ -1,3 +1,4 @@
+import { isDefaultFilters } from '@/features/competitor-search/services/search-filters';
 import {
   STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
@@ -64,7 +65,9 @@ export function searchFingerprint(
   const entries = Object.entries({ ...used, address: address?.trim() || null }).sort(([a], [b]) =>
     a.localeCompare(b),
   );
-  return isDefaultSettings(settings)
-    ? JSON.stringify(entries)
-    : JSON.stringify([...entries, ['settings', settings]]);
+  if (isDefaultSettings(settings)) return JSON.stringify(entries);
+  // Mission 110 — sans critère réglé, l'empreinte reste celle d'avant : un résultat payé gardé
+  // avec des réglages ne se perd pas au déploiement.
+  const { filters, ...rest } = settings!;
+  return JSON.stringify([...entries, ['settings', isDefaultFilters(filters) ? rest : settings]]);
 }

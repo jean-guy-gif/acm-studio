@@ -37,6 +37,11 @@ describe('« Bienvenue » (mission 97)', () => {
     expect(homeHref(12)).toBe('/builder');
   });
 
+  it('jamais en mode expert : ses dossiers (mission 110)', () => {
+    expect(homeHref(0, true)).toBe('/builder');
+    expect(homeHref(3, true)).toBe('/builder');
+  });
+
   it('donne les 4 étapes, une ligne chacune', () => {
     expect(WELCOME_STEPS.map((step) => step.title)).toEqual([
       'Le bien du vendeur',

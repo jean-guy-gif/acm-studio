@@ -132,6 +132,21 @@ describe('gapLine', () => {
     expect(gapLine(CRITERIA, located, place(300))).toBeNull();
   });
 
+  it('dit les critères réglés dont la donnée manque (mission 110)', () => {
+    const unknown = candidate({
+      features: { ...FEATURES, location: SUBJECT },
+      streamEstate: {
+        propertyId: 'p',
+        originSite: 'SeLoger',
+        onlineSince: null,
+        lastSeenAt: null,
+        priceDrops: [],
+        criteriaUnknown: ['minFloor', 'pool'],
+      },
+    });
+    expect(gapLine(CRITERIA, unknown, place(300))).toBe('Étage non indiqué · Piscine non indiquée');
+  });
+
   it('dit chaque écart, dans l’ordre', () => {
     const wider = candidate({
       surfaceArea: 78.4,

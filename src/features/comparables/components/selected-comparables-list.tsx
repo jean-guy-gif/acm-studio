@@ -15,6 +15,7 @@ import {
 import type { BulkComparableResult } from '@/features/comparables/actions/bulk-comparable-actions';
 import { ComparableCard } from '@/features/comparables/components/comparable-card';
 import type { Comparable } from '@/features/comparables/types';
+import { LIVE_ORDER_FROZEN } from '@/features/live-seller/services/live-timing';
 import { LocatorNotice } from '@/features/competitor-locator/components/locator-notice';
 import { useCompetitorLocator } from '@/features/competitor-locator/use-competitor-locator';
 
@@ -43,6 +44,7 @@ export function SelectedComparablesList({
   deleteAction,
   rejectSelectedAction,
   deleteSelectedAction,
+  orderFrozen = false,
 }: {
   comparables: Comparable[];
   projectId: string;
@@ -55,6 +57,8 @@ export function SelectedComparablesList({
   deleteAction: ServerAction;
   rejectSelectedAction: BulkAction;
   deleteSelectedAction: BulkAction;
+  // Mission 110 — le Live a commencé : l'ordre des concurrents ne bouge plus.
+  orderFrozen?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -104,6 +108,11 @@ export function SelectedComparablesList({
   return (
     <section className="flex flex-col gap-3">
       <h2 className={sectionTitle}>Concurrents retenus ({comparables.length})</h2>
+      {orderFrozen && comparables.length > 1 ? (
+        <p className={hintText} data-testid="order-frozen">
+          {LIVE_ORDER_FROZEN}
+        </p>
+      ) : null}
       {comparables.length > 0 ? <LocatorNotice availability={locatorAvailability} /> : null}
 
       {count > 0 ? (
@@ -181,6 +190,7 @@ export function SelectedComparablesList({
               deleteAction={deleteAction}
               isFirst={index === 0}
               isLast={index === comparables.length - 1}
+              orderFrozen={orderFrozen}
               locatorAvailability={locatorAvailability}
               oppositionNote={oppositionNotes[comparable.id]}
               selection={{

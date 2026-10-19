@@ -74,6 +74,9 @@ Aucune n'a de test qui appelle l'action. Leur cloisonnement entre agences est pr
 | `save-branding.ts`                                                                            | `agency_branding`, stockage                     | service                                                                           |
 | `open-example-dossier.ts`                                                                     | `projects`, `subject_properties`, `comparables` | service, e2e                                                                      |
 | `onboarding/actions.ts`                                                                       | `bootstrap_agency_owner`                        | `closed_doors` §8                                                                 |
+| `saved-searches.ts` (M110)                                                                    | `saved_searches`, `projects.search_settings`    | `les_experts` (CI), service                                                       |
+| `set-expert-mode.ts` (M110)                                                                   | `profiles.expert_mode` (sa ligne)               | `les_experts` §4 (CI), service                                                    |
+| `reorder-live-competitors.ts` (M110)                                                          | `reorder_retained_comparables`                  | `les_experts` §5-6 (CI), service                                                  |
 
 Quatorze tests SQL de `supabase/tests/` ne sont pas dans la CI (trois sont à réparer, M88) : ce
 qu'ils prouvaient n'est plus vérifié à chaque push.

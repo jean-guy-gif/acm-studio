@@ -100,7 +100,8 @@ export function mergeStreamEstateNote(
   next: StreamEstateSearchNote,
 ): StreamEstateSearchNote {
   if (previous == null) return next;
-  const sum = (key: keyof TieredSearchCounts) => previous.counts[key] + next.counts[key];
+  const sum = (key: Exclude<keyof TieredSearchCounts, 'outsideCriteria'>) =>
+    previous.counts[key] + next.counts[key];
   return {
     ...next,
     billed: previous.billed + next.billed,
@@ -113,6 +114,7 @@ export function mergeStreamEstateNote(
       otherCommune: sum('otherCommune'),
       unverifiedPosition: sum('unverifiedPosition'),
       duplicates: sum('duplicates'),
+      outsideCriteria: (previous.counts.outsideCriteria ?? 0) + (next.counts.outsideCriteria ?? 0),
     },
   };
 }
@@ -226,6 +228,9 @@ export function describeStreamEstateSearch(
       : null,
     counts.duplicates > 0
       ? `${plural(counts.duplicates, 'doublon', 'doublons')} (le même bien sous un second identifiant)`
+      : null,
+    (counts.outsideCriteria ?? 0) > 0
+      ? `${plural(counts.outsideCriteria ?? 0, 'bien', 'biens')} hors de vos critères (DPE, étage, extérieur, terrain ou piscine)`
       : null,
     counts.outsideWhitelist > 0
       ? `${plural(counts.outsideWhitelist, 'bien', 'biens')} sans annonce sur un site que l’extension relit`

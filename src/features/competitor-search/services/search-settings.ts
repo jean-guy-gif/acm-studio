@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+import {
+  DEFAULT_SEARCH_FILTERS,
+  describeFilters,
+  filtersToInput,
+  isDefaultFilters,
+  readSearchFiltersInput,
+  searchFiltersSchema,
+  type SearchFilters,
+  type SearchFiltersInput,
+} from '@/features/competitor-search/services/search-filters';
 import { formatEuro, formatNumber, formatSquareMeters } from '@/lib/format';
 
 // MISSION 99 — LES RÉGLAGES DE LA RECHERCHE (décision de Laurent, 12/10). Un conseiller
@@ -24,6 +34,8 @@ export type SearchSettings = {
   rooms: SettingRange | null; // null : le nombre de pièces du bien
   surface: SettingRange | null; // null : la surface du bien à ±10 %
   autoWiden: boolean; // false : la première recherche seulement, sans élargissement
+  // Mission 110 — DPE, étage, extérieur, terrain, piscine (search-filters.ts) : fixes.
+  filters: SearchFilters;
 };
 
 export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
@@ -32,6 +44,7 @@ export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
   rooms: null,
   surface: null,
   autoWiden: true,
+  filters: DEFAULT_SEARCH_FILTERS,
 };
 
 const range = (max: number) =>
@@ -53,6 +66,8 @@ export const searchSettingsSchema = z.object({
   rooms: range(30).nullable(),
   surface: range(5_000).nullable(),
   autoWiden: z.boolean(),
+  // Des réglages d'avant la mission 110 n'ont pas de critères : aucun.
+  filters: searchFiltersSchema.default(DEFAULT_SEARCH_FILTERS),
 });
 
 // Ce que la base garde (`projects.search_settings`), relu : illisible ou absent = automatique.
@@ -61,11 +76,13 @@ export function parseSearchSettings(value: unknown): SearchSettings {
   return parsed.success ? parsed.data : DEFAULT_SEARCH_SETTINGS;
 }
 
-export type SettingName = 'sector' | 'price' | 'rooms' | 'surface' | 'autoWiden';
+export type SettingName = 'sector' | 'price' | 'rooms' | 'surface' | 'autoWiden' | 'filters';
 
 // « réglé par vous » : le critère n'est plus celui que l'outil utiliserait seul.
 export function isSettingCustom(settings: SearchSettings, name: SettingName): boolean {
-  return name === 'autoWiden' ? !settings.autoWiden : settings[name] != null;
+  if (name === 'autoWiden') return !settings.autoWiden;
+  if (name === 'filters') return !isDefaultFilters(settings.filters);
+  return settings[name] != null;
 }
 
 export function isDefaultSettings(settings: SearchSettings | null | undefined): boolean {
@@ -75,13 +92,25 @@ export function isDefaultSettings(settings: SearchSettings | null | undefined): 
       settings.price == null &&
       settings.rooms == null &&
       settings.surface == null &&
-      settings.autoWiden)
+      settings.autoWiden &&
+      isDefaultFilters(settings.filters))
   );
 }
 
-// Ce qui s'écrit en base : rien du tout quand tout est automatique.
-export function settingsToStore(settings: SearchSettings): SearchSettings | null {
-  return isDefaultSettings(settings) ? null : settings;
+// Ce qui s'écrit en base : rien du tout quand tout est automatique. Mission 110 — sans critère
+// réglé, la clé `filters` n'est pas écrite : la base garde la forme d'avant la mission.
+export type StoredSearchSettings = Omit<SearchSettings, 'filters'> & { filters?: SearchFilters };
+
+export function settingsToStore(settings: SearchSettings): StoredSearchSettings | null {
+  if (isDefaultSettings(settings)) return null;
+  if (!isDefaultFilters(settings.filters)) return settings;
+  return {
+    sector: settings.sector,
+    price: settings.price,
+    rooms: settings.rooms,
+    surface: settings.surface,
+    autoWiden: settings.autoWiden,
+  };
 }
 
 // --- Ce que l'outil utiliserait seul, et ce qu'il a utilisé ---------------------------------
@@ -141,6 +170,7 @@ export function describeSearchCriteria(
     price ? priceLabel(price) : null,
     rooms ? roomsLabel(rooms) : null,
     surface ? surfaceLabel(surface) : null,
+    ...describeFilters(settings.filters),
   ].filter((part): part is string => part != null);
 }
 
@@ -157,6 +187,8 @@ export type SearchSettingsInput = {
   surfaceMin: string;
   surfaceMax: string;
   autoWiden: boolean;
+  // Mission 110 — absents d'un appel d'avant : aucun critère.
+  filters?: SearchFiltersInput;
 };
 
 export type ReadSettingsResult =
@@ -192,6 +224,10 @@ export function readSearchSettingsInput(input: SearchSettingsInput): ReadSetting
   if (!rooms.ok) return rooms;
   const surface = readPair(input.surfaceMin, input.surfaceMax, 'Surface');
   if (!surface.ok) return surface;
+  const filters = input.filters
+    ? readSearchFiltersInput(input.filters)
+    : { ok: true as const, filters: DEFAULT_SEARCH_FILTERS };
+  if (!filters.ok) return filters;
   const sector: SearchSector | null =
     input.sector === 'auto'
       ? null
@@ -204,6 +240,7 @@ export function readSearchSettingsInput(input: SearchSettingsInput): ReadSetting
     rooms: rooms.range,
     surface: surface.range,
     autoWiden: input.autoWiden,
+    filters: filters.filters,
   });
   return parsed.success
     ? { ok: true, settings: parsed.data }
@@ -226,6 +263,7 @@ export function settingsToInput(settings: SearchSettings): SearchSettingsInput {
     surfaceMin: text(settings.surface?.min),
     surfaceMax: text(settings.surface?.max),
     autoWiden: settings.autoWiden,
+    filters: filtersToInput(settings.filters),
   };
 }
 
@@ -234,4 +272,32 @@ export function settingsToInput(settings: SearchSettings): SearchSettingsInput {
 // ne se cherche pas avec les critères d'un appartement).
 export function advisorDefaultSettings(settings: SearchSettings): SearchSettings {
   return { ...DEFAULT_SEARCH_SETTINGS, sector: settings.sector, autoWiden: settings.autoWiden };
+}
+
+// Mission 110 — une RECHERCHE NOMMÉE (« Villas Vence ») garde le secteur, l'élargissement et les
+// critères (DPE, étage, extérieur, terrain, piscine). Jamais un prix, des pièces ni une surface :
+// ils sont propres à un bien (leçon de la M109).
+export type SavedSearchSettings = Pick<SearchSettings, 'sector' | 'autoWiden' | 'filters'>;
+
+export const savedSearchSettingsSchema = searchSettingsSchema
+  .pick({ sector: true, autoWiden: true, filters: true })
+  .strict();
+
+export function savedSearchSettings(settings: SearchSettings): SavedSearchSettings {
+  return { sector: settings.sector, autoWiden: settings.autoWiden, filters: settings.filters };
+}
+
+// Ce que la base garde, relu : illisible = rien (la recherche n'est pas proposée).
+export function parseSavedSearchSettings(value: unknown): SavedSearchSettings | null {
+  const parsed = savedSearchSettingsSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+// Rappeler une recherche sur un dossier : secteur, élargissement et critères viennent d'elle ; le
+// prix, les pièces et la surface réglés sur CE dossier restent les siens.
+export function applySavedSearch(
+  current: SearchSettings,
+  saved: SavedSearchSettings,
+): SearchSettings {
+  return { ...current, sector: saved.sector, autoWiden: saved.autoWiden, filters: saved.filters };
 }

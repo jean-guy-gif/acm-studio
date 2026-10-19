@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import {
+  DEFAULT_SEARCH_FILTERS,
+  type SearchFilters,
+} from '@/features/competitor-search/services/search-filters';
+
 import { distanceMeters } from '@/features/competitor-search/services/proximity';
 import type { GeoCommune } from '@/features/competitor-search/services/resolve-insee-code';
 import { baseStreamEstateQuery } from '@/features/competitor-search/services/stream-estate';
@@ -46,6 +51,9 @@ type Fake = {
   price?: number;
   host?: string;
   seenDaysAgo?: number; // dernier passage du robot sur l'annonce d'origine (1 jour par défaut)
+  // Mission 110 — l'étage du bien et les étiquettes de son annonce.
+  floor?: number | null;
+  features?: string[];
 };
 
 let counter = 0;
@@ -78,6 +86,7 @@ function toJson(fake: Fake) {
     createdAt: '2026-09-20T10:00:00+02:00',
     lastCrawledAt: '2026-10-05T10:00:00+02:00',
     location: fake.point,
+    floor: fake.floor ?? null,
     pictures: [],
     city: { name: fake.city ?? 'Saint-Laurent-du-Var', insee: fake.insee ?? SLV },
     adverts: [
@@ -85,6 +94,7 @@ function toJson(fake: Fake) {
         url: `https://www.${fake.host ?? 'seloger.com'}/annonces/achat/appartement/${fake.id}.htm`,
         expired: false,
         lastCrawledAt: seenAt,
+        features: fake.features ?? [],
       },
     ],
   };
@@ -652,5 +662,82 @@ describe('mission 78 : une grande maison trouve ses comparables', () => {
     expect(result.stop).toBe('target');
     expect(result.candidates).toHaveLength(10);
     expect(result.candidates.map((c) => c.key)).not.toContain('twin');
+  });
+});
+
+// Mission 110 — les critères réglés : le DPE part dans la requête ; l'étage, l'extérieur et la
+// piscine trient la réponse déjà payée. Une donnée connue qui ne remplit pas le critère écarte et
+// se compte ; une donnée absente garde le bien, marqué (décision de Laurent, 19/10).
+describe('les critères de la mission 110', () => {
+  const filters = (patch: Partial<SearchFilters>): SearchFilters => ({
+    ...DEFAULT_SEARCH_FILTERS,
+    ...patch,
+  });
+
+  it('le DPE est envoyé à Stream Estate, une classe par paramètre ; les autres critères non', async () => {
+    const { api, run } = search(
+      many(2, 'dpe', () => ({ point: north(200) })),
+      {
+        filters: filters({ dpe: ['A', 'B'], minFloor: 2, pool: true }),
+      },
+    );
+    await run;
+    expect(api.calls[0].params.getAll('energyCategories[]')).toEqual(['A', 'B']);
+    for (const name of ['floorsMin', 'floorMin', 'landSurfaceMin', 'pool']) {
+      expect(api.calls[0].params.has(name)).toBe(false);
+    }
+  });
+
+  it('sans critère, la requête est exactement celle d’avant', async () => {
+    const before = search(many(2, 'same', () => ({ point: north(200) })));
+    const after = search(
+      many(2, 'same', () => ({ point: north(200) })),
+      {
+        filters: DEFAULT_SEARCH_FILTERS,
+      },
+    );
+    await before.run;
+    await after.run;
+    expect(after.api.calls.map((call) => call.params.toString())).toEqual(
+      before.api.calls.map((call) => call.params.toString()),
+    );
+  });
+
+  it('étage minimum : connu et trop bas, écarté et compté ; inconnu, gardé et marqué', async () => {
+    const pool = [
+      { id: 'high', point: north(100), floor: 4 },
+      { id: 'low', point: north(150), floor: 1 },
+      { id: 'unknown', point: north(200), floor: null },
+    ];
+    const { run } = search(pool, { filters: filters({ minFloor: 2 }) });
+    const outcome = await run;
+    if (!outcome.ok) throw new Error('échec');
+    const keys = outcome.candidates.map((candidate) => candidate.key);
+    expect(keys).toContain('high');
+    expect(keys).toContain('unknown');
+    expect(keys).not.toContain('low');
+    expect(outcome.counts.outsideCriteria).toBe(1);
+    const unknown = outcome.candidates.find((candidate) => candidate.key === 'unknown');
+    expect(unknown?.streamEstate?.criteriaUnknown).toEqual(['minFloor']);
+    const high = outcome.candidates.find((candidate) => candidate.key === 'high');
+    expect(high?.streamEstate?.criteriaUnknown).toBeUndefined();
+  });
+
+  it('piscine et extérieur : lus dans les étiquettes de l’annonce', async () => {
+    const pool = [
+      { id: 'pool-balcony', point: north(100), features: ['Piscine', 'Balcony'] },
+      { id: 'no-balcony', point: north(150), features: ['Piscine', 'Pas de balcon'] },
+      { id: 'silent', point: north(200), features: [] },
+    ];
+    const { run } = search(pool, { filters: filters({ pool: true, outdoor: ['balcony'] }) });
+    const outcome = await run;
+    if (!outcome.ok) throw new Error('échec');
+    const keys = outcome.candidates.map((candidate) => candidate.key);
+    expect(keys).toEqual(expect.arrayContaining(['pool-balcony', 'silent']));
+    expect(keys).not.toContain('no-balcony');
+    expect(
+      outcome.candidates.find((candidate) => candidate.key === 'silent')?.streamEstate
+        ?.criteriaUnknown,
+    ).toEqual(['outdoor', 'pool']);
   });
 });

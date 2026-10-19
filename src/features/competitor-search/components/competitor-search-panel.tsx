@@ -1,5 +1,10 @@
 'use client';
 
+import type {
+  ApplySavedSearchResult,
+  SavedSearchesResult,
+} from '@/features/competitor-search/actions/saved-searches';
+import type { SavedSearch } from '@/features/competitor-search/services/saved-searches';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { RemoteImage } from '@/components/ui/remote-image';
@@ -194,7 +199,14 @@ type Props = {
     // Mission 108 — les réglages gardés par défaut par le conseiller, et l'action qui les garde.
     advisorDefaults: SearchSettings;
     saveDefaultsAction: (input: SearchSettingsInput) => Promise<SaveSearchDefaultsResult>;
+    // Mission 110 — les recherches nommées du conseiller, et leurs actions.
+    savedSearches: SavedSearch[];
+    saveNamedAction: (name: string, input: SearchSettingsInput) => Promise<SavedSearchesResult>;
+    applyNamedAction: (searchId: string) => Promise<ApplySavedSearchResult>;
+    deleteNamedAction: (searchId: string) => Promise<SavedSearchesResult>;
   };
+  // Mission 110 — le mode expert du conseiller : aides masquées.
+  expertMode?: boolean;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -418,6 +430,7 @@ export function CompetitorSearchPanel({
   keptResultAvailable = false,
   budgetNotice = null,
   searchSettings,
+  expertMode = false,
 }: Props) {
   const [pending, startTransition] = useTransition();
   // Mission 75 — après chaque import, ACM demande l'adresse du concurrent au Localisateur.
@@ -490,6 +503,10 @@ export function CompetitorSearchPanel({
     searchSettings?.advisorDefaults ?? null,
   );
   const [defaultsNote, setDefaultsNote] = useState<string | null>(null);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(
+    searchSettings?.savedSearches ?? [],
+  );
+  const [namedNote, setNamedNote] = useState<string | null>(null);
   // Le prix réglé pour la recherche Stream Estate : c'est lui, pas la fourchette de la fiche, qui
   // dit si un bien Stream Estate est « dans la fourchette » de la liste principale.
   const [streamRange, setStreamRange] = useState<SettingRange | null>(null);
@@ -608,16 +625,42 @@ export function CompetitorSearchPanel({
         setSettingsError(result.error);
         return false;
       }
-      setSavedSettings(result.settings);
-      setSettingsInput(settingsToInput(result.settings));
-      void forgetStreamEstateResult(projectId);
-      if (streamNote != null) {
-        setStreamNote(null);
-        await refreshRanking(
-          (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
-        );
-      }
+      await settingsSaved(result.settings);
       return true;
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  async function settingsSaved(settings: SearchSettings): Promise<void> {
+    setSavedSettings(settings);
+    setSettingsInput(settingsToInput(settings));
+    void forgetStreamEstateResult(projectId);
+    if (streamNote != null) {
+      setStreamNote(null);
+      await refreshRanking(
+        (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
+      );
+    }
+  }
+
+  // Mission 110 — les recherches nommées : enregistrer, rappeler sur ce dossier, retirer.
+  async function namedSearch(
+    run: () => Promise<SavedSearchesResult | ApplySavedSearchResult>,
+    done: string,
+  ): Promise<void> {
+    setSettingsError(null);
+    setNamedNote(null);
+    setSavingSettings(true);
+    try {
+      const result = await run();
+      if (!result.ok) {
+        setSettingsError(result.error);
+        return;
+      }
+      if ('searches' in result) setSavedSearches(result.searches);
+      else await settingsSaved(result.settings);
+      setNamedNote(done);
     } finally {
       setSavingSettings(false);
     }
@@ -1094,6 +1137,7 @@ export function CompetitorSearchPanel({
       onToggleSelect={() => toggleSelect(entry)}
       pending={busy}
       onDecision={(payload) => handleDecision(entry, payload)}
+      hideHints={expertMode}
     />
   );
 
@@ -1115,6 +1159,24 @@ export function CompetitorSearchPanel({
           advisorDefaults={advisorDefaults}
           defaultsNote={defaultsNote}
           onSaveDefaults={() => void saveDefaults()}
+          savedSearches={savedSearches}
+          namedNote={namedNote}
+          onSaveNamed={(name) =>
+            settingsInput != null &&
+            void namedSearch(
+              () => searchSettings.saveNamedAction(name, settingsInput),
+              'Recherche enregistrée : vous la retrouverez sur vos autres dossiers.',
+            )
+          }
+          onApplyNamed={(id) =>
+            void namedSearch(
+              () => searchSettings.applyNamedAction(id),
+              'Recherche appliquée et enregistrée sur ce dossier.',
+            )
+          }
+          onDeleteNamed={(id) =>
+            void namedSearch(() => searchSettings.deleteNamedAction(id), 'Recherche retirée.')
+          }
         />
       ) : null}
       {streamEstateAction ? (

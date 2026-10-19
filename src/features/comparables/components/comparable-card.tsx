@@ -50,6 +50,8 @@ type ComparableCardProps = {
   moveAction?: ServerAction;
   isFirst?: boolean;
   isLast?: boolean;
+  // Mission 110 — le Live a commencé : l'ordre est figé, les flèches sont désactivées.
+  orderFrozen?: boolean;
   // Sélection de lot (optionnelle) : présente = une case à cocher est affichée, même
   // modèle que la recherche (§8). Absente = carte normale (liste des écartés).
   selection?: { checked: boolean; onToggle: () => void; disabled?: boolean };
@@ -114,6 +116,7 @@ export function ComparableCard({
   moveAction,
   isFirst,
   isLast,
+  orderFrozen = false,
   selection,
   locatorAvailability,
   oppositionNote,
@@ -294,14 +297,14 @@ export function ComparableCard({
               <form action={moveAction}>
                 <input type="hidden" name="comparableId" value={comparable.id} />
                 <input type="hidden" name="direction" value="up" />
-                <button type="submit" className={smallBtn} disabled={isFirst}>
+                <button type="submit" className={smallBtn} disabled={isFirst || orderFrozen}>
                   ↑ Monter
                 </button>
               </form>
               <form action={moveAction}>
                 <input type="hidden" name="comparableId" value={comparable.id} />
                 <input type="hidden" name="direction" value="down" />
-                <button type="submit" className={smallBtn} disabled={isLast}>
+                <button type="submit" className={smallBtn} disabled={isLast || orderFrozen}>
                   ↓ Descendre
                 </button>
               </form>
