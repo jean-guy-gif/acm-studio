@@ -10,6 +10,7 @@ import {
   OPEN_EXAMPLE_LABEL,
   REAL_DOSSIER_CONFIRMATION,
   liveLaunchCheck,
+  NO_DECISION_NOTICE,
 } from '@/features/live-seller/services/live-launch';
 import {
   livePositionKey,
@@ -53,6 +54,7 @@ export function LiveLaunchActions({
   isExample,
   toVerifyCount,
   decisionOutdated = false,
+  decisionMissing = false,
   proceed = false,
 }: {
   projectId: string;
@@ -61,6 +63,7 @@ export function LiveLaunchActions({
   isExample: boolean;
   toVerifyCount: number;
   decisionOutdated?: boolean;
+  decisionMissing?: boolean;
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
   // rien à demander s'ouvre tout de suite ; ce qui demande s'affiche déjà ouvert.
   proceed?: boolean;
@@ -73,6 +76,7 @@ export function LiveLaunchActions({
     isExample,
     toVerifyCount,
     decisionOutdated,
+    decisionMissing,
   });
   const href = `/live/${projectId}`;
   const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
@@ -147,9 +151,20 @@ export function LiveLaunchActions({
       data-testid="live-launch-confirm"
       className="flex max-w-md flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
     >
-      {check.notices.map((notice) => (
-        <p key={notice}>{notice}</p>
-      ))}
+      {check.notices.map((notice) =>
+        // Mission 109 — sans décision de prix : le lien vers « Avant le rendez-vous ».
+        notice === NO_DECISION_NOTICE ? (
+          <p key={notice} data-testid="no-decision-notice">
+            {notice} :{' '}
+            <Link href={`/builder/${projectId}/avant-rendez-vous`} className={link}>
+              Avant le rendez-vous
+            </Link>
+            .
+          </p>
+        ) : (
+          <p key={notice}>{notice}</p>
+        ),
+      )}
       {check.confirm ? <p className="font-semibold">{REAL_DOSSIER_CONFIRMATION}</p> : null}
       <div className="flex flex-wrap items-center gap-2">
         <Link href={href} className={btnPrimary}>

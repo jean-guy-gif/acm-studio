@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
-import { getProject } from '@/features/projects/queries/get-project';
+import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-project-status';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -19,8 +19,8 @@ export type NeutralScreenContext = {
 export async function getNeutralScreenContext(
   projectId: string,
 ): Promise<NeutralScreenContext | null> {
-  const project = await getProject(projectId);
-  if (!project) {
+  // Mission 109 — un dossier archivé de l'agence ouvre aussi l'écran neutre (rien n'en sort).
+  if ((await getLiveProjectStatus(projectId)) == null) {
     return null;
   }
   const [branding, profile] = await Promise.all([getAgencyBranding(), getProfile()]);

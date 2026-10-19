@@ -3,6 +3,7 @@ import 'server-only';
 import { numberOrNull, textOrNull } from '@/features/live-seller/actions/live-action-state';
 import { normalizeLiveComparableResponse } from '@/features/live-seller/services/normalize-live-comparable-response';
 import { validateLiveComparableResponse } from '@/features/live-seller/services/validate-live-comparable-response';
+import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -28,12 +29,16 @@ export async function writeLiveComparableResponse(
 
   const { data: project } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, status')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   if (!project) {
     return { ok: false, error: 'Projet introuvable pour votre agence.' };
+  }
+  // Mission 109 — un dossier conclu ou archivé ne change plus par le Live.
+  if (isLiveClosed(project.status)) {
+    return { ok: false, error: LIVE_CLOSED_MESSAGE };
   }
 
   const { data: comparable } = await supabase

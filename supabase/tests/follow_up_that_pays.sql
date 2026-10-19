@@ -248,6 +248,11 @@ select pg_temp.expect('§4 un membre retiré n''ajoute rien',
 -- =====================================================================
 -- §5 — le prix révélé, dans le navigateur du conseiller C1.
 -- =====================================================================
+-- Mission 109 — un Live ne s'écrit que sur un dossier pas encore conclu : le dossier A1, conclu
+-- plus haut pour les §1 à §4, est remis « prêt » pour ce Live.
+reset role;
+update public.projects set status = 'ready_for_meeting'
+  where id = '96cccccc-0000-0000-0000-000000000001';
 select pg_temp.act_as('96000000-0000-0000-0000-0000000000c1');
 
 do $$

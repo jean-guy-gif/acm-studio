@@ -30,9 +30,11 @@ const option =
 export const CUSTOM_SETTING_LABEL = 'réglé par vous';
 // Mission 108 — les réglages du dossier sont ceux que le conseiller garde par défaut.
 export const ADVISOR_DEFAULTS_LABEL = 'vos réglages par défaut';
-export const KEEP_AS_DEFAULTS_LABEL = 'Garder comme mes réglages par défaut';
+// Mission 109 — seuls le secteur et l'élargissement : le libellé le dit.
+export const KEEP_AS_DEFAULTS_LABEL =
+  'Garder ce secteur et l’élargissement pour mes prochains dossiers';
 export const SEARCH_DEFAULTS_SAVED =
-  'Gardés comme vos réglages par défaut : ils s’appliqueront à vos nouveaux dossiers.';
+  'Secteur et élargissement gardés : ils s’appliqueront à vos prochains dossiers.';
 
 type Props = {
   // Ce qui est enregistré sur le dossier, et ce que le conseiller est en train de saisir.

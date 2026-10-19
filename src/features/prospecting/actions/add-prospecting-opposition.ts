@@ -42,9 +42,16 @@ export async function addProspectingOpposition(
   // Mission 107 — toujours possible : sans adresse confirmée, l'opposition porte sur les annonces
   // de la carte (le bien est bloqué partout où elles apparaissent) ; la clé d'adresse s'y
   // ajoutera quand le Localisateur la confirmera (competitor-locations.ts).
-  const key = card.row.confirmed ? addressKey(card.row.address) : null;
+  // Mission 109 — une carte regroupée : la clé de CHAQUE copie dont l'adresse est confirmée.
+  const addressKeys = [
+    ...new Set(
+      [card.row, ...card.copies.map((copy) => copy.row)].flatMap((row) =>
+        row.confirmed ? (addressKey(row.address) ?? []) : [],
+      ),
+    ),
+  ];
   const listingKeys = card.copies.flatMap((copy) => copy.row.listingKey ?? []);
-  if (key == null && listingKeys.length === 0) {
+  if (addressKeys.length === 0 && listingKeys.length === 0) {
     return {
       ok: false,
       error: 'Ni adresse confirmée ni annonce : saisissez l’adresse du bien pour l’inscrire.',
@@ -55,7 +62,8 @@ export async function addProspectingOpposition(
     await createClient(),
     { agencyId: profile.agency_id, profileId: profile.id },
     {
-      addressKey: key,
+      addressKey: null,
+      addressKeys,
       listingKeys,
     },
   );

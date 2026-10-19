@@ -85,10 +85,12 @@ export function fileBlocker(input: {
   professionalCard: string | null;
   professionalCardIssuer: string | null;
 }): FileBlocker | null {
+  // Mission 109 — pendant la bêta, aucun courrier sur un bien « Ne plus solliciter », ni au
+  // propriétaire ni au confrère (décision de Laurent, 19/10).
+  if (input.opposed) {
+    return 'opposed';
+  }
   if (input.version === 'owner') {
-    if (input.opposed) {
-      return 'opposed';
-    }
     if (!input.addressConfirmed) {
       return 'address_unconfirmed';
     }

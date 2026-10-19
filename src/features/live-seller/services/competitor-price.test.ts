@@ -70,8 +70,11 @@ describe('les écarts montrés au vendeur se mesurent au prix des concurrents', 
     expect(live?.competitiveMarketCentral).toBe(build(null)?.competitiveMarketCentral);
   });
 
-  it('sans décision enregistrée : le calcul courant', () => {
+  // Mission 109 — sans décision enregistrée, aucun prix final devant le vendeur (remplace M89,
+  // « sinon le calcul courant ») ; le calcul brut reste à part, pour la conclusion.
+  it('sans décision enregistrée : aucun prix des concurrents', () => {
     const live = build(null);
-    expect(live?.priceGaps.competitiveMarketCentral).toBe(live?.competitiveMarketCentral);
+    expect(live?.priceGaps.competitiveMarketCentral).toBeNull();
+    expect(live?.competitiveMarketCentral).not.toBeNull();
   });
 });

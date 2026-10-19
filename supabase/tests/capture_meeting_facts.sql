@@ -211,10 +211,15 @@ begin
     raise exception 'FAIL durée: figée incorrecte à la conclusion (%)', v_before;
   end if;
 
-  -- L'horodatage s'érode ET l'issue change : la durée FIGÉE ne doit pas bouger.
-  update public.live_seller_summary
-    set created_at = now() - interval '3 hours', updated_at = now()
-    where project_id = 'cccccccc-0000-0000-0000-000000000005';
+  -- L'horodatage ne peut plus s'éroder après la conclusion (M109 : refusé par la base), et
+  -- l'issue change : la durée FIGÉE ne doit pas bouger.
+  begin
+    update public.live_seller_summary
+      set created_at = now() - interval '3 hours', updated_at = now()
+      where project_id = 'cccccccc-0000-0000-0000-000000000005';
+    raise exception 'FAIL durée: le résumé d''un dossier conclu a changé';
+  exception when insufficient_privilege then null;
+  end;
   perform public.change_meeting_outcome(
     'cccccccc-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000000', 'follow_up', 'motif');
 

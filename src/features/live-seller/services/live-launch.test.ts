@@ -190,3 +190,38 @@ describe('Mission 108 — une décision de prix périmée', () => {
     expect(check.status === 'ask' && check.notices[0]).toMatch(/^Décision de prix à actualiser/);
   });
 });
+
+// Mission 109 — jamais un prix non décidé devant le vendeur : le lancement le rappelle.
+describe('Mission 109 — sans décision de prix', () => {
+  it('le rappel est dit, sans bloquer', () => {
+    const check = liveLaunchCheck({
+      competitorCount: 4,
+      isExample: true,
+      toVerifyCount: 0,
+      decisionMissing: true,
+    });
+    expect(check).toEqual({
+      status: 'ask',
+      confirm: false,
+      notices: [
+        'Aucune décision de prix : le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous',
+      ],
+    });
+  });
+
+  it('avec un lien vers « Avant le rendez-vous », et le lancement reste possible', () => {
+    const html = renderToStaticMarkup(
+      createElement(LiveLaunchActions, {
+        projectId: 'p1',
+        competitorCount: 4,
+        resume: NOT_STARTED,
+        isExample: true,
+        toVerifyCount: 0,
+        decisionMissing: true,
+        proceed: true,
+      }),
+    );
+    expect(html).toContain('href="/builder/p1/avant-rendez-vous"');
+    expect(html).toContain('href="/live/p1"');
+  });
+});

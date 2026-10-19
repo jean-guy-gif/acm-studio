@@ -20,6 +20,10 @@ export const REAL_DOSSIER_NOTE =
 // prix décidé reste montré, « Prix retenu par votre conseiller », jamais le calcul du jour.
 export const OUTDATED_DECISION_NOTICE =
   'Décision de prix à actualiser : le marché a changé depuis votre décision. Le vendeur verra le prix que vous avez décidé.';
+// Mission 109 — aucune décision de prix enregistrée : le vendeur ne verra aucun prix final. Dit au
+// lancement, avec un lien vers « Avant le rendez-vous » ; le lancement reste possible.
+export const NO_DECISION_NOTICE =
+  'Aucune décision de prix : le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous';
 export const LAUNCH_FOR_REAL_LABEL = 'Lancer devant le vendeur';
 export const OPEN_EXAMPLE_LABEL = 'Ouvrir le dossier d’exemple';
 
@@ -39,6 +43,8 @@ export function liveLaunchCheck(input: {
   toVerifyCount: number;
   // Mission 108 — la décision de prix enregistrée ne correspond plus au marché.
   decisionOutdated?: boolean;
+  // Mission 109 — aucune décision de prix n'est enregistrée.
+  decisionMissing?: boolean;
 }): LiveLaunchCheck {
   if (input.competitorCount <= 0) {
     return { status: 'blocked', reason: NO_COMPETITOR_REASON };
@@ -46,6 +52,7 @@ export function liveLaunchCheck(input: {
   const notices = [
     input.competitorCount < FEW_COMPETITORS_BELOW ? FEW_COMPETITORS_WARNING : null,
     toVerifyNotice(input.toVerifyCount),
+    input.decisionMissing ? NO_DECISION_NOTICE : null,
     input.decisionOutdated ? OUTDATED_DECISION_NOTICE : null,
   ].filter((notice): notice is string => notice != null);
   const confirm = !input.isExample;

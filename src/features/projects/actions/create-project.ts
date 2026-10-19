@@ -1,6 +1,7 @@
 'use server';
 
 import {
+  advisorDefaultSettings,
   parseSearchSettings,
   settingsToStore,
 } from '@/features/competitor-search/services/search-settings';
@@ -36,7 +37,10 @@ export async function createProject(formData: FormData): Promise<void> {
       seller_phone: sellerPhone || null,
       status: 'draft',
       // Mission 108 — les réglages de recherche gardés par défaut par le conseiller (relus).
-      search_settings: settingsToStore(parseSearchSettings(profile.search_defaults)),
+      // Mission 109 — le secteur et l'élargissement seulement, quoi que la base contienne.
+      search_settings: settingsToStore(
+        advisorDefaultSettings(parseSearchSettings(profile.search_defaults)),
+      ),
     })
     .select('id')
     .single();

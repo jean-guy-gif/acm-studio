@@ -10,6 +10,7 @@ import {
 } from '@/features/live-seller/actions/live-action-state';
 import { normalizeLiveSellerSummary } from '@/features/live-seller/services/normalize-live-seller-summary';
 import { validateLiveSellerSummary } from '@/features/live-seller/services/validate-live-seller-summary';
+import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -33,12 +34,16 @@ export async function saveLiveSellerSummary(
 
   const { data: project } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, status')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   if (!project) {
     return { ok: false, error: 'Projet introuvable pour votre agence.', fieldErrors: {}, values };
+  }
+  // Mission 109 — un dossier conclu ou archivé ne change plus par le Live.
+  if (isLiveClosed(project.status)) {
+    return { ok: false, error: LIVE_CLOSED_MESSAGE, fieldErrors: {}, values };
   }
 
   const normalized = normalizeLiveSellerSummary({

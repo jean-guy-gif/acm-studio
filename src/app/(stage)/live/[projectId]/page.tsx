@@ -5,6 +5,8 @@ import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-project-status';
+import { isLiveClosed } from '@/features/live-seller/services/live-closed';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { clampInitialLiveIndex } from '@/features/live-seller/services/max-reachable-live-index';
@@ -32,6 +34,12 @@ function parseInitialIndex(raw: string | undefined): number {
 export default async function LiveProjectPage({ params, searchParams }: LivePageProps) {
   const { projectId } = await params;
   const { fiche } = await searchParams;
+
+  // Mission 109 — un dossier conclu ou archivé ne se rejoue pas : l'écran neutre de pause. Seule la
+  // réouverture par un opérateur (M104) rouvre un Live.
+  if (isLiveClosed(await getLiveProjectStatus(projectId))) {
+    redirect(`/live/${projectId}/pause`);
+  }
 
   // Chargement unique (accès contrôlé : getProject cadré sur l'agence → 404 sinon).
   const presentation = await loadLivePresentation(projectId);
