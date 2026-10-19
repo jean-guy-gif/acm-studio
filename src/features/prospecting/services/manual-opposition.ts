@@ -36,6 +36,9 @@ export const MANUAL_OPPOSITION_CHOOSE =
 export const MANUAL_OPPOSITION_UNAVAILABLE =
   'Service des communes indisponible : tapez le nom de la commune.';
 export const COMMUNE_UNVERIFIED_LABEL = 'commune non vérifiée';
+// Mission 108 — l'adresse saisie par le conseiller : pas de liste de communes à l'écran.
+export const TYPED_ADDRESS_CHOOSE_COMMUNE =
+  'Ce code postal couvre plusieurs communes : ajoutez le nom de la commune après une virgule.';
 
 export type ManualAddressParts = {
   // « 14 chemin des Oliviers » — le numéro et la voie, tels que tapés.

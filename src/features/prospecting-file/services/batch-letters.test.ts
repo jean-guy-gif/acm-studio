@@ -5,6 +5,7 @@ import {
   CHOOSE_MESSAGE,
   splitBatchLetters,
   type BatchContext,
+  isBatchPreparable,
 } from '@/features/prospecting-file/services/batch-letters';
 import { fileBlocker } from '@/features/prospecting-file/services/file-access';
 
@@ -92,5 +93,23 @@ describe('les adresses écartées avant la préparation', () => {
       { row: 'opposée', reason: 'Ce propriétaire a demandé à ne plus être sollicité' },
       { row: 'à confirmer', reason: 'Adresse à confirmer avant d’envoyer' },
     ]);
+  });
+});
+
+// Mission 108 — le courrier au confrère n'a pas besoin de l'adresse confirmée.
+describe('courriers en lot : le confrère sans adresse confirmée', () => {
+  it('est préparé, pas écarté ; un propriétaire sans adresse l’est toujours', () => {
+    expect(isBatchPreparable({ status: 'to_confirm', step: 'colleague', opposed: false })).toBe(
+      true,
+    );
+    expect(isBatchPreparable({ status: 'to_confirm', step: 'owner', opposed: false })).toBe(false);
+    expect(isBatchPreparable({ status: 'ready', step: 'owner', opposed: false })).toBe(true);
+    expect(isBatchPreparable({ status: 'ready', step: 'colleague', opposed: true })).toBe(false);
+    expect(
+      excludedFromBatch([
+        { row: 'confrère', status: 'to_confirm', step: 'colleague', opposed: false },
+        { row: 'propriétaire', status: 'to_confirm', step: 'owner', opposed: false },
+      ]).map((entry) => entry.row),
+    ).toEqual(['propriétaire']);
   });
 });

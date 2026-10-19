@@ -426,14 +426,16 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
                 justification: savedPositioning.justification,
               }
             : null,
+          positioningOutdated: positioningStatus === 'outdated',
           // Mission 89 — les écarts montrés au vendeur se mesurent au « Prix des concurrents »,
           // le seul qu'il voit : le prix validé au positionnement, sinon le calcul courant.
           // (`competitiveMarketCentral`, juste au-dessus, reste le calcul brut : c'est lui qui
           // est figé comme « Marché calculé » à la conclusion.)
           priceGaps: calculateLivePriceGaps({
             sellerPerceivedPrice: sellerSummary?.seller_perceived_property_price ?? null,
+            // Mission 108 — une décision périmée ne se montre plus : le calcul courant la remplace.
             competitiveMarketCentral: sellerFacingCompetitorPrice(
-              savedPositioning?.advisorPrice,
+              positioningStatus === 'outdated' ? null : savedPositioning?.advisorPrice,
               competitiveMarketCentral,
             ),
             advisorComparativePrice: savedPositioning?.advisorComparativeMarketPrice ?? null,

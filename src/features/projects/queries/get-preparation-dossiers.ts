@@ -1,6 +1,6 @@
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import type { Project } from '@/features/projects/types';
-import { MIN_READY_COMPARABLES } from '@/features/projects/services/project-readiness';
+import { isProjectReady } from '@/features/projects/services/project-readiness';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -21,6 +21,8 @@ export type PreparationReadiness = {
   hasProperty: boolean;
   exploitableCount: number;
   hasPositioning: boolean;
+  // Mission 108 — concurrents retenus en attente d'import : « 2 en attente d'import ».
+  pendingImportCount: number;
   ready: boolean;
 };
 
@@ -60,7 +62,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
   const ids = list.map((p) => p.id);
   // Trois lectures batchées (pas une par dossier) — le détail de tous les dossiers en un
   // coup.
-  const [properties, comparables, positionings] = await Promise.all([
+  const [properties, comparables, positionings, pendingImports] = await Promise.all([
     supabase
       .from('subject_properties')
       .select(
@@ -78,7 +80,16 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
       .select('project_id')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
+    supabase
+      .from('pending_competitor_imports')
+      .select('project_id')
+      .eq('agency_id', agencyId)
+      .in('project_id', ids),
   ]);
+  const pendingCountByProject = new Map<string, number>();
+  for (const row of pendingImports.data ?? []) {
+    pendingCountByProject.set(row.project_id, (pendingCountByProject.get(row.project_id) ?? 0) + 1);
+  }
 
   const propertyByProject = new Map((properties.data ?? []).map((row) => [row.project_id, row]));
   const positioningByProject = new Map(
@@ -106,6 +117,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
     const exploitableCount = exploitableCountByProject.get(project.id) ?? 0;
     const hasProperty = propertyRow != null;
     const hasPositioning = positioningRow != null;
+    const pendingImportCount = pendingCountByProject.get(project.id) ?? 0;
 
     return {
       project,
@@ -128,7 +140,13 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
         hasProperty,
         exploitableCount,
         hasPositioning,
-        ready: hasProperty && exploitableCount >= MIN_READY_COMPARABLES && hasPositioning,
+        pendingImportCount,
+        ready: isProjectReady({
+          hasProperty,
+          exploitableCount,
+          hasPositioning,
+          pendingImportCount,
+        }),
       },
     };
   });

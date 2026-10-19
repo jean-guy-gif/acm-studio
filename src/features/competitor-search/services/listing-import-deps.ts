@@ -36,11 +36,15 @@ export function listingImportDeps(options: {
         projectId,
         listingPayload(url, html, propertyType),
       );
-      return result.ok ? { ok: true } : { ok: false, code: result.code };
+      return result.ok
+        ? { ok: true, dismissedExisting: result.dismissedExisting }
+        : { ok: false, code: result.code };
     },
     createFromSearch: async (url, { withdrawn }) => {
       const result = await createCompetitorFromSearch(projectId, url, withdrawn);
-      return result.ok ? { ok: true } : { ok: false, code: result.code };
+      return result.ok
+        ? { ok: true, dismissedExisting: result.dismissedExisting }
+        : { ok: false, code: result.code };
     },
     reportReadFailure: (url, cause, attempts) =>
       recordImportReadFailure(projectId, url, cause, attempts),

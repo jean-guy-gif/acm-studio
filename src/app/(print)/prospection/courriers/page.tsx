@@ -9,6 +9,7 @@ import { getProspectingFile } from '@/features/prospecting-file/queries/get-pros
 import {
   splitBatchLetters,
   excludedFromBatch,
+  isBatchPreparable,
 } from '@/features/prospecting-file/services/batch-letters';
 import { savedDocument } from '@/features/prospecting-file/services/saved-document';
 import { MarkLettersHanded } from '@/features/prospecting/components/mark-letters-handed';
@@ -59,9 +60,11 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
 
   const ready = cards.filter(
     (card) =>
-      card.row.status === 'ready' &&
-      card.row.opposedOn == null &&
-      card.sellers.some((item) => item.projectId === sellerId),
+      isBatchPreparable({
+        status: card.row.status,
+        step: card.row.step,
+        opposed: card.row.opposedOn != null,
+      }) && card.sellers.some((item) => item.projectId === sellerId),
   );
   const prepared = await Promise.all(
     ready.map(async (card) => {
@@ -83,6 +86,7 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
         .map((card) => ({
           row: cardCopy(card, sellerId).row,
           status: card.row.status,
+          step: card.row.step,
           opposed: card.row.opposedOn != null,
         })),
     ),

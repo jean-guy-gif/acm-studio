@@ -27,7 +27,7 @@ export function PropertyPriceRangeStep({
       <h2 className={formSectionTitle}>À votre avis, ce bien vaut entre combien et combien ?</h2>
       <p className={hintText}>
         Votre avis de professionnel, même large. Il ne sert qu’à cibler la recherche de concurrents
-        et n’est jamais montré au vendeur — l’outil ne produit aucune estimation.
+        et n’est jamais montré au vendeur.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <NumberField

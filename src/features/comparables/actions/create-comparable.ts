@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { isDuplicateListing } from '@/features/competitor-search/services/insert-competitor';
+import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { redirect } from 'next/navigation';
 
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
@@ -39,6 +39,9 @@ function collectValues(formData: FormData): Record<string, string> {
   }
   return values;
 }
+
+const DUPLICATE_RETAINED_MESSAGE =
+  'Déjà dans le dossier : cette annonce a déjà sa fiche, retenue. Aucune fiche n’a été ajoutée.';
 
 // projectId is bound server-side from the route; never taken from the client.
 export async function createComparable(
@@ -83,49 +86,30 @@ export async function createComparable(
     importGen,
   };
 
-  // display_order = max + 1, recomputed on every attempt. A concurrent creation
-  // can win the same order; the DEFERRABLE unique constraint then raises 23505,
-  // on which we retry (up to 5 times). Any other error stops immediately.
-  let inserted = false;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data: last } = await supabase
-      .from('comparables')
-      .select('display_order')
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id)
-      .order('display_order', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const nextOrder = (last?.display_order ?? 0) + 1;
+  // Mission 108 — l'insertion partagée : l'adresse de l'annonce est nettoyée comme sur tous les
+  // chemins d'import, et un doublon se dit au lieu d'être avalé.
+  const created = await insertCompetitor(supabase, projectId, profile.agency_id, {
+    ...parsed.input,
+    // Mission 83 — ce que l'annonce importée disait du vendeur et de l'exclusivité (champs
+    // cachés, revalidés). Une saisie à la main n'en porte pas : inconnu.
+    ...parseImportedMandateForm(formData),
+    // Mission 97 — les champs remplis par l'import et pas encore relus (champ caché, revalidé).
+    fields_to_verify: sanitizeFieldsToVerify(
+      formData.get('fields_to_verify'),
+      COMPETITOR_VERIFIABLE_FIELDS,
+    ),
+    is_selected: true,
+  });
 
-    const { error } = await supabase.from('comparables').insert({
-      ...parsed.input,
-      // Mission 83 — ce que l'annonce importée disait du vendeur et de l'exclusivité (champs
-      // cachés, revalidés). Une saisie à la main n'en porte pas : inconnu.
-      ...parseImportedMandateForm(formData),
-      // Mission 97 — les champs remplis par l'import et pas encore relus (champ caché, revalidé).
-      fields_to_verify: sanitizeFieldsToVerify(
-        formData.get('fields_to_verify'),
-        COMPETITOR_VERIFIABLE_FIELDS,
-      ),
-      project_id: projectId,
-      agency_id: profile.agency_id,
-      display_order: nextOrder,
-      is_selected: true,
-    });
-
-    // Mission 105 — la même annonce a déjà sa fiche dans ce dossier : c'est elle qui vaut.
-    if (!error || isDuplicateListing(error)) {
-      inserted = true;
-      break;
-    }
-    if (error.code !== '23505') {
-      return failureState;
-    }
-  }
-
-  if (!inserted) {
+  if (created.status === 'failed') {
     return failureState;
+  }
+  if (created.status === 'existing') {
+    return {
+      ...failureState,
+      error: created.selected ? DUPLICATE_RETAINED_MESSAGE : null,
+      duplicate: { id: created.id, selected: created.selected },
+    };
   }
 
   // MISSION 52 — un concurrent de plus peut compléter le dernier critère : le dossier

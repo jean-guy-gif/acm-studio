@@ -80,7 +80,13 @@ export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollow
     lastContactAt: lastContactAt(conclusion.concludedAt, input.contacts),
     lastContactDays: days,
     // Mission 105 — la date de prochaine relance décide, sinon la règle des 7 jours.
-    due: isFollowUpDueNow(conclusion.concludedAt, input.contacts, input.now),
+    // Mission 108 — avant toute relance, la date posée à la conclusion.
+    due: isFollowUpDueNow(
+      conclusion.concludedAt,
+      input.contacts,
+      input.now,
+      conclusion.nextFollowUpOn ?? null,
+    ),
     message: buildFollowUpMessage({
       motive: conclusion.followUpMotive,
       meetingDate: meetingDay(conclusion.concludedAt),

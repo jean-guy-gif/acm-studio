@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/styles';
 import { cancelInvitation } from '@/features/team/actions/cancel-invitation';
 import { inviteMember } from '@/features/team/actions/invite-member';
+import { reinstateMember } from '@/features/team/actions/reinstate-member';
 import { removeMember } from '@/features/team/actions/remove-member';
 import { resendInvitation } from '@/features/team/actions/resend-invitation';
 import { setMemberRole } from '@/features/team/actions/set-member-role';
@@ -32,6 +33,8 @@ export function TeamManagement({ team }: { team: Team }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'advisor' | 'manager'>('advisor');
   const [invite, setInvite] = useState<Feedback>(null);
+  // Mission 108 — l'adresse invitée est celle d'un membre retiré : « Réintégrer » est proposé.
+  const [reinstateId, setReinstateId] = useState<string | null>(null);
   const [action, setAction] = useState<Feedback>(null);
 
   function run(fn: () => Promise<{ ok: true } | { ok: false; error: string }>, okMessage: string) {
@@ -49,6 +52,7 @@ export function TeamManagement({ team }: { team: Team }) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     setInvite(null);
+    setReinstateId(null);
     startTransition(async () => {
       const result = await inviteMember(formData);
       if (result.ok) {
@@ -56,6 +60,7 @@ export function TeamManagement({ team }: { team: Team }) {
         setEmail('');
       } else {
         setInvite({ ok: false, message: result.error });
+        setReinstateId(result.reinstateMemberId ?? null);
       }
       router.refresh();
     });
@@ -100,6 +105,21 @@ export function TeamManagement({ team }: { team: Team }) {
             </button>
           </div>
           {invite ? <span className={invite.ok ? okText : errorText}>{invite.message}</span> : null}
+          {reinstateId ? (
+            <button
+              type="button"
+              className={linkBtn}
+              disabled={pending}
+              onClick={() => {
+                const id = reinstateId;
+                setReinstateId(null);
+                setInvite(null);
+                run(() => reinstateMember(id), 'Membre réintégré.');
+              }}
+            >
+              Réintégrer
+            </button>
+          ) : null}
         </form>
       </section>
 
@@ -224,7 +244,16 @@ export function TeamManagement({ team }: { team: Team }) {
                       {member.isSelf ? 'Me retirer' : 'Retirer'}
                     </button>
                   </span>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    className={linkBtn}
+                    disabled={pending}
+                    onClick={() => run(() => reinstateMember(member.id), 'Membre réintégré.')}
+                  >
+                    Réintégrer
+                  </button>
+                )}
               </li>
             );
           })}

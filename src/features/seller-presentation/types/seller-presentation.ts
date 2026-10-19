@@ -66,6 +66,9 @@ export type LiveComparativeData = {
   // Mission 104 — les concurrents qui entrent dans ce calcul (valeurs aberrantes exclues).
   calculationCount: number;
   advisorDecision: LiveAdvisorDecision | null;
+  // Mission 108 — la décision de prix est périmée (le marché a changé depuis) : son prix n'est
+  // plus montré au vendeur comme « retenu par votre conseiller ».
+  positioningOutdated: boolean;
   priceGaps: LivePriceGaps;
 };
 

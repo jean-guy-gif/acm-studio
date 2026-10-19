@@ -18,8 +18,8 @@ insert into public.agencies (id, name) values
   ('bbbbbbbb-0000-0000-0000-000000000000', 'Agence B');
 
 insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
-  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Alice', 'A', 'a@t.local', 'owner'),
-  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bob', 'B', 'b@t.local', 'owner');
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Alice', 'A', 'a@t.local', 'manager'),
+  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bob', 'B', 'b@t.local', 'manager');
 
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
   ('33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000000',

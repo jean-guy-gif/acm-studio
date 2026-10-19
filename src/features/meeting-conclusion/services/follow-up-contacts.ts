@@ -132,17 +132,40 @@ export function parseNextFollowUpOn(
 }
 
 // Le dossier attend-il une relance aujourd'hui ? La date posée avec la dernière relance décide ;
-// sans elle, la règle des 7 jours (M96).
+// Mission 108 — avant toute relance, la date posée à la conclusion ; sans date, la règle des
+// 7 jours (M96).
 export function isFollowUpDueNow(
   concludedAt: string | null | undefined,
   contacts: Pick<FollowUpContact, 'contactedAt' | 'nextFollowUpOn'>[],
   now: Date,
+  firstFollowUpOn: string | null = null,
 ): boolean {
   const latest = sortContacts(contacts)[0];
   if (latest?.nextFollowUpOn) {
     return parisDay(now) >= latest.nextFollowUpOn;
   }
+  if (!latest && firstFollowUpOn) {
+    return parisDay(now) >= firstFollowUpOn;
+  }
   return isFollowUpDue(daysSinceLastContact(concludedAt, contacts, now));
+}
+
+export const FIRST_FOLLOW_UP_INVALID =
+  'Date de première relance invalide : choisissez un jour d’aujourd’hui à un an.';
+
+// Mission 108 — la date de première relance reçue avec l'issue « à relancer », relue comme celle
+// d'une relance (M105) : vide, la date proposée. null pour toute autre issue.
+export function readFirstFollowUpOn(
+  raw: unknown,
+  outcome: string,
+  motive: FollowUpMotive | null | undefined,
+  now: Date,
+): { ok: true; day: string | null } | { ok: false } {
+  if (outcome !== 'follow_up') {
+    return { ok: true, day: null };
+  }
+  const parsed = parseNextFollowUpOn(raw, motive, now);
+  return parsed.ok ? { ok: true, day: parsed.day } : { ok: false };
 }
 
 // « Prochaine relance le 14/11 »

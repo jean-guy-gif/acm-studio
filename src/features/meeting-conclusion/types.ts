@@ -98,6 +98,8 @@ export type MeetingConclusion = ConclusionAmounts & {
   // null = non renseigné (dossiers à relancer d'avant la mission : aucun motif n'est inventé).
   followUpMotive: FollowUpMotive | null;
   followUpMotiveDetail: string | null;
+  // Mission 108 — la date de première relance, posée à la conclusion « à relancer ».
+  nextFollowUpOn?: string | null;
   // Mission 90 — exclusif ou simple, pour un mandat signé ; null = non renseigné (dossiers
   // signés avant la mission : aucun type n'est inventé). Et la date de signature, écrite une fois.
   mandateType: MandateType | null;

@@ -17,6 +17,10 @@ import {
   liveDerivedAmounts,
 } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 import { getProject } from '@/features/projects/queries/get-project';
+import {
+  FIRST_FOLLOW_UP_INVALID,
+  readFirstFollowUpOn,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -68,6 +72,16 @@ export async function concludeMeeting(
   if (!decision.ok) {
     return { ok: false, error: decision.error };
   }
+  // Mission 108 — « à relancer » : la date de première relance, proposée par l'écran et relue ici.
+  const firstFollowUp = readFirstFollowUpOn(
+    formData.get('next_follow_up_on'),
+    decision.value.outcome,
+    decision.value.motive,
+    new Date(),
+  );
+  if (!firstFollowUp.ok) {
+    return { ok: false, error: FIRST_FOLLOW_UP_INVALID };
+  }
 
   // Les valeurs COURANTES, au cas où l'étape 1 (prix au Live) ne les a pas déjà figées.
   // La fonction fige au premier passage (COALESCE) et ne réécrit jamais.
@@ -88,6 +102,7 @@ export async function concludeMeeting(
     p_mandate_type: decision.value.mandateType as string,
     p_follow_up_motive: decision.value.motive as string,
     p_follow_up_motive_detail: decision.value.motiveDetail as string,
+    p_next_follow_up_on: firstFollowUp.day as string,
     p_market_computed: amounts.marketComputed as number,
     p_advisor_analysis: amounts.advisorAnalysis as number,
     p_advisor_price: amounts.advisorPrice as number,

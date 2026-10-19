@@ -269,10 +269,18 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page, 'Un « à relancer » s’est enregistré sans motif').toHaveURL(
       new RegExp(`/builder/${projectId}/conclusion$`),
     );
+    // Mission 108 — la date de première relance est proposée dès la conclusion, et suit le motif.
+    const firstFollowUp = page.getByTestId('first-follow-up-date');
+    await expect(firstFollowUp).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
+    const weekLater = await firstFollowUp.inputValue();
     await page
       .locator('label')
       .filter({ hasText: /^Réfléchit au prix$/ })
       .click();
+    await expect(
+      firstFollowUp,
+      'La date ne suit pas « Réfléchit au prix » (un mois)',
+    ).not.toHaveValue(weekLater);
     await page.getByRole('button', { name: 'Conclure le rendez-vous' }).click();
   });
 

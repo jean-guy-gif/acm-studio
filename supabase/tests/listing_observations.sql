@@ -14,8 +14,8 @@ insert into public.agencies (id, name) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'Agence A'),
   ('bbbbbbbb-0000-0000-0000-000000000000', 'Agence B');
 insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
-  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Al', 'A', 'a@t.l', 'owner'),
-  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bo', 'B', 'b@t.l', 'owner');
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000000', 'Al', 'A', 'a@t.l', 'manager'),
+  ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-0000-0000-0000-000000000000', 'Bo', 'B', 'b@t.l', 'manager');
 
 do $$
 declare

@@ -98,8 +98,11 @@ export function WithdrawnReintegrateWarning({
 
 // Origin is derived deterministically from existing data: an imported comparable
 // always carries the source listing URL, a manual one does not.
-function originLabel(comparable: Comparable): 'Import URL' | 'Manuel' {
-  return comparable.listing_url && comparable.listing_url.trim() !== '' ? 'Import URL' : 'Manuel';
+// Mission 108 — dit avec les mots du conseiller, jamais « Import URL ».
+function originLabel(comparable: Comparable): string {
+  return comparable.listing_url && comparable.listing_url.trim() !== ''
+    ? 'Importé depuis l’annonce'
+    : 'Saisi à la main';
 }
 
 export function ComparableCard({
@@ -224,7 +227,7 @@ export function ComparableCard({
           <span>{displayCommune(comparable.city, comparable.postal_code) ?? 'Ville inconnue'}</span>
           {comparable.district?.trim() ? <span> · {comparable.district.trim()}</span> : null}
           {' · '}
-          <span>Origine : {originLabel(comparable)}</span>
+          <span>{originLabel(comparable)}</span>
         </div>
 
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">

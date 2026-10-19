@@ -8,6 +8,8 @@ export type CreateComparableState = {
   // Opaque import generation token, echoed so a later re-import can supersede
   // this echo (see the panel). Never interpreted server-side.
   importGen: string | null;
+  // Mission 108 — l'annonce avait déjà sa fiche dans le dossier : jamais avalé en silence.
+  duplicate?: { id: string; selected: boolean } | null;
 };
 
 export const initialCreateComparableState: CreateComparableState = {

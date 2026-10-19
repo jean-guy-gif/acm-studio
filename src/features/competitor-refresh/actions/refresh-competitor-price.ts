@@ -7,7 +7,8 @@ import { extractListingData } from '@/features/comparable-import/services/extrac
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
 import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
-import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
+import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import {
   priceCheckOutcome,
@@ -15,10 +16,12 @@ import {
 } from '@/features/competitor-refresh/services/price-refresh';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 const MAX_HTML_BYTES = 4 * 1024 * 1024;
+const REFRESH_SCOPE = 'relecture des prix des concurrents';
 
 export type CompetitorToRefresh = { id: string; listingUrl: string };
 
@@ -73,18 +76,24 @@ export async function refreshCompetitorPrice(
     .eq('is_selected', true)
     .maybeSingle();
   const listing = readListingPayload(payload);
-  const url = listing ? normalizeUrl(listing.url) : null;
+  const url = listing ? parseListingUrl(listing.url) : null;
   if (!competitor || !listing || !url || !isAllowedProtocol(url)) return { status: 'unreadable' };
-  if (url.href !== normalizeUrl(competitor.listing_url ?? '')?.href)
+  if (url.href !== parseListingUrl(competitor.listing_url ?? '')?.href)
     return { status: 'unreadable' };
 
+  // Mission 108 — une écriture refusée n'est jamais annoncée : le concurrent compte comme
+  // « illisible », et l'erreur part au journal.
   const markGone = async (): Promise<PriceCheckOutcome> => {
     if (competitor.listing_gone_at == null) {
-      await supabase
+      const { error } = await supabase
         .from('comparables')
         .update({ listing_gone_at: new Date().toISOString() })
         .eq('id', competitor.id)
         .eq('agency_id', agencyId);
+      if (error) {
+        await reportServerError(REFRESH_SCOPE, error);
+        return { status: 'unreadable' };
+      }
     }
     return { status: 'gone' };
   };
@@ -114,11 +123,15 @@ export async function refreshCompetitorPrice(
   if (outcome.status === 'changed') patch.price = input.price;
   if (competitor.listing_gone_at != null) patch.listing_gone_at = null;
   if (Object.keys(patch).length > 0) {
-    await supabase
+    const { error } = await supabase
       .from('comparables')
       .update(patch)
       .eq('id', competitor.id)
       .eq('agency_id', agencyId);
+    if (error) {
+      await reportServerError(REFRESH_SCOPE, error);
+      return { status: 'unreadable' };
+    }
   }
   return outcome;
 }

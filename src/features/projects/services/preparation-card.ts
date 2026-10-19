@@ -6,8 +6,10 @@ import { MIN_READY_COMPARABLES } from '@/features/projects/services/project-read
 // les imports existants. advancementSteps reste ici car il dépend d'une constante de
 // readiness (côté serveur).
 export {
+  FOURCHETTE_LABEL,
+  FOURCHETTE_PENDING,
   fourchetteLabel,
-  PRICE_DECISION_PENDING,
+  pendingImportLabel,
   propertyLabel,
 } from '@/features/projects/services/property-label';
 

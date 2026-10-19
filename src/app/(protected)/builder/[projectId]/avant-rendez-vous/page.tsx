@@ -141,6 +141,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     retained.map((comparable) => toGlanceCompetitor(comparable, generatedAt)),
   );
 
+  const pendingImports = await getPendingImports(projectId);
   const readiness = {
     hasProperty: property != null,
     retainedCount: retained.length,
@@ -148,6 +149,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       (comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area) != null,
     ).length,
     hasDecision: saved != null,
+    // Mission 108 — un retenu en attente d'import retient le badge « Prêt ».
+    pendingImportCount: pendingImports.length,
   };
   const checks = buildReadinessChecks(readiness);
   const ready = isReadyBadge(readiness, project.status);
@@ -224,7 +227,6 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   const sellerSurface = property?.surface_area ?? null;
 
   // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
-  const pendingImports = await getPendingImports(projectId);
   // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
   // sont nommés ; les concurrents écartés du calcul sont comptés.
   const launch = await getLiveLaunchInfo(projectId);
@@ -416,6 +418,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 resume={launch.resume}
                 isExample={launch.isExample}
                 toVerifyCount={launch.toVerifyCount}
+                decisionOutdated={launch.decisionOutdated}
               />
               {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
               {!launch.isExample && !launch.resume.started ? (

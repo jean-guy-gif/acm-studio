@@ -18,6 +18,8 @@ export type LiveLaunchInfo = {
   resume: LiveResume;
   isExample: boolean;
   toVerifyCount: number;
+  // Mission 108 — la décision de prix est périmée : rappelé au lancement, sans bloquer.
+  decisionOutdated: boolean;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -41,5 +43,6 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     resume: liveResume(pages, projected),
     isExample: project?.is_example === true,
     toVerifyCount: competitorsWithPriceOrSurfaceToVerify(comparables).length,
+    decisionOutdated: presentation.positioningStatus === 'outdated',
   };
 }

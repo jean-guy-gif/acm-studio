@@ -26,7 +26,9 @@ import { getPreparationDossiers } from '@/features/projects/queries/get-preparat
 import {
   advancementSteps,
   fourchetteLabel,
-  PRICE_DECISION_PENDING,
+  FOURCHETTE_LABEL,
+  FOURCHETTE_PENDING,
+  pendingImportLabel,
   propertyLabel,
 } from '@/features/projects/services/preparation-card';
 
@@ -131,19 +133,14 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                     </span>
                   )}
 
-                  {/* La décision de prix enregistrée (« Avant le rendez-vous ») — écran conseiller,
-                      jamais le vendeur. */}
+                  {/* Mission 108 — la fourchette du conseiller (M38), jamais montrée au vendeur.
+                      « Décision de prix » ne désigne que le prix décidé, dans l'avancement. */}
                   <span className="text-sm text-zinc-500 stage:text-white/60">
-                    {/* Mission 105 — la fourchette du conseiller, ou « À décider ». */}
-                    {fourchetteText ? (
-                      <>Décision de prix : {fourchetteText}</>
-                    ) : (
-                      <>
-                        Décision de prix :{' '}
-                        <span className="text-amber-700 stage:text-amber-300">
-                          {PRICE_DECISION_PENDING}
-                        </span>
-                      </>
+                    {FOURCHETTE_LABEL} :{' '}
+                    {fourchetteText ?? (
+                      <span className="text-amber-700 stage:text-amber-300">
+                        {FOURCHETTE_PENDING}
+                      </span>
                     )}
                   </span>
 
@@ -161,6 +158,15 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                         {step.done ? `${step.label} ✓` : `${step.label} — à compléter`}
                       </span>
                     ))}
+                    {/* Mission 108 — un retenu qui attend son import retient le dossier. */}
+                    {pendingImportLabel(readiness.pendingImportCount) ? (
+                      <span
+                        className="font-medium text-amber-700 stage:text-amber-300"
+                        data-testid="pending-import-count"
+                      >
+                        {pendingImportLabel(readiness.pendingImportCount)}
+                      </span>
+                    ) : null}
                   </div>
 
                   <span className="text-xs text-zinc-400 stage:text-white/40">

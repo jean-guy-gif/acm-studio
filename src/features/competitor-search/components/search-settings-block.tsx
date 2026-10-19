@@ -16,6 +16,7 @@ import {
   describeSearchCriteria,
   SEARCH_RADIUS_CHOICES,
   sectorLabel,
+  settingsToStore,
   wholeCommuneLabel,
   type SearchDefaults,
   type SearchSettings,
@@ -27,6 +28,11 @@ const option =
   'flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand-deep has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 border-zinc-200 text-zinc-700 stage:border-white/15 stage:text-white/80 stage:has-[:checked]:bg-brand/15 stage:has-[:checked]:text-white';
 
 export const CUSTOM_SETTING_LABEL = 'réglé par vous';
+// Mission 108 — les réglages du dossier sont ceux que le conseiller garde par défaut.
+export const ADVISOR_DEFAULTS_LABEL = 'vos réglages par défaut';
+export const KEEP_AS_DEFAULTS_LABEL = 'Garder comme mes réglages par défaut';
+export const SEARCH_DEFAULTS_SAVED =
+  'Gardés comme vos réglages par défaut : ils s’appliqueront à vos nouveaux dossiers.';
 
 type Props = {
   // Ce qui est enregistré sur le dossier, et ce que le conseiller est en train de saisir.
@@ -40,6 +46,9 @@ type Props = {
   error: string | null;
   onChange: (next: SearchSettingsInput) => void;
   onSave: () => void;
+  advisorDefaults?: SearchSettings | null;
+  defaultsNote?: string | null;
+  onSaveDefaults?: () => void;
 };
 
 function Row({
@@ -92,6 +101,9 @@ export function SearchSettingsBlock({
   error,
   onChange,
   onSave,
+  advisorDefaults = null,
+  defaultsNote = null,
+  onSaveDefaults,
 }: Props) {
   const set = (patch: Partial<SearchSettingsInput>) => onChange({ ...input, ...patch });
   const locked = disabled || saving;
@@ -101,6 +113,11 @@ export function SearchSettingsBlock({
     saved.rooms != null ||
     saved.surface != null ||
     !saved.autoWiden;
+  // Mission 108 — des réglages enregistrés identiques à ceux que le conseiller garde par défaut.
+  const fromAdvisorDefaults =
+    anyCustom &&
+    advisorDefaults != null &&
+    JSON.stringify(settingsToStore(saved)) === JSON.stringify(settingsToStore(advisorDefaults));
   const summary = [
     ...describeSearchCriteria(saved, defaults),
     saved.autoWiden ? null : 'sans élargissement',
@@ -149,7 +166,9 @@ export function SearchSettingsBlock({
         </span>{' '}
         <span className={hintText}>
           — {summary.join(' · ')}
-          {anyCustom ? ` · ${CUSTOM_SETTING_LABEL}` : ''}
+          {anyCustom
+            ? ` · ${fromAdvisorDefaults ? ADVISOR_DEFAULTS_LABEL : CUSTOM_SETTING_LABEL}`
+            : ''}
         </span>
       </summary>
       <div className="mt-4 flex flex-col gap-4">
@@ -282,12 +301,28 @@ export function SearchSettingsBlock({
           >
             {saving ? 'Enregistrement…' : 'Enregistrer les réglages'}
           </button>
+          {onSaveDefaults ? (
+            <button
+              type="button"
+              onClick={onSaveDefaults}
+              disabled={locked}
+              className={`${link} text-sm hover:underline`}
+              data-testid="keep-search-defaults"
+            >
+              {KEEP_AS_DEFAULTS_LABEL}
+            </button>
+          ) : null}
           <span className={hintText}>
             {dirty
               ? 'Réglages non enregistrés — « Chercher les concurrents » les enregistre aussi.'
               : 'Réglages enregistrés sur ce dossier.'}
           </span>
         </div>
+        {defaultsNote ? (
+          <p role="status" className={hintText}>
+            {defaultsNote}
+          </p>
+        ) : null}
       </div>
     </details>
   );

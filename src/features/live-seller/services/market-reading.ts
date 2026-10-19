@@ -30,12 +30,17 @@ type ReadingEntry = Pick<
   LiveComparableEntry,
   'id' | 'price' | 'priceHistory' | 'marketDuration'
 > & {
-  response: { seller_estimated_listing_price?: number | null } | null;
+  response: {
+    seller_estimated_listing_price?: number | null;
+    seller_serious_competitor?: string | null;
+  } | null;
 };
 
-// Même garde que la révélation elle-même : l'estimation du vendeur est PERSISTÉE.
+// Même garde que la révélation elle-même : l'estimation du vendeur est PERSISTÉE. Mission 108 —
+// un « Non » à « Un sérieux concurrent ? » écarte le concurrent, même dit après la révélation.
 const revealed = (entry: ReadingEntry): boolean =>
-  entry.response?.seller_estimated_listing_price != null;
+  entry.response?.seller_estimated_listing_price != null &&
+  entry.response.seller_serious_competitor !== 'no';
 
 export function buildMarketReading(
   comparables: readonly ReadingEntry[],

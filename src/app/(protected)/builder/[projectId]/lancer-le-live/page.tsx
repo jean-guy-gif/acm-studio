@@ -32,6 +32,7 @@ export default async function LaunchLivePage({
           resume={launch.resume}
           isExample={launch.isExample}
           toVerifyCount={launch.toVerifyCount}
+          decisionOutdated={launch.decisionOutdated}
           proceed
         />
       </div>

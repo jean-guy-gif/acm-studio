@@ -5,6 +5,7 @@ import {
   searchFingerprint,
   STREAM_ESTATE_MAX_COST_LABEL,
 } from '@/features/competitor-search/services/paid-search-guard';
+import { DEFAULT_SEARCH_SETTINGS } from '@/features/competitor-search/services/search-settings';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
 
 const criteria = (overrides: Partial<CompetitorSearchCriteria> = {}): CompetitorSearchCriteria =>
@@ -66,5 +67,24 @@ describe('le dernier résultat est gardé, puis invalidé', () => {
     expect(
       searchFingerprint(reordered as CompetitorSearchCriteria, '8 avenue Docteur Hochet'),
     ).toBe(base);
+  });
+});
+
+describe('Mission 108 — « Prix recherchés » réglés à part', () => {
+  const priced = { ...DEFAULT_SEARCH_SETTINGS, price: { min: 300_000, max: 380_000 } };
+
+  it('changer la fourchette de la fiche ne jette plus le résultat', () => {
+    expect(searchFingerprint(criteria({ advisorPriceMax: 360_000 }), null, priced)).toBe(
+      searchFingerprint(criteria(), null, priced),
+    );
+  });
+
+  it('sans prix réglé, la fourchette compte toujours, et changer le prix réglé jette le résultat', () => {
+    expect(searchFingerprint(criteria({ advisorPriceMax: 360_000 }), null)).not.toBe(
+      searchFingerprint(criteria(), null),
+    );
+    expect(
+      searchFingerprint(criteria(), null, { ...priced, price: { min: 300_000, max: 390_000 } }),
+    ).not.toBe(searchFingerprint(criteria(), null, priced));
   });
 });

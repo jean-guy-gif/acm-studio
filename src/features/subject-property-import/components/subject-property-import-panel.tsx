@@ -151,7 +151,10 @@ export function SubjectPropertyImportPanel({
         d’enregistrer.
       </p>
       {extension.available === false ? (
-        <ExtensionRequiredNotice reason={extension.noSiteAccess ? 'no_site_access' : 'missing'} />
+        <ExtensionRequiredNotice
+          reason={extension.noSiteAccess ? 'no_site_access' : 'missing'}
+          onRetry={extension.recheck}
+        />
       ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <input

@@ -4,6 +4,11 @@ import { useState } from 'react';
 
 import { fieldLabel, inputBase } from '@/components/ui/styles';
 import {
+  defaultNextFollowUpOn,
+  NEXT_FOLLOW_UP_MAX_DAYS,
+  parisDay,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
+import {
   CONCLUSION_OUTCOMES,
   FOLLOW_UP_MOTIVES,
   FOLLOW_UP_MOTIVE_LABELS,
@@ -45,6 +50,7 @@ export function OutcomeChoice({
   initialMandateType = null,
   initialMotive = null,
   initialMotiveDetail = null,
+  initialNextFollowUpOn = null,
   knownPrice = null,
   legend,
 }: {
@@ -57,9 +63,19 @@ export function OutcomeChoice({
   // Mission 96 — le motif de relance déjà enregistré, et la ligne de « Autre ».
   initialMotive?: FollowUpMotive | null;
   initialMotiveDetail?: string | null;
+  // Mission 108 — la date de première relance déjà posée, s'il y en a une.
+  initialNextFollowUpOn?: string | null;
   legend: string;
 }) {
   const [motive, setMotive] = useState<FollowUpMotive | null>(initialMotive);
+  // Mission 108 — la date proposée suit le motif (M105 : un mois pour « Réfléchit au prix », sept
+  // jours sinon), tant que le conseiller ne l'a pas changée lui-même.
+  const [nextOn, setNextOn] = useState<string | null>(initialNextFollowUpOn);
+  const [today] = useState(() => parisDay(new Date()));
+  const [lastDay] = useState(() =>
+    parisDay(new Date(Date.now() + NEXT_FOLLOW_UP_MAX_DAYS * 86_400_000)),
+  );
+  const proposedNextOn = nextOn ?? defaultNextFollowUpOn(motive, new Date());
   const priceRequired = outcome === 'signed' && knownPrice == null;
 
   return (
@@ -144,6 +160,20 @@ export function OutcomeChoice({
               className={inputBase}
             />
           ) : null}
+          <label className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-600 stage:text-white/70">
+            Première relance le
+            <input
+              type="date"
+              name="next_follow_up_on"
+              required
+              min={today}
+              max={lastDay}
+              value={proposedNextOn}
+              onChange={(event) => setNextOn(event.target.value || null)}
+              className={`${inputBase} w-auto`}
+              data-testid="first-follow-up-date"
+            />
+          </label>
         </fieldset>
       ) : null}
 
