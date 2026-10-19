@@ -233,10 +233,9 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
     marketReading: buildMarketReading(
       live.comparables,
       {
-        // Mission 108 — une décision périmée n'est plus « retenue par votre conseiller ».
-        advisorPrice: live.positioningOutdated
-          ? null
-          : (live.advisorDecision?.advisorPrice ?? null),
+        advisorPrice: live.advisorDecision?.advisorPrice ?? null,
+        // Mission 108 — une décision périmée ne se dit plus « à partir de N concurrents ».
+        advisorOutdated: live.positioningOutdated,
         marketComputed: live.competitiveMarketCentral,
       },
       live.calculationCount,

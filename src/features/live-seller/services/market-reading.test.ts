@@ -217,12 +217,13 @@ describe('« Analyse des prix » — Mission 108', () => {
       priceGaps: {},
     }) as unknown as LiveComparativeData;
 
-  it('une décision périmée ne se dit plus « retenue par votre conseiller »', () => {
-    expect(authorizeAdvisorRange(decided(false))?.marketReading.competitorPriceBasis).toBe(
-      'advisor',
+  it('une décision périmée reste « Prix retenu par votre conseiller », sans « à partir de N »', () => {
+    const fresh = authorizeAdvisorRange(decided(false))?.marketReading;
+    expect(competitorPriceBasisLabel(fresh!)).toBe(
+      'Prix retenu par votre conseiller à partir de 4 concurrents',
     );
     const reading = authorizeAdvisorRange(decided(true))?.marketReading;
-    expect(reading?.competitorPriceBasis).toBe('computed');
-    expect(competitorPriceBasisLabel(reading!)).toBe('Calculé sur 4 concurrents');
+    expect(reading?.competitorPriceBasis).toBe('advisor_only');
+    expect(competitorPriceBasisLabel(reading!)).toBe('Prix retenu par votre conseiller');
   });
 });

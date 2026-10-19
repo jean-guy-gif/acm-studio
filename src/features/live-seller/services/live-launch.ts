@@ -17,9 +17,9 @@ export const REAL_DOSSIER_CONFIRMATION =
 export const REAL_DOSSIER_NOTE =
   'Devant le vendeur, ses réponses sont enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.';
 // Mission 108 — une décision de prix périmée est rappelée, sans bloquer : devant le vendeur, le
-// « Prix des concurrents » est alors le calcul du jour, pas le prix de la décision.
+// prix décidé reste montré, « Prix retenu par votre conseiller », jamais le calcul du jour.
 export const OUTDATED_DECISION_NOTICE =
-  'Décision de prix à actualiser : le marché a changé depuis votre décision. Le vendeur verra le prix des concurrents calculé aujourd’hui.';
+  'Décision de prix à actualiser : le marché a changé depuis votre décision. Le vendeur verra le prix que vous avez décidé.';
 export const LAUNCH_FOR_REAL_LABEL = 'Lancer devant le vendeur';
 export const OPEN_EXAMPLE_LABEL = 'Ouvrir le dossier d’exemple';
 

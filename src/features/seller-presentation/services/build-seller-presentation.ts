@@ -433,9 +433,10 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
           // est figé comme « Marché calculé » à la conclusion.)
           priceGaps: calculateLivePriceGaps({
             sellerPerceivedPrice: sellerSummary?.seller_perceived_property_price ?? null,
-            // Mission 108 — une décision périmée ne se montre plus : le calcul courant la remplace.
+            // Mission 108 — même périmée, c'est la décision du conseiller : jamais le calcul du jour
+            // à sa place.
             competitiveMarketCentral: sellerFacingCompetitorPrice(
-              positioningStatus === 'outdated' ? null : savedPositioning?.advisorPrice,
+              savedPositioning?.advisorPrice,
               competitiveMarketCentral,
             ),
             advisorComparativePrice: savedPositioning?.advisorComparativeMarketPrice ?? null,

@@ -54,13 +54,12 @@ describe('les écarts montrés au vendeur se mesurent au prix des concurrents', 
   const build = (advisorPrice: number | null) =>
     present(advisorPrice == null ? null : { ...upToDate, advisorPrice }).live;
 
-  it('Mission 108 — une décision périmée : le vendeur voit le calcul du jour', () => {
+  it('Mission 108 — une décision périmée : le vendeur voit toujours le prix décidé', () => {
     const outdated = present({ ...upToDate, advisorPrice: 111111, rangeCentral: 1 });
     expect(outdated.positioningStatus).toBe('outdated');
     expect(outdated.live?.positioningOutdated).toBe(true);
-    expect(outdated.live?.priceGaps.competitiveMarketCentral).toBe(
-      outdated.live?.competitiveMarketCentral,
-    );
+    // Jamais le calcul du jour à sa place.
+    expect(outdated.live?.priceGaps.competitiveMarketCentral).toBe(111111);
   });
 
   it('prix ajusté par le conseiller : c’est lui que voit le vendeur, le calcul brut reste à part', () => {
