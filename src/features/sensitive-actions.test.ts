@@ -996,6 +996,23 @@ describe('Mission 108', () => {
       );
     });
 
+    it('la commune tapée, reconnue, reste écrite telle quelle (nom d’usage compris)', async () => {
+      const { confirmCompetitorAddress } =
+        await import('@/features/competitor-locator/actions/confirm-competitor-address');
+      const { addressKey } = await import('@/features/prospecting/services/address-key');
+      respond();
+      expect(
+        await confirmCompetitorAddress(PROJECT, 'c1', {
+          mode: 'typed',
+          address: '12 boulevard de la Tournée, 06160 Juan-les-Pins',
+        }),
+      ).toEqual({ ok: true });
+      expect(written()?.locator_address).toBe('12 boulevard de la Tournée, 06160 Juan-les-Pins');
+      expect(addressKey(written()?.locator_address ?? '')).toBe(
+        addressKey('12 boulevard de la Tournée, Antibes'),
+      );
+    });
+
     it('service des communes en panne : la commune tapée suffit, et le journal le note', async () => {
       const { confirmCompetitorAddress } =
         await import('@/features/competitor-locator/actions/confirm-competitor-address');
