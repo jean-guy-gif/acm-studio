@@ -28,7 +28,7 @@ export async function keepPaidSearchResult(input: {
   let portal = input.portal;
   let note = input.note;
   if (input.resuming) {
-    const { data } = await input.supabase
+    const { data, error } = await input.supabase
       .from('stream_estate_results')
       .select('result')
       .eq('project_id', input.projectId)
@@ -38,6 +38,15 @@ export async function keepPaidSearchResult(input: {
       portal: PortalSearchResult;
       note: StreamEstateSearchNote;
     } | null;
+    // Ce qui est déjà payé n'est jamais remplacé par la seule suite : une lecture en échec, ou un
+    // résultat gardé illisible, laissent le résultat gardé tel quel (l'écran garde la suite).
+    if (error || (data != null && previous == null)) {
+      await reportServerError(
+        'keepPaidSearchResult',
+        error ?? new Error('résultat gardé illisible : suite non ajoutée'),
+      );
+      return false;
+    }
     if (previous) {
       const candidates = [...previous.portal.candidates, ...portal.candidates];
       portal = {

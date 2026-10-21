@@ -96,6 +96,47 @@ describe('le résultat payé, gardé par la recherche', () => {
   });
 });
 
+describe('une suite qui échoue ne fait rien perdre', () => {
+  const resume = (respond: Parameters<typeof fakeSupabase>[0]) => {
+    const db = fakeSupabase(respond);
+    return {
+      db,
+      run: keepPaidSearchResult({
+        supabase: db.client as never,
+        agencyId: 'a1',
+        profileId: 'u1',
+        projectId: 'p1',
+        fingerprint: 'fp',
+        portal: portal(['c']),
+        note: note(20),
+        resuming: true,
+      }),
+    };
+  };
+
+  it('la lecture du résultat gardé échoue : rien n’est écrit par-dessus ce qui est payé', async () => {
+    const { db, run } = resume(() => ({ error: { message: 'panne' } }));
+    expect(await run).toBe(false);
+    expect(db.writes()).toEqual([]);
+  });
+
+  it('le résultat gardé est illisible : il reste tel quel', async () => {
+    const { db, run } = resume(() => ({ data: { result: { portal: 'abîmé' } } }));
+    expect(await run).toBe(false);
+    expect(db.writes()).toEqual([]);
+  });
+
+  it('l’écriture échoue : la ligne gardée n’est pas touchée (une seule écriture, refusée)', async () => {
+    const { db, run } = resume((calls) =>
+      calls.some((call) => call.method === 'upsert')
+        ? { error: { message: 'panne' } }
+        : { data: { result: { portal: portal(['a', 'b']), note: note(60) } } },
+    );
+    expect(await run).toBe(false);
+    expect(db.writes()).toEqual(['upsert stream_estate_results']);
+  });
+});
+
 describe('le quartier sort de l’empreinte', () => {
   const criteria = {
     propertyType: 'apartment',
