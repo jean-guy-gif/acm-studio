@@ -5,6 +5,9 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 // recherche : les listes de dossiers ne le chargent pas.
 // Mission 110 — `live_shortlist_at` (le choix des concurrents montrés au Live) n'est lu que par
 // le lancement du Live.
-export type Project = Omit<ProjectRow, 'search_settings' | 'live_shortlist_at'> &
-  Partial<Pick<ProjectRow, 'search_settings' | 'live_shortlist_at'>>;
+// Mission 112 — de même la trace de la confirmation « devant le vendeur ».
+type OptionalColumns =
+  'search_settings' | 'live_shortlist_at' | 'live_confirmed_at' | 'live_confirmed_by';
+export type Project = Omit<ProjectRow, OptionalColumns> &
+  Partial<Pick<ProjectRow, OptionalColumns>>;
 export type ProjectInsert = Database['public']['Tables']['projects']['Insert'];

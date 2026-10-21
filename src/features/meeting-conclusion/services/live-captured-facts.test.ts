@@ -24,6 +24,7 @@ function live(overrides: {
           } as LiveComparativeData['sellerSummary']),
     competitiveMarketCentral: null,
     calculationCount: 0,
+    seenTogetherCount: null,
     advisorDecision:
       overrides.sellerPrice === undefined
         ? null

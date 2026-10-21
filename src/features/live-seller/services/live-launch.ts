@@ -45,6 +45,8 @@ export function liveLaunchCheck(input: {
   decisionOutdated?: boolean;
   // Mission 109 — aucune décision de prix n'est enregistrée.
   decisionMissing?: boolean;
+  // Mission 112 — concurrents retenus qui attendent encore leur import (M101).
+  pendingImportCount?: number;
 }): LiveLaunchCheck {
   if (input.competitorCount <= 0) {
     return { status: 'blocked', reason: NO_COMPETITOR_REASON };
@@ -54,6 +56,7 @@ export function liveLaunchCheck(input: {
     toVerifyNotice(input.toVerifyCount),
     input.decisionMissing ? NO_DECISION_NOTICE : null,
     input.decisionOutdated ? OUTDATED_DECISION_NOTICE : null,
+    pendingImportsNotice(input.pendingImportCount ?? 0),
   ].filter((notice): notice is string => notice != null);
   const confirm = !input.isExample;
   return confirm || notices.length > 0 ? { status: 'ask', confirm, notices } : { status: 'go' };
@@ -62,4 +65,30 @@ export function liveLaunchCheck(input: {
 function toVerifyNotice(count: number): string | null {
   const label = priceOrSurfaceToVerifyLabel(count);
   return label ? `${label} : ils entrent tels quels dans le prix des concurrents.` : null;
+}
+
+// Mission 112 — des concurrents retenus attendent encore leur import (M101, M108) : rappelé avant
+// de déclarer prêt et de lancer le Live, sans rien bloquer (M52).
+export function pendingImportsNotice(count: number): string | null {
+  if (count <= 0) return null;
+  return count === 1
+    ? '1 concurrent retenu attend son import'
+    : `${count} concurrents retenus attendent leur import`;
+}
+
+// Mission 112 — l'adresse du Live ne s'ouvre jamais sans ses contrôles. Un vrai dossier dont le
+// Live n'a pas commencé passe par l'étape « Lancer le Live » (M107) tant que la confirmation
+// « devant le vendeur » n'est pas enregistrée (M104), ou qu'au-delà de 6 concurrents retenus leur
+// choix n'est pas fait (M110). Un Live commencé se reprend sans rien demander ; le dossier
+// d'exemple n'a pas de confirmation, mais garde le choix des 6.
+export function liveEntryGate(input: {
+  isExample: boolean;
+  started: boolean;
+  confirmedAt: string | null;
+  shortlistPending: boolean;
+}): 'open' | 'confirm' {
+  if (input.started) return 'open';
+  if (input.shortlistPending) return 'confirm';
+  if (!input.isExample && input.confirmedAt == null) return 'confirm';
+  return 'open';
 }

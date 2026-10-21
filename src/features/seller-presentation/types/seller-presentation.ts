@@ -65,6 +65,9 @@ export type LiveComparativeData = {
   competitiveMarketCentral: number | null;
   // Mission 104 — les concurrents qui entrent dans ce calcul (valeurs aberrantes exclues).
   calculationCount: number;
+  // Mission 112 — parmi eux, ceux que le vendeur voit pendant le Live, quand d'autres sont hors
+  // Live (M110) : « Calculé sur 8 concurrents, dont 6 vus ensemble ». null : tous sont vus.
+  seenTogetherCount: number | null;
   advisorDecision: LiveAdvisorDecision | null;
   // Mission 108 — la décision de prix est périmée (le marché a changé depuis) : son prix reste
   // montré au vendeur, « Prix retenu par votre conseiller », sans « à partir de N concurrents ».

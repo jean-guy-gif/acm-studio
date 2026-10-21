@@ -7,6 +7,7 @@ import type { MarketReading } from '@/features/live-seller/services/market-readi
 
 const READING: MarketReading = {
   calculationCount: 3,
+  seenTogetherCount: null,
   revealedCount: 3,
   prices: [300_000, 320_000, 360_000],
   lowestPrice: 300_000,

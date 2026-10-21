@@ -57,7 +57,10 @@ import {
   settleSearchBudget,
 } from '@/features/search-budget/services/reserve-budget';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
+import { keepPaidSearchResult } from '@/features/competitor-search/services/keep-paid-result';
+import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 export type StreamEstateSearchResult =
   | {
@@ -113,7 +116,8 @@ const GENERIC_ERROR = 'La recherche Stream Estate a échoué. Réessayez.';
 // on ne desserre que s'il manque des biens, jusqu'à 10 biens anciens importables et vivants, au
 // plus 60 annonces facturées (stream-estate-tiers.ts). Les critères viennent du bien vendeur
 // (jamais du client), la clé reste ici. On renvoie des CANDIDATS (même forme que ceux des
-// portails) : le classement et la décision restent ceux de l'écran. Rien n'est écrit.
+// portails) : le classement et la décision restent ceux de l'écran. Mission 112 — le résultat
+// payé est gardé sur le dossier ici même, avant de répondre (`keepPaidSearchResult`).
 // `resume` : « Chercher encore » — reprendre exactement où la recherche s'était arrêtée au
 // plafond (même cran, page suivante), pour 20 annonces de plus.
 export async function searchStreamEstate(
@@ -333,7 +337,7 @@ export async function searchStreamEstate(
   }
 
   const { candidates } = outcome;
-  return {
+  const answer: StreamEstateSearchResult & { ok: true } = {
     ok: true,
     portal: {
       portal: STREAM_ESTATE_SOURCE,
@@ -360,4 +364,29 @@ export async function searchStreamEstate(
     ),
     customSettings: !isDefaultSettings(settings),
   };
+  // Mission 112 — gardé ici, avant de répondre : le navigateur ne fait plus que l'afficher.
+  await keepPaidSearchResult({
+    supabase: await createClient(),
+    agencyId: profile.agency_id,
+    profileId: profile.id,
+    projectId,
+    fingerprint: searchFingerprint(criteria, loaded.address, settings),
+    portal: answer.portal,
+    note: {
+      billed: answer.billed,
+      stop: answer.stop,
+      cursor: answer.cursor,
+      tiers: answer.tiers,
+      counts: answer.counts,
+      newBuild: answer.newBuild,
+      located: answer.located,
+      communeName: answer.communeName,
+      inseeCode: answer.inseeCode,
+      criteriaUsed: answer.criteriaUsed,
+      customSettings: answer.customSettings,
+      arrondissement: answer.arrondissement,
+    },
+    resuming: resumeFrom != null,
+  });
+  return answer;
 }

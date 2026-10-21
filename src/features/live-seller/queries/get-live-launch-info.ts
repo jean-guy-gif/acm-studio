@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-fields/services/fields-to-verify';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
@@ -25,6 +26,8 @@ export type LiveLaunchInfo = {
   decisionMissing: boolean;
   // Mission 110 — au-delà de 6 retenus, le choix des concurrents montrés reste à faire.
   shortlistPending: boolean;
+  // Mission 112 — concurrents retenus qui attendent encore leur import : rappelé, sans bloquer.
+  pendingImportCount: number;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -39,9 +42,10 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     presentation.property != null,
     presentation.project.liveRhythm,
   );
-  const [project, comparables] = await Promise.all([
+  const [project, comparables, pending] = await Promise.all([
     getProject(projectId),
     getComparables(projectId),
+    getPendingImports(projectId),
   ]);
   return {
     competitorCount: projected?.comparables.length ?? 0,
@@ -54,5 +58,6 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
       comparables.filter((comparable) => comparable.is_selected).length,
       project?.live_shortlist_at ?? null,
     ),
+    pendingImportCount: pending.length,
   };
 }

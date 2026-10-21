@@ -55,10 +55,31 @@ export const STREAM_ESTATE_MAX_COST_LABEL = `Coût maximal : ${STREAM_ESTATE_MAX
 // Mission 108 — des « Prix recherchés » réglés à part remplacent la fourchette de la fiche dans la
 // recherche : la fourchette n'entre alors plus dans l'empreinte, et la changer ne jette plus le
 // résultat payé.
+// Mission 112 — le quartier n'entre plus dans l'empreinte : Stream Estate ne le lit pas, et le
+// corriger ne jetait que le résultat payé. `legacySearchFingerprint` est l'empreinte d'avant, avec
+// le quartier : un résultat gardé avant la mission se rouvre toujours.
 export function searchFingerprint(
   criteria: CompetitorSearchCriteria,
   address: string | null,
   settings: SearchSettings | null = null,
+): string {
+  const { district: _district, ...withoutDistrict } = criteria;
+  void _district;
+  return fingerprintOf(withoutDistrict, address, settings);
+}
+
+export function legacySearchFingerprint(
+  criteria: CompetitorSearchCriteria,
+  address: string | null,
+  settings: SearchSettings | null = null,
+): string {
+  return fingerprintOf(criteria, address, settings);
+}
+
+function fingerprintOf(
+  criteria: Partial<CompetitorSearchCriteria>,
+  address: string | null,
+  settings: SearchSettings | null,
 ): string {
   const used: Partial<CompetitorSearchCriteria> = { ...criteria };
   if (settings?.price != null) {

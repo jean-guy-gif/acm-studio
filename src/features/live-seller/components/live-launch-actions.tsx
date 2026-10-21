@@ -11,6 +11,7 @@ import {
   REAL_DOSSIER_CONFIRMATION,
   liveLaunchCheck,
   NO_DECISION_NOTICE,
+  pendingImportsNotice,
 } from '@/features/live-seller/services/live-launch';
 import {
   livePositionKey,
@@ -18,6 +19,7 @@ import {
   resumeLabel,
   type LiveResume,
 } from '@/features/live-seller/services/live-resume';
+import { confirmLiveLaunch } from '@/features/live-seller/actions/confirm-live-launch';
 import { openExampleDossier } from '@/features/welcome/actions/open-example-dossier';
 
 // La position gardée par l'appareil pendant le Live, lue après l'hydratation.
@@ -56,6 +58,7 @@ export function LiveLaunchActions({
   decisionOutdated = false,
   decisionMissing = false,
   shortlistPending = false,
+  pendingImportCount = 0,
   proceed = false,
   secondary = false,
 }: {
@@ -69,6 +72,8 @@ export function LiveLaunchActions({
   // Mission 110 — au-delà de 6 retenus, le choix des concurrents montrés reste à faire : le
   // lancement mène d'abord à ce choix (l'étape « Lancer le Live »).
   shortlistPending?: boolean;
+  // Mission 112 — concurrents retenus qui attendent leur import : rappelé avant de lancer.
+  pendingImportCount?: number;
   // Mission 110 — sur un écran où « Étape suivante » porte déjà le bouton principal.
   secondary?: boolean;
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
@@ -85,6 +90,7 @@ export function LiveLaunchActions({
     toVerifyCount,
     decisionOutdated,
     decisionMissing,
+    pendingImportCount,
   });
   const href = `/live/${projectId}`;
   const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
@@ -177,15 +183,33 @@ export function LiveLaunchActions({
             </Link>
             .
           </p>
+        ) : notice === pendingImportsNotice(pendingImportCount) ? (
+          // Mission 112 — avec un lien vers les concurrents, sans bloquer (M52).
+          <p key={notice} data-testid="launch-pending-imports">
+            {notice} :{' '}
+            <Link href={`/builder/${projectId}/comparables`} className={link}>
+              voir les concurrents
+            </Link>
+            .
+          </p>
         ) : (
           <p key={notice}>{notice}</p>
         ),
       )}
       {check.confirm ? <p className="font-semibold">{REAL_DOSSIER_CONFIRMATION}</p> : null}
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={href} className={primary}>
-          {check.confirm ? LAUNCH_FOR_REAL_LABEL : 'Lancer le Live'}
-        </Link>
+        {check.confirm ? (
+          // Mission 112 — la confirmation est enregistrée par le serveur, qui ouvre le Live.
+          <form action={confirmLiveLaunch.bind(null, projectId)}>
+            <button type="submit" className={primary} data-testid="launch-for-real">
+              {LAUNCH_FOR_REAL_LABEL}
+            </button>
+          </form>
+        ) : (
+          <Link href={href} className={primary}>
+            Lancer le Live
+          </Link>
+        )}
         {check.confirm ? (
           <form action={openExampleDossier}>
             <button type="submit" className={btnSecondary}>
