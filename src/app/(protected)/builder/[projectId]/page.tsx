@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/styles';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
 import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
+import { withCardOpposition } from '@/features/prospecting/queries/prospecting-card-store';
 import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { ReopenLivePanel } from '@/features/live-reopening/components/reopen-live-panel';
@@ -63,7 +64,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
-      ? await getProspectingRows(projectId)
+      ? // Mission 111 — l'opposition de la carte entière, comme le lot et la tournée.
+        await withCardOpposition(projectId, await getProspectingRows(projectId))
       : null;
 
   return (

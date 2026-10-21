@@ -131,3 +131,40 @@ describe('le tableau de la prise de mandat', () => {
     expect(dashboard.advisors[1].exclusiveShare).toBe(0.5);
   });
 });
+
+// Mission 111 — une ligne créée par la seule saisie du prix au Live n'est pas un rendez-vous mené.
+describe('les rendez-vous menés (mission 111)', () => {
+  it('ne comptent que les conclusions qui ont une issue', () => {
+    const dashboard = buildMandateDashboard({
+      projects: [
+        { id: 'live', advisorId: 'anne', isExample: false },
+        { id: 'done', advisorId: 'anne', isExample: false },
+      ],
+      conclusions: [
+        {
+          projectId: 'live',
+          outcome: null,
+          mandateType: null,
+          concludedAt: null,
+          signedAt: null,
+          firstOutcome: null,
+          objections: [],
+        },
+        {
+          projectId: 'done',
+          outcome: 'signed',
+          mandateType: 'exclusive',
+          concludedAt: T0,
+          signedAt: T0,
+          firstOutcome: 'signed',
+          objections: [],
+        },
+      ],
+      advisors: [{ id: 'anne', name: 'Anne' }],
+    });
+    expect(dashboard.agency.meetings).toBe(1);
+    expect(dashboard.agency.signedAtMeeting).toBe(1);
+    expect(dashboard.agency.signedUnknownPath).toBe(0);
+    expect(dashboard.advisors[0].meetings).toBe(1);
+  });
+});

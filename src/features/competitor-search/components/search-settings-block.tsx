@@ -79,6 +79,8 @@ type Props = {
   onSaveNamed?: (name: string) => void;
   onApplyNamed?: (id: string) => void;
   onDeleteNamed?: (id: string) => void;
+  // Mission 111 — l'avertissement avant un réglage qui demande une nouvelle recherche payante.
+  paidChangeConfirm?: ReactNode;
 };
 
 function Row({
@@ -139,6 +141,7 @@ export function SearchSettingsBlock({
   onSaveNamed,
   onApplyNamed,
   onDeleteNamed,
+  paidChangeConfirm = null,
 }: Props) {
   const set = (patch: Partial<SearchSettingsInput>) => onChange({ ...input, ...patch });
   const filters = input.filters ?? NO_FILTERS;
@@ -440,6 +443,7 @@ export function SearchSettingsBlock({
             {error}
           </p>
         ) : null}
+        {paidChangeConfirm}
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"

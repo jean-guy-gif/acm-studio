@@ -668,6 +668,48 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(skipped.c).toEqual({ rank: 1, total: 2 });
   });
 
+  // Mission 111 — le rang se lit parmi les concurrents MONTRÉS au Live : un concurrent hors Live
+  // le décalait (« Position 2 / 1 ») ; un « Non » n'y compte pas, même avec un prix deviné.
+  it('ranks among the comparables shown in the Live, with one off the Live and a « Non »', () => {
+    const ordered = [
+      comp('h', 3000, { excluded_from_live: true }),
+      comp('a', 7000),
+      comp('b', 5000),
+      comp('c', 6000),
+      comp('d', 4000),
+      comp('e', 6500),
+      comp('f', 5500),
+      comp('g', 4500),
+    ].map((comparable, index) => ({ ...comparable, display_order: index + 1 }));
+    const responses = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) =>
+      response({
+        id: `r-${id}`,
+        comparable_id: id,
+        // Un « Non » enregistré avant la M104 pouvait porter un prix deviné.
+        seller_serious_competitor: id === 'c' ? 'no' : 'yes',
+      }),
+    );
+    const live = buildSellerPresentation(
+      input({ comparables: ordered, sellerResponses: responses }),
+    ).live!;
+    expect(live.comparables.map((entry) => entry.id)).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g']);
+    const positions = Object.fromEntries(
+      live.comparables.map((entry) => [entry.id, entry.priceReveal.relativePosition]),
+    );
+    expect(positions).toEqual({
+      a: { rank: 1, total: 1 },
+      b: { rank: 1, total: 2 },
+      c: { rank: 2, total: 3 },
+      d: { rank: 1, total: 3 },
+      e: { rank: 3, total: 4 },
+      f: { rank: 3, total: 5 },
+      g: { rank: 2, total: 6 },
+    });
+    for (const position of Object.values(positions)) {
+      expect(position!.rank).toBeLessThanOrEqual(position!.total);
+    }
+  });
+
   // Mission 104 — « Calculé sur N concurrents » : N sans les valeurs aberrantes exclues.
   it('counts only the comparables that enter the competitor price', () => {
     const comparables = [

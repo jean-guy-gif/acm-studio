@@ -76,6 +76,7 @@ import {
   InfluentialComparablesView,
   type InfluentialComparableDisplay,
 } from '@/features/price-positioning/components/influential-comparables';
+import { isDecisionLocked } from '@/features/price-positioning/services/decision-lock';
 import { PositioningDecisionForm } from '@/features/price-positioning/components/positioning-decision-form';
 import { PositioningReasons } from '@/features/price-positioning/components/positioning-reasons';
 import { PositioningStatus } from '@/features/price-positioning/components/positioning-status';
@@ -360,6 +361,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 saveAction={savePricePositioning.bind(null, projectId)}
                 deleteAction={deletePricePositioning.bind(null, projectId)}
                 projectId={projectId}
+                locked={isDecisionLocked(project.status)}
               />
             ) : (
               <div className="flex flex-col gap-2">

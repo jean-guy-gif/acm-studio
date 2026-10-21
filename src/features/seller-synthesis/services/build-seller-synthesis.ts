@@ -34,12 +34,33 @@ export type SynthesisInput = {
     seller_perceived_property_price: number | null;
     seller_revised_property_price: number | null;
   } | null;
-  decision: { advisor_price: number | null; justification: string | null } | null;
+  decision: {
+    advisor_price: number | null;
+    advisor_comparative_market_price: number | null;
+    justification: string | null;
+  } | null;
+  // Mission 111 — les montants figés à la conclusion ; null tant que le dossier n'est pas conclu.
+  frozen: { advisor_price: number | null; advisor_analysis: number | null } | null;
   commercializationPrice: number | null;
   agency: SellerSynthesis['agency'];
 };
 
 const round = (value: number): number => Math.round(value * 10) / 10;
+
+// Mission 111 — après la conclusion, les montants figés : une décision changée ensuite (elle ne
+// peut plus l'être, mais un lien vit 30 jours) ne change pas ce que dit la synthèse. Avant, la
+// décision en cours. Un montant absent n'a pas de ligne.
+function synthesisDecision(input: SynthesisInput): SellerSynthesis['decision'] {
+  const justification = input.decision?.justification?.trim() || null;
+  const competitorPrice = input.frozen
+    ? input.frozen.advisor_price
+    : (input.decision?.advisor_price ?? null);
+  const advisorAnalysis = input.frozen
+    ? input.frozen.advisor_analysis
+    : (input.decision?.advisor_comparative_market_price ?? null);
+  if (competitorPrice == null && advisorAnalysis == null && justification == null) return null;
+  return { competitorPrice, advisorAnalysis, justification };
+}
 
 export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   const byId = new Map(input.competitors.map((row) => [row.id, row]));
@@ -93,12 +114,7 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       highestPrice: prices[prices.length - 1] ?? null,
       medianPrice: medianPrice == null ? null : Math.round(medianPrice),
     },
-    decision: input.decision
-      ? {
-          advisorPrice: input.decision.advisor_price,
-          justification: input.decision.justification?.trim() || null,
-        }
-      : null,
+    decision: synthesisDecision(input),
     commercializationPrice: input.commercializationPrice,
     agency: input.agency,
   };

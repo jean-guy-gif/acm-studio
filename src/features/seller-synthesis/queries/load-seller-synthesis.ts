@@ -53,13 +53,15 @@ export async function loadSellerSynthesis(
         .maybeSingle(),
       supabase
         .from('project_price_positionings')
-        .select('advisor_price, justification')
+        .select('advisor_price, advisor_comparative_market_price, justification')
         .eq('project_id', projectId)
         .eq('agency_id', agencyId)
         .maybeSingle(),
       supabase
         .from('project_meeting_conclusions')
-        .select('commercialization_price, concluded_at')
+        .select(
+          'commercialization_price, concluded_at, outcome, frozen_advisor_price, frozen_advisor_analysis',
+        )
         .eq('project_id', projectId)
         .eq('agency_id', agencyId)
         .maybeSingle(),
@@ -92,6 +94,14 @@ export async function loadSellerSynthesis(
     responses: responses.data ?? [],
     summary: summary.data ?? null,
     decision: decision.data ?? null,
+    // Mission 111 — conclu : les montants figés à la conclusion.
+    frozen:
+      project.status === 'meeting_completed' && conclusion.data?.outcome != null
+        ? {
+            advisor_price: conclusion.data.frozen_advisor_price,
+            advisor_analysis: conclusion.data.frozen_advisor_analysis,
+          }
+        : null,
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
     agency: {
       name: branding.data?.document_name?.trim() || agency.data?.name || '',
