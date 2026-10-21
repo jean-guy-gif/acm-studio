@@ -19,8 +19,14 @@ export type SellerSynthesis = {
     highestPrice: number | null;
     medianPrice: number | null;
   };
-  // La décision de prix du conseiller et ses arguments ; le prix convenu au Live.
-  decision: { advisorPrice: number | null; justification: string | null } | null;
+  // Les prix du Live (M89) : « Prix des concurrents », « Analyse du conseiller » et ses
+  // arguments ; le prix convenu au Live. Mission 111 — après la conclusion, les montants figés à
+  // la conclusion : le lien déjà envoyé dit ce que le vendeur a vu, et ne change plus.
+  decision: {
+    competitorPrice: number | null;
+    advisorAnalysis: number | null;
+    justification: string | null;
+  } | null;
   commercializationPrice: number | null;
   agency: {
     name: string;

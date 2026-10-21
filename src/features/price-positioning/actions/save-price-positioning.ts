@@ -8,6 +8,10 @@ import { parseDecisionInput } from '@/features/price-positioning/actions/parse-d
 import { buildPositioningSnapshot } from '@/features/price-positioning/services/build-positioning-snapshot';
 import { calculatePricePositioning } from '@/features/price-positioning/services/calculate-price-positioning';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
+import {
+  DECISION_LOCKED_MESSAGE,
+  isDecisionLocked,
+} from '@/features/price-positioning/services/decision-lock';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createClient } from '@/lib/supabase/server';
@@ -43,12 +47,16 @@ export async function savePricePositioning(
   const userClient = await createClient();
   const { data: project } = await userClient
     .from('projects')
-    .select('id')
+    .select('id, status')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   if (!project) {
     return { ok: false, error: 'Projet introuvable pour votre agence.' };
+  }
+  // Mission 111 — conclu ou archivé : la décision de prix ne se modifie plus.
+  if (isDecisionLocked(project.status)) {
+    return { ok: false, error: DECISION_LOCKED_MESSAGE };
   }
 
   // Recompute everything server-side from the current project data.

@@ -304,14 +304,21 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
   // concurrents DÉJÀ RÉVÉLÉS à son écran : ceux qui le précèdent dans le Live et dont le vendeur
   // a deviné le prix, plus lui-même. Comme la bande et la phrase de position (M94), il ne dit
   // rien d'un concurrent à venir, et grandit à chaque concurrent révélé.
-  const revealedPricesPerSquareMeterUpTo = (index: number): number[] =>
-    retained
-      .filter(
-        (comparable, position) =>
-          position === index ||
-          (position < index &&
-            responseByComparable.get(comparable.id)?.seller_estimated_listing_price != null),
-      )
+  //
+  // Mission 111 — `index` est la place du concurrent parmi ceux que le Live MONTRE : le rang se
+  // lit donc dans cette liste-là (un concurrent hors Live le décalait : « Position 2 / 1 »), et un
+  // concurrent jugé « Non » n'y compte pas (M104, M108).
+  const revealedPricesPerSquareMeterUpTo = (shown: Comparable[], index: number): number[] =>
+    shown
+      .filter((comparable, position) => {
+        if (position === index) return true;
+        const response = responseByComparable.get(comparable.id);
+        return (
+          position < index &&
+          response?.seller_estimated_listing_price != null &&
+          response.seller_serious_competitor !== 'no'
+        );
+      })
       .map((comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area))
       .filter((value): value is number => value != null);
   const emptyBundle: FeatureBundle = {
@@ -397,7 +404,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
         price: comparable.price,
         surfaceArea: comparable.surface_area,
         sellerEstimate: response?.seller_estimated_listing_price ?? null,
-        retainedPricesPerSquareMeter: revealedPricesPerSquareMeterUpTo(index),
+        retainedPricesPerSquareMeter: revealedPricesPerSquareMeterUpTo(shownInLive, index),
         thisPricePerSquareMeter: ppsm,
       }),
       priceHistory: storedFieldsPriceHistoryProvider.getPriceHistory(historySource),

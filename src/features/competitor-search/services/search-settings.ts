@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  sortedFiltersChanged,
   DEFAULT_SEARCH_FILTERS,
   describeFilters,
   filtersToInput,
@@ -300,4 +301,26 @@ export function applySavedSearch(
   saved: SavedSearchSettings,
 ): SearchSettings {
   return { ...current, sector: saved.sector, autoWiden: saved.autoWiden, filters: saved.filters };
+}
+
+// Mission 111 — ce que change un nouveau réglage, quand un résultat payé est affiché :
+//   • 'none'   : rien ;
+//   • 'sorted' : seuls l'étage, l'extérieur, le terrain ou la piscine ont changé — les biens déjà
+//                reçus sont triés à nouveau, sans aucun appel payant ;
+//   • 'paid'   : un critère de la requête a changé (secteur, élargissement, DPE, prix, pièces,
+//                surface) — il faut une nouvelle recherche payante, et l'écran prévient d'abord.
+export type SettingsChange = 'none' | 'sorted' | 'paid';
+
+export function settingsChangeKind(before: SearchSettings, after: SearchSettings): SettingsChange {
+  const queryPart = (settings: SearchSettings) =>
+    JSON.stringify([
+      settings.sector,
+      settings.autoWiden,
+      settings.price,
+      settings.rooms,
+      settings.surface,
+      settings.filters.dpe,
+    ]);
+  if (queryPart(before) !== queryPart(after)) return 'paid';
+  return sortedFiltersChanged(before.filters, after.filters) ? 'sorted' : 'none';
 }

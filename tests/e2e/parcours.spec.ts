@@ -890,6 +890,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       );
     };
     await check(await synthesis.innerText(), 'La synthèse');
+    // Mission 111 — les prix du Live, sous leurs noms du Live.
+    await expect(synthesis.getByText('Prix des concurrents', { exact: true })).toBeVisible();
+    await expect(synthesis).not.toContainText(
+      /que nous vous proposons|Prix retenu par votre conseiller/,
+    );
     await page.getByRole('button', { name: /Créer un lien pour le vendeur/ }).click();
     const link = (await page.getByTestId('synthesis-link').innerText()).trim();
     expect(link).toMatch(/\/synthese\/[A-Za-z0-9_-]{43}$/);
@@ -913,6 +918,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     } finally {
       await stranger.close();
     }
+    // Mission 111 — le dossier est conclu : la décision de prix ne se modifie plus.
+    await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+    await expect(page.getByTestId('decision-locked')).toHaveText(
+      'Rendez-vous conclu : la décision de prix ne se modifie plus.',
+    );
+    await expect(page.getByRole('button', { name: 'Enregistrer la décision' })).toBeDisabled();
     // L'étape suivante part de la Prospection filtrée sur le bien, comme avant cette étape.
     await page.goto(`/prospection?bien=${projectId}`);
   });

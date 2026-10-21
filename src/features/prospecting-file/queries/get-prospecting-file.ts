@@ -36,6 +36,7 @@ import {
   type ProspectingFileVersion,
   type ProspectingSender,
 } from '@/features/prospecting-file/types';
+import { cardOpposedOn } from '@/features/prospecting/queries/prospecting-card-store';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { opposedOn } from '@/features/prospecting/services/opposition';
 import { readPhotoPaths } from '@/features/subject-property-photos/services/get-property-photos';
@@ -150,6 +151,8 @@ export async function getProspectingFile(
     getOppositions(supabase, agencyId),
   ]);
   // Mission 102 — par l'adresse du bien ou par son annonce.
+  // Mission 111 — et par la carte entière : une autre copie du même bien peut porter l'adresse
+  // inscrite (page du courrier, son enregistrement, le lot).
   const opposed =
     opposedOn(
       {
@@ -157,7 +160,7 @@ export async function getProspectingFile(
         listingKey: listingIdentityKey(competitor.listing_url),
       },
       oppositions,
-    ) != null;
+    ) != null || (await cardOpposedOn(projectId, competitorId)) != null;
 
   const confirmedAddress =
     competitor.locator_confirmed === true ? competitor.locator_address?.trim() || null : null;

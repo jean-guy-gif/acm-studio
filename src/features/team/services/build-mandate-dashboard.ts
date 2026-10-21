@@ -6,7 +6,7 @@ import { OBJECTION_LABELS, type Objection } from '@/features/meeting-conclusion/
 // seulement (remplace M56 et M85, « pas de tableau de bord avant d'avoir des données ») : jamais
 // de comparaison entre agences (M59). Le dossier d'exemple n'y entre jamais (M97). Pur.
 //
-// Un rendez-vous mené = un dossier conclu (une conclusion, quelle que soit l'issue). Un mandat est
+// Un rendez-vous mené = un dossier conclu (une conclusion avec une issue, quelle qu'elle soit). Un mandat est
 // signé « au rendez-vous » quand la PREMIÈRE issue enregistrée est « Mandat signé », « après
 // relance » sinon (décision de Laurent, 19/10) ; une conclusion dont la première issue n'est pas
 // connue est comptée à part, « parcours inconnu ». Le délai médian porte sur les seuls mandats
@@ -47,7 +47,10 @@ export type MandateDashboard = {
 
 const DAY_MS = 86_400_000;
 
-function figures(conclusions: DashboardConclusion[]): MandateFigures {
+function figures(rows: DashboardConclusion[]): MandateFigures {
+  // Mission 111 — une ligne créée par la seule saisie du prix au Live, sur un dossier non conclu,
+  // n'est pas un rendez-vous mené : seules comptent les conclusions qui ont une issue.
+  const conclusions = rows.filter((c) => c.outcome != null);
   const signed = conclusions.filter((c) => c.outcome === 'signed');
   const atMeeting = signed.filter((c) => c.firstOutcome === 'signed').length;
   const afterFollowUpRows = signed.filter(

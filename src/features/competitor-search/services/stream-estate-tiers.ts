@@ -576,8 +576,15 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
   const unverifiedPosition = new Set<string>();
   const tiers: TierReport[] = [];
   let billed = 0;
+  // Mission 111 — la cible ne compte que les biens qui remplissent les critères triés : ceux qui
+  // ne les remplissent pas sont gardés (payés, ils reviendront si le critère se desserre), mais ne
+  // comptent pas comme trouvés.
   const oldCount = () =>
-    (memory?.oldCount ?? 0) + candidates.filter((candidate) => !candidate.isNewBuild).length;
+    (memory?.oldCount ?? 0) +
+    candidates.filter(
+      (candidate) =>
+        !candidate.isNewBuild && (!filters || checkFilters(filters, candidate).kind !== 'fails'),
+    ).length;
 
   const finish = (
     stop: 'target' | 'cap' | 'exhausted' | 'error',
@@ -679,13 +686,13 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
             unverifiedPosition.add(candidate.key!);
             continue;
           }
-          // Mission 110 — un critère réglé que le bien ne remplit pas l'écarte, partout (il ne le
-          // remplira pas plus à un élargissement) ; une donnée absente le garde, et la carte le dit.
+          // Mission 110 — un critère réglé que le bien ne remplit pas l'écarte de l'écran ; une
+          // donnée absente le garde, et la carte le dit. Mission 111 — le bien écarté reste dans le
+          // résultat payé : l'écran trie selon les critères en vigueur (`sortReceived`), et un
+          // critère desserré le fait revenir, sans repayer.
           const verdict = filters ? checkFilters(filters, candidate) : null;
           if (verdict?.kind === 'fails') {
-            keys.add(candidate.key!);
             counts.outsideCriteria = (counts.outsideCriteria ?? 0) + 1;
-            continue;
           }
           // Mission 78 — le même bien sous un second identifiant : une seule carte, un seul compte.
           if (candidates.some((kept) => isSameStreamEstateProperty(kept, candidate))) {
@@ -696,13 +703,9 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
           keys.add(candidate.key!);
           candidates.push({
             ...candidate,
-            streamEstate: {
-              ...candidate.streamEstate!,
-              tier: plan.tier,
-              ...(verdict?.kind === 'unknown' ? { criteriaUnknown: verdict.unknown } : {}),
-            },
+            streamEstate: { ...candidate.streamEstate!, tier: plan.tier },
           });
-          report.kept += 1;
+          if (verdict?.kind !== 'fails') report.kept += 1;
         }
 
         if (oldCount() >= target) return finish('target');
