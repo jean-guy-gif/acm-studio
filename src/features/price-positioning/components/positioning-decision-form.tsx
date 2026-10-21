@@ -12,6 +12,7 @@ import {
   fieldLabel,
   inputBase,
 } from '@/components/ui/styles';
+import { DECISION_LOCKED_MESSAGE } from '@/features/price-positioning/services/decision-lock';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
@@ -29,6 +30,8 @@ type Props = {
   saveAction: (formData: FormData) => Promise<SavePositioningResult>;
   deleteAction: () => Promise<DeletePositioningResult>;
   projectId: string;
+  // Mission 111 — dossier conclu ou archivé : la décision se lit, ne se modifie plus.
+  locked?: boolean;
 };
 
 const shownToSeller = 'text-xs font-medium text-amber-700 stage:text-amber-300';
@@ -52,6 +55,7 @@ export function PositioningDecisionForm({
   saveAction,
   deleteAction,
   projectId,
+  locked = false,
 }: Props) {
   const router = useRouter();
   const [becameReady, setBecameReady] = useState(false);
@@ -110,8 +114,13 @@ export function PositioningDecisionForm({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <fieldset disabled={locked} className="flex min-w-0 flex-col gap-4">
       {becameReady ? <BasculeBanner projectId={projectId} /> : null}
+      {locked ? (
+        <p className={alertOk} data-testid="decision-locked">
+          {DECISION_LOCKED_MESSAGE}
+        </p>
+      ) : null}
 
       {/* Mission 89 — calculé sur les concurrents retenus : il porte ce nom, et reste modifiable. */}
       <label className="flex flex-col gap-1.5">
@@ -204,6 +213,6 @@ export function PositioningDecisionForm({
           </button>
         ) : null}
       </div>
-    </div>
+    </fieldset>
   );
 }

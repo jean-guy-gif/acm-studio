@@ -143,6 +143,12 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/les_experts.sql
 
+      # Mission 111 — les chiffres justes : première issue, prix d'un dossier conclu, écritures.
+      - name: Les chiffres justes
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/chiffres_justes.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

@@ -24,7 +24,6 @@ import {
 } from '@/features/search-budget/services/budget';
 
 import {
-  forgetStreamEstateResult,
   keepStreamEstateResult,
   recallStreamEstateResult,
 } from '@/features/competitor-search/actions/kept-result';
@@ -91,17 +90,23 @@ import {
 import type { SaveSearchDefaultsResult } from '@/features/competitor-search/actions/save-search-defaults';
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import {
+  applySavedSearch,
+  readSearchSettingsInput,
+  settingsChangeKind,
   settingsToInput,
   type SearchDefaults,
   type SearchSettings,
   type SearchSettingsInput,
   type SettingRange,
 } from '@/features/competitor-search/services/search-settings';
+import { sortReceived } from '@/features/competitor-search/services/search-filters';
 import { showBatchImport } from '@/features/competitor-search/services/batch-import-visibility';
 import {
   canSearchMore,
   describeStreamEstateSearch,
+  afterSettingsChange,
   mergeStreamEstateNote,
+  PAID_CHANGE_WARNING,
   MORE_LABEL,
   resumeMemory,
   type StreamEstateSearchNote,
@@ -490,6 +495,13 @@ export function CompetitorSearchPanel({
   // Essai Stream Estate — recherche en cours, et ce qu'elle a coûté / rapporté.
   const [streamSearching, setStreamSearching] = useState(false);
   const [streamNote, setStreamNote] = useState<StreamEstateSearchNote | null>(null);
+  // Mission 111 — le résultat payé tel que reçu, TOUS ses biens : l'écran le trie selon les
+  // critères en vigueur, et un critère desserré fait revenir ce qu'il écartait, sans repayer.
+  const [streamRaw, setStreamRaw] = useState<PortalSearchResult | null>(null);
+  // Mission 111 — un réglage qui demande une nouvelle recherche payante se confirme d'abord.
+  const [confirmingPaidChange, setConfirmingPaidChange] = useState<
+    { kind: 'save' } | { kind: 'named'; id: string } | null
+  >(null);
   // Mission 99 — les réglages : ce qui est enregistré, ce qui est en cours de saisie.
   const [savedSettings, setSavedSettings] = useState<SearchSettings | null>(
     searchSettings?.saved ?? null,
@@ -613,10 +625,24 @@ export function CompetitorSearchPanel({
     }
   }
 
-  async function saveSettings(): Promise<boolean> {
+  // Mission 111 — un résultat payé affiché, et le nouveau réglage touche la requête : l'écran
+  // prévient avant d'enregistrer (le résultat n'est remplacé qu'après une recherche réussie).
+  const needsPaidWarning = (next: SearchSettings | null): boolean =>
+    streamNote != null &&
+    savedSettings != null &&
+    next != null &&
+    settingsChangeKind(savedSettings, next) === 'paid';
+
+  async function saveSettings(confirmed = false): Promise<boolean> {
     if (!searchSettings || settingsInput == null) {
       return true;
     }
+    const next = readSearchSettingsInput(settingsInput);
+    if (!confirmed && next.ok && needsPaidWarning(next.settings)) {
+      setConfirmingPaidChange({ kind: 'save' });
+      return false;
+    }
+    setConfirmingPaidChange(null);
     setSettingsError(null);
     setSavingSettings(true);
     try {
@@ -632,16 +658,47 @@ export function CompetitorSearchPanel({
     }
   }
 
+  // Mission 111 — après un réglage enregistré : le résultat payé n'est jamais oublié ici (M107).
+  // Seuls des critères triés ont changé : les biens déjà reçus sont triés à nouveau, sans appel.
+  // Un critère de la requête a changé : le résultat reste affiché, marqué « réglages
+  // précédents », jusqu'à la prochaine recherche réussie.
   async function settingsSaved(settings: SearchSettings): Promise<void> {
+    const previous = savedSettings;
     setSavedSettings(settings);
     setSettingsInput(settingsToInput(settings));
-    void forgetStreamEstateResult(projectId);
-    if (streamNote != null) {
-      setStreamNote(null);
-      await refreshRanking(
-        (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE),
-      );
+    if (streamNote == null || previous == null) {
+      return;
     }
+    const after = afterSettingsChange({
+      previous,
+      next: settings,
+      received: streamRaw?.candidates ?? [],
+      note: streamNote,
+    });
+    if (after.shown != null && streamRaw != null) {
+      const others = (portals ?? []).filter((portal) => portal.portal !== STREAM_ESTATE_SOURCE);
+      await refreshRanking([...others, { ...streamRaw, candidates: after.shown }]);
+    }
+    setStreamNote(after.note);
+  }
+
+  function applyNamed(id: string, confirmed = false) {
+    const search = savedSearches.find((item) => item.id === id);
+    if (
+      !confirmed &&
+      search != null &&
+      savedSettings != null &&
+      needsPaidWarning(applySavedSearch(savedSettings, search.settings))
+    ) {
+      setConfirmingPaidChange({ kind: 'named', id });
+      return;
+    }
+    setConfirmingPaidChange(null);
+    if (!searchSettings) return;
+    void namedSearch(
+      () => searchSettings.applyNamedAction(id),
+      'Recherche appliquée et enregistrée sur ce dossier.',
+    );
   }
 
   // Mission 110 — les recherches nommées : enregistrer, rappeler sur ce dossier, retirer.
@@ -672,12 +729,11 @@ export function CompetitorSearchPanel({
     }
     // Mission 99 — des réglages saisis mais pas enregistrés le sont d'abord : la recherche lit les
     // réglages en base, jamais ceux de l'écran. Un réglage refusé retient la recherche.
-    if (!more && settingsDirty && !(await saveSettings())) {
+    if (!more && settingsDirty && !(await saveSettings(true))) {
       return;
     }
-    const previousPortal = more
-      ? ((portals ?? []).find((portal) => portal.portal === STREAM_ESTATE_SOURCE) ?? null)
-      : null;
+    // Mission 111 — reprendre part des biens REÇUS (tous), pas de ceux que l'écran montre.
+    const previousPortal = more ? streamRaw : null;
     const previousNote = more ? streamNote : null;
     if (more && (previousNote?.cursor == null || previousPortal == null)) {
       return;
@@ -691,7 +747,10 @@ export function CompetitorSearchPanel({
       const outcome = await runPaidSearch(pingExtension, () =>
         streamEstateAction(
           more && previousNote?.cursor && previousPortal
-            ? { cursor: previousNote.cursor, memory: resumeMemory(previousPortal.candidates) }
+            ? {
+                cursor: previousNote.cursor,
+                memory: resumeMemory(previousPortal.candidates, savedSettings?.filters ?? null),
+              }
             : null,
         ),
       );
@@ -721,8 +780,12 @@ export function CompetitorSearchPanel({
         status: candidates.length > 0 ? 'ok' : 'empty',
         message: candidates.length > 0 ? null : result.portal.message,
       };
-      await refreshRanking([...others, streamPortal]);
-      const note = mergeStreamEstateNote(previousNote, {
+      // Mission 111 — tous les biens reçus sont gardés ; l'écran montre ceux que les critères en
+      // vigueur admettent.
+      const sorted = sortReceived(candidates, prep.settings.filters);
+      setStreamRaw(streamPortal);
+      await refreshRanking([...others, { ...streamPortal, candidates: sorted.candidates }]);
+      const merged = mergeStreamEstateNote(previousNote, {
         billed: result.billed,
         stop: result.stop,
         cursor: result.cursor,
@@ -736,6 +799,12 @@ export function CompetitorSearchPanel({
         customSettings: result.customSettings,
         arrondissement: result.arrondissement,
       });
+      const note: StreamEstateSearchNote = {
+        ...merged,
+        counts: { ...merged.counts, outsideCriteria: sorted.outsideCriteria },
+        resorted: undefined,
+        staleSettings: undefined,
+      };
       setStreamNote(note);
       // Mission 93 — gardé pour ce dossier, le temps de la séance : actualiser ou revenir en
       // arrière le réaffiche sans repayer.
@@ -773,8 +842,15 @@ export function CompetitorSearchPanel({
       }
       setAdvisorRange({ min: prep.criteria.advisorPriceMin, max: prep.criteria.advisorPriceMax });
       setStreamRange(prep.settings.price);
-      await refreshRanking([kept.portal]);
-      setStreamNote(kept.note);
+      // Mission 111 — le résultat gardé contient tous les biens reçus : trié selon les critères
+      // en vigueur, qui ont pu changer depuis (ils n'entrent pas dans l'empreinte).
+      const sorted = sortReceived(kept.portal.candidates, prep.settings.filters);
+      setStreamRaw(kept.portal);
+      await refreshRanking([{ ...kept.portal, candidates: sorted.candidates }]);
+      setStreamNote({
+        ...kept.note,
+        counts: { ...kept.note.counts, outsideCriteria: sorted.outsideCriteria },
+      });
     })();
     // Une seule fois, à l'ouverture de l'écran.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1156,6 +1232,40 @@ export function CompetitorSearchPanel({
           error={settingsError}
           onChange={setSettingsInput}
           onSave={() => void saveSettings()}
+          paidChangeConfirm={
+            confirmingPaidChange ? (
+              <div
+                role="group"
+                aria-label="Nouvelle recherche payante"
+                data-testid="paid-change-confirm"
+                className="flex w-full flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
+              >
+                <p>{PAID_CHANGE_WARNING}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className={btnSecondary}
+                    onClick={() => setConfirmingPaidChange(null)}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className={btnPrimary}
+                    disabled={busy}
+                    onClick={() => {
+                      const pending = confirmingPaidChange;
+                      setConfirmingPaidChange(null);
+                      if (pending.kind === 'save') void saveSettings(true);
+                      else applyNamed(pending.id, true);
+                    }}
+                  >
+                    Enregistrer quand même
+                  </button>
+                </div>
+              </div>
+            ) : null
+          }
           advisorDefaults={advisorDefaults}
           defaultsNote={defaultsNote}
           onSaveDefaults={() => void saveDefaults()}
@@ -1168,12 +1278,7 @@ export function CompetitorSearchPanel({
               'Recherche enregistrée : vous la retrouverez sur vos autres dossiers.',
             )
           }
-          onApplyNamed={(id) =>
-            void namedSearch(
-              () => searchSettings.applyNamedAction(id),
-              'Recherche appliquée et enregistrée sur ce dossier.',
-            )
-          }
+          onApplyNamed={(id) => applyNamed(id)}
           onDeleteNamed={(id) =>
             void namedSearch(() => searchSettings.deleteNamedAction(id), 'Recherche retirée.')
           }

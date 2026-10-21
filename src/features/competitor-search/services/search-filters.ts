@@ -223,3 +223,68 @@ export function filtersToInput(filters: SearchFilters): SearchFiltersInput {
     pool: filters.pool,
   };
 }
+
+// --- Le tri des biens déjà reçus (mission 111) ------------------------------------------------
+
+// Le résultat payé garde TOUS les biens reçus ; l'écran les trie selon les critères en vigueur, à
+// la réception comme à chaque réouverture : un bien qui ne remplit pas un critère connu est écarté
+// et compté, un bien dont la donnée manque est gardé et sa carte le dit. Desserrer un critère fait
+// revenir ce qui avait été écarté, sans nouvel appel. Les marques d'un tri précédent sont refaites.
+export function sortReceived(
+  candidates: CompetitorCandidate[],
+  filters: SearchFilters | null | undefined,
+): { candidates: CompetitorCandidate[]; outsideCriteria: number } {
+  const active = filters && !isDefaultFilters(filters) ? filters : null;
+  let outsideCriteria = 0;
+  const kept: CompetitorCandidate[] = [];
+  for (const candidate of candidates) {
+    const facts = candidate.streamEstate;
+    const clean: CompetitorCandidate = facts
+      ? { ...candidate, streamEstate: { ...facts, criteriaUnknown: undefined } }
+      : candidate;
+    if (clean.streamEstate) delete clean.streamEstate.criteriaUnknown;
+    // Seuls les biens Stream Estate sont triés : les critères ne valent que pour lui (M99).
+    const verdict = active && facts ? checkFilters(active, clean) : null;
+    if (verdict?.kind === 'fails') {
+      outsideCriteria += 1;
+      continue;
+    }
+    kept.push(
+      verdict?.kind === 'unknown'
+        ? { ...clean, streamEstate: { ...clean.streamEstate!, criteriaUnknown: verdict.unknown } }
+        : clean,
+    );
+  }
+  return { candidates: kept, outsideCriteria };
+}
+
+// --- Ce que change un nouveau réglage (mission 111) -------------------------------------------
+
+// Les critères triés sur les biens déjà reçus : l'étage, l'extérieur, le terrain, la piscine. Le
+// DPE, lui, part dans la requête (M110).
+export const SORTED_FILTERS: FilterName[] = ['minFloor', 'outdoor', 'minLand', 'pool'];
+
+// Les critères qui partent dans la requête payée : le DPE seul.
+export function queryFilters(filters: SearchFilters): SearchFilters {
+  return { ...DEFAULT_SEARCH_FILTERS, dpe: filters.dpe };
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+// Un critère trié s'est-il desserré ? Alors des biens déjà reçus, écartés, peuvent revenir.
+export function sortedFiltersLoosened(before: SearchFilters, after: SearchFilters): boolean {
+  const lower = (a: number | null, b: number | null) => a != null && (b == null || b < a);
+  const outdoorLooser =
+    before.outdoor != null &&
+    (after.outdoor == null || after.outdoor.some((space) => !before.outdoor!.includes(space)));
+  return (
+    lower(before.minFloor, after.minFloor) ||
+    lower(before.minLand, after.minLand) ||
+    outdoorLooser ||
+    (before.pool && !after.pool)
+  );
+}
+
+export function sortedFiltersChanged(before: SearchFilters, after: SearchFilters): boolean {
+  return SORTED_FILTERS.some((name) => !same(before[name], after[name]));
+}

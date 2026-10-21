@@ -1,4 +1,7 @@
-import { isDefaultFilters } from '@/features/competitor-search/services/search-filters';
+import {
+  isDefaultFilters,
+  queryFilters,
+} from '@/features/competitor-search/services/search-filters';
 import {
   STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
@@ -65,9 +68,12 @@ export function searchFingerprint(
   const entries = Object.entries({ ...used, address: address?.trim() || null }).sort(([a], [b]) =>
     a.localeCompare(b),
   );
-  if (isDefaultSettings(settings)) return JSON.stringify(entries);
-  // Mission 110 — sans critère réglé, l'empreinte reste celle d'avant : un résultat payé gardé
-  // avec des réglages ne se perd pas au déploiement.
-  const { filters, ...rest } = settings!;
-  return JSON.stringify([...entries, ['settings', isDefaultFilters(filters) ? rest : settings]]);
+  // Mission 111 — seuls les critères de la REQUÊTE entrent dans l'empreinte : l'étage,
+  // l'extérieur, le terrain et la piscine trient les biens déjà reçus, à chaque lecture, et ne
+  // jettent pas le résultat payé. Sans critère de requête réglé, l'empreinte reste celle d'avant
+  // les missions 110 et 111 : aucun résultat gardé ne se perd au déploiement.
+  const queried = settings ? { ...settings, filters: queryFilters(settings.filters) } : null;
+  if (isDefaultSettings(queried)) return JSON.stringify(entries);
+  const { filters, ...rest } = queried!;
+  return JSON.stringify([...entries, ['settings', isDefaultFilters(filters) ? rest : queried]]);
 }

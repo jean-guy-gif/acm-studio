@@ -113,16 +113,25 @@ function databaseWithTraps() {
             seller_revised_property_price: 325_000,
           },
         };
+      // Mission 111 — la décision en cours a changé APRÈS le rendez-vous : la synthèse d'un
+      // dossier conclu dit les montants figés à la conclusion, pas ceux-ci.
       case 'project_price_positionings':
         return {
           data: {
-            advisor_price: 320_000,
+            advisor_price: 999_000,
+            advisor_comparative_market_price: 998_000,
             justification: 'Trois biens proches, le vôtre a un balcon.',
           },
         };
       case 'project_meeting_conclusions':
         return {
-          data: { commercialization_price: 319_000, concluded_at: '2026-10-19T10:00:00.000Z' },
+          data: {
+            commercialization_price: 319_000,
+            concluded_at: '2026-10-19T10:00:00.000Z',
+            outcome: 'signed',
+            frozen_advisor_price: 320_000,
+            frozen_advisor_analysis: 330_000,
+          },
         };
       case 'agencies':
         return { data: { name: 'Agence Test' } };
@@ -190,11 +199,22 @@ describe('la synthèse au vendeur', () => {
       /^Appartement · 3 pièces · 68\sm² · Antibes$/,
     );
     expect(synthesis.decision).toEqual({
-      advisorPrice: 320_000,
+      competitorPrice: 320_000,
+      advisorAnalysis: 330_000,
       justification: 'Trois biens proches, le vôtre a un balcon.',
     });
     expect(synthesis.commercializationPrice).toBe(319_000);
     const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
+    // Mission 111 — les libellés du Live (M89), plus « que nous vous proposons ».
+    for (const label of [
+      'Prix des concurrents',
+      'Analyse du conseiller',
+      'Prix de commercialisation convenu ensemble',
+    ]) {
+      expect(html).toContain(label);
+    }
+    expect(html).not.toMatch(/que nous vous proposons|Prix retenu par votre conseiller/);
+    expect(html).not.toMatch(/999|998/);
     expect(html).toContain('Carte professionnelle CPI 0601 délivrée par CCI Nice');
     expect(html).toContain('Ne peut recevoir aucun fonds');
     expect(html).not.toMatch(/[Ee]stimation/);
@@ -251,5 +271,62 @@ describe('le lien de la synthèse', () => {
       'utf8',
     );
     expect(migration).toContain("default (now() + interval '30 days')");
+  });
+});
+
+// Mission 111 — avant la conclusion, la synthèse lit la décision en cours ; un montant absent n'a
+// pas de ligne.
+describe('les prix de la synthèse (mission 111)', () => {
+  const base = {
+    sellerName: 'M. Vendeur',
+    concludedAt: null,
+    competitors: [],
+    responses: [],
+    summary: { seller_perceived_property_price: 350_000, seller_revised_property_price: null },
+    commercializationPrice: null,
+    agency: {
+      name: 'Agence',
+      logoUrl: null,
+      postalAddress: null,
+      professionalCard: null,
+      professionalCardIssuer: null,
+      financialGuarantee: null,
+      advisorName: null,
+      advisorPhone: null,
+      advisorEmail: null,
+    },
+  };
+
+  it('avant la conclusion : la décision en cours', () => {
+    const synthesis = buildSellerSynthesis({
+      ...base,
+      decision: {
+        advisor_price: 310_000,
+        advisor_comparative_market_price: null,
+        justification: null,
+      },
+      frozen: null,
+    });
+    expect(synthesis.decision).toEqual({
+      competitorPrice: 310_000,
+      advisorAnalysis: null,
+      justification: null,
+    });
+    const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
+    expect(html).toContain('Prix des concurrents');
+    expect(html).not.toContain('Analyse du conseiller');
+  });
+
+  it('après la conclusion : les montants figés, même sans décision en cours', () => {
+    const synthesis = buildSellerSynthesis({
+      ...base,
+      decision: null,
+      frozen: { advisor_price: 300_000, advisor_analysis: 305_000 },
+    });
+    expect(synthesis.decision).toEqual({
+      competitorPrice: 300_000,
+      advisorAnalysis: 305_000,
+      justification: null,
+    });
   });
 });

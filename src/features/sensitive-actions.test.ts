@@ -1558,3 +1558,46 @@ describe('l’ordre figé une fois le Live commencé (mission 110)', () => {
     expect(server.writes()).toEqual(['rpc move_selected_comparable']);
   });
 });
+
+// Mission 111 — un dossier conclu ne change plus : ni sa décision de prix, ni son prix de
+// commercialisation par un onglet du Live resté ouvert.
+describe('les chiffres justes (mission 111)', () => {
+  it('une décision de prix ne s’enregistre ni ne se supprime sur un dossier conclu ou archivé', async () => {
+    const { savePricePositioning } =
+      await import('@/features/price-positioning/actions/save-price-positioning');
+    const { deletePricePositioning } =
+      await import('@/features/price-positioning/actions/delete-price-positioning');
+    const { DECISION_LOCKED_MESSAGE } =
+      await import('@/features/price-positioning/services/decision-lock');
+    state.profile = advisor;
+    for (const status of ['meeting_completed', 'archived']) {
+      server.reset();
+      service.reset();
+      state.respond = (table) => (table === 'projects' ? { data: { id: PROJECT, status } } : {});
+      expect(
+        await savePricePositioning(PROJECT, form({ advisorPrice: '320000', justification: '' })),
+      ).toEqual({ ok: false, error: DECISION_LOCKED_MESSAGE });
+      expect(await deletePricePositioning(PROJECT)).toEqual({
+        ok: false,
+        error: DECISION_LOCKED_MESSAGE,
+      });
+      noWrite();
+    }
+  });
+
+  it('le prix de commercialisation d’un dossier conclu ne change plus par le Live', async () => {
+    const { saveCommercializationPrice } =
+      await import('@/features/meeting-conclusion/actions/save-commercialization-price');
+    const { LIVE_CLOSED_MESSAGE } = await import('@/features/live-seller/services/live-closed');
+    state.profile = advisor;
+    for (const status of ['meeting_completed', 'archived']) {
+      server.reset();
+      service.reset();
+      state.respond = (table) => (table === 'projects' ? { data: { id: PROJECT, status } } : {});
+      expect(
+        await saveCommercializationPrice(PROJECT, form({ commercialization_price: '330000' })),
+      ).toEqual({ ok: false, error: LIVE_CLOSED_MESSAGE });
+      noWrite();
+    }
+  });
+});

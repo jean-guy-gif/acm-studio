@@ -9,6 +9,8 @@
 --      chaîne cohérente (le bien de B tient au dossier de B, etc.) ;
 --   §2 un conseiller de A relit les lignes de A (contrôle : le test ne passe pas à vide), ne lit
 --      AUCUNE ligne de B, n'en modifie ni n'en supprime aucune, et n'en ajoute aucune ;
+--   §2b (mission 111) le cas mixte : avec SON `agency_id`, un conseiller de A ne rattache aucune
+--      ligne au dossier, au concurrent ou au bien de B ;
 --   §3 un membre retiré de A ne lit plus rien, sauf son propre profil ;
 --   §4 un visiteur non connecté (`anon`) ne lit rien, nulle part ;
 --   §5 les exceptions tiennent ce qu'elles disent : l'agence d'un autre est invisible, la table
@@ -318,6 +320,59 @@ begin
       s.tbl, s.tbl, s.payload));
     if v_got <> 'refus' then
       raise exception 'FAIL §2 % : un conseiller de A AJOUTE une ligne à l''agence B, ou le refus ne vient pas du cloisonnement (%)', s.tbl, v_got;
+    end if;
+  end loop;
+end $$;
+
+-- §2b — Mission 111 : le cas MIXTE, pour toute table rattachée à un dossier (`project_id`,
+-- `comparable_id`, `subject_property_id`) : un conseiller de A, avec SON `agency_id`, ne rattache
+-- une ligne ni au dossier, ni au concurrent, ni au bien de l'agence B — ni en l'ajoutant, ni en
+-- déplaçant une ligne de A. Une future table qui ne vérifierait que son `agency_id` échoue ici.
+select pg_temp.act_as('10000000-0000-0000-0000-0000000000a1');
+
+do $$
+declare
+  s record;
+  v_link text;
+  v_foreign jsonb;
+  v_got text;
+  v_set text;
+  v_b constant uuid := '100bbbbb-0000-0000-0000-000000000000';
+  v_links constant jsonb := '{"project_id":"projects","comparable_id":"comparables","subject_property_id":"subject_properties"}';
+begin
+  for s in
+    select tbl, payload from seeds
+    where agency = '100aaaaa-0000-0000-0000-000000000000'::uuid
+      and (payload ? 'project_id' or payload ? 'comparable_id' or payload ? 'subject_property_id')
+    order by tbl
+  loop
+    -- La ligne de A, rattachée à tout ce que B possède du même genre.
+    v_foreign := s.payload || jsonb_build_object('id', gen_random_uuid());
+    v_set := '';
+    for v_link in select k from jsonb_object_keys(v_links) k where s.payload ? k loop
+      v_foreign := v_foreign || jsonb_build_object(v_link,
+        (select payload ->> 'id' from seeds where tbl = v_links ->> v_link and agency = v_b));
+      v_set := v_set || format('%s%I = %L', case when v_set = '' then '' else ', ' end,
+        v_link, v_foreign ->> v_link);
+    end loop;
+
+    v_got := pg_temp.attempt(format(
+      'insert into public.%I select * from jsonb_populate_record(null::public.%I, %L::jsonb)',
+      s.tbl, s.tbl, v_foreign));
+    if v_got <> 'refus' then
+      raise exception 'FAIL §2b % : un conseiller de A, avec son agency_id, rattache une ligne à un dossier de B (%)', s.tbl, v_got;
+    end if;
+
+    -- Refusée, ou acceptée sans effet (un rattachement figé, M92) : la ligne relue est toujours
+    -- celle de A.
+    v_got := pg_temp.attempt(format('update public.%I set %s where id = %L',
+      s.tbl, v_set, s.payload ->> 'id'));
+    if v_got not in ('0', 'refus') then
+      v_got := pg_temp.read_count(format('select count(*) from public.%I where id = %L and (%s)',
+        s.tbl, s.payload ->> 'id', replace(v_set, ', ', ' or ')));
+      if v_got not in ('0', 'refus') then
+        raise exception 'FAIL §2b % : un conseiller de A déplace une ligne vers un dossier de B', s.tbl;
+      end if;
     end if;
   end loop;
 end $$;

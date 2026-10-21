@@ -115,11 +115,18 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
       {decision || synthesis.commercializationPrice != null ? (
         <section className={section}>
-          <h2 className={title}>Le prix que nous vous proposons</h2>
-          {decision?.advisorPrice != null ? (
+          {/* Mission 111 — les libellés du Live (M89) ; un montant absent n'a pas de ligne. */}
+          <h2 className={title}>Les prix du rendez-vous</h2>
+          {decision?.competitorPrice != null ? (
             <p className={line}>
-              <span>Prix retenu par votre conseiller</span>
-              <strong>{formatEuro(decision.advisorPrice)}</strong>
+              <span>Prix des concurrents</span>
+              <strong>{formatEuro(decision.competitorPrice)}</strong>
+            </p>
+          ) : null}
+          {decision?.advisorAnalysis != null ? (
+            <p className={line}>
+              <span>Analyse du conseiller</span>
+              <strong>{formatEuro(decision.advisorAnalysis)}</strong>
             </p>
           ) : null}
           {decision?.justification ? (

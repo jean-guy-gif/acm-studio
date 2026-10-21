@@ -5,8 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { commercializationPriceSchema } from '@/features/meeting-conclusion/schemas/conclusion-input';
 import { liveDerivedAmounts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
+import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
+import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 type SaveArgs = Database['public']['Functions']['save_commercialization_price']['Args'];
@@ -33,6 +35,24 @@ export async function saveCommercializationPrice(
     return { ok: false, error: 'Saisissez un prix de commercialisation valide.' };
   }
 
+  // Mission 111 — un dossier conclu ou archivé ne change plus par le Live (M109) : un onglet resté
+  // ouvert ne remplace pas le prix d'un mandat signé. La conclusion et « Changer l'issue » écrivent
+  // ce prix par leurs propres fonctions (M90). La base le refuse aussi.
+  const { data: project } = await (
+    await createClient()
+  )
+    .from('projects')
+    .select('id, status')
+    .eq('id', projectId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  if (!project) {
+    return { ok: false, error: 'Dossier introuvable pour votre agence.' };
+  }
+  if (isLiveClosed(project.status)) {
+    return { ok: false, error: LIVE_CLOSED_MESSAGE };
+  }
+
   // Autorisation : loadLivePresentation passe par getProject, cadré sur l'agence → null
   // pour un dossier étranger ou absent.
   const presentation = await loadLivePresentation(projectId);
@@ -54,7 +74,12 @@ export async function saveCommercializationPrice(
   };
   const { error } = await serviceClient.rpc('save_commercialization_price', args);
   if (error) {
-    return { ok: false, error: 'L’enregistrement a échoué. Réessayez.' };
+    return {
+      ok: false,
+      error: error.message.includes('live_closed')
+        ? LIVE_CLOSED_MESSAGE
+        : 'L’enregistrement a échoué. Réessayez.',
+    };
   }
 
   revalidatePath(`/builder/${projectId}/conclusion`);

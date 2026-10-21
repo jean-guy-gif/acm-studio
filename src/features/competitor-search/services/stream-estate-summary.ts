@@ -1,4 +1,13 @@
 import {
+  sortedFiltersLoosened,
+  sortReceived,
+  type SearchFilters,
+} from '@/features/competitor-search/services/search-filters';
+import {
+  settingsChangeKind,
+  type SearchSettings,
+} from '@/features/competitor-search/services/search-settings';
+import {
   STREAM_ESTATE_MORE_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
   STREAM_ESTATE_TARGET,
@@ -36,7 +45,21 @@ export type StreamEstateSearchNote = {
   customSettings?: boolean;
   // Mission 99 — Paris, Lyon, Marseille : la recherche porte sur l'arrondissement, puis ses voisins.
   arrondissement?: boolean;
+  // Mission 111 — les critères triés ont changé depuis la recherche : réappliqués aux biens déjà
+  // reçus, sans nouvel appel (« looser » : un critère s'est desserré).
+  resorted?: 'tighter' | 'looser';
+  // Mission 111 — un critère de la requête a changé depuis : ce résultat vient des réglages
+  // précédents, jusqu'à la prochaine recherche réussie (M107).
+  staleSettings?: boolean;
 };
+
+export const RESORTED_NOTE = 'Critères appliqués aux biens déjà trouvés, sans nouvelle recherche.';
+export const RESORTED_LOOSER_NOTE =
+  'Les biens déjà reçus qui y répondent maintenant reviennent ; pour en trouver d’autres, une nouvelle recherche serait nécessaire.';
+export const STALE_SETTINGS_NOTE =
+  'Résultat obtenu avec vos réglages précédents : relancez la recherche pour appliquer les nouveaux.';
+export const PAID_CHANGE_WARNING =
+  'Ce changement demande une nouvelle recherche payante (jusqu’à 0,60 €). Le résultat actuel sera remplacé quand elle aura réussi.';
 
 const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
   1: ['identique', 'identiques'],
@@ -121,11 +144,17 @@ export function mergeStreamEstateNote(
 
 // Ce que l'écran renvoie au serveur pour reprendre : les biens déjà trouvés (jamais repris ni
 // recomptés) et leurs positions (pour repérer le remplissage d'une page à l'autre).
-export function resumeMemory(candidates: CompetitorCandidate[]): TieredSearchMemory {
+// Mission 111 — `candidates` : TOUS les biens reçus (jamais repris) ; seuls ceux qui remplissent
+// les critères triés comptent comme trouvés.
+export function resumeMemory(
+  candidates: CompetitorCandidate[],
+  filters: SearchFilters | null = null,
+): TieredSearchMemory {
   const found = candidates.filter((candidate) => candidate.key != null);
+  const counted = sortReceived(found, filters).candidates;
   return {
     keys: found.map((candidate) => candidate.key!),
-    oldCount: found.filter((candidate) => !candidate.isNewBuild).length,
+    oldCount: counted.filter((candidate) => !candidate.isNewBuild).length,
     locations: found.map((candidate) => ({
       uuid: candidate.key!,
       point: candidate.features?.location ?? null,
@@ -157,6 +186,13 @@ export function describeStreamEstateSearch(
   } — ${plural(note.billed, 'annonce facturée', 'annonces facturées')} (${euroCost(note.billed)})`;
 
   const details: string[] = [];
+  // Mission 111 — ce que l'écran a fait des biens déjà reçus depuis la recherche.
+  if (note.staleSettings) details.push(STALE_SETTINGS_NOTE);
+  if (note.resorted) {
+    details.push(
+      note.resorted === 'looser' ? `${RESORTED_NOTE} ${RESORTED_LOOSER_NOTE}` : RESORTED_NOTE,
+    );
+  }
   const widenings = widenedTimes(note.tiers.map((report) => report.tier));
   if (note.criteriaUsed != null && note.criteriaUsed.length > 0) {
     // Mission 99 — le bilan dit quels critères ont servi : « Rayon 2 km · 300 000 – 380 000 € ·
@@ -248,4 +284,36 @@ export function describeStreamEstateSearch(
     );
   }
   return { headline, details };
+}
+
+// Mission 111 — ce que devient le résultat payé affiché quand un réglage est enregistré. Jamais un
+// appel payant, jamais un résultat oublié (M107) :
+//   • critère de la requête changé : le résultat reste, marqué « réglages précédents » — il ne sera
+//     remplacé que par une recherche réussie ;
+//   • seuls des critères triés changés : les biens REÇUS (tous) sont triés à nouveau ;
+//   • rien : rien.
+export function afterSettingsChange(input: {
+  previous: SearchSettings;
+  next: SearchSettings;
+  received: CompetitorCandidate[];
+  note: StreamEstateSearchNote;
+}): { note: StreamEstateSearchNote; shown: CompetitorCandidate[] | null } {
+  const kind = settingsChangeKind(input.previous, input.next);
+  if (kind === 'paid') {
+    return { note: { ...input.note, staleSettings: true }, shown: null };
+  }
+  if (kind === 'none') {
+    return { note: input.note, shown: null };
+  }
+  const sorted = sortReceived(input.received, input.next.filters);
+  return {
+    shown: sorted.candidates,
+    note: {
+      ...input.note,
+      counts: { ...input.note.counts, outsideCriteria: sorted.outsideCriteria },
+      resorted: sortedFiltersLoosened(input.previous.filters, input.next.filters)
+        ? 'looser'
+        : 'tighter',
+    },
+  };
 }

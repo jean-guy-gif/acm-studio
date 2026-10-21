@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_SEARCH_FILTERS,
+  sortReceived,
   type SearchFilters,
 } from '@/features/competitor-search/services/search-filters';
 
@@ -703,24 +704,53 @@ describe('les critères de la mission 110', () => {
     );
   });
 
-  it('étage minimum : connu et trop bas, écarté et compté ; inconnu, gardé et marqué', async () => {
+  // Mission 111 — la recherche garde TOUS les biens reçus (payés) ; l'écran les trie selon les
+  // critères en vigueur (`sortReceived`) : écartés et comptés, ou gardés « non indiqué ».
+  it('étage minimum : connu et trop bas, écarté et compté à l’écran ; inconnu, gardé et marqué', async () => {
     const pool = [
       { id: 'high', point: north(100), floor: 4 },
       { id: 'low', point: north(150), floor: 1 },
       { id: 'unknown', point: north(200), floor: null },
     ];
+    const minFloor2 = filters({ minFloor: 2 });
+    const { run } = search(pool, { filters: minFloor2 });
+    const outcome = await run;
+    if (!outcome.ok) throw new Error('échec');
+    // Reçus et gardés, tous les trois.
+    expect(outcome.candidates.map((candidate) => candidate.key).sort()).toEqual([
+      'high',
+      'low',
+      'unknown',
+    ]);
+    expect(outcome.counts.outsideCriteria).toBe(1);
+    const shown = sortReceived(outcome.candidates, minFloor2);
+    expect(shown.candidates.map((candidate) => candidate.key).sort()).toEqual(['high', 'unknown']);
+    expect(shown.outsideCriteria).toBe(1);
+    const unknown = shown.candidates.find((candidate) => candidate.key === 'unknown');
+    expect(unknown?.streamEstate?.criteriaUnknown).toEqual(['minFloor']);
+    const high = shown.candidates.find((candidate) => candidate.key === 'high');
+    expect(high?.streamEstate?.criteriaUnknown).toBeUndefined();
+    // Desserré : le bien écarté revient, sans nouvel appel.
+    const back = sortReceived(outcome.candidates, filters({ minFloor: 1 }));
+    expect(back.candidates.map((candidate) => candidate.key).sort()).toEqual([
+      'high',
+      'low',
+      'unknown',
+    ]);
+    expect(back.outsideCriteria).toBe(0);
+  });
+
+  it('les biens écartés par un critère trié ne comptent pas pour la cible de 10', async () => {
+    const pool = [
+      ...many(10, 'low', () => ({ point: north(100), floor: 0 })),
+      ...many(3, 'high', () => ({ point: north(200), floor: 5 })),
+    ];
     const { run } = search(pool, { filters: filters({ minFloor: 2 }) });
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
-    const keys = outcome.candidates.map((candidate) => candidate.key);
-    expect(keys).toContain('high');
-    expect(keys).toContain('unknown');
-    expect(keys).not.toContain('low');
-    expect(outcome.counts.outsideCriteria).toBe(1);
-    const unknown = outcome.candidates.find((candidate) => candidate.key === 'unknown');
-    expect(unknown?.streamEstate?.criteriaUnknown).toEqual(['minFloor']);
-    const high = outcome.candidates.find((candidate) => candidate.key === 'high');
-    expect(high?.streamEstate?.criteriaUnknown).toBeUndefined();
+    // Dix biens reçus au rez-de-chaussée n'arrêtent pas la recherche : elle continue.
+    expect(outcome.stop).not.toBe('target');
+    expect(sortReceived(outcome.candidates, filters({ minFloor: 2 })).candidates).toHaveLength(3);
   });
 
   it('piscine et extérieur : lus dans les étiquettes de l’annonce', async () => {
@@ -729,14 +759,16 @@ describe('les critères de la mission 110', () => {
       { id: 'no-balcony', point: north(150), features: ['Piscine', 'Pas de balcon'] },
       { id: 'silent', point: north(200), features: [] },
     ];
-    const { run } = search(pool, { filters: filters({ pool: true, outdoor: ['balcony'] }) });
+    const wanted = filters({ pool: true, outdoor: ['balcony'] });
+    const { run } = search(pool, { filters: wanted });
     const outcome = await run;
     if (!outcome.ok) throw new Error('échec');
-    const keys = outcome.candidates.map((candidate) => candidate.key);
+    const shown = sortReceived(outcome.candidates, wanted);
+    const keys = shown.candidates.map((candidate) => candidate.key);
     expect(keys).toEqual(expect.arrayContaining(['pool-balcony', 'silent']));
     expect(keys).not.toContain('no-balcony');
     expect(
-      outcome.candidates.find((candidate) => candidate.key === 'silent')?.streamEstate
+      shown.candidates.find((candidate) => candidate.key === 'silent')?.streamEstate
         ?.criteriaUnknown,
     ).toEqual(['outdoor', 'pool']);
   });
