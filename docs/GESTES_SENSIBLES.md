@@ -77,6 +77,8 @@ Aucune n'a de test qui appelle l'action. Leur cloisonnement entre agences est pr
 | `saved-searches.ts` (M110)                                                                    | `saved_searches`, `projects.search_settings`    | `les_experts` (CI), service                                                       |
 | `set-expert-mode.ts` (M110)                                                                   | `profiles.expert_mode` (sa ligne)               | `les_experts` §4 (CI), service                                                    |
 | `reorder-live-competitors.ts` (M110)                                                          | `reorder_retained_comparables`                  | `les_experts` §5-6 (CI), service                                                  |
+| `confirm-live-launch.ts` (M112)                                                               | `projects.live_confirmed_*`                     | service, e2e                                                                      |
+| `save-live-shortlist.ts` (M110, M112)                                                         | `save_live_shortlist`                           | `live_controle` (CI), service                                                     |
 
 Quatorze tests SQL de `supabase/tests/` ne sont pas dans la CI (trois sont à réparer, M88) : ce
 qu'ils prouvaient n'est plus vérifié à chaque push.

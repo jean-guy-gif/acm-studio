@@ -3,7 +3,11 @@ import 'server-only';
 import { numberOrNull, textOrNull } from '@/features/live-seller/actions/live-action-state';
 import { normalizeLiveComparableResponse } from '@/features/live-seller/services/normalize-live-comparable-response';
 import { validateLiveComparableResponse } from '@/features/live-seller/services/validate-live-comparable-response';
-import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
+import {
+  isLiveClosed,
+  LIVE_CLOSED_MESSAGE,
+  NOT_SHOWN_IN_LIVE_MESSAGE,
+} from '@/features/live-seller/services/live-closed';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -43,13 +47,18 @@ export async function writeLiveComparableResponse(
 
   const { data: comparable } = await supabase
     .from('comparables')
-    .select('id')
+    .select('id, is_selected, excluded_from_live')
     .eq('id', comparableId)
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   if (!comparable) {
     return { ok: false, error: 'Bien concurrent introuvable pour ce dossier.' };
+  }
+  // Mission 112 — pas de réponse pour un concurrent que le vendeur ne voit pas : hors Live, ou plus
+  // retenu. La base le refuse aussi.
+  if (!comparable.is_selected || comparable.excluded_from_live) {
+    return { ok: false, error: NOT_SHOWN_IN_LIVE_MESSAGE };
   }
 
   const normalized = normalizeLiveComparableResponse({

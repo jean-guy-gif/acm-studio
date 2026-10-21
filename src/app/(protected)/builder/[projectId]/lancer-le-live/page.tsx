@@ -42,6 +42,7 @@ export default async function LaunchLivePage({
             decisionOutdated={launch.decisionOutdated}
             decisionMissing={launch.decisionMissing}
             shortlistPending={launch.shortlistPending}
+            pendingImportCount={launch.pendingImportCount}
             proceed
           />
         </div>

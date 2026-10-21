@@ -226,8 +226,11 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
   if (!isAdvisorRangeAuthorized(live)) {
     return null;
   }
+  // Mission 112 — sans décision de prix enregistrée, le calcul brut ne part pas vers le navigateur :
+  // le vendeur n'en voit rien (M109), et une garde de rendu n'est pas une garde de donnée (M51).
+  const marketComputed = live.advisorDecision ? live.competitiveMarketCentral : null;
   return {
-    competitiveMarketCentral: live.competitiveMarketCentral,
+    competitiveMarketCentral: marketComputed,
     priceGaps: live.priceGaps,
     advisorDecision: live.advisorDecision,
     marketReading: buildMarketReading(
@@ -236,9 +239,10 @@ export function authorizeAdvisorRange(live: LiveComparativeData): AuthorizedAdvi
         advisorPrice: live.advisorDecision?.advisorPrice ?? null,
         // Mission 108 — une décision périmée ne se dit plus « à partir de N concurrents ».
         advisorOutdated: live.positioningOutdated,
-        marketComputed: live.competitiveMarketCentral,
+        marketComputed,
       },
       live.calculationCount,
+      live.seenTogetherCount,
     ),
   };
 }

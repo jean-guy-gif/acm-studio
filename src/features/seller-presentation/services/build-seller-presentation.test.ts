@@ -710,6 +710,21 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     }
   });
 
+  // Mission 112 — des concurrents hors Live entrent dans le calcul : « dont 6 vus ensemble ».
+  it('counts the comparables seen together when some are off the Live', () => {
+    const all = Array.from({ length: 8 }, (_, i) =>
+      comp(`c${i}`, 5000 + i * 50, {
+        display_order: i + 1,
+        excluded_from_live: i >= 6,
+      }),
+    );
+    const live = buildSellerPresentation(input({ comparables: all })).live!;
+    expect(live.comparables).toHaveLength(6);
+    expect(live.calculationCount).toBe(8);
+    expect(live.seenTogetherCount).toBe(6);
+    expect(buildSellerPresentation(input()).live!.seenTogetherCount).toBeNull();
+  });
+
   // Mission 104 — « Calculé sur N concurrents » : N sans les valeurs aberrantes exclues.
   it('counts only the comparables that enter the competitor price', () => {
     const comparables = [

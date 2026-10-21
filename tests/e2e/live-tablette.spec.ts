@@ -112,7 +112,7 @@ async function openLive(page: Page): Promise<void> {
   await expect(confirm).toContainText('Peu de concurrents : la lecture du marché sera fragile.');
   await expect(confirm).toContainText('Vous êtes devant le vendeur ?');
   await expect(confirm.getByRole('button', { name: 'Ouvrir le dossier d’exemple' })).toBeVisible();
-  await confirm.getByRole('link', { name: 'Lancer devant le vendeur' }).click();
+  await confirm.getByRole('button', { name: 'Lancer devant le vendeur' }).click();
   await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
   await expect(page.locator('[data-stage] > header')).toBeVisible();
 }

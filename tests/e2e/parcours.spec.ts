@@ -997,7 +997,16 @@ async function walkLive(
     'Le bandeau du compte de test manque dans l’espace conseiller',
   ).toHaveText('Compte de test automatique — ne préparez pas de vrai dossier ici');
 
-  await page.goto(`/live/${projectId}`);
+  if (firstPass) {
+    // Mission 112 — un vrai dossier jamais lancé : son adresse renvoie vers la confirmation, que le
+    // serveur garde avant d'ouvrir la scène.
+    await page.goto(`/live/${projectId}`);
+    await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/lancer-le-live$`));
+    await page.getByTestId('launch-for-real').click();
+    await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
+  } else {
+    await page.goto(`/live/${projectId}`);
+  }
 
   // Introduction
   await expect(page.getByRole('button', { name: 'Démarrer la présentation' })).toBeVisible();

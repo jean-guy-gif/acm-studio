@@ -19,6 +19,8 @@ const state = vi.hoisted(() => ({
   // Mission 105 — ce que la base accepte de réserver (null : tout ce qui est demandé).
   grant: null as number | null,
   reserved: [] as number[],
+  // Mission 112 — les résultats gardés par la recherche elle-même.
+  kept: [] as { resuming: boolean; billed: number }[],
 }));
 
 vi.mock('@/features/competitor-search/services/stream-estate-config', () => ({
@@ -28,6 +30,14 @@ vi.mock('@/features/projects/queries/get-project', () => ({
   getProject: async () => ({ id: PROJECT, is_example: false }),
 }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
+// Mission 112 — la recherche garde elle-même le résultat payé (testé à part : keep-paid-result).
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+vi.mock('@/features/competitor-search/services/keep-paid-result', () => ({
+  keepPaidSearchResult: async (input: { resuming: boolean; note: { billed: number } }) => {
+    state.kept.push({ resuming: input.resuming, billed: input.note.billed });
+    return true;
+  },
+}));
 vi.mock('@/features/search-budget/queries/get-search-budget', () => ({
   getSearchBudget: async () => state.budget,
 }));
@@ -114,6 +124,7 @@ beforeEach(() => {
   state.errors = [];
   state.grant = null;
   state.reserved = [];
+  state.kept = [];
   state.profile = { id: 'u-advisor', agency_id: AGENCY, role: 'advisor', removed_at: null };
   state.budget = { ok: true, budget: searchBudget(0, null) };
   stubApi();
@@ -157,6 +168,8 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
     expect(result.ok && result.billed).toBe(60);
     expect(state.reserved).toEqual([60]);
     expect(state.usage).toEqual([{ adverts: 60 }]);
+    // Mission 112 — gardé par la recherche, une fois, avant de répondre.
+    expect(state.kept).toEqual([{ resuming: false, billed: 60 }]);
   });
 
   // Mission 105 — la base n'accorde que ce qui reste, compteur verrouillé : la recherche ne
@@ -192,6 +205,8 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
     expect((await search()).ok).toBe(false);
     expect(state.usage).toEqual([]);
     expect(state.errors).toContain('searchStreamEstate');
+    // Mission 112 — une recherche qui échoue ne garde rien : l'ancien résultat reste tel quel.
+    expect(state.kept).toEqual([]);
   });
 
   it('l’API refuse la clé : la panne entre au journal des erreurs', async () => {

@@ -127,10 +127,13 @@ export function LivePageConclusion({
         ) : null}
       </div>
 
-      <p className="max-w-3xl text-base text-zinc-600 stage:text-white/70">
-        Le prix des concurrents montre à quels biens votre logement sera comparé. L’analyse du
-        conseiller détermine le positionnement professionnel proposé.
-      </p>
+      {/* Mission 112 — sans décision de prix, aucun prix final : la phrase non plus. */}
+      {decision ? (
+        <p className="max-w-3xl text-base text-zinc-600 stage:text-white/70">
+          Le prix des concurrents montre à quels biens votre logement sera comparé. L’analyse du
+          conseiller détermine le positionnement professionnel proposé.
+        </p>
+      ) : null}
 
       {/* Mission 53 §1 — la seule question qui vient après l'analyse. Repères au-dessus (déjà
           vus), champ vide en dessous. Remplir = l'accord. */}

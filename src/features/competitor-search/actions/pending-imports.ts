@@ -158,8 +158,9 @@ export async function createCompetitorFromSearch(
     .maybeSingle();
   if (existing) {
     // Mission 108 — déjà dans le dossier, écartée : rien n'est créé, le conseiller décide.
+    // Mission 112 — la ligne d'attente reste tant qu'il n'a pas répondu à « La retenir ? » : la
+    // retenir la retire (`retainCompetitor`), « Ne pas importer » aussi.
     if (!existing.is_selected) {
-      await clearPending();
       return { ok: true, retained: false, dismissedExisting: existing.id };
     }
     return done(true);
@@ -194,7 +195,6 @@ export async function createCompetitorFromSearch(
   if (created.status === 'failed') return { ok: false, error: FAILURE };
   if (created.status === 'existing') {
     if (!created.selected) {
-      await clearPending();
       return { ok: true, retained: false, dismissedExisting: created.id };
     }
     return done(true);

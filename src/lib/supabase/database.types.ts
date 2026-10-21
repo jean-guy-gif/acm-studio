@@ -1319,6 +1319,8 @@ export type Database = {
           created_at: string
           id: string
           is_example: boolean
+          live_confirmed_at: string | null
+          live_confirmed_by: string | null
           live_ended_at: string | null
           live_rhythm: string
           live_shortlist_at: string | null
@@ -1336,6 +1338,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_example?: boolean
+          live_confirmed_at?: string | null
+          live_confirmed_by?: string | null
           live_ended_at?: string | null
           live_rhythm?: string
           live_shortlist_at?: string | null
@@ -1353,6 +1357,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_example?: boolean
+          live_confirmed_at?: string | null
+          live_confirmed_by?: string | null
           live_ended_at?: string | null
           live_rhythm?: string
           live_shortlist_at?: string | null
@@ -1377,6 +1383,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_live_confirmed_by_fkey"
+            columns: ["live_confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1997,6 +2010,7 @@ export type Database = {
       get_current_agency_id: { Args: never; Returns: string }
       has_pending_invitation: { Args: never; Returns: boolean }
       is_current_manager: { Args: never; Returns: boolean }
+      live_has_started: { Args: { p_project_id: string }; Returns: boolean }
       meeting_duration_seconds: {
         Args: { p_project_id: string }
         Returns: number
@@ -2052,6 +2066,10 @@ export type Database = {
           p_project_id: string
         }
         Returns: undefined
+      }
+      save_live_shortlist: {
+        Args: { p_project_id: string; p_shown: string[] }
+        Returns: number
       }
       settle_stream_estate_budget: {
         Args: { p_billed: number; p_reservation_id: string }

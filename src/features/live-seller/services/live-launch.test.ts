@@ -7,6 +7,9 @@ vi.mock('@/features/welcome/actions/open-example-dossier', () => ({
   openExampleDossier: async () => undefined,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: () => undefined }) }));
+vi.mock('@/features/live-seller/actions/confirm-live-launch', () => ({
+  confirmLiveLaunch: async () => undefined,
+}));
 
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {

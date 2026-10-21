@@ -235,6 +235,18 @@ describe('livraison — fourchette conseiller absente de la charge initiale (§ 
       base.sellerSummary?.seller_perceived_property_price,
     );
   });
+
+  // Mission 112 — sans décision de prix, le calcul brut ne part pas vers le navigateur : une garde
+  // de donnée, pas de rendu (M51, M109).
+  it('sans décision de prix enregistrée, le calcul brut n’est pas dans la charge', () => {
+    const base = buildLive(true);
+    const done = withResponses({ ...base, advisorDecision: null }, () => estimated);
+    expect(base.competitiveMarketCentral).not.toBeNull();
+    const range = authorizeAdvisorRange(done);
+    expect(range).not.toBeNull();
+    expect(range?.competitiveMarketCentral).toBeNull();
+    expect(JSON.stringify(range)).not.toContain(String(base.competitiveMarketCentral));
+  });
 });
 
 describe('isDurationKnown — l’étape « Durée » n’existe que s’il y a quelque chose à révéler', () => {
