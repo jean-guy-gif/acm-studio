@@ -1332,48 +1332,51 @@ describe('Mission 110 — « Retirer le lien » de la synthèse', () => {
 // Mission 110, partie B.
 describe('Mission 110 — les concurrents montrés au Live', () => {
   const A = '66666666-6666-4666-8666-666666666661';
-  const B = '66666666-6666-4666-8666-666666666662';
   const OTHER = '66666666-6666-4666-8666-666666666669';
-  const respondWith = (live: { started: string | null; answers: number }) => {
-    state.respond = (table, method) => {
-      if (table === 'projects' && method === 'select')
-        return { data: { id: PROJECT, live_started_at: live.started } };
-      if (table === 'live_seller_responses' || table === 'live_seller_summary')
-        return { count: live.answers };
-      if (table === 'comparables' && method === 'select') return { data: [{ id: A }, { id: B }] };
-      return {};
-    };
-  };
 
-  it('refusé une fois le Live commencé, sans rien écrire', async () => {
+  // Mission 112 — le choix part en UNE opération en base (`save_live_shortlist`), qui relit les
+  // retenus et refuse une fois le Live commencé (prouvé en base : live_controle.sql). L'action
+  // transmet les identifiants, et traduit les refus.
+  it('refusé une fois le Live commencé : le message, et rien d’autre que l’opération refusée', async () => {
     const { saveLiveShortlist } =
       await import('@/features/live-seller/actions/save-live-shortlist');
-    respondWith({ started: '2026-10-19T10:00:00.000Z', answers: 0 });
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT } }
+        : table === 'save_live_shortlist'
+          ? { error: { message: 'live_started' } }
+          : {};
     expect(await saveLiveShortlist(PROJECT, [A])).toEqual({
       ok: false,
       error: 'Le Live a commencé : les concurrents montrés ne se modifient plus.',
     });
-    noWrite();
+    expect(server.writes()).toEqual(['rpc save_live_shortlist']);
   });
 
-  it('ne garde que des concurrents retenus du dossier, au moins un', async () => {
+  it('transmet les identifiants une seule fois, et dit « au moins un »', async () => {
     const { saveLiveShortlist } =
       await import('@/features/live-seller/actions/save-live-shortlist');
-    respondWith({ started: null, answers: 0 });
-    expect((await saveLiveShortlist(PROJECT, [OTHER])).ok).toBe(false);
+    state.profile = advisor;
+    expect((await saveLiveShortlist(PROJECT, ['pas-un-identifiant'])).ok).toBe(false);
     noWrite();
-    expect(await saveLiveShortlist(PROJECT, [A, OTHER])).toEqual({ ok: true });
-    const updates = server.calls
-      .filter((call) => call.method === 'update')
-      .map((call) => call.args[0]);
-    expect(updates).toEqual([
-      { excluded_from_live: false },
-      { excluded_from_live: true },
-      expect.objectContaining({ live_shortlist_at: expect.any(String) }),
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT } }
+        : table === 'save_live_shortlist'
+          ? { error: { message: 'empty_shortlist' } }
+          : {};
+    expect(await saveLiveShortlist(PROJECT, [OTHER])).toEqual({
+      ok: false,
+      error: 'Gardez au moins un concurrent pour le Live.',
+    });
+    server.reset();
+    state.respond = (table) => (table === 'projects' ? { data: { id: PROJECT } } : { data: 1 });
+    expect(await saveLiveShortlist(PROJECT, [A, A, OTHER])).toEqual({ ok: true });
+    expect(server.calls.find((call) => call.method === 'rpc')?.args).toEqual([
+      'save_live_shortlist',
+      { p_project_id: PROJECT, p_shown: [A, OTHER] },
     ]);
-    const ins = server.calls.filter((call) => call.method === 'in').map((call) => call.args);
-    expect(ins).toContainEqual(['id', [A]]);
-    expect(ins).toContainEqual(['id', [B]]);
   });
 });
 

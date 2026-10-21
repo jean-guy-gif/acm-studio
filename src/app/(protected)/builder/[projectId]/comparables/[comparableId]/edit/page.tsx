@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { SubmitButton } from '@/components/submit-button';
-import { alertError, backLink, card, kickerLabel, pageTitle } from '@/components/ui/styles';
+import { backLink, kickerLabel, pageTitle } from '@/components/ui/styles';
 import { updateComparable } from '@/features/comparables/actions/update-comparable';
-import { ComparableFormFields } from '@/features/comparables/comparable-form-fields';
+import { EditComparableForm } from '@/features/comparables/components/edit-comparable-form';
 import { getComparable } from '@/features/comparables/queries/get-comparable';
 
 type EditComparablePageProps = {
@@ -36,24 +35,12 @@ export default async function EditComparablePage({
         <h1 className={pageTitle}>Modifier le bien</h1>
       </div>
 
-      {error ? (
-        <p role="alert" className={alertError}>
-          {error}
-        </p>
-      ) : null}
-
-      <form
+      <EditComparableForm
+        projectId={projectId}
+        comparable={comparable}
         action={update}
-        className={`${card} grid w-full max-w-3xl grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6`}
-      >
-        <ComparableFormFields comparable={comparable} />
-        <SubmitButton
-          pendingLabel="Enregistrement…"
-          className="mt-2 self-start justify-self-start sm:col-span-2"
-        >
-          Enregistrer les modifications
-        </SubmitButton>
-      </form>
+        initialError={error ?? null}
+      />
     </div>
   );
 }

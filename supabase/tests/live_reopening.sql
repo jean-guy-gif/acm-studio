@@ -24,7 +24,7 @@ insert into public.profiles (id, agency_id, first_name, last_name, email, role) 
 insert into public.projects (id, agency_id, advisor_id, seller_name, status, live_started_at, live_ended_at) values
   ('104ccccc-0000-0000-0000-000000000001', '104aaaaa-0000-0000-0000-000000000000',
    '10411111-1111-1111-1111-111111111111', 'figé par erreur', 'ready_for_meeting',
-   '2026-10-14 09:00:00+00', '2026-10-14 09:05:00+00'),
+   null, null),
   ('104ccccc-0000-0000-0000-000000000002', '104aaaaa-0000-0000-0000-000000000000',
    '10411111-1111-1111-1111-111111111111', 'conclu', 'meeting_completed', null, null),
   ('104ccccc-0000-0000-0000-000000000003', '104aaaaa-0000-0000-0000-000000000000',
@@ -32,6 +32,11 @@ insert into public.projects (id, agency_id, advisor_id, seller_name, status, liv
 insert into public.comparables (id, agency_id, project_id, title, price, surface_area, is_selected, display_order) values
   ('104dddd0-0000-0000-0000-000000000001', '104aaaaa-0000-0000-0000-000000000000',
    '104ccccc-0000-0000-0000-000000000001', 'c1', 300000, 60, true, 0);
+-- Mission 112 — dans l'ordre d'un vrai rendez-vous : le concurrent retenu, PUIS le Live commence
+-- (un concurrent retenu en plein Live serait hors Live, et sans réponse).
+update public.projects
+  set live_started_at = '2026-10-14 09:00:00+00', live_ended_at = '2026-10-14 09:05:00+00'
+  where id = '104ccccc-0000-0000-0000-000000000001';
 insert into public.live_seller_responses (agency_id, project_id, comparable_id, seller_serious_competitor, seller_estimated_listing_price)
   values ('104aaaaa-0000-0000-0000-000000000000', '104ccccc-0000-0000-0000-000000000001',
           '104dddd0-0000-0000-0000-000000000001', 'yes', 280000);

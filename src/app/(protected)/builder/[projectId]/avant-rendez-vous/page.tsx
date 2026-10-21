@@ -487,6 +487,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 decisionOutdated={launch.decisionOutdated}
                 decisionMissing={launch.decisionMissing}
                 shortlistPending={launch.shortlistPending}
+                pendingImportCount={launch.pendingImportCount}
                 secondary
               />
               {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}

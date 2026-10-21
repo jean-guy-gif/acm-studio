@@ -126,6 +126,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 decisionOutdated={launch.decisionOutdated}
                 decisionMissing={launch.decisionMissing}
                 shortlistPending={launch.shortlistPending}
+                pendingImportCount={launch.pendingImportCount}
                 secondary
               />
             ) : null}

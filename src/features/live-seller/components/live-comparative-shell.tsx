@@ -39,6 +39,7 @@ import {
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
 import { buildLivePages, type LiveRhythm } from '@/features/live-seller/services/build-live-pages';
+import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
 import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
 import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
@@ -387,6 +388,9 @@ export function LiveComparativeShell({
     if (busy || index >= pages.length - 1) return;
     setAwaitError(null);
     const fd = harvest();
+    // Mission 112 — un « Non » dit après coup retire ce concurrent de la bande (M108) : la bande
+    // déjà livrée est oubliée, et redemandée au serveur en arrivant sur « Analyse des prix ».
+    if (range != null && invalidatesAnalysis(fd)) setRange(null);
     const entersAnalysis = pages[index + 1]?.type === 'price_analysis';
     // Enregistre le formulaire de l'écran, puis demande la fourchette : le serveur ne la
     // livre que si le prix du vendeur est en base et que chaque concurrent est estimé.

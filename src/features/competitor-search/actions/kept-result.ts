@@ -5,14 +5,17 @@ import {
   parseKeptResult,
   type KeptResult,
 } from '@/features/competitor-search/services/kept-result';
-import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
-import { reportServerError } from '@/lib/app-errors/report-server-error';
+import {
+  legacySearchFingerprint,
+  searchFingerprint,
+} from '@/features/competitor-search/services/paid-search-guard';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 105 — le dernier résultat payé, sur le dossier (`stream_estate_results`, une ligne par
 // dossier, cloisonnée par agence). L'empreinte est TOUJOURS calculée ici, depuis la base : un
 // résultat dont le bien, la fourchette ou les réglages ont changé est jeté, jamais rendu.
+// Mission 112 — c'est la recherche elle-même qui le garde (`keepPaidSearchResult`), plus l'écran.
 
 async function currentFingerprint(projectId: string) {
   const profile = await getProfile();
@@ -22,33 +25,9 @@ async function currentFingerprint(projectId: string) {
   return {
     profile,
     fingerprint: searchFingerprint(loaded.criteria, loaded.address, loaded.settings),
+    // Mission 112 — l'empreinte d'avant, avec le quartier : ce qui était gardé se rouvre.
+    legacy: legacySearchFingerprint(loaded.criteria, loaded.address, loaded.settings),
   };
-}
-
-export async function keepStreamEstateResult(
-  projectId: string,
-  raw: unknown,
-): Promise<{ ok: boolean }> {
-  const current = await currentFingerprint(projectId);
-  const kept = parseKeptResult(raw);
-  if (!current || !kept) return { ok: false };
-  const supabase = await createClient();
-  const { error } = await supabase.from('stream_estate_results').upsert(
-    {
-      agency_id: current.profile.agency_id,
-      project_id: projectId,
-      saved_by: current.profile.id,
-      fingerprint: current.fingerprint,
-      result: kept as never,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'project_id' },
-  );
-  if (error) {
-    await reportServerError('keepStreamEstateResult', error);
-    return { ok: false };
-  }
-  return { ok: true };
 }
 
 export async function recallStreamEstateResult(projectId: string): Promise<KeptResult | null> {
@@ -63,7 +42,8 @@ export async function recallStreamEstateResult(projectId: string): Promise<KeptR
     .maybeSingle();
   if (!data) return null;
   const kept = parseKeptResult(data.result);
-  if (data.fingerprint !== current.fingerprint || !kept) {
+  const matches = data.fingerprint === current.fingerprint || data.fingerprint === current.legacy;
+  if (!matches || !kept) {
     // Le bien, la fourchette ou les réglages ont changé : un résultat périmé ne s'affiche jamais.
     await forgetStreamEstateResult(projectId);
     return null;

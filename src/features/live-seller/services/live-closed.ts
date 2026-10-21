@@ -9,3 +9,6 @@ export const LIVE_CLOSED_MESSAGE = 'Rendez-vous terminé : la réponse n’est p
 export function isLiveClosed(status: string | null | undefined): boolean {
   return (LIVE_CLOSED_STATUSES as readonly string[]).includes(status ?? '');
 }
+
+// Mission 112 — un concurrent hors Live, ou plus retenu, ne reçoit pas de réponse du vendeur.
+export const NOT_SHOWN_IN_LIVE_MESSAGE = 'Ce concurrent n’est pas montré pendant le Live.';

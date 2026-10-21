@@ -23,10 +23,7 @@ import {
   BUDGET_REACHED_LABEL,
 } from '@/features/search-budget/services/budget';
 
-import {
-  keepStreamEstateResult,
-  recallStreamEstateResult,
-} from '@/features/competitor-search/actions/kept-result';
+import { recallStreamEstateResult } from '@/features/competitor-search/actions/kept-result';
 import { registerPendingImports } from '@/features/competitor-search/actions/pending-imports';
 import {
   batchProgressLabel,
@@ -810,7 +807,7 @@ export function CompetitorSearchPanel({
       // arrière le réaffiche sans repayer.
       // Mission 105 — gardé sur le dossier, côté serveur : il se rouvre sur un autre appareil ou
       // le lendemain, sans nouvel appel.
-      void keepStreamEstateResult(projectId, { portal: streamPortal, note });
+      // Mission 112 — déjà gardé par le serveur, dans la recherche qui a payé.
     } finally {
       setStreamSearching(false);
     }

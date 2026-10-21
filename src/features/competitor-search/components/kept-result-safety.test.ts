@@ -23,8 +23,17 @@ describe('une relance de recherche qui échoue ne fait rien perdre', () => {
     // remplacement ; le nouveau résultat n'est gardé qu'après.
     const failure = body.indexOf('if (!result.ok)');
     expect(failure).toBeGreaterThan(-1);
-    expect(body.indexOf('keepStreamEstateResult(')).toBeGreaterThan(failure);
     expect(body.indexOf('setStreamNote(note)')).toBeGreaterThan(failure);
+  });
+
+  // Mission 112 — le résultat payé est gardé par le serveur, dans l'action qui a payé, AVANT de
+  // répondre : le navigateur ne l'enregistre plus (une coupure le faisait perdre).
+  it('le résultat payé est gardé par l’action de recherche, avant sa réponse', () => {
+    expect(panel).not.toContain('keepStreamEstateResult');
+    const action = read('features', 'competitor-search', 'actions', 'search-stream-estate.ts');
+    const keep = action.indexOf('await keepPaidSearchResult(');
+    expect(keep).toBeGreaterThan(action.indexOf('const answer'));
+    expect(keep).toBeLessThan(action.indexOf('return answer;'));
   });
 
   it('budget atteint : le résultat gardé se rouvre quand même', () => {

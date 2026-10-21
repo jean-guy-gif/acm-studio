@@ -416,16 +416,25 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
     };
   });
 
+  const calculationCount =
+    currentPositioning.dataset.usedCount > 0
+      ? currentPositioning.dataset.usedCount
+      : retained.length;
+  // Mission 112 — ceux du calcul que le vendeur voit : montrés au Live, ni aberrants, ni sans prix
+  // au m².
+  const seenTogether = shownInLive.filter(
+    (comparable) =>
+      !outlierIds.has(comparable.id) &&
+      pricePerSquareMeter(comparable.price, comparable.surface_area) != null,
+  ).length;
   const live: LiveComparativeData | null =
     property != null && shownInLive.length >= 1
       ? {
           comparables: liveComparables,
           sellerSummary,
           competitiveMarketCentral,
-          calculationCount:
-            currentPositioning.dataset.usedCount > 0
-              ? currentPositioning.dataset.usedCount
-              : retained.length,
+          calculationCount,
+          seenTogetherCount: seenTogether < calculationCount ? seenTogether : null,
           advisorDecision: savedPositioning
             ? {
                 advisorPrice: savedPositioning.advisorPrice,

@@ -13,6 +13,8 @@ export type MarketReading = {
   // Mission 104 — les concurrents qui ENTRENT dans le calcul du « Prix des concurrents » (les
   // valeurs aberrantes écartées n'y sont pas), et ceux dont le prix a été révélé.
   calculationCount: number;
+  // Mission 112 — ceux du calcul que le vendeur voit, quand d'autres sont hors Live ; sinon null.
+  seenTogetherCount: number | null;
   revealedCount: number;
   // Les prix affichés des concurrents révélés, du moins cher au plus cher : la bande.
   prices: number[];
@@ -48,6 +50,7 @@ export function buildMarketReading(
   comparables: readonly ReadingEntry[],
   prices: { advisorPrice: number | null; marketComputed: number | null; advisorOutdated?: boolean },
   calculationCount: number,
+  seenTogetherCount: number | null = null,
 ): MarketReading {
   const shown = comparables.filter(revealed);
   const listed = shown
@@ -63,6 +66,7 @@ export function buildMarketReading(
 
   return {
     calculationCount,
+    seenTogetherCount,
     revealedCount: shown.length,
     prices: listed,
     lowestPrice: listed.length > 0 ? listed[0] : null,
@@ -86,13 +90,20 @@ export function buildMarketReading(
 // marché » pour un prix ajusté. Mission 104 — le nombre est celui des concurrents qui entrent
 // dans le calcul : un concurrent écarté pour un prix au m² trop éloigné n'y est pas compté.
 export function competitorPriceBasisLabel(
-  reading: Pick<MarketReading, 'calculationCount' | 'competitorPriceBasis'>,
+  reading: Pick<MarketReading, 'calculationCount' | 'competitorPriceBasis'> & {
+    seenTogetherCount?: number | null;
+  },
 ): string {
   if (reading.competitorPriceBasis === 'advisor_only') {
     return 'Prix retenu par votre conseiller';
   }
   const count = reading.calculationCount;
-  const competitors = `${count} concurrent${count > 1 ? 's' : ''}`;
+  // Mission 112 — des concurrents hors Live entrent dans le calcul : le vendeur sait combien il
+  // en a vus. Le prix ne change pas.
+  const seen = reading.seenTogetherCount;
+  const competitors = `${count} concurrent${count > 1 ? 's' : ''}${
+    seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : ''
+  }`;
   return reading.competitorPriceBasis === 'advisor'
     ? `Prix retenu par votre conseiller à partir de ${competitors}`
     : `Calculé sur ${competitors}`;

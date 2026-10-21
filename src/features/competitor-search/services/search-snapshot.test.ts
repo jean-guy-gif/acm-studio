@@ -246,7 +246,14 @@ describe('rien de l’import en attente ne passe côté vendeur', () => {
       ...files(join(src, 'app/(stage)')),
     ];
     expect(seller.length).toBeGreaterThan(20);
-    for (const path of seller) {
+    // Mission 112 — deux fichiers du dossier `live-seller` sont des écrans du CONSEILLER, avant le
+    // Live : le bouton « Lancer le Live » et ce qu'il lit. Ils rappellent les imports en attente
+    // (« 2 concurrents retenus attendent leur import ») ; rien n'en passe dans la charge du Live.
+    const advisorSide = [
+      join('features', 'live-seller', 'components', 'live-launch-actions.tsx'),
+      join('features', 'live-seller', 'queries', 'get-live-launch-info.ts'),
+    ];
+    for (const path of seller.filter((file) => !advisorSide.some((side) => file.endsWith(side)))) {
       expect(readFileSync(path, 'utf8'), path).not.toMatch(
         /pending_competitor_imports|pending-imports|imported_from_search|listing_withdrawn|PendingImportsBanner/,
       );

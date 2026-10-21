@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { canChangeLiveRhythm } from '@/features/live-seller/services/live-timing';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -31,7 +30,7 @@ export async function saveLiveShortlist(
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id, live_started_at')
+    .select('id')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .in('status', ['draft', 'ready_for_meeting'])
@@ -39,64 +38,22 @@ export async function saveLiveShortlist(
   if (!project) {
     return { ok: false, error: FAILURE };
   }
-  const [{ count: responses }, { count: summaries }, { data: retained }] = await Promise.all([
-    supabase
-      .from('live_seller_responses')
-      .select('id', { count: 'exact', head: true })
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id),
-    supabase
-      .from('live_seller_summary')
-      .select('id', { count: 'exact', head: true })
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id),
-    supabase
-      .from('comparables')
-      .select('id')
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id)
-      .eq('is_selected', true),
-  ]);
-  if (
-    !canChangeLiveRhythm({
-      liveStartedAt: project.live_started_at,
-      hasSellerAnswers: (responses ?? 0) + (summaries ?? 0) > 0,
-    })
-  ) {
-    return { ok: false, error: LOCKED };
-  }
-  const retainedIds = (retained ?? []).map((row) => row.id);
-  const kept = new Set(ids.data.filter((id) => retainedIds.includes(id)));
-  if (kept.size === 0) {
-    return { ok: false, error: 'Gardez au moins un concurrent pour le Live.' };
-  }
-  const hidden = retainedIds.filter((id) => !kept.has(id));
-  const writes = [
-    supabase
-      .from('comparables')
-      .update({ excluded_from_live: false })
-      .eq('project_id', projectId)
-      .eq('agency_id', profile.agency_id)
-      .in('id', [...kept]),
-    ...(hidden.length > 0
-      ? [
-          supabase
-            .from('comparables')
-            .update({ excluded_from_live: true })
-            .eq('project_id', projectId)
-            .eq('agency_id', profile.agency_id)
-            .in('id', hidden),
-        ]
-      : []),
-    supabase
-      .from('projects')
-      .update({ live_shortlist_at: new Date().toISOString() })
-      .eq('id', projectId)
-      .eq('agency_id', profile.agency_id),
-  ];
-  const results = await Promise.all(writes);
-  if (results.some((result) => result.error)) {
-    return { ok: false, error: FAILURE };
+  // Mission 112 — une seule opération en base (`save_live_shortlist`) : elle relit les concurrents
+  // retenus, en garde au moins un, date le choix, et refuse une fois le Live commencé — la base
+  // fige ensuite les concurrents montrés, comme l'ordre et le rythme.
+  const { error } = await supabase.rpc('save_live_shortlist', {
+    p_project_id: projectId,
+    p_shown: [...new Set(ids.data)],
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.message.includes('live_started')
+        ? LOCKED
+        : error.message.includes('empty_shortlist')
+          ? 'Gardez au moins un concurrent pour le Live.'
+          : FAILURE,
+    };
   }
   revalidatePath(`/builder/${projectId}/lancer-le-live`);
   revalidatePath(`/builder/${projectId}/avant-rendez-vous`);

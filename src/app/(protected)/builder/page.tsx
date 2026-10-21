@@ -11,9 +11,11 @@ import {
   card,
   emptyState,
   kickerLabel,
+  link,
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { pendingImportsNotice } from '@/features/live-seller/services/live-launch';
 import { archiveProjectAction } from '@/features/projects/actions/archive-project';
 import {
   declareProjectReady,
@@ -203,6 +205,18 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                           Déclarer prêt
                         </SubmitButton>
                       </form>
+                      {/* Mission 112 — rappelé près du bouton, sans le bloquer (M52). */}
+                      {pendingImportsNotice(readiness.pendingImportCount) ? (
+                        <span
+                          className="w-full text-xs font-medium text-amber-700 sm:text-right stage:text-amber-300"
+                          data-testid="ready-pending-imports"
+                        >
+                          {pendingImportsNotice(readiness.pendingImportCount)} —{' '}
+                          <Link href={`/builder/${project.id}/comparables`} className={link}>
+                            voir les concurrents
+                          </Link>
+                        </span>
+                      ) : null}
                       <ArchiveProjectButton
                         projectId={project.id}
                         projectName={project.seller_name}

@@ -5,7 +5,10 @@ import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 // Mission 104 — « Non » à « Un sérieux concurrent ? » n'enregistre jamais de prix : la base
 // figerait la devinette et le prix révélé (M92, M96) d'un concurrent écarté par le vendeur.
 
-const server = fakeSupabase(() => ({ data: { id: 'x' } }));
+// Mission 112 — un concurrent retenu et montré au Live.
+const server = fakeSupabase(() => ({
+  data: { id: 'x', is_selected: true, excluded_from_live: false },
+}));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/auth/get-profile', () => ({

@@ -28,6 +28,11 @@ vi.mock('@/features/projects/queries/get-project', () => ({
   getProject: async () => ({ id: PROJECT, is_example: false }),
 }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
+// Mission 112 — la recherche garde elle-même le résultat payé (testé à part : keep-paid-result).
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+vi.mock('@/features/competitor-search/services/keep-paid-result', () => ({
+  keepPaidSearchResult: async () => true,
+}));
 vi.mock('@/features/search-budget/queries/get-search-budget', () => ({
   getSearchBudget: async () => state.budget,
 }));

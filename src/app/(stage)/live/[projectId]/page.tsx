@@ -1,5 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 
+import { getComparables } from '@/features/comparables/queries/get-comparables';
+import { liveEntryGate } from '@/features/live-seller/services/live-launch';
+import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
+import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
+import { getProject } from '@/features/projects/queries/get-project';
+
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -51,6 +57,22 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   // de pause (M92). Le conseiller lit la raison sur la liste du Live, où mène « Accès conseiller ».
   if (!presentation.live) {
     redirect(`/live/${projectId}/pause`);
+  }
+  // Mission 112 — jamais sans ses contrôles : un vrai dossier jamais lancé passe d'abord par la
+  // confirmation « devant le vendeur » enregistrée ; au-delà de 6 concurrents, par leur choix.
+  const project = await getProject(projectId);
+  if (!project) {
+    notFound();
+  }
+  const retainedCount = (await getComparables(projectId)).filter((c) => c.is_selected).length;
+  const gate = liveEntryGate({
+    isExample: project.is_example,
+    started: project.live_started_at != null || hasLiveStarted(presentation.live),
+    confirmedAt: project.live_confirmed_at ?? null,
+    shortlistPending: needsLiveShortlist(retainedCount, project.live_shortlist_at ?? null),
+  });
+  if (gate === 'confirm') {
+    redirect(`/builder/${projectId}/lancer-le-live`);
   }
 
   // MISSION 51 §2.2 — le vendeur ne reçoit qu'une charge PROJETÉE : chaque concurrent est
