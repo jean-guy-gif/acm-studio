@@ -389,13 +389,13 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   const surface = input.property?.surface_area ?? null;
   const agreed = input.commercializationPrice;
   const typeLabel = propertyTypeLabel(input.property?.property_type);
-  const commune = input.property?.district?.trim() || input.property?.city?.trim() || null;
+  const commune = input.property?.city?.trim() || null;
 
   return {
     sellerName: input.sellerName,
     meetingDate: input.meetingDate,
     propertyLabel: [typeLabel, commune].filter(Boolean).join(' · ') || null,
-    commune: input.property?.city?.trim() || null,
+    commune,
     property: input.property
       ? {
           photos: input.propertyPhotoUrls.slice(0, 3),

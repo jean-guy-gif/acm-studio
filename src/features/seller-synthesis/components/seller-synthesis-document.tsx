@@ -41,7 +41,7 @@ const STATUS = {
 } as const;
 
 const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
-const card = 'border border-zinc-200 bg-white px-3.5 py-3';
+const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
 const bigNumber = 'font-title text-xl leading-tight font-bold text-brand-darker';
 
 function meetingDay(value: string | null): string | null {
@@ -395,7 +395,9 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
       : null,
   ].filter((item): item is { label: string; value: number; hint: string } => item != null);
 
-  const pageRules = `@page{size:A4;margin:14mm 14mm 18mm;@bottom-left{content:${cssString(footer)};font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
+  // Chrome met toutes les pages à la largeur de la première : les marges de côté sont donc nulles
+  // partout (la couverture va bord à bord) et les 14 mm de côté vivent dans le contenu.
+  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
 
   return (
     <article
@@ -466,7 +468,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
         </div>
       </section>
 
-      <div className="flex flex-col gap-6 p-5 sm:p-8 print:p-0">
+      <div className="flex flex-col gap-6 p-5 sm:p-8 print:px-[14mm] print:py-0">
         {/* 01 · Votre bien — écrans « Votre bien » et « Votre valeur perçue ». */}
         {property || synthesis.perceivedPrice != null ? (
           <section className="flex flex-col gap-3">
@@ -495,7 +497,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               </div>
             ) : null}
             {property && property.facts.length > 0 ? (
-              <dl className="grid grid-cols-2 border-t border-l border-zinc-200 bg-white sm:grid-cols-3">
+              <dl className="grid grid-cols-2 border-t border-l border-zinc-200 bg-white break-inside-avoid sm:grid-cols-3">
                 {property.facts.map((fact) => (
                   <div key={fact.label} className="border-r border-b border-zinc-200 px-3.5 py-2.5">
                     <dt className={kicker}>{fact.label}</dt>
@@ -529,7 +531,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
         {/* 02 · Les biens regardés ensemble — une fiche par concurrent montré, dans l'ordre du Live. */}
         {synthesis.competitors.length > 0 ? (
-          <section className="flex flex-col gap-3 break-before-page">
+          <section className="flex flex-col gap-3">
             <SectionTitle
               number={sectionNumber('competitors')}
               title="Les biens que nous avons regardés ensemble"
@@ -553,7 +555,9 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               <div className={`${card} flex flex-col gap-2`}>
                 <div className={kicker}>Votre bien</div>
                 {synthesis.dpe.subject ? (
-                  <DpeLetter letter={synthesis.dpe.subject} size="md" />
+                  <span className="self-start">
+                    <DpeLetter letter={synthesis.dpe.subject} size="md" />
+                  </span>
                 ) : (
                   <p className="text-sm text-zinc-500">
                     Pas encore de DPE : il sera établi par le diagnostiqueur.
@@ -594,7 +598,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
         {/* 05 · L'analyse des prix — écran « Analyse des prix ». */}
         {analysis || decision ? (
-          <section className="flex flex-col gap-3 break-before-page">
+          <section className="flex flex-col gap-3">
             <SectionTitle
               number={sectionNumber('analysis')}
               title="L’analyse des prix"
@@ -708,14 +712,14 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
         ) : null}
 
         {/* 06 · Le chemin de votre prix — « Après avoir vu le marché » et « Sur quel prix partons-nous ? ». */}
-        <section className="flex flex-col gap-3 break-before-page">
+        <section className="flex flex-col gap-3">
           <SectionTitle
             number={sectionNumber('path')}
             title="Le chemin de votre prix"
             hint="Votre prix au début du rendez-vous, après avoir vu le marché, puis celui que nous avons retenu ensemble."
           />
           {steps.length > 0 ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <div className="flex flex-col gap-2 break-inside-avoid sm:flex-row sm:items-stretch">
               {steps.map((step, index) => {
                 const last = step.label === 'Convenu ensemble';
                 return (
