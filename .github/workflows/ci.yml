@@ -170,3 +170,9 @@ jobs:
               -v ON_ERROR_STOP=1 < "supabase/tests/$test.sql"
             echo "::endgroup::"
           done
+
+      # Mission 113 — la base de la CI s'arrêtait net sur live_reopening.sql depuis la mission 104
+      # (« server closed the connection unexpectedly ») : en cas d'échec, son journal dit pourquoi.
+      - name: Journal de la base (en cas d'échec)
+        if: failure()
+        run: docker logs --tail 200 supabase_db_acm-studio

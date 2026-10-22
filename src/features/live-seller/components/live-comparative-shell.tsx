@@ -822,8 +822,8 @@ export function LiveComparativeShell({
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
         return; // never hijack typing
       }
-      // The photo lightbox owns the keyboard while it is open.
-      if (document.body.dataset.lightbox === 'open') {
+      // The photo lightbox and the « Revoir » card (mission 113) own the keyboard while open.
+      if (document.body.dataset.lightbox === 'open' || document.body.dataset.review === 'open') {
         return;
       }
       if (event.key === 'f' || event.key === 'F') {
@@ -1025,7 +1025,7 @@ export function LiveComparativeShell({
             competitorEnergyRatings={comparables.map((c) => c.energyRating)}
           />
         ) : page.type === 'dangerous_competitor' && live ? (
-          <LivePageDangerous comparables={authorizedComparables} summary={summary} />
+          <LivePageDangerous comparables={comparables} summary={summary} />
         ) : page.type === 'seller_perceived_price' ? (
           <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
         ) : page.type === 'seller_revised_price' ? (
