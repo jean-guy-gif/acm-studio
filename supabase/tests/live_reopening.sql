@@ -44,34 +44,35 @@ insert into public.live_seller_summary (agency_id, project_id, seller_perceived_
   values ('104aaaaa-0000-0000-0000-000000000000', '104ccccc-0000-0000-0000-000000000001', 350000);
 
 -- §1 — le navigateur, conseiller comme manager.
--- Mission 113 — le rôle se change en SQL, hors de PL/pgSQL : un `set local role` suivi de
--- `reset role` dans une boucle à blocs d'exception faisait tomber le serveur de la CI (signal 11,
--- Postgres 17.6 x86) depuis la mission 104 ; les assertions sont les mêmes.
-create function pg_temp.browser_cannot_reopen(p_uid uuid) returns void language plpgsql as $$
+-- Mission 113 — le droit d'appeler reopen_live se lit (has_function_privilege), comme dans
+-- finitions.sql : APPELER une fonction fermée fait tomber le serveur Postgres de la CI (signal 11,
+-- image Supabase 17.6 x86) — la tâche SQL de la CI s'arrêtait ici depuis la mission 104.
+do $$
 begin
-  begin
-    perform public.reopen_live('104ccccc-0000-0000-0000-000000000001', p_uid, 'x@t.l', 'motif suffisant');
-    raise exception 'FAIL 1: reopen_live appelable depuis le navigateur (%)', p_uid;
-  exception when insufficient_privilege then null;
-  end;
-  begin
-    perform count(*) from public.live_reopenings;
-    raise exception 'FAIL 1: la trace se lit depuis le navigateur (%)', p_uid;
-  exception when insufficient_privilege then null;
-  end;
+  if has_function_privilege('authenticated', 'public.reopen_live(uuid,uuid,text,text)', 'execute')
+     or has_function_privilege('anon', 'public.reopen_live(uuid,uuid,text,text)', 'execute') then
+    raise exception 'FAIL 1: reopen_live appelable depuis le navigateur';
+  end if;
 end $$;
-grant execute on function pg_temp.browser_cannot_reopen(uuid) to authenticated;
+
+create function pg_temp.browser_cannot_read_trace(p_uid uuid) returns void language plpgsql as $$
+begin
+  perform count(*) from public.live_reopenings;
+  raise exception 'FAIL 1: la trace se lit depuis le navigateur (%)', p_uid;
+exception when insufficient_privilege then null;
+end $$;
+grant execute on function pg_temp.browser_cannot_read_trace(uuid) to authenticated;
 
 select set_config('request.jwt.claims',
   '{"sub":"10411111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 set local role authenticated;
-select pg_temp.browser_cannot_reopen('10411111-1111-1111-1111-111111111111');
+select pg_temp.browser_cannot_read_trace('10411111-1111-1111-1111-111111111111');
 reset role;
 
 select set_config('request.jwt.claims',
   '{"sub":"10422222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 set local role authenticated;
-select pg_temp.browser_cannot_reopen('10422222-2222-2222-2222-222222222222');
+select pg_temp.browser_cannot_read_trace('10422222-2222-2222-2222-222222222222');
 reset role;
 
 do $$
