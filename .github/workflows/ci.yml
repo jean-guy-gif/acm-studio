@@ -33,6 +33,10 @@ jobs:
   # invité, et échoue à la première porte restée ouverte.
   sql:
     runs-on: ubuntu-latest
+    # Mission 113 — lire les images du registre de GitHub sous l'identité de l'exécution.
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +49,14 @@ jobs:
       # qui lui est fermée. La CLI lit la version de la base liée dans supabase/.temp.
       - name: Image de la base en ligne
         run: mkdir -p supabase/.temp && echo 17.6.1.155 > supabase/.temp/postgres-version
+
+      # ghcr.io refusait les téléchargements anonymes depuis les machines partagées de GitHub
+      # (« toomanyrequests ») : le téléchargement de l'image est identifié par le jeton de la course.
+      - name: Connexion au registre des images
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
 
       - run: supabase db start
 
