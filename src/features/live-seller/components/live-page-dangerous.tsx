@@ -1,5 +1,8 @@
 'use client';
 
+import { useCallback, useState } from 'react';
+
+import { LiveCompetitorReview } from '@/features/live-seller/components/live-competitor-review';
 import { LivePhoto } from '@/features/live-seller/components/live-photo';
 import {
   choice,
@@ -17,7 +20,10 @@ import {
   type SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
-import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import type {
+  AuthorizedSellerComparable,
+  SellerComparable,
+} from '@/features/live-seller/services/project-live-for-seller';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
@@ -25,20 +31,38 @@ const euro = (value: number | null): string => (value != null ? formatEuro(value
 // Synthèse — the seller picks the most dangerous competitor among the ones he
 // judged serious (yes / unsure). The software records the choice but NEVER
 // concludes that this price is a maximum.
+// Mission 113 — chaque concurrent montré au Live porte « Revoir », « Non » compris : sa fiche
+// s'ouvre en plein écran, en lecture seule, et se referme sur cet écran inchangé.
 export function LivePageDangerous({
   comparables,
   summary,
 }: {
-  comparables: AuthorizedSellerComparable[];
+  comparables: SellerComparable[];
   summary: LiveSellerSummary | null;
 }) {
   const selected = summary?.seller_most_dangerous_comparable_id ?? '';
   const reason = summary?.seller_most_dangerous_reason ?? '';
   const comment = summary?.seller_most_dangerous_comment ?? '';
-  const eligibleComparables = comparables.filter((entry) => {
+  const [reviewedId, setReviewedId] = useState<string | null>(null);
+  const closeReview = useCallback(() => setReviewedId(null), []);
+  const reviewed = comparables.find((entry) => entry.id === reviewedId) ?? null;
+  const eligibleComparables = comparables.filter((entry): entry is AuthorizedSellerComparable => {
     const answer = entry.response?.seller_serious_competitor;
-    return answer === 'yes' || answer === 'unsure';
+    return entry.authorized && (answer === 'yes' || answer === 'unsure');
   });
+  const otherComparables = comparables.filter(
+    (entry) => !eligibleComparables.some((eligible) => eligible.id === entry.id),
+  );
+  const reviewButton = (entry: SellerComparable) => (
+    <button
+      type="button"
+      onClick={() => setReviewedId(entry.id)}
+      data-testid="review-competitor"
+      className="min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-base font-medium text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep stage:border-white/25 stage:text-white/85 stage:hover:border-brand stage:hover:text-white"
+    >
+      Revoir
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -57,64 +81,85 @@ export function LivePageDangerous({
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {eligibleComparables.map((entry) => (
-              <label
-                key={entry.id}
-                className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-brand stage:has-checked:bg-brand/15"
-              >
-                <input
-                  type="radio"
-                  name="seller_most_dangerous_comparable_id"
-                  value={entry.id}
-                  defaultChecked={selected === entry.id}
-                  className="sr-only"
-                />
-                <LivePhoto
-                  photoUrl={entry.photoUrl}
-                  photoUrls={[]}
-                  alt={entry.neutralLabel}
-                  compact
-                />
-                <div className="flex flex-col gap-2 p-4">
-                  <div className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
-                    {entry.neutralLabel}
-                  </div>
-                  <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {[entry.district, entry.city].filter(Boolean).join(', ') ||
-                      'Localisation inconnue'}
-                    {entry.surfaceArea != null ? ` · ${formatSquareMeters(entry.surfaceArea)}` : ''}
-                    {entry.roomsCount != null ? ` · ${entry.roomsCount} pièces` : ''}
-                  </div>
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="font-title text-2xl font-bold text-brand-deep stage:text-white">
-                      {euro(entry.price)}
-                    </span>
-                    {entry.marketDuration?.available ? (
-                      <span className="text-xs text-zinc-400 stage:text-white/50">
-                        {entry.marketDuration?.label}
-                      </span>
-                    ) : null}
-                  </div>
-                  {entry.response?.seller_estimated_listing_price != null ? (
-                    <div className="text-sm text-zinc-500 stage:text-white/60">
-                      Imaginé : {euro(entry.response.seller_estimated_listing_price)}
-                      {entry.priceReveal.gapAmount != null
-                        ? ` · écart ${formatEuro(entry.priceReveal.gapAmount, { signed: true })}`
-                        : ''}
+              <div key={entry.id} className="flex flex-col gap-2">
+                <label className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-brand stage:has-checked:bg-brand/15">
+                  <input
+                    type="radio"
+                    name="seller_most_dangerous_comparable_id"
+                    value={entry.id}
+                    defaultChecked={selected === entry.id}
+                    className="sr-only"
+                  />
+                  <LivePhoto
+                    photoUrl={entry.photoUrl}
+                    photoUrls={[]}
+                    alt={entry.neutralLabel}
+                    compact
+                  />
+                  <div className="flex flex-col gap-2 p-4">
+                    <div className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
+                      {entry.neutralLabel}
                     </div>
-                  ) : null}
-                  <div className={statLabel}>
-                    Sérieux concurrent :{' '}
-                    {entry.response?.seller_serious_competitor
-                      ? SERIOUS_COMPETITOR_LABELS[
-                          entry.response.seller_serious_competitor as SeriousCompetitor
-                        ]
-                      : 'Non renseigné'}
+                    <div className="text-sm text-zinc-500 stage:text-white/60">
+                      {[entry.district, entry.city].filter(Boolean).join(', ') ||
+                        'Localisation inconnue'}
+                      {entry.surfaceArea != null
+                        ? ` · ${formatSquareMeters(entry.surfaceArea)}`
+                        : ''}
+                      {entry.roomsCount != null ? ` · ${entry.roomsCount} pièces` : ''}
+                    </div>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="font-title text-2xl font-bold text-brand-deep stage:text-white">
+                        {euro(entry.price)}
+                      </span>
+                      {entry.marketDuration?.available ? (
+                        <span className="text-xs text-zinc-400 stage:text-white/50">
+                          {entry.marketDuration?.label}
+                        </span>
+                      ) : null}
+                    </div>
+                    {entry.response?.seller_estimated_listing_price != null ? (
+                      <div className="text-sm text-zinc-500 stage:text-white/60">
+                        Imaginé : {euro(entry.response.seller_estimated_listing_price)}
+                        {entry.priceReveal.gapAmount != null
+                          ? ` · écart ${formatEuro(entry.priceReveal.gapAmount, { signed: true })}`
+                          : ''}
+                      </div>
+                    ) : null}
+                    <div className={statLabel}>
+                      Sérieux concurrent :{' '}
+                      {entry.response?.seller_serious_competitor
+                        ? SERIOUS_COMPETITOR_LABELS[
+                            entry.response.seller_serious_competitor as SeriousCompetitor
+                          ]
+                        : 'Non renseigné'}
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
+                {reviewButton(entry)}
+              </div>
             ))}
           </div>
         )}
+
+        {otherComparables.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <span className={statLabel}>Les autres biens regardés</span>
+            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              {otherComparables.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-2 stage:border-white/15"
+                >
+                  <span className="min-w-0 text-base text-zinc-700 stage:text-white/80">
+                    {entry.neutralLabel}
+                  </span>
+                  {reviewButton(entry)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className={`${panel} flex flex-col gap-4`}>
           <fieldset className="flex flex-col gap-3">
@@ -145,6 +190,7 @@ export function LivePageDangerous({
           </label>
         </div>
       </form>
+      {reviewed ? <LiveCompetitorReview entry={reviewed} onClose={closeReview} /> : null}
     </div>
   );
 }

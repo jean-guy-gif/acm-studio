@@ -120,20 +120,24 @@ begin
 end $$;
 
 -- Les fonctions de conclusion restent fermées au navigateur.
-select pg_temp.act_as('10811111-1111-1111-1111-111111111111');
+-- Mission 113 — le droit se lit (has_function_privilege), comme dans finitions.sql : appeler une
+-- fonction fermée fait tomber le serveur Postgres de la CI (signal 11, image Supabase 17.6 x86).
 do $$
+declare v_fn regprocedure;
 begin
-  begin
-    perform public.conclude_meeting(
-      p_project_id => '108ccccc-0000-0000-0000-00000000000a',
-      p_agency_id => '108aaaaa-0000-0000-0000-000000000000',
-      p_outcome => 'signed', p_reason => null, p_price => null,
-      p_market_computed => null, p_advisor_analysis => null, p_advisor_price => null);
-    raise exception 'FAIL 3: le navigateur appelle conclude_meeting';
-  exception when insufficient_privilege then null;
-  end;
+  for v_fn in
+    select p.oid::regprocedure from pg_proc p
+    where p.pronamespace = 'public'::regnamespace and p.proname = 'conclude_meeting'
+  loop
+    if has_function_privilege('authenticated', v_fn, 'execute')
+       or has_function_privilege('anon', v_fn, 'execute') then
+      raise exception 'FAIL 3: le navigateur appelle %', v_fn;
+    end if;
+  end loop;
+  if not found then
+    raise exception 'FAIL 3: conclude_meeting introuvable';
+  end if;
 end $$;
-reset role;
 
 do $$ begin raise notice 'finitions_audit_5 : OK'; end $$;
 

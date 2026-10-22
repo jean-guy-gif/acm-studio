@@ -44,25 +44,39 @@ insert into public.live_seller_summary (agency_id, project_id, seller_perceived_
   values ('104aaaaa-0000-0000-0000-000000000000', '104ccccc-0000-0000-0000-000000000001', 350000);
 
 -- §1 — le navigateur, conseiller comme manager.
+-- Mission 113 — le droit d'appeler reopen_live se lit (has_function_privilege), comme dans
+-- finitions.sql : APPELER une fonction fermée fait tomber le serveur Postgres de la CI (signal 11,
+-- image Supabase 17.6 x86) — la tâche SQL de la CI s'arrêtait ici depuis la mission 104.
 do $$
-declare v_uid text;
 begin
-  foreach v_uid in array array['10411111-1111-1111-1111-111111111111', '10422222-2222-2222-2222-222222222222'] loop
-    perform set_config('request.jwt.claims',
-      format('{"sub":"%s","role":"authenticated"}', v_uid), true);
-    set local role authenticated;
-    begin
-      perform public.reopen_live('104ccccc-0000-0000-0000-000000000001', v_uid::uuid, 'x@t.l', 'motif suffisant');
-      raise exception 'FAIL 1: reopen_live appelable depuis le navigateur (%)', v_uid;
-    exception when insufficient_privilege then null;
-    end;
-    begin
-      perform count(*) from public.live_reopenings;
-      raise exception 'FAIL 1: la trace se lit depuis le navigateur (%)', v_uid;
-    exception when insufficient_privilege then null;
-    end;
-    reset role;
-  end loop;
+  if has_function_privilege('authenticated', 'public.reopen_live(uuid,uuid,text,text)', 'execute')
+     or has_function_privilege('anon', 'public.reopen_live(uuid,uuid,text,text)', 'execute') then
+    raise exception 'FAIL 1: reopen_live appelable depuis le navigateur';
+  end if;
+end $$;
+
+create function pg_temp.browser_cannot_read_trace(p_uid uuid) returns void language plpgsql as $$
+begin
+  perform count(*) from public.live_reopenings;
+  raise exception 'FAIL 1: la trace se lit depuis le navigateur (%)', p_uid;
+exception when insufficient_privilege then null;
+end $$;
+grant execute on function pg_temp.browser_cannot_read_trace(uuid) to authenticated;
+
+select set_config('request.jwt.claims',
+  '{"sub":"10411111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+set local role authenticated;
+select pg_temp.browser_cannot_read_trace('10411111-1111-1111-1111-111111111111');
+reset role;
+
+select set_config('request.jwt.claims',
+  '{"sub":"10422222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+set local role authenticated;
+select pg_temp.browser_cannot_read_trace('10422222-2222-2222-2222-222222222222');
+reset role;
+
+do $$
+begin
   if (select count(*) from public.live_seller_responses
         where project_id = '104ccccc-0000-0000-0000-000000000001') <> 1 then
     raise exception 'FAIL 1: une réponse a disparu sans réouverture';

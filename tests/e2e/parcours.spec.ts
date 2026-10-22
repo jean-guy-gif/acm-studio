@@ -1281,6 +1281,27 @@ async function walkLive(
     page.getByRole('heading', { name: 'Quel concurrent vous paraît le plus dangereux ?' }),
   ).toBeVisible();
   await onScreen('Le concurrent le plus dangereux');
+  // Mission 113 — « Revoir » ouvre la fiche d'un concurrent en plein écran, sans rien écrire ni
+  // changer d'écran : « Fermer » rend l'écran du plus dangereux tel qu'il était.
+  const dangerousUrl = page.url();
+  await page.getByTestId('review-competitor').first().click();
+  const review = page.getByTestId('competitor-review');
+  await expect(review).toBeVisible();
+  await expect(review.getByText(neutralLabel(COMPETITORS[0]))).toBeVisible();
+  await expect(review.getByText('Face à votre bien, critère par critère')).toBeVisible();
+  expect(withoutSpaces(await review.getByTestId('competitor-review-price').innerText())).toContain(
+    String(COMPETITORS[0].price),
+  );
+  expect(await review.innerText(), 'La fiche « Revoir » montre un titre d’annonce').not.toContain(
+    COMPETITORS[0].title,
+  );
+  await onScreen('Le concurrent le plus dangereux · Revoir');
+  await review.getByRole('button', { name: 'Fermer' }).click();
+  await expect(review).toHaveCount(0);
+  expect(page.url(), '« Revoir » a changé l’écran du Live').toBe(dangerousUrl);
+  await expect(
+    page.getByRole('heading', { name: 'Quel concurrent vous paraît le plus dangereux ?' }),
+  ).toBeVisible();
   await page
     .locator('label')
     .filter({ has: page.locator('input[name="seller_most_dangerous_comparable_id"]') })
