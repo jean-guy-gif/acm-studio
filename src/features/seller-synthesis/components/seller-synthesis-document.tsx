@@ -268,7 +268,7 @@ function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] })
   const high = Math.max(...prices);
   return (
     <div className="flex flex-col gap-1">
-      <div className="relative mx-[12%] h-28">
+      <div className="relative mx-[12%] h-24">
         <div className="absolute inset-x-0 top-[3.25rem] h-[3px] bg-zinc-200" />
         {prices.map((price, index) => (
           <span
@@ -676,7 +676,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             {decision && (decision.competitorPrice != null || decision.advisorAnalysis != null) ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {decision.competitorPrice != null ? (
-                  <div className="bg-brand-darker px-4 py-3.5 text-white">
+                  <div className="bg-brand-darker px-4 py-3.5 text-white break-inside-avoid">
                     <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
                       Prix des concurrents
                     </div>
@@ -689,7 +689,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   </div>
                 ) : null}
                 {decision.advisorAnalysis != null ? (
-                  <div className="bg-brand-deep px-4 py-3.5 text-white">
+                  <div className="bg-brand-deep px-4 py-3.5 text-white break-inside-avoid">
                     <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
                       Analyse du conseiller
                     </div>
@@ -716,7 +716,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           <SectionTitle
             number={sectionNumber('path')}
             title="Le chemin de votre prix"
-            hint="Votre prix au début du rendez-vous, après avoir vu le marché, puis celui que nous avons retenu ensemble."
+            hint="Au début du rendez-vous, après avoir vu le marché, puis le prix retenu ensemble."
           />
           {steps.length > 0 ? (
             <div className="flex flex-col gap-2 break-inside-avoid sm:flex-row sm:items-stretch">
@@ -733,7 +733,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                       </span>
                     ) : null}
                     <div
-                      className={`flex-1 px-4 py-5 ${last ? 'bg-brand-deep text-white' : 'border border-zinc-200 bg-white'}`}
+                      className={`flex-1 px-4 py-4 ${last ? 'bg-brand-deep text-white' : 'border border-zinc-200 bg-white'}`}
                     >
                       <div
                         className={`text-[0.62rem] font-semibold tracking-[0.14em] uppercase ${last ? 'text-white/75' : 'text-zinc-500'}`}
@@ -791,18 +791,18 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             </div>
           ) : null}
 
-          <footer className="mt-6 flex flex-col gap-3 break-inside-avoid">
+          <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
             <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">
               Les prix cités sont ceux des annonces, pas des prix de vente. Surfaces et
               caractéristiques telles qu’annoncées, à vérifier.
             </p>
             {agency.advisorName ? (
-              <div className="flex items-center gap-4 border border-zinc-200 bg-white p-4">
+              <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">
                 {agency.advisorPhotoUrl ? (
                   <img
                     src={agency.advisorPhotoUrl}
                     alt={agency.advisorName}
-                    className="h-16 w-16 shrink-0 rounded-full object-cover"
+                    className="h-14 w-14 shrink-0 rounded-full object-cover"
                   />
                 ) : null}
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -815,7 +815,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                 {agency.advisorQr ? (
                   <svg
                     viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
-                    className="h-20 w-20 shrink-0"
+                    className="h-16 w-16 shrink-0"
                     role="img"
                     aria-label="Carte de contact du conseiller"
                     shapeRendering="crispEdges"

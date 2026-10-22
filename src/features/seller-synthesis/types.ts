@@ -23,6 +23,7 @@ export type SynthesisCompetitor = {
   // Sa place parmi les concurrents montrés au Live (« Concurrent 2 »).
   position: number;
   label: string;
+  surfaceArea: number | null;
   // La photo que montre le Live, telle quelle (M58) ; null sans photo ou si le conseiller l'a
   // retirée (« Sans photo ») — l'adresse de l'image ne part alors pas vers la page.
   photoUrl: string | null;

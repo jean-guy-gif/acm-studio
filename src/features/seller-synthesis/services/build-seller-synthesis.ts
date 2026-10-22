@@ -304,6 +304,7 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     return {
       id: row.id,
       position: index + 1,
+      surfaceArea: row.surface_area,
       label: neutralComparableLabel({
         propertyType: row.property_type,
         roomsCount: row.rooms_count,
@@ -376,7 +377,16 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   const market = buildMarketReading(reading, { advisorPrice: null, marketComputed: null }, 0);
   const perSquareMeter = revealedList
     .filter((item) => item.revealed!.pricePerSquareMeter != null)
-    .map((item) => ({ label: item.label, value: item.revealed!.pricePerSquareMeter as number }))
+    .map((item) => ({
+      // Un libellé court, qui tient sur la barre : sa place au Live et sa surface.
+      label: [
+        `Concurrent ${item.position}`,
+        item.surfaceArea != null ? formatSquareMeters(item.surfaceArea) : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      value: item.revealed!.pricePerSquareMeter as number,
+    }))
     .sort((a, b) => a.value - b.value);
   const medianPpsm = median(perSquareMeter.map((item) => item.value));
 
