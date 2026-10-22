@@ -7,7 +7,7 @@ import {
   pricesKnown,
 } from '@/features/prospecting-file/services/compare-properties';
 import { chosenPhotoPath } from '@/features/prospecting-file/services/file-overrides';
-import type { QrCode } from '@/features/prospecting-file/services/qr-code';
+import type { QrCode } from '@/features/contact-card/services/qr-code';
 import {
   initialTheirPhotoChoice,
   theirPhotoDisplayUrl,

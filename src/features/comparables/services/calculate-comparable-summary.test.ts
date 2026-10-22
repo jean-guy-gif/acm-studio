@@ -23,6 +23,7 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     listing_withdrawn: false,
     listing_gone_at: null,
     excluded_from_live: false,
+    synthesis_hide_photo: false,
     fields_to_verify: [],
     title: null,
     address: null,

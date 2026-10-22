@@ -310,6 +310,7 @@ export type Database = {
           sold_by_source: string | null
           source: string | null
           surface_area: number | null
+          synthesis_hide_photo: boolean
           title: string | null
           updated_at: string
         }
@@ -376,6 +377,7 @@ export type Database = {
           sold_by_source?: string | null
           source?: string | null
           surface_area?: number | null
+          synthesis_hide_photo?: boolean
           title?: string | null
           updated_at?: string
         }
@@ -442,6 +444,7 @@ export type Database = {
           sold_by_source?: string | null
           source?: string | null
           surface_area?: number | null
+          synthesis_hide_photo?: boolean
           title?: string | null
           updated_at?: string
         }

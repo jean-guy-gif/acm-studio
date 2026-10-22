@@ -6,6 +6,7 @@ import { backLink, hintText } from '@/components/ui/styles';
 import { SynthesisPrintButton } from '@/features/seller-synthesis/components/synthesis-print-button';
 import { SellerSynthesisDocument } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { SynthesisLinkButton } from '@/features/seller-synthesis/components/synthesis-link-button';
+import { SynthesisPhotoChoices } from '@/features/seller-synthesis/components/synthesis-photo-choices';
 import { loadSellerSynthesis } from '@/features/seller-synthesis/queries/load-seller-synthesis';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -50,9 +51,20 @@ export default async function SellerSynthesisPage({
           <SynthesisPrintButton />
         </div>
         <p className={hintText}>
-          Ce document reprend ce que le vendeur a dit, le marché vu ensemble et votre prix. Il ne
-          contient ni adresse ni annonce de concurrent.
+          Ce document raconte le rendez-vous, dans l’ordre du Live : ce que vous avez montré et ce
+          que le vendeur a répondu. Il ne contient ni adresse, ni titre, ni lien d’annonce.
         </p>
+        <SynthesisPhotoChoices
+          projectId={projectId}
+          competitors={synthesis.competitors
+            .filter((competitor) => competitor.hasPhoto)
+            .map((competitor) => ({
+              id: competitor.id,
+              position: competitor.position,
+              label: competitor.label,
+              hidden: competitor.photoHidden,
+            }))}
+        />
         <SynthesisLinkButton
           projectId={projectId}
           links={(links ?? []).map((item) => ({

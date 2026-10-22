@@ -146,11 +146,16 @@ export default function ConfidentialitePage() {
               suivre la prise de mandat ; jamais à d’autres agences.
             </li>
             <li>
-              La synthèse du rendez-vous laissée au vendeur : ce qu’il a dit, le marché vu ensemble
-              — sans aucune adresse ni annonce de bien concurrent — et le prix proposé. Le
-              conseiller peut l’imprimer ou créer un lien pour la lui envoyer : ce lien s’ouvre sans
-              compte, n’est jamais indexé par les moteurs de recherche et expire après 30 jours. ACM
-              Studio ne garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
+              La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
+              rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
+              concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le
+              prix retenu, avec les photos de son bien. Chaque bien concurrent y figure par ses
+              caractéristiques et une photo tirée de son annonce, montrée telle quelle — jamais son
+              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend ; le conseiller
+              peut retirer cette photo (« Sans photo »), du document comme du lien. Le conseiller
+              peut l’imprimer ou créer un lien pour la lui envoyer : ce lien s’ouvre sans compte,
+              n’est jamais indexé par les moteurs de recherche et expire après 30 jours. ACM Studio
+              ne garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
               d’expiration.
             </li>
             <li>

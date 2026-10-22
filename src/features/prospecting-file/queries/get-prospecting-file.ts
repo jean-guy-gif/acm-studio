@@ -17,7 +17,7 @@ import {
   buildProspectingFacts,
 } from '@/features/prospecting-file/services/prospecting-facts';
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
-import { buildQrCode, type QrCode } from '@/features/prospecting-file/services/qr-code';
+import { buildQrCode, type QrCode } from '@/features/contact-card/services/qr-code';
 import {
   LISTING_PHOTOS_OFFERED,
   withoutListingPhoto,
@@ -28,7 +28,7 @@ import {
   type SavedTheirPhoto,
   type TheirPhotoMode,
 } from '@/features/prospecting-file/services/their-photo';
-import { buildVCard } from '@/features/prospecting-file/services/vcard';
+import { buildVCard } from '@/features/contact-card/services/vcard';
 import {
   NO_OVERRIDES,
   type ProspectingFileFacts,

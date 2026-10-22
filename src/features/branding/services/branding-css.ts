@@ -21,7 +21,7 @@ const TOKEN_MAP: [ColorKey, string][] = [
 
 // Les déclarations CSS (sans le sélecteur), ex. « --color-brand: #abcdef; --color-brand-deep: … ».
 // Vide si aucune couleur valide → aucune surcharge, l'outil garde ses défauts.
-export function brandingCssVariables(branding: AgencyBranding): string {
+export function brandingCssVariables(branding: Pick<AgencyBranding, ColorKey>): string {
   const declarations: string[] = [];
   for (const [key, cssVar] of TOKEN_MAP) {
     const value = branding[key];
