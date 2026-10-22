@@ -878,8 +878,21 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   await test.step('La synthèse au vendeur, à imprimer ou par lien', async () => {
     await page.goto(`/builder/${projectId}/synthese`);
     const synthesis = page.getByTestId('seller-synthesis');
-    await expect(synthesis.getByText('Ce que vous nous avez dit')).toBeVisible();
-    await expect(synthesis.getByText('Le marché vu ensemble')).toBeVisible();
+    // Mission 113 — le rendez-vous, dans l'ordre du Live : une fiche par concurrent montré, plus
+    // celle du plus dangereux.
+    for (const title of [
+      'Votre bien',
+      'Les biens que nous avons regardés ensemble',
+      'Le concurrent le plus dangereux, selon vous',
+      'L’analyse des prix',
+      'Le chemin de votre prix',
+    ]) {
+      await expect(synthesis.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    }
+    await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(COMPETITORS.length + 1);
+    await expect(synthesis.getByText('Pourquoi, selon vous').locator('..')).toContainText(
+      'Meilleure localisation',
+    );
     const check = async (text: string, where: string) => {
       for (const competitor of COMPETITORS) {
         expect(text, `${where} : le titre « ${competitor.title} »`).not.toContain(competitor.title);
