@@ -10,6 +10,8 @@ type PositioningInsert = Database['public']['Tables']['project_price_positioning
 // et une synthèse. Rien n'est inventé à la main : la plage, la confiance et l'instantané sont ceux
 // du moteur de l'outil, calculés sur les concurrents fictifs ; le prix retenu est le centre de la
 // plage, à mille euros près. La justification dit qu'elle est un exemple (M97).
+// Mission 113 — « Votre analyse de valeur » aussi, arrondie au millier comme M110 le dit : sans
+// elle, la conclusion figeait une analyse vide et l'exemple ne montrait pas « Analyse du conseiller ».
 export const EXAMPLE_JUSTIFICATION =
   'Exemple : le bien se place au milieu des cinq concurrents, de surface et de nombre de pièces proches. Son balcon et son garage le distinguent ; son DPE D est dans la moyenne.';
 
@@ -45,6 +47,7 @@ export function exampleDecisionRow(input: {
     project_id: input.projectId,
     agency_id: input.agencyId,
     advisor_price: advisorPrice,
+    advisor_comparative_market_price: advisorPrice,
     range_low: positioning.recommendedRange.low,
     range_central: positioning.recommendedRange.central,
     range_high: positioning.recommendedRange.high,
