@@ -46,7 +46,11 @@ jobs:
       - name: Image de la base en ligne
         run: mkdir -p supabase/.temp && echo 17.6.1.155 > supabase/.temp/postgres-version
 
+      # ghcr.io refuse régulièrement le téléchargement depuis les machines partagées de GitHub
+      # (« toomanyrequests ») : la même image, sur le registre public d'AWS.
       - run: supabase db start
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 
       - name: Image réellement démarrée
         run: docker inspect --format '{{.Config.Image}}' supabase_db_acm-studio
