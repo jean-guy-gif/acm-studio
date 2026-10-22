@@ -42,6 +42,8 @@ const STATUS = {
 
 const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
 const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
+// Les cartes d'une même ligne se partagent toute la largeur, qu'il y en ait une, deux ou trois.
+const row = 'flex flex-col gap-2 sm:flex-row [&>*]:min-w-0 [&>*]:flex-1';
 const bigNumber = 'font-title text-xl leading-tight font-bold text-brand-darker';
 
 function meetingDay(value: string | null): string | null {
@@ -148,12 +150,14 @@ function CompetitorCard({
   const dangerous = dangerousReason !== undefined;
   return (
     <article
-      className={`grid grid-cols-1 border border-t-[3px] border-zinc-200 bg-white break-inside-avoid sm:grid-cols-[52mm_1fr] ${
-        dangerous ? 'border-t-amber-600' : 'border-t-brand-deep'
-      }`}
+      className={`grid grid-cols-1 border border-t-[3px] border-zinc-200 bg-white break-inside-avoid ${
+        competitor.photoUrl ? 'sm:grid-cols-[52mm_1fr]' : ''
+      } ${dangerous ? 'border-t-amber-600' : 'border-t-brand-deep'}`}
       data-testid="synthesis-competitor"
     >
-      <Photo url={competitor.photoUrl} alt={competitor.label} className="h-44 w-full sm:h-full" />
+      {competitor.photoUrl ? (
+        <Photo url={competitor.photoUrl} alt={competitor.label} className="h-44 w-full sm:h-full" />
+      ) : null}
       <div className="flex flex-col gap-2 p-3.5">
         <div>
           <div className={kicker}>Concurrent {competitor.position}</div>
@@ -174,7 +178,7 @@ function CompetitorCard({
           </p>
         ) : null}
         {revealed && !dangerous ? (
-          <div className="grid grid-cols-1 gap-1.5 text-[0.78rem] sm:grid-cols-[1.25fr_1fr]">
+          <div className={`${row} text-[0.78rem]`}>
             <div className={`${card} flex flex-col gap-0.5`}>
               <div className={kicker}>Le prix</div>
               <Pair label="Vous imaginiez" value={formatEuro(revealed.guess)} />
@@ -219,7 +223,7 @@ function CompetitorCard({
           </div>
         ) : null}
         {dangerous ? (
-          <div className="grid grid-cols-1 gap-1.5 text-[0.78rem] sm:grid-cols-2">
+          <div className={`${row} text-[0.78rem]`}>
             {revealed ? (
               <div className={card}>
                 <div className={kicker}>Prix affiché</div>
@@ -454,7 +458,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           </h1>
           <p className="text-sm opacity-90">Pour {synthesis.sellerName}</p>
           {coverFigures.length > 0 ? (
-            <div className="mt-8 grid grid-cols-1 gap-4 border-t border-white/35 pt-4 sm:grid-cols-3">
+            <div className="mt-8 flex flex-col gap-4 border-t border-white/35 pt-4 sm:flex-row [&>*]:flex-1">
               {coverFigures.map((figure) => (
                 <div key={figure.label}>
                   <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
@@ -551,7 +555,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               title="Le DPE face au marché"
               hint="La classe énergie des biens regardés, et celle du vôtre."
             />
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className={row}>
               <div className={`${card} flex flex-col gap-2`}>
                 <div className={kicker}>Votre bien</div>
                 {synthesis.dpe.subject ? (
@@ -596,116 +600,117 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           </section>
         ) : null}
 
-        {/* 05 · L'analyse des prix — écran « Analyse des prix ». */}
+        {/* 05 · L'analyse des prix — écran « Analyse des prix ». La bande, les deux prix et le point
+            à retenir restent ensemble, titre compris : une page ne se coupe qu'avant eux. */}
         {analysis || decision ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle
-              number={sectionNumber('analysis')}
-              title="L’analyse des prix"
-              hint="Les prix affichés des biens dont nous avons regardé le prix ensemble."
-            />
-            {analysis ? (
-              <>
+            <div className="flex flex-col gap-3 break-inside-avoid">
+              <SectionTitle
+                number={sectionNumber('analysis')}
+                title="L’analyse des prix"
+                hint="Les prix affichés des biens dont nous avons regardé le prix ensemble."
+              />
+              {analysis ? (
                 <div className={card}>
                   <div className={kicker}>Prix affichés, du moins cher au plus cher</div>
                   <PriceBand prices={analysis.prices} markers={analysisMarkers} />
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {analysis.medianPrice != null ? (
-                    <div className={card}>
-                      <div className={kicker}>Prix médian</div>
-                      <div className={bigNumber}>{formatEuro(analysis.medianPrice)}</div>
-                    </div>
-                  ) : null}
-                  {analysis.medianDaysOnMarket != null ? (
-                    <div className={card}>
-                      <div className={kicker}>Ancienneté médiane</div>
-                      <div className={bigNumber}>
-                        {formatNumber(analysis.medianDaysOnMarket)} jours
+              ) : null}
+              {decision &&
+              (decision.competitorPrice != null || decision.advisorAnalysis != null) ? (
+                <div className={row}>
+                  {decision.competitorPrice != null ? (
+                    <div className="bg-brand-darker px-4 py-3.5 text-white">
+                      <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
+                        Prix des concurrents
                       </div>
+                      <div className="font-title text-2xl font-bold">
+                        {formatEuro(decision.competitorPrice)}
+                      </div>
+                      {decision.basisLabel ? (
+                        <div className="text-xs text-white/80">{decision.basisLabel}</div>
+                      ) : null}
                     </div>
                   ) : null}
-                  {analysis.droppedCount != null ? (
-                    <div className={card}>
-                      <div className={kicker}>Baisse de prix connue</div>
-                      <div className={bigNumber}>
-                        {analysis.droppedCount} sur {analysis.revealedCount}
+                  {decision.advisorAnalysis != null ? (
+                    <div className="bg-brand-deep px-4 py-3.5 text-white">
+                      <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
+                        Analyse du conseiller
+                      </div>
+                      <div className="font-title text-2xl font-bold">
+                        {formatEuro(decision.advisorAnalysis)}
                       </div>
                     </div>
                   ) : null}
                 </div>
-                {analysis.perSquareMeter.length > 0 ? (
+              ) : null}
+              {decision?.justification ? (
+                <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-4">
+                  <div className={`${kicker} text-brand-deep`}>Le point à retenir</div>
+                  <p className="mt-1.5 text-[0.95rem] leading-relaxed whitespace-pre-line">
+                    {decision.justification}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+            {analysis &&
+            (analysis.medianPrice != null ||
+              analysis.medianDaysOnMarket != null ||
+              analysis.droppedCount != null) ? (
+              <div className={row}>
+                {analysis.medianPrice != null ? (
                   <div className={card}>
-                    <div className={`${kicker} mb-1`}>
-                      Prix affichés au m², du moins cher au plus cher
-                    </div>
-                    {(() => {
-                      const rows = [
-                        ...analysis.perSquareMeter.map((item) => ({ ...item, median: false })),
-                        ...(analysis.medianPerSquareMeter != null
-                          ? [
-                              {
-                                label: 'Médiane',
-                                value: analysis.medianPerSquareMeter,
-                                median: true,
-                              },
-                            ]
-                          : []),
-                      ].sort((a, b) => a.value - b.value);
-                      const max = Math.max(...rows.map((row) => row.value));
-                      return rows.map((row, index) => (
-                        <div
-                          key={`${row.label}-${index}`}
-                          className="grid grid-cols-[minmax(0,11rem)_1fr_5rem] items-center gap-3 border-b border-zinc-100 py-1 text-[0.78rem] last:border-b-0"
-                        >
-                          <span className={`truncate ${row.median ? 'font-bold' : ''}`}>
-                            {row.label}
-                          </span>
-                          <span
-                            className={`block h-2 rounded-sm ${row.median ? 'bg-brand-deep' : 'bg-zinc-400'}`}
-                            style={{ width: `${Math.max(8, (row.value / max) * 100)}%` }}
-                          />
-                          <b className="text-right">{formatEuroPerSquareMeter(row.value)}</b>
-                        </div>
-                      ));
-                    })()}
+                    <div className={kicker}>Prix médian</div>
+                    <div className={bigNumber}>{formatEuro(analysis.medianPrice)}</div>
                   </div>
                 ) : null}
-              </>
-            ) : null}
-            {decision && (decision.competitorPrice != null || decision.advisorAnalysis != null) ? (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {decision.competitorPrice != null ? (
-                  <div className="bg-brand-darker px-4 py-3.5 text-white break-inside-avoid">
-                    <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
-                      Prix des concurrents
+                {analysis.medianDaysOnMarket != null ? (
+                  <div className={card}>
+                    <div className={kicker}>Ancienneté médiane</div>
+                    <div className={bigNumber}>
+                      {formatNumber(analysis.medianDaysOnMarket)} jours
                     </div>
-                    <div className="font-title text-2xl font-bold">
-                      {formatEuro(decision.competitorPrice)}
-                    </div>
-                    {decision.basisLabel ? (
-                      <div className="text-xs text-white/80">{decision.basisLabel}</div>
-                    ) : null}
                   </div>
                 ) : null}
-                {decision.advisorAnalysis != null ? (
-                  <div className="bg-brand-deep px-4 py-3.5 text-white break-inside-avoid">
-                    <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
-                      Analyse du conseiller
-                    </div>
-                    <div className="font-title text-2xl font-bold">
-                      {formatEuro(decision.advisorAnalysis)}
+                {analysis.droppedCount != null ? (
+                  <div className={card}>
+                    <div className={kicker}>Baisse de prix connue</div>
+                    <div className={bigNumber}>
+                      {analysis.droppedCount} sur {analysis.revealedCount}
                     </div>
                   </div>
                 ) : null}
               </div>
             ) : null}
-            {decision?.justification ? (
-              <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-4 break-inside-avoid">
-                <div className={`${kicker} text-brand-deep`}>Le point à retenir</div>
-                <p className="mt-1.5 text-[0.95rem] leading-relaxed whitespace-pre-line">
-                  {decision.justification}
-                </p>
+            {analysis && analysis.perSquareMeter.length > 0 ? (
+              <div className={card}>
+                <div className={`${kicker} mb-1`}>
+                  Prix affichés au m², du moins cher au plus cher
+                </div>
+                {(() => {
+                  const rows = [
+                    ...analysis.perSquareMeter.map((item) => ({ ...item, median: false })),
+                    ...(analysis.medianPerSquareMeter != null
+                      ? [{ label: 'Médiane', value: analysis.medianPerSquareMeter, median: true }]
+                      : []),
+                  ].sort((a, b) => a.value - b.value);
+                  const max = Math.max(...rows.map((item) => item.value));
+                  return rows.map((item, index) => (
+                    <div
+                      key={`${item.label}-${index}`}
+                      className="grid grid-cols-[minmax(0,11rem)_1fr_5rem] items-center gap-3 border-b border-zinc-100 py-1 text-[0.78rem] last:border-b-0"
+                    >
+                      <span className={`truncate ${item.median ? 'font-bold' : ''}`}>
+                        {item.label}
+                      </span>
+                      <span
+                        className={`block h-2 rounded-sm ${item.median ? 'bg-brand-deep' : 'bg-zinc-400'}`}
+                        style={{ width: `${Math.max(8, (item.value / max) * 100)}%` }}
+                      />
+                      <b className="text-right">{formatEuroPerSquareMeter(item.value)}</b>
+                    </div>
+                  ));
+                })()}
               </div>
             ) : null}
           </section>
@@ -765,7 +770,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             </div>
           ) : null}
           {synthesis.agreedPricePerSquareMeter != null || synthesis.positionSentence ? (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1.6fr]">
+            <div className={row}>
               {synthesis.agreedPricePerSquareMeter != null ? (
                 <div className={card}>
                   <div className={kicker}>Prix convenu au m²</div>
