@@ -374,6 +374,32 @@ describe('la synthèse au vendeur', () => {
     expect(html).not.toContain('javascript');
   });
 
+  it('une fiche sans photo passe en pleine largeur, sans colonne grise', async () => {
+    const { html } = await load();
+    const cards = html.split('data-testid="synthesis-competitor"').slice(1);
+    // c1 a sa photo ; c3 l'a retirée (« Sans photo ») : pas de colonne de photo.
+    expect(cards[0]).toContain('sm:grid-cols-[52mm_1fr]');
+    expect(cards[2]).not.toContain('sm:grid-cols-[52mm_1fr]');
+    expect(cards[2].slice(0, cards[2].indexOf('Concurrent 3'))).not.toContain('bg-zinc-200');
+  });
+
+  it('la bande, les deux prix et le point à retenir forment un seul bloc insécable', async () => {
+    const { html } = await load();
+    const start = html.indexOf('L’analyse des prix');
+    const block = html.slice(
+      html.lastIndexOf('break-inside-avoid', start),
+      html.indexOf('Prix médian'),
+    );
+    for (const part of [
+      'Prix affichés, du moins cher au plus cher',
+      'Prix des concurrents',
+      'Analyse du conseiller',
+      'Le point à retenir',
+    ]) {
+      expect(block, part).toContain(part);
+    }
+  });
+
   it('une donnée absente n’a pas de case, jamais « — »', async () => {
     const { html } = await load();
     expect(html).not.toContain('—');
