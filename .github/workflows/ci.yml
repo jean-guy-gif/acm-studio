@@ -46,14 +46,6 @@ jobs:
       - name: Image de la base en ligne
         run: mkdir -p supabase/.temp && echo 17.6.1.155 > supabase/.temp/postgres-version
 
-      # ghcr.io refuse le téléchargement anonyme depuis les machines partagées de GitHub
-      # (« toomanyrequests ») : connecté avec le jeton de la course, la limite est plus haute.
-      - name: Connexion au registre des images
-        env:
-          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REGISTRY_USER: ${{ github.actor }}
-        run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
-
       - run: supabase db start
 
       - name: Image réellement démarrée
