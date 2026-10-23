@@ -110,7 +110,6 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       logoDarkUrl={branding?.logoDarkUrl ?? null}
       agencyName={agency?.name ?? null}
       hasAgreedPrice={conclusion?.commercializationPrice != null}
-      isDemo={agency?.is_demo === true}
     />
   );
 }

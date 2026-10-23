@@ -18,6 +18,9 @@ import {
 // conclure, mettre à jour les prix (une baisse simulée), signer le mandat, prospecter (courriers,
 // lot, tournée, « Ne plus solliciter »), la synthèse et son lien, le tableau du manager.
 //
+// Décision de Jean-Guy du 23/10 : rien ne dit « démonstration » à l'écran ni à l'impression — le
+// parcours le vérifie sur chaque page qu'il traverse (`expectUnspoken`).
+//
 // Toute requête vers un autre hôte qu'ACM et Supabase est BLOQUÉE par le navigateur : si une
 // étape en dépendait, elle casserait ici. Les hôtes bloqués sont comptés ; seuls les outils de
 // Vercel sur un déploiement d'aperçu (barre d'outils, retours) sont tolérés dans ce compte.
@@ -37,7 +40,8 @@ const REVISED_PRICE = 401_500;
 const COMMERCIALIZATION_PRICE = 392_500;
 const COMMENT = 'Réponse saisie par le test automatique (démo)';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
-const DEMO_BANNER = 'Démonstration — données fictives';
+// Ce qu'aucune page de l'agence de démo ne doit dire.
+const UNSPOKEN = /d[ée]monstration|données fictives|fictif/i;
 const DEMO_LISTING_HOST = 'annonces.demonstration.invalid';
 const SUPABASE_HOST = /\.supabase\.(co|in)$/;
 // Les outils de Vercel sur un déploiement d'aperçu : bloqués comme le reste, mais tolérés dans le
@@ -45,6 +49,15 @@ const SUPABASE_HOST = /\.supabase\.(co|in)$/;
 const VERCEL_TOOLING = /(^|\.)vercel\.live$|(^|\.)vercel-scripts\.com$|(^|\.)vercel-insights\.com$/;
 
 type Competitor = { price: number };
+
+async function expectUnspoken(page: Page, screen: string): Promise<void> {
+  await expect(page.getByTestId('demo-banner'), screen).toHaveCount(0);
+  await expect(page.getByTestId('demo-watermark'), screen).toHaveCount(0);
+  await expect(page.getByTestId('demo-live-note'), screen).toHaveCount(0);
+  expect(await page.locator('body').innerText(), `« ${screen} » dit « démonstration »`).not.toMatch(
+    UNSPOKEN,
+  );
+}
 
 test.setTimeout(30 * 60_000);
 
@@ -69,16 +82,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
   let competitors: Competitor[] = [];
 
   try {
-    await test.step('Connexion : le bandeau de démonstration, « Bienvenue » sans extension', async () => {
+    await test.step('Connexion : rien ne dit « démonstration », « Bienvenue » sans extension', async () => {
       await login(page, demoCredentials());
-      await expect(page.getByTestId('demo-banner')).toHaveText(DEMO_BANNER);
+      await expectUnspoken(page, 'Mes dossiers');
       await page.getByRole('link', { name: /^Aide/ }).click();
       await expect(page).toHaveURL(/\/bienvenue$/);
+      // Sans extension ni Localisateur, tout est coché : rien à installer, et rien ne le commente.
       await expect(page.getByTestId('need-extension')).toHaveAttribute('data-state', 'done');
-      await expect(page.getByTestId('need-extension')).toContainText(
-        'Pas nécessaire en démonstration',
-      );
       await expect(page.getByTestId('need-locator')).toHaveAttribute('data-state', 'done');
+      await expectUnspoken(page, 'Bienvenue');
     });
 
     await test.step('Nouveau dossier', async () => {
@@ -104,7 +116,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // La fiche PDF de démo se lit comme une vraie (M43), dans le navigateur, sans rien d'extérieur.
       // D'abord elle, puis l'annonce : c'est l'annonce qui porte l'adresse fictive et les photos.
       const brochures = page.getByTestId('demo-brochure-choices');
-      await expect(brochures).toContainText('Fiche de démonstration :');
+      await expect(brochures).toContainText('Fiches à importer :');
       await brochures.getByRole('button', { name: 'Appartement 3 pièces à Antibes' }).click();
       await expect(page.getByText('Analyse de la fiche…')).toHaveCount(0, { timeout: 60_000 });
       // (Le seul « alert » attendu est l'annonceur de route de Next.js, hors de tout formulaire.)
@@ -113,7 +125,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(field('Surface')).toHaveValue(SUBJECT.surface);
 
       const choices = page.getByTestId('demo-listing-choices');
-      await expect(choices).toContainText('Annonce de démonstration :');
+      await expect(choices).toContainText('Annonces à importer :');
       await expect(
         choices.getByRole('button', { name: 'Appartement 3 pièces à Antibes' }),
       ).toBeVisible();
@@ -155,6 +167,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await field('À').fill(String(FOURCHETTE.max));
       await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
       await expect(page.getByText('Enregistré', { exact: true })).toBeVisible();
+      await expectUnspoken(page, 'Bien vendeur');
     });
 
     await test.step('Chercher les concurrents : simulé, sans coût ni portail', async () => {
@@ -204,6 +217,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       });
       await expect(page.getByText(/en échec/)).toHaveCount(0);
       await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+      await expectUnspoken(page, 'Trouver des concurrents');
     });
 
     await test.step('Cinq concurrents importés, à vérifier, et leurs adresses confirmées', async () => {
@@ -234,6 +248,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         'Prix des concurrents de la démo, dans l’ordre :',
         competitors.map((c) => c.price),
       );
+      await expectUnspoken(page, 'Concurrents');
     });
 
     await test.step('Avant le rendez-vous : la décision de prix, le dossier est prêt', async () => {
@@ -241,6 +256,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByText(/[1-9]\d* informations? importées? à vérifier/)).toBeVisible();
       await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
       await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
+      await expectUnspoken(page, 'Avant le rendez-vous');
       await page.goto(`/builder/${projectId}`);
       await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
     });
@@ -259,7 +275,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.getByRole('link', { name: /Terminer le rendez-vous/ }).click();
       await expect(page).toHaveURL(new RegExp(`/live/${projectId}/merci$`));
       await expect(page.getByRole('heading', { name: 'Merci pour cet échange' })).toBeVisible();
-      await expect(page.getByTestId('demo-live-note')).toHaveText(DEMO_BANNER);
+      await expectUnspoken(page, 'Merci');
       await page.getByRole('link', { name: 'Accès conseiller' }).click();
       await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/conclusion$`));
       await page
@@ -290,6 +306,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         /[1-9]\d* baisses? de prix/,
       );
       await expect(page.getByText(/Installer l’extension|extension ACM/)).toHaveCount(0);
+      await expectUnspoken(page, 'Suivi');
     });
 
     await test.step('Mandat signé, exclusif, depuis la ligne du Suivi', async () => {
@@ -314,7 +331,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       ).toBeVisible();
     });
 
-    await test.step('Prospection : adresses déjà confirmées, courriers, lot, tournée, filigrane', async () => {
+    await test.step('Prospection : adresses déjà confirmées, courriers, lot, tournée, sans mention', async () => {
       await page.goto(`/prospection?bien=${projectId}`);
       const cards = page.getByTestId('prospecting-card');
       await expect(cards).toHaveCount(RETAINED);
@@ -334,7 +351,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .getAttribute('href');
       expect(href, 'Le lien du courrier est introuvable').toMatch(/\/prospection\/[0-9a-f-]{36}/);
       await page.goto(href!);
-      await expect(page.getByTestId('demo-watermark')).toHaveText('DÉMONSTRATION');
+      await expectUnspoken(page, 'Courrier de prospection');
       await expect(page.getByText(/Installer l’extension|Installez le Localisateur/)).toHaveCount(
         0,
       );
@@ -354,20 +371,20 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // Les courriers en lot et la tournée : la feuille entière porte le filigrane.
       await page.goto(`/prospection/courriers?bien=${projectId}`);
       await expect(page.getByRole('heading', { name: 'Courriers de prospection' })).toBeVisible();
-      await expect(page.getByTestId('demo-watermark')).toHaveText('DÉMONSTRATION');
+      await expectUnspoken(page, 'Courriers en lot');
       await expect(
         page.getByText('Ce propriétaire a demandé à ne plus être sollicité'),
       ).toBeVisible();
       await page.goto(`/prospection/tournee?bien=${projectId}`);
       await expect(page.getByRole('heading', { name: 'Ma tournée de prospection' })).toBeVisible();
-      await expect(page.getByTestId('demo-watermark')).toHaveText('DÉMONSTRATION');
+      await expectUnspoken(page, 'Tournée');
     });
 
-    await test.step('La synthèse au vendeur : filigrane, à l’écran et par le lien public', async () => {
+    await test.step('La synthèse au vendeur : sans mention, à l’écran et par le lien public', async () => {
       await page.goto(`/builder/${projectId}/synthese`);
       const synthesis = page.getByTestId('seller-synthesis');
       await expect(synthesis).toBeVisible();
-      await expect(page.getByTestId('demo-watermark')).toHaveText('DÉMONSTRATION');
+      await expectUnspoken(page, 'Synthèse');
       await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(RETAINED + 1);
       const text = await synthesis.innerText();
       expect(text).not.toMatch(/Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid/);
@@ -391,10 +408,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         const response = await visitor.goto(link);
         expect(response?.headers()['x-robots-tag']).toContain('noindex');
         await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
-        await expect(
-          visitor.getByTestId('demo-watermark'),
-          'Le lien public de la synthèse n’a pas le filigrane',
-        ).toHaveText('DÉMONSTRATION');
+        await expectUnspoken(visitor, 'Synthèse, lien public');
         await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
         await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
         const after = await visitor.goto(link);
@@ -411,6 +425,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(dashboard.getByText('Rendez-vous menés')).toBeVisible();
       const meetings = await dashboard.getByText('Rendez-vous menés').locator('..').innerText();
       expect(withoutSpaces(meetings)).toMatch(/[1-9]/);
+      await expectUnspoken(page, 'Vue manager');
     });
 
     await test.step('Suivi et Prospection tiennent sur tablette (768 × 1024)', async () => {
@@ -480,9 +495,8 @@ async function walkLive(
     expect(payload, `Une adresse d’annonce de démo est dans « ${screen} »`).not.toContain(
       DEMO_LISTING_HOST,
     );
-    // Mission 114 — la note discrète du Live, jamais le bandeau de l'espace conseiller.
-    await expect(page.getByTestId('demo-live-note')).toHaveText(DEMO_BANNER);
-    await expect(page.getByTestId('demo-banner')).toHaveCount(0);
+    // Décision du 23/10 — le Live ne dit pas non plus « démonstration ».
+    await expectUnspoken(page, screen);
     if (tablet) await expectNoHorizontalScroll(page, screen);
   };
   const expectPriceHidden = async (competitor: Competitor, screen: string) => {
@@ -724,6 +738,11 @@ async function walkLive(
   const scale = page.getByRole('group', { name: 'Votre note, de 1 à 10' });
   const score = (value: number) => scale.getByRole('button', { name: String(value), exact: true });
   if (firstPass) {
+    // L'échelle entre avec une transition : on attend qu'elle soit stable avant de la toucher (un
+    // clic pendant la transition a trouvé l'élément « détaché » lors d'un passage).
+    await page.waitForFunction(() =>
+      document.getAnimations().every((animation) => animation.playState !== 'running'),
+    );
     await score(7).click();
     await page.locator('textarea[name="seller_launch_readiness_missing"]').fill(MISSING_FOR_TEN);
     await score(10).click();

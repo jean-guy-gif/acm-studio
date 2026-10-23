@@ -97,7 +97,8 @@ describe('les fiches PDF de démonstration, lues comme de vraies fiches', () => 
     it(`${scenario.label} : la fiche remplit le bien vendeur, le prix reste une information`, async () => {
       const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
       const pages = await readPages(pdfjs, scenario.id);
-      expect(pages.join('\n')).toContain('DÉMONSTRATION');
+      // Décision du 23/10 — rien ne dit « démonstration », à l'impression non plus.
+      expect(pages.join('\n')).not.toMatch(/d[ée]mo|fictif/i);
       const fields = parseAgencyBrochure(pages);
       expect(fields.propertyType).toBe(TYPE_LABEL[subject.propertyType]);
       expect(fields.surfaceArea).toBe(subject.surfaceArea);
@@ -123,7 +124,7 @@ describe('les fiches PDF de démonstration, lues comme de vraies fiches', () => 
       expect(fields.monthlyCharges).toBe(subject.monthlyCharges);
       expect(fields.readPrice).toBe(subject.listedPrice);
       expect(fields.isCondominium).toBe(subject.propertyType === 'apartment' ? true : null);
-      expect(fields.description).toContain('fictif');
+      expect(fields.description).not.toMatch(/d[ée]mo|fictif/i);
 
       // Le prix lu ne remplit aucun champ (M38, M44) : il voyage « pour information ».
       const mapped = mapBrochureToProperty(fields);

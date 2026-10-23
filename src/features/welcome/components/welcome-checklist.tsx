@@ -129,7 +129,6 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
         }
         title="L’extension ACM Studio"
       >
-        {extension.demo ? 'Pas nécessaire en démonstration : les annonces sont simulées.' : null}
         {extension.available === false && !extension.demo ? (
           extension.noSiteAccess ? (
             // Mission 105 — installée, mais Chrome ne lui laisse pas lire ACM Studio.
@@ -172,9 +171,7 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
         state={extension.demo || locatorInstalled(locator) ? 'done' : 'optional'}
         title="Facultatif : Localisateur Academia"
       >
-        {extension.demo
-          ? 'Pas nécessaire en démonstration : les adresses sont simulées.'
-          : 'Pour retrouver l’adresse d’un bien.'}
+        Pour retrouver l’adresse d’un bien.
         {extension.demo || locatorInstalled(locator) ? null : (
           <>
             {' '}

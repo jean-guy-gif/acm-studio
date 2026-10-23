@@ -103,8 +103,6 @@ export type SellerSynthesis = {
   positionSentence: string | null;
   agency: {
     name: string;
-    // Mission 114 — l'agence de démonstration : la page porte le filigrane « DÉMONSTRATION ».
-    isDemo: boolean;
     logoUrl: string | null;
     postalAddress: string | null;
     professionalCard: string | null;

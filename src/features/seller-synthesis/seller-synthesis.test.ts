@@ -471,7 +471,6 @@ describe('les prix de la synthèse (mission 111)', () => {
     commercializationPrice: null,
     agency: {
       name: 'Agence',
-      isDemo: false,
       logoUrl: null,
       postalAddress: null,
       professionalCard: null,

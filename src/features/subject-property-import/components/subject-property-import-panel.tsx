@@ -165,7 +165,7 @@ export function SubjectPropertyImportPanel({
           un scénario remplit l'adresse, « Importer l'annonce » lit le jeu de données. */}
       {demoListings && demoListings.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2" data-testid="demo-listing-choices">
-          <span className={hintText}>Annonce de démonstration :</span>
+          <span className={hintText}>Annonces à importer :</span>
           {demoListings.map((choice) => (
             <button
               key={choice.url}
