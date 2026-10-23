@@ -5,15 +5,12 @@ import { z } from 'zod';
 
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
-import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
 import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
-import {
-  priceCheckOutcome,
-  type PriceCheckOutcome,
-} from '@/features/competitor-refresh/services/price-refresh';
+import type { PriceCheckOutcome } from '@/features/competitor-refresh/services/price-refresh';
+import { recordPriceReading } from '@/features/competitor-refresh/services/record-price-reading';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -116,24 +113,8 @@ export async function refreshCompetitorPrice(
       : { status: 'unreadable' };
   }
 
-  // Le constat daté (M47), puis le prix du concurrent s'il a changé.
-  await observeListing(supabase, agencyId, url.href, data);
-  const outcome = priceCheckOutcome(competitor.price, { price: input.price });
-  const patch: { price?: number; listing_gone_at?: null } = {};
-  if (outcome.status === 'changed') patch.price = input.price;
-  if (competitor.listing_gone_at != null) patch.listing_gone_at = null;
-  if (Object.keys(patch).length > 0) {
-    const { error } = await supabase
-      .from('comparables')
-      .update(patch)
-      .eq('id', competitor.id)
-      .eq('agency_id', agencyId);
-    if (error) {
-      await reportServerError(REFRESH_SCOPE, error);
-      return { status: 'unreadable' };
-    }
-  }
-  return outcome;
+  // Le constat daté (M47), puis le prix du concurrent s'il a changé (service partagé, M114).
+  return recordPriceReading(supabase, agencyId, competitor, url.href, data, input.price);
 }
 
 export async function finishPriceRefresh(projectId: string): Promise<void> {

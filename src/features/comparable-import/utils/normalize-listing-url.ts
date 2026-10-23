@@ -18,6 +18,8 @@
 // normalisation is DETERMINISTIC and never depends on the robots result — it is
 // always the same. If the canonical address is still refused, it is refused.
 
+import { DEMO_LISTING_HOST } from '@/features/demo/constants';
+
 type PortalRule = { suffixes: string[]; keepQueryParams: string[] };
 
 const PORTAL_RULES: PortalRule[] = [
@@ -26,6 +28,8 @@ const PORTAL_RULES: PortalRule[] = [
   { suffixes: ['green-acres.fr'], keepQueryParams: [] },
   { suffixes: ['lefigaro.fr'], keepQueryParams: [] },
   { suffixes: ['maisonsetappartements.fr'], keepQueryParams: [] },
+  // Mission 114 — les annonces de démonstration (hôte réservé) : nettoyées comme les autres.
+  { suffixes: [DEMO_LISTING_HOST], keepQueryParams: [] },
   // leboncoin.fr : NON supporté, ne pas rajouter. Son robots.txt interdit /ad/,
   // le chemin même des annonces — l'import serait refusé au robots-check. Sans
   // règle ici, une adresse leboncoin est traitée comme un portail inconnu

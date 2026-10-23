@@ -89,7 +89,10 @@ describe('« Bienvenue » (mission 97)', () => {
     expect(locatorInstalled(null)).toBe(false);
     const checklist = read('features', 'welcome', 'components', 'welcome-checklist.tsx');
     expect(checklist).toContain('href={LOCALISATEUR_STORE_URL}');
-    expect(checklist).toContain("state={locatorInstalled(locator) ? 'done' : 'optional'}");
+    // Mission 114 — en démonstration, la ligne est cochée sans Localisateur : les adresses sont simulées.
+    expect(checklist).toContain(
+      "state={extension.demo || locatorInstalled(locator) ? 'done' : 'optional'}",
+    );
     expect(checklist).toContain('pingLocator()');
   });
 

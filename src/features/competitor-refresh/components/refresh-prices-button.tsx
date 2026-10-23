@@ -21,13 +21,17 @@ import {
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
 import { redirectedAwayFromListing } from '@/features/competitor-search/services/stream-estate-import';
+import { refreshDemoPrices } from '@/features/demo/actions/refresh-demo-prices';
+import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 
 export const NO_EXTENSION_FOR_REFRESH = 'Installez ou activez l’extension ACM, puis réessayez.';
 
 // Mission 105 — sur le Suivi d'un dossier : relire, par l'extension, les annonces des concurrents
 // retenus. Aucun appel payant ; le serveur relit chaque page et décide.
+// Mission 114 — en démonstration, pas d'extension : le serveur relit les prix du jeu de données.
 export function RefreshPricesButton({ projectId }: { projectId: string }) {
   const router = useRouter();
+  const demo = useDemoMode();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,6 +43,13 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
     setMessage(null);
     setMissingExtension(false);
     try {
+      if (demo) {
+        setProgress('Relecture des annonces…');
+        const outcomes = await refreshDemoPrices(projectId);
+        setMessage(priceRefreshSummary(outcomes));
+        router.refresh();
+        return;
+      }
       const ping = await pingExtension({ force });
       if (!ping.available) {
         setMessage(NO_EXTENSION_FOR_REFRESH);

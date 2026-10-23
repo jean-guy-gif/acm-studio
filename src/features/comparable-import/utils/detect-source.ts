@@ -1,6 +1,10 @@
 // Light domain -> source-label mapping. Unknown domains fall back to the
 // normalised hostname (never blocked just because the portal is unknown).
+import { DEMO_LISTING_HOST, DEMO_SOURCE_LABEL } from '@/features/demo/constants';
+
 const KNOWN_SOURCES: ReadonlyArray<readonly [string, string]> = [
+  // Mission 114 — les annonces de démonstration disent leur source : « Démonstration ».
+  [DEMO_LISTING_HOST, DEMO_SOURCE_LABEL],
   ['seloger.com', 'SeLoger'],
   ['bienici.com', "Bien'ici"],
   ['leboncoin.fr', 'Leboncoin'],

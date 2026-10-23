@@ -17,6 +17,13 @@ import { SubjectPropertyImportForm } from '@/features/subject-property-import/co
 import { updatePropertyPhotos } from '@/features/subject-property-photos/actions/update-property-photos';
 import { uploadPropertyPhotos } from '@/features/subject-property-photos/actions/upload-property-photos';
 import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
+import { importDemoSubjectListing } from '@/features/demo/actions/import-demo-subject';
+import {
+  demoBrochureChoices,
+  demoSubjectListingChoices,
+} from '@/features/demo/services/demo-choices';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { getProfile } from '@/lib/auth/get-profile';
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
@@ -36,10 +43,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     getSubjectPropertyCondominium(projectId),
     getPropertyPhotos(projectId),
   ]);
+  // Mission 114 — l'agence de démonstration : « Importer une annonce » lit le jeu de données (même
+  // signature, action liée par la page), les annonces des scénarios sont proposées d'avance, et la
+  // fiche PDF de démonstration est à un clic. Décidé sur le repère de l'agence, lu en base.
+  const demo = await isDemoAgency((await getProfile())?.agency_id);
   const save = saveSubjectPropertySheet.bind(null, projectId);
   const uploadPhotos = uploadPropertyPhotos.bind(null, projectId);
   const updatePhotos = updatePropertyPhotos.bind(null, projectId);
-  const importFromUrl = importComparableUrl.bind(null, projectId);
+  const importFromUrl = demo
+    ? importDemoSubjectListing.bind(null, projectId)
+    : importComparableUrl.bind(null, projectId);
   const importFromHtml = importComparableHtml.bind(null, projectId);
   const recoverPhoto = recoverPropertyPhoto.bind(null, projectId);
   const depositBrochure = depositBrochurePhotos.bind(null, projectId);
@@ -69,6 +82,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         findHref={`/builder/${projectId}/comparables/find`}
         backHref={`/builder/${projectId}`}
         projectId={projectId}
+        demoListings={demo ? demoSubjectListingChoices() : null}
+        demoBrochures={demo ? demoBrochureChoices() : null}
       />
     </div>
   );

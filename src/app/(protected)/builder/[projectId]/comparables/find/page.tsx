@@ -20,8 +20,9 @@ import { saveSearchSettings } from '@/features/competitor-search/actions/save-se
 import { searchStreamEstate } from '@/features/competitor-search/actions/search-stream-estate';
 import { CompetitorSearchPanel } from '@/features/competitor-search/components/competitor-search-panel';
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
-import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
+import { geoProvider } from '@/features/competitor-search/services/geo-provider';
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { searchDefaults } from '@/features/competitor-search/services/stream-estate-tiers';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -63,16 +64,20 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
   const recordDecisionsAction = recordCompetitorDecisions.bind(null, projectId);
   const prepareOpenAction = prepareOpenSearches.bind(null, projectId);
   const rememberPlacesAction = rememberPortalPlaces.bind(null, projectId);
+  // Mission 114 — l'agence de démonstration : la recherche est simulée côté serveur (ni clé, ni
+  // budget), et l'écran ne sonde pas l'extension. Décidé sur le repère de l'agence, lu en base.
+  const sessionProfile = await getProfile();
+  const demo = await isDemoAgency(sessionProfile?.agency_id);
   // Essai Stream Estate : seulement si la clé est définie côté serveur. On transmet une action
   // liée, jamais la clé.
   const streamEstateAvailable =
     // Mission 97 — jamais sur un dossier d'exemple : rien n'est facturé pour une démonstration.
-    streamEstateApiKey() != null && !project.is_example;
+    (demo || streamEstateApiKey() != null) && !project.is_example;
   // Mission 100 — le budget de recherche du mois. Atteint : le bouton est remplacé, aucun appel
   // ne part (l'action le refuse aussi). À 80 %, le manager de l'agence est prévenu. Un budget
   // illisible ne retire pas le bouton : c'est l'action qui refusera, en le disant.
-  const profile = streamEstateAvailable ? await getProfile() : null;
-  const budgetRead = profile ? await getSearchBudget(profile.agency_id) : null;
+  const profile = streamEstateAvailable ? sessionProfile : null;
+  const budgetRead = profile && !demo ? await getSearchBudget(profile.agency_id) : null;
   const budget = budgetRead?.ok ? budgetRead.budget : null;
   const streamEstateAction =
     streamEstateAvailable && !budget?.reached
@@ -89,8 +94,9 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
     streamEstateAction != null && missing.length === 0 ? await loadSearchCriteria(projectId) : null;
   let searchSettings: Parameters<typeof CompetitorSearchPanel>[0]['searchSettings'];
   if (loaded?.ok) {
-    const commune = await resolveCommune(loaded.criteria.city, loaded.criteria.postalCode);
-    const geocode = await geocodeSubject(
+    const geo = geoProvider(demo);
+    const commune = await geo.resolveCommune(loaded.criteria.city, loaded.criteria.postalCode);
+    const geocode = await geo.geocodeSubject(
       loaded.address,
       loaded.criteria.postalCode,
       commune.ok ? commune.name : loaded.criteria.city,
@@ -144,7 +150,8 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
           budgetReached={streamEstateAvailable && budget?.reached === true}
           budgetNotice={budgetNotice}
           searchSettings={searchSettings}
-          expertMode={(await getProfile())?.expert_mode === true}
+          expertMode={sessionProfile?.expert_mode === true}
+          demo={demo}
         />
       ) : (
         <div

@@ -93,6 +93,8 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
   // Mission 106 — un Localisateur répond-il (celui du Store ou celui du mode développeur) ?
   const [locator, setLocator] = useState<LocatorAvailability | null>(null);
   useEffect(() => {
+    // Mission 114 — en démonstration, le Localisateur n'est pas sondé : la démo s'en passe.
+    if (extension.demo) return;
     let cancelled = false;
     void pingLocator().then((availability) => {
       if (!cancelled) setLocator(availability);
@@ -100,7 +102,7 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [extension.demo]);
 
   return (
     <ul className="flex flex-col gap-3.5">
@@ -115,10 +117,20 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
       </Item>
       <Item
         testId="need-extension"
-        state={extension.available == null ? 'unknown' : extension.available ? 'done' : 'todo'}
+        state={
+          // Mission 114 — en démonstration, l'extension n'est pas requise : rien à installer.
+          extension.demo
+            ? 'done'
+            : extension.available == null
+              ? 'unknown'
+              : extension.available
+                ? 'done'
+                : 'todo'
+        }
         title="L’extension ACM Studio"
       >
-        {extension.available === false ? (
+        {extension.demo ? 'Pas nécessaire en démonstration : les annonces sont simulées.' : null}
+        {extension.available === false && !extension.demo ? (
           extension.noSiteAccess ? (
             // Mission 105 — installée, mais Chrome ne lui laisse pas lire ACM Studio.
             <span data-testid="extension-no-site-access">
@@ -157,11 +169,13 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
       </Item>
       <Item
         testId="need-locator"
-        state={locatorInstalled(locator) ? 'done' : 'optional'}
+        state={extension.demo || locatorInstalled(locator) ? 'done' : 'optional'}
         title="Facultatif : Localisateur Academia"
       >
-        Pour retrouver l’adresse d’un bien.
-        {locatorInstalled(locator) ? null : (
+        {extension.demo
+          ? 'Pas nécessaire en démonstration : les adresses sont simulées.'
+          : 'Pour retrouver l’adresse d’un bien.'}
+        {extension.demo || locatorInstalled(locator) ? null : (
           <>
             {' '}
             <a

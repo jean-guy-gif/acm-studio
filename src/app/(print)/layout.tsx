@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { DemoWatermark } from '@/features/demo/components/demo-watermark';
 import { TestAccountBanner } from '@/features/test-account/test-account-banner';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -17,10 +18,12 @@ export default async function PrintLayout({ children }: { children: React.ReactN
   }
 
   // Mission 87 — le bandeau du compte de test, à l'écran seulement : jamais sur la feuille.
+  // Mission 114 — le filigrane « DÉMONSTRATION » de l'agence de démo, à l'écran ET sur la feuille.
   const agency = await getAgency(profile.agency_id);
   return (
     <>
       <TestAccountBanner agencyName={agency?.name} />
+      <DemoWatermark isDemo={agency?.is_demo === true} />
       {children}
     </>
   );

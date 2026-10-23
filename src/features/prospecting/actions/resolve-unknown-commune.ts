@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { fetchCommunes } from '@/features/competitor-search/services/fetch-geo';
+import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { manualCommuneLookupName } from '@/features/prospecting/services/manual-opposition';
 import { correctedOppositionKey } from '@/features/prospecting/services/opposition-recheck';
 import { isManagerRole } from '@/features/team/services/role';
@@ -48,7 +48,9 @@ export async function correctOppositionCommune(
   if (commune.length < 2 || commune.length > 120 || s.row.address_key == null) {
     return { ok: false, error: 'Tapez le nom de la commune.' };
   }
-  const found = await fetchCommunes({ name: manualCommuneLookupName(commune) });
+  // Mission 114 — le référentiel des communes de l'agence (public, ou local en démonstration).
+  const geo = await geoProviderFor(s.profile.agency_id);
+  const found = await geo.fetchCommunes({ name: manualCommuneLookupName(commune) });
   if (found == null) {
     return { ok: false, error: 'Service des communes indisponible : réessayez dans un instant.' };
   }
