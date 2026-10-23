@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { parseAdvisorPhone } from '@/features/advisor-profile/services/parse-advisor-phone';
 import { lines, paragraphs, parseEmphasis } from '@/features/prospecting-file/services/emphasis';
-import { buildQrCode } from '@/features/prospecting-file/services/qr-code';
-import { buildVCard } from '@/features/prospecting-file/services/vcard';
+import { buildQrCode } from '@/features/contact-card/services/qr-code';
+import { buildVCard } from '@/features/contact-card/services/vcard';
 
 describe('carte de contact du conseiller', () => {
   const contact = {

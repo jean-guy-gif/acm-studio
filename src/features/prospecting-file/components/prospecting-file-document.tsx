@@ -17,7 +17,7 @@ import {
 import { DOCUMENT_CSS } from '@/features/prospecting-file/components/document-styles';
 import { lines, paragraphs, parseEmphasis } from '@/features/prospecting-file/services/emphasis';
 import { ownerLegalMention } from '@/features/prospecting-file/services/legal-mention';
-import type { QrCode } from '@/features/prospecting-file/services/qr-code';
+import type { QrCode } from '@/features/contact-card/services/qr-code';
 import type {
   PropertyCard,
   ProspectingFile,

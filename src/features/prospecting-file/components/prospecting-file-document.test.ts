@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { ProspectingFileDocument } from '@/features/prospecting-file/components/prospecting-file-document';
-import { buildQrCode } from '@/features/prospecting-file/services/qr-code';
+import { buildQrCode } from '@/features/contact-card/services/qr-code';
 import { savedDocument } from '@/features/prospecting-file/services/saved-document';
 import { makeFacts } from '@/features/prospecting-file/services/test-facts';
 import { NO_SAVED_THEIR_PHOTO } from '@/features/prospecting-file/services/their-photo';

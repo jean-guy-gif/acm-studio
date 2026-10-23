@@ -82,21 +82,23 @@ const competitors = (count: number): string => `${count} concurrent${count > 1 ?
 // Au dixième, comme l'écart affiché par le Live.
 const averagePercent = (value: number): string => formatPercent(value, { maxDecimals: 1 });
 
-// « Il a sous-estimé 4 concurrents sur 6, de 6 % en moyenne ».
-export function guessLines(summary: GuessSummary): string[] {
+// « Il a sous-estimé 4 concurrents sur 6, de 6 % en moyenne ». Mission 113 — les mêmes mots, à
+// la 2e personne, dans la synthèse laissée au vendeur : « Vous avez sous-estimé… ».
+export function guessLines(summary: GuessSummary, subject: 'il' | 'vous' = 'il'): string[] {
+  const who = subject === 'vous' ? 'Vous avez' : 'Il a';
   const lines: string[] = [];
   if (summary.under > 0 && summary.underAveragePercent != null) {
     lines.push(
-      `Il a sous-estimé ${competitors(summary.under)} sur ${summary.compared}, de ${averagePercent(summary.underAveragePercent)} en moyenne`,
+      `${who} sous-estimé ${competitors(summary.under)} sur ${summary.compared}, de ${averagePercent(summary.underAveragePercent)} en moyenne`,
     );
   }
   if (summary.over > 0 && summary.overAveragePercent != null) {
     lines.push(
-      `Il a surestimé ${competitors(summary.over)} sur ${summary.compared}, de ${averagePercent(summary.overAveragePercent)} en moyenne`,
+      `${who} surestimé ${competitors(summary.over)} sur ${summary.compared}, de ${averagePercent(summary.overAveragePercent)} en moyenne`,
     );
   }
   if (lines.length === 0) {
-    lines.push(`Il a donné le prix affiché de ${competitors(summary.compared)}`);
+    lines.push(`${who} donné le prix affiché de ${competitors(summary.compared)}`);
   }
   return lines;
 }

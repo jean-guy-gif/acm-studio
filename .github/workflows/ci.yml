@@ -33,6 +33,10 @@ jobs:
   # invité, et échoue à la première porte restée ouverte.
   sql:
     runs-on: ubuntu-latest
+    # Mission 113 — lire les images du registre de GitHub sous l'identité de l'exécution.
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +44,24 @@ jobs:
         with:
           version: 2.101.0
 
+      # Mission 113 — la base de la CI sur l'image de la base en ligne (17.6.1.155) : l'image par
+      # défaut de la CLI 2.101.0 (17.6.1.106, x86) tombe quand le navigateur appelle une fonction
+      # qui lui est fermée. La CLI lit la version de la base liée dans supabase/.temp.
+      - name: Image de la base en ligne
+        run: mkdir -p supabase/.temp && echo 17.6.1.155 > supabase/.temp/postgres-version
+
+      # ghcr.io refusait les téléchargements anonymes depuis les machines partagées de GitHub
+      # (« toomanyrequests ») : le téléchargement de l'image est identifié par le jeton de la course.
+      - name: Connexion au registre des images
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+
       - run: supabase db start
+
+      - name: Image réellement démarrée
+        run: docker inspect --format '{{.Config.Image}}' supabase_db_acm-studio
 
       - name: Portes fermées (profils, agence, invitations)
         run: |
@@ -154,6 +175,12 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/live_controle.sql
+
+      # Mission 113 — « Sans photo » sur la synthèse : par défaut la photo figure, l'agence seule la retire.
+      - name: Synthèse sans photo
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/synthese_sans_photo.sql
 
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.

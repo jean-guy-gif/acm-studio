@@ -33,6 +33,8 @@ describe('la décision de prix du dossier d’exemple', () => {
   it('calculée par le moteur de l’outil, prix au millier, justification d’exemple', () => {
     expect(row).not.toBeNull();
     expect(row!.advisor_price! % 1000).toBe(0);
+    // Mission 113 — l'analyse du conseiller, arrondie au millier (M110).
+    expect(row!.advisor_comparative_market_price).toBe(row!.advisor_price);
     expect(row!.advisor_price).toBeGreaterThanOrEqual(row!.range_low!);
     expect(row!.advisor_price).toBeLessThanOrEqual(row!.range_high!);
     expect(row!.justification).toBe(EXAMPLE_JUSTIFICATION);
