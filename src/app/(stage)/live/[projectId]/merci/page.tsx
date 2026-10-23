@@ -29,7 +29,6 @@ export default async function LiveThanksPage({
       logoLightUrl={context.logoLightUrl}
       logoDarkUrl={context.logoDarkUrl}
       agencyName={context.agencyName}
-      isDemo={context.isDemo}
       advisorAccess={
         <Link href={`/builder/${projectId}/conclusion`} className={advisorAccessLink}>
           Accès conseiller

@@ -1,4 +1,4 @@
-// Mission 114 — les fiches PDF de DÉMONSTRATION (`public/demo/fiche-<scénario>.pdf`), une par
+// Mission 114 — les fiches PDF de la démo (`public/demo/fiche-<scénario>.pdf`), une par
 // scénario, fabriquées depuis le jeu de données : la même mise en page qu'une fiche d'agence —
 // « Vente - Appartement », le prix « Honoraires à la charge du vendeur », le bloc « Surface
 // habitable / Pièces », les paires « Libellé : valeur », les sections Prestations et Surfaces, la
@@ -22,8 +22,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'public', 'demo');
 const PHOTOS = join(OUT, 'photos');
 
-const AGENCY = 'Agence Démo Côte d’Azur';
-const LEGAL_CARD = 'Carte professionnelle DEMO-0000 délivrée par la CCI de démonstration';
+// Une agence inventée pour la fiche, et une carte au format courant : rien ne dit « démonstration »
+// (décision du 23/10), aucun nom réel (test du jeu de données).
+const AGENCY = 'Agence du Cap Horizon';
+const LEGAL_CARD = 'Carte professionnelle CPI 0600 2026 000 000 000 délivrée par la CCI';
 
 const euro = (value) => `${Math.round(value).toLocaleString('fr-FR').replace(/ /g, ' ')} €`;
 
@@ -87,7 +89,6 @@ function legal(subject, isCondominium) {
       : []),
     `Classe énergie ${ENERGY[subject.energyRating]} kWh/m².an (${subject.energyRating})`,
     `Classe climat ${CLIMATE[subject.gesRating]} kg CO2/m².an (${subject.gesRating})`,
-    'Document de démonstration : bien fictif, rue fictive, aucune annonce réelle',
   ];
   return parts.join(' - ');
 }
@@ -133,7 +134,6 @@ function html(scenario, reference) {
   body { font-family: Helvetica, Arial, sans-serif; color: #222; font-size: 11pt; margin: 0; font-variant-ligatures: none; }
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
-  .demo { background: #5b21b6; color: #fff; font-weight: 700; text-align: center; padding: 4px; letter-spacing: .08em; }
   h1 { font-size: 20pt; margin: 14px 0 4px; }
   .price { font-size: 14pt; margin: 0 0 10px; }
   p.desc { line-height: 1.45; margin: 0 0 14px; }
@@ -149,7 +149,6 @@ function html(scenario, reference) {
   .ref { color: #666; }
 </style></head><body>
 <section class="page">
-  <div class="demo">DÉMONSTRATION — FICHE FICTIVE</div>
   <img class="cover" src="${photo(subject.photos[0])}" alt="">
   <div>Vente - ${TYPE_LABEL[subject.propertyType]}</div>
   <h1>${escape(subject.title)}</h1>
@@ -164,7 +163,6 @@ function html(scenario, reference) {
   <p class="legal">${escape(legalLine)}</p>
 </section>
 <section class="page">
-  <div class="demo">DÉMONSTRATION — FICHE FICTIVE</div>
   <h2>Informations</h2>
   <ul>${pairs.map(([label, value]) => `<li>${escape(label)} : ${escape(value)}</li>`).join('')}</ul>
   <h2>Prestations</h2>

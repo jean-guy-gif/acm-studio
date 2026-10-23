@@ -20,9 +20,11 @@ Chaque réponse simulée arrive après un délai fixe de 1,5 s (`DEMO_DELAY_MS`)
 ses états réels. Rien ne dépend du réseau au-delà d'ACM et de Supabase ; **une connexion à ACM reste
 nécessaire** (une 4G suffit), il n'y a pas de mode hors ligne.
 
-Ce qui se voit : le bandeau « Démonstration — données fictives » en haut de l'espace conseiller,
-une note discrète en pied d'écran du Live (scène et écrans neutres), le filigrane « DÉMONSTRATION »
-sur chaque page imprimée (courriers, tournée, synthèse au vendeur, lien public compris).
+Rien ne dit « démonstration » à l'écran ni à l'impression (décision de Jean-Guy, 23/10, qui
+remplace le bandeau, la note du Live et le filigrane prévus le 22/10) : ni bandeau, ni pied
+d'écran, ni filigrane, ni pastille ; les documents de démo s'impriment comme les vrais. Le repère
+ne se voit qu'en bas de `/erreurs`, côté opérateur. Un test (`demo-unspoken.test.ts`) le vérifie
+sur le code, et l'e2e `demo` sur les pages.
 
 ## Le jeu de données (`src/features/demo/data/scenarios.ts`)
 

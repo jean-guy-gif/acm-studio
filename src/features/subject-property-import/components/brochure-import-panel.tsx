@@ -91,7 +91,7 @@ export function BrochureImportPanel({
       setFile(chosen);
       analyse(chosen);
     } catch {
-      setError('La fiche de démonstration n’a pas pu être lue. Réessayez.');
+      setError('La fiche n’a pas pu être lue. Réessayez.');
     }
   }
 
@@ -165,7 +165,7 @@ export function BrochureImportPanel({
       </div>
       {demoBrochures && demoBrochures.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2" data-testid="demo-brochure-choices">
-          <span className={hintText}>Fiche de démonstration :</span>
+          <span className={hintText}>Fiches à importer :</span>
           {demoBrochures.map((choice) => (
             <button
               key={choice.url}

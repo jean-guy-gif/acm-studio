@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { DemoWatermark } from '@/features/demo/components/demo-watermark';
 import { SellerSynthesisDocument } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { loadSellerSynthesis } from '@/features/seller-synthesis/queries/load-seller-synthesis';
 import {
@@ -48,8 +47,6 @@ export default async function PublicSynthesisPage({
   }
   return (
     <main className="min-h-screen bg-zinc-100 p-4 print:bg-white print:p-0">
-      {/* Mission 114 — une synthèse de l'agence de démonstration porte le filigrane, lien compris. */}
-      <DemoWatermark isDemo={synthesis.agency.isDemo} />
       <SellerSynthesisDocument synthesis={synthesis} />
     </main>
   );

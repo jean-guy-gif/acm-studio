@@ -21,8 +21,8 @@ import { demoListingUrl, demoSubjectListingUrl } from '@/features/demo/services/
 
 // Les rues fictives autorisées : la seule liste que le jeu de données a le droit d'utiliser.
 const FICTIONAL_STREETS = [
-  'allée des Démonstrations',
-  'chemin du Simulateur',
+  'allée des Trois Cadrans',
+  'chemin des Restanques Hautes',
   'impasse de l’Essai',
   'rue de la Maquette',
   'avenue du Prototype',
