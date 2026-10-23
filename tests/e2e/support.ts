@@ -7,12 +7,23 @@ import { expect, type Page } from '@playwright/test';
 // avec leur raison : `removeTestOppositions` (mission 98) et `ageTestFollowUp` (mission 96)
 // plus bas, et le nettoyage de fin de passage (mission 100, `global-teardown.ts`).
 
-export function requireEnv(name: 'E2E_EMAIL' | 'E2E_PASSWORD'): string {
+export function requireEnv(
+  name: 'E2E_EMAIL' | 'E2E_PASSWORD' | 'E2E_DEMO_EMAIL' | 'E2E_DEMO_PASSWORD',
+): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`${name} manquant : renseignez-le dans .env.e2e.local (ignoré par git).`);
   }
   return value;
+}
+
+// Mission 114 — le compte de l'agence de démonstration (`E2E_DEMO_EMAIL`, `E2E_DEMO_PASSWORD`),
+// à part du compte de test : son agence porte le repère `is_demo`, et ses dossiers de test sont
+// retirés par `removeDemoRunDossiers`. Le mot de passe ne vit que dans `.env.e2e.local`.
+export type Credentials = { email: string; password: string };
+
+export function demoCredentials(): Credentials {
+  return { email: requireEnv('E2E_DEMO_EMAIL'), password: requireEnv('E2E_DEMO_PASSWORD') };
 }
 
 // « TEST AUTOMATIQUE 2026-10-06 20:20:15 » — heure de Paris, unique à la seconde : le
@@ -62,15 +73,15 @@ function loginPath(): string {
   return `/login?${query.toString()}`;
 }
 
-export async function login(page: Page): Promise<void> {
+export async function login(page: Page, credentials?: Credentials): Promise<void> {
   await page.goto(loginPath());
   await expect(
     page.getByRole('heading', { name: 'Connexion' }),
     'Page de connexion d’ACM introuvable — l’URL d’essai est-elle protégée par Vercel ? ' +
       'Renseignez E2E_VERCEL_BYPASS dans .env.e2e.local.',
   ).toBeVisible();
-  await page.getByLabel('Adresse e-mail').fill(requireEnv('E2E_EMAIL'));
-  await page.getByLabel('Mot de passe').fill(requireEnv('E2E_PASSWORD'));
+  await page.getByLabel('Adresse e-mail').fill(credentials?.email ?? requireEnv('E2E_EMAIL'));
+  await page.getByLabel('Mot de passe').fill(credentials?.password ?? requireEnv('E2E_PASSWORD'));
   await page.getByRole('button', { name: 'Se connecter' }).click();
   // Mission 100 — l'agence de test est vidée à la fin de chaque passage : un conseiller sans
   // dossier arrive sur « Bienvenue » (M97), avec des dossiers sur ses dossiers. Les parcours
@@ -301,4 +312,72 @@ export function ageTestFollowUp(projectId: string, direction: 'age' | 'back'): A
     relances: read('relances'),
     concurrents: read('concurrents'),
   };
+}
+
+// Mission 114 — EXCEPTION à « tout passe par l'écran », comme le nettoyage de l'agence de test
+// (M100) : l'e2e `demo` conclut un dossier dans l'agence de DÉMONSTRATION, et rien de conclu ne
+// se supprime depuis l'écran. Pour que l'agence partagée par les closers ne grossisse pas d'un
+// dossier par passage, le parcours retire, par la CLI Supabase du poste :
+//   • les dossiers « TEST AUTOMATIQUE … » de l'agence du compte de démo, avec tout ce qui en
+//     dépend (concurrents, réponses, conclusions, relances, courriers, liens de synthèse…) ;
+//   • les lignes « Ne plus solliciter » que ce passage a inscrites (depuis `since`).
+// Le bloc REVÉRIFIE dans la base que l'agence porte le repère `is_demo` : ailleurs, rien n'est
+// supprimé. Les photos du bien vendeur déposées dans le stockage ne sont pas retirées (comme pour
+// l'agence de test). Rend le nombre de dossiers et d'oppositions retirés.
+export function removeDemoRunDossiers(since: Date): { dossiers: number; oppositions: number } {
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  // Une seule instruction : chaque suppression est cadrée sur l'agence de DÉMONSTRATION du compte
+  // (`is_demo` relu ici) et sur les dossiers « TEST AUTOMATIQUE … » ; hors d'une agence de démo,
+  // la liste est vide et rien n'est supprimé.
+  const sql = `with demo_agency as (
+    select a.id from public.profiles p join public.agencies a on a.id = p.agency_id
+    where lower(p.email) = lower('${email}') and a.is_demo
+  ), run_dossiers as (
+    select id from public.projects
+    where agency_id in (select id from demo_agency) and seller_name like 'TEST AUTOMATIQUE %'
+  ), run_properties as (
+    select id from public.subject_properties where project_id in (select id from run_dossiers)
+  ), d1 as (delete from public.live_reopenings where project_id in (select id from run_dossiers) returning 1),
+  d2 as (delete from public.stream_estate_results where project_id in (select id from run_dossiers) returning 1),
+  d3 as (delete from public.competitor_prospecting_files where project_id in (select id from run_dossiers) returning 1),
+  d4 as (delete from public.live_seller_responses where project_id in (select id from run_dossiers) returning 1),
+  d5 as (delete from public.live_seller_summary where project_id in (select id from run_dossiers) returning 1),
+  d6 as (delete from public.follow_up_contacts where project_id in (select id from run_dossiers) returning 1),
+  d7 as (delete from public.seller_synthesis_links where project_id in (select id from run_dossiers) returning 1),
+  d8 as (delete from public.project_meeting_conclusions where project_id in (select id from run_dossiers) returning 1),
+  d9 as (delete from public.project_price_positionings where project_id in (select id from run_dossiers) returning 1),
+  d10 as (delete from public.pending_competitor_imports where project_id in (select id from run_dossiers) returning 1),
+  d11 as (delete from public.competitor_decisions where project_id in (select id from run_dossiers) returning 1),
+  d12 as (delete from public.comparables where project_id in (select id from run_dossiers) returning 1),
+  d13 as (delete from public.subject_property_condominiums where subject_property_id in (select id from run_properties) returning 1),
+  d14 as (delete from public.subject_property_diagnostics where subject_property_id in (select id from run_properties) returning 1),
+  d15 as (delete from public.subject_properties where project_id in (select id from run_dossiers) returning 1),
+  d16 as (delete from public.projects where id in (select id from run_dossiers) returning 1),
+  d17 as (
+    delete from public.prospecting_oppositions
+    where agency_id in (select id from demo_agency)
+      and created_at >= '${since.toISOString()}'::timestamptz
+    returning 1
+  )
+  select (select count(*)::int from d16) as dossiers, (select count(*)::int from d17) as oppositions`;
+  let output: string;
+  try {
+    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (error) {
+    const detail = error instanceof Error && 'stderr' in error ? String(error.stderr) : '';
+    throw new Error(
+      `Les dossiers de démonstration du test n’ont pas pu être retirés : \`supabase db query --linked\` a échoué. ${detail.slice(0, 300)}`,
+    );
+  }
+  const read = (name: string): number => {
+    const count = new RegExp(`"${name}":\\s*(\\d+)`).exec(output)?.[1];
+    if (count === undefined) {
+      throw new Error('Réponse inattendue de `supabase db query` au retrait des dossiers de démo.');
+    }
+    return Number(count);
+  };
+  return { dossiers: read('dossiers'), oppositions: read('oppositions') };
 }

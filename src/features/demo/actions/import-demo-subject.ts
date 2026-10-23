@@ -1,9 +1,7 @@
 'use server';
 
-import type {
-  ComparableImportResult,
-  ImportedComparableData,
-} from '@/features/comparable-import/types';
+import type { ComparableImportResult } from '@/features/comparable-import/types';
+import { summarizeListingFields } from '@/features/comparable-import/services/normalize-listing-data';
 import { DEMO_SUBJECT_UNKNOWN } from '@/features/demo/constants';
 import { demoDelay } from '@/features/demo/services/demo-delay';
 import { demoSubjectImportedData } from '@/features/demo/services/demo-listing-data';
@@ -11,20 +9,6 @@ import { findDemoSubjectScenario } from '@/features/demo/services/demo-urls';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
-
-const filled = (value: unknown): boolean =>
-  Array.isArray(value) ? value.length > 0 : value != null && value !== '';
-
-// Les champs trouvés et manquants, comme le lecteur d'annonce les compte pour l'écran.
-function fieldSummary(data: ImportedComparableData): { found: string[]; missing: string[] } {
-  const found: string[] = [];
-  const missing: string[] = [];
-  for (const [key, value] of Object.entries(data)) {
-    if (key === 'listingUrl' || key === 'source') continue;
-    (filled(value) ? found : missing).push(key);
-  }
-  return { found, missing };
-}
 
 // Mission 114 — « Importer une annonce » sur le bien vendeur, en démonstration : l'annonce
 // proposée d'avance est celle du scénario ; ses données arrivent du jeu de données, côté serveur,
@@ -59,6 +43,7 @@ export async function importDemoSubjectListing(
   }
   await demoDelay();
   const data = demoSubjectImportedData(scenario, new Date());
-  const { found, missing } = fieldSummary(data);
-  return { ok: true, data, foundFields: found, missingFields: missing, history: null };
+  // Trouvé et manquant comptés comme pour une annonce lue : les champs du résumé, pas les clés.
+  const { foundFields, missingFields } = summarizeListingFields(data);
+  return { ok: true, data, foundFields, missingFields, history: null };
 }

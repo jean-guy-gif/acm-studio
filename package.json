@@ -17,6 +17,7 @@
     "test": "vitest run",
     "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
     "e2e": "playwright test",
+    "e2e:demo": "playwright test tests/e2e/demo.spec.ts",
     "extension:icons": "node scripts/extension-icons.mjs",
     "extension:zip": "node scripts/extension-zip.mjs",
     "sauvegarde": "node scripts/sauvegarde.mjs",
