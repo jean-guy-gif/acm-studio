@@ -40,8 +40,9 @@ const REVISED_PRICE = 401_500;
 const COMMERCIALIZATION_PRICE = 392_500;
 const COMMENT = 'Réponse saisie par le test automatique (démo)';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
-// Ce qu'aucune page de l'agence de démo ne doit dire.
-const UNSPOKEN = /d[ée]monstration|données fictives|fictif/i;
+// Ce qu'aucune page de l'agence de démo ne doit dire. (« fictifs » reste : « Bienvenue » le dit
+// du dossier d'exemple, M97, dans toute agence.)
+const UNSPOKEN = /d[ée]monstration|données fictives/i;
 const DEMO_LISTING_HOST = 'annonces.demonstration.invalid';
 const SUPABASE_HOST = /\.supabase\.(co|in)$/;
 // Les outils de Vercel sur un déploiement d'aperçu : bloqués comme le reste, mais tolérés dans le
