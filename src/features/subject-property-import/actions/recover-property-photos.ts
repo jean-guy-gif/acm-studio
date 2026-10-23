@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
 import { fetchListingImage } from '@/features/subject-property-import/services/fetch-listing-image';
 import { MAX_PROPERTY_PHOTOS } from '@/features/subject-property-photos/constants';
 import {
@@ -46,7 +47,12 @@ export async function recoverPropertyPhoto(
     return { ok: false, url: rawUrl, error: `Maximum ${MAX_PROPERTY_PHOTOS} photos atteint.` };
   }
 
-  const image = await fetchListingImage(rawUrl);
+  // Mission 114 — une photo de démonstration (servie par l'application) se lit sur le disque,
+  // dans l'agence de démonstration seulement : aucune requête vers l'extérieur ; les mêmes
+  // vérifications d'octets suivent.
+  const image = await readDemoPhoto(rawUrl, agencyId).then((bytes) =>
+    bytes ? { ok: true as const, bytes } : fetchListingImage(rawUrl),
+  );
   if (!image.ok) {
     return { ok: false, url: rawUrl, error: image.error };
   }

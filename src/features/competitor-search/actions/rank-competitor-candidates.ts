@@ -6,7 +6,7 @@ import {
   type CompetitorDecisionRecord,
   type DecisionReason,
 } from '@/features/competitor-search/services/learn-from-decisions';
-import { geocodeSubject, resolveCommune } from '@/features/competitor-search/services/fetch-geo';
+import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
 import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
 import {
@@ -110,8 +110,11 @@ export async function rankCompetitorCandidates(
   // Mission 71 — la commune officielle (geo.api.gouv.fr, gratuit, en cache un jour) : son code
   // INSEE dit « même commune » pour un bien Stream Estate, et son nom géocode l'adresse (« St
   // Laurent du Var » fait tomber le score sous 0,8 : 0,74 contre 0,83, mesuré le 06/10).
-  const commune = await resolveCommune(criteria.city, criteria.postalCode);
-  const geocode = await geocodeSubject(
+  // Mission 114 — l'agence de démonstration lit sa table locale des communes ; les autres, les
+  // services publics. Décidé ici, sur le repère de l'agence.
+  const geo = await geoProviderFor(profile.agency_id);
+  const commune = await geo.resolveCommune(criteria.city, criteria.postalCode);
+  const geocode = await geo.geocodeSubject(
     property.address,
     property.postal_code,
     commune.ok ? commune.name : criteria.city,

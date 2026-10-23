@@ -10,6 +10,13 @@ import {
   type PortalRobotsCache,
 } from '@/features/competitor-search/services/read-page-via-extension';
 import { redirectedAwayFromListing } from '@/features/competitor-search/services/stream-estate-import';
+import { importDemoCompetitor } from '@/features/demo/actions/import-demo-competitor';
+
+// Mission 114 — en démonstration, « lire la page » ne sonde pas l'extension : la lecture est
+// tenue pour acquise, et c'est l'action de démonstration qui importe, depuis le jeu de données,
+// côté serveur (où le repère de l'agence est revérifié). Le reste de l'enchaînement — trois
+// tentatives, création depuis la recherche, attente — ne change pas.
+const DEMO_PAGE = '<!-- démonstration : aucune page lue -->';
 
 // Mission 101 — ce dont l'import d'une annonce a besoin, branché sur l'extension (lecture de la
 // page) et sur le serveur (import, création depuis la recherche, signalement). Utilisé par l'écran
@@ -22,20 +29,23 @@ export function listingImportDeps(options: {
   robotsCache: PortalRobotsCache;
   // La fenêtre du lot, réutilisée pour les deux premières lectures. Absente : fenêtre neuve.
   windowId?: number;
+  // Mission 114 — l'agence de démonstration : ni extension, ni page.
+  demo?: boolean;
 }): ImportListingDeps {
-  const { projectId, propertyType, fromStreamEstate, robotsCache, windowId } = options;
+  const { projectId, propertyType, fromStreamEstate, robotsCache, windowId, demo } = options;
   return {
-    readPage: (url, { freshWindow }) =>
-      readPageViaExtension(url, {
-        robotsCache,
-        ...(freshWindow || windowId == null ? {} : { windowId }),
-      }),
-    ...(fromStreamEstate ? { isWithdrawn: redirectedAwayFromListing } : {}),
+    readPage: demo
+      ? async (url) => ({ ok: true, html: DEMO_PAGE, finalUrl: url })
+      : (url, { freshWindow }) =>
+          readPageViaExtension(url, {
+            robotsCache,
+            ...(freshWindow || windowId == null ? {} : { windowId }),
+          }),
+    ...(fromStreamEstate && !demo ? { isWithdrawn: redirectedAwayFromListing } : {}),
     importPage: async (url, html) => {
-      const result = await importAndCreateComparable(
-        projectId,
-        listingPayload(url, html, propertyType),
-      );
+      const result = demo
+        ? await importDemoCompetitor(projectId, url)
+        : await importAndCreateComparable(projectId, listingPayload(url, html, propertyType));
       return result.ok
         ? { ok: true, dismissedExisting: result.dismissedExisting }
         : { ok: false, code: result.code };

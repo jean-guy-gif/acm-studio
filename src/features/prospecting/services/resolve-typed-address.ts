@@ -14,9 +14,12 @@ import {
 // Mission 108 — partagé par l'opposition à la main (M103) et l'adresse saisie par le conseiller.
 // L'adresse tapée, relue ici : sa commune est reconnue par le référentiel des communes
 // (geo.api.gouv.fr), jamais crue sur parole. Une panne du référentiel n'inscrit rien.
+// Mission 114 — `lookup` : le référentiel de l'agence (public, ou la table locale de la
+// démonstration), choisi par l'appelant sur le repère de l'agence.
 export async function resolveManualOpposition(
   raw: unknown,
   rawCommuneCode: unknown,
+  lookup: typeof fetchCommunes = fetchCommunes,
 ): Promise<ManualOppositionDecision> {
   const parts = parseManualAddress(raw);
   if (!parts) {
@@ -25,7 +28,7 @@ export async function resolveManualOpposition(
   if (parts.postalCode == null && parts.commune == null) {
     return { status: 'error', error: MANUAL_OPPOSITION_NO_COMMUNE };
   }
-  const found = await fetchCommunes(
+  const found = await lookup(
     parts.postalCode != null
       ? { postalCode: parts.postalCode }
       : { name: manualCommuneLookupName(parts.commune ?? '') },

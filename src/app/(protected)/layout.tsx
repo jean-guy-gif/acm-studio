@@ -10,6 +10,7 @@ import { countErrorsSinceYesterday } from '@/features/operations/queries/get-err
 import { errorsBadgeLabel } from '@/features/operations/services/group-errors';
 import { isOperatorEmail } from '@/features/operations/services/operators';
 import { requireOperator } from '@/features/operations/services/require-operator';
+import { DemoModeProvider } from '@/features/demo/components/demo-mode-provider';
 import { TestAccountBanner } from '@/features/test-account/test-account-banner';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -65,8 +66,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   const theme: AppTheme = cookieStore.get(APP_THEME_COOKIE)?.value === 'dark' ? 'dark' : 'light';
 
+  // Mission 114 — l'agence de démonstration : le drapeau que les écrans lisent pour ne pas sonder
+  // l'extension ni le Localisateur (la bascule des données, elle, se décide côté serveur sur ce
+  // même repère). Rien ne dit « démonstration » à l'écran (décision du 23/10).
+  const isDemo = agency?.is_demo === true;
+
   return (
-    <>
+    <DemoModeProvider isDemo={isDemo}>
       {/* Mission 87 — le compte de test se voit, en haut de chaque page. */}
       <TestAccountBanner agencyName={agency?.name} />
       <AppShell
@@ -81,6 +87,6 @@ export default async function ProtectedLayout({ children }: { children: React.Re
       >
         {children}
       </AppShell>
-    </>
+    </DemoModeProvider>
   );
 }

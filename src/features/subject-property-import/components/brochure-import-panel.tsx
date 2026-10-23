@@ -29,14 +29,20 @@ const euro = (value: number | null): string => (value != null ? formatEuro(value
 // condominium header. The read price is shown as INFORMATION only (it is the
 // advisor's own agency price — the no-estimate rule matters most here). Photos are
 // recovered only on the explicit click below, never automatically.
+export type DemoBrochureChoice = { label: string; url: string };
+
 export function BrochureImportPanel({
   parseAction,
   depositAction,
   onImported,
+  demoBrochures = null,
 }: {
   parseAction: (pages: string[]) => Promise<ParseBrochureResult>;
   depositAction: (formData: FormData) => Promise<DepositBrochureResult>;
   onImported: (data: BrochureImport) => void;
+  // Mission 114 — les fiches PDF de démonstration, servies par l'application : un clic la lit
+  // comme une fiche déposée (même lecture dans le navigateur, même action serveur).
+  demoBrochures?: DemoBrochureChoice[] | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -49,13 +55,13 @@ export function BrochureImportPanel({
 
   // The PDF is read HERE, in the browser (Mission 43): it never leaves the advisor's
   // machine. Only the extracted text is sent to the server action.
-  function analyse() {
-    if (!file) return;
+  function analyse(chosen: File | null = file) {
+    if (!chosen) return;
     setError(null);
     setDeposit(null);
     startTransition(async () => {
       try {
-        const pages = await readBrochurePages(file);
+        const pages = await readBrochurePages(chosen);
         const result = await parseAction(pages);
         if (result.ok) {
           setSummary(result.data);
@@ -69,6 +75,24 @@ export function BrochureImportPanel({
         setError(readError instanceof Error ? readError.message : 'Le PDF n’a pas pu être lu.');
       }
     });
+  }
+
+  // Mission 114 — la fiche de démonstration : le fichier PDF est pris sur l'application, puis lu
+  // exactement comme une fiche déposée par le conseiller.
+  async function loadDemoBrochure(choice: DemoBrochureChoice) {
+    setError(null);
+    try {
+      const response = await fetch(choice.url);
+      if (!response.ok) throw new Error('fiche indisponible');
+      const blob = await response.blob();
+      const chosen = new File([blob], choice.url.split('/').pop() ?? 'fiche.pdf', {
+        type: 'application/pdf',
+      });
+      setFile(chosen);
+      analyse(chosen);
+    } catch {
+      setError('La fiche n’a pas pu être lue. Réessayez.');
+    }
   }
 
   // Explicit click only. Decodes and re-encodes the fiche's photos to JPEG in the
@@ -132,13 +156,29 @@ export function BrochureImportPanel({
         />
         <button
           type="button"
-          onClick={analyse}
+          onClick={() => analyse()}
           disabled={pending || file == null}
           className={btnPrimary}
         >
           {pending ? 'Analyse de la fiche…' : 'Analyser la fiche'}
         </button>
       </div>
+      {demoBrochures && demoBrochures.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2" data-testid="demo-brochure-choices">
+          <span className={hintText}>Fiches à importer :</span>
+          {demoBrochures.map((choice) => (
+            <button
+              key={choice.url}
+              type="button"
+              disabled={pending}
+              onClick={() => void loadDemoBrochure(choice)}
+              className={`${btnSecondary} text-xs`}
+            >
+              {choice.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {error ? (
         <p role="alert" className={alertError}>

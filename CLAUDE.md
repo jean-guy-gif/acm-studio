@@ -79,7 +79,9 @@ validation de Google, et se décide avec Laurent.
 - `database.types.ts` se génère (`npm run gen:types`). Jamais exposés : la clé service Supabase, la
   clé Stream Estate, les données d'une autre agence.
 - Dépendance nouvelle : besoin réel et non couvert, `npm install` se demande. Un refactoring ne
-  change aucun comportement. Démonstration identifiée comme telle. Desktop d'abord, tablette ok.
+  change aucun comportement. L'agence de démonstration (`agencies.is_demo`, M114) se reconnaît au
+  serveur seulement : rien ne dit « démo » à l'écran ni à l'impression (Jean-Guy, 23/10). Desktop
+  d'abord, tablette ok.
 
 ## Base de données
 

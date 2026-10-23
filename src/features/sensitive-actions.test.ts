@@ -1604,3 +1604,69 @@ describe('les chiffres justes (mission 111)', () => {
     }
   });
 });
+
+// Mission 114 — le repère « Agence de démonstration » : les seuls opérateurs (ACM_OPERATOR_EMAILS),
+// par la clé service après le garde ; la colonne est retirée au navigateur dans la base
+// (supabase/tests/agence_demo.sql). C'est ce repère qui bascule l'agence vers les fournisseurs
+// simulés : un manager ne le règle pas.
+describe('marquer une agence de démonstration', () => {
+  const laurent = { id: 'u-op', email: 'laurent@start-academy.fr' };
+
+  it('refuse tout compte hors de la liste — manager compris — sans rien écrire', async () => {
+    const { setAgencyDemo } = await import('@/features/operations/actions/set-agency-demo');
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    for (const user of [null, { id: 'u-manager', email: 'manager@agence.fr' }]) {
+      state.user = user;
+      state.profile = manager;
+      expect(await setAgencyDemo(AGENCY, form({ demo: 'true' }))).toEqual({
+        ok: false,
+        error: 'Réservé aux comptes autorisés.',
+      });
+    }
+    delete process.env.ACM_OPERATOR_EMAILS;
+    state.user = laurent;
+    expect((await setAgencyDemo(AGENCY, form({ demo: 'true' }))).ok).toBe(false);
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    state.profile = removed;
+    expect((await setAgencyDemo(AGENCY, form({ demo: 'true' }))).ok).toBe(false);
+    noWrite();
+  });
+
+  it('refuse un choix mal formé et une agence inconnue', async () => {
+    const { setAgencyDemo } = await import('@/features/operations/actions/set-agency-demo');
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    state.user = laurent;
+    for (const demo of ['', 'oui', '1']) {
+      expect((await setAgencyDemo(AGENCY, form({ demo }))).ok).toBe(false);
+    }
+    expect((await setAgencyDemo('pas-un-id', form({ demo: 'true' }))).ok).toBe(false);
+    state.respond = () => ({ data: null });
+    expect(await setAgencyDemo(AGENCY, form({ demo: 'true' }))).toEqual({
+      ok: false,
+      error: 'Agence introuvable.',
+    });
+    noWrite();
+  });
+
+  it('un compte autorisé pose et retire le repère, par la clé service, sur cette agence', async () => {
+    const { setAgencyDemo } = await import('@/features/operations/actions/set-agency-demo');
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    state.user = laurent;
+    state.respond = (table) => (table === 'agencies' ? { data: { id: AGENCY } } : {});
+    expect(await setAgencyDemo(AGENCY, form({ demo: 'true' }))).toEqual({ ok: true, isDemo: true });
+    expect(await setAgencyDemo(AGENCY, form({ demo: 'false' }))).toEqual({
+      ok: true,
+      isDemo: false,
+    });
+    expect(service.writes()).toEqual(['update agencies', 'update agencies']);
+    const updates = service.calls.filter((call) => call.method === 'update');
+    expect(updates[0]?.args[0]).toMatchObject({ is_demo: true });
+    expect(updates[1]?.args[0]).toMatchObject({ is_demo: false });
+    const scoped = service.calls.filter(
+      (call) => call.method === 'eq' && call.args[0] === 'id' && call.args[1] === AGENCY,
+    );
+    expect(scoped.length).toBeGreaterThanOrEqual(2);
+    // Rien n'est passé par le client de la session : la colonne lui est fermée.
+    expect(server.writes()).toEqual([]);
+  });
+});

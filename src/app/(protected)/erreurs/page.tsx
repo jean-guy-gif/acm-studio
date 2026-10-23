@@ -9,8 +9,10 @@ import {
   pageTitle,
   sectionTitle,
 } from '@/components/ui/styles';
+import { setAgencyDemo } from '@/features/operations/actions/set-agency-demo';
 import { setAgencySearchCap } from '@/features/operations/actions/set-agency-search-cap';
 import { AgencyCapForm } from '@/features/operations/components/agency-cap-form';
+import { AgencyDemoToggle } from '@/features/operations/components/agency-demo-toggle';
 import { getAgencyBudgets } from '@/features/operations/queries/get-agency-budgets';
 import {
   getErrorReport,
@@ -153,7 +155,7 @@ export default async function ErrorsPage() {
           </p>
         </div>
         <ul className="flex flex-col gap-3">
-          {budgets.map(({ agencyId, agencyName, budget }) => (
+          {budgets.map(({ agencyId, agencyName, budget, isDemo }) => (
             <li
               key={agencyId}
               className={`${card} flex flex-wrap items-center justify-between gap-3 p-4`}
@@ -161,6 +163,9 @@ export default async function ErrorsPage() {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-title font-semibold break-words text-zinc-900 stage:text-white">
                   {agencyName}
+                  {isDemo ? (
+                    <span className={`${badgeNeutral} ml-2 align-middle`}>Démonstration</span>
+                  ) : null}
                 </span>
                 <span className="text-sm text-zinc-600 stage:text-white/65">
                   Ce mois-ci : {budgetUsageLabel(budget)}
@@ -168,11 +173,19 @@ export default async function ErrorsPage() {
                   {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
                 </span>
               </div>
-              <AgencyCapForm
-                agencyName={agencyName}
-                initialEuros={budget.capCents / 100}
-                saveAction={setAgencySearchCap.bind(null, agencyId)}
-              />
+              <div className="flex flex-col items-end gap-2">
+                <AgencyCapForm
+                  agencyName={agencyName}
+                  initialEuros={budget.capCents / 100}
+                  saveAction={setAgencySearchCap.bind(null, agencyId)}
+                />
+                {/* Mission 114 — le repère de l'agence de démonstration, réservé aux opérateurs. */}
+                <AgencyDemoToggle
+                  agencyName={agencyName}
+                  initialIsDemo={isDemo}
+                  saveAction={setAgencyDemo.bind(null, agencyId)}
+                />
+              </div>
             </li>
           ))}
         </ul>

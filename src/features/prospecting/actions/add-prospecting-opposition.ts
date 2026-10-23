@@ -12,6 +12,7 @@ import {
   MANUAL_OPPOSITION_CHOOSE,
   type ManualCommune,
 } from '@/features/prospecting/services/manual-opposition';
+import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { resolveManualOpposition } from '@/features/prospecting/services/resolve-typed-address';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -97,7 +98,9 @@ export async function checkManualOpposition(
   if (!profile || profile.removed_at) {
     return { ok: false, error: 'Vous devez être connecté.' };
   }
-  const decision = await resolveManualOpposition(raw, communeCode);
+  // Mission 114 — le référentiel des communes de l'agence (public, ou local en démonstration).
+  const geo = await geoProviderFor(profile.agency_id);
+  const decision = await resolveManualOpposition(raw, communeCode, geo.fetchCommunes);
   if (decision.status === 'error') {
     return { ok: false, error: decision.error };
   }
@@ -118,7 +121,8 @@ export async function addManualOpposition(
   if (!profile || profile.removed_at) {
     return { ok: false, error: 'Vous devez être connecté.' };
   }
-  const decision = await resolveManualOpposition(raw, communeCode);
+  const geo = await geoProviderFor(profile.agency_id);
+  const decision = await resolveManualOpposition(raw, communeCode, geo.fetchCommunes);
   if (decision.status === 'error') {
     return { ok: false, error: decision.error };
   }

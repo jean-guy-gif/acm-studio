@@ -53,9 +53,10 @@ describe('une relance de recherche qui échoue ne fait rien perdre', () => {
       'page.tsx',
     );
     // La réouverture dépend de la clé et du dossier (pas un exemple), jamais du budget du mois.
+    // Mission 114 — ou du repère de l'agence de démonstration, qui n'a pas de clé.
     expect(page).toContain('keptResultAvailable={streamEstateAvailable}');
     expect(page).toMatch(
-      /const streamEstateAvailable =[\s\S]*?streamEstateApiKey\(\) != null && !project\.is_example;/,
+      /const streamEstateAvailable =[\s\S]*?\(demo \|\| streamEstateApiKey\(\) != null\) && !project\.is_example;/,
     );
   });
 });

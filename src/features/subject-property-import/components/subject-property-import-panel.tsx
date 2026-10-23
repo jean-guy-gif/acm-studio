@@ -54,20 +54,25 @@ const euro = (value: number | null): string => (value != null ? formatEuro(value
 // pastes the listing address. It CALLS importComparableUrl / importComparableHtml,
 // which write no comparable row but DO record a dated market observation of the
 // public listing (Mission 47), and hands the mapped prefill up to the form.
+export type DemoListingChoice = { label: string; url: string };
+
 export function SubjectPropertyImportPanel({
   importAction,
   importHtmlAction,
   recoverAction,
   onImported,
+  demoListings = null,
 }: {
   importAction: (formData: FormData) => Promise<ComparableImportResult>;
   importHtmlAction: (formData: FormData) => Promise<ComparableImportResult>;
   recoverAction: (url: string) => Promise<RecoverPropertyPhotoResult>;
   onImported: (prefill: SubjectPropertyImportPrefill) => void;
+  // Mission 114 — les annonces des scénarios de démonstration, la première remplie d'avance.
+  demoListings?: DemoListingChoice[] | null;
 }) {
   const router = useRouter();
   const extension = useBrowserExtension();
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(demoListings?.[0]?.url ?? '');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<{
@@ -150,11 +155,28 @@ export function SubjectPropertyImportPanel({
         Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
         d’enregistrer.
       </p>
-      {extension.available === false ? (
+      {extension.available === false && !extension.demo ? (
         <ExtensionRequiredNotice
           reason={extension.noSiteAccess ? 'no_site_access' : 'missing'}
           onRetry={extension.recheck}
         />
+      ) : null}
+      {/* Mission 114 — en démonstration, l'annonce du scénario est proposée d'avance : un clic sur
+          un scénario remplit l'adresse, « Importer l'annonce » lit le jeu de données. */}
+      {demoListings && demoListings.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2" data-testid="demo-listing-choices">
+          <span className={hintText}>Annonces à importer :</span>
+          {demoListings.map((choice) => (
+            <button
+              key={choice.url}
+              type="button"
+              onClick={() => setUrl(choice.url)}
+              className={`${btnSecondary} text-xs ${url === choice.url ? 'ring-2 ring-violet-400' : ''}`}
+            >
+              {choice.label}
+            </button>
+          ))}
+        </div>
       ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
