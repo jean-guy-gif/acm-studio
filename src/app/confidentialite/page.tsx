@@ -112,9 +112,10 @@ export default function ConfidentialitePage() {
               la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte professionnelle
               de l’agence et l’autorité qui l’a délivrée, puis sa garantie financière ou la mention
               « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du propriétaire, ni rien du
-              vendeur. Pendant la bêta, aucune photo de l’annonce d’un concurrent n’y figure : elle
-              appartient à son auteur. ACM Studio conserve les textes que le conseiller a réécrits ;
-              il n’envoie lui-même aucun courrier.
+              vendeur. Il peut porter une photo tirée de l’annonce du bien concurrent, montrée telle
+              quelle, au seul choix du conseiller (jamais par défaut) : elle appartient à son
+              auteur. ACM Studio conserve les textes que le conseiller a réécrits ; il n’envoie
+              lui-même aucun courrier.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être

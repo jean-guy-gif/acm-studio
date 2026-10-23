@@ -357,6 +357,35 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         0,
       );
 
+      // Mission 115 — « Photo de son bien » : une photo de l'annonce, choisie par le closer, sur un
+      // courrier confrère (le compte de démo n'a pas de téléphone : le courrier propriétaire est
+      // retenu, M90) ; elle s'imprime à l'unité, et en lot.
+      await page.goto(`/prospection?bien=${projectId}`);
+      const hrefs = await ready
+        .getByTestId('prospecting-card')
+        .getByRole('link', { name: /Préparer le dossier/ })
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+      const colleague = hrefs.find((link) => link.includes('version=colleague'));
+      expect(colleague, 'Aucun courrier confrère parmi les concurrents de la démo').toBeTruthy();
+      await page.goto(colleague!);
+      const photoChoice = page.getByTestId('their-photo-choice');
+      await expect(photoChoice).toBeVisible();
+      const theirPhoto = page.locator('.pf-doc [data-testid="their-photo"] img');
+      await expect(theirPhoto, 'Une photo s’imprime sans que le closer l’ait choisie').toHaveCount(
+        0,
+      );
+      await photoChoice.getByRole('img', { name: 'Photo 1 de son annonce' }).click();
+      await expect(theirPhoto).toHaveCount(1);
+      await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+      await expect(page.getByText(/^Enregistré\./)).toBeVisible();
+      await page.reload();
+      await expect(theirPhoto, 'La photo choisie n’est pas gardée').toHaveCount(1);
+      await page.goto(`/prospection/courriers?bien=${projectId}`);
+      await expect(
+        page.locator('.pf-doc [data-testid="their-photo"] img'),
+        'La photo choisie manque au lot',
+      ).toHaveCount(1);
+
       // « Ne plus solliciter » sur une carte : inscrit, la carte sort du tableau.
       await page.goto(`/prospection?bien=${projectId}`);
       const refused = ready.getByTestId('prospecting-card').last();
