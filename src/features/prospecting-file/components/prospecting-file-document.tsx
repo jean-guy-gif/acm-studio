@@ -104,6 +104,7 @@ function Mentions({
 
 // La photo du bien concurrent choisie par le conseiller. Si elle ne se charge pas (lien expiré,
 // portail qui bloque), le cadre gris la remplace : jamais une image cassée sur la feuille.
+// Mission 115 — sans photo choisie, aucun cadre : le composant n'est pas rendu.
 function TheirPhoto({ url, placeholder }: { url: string | null; placeholder: string[] }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   return (
@@ -257,7 +258,9 @@ function OwnerPages({
             ) : null}
           </Card>
           <Card card={file.theirs} side="yours">
-            <TheirPhoto url={theirPhotoUrl} placeholder={file.theirPlaceholder} />
+            {theirPhotoUrl ? (
+              <TheirPhoto url={theirPhotoUrl} placeholder={file.theirPlaceholder} />
+            ) : null}
           </Card>
         </div>
 
@@ -361,8 +364,7 @@ function ColleaguePage({
 
       <div className="pf-duo">
         {/* La photo de notre bien, et en face celle que le conseiller a choisie pour le bien
-            du confrère (ou le cadre gris). Sans aucune photo, les deux cartes s'alignent sans
-            bandeau. */}
+            du confrère. Mission 115 — sans photo choisie, aucun cadre vide. */}
         <Card card={file.ours} side="ours">
           {photoUrl ? (
             <div className="pf-ph">
@@ -371,7 +373,7 @@ function ColleaguePage({
           ) : null}
         </Card>
         <Card card={file.theirs} side="yours">
-          {photoUrl || theirPhotoUrl ? (
+          {theirPhotoUrl ? (
             <TheirPhoto url={theirPhotoUrl} placeholder={file.theirPlaceholder} />
           ) : null}
         </Card>

@@ -40,6 +40,37 @@ const base = {
 
 // Mission 98 — « Préparer tous les courriers » imprime chaque dossier sans passer par l'éditeur.
 describe('savedDocument — le dossier tel qu’enregistré', () => {
+  // Mission 115 — une photo d'annonce choisie s'imprime, à l'unité comme en lot (le lot passe par
+  // ici, M98) : la copie gardée par l'agence d'abord (M87), sinon l'adresse de l'annonce.
+  it('une photo d’annonce enregistrée s’imprime : la copie gardée, sinon l’adresse de l’annonce', () => {
+    const copied = savedDocument({
+      ...base,
+      theirPhoto: {
+        ...base.theirPhoto,
+        saved: { mode: 'listing', sourceUrl: 'https://portail.test/x.jpg', path: `${PREFIX}x.jpg` },
+        signed: { [`${PREFIX}x.jpg`]: 'https://stockage.test/x' },
+      },
+    });
+    expect(copied.theirPhotoUrl).toBe('https://stockage.test/x');
+    const notYetCopied = savedDocument({
+      ...base,
+      theirPhoto: {
+        ...base.theirPhoto,
+        saved: { mode: 'listing', sourceUrl: 'https://portail.test/x.jpg', path: null },
+      },
+    });
+    expect(notYetCopied.theirPhotoUrl).toBe('https://portail.test/x.jpg');
+    // Une photo qui n'est plus celle de l'annonce ne s'imprime pas.
+    const gone = savedDocument({
+      ...base,
+      theirPhoto: {
+        ...base.theirPhoto,
+        saved: { mode: 'listing', sourceUrl: 'https://portail.test/retiree.jpg', path: null },
+      },
+    });
+    expect(gone.theirPhotoUrl).toBeNull();
+  });
+
   it('rien d’enregistré : les textes proposés, la première photo de notre bien, sans photo du sien', () => {
     const document = savedDocument(base);
     expect(document.texts).toEqual(document.file.defaults);
