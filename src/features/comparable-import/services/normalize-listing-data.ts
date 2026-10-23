@@ -77,6 +77,29 @@ const SUMMARY_FIELDS: Array<ScalarField | 'title' | 'daysOnMarket'> = [
   'daysOnMarket',
 ];
 
+// Ce que l'écran annonce comme trouvé et manquant, pour une annonce lue comme pour une annonce de
+// démonstration (M114) : les seuls champs du résumé, jamais toutes les clés de la donnée.
+export function summarizeListingFields(data: ImportedComparableData): {
+  foundFields: string[];
+  missingFields: string[];
+} {
+  const foundFields: string[] = [];
+  const missingFields: string[] = [];
+  for (const field of SUMMARY_FIELDS) {
+    if (data[field] !== null) {
+      foundFields.push(field);
+    } else {
+      missingFields.push(field);
+    }
+  }
+  if (data.photoUrls.length > 0) {
+    foundFields.push('photoUrls');
+  } else {
+    missingFields.push('photoUrls');
+  }
+  return { foundFields, missingFields };
+}
+
 function pickScalar(field: ScalarField, sources: PartialListingData[]): string | number | null {
   for (const source of sources) {
     const value = source[field];
@@ -463,20 +486,7 @@ export function normalizeListingData(
   data.outdoorSpaces = forOutdoorParking.outdoorSpaces;
   data.parkingTypes = forOutdoorParking.parkingTypes;
 
-  const foundFields: string[] = [];
-  const missingFields: string[] = [];
-  for (const field of SUMMARY_FIELDS) {
-    if (data[field] !== null) {
-      foundFields.push(field);
-    } else {
-      missingFields.push(field);
-    }
-  }
-  if (data.photoUrls.length > 0) {
-    foundFields.push('photoUrls');
-  } else {
-    missingFields.push('photoUrls');
-  }
+  const { foundFields, missingFields } = summarizeListingFields(data);
 
   return { data, foundFields, missingFields };
 }
