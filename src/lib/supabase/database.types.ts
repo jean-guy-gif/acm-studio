@@ -14,6 +14,7 @@ export type Database = {
           created_at: string
           follow_up_dormant_days: number
           id: string
+          is_demo: boolean
           name: string
           preparation_dormant_days: number
           updated_at: string
@@ -22,6 +23,7 @@ export type Database = {
           created_at?: string
           follow_up_dormant_days?: number
           id?: string
+          is_demo?: boolean
           name: string
           preparation_dormant_days?: number
           updated_at?: string
@@ -30,6 +32,7 @@ export type Database = {
           created_at?: string
           follow_up_dormant_days?: number
           id?: string
+          is_demo?: boolean
           name?: string
           preparation_dormant_days?: number
           updated_at?: string

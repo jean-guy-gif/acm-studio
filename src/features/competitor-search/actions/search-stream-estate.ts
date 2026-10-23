@@ -5,11 +5,10 @@ import { EXAMPLE_SEARCH_MESSAGE } from '@/features/welcome/services/example-excl
 import { z } from 'zod';
 
 import { loadSearchCriteria } from '@/features/competitor-search/queries/load-search-criteria';
-import {
-  fetchDepartmentCommunes,
-  geocodeSubject,
-  resolveCommune,
-} from '@/features/competitor-search/services/fetch-geo';
+import { geoProvider } from '@/features/competitor-search/services/geo-provider';
+import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
+import { demoStreamEstatePage } from '@/features/demo/services/demo-stream-estate';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import {
   baseStreamEstateQuery,
   billedAdverts,
@@ -120,17 +119,15 @@ const GENERIC_ERROR = 'La recherche Stream Estate a échoué. Réessayez.';
 // payé est gardé sur le dossier ici même, avant de répondre (`keepPaidSearchResult`).
 // `resume` : « Chercher encore » — reprendre exactement où la recherche s'était arrêtée au
 // plafond (même cran, page suivante), pour 20 annonces de plus.
+//
+// Mission 114 — dans l'AGENCE DE DÉMONSTRATION (repère `agencies.is_demo`, lu ici, jamais reçu du
+// navigateur), l'API est remplacée par la recherche simulée : ni clé, ni budget, ni réservation,
+// aucun appel ; tout le reste — crans, classement, résultat gardé, « Chercher encore » — est le
+// même code. Une agence réelle n'atteint jamais la simulation.
 export async function searchStreamEstate(
   projectId: string,
   resume?: StreamEstateResume | null,
 ): Promise<StreamEstateSearchResult> {
-  const apiKey = streamEstateApiKey();
-  if (apiKey == null) {
-    return {
-      ok: false,
-      error: 'La recherche de concurrents n’est pas activée : prévenez l’équipe ACM Studio.',
-    };
-  }
   const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
   if (parsedResume != null && !parsedResume.success) {
     return { ok: false, error: GENERIC_ERROR };
@@ -142,22 +139,33 @@ export async function searchStreamEstate(
     return { ok: false, error: EXAMPLE_SEARCH_MESSAGE };
   }
 
-  // Mission 100 — le plafond mensuel de l'agence, vérifié AVANT tout appel payant. Un budget
-  // illisible n'est pas un budget libre : la recherche ne part pas.
   const profile = await getProfile();
   if (!profile || profile.removed_at) {
     return { ok: false, error: 'Vous devez être connecté.' };
   }
-  const budgetRead = await getSearchBudget(profile.agency_id);
-  if (!budgetRead.ok) {
+  const demo = await isDemoAgency(profile.agency_id);
+  const apiKey = demo ? null : streamEstateApiKey();
+  if (!demo && apiKey == null) {
+    return {
+      ok: false,
+      error: 'La recherche de concurrents n’est pas activée : prévenez l’équipe ACM Studio.',
+    };
+  }
+
+  // Mission 100 — le plafond mensuel de l'agence, vérifié AVANT tout appel payant. Un budget
+  // illisible n'est pas un budget libre : la recherche ne part pas. Rien à vérifier en démo :
+  // rien n'est payé.
+  const budgetRead = demo ? null : await getSearchBudget(profile.agency_id);
+  if (budgetRead != null && !budgetRead.ok) {
     return { ok: false, error: BUDGET_UNREADABLE_MESSAGE };
   }
-  if (budgetRead.budget.reached) {
+  if (budgetRead?.ok && budgetRead.budget.reached) {
     return {
       ok: false,
       error: `${BUDGET_REACHED_LABEL}. Aucune recherche lancée. ${BUDGET_REACHED_HINT}`,
     };
   }
+  const geo = geoProvider(demo);
 
   const loaded = await loadSearchCriteria(projectId);
   if (!loaded.ok) {
@@ -172,7 +180,7 @@ export async function searchStreamEstate(
   const { criteria, settings } = loaded;
 
   // 1. La commune (code INSEE, centre, département) — sans code fiable, on ne cherche pas.
-  const commune = await resolveCommune(criteria.city, criteria.postalCode);
+  const commune = await geo.resolveCommune(criteria.city, criteria.postalCode);
   if (!commune.ok) {
     const where = [criteria.city, criteria.postalCode].filter(Boolean).join(' ');
     const reasons: Record<typeof commune.reason, string> = {
@@ -197,7 +205,7 @@ export async function searchStreamEstate(
   // 2. Le quartier : l'adresse du bien géocodée sûrement, sinon le centre de la commune (10 km).
   // Avec le nom OFFICIEL de la commune : « St Laurent du Var » fait tomber le score du géocodage
   // sous 0,8 (0,74 contre 0,83 pour la même adresse, mesuré le 06/10) — et le quartier avec.
-  const geocode = await geocodeSubject(loaded.address, criteria.postalCode, commune.name);
+  const geocode = await geo.geocodeSubject(loaded.address, criteria.postalCode, commune.name);
   const subjectPoint = geocode.ok ? geocode.point : null;
   const origin = subjectPoint ?? commune.centre;
   // Mission 99 — un rayon réglé se mesure « autour du bien » : sans adresse reconnue, pas de
@@ -213,7 +221,7 @@ export async function searchStreamEstate(
   // 3. Les communes voisines, pour retirer du cercle ce qui n'est pas la commune du bien.
   const departmentCommunes =
     subjectPoint != null && commune.departement != null
-      ? await fetchDepartmentCommunes(commune.departement)
+      ? await geo.fetchDepartmentCommunes(commune.departement)
       : null;
   // Mission 99 — dans une ville à arrondissements, les autres arrondissements sont exclus du
   // cercle comme des communes voisines, et l'élargissement « arrondissements voisins » les ajoute.
@@ -232,10 +240,10 @@ export async function searchStreamEstate(
 
   // Mission 100 — ce que cette recherche a réellement facturé, compté sur chaque réponse.
   let billed = 0;
-  const fetchPage: FetchStreamEstatePage = async (params) => {
+  const liveFetchPage: FetchStreamEstatePage = async (params) => {
     try {
       const response = await fetch(`${STREAM_ESTATE_ENDPOINT}?${params}`, {
-        headers: { 'X-API-KEY': apiKey, Accept: 'application/ld+json' },
+        headers: { 'X-API-KEY': apiKey ?? '', Accept: 'application/ld+json' },
         signal: AbortSignal.timeout(TIMEOUT_MS),
         cache: 'no-store',
       });
@@ -255,6 +263,10 @@ export async function searchStreamEstate(
       return { ok: false, refused: false };
     }
   };
+  // Mission 114 — la page simulée répond aux mêmes paramètres, depuis le jeu de données.
+  const fetchPage: FetchStreamEstatePage = demo
+    ? demoStreamEstatePage({ listings: DEMO_LISTINGS, now })
+    : liveFetchPage;
 
   // 4. Les crans, du plus proche au plus large — ou la reprise, 20 annonces de plus.
   const plans = planTiers(
@@ -285,17 +297,18 @@ export async function searchStreamEstate(
     };
   }
   // Mission 105 — le coût maximal est réservé AVANT l'appel payant, compteur de l'agence
-  // verrouillé : deux recherches simultanées ne franchissent pas le plafond.
-  const reservation = await reserveSearchBudget({
-    agencyId: profile.agency_id,
-    projectId,
-    userId: profile.id,
-    wanted: advertsAllowed(
-      resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP,
-      budgetRead.budget,
-    ),
-  });
-  if (!reservation.ok) {
+  // verrouillé : deux recherches simultanées ne franchissent pas le plafond. En démo, rien n'est
+  // réservé : la recherche simulée s'arrête au même plafond d'annonces, sans compteur.
+  const wanted = resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP;
+  const reservation = budgetRead?.ok
+    ? await reserveSearchBudget({
+        agencyId: profile.agency_id,
+        projectId,
+        userId: profile.id,
+        wanted: advertsAllowed(wanted, budgetRead.budget),
+      })
+    : null;
+  if (reservation != null && !reservation.ok) {
     return {
       ok: false,
       error:
@@ -312,7 +325,7 @@ export async function searchStreamEstate(
     fetchPage,
     now,
     // Mission 105 — jamais plus que ce qui vient d'être réservé sur le budget du mois.
-    cap: reservation.adverts,
+    cap: reservation?.ok ? reservation.adverts : wanted,
     filters: settings.filters,
     ...(resumeFrom != null
       ? {
@@ -325,7 +338,7 @@ export async function searchStreamEstate(
   });
   // Comptée que la recherche ait abouti ou non : ce qui est facturé est dépensé ; le reste de la
   // réservation est rendu.
-  await settleSearchBudget(reservation.reservationId, billed);
+  if (reservation?.ok) await settleSearchBudget(reservation.reservationId, billed);
   if (!outcome.ok) {
     return {
       ok: false,
@@ -348,7 +361,8 @@ export async function searchStreamEstate(
         candidates.length > 0 ? null : 'Stream Estate ne renvoie aucun bien pour ces critères.',
       candidates,
     },
-    billed: outcome.billed,
+    // Mission 114 — la démonstration ne facture rien : le bilan dit 0 annonce facturée.
+    billed: demo ? 0 : outcome.billed,
     stop: outcome.stop,
     cursor: outcome.cursor,
     tiers: outcome.tiers,

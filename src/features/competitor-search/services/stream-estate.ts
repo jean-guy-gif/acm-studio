@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { communeKey } from '@/features/competitor-search/utils/commune-name';
+import { DEMO_LISTING_HOST } from '@/features/demo/constants';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import {
   isGeneratedNewBuildTitle,
@@ -207,6 +208,12 @@ export function isImportableUrl(rawUrl: string): boolean {
   }
   if (url.protocol !== 'https:') return false;
   const host = url.hostname.toLowerCase();
+  // Mission 114 — l'hôte RÉSERVÉ des annonces de démonstration (`.invalid`, jamais résolu) est
+  // importable aussi : une réponse de l'API réelle ne le porte jamais ; seule la recherche simulée
+  // de l'agence de démo le renvoie, et ses annonces s'importent sans extension (actions de
+  // démonstration). Il n'entre pas dans IMPORTABLE_HOST_SUFFIXES, qui reste la liste des sites
+  // que l'extension sait relire.
+  if (host === DEMO_LISTING_HOST) return true;
   return IMPORTABLE_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
 }
 

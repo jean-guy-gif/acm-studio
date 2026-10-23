@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
   reserved: [] as number[],
   // Mission 112 — les résultats gardés par la recherche elle-même.
   kept: [] as { resuming: boolean; billed: number }[],
+  // Mission 114 — le repère de l'agence de démonstration, tel que le serveur le lit en base.
+  demo: false,
 }));
 
 vi.mock('@/features/competitor-search/services/stream-estate-config', () => ({
@@ -32,6 +34,13 @@ vi.mock('@/features/projects/queries/get-project', () => ({
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 // Mission 112 — la recherche garde elle-même le résultat payé (testé à part : keep-paid-result).
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+// Mission 114 — la bascule vers la recherche simulée se décide sur ce seul repère, lu au serveur :
+// une agence réelle part chez Stream Estate, l'agence de démonstration n'y va jamais.
+vi.mock('@/features/demo/services/is-demo-agency', () => ({
+  isDemoAgency: async () => state.demo,
+}));
+// Le délai fixe des réponses simulées (1,5 s par page) n'a rien à prouver ici.
+vi.mock('@/features/demo/services/demo-delay', () => ({ demoDelay: async () => undefined }));
 vi.mock('@/features/competitor-search/services/keep-paid-result', () => ({
   keepPaidSearchResult: async (input: { resuming: boolean; note: { billed: number } }) => {
     state.kept.push({ resuming: input.resuming, billed: input.note.billed });
@@ -125,6 +134,7 @@ beforeEach(() => {
   state.grant = null;
   state.reserved = [];
   state.kept = [];
+  state.demo = false;
   state.profile = { id: 'u-advisor', agency_id: AGENCY, role: 'advisor', removed_at: null };
   state.budget = { ok: true, budget: searchBudget(0, null) };
   stubApi();
@@ -216,5 +226,29 @@ describe('« Chercher les concurrents » et le budget du mois', () => {
     // Le détail technique part au journal, pas à l'écran.
     expect(result.ok ? '' : result.error).not.toMatch(/clé|console|401/);
     expect(state.errors).toEqual(['searchStreamEstate']);
+  });
+});
+
+// Mission 114 — l'agence de démonstration : la recherche simulée répond depuis le jeu de données,
+// par les mêmes crans et le même classement ; aucun appel à Stream Estate, aucun budget lu ni
+// réservé, rien de compté, 0 annonce facturée au bilan.
+describe('l’agence de démonstration (mission 114)', () => {
+  it('aucun appel, aucun budget, rien de compté : le résultat vient du jeu de données', async () => {
+    state.demo = true;
+    // Un budget illisible n'arrête pas la démo : il n'est même pas lu.
+    state.budget = { ok: false };
+    const result = await search();
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(pages).toEqual([]);
+    expect(state.reserved).toEqual([]);
+    expect(state.usage).toEqual([]);
+    expect(result.billed).toBe(0);
+    expect(result.portal.candidates.length).toBeGreaterThan(0);
+    for (const candidate of result.portal.candidates) {
+      expect(new URL(candidate.url).hostname).toBe('annonces.demonstration.invalid');
+    }
+    // Gardé comme un résultat payé (M112) : il se rouvre, sans nouvel appel.
+    expect(state.kept).toEqual([{ resuming: false, billed: 0 }]);
   });
 });

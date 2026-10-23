@@ -18,10 +18,14 @@ import {
 } from '@/features/competitor-locator/services/location-watch';
 import { syncCompetitorLocations } from '@/features/competitor-locator/services/sync-competitor-locations';
 import type { LocatorAvailability } from '@/features/competitor-locator/types';
+import { locateDemoCompetitors } from '@/features/demo/actions/locate-demo-competitors';
+import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 
 // Mission 75 — branche la veille du Localisateur sur un dossier : une passe à l'ouverture, une à
 // chaque retour sur l'onglet (le conseiller revient d'une annonce ou de la vue du Localisateur),
 // et `refresh()` après un import. `availability` reste null tant que le ping n'a pas répondu.
+// Mission 114 — en démonstration, la passe ne sonde pas le Localisateur : elle demande au serveur
+// les adresses du jeu de données (`locateDemoCompetitors`), qui les écrit par le même chemin.
 export function useCompetitorLocator(
   projectId: string,
   // Faux là où l'écran ne montre pas les adresses (recherche) : rien à rafraîchir.
@@ -31,19 +35,22 @@ export function useCompetitorLocator(
   refresh: () => void;
 } {
   const router = useRouter();
+  const demo = useDemoMode();
   const [availability, setAvailability] = useState<LocatorAvailability | null>(null);
   const watchRef = useRef<LocationWatch | null>(null);
 
   useEffect(() => {
     const watch = createLocationWatch({
       sync: () =>
-        syncCompetitorLocations({
-          ping: pingLocator,
-          loadToLocate: () => loadCompetitorsToLocate(projectId),
-          fetchProperties: fetchLocatorProperties,
-          save: (entries) => saveCompetitorLocations(projectId, entries),
-          maxUrls: LOCATOR_MAX_URLS,
-        }),
+        demo
+          ? locateDemoCompetitors(projectId)
+          : syncCompetitorLocations({
+              ping: pingLocator,
+              loadToLocate: () => loadCompetitorsToLocate(projectId),
+              fetchProperties: fetchLocatorProperties,
+              save: (entries) => saveCompetitorLocations(projectId, entries),
+              maxUrls: LOCATOR_MAX_URLS,
+            }),
       onOutcome: (outcome) => {
         setAvailability(outcome.availability);
         if (refreshOnChange && outcome.changed > 0) {
@@ -65,7 +72,7 @@ export function useCompetitorLocator(
       watch.stop();
       watchRef.current = null;
     };
-  }, [projectId, router, refreshOnChange]);
+  }, [projectId, router, refreshOnChange, demo]);
 
   const refresh = useCallback(() => watchRef.current?.start(), []);
 

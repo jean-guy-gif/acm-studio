@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Mission 114 — les photos de démonstration sont lues sur le disque par l'action qui dépose les
+  // photos du bien vendeur (page de la fiche) : elles voyagent avec cette route.
+  outputFileTracingIncludes: {
+    '/builder/[projectId]/property': ['./public/demo/photos/**/*'],
+  },
   experimental: {
     serverActions: {
       // Le conseiller colle une page d'annonce entière. Mesuré sur les pages

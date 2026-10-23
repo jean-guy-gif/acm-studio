@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { Logo } from '@/components/brand/logo';
+import { DEMO_BANNER_MESSAGE } from '@/features/demo/constants';
 import {
   question,
   questionHint,
@@ -20,6 +21,7 @@ export function LiveNeutralScreen({
   agencyName,
   actions = null,
   advisorAccess,
+  isDemo = false,
 }: {
   title: string;
   subtitle?: string | null;
@@ -30,6 +32,8 @@ export function LiveNeutralScreen({
   actions?: ReactNode;
   // « Accès conseiller », discret, en bas.
   advisorAccess: ReactNode;
+  // Mission 114 — l'agence de démonstration : la note discrète, en pied d'écran.
+  isDemo?: boolean;
 }) {
   return (
     <div data-stage="dark" className={`${stageRoot} overflow-hidden`}>
@@ -52,6 +56,16 @@ export function LiveNeutralScreen({
         {actions}
       </main>
       <footer className="relative flex justify-center px-6 pb-6">{advisorAccess}</footer>
+      {/* Mission 114 — en démonstration, l'écran neutre le dit aussi, discrètement. */}
+      {isDemo ? (
+        <p
+          data-testid="demo-live-note"
+          className="pointer-events-none fixed right-3 bottom-1 z-30 text-[10px] font-medium tracking-wide text-white/30 uppercase"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          {DEMO_BANNER_MESSAGE}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Logo } from '@/components/brand/logo';
+import { DEMO_BANNER_MESSAGE } from '@/features/demo/constants';
 import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
@@ -78,6 +79,7 @@ export function LiveComparativeShell({
   logoDarkUrl = null,
   agencyName = null,
   hasAgreedPrice = false,
+  isDemo = false,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -103,6 +105,8 @@ export function LiveComparativeShell({
   // Mission 89 — un prix de commercialisation est-il déjà enregistré pour ce dossier ? Un
   // oui/non, jamais le montant : la question de 1 à 10 ne dit « à ce prix » que s'il y en a un.
   hasAgreedPrice?: boolean;
+  // Mission 114 — l'agence de démonstration : une note discrète en pied d'écran, rien d'autre.
+  isDemo?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -927,6 +931,17 @@ export function LiveComparativeShell({
       <div className={stageGlowLayer} aria-hidden>
         <div className={stageGlow} />
       </div>
+
+      {/* Mission 114 — en démonstration, le Live le dit, discrètement, en pied d'écran. */}
+      {isDemo ? (
+        <p
+          data-testid="demo-live-note"
+          className="pointer-events-none fixed right-3 bottom-1 z-30 text-[10px] font-medium tracking-wide text-zinc-400 uppercase stage:text-white/30"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          {DEMO_BANNER_MESSAGE}
+        </p>
+      ) : null}
 
       {/* Chrome supérieur : identité + réglages, volontairement discret. */}
       <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">

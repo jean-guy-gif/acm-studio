@@ -209,6 +209,9 @@ type Props = {
   };
   // Mission 110 — le mode expert du conseiller : aides masquées.
   expertMode?: boolean;
+  // Mission 114 — l'agence de démonstration : l'écran ne sonde pas l'extension, n'ouvre aucune
+  // fenêtre de portail, ne parle ni de coût ni de portails ; les données viennent du serveur.
+  demo?: boolean;
 };
 
 // Mission 69 — ce que l'écran dit après « Ouvrir mes recherches ».
@@ -433,8 +436,13 @@ export function CompetitorSearchPanel({
   budgetNotice = null,
   searchSettings,
   expertMode = false,
+  demo = false,
 }: Props) {
   const [pending, startTransition] = useTransition();
+  // Mission 114 — en démonstration, l'extension est tenue pour présente sans être sondée : la
+  // lecture des pages est simulée côté serveur, où le repère de l'agence est revérifié.
+  const detect = (options?: { force?: boolean }) =>
+    demo ? Promise.resolve({ available: true as const }) : pingExtension(options);
   // Mission 75 — après chaque import, ACM demande l'adresse du concurrent au Localisateur.
   const { refresh: refreshLocator } = useCompetitorLocator(projectId, false);
   const [error, setError] = useState<string | null>(null);
@@ -463,7 +471,7 @@ export function CompetitorSearchPanel({
   const [withdrawnImported, setWithdrawnImported] = useState(0);
   // Mission 108 — « Réessayer » sous le message d'installation : la détection complète.
   const retryExtension = async () => {
-    const ping = await pingExtension({ force: true });
+    const ping = await detect({ force: true });
     setExtensionIssue(ping.available ? null : missingExtensionIssue());
     if (ping.available) setError(null);
   };
@@ -741,7 +749,7 @@ export function CompetitorSearchPanel({
     try {
       // Mission 93 — seule l'extension permet d'importer ce que la recherche trouve : sans elle,
       // on ne paie pas. Le ping d'abord ; l'appel facturé ne part que s'il répond.
-      const outcome = await runPaidSearch(pingExtension, () =>
+      const outcome = await runPaidSearch(detect, () =>
         streamEstateAction(
           more && previousNote?.cursor && previousPortal
             ? {
@@ -868,7 +876,7 @@ export function CompetitorSearchPanel({
         setError(prep.error);
         return;
       }
-      const ping = await pingExtension();
+      const ping = await detect();
       if (!ping.available) {
         setExtensionIssue(missingExtensionIssue());
         return;
@@ -899,7 +907,7 @@ export function CompetitorSearchPanel({
     setWaitingTabs([]);
     setReading(true);
     try {
-      const ping = await pingExtension();
+      const ping = await detect();
       if (!ping.available) {
         setExtensionIssue(missingExtensionIssue());
         return;
@@ -990,6 +998,7 @@ export function CompetitorSearchPanel({
         fromStreamEstate: candidate.streamEstate != null,
         robotsCache,
         windowId,
+        demo,
       }),
     );
     if (outcome.status === 'pending') {
@@ -1023,14 +1032,17 @@ export function CompetitorSearchPanel({
       setError(RETAINED_NOT_SAVED_MESSAGE);
       return;
     }
-    const ping = await pingExtension();
+    const ping = await detect();
     if (!ping.available) {
       setExtensionIssue(missingExtensionIssue());
       setError(RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE);
       return;
     }
-    const win = await openSearchWindowViaExtension();
-    if (!win.ok || win.windowId == null) {
+    // Mission 114 — en démonstration, aucune fenêtre de portail : rien à ouvrir ni à fermer.
+    const win: { ok: boolean; windowId?: number } = demo
+      ? { ok: true }
+      : await openSearchWindowViaExtension();
+    if (!win.ok || (!demo && win.windowId == null)) {
       setError('La fenêtre d’import n’a pas pu s’ouvrir. Réessayez.');
       return;
     }
@@ -1071,7 +1083,9 @@ export function CompetitorSearchPanel({
     } finally {
       // Quoi qu'il arrive : la fenêtre se ferme, les décisions des biens RETENUS s'écrivent, et
       // l'écran rend la main. Une annonce retirée entre sans décision : c'est au conseiller.
-      await closeSearchWindowViaExtension(win.windowId).catch(() => undefined);
+      if (win.windowId != null) {
+        await closeSearchWindowViaExtension(win.windowId).catch(() => undefined);
+      }
       const decisions = batchDecisions(retained);
       if (decisions.length > 0) {
         await recordDecisionsAction(decisions).catch(() => undefined);
@@ -1097,7 +1111,7 @@ export function CompetitorSearchPanel({
     if (!(await registerRetained([candidate]))) {
       return RETAINED_NOT_SAVED_MESSAGE;
     }
-    const ping = await pingExtension();
+    const ping = await detect();
     if (!ping.available) {
       setExtensionIssue(missingExtensionIssue());
       return RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE;
@@ -1317,7 +1331,8 @@ export function CompetitorSearchPanel({
             <button
               type="button"
               onClick={() =>
-                streamNote ? setConfirmingRelaunch(true) : void searchViaStreamEstate()
+                // Mission 114 — en démonstration, relancer ne coûte rien : pas de confirmation.
+                streamNote && !demo ? setConfirmingRelaunch(true) : void searchViaStreamEstate()
               }
               disabled={busy}
               className={btnPrimary}
@@ -1330,10 +1345,12 @@ export function CompetitorSearchPanel({
             </button>
           )}
           <p className={hintText}>Critères : {criteriaLabel}</p>
-          {/* Mission 93 — le coût se dit avant de payer. */}
-          <p className="w-full text-xs text-zinc-500 stage:text-white/50">
-            {STREAM_ESTATE_MAX_COST_LABEL}
-          </p>
+          {/* Mission 93 — le coût se dit avant de payer. Mission 114 — rien n'est payé en démo. */}
+          {demo ? null : (
+            <p className="w-full text-xs text-zinc-500 stage:text-white/50">
+              {STREAM_ESTATE_MAX_COST_LABEL}
+            </p>
+          )}
           {budgetNotice ? (
             <p
               role="status"
@@ -1355,60 +1372,70 @@ export function CompetitorSearchPanel({
       ) : null}
       {/* Mission 69 — deux clics : ACM ouvre les portails déjà filtrés avec les caractéristiques
           du bien, puis lit tous les onglets d'un coup. Mission 73 : en secondaire, sous leur
-          intitulé. */}
-      <h3 className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-        {streamEstateAction
-          ? 'Ou chercher vous-même sur les portails'
-          : 'Chercher vous-même sur les portails'}
-      </h3>
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={openMySearches} disabled={busy} className={btnSecondary}>
-          {opening ? 'Ouverture…' : 'Ouvrir mes recherches'}
-        </button>
-        <button type="button" onClick={readAllMySearches} disabled={busy} className={btnSecondary}>
-          {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
-        </button>
-        {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
-      </div>
-      <p className={hintText}>
-        « Ouvrir mes recherches » ouvre les portails déjà filtrés ; corrigez un filtre si besoin,
-        puis « Lire mes recherches ».
-      </p>
-      {openedSearches ? (
-        <div className={`${card} flex flex-col gap-2 p-4`}>
-          <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
-            {openedSearches.opened > 0
-              ? `${plural(openedSearches.opened, 'onglet ouvert', 'onglets ouverts')} à côté d’ACM`
-              : 'Vos recherches sont déjà ouvertes dans vos onglets'}
-          </span>
-          {openedSearches.links.map((link) => (
-            <div key={link.portal} className="flex flex-col gap-0.5 text-sm">
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={`${linkCls} hover:underline`}
-              >
-                {link.label}
-                {link.needsPlace ? '' : ' — déjà filtré'}
-              </a>
-              {link.needsPlace ? (
-                <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
-                  Première recherche à {openedSearches.city} sur {link.label} : réglez la commune
-                  une fois, ACM s’en souviendra. Réglez aussi les filtres sur cet onglet.
-                </span>
-              ) : null}
+          intitulé. Mission 114 — sans portail en démonstration : la section n'existe pas. */}
+      {demo ? null : (
+        <>
+          <h3 className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+            {streamEstateAction
+              ? 'Ou chercher vous-même sur les portails'
+              : 'Chercher vous-même sur les portails'}
+          </h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={openMySearches} disabled={busy} className={btnSecondary}>
+              {opening ? 'Ouverture…' : 'Ouvrir mes recherches'}
+            </button>
+            <button
+              type="button"
+              onClick={readAllMySearches}
+              disabled={busy}
+              className={btnSecondary}
+            >
+              {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
+            </button>
+            {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
+          </div>
+          <p className={hintText}>
+            « Ouvrir mes recherches » ouvre les portails déjà filtrés ; corrigez un filtre si
+            besoin, puis « Lire mes recherches ».
+          </p>
+          {openedSearches ? (
+            <div className={`${card} flex flex-col gap-2 p-4`}>
+              <span className="font-title text-sm font-semibold text-zinc-800 stage:text-white">
+                {openedSearches.opened > 0
+                  ? `${plural(openedSearches.opened, 'onglet ouvert', 'onglets ouverts')} à côté d’ACM`
+                  : 'Vos recherches sont déjà ouvertes dans vos onglets'}
+              </span>
+              {openedSearches.links.map((link) => (
+                <div key={link.portal} className="flex flex-col gap-0.5 text-sm">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={`${linkCls} hover:underline`}
+                  >
+                    {link.label}
+                    {link.needsPlace ? '' : ' — déjà filtré'}
+                  </a>
+                  {link.needsPlace ? (
+                    <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
+                      Première recherche à {openedSearches.city} sur {link.label} : réglez la
+                      commune une fois, ACM s’en souviendra. Réglez aussi les filtres sur cet
+                      onglet.
+                    </span>
+                  ) : null}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : null}
-      {waitingTabs.length > 0 ? (
-        <p role="alert" className={alertError}>
-          {waitingTabs.map((label) => `Cliquez une fois sur l’onglet ${label}`).join(' ; ')} —
-          {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur l’écran
-          d’attente du portail. Puis relancez « Lire mes recherches ».
-        </p>
-      ) : null}
+          ) : null}
+          {waitingTabs.length > 0 ? (
+            <p role="alert" className={alertError}>
+              {waitingTabs.map((label) => `Cliquez une fois sur l’onglet ${label}`).join(' ; ')} —
+              {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur
+              l’écran d’attente du portail. Puis relancez « Lire mes recherches ».
+            </p>
+          ) : null}
+        </>
+      )}
       {streamNote
         ? (() => {
             // Mission 71 — la ligne de bilan : combien, à quel cran, et ce que la recherche a coûté

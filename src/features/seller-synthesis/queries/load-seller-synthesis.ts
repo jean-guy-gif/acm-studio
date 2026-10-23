@@ -103,7 +103,7 @@ export async function loadSellerSynthesis(
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
       .maybeSingle(),
-    supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
+    supabase.from('agencies').select('name, is_demo').eq('id', agencyId).maybeSingle(),
     supabase
       .from('agency_branding')
       .select(
@@ -170,6 +170,7 @@ export async function loadSellerSynthesis(
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
     agency: {
       name: agencyName,
+      isDemo: agency.data?.is_demo === true,
       logoUrl: logoPath
         ? supabase.storage.from(BRANDING_BUCKET).getPublicUrl(logoPath).data.publicUrl
         : null,

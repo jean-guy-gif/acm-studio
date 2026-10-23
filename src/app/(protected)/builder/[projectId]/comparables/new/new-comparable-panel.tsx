@@ -204,7 +204,8 @@ export function NewComparablePanel({
           Collez le lien SeLoger, Bien’ici, Green-Acres, Maisons et Appartements… — photos, texte et
           caractéristiques sont aspirés pour vous.
         </p>
-        {extension.available === false ? (
+        {/* Mission 114 — en démonstration, l'absence de l'extension ne s'affiche pas. */}
+        {extension.available === false && !extension.demo ? (
           <ExtensionRequiredNotice
             reason={extension.noSiteAccess ? 'no_site_access' : 'missing'}
             onRetry={extension.recheck}

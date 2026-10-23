@@ -3,7 +3,7 @@ import 'server-only';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { prospectingStep } from '@/features/competitor-mandate/services/mandate-columns';
-import { geocodeSubject } from '@/features/competitor-search/services/fetch-geo';
+import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { distanceMeters } from '@/features/competitor-search/services/proximity';
 import {
   fileBlocker,
@@ -200,7 +200,9 @@ export async function getProspectingFile(
     competitor.locator_longitude != null &&
     property.city
   ) {
-    const geocode = await geocodeSubject(property.address, property.postal_code, property.city);
+    // Mission 114 — géocodé par le référentiel de l'agence (public, ou local en démonstration).
+    const geo = await geoProviderFor(agencyId);
+    const geocode = await geo.geocodeSubject(property.address, property.postal_code, property.city);
     if (geocode.ok) {
       distance = distanceMeters(geocode.point, {
         lat: competitor.locator_latitude,

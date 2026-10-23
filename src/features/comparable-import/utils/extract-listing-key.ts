@@ -1,4 +1,5 @@
 import { normalizeListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
+import { DEMO_LISTING_HOST, DEMO_PORTAL, DEMO_SOURCE_LABEL } from '@/features/demo/constants';
 
 // The identity of a listing (Mission 47 §3): the couple (portal, identifier in the
 // PATH of the canonical address). Two observations compare only if we know they are
@@ -19,6 +20,10 @@ const MEASURED_PORTALS: { suffixes: string[]; portal: string }[] = [
   // juste. Sans cette entrée, aucune observation n'est écrite et le portail n'a
   // jamais d'historique de prix.
   { suffixes: ['maisonsetappartements.fr'], portal: 'maisonsetappartements' },
+  // Mission 114 — le portail de DÉMONSTRATION (hôte réservé) : l'identifiant du bien fictif est le
+  // dernier segment du chemin, pour que ses observations et son regroupement marchent comme ceux
+  // d'un portail mesuré. Aucune page réelle n'y est jamais lue.
+  { suffixes: [DEMO_LISTING_HOST], portal: DEMO_PORTAL },
   // leboncoin.fr : NON supporté, ne pas rajouter. Son robots.txt interdit /ad/,
   // le chemin des annonces — on ne le lira jamais, donc pas d'identité à en tirer.
 ];
@@ -29,6 +34,7 @@ export const LISTING_PORTAL_LABELS: Record<string, string> = {
   bienici: 'Bien’ici',
   greenacres: 'Green Acres',
   maisonsetappartements: 'Maisons et Appartements',
+  [DEMO_PORTAL]: DEMO_SOURCE_LABEL,
 };
 
 export type ListingIdentity = { portal: string; listingKey: string; canonicalUrl: string };

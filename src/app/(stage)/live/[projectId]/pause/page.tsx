@@ -30,6 +30,7 @@ export default async function LivePausePage({
       logoLightUrl={context.logoLightUrl}
       logoDarkUrl={context.logoDarkUrl}
       agencyName={context.agencyName}
+      isDemo={context.isDemo}
       actions={<LiveResumeLink projectId={projectId} />}
       advisorAccess={
         <Link href="/live" className={advisorAccessLink}>

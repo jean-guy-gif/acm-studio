@@ -15,6 +15,7 @@ import {
   READ_FAILURE_LABELS,
 } from '@/features/competitor-search/services/import-listing';
 import { listingImportDeps } from '@/features/competitor-search/services/listing-import-deps';
+import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import {
   PENDING_DISMISS_LABEL,
   PENDING_IMPORTS_HINT,
@@ -34,6 +35,8 @@ export function PendingImportsBanner({
   pending: PendingImportView[];
 }) {
   const router = useRouter();
+  // Mission 114 — en démonstration, « Réessayer » importe depuis le jeu de données, sans extension.
+  const demo = useDemoMode();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   // Mission 108 — déjà dans le dossier, écartée : la question reste après le rafraîchissement.
@@ -58,6 +61,7 @@ export function PendingImportsBanner({
           propertyType: item.propertyType,
           fromStreamEstate: item.fromStreamEstate,
           robotsCache: new Map(),
+          demo,
         }),
       );
       if (outcome.status === 'pending') {

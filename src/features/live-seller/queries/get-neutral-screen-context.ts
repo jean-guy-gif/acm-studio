@@ -14,6 +14,8 @@ export type NeutralScreenContext = {
   logoDarkUrl: string | null;
   agencyName: string | null;
   advisorFirstName: string | null;
+  // Mission 114 — l'agence de démonstration : l'écran neutre porte la note discrète.
+  isDemo: boolean;
 };
 
 export async function getNeutralScreenContext(
@@ -30,5 +32,6 @@ export async function getNeutralScreenContext(
     logoDarkUrl: branding?.logoDarkUrl ?? null,
     agencyName: agency?.name ?? null,
     advisorFirstName: profile?.first_name?.trim() || null,
+    isDemo: agency?.is_demo === true,
   };
 }

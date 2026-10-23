@@ -12,9 +12,15 @@ import type {
   DepositBrochureResult,
   ParseBrochureResult,
 } from '@/features/subject-property-import/actions/import-brochure-pdf';
-import { BrochureImportPanel } from '@/features/subject-property-import/components/brochure-import-panel';
+import {
+  BrochureImportPanel,
+  type DemoBrochureChoice,
+} from '@/features/subject-property-import/components/brochure-import-panel';
 import type { RecoverPropertyPhotoResult } from '@/features/subject-property-import/actions/recover-property-photos';
-import { SubjectPropertyImportPanel } from '@/features/subject-property-import/components/subject-property-import-panel';
+import {
+  SubjectPropertyImportPanel,
+  type DemoListingChoice,
+} from '@/features/subject-property-import/components/subject-property-import-panel';
 import type {
   BrochureCondominiumPrefill,
   BrochureDiagnosticsPrefill,
@@ -93,6 +99,8 @@ export function SubjectPropertyImportForm({
   findHref,
   backHref,
   projectId,
+  demoListings = null,
+  demoBrochures = null,
 }: {
   property: SubjectProperty | null;
   saveAction: (formData: FormData) => Promise<SaveSubjectPropertySheetResult>;
@@ -109,6 +117,9 @@ export function SubjectPropertyImportForm({
   findHref: string;
   backHref: string;
   projectId: string;
+  // Mission 114 — en démonstration : les annonces et les fiches PDF des scénarios, proposées.
+  demoListings?: DemoListingChoice[] | null;
+  demoBrochures?: DemoBrochureChoice[] | null;
 }) {
   const router = useRouter();
   const [imported, setImported] = useState<SubjectPropertyImportPrefill | null>(null);
@@ -269,6 +280,7 @@ export function SubjectPropertyImportForm({
         importAction={importAction}
         importHtmlAction={importHtmlAction}
         recoverAction={recoverAction}
+        demoListings={demoListings}
         onImported={(prefill) => {
           setImported(prefill);
           setPropertyKey((value) => value + 1);
@@ -278,6 +290,7 @@ export function SubjectPropertyImportForm({
       <BrochureImportPanel
         parseAction={parseBrochureAction}
         depositAction={depositBrochureAction}
+        demoBrochures={demoBrochures}
         onImported={(data) => {
           setImported(data.property);
           setImportedDiagnostics(data.diagnostics);

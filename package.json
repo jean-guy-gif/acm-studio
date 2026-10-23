@@ -23,7 +23,8 @@
     "sauvegarde:verifier": "node scripts/sauvegarde-verifier.mjs",
     "nettoyer:test": "node scripts/nettoyer-test.mjs",
     "verifier:production": "node scripts/verifier-production.mjs",
-    "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs"
+    "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs",
+    "demo:fiches": "node --experimental-strip-types --no-warnings scripts/demo-fiches.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

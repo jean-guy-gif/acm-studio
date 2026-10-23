@@ -1,25 +1,15 @@
 'use server';
 
-import {
-  COMPETITOR_VERIFIABLE_FIELDS,
-  importedFields,
-} from '@/features/imported-fields/services/fields-to-verify';
-import { revalidatePath } from 'next/cache';
-
-import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
-
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
 import { normalizeListingData } from '@/features/comparable-import/services/normalize-listing-data';
-import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
 import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
-import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
-import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
+import { createImportedCompetitor } from '@/features/competitor-search/services/create-imported-competitor';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
-import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { isDemoListingHost } from '@/features/demo/services/demo-urls';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -75,6 +65,11 @@ export async function importAndCreateComparable(
   if (!url || !isAllowedProtocol(url)) {
     return { ok: false, error: 'Adresse d’annonce invalide.' };
   }
+  // Mission 114 — une annonce de démonstration n'a pas de page : elle s'importe par l'action de
+  // démonstration, dans l'agence de démonstration seulement. Ici, elle est inconnue.
+  if (isDemoListingHost(url.hostname)) {
+    return { ok: false, error: 'Adresse d’annonce invalide.' };
+  }
   if (html.trim() === '' || Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
     return { ok: false, error: GENERIC_ERROR };
   }
@@ -101,44 +96,14 @@ export async function importAndCreateComparable(
     };
   }
 
-  // Observation datée (mission 47), best effort — comme l'import unitaire.
-  await observeListing(supabase, profile.agency_id, url.href, data);
-
-  // Type canonique écrit en base (apartment/house/…) ; jamais le texte libre.
-  const canonicalType = normalizePropertyType(propertyType);
-
-  const created = await insertCompetitor(supabase, projectId, profile.agency_id, {
-    ...input,
-    // Mission 83 — vendeur et exclusivité tels que l'annonce les dit, avec leur provenance.
-    ...importedMandateColumns(data),
-    property_type: canonicalType,
-    // Mission 97 — tout ce que l'import vient de remplir reste « à vérifier » jusqu'à relecture.
-    fields_to_verify: importedFields(input, COMPETITOR_VERIFIABLE_FIELDS),
-    is_selected: true,
+  // Mission 114 — ce qui suit la lecture est partagé avec l'import de démonstration.
+  return createImportedCompetitor({
+    supabase,
+    projectId,
+    agencyId: profile.agency_id,
+    url,
+    data,
+    input,
+    propertyType,
   });
-  if (created.status === 'failed') {
-    return { ok: false, error: GENERIC_ERROR };
-  }
-  // Mission 101 — le bien n'est plus « en attente d'import » : sa ligne part avec sa création.
-  await supabase
-    .from('pending_competitor_imports')
-    .delete()
-    .eq('project_id', projectId)
-    .eq('agency_id', profile.agency_id)
-    .eq('listing_url', url.href);
-  // MISSION 52 — un concurrent importé peut compléter le dernier critère → bascule
-  // automatique du dossier dans le Live (draft → ready).
-  const becameReady = await maybePromoteToReady(supabase, projectId, profile.agency_id);
-  revalidatePath(`/builder/${projectId}/comparables`);
-  revalidatePath(`/builder/${projectId}`);
-  revalidatePath('/builder');
-  revalidatePath('/live');
-  return {
-    ok: true,
-    name: input.title,
-    becameReady,
-    ...(created.status === 'existing' && !created.selected
-      ? { dismissedExisting: created.id }
-      : {}),
-  };
 }
