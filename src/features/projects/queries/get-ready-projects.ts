@@ -16,7 +16,7 @@ export async function getReadyProjects(): Promise<Project[]> {
   const { data } = await supabase
     .from('projects')
     .select(
-      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at, is_example',
+      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at, is_example, demo_stage',
     )
     .eq('agency_id', profile.agency_id)
     .eq('status', 'ready_for_meeting')

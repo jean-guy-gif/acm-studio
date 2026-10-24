@@ -62,7 +62,7 @@ async function expectUnspoken(page: Page, screen: string): Promise<void> {
   );
 }
 
-test.setTimeout(30 * 60_000);
+test.setTimeout(40 * 60_000);
 
 async function blockOutsideHosts(context: BrowserContext, blocked: Map<string, number>) {
   const own = new URL(process.env.E2E_BASE_URL ?? 'http://localhost').hostname;
@@ -106,6 +106,37 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         await page.getByRole('button', { name: /Enregistrer/ }).click();
         await expect(page.getByText('Profil enregistré.')).toBeVisible();
       }
+    });
+
+    // Mission 114 (partie B) — « Préparer ma démo » : quatre dossiers à quatre étapes, à soi. Un
+    // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
+    // les remet à zéro.
+    await test.step('Ma démo : quatre dossiers, un par étape', async () => {
+      await page.goto('/ma-demo');
+      await expect(page.getByTestId('demo-dossiers')).toBeVisible();
+      await expectUnspoken(page, 'Ma démo');
+      if ((await page.getByTestId('demo-dossier').count()) === 0) {
+        await page.getByRole('button', { name: 'Préparer ma démo' }).click();
+        await expect(page.getByTestId('demo-dossier')).toHaveCount(4, { timeout: 180_000 });
+      }
+      const stages = await page
+        .getByTestId('demo-dossier')
+        .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
+      expect(stages).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+      // Chacun à sa place : le prêt dans la liste du Live, les deux conclus dans le Suivi.
+      await page.goto('/live');
+      await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
+      await page.goto('/suivi');
+      const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+      await expect(signed.getByTestId('mandate-type-badge')).toHaveText('Exclusif');
+      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Martin' });
+      await expect(followUp.getByText('À relancer', { exact: true })).toBeVisible();
+      await expect(followUp.getByTestId('objections-line')).toHaveText(
+        'Freins : Le prix · Le délai',
+      );
+      await expect(followUp.getByText(/Dernier contact il y a 8 jours/)).toBeVisible();
+      // L'entrée « Ma démo » est au menu de l'agence de démo.
+      await expect(page.getByRole('link', { name: /^Ma démo/ })).toBeVisible();
     });
 
     await test.step('Nouveau dossier', async () => {
@@ -576,6 +607,31 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('suivi-row').filter({ hasText: dossierName })).toBeVisible();
       expect(await overflow(), 'Le Suivi déborde sur tablette').toBeLessThanOrEqual(0);
       await page.setViewportSize({ width: 1280, height: 720 });
+    });
+
+    // Mission 114 (partie B) — « Remettre ma démo à zéro » : confirmation dans l'écran, puis quatre
+    // dossiers neufs (d'autres identifiants) ; les dossiers des collègues ne bougent pas (prouvé par
+    // les tests unitaires : ce passage n'a qu'un compte de démo).
+    await test.step('Remettre ma démo à zéro', async () => {
+      await page.goto('/ma-demo');
+      const before = await page
+        .getByTestId('demo-dossier')
+        .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
+      expect(before).toHaveLength(4);
+      await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
+      const confirm = page.getByTestId('demo-reset-confirm');
+      await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
+      await confirm.getByRole('button', { name: 'Annuler' }).click();
+      await expect(confirm).toHaveCount(0);
+      await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
+      await confirm.getByRole('button', { name: 'Remettre à zéro' }).click();
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(4, { timeout: 180_000 });
+      const after = await page
+        .getByTestId('demo-dossier')
+        .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
+      expect(after).toHaveLength(4);
+      for (const href of after.slice(0, 3)) expect(before).not.toContain(href);
+      await expectUnspoken(page, 'Ma démo, remise à zéro');
     });
 
     await test.step('Aucune requête vers l’extérieur', async () => {

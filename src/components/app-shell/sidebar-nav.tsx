@@ -21,11 +21,23 @@ const NAV = [
 // depuis hier ; elle se tait à zéro.
 export type ErrorsBadge = { count: number; label: string };
 
-export function SidebarNav({ errorsBadge = null }: { errorsBadge?: ErrorsBadge | null }) {
+// Mission 114 (partie B) — « Ma démo » n'apparaît qu'à l'agence de démonstration : le layout ne
+// transmet `demoEntry` que pour elle (la page, elle, se garde seule).
+export function SidebarNav({
+  errorsBadge = null,
+  demoEntry = false,
+}: {
+  errorsBadge?: ErrorsBadge | null;
+  demoEntry?: boolean;
+}) {
   const pathname = usePathname();
-  const items = errorsBadge
-    ? [...NAV, { href: '/erreurs', label: 'Erreurs', hint: 'Ce qui casse' }]
-    : NAV;
+  const items = [
+    ...NAV,
+    ...(demoEntry
+      ? [{ href: '/ma-demo', label: 'Ma démo', hint: 'Quatre dossiers à dérouler' }]
+      : []),
+    ...(errorsBadge ? [{ href: '/erreurs', label: 'Erreurs', hint: 'Ce qui casse' }] : []),
+  ];
 
   return (
     <nav className="flex flex-wrap gap-1 md:flex-col md:gap-1.5">

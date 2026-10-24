@@ -86,6 +86,8 @@ describe('rien ne dit « démonstration » à l’écran ni à l’impression', 
     for (const agency of DEMO_AGENCIES) expect(agency).not.toMatch(UNSPOKEN);
     for (const scenario of DEMO_SCENARIOS) {
       expect(scenario.label).not.toMatch(UNSPOKEN);
+      // Partie B — le nom du vendeur devient celui d'un dossier de démo.
+      expect(scenario.sellerName).not.toMatch(UNSPOKEN);
       expect(scenario.subject.title).not.toMatch(UNSPOKEN);
       expect(scenario.subject.description).not.toMatch(UNSPOKEN);
       for (const strength of scenario.subject.strengths) expect(strength).not.toMatch(UNSPOKEN);

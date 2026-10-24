@@ -1,0 +1,435 @@
+'use server';
+
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
+import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
+import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
+import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
+import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
+import {
+  DEMO_DANGEROUS_REASON,
+  DEMO_FOLLOW_UP_DAYS,
+  DEMO_FOLLOW_UP_NOTE,
+  DEMO_JUSTIFICATION,
+  DEMO_LIVE_MINUTES,
+  DEMO_READINESS_MISSING,
+  DEMO_STAGES,
+  demoSeedPlan,
+  type DemoSeedPlan,
+} from '@/features/demo/services/demo-seed';
+import { demoPhotoUrl } from '@/features/demo/services/demo-urls';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
+import { addressKey } from '@/features/prospecting/services/address-key';
+import { PROPERTY_PHOTO_BUCKET } from '@/features/subject-property-photos/constants';
+import { depositPropertyPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
+import { validatePhotoBytes } from '@/features/subject-property-photos/services/validate-photo-upload';
+import { exampleDecisionRow } from '@/features/welcome/services/example-decision';
+import { getProfile } from '@/lib/auth/get-profile';
+import type { Database } from '@/lib/supabase/database.types';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
+
+type Client = SupabaseClient<Database>;
+
+const DEMO_PAGE = '/ma-demo';
+const FAILED = `${DEMO_PAGE}?error=${encodeURIComponent('La démo n’a pas pu être préparée. Réessayez.')}`;
+
+// Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro ». Réservé à un
+// closer de l'AGENCE DE DÉMONSTRATION (repère `is_demo`, lu en base) ; l'écriture passe par la
+// clé service après ce garde, dans cette seule agence, pour le seul closer connecté : chaque
+// dossier porte sa marque (`projects.demo_stage`) et son conseiller. Les dossiers de démo
+// entrent dans les mêmes tables, par les mêmes services, que ceux de l'outil : l'insertion d'un
+// concurrent, la décision de prix (M110), la fonction `conclude_meeting`, les adresses, la
+// relance, l'opposition.
+
+type Closer = { id: string; agencyId: string };
+
+async function requireDemoCloser(): Promise<Closer> {
+  const profile = await getProfile();
+  if (!profile || profile.removed_at) {
+    redirect('/onboarding');
+  }
+  if (!(await isDemoAgency(profile.agency_id))) {
+    redirect('/builder');
+  }
+  return { id: profile.id, agencyId: profile.agency_id };
+}
+
+function revalidateDemo(): void {
+  for (const path of [DEMO_PAGE, '/builder', '/live', '/suivi', '/prospection', '/bienvenue']) {
+    revalidatePath(path);
+  }
+}
+
+// Les dossiers de démo du closer : marqués, à lui, dans son agence.
+export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promise<string[]> {
+  const { data } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('advisor_id', closer.id)
+    .not('demo_stage', 'is', null);
+  return (data ?? []).map((row) => row.id);
+}
+
+// Supprime les dossiers de démo du closer et ce qui en dépend — jamais ceux d'un collègue, jamais
+// un dossier sans marque. Les photos déposées dans le stockage partent aussi. Les oppositions
+// de l'agence restent : la liste « Ne plus solliciter » est commune (M98), et « Préparer » la
+// retrouve.
+export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
+  const ids = await ownDemoDossierIds(supabase, closer);
+  if (ids.length === 0) return 0;
+  const { data: properties } = await supabase
+    .from('subject_properties')
+    .select('id, photo_urls')
+    .in('project_id', ids)
+    .eq('agency_id', closer.agencyId);
+  const photoPaths = (properties ?? []).flatMap((row) =>
+    Array.isArray(row.photo_urls)
+      ? row.photo_urls.filter((path): path is string => typeof path === 'string')
+      : [],
+  );
+  if (photoPaths.length > 0) {
+    await supabase.storage.from(PROPERTY_PHOTO_BUCKET).remove(photoPaths);
+  }
+  const propertyIds = (properties ?? []).map((row) => row.id);
+  const byProject = [
+    'live_reopenings',
+    'stream_estate_results',
+    'competitor_prospecting_files',
+    'live_seller_responses',
+    'live_seller_summary',
+    'follow_up_contacts',
+    'seller_synthesis_links',
+    'project_meeting_conclusions',
+    'project_price_positionings',
+    'pending_competitor_imports',
+    'competitor_decisions',
+    'comparables',
+  ] as const;
+  for (const table of byProject) {
+    await supabase.from(table).delete().in('project_id', ids).eq('agency_id', closer.agencyId);
+  }
+  if (propertyIds.length > 0) {
+    await supabase
+      .from('subject_property_condominiums')
+      .delete()
+      .in('subject_property_id', propertyIds);
+    await supabase
+      .from('subject_property_diagnostics')
+      .delete()
+      .in('subject_property_id', propertyIds);
+  }
+  await supabase
+    .from('subject_properties')
+    .delete()
+    .in('project_id', ids)
+    .eq('agency_id', closer.agencyId);
+  const { data: removed } = await supabase
+    .from('projects')
+    .delete()
+    .in('id', ids)
+    .eq('agency_id', closer.agencyId)
+    .eq('advisor_id', closer.id)
+    .not('demo_stage', 'is', null)
+    .select('id');
+  return removed?.length ?? 0;
+}
+
+const minutesAgo = (now: Date, minutes: number): string =>
+  new Date(now.getTime() - minutes * 60_000).toISOString();
+const daysAgo = (now: Date, days: number): string =>
+  new Date(now.getTime() - days * 86_400_000).toISOString();
+const dayIn = (now: Date, days: number): string =>
+  new Date(now.getTime() + days * 86_400_000).toISOString().slice(0, 10);
+
+async function depositDemoPhotos(
+  supabase: Client,
+  closer: Closer,
+  projectId: string,
+  files: string[],
+): Promise<string[]> {
+  const paths: string[] = [];
+  for (const file of files) {
+    const bytes = await readDemoPhoto(demoPhotoUrl(file), closer.agencyId);
+    if (!bytes) continue;
+    const validation = validatePhotoBytes(bytes);
+    if (!validation.ok) continue;
+    const deposit = await depositPropertyPhoto(supabase, {
+      agencyId: closer.agencyId,
+      projectId,
+      bytes,
+      format: validation.format,
+    });
+    if (deposit.ok) paths.push(deposit.path);
+  }
+  return paths;
+}
+
+// Un dossier de démo, à son étape. Rend l'identifiant du dossier, ou null si une écriture a
+// échoué (le dossier à moitié créé est alors retiré).
+async function seedDemoDossier(
+  supabase: Client,
+  closer: Closer,
+  plan: DemoSeedPlan,
+  now: Date,
+): Promise<string | null> {
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .insert({
+      agency_id: closer.agencyId,
+      advisor_id: closer.id,
+      seller_name: plan.sellerName,
+      status: 'draft',
+      demo_stage: plan.stage,
+    })
+    .select('id')
+    .single();
+  if (projectError || !project) return null;
+  const projectId = project.id;
+  const failed = async (): Promise<null> => {
+    await deleteOne(supabase, closer, projectId);
+    return null;
+  };
+  if (!plan.property) return projectId;
+
+  // Le bien vendeur, avec ses photos déposées dans le stockage de l'agence (M37).
+  const photos = await depositDemoPhotos(supabase, closer, projectId, plan.photoFiles);
+  const { error: propertyError } = await supabase.from('subject_properties').insert({
+    ...(plan.property as Database['public']['Tables']['subject_properties']['Insert']),
+    project_id: projectId,
+    agency_id: closer.agencyId,
+    photo_urls: photos,
+  });
+  if (propertyError) return failed();
+
+  // Les concurrents, comme un import les crée (M83, M101) ; relus sans pastille « À vérifier ».
+  for (const competitor of plan.competitors) {
+    const input = importedToComparableInput(competitor.data);
+    if (!input) return failed();
+    const inserted = await insertCompetitor(supabase, projectId, closer.agencyId, {
+      ...input,
+      ...importedMandateColumns(competitor.data),
+      property_type: competitor.listing.propertyType,
+      fields_to_verify: [],
+      is_selected: true,
+    });
+    if (inserted.status === 'failed') return failed();
+  }
+  const { data: comparables } = await supabase
+    .from('comparables')
+    .select('*')
+    .eq('project_id', projectId)
+    .eq('agency_id', closer.agencyId)
+    .order('display_order', { ascending: true });
+  if (!comparables || comparables.length !== plan.competitors.length) return failed();
+  const rowOf = (index: number) =>
+    comparables.find((row) =>
+      (row.listing_url ?? '').endsWith(`/${plan.competitors[index].listing.id}`),
+    ) ?? null;
+
+  // Les adresses, comme le Localisateur simulé les rend : confirmées, avec leur étiquette (M75).
+  for (const [index, competitor] of plan.competitors.entries()) {
+    const row = rowOf(index);
+    const location = parseLocatorProperty(demoLocatorEntry(competitor.listing, now).raw);
+    if (!row || !location) return failed();
+    const { error } = await supabase
+      .from('comparables')
+      .update({
+        locator_state: location.state,
+        locator_label: location.label,
+        locator_label_key: location.labelKey,
+        locator_address: location.address,
+        locator_source: location.source,
+        locator_confirmed: location.confirmed,
+        locator_property_id: location.propertyId,
+        locator_latitude: location.latitude,
+        locator_longitude: location.longitude,
+        locator_analyzed_at: location.analyzedAt,
+      })
+      .eq('id', row.id);
+    if (error) return failed();
+  }
+
+  // La décision de prix, calculée par le moteur de l'outil (M110), avec sa justification.
+  const decision = exampleDecisionRow({
+    projectId,
+    agencyId: closer.agencyId,
+    validatedBy: closer.id,
+    sellerSurface: plan.scenario.subject.surfaceArea,
+    comparables,
+    now,
+  });
+  if (!decision) return failed();
+  const { error: decisionError } = await supabase
+    .from('project_price_positionings')
+    .upsert({ ...decision, justification: DEMO_JUSTIFICATION }, { onConflict: 'project_id' });
+  if (decisionError) return failed();
+
+  // Prêt pour le Live (M52) : le closer n'a rien à déclarer.
+  const { error: readyError } = await supabase
+    .from('projects')
+    .update({ status: 'ready_for_meeting', updated_at: now.toISOString() })
+    .eq('id', projectId);
+  if (readyError) return failed();
+  if (!plan.live || !plan.conclusion) return projectId;
+
+  // Le Live, mené : heures de début et de fin (M95), confirmation « devant le vendeur » (M112),
+  // les réponses du vendeur (prix révélé figé à la devinette, M96), son résumé.
+  const live = plan.live;
+  const dangerous = rowOf(live.dangerousIndex);
+  const { error: liveError } = await supabase
+    .from('projects')
+    .update({
+      live_confirmed_at: minutesAgo(now, DEMO_LIVE_MINUTES.startedAgo + 1),
+      live_confirmed_by: closer.id,
+      live_started_at: minutesAgo(now, DEMO_LIVE_MINUTES.startedAgo),
+      live_ended_at: minutesAgo(now, DEMO_LIVE_MINUTES.endedAgo),
+    })
+    .eq('id', projectId);
+  if (liveError || !dangerous) return failed();
+  const { error: summaryError } = await supabase.from('live_seller_summary').insert({
+    project_id: projectId,
+    agency_id: closer.agencyId,
+    seller_property_confirmed: 'yes',
+    seller_perceived_property_price: live.perceivedPrice,
+    seller_revised_property_price: live.revisedPrice,
+    seller_most_dangerous_comparable_id: dangerous.id,
+    seller_most_dangerous_reason: DEMO_DANGEROUS_REASON,
+    seller_launch_readiness_first: live.readinessFirst,
+    seller_launch_readiness_last: live.readinessLast,
+    seller_launch_readiness_missing: DEMO_READINESS_MISSING,
+  });
+  if (summaryError) return failed();
+  for (const [index, competitor] of plan.competitors.entries()) {
+    const row = rowOf(index);
+    if (!row) return failed();
+    const { error } = await supabase.from('live_seller_responses').insert({
+      project_id: projectId,
+      agency_id: closer.agencyId,
+      comparable_id: row.id,
+      seller_serious_competitor: 'yes',
+      seller_estimated_listing_price: competitor.guess,
+      seller_price_coherence: 'coherent',
+      seller_estimated_days_on_market: live.daysGuess,
+      seller_market_duration_reason: 'price_too_high',
+    });
+    if (error) return failed();
+  }
+
+  // La conclusion, par la fonction de la base (M53, M56, M90, M110).
+  const { error: concludeError } = await supabase.rpc('conclude_meeting', {
+    p_project_id: projectId,
+    p_agency_id: closer.agencyId,
+    p_outcome: plan.conclusion.outcome,
+    p_reason: null as unknown as string,
+    p_price: live.agreedPrice,
+    p_market_computed: decision.range_central as number,
+    p_advisor_analysis: decision.advisor_price as number,
+    p_advisor_price: decision.advisor_price as number,
+    p_seller_perceived: live.perceivedPrice,
+    p_retained: plan.competitors.length,
+    p_exploitable: plan.competitors.length,
+    ...(plan.conclusion.outcome === 'signed'
+      ? { p_mandate_type: plan.conclusion.mandateType }
+      : {
+          p_follow_up_motive: plan.conclusion.motive,
+          p_next_follow_up_on: dayIn(now, DEMO_FOLLOW_UP_DAYS.nextIn),
+          p_objections: plan.conclusion.objections,
+        }),
+  });
+  if (concludeError) return failed();
+
+  if (plan.conclusion.outcome === 'follow_up') {
+    // Un rendez-vous d'il y a neuf jours, une relance passée, un concurrent qui a baissé depuis.
+    await supabase
+      .from('project_meeting_conclusions')
+      .update({ concluded_at: daysAgo(now, DEMO_FOLLOW_UP_DAYS.meetingAgo) })
+      .eq('project_id', projectId);
+    const { error: contactError } = await supabase.from('follow_up_contacts').insert({
+      project_id: projectId,
+      agency_id: closer.agencyId,
+      author_id: closer.id,
+      note: DEMO_FOLLOW_UP_NOTE,
+      contacted_at: daysAgo(now, DEMO_FOLLOW_UP_DAYS.contactAgo),
+      next_follow_up_on: dayIn(now, DEMO_FOLLOW_UP_DAYS.nextIn),
+    });
+    if (contactError) return failed();
+    const dropped = plan.priceDrop ? rowOf(plan.priceDrop.index) : null;
+    if (plan.priceDrop && dropped) {
+      await supabase
+        .from('comparables')
+        .update({ price: plan.priceDrop.price })
+        .eq('id', dropped.id);
+    }
+  }
+  if (plan.opposedAddress) {
+    // Une adresse « Ne plus solliciter » (M98, M102) : celle d'un concurrent, pour l'agence.
+    const key = addressKey(plan.opposedAddress);
+    if (key) {
+      await supabase
+        .from('prospecting_oppositions')
+        .upsert(
+          { agency_id: closer.agencyId, address_key: key, created_by: closer.id },
+          { onConflict: 'agency_id,address_key', ignoreDuplicates: true },
+        );
+    }
+  }
+  return projectId;
+}
+
+async function deleteOne(supabase: Client, closer: Closer, projectId: string): Promise<void> {
+  const scoped = { id: projectId, agencyId: closer.agencyId };
+  for (const table of [
+    'live_seller_responses',
+    'live_seller_summary',
+    'project_meeting_conclusions',
+    'project_price_positionings',
+    'comparables',
+    'subject_properties',
+  ] as const) {
+    await supabase
+      .from(table)
+      .delete()
+      .eq('project_id', scoped.id)
+      .eq('agency_id', scoped.agencyId);
+  }
+  await supabase.from('projects').delete().eq('id', projectId).eq('agency_id', closer.agencyId);
+}
+
+export async function seedDemoDossiers(
+  supabase: Client,
+  closer: Closer,
+  now: Date,
+): Promise<boolean> {
+  for (const stage of DEMO_STAGES) {
+    const id = await seedDemoDossier(supabase, closer, demoSeedPlan(stage, now), now);
+    if (!id) return false;
+  }
+  return true;
+}
+
+// « Préparer ma démo » : quatre dossiers, s'il n'en a pas encore.
+export async function prepareDemoDossiers(): Promise<void> {
+  const closer = await requireDemoCloser();
+  const supabase = createServiceRoleClient();
+  if ((await ownDemoDossierIds(supabase, closer)).length === 0) {
+    const ok = await seedDemoDossiers(supabase, closer, new Date());
+    if (!ok) redirect(FAILED);
+  }
+  revalidateDemo();
+  redirect(DEMO_PAGE);
+}
+
+// « Remettre ma démo à zéro » : les siens disparaissent, quatre neufs les remplacent.
+export async function resetDemoDossiers(): Promise<void> {
+  const closer = await requireDemoCloser();
+  const supabase = createServiceRoleClient();
+  await deleteDemoDossiers(supabase, closer);
+  const ok = await seedDemoDossiers(supabase, closer, new Date());
+  revalidateDemo();
+  redirect(ok ? DEMO_PAGE : FAILED);
+}

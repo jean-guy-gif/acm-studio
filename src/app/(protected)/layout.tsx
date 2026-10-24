@@ -84,6 +84,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         logoLightUrl={branding?.logoLightUrl ?? null}
         logoDarkUrl={branding?.logoDarkUrl ?? null}
         errorsBadge={errorsBadge}
+        demoEntry={isDemo}
       >
         {children}
       </AppShell>

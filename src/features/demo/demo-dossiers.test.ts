@@ -1,0 +1,107 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { fakeSupabase } from '@/test-fixtures/fake-supabase';
+
+// Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro » : réservés à un
+// closer de l'agence de démonstration, et la remise à zéro ne touche qu'à SES dossiers marqués.
+// Les actions sont appelées pour de vrai ; la session, le repère et les clients sont remplacés.
+
+const state = vi.hoisted(() => ({
+  demo: true,
+  profile: null as Record<string, unknown> | null,
+  respond: (() => ({})) as (table: string) => { data?: unknown; error?: unknown },
+}));
+const service = fakeSupabase((calls) => {
+  const from = [...calls].reverse().find((call) => call.method === 'from');
+  return state.respond(from ? String(from.args[0]) : '');
+});
+
+vi.mock('@/features/demo/services/is-demo-agency', () => ({
+  isDemoAgency: async () => state.demo,
+}));
+vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
+vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+vi.mock('next/navigation', () => ({
+  redirect: (path: string) => {
+    throw new Error(`REDIRECT ${path}`);
+  },
+}));
+
+const AGENCY = '11111111-1111-4111-8111-111111111111';
+const closer = { id: 'u-closer', agency_id: AGENCY, role: 'advisor', removed_at: null };
+
+beforeEach(() => {
+  service.reset();
+  state.demo = true;
+  state.profile = closer;
+  state.respond = () => ({ data: [] });
+});
+
+describe('qui peut préparer ou remettre à zéro', () => {
+  it('hors de l’agence de démonstration : renvoyé vers ses dossiers, sans rien écrire', async () => {
+    const { prepareDemoDossiers, resetDemoDossiers } =
+      await import('@/features/demo/actions/demo-dossiers');
+    state.demo = false;
+    await expect(prepareDemoDossiers()).rejects.toThrow('REDIRECT /builder');
+    await expect(resetDemoDossiers()).rejects.toThrow('REDIRECT /builder');
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('sans session, ou membre retiré : vers l’ouverture d’agence, sans rien écrire', async () => {
+    const { resetDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
+    for (const profile of [null, { ...closer, removed_at: '2026-10-01T00:00:00Z' }]) {
+      state.profile = profile;
+      await expect(resetDemoDossiers()).rejects.toThrow('REDIRECT /onboarding');
+    }
+    expect(service.writes()).toEqual([]);
+  });
+});
+
+describe('la remise à zéro ne touche qu’aux dossiers de démo du closer connecté', () => {
+  it('lit ses dossiers marqués, dans son agence, et supprime ce qui en dépend', async () => {
+    const { deleteDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: [{ id: 'p1' }, { id: 'p2' }] }
+        : table === 'subject_properties'
+          ? { data: [{ id: 'sp1', photo_urls: [`${AGENCY}/p1/property/a.jpg`] }] }
+          : { data: [] };
+    const removed = await deleteDemoDossiers(service.client, { id: 'u-closer', agencyId: AGENCY });
+    expect(removed).toBe(2);
+    // Le périmètre : SON identifiant, SON agence, la marque.
+    const scoped = service.calls.filter(
+      (call) =>
+        call.method === 'eq' && call.args[0] === 'advisor_id' && call.args[1] === 'u-closer',
+    );
+    expect(scoped.length).toBeGreaterThanOrEqual(2);
+    expect(
+      service.calls.some(
+        (call) => call.method === 'not' && call.args[0] === 'demo_stage' && call.args[2] === null,
+      ),
+    ).toBe(true);
+    expect(
+      service.calls.every(
+        (call) => call.method !== 'eq' || call.args[0] !== 'agency_id' || call.args[1] === AGENCY,
+      ),
+    ).toBe(true);
+    // Les photos déposées partent du stockage ; les dépendances puis les dossiers sont supprimés.
+    expect(service.calls.find((call) => call.method === 'remove')?.args[0]).toEqual([
+      `${AGENCY}/p1/property/a.jpg`,
+    ]);
+    const deleted = service.writes().filter((write) => write.startsWith('delete '));
+    expect(deleted).toContain('delete comparables');
+    expect(deleted).toContain('delete subject_properties');
+    expect(deleted).toContain('delete project_meeting_conclusions');
+    expect(deleted[deleted.length - 1]).toBe('delete projects');
+    // Jamais une table hors de la liste (ni les oppositions de l'agence, communes à tous).
+    expect(deleted).not.toContain('delete prospecting_oppositions');
+  });
+
+  it('sans dossier marqué, rien n’est supprimé', async () => {
+    const { deleteDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
+    expect(await deleteDemoDossiers(service.client, { id: 'u-closer', agencyId: AGENCY })).toBe(0);
+    expect(service.writes()).toEqual([]);
+  });
+});
