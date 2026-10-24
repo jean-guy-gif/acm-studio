@@ -77,12 +77,21 @@ export function PriceBand({
   const low = Math.min(...all);
   const high = Math.max(...all);
   const left = (value: number) => `${bandPosition(value, all) * 100}%`;
+  // Le libellé du plus dangereux s'ancre du côté où il a la place : centré sur son repère, sauf
+  // près d'un bord de la bande (il sortait de l'écran sur tablette quand le concurrent désigné
+  // était le moins cher).
+  const labelAnchor = (value: number): string => {
+    const position = bandPosition(value, all);
+    if (position < 0.3) return 'left-0';
+    if (position > 0.7) return 'right-0 text-right';
+    return 'left-1/2 -translate-x-1/2';
+  };
 
   return (
     <div className={`${panelSoft} flex flex-col gap-3`} data-price-band>
       <div className={statLabel}>Les prix affichés des biens que vous avez vus</div>
       <div className="px-3">
-        <div className="relative h-16">
+        <div className="relative mt-5 h-16">
           <div className="absolute inset-x-0 top-1/2 h-px bg-zinc-300 stage:bg-white/25" />
           {reading.prices.map((price, index) => (
             <span
@@ -102,7 +111,9 @@ export function PriceBand({
               title={`${marker.label} : ${formatEuro(marker.value)}`}
             >
               {marker.key === 'dangerous' ? (
-                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand">
+                <span
+                  className={`absolute -top-5 text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand ${labelAnchor(marker.value)}`}
+                >
                   {marker.label}
                 </span>
               ) : null}
