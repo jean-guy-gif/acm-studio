@@ -1329,6 +1329,7 @@ export type Database = {
           advisor_id: string
           agency_id: string
           created_at: string
+          demo_stage: string | null
           id: string
           is_example: boolean
           live_confirmed_at: string | null
@@ -1348,6 +1349,7 @@ export type Database = {
           advisor_id: string
           agency_id: string
           created_at?: string
+          demo_stage?: string | null
           id?: string
           is_example?: boolean
           live_confirmed_at?: string | null
@@ -1367,6 +1369,7 @@ export type Database = {
           advisor_id?: string
           agency_id?: string
           created_at?: string
+          demo_stage?: string | null
           id?: string
           is_example?: boolean
           live_confirmed_at?: string | null

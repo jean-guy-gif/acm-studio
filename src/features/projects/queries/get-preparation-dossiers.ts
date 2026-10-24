@@ -48,7 +48,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
   const { data: projects } = await supabase
     .from('projects')
     .select(
-      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at, is_example',
+      'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at, is_example, demo_stage',
     )
     .eq('agency_id', agencyId)
     .eq('status', ready ? 'ready_for_meeting' : 'draft')

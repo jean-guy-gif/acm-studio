@@ -81,6 +81,20 @@ photos de la fiche ». Chaque page porte « DÉMONSTRATION — FICHE FICTIVE ».
 (`src/features/demo/demo-brochures.test.ts`) relit chaque PDF comme le navigateur le ferait et
 vérifie ce que la fiche remplit.
 
+## Les dossiers de chaque closer (partie B)
+
+« Ma démo » (`/ma-demo`, au menu de l'agence de démo et sur « Bienvenue ») : « Préparer ma démo »
+crée pour le closer connecté quatre dossiers marqués (`projects.demo_stage`), un par étape —
+« À préparer » (Antibes, le bien à importer), « Prêt pour le Live » (Vence : cinq concurrents
+importés, adresses confirmées, décision de prix), « Conclu, mandat signé » (Mougins : Live mené,
+synthèse, concurrents à prospecter, courriers prêts, une adresse « Ne plus solliciter »), « À
+relancer » (Antibes : conclu avec freins, une relance d'il y a huit jours, un concurrent qui a
+baissé depuis). « Remettre ma démo à zéro », avec confirmation, supprime les siens (photos du
+stockage comprises) et en recrée quatre ; les dossiers des autres closers ne bougent pas, la liste
+« Ne plus solliciter » de l'agence reste. Tout passe par la clé service après le garde « agence
+de démo », dans les mêmes tables et par les mêmes services que l'outil (`demo-seed.ts`,
+`actions/demo-dossiers.ts`).
+
 ## Ce que Laurent fait (mission 114)
 
 1. Créer le compte de l'agence de démo dans la console Supabase, l'ouvrir par `/onboarding` sous le

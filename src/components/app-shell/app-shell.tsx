@@ -18,6 +18,7 @@ export function AppShell({
   logoLightUrl = null,
   logoDarkUrl = null,
   errorsBadge = null,
+  demoEntry = false,
   children,
 }: {
   profileName: string;
@@ -29,6 +30,8 @@ export function AppShell({
   logoDarkUrl?: string | null;
   // Mission 100 — seulement pour les comptes autorisés ; null pour tous les autres.
   errorsBadge?: ErrorsBadge | null;
+  // Mission 114 (partie B) — l'entrée « Ma démo », pour l'agence de démonstration seulement.
+  demoEntry?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -53,7 +56,7 @@ export function AppShell({
                 <AppThemeToggle />
               </span>
             </div>
-            <SidebarNav errorsBadge={errorsBadge} />
+            <SidebarNav errorsBadge={errorsBadge} demoEntry={demoEntry} />
           </div>
 
           <div className="hidden flex-col gap-3 md:flex">
