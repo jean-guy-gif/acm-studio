@@ -35,26 +35,40 @@ function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
 // vendeur. Aucun prix non révélé n'y figure (la lecture vient du serveur, sur les seuls révélés).
 // Mission 104 — le « Prix des concurrents » y est placé aussi, comme les prix du vendeur : le
 // vendeur voit où il tombe parmi les biens qu'il a vus.
+// Mission 115 — trois repères nommés, « Au début », « Après le marché » et « Le plus dangereux
+// selon vous » (le prix affiché du concurrent désigné, M110) : ce dernier se voit au premier
+// regard, libellé et couleur de l'agence, plus un point muet. Absent sans désignation, et jamais
+// pour un « Non » (M41) : seul un concurrent RÉVÉLÉ est sur la bande.
 const MARKER_COLORS: Record<string, string> = {
   start: 'bg-zinc-900 stage:bg-white',
   revised: 'bg-brand',
+  dangerous: 'bg-brand-deep stage:bg-brand',
   competitors: 'bg-amber-500',
 };
+export const DANGEROUS_MARKER_LABEL = 'Le plus dangereux selon vous';
 
 export function PriceBand({
   reading,
   startPrice,
   revisedPrice,
   competitorPrice,
+  dangerousId = null,
 }: {
   reading: MarketReading;
   startPrice: number | null;
   revisedPrice: number | null;
   competitorPrice: number | null;
+  // Mission 115 — le concurrent désigné « le plus dangereux » ; null tant qu'aucun ne l'est.
+  dangerousId?: string | null;
 }) {
+  const dangerousPrice =
+    dangerousId != null
+      ? (reading.revealed.find((entry) => entry.id === dangerousId)?.price ?? null)
+      : null;
   const markers = [
-    { key: 'start', label: 'Votre prix de départ', value: startPrice },
-    { key: 'revised', label: 'Votre prix après le marché', value: revisedPrice },
+    { key: 'start', label: 'Au début', value: startPrice },
+    { key: 'revised', label: 'Après le marché', value: revisedPrice },
+    { key: 'dangerous', label: DANGEROUS_MARKER_LABEL, value: dangerousPrice },
     { key: 'competitors', label: 'Prix des concurrents', value: competitorPrice },
   ].filter(
     (marker): marker is { key: string; label: string; value: number } => marker.value != null,
@@ -63,12 +77,21 @@ export function PriceBand({
   const low = Math.min(...all);
   const high = Math.max(...all);
   const left = (value: number) => `${bandPosition(value, all) * 100}%`;
+  // Le libellé du plus dangereux s'ancre du côté où il a la place : centré sur son repère, sauf
+  // près d'un bord de la bande (il sortait de l'écran sur tablette quand le concurrent désigné
+  // était le moins cher).
+  const labelAnchor = (value: number): string => {
+    const position = bandPosition(value, all);
+    if (position < 0.3) return 'left-0';
+    if (position > 0.7) return 'right-0 text-right';
+    return 'left-1/2 -translate-x-1/2';
+  };
 
   return (
     <div className={`${panelSoft} flex flex-col gap-3`} data-price-band>
       <div className={statLabel}>Les prix affichés des biens que vous avez vus</div>
       <div className="px-3">
-        <div className="relative h-16">
+        <div className="relative mt-5 h-16">
           <div className="absolute inset-x-0 top-1/2 h-px bg-zinc-300 stage:bg-white/25" />
           {reading.prices.map((price, index) => (
             <span
@@ -86,7 +109,15 @@ export function PriceBand({
               className={`absolute h-full w-1 -translate-x-1/2 rounded-full ${MARKER_COLORS[marker.key]}`}
               style={{ left: left(marker.value) }}
               title={`${marker.label} : ${formatEuro(marker.value)}`}
-            />
+            >
+              {marker.key === 'dangerous' ? (
+                <span
+                  className={`absolute -top-5 text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand ${labelAnchor(marker.value)}`}
+                >
+                  {marker.label}
+                </span>
+              ) : null}
+            </span>
           ))}
         </div>
       </div>
@@ -121,11 +152,14 @@ export function LivePageAnalysis({
   priceGaps,
   reading,
   revisedPrice,
+  dangerousId = null,
 }: {
   priceGaps: LivePriceGaps;
   reading: MarketReading;
   // Le prix reformulé par le vendeur ; null si l'écran a été passé.
   revisedPrice: number | null;
+  // Mission 115 — le concurrent désigné « le plus dangereux », nommé sur la bande.
+  dangerousId?: string | null;
 }) {
   const gaps = priceGaps;
   const figures: { label: string; value: string }[] = [];
@@ -213,6 +247,7 @@ export function LivePageAnalysis({
             startPrice={gaps.sellerPerceivedPrice}
             revisedPrice={revisedPrice}
             competitorPrice={gaps.competitiveMarketCentral}
+            dangerousId={dangerousId}
           />
         </div>
       ) : null}

@@ -431,6 +431,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(synthesis).toBeVisible();
       await expectUnspoken(page, 'Synthèse');
       await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(RETAINED + 1);
+      await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
       const text = await synthesis.innerText();
       expect(text).not.toMatch(/Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid/);
       for (const bound of [FOURCHETTE.min, FOURCHETTE.max]) {
@@ -753,6 +754,8 @@ async function walkLive(
   const band = page.locator('[data-price-band]');
   await expect(band.locator('[data-band-dot]')).toHaveCount(competitors.length);
   await expect(band.locator('[data-band-marker="competitors"]')).toHaveCount(1);
+  // Mission 115 — le plus dangereux désigné est nommé sur la bande.
+  await expect(band.locator('[data-band-marker="dangerous"]')).toHaveCount(1);
   await onScreen('Analyse des prix');
   await validate();
 

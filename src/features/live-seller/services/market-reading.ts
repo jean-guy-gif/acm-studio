@@ -18,6 +18,9 @@ export type MarketReading = {
   revealedCount: number;
   // Les prix affichés des concurrents révélés, du moins cher au plus cher : la bande.
   prices: number[];
+  // Mission 115 — les mêmes concurrents révélés, avec leur identifiant : la bande nomme « Le plus
+  // dangereux selon vous » (M110) par son prix affiché. Rien de plus que la bande ne montre déjà.
+  revealed: { id: string; price: number }[];
   lowestPrice: number | null;
   highestPrice: number | null;
   medianPrice: number | null;
@@ -53,10 +56,8 @@ export function buildMarketReading(
   seenTogetherCount: number | null = null,
 ): MarketReading {
   const shown = comparables.filter(revealed);
-  const listed = shown
-    .map((entry) => entry.price)
-    .filter((price) => Number.isFinite(price) && price > 0)
-    .sort((a, b) => a - b);
+  const priced = shown.filter((entry) => Number.isFinite(entry.price) && entry.price > 0);
+  const listed = priced.map((entry) => entry.price).sort((a, b) => a - b);
   const days = shown
     .map((entry) => (entry.marketDuration.available ? entry.marketDuration.days : null))
     .filter((value): value is number => typeof value === 'number' && value >= 0);
@@ -69,6 +70,7 @@ export function buildMarketReading(
     seenTogetherCount,
     revealedCount: shown.length,
     prices: listed,
+    revealed: priced.map((entry) => ({ id: entry.id, price: entry.price })),
     lowestPrice: listed.length > 0 ? listed[0] : null,
     highestPrice: listed.length > 0 ? listed[listed.length - 1] : null,
     medianPrice: medianPrice == null ? null : Math.round(medianPrice),

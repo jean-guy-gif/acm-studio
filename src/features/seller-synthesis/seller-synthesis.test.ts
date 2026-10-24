@@ -527,4 +527,23 @@ describe('les prix de la synthèse (mission 111)', () => {
     const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
     expect(html).not.toContain('Prix des concurrents');
   });
+
+  // Mission 115 — sans désignation, la bande ne nomme pas de plus dangereux.
+  it('la bande ne nomme pas de plus dangereux sans désignation', () => {
+    const synthesis = buildSellerSynthesis(base);
+    const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
+    expect(synthesis.dangerous).toBeNull();
+    expect(html).not.toContain('Le plus dangereux selon vous');
+  });
+});
+
+// Mission 115 — la bande de « L'analyse des prix » nomme « Le plus dangereux selon vous », au prix
+// affiché du concurrent désigné, figé au Live ; absent sans désignation.
+describe('« Le plus dangereux selon vous » sur la bande de la synthèse', () => {
+  it('nommé, au prix révélé du concurrent désigné', async () => {
+    const { html, synthesis } = await load();
+    expect(synthesis.dangerous?.competitorId).toBe('c3');
+    expect(html).toMatch(/Le plus dangereux selon vous<\/span><b>330\s000\s€/);
+    expect(html).toMatch(/Au début<\/span><b>/);
+  });
 });
