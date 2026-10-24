@@ -409,9 +409,23 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
       await expect(exclusivityGroups.first()).toBeVisible();
       for (const index of [0, 1]) {
-        const yes = exclusivityGroups.nth(index).getByRole('button', { name: 'Oui', exact: true });
-        await yes.click();
-        await expect(yes).toHaveAttribute('aria-pressed', 'true');
+        const yes = () =>
+          exclusivityGroups.nth(index).getByRole('button', { name: 'Oui', exact: true });
+        await yes().click();
+        await expect(yes()).toHaveAttribute('aria-pressed', 'true');
+        // Le chip est optimiste : on attend que la correction soit EN BASE avant de continuer
+        // (une navigation pendant l'envoi l'aurait interrompue).
+        await expect
+          .poll(
+            async () => {
+              await page.reload();
+              return yes().getAttribute('aria-pressed');
+            },
+            {
+              message: `La correction « Exclusivité : Oui » n’est pas enregistrée (ligne ${index + 1})`,
+            },
+          )
+          .toBe('true');
       }
       await page.goto(`/prospection?bien=${projectId}`);
       const colleague = () =>
@@ -429,16 +443,20 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const first = colleague();
       const firstAddress = (await first.innerText()).split('\n')[0];
       await first.getByRole('button', { name: 'Marquer contacté' }).click();
-      const contacted = ready.getByTestId('prospecting-card').filter({ hasText: firstAddress });
+      // Contacté, le confrère passe dans « Dossier remis » ; ses gestes sont la collaboration.
+      const handed = page.getByTestId('prospecting-column-handed');
+      const contacted = handed.getByTestId('prospecting-card').filter({ hasText: firstAddress });
       await expect(contacted.getByRole('button', { name: 'Collaboration refusée' })).toBeVisible();
       await expect(contacted.getByRole('button', { name: 'Collaboration obtenue' })).toBeVisible();
       await expect(contacted.getByRole('button', { name: 'RDV obtenu' })).toHaveCount(0);
       await contacted.getByRole('button', { name: 'Collaboration refusée' }).click();
-      await expect(contacted.getByTestId('collaboration-declined-badge')).toContainText(
+      // Refusée : le bien revient dans « Prêt à envoyer », en propriétaire.
+      const back = ready.getByTestId('prospecting-card').filter({ hasText: firstAddress });
+      await expect(back.getByTestId('collaboration-declined-badge')).toContainText(
         'Collaboration refusée',
       );
-      await expect(contacted.getByText('Propriétaire · aller sonner')).toBeVisible();
-      const ownerLetter = await contacted
+      await expect(back.getByText('Propriétaire · aller sonner')).toBeVisible();
+      const ownerLetter = await back
         .getByRole('link', { name: 'Préparer le dossier', exact: true })
         .getAttribute('href');
       expect(ownerLetter).toContain('version=owner');
@@ -451,7 +469,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const second = colleague();
       const secondAddress = (await second.innerText()).split('\n')[0];
       await second.getByRole('button', { name: 'Marquer contacté' }).click();
-      await ready
+      await handed
         .getByTestId('prospecting-card')
         .filter({ hasText: secondAddress })
         .getByRole('button', { name: 'Collaboration obtenue' })
