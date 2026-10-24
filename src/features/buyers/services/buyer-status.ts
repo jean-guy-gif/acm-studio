@@ -1,0 +1,48 @@
+import { BUYER_STATUS_LABELS, type BuyerStatus } from '@/features/buyers/types';
+
+// Mission 117 — le statut d'un acquéreur avance un cran à la fois, et revient d'un cran (M86) :
+//   en recherche → en visite → a acheté ; « abandonné » depuis la recherche ou la visite ;
+//   « abandonné » reprend la recherche. Chaque changement est un fait daté (`status_changed_at`).
+export const BUYER_STATUS_MOVES = ['forward', 'back', 'abandon'] as const;
+export type BuyerStatusMove = (typeof BUYER_STATUS_MOVES)[number];
+
+const NEXT: Record<BuyerStatus, Partial<Record<BuyerStatusMove, BuyerStatus>>> = {
+  searching: { forward: 'visiting', abandon: 'abandoned' },
+  visiting: { forward: 'bought', back: 'searching', abandon: 'abandoned' },
+  bought: { back: 'visiting' },
+  abandoned: { back: 'searching' },
+};
+
+export function nextBuyerStatus(current: BuyerStatus, move: BuyerStatusMove): BuyerStatus | null {
+  return NEXT[current][move] ?? null;
+}
+
+export function isBuyerStatusMove(value: unknown): value is BuyerStatusMove {
+  return typeof value === 'string' && (BUYER_STATUS_MOVES as readonly string[]).includes(value);
+}
+
+// Les boutons de l'écran : ce que chaque cran permet, avec son libellé.
+export function buyerStatusActions(
+  current: BuyerStatus,
+): { move: BuyerStatusMove; label: string; primary: boolean }[] {
+  const actions: { move: BuyerStatusMove; label: string; primary: boolean }[] = [];
+  const forward = nextBuyerStatus(current, 'forward');
+  if (forward) {
+    actions.push({ move: 'forward', label: BUYER_STATUS_LABELS[forward], primary: true });
+  }
+  const back = nextBuyerStatus(current, 'back');
+  if (back) {
+    actions.push({
+      move: 'back',
+      label:
+        current === 'abandoned'
+          ? 'Reprendre la recherche'
+          : `Revenir : ${BUYER_STATUS_LABELS[back].toLowerCase()}`,
+      primary: false,
+    });
+  }
+  if (nextBuyerStatus(current, 'abandon')) {
+    actions.push({ move: 'abandon', label: 'Abandonné', primary: false });
+  }
+  return actions;
+}

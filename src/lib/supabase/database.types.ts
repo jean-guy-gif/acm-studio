@@ -249,6 +249,123 @@ export type Database = {
           },
         ]
       }
+      buyers: {
+        Row: {
+          advisor_id: string
+          agency_id: string
+          archived_at: string | null
+          bedrooms_min: number | null
+          budget_ideal: number | null
+          budget_max: number | null
+          cities: string[]
+          created_at: string
+          deal_breakers: string | null
+          demo: boolean
+          elevator: boolean | null
+          email: string | null
+          energy_rating_max: string | null
+          floor_min: number | null
+          id: string
+          must_have: string[]
+          name: string
+          notes: string | null
+          outdoor: boolean | null
+          parking: boolean | null
+          phone: string | null
+          pool: boolean | null
+          property_types: string[]
+          purpose: string | null
+          rooms_min: number | null
+          status: string
+          status_changed_at: string
+          surface_min: number | null
+          timeline: string | null
+          updated_at: string
+          works_accepted: boolean | null
+        }
+        Insert: {
+          advisor_id: string
+          agency_id: string
+          archived_at?: string | null
+          bedrooms_min?: number | null
+          budget_ideal?: number | null
+          budget_max?: number | null
+          cities: string[]
+          created_at?: string
+          deal_breakers?: string | null
+          demo?: boolean
+          elevator?: boolean | null
+          email?: string | null
+          energy_rating_max?: string | null
+          floor_min?: number | null
+          id?: string
+          must_have?: string[]
+          name: string
+          notes?: string | null
+          outdoor?: boolean | null
+          parking?: boolean | null
+          phone?: string | null
+          pool?: boolean | null
+          property_types?: string[]
+          purpose?: string | null
+          rooms_min?: number | null
+          status?: string
+          status_changed_at?: string
+          surface_min?: number | null
+          timeline?: string | null
+          updated_at?: string
+          works_accepted?: boolean | null
+        }
+        Update: {
+          advisor_id?: string
+          agency_id?: string
+          archived_at?: string | null
+          bedrooms_min?: number | null
+          budget_ideal?: number | null
+          budget_max?: number | null
+          cities?: string[]
+          created_at?: string
+          deal_breakers?: string | null
+          demo?: boolean
+          elevator?: boolean | null
+          email?: string | null
+          energy_rating_max?: string | null
+          floor_min?: number | null
+          id?: string
+          must_have?: string[]
+          name?: string
+          notes?: string | null
+          outdoor?: boolean | null
+          parking?: boolean | null
+          phone?: string | null
+          pool?: boolean | null
+          property_types?: string[]
+          purpose?: string | null
+          rooms_min?: number | null
+          status?: string
+          status_changed_at?: string
+          surface_min?: number | null
+          timeline?: string | null
+          updated_at?: string
+          works_accepted?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyers_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyers_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comparables: {
         Row: {
           address: string | null

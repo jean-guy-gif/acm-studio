@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { SubmitButton } from '@/components/submit-button';
-import { btnPrimary, card, hintText, sectionTitle } from '@/components/ui/styles';
+import { btnPrimary, card, hintText, link, sectionTitle } from '@/components/ui/styles';
 import { prepareDemoDossiers, resetDemoDossiers } from '@/features/demo/actions/demo-dossiers';
 import { DemoResetButton } from '@/features/demo/components/demo-reset-button';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
@@ -22,7 +22,11 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
       <h2 className={sectionTitle}>Ma démo</h2>
       <p className={hintText}>
         Quatre dossiers, un par étape de l’outil : à préparer, prêt pour le Live, conclu avec un
-        mandat signé, à relancer. Ils sont à vous ; chaque closer a les siens.
+        mandat signé, à relancer ; et deux{' '}
+        <Link href="/acquereurs" className={link}>
+          acquéreurs
+        </Link>{' '}
+        à rapprocher. Ils sont à vous ; chaque closer a les siens.
       </p>
       {dossiers.length > 0 ? (
         <ul className="flex flex-col gap-2" data-testid="demo-dossier-list">

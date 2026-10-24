@@ -147,6 +147,16 @@ export default function ConfidentialitePage() {
               suivre la prise de mandat ; jamais à d’autres agences.
             </li>
             <li>
+              Les fiches acquéreur : pour un acquéreur rencontré par l’agence, le conseiller note
+              son nom, son téléphone et son e-mail s’il les donne, la raison et le calendrier de son
+              achat, ce qu’il cherche (type de bien, communes, budget, pièces, surface, équipements)
+              et ses critères indispensables ou éliminatoires, avec des notes libres. Ces fiches
+              servent à rapprocher sa recherche des biens que l’agence connaît ; elles sont visibles
+              par les seuls membres de l’agence, jamais par une autre agence ni par un vendeur. Le
+              conseiller peut archiver une fiche : elle disparaît alors de l’outil et est effacée
+              sur demande.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

@@ -4,10 +4,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { buyerColumns } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
+import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
   DEMO_DANGEROUS_REASON,
@@ -59,7 +61,15 @@ async function requireDemoCloser(): Promise<Closer> {
 }
 
 function revalidateDemo(): void {
-  for (const path of [DEMO_PAGE, '/builder', '/live', '/suivi', '/prospection', '/bienvenue']) {
+  for (const path of [
+    DEMO_PAGE,
+    '/builder',
+    '/live',
+    '/suivi',
+    '/prospection',
+    '/acquereurs',
+    '/bienvenue',
+  ]) {
     revalidatePath(path);
   }
 }
@@ -79,6 +89,30 @@ export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promi
 // un dossier sans marque. Les photos déposées dans le stockage partent aussi. Les oppositions
 // de l'agence restent : la liste « Ne plus solliciter » est commune (M98), et « Préparer » la
 // retrouve.
+// Mission 117 — les deux acquéreurs de la démo du closer : marqués, à lui, dans son agence.
+export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<number> {
+  const { data } = await supabase
+    .from('buyers')
+    .delete()
+    .eq('agency_id', closer.agencyId)
+    .eq('advisor_id', closer.id)
+    .eq('demo', true)
+    .select('id');
+  return data?.length ?? 0;
+}
+
+export async function seedDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
+  const { error } = await supabase.from('buyers').insert(
+    DEMO_BUYERS.map((buyer) => ({
+      ...buyerColumns(buyer),
+      agency_id: closer.agencyId,
+      advisor_id: closer.id,
+      demo: true,
+    })),
+  );
+  return !error;
+}
+
 export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
   const ids = await ownDemoDossierIds(supabase, closer);
   if (ids.length === 0) return 0;
@@ -409,7 +443,8 @@ export async function seedDemoDossiers(
     const id = await seedDemoDossier(supabase, closer, demoSeedPlan(stage, now), now);
     if (!id) return false;
   }
-  return true;
+  // Mission 117 — et ses deux acquéreurs, qui vont avec les scénarios.
+  return seedDemoBuyers(supabase, closer);
 }
 
 // « Préparer ma démo » : quatre dossiers, s'il n'en a pas encore.
@@ -417,6 +452,7 @@ export async function prepareDemoDossiers(): Promise<void> {
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();
   if ((await ownDemoDossierIds(supabase, closer)).length === 0) {
+    await deleteDemoBuyers(supabase, closer);
     const ok = await seedDemoDossiers(supabase, closer, new Date());
     if (!ok) redirect(FAILED);
   }
@@ -429,6 +465,7 @@ export async function resetDemoDossiers(): Promise<void> {
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();
   await deleteDemoDossiers(supabase, closer);
+  await deleteDemoBuyers(supabase, closer);
   const ok = await seedDemoDossiers(supabase, closer, new Date());
   revalidateDemo();
   redirect(ok ? DEMO_PAGE : FAILED);

@@ -661,6 +661,113 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(row.getByRole('link', { name: /Relancer/ })).toHaveCount(0);
   });
 
+  // Mission 117 — la fiche acquéreur : créée, retrouvée dans la liste, « Rapprocher » pré-remplit
+  // le rapprochement du Suivi (qui trouve le mandat signé de ce passage), statut, archivage.
+  await test.step('La fiche acquéreur : créer, retrouver, rapprocher, statut, archiver', async () => {
+    const buyerName = `Acquéreur ${dossierName}`;
+    await page.getByRole('link', { name: /^Acquéreurs/ }).click();
+    await expect(page).toHaveURL(/\/acquereurs$/);
+    await page.getByRole('link', { name: 'Nouvel acquéreur' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
+    const field = (label: string) =>
+      page
+        .locator('label')
+        .filter({ has: page.locator('span', { hasText: new RegExp(`^${label}$`) }) })
+        .locator('input, select, textarea');
+    await field('Nom').fill(buyerName);
+    const typeBox = page.locator('input[name="property_types"][value="apartment"]');
+    await typeBox.check();
+    // Nice, la commune du bien de ce passage ; une deuxième commune, dédoublonnée par sa clé.
+    await field('Communes').fill('Nice, nice, Cagnes-sur-Mer');
+    await field('Pièces \\(minimum\\)').fill('3');
+    await field('Chambres \\(minimum\\)').fill('4');
+    await field('Surface \\(m², minimum\\)').fill('60');
+    await field('Budget idéal \\(€\\)').fill('300 000');
+    await field('Budget plafond \\(€\\)').fill(String(COMMERCIALIZATION_PRICE - 5_000));
+    await field('Extérieur').selectOption('yes');
+    await page.locator('input[name="must_have"][value="outdoor"]').check();
+    // Plus de chambres que de pièces : refusé, sur le champ, rien n'est enregistré.
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByTestId('buyer-error-bedrooms_min')).toHaveText(
+      'Pas plus de chambres que de pièces.',
+    );
+    await expect(page).toHaveURL(/\/acquereurs\/nouveau/);
+    await field('Chambres \\(minimum\\)').fill('2');
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?enregistre=1$/);
+    const buyerUrl = page.url().replace(/\?.*$/, '');
+    await expect(page.getByTestId('buyer-name')).toHaveText(buyerName);
+    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
+    // Les communes dédoublonnées, la fiche relue.
+    await expect(field('Communes')).toHaveValue('Nice, Cagnes-sur-Mer');
+    await expect(typeBox).toBeChecked();
+    await expect(page.locator('input[name="must_have"][value="outdoor"]')).toBeChecked();
+
+    // La liste : la fiche, « Ma fiche », type, communes, budget, pièces ; la recherche par nom.
+    await page.goto('/acquereurs');
+    const row = page.getByTestId('buyer-row').filter({ hasText: buyerName });
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('Ma fiche');
+    await expect(row).toContainText('Appartement · Nice · Cagnes-sur-Mer');
+    await expect(row).toContainText('3 pièces ou plus');
+    await page.getByLabel('Rechercher un acquéreur par nom').fill(dossierName.slice(-6));
+    await page.getByRole('button', { name: 'Rechercher' }).click();
+    await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toBeVisible();
+
+    // « Rapprocher » : le rapprochement du Suivi, pré-rempli, trouve le mandat signé d'Antibes…
+    // ici celui de ce passage, à Nice (3 pièces, 65 m², 315 000 € convenus : sous le plafond + 5 %).
+    await page.goto(buyerUrl);
+    await page.getByRole('link', { name: 'Rapprocher' }).click();
+    await expect(page).toHaveURL(new RegExp(`/suivi\\?acquereur=${buyerUrl.split('/').pop()}`));
+    const panel = page.getByTestId('buyer-search');
+    await expect(panel.getByRole('heading', { name: 'Rapprochement acquéreur' })).toBeVisible();
+    await expect(panel).toContainText(buyerName);
+    await expect(panel.locator('input[name="city"]')).toHaveValue('Nice, Cagnes-sur-Mer');
+    await expect(panel.locator('input[name="roomsCount"]')).toHaveValue('3');
+    await expect(panel.locator('input[name="surfaceArea"]')).toHaveValue('60');
+    await expect(panel.locator('input[name="budgetMax"]')).toHaveValue(
+      String(COMMERCIALIZATION_PRICE - 5_000),
+    );
+    await expect(panel.locator('input[name="propertyType"]')).toHaveValue('Appartement');
+    // Joué d'avance : le mandat signé de ce passage correspond.
+    await expect(panel.getByText(/correspond(ent)? à cet acquéreur/)).toBeVisible();
+    await expect(panel.getByText(dossierName).first()).toBeVisible();
+    await expect(panel.getByRole('link', { name: 'Enregistrer cette recherche' })).toHaveCount(0);
+    await expect(page.getByText(/acheteur/i)).toHaveCount(0);
+
+    // Sans fiche, le rapprochement propose d'enregistrer la recherche : vers une fiche pré-remplie.
+    await page.goto('/suivi');
+    const fresh = page.getByTestId('buyer-search');
+    await fresh.locator('input[name="city"]').fill('Nice');
+    await fresh.locator('input[name="roomsCount"]').fill('3');
+    await fresh.getByRole('button', { name: 'Rapprocher' }).click();
+    const save = fresh.getByRole('link', { name: 'Enregistrer cette recherche' });
+    await expect(save).toHaveAttribute('href', /\/acquereurs\/nouveau\?.*communes=Nice/);
+    await save.click();
+    await expect(field('Communes')).toHaveValue('Nice');
+    await expect(field('Pièces \\(minimum\\)')).toHaveValue('3');
+
+    // Le statut, un cran à la fois ; puis « Archiver » : disparue de la liste et de son adresse.
+    await page.goto(buyerUrl);
+    await page.getByTestId('buyer-status').getByRole('button', { name: 'En visite' }).click();
+    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
+    await expect(
+      page.getByTestId('buyer-status').getByRole('button', { name: 'A acheté' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Archiver' }).click();
+    const confirm = page.getByTestId('buyer-archive-confirm');
+    await expect(confirm).toContainText(`Archiver la fiche de ${buyerName} ?`);
+    await confirm.getByRole('button', { name: 'Annuler' }).click();
+    await expect(confirm).toHaveCount(0);
+    await page.getByRole('button', { name: 'Archiver' }).click();
+    await confirm.getByRole('button', { name: 'Archiver' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\?archive=/);
+    await expect(page.getByTestId('buyer-archived-notice')).toContainText(buyerName);
+    await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toHaveCount(0);
+    const gone = await page.goto(buyerUrl);
+    expect(gone?.status()).toBe(404);
+  });
+
   await test.step('Prospection filtrée sur le bien, jusqu’au dossier remis', async () => {
     const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
     await row.getByRole('link', { name: /Prospecter/ }).click();

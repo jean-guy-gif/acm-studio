@@ -123,6 +123,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
       expect(stages).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+      // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
+      await expectDemoBuyers(page);
       // Chacun à sa place : le prêt dans la liste du Live, les deux conclus dans le Suivi.
       await page.goto('/live');
       await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
@@ -657,6 +659,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const after = await hrefs();
       for (const href of after.slice(0, 3)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
+      // Mission 117 — deux acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
+      await expectDemoBuyers(page);
     });
 
     await test.step('Aucune requête vers l’extérieur', async () => {
@@ -974,4 +978,28 @@ async function walkLive(
     await expect(score(10)).toHaveAttribute('aria-pressed', 'true');
   }
   await expect(page.getByRole('link', { name: /Terminer le rendez-vous/ })).toBeVisible();
+}
+
+// Mission 117 — les deux acquéreurs de la démo : M. et Mme Rossi (appartement, Antibes) et la
+// famille Keller (villa, Mougins), exactement deux ; « Rapprocher » sur les Keller ouvre le
+// rapprochement pré-rempli et y trouve le mandat signé de Mougins.
+async function expectDemoBuyers(page: Page): Promise<void> {
+  await page.goto('/acquereurs');
+  await expectUnspoken(page, 'Acquéreurs');
+  const rows = page.getByTestId('buyer-row');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.filter({ hasText: 'M. et Mme Rossi' })).toContainText(
+    'Appartement · Antibes · Juan-les-Pins',
+  );
+  const keller = rows.filter({ hasText: 'Famille Keller' });
+  await expect(keller).toContainText('Maison · Mougins');
+  await keller.getByRole('link', { name: 'Famille Keller' }).click();
+  await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+  await page.getByRole('link', { name: 'Rapprocher' }).click();
+  const panel = page.getByTestId('buyer-search');
+  await expect(panel.locator('input[name="city"]')).toHaveValue(
+    'Mougins, Mouans-Sartoux, Valbonne',
+  );
+  await expect(panel.getByText(/correspond(ent)? à cet acquéreur/)).toBeVisible();
+  await expect(panel.getByText('M. Lefebvre').first()).toBeVisible();
 }

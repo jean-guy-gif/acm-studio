@@ -1,0 +1,70 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import {
+  alertOk,
+  backLink,
+  btnPrimary,
+  card,
+  kickerLabel,
+  pageSubtitle,
+  pageTitle,
+} from '@/components/ui/styles';
+import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
+import { BuyerForm } from '@/features/buyers/components/buyer-form';
+import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
+import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+
+export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
+
+type BuyerPageProps = {
+  params: Promise<{ buyerId: string }>;
+  searchParams: Promise<{ enregistre?: string }>;
+};
+
+// Mission 117 — la fiche d'un acquéreur : son statut, « Rapprocher » (le rapprochement du Suivi,
+// pré-rempli, M86), la fiche à modifier, « Archiver ». Une fiche archivée ou d'une autre agence
+// est introuvable (M93).
+export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
+  const [{ buyerId }, { enregistre }] = await Promise.all([params, searchParams]);
+  const buyer = await getBuyer(buyerId);
+  if (!buyer) notFound();
+
+  return (
+    <div className="flex max-w-3xl flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-2">
+        <Link href="/acquereurs" className={backLink}>
+          ← Acquéreurs
+        </Link>
+        <span className={kickerLabel}>Acquéreur</span>
+        <h1 className={pageTitle} data-testid="buyer-name">
+          {buyer.name}
+        </h1>
+        <p className={pageSubtitle}>
+          Fiche créée le {buyerDateLabel(buyer.createdAt)} · modifiée le{' '}
+          {buyerDateLabel(buyer.updatedAt)}
+        </p>
+      </div>
+
+      {enregistre ? (
+        <p role="status" className={alertOk}>
+          Fiche enregistrée.
+        </p>
+      ) : null}
+
+      <section className={`${card} flex flex-wrap items-center justify-between gap-4 p-5`}>
+        <BuyerStatusActions buyer={buyer} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href={`/suivi?acquereur=${buyer.id}#rapprochement`} className={btnPrimary}>
+            Rapprocher
+          </Link>
+          <BuyerArchiveButton buyerId={buyer.id} name={buyer.name} />
+        </div>
+      </section>
+
+      <BuyerForm buyer={buyer} />
+    </div>
+  );
+}
