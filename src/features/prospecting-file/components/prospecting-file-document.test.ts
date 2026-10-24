@@ -6,7 +6,10 @@ import { ProspectingFileDocument } from '@/features/prospecting-file/components/
 import { buildQrCode } from '@/features/contact-card/services/qr-code';
 import { savedDocument } from '@/features/prospecting-file/services/saved-document';
 import { makeFacts } from '@/features/prospecting-file/services/test-facts';
-import { NO_SAVED_THEIR_PHOTO } from '@/features/prospecting-file/services/their-photo';
+import {
+  NO_SAVED_THEIR_PHOTO,
+  type SavedTheirPhoto,
+} from '@/features/prospecting-file/services/their-photo';
 import {
   NO_OVERRIDES,
   type AddressSource,
@@ -33,6 +36,10 @@ function printed(
   version: ProspectingFileVersion,
   source: AddressSource,
   sender: ProspectingSender = SENDER,
+  theirPhoto: { listing: string[]; saved: SavedTheirPhoto } = {
+    listing: [],
+    saved: NO_SAVED_THEIR_PHOTO,
+  },
 ): string {
   const document = savedDocument({
     version,
@@ -40,7 +47,7 @@ function printed(
     sender,
     overrides: NO_OVERRIDES,
     photos: [],
-    theirPhoto: { listing: [], saved: NO_SAVED_THEIR_PHOTO, signed: {}, prefix: 'a/p/c1/' },
+    theirPhoto: { ...theirPhoto, signed: {}, prefix: 'a/p/c1/' },
     qr: buildQrCode('BEGIN:VCARD\nEND:VCARD'),
   });
   return renderToStaticMarkup(createElement(ProspectingFileDocument, document))
@@ -94,5 +101,30 @@ describe('le courrier imprimé', () => {
     const html = printed('owner', 'locator', { ...SENDER, agencyName: 'Port Immo' });
     expect(legal(html)).toContain('Responsable du traitement : Port Immo, 1 place de la Mairie');
     expect(html).not.toContain('Agence du Port');
+  });
+});
+
+// Mission 115 — la photo du bien concurrent, au choix du conseiller : choisie, elle s'imprime ;
+// sans photo, la mise en page ne laisse aucun cadre vide, propriétaire comme confrère.
+describe('la photo du bien concurrent sur le courrier', () => {
+  const chosen = {
+    listing: ['https://portail.test/facade.jpg'],
+    saved: { mode: 'listing' as const, sourceUrl: 'https://portail.test/facade.jpg', path: null },
+  };
+
+  it('choisie : l’image est sur la feuille, dans les deux versions', () => {
+    for (const version of ['owner', 'colleague'] as const) {
+      const html = printed(version, 'locator', SENDER, chosen);
+      expect(html, version).toMatch(
+        /data-testid="their-photo"[^>]*>\s*<img src="https:\/\/portail\.test\/facade\.jpg"/,
+      );
+    }
+  });
+
+  it('sans photo : aucun cadre, dans les deux versions', () => {
+    for (const version of ['owner', 'colleague'] as const) {
+      const html = printed(version, 'locator');
+      expect(html, version).not.toContain('data-testid="their-photo"');
+    }
   });
 });

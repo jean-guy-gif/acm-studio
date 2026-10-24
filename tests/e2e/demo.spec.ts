@@ -35,6 +35,8 @@ const LISTED_PRICE = 405_000; // le prix de l'annonce de démo : « pour informa
 // ne doit jamais apparaître devant le vendeur.
 const FOURCHETTE = { min: 380_500, max: 429_500 };
 const RETAINED = 5;
+// Le téléphone du compte de démo, s'il manque : sans lui, aucun courrier propriétaire (M90).
+const DEMO_PHONE = '06 00 00 00 01';
 const PERCEIVED_PRICE = 415_500;
 const REVISED_PRICE = 401_500;
 const COMMERCIALIZATION_PRICE = 392_500;
@@ -92,6 +94,18 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('need-extension')).toHaveAttribute('data-state', 'done');
       await expect(page.getByTestId('need-locator')).toHaveAttribute('data-state', 'done');
       await expectUnspoken(page, 'Bienvenue');
+      // « Ce qu'il vous faut » (M97) : le téléphone du profil. Le compte de démo le renseigne une
+      // fois, s'il manque — sans lui, aucun courrier propriétaire ne se prépare (M90).
+      if ((await page.getByTestId('need-phone').getAttribute('data-state')) === 'todo') {
+        await page.goto('/profil');
+        await page
+          .locator('label')
+          .filter({ has: page.locator('span', { hasText: /^Téléphone$/ }) })
+          .locator('input')
+          .fill(DEMO_PHONE);
+        await page.getByRole('button', { name: /Enregistrer/ }).click();
+        await expect(page.getByText('Profil enregistré.')).toBeVisible();
+      }
     });
 
     await test.step('Nouveau dossier', async () => {
@@ -356,6 +370,36 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByText(/Installer l’extension|Installez le Localisateur/)).toHaveCount(
         0,
       );
+
+      // Mission 115 — « Photo de son bien » : une photo de l'annonce, choisie par le closer, sur un
+      // courrier dont la version est connue (un seul « Préparer le dossier » : pas la carte « À
+      // qui s'adresser ? », que le lot retient) ; elle s'imprime à l'unité, et en lot.
+      await page.goto(`/prospection?bien=${projectId}`);
+      const hrefs = await ready
+        .getByTestId('prospecting-card')
+        .getByRole('link', { name: 'Préparer le dossier', exact: true })
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+      expect(hrefs.length, 'Aucun courrier à version connue parmi les concurrents').toBeGreaterThan(
+        0,
+      );
+      await page.goto(hrefs[0]);
+      const photoChoice = page.getByTestId('their-photo-choice');
+      await expect(photoChoice).toBeVisible();
+      const theirPhoto = page.locator('.pf-doc [data-testid="their-photo"] img');
+      await expect(theirPhoto, 'Une photo s’imprime sans que le closer l’ait choisie').toHaveCount(
+        0,
+      );
+      await photoChoice.getByRole('img', { name: 'Photo 1 de son annonce' }).click();
+      await expect(theirPhoto).toHaveCount(1);
+      await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+      await expect(page.getByText(/^Enregistré\./)).toBeVisible();
+      await page.reload();
+      await expect(theirPhoto, 'La photo choisie n’est pas gardée').toHaveCount(1);
+      await page.goto(`/prospection/courriers?bien=${projectId}`);
+      await expect(
+        page.locator('.pf-doc [data-testid="their-photo"] img'),
+        'La photo choisie manque au lot',
+      ).toHaveCount(1);
 
       // « Ne plus solliciter » sur une carte : inscrit, la carte sort du tableau.
       await page.goto(`/prospection?bien=${projectId}`);

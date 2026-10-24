@@ -108,18 +108,14 @@ export function theirPhotoDisplayUrl(
   return copied ?? choice.url;
 }
 
-// Mission 105 — la photo d'une annonce appartient à son auteur : pendant la bêta, l'option est
-// retirée de l'éditeur, et une photo d'annonce déjà choisie ne s'imprime plus (rien n'est effacé
-// en base). La photo prise par le conseiller lui-même (« Ma photo ») n'est pas concernée.
-export const LISTING_PHOTOS_OFFERED = false;
-
-export function withoutListingPhoto(saved: SavedTheirPhoto): SavedTheirPhoto {
-  return saved.mode === 'listing' ? { mode: 'none', sourceUrl: null, path: null } : saved;
-}
+// Mission 115 — l'option « Photo de son bien » est de retour (décision de Jean-Guy du 23/10, en
+// connaissance du risque : la photo appartient à son auteur ; remplace M105, « retirée pendant la
+// bêta », et s'aligne sur la synthèse, M113) : la photo que montre le Live, au choix du conseiller,
+// « Sans photo » par défaut.
 
 // Mission 108 — après un enregistrement, le fichier gardé que le courrier ne montre plus : il est
-// retiré du stockage. `storedPath` est le fichier RÉELLEMENT gardé, photo d'annonce comprise
-// (masquée à l'écran depuis M105) — sinon elle restait dans le stockage pour toujours.
+// retiré du stockage. `storedPath` est le fichier RÉELLEMENT gardé — sinon il restait dans le
+// stockage pour toujours.
 export function staleTheirPhotoPath(storedPath: string | null, kept: string | null): string | null {
   return storedPath && storedPath !== kept ? storedPath : null;
 }
