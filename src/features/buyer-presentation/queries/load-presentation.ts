@@ -1,5 +1,7 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { agencyPriceForBuyer } from '@/features/buyer-presentation/services/agency-price';
 import { buildBuyerPresentation } from '@/features/buyer-presentation/services/build-presentation';
@@ -15,8 +17,10 @@ import type { IdealSelectionItem } from '@/features/ideal-properties/types';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
-import type { Json } from '@/lib/supabase/database.types';
+import type { Database, Json } from '@/lib/supabase/database.types';
 import { createClient } from '@/lib/supabase/server';
+
+export type PresentationClient = SupabaseClient<Database>;
 
 export type LoadedPresentation = {
   presentation: BuyerPresentation;
@@ -44,8 +48,13 @@ const list = (value: unknown): string[] =>
 // M107). Le prix est celui figé à la sélection (M111). Les photos : celles du bien vendeur par
 // liens signés d'une heure (M37, M113), celles de l'annonce du concurrent ou de l'annonce du marché
 // telles que publiées (M58).
-async function presentedItems(items: IdealSelectionItem[]): Promise<PresentedItemInput[]> {
-  const supabase = await createClient();
+// Mission 119 (partie B) — le même chargement sert la présentation (client du conseiller, RLS) et
+// le dossier acquéreur, à l'écran du conseiller comme sur son lien public (clé de service, après
+// vérification du jeton) : le client est passé par l'appelant.
+export async function presentedItems(
+  supabase: PresentationClient,
+  items: IdealSelectionItem[],
+): Promise<PresentedItemInput[]> {
   const projectIds = items
     .filter((item) => item.source === 'project')
     .map((item) => item.reference);
@@ -185,7 +194,7 @@ export async function loadPresentation(buyerId: string): Promise<LoadedPresentat
           selection.items.map((item) => item.id),
         )
         .order('requested_at'),
-      presentedItems(selection.items),
+      presentedItems(supabase, selection.items),
       getAgencyBranding(),
       getAgency(profile.agency_id),
     ]);

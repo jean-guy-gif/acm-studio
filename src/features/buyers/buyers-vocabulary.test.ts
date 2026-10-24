@@ -17,6 +17,10 @@ const SCOPE = [
   join('features', 'buyer-presentation'),
   join('app', '(protected)', 'visites'),
   join('app', '(stage)', 'presentation'),
+  // Mission 119 (partie B) — le dossier acquéreur et son lien.
+  join('features', 'buyer-dossier'),
+  join('app', 'dossier'),
+  join('app', '(print)', 'acquereurs'),
 ];
 
 const files = (dir: string): string[] =>

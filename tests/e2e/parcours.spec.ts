@@ -896,6 +896,67 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('visits-done')).toContainText('Pas pour lui');
     await expect(page.getByTestId('visits-pending')).toHaveCount(0);
 
+    // Mission 119 (partie B) — « Dossier acquéreur » : la même sélection, une page par bien, la
+    // dernière page à cocher ; un lien public sans compte, « noindex » ; une coche crée une demande
+    // « depuis le dossier » sur Visites ; le lien retiré ne s'ouvre plus.
+    await page.goto(buyerUrl);
+    await page.getByTestId('buyer-dossier').click();
+    await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
+    const dossier = page.getByTestId('buyer-dossier');
+    await expect(dossier).toBeVisible();
+    await expect(dossier).toContainText('Votre sélection');
+    await expect(dossier.getByTestId('dossier-item')).toHaveCount(1);
+    await expect(dossier.getByTestId('dossier-price')).toBeVisible();
+    await expect(dossier).toContainText('Quels biens souhaitez-vous visiter ?');
+    const dossierCheck = async (text: string, where: string) => {
+      for (const competitor of COMPETITORS) {
+        expect(text, `${where} : le titre « ${competitor.title} »`).not.toContain(competitor.title);
+      }
+      expect(text, `${where} : un mot interdit`).not.toMatch(
+        /Vendu par|Exclusivité|[Ee]stimation|disponible/,
+      );
+      expect(text, `${where} : la fourchette`).not.toContain(String(FOURCHETTE.min));
+    };
+    await dossierCheck(await dossier.innerText(), 'Le dossier acquéreur');
+    await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
+    const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
+    expect(dossierLink).toMatch(/\/dossier\/[A-Za-z0-9_-]{43}$/);
+    const dossierBypass = process.env.E2E_VERCEL_BYPASS;
+    const stranger = await page
+      .context()
+      .browser()!
+      .newContext(
+        dossierBypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': dossierBypass } } : {},
+      );
+    try {
+      const visitor = await stranger.newPage();
+      const response = await visitor.goto(dossierLink);
+      expect(response?.headers()['x-robots-tag']).toContain('noindex');
+      const publicDossier = visitor.getByTestId('buyer-dossier');
+      await expect(publicDossier).toBeVisible();
+      await dossierCheck(await publicDossier.innerText(), 'Le lien public du dossier');
+      // Sans compte : une coche, « Envoyer », et la demande arrive sur Visites.
+      await visitor.getByTestId('dossier-visit-send').click();
+      await expect(visitor.getByTestId('dossier-visit-message')).toHaveText(
+        'Cochez au moins un bien.',
+      );
+      await visitor.getByTestId('dossier-visit-check').first().check();
+      await visitor.getByTestId('dossier-visit-send').click();
+      await expect(visitor.getByTestId('dossier-visit-message')).toContainText(
+        'Votre demande est envoyée',
+      );
+      await page.goto('/visites');
+      await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
+      // « Retirer le lien » : il ne s'ouvre plus, tout de suite.
+      await page.goto(`${buyerUrl}/dossier`);
+      await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+      await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+      const after = await visitor.goto(dossierLink);
+      expect(after?.status(), 'Un lien retiré s’ouvre encore').toBe(404);
+    } finally {
+      await stranger.close();
+    }
+
     // Le statut, un cran à la fois ; puis « Archiver » : disparue de la liste et de son adresse.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-status').getByRole('button', { name: 'En visite' }).click();

@@ -77,6 +77,15 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               {selection.presentedAt ? 'Revoir la présentation' : 'Présenter la sélection'}
             </Link>
           ) : null}
+          {selection ? (
+            <Link
+              href={`/acquereurs/${buyer.id}/dossier`}
+              className={btnSecondary}
+              data-testid="buyer-dossier"
+            >
+              Dossier acquéreur
+            </Link>
+          ) : null}
           <Link href={`/suivi?acquereur=${buyer.id}#rapprochement`} className={btnSecondary}>
             Rapprocher
           </Link>
