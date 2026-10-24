@@ -625,11 +625,23 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(confirm).toHaveCount(0);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       await confirm.getByRole('button', { name: 'Remettre à zéro' }).click();
-      await expect(page.getByTestId('demo-dossier')).toHaveCount(4, { timeout: 180_000 });
-      const after = await page
-        .getByTestId('demo-dossier')
-        .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-      expect(after).toHaveLength(4);
+      // La remise à zéro dure (photos déposées, Live, conclusion) : on attend que la liste change
+      // — les anciens dossiers s'affichent jusqu'au retour de l'action.
+      const hrefs = () =>
+        page
+          .getByTestId('demo-dossier')
+          .evaluateAll((items) =>
+            items.map((item) => item.querySelector('a')?.getAttribute('href')),
+          );
+      await expect
+        .poll(async () => (await hrefs())[0], {
+          message: 'La remise à zéro n’a pas remplacé les dossiers',
+          timeout: 180_000,
+        })
+        .not.toBe(before[0]);
+      await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(4);
+      const after = await hrefs();
       for (const href of after.slice(0, 3)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
     });
