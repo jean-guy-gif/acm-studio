@@ -1012,9 +1012,12 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
   await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
   await expectUnspoken(page, 'Biens idéaux');
-  await expect(page.getByTestId('ideal-agency-hit').filter({ hasText: 'M. Lefebvre' })).toHaveCount(
-    1,
-  );
+  // Le mandat de Mougins, et ses concurrents à prospecter, tous « Pour : M. Lefebvre ».
+  const mandate = page
+    .getByTestId('ideal-agency-hit')
+    .filter({ hasText: 'Mes mandats' })
+    .filter({ hasText: 'M. Lefebvre' });
+  await expect(mandate).toHaveCount(1);
   await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
   await page
     .getByTestId('ideal-paid-confirm')
@@ -1030,11 +1033,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     /affiché le \d{2}\/\d{2}\/\d{4}/,
   );
   // Trois biens : le mandat de l'agence, puis les deux premiers du marché.
-  await page
-    .getByTestId('ideal-agency-hit')
-    .filter({ hasText: 'M. Lefebvre' })
-    .getByRole('checkbox')
-    .check();
+  await mandate.getByRole('checkbox').check();
   const marketBoxes = page.getByTestId('ideal-market-hit').getByRole('checkbox');
   await marketBoxes.nth(0).check();
   await marketBoxes.nth(1).check();
