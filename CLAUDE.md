@@ -10,8 +10,10 @@ Le conseiller décide.
 Le logiciel prépare.
 Le vendeur comprend.
 
-**Le gel.** Aucune nouvelle fonctionnalité avant le pilote. Une mission naît d'un problème
-rencontré en vrai rendez-vous. Les idées vont dans `docs/IDEES.md`.
+**Le gel est levé** (Jean-Guy, 24/10) : le parcours vendeur est complet et la démo le prouve de bout
+en bout (M114). Une mission naît d'un problème rencontré en vrai rendez-vous ou d'une décision de
+Jean-Guy ; les idées non retenues vont dans `docs/IDEES.md`. Le mode acquéreur (missions 117 à 120)
+est le chantier en cours ; la lecture de notes manuscrites par IA (121) attend la fin des quatre.
 
 ## Règles produit absolues
 
@@ -32,8 +34,11 @@ rencontré en vrai rendez-vous. Les idées vont dans `docs/IDEES.md`.
 - **Live** (`/live`) : le rendez-vous face au vendeur ; seuls les dossiers prêts (`ready_for_meeting`).
 - **Suivi** (`/suivi`) : les dossiers conclus (`meeting_completed`), leur issue, la recherche acheteur.
 - **Administration** (`/admin`) : identité de l'agence et équipe — jamais la méthode.
-- **MVP** : ces trois espaces, de la création du dossier au Suivi. Le rapport conseiller et l'export
-  PowerPoint sortent du MVP : la Conclusion et le Suivi en tiennent lieu. Tout le reste est V2.
+- **Acquéreurs** (`/acquereurs`, missions 117 à 120) : la fiche acquéreur, les biens idéaux, le dossier
+  remis à l'acquéreur, et les actions qui en dérivent (visite, courrier propriétaire, confrère).
+- **MVP** (livré) : Préparation, Live, Suivi, Prospection, Administration. Le rapport conseiller et
+  l'export PowerPoint n'en font pas partie : la Conclusion et la synthèse en tiennent lieu. Le mode
+  acquéreur est la V2, décidée le 24/10 par Jean-Guy.
 
 ## Le Live tel qu'il est
 
