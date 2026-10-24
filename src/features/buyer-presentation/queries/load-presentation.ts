@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { agencyPriceForBuyer } from '@/features/buyer-presentation/services/agency-price';
 import { buildBuyerPresentation } from '@/features/buyer-presentation/services/build-presentation';
 import { toVisitRequest } from '@/features/buyer-presentation/services/visit-request-row';
 import type {
@@ -51,31 +52,40 @@ async function presentedItems(items: IdealSelectionItem[]): Promise<PresentedIte
   const competitorIds = items
     .filter((item) => item.source === 'competitor')
     .map((item) => item.reference);
-  const [{ data: properties }, { data: competitors }, { data: rawItems }] = await Promise.all([
-    projectIds.length > 0
-      ? supabase
-          .from('subject_properties')
-          .select(
-            'project_id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
-          )
-          .in('project_id', projectIds)
-      : Promise.resolve({ data: [] as never[] }),
-    competitorIds.length > 0
-      ? supabase
-          .from('comparables')
-          .select(
-            'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
-          )
-          .in('id', competitorIds)
-      : Promise.resolve({ data: [] as never[] }),
-    supabase
-      .from('buyer_selection_items')
-      .select('id, snapshot, imported')
-      .in(
-        'id',
-        items.map((item) => item.id),
-      ),
-  ]);
+  const [{ data: properties }, { data: competitors }, { data: rawItems }, { data: conclusions }] =
+    await Promise.all([
+      projectIds.length > 0
+        ? supabase
+            .from('subject_properties')
+            .select(
+              'project_id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
+            )
+            .in('project_id', projectIds)
+        : Promise.resolve({ data: [] as never[] }),
+      competitorIds.length > 0
+        ? supabase
+            .from('comparables')
+            .select(
+              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
+            )
+            .in('id', competitorIds)
+        : Promise.resolve({ data: [] as never[] }),
+      supabase
+        .from('buyer_selection_items')
+        .select('id, snapshot, imported')
+        .in(
+          'id',
+          items.map((item) => item.id),
+        ),
+      // Décision de Jean-Guy (24/10) : seul un mandat SIGNÉ montre son prix ; l'issue est relue ici.
+      projectIds.length > 0
+        ? supabase
+            .from('project_meeting_conclusions')
+            .select('project_id, outcome')
+            .in('project_id', projectIds)
+        : Promise.resolve({ data: [] as never[] }),
+    ]);
+  const outcomeByProject = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
   const propertyByProject = new Map((properties ?? []).map((row) => [row.project_id, row]));
   const competitorById = new Map((competitors ?? []).map((row) => [row.id, row]));
   const dataById = new Map((rawItems ?? []).map((row) => [row.id, row]));
@@ -104,6 +114,7 @@ async function presentedItems(items: IdealSelectionItem[]): Promise<PresentedIte
       const property = propertyByProject.get(item.reference);
       return {
         ...base,
+        price: agencyPriceForBuyer(outcomeByProject.get(item.reference), item.listedPrice),
         city: property?.city ?? null,
         district: property?.district ?? null,
         surfaceArea: property?.surface_area ?? null,
