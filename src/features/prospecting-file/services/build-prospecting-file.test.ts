@@ -4,6 +4,7 @@ import {
   agencyMentions,
   allTexts,
   buildProspectingFile,
+  COLLABORATION_DECLINED_SENTENCE,
   resolveTexts,
 } from '@/features/prospecting-file/services/build-prospecting-file';
 import { plainText } from '@/features/prospecting-file/services/emphasis';
@@ -232,5 +233,28 @@ describe('ce que le document dit', () => {
       'Mon point 2',
       file.defaults.proposals[2],
     ]);
+  });
+});
+
+// Mission 115 — après un refus de collaboration du confrère, le courrier propriétaire le dit,
+// d'une phrase proposée (modifiable) ; sans refus, rien.
+describe('le courrier propriétaire après un refus de collaboration (mission 115)', () => {
+  it('propose la phrase, et seulement dans ce cas', () => {
+    const refused = buildProspectingFile(makeFacts({ collaborationDeclined: true }), 'owner', {
+      showPrices: true,
+    });
+    expect(refused.defaults.letter).toContain(COLLABORATION_DECLINED_SENTENCE);
+    expect(COLLABORATION_DECLINED_SENTENCE).not.toMatch(/mandat(?! exclusif)/);
+    const plain = buildProspectingFile(makeFacts(), 'owner', { showPrices: true });
+    expect(plain.defaults.letter).not.toContain('refusé');
+    // La version confrère ne la porte jamais.
+    const colleague = buildProspectingFile(
+      makeFacts({ collaborationDeclined: true }),
+      'colleague',
+      {
+        showPrices: true,
+      },
+    );
+    expect(colleague.defaults.letter).not.toContain('refusé');
   });
 });

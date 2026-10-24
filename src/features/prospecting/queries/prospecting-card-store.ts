@@ -75,7 +75,13 @@ export async function moveCard(
   if (card.row.opposedOn != null) {
     return { ok: false, error: `${OPPOSED_MESSAGE}.` };
   }
-  const result = applyProspectingMove(card.row.status, move, now, card.row.step);
+  const result = applyProspectingMove(
+    card.row.status,
+    move,
+    now,
+    card.row.step,
+    card.row.collaborationDeclinedAt != null,
+  );
   if (!result.ok) {
     return result;
   }

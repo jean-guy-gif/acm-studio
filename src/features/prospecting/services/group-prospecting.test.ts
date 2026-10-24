@@ -134,6 +134,8 @@ describe('le statut d’une carte vaut pour ses copies', () => {
       prospecting_meeting_at: T2,
       prospecting_mandate_at: null,
       prospecting_declined_at: null,
+      prospecting_collaboration_at: null,
+      prospecting_collaboration_declined_at: null,
     });
     // Chaque copie, relue seule, dit alors la même chose que la carte.
     expect(prospectingStatus(written, false)).toBe('meeting');
@@ -151,6 +153,8 @@ describe('le statut d’une carte vaut pour ses copies', () => {
       prospecting_meeting_at: T2,
       prospecting_mandate_at: T2,
       prospecting_declined_at: null,
+      prospecting_collaboration_at: null,
+      prospecting_collaboration_declined_at: null,
     });
   });
 
@@ -207,5 +211,23 @@ describe('cardCopy — le courrier compare NOTRE bien au sien', () => {
     expect(cardCopy(card, null).row.id).toBe('a');
     expect(cardCopy(card, 'martin').row.id).toBe('a');
     expect(cardCopy(card, 'inconnu').row.id).toBe('a');
+  });
+});
+
+// Mission 115 — la collaboration avec le confrère se lit sur la carte entière.
+describe('collaboration sur une carte (mission 115)', () => {
+  it('une collaboration obtenue sur une copie clôt la carte ; un refus la remet en propriétaire', () => {
+    expect(
+      cardDates([row('a', { handedAt: T1, collaborationAt: T2 }), row('b', { handedAt: T1 })]),
+    ).toMatchObject({
+      prospecting_collaboration_at: T2,
+      prospecting_collaboration_declined_at: null,
+    });
+    const refused = groupProspecting([
+      entry('m', row('a', { step: 'colleague', handedAt: T1, collaborationDeclinedAt: T2 })),
+    ]);
+    expect(refused[0].row.step).toBe('owner');
+    expect(refused[0].row.collaborationDeclinedAt).toBe(T2);
+    expect(refused[0].row.status).toBe('to_confirm');
   });
 });

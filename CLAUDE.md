@@ -68,7 +68,7 @@ inutile, machines à états prématurées, microservices.
 L'extension Chrome est **publiée** sur le Chrome Web Store (non répertoriée, version 1.0.0,
 identifiant `podbdogdackjabnpnngndpkdnhfakfgb`, depuis le 13/10/2026 ; fiche et lien :
 `docs/extension-store.md`). **On ne modifie pas `extension/`** : toute modification repasse par la
-validation de Google, et se décide avec Laurent.
+validation de Google, et se décide avec Jean-Guy.
 
 ## Règles de code
 
@@ -151,8 +151,11 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 
 ## Flux de travail
 
+- **Jean-Guy Ourmières crée et décide le produit** : il écrit les missions, essaie, valide et tranche.
+  Une décision datée et signée Jean-Guy, ici, dans `docs/DECISIONS.md` ou dans une mission, fait
+  autorité sur toute décision antérieure, y compris celles qui citent Laurent.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
-  push. Puis Laurent essaie. Puis `/valide NN` fusionne dans `main` et complète
+  push. Puis Jean-Guy essaie. Puis `/valide NN` fusionne dans `main` et complète
   `docs/DECISIONS.md`. **Jamais de fusion dans `main` sans « valide ».**
 - On essaie sur l'URL d'essai (branche `essai`). La base Supabase est partagée avec l'environnement
   de travail : une migration doit rester compatible avec le code de `main`, et elle s'applique,

@@ -33,6 +33,7 @@ export function makeFacts(overrides: Partial<ProspectingFileFacts> = {}): Prospe
     theirAddress: '14 chemin des Oliviers, 06800 Cagnes-sur-Mer',
     theirAddressSource: 'locator',
     distanceMeters: 640,
+    collaborationDeclined: false,
     ...overrides,
   };
 }

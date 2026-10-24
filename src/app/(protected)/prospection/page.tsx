@@ -137,6 +137,17 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
               <span className={tileNumber}>{counters.mandates}</span>
               <span className="text-xs text-white/70">Mandats rentrés (déclarés)</span>
             </div>
+            {/* Mission 115 — les collaborations obtenues avec un confrère, comptées à part. */}
+            <div className={tile} data-testid="collaborations-counter">
+              <span className={`${tileNumber} text-zinc-900 stage:text-white`}>
+                {counters.collaborations}
+              </span>
+              <span className={tileLabel}>
+                Collaboration{counters.collaborations > 1 ? 's' : ''} obtenue
+                {counters.collaborations > 1 ? 's' : ''} (déclarée
+                {counters.collaborations > 1 ? 's' : ''})
+              </span>
+            </div>
           </div>
 
           {watched.map((seller, index) => (

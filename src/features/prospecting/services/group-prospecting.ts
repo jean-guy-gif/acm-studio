@@ -1,6 +1,7 @@
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { unitAddressKey } from '@/features/prospecting/services/address-key';
 import {
+  collaborationDeclined,
   prospectingStatus,
   type ProspectingDates,
 } from '@/features/prospecting/services/prospecting-status';
@@ -49,13 +50,19 @@ const earliest = (values: (string | null)[]): string | null =>
 
 // Les faits datés d'une carte : un fait posé sur une copie vaut pour toutes. Un mandat rentré
 // l'emporte sur un « pas intéressé » resté sur une autre copie.
+// Mission 115 — une collaboration obtenue sur une copie clôt la carte ; un refus sur une copie
+// remet la carte en propriétaire.
 export function cardDates(rows: ProspectingRow[]): ProspectingDates {
   const mandate = earliest(rows.map((row) => row.mandateAt));
+  const collaboration = earliest(rows.map((row) => row.collaborationAt));
   return {
     prospecting_handed_at: earliest(rows.map((row) => row.handedAt)),
     prospecting_meeting_at: earliest(rows.map((row) => row.meetingAt)),
     prospecting_mandate_at: mandate,
     prospecting_declined_at: mandate == null ? earliest(rows.map((row) => row.declinedAt)) : null,
+    prospecting_collaboration_at: mandate == null ? collaboration : null,
+    prospecting_collaboration_declined_at:
+      collaboration == null ? earliest(rows.map((row) => row.collaborationDeclinedAt)) : null,
   };
 }
 
@@ -82,8 +89,13 @@ function buildCard(copies: ProspectingEntry[]): ProspectingCard {
       meetingAt: dates.prospecting_meeting_at,
       mandateAt: dates.prospecting_mandate_at,
       declinedAt: dates.prospecting_declined_at,
-      // À qui s'adresser : ce qu'une copie sait vaut pour la carte.
-      step: rows.find((row) => row.step !== 'check')?.step ?? 'check',
+      collaborationAt: dates.prospecting_collaboration_at,
+      collaborationDeclinedAt: dates.prospecting_collaboration_declined_at,
+      // À qui s'adresser : ce qu'une copie sait vaut pour la carte. Mission 115 — après un refus
+      // de collaboration, le bien se démarche comme un propriétaire.
+      step: collaborationDeclined(dates)
+        ? 'owner'
+        : (rows.find((row) => row.step !== 'check')?.step ?? 'check'),
       opposedOn: earliest(rows.map((row) => row.opposedOn)),
     },
   };

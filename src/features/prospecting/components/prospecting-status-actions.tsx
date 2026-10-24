@@ -21,16 +21,27 @@ const MOVES: Record<ProspectingStatus, { move: ProspectingMove; label: string }[
   handed: [{ move: 'meeting', label: 'RDV obtenu' }, DECLINE],
   meeting: [{ move: 'mandate', label: 'Mandat rentré' }, DECLINE],
   mandate: [],
+  collaboration: [],
   declined: [],
 };
-const CAN_UNDO: ProspectingStatus[] = ['handed', 'meeting', 'mandate', 'declined'];
+const CAN_UNDO: ProspectingStatus[] = ['handed', 'meeting', 'mandate', 'collaboration', 'declined'];
 
 // Mission 98 — un confrère se contacte par téléphone, sans attendre l'adresse du bien :
 // « Marquer contacté » pose le même fait daté que « Marquer remis ».
+// Mission 115 — contacté, un confrère n'a plus « RDV obtenu » : « Collaboration obtenue » clôt
+// sa prospection, « Collaboration refusée » remet le bien en courrier propriétaire.
 const CONTACTED = { move: 'handed', label: 'Marquer contacté' } as const;
+const COLLABORATION = [
+  { move: 'collaboration', label: 'Collaboration obtenue' },
+  { move: 'collaboration_declined', label: 'Collaboration refusée' },
+  DECLINE,
+] as const;
 function movesFor(status: ProspectingStatus, step: ProspectingStep) {
   if (step === 'colleague' && (status === 'to_confirm' || status === 'ready')) {
     return [CONTACTED, DECLINE];
+  }
+  if (step === 'colleague' && status === 'handed') {
+    return COLLABORATION;
   }
   return MOVES[status];
 }
@@ -43,6 +54,7 @@ export function ProspectingStatusActions({
   status,
   step,
   primary = false,
+  refusedCollaboration = false,
 }: {
   projectId: string;
   competitorId: string;
@@ -50,11 +62,15 @@ export function ProspectingStatusActions({
   step: ProspectingStep;
   // Vrai quand ce geste est l'action principale de la carte (aucune autre avant lui).
   primary?: boolean;
+  // Mission 115 — un refus de collaboration est posé : s'il est le dernier fait, il s'annule.
+  refusedCollaboration?: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const moves = movesFor(status, step);
-  const canUndo = CAN_UNDO.includes(status);
+  const canUndo =
+    CAN_UNDO.includes(status) ||
+    (refusedCollaboration && (status === 'ready' || status === 'to_confirm'));
   if (moves.length === 0 && !canUndo) {
     return null;
   }
