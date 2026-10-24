@@ -908,6 +908,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(
       synthesis.getByText('Prix des concurrents', { exact: true }).first(),
     ).toBeVisible();
+    // Mission 115 — la bande nomme le plus dangereux désigné pendant le Live.
+    await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
     await expect(synthesis).not.toContainText(
       /que nous vous proposons|Prix retenu par votre conseiller/,
     );
@@ -1370,8 +1372,12 @@ async function walkLive(
   const band = page.locator('[data-price-band]');
   await expect(band.locator('[data-band-dot]')).toHaveCount(COMPETITORS.length);
   // Mission 104 — et le « Prix des concurrents », placé sur la bande comme les prix du vendeur.
-  await expect(band.locator('[data-band-marker]')).toHaveCount(3);
+  // Mission 115 — et « Le plus dangereux selon vous », au prix du concurrent désigné deux écrans
+  // plus tôt : quatre repères nommés.
+  await expect(band.locator('[data-band-marker]')).toHaveCount(4);
   await expect(band.locator('[data-band-marker="competitors"]')).toHaveCount(1);
+  await expect(band.locator('[data-band-marker="dangerous"]')).toHaveCount(1);
+  await expect(band.getByText('Le plus dangereux selon vous').first()).toBeVisible();
   const analysisText = withoutSpaces(await mainText(page));
   for (const bound of [
     Math.min(...COMPETITORS.map((c) => c.price)),
