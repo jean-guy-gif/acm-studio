@@ -68,7 +68,10 @@ describe('la remise à zéro ne touche qu’aux dossiers de démo du closer conn
         : table === 'subject_properties'
           ? { data: [{ id: 'sp1', photo_urls: [`${AGENCY}/p1/property/a.jpg`] }] }
           : { data: [] };
-    const removed = await deleteDemoDossiers(service.client, { id: 'u-closer', agencyId: AGENCY });
+    const removed = await deleteDemoDossiers(service.client as never, {
+      id: 'u-closer',
+      agencyId: AGENCY,
+    });
     expect(removed).toBe(2);
     // Le périmètre : SON identifiant, SON agence, la marque.
     const scoped = service.calls.filter(
@@ -101,7 +104,9 @@ describe('la remise à zéro ne touche qu’aux dossiers de démo du closer conn
 
   it('sans dossier marqué, rien n’est supprimé', async () => {
     const { deleteDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
-    expect(await deleteDemoDossiers(service.client, { id: 'u-closer', agencyId: AGENCY })).toBe(0);
+    expect(
+      await deleteDemoDossiers(service.client as never, { id: 'u-closer', agencyId: AGENCY }),
+    ).toBe(0);
     expect(service.writes()).toEqual([]);
   });
 });
