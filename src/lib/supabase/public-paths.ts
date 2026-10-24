@@ -28,6 +28,14 @@ const PUBLIC_PATHS = [
 // forme EXACTE « /synthese/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
 const PUBLIC_SYNTHESIS = /^\/synthese\/[A-Za-z0-9_-]{43}$/;
 
+// Mission 119 — le dossier acquéreur, ouvert par son lien sans compte, de la même forme exacte :
+// « /dossier/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
+const PUBLIC_BUYER_DOSSIER = /^\/dossier\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname) || PUBLIC_SYNTHESIS.test(pathname);
+  return (
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_SYNTHESIS.test(pathname) ||
+    PUBLIC_BUYER_DOSSIER.test(pathname)
+  );
 }

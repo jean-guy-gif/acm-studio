@@ -25,6 +25,14 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/design-preview/app')).toBe(false);
   });
 
+  it('ouvre le dossier acquéreur par son jeton de 43 caractères, et rien d’autre sous /dossier (mission 119)', () => {
+    expect(isPublicPath(`/dossier/${'A'.repeat(43)}`)).toBe(true);
+    expect(isPublicPath(`/dossier/${'A'.repeat(42)}`)).toBe(false);
+    expect(isPublicPath('/dossier')).toBe(false);
+    expect(isPublicPath('/dossier/')).toBe(false);
+    expect(isPublicPath(`/dossier/${'A'.repeat(43)}/autre`)).toBe(false);
+  });
+
   it('ouvre /api/version, et rien d’autre sous /api (mission 100)', () => {
     expect(isPublicPath('/api/version')).toBe(true);
     expect(isPublicPath('/api')).toBe(false);

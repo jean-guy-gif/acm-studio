@@ -170,6 +170,18 @@ export default function ConfidentialitePage() {
               d’expiration.
             </li>
             <li>
+              Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et
+              lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
+              caractéristiques, son prix affiché, pourquoi il correspond et ce qu’il faut savoir,
+              avec une photo tirée de l’annonce ou du bien, montrée telle quelle — jamais l’adresse,
+              le titre ou le lien d’une annonce, ni l’agence qui le vend ; le conseiller peut
+              retirer cette photo (« Sans photo »). Le dossier s’imprime ou part par un lien qui
+              s’ouvre sans compte, n’est jamais indexé et expire après 30 jours ; le conseiller peut
+              le retirer. Sur ce lien, l’acquéreur peut cocher les biens qu’il souhaite visiter et
+              envoyer ce choix : ACM Studio n’enregistre alors que ces coches, datées, pour le
+              conseiller, sans compte ni adresse e-mail ; rien d’autre n’est saisi.
+            </li>
+            <li>
               Un journal technique : quand une erreur inattendue survient, ACM Studio enregistre sa
               date, la page concernée, un message technique, la version de l’outil et les
               identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
