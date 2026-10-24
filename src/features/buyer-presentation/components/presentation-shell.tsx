@@ -153,7 +153,7 @@ export function PresentationShell({
     startTransition(async () => {
       const result = readOnly
         ? { ok: true as const }
-        : await finishPresentation(presentation.buyerId).catch(() => ({
+        : await finishPresentation(presentation.buyerId, presentation.selectionId).catch(() => ({
             ok: false as const,
             error: 'Connexion perdue — réessayez.',
           }));
@@ -235,6 +235,23 @@ export function PresentationShell({
           />
         </div>
       </div>
+
+      {readOnly ? (
+        <p
+          data-testid="presentation-finished"
+          className="relative mx-auto mt-4 w-full max-w-5xl px-4 text-sm text-zinc-600 sm:px-8 stage:text-white/70"
+        >
+          Présentation terminée le {buyerDateLabel(presentation.presentedAt!)} : pour en refaire
+          une,{' '}
+          <Link
+            href={`/acquereurs/${presentation.buyerId}/biens-ideaux`}
+            className="font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
+          >
+            retenez une nouvelle sélection
+          </Link>
+          .
+        </p>
+      ) : null}
 
       <main
         key={index}
@@ -460,23 +477,34 @@ function ItemScreen({
           )}
         </section>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className={requested ? primaryBtn : navBtn}
-          disabled={busy || readOnly}
-          aria-pressed={requested}
-          onClick={onToggle}
-          data-testid="presentation-visit"
-        >
-          {requested ? `✓ ${VISIT_REQUESTED}` : REQUEST_VISIT}
-        </button>
-        {requested && !readOnly ? (
-          <span className="text-sm text-zinc-500 stage:text-white/60">
-            Un second geste l’annule.
-          </span>
-        ) : null}
-      </div>
+      {readOnly ? (
+        requested ? (
+          <p
+            className="text-base font-semibold text-brand-deep stage:text-brand"
+            data-testid="presentation-visit-requested"
+          >
+            ✓ {VISIT_REQUESTED}
+          </p>
+        ) : null
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className={requested ? primaryBtn : navBtn}
+            disabled={busy}
+            aria-pressed={requested}
+            onClick={onToggle}
+            data-testid="presentation-visit"
+          >
+            {requested ? `✓ ${VISIT_REQUESTED}` : REQUEST_VISIT}
+          </button>
+          {requested ? (
+            <span className="text-sm text-zinc-500 stage:text-white/60">
+              Un second geste l’annule.
+            </span>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

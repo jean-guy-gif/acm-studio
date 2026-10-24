@@ -176,11 +176,23 @@ describe('la présentation de la sélection', () => {
         items: [trap],
       }),
     );
-    // Le constructeur recopie l'entrée telle quelle dans l'écran : c'est la REQUÊTE
-    // (load-presentation.ts) qui ne construit jamais ces champs, et le code de la scène ne les lit
-    // pas — vérifié ci-dessous sur les fichiers. Le titre piège ne doit apparaître nulle part dans
-    // ce que la scène AFFICHE.
+    // Le constructeur applique la liste d'autorisation : le titre piège (M107), l'adresse, le lien,
+    // le vendeur, l'exclusivité, la fourchette et le prix convenu ne sortent pas de la charge.
     expect(spiked).toContain('Maison · 7 pièces');
+    for (const leak of [
+      'EXCLUSIVITÉ Agence Dupont',
+      'rue des Lilas',
+      'piege.htm',
+      'soldBy',
+      'exclusivity',
+      'advisorPriceMin',
+      'commercializationPrice',
+      'title',
+      'listingUrl',
+      'address',
+    ]) {
+      expect(spiked).not.toContain(leak);
+    }
   });
 
   it('le code de la présentation ne lit ni titre, ni adresse, ni lien, ni vendeur, ni exclusivité, ni fourchette, ni prix convenu, ni « estimation »', () => {

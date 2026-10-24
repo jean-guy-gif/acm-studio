@@ -25,10 +25,17 @@ Mission à exécuter : **$ARGUMENTS**
    l'appliquer**.
 6. Barrières, toutes vertes : `npm run typecheck`, `npm run lint`, `npm test`,
    `npm run format:check`, `npm run build`.
+   - Si la mission crée une migration : lance le sous-agent **gardien-sql** sur le fichier et son test
+     SQL AVANT de me demander mon accord ; joins son rapport et sa prédiction de comptage.
+   - Puis lance le sous-agent **relecteur** sur la branche. Corrige ses **bloquants** et relance les
+     barrières ; les « à corriger avant le /valide » et les remarques vont dans ton rapport final, tels
+     quels. Ne discute pas ses constats dans le rapport : je tranche.
 7. Commit `Mission $ARGUMENTS — <titre>`, puis `git push -u origin <branche>`. Si la branche `essai`
    existe (mission 64), fusionne aussi ta branche dans `essai` et pousse `essai` : c'est là que
-   j'essaie.
-8. Rapport final, 15 lignes au plus :
+   j'essaie. Une fois l'essai déployé (`/api/version` répond ton commit), lance le sous-agent
+   **testeur** : il joue les barrières et la suite e2e, et distingue aléa et défaut. Un défaut se
+   corrige avant le rapport ; un aléa se nomme dans le rapport.
+8. Rapport final, 15 lignes au plus, suivi des rapports du relecteur et du testeur tels quels :
    - ce qui a changé (comportement, fichiers principaux) ;
    - le scénario d'essai à l'écran, pas à pas, avec l'URL ;
    - les risques restants ;

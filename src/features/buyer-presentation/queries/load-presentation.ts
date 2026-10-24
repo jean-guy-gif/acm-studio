@@ -11,7 +11,6 @@ import type {
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import type { IdealSelectionItem } from '@/features/ideal-properties/types';
-import { PROPERTY_PHOTO_BUCKET } from '@/features/subject-property-photos/constants';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -195,5 +194,3 @@ export async function loadPresentation(buyerId: string): Promise<LoadedPresentat
     advisorFirstName: profile.first_name?.trim() || null,
   };
 }
-
-export { PROPERTY_PHOTO_BUCKET };

@@ -39,8 +39,12 @@ function revalidate(buyerId: string): void {
 export async function requestVisit(itemId: string, during: unknown): Promise<VisitActionResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
+  // « depuis le dossier » est réservé au lien public (partie B) : le navigateur d'un conseiller ne
+  // demande que « pendant la présentation » ou « par le conseiller ».
   const requestedDuring: VisitRequestDuring =
-    typeof during === 'string' && (VISIT_REQUEST_DURING as readonly string[]).includes(during)
+    typeof during === 'string' &&
+    (VISIT_REQUEST_DURING as readonly string[]).includes(during) &&
+    during !== 'dossier'
       ? (during as VisitRequestDuring)
       : 'conseiller';
   const client = createServiceRoleClient();
@@ -81,6 +85,22 @@ export async function cancelVisitRequest(requestId: string): Promise<VisitAction
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
   const client = createServiceRoleClient();
+  // Une demande faite pendant une présentation ne s'annule que pendant cette présentation : une
+  // fois terminée, elle se relit sans se modifier.
+  const { data: existing } = await client
+    .from('buyer_visit_requests')
+    .select('requested_during, buyer_selection_items!inner(buyer_selections!inner(presented_at))')
+    .eq('id', requestId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  const presentedAt = (
+    existing?.buyer_selection_items as unknown as {
+      buyer_selections: { presented_at: string | null };
+    } | null
+  )?.buyer_selections.presented_at;
+  if (existing?.requested_during === 'presentation' && presentedAt != null) {
+    return { ok: false, error: 'La présentation est terminée : elle se relit sans se modifier.' };
+  }
   const { data, error } = await client
     .from('buyer_visit_requests')
     .update({ cancelled_at: new Date().toISOString() })
@@ -97,17 +117,20 @@ export async function cancelVisitRequest(requestId: string): Promise<VisitAction
 
 // « Terminer » : la présentation de cette sélection est faite ; elle se relit ensuite en lecture
 // seule, « Terminé le [date] », sans se recalculer (M111).
-export async function finishPresentation(buyerId: string): Promise<PlainResult> {
+export async function finishPresentation(
+  buyerId: string,
+  selectionId: string,
+): Promise<PlainResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
   const client = createServiceRoleClient();
+  // La sélection PRÉSENTÉE, celle que la scène connaît — pas la dernière en date.
   const { data: selection } = await client
     .from('buyer_selections')
     .select('id, presented_at')
+    .eq('id', selectionId)
     .eq('buyer_id', buyerId)
     .eq('agency_id', profile.agency_id)
-    .order('created_at', { ascending: false })
-    .limit(1)
     .maybeSingle();
   if (!selection) return { ok: false, error: 'Aucune sélection à présenter.' };
   if (selection.presented_at == null) {
@@ -146,6 +169,8 @@ export async function recordVisitDone(
     .eq('id', requestId)
     .eq('agency_id', profile.agency_id)
     .is('cancelled_at', null)
+    // Un fait daté ne se redate pas : une visite faite ne s'enregistre qu'une fois.
+    .is('visited_at', null)
     .select('*')
     .maybeSingle();
   if (error || !data)
