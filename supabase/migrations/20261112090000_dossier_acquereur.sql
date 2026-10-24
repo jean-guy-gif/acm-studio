@@ -26,6 +26,9 @@ create table public.buyer_dossier_links (
 );
 
 create index buyer_dossier_links_buyer on public.buyer_dossier_links (buyer_id);
+-- La clé vers la sélection est en cascade : indexée, pour que supprimer une sélection ne parcoure
+-- pas la table (comme `seller_synthesis_links.project_id`).
+create index buyer_dossier_links_selection on public.buyer_dossier_links (selection_id);
 
 comment on table public.buyer_dossier_links is
   'Mission 119 — le lien public du dossier acquéreur : condensat du jeton, fiche, sélection, agence, auteur, expiration ; jamais le lien.';

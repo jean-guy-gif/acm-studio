@@ -71,6 +71,8 @@ select pg_temp.expect('§1 le navigateur ne crée pas un lien',
   pg_temp.attempt($$insert into public.buyer_dossier_links (agency_id, buyer_id, selection_id, token_hash) values
     ('119baaaa-0000-0000-0000-000000000000', '119baaaa-1111-0000-0000-000000000000', '119baaaa-2222-0000-0000-000000000000', repeat('b', 64))$$), 'refus');
 select pg_temp.expect('§1 ni ne le retire', pg_temp.attempt($$delete from public.buyer_dossier_links$$), 'refus');
+select pg_temp.expect('§1 ni ne le prolonge',
+  pg_temp.attempt($$update public.buyer_dossier_links set expires_at = now() + interval '1 year'$$), 'refus');
 select pg_temp.expect('§1 ni ne cache une photo',
   pg_temp.attempt($$update public.buyer_selection_items set dossier_hide_photo = true$$), 'refus');
 select pg_temp.act_as('11931111-0000-0000-0000-0000000000b1');
