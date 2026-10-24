@@ -665,6 +665,38 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   // le rapprochement du Suivi (qui trouve le mandat signé de ce passage), statut, archivage.
   await test.step('La fiche acquéreur : créer, retrouver, rapprocher, statut, archiver', async () => {
     const buyerName = `Acquéreur ${dossierName}`;
+    // Mission 118 — l'interrupteur Vendeur | Acquéreur : le menu change, le mode est retenu après
+    // un rechargement, et une page de l'autre mode ouverte par son adresse place l'interrupteur.
+    const switcher = page.getByTestId('workspace-switch');
+    const modeWord = page.getByTestId('workspace-mode-word');
+    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+    await expect(modeWord).toHaveText('Mode Vendeur');
+    await expect(page.getByRole('link', { name: /^Préparation/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Acquéreurs/ })).toHaveCount(0);
+    await switcher.getByRole('button', { name: 'Acquéreur' }).click();
+    await expect(page).toHaveURL(/\/acquereurs$/);
+    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
+    await expect(modeWord).toHaveText('Mode Acquéreur');
+    for (const label of ['Acquéreurs', 'Biens idéaux', 'Prospection', 'Administration', 'Aide']) {
+      await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
+    }
+    for (const label of ['Préparation', 'Live', 'Suivi', 'Visites']) {
+      await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toHaveCount(0);
+    }
+    // Mémorisé : une page commune relit le mode enregistré.
+    await page.goto('/prospection');
+    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
+    // Une page du mode Vendeur ouverte par son adresse : l'interrupteur se place sur Vendeur, le
+    // menu Vendeur s'affiche, le mode mémorisé ne change pas.
+    await page.goto('/suivi');
+    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+    await expect(page.getByRole('link', { name: /^Live/ })).toBeVisible();
+    await page.goto('/admin');
+    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
+    // « Biens idéaux » mène aux fiches et à « Rapprocher » (partie B à venir).
+    await page.getByRole('link', { name: /^Biens idéaux/ }).click();
+    await expect(page).toHaveURL(/\/biens-ideaux$/);
+    await expect(page.getByRole('heading', { name: 'Biens idéaux' })).toBeVisible();
     await page.getByRole('link', { name: /^Acquéreurs/ }).click();
     await expect(page).toHaveURL(/\/acquereurs$/);
     await page.getByRole('link', { name: 'Nouvel acquéreur' }).click();
@@ -766,7 +798,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toHaveCount(0);
     const gone = await page.goto(buyerUrl);
     expect(gone?.status()).toBe(404);
-    // La suite du parcours repart du Suivi.
+    // Retour au mode Vendeur, retenu : la suite du parcours repart du Suivi.
+    await page.goto('/acquereurs');
+    await switcher.getByRole('button', { name: 'Vendeur' }).click();
+    await expect(page).toHaveURL(/\/builder$/);
+    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+    await page.goto('/prospection');
+    await expect(switcher).toHaveAttribute('data-mode', 'seller');
     await page.goto('/suivi');
   });
 
