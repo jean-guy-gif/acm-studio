@@ -11,6 +11,7 @@ import {
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
+  ensureSellerMode,
 } from './support';
 
 // Mission 66 — un dossier de bout en bout, sans portail : Préparation → Live → Suivi.
@@ -65,6 +66,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Connexion', async () => {
     await login(page);
+    await ensureSellerMode(page);
   });
 
   // Mission 93 — « Supprimer » demande confirmation dans l'écran, puis archive : le dossier
