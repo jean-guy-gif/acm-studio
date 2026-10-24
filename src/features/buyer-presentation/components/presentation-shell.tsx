@@ -11,6 +11,7 @@ import {
   finishPresentation,
   requestVisit,
 } from '@/features/buyer-presentation/actions/visit-requests';
+import { PRICE_TO_CONFIRM } from '@/features/buyer-presentation/services/agency-price';
 import {
   countLabel,
   pricePerSqmLabel,
@@ -412,7 +413,9 @@ function ItemScreen({
               {formatEuro(item.price)}
             </span>
           ) : (
-            <span className={statValue}>Prix à confirmer avec le propriétaire</span>
+            <span className={statValue} data-testid="presentation-price-to-confirm">
+              {PRICE_TO_CONFIRM}
+            </span>
           )}
           <span className="text-sm text-zinc-500 stage:text-white/60">
             {[
