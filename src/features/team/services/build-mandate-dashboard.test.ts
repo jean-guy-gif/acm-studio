@@ -168,3 +168,31 @@ describe('les rendez-vous menés (mission 111)', () => {
     expect(dashboard.advisors[0].meetings).toBe(1);
   });
 });
+
+// Mission 115 — les collaborations obtenues avec un confrère, comptées à part, agence et conseiller,
+// jamais celles du dossier d'exemple ni d'un dossier qui n'est pas le sien.
+describe('les collaborations obtenues (mission 115)', () => {
+  it('comptées à part, sans l’exemple ni un dossier étranger', () => {
+    const dashboard = buildMandateDashboard({
+      projects,
+      conclusions,
+      advisors,
+      collaborations: [
+        { projectId: 'a1' },
+        { projectId: 'b1' },
+        { projectId: 'b1' },
+        { projectId: 'ex' },
+        { projectId: 'autre' },
+      ],
+    });
+    expect(dashboard.agency.collaborations).toBe(3);
+    expect(dashboard.advisors.find((a) => a.advisorId === 'anne')?.collaborations).toBe(1);
+    expect(dashboard.advisors.find((a) => a.advisorId === 'bruno')?.collaborations).toBe(2);
+  });
+
+  it('zéro sans collaboration', () => {
+    expect(buildMandateDashboard({ projects, conclusions, advisors }).agency.collaborations).toBe(
+      0,
+    );
+  });
+});

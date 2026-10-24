@@ -92,6 +92,8 @@ export function buildProspectingFacts(input: {
   // L'adresse a-t-elle une position (latitude et longitude) ?
   theirAddressHasPosition: boolean;
   distanceMeters: number | null;
+  // Mission 115 — un refus de collaboration posé sur ce concurrent.
+  collaborationDeclined?: boolean;
 }): ProspectingFileFacts {
   return {
     // Le type est un filtre dur de la recherche (M54) : les deux biens ont le même. Celui du
@@ -105,5 +107,6 @@ export function buildProspectingFacts(input: {
       input.distanceMeters != null && Number.isFinite(input.distanceMeters)
         ? input.distanceMeters
         : null,
+    collaborationDeclined: input.collaborationDeclined === true,
   };
 }

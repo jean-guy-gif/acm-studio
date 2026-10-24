@@ -3,6 +3,7 @@ import 'server-only';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { prospectingStep } from '@/features/competitor-mandate/services/mandate-columns';
+import { collaborationDeclined } from '@/features/prospecting/services/prospecting-status';
 import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { distanceMeters } from '@/features/competitor-search/services/proximity';
 import {
@@ -118,7 +119,7 @@ export async function getProspectingFile(
       supabase
         .from('comparables')
         .select(
-          `id, is_selected, sold_by, exclusivity, listing_url, locator_address, locator_confirmed, locator_source, locator_latitude, locator_longitude, photo_urls, ${THEIR_LISTING_SELECT}`,
+          `id, is_selected, sold_by, exclusivity, listing_url, locator_address, locator_confirmed, locator_source, locator_latitude, locator_longitude, photo_urls, prospecting_collaboration_declined_at, ${THEIR_LISTING_SELECT}`,
         )
         .eq('id', competitorId)
         .eq('project_id', projectId)
@@ -173,7 +174,8 @@ export async function getProspectingFile(
       professionalCardIssuer: branding?.professionalCardIssuer ?? null,
     });
 
-  const step = prospectingStep(competitor);
+  // Mission 115 — après un refus de collaboration, le bien se démarche comme un propriétaire.
+  const step = collaborationDeclined(competitor) ? 'owner' : prospectingStep(competitor);
   const version = resolveFileVersion(step, requestedVersion);
   if (version == null) {
     return {
@@ -261,6 +263,7 @@ export async function getProspectingFile(
       theirAddressHasPosition:
         competitor.locator_latitude != null && competitor.locator_longitude != null,
       distanceMeters: distance,
+      collaborationDeclined: collaborationDeclined(competitor),
     }),
     sender: {
       advisorName: `${profile.first_name} ${profile.last_name}`.trim(),

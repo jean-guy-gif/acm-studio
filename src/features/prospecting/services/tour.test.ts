@@ -198,3 +198,28 @@ describe('« Mes dossiers / Toute l’agence »', () => {
     expect(filterByScope(cards, 'agency', 'moi')).toHaveLength(3);
   });
 });
+
+// Mission 115 — une collaboration obtenue ferme le confrère : plus à appeler ; refusée, le bien
+// devient un propriétaire à aller voir, à son adresse confirmée.
+describe('collaboration et tournée (mission 115)', () => {
+  it('obtenue : hors tournée ; refusée : parmi les propriétaires', () => {
+    const cards = groupProspecting([
+      entry(
+        'm',
+        row('obtenue', { step: 'colleague', surfaceArea: 20, handedAt: T, collaborationAt: T }),
+      ),
+      entry(
+        'm',
+        addressed('refusee', '4 rue Haute, 06140 Vence', {
+          step: 'colleague',
+          surfaceArea: 30,
+          handedAt: T,
+          collaborationDeclinedAt: T,
+        }),
+      ),
+    ]);
+    const tour = buildTour(cards);
+    expect(tour.colleagues.map((card) => card.row.id)).toEqual([]);
+    expect(tour.owners.map((stop) => stop.card.row.id)).toEqual(['refusee']);
+  });
+});

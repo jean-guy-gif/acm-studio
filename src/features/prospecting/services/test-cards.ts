@@ -34,6 +34,8 @@ export function row(id: string, overrides: Partial<ProspectingRow> = {}): Prospe
     meetingAt: null,
     mandateAt: null,
     declinedAt: null,
+    collaborationAt: null,
+    collaborationDeclinedAt: null,
     step: 'owner',
     mandate: {
       id,

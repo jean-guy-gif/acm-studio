@@ -34,7 +34,7 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
   const { agency } = dashboard;
   return (
     <div className="flex flex-col gap-4" data-testid="mandate-dashboard">
-      <div className={`${card} grid grid-cols-2 gap-5 p-5 md:grid-cols-3 lg:grid-cols-6`}>
+      <div className={`${card} grid grid-cols-2 gap-5 p-5 md:grid-cols-4 lg:grid-cols-7`}>
         <Figure label="Rendez-vous menés" value={formatNumber(agency.meetings)} />
         <Figure
           label="Mandats signés au rendez-vous"
@@ -47,6 +47,8 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
         <Figure label="Part d’exclusifs" value={exclusive(agency.exclusiveShare)} />
         <Figure label="Délai médian après relance" value={days(agency.medianDaysToSignature)} />
         <Figure label="Freins les plus cités" value={objections(agency)} />
+        {/* Mission 115 — les collaborations obtenues avec un confrère, à part des mandats. */}
+        <Figure label="Collaborations obtenues" value={formatNumber(agency.collaborations)} />
       </div>
       {dashboard.advisors.length > 0 ? (
         <div className="overflow-x-auto">
@@ -59,6 +61,7 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
                 <th className="py-2 pr-4 font-medium">Signés après relance</th>
                 <th className="py-2 pr-4 font-medium">Exclusifs</th>
                 <th className="py-2 pr-4 font-medium">Délai médian</th>
+                <th className="py-2 pr-4 font-medium">Collaborations</th>
                 <th className="py-2 font-medium">Freins</th>
               </tr>
             </thead>
@@ -76,6 +79,7 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
                   <td className="py-2 pr-4">{formatNumber(advisor.signedAfterFollowUp)}</td>
                   <td className="py-2 pr-4">{exclusive(advisor.exclusiveShare)}</td>
                   <td className="py-2 pr-4">{days(advisor.medianDaysToSignature)}</td>
+                  <td className="py-2 pr-4">{formatNumber(advisor.collaborations)}</td>
                   <td className="py-2">{objections(advisor)}</td>
                 </tr>
               ))}
