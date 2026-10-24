@@ -15,7 +15,6 @@ import {
   PROPERTY_TYPE_LABELS,
   type OutdoorSpace,
   type ParkingType,
-  type PropertyType,
 } from '@/features/subject-property/constants/property-options';
 import { formatEuro, formatEuroPerSquareMeter, formatSquareMeters } from '@/lib/format';
 
@@ -143,6 +142,30 @@ export function itemFacts(item: PresentedItemInput): { label: string; value: str
   return facts;
 }
 
+// La LISTE D'AUTORISATION appliquée : un appelant qui passerait un titre, une adresse, un lien ou
+// un vendeur en plus ne les verrait pas sortir — le constructeur ne recopie que ces champs.
+export function allowedItem(item: PresentedItemInput): PresentedItemInput {
+  return {
+    itemId: item.itemId,
+    position: item.position,
+    source: item.source,
+    category: item.category,
+    label: item.label,
+    city: item.city,
+    district: item.district,
+    price: item.price,
+    priceSeenOn: item.priceSeenOn,
+    surfaceArea: item.surfaceArea,
+    roomsCount: item.roomsCount,
+    bedroomsCount: item.bedroomsCount,
+    outdoor: [...item.outdoor],
+    parking: [...item.parking],
+    energyRating: item.energyRating,
+    photos: [...item.photos],
+    gaps: [...item.gaps],
+  };
+}
+
 export function buildBuyerPresentation(input: {
   buyerId: string;
   buyer: BuyerInput;
@@ -151,7 +174,7 @@ export function buildBuyerPresentation(input: {
   presentedAt: string | null;
   items: PresentedItemInput[];
 }): BuyerPresentation {
-  const items = [...input.items].sort((a, b) => a.position - b.position);
+  const items = input.items.map(allowedItem).sort((a, b) => a.position - b.position);
   const screens: PresentationScreen[] = [
     {
       type: 'intro',
@@ -185,5 +208,3 @@ export function buildBuyerPresentation(input: {
 // « 3 biens » pour l'ouverture, « Prix au m² » pour l'écran du bien.
 export const countLabel = (count: number): string => plural(count, 'bien', 'biens');
 export const pricePerSqmLabel = (value: number): string => formatEuroPerSquareMeter(value);
-export { PROPERTY_TYPE_LABELS as PRESENTATION_TYPE_LABELS };
-export type { PropertyType as PresentationPropertyType };

@@ -56,7 +56,7 @@ describe('les demandes de visite', () => {
     expect((await requestVisit('i1', 'presentation')).ok).toBe(false);
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: '2026-10-01' };
     expect((await cancelVisitRequest('r1')).ok).toBe(false);
-    expect((await finishPresentation('b1')).ok).toBe(false);
+    expect((await finishPresentation('b1', 's1')).ok).toBe(false);
     expect((await recordVisitDone('r1', 'x', 'visited')).ok).toBe(false);
     expect(service.writes()).toEqual([]);
   });
@@ -107,7 +107,15 @@ describe('les demandes de visite', () => {
   });
 
   it('annuler : datée, sur une demande ni visitée ni déjà annulée', async () => {
-    state.respond = () => ({ data: { ...requestRow, cancelled_at: '2026-10-24T10:05:00Z' } });
+    state.respond = (_table, calls) =>
+      calls.some((call) => call.method === 'update')
+        ? { data: { ...requestRow, cancelled_at: '2026-10-24T10:05:00Z' } }
+        : {
+            data: {
+              requested_during: 'presentation',
+              buyer_selection_items: { buyer_selections: { presented_at: null } },
+            },
+          };
     const result = await cancelVisitRequest('r1');
     expect(result.ok && result.request.cancelledAt).toBe('2026-10-24T10:05:00Z');
     expect(service.writes()).toEqual(['update buyer_visit_requests']);
@@ -117,13 +125,44 @@ describe('les demandes de visite', () => {
     expect(filters).toEqual(['visited_at', 'cancelled_at']);
   });
 
-  it('terminer : pose presented_at une fois sur la dernière sélection de l’agence', async () => {
+  it('terminer : pose presented_at une fois, sur la sélection présentée', async () => {
     state.respond = () => ({ data: { id: 's1', presented_at: null } });
-    expect(await finishPresentation('b1')).toEqual({ ok: true });
+    expect(await finishPresentation('b1', 's1')).toEqual({ ok: true });
     expect(service.writes()).toEqual(['update buyer_selections']);
+    expect(
+      service.calls.some(
+        (call) => call.method === 'eq' && call.args[0] === 'id' && call.args[1] === 's1',
+      ),
+    ).toBe(true);
     service.reset();
     state.respond = () => ({ data: { id: 's1', presented_at: '2026-10-24T11:00:00Z' } });
-    expect(await finishPresentation('b1')).toEqual({ ok: true });
+    expect(await finishPresentation('b1', 's1')).toEqual({ ok: true });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('« depuis le dossier » est réservé au lien public : d’un conseiller, c’est « par le conseiller »', async () => {
+    state.respond = (table) =>
+      table === 'buyer_selection_items'
+        ? { data: itemRow(null) }
+        : { data: { ...requestRow, requested_during: 'conseiller' } };
+    const result = await requestVisit('i1', 'dossier');
+    expect(result.ok && result.request.requestedDuring).toBe('conseiller');
+    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toMatchObject({
+      requested_during: 'conseiller',
+    });
+  });
+
+  it('annuler après « Terminer » : refusé, rien n’est écrit', async () => {
+    state.respond = () => ({
+      data: {
+        requested_during: 'presentation',
+        buyer_selection_items: { buyer_selections: { presented_at: '2026-10-24T11:00:00Z' } },
+      },
+    });
+    expect(await cancelVisitRequest('r1')).toEqual({
+      ok: false,
+      error: 'La présentation est terminée : elle se relit sans se modifier.',
+    });
     expect(service.writes()).toEqual([]);
   });
 
@@ -153,5 +192,9 @@ describe('les demandes de visite', () => {
     >;
     expect(update).toMatchObject({ feedback: 'Trop sombre', outcome: 'declined' });
     expect(typeof update.visited_at).toBe('string');
+    // Une visite faite ne se redate pas : l'écriture ne vise que les demandes non visitées.
+    expect(
+      service.calls.filter((call) => call.method === 'is').map((call) => call.args[0]),
+    ).toEqual(['cancelled_at', 'visited_at']);
   });
 });

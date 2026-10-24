@@ -864,7 +864,16 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.getByTestId('present-selection').click();
     await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
     await page.getByTestId('presentation-next').click();
-    await expect(page.getByTestId('presentation-visit')).toBeDisabled();
+    await expect(page.getByTestId('presentation-finished')).toContainText(
+      /^Présentation terminée le \d{2}\/\d{2}\/\d{4} : pour en refaire une, retenez une nouvelle sélection\.$/,
+    );
+    await expect(
+      page
+        .getByTestId('presentation-finished')
+        .getByRole('link', { name: 'retenez une nouvelle sélection' }),
+    ).toHaveAttribute('href', new RegExp(`${buyerUrl}/biens-ideaux$`));
+    await expect(page.getByTestId('presentation-visit')).toHaveCount(0);
+    await expect(page.getByTestId('presentation-visit-requested')).toBeVisible();
     // Visites : la demande à planifier, puis « Visite faite » avec un retour et une issue.
     await page.goto('/visites');
     const visitLine = page
