@@ -257,7 +257,7 @@ function CompetitorCard({
   );
 }
 
-type Marker = { label: string; value: number; tone: 'muted' | 'brand' | 'dark' };
+type Marker = { label: string; value: number; tone: 'muted' | 'brand' | 'deep' | 'dark' };
 
 // La bande des prix affichés (M94), avec ses repères.
 function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] }) {
@@ -266,6 +266,8 @@ function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] })
   const tone = {
     muted: 'bg-zinc-400 text-zinc-600',
     brand: 'bg-brand text-brand-deep',
+    // Mission 115 — « Le plus dangereux selon vous » : couleur de l'agence, lisible au premier regard.
+    deep: 'bg-brand-deep text-brand-deep font-semibold',
     dark: 'bg-brand-darker text-brand-darker',
   };
   const low = Math.min(...prices);
@@ -353,18 +355,26 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
       : null,
   ].filter((item): item is { label: string; value: string } => item != null);
 
-  const analysisMarkers: Marker[] = [
+  // Mission 115 — trois repères nommés sur la bande : « Au début », « Après le marché » et « Le
+  // plus dangereux selon vous » (son prix affiché, figé au Live ; absent sans désignation, jamais
+  // pour un « Non », qui n'a pas de prix révélé, M41), plus le « Prix des concurrents » (M104).
+  const dangerousPrice = dangerous?.revealed?.price ?? null;
+  const analysisCandidates: (Marker | null)[] = [
     synthesis.perceivedPrice != null
-      ? { label: 'Votre prix de départ', value: synthesis.perceivedPrice, tone: 'muted' as const }
+      ? { label: 'Au début', value: synthesis.perceivedPrice, tone: 'muted' as const }
       : null,
     synthesis.revisedPrice != null
       ? { label: 'Après le marché', value: synthesis.revisedPrice, tone: 'brand' as const }
       : null,
+    dangerousPrice != null
+      ? { label: 'Le plus dangereux selon vous', value: dangerousPrice, tone: 'deep' as const }
+      : null,
     decision?.competitorPrice != null
       ? { label: 'Prix des concurrents', value: decision.competitorPrice, tone: 'dark' as const }
       : null,
-  ].filter((item): item is Marker => item != null);
-  const pathMarkers: Marker[] = [
+  ];
+  const analysisMarkers = analysisCandidates.filter((item): item is Marker => item != null);
+  const pathCandidates: (Marker | null)[] = [
     synthesis.perceivedPrice != null
       ? { label: 'Au début', value: synthesis.perceivedPrice, tone: 'muted' as const }
       : null,
@@ -378,7 +388,8 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           tone: 'dark' as const,
         }
       : null,
-  ].filter((item): item is Marker => item != null);
+  ];
+  const pathMarkers = pathCandidates.filter((item): item is Marker => item != null);
   const steps = [
     synthesis.perceivedPrice != null
       ? { label: 'Au début', value: synthesis.perceivedPrice, hint: 'Votre valeur perçue' }

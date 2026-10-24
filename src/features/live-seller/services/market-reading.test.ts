@@ -65,6 +65,12 @@ describe('la lecture du marché ne porte que sur les concurrents révélés (mis
       droppedCount: 2,
       medianDaysOnMarket: 120,
     });
+    // Mission 115 — les mêmes révélés, avec leur identifiant, pour nommer le plus dangereux.
+    expect(reading.revealed).toEqual([
+      { id: 'a', price: 291_500 },
+      { id: 'b', price: 298_700 },
+      { id: 'c', price: 312_400 },
+    ]);
   });
 
   it('n’utilise JAMAIS un concurrent non révélé : ni son prix, ni sa durée, ni sa baisse', () => {

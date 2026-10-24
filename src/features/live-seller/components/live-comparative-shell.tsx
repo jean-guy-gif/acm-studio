@@ -1035,6 +1035,7 @@ export function LiveComparativeShell({
             priceGaps={effectiveRange.priceGaps}
             reading={effectiveRange.marketReading}
             revisedPrice={summary?.seller_revised_property_price ?? null}
+            dangerousId={summary?.seller_most_dangerous_comparable_id ?? null}
           />
         ) : page.type === 'price_analysis' ? (
           <LivePageAnalysisPending
