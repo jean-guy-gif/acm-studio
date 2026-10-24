@@ -57,5 +57,7 @@ export type IdealSelectionItem = {
 export type IdealSelection = {
   id: string;
   createdAt: string;
+  // Mission 119 — la présentation de cette sélection s'est terminée (lecture seule ensuite).
+  presentedAt: string | null;
   items: IdealSelectionItem[];
 };

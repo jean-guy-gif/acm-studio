@@ -10,11 +10,12 @@ const SELLER_NAV: NavItem[] = [
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
 ];
 
-// Mode Acquéreur : les fiches (M117), les biens idéaux (partie B ; d'ici là, la page mène à la
-// fiche et à « Rapprocher »), la même Prospection ; « Visites » (M119) n'existe pas encore.
+// Mode Acquéreur : les fiches (M117), les biens idéaux (M118), les visites (M119), la même
+// Prospection.
 const BUYER_NAV: NavItem[] = [
   { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
   { href: '/biens-ideaux', label: 'Biens idéaux', hint: 'Ce qui leur correspond' },
+  { href: '/visites', label: 'Visites', hint: 'Demandes et retours' },
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
 ];
 

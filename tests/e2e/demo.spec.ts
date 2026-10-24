@@ -1048,4 +1048,37 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.goto('/acquereurs');
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
+
+  // Mission 119 — « Présenter la sélection » : l'ouverture, trois biens avec leur prix affiché,
+  // une visite demandée sur le 2e, la fin ; puis Visites la montre et la visite est faite.
+  await page.getByTestId('present-selection').click();
+  const scene = page.getByTestId('buyer-presentation');
+  await expect(scene).toHaveAttribute('data-screen', 'intro');
+  await expectUnspoken(page, 'Présentation — ouverture');
+  await expect(page.getByTestId('presentation-criteria')).toContainText('Une piscine');
+  await page.getByTestId('presentation-next').click();
+  await expect(page.getByTestId('presentation-price')).toBeVisible();
+  await expectUnspoken(page, 'Présentation — bien 1');
+  await page.getByTestId('presentation-next').click();
+  await page.getByTestId('presentation-visit').click();
+  await expect(page.getByTestId('presentation-visit')).toHaveText(/Visite demandée/);
+  await page.getByTestId('presentation-next').click();
+  await page.getByTestId('presentation-next').click();
+  await expect(scene).toHaveAttribute('data-screen', 'end');
+  await expect(page.getByTestId('presentation-recap').locator('li')).toHaveCount(1);
+  await page.getByTestId('presentation-finish').click();
+  await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
+  await page.goto('/visites');
+  await expectUnspoken(page, 'Visites');
+  await expect(page.getByTestId('visits-pending')).toContainText('Famille Keller');
+  await page
+    .getByTestId('visits-pending')
+    .getByRole('button', { name: 'Visite faite' })
+    .first()
+    .click();
+  const doneForm = page.getByTestId('visit-done-form');
+  await doneForm.getByLabel('Retour de visite').fill('Belle lumière, jardin un peu petit');
+  await doneForm.getByLabel('Issue de la visite').selectOption('offer');
+  await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
+  await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
 }

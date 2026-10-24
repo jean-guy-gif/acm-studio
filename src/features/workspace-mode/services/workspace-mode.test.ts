@@ -21,15 +21,17 @@ describe('le mode du menu, Vendeur ou Acquéreur', () => {
     ]);
   });
 
-  it('Acquéreur : Acquéreurs, Biens idéaux, Prospection ; Visites n’existe pas encore', () => {
+  it('Acquéreur : Acquéreurs, Biens idéaux, Visites (M119), Prospection', () => {
     expect(navForMode('buyer').map((item) => item.label)).toEqual([
       'Acquéreurs',
       'Biens idéaux',
+      'Visites',
       'Prospection',
     ]);
     expect(navForMode('buyer').map((item) => item.href)).toEqual([
       '/acquereurs',
       '/biens-ideaux',
+      '/visites',
       '/prospection',
     ]);
   });
@@ -42,6 +44,7 @@ describe('le mode du menu, Vendeur ou Acquéreur', () => {
     expect(modeForPath('/acquereurs')).toBe('buyer');
     expect(modeForPath('/acquereurs/abc/')).toBe('buyer');
     expect(modeForPath('/biens-ideaux')).toBe('buyer');
+    expect(modeForPath('/visites')).toBe('buyer');
     expect(modeForPath('/builder/123/avant-rendez-vous')).toBe('seller');
     expect(modeForPath('/live')).toBe('seller');
     expect(modeForPath('/suivi')).toBe('seller');
