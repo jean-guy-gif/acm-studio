@@ -97,7 +97,8 @@ describe('« Bienvenue » (mission 97)', () => {
   });
 
   it('« Aide » ramène à « Bienvenue » depuis le menu', () => {
-    expect(read('components', 'app-shell', 'sidebar-nav.tsx')).toContain(
+    // Mission 118 — le menu commun aux deux modes vit dans le service du mode.
+    expect(read('features', 'workspace-mode', 'services', 'workspace-mode.ts')).toContain(
       "{ href: '/bienvenue', label: 'Aide'",
     );
   });
