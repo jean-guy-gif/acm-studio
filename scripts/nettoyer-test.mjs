@@ -21,6 +21,8 @@ const TEST_AGENCY_PREFIX = 'TEST AUTOMATIQUE';
 // des deux listes arrête le script : on décide, on ne devine pas.
 const CLEANED = [
   // Mission 118 — les sélections de biens idéaux, puis les fiches acquéreur de l'agence de test.
+  // Mission 119 — les demandes de visite.
+  'buyer_visit_requests',
   'buyer_selection_items',
   'buyer_selections',
   'buyers',
@@ -197,6 +199,7 @@ begin
   delete from public.saved_searches where agency_id = v_agency;
   -- Mission 117 — les fiches acquéreur de l'agence de test, archivées comprises ; mission 118 —
   -- leurs sélections partent avec elles (cascade), supprimées ici explicitement.
+  delete from public.buyer_visit_requests where agency_id = v_agency;
   delete from public.buyer_selection_items where agency_id = v_agency;
   delete from public.buyer_selections where agency_id = v_agency;
   delete from public.buyers where agency_id = v_agency;

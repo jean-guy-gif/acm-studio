@@ -11,6 +11,7 @@ import {
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
+  ensureSellerMode,
 } from './support';
 
 // Mission 66 — un dossier de bout en bout, sans portail : Préparation → Live → Suivi.
@@ -65,6 +66,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Connexion', async () => {
     await login(page);
+    await ensureSellerMode(page);
   });
 
   // Mission 93 — « Supprimer » demande confirmation dans l'écran, puis archive : le dossier
@@ -677,10 +679,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs$/);
     await expect(switcher).toHaveAttribute('data-mode', 'buyer');
     await expect(modeWord).toHaveText('Mode Acquéreur');
-    for (const label of ['Acquéreurs', 'Biens idéaux', 'Prospection', 'Administration', 'Aide']) {
+    for (const label of [
+      'Acquéreurs',
+      'Biens idéaux',
+      'Visites',
+      'Prospection',
+      'Administration',
+      'Aide',
+    ]) {
       await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
-    for (const label of ['Préparation', 'Live', 'Suivi', 'Visites']) {
+    for (const label of ['Préparation', 'Live', 'Suivi']) {
       await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toHaveCount(0);
     }
     // Mémorisé : une page commune relit le mode enregistré.
@@ -724,6 +733,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'Pas plus de chambres que de pièces.',
     );
     await expect(page).toHaveURL(/\/acquereurs\/nouveau/);
+    // Mission 119 — les pièces restent libres : les concurrents de ce passage, sans nombre de
+    // pièces connu, correspondent alors au rapprochement (M86) et à la sélection.
+    await field('Pièces \\(minimum\\)').fill('');
     await field('Chambres \\(minimum\\)').fill('2');
     await page.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?enregistre=1$/);
@@ -741,7 +753,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(row).toBeVisible();
     await expect(row).toContainText('Ma fiche');
     await expect(row).toContainText('Appartement · Nice · Cagnes-sur-Mer');
-    await expect(row).toContainText('3 pièces ou plus');
+    await expect(row).not.toContainText('pièces ou plus');
     await page.getByLabel('Rechercher un acquéreur par nom').fill(dossierName.slice(-6));
     await page.getByRole('button', { name: 'Rechercher' }).click();
     await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toBeVisible();
@@ -755,7 +767,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(panel.getByRole('heading', { name: 'Rapprochement acquéreur' })).toBeVisible();
     await expect(panel).toContainText(buyerName);
     await expect(panel.locator('input[name="city"]')).toHaveValue('Nice, Cagnes-sur-Mer');
-    await expect(panel.locator('input[name="roomsCount"]')).toHaveValue('3');
+    await expect(panel.locator('input[name="roomsCount"]')).toHaveValue('');
     await expect(panel.locator('input[name="surfaceArea"]')).toHaveValue('60');
     await expect(panel.locator('input[name="budgetMax"]')).toHaveValue(
       String(COMMERCIALIZATION_PRICE - 5_000),
@@ -788,7 +800,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
     await expect(page.getByTestId('ideal-title')).toContainText(buyerName);
     const agencyHits = page.getByTestId('ideal-agency-hit');
-    await expect(agencyHits.filter({ hasText: dossierName })).toHaveCount(1);
+    // Le mandat de ce passage ; ses concurrents saisis à la main n'ont pas de type de bien, le
+    // rapprochement les met à part (M54) : un seul bien se retient ici, la démo en retient trois.
+    const mandateHit = agencyHits.filter({ hasText: 'Mes mandats' });
+    await expect(mandateHit).toHaveCount(1);
     await expect(page.getByText(/disponible/i)).toHaveCount(0);
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     const paid = page.getByTestId('ideal-paid-confirm');
@@ -797,16 +812,89 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(paid).toHaveCount(0);
     await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);
     await expect(page.getByTestId('ideal-retain')).toBeDisabled();
-    await agencyHits.filter({ hasText: dossierName }).getByRole('checkbox').check();
+    await mandateHit.getByRole('checkbox').check();
     await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
     await page.getByTestId('ideal-retain').click();
     await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
     await expect(page.getByTestId('ideal-selection-item')).toHaveCount(1);
-    await expect(page.getByTestId('ideal-selection-item')).toContainText('Dans l’agence');
+    await expect(page.getByTestId('ideal-selection-item').first()).toContainText('Dans l’agence');
     await page.goto(buyerUrl);
     await expect(page.getByTestId('ideal-selection')).toContainText(
       'Appartement · 3 pièces · 65 m²',
     );
+
+    // Mission 119 — « Présenter la sélection » : plein cadre, l'ouverture, un bien par écran avec
+    // son prix affiché, « Pourquoi » et « À savoir », une visite demandée sur le 2e, la fin, puis
+    // Visites la montre ; rien du titre d'annonce ni « disponible » devant l'acquéreur.
+    await page.getByTestId('present-selection').click();
+    await expect(page).toHaveURL(new RegExp(`/presentation/${buyerUrl.split('/').pop()}$`));
+    const scene = page.getByTestId('buyer-presentation');
+    await expect(scene).toHaveAttribute('data-screen', 'intro');
+    await expect(page.getByTestId('presentation-criteria')).toContainText(
+      'Communes : Nice, Cagnes-sur-Mer',
+    );
+    await expect(page.getByTestId('presentation-criteria')).toContainText('Un extérieur');
+    await expectNoListingTitle(page, 'Présentation — ouverture');
+    await page.getByTestId('presentation-next').click();
+    await expect(scene).toHaveAttribute('data-screen', 'item');
+    await expect(page.getByTestId('presentation-price')).toBeVisible();
+    await expect(page.getByTestId('presentation-why')).toContainText('Un extérieur');
+    await expect(page.getByText(/disponible|estimation/i)).toHaveCount(0);
+    await expectNoListingTitle(page, 'Présentation — bien 1');
+    await expectFourchetteHidden(page, 'Présentation — bien 1');
+    const visitButton = page.getByTestId('presentation-visit');
+    await visitButton.click();
+    await expect(visitButton).toHaveText(/Visite demandée/);
+    // Un second geste l'annule, un troisième la redemande.
+    await visitButton.click();
+    await expect(visitButton).toHaveText('Demander une visite');
+    await visitButton.click();
+    await expect(visitButton).toHaveText(/Visite demandée/);
+    await page.getByTestId('presentation-next').click();
+    await expect(scene).toHaveAttribute('data-screen', 'end');
+    await expect(page.getByTestId('presentation-recap').locator('li')).toHaveCount(1);
+    // Tablette : la scène ne déborde pas.
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expectNoHorizontalScroll(page, 'Présentation — fin (768 × 1024)');
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.getByTestId('presentation-finish').click();
+    await expect(page).toHaveURL(new RegExp(`${buyerUrl}$`));
+    await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
+    // Relue en lecture seule : « Terminé le », plus de demande possible.
+    await page.getByTestId('present-selection').click();
+    await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
+    await page.getByTestId('presentation-next').click();
+    await expect(page.getByTestId('presentation-finished')).toContainText(
+      /^Présentation terminée le \d{2}\/\d{2}\/\d{4} : pour en refaire une, retenez une nouvelle sélection\.$/,
+    );
+    await expect(
+      page
+        .getByTestId('presentation-finished')
+        .getByRole('link', { name: 'retenez une nouvelle sélection' }),
+    ).toHaveAttribute('href', new RegExp(`/acquereurs/${buyerUrl.split('/').pop()}/biens-ideaux$`));
+    await expect(page.getByTestId('presentation-visit')).toHaveCount(0);
+    await expect(page.getByTestId('presentation-visit-requested')).toBeVisible();
+    // Visites : la demande à planifier, puis « Visite faite » avec un retour et une issue.
+    await page.goto('/visites');
+    const visitLine = page
+      .getByTestId('visit-line')
+      .filter({ hasText: buyerName.slice(-12) })
+      .or(page.getByTestId('visits-pending').getByTestId('visit-line'));
+    await expect(page.getByTestId('visits-pending')).toContainText(buyerName);
+    await expect(page.getByTestId('visits-pending')).toContainText('pendant la présentation');
+    // Un bien de l'agence : pas de « Propriétaire ou confrère à contacter » (réservé aux
+    // concurrents et aux exclusivités).
+    await expect(page.getByTestId('visits-pending')).not.toContainText('confrère à contacter');
+    await visitLine.first().getByRole('button', { name: 'Visite faite' }).click();
+    const doneForm = page.getByTestId('visit-done-form');
+    await doneForm.getByLabel('Retour de visite').fill('Trop sombre, d’après le test automatique');
+    await doneForm.getByLabel('Issue de la visite').selectOption('declined');
+    await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
+    await expect(page.getByTestId('visits-done')).toContainText(
+      'Trop sombre, d’après le test automatique',
+    );
+    await expect(page.getByTestId('visits-done')).toContainText('Pas pour lui');
+    await expect(page.getByTestId('visits-pending')).toHaveCount(0);
 
     // Le statut, un cran à la fois ; puis « Archiver » : disparue de la liste et de son adresse.
     await page.goto(buyerUrl);

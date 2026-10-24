@@ -87,6 +87,7 @@ export function toSelection(row: SelectionRow, items: SelectionItemRow[]): Ideal
   return {
     id: row.id,
     createdAt: row.created_at,
+    presentedAt: row.presented_at ?? null,
     items: [...items].sort((a, b) => a.position - b.position).map(toItem),
   };
 }

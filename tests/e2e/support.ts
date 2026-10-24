@@ -73,6 +73,18 @@ function loginPath(): string {
   return `/login?${query.toString()}`;
 }
 
+// Mission 118 — le mode du menu (Vendeur | Acquéreur) est mémorisé sur le profil : un passage
+// interrompu en mode Acquéreur le laisse ainsi pour le suivant. Les parcours qui cliquent le menu
+// Vendeur commencent par s'y remettre, sans rien supposer.
+export async function ensureSellerMode(page: Page): Promise<void> {
+  const switcher = page.getByTestId('workspace-switch');
+  await expect(switcher).toBeVisible();
+  if ((await switcher.getAttribute('data-mode')) === 'buyer') {
+    await switcher.getByRole('button', { name: 'Vendeur' }).click();
+    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+  }
+}
+
 export async function login(page: Page, credentials?: Credentials): Promise<void> {
   await page.goto(loginPath());
   await expect(
