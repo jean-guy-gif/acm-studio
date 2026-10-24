@@ -798,11 +798,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
     await expect(page.getByTestId('ideal-title')).toContainText(buyerName);
     const agencyHits = page.getByTestId('ideal-agency-hit');
-    // Le mandat de ce passage et ses concurrents à prospecter, tous « Pour : [dossier] ».
+    // Le mandat de ce passage ; ses concurrents saisis à la main n'ont pas de type de bien, le
+    // rapprochement les met à part (M54) : un seul bien se retient ici, la démo en retient trois.
     const mandateHit = agencyHits.filter({ hasText: 'Mes mandats' });
-    const competitorHits = agencyHits.filter({ hasText: 'Concurrents à prospecter' });
     await expect(mandateHit).toHaveCount(1);
-    await expect(competitorHits.first()).toBeVisible();
     await expect(page.getByText(/disponible/i)).toHaveCount(0);
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     const paid = page.getByTestId('ideal-paid-confirm');
@@ -811,13 +810,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(paid).toHaveCount(0);
     await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);
     await expect(page.getByTestId('ideal-retain')).toBeDisabled();
-    // Deux biens retenus : le mandat, puis un concurrent à prospecter.
     await mandateHit.getByRole('checkbox').check();
-    await competitorHits.first().getByRole('checkbox').check();
-    await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (2/3)');
+    await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
     await page.getByTestId('ideal-retain').click();
-    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 2 biens.');
-    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(2);
+    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
+    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(1);
     await expect(page.getByTestId('ideal-selection-item').first()).toContainText('Dans l’agence');
     await page.goto(buyerUrl);
     await expect(page.getByTestId('ideal-selection')).toContainText(
@@ -843,9 +840,6 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText(/disponible|estimation/i)).toHaveCount(0);
     await expectNoListingTitle(page, 'Présentation — bien 1');
     await expectFourchetteHidden(page, 'Présentation — bien 1');
-    await page.getByTestId('presentation-next').click();
-    await expect(page.getByTestId('presentation-price')).toBeVisible();
-    await expectNoListingTitle(page, 'Présentation — bien 2');
     const visitButton = page.getByTestId('presentation-visit');
     await visitButton.click();
     await expect(visitButton).toHaveText(/Visite demandée/);
@@ -877,9 +871,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .or(page.getByTestId('visits-pending').getByTestId('visit-line'));
     await expect(page.getByTestId('visits-pending')).toContainText(buyerName);
     await expect(page.getByTestId('visits-pending')).toContainText('pendant la présentation');
-    await expect(page.getByTestId('visits-pending')).toContainText(
-      'Propriétaire ou confrère à contacter',
-    );
+    // Un bien de l'agence : pas de « Propriétaire ou confrère à contacter » (réservé aux
+    // concurrents et aux exclusivités).
+    await expect(page.getByTestId('visits-pending')).not.toContainText('confrère à contacter');
     await visitLine.first().getByRole('button', { name: 'Visite faite' }).click();
     const doneForm = page.getByTestId('visit-done-form');
     await doneForm.getByLabel('Retour de visite').fill('Trop sombre, d’après le test automatique');
