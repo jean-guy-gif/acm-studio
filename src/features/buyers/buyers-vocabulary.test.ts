@@ -9,7 +9,10 @@ const SRC = join(process.cwd(), 'src');
 const SCOPE = [
   join('features', 'buyers'),
   join('app', '(protected)', 'acquereurs'),
+  join('app', '(protected)', 'biens-ideaux'),
   join('features', 'demo', 'services', 'demo-buyers.ts'),
+  // Mission 118 — les biens idéaux.
+  join('features', 'ideal-properties'),
 ];
 
 const files = (dir: string): string[] =>
@@ -48,6 +51,14 @@ describe('le vocabulaire du mode acquéreur (mission 117)', () => {
 
   it('jamais « estimation »', () => {
     expect(offenders(/estimation/i)).toEqual([]);
+  });
+
+  it('une recherche n’est pas une disponibilité : jamais « disponible » dans les biens idéaux (M118)', () => {
+    expect(offenders(/disponible/i)).toEqual([]);
+    const types = shown(join(SRC, 'features', 'ideal-properties', 'types.ts'));
+    for (const label of ['Correspondance forte', 'Bon compromis', 'À explorer']) {
+      expect(types).toContain(label);
+    }
   });
 
   it('le rapprochement du Suivi se nomme « Rapprochement acquéreur » et ne dit plus « acheteur » à l’écran', () => {

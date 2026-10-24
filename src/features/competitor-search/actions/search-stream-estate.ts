@@ -9,11 +9,8 @@ import { geoProvider } from '@/features/competitor-search/services/geo-provider'
 import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { demoStreamEstatePage } from '@/features/demo/services/demo-stream-estate';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
-import {
-  baseStreamEstateQuery,
-  billedAdverts,
-  STREAM_ESTATE_ENDPOINT,
-} from '@/features/competitor-search/services/stream-estate';
+import { baseStreamEstateQuery } from '@/features/competitor-search/services/stream-estate';
+import { liveStreamEstatePage } from '@/features/competitor-search/services/stream-estate-fetch';
 import {
   describeSearchCriteria,
   isDefaultSettings,
@@ -55,7 +52,6 @@ import {
   reserveSearchBudget,
   settleSearchBudget,
 } from '@/features/search-budget/services/reserve-budget';
-import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { keepPaidSearchResult } from '@/features/competitor-search/services/keep-paid-result';
 import { searchFingerprint } from '@/features/competitor-search/services/paid-search-guard';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -108,7 +104,6 @@ const resumeSchema = z.object({
 
 export type StreamEstateResume = { cursor: TierCursor; memory: TieredSearchMemory };
 
-const TIMEOUT_MS = 10_000;
 const GENERIC_ERROR = 'La recherche Stream Estate a échoué. Réessayez.';
 
 // MISSION 71 — la recherche Stream Estate PAR CRANS, côté serveur : on commence par l'identique et
@@ -240,33 +235,12 @@ export async function searchStreamEstate(
 
   // Mission 100 — ce que cette recherche a réellement facturé, compté sur chaque réponse.
   let billed = 0;
-  const liveFetchPage: FetchStreamEstatePage = async (params) => {
-    try {
-      const response = await fetch(`${STREAM_ESTATE_ENDPOINT}?${params}`, {
-        headers: { 'X-API-KEY': apiKey ?? '', Accept: 'application/ld+json' },
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        cache: 'no-store',
-      });
-      if (response.status === 401 || response.status === 403) {
-        await reportServerError(
-          'searchStreamEstate',
-          new Error(`refus de l’API (${response.status})`),
-        );
-        return { ok: false, refused: true };
-      }
-      if (!response.ok) throw new Error(`Stream Estate ${response.status}`);
-      const json: unknown = await response.json();
-      billed += billedAdverts(json);
-      return { ok: true, json };
-    } catch (error) {
-      await reportServerError('searchStreamEstate', error);
-      return { ok: false, refused: false };
-    }
-  };
   // Mission 114 — la page simulée répond aux mêmes paramètres, depuis le jeu de données.
   const fetchPage: FetchStreamEstatePage = demo
     ? demoStreamEstatePage({ listings: DEMO_LISTINGS, now })
-    : liveFetchPage;
+    : liveStreamEstatePage(apiKey ?? '', (count) => {
+        billed += count;
+      });
 
   // 4. Les crans, du plus proche au plus large — ou la reprise, 20 annonces de plus.
   const plans = planTiers(

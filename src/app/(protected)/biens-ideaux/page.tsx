@@ -20,8 +20,8 @@ import { getProfile } from '@/lib/auth/get-profile';
 
 export const metadata: Metadata = { title: 'Biens idéaux — ACM Studio' };
 
-// Mission 118 (partie A) — « Biens idéaux » : en attendant la partie B, la page mène à chaque fiche
-// et à son rapprochement (M86, M117) ; rien n'est cherché ni enregistré ici.
+// Mission 118 — « Biens idéaux » : chaque acquéreur, avec « Trouver les biens idéaux » (partie B) ;
+// rien n'est cherché ni enregistré ici.
 export default async function IdealPropertiesPage() {
   const [profile, all] = await Promise.all([getProfile(), getBuyers()]);
   const buyers = sortBuyers(all, profile?.id ?? null);
@@ -68,10 +68,10 @@ export default async function IdealPropertiesPage() {
                   </span>
                 </div>
                 <Link
-                  href={`/suivi?acquereur=${buyer.id}#rapprochement`}
+                  href={`/acquereurs/${buyer.id}/biens-ideaux`}
                   className={`${btnSecondary} px-3 py-1.5 text-xs`}
                 >
-                  Rapprocher
+                  Trouver les biens idéaux
                 </Link>
               </li>
             );

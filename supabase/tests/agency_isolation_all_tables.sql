@@ -68,6 +68,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'seller_synthesis_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
     -- Mission 117 — une fiche acquéreur a au moins une commune.
     when 'buyers.cities' then $v$array['Antibes']$v$
+    -- Mission 118 — un bien retenu a une source dans la liste.
+    when 'buyer_selection_items.source' then $v$'listing'$v$
     else null
   end
 $$;
