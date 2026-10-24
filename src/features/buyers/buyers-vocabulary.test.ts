@@ -1,0 +1,71 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+// Mission 117 — « Acquéreur » partout dans le nouveau code et à l'écran ; jamais « acheteur »
+// (sauf, hors de ce périmètre, le code de M86 qui garde ses noms), jamais « estimation » (M105).
+const SRC = join(process.cwd(), 'src');
+const SCOPE = [
+  join('features', 'buyers'),
+  join('app', '(protected)', 'acquereurs'),
+  join('features', 'demo', 'services', 'demo-buyers.ts'),
+];
+
+const files = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return files(path);
+    return /\.(ts|tsx)$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : [];
+  });
+
+const shown = (path: string): string =>
+  readFileSync(path, 'utf8')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('//'))
+    .map((line) => line.replace(/\s\/\/ .*$/, ''))
+    .join('\n');
+
+const SCREENS = files(SRC)
+  .map((path) => relative(SRC, path))
+  .filter((path) => SCOPE.some((dir) => path === dir || path.startsWith(dir)));
+
+const offenders = (pattern: RegExp): string[] =>
+  SCREENS.filter((path) => pattern.test(shown(join(SRC, path))));
+
+describe('le vocabulaire du mode acquéreur (mission 117)', () => {
+  it('le périmètre couvre la feature et ses écrans', () => {
+    expect(SCREENS.length).toBeGreaterThan(10);
+    expect(SCREENS).toContain(join('features', 'buyers', 'components', 'buyer-form.tsx'));
+    expect(SCREENS).toContain(join('app', '(protected)', 'acquereurs', 'page.tsx'));
+  });
+
+  it('jamais « acheteur »', () => {
+    expect(offenders(/acheteu(r|se)s?/i)).toEqual([]);
+  });
+
+  it('jamais « estimation »', () => {
+    expect(offenders(/estimation/i)).toEqual([]);
+  });
+
+  it('le rapprochement du Suivi se nomme « Rapprochement acquéreur » et ne dit plus « acheteur » à l’écran', () => {
+    const panel = shown(
+      join(SRC, 'features', 'meeting-conclusion', 'components', 'buyer-search-panel.tsx'),
+    );
+    expect(panel).toContain('Rapprochement acquéreur');
+    expect(panel).not.toMatch(/acheteur/i);
+    expect(panel).toContain('Enregistrer cette recherche');
+  });
+
+  it('le menu porte « Acquéreurs » entre Prospection et Administration', () => {
+    const nav = readFileSync(join(SRC, 'components', 'app-shell', 'sidebar-nav.tsx'), 'utf8');
+    const prospection = nav.indexOf("href: '/prospection'");
+    const buyers = nav.indexOf("href: '/acquereurs'");
+    const admin = nav.indexOf("href: '/admin'");
+    expect(buyers).toBeGreaterThan(prospection);
+    expect(admin).toBeGreaterThan(buyers);
+    expect(nav).toContain("label: 'Acquéreurs'");
+  });
+});

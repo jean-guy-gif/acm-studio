@@ -20,6 +20,8 @@ const TEST_AGENCY_PREFIX = 'TEST AUTOMATIQUE';
 // Ce que le nettoyage supprime, et ce qu'il garde. Une table à `agency_id` qui n'est dans aucune
 // des deux listes arrête le script : on décide, on ne devine pas.
 const CLEANED = [
+  // Mission 117 — les fiches acquéreur de l'agence de test.
+  'buyers',
   'comparables',
   'competitor_decisions',
   'competitor_prospecting_files',

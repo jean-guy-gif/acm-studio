@@ -74,6 +74,22 @@ const webUrl = (url: string | null): string | null =>
 
 const phoneHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
+// Mission 117 — les critères tapés, portés vers une fiche acquéreur neuve ; le budget min n'a pas
+// de place sur la fiche (elle a un budget idéal et un plafond), il n'y va pas.
+function newBuyerHref(criteria: BuyerCriteria): string {
+  const params = new URLSearchParams();
+  const set = (key: string, value: string | number | null) => {
+    if (value != null && value !== '') params.set(key, String(value));
+  };
+  set('type', criteria.propertyType);
+  set('communes', criteria.city);
+  set('pieces', criteria.roomsCount);
+  set('surface', criteria.surfaceArea);
+  set('budget', criteria.budgetMax);
+  const query = params.toString();
+  return query ? `/acquereurs/nouveau?${query}` : '/acquereurs/nouveau';
+}
+
 // « 3 p. · 65 m² · 320 000 € · Antibes » — chaque morceau insécable : un prix ne se coupe pas.
 function candidateFacts(candidate: BuyerCandidate): string[] {
   return [
@@ -107,7 +123,7 @@ function HitAction({ candidate }: { candidate: BuyerCandidate }) {
           </a>
         ) : null}
         <Link href={`/builder/${candidate.projectId}`} className={miniSecondary}>
-          Rappeler : « j’ai un acheteur »
+          Rappeler : « j’ai un acquéreur »
         </Link>
       </div>
     );
@@ -208,14 +224,14 @@ function Results({ result }: { result: BuyerReconciliation }) {
           <span className="text-emerald-700 stage:text-emerald-300">
             {count} bien{count > 1 ? 's' : ''}
           </span>{' '}
-          {count > 1 ? 'correspondent' : 'correspond'} à cet acheteur
+          {count > 1 ? 'correspondent' : 'correspond'} à cet acquéreur
         </p>
       ) : (
         <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 stage:border-amber-400/50 stage:bg-amber-500/10">
           <p className="font-title text-xl font-bold text-amber-900 stage:text-amber-200">
             {noneOfType && result.requestedType != null
               ? `Votre Suivi ne contient ${noneOfTypeLabel(result.requestedType)}`
-              : 'Aucun bien ne correspond exactement à cet acheteur'}
+              : 'Aucun bien ne correspond exactement à cet acquéreur'}
           </p>
           {noneOfType &&
           (result.composition.byType.length > 0 || result.composition.unclassifiedCount > 0) ? (
@@ -285,19 +301,27 @@ function Results({ result }: { result: BuyerReconciliation }) {
   );
 }
 
-// Mission 54 §3 — la recherche acheteur : un panneau JETABLE (rien enregistré, pas de fiche
-// acheteur). Mission 86 — elle cherche dans trois listes (mes mandats, mes vendeurs à relancer,
+// Mission 54 §3 — le rapprochement acquéreur : un panneau JETABLE (rien enregistré ici ; la fiche
+// acquéreur, depuis M117, se crée dans l'espace Acquéreurs). Mission 86 — elle cherche dans trois listes (mes mandats, mes vendeurs à relancer,
 // les concurrents à prospecter) et range ce qui correspond en trois groupes, chacun avec son
 // action. Tout tourne côté client : l'écran est réservé au conseiller.
+// Mission 117 — « Rapprocher » sur une fiche acquéreur ouvre ce rapprochement pré-rempli de ses
+// critères (communes, pièces, surface, budget plafond), et le joue tout de suite ; le rapprochement
+// lui-même ne change pas (M86) et n'enregistre rien. Sans fiche, « Enregistrer cette recherche »
+// mène à une fiche neuve, pré-remplie des critères tapés.
 export function BuyerSearchPanel({
   dossiers,
   entries,
+  initialCriteria = null,
+  buyerName = null,
 }: {
   dossiers: SuiviDossier[];
   entries: ProspectingEntry[];
+  initialCriteria?: BuyerCriteria | null;
+  buyerName?: string | null;
 }) {
   const candidates = useMemo(() => buyerCandidates(dossiers, entries), [dossiers, entries]);
-  const [criteria, setCriteria] = useState<BuyerCriteria | null>(null);
+  const [criteria, setCriteria] = useState<BuyerCriteria | null>(initialCriteria);
   // Recalculé si les listes changent (une issue modifiée plus bas) : jamais un résultat périmé.
   const result = useMemo(
     () => (criteria ? reconcileBuyer(criteria, candidates) : null),
@@ -316,12 +340,26 @@ export function BuyerSearchPanel({
   );
 
   return (
-    <section className={`${card} @container flex flex-col gap-3 p-5`}>
+    <section
+      id="rapprochement"
+      className={`${card} @container flex flex-col gap-3 p-5`}
+      data-testid="buyer-search"
+    >
       <div className="flex flex-col gap-0.5">
-        <h2 className={sectionTitle}>Un acheteur dans le pipe&nbsp;?</h2>
+        <h2 className={sectionTitle}>Rapprochement acquéreur</h2>
         <p className="text-sm text-zinc-500 stage:text-white/60">
-          Tapez sa recherche&nbsp;: ACM vous montre vos mandats, vos vendeurs à relancer et les
-          concurrents à prospecter qui lui correspondent. Rien n’est enregistré.
+          {buyerName ? (
+            <>
+              La recherche de <span className="font-semibold">{buyerName}</span>, face à vos
+              mandats, vos vendeurs à relancer et les concurrents à prospecter. Rien n’est
+              enregistré ici.
+            </>
+          ) : (
+            <>
+              Tapez sa recherche&nbsp;: ACM vous montre vos mandats, vos vendeurs à relancer et les
+              concurrents à prospecter qui lui correspondent. Rien n’est enregistré.
+            </>
+          )}
         </p>
       </div>
 
@@ -340,18 +378,47 @@ export function BuyerSearchPanel({
           });
         }}
       >
-        {field('Type', 'propertyType', { type: 'text', placeholder: 'Appartement…' })}
-        {field('Pièces', 'roomsCount', { type: 'number', min: 0 })}
-        {field('Surface (m²)', 'surfaceArea', { type: 'number', min: 0 })}
-        {field('Budget min (€)', 'budgetMin', { type: 'number', min: 0 })}
-        {field('Budget max (€)', 'budgetMax', { type: 'number', min: 0 })}
-        {field('Secteur', 'city', { type: 'text', placeholder: 'Antibes, Juan-les-Pins…' })}
+        {field('Type', 'propertyType', {
+          type: 'text',
+          placeholder: 'Appartement…',
+          defaultValue: initialCriteria?.propertyType ?? '',
+        })}
+        {field('Pièces', 'roomsCount', {
+          type: 'number',
+          min: 0,
+          defaultValue: initialCriteria?.roomsCount ?? '',
+        })}
+        {field('Surface (m²)', 'surfaceArea', {
+          type: 'number',
+          min: 0,
+          defaultValue: initialCriteria?.surfaceArea ?? '',
+        })}
+        {field('Budget min (€)', 'budgetMin', {
+          type: 'number',
+          min: 0,
+          defaultValue: initialCriteria?.budgetMin ?? '',
+        })}
+        {field('Budget max (€)', 'budgetMax', {
+          type: 'number',
+          min: 0,
+          defaultValue: initialCriteria?.budgetMax ?? '',
+        })}
+        {field('Secteur', 'city', {
+          type: 'text',
+          placeholder: 'Antibes, Juan-les-Pins…',
+          defaultValue: initialCriteria?.city ?? '',
+        })}
         <button type="submit" className={`${btnPrimary} whitespace-nowrap`}>
           Rapprocher
         </button>
       </form>
 
       {result ? <Results result={result} /> : null}
+      {criteria && !buyerName ? (
+        <Link href={newBuyerHref(criteria)} className={`${btnSecondary} self-start`}>
+          Enregistrer cette recherche
+        </Link>
+      ) : null}
     </section>
   );
 }

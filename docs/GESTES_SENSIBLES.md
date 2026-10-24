@@ -81,6 +81,8 @@ Aucune n'a de test qui appelle l'action. Leur cloisonnement entre agences est pr
 | `reorder-live-competitors.ts` (M110)                                                          | `reorder_retained_comparables`                  | `les_experts` §5-6 (CI), service                                                  |
 | `confirm-live-launch.ts` (M112)                                                               | `projects.live_confirmed_*`                     | service, e2e                                                                      |
 | `save-live-shortlist.ts` (M110, M112)                                                         | `save_live_shortlist`                           | `live_controle` (CI), service                                                     |
+| `buyers/actions/buyers.ts` (M117)                                                             | `buyers` (créer, modifier, statut, archiver)    | `acquereurs` (CI), `buyers.test.ts` (client factice), e2e                         |
+| `demo-dossiers.ts` (M117, acquéreurs de la démo)                                              | `buyers` (marque `demo`, les siens)             | `demo-dossiers.test.ts` (client factice), e2e démo                                |
 
 Quatorze tests SQL de `supabase/tests/` ne sont pas dans la CI (trois sont à réparer, M88) : ce
 qu'ils prouvaient n'est plus vérifié à chaque push.

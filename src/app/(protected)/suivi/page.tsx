@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 import { emptyState, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { BuyerSearchPanel } from '@/features/meeting-conclusion/components/buyer-search-panel';
 import { SuiviRow } from '@/features/meeting-conclusion/components/suivi-row';
 import {
@@ -46,7 +48,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { formatPercent } from '@/lib/format';
 
 type SuiviPageProps = {
-  searchParams: Promise<{ issue?: string; motif?: string }>;
+  searchParams: Promise<{ issue?: string; motif?: string; acquereur?: string }>;
 };
 
 const chip =
@@ -75,8 +77,11 @@ const motiveHref = (motive: FollowUpMotive): string => `/suivi?issue=follow_up&m
 // Mission 86 — il se lit d'un coup d'œil : des compteurs qui filtrent, une ligne courte par
 // dossier, une seule action selon l'issue. « Tous » ne masque rien (règle M52).
 export default async function SuiviPage({ searchParams }: SuiviPageProps) {
-  const { issue, motif } = await searchParams;
+  const { issue, motif, acquereur } = await searchParams;
   const motive = parseFollowUpMotive(motif);
+  // Mission 117 — « Rapprocher » depuis une fiche acquéreur : ses critères pré-remplissent le
+  // rapprochement ; une fiche archivée ou d'une autre agence n'est pas lue (M93).
+  const buyer = acquereur ? await getBuyer(acquereur) : null;
   // Un motif choisi ne montre que des « à relancer ».
   const group = motive != null ? 'follow_up' : parseSuiviGroup(issue);
 
@@ -217,6 +222,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
             entries={cards
               .filter((card) => card.row.opposedOn == null)
               .map(({ row, seller }) => ({ row, seller }))}
+            initialCriteria={buyer ? buyerToCriteria(buyer) : null}
+            buyerName={buyer?.name ?? null}
           />
 
           <div className="flex flex-wrap items-center gap-2">

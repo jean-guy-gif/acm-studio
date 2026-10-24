@@ -11,6 +11,8 @@ const NAV = [
   { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
   { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
+  // Mission 117 — l'espace Acquéreurs, entre Prospection et Administration.
+  { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
   { href: '/admin', label: 'Administration', hint: 'Agence et équipe' },
   // Mission 97 — « Bienvenue », où l'on revient quand on veut.
   { href: '/bienvenue', label: 'Aide', hint: 'Premiers pas' },
