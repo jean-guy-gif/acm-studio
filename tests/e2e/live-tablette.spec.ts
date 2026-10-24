@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { expectNoHorizontalScroll, login } from './support';
+import { expectNoHorizontalScroll, login, ensureSellerMode } from './support';
 
 // Mission 72 — le Live tient sur tablette, quoi qu'il arrive. Deux vérifications courtes,
 // à part du parcours complet : la scène ne peut être décalée dans aucune taille (fenêtre et
@@ -22,6 +22,7 @@ const VIEWPORTS = [
 
 async function openLive(page: Page): Promise<void> {
   await login(page);
+  await ensureSellerMode(page);
   await page.goto('/live');
   const item = () => page.locator('li').filter({ hasText: DOSSIER }).first();
 
