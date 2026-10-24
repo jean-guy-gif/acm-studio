@@ -16,7 +16,7 @@ export async function getMandateDashboard(): Promise<MandateDashboard | null> {
     return null;
   }
   const supabase = await createClient();
-  const [projects, conclusions, profiles] = await Promise.all([
+  const [projects, conclusions, profiles, collaborations] = await Promise.all([
     supabase
       .from('projects')
       .select('id, advisor_id, is_example')
@@ -32,8 +32,15 @@ export async function getMandateDashboard(): Promise<MandateDashboard | null> {
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('agency_id', profile.agency_id),
+    // Mission 115 — les collaborations obtenues avec un confrère, un fait posé par le conseiller.
+    supabase
+      .from('comparables')
+      .select('project_id')
+      .eq('agency_id', profile.agency_id)
+      .eq('is_selected', true)
+      .not('prospecting_collaboration_at', 'is', null),
   ]);
-  if (projects.error || conclusions.error || profiles.error) {
+  if (projects.error || conclusions.error || profiles.error || collaborations.error) {
     return null;
   }
   return buildMandateDashboard({
@@ -55,5 +62,6 @@ export async function getMandateDashboard(): Promise<MandateDashboard | null> {
       id: row.id,
       name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || 'Conseiller',
     })),
+    collaborations: (collaborations.data ?? []).map((row) => ({ projectId: row.project_id })),
   });
 }

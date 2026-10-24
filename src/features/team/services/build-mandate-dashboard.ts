@@ -24,6 +24,8 @@ export type DashboardConclusion = {
   objections: unknown;
 };
 export type DashboardAdvisor = { id: string; name: string };
+// Mission 115 — une collaboration obtenue avec un confrère (un concurrent retenu d'un mandat).
+export type DashboardCollaboration = { projectId: string };
 
 export type MandateFigures = {
   meetings: number;
@@ -38,6 +40,8 @@ export type MandateFigures = {
   medianDaysToSignature: number | null;
   // Les freins les plus fréquents, du plus au moins cité.
   objections: { objection: Objection; label: string; count: number }[];
+  // Mission 115 — collaborations obtenues avec un confrère, comptées à part des mandats.
+  collaborations: number;
 };
 
 export type MandateDashboard = {
@@ -47,7 +51,7 @@ export type MandateDashboard = {
 
 const DAY_MS = 86_400_000;
 
-function figures(rows: DashboardConclusion[]): MandateFigures {
+function figures(rows: DashboardConclusion[], collaborations = 0): MandateFigures {
   // Mission 111 — une ligne créée par la seule saisie du prix au Live, sur un dossier non conclu,
   // n'est pas un rendez-vous mené : seules comptent les conclusions qui ont une issue.
   const conclusions = rows.filter((c) => c.outcome != null);
@@ -83,6 +87,7 @@ function figures(rows: DashboardConclusion[]): MandateFigures {
     objections: [...counts.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([objection, count]) => ({ objection, label: OBJECTION_LABELS[objection], count })),
+    collaborations,
   };
 }
 
@@ -90,19 +95,25 @@ export function buildMandateDashboard(input: {
   projects: DashboardProject[];
   conclusions: DashboardConclusion[];
   advisors: DashboardAdvisor[];
+  collaborations?: DashboardCollaboration[];
 }): MandateDashboard {
   const real = new Map(
     input.projects.filter((project) => !project.isExample).map((project) => [project.id, project]),
   );
   const counted = input.conclusions.filter((conclusion) => real.has(conclusion.projectId));
+  // Mission 115 — jamais celles du dossier d'exemple (M97), ni d'un dossier qui n'est pas le sien.
+  const collaborations = (input.collaborations ?? []).filter((item) => real.has(item.projectId));
   const advisors = input.advisors
     .map((advisor) => {
       const own = counted.filter(
         (conclusion) => real.get(conclusion.projectId)?.advisorId === advisor.id,
       );
-      return { advisorId: advisor.id, name: advisor.name, ...figures(own) };
+      const ownCollaborations = collaborations.filter(
+        (item) => real.get(item.projectId)?.advisorId === advisor.id,
+      ).length;
+      return { advisorId: advisor.id, name: advisor.name, ...figures(own, ownCollaborations) };
     })
     .filter((advisor) => advisor.meetings > 0)
     .sort((a, b) => b.meetings - a.meetings || a.name.localeCompare(b.name));
-  return { agency: figures(counted), advisors };
+  return { agency: figures(counted, collaborations.length), advisors };
 }

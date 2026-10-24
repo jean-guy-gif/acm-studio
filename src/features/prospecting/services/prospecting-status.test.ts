@@ -18,6 +18,8 @@ const NONE: ProspectingDates = {
   prospecting_meeting_at: null,
   prospecting_mandate_at: null,
   prospecting_declined_at: null,
+  prospecting_collaboration_at: null,
+  prospecting_collaboration_declined_at: null,
 };
 const NOW = '2026-10-10T08:00:00.000Z';
 
@@ -84,24 +86,20 @@ describe('applyProspectingMove', () => {
     }
   });
 
-  // Mission 98 — un confrère se contacte sans attendre l'adresse du bien ; la suite est la même.
-  it('un confrère est « contacté » sans adresse, puis suit les mêmes étapes', () => {
+  // Mission 98 — un confrère se contacte sans attendre l'adresse du bien. Mission 115 — contacté,
+  // la suite n'est plus celle d'un propriétaire : collaboration obtenue ou refusée.
+  it('un confrère est « contacté » sans adresse, puis dit la collaboration', () => {
     expect(applyProspectingMove('to_confirm', 'handed', NOW, 'colleague')).toEqual({
       ok: true,
       patch: { prospecting_handed_at: NOW },
     });
     expect(canMarkHanded('to_confirm', 'colleague')).toBe(true);
     expect(canMarkHanded('ready', 'colleague')).toBe(true);
-    // Contacté sans adresse : le statut tient, et le rendez-vous puis le mandat se notent.
+    // Contacté sans adresse : le statut tient ; « RDV obtenu » n'est plus un geste de confrère.
     const contacted = { ...NONE, prospecting_handed_at: NOW };
     expect(prospectingStatus(contacted, false)).toBe('handed');
-    expect(applyProspectingMove('handed', 'meeting', NOW, 'colleague').ok).toBe(true);
-    expect(applyProspectingMove('meeting', 'mandate', NOW, 'colleague').ok).toBe(true);
-    expect(prospectingCounters(['handed', 'meeting', 'mandate'])).toMatchObject({
-      handed: 3,
-      meetings: 2,
-      mandates: 1,
-    });
+    expect(applyProspectingMove('handed', 'meeting', NOW, 'colleague').ok).toBe(false);
+    expect(applyProspectingMove('handed', 'collaboration', NOW, 'colleague').ok).toBe(true);
   });
 
   it('un propriétaire, ou un concurrent « à vérifier », attend toujours son adresse', () => {
@@ -187,6 +185,7 @@ describe('compteurs et avancement', () => {
       handed: 3,
       meetings: 2,
       mandates: 1,
+      collaborations: 0,
       declined: 1,
     });
   });
@@ -197,5 +196,93 @@ describe('compteurs et avancement', () => {
     );
     expect(prospectingProgress(['handed', 'handed', 'meeting'])).toBe('2 remis · 1 RDV obtenu');
     expect(prospectingProgress([])).toBeNull();
+  });
+});
+
+// Mission 115 — le confrère : collaboration obtenue ou refusée, après « Contacté ».
+describe('collaboration avec le confrère (mission 115)', () => {
+  const contacted = { ...NONE, prospecting_handed_at: NOW };
+  const LATER = '2026-10-12T08:00:00.000Z';
+
+  it('contacté, un confrère a « obtenue » ou « refusée », plus « RDV obtenu »', () => {
+    expect(applyProspectingMove('handed', 'collaboration', NOW, 'colleague')).toEqual({
+      ok: true,
+      patch: { prospecting_collaboration_at: NOW },
+    });
+    expect(applyProspectingMove('handed', 'collaboration_declined', NOW, 'colleague')).toEqual({
+      ok: true,
+      patch: { prospecting_collaboration_declined_at: NOW },
+    });
+    expect(applyProspectingMove('handed', 'meeting', NOW, 'colleague').ok).toBe(false);
+  });
+
+  it('ni avant le contact, ni pour un propriétaire', () => {
+    for (const status of ['to_confirm', 'ready', 'meeting'] as const) {
+      expect(applyProspectingMove(status, 'collaboration', NOW, 'colleague').ok).toBe(false);
+      expect(applyProspectingMove(status, 'collaboration_declined', NOW, 'colleague').ok).toBe(
+        false,
+      );
+    }
+    for (const step of ['owner', 'check'] as const) {
+      expect(applyProspectingMove('handed', 'collaboration', NOW, step).ok).toBe(false);
+      // Le parcours propriétaire ne change pas : remis → rendez-vous → mandat.
+      expect(applyProspectingMove('handed', 'meeting', NOW, step).ok).toBe(true);
+    }
+  });
+
+  it('« obtenue » clôt la prospection : statut à part, plus « pas intéressé », annulable', () => {
+    const obtained = { ...contacted, prospecting_collaboration_at: LATER };
+    expect(prospectingStatus(obtained, false)).toBe('collaboration');
+    expect(applyProspectingMove('collaboration', 'declined', NOW, 'colleague').ok).toBe(false);
+    expect(applyProspectingMove('collaboration', 'meeting', NOW, 'colleague').ok).toBe(false);
+    expect(applyProspectingMove('collaboration', 'back', NOW, 'colleague')).toEqual({
+      ok: true,
+      patch: { prospecting_collaboration_at: null },
+    });
+    expect(prospectingCounters(['collaboration', 'handed', 'mandate'])).toMatchObject({
+      toCanvass: 2,
+      handed: 3,
+      mandates: 1,
+      collaborations: 1,
+    });
+    expect(prospectingProgress(['collaboration', 'collaboration'])).toBe(
+      '2 collaborations obtenues',
+    );
+  });
+
+  it('« refusée » remet le bien en propriétaire : le contact d’avant ne compte plus', () => {
+    const refused = { ...contacted, prospecting_collaboration_declined_at: LATER };
+    // Le contact du confrère (NOW) est antérieur au refus (LATER) : à l'adresse de décider.
+    expect(prospectingStatus(refused, true)).toBe('ready');
+    expect(prospectingStatus(refused, false)).toBe('to_confirm');
+    // Puis la suite d'un propriétaire, datée après le refus.
+    const AFTER = '2026-10-14T08:00:00.000Z';
+    expect(applyProspectingMove('ready', 'handed', AFTER, 'owner')).toEqual({
+      ok: true,
+      patch: { prospecting_handed_at: AFTER },
+    });
+    const handed = { ...refused, prospecting_handed_at: AFTER };
+    expect(prospectingStatus(handed, true)).toBe('handed');
+    expect(applyProspectingMove('handed', 'meeting', AFTER, 'owner').ok).toBe(true);
+    expect(prospectingStatus({ ...handed, prospecting_meeting_at: AFTER }, true)).toBe('meeting');
+  });
+
+  it('le refus, dernier fait posé, s’annule ; le confrère redevient « contacté »', () => {
+    expect(applyProspectingMove('ready', 'back', NOW, 'owner', true)).toEqual({
+      ok: true,
+      patch: { prospecting_collaboration_declined_at: null },
+    });
+    expect(applyProspectingMove('to_confirm', 'back', NOW, 'owner', true).ok).toBe(true);
+    expect(applyProspectingMove('ready', 'back', NOW, 'owner', false).ok).toBe(false);
+    // Un fait posé après le refus s'annule d'abord, lui.
+    expect(applyProspectingMove('handed', 'back', NOW, 'owner', true)).toEqual({
+      ok: true,
+      patch: { prospecting_handed_at: null },
+    });
+  });
+
+  it('reconnaît les sept gestes', () => {
+    expect(isProspectingMove('collaboration')).toBe(true);
+    expect(isProspectingMove('collaboration_declined')).toBe(true);
   });
 });

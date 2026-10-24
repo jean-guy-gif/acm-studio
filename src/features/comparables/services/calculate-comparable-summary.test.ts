@@ -60,6 +60,8 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     prospecting_meeting_at: null,
     prospecting_mandate_at: null,
     prospecting_declined_at: null,
+    prospecting_collaboration_at: null,
+    prospecting_collaboration_declined_at: null,
     sold_by: null,
     sold_by_source: null,
     exclusivity: null,

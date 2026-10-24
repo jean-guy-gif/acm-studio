@@ -45,6 +45,9 @@ export type ProspectingFileFacts = {
   theirAddressSource: AddressSource;
   // Distance entre les deux biens, seulement entre deux positions sûres ; sinon null.
   distanceMeters: number | null;
+  // Mission 115 — l'agence du bien a refusé une collaboration en mandat exclusif : le courrier
+  // propriétaire le dit, d'une phrase proposée et modifiable.
+  collaborationDeclined: boolean;
 };
 
 // Qui a établi l'adresse du bien concurrent : le Localisateur (données publiques : DPE,

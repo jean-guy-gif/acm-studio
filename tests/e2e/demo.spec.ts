@@ -401,6 +401,71 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         'La photo choisie manque au lot',
       ).toHaveCount(1);
 
+      // Mission 115 — le confrère. Le closer précise « Exclusivité : Oui » sur deux concurrents
+      // depuis la page du dossier (M83), puis, sur Prospection : contacté → « Collaboration
+      // refusée » remet le bien en courrier propriétaire, avec la phrase proposée ; contacté →
+      // « Collaboration obtenue » clôt sa prospection, comptée à part.
+      await page.goto(`/builder/${projectId}`);
+      const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
+      await expect(exclusivityGroups.first()).toBeVisible();
+      for (const index of [0, 1]) {
+        const yes = exclusivityGroups.nth(index).getByRole('button', { name: 'Oui', exact: true });
+        await yes.click();
+        await expect(yes).toHaveAttribute('aria-pressed', 'true');
+      }
+      await page.goto(`/prospection?bien=${projectId}`);
+      const colleague = () =>
+        ready
+          .getByTestId('prospecting-card')
+          .filter({ hasText: 'Exclusivité · appeler le confrère' })
+          .first();
+      await expect(
+        ready
+          .getByTestId('prospecting-card')
+          .filter({ hasText: 'Exclusivité · appeler le confrère' }),
+      ).toHaveCount(2);
+
+      // Refusée : le bien repasse propriétaire, et son courrier le dit.
+      const first = colleague();
+      const firstAddress = (await first.innerText()).split('\n')[0];
+      await first.getByRole('button', { name: 'Marquer contacté' }).click();
+      const contacted = ready.getByTestId('prospecting-card').filter({ hasText: firstAddress });
+      await expect(contacted.getByRole('button', { name: 'Collaboration refusée' })).toBeVisible();
+      await expect(contacted.getByRole('button', { name: 'Collaboration obtenue' })).toBeVisible();
+      await expect(contacted.getByRole('button', { name: 'RDV obtenu' })).toHaveCount(0);
+      await contacted.getByRole('button', { name: 'Collaboration refusée' }).click();
+      await expect(contacted.getByTestId('collaboration-declined-badge')).toContainText(
+        'Collaboration refusée',
+      );
+      await expect(contacted.getByText('Propriétaire · aller sonner')).toBeVisible();
+      const ownerLetter = await contacted
+        .getByRole('link', { name: 'Préparer le dossier', exact: true })
+        .getAttribute('href');
+      expect(ownerLetter).toContain('version=owner');
+      await page.goto(ownerLetter!);
+      await expect(page.locator('.pf-doc')).toContainText('elle a refusé cette collaboration');
+      await expectUnspoken(page, 'Courrier propriétaire après refus');
+
+      // Obtenue : le concurrent quitte les biens à prospecter, compté à part.
+      await page.goto(`/prospection?bien=${projectId}`);
+      const second = colleague();
+      const secondAddress = (await second.innerText()).split('\n')[0];
+      await second.getByRole('button', { name: 'Marquer contacté' }).click();
+      await ready
+        .getByTestId('prospecting-card')
+        .filter({ hasText: secondAddress })
+        .getByRole('button', { name: 'Collaboration obtenue' })
+        .click();
+      const closed = page
+        .getByTestId('prospecting-column-meeting')
+        .getByTestId('prospecting-card')
+        .filter({ hasText: secondAddress });
+      await expect(closed.getByTestId('collaboration-badge')).toContainText(
+        'Collaboration obtenue',
+      );
+      await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED - 1);
+      await expect(page.getByTestId('collaborations-counter')).toContainText('1');
+
       // « Ne plus solliciter » sur une carte : inscrit, la carte sort du tableau.
       await page.goto(`/prospection?bien=${projectId}`);
       const refused = ready.getByTestId('prospecting-card').last();
@@ -410,7 +475,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('opposition-notice')).toHaveText(
         'Inscrit : plus aucun courrier pour cette adresse',
       );
-      await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED - 1);
+      await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED - 2);
       console.log('Carte « Ne plus solliciter » (démo) :', refusedText.split('\n')[0]);
 
       // Les courriers en lot et la tournée : la feuille entière porte le filigrane.
@@ -471,6 +536,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(dashboard.getByText('Rendez-vous menés')).toBeVisible();
       const meetings = await dashboard.getByText('Rendez-vous menés').locator('..').innerText();
       expect(withoutSpaces(meetings)).toMatch(/[1-9]/);
+      // Mission 115 — la collaboration obtenue pendant le passage, comptée à part.
+      const collaborations = await dashboard
+        .getByText('Collaborations obtenues')
+        .locator('..')
+        .innerText();
+      expect(withoutSpaces(collaborations)).toMatch(/[1-9]/);
       await expectUnspoken(page, 'Vue manager');
     });
 

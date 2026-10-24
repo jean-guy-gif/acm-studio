@@ -39,6 +39,8 @@ const SENTINELS = {
   prospecting_meeting_at: '2031-01-03T03:04:05.000Z',
   prospecting_mandate_at: '2031-01-04T03:04:05.000Z',
   prospecting_declined_at: null,
+  prospecting_collaboration_at: null,
+  prospecting_collaboration_declined_at: null,
 };
 const LEAKS = [
   'ADRESSE-SECRETE',

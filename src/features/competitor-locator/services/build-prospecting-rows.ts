@@ -21,6 +21,7 @@ import {
   type Oppositions,
 } from '@/features/prospecting/services/opposition';
 import {
+  collaborationDeclined,
   prospectingStatus,
   type ProspectingStatus,
 } from '@/features/prospecting/services/prospecting-status';
@@ -79,6 +80,9 @@ export type ProspectingRow = {
   meetingAt: string | null;
   mandateAt: string | null;
   declinedAt: string | null;
+  // Mission 115 — collaboration obtenue ou refusée avec le confrère.
+  collaborationAt: string | null;
+  collaborationDeclinedAt: string | null;
   // Mission 83 — à qui s'adresser (confrère, propriétaire, à vérifier), et les quatre valeurs
   // que le conseiller corrige d'un clic sur la ligne.
   step: ProspectingStep;
@@ -213,7 +217,10 @@ export function buildProspectingRows(
         meetingAt: competitor.prospecting_meeting_at,
         mandateAt: competitor.prospecting_mandate_at,
         declinedAt: competitor.prospecting_declined_at,
-        step: prospectingStep(competitor),
+        collaborationAt: competitor.prospecting_collaboration_at,
+        collaborationDeclinedAt: competitor.prospecting_collaboration_declined_at,
+        // Mission 115 — après un refus de collaboration, le bien se démarche comme un propriétaire.
+        step: collaborationDeclined(competitor) ? 'owner' : prospectingStep(competitor),
         mandate: {
           id: competitor.id,
           project_id: competitor.project_id,

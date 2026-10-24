@@ -87,6 +87,22 @@ export function ProspectingCard({
             Mandat rentré{shared.mandateAt ? ` · ${shortDate(shared.mandateAt)}` : ''}
           </span>
         ) : null}
+        {/* Mission 115 — la collaboration avec le confrère, obtenue (close) ou refusée (le bien
+            se démarche désormais comme un propriétaire). */}
+        {status === 'collaboration' ? (
+          <span data-testid="collaboration-badge" className={`${badgeSelected} whitespace-nowrap`}>
+            Collaboration obtenue
+            {shared.collaborationAt ? ` · ${shortDate(shared.collaborationAt)}` : ''}
+          </span>
+        ) : null}
+        {shared.collaborationDeclinedAt != null && status !== 'declined' ? (
+          <span
+            data-testid="collaboration-declined-badge"
+            className={`${badgeNeutral} whitespace-nowrap`}
+          >
+            Collaboration refusée · {shortDate(shared.collaborationDeclinedAt)}
+          </span>
+        ) : null}
         {status === 'declined' ? (
           <span className={`${badgeNeutral} whitespace-nowrap`}>
             Pas intéressé{shared.declinedAt ? ` · ${shortDate(shared.declinedAt)}` : ''}
@@ -127,7 +143,7 @@ export function ProspectingCard({
               (M84). Mission 90 — et ensuite, « Corriger l'adresse » reste toujours disponible,
               même quand elle vient du Localisateur : un courrier ne part pas à une adresse
               fausse. */}
-          {status !== 'declined' ? (
+          {status !== 'declined' && status !== 'collaboration' ? (
             <ConfirmAddressActions
               projectId={seller.projectId}
               competitorId={row.id}
@@ -155,6 +171,7 @@ export function ProspectingCard({
               status={status}
               step={step}
               primary={status === 'handed' || status === 'meeting'}
+              refusedCollaboration={shared.collaborationDeclinedAt != null}
             />
           </div>
 

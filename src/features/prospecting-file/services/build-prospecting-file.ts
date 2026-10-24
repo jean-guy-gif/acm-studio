@@ -48,6 +48,9 @@ function nearness(facts: ProspectingFileFacts): { owner: string; colleague: stri
   return { owner: `comparable ${wording.toYourOne}`, colleague: '' };
 }
 
+export const COLLABORATION_DECLINED_SENTENCE =
+  'J’ai proposé à l’agence qui détient votre mandat exclusif de travailler ensemble sur votre vente ; elle a refusé cette collaboration. Je m’adresse donc à vous directement.';
+
 function ownerTexts(facts: ProspectingFileFacts): ProspectingFileTexts {
   const wording = propertyWording(facts.kind);
   const theirs = distinctFacts(facts).theirs;
@@ -56,6 +59,9 @@ function ownerTexts(facts: ProspectingFileFacts): ProspectingFileTexts {
     letter: [
       'Madame, Monsieur,',
       `Je viens de mettre en vente ${wording.a} ${nearness(facts).owner}. En préparant sa mise sur le marché, j’ai étudié les biens qui lui ressemblent vraiment : le vôtre en fait partie.`,
+      // Mission 115 — après un refus de collaboration du confrère : une phrase proposée, que le
+      // conseiller peut réécrire.
+      ...(facts.collaborationDeclined ? [COLLABORATION_DECLINED_SENTENCE] : []),
       `Concrètement, les acquéreurs qui visiteront ${wording.ourNoun} regarderont aussi ${wording.yourOne}. Plutôt que de nous les disputer, je vous propose de les partager.`,
     ].join('\n\n'),
     keyMessage:
