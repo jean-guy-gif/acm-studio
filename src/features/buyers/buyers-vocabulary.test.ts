@@ -13,6 +13,10 @@ const SCOPE = [
   join('features', 'demo', 'services', 'demo-buyers.ts'),
   // Mission 118 — les biens idéaux.
   join('features', 'ideal-properties'),
+  // Mission 119 — la présentation et les visites.
+  join('features', 'buyer-presentation'),
+  join('app', '(protected)', 'visites'),
+  join('app', '(stage)', 'presentation'),
 ];
 
 const files = (dir: string): string[] =>

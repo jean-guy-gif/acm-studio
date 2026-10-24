@@ -322,6 +322,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          presented_at: string | null
         }
         Insert: {
           agency_id: string
@@ -329,6 +330,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          presented_at?: string | null
         }
         Update: {
           agency_id?: string
@@ -336,6 +338,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          presented_at?: string | null
         }
         Relationships: [
           {
@@ -357,6 +360,70 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_visit_requests: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          buyer_selection_item_id: string
+          cancelled_at: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          outcome: string
+          requested_at: string
+          requested_during: string
+          visited_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          buyer_selection_item_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          outcome?: string
+          requested_at?: string
+          requested_during: string
+          visited_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          buyer_selection_item_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          outcome?: string
+          requested_at?: string
+          requested_during?: string
+          visited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_visit_requests_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_visit_requests_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_visit_requests_buyer_selection_item_id_fkey"
+            columns: ["buyer_selection_item_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selection_items"
             referencedColumns: ["id"]
           },
         ]

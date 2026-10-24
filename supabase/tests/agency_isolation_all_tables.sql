@@ -70,6 +70,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyers.cities' then $v$array['Antibes']$v$
     -- Mission 118 — un bien retenu a une source dans la liste.
     when 'buyer_selection_items.source' then $v$'listing'$v$
+    -- Mission 119 — une demande de visite dit pendant quoi elle a été faite.
+    when 'buyer_visit_requests.requested_during' then $v$'conseiller'$v$
     else null
   end
 $$;
