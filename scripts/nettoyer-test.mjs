@@ -20,6 +20,8 @@ const TEST_AGENCY_PREFIX = 'TEST AUTOMATIQUE';
 // Ce que le nettoyage supprime, et ce qu'il garde. Une table à `agency_id` qui n'est dans aucune
 // des deux listes arrête le script : on décide, on ne devine pas.
 const CLEANED = [
+  // Mission 117 — les fiches acquéreur de l'agence de test.
+  'buyers',
   'comparables',
   'competitor_decisions',
   'competitor_prospecting_files',
@@ -191,6 +193,8 @@ begin
   delete from public.prospecting_oppositions where agency_id = v_agency;
   -- Mission 110 — les recherches nommées des comptes de test (les comptes restent).
   delete from public.saved_searches where agency_id = v_agency;
+  -- Mission 117 — les fiches acquéreur de l'agence de test, archivées comprises.
+  delete from public.buyers where agency_id = v_agency;
 end $$`);
 
 const after = countByTable(agency.id);

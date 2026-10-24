@@ -110,3 +110,41 @@ describe('la remise à zéro ne touche qu’aux dossiers de démo du closer conn
     expect(service.writes()).toEqual([]);
   });
 });
+
+// Mission 117 — les deux acquéreurs de la démo vont et viennent avec les dossiers : semés par
+// « Préparer ma démo », retirés par la remise à zéro, dans le seul périmètre du closer.
+describe('les acquéreurs de la démo', () => {
+  it('la remise à zéro ne retire que SES acquéreurs marqués, dans SON agence', async () => {
+    const { deleteDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
+    state.respond = (table) =>
+      table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
+    const removed = await deleteDemoBuyers(service.client as never, {
+      id: 'u-closer',
+      agencyId: AGENCY,
+    });
+    expect(removed).toBe(2);
+    expect(service.writes()).toEqual(['delete buyers']);
+    const filters = service.calls
+      .filter((call) => call.method === 'eq')
+      .map((call) => `${String(call.args[0])}=${String(call.args[1])}`);
+    expect(filters).toEqual([`agency_id=${AGENCY}`, 'advisor_id=u-closer', 'demo=true']);
+  });
+
+  it('« Préparer ma démo » sème deux acquéreurs marqués, au closer, dans son agence', async () => {
+    const { seedDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
+    expect(
+      await seedDemoBuyers(service.client as never, { id: 'u-closer', agencyId: AGENCY }),
+    ).toBe(true);
+    expect(service.writes()).toEqual(['insert buyers']);
+    const rows = service.calls.find((call) => call.method === 'insert')?.args[0] as Record<
+      string,
+      unknown
+    >[];
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(row).toMatchObject({ agency_id: AGENCY, advisor_id: 'u-closer', demo: true });
+      expect(row).not.toHaveProperty('status');
+    }
+    expect(rows.map((row) => row.name)).toEqual(['M. et Mme Rossi', 'Famille Keller']);
+  });
+});
