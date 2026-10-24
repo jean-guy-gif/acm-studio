@@ -528,6 +528,33 @@ describe('les prix de la synthèse (mission 111)', () => {
     expect(html).not.toContain('Prix des concurrents');
   });
 
+  // Mission 116 — le prix convenu en couleur face à l'analyse du conseiller, sur les montants
+  // figés à la conclusion (M111) ; sans analyse, la carte reste telle quelle.
+  it('le prix convenu prend la couleur de son écart à l’analyse figée, avec son libellé', () => {
+    const colour = (commercializationPrice: number, analysis: number | null) =>
+      renderToStaticMarkup(
+        createElement(SellerSynthesisDocument, {
+          synthesis: buildSellerSynthesis({
+            ...base,
+            commercializationPrice,
+            frozen:
+              analysis == null
+                ? null
+                : { advisor_price: analysis, advisor_analysis: analysis, market_computed: 300_000 },
+          }),
+        }),
+      );
+    expect(colour(419_000, 400_000)).toContain('data-alignment="green"');
+    expect(colour(419_000, 400_000)).toContain('Prix aligné sur le marché');
+    expect(colour(420_000, 400_000)).toContain('Proche du marché');
+    expect(colour(440_000, 400_000)).toContain('data-alignment="red"');
+    expect(colour(440_000, 400_000)).toContain('Éloigné du marché');
+    const plain = colour(440_000, null);
+    expect(plain).toContain('data-alignment=""');
+    expect(plain).not.toContain('data-testid="price-alignment"');
+    expect(plain).toContain('Convenu ensemble');
+  });
+
   // Mission 115 — sans désignation, la bande ne nomme pas de plus dangereux.
   it('la bande ne nomme pas de plus dangereux sans désignation', () => {
     const synthesis = buildSellerSynthesis(base);

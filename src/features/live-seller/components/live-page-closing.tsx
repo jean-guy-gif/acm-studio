@@ -14,6 +14,10 @@ import {
   MAX_LIVE_COMMENT_LENGTH,
   MIN_LAUNCH_READINESS,
 } from '@/features/live-seller/constants';
+import {
+  PRICE_ALIGNMENT_TEXT,
+  priceAlignment,
+} from '@/features/price-positioning/services/price-alignment';
 import { formatEuro } from '@/lib/format';
 
 const SCORES = Array.from(
@@ -36,9 +40,13 @@ export function closingQuestion(hasAgreedPrice: boolean): string {
 // de 10, l'écran fait sortir ce qui manque encore ; à 10, on lance la vente. Aucun montant
 // ici, sauf le prix déjà décidé ; rien n'est pré-sélectionné et rien n'est obligatoire.
 // Écran contrôlé par le shell, qui enregistre la note et porte « Terminer le rendez-vous ».
+// Mission 116 — le prix de commercialisation en couleur face à l'analyse du conseiller : titre et
+// montant colorés, le libellé toujours à côté du titre (jamais la couleur seule). Sans analyse
+// du conseiller (M109), aucune couleur ni libellé.
 export function LivePageClosing({
   agreedPrice,
   hasAgreedPrice,
+  advisorAnalysis = null,
   score,
   missing,
   onScore,
@@ -46,6 +54,8 @@ export function LivePageClosing({
 }: {
   // Le prix de commercialisation enregistré pendant cette séance, s'il y en a un.
   agreedPrice: number | null;
+  // Mission 116 — l'analyse du conseiller, la référence de la couleur ; null sans décision.
+  advisorAnalysis?: number | null;
   // Mission 89 — un prix de commercialisation est-il enregistré (cette séance ou une autre) ?
   hasAgreedPrice: boolean;
   score: number | null;
@@ -64,10 +74,7 @@ export function LivePageClosing({
       </div>
 
       {agreedPrice != null ? (
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Prix de commercialisation</div>
-          <div className={bigValue}>{formatEuro(agreedPrice)}</div>
-        </div>
+        <AgreedPrice price={agreedPrice} advisorAnalysis={advisorAnalysis} />
       ) : null}
 
       <div
@@ -108,6 +115,34 @@ export function LivePageClosing({
           </label>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function AgreedPrice({
+  price,
+  advisorAnalysis,
+}: {
+  price: number;
+  advisorAnalysis: number | null;
+}) {
+  const alignment = priceAlignment(price, advisorAnalysis);
+  const tone = alignment ? PRICE_ALIGNMENT_TEXT[alignment.tone] : '';
+  return (
+    <div
+      className={`${panel} flex flex-col gap-1.5`}
+      data-testid="agreed-price"
+      data-alignment={alignment?.tone ?? ''}
+    >
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <div className={`${statLabel} ${tone}`}>Prix de commercialisation</div>
+        {alignment ? (
+          <span data-testid="price-alignment" className={`text-sm font-semibold ${tone}`}>
+            {alignment.label}
+          </span>
+        ) : null}
+      </div>
+      <div className={`${bigValue} ${tone}`}>{formatEuro(price)}</div>
     </div>
   );
 }
