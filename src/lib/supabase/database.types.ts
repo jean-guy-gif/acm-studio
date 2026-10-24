@@ -1204,6 +1204,7 @@ export type Database = {
           role: string
           search_defaults: Json | null
           updated_at: string
+          workspace_mode: string
         }
         Insert: {
           agency_id: string
@@ -1219,6 +1220,7 @@ export type Database = {
           role: string
           search_defaults?: Json | null
           updated_at?: string
+          workspace_mode?: string
         }
         Update: {
           agency_id?: string
@@ -1234,6 +1236,7 @@ export type Database = {
           role?: string
           search_defaults?: Json | null
           updated_at?: string
+          workspace_mode?: string
         }
         Relationships: [
           {

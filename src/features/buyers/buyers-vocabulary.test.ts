@@ -59,13 +59,13 @@ describe('le vocabulaire du mode acquéreur (mission 117)', () => {
     expect(panel).toContain('Enregistrer cette recherche');
   });
 
-  it('le menu porte « Acquéreurs » entre Prospection et Administration', () => {
-    const nav = readFileSync(join(SRC, 'components', 'app-shell', 'sidebar-nav.tsx'), 'utf8');
-    const prospection = nav.indexOf("href: '/prospection'");
-    const buyers = nav.indexOf("href: '/acquereurs'");
-    const admin = nav.indexOf("href: '/admin'");
-    expect(buyers).toBeGreaterThan(prospection);
-    expect(admin).toBeGreaterThan(buyers);
+  it('le menu du mode Acquéreur commence par « Acquéreurs » (M118) et le mode Vendeur ne le porte pas', () => {
+    const nav = readFileSync(
+      join(SRC, 'features', 'workspace-mode', 'services', 'workspace-mode.ts'),
+      'utf8',
+    );
     expect(nav).toContain("label: 'Acquéreurs'");
+    const seller = nav.slice(nav.indexOf('const SELLER_NAV'), nav.indexOf('const BUYER_NAV'));
+    expect(seller).not.toContain('/acquereurs');
   });
 });

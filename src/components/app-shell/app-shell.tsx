@@ -4,6 +4,7 @@ import { SidebarNav, type ErrorsBadge } from '@/components/app-shell/sidebar-nav
 import { AppLogo } from '@/components/theme/app-logo';
 import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
+import type { WorkspaceMode } from '@/features/workspace-mode/types';
 import { btnGhost, softPanel } from '@/components/ui/styles';
 
 // Shell applicatif présentational : barre latérale + zone principale, dans le
@@ -19,6 +20,7 @@ export function AppShell({
   logoDarkUrl = null,
   errorsBadge = null,
   demoEntry = false,
+  workspaceMode = 'seller',
   children,
 }: {
   profileName: string;
@@ -32,6 +34,8 @@ export function AppShell({
   errorsBadge?: ErrorsBadge | null;
   // Mission 114 (partie B) — l'entrée « Ma démo », pour l'agence de démonstration seulement.
   demoEntry?: boolean;
+  // Mission 118 — le mode du menu mémorisé par le conseiller (Vendeur par défaut).
+  workspaceMode?: WorkspaceMode;
   children: React.ReactNode;
 }) {
   return (
@@ -56,7 +60,11 @@ export function AppShell({
                 <AppThemeToggle />
               </span>
             </div>
-            <SidebarNav errorsBadge={errorsBadge} demoEntry={demoEntry} />
+            <SidebarNav
+              errorsBadge={errorsBadge}
+              demoEntry={demoEntry}
+              workspaceMode={workspaceMode}
+            />
           </div>
 
           <div className="hidden flex-col gap-3 md:flex">
