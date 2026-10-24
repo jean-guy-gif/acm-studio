@@ -871,7 +871,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       page
         .getByTestId('presentation-finished')
         .getByRole('link', { name: 'retenez une nouvelle sélection' }),
-    ).toHaveAttribute('href', new RegExp(`${buyerUrl}/biens-ideaux$`));
+    ).toHaveAttribute('href', new RegExp(`/acquereurs/${buyerUrl.split('/').pop()}/biens-ideaux$`));
     await expect(page.getByTestId('presentation-visit')).toHaveCount(0);
     await expect(page.getByTestId('presentation-visit-requested')).toBeVisible();
     // Visites : la demande à planifier, puis « Visite faite » avec un retour et une issue.
