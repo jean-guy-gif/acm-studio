@@ -115,7 +115,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/ma-demo');
       await expect(page.getByTestId('demo-dossiers')).toBeVisible();
       await expectUnspoken(page, 'Ma démo');
-      if ((await page.getByTestId('demo-dossier').count()) === 0) {
+      const prepared = (await page.getByTestId('demo-dossier').count()) === 0;
+      if (prepared) {
         await page.getByRole('button', { name: 'Préparer ma démo' }).click();
         await expect(page.getByTestId('demo-dossier')).toHaveCount(4, { timeout: 180_000 });
       }
@@ -124,7 +125,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
       expect(stages).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
       // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
-      await expectDemoBuyers(page);
+      // Des dossiers préparés avant la mission n'en ont pas : la remise à zéro, en fin de passage,
+      // les prouve alors.
+      if (prepared) await expectDemoBuyers(page);
       // Chacun à sa place : le prêt dans la liste du Live, les deux conclus dans le Suivi.
       await page.goto('/live');
       await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
