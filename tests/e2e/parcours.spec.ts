@@ -42,6 +42,9 @@ const FOURCHETTE = { min: 255_500, max: 345_500 };
 const PERCEIVED_PRICE = 350_000;
 const REVISED_PRICE = 325_000;
 const COMMERCIALIZATION_PRICE = 315_000;
+// Mission 116 — l'analyse du conseiller ; 315 000 € est à +5 % : « Proche du marché », orange.
+const ADVISOR_ANALYSIS = 300_000;
+const PRICE_ALIGNMENT_LABEL = 'Proche du marché';
 const COMMENT = 'Réponse saisie par le test automatique';
 const FOLLOW_UP_NOTE = 'Message laissé, d’après le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
@@ -282,6 +285,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     );
     // Mission 110 — avant la décision, pas d'« Étape suivante » ici : c'est cet écran qui l'est.
     await expect(page.getByTestId('next-step')).toHaveCount(0);
+    // Mission 116 — l'analyse du conseiller : la référence de la couleur du prix convenu.
+    await page
+      .locator('label')
+      .filter({ hasText: 'Votre analyse de valeur' })
+      .locator('input')
+      .fill(String(ADVISOR_ANALYSIS));
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     // Puis l'étape suivante dit quoi faire : lancer le Live.
@@ -910,6 +919,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     ).toBeVisible();
     // Mission 115 — la bande nomme le plus dangereux désigné pendant le Live.
     await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
+    // Mission 116 — le prix convenu en couleur, sur les montants figés, libellé compris.
+    await expect(synthesis.getByTestId('agreed-price')).toHaveAttribute('data-alignment', 'orange');
+    await expect(synthesis.getByTestId('price-alignment')).toHaveText(PRICE_ALIGNMENT_LABEL);
     await expect(synthesis).not.toContainText(
       /que nous vous proposons|Prix retenu par votre conseiller/,
     );
@@ -1428,6 +1440,12 @@ async function walkLive(
     }),
   ).toBeVisible();
   await onScreen('Prêt à lancer ?');
+  // Mission 116 — le prix de commercialisation en couleur, son libellé à côté du titre. Au second
+  // passage (rechargement), le montant ne s'affiche plus (M85) : ni couleur, ni libellé.
+  if (firstPass) {
+    await expect(page.getByTestId('agreed-price')).toHaveAttribute('data-alignment', 'orange');
+    await expect(page.getByTestId('price-alignment')).toHaveText(PRICE_ALIGNMENT_LABEL);
+  }
   const scale = page.getByRole('group', { name: 'Votre note, de 1 à 10' });
   await expect(scale.getByRole('button')).toHaveCount(10);
   const score = (value: number) => scale.getByRole('button', { name: String(value), exact: true });

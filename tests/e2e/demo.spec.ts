@@ -300,6 +300,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Avant le rendez-vous : la décision de prix, le dossier est prêt', async () => {
       await page.goto(`/builder/${projectId}/avant-rendez-vous`);
       await expect(page.getByText(/[1-9]\d* informations? importées? à vérifier/)).toBeVisible();
+      // Mission 116 — l'analyse du conseiller : le prix convenu sera en couleur face à elle.
+      await page
+        .locator('label')
+        .filter({ hasText: 'Votre analyse de valeur' })
+        .locator('input')
+        .fill(String(LISTED_PRICE));
       await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
       await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
       await expectUnspoken(page, 'Avant le rendez-vous');
@@ -546,6 +552,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expectUnspoken(page, 'Synthèse');
       await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(RETAINED + 1);
       await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
+      await expect(synthesis.getByTestId('agreed-price')).toHaveAttribute(
+        'data-alignment',
+        'green',
+      );
+      await expect(synthesis.getByTestId('price-alignment')).toHaveText(
+        'Prix aligné sur le marché',
+      );
       const text = await synthesis.innerText();
       expect(text).not.toMatch(/Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid/);
       for (const bound of [FOURCHETTE.min, FOURCHETTE.max]) {
@@ -940,6 +953,11 @@ async function walkLive(
     }),
   ).toBeVisible();
   await onScreen('Prêt à lancer ?');
+  // Mission 116 — 392 500 € face à 405 000 € : « Prix aligné sur le marché », vert.
+  if (firstPass) {
+    await expect(page.getByTestId('agreed-price')).toHaveAttribute('data-alignment', 'green');
+    await expect(page.getByTestId('price-alignment')).toHaveText('Prix aligné sur le marché');
+  }
   const scale = page.getByRole('group', { name: 'Votre note, de 1 à 10' });
   const score = (value: number) => scale.getByRole('button', { name: String(value), exact: true });
   if (firstPass) {

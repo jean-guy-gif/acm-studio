@@ -2,6 +2,7 @@
 import { RemoteImage } from '@/components/ui/remote-image';
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import { bandPosition } from '@/features/live-seller/services/market-reading';
+import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import { SERIOUS_COMPETITOR_LABELS } from '@/features/live-seller/constants';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
 import {
@@ -259,6 +260,14 @@ function CompetitorCard({
 
 type Marker = { label: string; value: number; tone: 'muted' | 'brand' | 'deep' | 'dark' };
 
+// Mission 116 — les couleurs du prix convenu, lisibles à l'écran comme à l'impression ; en noir
+// et blanc, le libellé suffit.
+const ALIGNMENT_TONE = {
+  green: { text: 'text-emerald-700', border: 'border-emerald-600' },
+  orange: { text: 'text-amber-700', border: 'border-amber-500' },
+  red: { text: 'text-red-700', border: 'border-red-600' },
+} as const;
+
 // La bande des prix affichés (M94), avec ses repères.
 function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] }) {
   const all = [...prices, ...markers.map((marker) => marker.value)];
@@ -390,6 +399,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
       : null,
   ];
   const pathMarkers = pathCandidates.filter((item): item is Marker => item != null);
+  // Mission 116 — la couleur du prix convenu, sur les montants figés à la conclusion (M111).
+  const agreedAlignment = priceAlignment(
+    synthesis.commercializationPrice,
+    decision?.advisorAnalysis ?? null,
+  );
   const steps = [
     synthesis.perceivedPrice != null
       ? { label: 'Au début', value: synthesis.perceivedPrice, hint: 'Votre valeur perçue' }
@@ -738,6 +752,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             <div className="flex flex-col gap-2 break-inside-avoid sm:flex-row sm:items-stretch">
               {steps.map((step, index) => {
                 const last = step.label === 'Convenu ensemble';
+                // Mission 116 — le prix convenu en couleur face à l'analyse du conseiller, sur les
+                // montants figés à la conclusion (M111) : titre et montant colorés, le libellé à
+                // côté. Sans analyse, la carte reste telle quelle.
+                const alignment = last ? agreedAlignment : null;
+                const toneClass = alignment ? ALIGNMENT_TONE[alignment.tone] : null;
                 return (
                   <div
                     key={step.label}
@@ -749,19 +768,43 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                       </span>
                     ) : null}
                     <div
-                      className={`flex-1 px-4 py-4 ${last ? 'bg-brand-deep text-white' : 'border border-zinc-200 bg-white'}`}
+                      className={`flex-1 px-4 py-4 ${
+                        toneClass
+                          ? `border-2 bg-white ${toneClass.border}`
+                          : last
+                            ? 'bg-brand-deep text-white'
+                            : 'border border-zinc-200 bg-white'
+                      }`}
+                      data-testid={last ? 'agreed-price' : undefined}
+                      data-alignment={last ? (alignment?.tone ?? '') : undefined}
                     >
-                      <div
-                        className={`text-[0.62rem] font-semibold tracking-[0.14em] uppercase ${last ? 'text-white/75' : 'text-zinc-500'}`}
-                      >
-                        {step.label}
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <div
+                          className={`text-[0.62rem] font-semibold tracking-[0.14em] uppercase ${
+                            toneClass ? toneClass.text : last ? 'text-white/75' : 'text-zinc-500'
+                          }`}
+                        >
+                          {step.label}
+                        </div>
+                        {alignment && toneClass ? (
+                          <span
+                            data-testid="price-alignment"
+                            className={`text-xs font-semibold ${toneClass.text}`}
+                          >
+                            {alignment.label}
+                          </span>
+                        ) : null}
                       </div>
                       <div
-                        className={`font-title text-[1.7rem] leading-tight font-bold ${last ? '' : 'text-brand-darker'}`}
+                        className={`font-title text-[1.7rem] leading-tight font-bold ${
+                          toneClass ? toneClass.text : last ? '' : 'text-brand-darker'
+                        }`}
                       >
                         {formatEuro(step.value)}
                       </div>
-                      <div className={`text-xs ${last ? 'text-white/80' : 'text-zinc-500'}`}>
+                      <div
+                        className={`text-xs ${toneClass ? 'text-zinc-600' : last ? 'text-white/80' : 'text-zinc-500'}`}
+                      >
                         {step.hint}
                       </div>
                     </div>

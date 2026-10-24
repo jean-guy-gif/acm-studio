@@ -1060,6 +1060,7 @@ export function LiveComparativeShell({
           <LivePageClosing
             agreedPrice={agreedPrice}
             hasAgreedPrice={hasAgreedPrice || agreedPrice != null}
+            advisorAnalysis={effectiveRange?.priceGaps.advisorComparativePrice ?? null}
             score={closing.last}
             missing={closing.missing}
             onScore={handleClosingScore}
