@@ -20,7 +20,9 @@ const TEST_AGENCY_PREFIX = 'TEST AUTOMATIQUE';
 // Ce que le nettoyage supprime, et ce qu'il garde. Une table à `agency_id` qui n'est dans aucune
 // des deux listes arrête le script : on décide, on ne devine pas.
 const CLEANED = [
-  // Mission 117 — les fiches acquéreur de l'agence de test.
+  // Mission 118 — les sélections de biens idéaux, puis les fiches acquéreur de l'agence de test.
+  'buyer_selection_items',
+  'buyer_selections',
   'buyers',
   'comparables',
   'competitor_decisions',
@@ -193,7 +195,10 @@ begin
   delete from public.prospecting_oppositions where agency_id = v_agency;
   -- Mission 110 — les recherches nommées des comptes de test (les comptes restent).
   delete from public.saved_searches where agency_id = v_agency;
-  -- Mission 117 — les fiches acquéreur de l'agence de test, archivées comprises.
+  -- Mission 117 — les fiches acquéreur de l'agence de test, archivées comprises ; mission 118 —
+  -- leurs sélections partent avec elles (cascade), supprimées ici explicitement.
+  delete from public.buyer_selection_items where agency_id = v_agency;
+  delete from public.buyer_selections where agency_id = v_agency;
   delete from public.buyers where agency_id = v_agency;
 end $$`);
 

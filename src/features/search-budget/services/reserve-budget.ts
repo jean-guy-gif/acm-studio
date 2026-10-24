@@ -19,7 +19,9 @@ export type BudgetReservation =
 
 export async function reserveSearchBudget(input: {
   agencyId: string;
-  projectId: string;
+  // Mission 118 — une recherche pour un acquéreur n'a pas de dossier : la consommation reste à
+  // l'agence, sans dossier (comme après la suppression d'un dossier, M100).
+  projectId: string | null;
   userId: string;
   wanted: number;
   now?: Date;
@@ -27,7 +29,8 @@ export async function reserveSearchBudget(input: {
   try {
     const { data, error } = await createServiceRoleClient().rpc('reserve_stream_estate_budget', {
       p_agency_id: input.agencyId,
-      p_project_id: input.projectId,
+      // Le type généré veut un texte ; la fonction accepte NULL (la colonne est nullable, M100).
+      p_project_id: input.projectId as string,
       p_user_id: input.userId,
       p_wanted: input.wanted,
       p_since: startOfParisMonth(input.now ?? new Date()).toISOString(),

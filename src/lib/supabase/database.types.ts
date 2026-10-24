@@ -249,6 +249,118 @@ export type Database = {
           },
         ]
       }
+      buyer_selection_items: {
+        Row: {
+          agency_id: string
+          category: string | null
+          created_at: string
+          gaps: string[]
+          id: string
+          imported: Json | null
+          label: string
+          listed_price: number | null
+          position: number
+          price_seen_on: string | null
+          reference: string
+          selection_id: string
+          snapshot: Json | null
+          source: string
+        }
+        Insert: {
+          agency_id: string
+          category?: string | null
+          created_at?: string
+          gaps?: string[]
+          id?: string
+          imported?: Json | null
+          label: string
+          listed_price?: number | null
+          position: number
+          price_seen_on?: string | null
+          reference: string
+          selection_id: string
+          snapshot?: Json | null
+          source: string
+        }
+        Update: {
+          agency_id?: string
+          category?: string | null
+          created_at?: string
+          gaps?: string[]
+          id?: string
+          imported?: Json | null
+          label?: string
+          listed_price?: number | null
+          position?: number
+          price_seen_on?: string | null
+          reference?: string
+          selection_id?: string
+          snapshot?: Json | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_selection_items_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_selection_items_selection_id_fkey"
+            columns: ["selection_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_selections: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_selections_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_selections_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_selections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyers: {
         Row: {
           advisor_id: string

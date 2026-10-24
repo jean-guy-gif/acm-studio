@@ -1005,4 +1005,47 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   );
   await expect(panel.getByText(/correspond(ent)? à cet acquéreur/)).toBeVisible();
   await expect(panel.getByText('M. Lefebvre').first()).toBeVisible();
+
+  // Mission 118 (partie B) — « Trouver les biens idéaux » : l'agence d'abord (le mandat de
+  // Mougins), puis le marché simulé (M114), en trois catégories ; trois biens retenus, retrouvés.
+  await page.goBack();
+  await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
+  await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
+  await expectUnspoken(page, 'Biens idéaux');
+  // Le mandat de Mougins, et ses concurrents à prospecter, tous « Pour : M. Lefebvre ».
+  const mandate = page
+    .getByTestId('ideal-agency-hit')
+    .filter({ hasText: 'Mes mandats' })
+    .filter({ hasText: 'M. Lefebvre' });
+  await expect(mandate).toHaveCount(1);
+  await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
+  await page
+    .getByTestId('ideal-paid-confirm')
+    .getByRole('button', { name: 'Lancer et payer' })
+    .click();
+  await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce facturée');
+  for (const category of ['strong', 'compromise', 'explore']) {
+    await expect(page.getByTestId(`ideal-category-${category}`)).toBeVisible();
+  }
+  await expect(page.getByText(/disponible/i)).toHaveCount(0);
+  await expect(page.getByTestId('ideal-market-hit').first()).toContainText(
+    /affiché le \d{2}\/\d{2}\/\d{4}/,
+  );
+  // Trois biens : le mandat de l'agence, puis les deux premiers du marché.
+  await mandate.getByRole('checkbox').check();
+  const marketBoxes = page.getByTestId('ideal-market-hit').getByRole('checkbox');
+  await marketBoxes.nth(0).check();
+  await marketBoxes.nth(1).check();
+  await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (3/3)');
+  await expect(marketBoxes.nth(2)).toBeDisabled();
+  await page.getByTestId('ideal-retain').click();
+  await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 3 biens.', {
+    timeout: 30_000,
+  });
+  await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
+  await expectUnspoken(page, 'Biens idéaux, sélection retenue');
+  await page.goto('/acquereurs');
+  await page.getByRole('link', { name: 'Famille Keller' }).click();
+  await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 }

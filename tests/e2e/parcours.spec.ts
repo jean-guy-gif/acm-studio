@@ -779,6 +779,35 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(field('Communes')).toHaveValue('Nice');
     await expect(field('Pièces \\(minimum\\)')).toHaveValue('3');
 
+    // Mission 118 (partie B) — « Trouver les biens idéaux » : l'agence d'abord (le mandat signé de
+    // ce passage), puis le marché, payant : l'avertissement du coût s'affiche, la recherche n'est
+    // PAS lancée (aucun appel payant dans les tests, M99 ; l'agence de test n'est pas de démo) ;
+    // un bien retenu, retrouvé sur la fiche.
+    await page.goto(buyerUrl);
+    await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
+    await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
+    await expect(page.getByTestId('ideal-title')).toContainText(buyerName);
+    const agencyHits = page.getByTestId('ideal-agency-hit');
+    await expect(agencyHits.filter({ hasText: dossierName })).toHaveCount(1);
+    await expect(page.getByText(/disponible/i)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
+    const paid = page.getByTestId('ideal-paid-confirm');
+    await expect(paid).toContainText('Recherche payante sur le marché : jusqu’à 0,60 €');
+    await paid.getByRole('button', { name: 'Annuler' }).click();
+    await expect(paid).toHaveCount(0);
+    await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);
+    await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+    await agencyHits.filter({ hasText: dossierName }).getByRole('checkbox').check();
+    await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
+    await page.getByTestId('ideal-retain').click();
+    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
+    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(1);
+    await expect(page.getByTestId('ideal-selection-item')).toContainText('Dans l’agence');
+    await page.goto(buyerUrl);
+    await expect(page.getByTestId('ideal-selection')).toContainText(
+      'Appartement · 3 pièces · 65 m²',
+    );
+
     // Le statut, un cran à la fois ; puis « Archiver » : disparue de la liste et de son adresse.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-status').getByRole('button', { name: 'En visite' }).click();
