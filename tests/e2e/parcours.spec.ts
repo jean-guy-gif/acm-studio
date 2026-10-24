@@ -766,6 +766,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toHaveCount(0);
     const gone = await page.goto(buyerUrl);
     expect(gone?.status()).toBe(404);
+    // La suite du parcours repart du Suivi.
+    await page.goto('/suivi');
   });
 
   await test.step('Prospection filtrée sur le bien, jusqu’au dossier remis', async () => {
