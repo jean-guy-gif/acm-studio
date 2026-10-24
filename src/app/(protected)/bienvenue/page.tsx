@@ -11,6 +11,9 @@ import {
   pageTitle,
   sectionTitle,
 } from '@/components/ui/styles';
+import { DemoDossiersPanel } from '@/features/demo/components/demo-dossiers-panel';
+import { getDemoDossiers } from '@/features/demo/queries/get-demo-dossiers';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { openExampleDossier } from '@/features/welcome/actions/open-example-dossier';
 import { WelcomeChecklist } from '@/features/welcome/components/welcome-checklist';
 import { WELCOME_STEPS } from '@/features/welcome/services/welcome';
@@ -25,6 +28,9 @@ type WelcomePageProps = {
 export default async function WelcomePage({ searchParams }: WelcomePageProps) {
   const { error } = await searchParams;
   const profile = await getProfile();
+  // Mission 114 (partie B) — dans l'agence de démonstration, « Ma démo » est aussi ici.
+  const demo = profile ? await isDemoAgency(profile.agency_id) : false;
+  const demoDossiers = demo ? await getDemoDossiers() : [];
 
   return (
     <div className="flex max-w-3xl flex-col gap-6 md:gap-8">
@@ -65,6 +71,8 @@ export default async function WelcomePage({ searchParams }: WelcomePageProps) {
           ))}
         </ol>
       </section>
+
+      {demo ? <DemoDossiersPanel dossiers={demoDossiers} /> : null}
 
       <section className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
         <h2 className={sectionTitle}>Essayer sans risque</h2>

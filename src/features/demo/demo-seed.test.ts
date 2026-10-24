@@ -1,0 +1,95 @@
+import { describe, expect, it } from 'vitest';
+
+import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
+import {
+  DEMO_SEED_COMPETITORS,
+  DEMO_STAGE_LABELS,
+  DEMO_STAGE_SCENARIO,
+  DEMO_STAGES,
+  demoSeedCompetitors,
+  demoSeedPlan,
+} from '@/features/demo/services/demo-seed';
+
+// Mission 114 (partie B) — les quatre dossiers d'un closer, décrits avant d'être écrits : quatre
+// étapes, chacune son scénario ; le bien tel que l'import le remplit (jamais le prix, M38) ; cinq
+// concurrents, dont un qui baisse après le rendez-vous ; un Live et une conclusion pour les deux
+// dossiers conclus ; rien ne dit « démo ».
+const NOW = new Date('2026-10-24T10:00:00.000Z');
+const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
+
+describe('le plan des dossiers de démo', () => {
+  it('quatre étapes, nommées, chacune avec son scénario', () => {
+    expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+    for (const stage of DEMO_STAGES) {
+      expect(DEMO_STAGE_LABELS[stage]).not.toMatch(UNSPOKEN);
+      expect(DEMO_SCENARIOS.some((s) => s.id === DEMO_STAGE_SCENARIO[stage])).toBe(true);
+    }
+  });
+
+  it('« À préparer » : un dossier nu, le bien reste à importer', () => {
+    const plan = demoSeedPlan('to_prepare', NOW);
+    expect(plan.scenario.id).toBe('antibes');
+    expect(plan.property).toBeNull();
+    expect(plan.competitors).toEqual([]);
+    expect(plan.live).toBeNull();
+    expect(plan.conclusion).toBeNull();
+    expect(plan.sellerName).not.toMatch(UNSPOKEN);
+  });
+
+  it('« Prêt pour le Live » : le bien (sans son prix), sa fourchette, cinq concurrents, pas de Live', () => {
+    const plan = demoSeedPlan('ready', NOW);
+    expect(plan.scenario.id).toBe('vence');
+    const property = plan.property!;
+    expect(property.surface_area).toBe(plan.scenario.subject.surfaceArea);
+    expect(property.city).toBe('Vence');
+    expect(property.advisor_price_min).toBe(plan.scenario.subject.advisorRange.min);
+    expect(property.advisor_price_max).toBe(plan.scenario.subject.advisorRange.max);
+    expect(JSON.stringify(property)).not.toContain(String(plan.scenario.subject.listedPrice));
+    expect(property.fields_to_verify).toEqual([]);
+    expect(plan.photoFiles).toHaveLength(3);
+    expect(plan.competitors).toHaveLength(DEMO_SEED_COMPETITORS);
+    for (const competitor of plan.competitors) {
+      expect(competitor.data.price).toBe(competitor.listing.price);
+      expect(competitor.guess).toBeLessThan(competitor.listing.price);
+      expect(competitor.data.title).not.toMatch(UNSPOKEN);
+    }
+    expect(plan.live).toBeNull();
+    expect(plan.conclusion).toBeNull();
+  });
+
+  it('« Mandat signé » : un Live mené, un mandat exclusif, une adresse « Ne plus solliciter »', () => {
+    const plan = demoSeedPlan('signed', NOW);
+    expect(plan.scenario.id).toBe('mougins');
+    expect(plan.live).toMatchObject({ readinessFirst: 7, readinessLast: 10, dangerousIndex: 0 });
+    expect(plan.live!.perceivedPrice).toBeGreaterThan(plan.live!.revisedPrice);
+    expect(plan.live!.agreedPrice).toBeLessThan(plan.live!.revisedPrice);
+    expect(plan.conclusion).toEqual({ outcome: 'signed', mandateType: 'exclusive' });
+    expect(plan.priceDrop).toBeNull();
+    expect(plan.opposedAddress).toMatch(/Mougins$/);
+  });
+
+  it('« À relancer » : conclu avec un motif et des freins, et un concurrent qui a baissé depuis', () => {
+    const plan = demoSeedPlan('follow_up', NOW);
+    expect(plan.scenario.id).toBe('antibes');
+    expect(plan.conclusion).toEqual({
+      outcome: 'follow_up',
+      motive: 'thinking_price',
+      objections: ['price', 'timing'],
+    });
+    expect(plan.priceDrop).not.toBeNull();
+    const dropped = plan.competitors[plan.priceDrop!.index];
+    expect(plan.priceDrop!.price).toBeLessThan(dropped.listing.price);
+    expect(plan.opposedAddress).toBeNull();
+  });
+
+  it('les concurrents retenus sont les plus proches du prix du bien, un qui baisse toujours parmi eux', () => {
+    for (const scenario of DEMO_SCENARIOS) {
+      const chosen = demoSeedCompetitors(scenario);
+      expect(chosen).toHaveLength(DEMO_SEED_COMPETITORS);
+      expect(new Set(chosen.map((c) => c.id)).size).toBe(DEMO_SEED_COMPETITORS);
+      expect(chosen.some((c) => c.priceAfterMeeting != null && c.priceAfterMeeting < c.price)).toBe(
+        true,
+      );
+    }
+  });
+});
