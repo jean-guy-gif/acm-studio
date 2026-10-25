@@ -1,5 +1,9 @@
 import 'server-only';
 
+import {
+  elevatorFromLabels,
+  poolFromLabels,
+} from '@/features/competitor-search/services/stream-estate-features';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { observedPriceDrops } from '@/features/buyer-presentation/queries/observed-price-drops';
@@ -64,7 +68,7 @@ export async function presentedItems(
         ? supabase
             .from('comparables')
             .select(
-              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, general_condition, listing_published_at',
+              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, general_condition, listing_published_at, listing_features',
             )
             .eq('agency_id', agencyId)
             .in('id', competitorIds)
@@ -141,6 +145,9 @@ export async function presentedItems(
     }
     if (item.source === 'competitor') {
       const competitor = competitorById.get(item.reference);
+      // La piscine et l'ascenseur d'un concurrent : dans les étiquettes de son annonce (essai de
+      // Jean-Guy, 25/10 : trois villas avec piscine montraient « ? »).
+      const labels = strings(competitor?.listing_features);
       return {
         ...base,
         city: competitor?.city ?? null,
@@ -154,8 +161,8 @@ export async function presentedItems(
         photos: httpsOnly(strings(competitor?.photo_urls)),
         propertyType: competitor?.property_type ?? null,
         floor: null,
-        hasPool: null,
-        hasElevator: null,
+        hasPool: poolFromLabels(labels),
+        hasElevator: elevatorFromLabels(labels),
         condition: competitor?.general_condition ?? null,
         listedSince: competitor?.listing_published_at ?? null,
         priceDrop: drops.get(item.id) ?? null,
@@ -169,6 +176,8 @@ export async function presentedItems(
     const outdoorFeature = (features?.outdoor ?? null) as { present?: unknown } | null;
     const streamEstate = (snapshot?.streamEstate ?? null) as Record<string, unknown> | null;
     const features122 = features ?? {};
+    // Les étiquettes lues à l'import d'abord, sinon ce que la recherche en a dit (M118).
+    const importedLabels = imported ? list(imported.listingFeatures) : [];
     return {
       ...base,
       city: str(imported?.city) ?? str(snapshot?.city),
@@ -183,8 +192,8 @@ export async function presentedItems(
       photos: httpsOnly(imported ? list(imported.photoUrls) : list(snapshot?.photoUrls)),
       propertyType: str(imported?.propertyType) ?? str(snapshot?.propertyType),
       floor: num(imported?.floor) ?? num(features122.floor),
-      hasPool: bool(features122.hasPool),
-      hasElevator: bool(features122.hasElevator),
+      hasPool: poolFromLabels(importedLabels) ?? bool(features122.hasPool),
+      hasElevator: elevatorFromLabels(importedLabels) ?? bool(features122.hasElevator),
       condition: str(imported?.generalCondition) ?? str(features122.condition),
       // La date de mise en vente que l'annonce publie (M47) ; jamais le premier passage de Stream
       // Estate, qui n'est pas la date du portail (M101).

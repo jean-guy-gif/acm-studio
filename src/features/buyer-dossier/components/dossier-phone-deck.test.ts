@@ -128,6 +128,15 @@ const render = (over: Partial<Parameters<typeof DossierPhoneDeck>[0]> = {}) =>
 // sélection : le déroulé à répondre, le merci après sa réponse, « Ce que nous avons vu ensemble »
 // après la présentation ; jamais le formulaire une fois la réponse donnée.
 describe('le lien du dossier sur téléphone', () => {
+  // Essai de Jean-Guy (25/10) : la barre n'est plus fixée en bas, où elle recouvrait « Pas pour
+  // moi » ; elle suit le contenu, sous les réponses.
+  it('la barre du téléphone suit le contenu, jamais fixée par-dessus les réponses', () => {
+    const page = render();
+    const nav = page.slice(page.indexOf('<nav'), page.indexOf('data-testid="dossier-nav"'));
+    expect(nav).not.toMatch(/\bfixed\b/);
+    expect(page.indexOf('data-testid="dossier-nav"')).toBeGreaterThan(page.indexOf('</main>'));
+  });
+
   it('pas encore répondu : le déroulé, et « Télécharger en PDF » à la fin', () => {
     const page = render();
     expect(page).toContain('data-testid="dossier-phone-deck"');
@@ -261,8 +270,10 @@ describe('la page du lien et son document imprimable', () => {
     page.indexOf('data-testid="dossier-print"'),
   );
 
-  it('le document est présent, caché à l’écran, seul à l’impression', () => {
-    expect(page).toMatch(/class="hidden print:block" data-testid="dossier-print"/);
+  it('le document est présent, hors de l’écran (ses photos se chargent), seul à l’impression', () => {
+    expect(page).toMatch(
+      /aria-hidden="true" class="pointer-events-none fixed top-0 -left-\[10000px\] w-\[210mm\] print:static print:w-auto" data-testid="dossier-print"/,
+    );
     expect(printPart).toContain('data-testid="buyer-dossier"');
     expect(printPart).toContain('data-testid="dossier-choices"');
     expect(page).toMatch(/class="print:hidden" data-testid="dossier-screen"/);

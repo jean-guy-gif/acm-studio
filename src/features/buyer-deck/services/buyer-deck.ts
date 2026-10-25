@@ -20,6 +20,7 @@ import { normalizePropertyType } from '@/features/competitor-search/utils/normal
 import { DPE_CLASSES, dpeClass } from '@/features/dpe/services/dpe';
 import { BUDGET_MARGIN_PERCENT } from '@/features/ideal-properties/services/ideal-criteria';
 import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
+import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import {
   buyerCommuneKey,
   communeCovered,
@@ -354,13 +355,59 @@ export function clampPitch(text: string): string {
   return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:]+$/, '')}…`;
 }
 
-// « Pourquoi je vous le propose » — proposée par l'outil depuis les SEULS faits de la grille :
-// combien de critères il coche, et ceux qui sont à voir ensemble. Jamais un adjectif que les faits
-// ne portent pas.
-export function proposedPitch(marks: DeckMark[]): string | null {
+// Les faits les plus forts, dans cet ordre, parmi ses indispensables satisfaits (décision de
+// Jean-Guy, 25/10) : par eux commence « Pourquoi je vous le propose », jamais par un doute.
+const STRONG_CRITERIA: BuyerCriterion[] = ['surface', 'outdoor', 'pool', 'cities', 'budget'];
+
+function strongFact(mark: DeckMark): string | null {
+  switch (mark.criterion) {
+    case 'surface':
+      return mark.text;
+    case 'outdoor':
+      return mark.text.toLocaleLowerCase('fr-FR');
+    case 'pool':
+      return 'une piscine';
+    case 'cities':
+      return mark.text.replace(/^À /, 'à ');
+    case 'budget':
+      return 'dans votre budget';
+    default:
+      return null;
+  }
+}
+
+const capitalize = (text: string): string =>
+  text.length > 0 ? `${text[0]!.toLocaleUpperCase('fr-FR')}${text.slice(1)}` : text;
+
+// « Pourquoi je vous le propose » — proposée par l'outil depuis les SEULS faits de la grille.
+// Elle commence par les faits les plus forts parmi ses indispensables satisfaits (« 210 m²,
+// terrasse, jardin, une piscine, à Mougins, dans votre budget. »), puis dit combien de critères il
+// coche ; les « ? » restent dans la liste du bien, jamais en tête. Sans indispensable satisfait
+// parmi eux : combien il en coche, et ceux qui sont à voir ensemble. Jamais un adjectif que les
+// faits ne portent pas.
+export function proposedPitch(
+  marks: DeckMark[],
+  mustHave: ReadonlySet<BuyerCriterion> = new Set(),
+): string | null {
   const total = marks.length;
   if (total === 0) return null;
   const ok = marks.filter((mark) => mark.mark === 'ok').length;
+  const strong = STRONG_CRITERIA.map((criterion) =>
+    marks.find(
+      (mark) => mark.criterion === criterion && mark.mark === 'ok' && mustHave.has(criterion),
+    ),
+  )
+    .map((mark) => (mark ? strongFact(mark) : null))
+    .filter((fact): fact is string => fact != null && fact !== '');
+  if (strong.length > 0) {
+    const count =
+      ok === total
+        ? total === 1
+          ? 'Il coche votre critère.'
+          : `Il coche vos ${total} critères.`
+        : `Il coche ${plural(ok, 'critère', 'critères')} sur ${total}.`;
+    return clampPitch(`${capitalize(strong.join(', '))}. ${count}`);
+  }
   if (ok === total) {
     return total === 1 ? 'Il coche votre critère.' : `Il coche vos ${total} critères.`;
   }
@@ -442,11 +489,19 @@ export function buildBuyerDeck(input: {
   const ordered = [...input.items].sort((a, b) => a.position - b.position);
   const items = ordered.map((raw, index): DeckItem => {
     const item = allowedItem(raw);
+    const budgetTone = priceAlignment(item.price, input.buyer.budgetMax)?.tone ?? null;
     const marks = criteria.map((row): DeckMark => {
       const verdict = judgeForBuyer(row.criterion, input.buyer, item);
-      return { criterion: row.criterion, ...verdict };
+      return {
+        criterion: row.criterion,
+        ...verdict,
+        tone: row.criterion === 'budget' ? budgetTone : null,
+      };
     });
-    const proposed = proposedPitch(marks);
+    const proposed = proposedPitch(
+      marks,
+      new Set(criteria.filter((row) => row.mustHave).map((row) => row.criterion)),
+    );
     const blockedBy = marks
       .filter((mark, rowIndex) => criteria[rowIndex]?.mustHave && mark.mark === 'no')
       .map((mark) => mark.text);

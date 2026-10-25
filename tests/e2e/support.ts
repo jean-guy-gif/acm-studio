@@ -408,3 +408,43 @@ export function removeDemoRunDossiers(since: Date): { dossiers: number; oppositi
   };
   return { dossiers: read('dossiers'), oppositions: read('oppositions') };
 }
+
+// Mission 122 (partie B, essai de Jean-Guy, 25/10) — « le lien enregistre une réponse différente
+// de celle touchée » : un message à l'écran ne prouve pas une ligne écrite (comme les oppositions,
+// M103). Les réponses « depuis le lien » de la sélection la plus récente d'un acquéreur de l'agence
+// de DÉMONSTRATION du compte de démo, lues EN BASE par la CLI Supabase du poste ; lecture seule.
+export type LinkAnswerRow = { position: number; answer: string; reasons: string[] };
+
+export function readDemoLinkAnswers(buyerName: string): LinkAnswerRow[] {
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  const name = buyerName.replace(/'/g, "''");
+  const sql = `with demo_agency as (
+    select a.id from public.profiles p join public.agencies a on a.id = p.agency_id
+    where lower(p.email) = lower('${email}') and a.is_demo
+  ), latest as (
+    select s.id from public.buyer_selections s join public.buyers b on b.id = s.buyer_id
+    where b.agency_id in (select id from demo_agency) and b.name = '${name}' and b.archived_at is null
+    order by s.created_at desc limit 1
+  )
+  select coalesce(json_agg(json_build_object('position', i.position, 'answer', r.answer,
+    'reasons', r.reasons) order by i.position), '[]'::json)::text as reponses
+  from public.buyer_item_responses r
+  join public.buyer_selection_items i on i.id = r.selection_item_id
+  where i.selection_id in (select id from latest) and r.answered_during = 'dossier'`;
+  let output: string;
+  try {
+    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'Les réponses du lien n’ont pas pu être lues : `supabase db query --linked` a échoué.',
+    );
+  }
+  const rows = /"reponses":\s*"((?:[^"\\]|\\.)*)"/.exec(output)?.[1];
+  if (rows === undefined) {
+    throw new Error('Réponse inattendue de `supabase db query` à la lecture des réponses du lien.');
+  }
+  return JSON.parse(JSON.parse(`"${rows}"`)) as LinkAnswerRow[];
+}

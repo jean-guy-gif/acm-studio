@@ -11,6 +11,7 @@ import {
   removeDemoRunDossiers,
   uniqueDossierName,
   withoutSpaces,
+  readDemoLinkAnswers,
 } from './support';
 
 // Mission 114 (point 14) — la démonstration des closers, de bout en bout, sur l'URL d'essai, avec
@@ -1061,10 +1062,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
-  // Mission 122 (partie B) — avant la présentation, le lien du dossier des Keller, répondu depuis
-  // un téléphone (390 × 844) : A « Pas pour moi » (le prix), B « Peut-être », C sans réponse —
-  // « Envoyer ma réponse » demande confirmation (décision de Jean-Guy, 25/10) ; le merci, puis une
-  // seconde ouverture sans formulaire ; la réponse se lit sur la fiche, « depuis le lien ».
+  // Mission 122 (partie B) — avant la présentation, le lien du dossier des Keller, répondu au doigt
+  // depuis un téléphone (390 × 844) : A « Je veux le visiter », B « Peut-être », C d'abord sans
+  // réponse — « Envoyer ma réponse » demande confirmation (décision de Jean-Guy, 25/10) — puis
+  // « Pas pour moi » avec une raison ; la base relue dit exactement ce qui a été touché ; le merci,
+  // puis une seconde ouverture sans formulaire ; la réponse se lit sur la fiche, « depuis le lien ».
   await page.getByTestId('buyer-dossier').click();
   const dossier = page.getByTestId('buyer-dossier');
   await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
@@ -1096,38 +1098,64 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(phone).toHaveAttribute('data-screen', 'grid');
     const linkAnswer = (value: string) =>
       visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+    // Essai de Jean-Guy (25/10) : A « Je veux le visiter », B « Peut-être », au doigt.
     for (const [letter, value] of [
-      ['A', 'no'],
+      ['A', 'visit'],
       ['B', 'maybe'],
     ] as const) {
-      await visitor.getByTestId('dossier-next').click();
+      await visitor.getByTestId('dossier-next').tap();
       await expect(phone).toHaveAttribute('data-screen', 'item');
       await expect(visitor.getByText(`Bien ${letter} · `).first()).toBeVisible();
       expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
-      await linkAnswer(value).click();
+      await linkAnswer(value).tap();
       await expect(linkAnswer(value)).toHaveAttribute('aria-pressed', 'true');
+      // La barre suit le contenu : elle ne recouvre jamais une réponse.
+      const nav = await visitor.getByTestId('dossier-nav').boundingBox();
+      const last = await linkAnswer('no').boundingBox();
+      expect(
+        last!.y + last!.height,
+        `bien ${letter} : la barre sous les réponses`,
+      ).toBeLessThanOrEqual(nav!.y);
     }
-    await visitor.getByTestId('dossier-go-answer').click();
+    await visitor.getByTestId('dossier-go-answer').tap();
     const answerScreen = visitor.getByTestId('dossier-answer');
+    await expect(answerScreen).toContainText('Vous voulez visiter le bien A.');
     await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
-    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).click();
+    await expect(answerScreen).not.toContainText('pas pour vous');
+    await visitor.getByTestId('dossier-availability').filter({ hasText: 'Samedi matin' }).tap();
     await expect(visitor.getByTestId('dossier-download')).toHaveText('Télécharger en PDF');
     await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
-    await visitor.getByTestId('dossier-send').click();
+    // C sans réponse : la confirmation, qui prend le focus ; « Annuler », puis C depuis la grille.
+    await visitor.getByTestId('dossier-send').tap();
     const confirm = visitor.getByTestId('dossier-send-confirm');
     await expect(confirm).toContainText('1 bien sans réponse : C. Envoyer quand même ?');
     await expect(confirm).toBeFocused();
-    await confirm.getByRole('button', { name: 'Annuler' }).click();
+    await confirm.getByRole('button', { name: 'Annuler' }).tap();
     await expect(confirm).toHaveCount(0);
-    await visitor.getByTestId('dossier-send').click();
-    await visitor.getByTestId('dossier-send-anyway').click();
+    await visitor.getByTestId('dossier-previous').tap();
+    await expect(phone).toHaveAttribute('data-screen', 'grid');
+    await visitor.locator('[data-testid="deck-open-item"][data-letter="C"]').tap();
+    await expect(visitor.getByText('Bien C · ').first()).toBeVisible();
+    await linkAnswer('no').tap();
+    await expect(linkAnswer('no')).toHaveAttribute('aria-pressed', 'true');
+    await visitor.getByTestId('dossier-go-answer').tap();
+    await expect(answerScreen).toContainText('Le bien C : pas pour vous. Pourquoi ?');
+    await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
+    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).tap();
+    await visitor.getByTestId('dossier-send').tap();
     await expect(visitor.getByTestId('dossier-thanks')).toContainText(
       'Merci, j’ai bien reçu votre réponse',
     );
-    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(2);
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
+    // La base dit ce qui a été touché, et rien d'autre.
+    expect(readDemoLinkAnswers('Famille Keller')).toEqual([
+      { position: 1, answer: 'visit', reasons: [] },
+      { position: 2, answer: 'maybe', reasons: [] },
+      { position: 3, answer: 'no', reasons: ['price'] },
+    ]);
     await visitor.goto(dossierLink);
     await expect(visitor.getByTestId('dossier-thanks')).toBeVisible();
-    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(2);
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
     await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
   } finally {
     await answering.close();
@@ -1136,6 +1164,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
+  await expect(page.getByTestId('buyer-answers')).toContainText('Peut-être');
 
   // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
   // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
@@ -1255,8 +1284,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByTestId('presentation-finish').click();
   await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
   const answers = page.getByTestId('buyer-answers');
-  // Trois réponses de la présentation, deux du lien.
-  await expect(answers.getByTestId('buyer-answer')).toHaveCount(5);
+  // Trois réponses de la présentation, trois du lien.
+  await expect(answers.getByTestId('buyer-answer')).toHaveCount(6);
   await expect(answers).toContainText('Veut le visiter');
   await expect(answers).toContainText('Pas pour lui : La surface');
   await expect(answers).toContainText('Peut-être');

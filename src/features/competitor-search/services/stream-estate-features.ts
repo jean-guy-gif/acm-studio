@@ -157,6 +157,19 @@ function readPool(label: string): boolean | null {
   return null;
 }
 
+// Mission 122 (partie B, essai de Jean-Guy, 25/10) — la piscine et l'ascenseur lus dans les
+// étiquettes d'une annonce, quelle qu'en soit la source : Stream Estate, l'import d'une annonce
+// (`listingFeatures`), un concurrent (`comparables.listing_features`). Une piscine dite quelque part
+// l'emporte ; sinon une seule valeur si les étiquettes concordent ; rien de dit : null.
+export function poolFromLabels(labels: readonly string[]): boolean | null {
+  const values = labels.map(readPool);
+  return values.includes(true) ? true : agreed(values);
+}
+
+export function elevatorFromLabels(labels: readonly string[]): boolean | null {
+  return labels.some((label) => clean(label) === 'ascenseur') ? true : null;
+}
+
 // Une seule valeur si toutes les sources concordent ; sinon (aucune, ou contradiction) null.
 function agreed<T>(values: (T | null | undefined)[]): T | null {
   const known = [...new Set(values.filter((value): value is T => value != null))];
@@ -185,8 +198,7 @@ export function readStreamEstateFeatures(
   }
   for (const space of present) absent.delete(space); // un « oui » quelque part l'emporte
 
-  const poolValues = labels.map(readPool);
-  const elevatorLabel = labels.some((label) => clean(label) === 'ascenseur') ? true : null;
+  const elevatorLabel = elevatorFromLabels(labels);
 
   return {
     location: discarded ? null : point,
@@ -197,7 +209,7 @@ export function readStreamEstateFeatures(
       property.elevator ??
       agreed(property.adverts.map((advert) => advert.elevator)) ??
       elevatorLabel,
-    hasPool: poolValues.includes(true) ? true : agreed(poolValues),
+    hasPool: poolFromLabels(labels),
     parking: parking.length > 0 ? parking : null,
     outdoor:
       present.size > 0 || absent.size > 0 ? { present: [...present], absent: [...absent] } : null,

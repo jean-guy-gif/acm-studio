@@ -97,6 +97,30 @@ export const DEMO_PHOTO_POOLS = {
   villa: Array.from({ length: 8 }, (_, i) => `villa-${String(i + 1).padStart(2, '0')}.jpg`),
 } as const;
 
+// Les photos d'extérieur de chaque famille (docs/DEMO.md) : la photo principale d'une maison n'est
+// jamais un intérieur ni un immeuble, et la villa de Mougins ne montre que des extérieurs de villa
+// (essai de Jean-Guy, 25/10).
+export const DEMO_PHOTO_EXTERIORS = {
+  house: DEMO_PHOTO_POOLS.house.slice(0, 4),
+  villa: DEMO_PHOTO_POOLS.villa.slice(0, 6),
+} as const;
+
+// 2 à 4 photos par bien, en tournant dans une liste d'extérieurs : la première, toujours un
+// extérieur, distingue le bien ; les suivantes, d'autres extérieurs puis, s'il y en a, des
+// intérieurs de la même famille.
+const exteriorsFirst =
+  (exteriors: readonly string[], interiors: readonly string[]) => (index: number) => {
+    const count = 2 + (index % 3); // 2, 3, 4, 2, 3, 4…
+    const main = exteriors[index % exteriors.length]!;
+    const others = [
+      ...exteriors.slice((index % exteriors.length) + 1),
+      ...exteriors.slice(0, index % exteriors.length),
+      ...interiors.slice(index % Math.max(interiors.length, 1)),
+      ...interiors.slice(0, index % Math.max(interiors.length, 1)),
+    ];
+    return [main, ...others.slice(0, count - 1)];
+  };
+
 // 2 à 4 photos par bien, en tournant dans la famille : la première distingue le bien, les
 // suivantes montrent l'intérieur.
 const rotate = (size: number) => (index: number) => {
@@ -637,7 +661,7 @@ const venceListings = seed(
   'vence',
   'house',
   [...DEMO_PHOTO_POOLS.house],
-  rotate(8),
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.house, DEMO_PHOTO_POOLS.house.slice(4)),
 )([
   {
     id: 'ven-01',
@@ -1094,7 +1118,7 @@ const mouginsListings = seed(
   'mougins',
   'house',
   [...DEMO_PHOTO_POOLS.villa],
-  rotate(8),
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.villa, []),
 )([
   {
     id: 'mou-01',
