@@ -249,11 +249,74 @@ export type Database = {
           },
         ]
       }
+      buyer_dossier_links: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          selection_id: string
+          token_hash: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          selection_id: string
+          token_hash: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          selection_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_dossier_links_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_dossier_links_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_dossier_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_dossier_links_selection_id_fkey"
+            columns: ["selection_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_selection_items: {
         Row: {
           agency_id: string
           category: string | null
           created_at: string
+          dossier_hide_photo: boolean
           gaps: string[]
           id: string
           imported: Json | null
@@ -270,6 +333,7 @@ export type Database = {
           agency_id: string
           category?: string | null
           created_at?: string
+          dossier_hide_photo?: boolean
           gaps?: string[]
           id?: string
           imported?: Json | null
@@ -286,6 +350,7 @@ export type Database = {
           agency_id?: string
           category?: string | null
           created_at?: string
+          dossier_hide_photo?: boolean
           gaps?: string[]
           id?: string
           imported?: Json | null

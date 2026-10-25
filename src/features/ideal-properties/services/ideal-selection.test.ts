@@ -63,6 +63,7 @@ describe('la sélection de biens idéaux', () => {
       price_seen_on: '2026-10-24',
       gaps: [],
       created_at: '2026-10-24T10:00:00Z',
+      dossier_hide_photo: false,
     };
     const selection = toSelection(row, [
       {

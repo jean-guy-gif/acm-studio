@@ -62,7 +62,8 @@ async function expectUnspoken(page: Page, screen: string): Promise<void> {
   );
 }
 
-test.setTimeout(40 * 60_000);
+// Budget de la démo : 8 minutes (décision de Jean-Guy, 25/10 ; 40 minutes depuis la M114 B).
+test.setTimeout(8 * 60_000);
 
 async function blockOutsideHosts(context: BrowserContext, blocked: Map<string, number>) {
   const own = new URL(process.env.E2E_BASE_URL ?? 'http://localhost').hostname;
@@ -1081,4 +1082,43 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await doneForm.getByLabel('Issue de la visite').selectOption('offer');
   await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
+
+  // Mission 119 (partie B) — le dossier acquéreur des Keller : trois pages de biens, le lien public
+  // sans compte, une coche qui arrive sur Visites « depuis le dossier », le lien retiré.
+  await page.goto('/acquereurs');
+  await page.getByRole('link', { name: 'Famille Keller' }).click();
+  await page.getByTestId('buyer-dossier').click();
+  const dossier = page.getByTestId('buyer-dossier');
+  await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
+  await expectUnspoken(page, 'Dossier acquéreur');
+  await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
+  const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
+  const stranger = await page
+    .context()
+    .browser()!
+    .newContext(
+      process.env.E2E_VERCEL_BYPASS
+        ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': process.env.E2E_VERCEL_BYPASS } }
+        : {},
+    );
+  try {
+    const visitor = await stranger.newPage();
+    const response = await visitor.goto(dossierLink);
+    expect(response?.headers()['x-robots-tag']).toContain('noindex');
+    await expect(visitor.getByTestId('buyer-dossier')).toBeVisible();
+    expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+    await visitor.getByTestId('dossier-visit-check').first().check();
+    await visitor.getByTestId('dossier-visit-send').click();
+    await expect(visitor.getByTestId('dossier-visit-message')).toContainText(
+      'Votre demande est envoyée',
+    );
+    await page.goto('/visites');
+    await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
+    await page.goBack();
+    await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+    await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+    expect((await visitor.goto(dossierLink))?.status()).toBe(404);
+  } finally {
+    await stranger.close();
+  }
 }
