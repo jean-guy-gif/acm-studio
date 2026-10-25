@@ -29,9 +29,9 @@ insert into public.buyer_selection_items (id, agency_id, selection_id, position,
   ('122fffff-3333-0000-0000-00000000000b', '122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000', 2, 'listing', 'https://exemple.invalid/b', 'B'),
   ('122fffff-3333-0000-0000-00000000000c', '122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000', 3, 'listing', 'https://exemple.invalid/c', 'C');
 -- Une demande « depuis le dossier » existe déjà sur le bien B.
-insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during) values
+insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during, availability) values
   ('122fffff-5555-0000-0000-00000000000b', '122fffff-0000-0000-0000-000000000000', '122fffff-1111-0000-0000-000000000000',
-   '122fffff-3333-0000-0000-00000000000b', 'dossier');
+   '122fffff-3333-0000-0000-00000000000b', 'dossier', array['weekday_evening', 'sunday']);
 
 create function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $$
 begin
@@ -110,6 +110,7 @@ select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122ffff
 select pg_temp.expect('§2 « peut-être » laisse la demande « depuis le dossier »',
   (select (cancelled_at is null)::text from public.buyer_visit_requests where id = '122fffff-5555-0000-0000-00000000000b'), 'true');
 select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-00000000000b', 'visit', '{}');
+select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-00000000000c', 'visit', '{}');
 update public.buyer_selection_items set removed_at = now() where id = '122fffff-3333-0000-0000-00000000000c';
 select pg_temp.expect('§2 un bien retiré ne reçoit plus de réponse',
   pg_temp.attempt($$select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-00000000000c', 'visit', '{}')$$),
@@ -140,9 +141,15 @@ select pg_temp.expect('§3 un déroulé qui n''est pas un objet : refusé par la
 select pg_temp.expect('§3 « Terminer » répond vrai la première fois',
   public.finish_buyer_presentation('122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000',
     '{"words":"Un 3 pièces"}'::jsonb, array['sat_morning', 'sunday'])::text, 'true');
-select pg_temp.expect('§3 les disponibilités sur les deux biens à visiter, « dossier » comprise',
-  (select count(*)::text from public.buyer_visit_requests
-   where cancelled_at is null and availability = array['sat_morning', 'sunday']), '2');
+select pg_temp.expect('§3 les créneaux sur le bien à visiter de la présentation',
+  (select availability::text from public.buyer_visit_requests
+   where buyer_selection_item_id = '122fffff-3333-0000-0000-00000000000a' and cancelled_at is null), '{sat_morning,sunday}');
+select pg_temp.expect('§3 « depuis le dossier » : ajoutés, sans doublon, dans l''ordre, jamais écrasés',
+  (select availability::text from public.buyer_visit_requests where id = '122fffff-5555-0000-0000-00000000000b'),
+  '{sat_morning,sunday,weekday_evening}');
+select pg_temp.expect('§3 un bien retiré ne reçoit pas de créneaux',
+  (select cardinality(availability)::text from public.buyer_visit_requests
+   where buyer_selection_item_id = '122fffff-3333-0000-0000-00000000000c' and cancelled_at is null), '0');
 select pg_temp.expect('§3 la date et le déroulé figé',
   (select (presented_at is not null and presented_deck ->> 'words' = 'Un 3 pièces')::text
    from public.buyer_selections where id = '122fffff-2222-0000-0000-000000000000'), 'true');

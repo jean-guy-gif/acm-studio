@@ -4,6 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { observedPriceDrops } from '@/features/buyer-presentation/queries/observed-price-drops';
 import { agencyPriceForBuyer } from '@/features/buyer-presentation/services/agency-price';
+import {
+  listingOutdoor,
+  listingParking,
+} from '@/features/buyer-presentation/services/listing-facts';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 import type { IdealSelectionItem } from '@/features/ideal-properties/types';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
@@ -164,10 +168,6 @@ export async function presentedItems(
     const features = (snapshot?.features ?? null) as Record<string, unknown> | null;
     const outdoorFeature = (features?.outdoor ?? null) as { present?: unknown } | null;
     const streamEstate = (snapshot?.streamEstate ?? null) as Record<string, unknown> | null;
-    // Une annonce du marché sans extérieur nommé mais avec des extérieurs dits absents (« Pas de
-    // balcon ») n'a pas d'extérieur : la grille le dit, au lieu de « à vérifier ».
-    const outdoorAbsent =
-      !imported && outdoorFeature != null && list(outdoorFeature.present).length === 0;
     const features122 = features ?? {};
     return {
       ...base,
@@ -176,17 +176,9 @@ export async function presentedItems(
       surfaceArea: num(imported?.surfaceArea) ?? num(snapshot?.surfaceArea),
       roomsCount: num(imported?.roomsCount) ?? num(snapshot?.roomsCount),
       bedroomsCount: num(imported?.bedroomsCount) ?? num(streamEstate?.bedrooms),
-      outdoor: imported
-        ? list(imported.outdoorSpaces)
-        : outdoorAbsent
-          ? ['none']
-          : list(outdoorFeature?.present),
-      // Un parking connu comme absent (la carte n'en nomme aucun) se dit « Pas de parking » (M118).
-      parking: imported
-        ? list(imported.parkingTypes)
-        : Array.isArray(features?.parking) && features.parking.length === 0
-          ? ['none']
-          : list(features?.parking),
+      // Extérieur et parking connus comme absents : « ✗ », jamais « à vérifier » (M118).
+      outdoor: listingOutdoor(imported, outdoorFeature),
+      parking: listingParking(imported, features),
       energyRating: str(imported?.energyRating) ?? str(snapshot?.energyClass),
       photos: httpsOnly(imported ? list(imported.photoUrls) : list(snapshot?.photoUrls)),
       propertyType: str(imported?.propertyType) ?? str(snapshot?.propertyType),

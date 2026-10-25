@@ -2,7 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { derivePriceChange } from '@/features/comparable-import/services/derive-price-change';
+import { observedDrop } from '@/features/buyer-presentation/services/observed-drop';
 import { extractListingKey } from '@/features/comparable-import/utils/extract-listing-key';
 import type { IdealSelectionItem } from '@/features/ideal-properties/types';
 import type { Database } from '@/lib/supabase/database.types';
@@ -51,13 +51,12 @@ export async function observedPriceDrops(
     ]);
   const drops = new Map<string, ObservedDrop>();
   for (const [itemId, identity] of identities) {
-    const change = derivePriceChange(
+    const drop = observedDrop(
       (observations ?? [])
         .filter((row) => row.portal === identity.portal && row.listing_key === identity.listingKey)
         .map((row) => ({ observedOn: row.observed_on, price: Number(row.price) })),
     );
-    if (change && change.amount > 0)
-      drops.set(itemId, { amount: change.amount, at: change.toDate });
+    if (drop) drops.set(itemId, drop);
   }
   return drops;
 }

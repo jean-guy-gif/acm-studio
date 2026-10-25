@@ -132,12 +132,21 @@ begin
     return false;
   end if;
 
+  -- Décisions de Jean-Guy (25/10) : un bien retiré ne reçoit pas de créneaux ; les créneaux
+  -- s'AJOUTENT à ceux déjà posés (une demande « depuis le dossier » peut en avoir), sans doublon,
+  -- dans l'ordre de la liste — jamais en écrasement.
   if cardinality(coalesce(p_availability, '{}')) > 0 then
     update public.buyer_visit_requests r
-      set availability = p_availability
+      set availability = array(
+        select slot
+        from unnest(array['sat_morning', 'sat_afternoon', 'sunday', 'weekday_day', 'weekday_evening']::text[])
+          with ordinality as slots(slot, rank)
+        where slot = any(r.availability || p_availability)
+        order by rank
+      )
     from public.buyer_selection_items i, public.buyer_item_responses a
     where r.buyer_selection_item_id = i.id
-      and i.selection_id = p_selection_id and i.agency_id = p_agency_id
+      and i.selection_id = p_selection_id and i.agency_id = p_agency_id and i.removed_at is null
       and r.agency_id = p_agency_id and r.cancelled_at is null and r.visited_at is null
       and a.selection_item_id = i.id and a.answered_during = 'presentation' and a.answer = 'visit';
   end if;

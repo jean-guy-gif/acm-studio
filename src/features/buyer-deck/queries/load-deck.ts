@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
+import { deckForReading } from '@/features/buyer-deck/services/frozen-deck';
 import { toItemResponse } from '@/features/buyer-deck/services/response-row';
 import type { AvailabilitySlot, BuyerDeck, ItemResponse } from '@/features/buyer-deck/types';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
@@ -59,16 +60,6 @@ export async function computeDeck(
   });
 }
 
-// Un déroulé figé, relu de la base : écrit par le serveur seul (`finish_buyer_presentation`), il
-// est repris tel quel ; une forme inattendue vaut « pas de déroulé figé ».
-function storedDeck(value: unknown): BuyerDeck | null {
-  if (typeof value !== 'object' || value == null) return null;
-  const deck = value as Partial<BuyerDeck>;
-  return Array.isArray(deck.items) && Array.isArray(deck.criteria) && typeof deck.words === 'string'
-    ? (deck as BuyerDeck)
-    : null;
-}
-
 // La présentation d'un acquéreur de l'agence, sur sa dernière sélection. Terminée, elle se relit
 // telle qu'elle a été affichée (décision de Jean-Guy, 25/10) : seuls les liens des photos, signés
 // pour une heure (M37), sont renouvelés. Une présentation terminée avant la mission 122 n'a pas de
@@ -93,20 +84,11 @@ export async function loadDeck(buyerId: string): Promise<LoadedDeck | null> {
       getAgencyBranding(),
       getAgency(profile.agency_id),
     ]);
-  const frozen = selection.presentedAt ? storedDeck(selection.presentedDeck) : null;
-  const freshPhotos = new Map(computed.items.map((item) => [item.item.itemId, item]));
-  const deck: BuyerDeck = frozen
-    ? {
-        ...frozen,
-        presentedAt: selection.presentedAt,
-        items: frozen.items.map((item) => {
-          const fresh = freshPhotos.get(item.item.itemId);
-          return fresh
-            ? { ...item, photos: fresh.photos, item: { ...item.item, photos: fresh.item.photos } }
-            : item;
-        }),
-      }
-    : computed;
+  const deck = deckForReading({
+    presentedAt: selection.presentedAt,
+    presentedDeck: selection.presentedDeck,
+    computed,
+  });
   const advisorName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
   return {
     deck,
