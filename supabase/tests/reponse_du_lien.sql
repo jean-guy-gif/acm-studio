@@ -75,6 +75,9 @@ end $$;
 select pg_temp.expect('§1 fermée au navigateur',
   (has_function_privilege('authenticated', 'public.submit_buyer_dossier_answers(uuid, uuid, jsonb, text[])', 'execute')
    or has_function_privilege('anon', 'public.submit_buyer_dossier_answers(uuid, uuid, jsonb, text[])', 'execute'))::text, 'false');
+select pg_temp.expect('§1 les créneaux du lien fermés au navigateur, en écriture',
+  (has_column_privilege('authenticated', 'public.buyer_selections', 'dossier_availability', 'UPDATE')
+   or has_column_privilege('authenticated', 'public.buyer_selections', 'dossier_availability', 'INSERT'))::text, 'false');
 select pg_temp.expect('§1 ouverte au serveur',
   has_function_privilege('service_role', 'public.submit_buyer_dossier_answers(uuid, uuid, jsonb, text[])', 'execute')::text, 'true');
 
@@ -171,6 +174,16 @@ select pg_temp.expect('§2 et une demande « depuis le dossier » naît à côt�
   (select string_agg(requested_during || ' ' || availability::text, ' / ') from public.buyer_visit_requests
    where buyer_selection_item_id = '122bbbbb-4444-0000-0000-0000000000dc' and cancelled_at is null),
   'dossier {sunday}');
+
+-- Aucun « Je veux le visiter » : ses créneaux ne sont pas gardés.
+insert into public.buyer_selections (id, agency_id, buyer_id) values
+  ('122bbbbb-3333-0000-0000-0000000000bb', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000');
+insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
+  ('122bbbbb-4444-0000-0000-0000000000bb', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000bb', 1, 'listing', 'https://exemple.invalid/w', 'W');
+select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000bb',
+  '[{"itemId":"122bbbbb-4444-0000-0000-0000000000bb","answer":"maybe"}]'::jsonb, array['sunday']);
+select pg_temp.expect('§2 sans visite, aucun créneau du lien gardé',
+  (select dossier_availability::text from public.buyer_selections where id = '122bbbbb-3333-0000-0000-0000000000bb'), '{}');
 
 -- §3 une seule réponse
 select pg_temp.expect('§3 un second envoi sur la même sélection : refusé',
