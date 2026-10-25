@@ -28,7 +28,13 @@ export async function createDossierLink(buyerId: string): Promise<CreateDossierL
   if (!profile || profile.removed_at || !z.uuid().safeParse(buyerId).success) {
     return { ok: false, error: FAILURE };
   }
-  const dossier = await loadBuyerDossier(await createClient(), buyerId, profile.agency_id);
+  const dossier = await loadBuyerDossier(
+    await createClient(),
+    buyerId,
+    profile.agency_id,
+    null,
+    profile.id,
+  );
   if (!dossier) return { ok: false, error: 'Pas de dossier sans sélection retenue.' };
   const token = newDossierToken();
   const { data, error } = await createServiceRoleClient()

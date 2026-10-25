@@ -22,6 +22,8 @@ const FAILURE = 'Votre demande n’a pas pu être envoyée. Réessayez.';
 // sont ceux de la sélection du lien et d'elle seule, chaque coche crée une demande datée
 // (`requested_during = 'dossier'`), visible sur Visites ; une demande déjà vivante sur un bien ne
 // se redouble pas. Le conseiller est le seul à y donner suite. Aucune autre saisie que ces coches.
+// Décision de Jean-Guy (25/10) : un acquéreur archivé ne reçoit plus de demande, ici comme depuis
+// le conseiller (`visit-requests.ts`) — le jeton seul ne suffit pas.
 export async function requestVisitsFromDossier(
   token: unknown,
   rawItemIds: unknown,
@@ -42,6 +44,14 @@ export async function requestVisitsFromDossier(
     .gt('expires_at', new Date().toISOString())
     .maybeSingle();
   if (!link) return { ok: false, error: 'Ce lien n’est plus valable.' };
+  const { data: buyer } = await admin
+    .from('buyers')
+    .select('id')
+    .eq('id', link.buyer_id)
+    .eq('agency_id', link.agency_id)
+    .is('archived_at', null)
+    .maybeSingle();
+  if (!buyer) return { ok: false, error: 'Ce lien n’est plus valable.' };
 
   const [{ data: items }, { data: existing }] = await Promise.all([
     admin

@@ -27,7 +27,7 @@ export default async function BuyerDossierPage({
   const profile = await getProfile();
   if (!profile || !/^[0-9a-f-]{36}$/i.test(buyerId)) notFound();
   const supabase = await createClient();
-  const dossier = await loadBuyerDossier(supabase, buyerId, profile.agency_id);
+  const dossier = await loadBuyerDossier(supabase, buyerId, profile.agency_id, null, profile.id);
   if (!dossier) notFound();
   const { data: links } = await supabase
     .from('buyer_dossier_links')

@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { brandingCssVariables } from '@/features/branding/services/branding-css';
 import { brandingFontDeclarations } from '@/features/branding/services/branding-typography';
 import { buildBuyerDossier } from '@/features/buyer-dossier/services/build-buyer-dossier';
+import { chooseDossierAdvisor } from '@/features/buyer-dossier/services/dossier-advisor';
 import type { BuyerDossier } from '@/features/buyer-dossier/types';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
 import {
@@ -28,12 +29,14 @@ const PHOTO_URL_TTL_SECONDS = 60 * 60;
 // ni adresse, ni lien, ni vendeur ; le prix d'un bien de l'agence selon la règle du 24/10). Sert à
 // l'écran du conseiller (son client, RLS) et à la page publique du lien (clé de service, après
 // vérification du jeton, sur la sélection du lien). null : fiche archivée, d'une autre agence, ou
-// sans sélection.
+// sans sélection. Le conseiller imprimé est celui de la fiche ; s'il est un membre retiré, c'est le
+// conseiller connecté — ou, sur le lien, celui qui l'a créé — (décision de Jean-Guy, 25/10).
 export async function loadBuyerDossier(
   supabase: Client,
   buyerId: string,
   agencyId: string,
   selectionId: string | null = null,
+  connectedAdvisorId: string | null = null,
 ): Promise<BuyerDossier | null> {
   const { data: buyerRow } = await supabase
     .from('buyers')
@@ -64,8 +67,11 @@ export async function loadBuyerDossier(
   const selection = toSelection(selectionRow, itemRows ?? []);
   if (selection.items.length === 0) return null;
 
-  const [items, { data: requestRows }, agency, branding, advisor] = await Promise.all([
-    presentedItems(supabase, selection.items),
+  const advisorIds = [
+    ...new Set([buyer.advisorId, connectedAdvisorId].filter(Boolean)),
+  ] as string[];
+  const [items, { data: requestRows }, agency, branding, advisorRows] = await Promise.all([
+    presentedItems(supabase, selection.items, agencyId),
     supabase
       .from('buyer_visit_requests')
       .select('*')
@@ -83,11 +89,17 @@ export async function loadBuyerDossier(
       .maybeSingle(),
     supabase
       .from('profiles')
-      .select('first_name, last_name, phone, email, photo_path')
-      .eq('id', buyer.advisorId)
+      .select('id, first_name, last_name, phone, email, photo_path, removed_at')
       .eq('agency_id', agencyId)
-      .maybeSingle(),
+      .in('id', advisorIds),
   ]);
+  const profiles = advisorRows.data ?? [];
+  const advisor = {
+    data: chooseDossierAdvisor(
+      profiles.find((row) => row.id === buyer.advisorId) ?? null,
+      profiles.find((row) => row.id === connectedAdvisorId) ?? null,
+    ),
+  };
   const hidden = new Map((itemRows ?? []).map((row) => [row.id, row.dossier_hide_photo]));
   const requested = new Set(
     (requestRows ?? [])

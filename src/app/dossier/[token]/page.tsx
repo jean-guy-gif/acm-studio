@@ -31,12 +31,18 @@ export default async function PublicBuyerDossierPage({
   const admin = createServiceRoleClient();
   const { data: link } = await admin
     .from('buyer_dossier_links')
-    .select('buyer_id, agency_id, selection_id, expires_at')
+    .select('buyer_id, agency_id, selection_id, expires_at, created_by')
     .eq('token_hash', hashDossierToken(token))
     .gt('expires_at', new Date().toISOString())
     .maybeSingle();
   if (!link) notFound();
-  const dossier = await loadBuyerDossier(admin, link.buyer_id, link.agency_id, link.selection_id);
+  const dossier = await loadBuyerDossier(
+    admin,
+    link.buyer_id,
+    link.agency_id,
+    link.selection_id,
+    link.created_by,
+  );
   if (!dossier) notFound();
   return (
     <main className="min-h-screen bg-zinc-100 p-4 print:bg-white print:p-0">

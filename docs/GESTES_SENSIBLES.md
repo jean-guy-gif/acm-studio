@@ -88,7 +88,7 @@ Aucune n'a de test qui appelle l'action. Leur cloisonnement entre agences est pr
 | `save-ideal-selection.ts`, `import-ideal-listing.ts` (M118)                                   | `buyer_selections`, `buyer_selection_items`                                               | `biens_ideaux` (CI), `save-ideal-selection.test.ts` (client factice), e2e         |
 | `visit-requests.ts` (M119)                                                                    | `buyer_visit_requests` (demander, annuler, visite faite), `buyer_selections.presented_at` | `visites` (CI), `visit-requests.test.ts` (client factice), e2e                    |
 | `dossier-links.ts` (M119 B)                                                                   | `buyer_dossier_links` (créer, retirer), `buyer_selection_items.dossier_hide_photo`        | `dossier_acquereur` (CI), `dossier-links.test.ts` (client factice), e2e           |
-| `request-visits-from-dossier.ts` (M119 B, lien public, sans compte)                           | `buyer_visit_requests` (`dossier`), après le jeton                                        | `request-visits-from-dossier.test.ts` (client factice), e2e                       |
+| `request-visits-from-dossier.ts` (M119 B, lien public, sans compte)                           | `buyer_visit_requests` (`dossier`), après le jeton et la fiche non archivée               | `request-visits-from-dossier.test.ts` (client factice), e2e                       |
 
 Quatorze tests SQL de `supabase/tests/` ne sont pas dans la CI (trois sont à réparer, M88) : ce
 qu'ils prouvaient n'est plus vérifié à chaque push.
