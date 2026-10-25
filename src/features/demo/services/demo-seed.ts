@@ -128,6 +128,11 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     monthly_charges: subject.monthlyCharges,
     property_tax: subject.propertyTax,
     fields_to_verify: [],
+    // La piscine et l'ascenseur du bien (oui / non / non renseigné) : l'import d'une annonce ne
+    // les écrit pas (le conseiller les renseigne, Stream Estate, 05/10) ; la démo pose ceux de son
+    // scénario, sans quoi la villa de Mougins montrait « ? Piscine » aux Keller (essai, 25/10).
+    has_pool: subject.hasPool,
+    has_elevator: subject.hasElevator,
   };
   const competitors = demoSeedCompetitors(scenario).map((listing) => ({
     listing,
