@@ -1159,6 +1159,9 @@ const mouginsListings = seed(
   {
     id: 'mou-02',
     // Essai de Jean-Guy (25/10) : au plafond des Keller + 5 % pile — « à négocier », le budget en orange.
+    // Sa photo principale n'est aucune de celles de la villa vendue, ni celle d'un autre concurrent
+    // du dossier de Mougins (mou-12 s'ouvrait aussi sur villa-03).
+    photos: ['villa-05.jpg', 'villa-04.jpg', 'villa-02.jpg'],
     title: 'Villa 7 pièces 220 m² piscine — Mougins',
     price: 1732500,
     surfaceArea: 220,
@@ -1316,11 +1319,11 @@ const mouginsListings = seed(
   {
     id: 'mou-07',
     // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
-    // Ses propres photos : sa photo principale n'est ni celle de la villa vendue ni celle de mou-02,
-    // retenus avec lui pour les Keller, et il ne partage aucune photo avec mou-02 (relecture des
-    // rendus, 25/10). Avec six extérieurs de villa, une photo secondaire reste commune avec la villa
-    // vendue.
-    photos: ['villa-06.jpg', 'villa-02.jpg'],
+    // Ses propres photos : sa photo principale n'est aucune de celles de la villa vendue ni de
+    // mou-02, retenus avec lui pour les Keller, et il ne partage aucune photo avec mou-02 (relecture
+    // des rendus, 25/10). Avec six extérieurs de villa pour huit photos montrées, deux répétitions
+    // restent, toujours en photo secondaire.
+    photos: ['villa-06.jpg', 'villa-03.jpg'],
     title: 'Villa 7 pièces 200 m² — Mouans-Sartoux',
     price: 1620000,
     surfaceArea: 200,
