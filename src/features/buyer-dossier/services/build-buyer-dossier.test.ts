@@ -257,6 +257,54 @@ describe('le PDF du dossier qui fait agir', () => {
     expect(choices).toContain('aria-label="Carte de contact du conseiller"');
   });
 
+  // Essai de Jean-Guy (25/10).
+  it('couverture : le conseiller y figure ; A « Sans photo », la première photo d’un autre bien', () => {
+    const page = html(
+      [item(), item({ itemId: 'i2', position: 2, photos: ['https://photos.example/b.jpg'] })],
+      { i1: true },
+    );
+    const cover = page.slice(
+      page.indexOf('data-testid="dossier-cover"'),
+      page.indexOf('data-testid="dossier-grid"'),
+    );
+    expect(cover).toContain('https://photos.example/b.jpg');
+    expect(cover).toContain('data-testid="dossier-cover-advisor"');
+    expect(cover).toContain('Votre conseiller : Carl Conseiller · 06 11 22 33 44');
+  });
+
+  it('chaque bien commence une page et ne se coupe pas, photos comprises', () => {
+    const page = html([item(), item({ itemId: 'i2', position: 2 })]);
+    const sections = page.match(/<section class="[^"]*" data-testid="dossier-item"/g) ?? [];
+    expect(sections).toHaveLength(2);
+    for (const section of sections) {
+      expect(section).toContain('break-before-page');
+      expect(section).toContain('break-inside-avoid');
+    }
+    expect(page).toMatch(/class="[^"]*break-inside-avoid[^"]*" data-testid="dossier-photos"/);
+    expect(page).toMatch(/class="[^"]*break-before-page[^"]*" data-testid="dossier-choices"/);
+  });
+
+  it('l’étoile des indispensables, dessinée, dans la grille et la légende', () => {
+    const page = html([item()]);
+    const grid = page.slice(
+      page.indexOf('data-testid="dossier-grid"'),
+      page.indexOf('data-testid="dossier-item"'),
+    );
+    const mustRows = deck([item()]).criteria.filter((row) => row.mustHave).length;
+    // Une étoile par ligne indispensable, plus celle de la légende.
+    expect(count(grid, 'data-testid="must-star"')).toBe(mustRows + 1);
+    expect(grid).toContain('aria-label="indispensable"');
+    expect(grid).toContain('data-testid="grid-legend"');
+  });
+
+  it('le budget en couleur, dans la grille et sur la ligne du bien', () => {
+    const page = html([item({ price: 1_700_000 })]);
+    // 1 700 000 € pour un plafond de 1 650 000 € : +3 %, vert.
+    expect(page).toMatch(/data-tone="green"/);
+    const red = html([item({ price: 1_900_000 })]);
+    expect(count(red, 'data-tone="red"')).toBe(2);
+  });
+
   it('un bien « Sans photo » n’en a aucune, couverture comprise', () => {
     const page = html([item()], { i1: true });
     expect(page).not.toContain('https://photos.example/1.jpg');

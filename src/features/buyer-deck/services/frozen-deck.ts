@@ -39,6 +39,7 @@ export function allowedDeck(deck: BuyerDeck): BuyerDeck {
         criterion: mark.criterion,
         mark: mark.mark,
         text: mark.text,
+        tone: mark.tone ?? null,
       })),
       okCount: entry.okCount,
       total: entry.total,

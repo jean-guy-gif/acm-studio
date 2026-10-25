@@ -201,12 +201,68 @@ describe('la phrase de tête', () => {
 });
 
 describe('« Pourquoi je vous le propose »', () => {
-  it('tirée des seuls faits de la grille', () => {
+  it('tirée des seuls faits de la grille, ses indispensables satisfaits en tête', () => {
     const full = deck([item()]).items[0]!;
     expect(full.okCount).toBe(full.total);
-    expect(full.pitch).toBe(`Il coche vos ${full.total} critères.`);
+    expect(full.pitch).toBe(`Terrasse, à Antibes. Il coche vos ${full.total} critères.`);
     const partial = deck([item({ surfaceArea: 62, hasElevator: null })]).items[0]!;
-    expect(partial.pitch).toBe(
+    expect(partial.pitch).toBe('Terrasse, à Antibes. Il coche 7 critères sur 9.');
+  });
+
+  // Essai de Jean-Guy (25/10) : elle commence par les faits les plus forts parmi ses
+  // indispensables satisfaits — surface, extérieur, piscine, commune, « dans votre budget » —,
+  // jamais par un doute ; les « ? » restent dans la liste du bien.
+  it('les faits les plus forts d’abord, dans cet ordre ; un doute jamais en tête', () => {
+    const villaBuyer = {
+      ...buyer,
+      propertyTypes: ['house'],
+      cities: ['Mougins'],
+      surfaceMin: 180,
+      pool: true,
+      mustHave: ['budget', 'cities', 'pool', 'outdoor', 'surface'],
+    } as BuyerInput;
+    const villa = (over: Partial<DeckItemInput>) =>
+      buildBuyerDeck({
+        buyerId: 'b',
+        buyer: villaBuyer,
+        selectionId: 's',
+        selectedAt: '2026-10-24T10:00:00Z',
+        presentedAt: null,
+        buyerWords: null,
+        items: [
+          item({
+            propertyType: 'Maison',
+            city: 'Mougins',
+            surfaceArea: 210,
+            outdoor: ['terrace', 'garden'],
+            hasPool: true,
+            ...over,
+          }),
+        ],
+        now: new Date('2026-10-25T10:00:00Z'),
+      }).items[0]!;
+    expect(villa({}).pitch).toMatch(
+      /^210\sm², terrasse, jardin, une piscine, à Mougins, dans votre budget\. Il coche/,
+    );
+    // La piscine non indiquée : elle n'est pas en tête, et reste « ? » dans la liste.
+    const unknownPool = villa({ hasPool: null });
+    expect(unknownPool.pitch).toMatch(/^210\sm², terrasse, jardin, à Mougins, dans votre budget\./);
+    expect(unknownPool.pitch).not.toMatch(/piscine|à voir|vérifier/);
+    expect(unknownPool.marks.find((mark) => mark.criterion === 'pool')?.mark).toBe('check');
+  });
+
+  it('sans indispensable fort satisfait : combien il en coche, et ce qui est à voir ensemble', () => {
+    const noMustHave = buildBuyerDeck({
+      buyerId: 'b',
+      buyer: { ...buyer, mustHave: [] },
+      selectionId: 's',
+      selectedAt: '2026-10-24T10:00:00Z',
+      presentedAt: null,
+      buyerWords: null,
+      items: [item({ surfaceArea: 62, hasElevator: null })],
+      now: new Date('2026-10-25T10:00:00Z'),
+    }).items[0]!;
+    expect(noMustHave.pitch).toBe(
       'Il coche 7 critères sur 9 : la surface et l’ascenseur sont à voir ensemble.',
     );
   });
@@ -223,7 +279,28 @@ describe('« Pourquoi je vous le propose »', () => {
   it('la phrase du conseiller l’emporte, la proposée reste à côté', () => {
     const [entry] = deck([item({ pitch: 'Le calme, à 5 minutes du marché.' })]).items;
     expect(entry!.pitch).toBe('Le calme, à 5 minutes du marché.');
-    expect(entry!.pitchProposed).toMatch(/^Il coche/);
+    expect(entry!.pitchProposed).toMatch(/Il coche/);
+  });
+});
+
+// Décision de Jean-Guy (25/10) : le budget prend les couleurs de la M116, le même service
+// (`priceAlignment`) appliqué au budget plafond ; les autres critères n'ont pas de couleur à part.
+describe('le budget en couleur', () => {
+  const toneAt = (price: number | null) =>
+    deck([item({ price })]).items[0]!.marks.find((mark) => mark.criterion === 'budget')?.tone;
+  it('vert sous +5 %, orange de +5 % à moins de +10 %, rouge à +10 % et plus', () => {
+    expect(toneAt(415_000)).toBe('green');
+    expect(toneAt(451_000)).toBe('green');
+    expect(toneAt(451_500)).toBe('orange');
+    expect(toneAt(472_999)).toBe('orange');
+    expect(toneAt(473_000)).toBe('red');
+    expect(toneAt(null)).toBeNull();
+  });
+  it('seul le budget porte une couleur', () => {
+    const marks = deck([item()]).items[0]!.marks;
+    for (const mark of marks.filter((entry) => entry.criterion !== 'budget')) {
+      expect(mark.tone ?? null).toBeNull();
+    }
   });
 });
 

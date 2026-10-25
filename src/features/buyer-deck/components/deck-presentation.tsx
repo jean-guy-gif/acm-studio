@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { RemoteImage } from '@/components/ui/remote-image';
 import { answerItem, finishPresentation } from '@/features/buyer-deck/actions/deck-actions';
+import { GridLegend, MustHaveStar, markClass } from '@/features/buyer-deck/components/deck-marks';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
   ANSWER,
@@ -24,7 +25,6 @@ import {
   AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
   GRID_ANSWER_LABELS,
-  GRID_LEGEND,
   ITEM_ANSWER_LABELS,
   ITEM_ANSWERS,
   NO_REASON_LABELS,
@@ -32,7 +32,6 @@ import {
   type AvailabilitySlot,
   type BuyerDeck,
   type DeckItem,
-  type GridMark,
   type ItemAnswer,
   type ItemResponse,
   type NoReason,
@@ -74,13 +73,6 @@ const chip = (on: boolean): string =>
       ? 'border-brand bg-brand text-white'
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/25 stage:bg-white/5 stage:text-white/80'
   }`;
-
-const MARK_STYLES: Record<GridMark, string> = {
-  ok: 'text-emerald-700 stage:text-emerald-300',
-  near: 'text-amber-700 stage:text-amber-300',
-  no: 'text-red-700 stage:text-red-300',
-  check: 'text-sky-700 stage:text-sky-300',
-};
 
 const lettersOf = (items: DeckItem[]): string =>
   items.length <= 1
@@ -644,7 +636,12 @@ export function GridScreen({
                   className="border-t border-zinc-100 py-2 pr-3 text-base font-medium text-zinc-800 stage:border-white/10 stage:text-white/90"
                 >
                   {row.label}
-                  {row.mustHave ? ' ★' : ''}
+                  {row.mustHave ? (
+                    <>
+                      {' '}
+                      <MustHaveStar />
+                    </>
+                  ) : null}
                 </th>
                 {deck.items.map((item) => {
                   const mark = item.marks[rowIndex]!;
@@ -654,7 +651,8 @@ export function GridScreen({
                       title={mark.text}
                       data-testid="deck-grid-cell"
                       data-mark={mark.mark}
-                      className={`border-t border-zinc-100 py-2 text-center font-title text-xl font-bold stage:border-white/10 ${MARK_STYLES[mark.mark]}`}
+                      data-tone={mark.tone ?? undefined}
+                      className={`border-t border-zinc-100 py-2 text-center font-title text-xl font-bold stage:border-white/10 ${markClass(mark)}`}
                     >
                       {markSymbol(mark.mark)}
                     </td>
@@ -665,7 +663,7 @@ export function GridScreen({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-zinc-500 stage:text-white/50">{GRID_LEGEND}</p>
+      <GridLegend className="text-xs text-zinc-500 stage:text-white/50" />
       {deck.lead ? (
         <div className="flex flex-col items-start gap-3">
           <p
@@ -729,8 +727,13 @@ export function ItemScreen({
         </p>
         <ul className="flex flex-col gap-2">
           {item.marks.map((mark) => (
-            <li key={mark.criterion} data-testid="deck-mark" data-mark={mark.mark}>
-              <span className={`text-base font-medium ${MARK_STYLES[mark.mark]}`}>
+            <li
+              key={mark.criterion}
+              data-testid="deck-mark"
+              data-mark={mark.mark}
+              data-tone={mark.tone ?? undefined}
+            >
+              <span className={`text-base font-medium ${markClass(mark)}`}>
                 {markSymbol(mark.mark)} {mark.text}
               </span>
               {mark.criterion === 'budget' && item.priceLine ? (

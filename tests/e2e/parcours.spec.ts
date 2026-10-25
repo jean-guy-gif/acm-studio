@@ -875,9 +875,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const rows = await page.getByTestId('deck-grid-row').count();
     expect(rows, 'la grille a une ligne par critère de la fiche').toBeGreaterThan(0);
     await expect(page.getByTestId('deck-grid-cell')).toHaveCount(rows);
+    // L'étoile des indispensables, dessinée (essai de Jean-Guy, 25/10), dans la grille et la légende.
     await expect(
-      page.locator('[data-testid="deck-grid-row"][data-must="true"]').first(),
-    ).toContainText('★');
+      page
+        .locator('[data-testid="deck-grid-row"][data-must="true"]')
+        .first()
+        .getByTestId('must-star'),
+    ).toBeVisible();
+    await expect(page.getByTestId('grid-legend').getByTestId('must-star')).toBeVisible();
     await page.getByTestId('presentation-next').click();
     await expect(scene).toHaveAttribute('data-screen', 'item');
     await expect(page.getByTestId('deck-item-count')).toHaveText(/^\d+ critères? sur \d+$/);

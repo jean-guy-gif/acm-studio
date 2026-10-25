@@ -1,3 +1,4 @@
+import type { PriceAlignmentTone } from '@/features/price-positioning/services/price-alignment';
 import type { BuyerCriterion } from '@/features/buyers/types';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 
@@ -92,7 +93,8 @@ export const GRID_SYMBOLS: Record<GridMark, string> = {
   no: '✗',
   check: '?',
 };
-export const GRID_LEGEND = '★ indispensable · ✓ oui · ≈ proche · ✗ non · ? à vérifier ensemble';
+export const GRID_LEGEND_MARKS = '✓ oui · ≈ proche · ✗ non · ? à vérifier ensemble';
+export const GRID_LEGEND = `★ indispensable · ${GRID_LEGEND_MARKS}`;
 
 // Une ligne de la grille : un critère de la fiche, indispensable ou préférence.
 export type DeckCriterion = {
@@ -101,11 +103,15 @@ export type DeckCriterion = {
   mustHave: boolean;
 };
 
-// Un critère vu sur un bien : sa marque et son fait (« ✓ 2 chambres, comme demandé »).
+// Un critère vu sur un bien : sa marque et son fait (« ✓ 2 chambres, comme demandé »). Le budget
+// porte aussi la couleur de la M116 (`priceAlignment`, appliqué au budget plafond : vert sous +5 %,
+// orange de +5 % à moins de +10 %, rouge à +10 % et plus ; décision de Jean-Guy, 25/10) ; null
+// sans prix montré ou sans budget, et pour les autres critères.
 export type DeckMark = {
   criterion: BuyerCriterion;
   mark: GridMark;
   text: string;
+  tone?: PriceAlignmentTone | null;
 };
 
 // Les faits d'un bien que le déroulé lit : la liste d'autorisation de la présentation (M119), plus

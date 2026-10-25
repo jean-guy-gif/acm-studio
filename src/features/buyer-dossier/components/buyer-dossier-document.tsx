@@ -1,12 +1,11 @@
+import { GridLegend, MustHaveStar, markClass } from '@/features/buyer-deck/components/deck-marks';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
   AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
-  GRID_LEGEND,
   ITEM_ANSWER_LABELS,
   ITEM_ANSWERS,
   type DeckItem,
-  type GridMark,
 } from '@/features/buyer-deck/types';
 import {
   DOSSIER_CHOICES_TITLE,
@@ -20,14 +19,12 @@ import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 // page décrit par ses critères, et la dernière page « Mes choix » : pour chaque bien, trois cases à
 // cocher au stylo, ses disponibilités à cocher, le conseiller et son QR, les mentions de l'agence
 // (M84, M102). Imprimé par le navigateur (M84), aux couleurs de l'agence (M55).
+// Essai de Jean-Guy (25/10) : la couverture porte la photo du bien A en pleine page (sinon la
+// première photo de la sélection), sa phrase, la date et le conseiller ; chaque bien commence une
+// page et ne se coupe jamais, photos comprises ; l'étoile des indispensables est dessinée ; le
+// budget prend les couleurs de la M116.
 
 const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
-const MARK_COLORS: Record<GridMark, string> = {
-  ok: 'text-emerald-700',
-  near: 'text-amber-700',
-  no: 'text-red-700',
-  check: 'text-sky-700',
-};
 
 const cssString = (value: string): string => `"${value.replace(/["\\]/g, '')}"`;
 
@@ -48,7 +45,7 @@ function ItemPage({ entry }: { entry: DeckItem }) {
     .join(' · ');
   return (
     <section
-      className="flex flex-col gap-4 break-inside-avoid break-after-page"
+      className="flex flex-col gap-4 break-before-page break-inside-avoid print:pt-[4mm]"
       data-testid="dossier-item"
     >
       <div className="flex flex-col gap-1">
@@ -59,7 +56,7 @@ function ItemPage({ entry }: { entry: DeckItem }) {
         {where ? <p className="text-sm text-zinc-600">{where}</p> : null}
       </div>
       {entry.photos.length > 0 ? (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 break-inside-avoid" data-testid="dossier-photos">
           {entry.photos.slice(0, 3).map((photo, index) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -73,8 +70,13 @@ function ItemPage({ entry }: { entry: DeckItem }) {
       ) : null}
       <ul className="flex flex-col gap-1.5 border border-zinc-200 bg-white px-4 py-3">
         {entry.marks.map((mark) => (
-          <li key={mark.criterion} data-testid="dossier-mark" data-mark={mark.mark}>
-            <span className={`font-medium ${MARK_COLORS[mark.mark]}`}>
+          <li
+            key={mark.criterion}
+            data-testid="dossier-mark"
+            data-mark={mark.mark}
+            data-tone={mark.tone ?? undefined}
+          >
+            <span className={`font-medium ${markClass(mark)}`}>
               {markSymbol(mark.mark)} {mark.text}
             </span>
             {mark.criterion === 'budget' && entry.priceLine ? (
@@ -102,8 +104,10 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
   const day = buyerDateLabel(dossier.selectedAt);
   const footer = `Sélection confidentielle · ${dossier.sector} · ${day}`;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
-  // La photo du bien A, sauf « Sans photo ».
-  const cover = deck.items[0]?.photos[0] ?? null;
+  // La photo du bien A en pleine page ; s'il est « Sans photo » ou n'en a pas, la première photo de
+  // la sélection — un aplat seulement quand aucun bien n'a de photo, et jamais vide : sa phrase,
+  // la date et le conseiller y sont toujours.
+  const cover = deck.items.flatMap((entry) => entry.photos)[0] ?? null;
 
   return (
     <article
@@ -155,12 +159,18 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
           <p className="text-sm opacity-90">
             {deck.items.length} bien{deck.items.length > 1 ? 's' : ''} · {dossier.sector}
           </p>
+          {agency.advisorName ? (
+            <p className="mt-2 text-sm font-semibold" data-testid="dossier-cover-advisor">
+              Votre conseiller :{' '}
+              {[agency.advisorName, agency.advisorPhone].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
         </div>
       </section>
 
       <div className="flex flex-col gap-6 p-5 sm:p-8 print:px-[14mm] print:py-0">
         <section
-          className="flex flex-col gap-3 break-inside-avoid break-after-page"
+          className="flex flex-col gap-3 break-inside-avoid print:pt-[4mm]"
           data-testid="dossier-grid"
         >
           <h2 className="font-title text-2xl font-bold text-brand-darker">Vos critères</h2>
@@ -183,7 +193,12 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                 <tr key={row.criterion} data-testid="dossier-grid-row">
                   <th scope="row" className="border-t border-zinc-100 px-3 py-1.5 font-medium">
                     {row.label}
-                    {row.mustHave ? ' ★' : ''}
+                    {row.mustHave ? (
+                      <>
+                        {' '}
+                        <MustHaveStar />
+                      </>
+                    ) : null}
                   </th>
                   {deck.items.map((entry) => {
                     const mark = entry.marks[rowIndex]!;
@@ -191,7 +206,8 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                       <td
                         key={entry.item.itemId}
                         title={mark.text}
-                        className={`border-t border-zinc-100 px-3 py-1.5 text-center font-title text-lg font-bold ${MARK_COLORS[mark.mark]}`}
+                        data-tone={mark.tone ?? undefined}
+                        className={`border-t border-zinc-100 px-3 py-1.5 text-center font-title text-lg font-bold ${markClass(mark)}`}
                       >
                         {markSymbol(mark.mark)}
                       </td>
@@ -201,7 +217,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-zinc-500">{GRID_LEGEND}</p>
+          <GridLegend className="text-xs text-zinc-500" />
           {deck.lead ? (
             <p className="font-title text-lg font-semibold text-brand-darker">{deck.lead}</p>
           ) : null}
@@ -211,7 +227,10 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
           <ItemPage key={entry.item.itemId} entry={entry} />
         ))}
 
-        <section className="flex flex-col gap-4 break-inside-avoid" data-testid="dossier-choices">
+        <section
+          className="flex flex-col gap-4 break-before-page break-inside-avoid print:pt-[4mm]"
+          data-testid="dossier-choices"
+        >
           <h2 className="font-title text-2xl font-bold text-brand-darker">
             {DOSSIER_CHOICES_TITLE}
           </h2>

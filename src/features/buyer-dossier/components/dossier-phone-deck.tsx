@@ -410,7 +410,7 @@ export function DossierPhoneDeck({
               ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
               : 'Votre réponse'}
       </p>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-40">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-6">
         {screen.type === 'words' ? (
           <div className="flex flex-col gap-4">
             <h1 className="font-title text-2xl font-bold text-zinc-900">Vous m’avez dit :</h1>
@@ -576,8 +576,12 @@ export function DossierPhoneDeck({
         ) : null}
       </main>
 
+      {/* Essai de Jean-Guy (25/10) : une barre fixée en bas recouvrait « Pas pour moi », et un
+          toucher sur la barre juste après un défilement pouvait arriver sur ce bouton (Safari sur
+          iPhone). La barre suit le contenu, sous les réponses, séparée d'elles : rien ne se
+          superpose jamais. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 flex flex-col gap-2 border-t border-zinc-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] backdrop-blur"
+        className="mx-auto mt-2 flex w-full max-w-xl flex-col gap-2 border-t border-zinc-200 px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
         data-testid="dossier-nav"
       >
         {screen.type === 'grid' || screen.type === 'item' ? (
