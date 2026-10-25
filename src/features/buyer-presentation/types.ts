@@ -1,3 +1,4 @@
+import type { AvailabilitySlot } from '@/features/buyer-deck/types';
 import type { Database } from '@/lib/supabase/database.types';
 import type { SelectionCategory, SelectionSource } from '@/features/ideal-properties/types';
 
@@ -34,6 +35,8 @@ export type VisitRequest = {
   visitedAt: string | null;
   feedback: string | null;
   outcome: VisitOutcome;
+  // Mission 122 — ses disponibilités, données à la fin de la présentation.
+  availability: AvailabilitySlot[];
 };
 
 // Ce qu'un bien a le droit de porter devant l'acquéreur : LISTE D'AUTORISATION. Ni titre, ni
@@ -59,31 +62,14 @@ export type PresentedItemInput = {
   photos: string[];
   // Les écarts nommés par la 118, figés : « À savoir », jamais cachés.
   gaps: string[];
-};
-
-export type PresentationScreen =
-  | {
-      type: 'intro';
-      buyerName: string;
-      criteria: string[];
-      count: number;
-    }
-  | {
-      type: 'item';
-      item: PresentedItemInput;
-      pricePerSqm: number | null;
-      // « Pourquoi ce bien correspond à votre recherche » : les indispensables satisfaits.
-      why: string[];
-      seenOnLabel: string | null;
-      facts: { label: string; value: string }[];
-    }
-  | { type: 'end'; count: number };
-
-export type BuyerPresentation = {
-  buyerId: string;
-  buyerName: string;
-  selectionId: string;
-  selectedAt: string;
-  presentedAt: string | null;
-  screens: PresentationScreen[];
+  // Mission 122 — ce que la grille juge et ce qui se date, sans rien de plus : le type de bien,
+  // l'étage, la piscine, l'ascenseur, l'état (vocabulaire general_condition), la date de mise en
+  // vente publiée par l'annonce, la dernière baisse de prix connue. null : non indiqué.
+  propertyType: string | null;
+  floor: number | null;
+  hasPool: boolean | null;
+  hasElevator: boolean | null;
+  condition: string | null;
+  listedSince: string | null;
+  priceDrop: { amount: number; at: string | null } | null;
 };

@@ -846,47 +846,75 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'Appartement · 3 pièces · 65 m²',
     );
 
-    // Mission 119 — « Présenter la sélection » : plein cadre, l'ouverture, un bien par écran avec
-    // son prix affiché, « Pourquoi » et « À savoir », une visite demandée sur le 2e, la fin, puis
-    // Visites la montre ; rien du titre d'annonce ni « disponible » devant l'acquéreur.
+    // Mission 122 — « Avant de présenter » : ses mots et la phrase « Pourquoi » se relisent et se
+    // modifient ; puis la présentation, tout part de sa recherche : ses mots, la grille, un bien par
+    // écran décrit par ses critères, sa réponse ; « Terminer » fige ; la fiche montre ses réponses.
+    const prepare = page.getByTestId('deck-prepare');
+    await expect(prepare).toBeVisible();
+    const words = prepare.getByTestId('deck-words-editor');
+    await words
+      .locator('textarea')
+      .fill('Un 3 pièces à Nice ou Cagnes, avec un extérieur, au calme.');
+    await words.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(words.getByText('Enregistré.')).toBeVisible();
+    const pitch = prepare.getByTestId('deck-pitch-editor').first();
+    await pitch.locator('input').fill('Il coche vos critères, avec la terrasse que vous vouliez.');
+    await pitch.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(pitch.getByText('Enregistré.')).toBeVisible();
+
     await page.getByTestId('present-selection').click();
     await expect(page).toHaveURL(new RegExp(`/presentation/${buyerUrl.split('/').pop()}$`));
     const scene = page.getByTestId('buyer-presentation');
-    await expect(scene).toHaveAttribute('data-screen', 'intro');
-    await expect(page.getByTestId('presentation-criteria')).toContainText(
-      'Communes : Nice, Cagnes-sur-Mer',
+    await expect(scene).toHaveAttribute('data-screen', 'words');
+    await expect(page.getByTestId('deck-words')).toContainText(
+      'Un 3 pièces à Nice ou Cagnes, avec un extérieur, au calme.',
     );
-    await expect(page.getByTestId('presentation-criteria')).toContainText('Un extérieur');
-    await expectNoListingTitle(page, 'Présentation — ouverture');
+    await expectNoListingTitle(page, 'Présentation — ses mots');
+    await page.getByTestId('presentation-next').click();
+    await expect(scene).toHaveAttribute('data-screen', 'grid');
+    const rows = await page.getByTestId('deck-grid-row').count();
+    expect(rows, 'la grille a une ligne par critère de la fiche').toBeGreaterThan(0);
+    await expect(page.getByTestId('deck-grid-cell')).toHaveCount(rows);
+    await expect(
+      page.locator('[data-testid="deck-grid-row"][data-must="true"]').first(),
+    ).toContainText('★');
     await page.getByTestId('presentation-next').click();
     await expect(scene).toHaveAttribute('data-screen', 'item');
-    await expect(page.getByTestId('presentation-price')).toBeVisible();
-    await expect(page.getByTestId('presentation-why')).toContainText('Un extérieur');
+    await expect(page.getByTestId('deck-item-count')).toHaveText(/^\d+ critères? sur \d+$/);
+    await expect(page.getByTestId('deck-pitch')).toContainText(
+      'Il coche vos critères, avec la terrasse que vous vouliez.',
+    );
     await expect(page.getByText(/disponible|estimation/i)).toHaveCount(0);
-    await expectNoListingTitle(page, 'Présentation — bien 1');
-    await expectFourchetteHidden(page, 'Présentation — bien 1');
-    const visitButton = page.getByTestId('presentation-visit');
-    await visitButton.click();
-    await expect(visitButton).toHaveText(/Visite demandée/);
-    // Un second geste l'annule, un troisième la redemande.
-    await visitButton.click();
-    await expect(visitButton).toHaveText('Demander une visite');
-    await visitButton.click();
-    await expect(visitButton).toHaveText(/Visite demandée/);
+    await expectNoListingTitle(page, 'Présentation — bien A');
+    await expectFourchetteHidden(page, 'Présentation — bien A');
+    const answer = (value: string) =>
+      page.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+    await answer('visit').click();
+    await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
+    // Il change d'avis, puis revient : la dernière réponse touchée vaut.
+    await answer('maybe').click();
+    await expect(answer('maybe')).toHaveAttribute('aria-pressed', 'true');
+    await answer('visit').click();
+    await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
     await page.getByTestId('presentation-next').click();
-    await expect(scene).toHaveAttribute('data-screen', 'end');
-    await expect(page.getByTestId('presentation-recap').locator('li')).toHaveCount(1);
+    await expect(scene).toHaveAttribute('data-screen', 'answer');
+    await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien A.');
+    await page.getByTestId('deck-availability').filter({ hasText: 'Samedi matin' }).click();
+    await expect(page.getByTestId('deck-next')).toContainText(
+      'je vous confirme les visites sous 24 h',
+    );
     // Tablette : la scène ne déborde pas.
     await page.setViewportSize({ width: 768, height: 1024 });
-    await expectNoHorizontalScroll(page, 'Présentation — fin (768 × 1024)');
+    await expectNoHorizontalScroll(page, 'Présentation — sa réponse (768 × 1024)');
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.getByTestId('presentation-finish').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}$`));
     await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
-    // Relue en lecture seule : « Terminé le », plus de demande possible.
+    await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
+    await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
+    // Relue en lecture seule : « Terminé le », plus de réponse possible.
     await page.getByTestId('present-selection').click();
     await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
-    await page.getByTestId('presentation-next').click();
     await expect(page.getByTestId('presentation-finished')).toContainText(
       /^Présentation terminée le \d{2}\/\d{2}\/\d{4} : pour en refaire une, retenez une nouvelle sélection\.$/,
     );
@@ -895,8 +923,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
         .getByTestId('presentation-finished')
         .getByRole('link', { name: 'retenez une nouvelle sélection' }),
     ).toHaveAttribute('href', new RegExp(`/acquereurs/${buyerUrl.split('/').pop()}/biens-ideaux$`));
-    await expect(page.getByTestId('presentation-visit')).toHaveCount(0);
-    await expect(page.getByTestId('presentation-visit-requested')).toBeVisible();
+    await page.getByTestId('presentation-next').click();
+    await page.getByTestId('presentation-next').click();
+    await expect(answer('visit')).toBeDisabled();
+    await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
     // Visites : la demande à planifier, puis « Visite faite » avec un retour et une issue.
     await page.goto('/visites');
     const visitLine = page
@@ -905,6 +935,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .or(page.getByTestId('visits-pending').getByTestId('visit-line'));
     await expect(page.getByTestId('visits-pending')).toContainText(buyerName);
     await expect(page.getByTestId('visits-pending')).toContainText('pendant la présentation');
+    await expect(page.getByTestId('visit-availability').first()).toContainText('Samedi matin');
     // Un bien de l'agence : pas de « Propriétaire ou confrère à contacter » (réservé aux
     // concurrents et aux exclusivités).
     await expect(page.getByTestId('visits-pending')).not.toContainText('confrère à contacter');

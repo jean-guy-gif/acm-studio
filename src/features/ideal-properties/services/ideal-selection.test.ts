@@ -55,6 +55,7 @@ describe('la sélection de biens idéaux', () => {
       created_by: null,
       created_at: '2026-10-24T10:00:00Z',
       presented_at: null,
+      buyer_words: null,
     };
     const base = {
       agency_id: 'a',
@@ -64,6 +65,7 @@ describe('la sélection de biens idéaux', () => {
       gaps: [],
       created_at: '2026-10-24T10:00:00Z',
       dossier_hide_photo: false,
+      pitch: null,
     };
     const selection = toSelection(row, [
       {

@@ -113,4 +113,6 @@ export type Buyer = BuyerInput & {
   status: BuyerStatus;
   statusChangedAt: string;
   demo: boolean;
+  // Mission 122 — les suggestions ignorées par le conseiller, par raison : elles ne reviennent plus.
+  ignoredSuggestions: string[];
 };

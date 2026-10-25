@@ -12,6 +12,11 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
+import { DeckPrepare } from '@/features/buyer-deck/components/deck-prepare';
+import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
+import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
+import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
@@ -19,6 +24,8 @@ import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
+import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
 
@@ -34,8 +41,16 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const [{ buyerId }, { enregistre }] = await Promise.all([params, searchParams]);
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
-  // Mission 118 — la dernière sélection de biens idéaux, si elle existe.
-  const selection = await getIdealSelection(buyer.id);
+  // Mission 118 — la dernière sélection de biens idéaux, si elle existe. Mission 122 — son
+  // déroulé (« Avant de présenter ») et ses réponses, toutes sélections confondues.
+  const [selection, profile] = await Promise.all([getIdealSelection(buyer.id), getProfile()]);
+  const [loadedDeck, answers] = await Promise.all([
+    selection && !selection.presentedAt ? loadDeck(buyer.id) : Promise.resolve(null),
+    profile
+      ? getBuyerAnswers(await createClient(), buyer.id, profile.agency_id)
+      : Promise.resolve({ lines: [], forSuggestions: [] }),
+  ]);
+  const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
 
   return (
     <div className="flex max-w-3xl flex-col gap-6 md:gap-8">
@@ -94,6 +109,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       </section>
 
       {selection ? <IdealSelectionList selection={selection} /> : null}
+
+      {loadedDeck ? <DeckPrepare deck={loadedDeck.deck} /> : null}
+
+      {answers.lines.length > 0 ? (
+        <BuyerAnswers buyerId={buyer.id} answers={answers.lines} suggestions={suggestions} />
+      ) : null}
 
       <BuyerForm buyer={buyer} />
     </div>

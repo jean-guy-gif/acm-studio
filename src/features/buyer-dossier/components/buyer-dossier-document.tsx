@@ -6,7 +6,7 @@ import {
   type DossierItem,
 } from '@/features/buyer-dossier/types';
 import { PRICE_TO_CONFIRM } from '@/features/buyer-presentation/services/agency-price';
-import { KNOW_TITLE, WHY_TITLE } from '@/features/buyer-presentation/components/presentation-shell';
+import { KNOW_TITLE, WHY_TITLE } from '@/features/buyer-presentation/services/build-presentation';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 

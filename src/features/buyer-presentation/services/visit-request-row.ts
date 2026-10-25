@@ -1,3 +1,4 @@
+import { AVAILABILITY_SLOTS } from '@/features/buyer-deck/types';
 import {
   VISIT_OUTCOMES,
   VISIT_REQUEST_DURING,
@@ -25,6 +26,7 @@ export function toVisitRequest(row: VisitRequestRow): VisitRequest {
     visitedAt: row.visited_at,
     feedback: row.feedback,
     outcome: oneOf<VisitOutcome>(VISIT_OUTCOMES, row.outcome, 'to_plan'),
+    availability: AVAILABILITY_SLOTS.filter((slot) => (row.availability ?? []).includes(slot)),
   };
 }
 

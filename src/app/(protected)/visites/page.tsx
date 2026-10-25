@@ -11,6 +11,12 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { getOtherAnswers } from '@/features/buyer-deck/queries/get-other-answers';
+import {
+  AVAILABILITY_LABELS,
+  ITEM_ANSWER_REPORT,
+  NO_REASON_LABELS,
+} from '@/features/buyer-deck/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
 import {
   getVisitLines,
@@ -75,6 +81,12 @@ function VisitRow({ line }: { line: VisitLine }) {
         {VISIT_REQUEST_DURING_LABELS[line.requestedDuring]}
         {done ? ` · visitée le ${buyerDateLabel(line.visitedAt!)}` : ''}
       </p>
+      {/* Mission 122 — ses créneaux, donnés à la fin de la présentation. */}
+      {line.availability.length > 0 ? (
+        <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-availability">
+          Ses créneaux : {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
+        </p>
+      ) : null}
       {done ? (
         line.feedback ? (
           <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-feedback">
@@ -89,7 +101,8 @@ function VisitRow({ line }: { line: VisitLine }) {
 }
 
 export default async function VisitsPage() {
-  const lines = (await getVisitLines()).filter((line) => !line.buyerArchived);
+  const [allLines, others] = await Promise.all([getVisitLines(), getOtherAnswers()]);
+  const lines = allLines.filter((line) => !line.buyerArchived);
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
   return (
@@ -138,6 +151,38 @@ export default async function VisitsPage() {
           </section>
         ) : null,
       )}
+      {/* Mission 122 — « Peut-être » et « Pas pour moi » se lisent ici aussi. */}
+      {others.length > 0 ? (
+        <section className={`${card} flex flex-col gap-3 p-5`} data-testid="visits-other-answers">
+          <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+            Ses autres réponses <span className={badgeBrand}>{others.length}</span>
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {others.map((answer) => (
+              <li
+                key={answer.id}
+                data-testid="other-answer"
+                data-answer={answer.answer}
+                className="flex flex-col gap-0.5 rounded-xl border border-zinc-200 px-4 py-2.5 stage:border-white/10"
+              >
+                <span className="font-medium text-zinc-900 stage:text-white">
+                  <Link href={`/acquereurs/${answer.buyerId}`} className="hover:underline">
+                    {answer.buyerName}
+                  </Link>{' '}
+                  · {answer.itemLabel}
+                </span>
+                <span className="text-sm text-zinc-700 stage:text-white/80">
+                  {ITEM_ANSWER_REPORT[answer.answer]}
+                  {answer.reasons.length > 0
+                    ? ` : ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
+                    : ''}{' '}
+                  · le {buyerDateLabel(answer.answeredAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -182,6 +182,16 @@ export default function ConfidentialitePage() {
               conseiller, sans compte ni adresse e-mail ; rien d’autre n’est saisi.
             </li>
             <li>
+              Les réponses de l’acquéreur : quand le conseiller lui présente sa sélection, il note,
+              pour chaque bien, ce que l’acquéreur répond — le visiter, peut-être, pas pour lui —
+              et, s’il n’en veut pas, la raison parmi une liste (le quartier, la surface,
+              l’extérieur, le parking, le prix, les travaux, les photos, autre), ainsi que ses
+              créneaux de visite parmi une liste ; aucun texte libre. Ces réponses sont datées, lues
+              par la seule agence, et servent au conseiller à organiser les visites et à affiner la
+              recherche : quand une même raison revient, la fiche lui propose un changement, qui ne
+              s’applique que s’il l’accepte.
+            </li>
+            <li>
               Un journal technique : quand une erreur inattendue survient, ACM Studio enregistre sa
               date, la page concernée, un message technique, la version de l’outil et les
               identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
