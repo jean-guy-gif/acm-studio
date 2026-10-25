@@ -661,7 +661,8 @@ const venceListings = seed(
   'vence',
   'house',
   [...DEMO_PHOTO_POOLS.house],
-  exteriorsFirst(DEMO_PHOTO_EXTERIORS.house, DEMO_PHOTO_POOLS.house.slice(4)),
+  // La photo principale d'un concurrent n'est jamais celle du bien vendeur (maison-01).
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.house.slice(1), DEMO_PHOTO_POOLS.house.slice(4)),
 )([
   {
     id: 'ven-01',
@@ -1118,7 +1119,9 @@ const mouginsListings = seed(
   'mougins',
   'house',
   [...DEMO_PHOTO_POOLS.villa],
-  exteriorsFirst(DEMO_PHOTO_EXTERIORS.villa, []),
+  // La photo principale d'une annonce n'est jamais celle de la villa vendue (villa-01) : deux
+  // colonnes de la grille ne montrent pas la même miniature (relecture des rendus, 25/10).
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.villa.slice(1), []),
 )([
   {
     id: 'mou-01',
@@ -1311,7 +1314,7 @@ const mouginsListings = seed(
   {
     id: 'mou-07',
     // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
-    title: 'Villa 7 pièces 200 m² piscine — Mouans-Sartoux',
+    title: 'Villa 7 pièces 200 m² — Mouans-Sartoux',
     price: 1620000,
     surfaceArea: 200,
     landArea: 1500,
@@ -1337,7 +1340,7 @@ const mouginsListings = seed(
     publishedDaysAgo: 30,
     priceChanges: [],
     seller: sold('Collines & Vallons Immobilier', 'no'),
-    description: 'Villa de 2012 de 200 m² avec piscine, quatre chambres, terrain de 1 500 m².',
+    description: 'Villa de 2012 de 200 m², quatre chambres, terrain de 1 500 m².',
     priceAfterMeeting: null,
   },
   {

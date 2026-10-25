@@ -156,7 +156,7 @@ async function seedKellerSelection(
       price_seen_on: item.priceSeenOn,
       category: item.category,
       gaps: item.gaps,
-      snapshot: null,
+      snapshot: (item.snapshot ?? null) as Json | null,
       imported: (item.imported ?? null) as unknown as Json | null,
     };
   });

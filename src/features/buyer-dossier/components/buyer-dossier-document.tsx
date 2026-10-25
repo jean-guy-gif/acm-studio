@@ -127,10 +127,10 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
       >
         {cover ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             {/* Essai de Jean-Guy (25/10) : la photo cadrée sur le bien, pas sur le ciel — plus haute
                 que la page et posée en bas, son haut est rogné ; le dégradé sombre n'est qu'en
                 bas, sous le texte ; jamais de voile sur la photo. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={cover}
               alt=""

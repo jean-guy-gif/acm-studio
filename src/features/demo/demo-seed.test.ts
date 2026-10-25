@@ -128,6 +128,11 @@ describe('la sélection des Keller', async () => {
     expect(plan[1]!.gaps[0]).toMatch(/au-dessus du budget, à négocier$/);
   });
 
+  it('les annonces portent leur type de bien : aucun « ? Type de bien »', () => {
+    expect(plan[1]!.snapshot?.propertyType).toBe('house');
+    expect(plan[2]!.snapshot?.propertyType).toBe('house');
+  });
+
   it('le bien à vérifier : sa piscine n’est pas indiquée', () => {
     expect(poolFromLabels(plan[2]!.imported!.listingFeatures)).toBeNull();
     expect(plan[2]!.gaps).toEqual(['À vérifier : Piscine']);

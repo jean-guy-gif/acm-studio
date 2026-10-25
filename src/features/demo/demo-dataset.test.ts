@@ -242,6 +242,15 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
           for (const file of photos) expect(exteriors.has(file), `Mougins : ${file}`).toBe(true);
         }
       }
+      // Deux colonnes de la grille ne montrent jamais la même miniature : la photo principale d'un
+      // concurrent n'est pas celle du bien vendeur (relecture des rendus, 25/10).
+      if (scenario.id !== 'antibes') {
+        for (const listing of scenario.listings) {
+          expect(listing.photos[0], `${scenario.id} ${listing.id}`).not.toBe(
+            scenario.subject.photos[0],
+          );
+        }
+      }
       if (scenario.id === 'vence') {
         const exteriors = new Set<string>(DEMO_PHOTO_EXTERIORS.house);
         for (const photos of all)

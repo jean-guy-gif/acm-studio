@@ -1022,6 +1022,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Mission 118 (partie B) — « Trouver les biens idéaux » : l'agence d'abord (le mandat de
   // Mougins), puis le marché simulé (M114), en trois catégories ; trois biens retenus, retrouvés.
   await page.goBack();
+  // Relecture des rendus (25/10) : « Préparer ma démo » (ou sa remise à zéro) a déjà retenu pour
+  // les Keller le mandat de Mougins, un compromis au budget en orange et un bien à vérifier.
+  await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
   await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
   await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
   await expectUnspoken(page, 'Biens idéaux');
@@ -1195,6 +1198,10 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // colonne ; le budget du compromis en orange ; une seule phrase de tête, sur le bien qui coche tout.
   await expect(page.getByTestId('deck-open-item').locator('img')).toHaveCount(3);
   await expect(page.locator('[data-testid="deck-grid-cell"][data-tone="orange"]')).toHaveCount(1);
+  // Le bien à vérifier porte son « ? » (sa piscine n'est pas indiquée).
+  await expect(page.locator('[data-testid="deck-grid-cell"][data-mark="check"]')).not.toHaveCount(
+    0,
+  );
   await expect(page.getByTestId('deck-lead')).toContainText('Le bien A coche tous vos critères');
   await expect(page.getByTestId('deck-grid-cell')).toHaveCount(gridRows * 3);
   await expectUnspoken(page, 'Présentation — la grille');
