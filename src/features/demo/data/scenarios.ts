@@ -1316,8 +1316,10 @@ const mouginsListings = seed(
   {
     id: 'mou-07',
     // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
-    // Ses propres photos : aucune n'est celle de la villa vendue ni de mou-02, retenus avec lui pour
-    // les Keller (relecture des rendus, 25/10).
+    // Ses propres photos : sa photo principale n'est ni celle de la villa vendue ni celle de mou-02,
+    // retenus avec lui pour les Keller, et il ne partage aucune photo avec mou-02 (relecture des
+    // rendus, 25/10). Avec six extérieurs de villa, une photo secondaire reste commune avec la villa
+    // vendue.
     photos: ['villa-06.jpg', 'villa-02.jpg'],
     title: 'Villa 7 pièces 200 m² — Mouans-Sartoux',
     price: 1620000,
