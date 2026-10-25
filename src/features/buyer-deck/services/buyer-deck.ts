@@ -410,15 +410,23 @@ export function datedFact(item: PresentedItemInput, now: Date): string | null {
 }
 
 // La phrase de tête, sous la grille : le bien qui coche le plus de critères (à égalité, l'ordre de
-// la sélection), jamais un bien qui porte ✗ sur un indispensable (décision du 25/10).
-export function leadSentence(items: DeckItem[]): string | null {
+// la sélection), jamais un bien qui porte ✗ sur un indispensable (décision du 25/10), et aucune
+// phrase quand aucun bien ne coche rien.
+export function leadOf(items: DeckItem[]): { letter: string; sentence: string } | null {
   const candidates = items.filter((item) => !item.blocked && item.total > 0);
   if (candidates.length === 0) return null;
   const best = candidates.reduce((top, item) => (item.okCount > top.okCount ? item : top));
-  return best.okCount === best.total
-    ? `Le bien ${best.letter} coche tous vos critères : c’est par lui que je vous propose de commencer.`
-    : `Le bien ${best.letter} en coche le plus : ${best.okCount} sur ${best.total}.`;
+  if (best.okCount === 0) return null;
+  return {
+    letter: best.letter,
+    sentence:
+      best.okCount === best.total
+        ? `Le bien ${best.letter} coche tous vos critères : c’est par lui que je vous propose de commencer.`
+        : `Le bien ${best.letter} en coche le plus : ${best.okCount} sur ${best.total}.`,
+  };
 }
+
+export const leadSentence = (items: DeckItem[]): string | null => leadOf(items)?.sentence ?? null;
 
 export function buildBuyerDeck(input: {
   buyerId: string;
@@ -439,6 +447,9 @@ export function buildBuyerDeck(input: {
       return { criterion: row.criterion, ...verdict };
     });
     const proposed = proposedPitch(marks);
+    const blockedBy = marks
+      .filter((mark, rowIndex) => criteria[rowIndex]?.mustHave && mark.mark === 'no')
+      .map((mark) => mark.text);
     return {
       letter: LETTERS[index] ?? String(index + 1),
       item,
@@ -462,10 +473,12 @@ export function buildBuyerDeck(input: {
       pitch: raw.pitch?.trim() ? clampPitch(raw.pitch.trim()) : proposed,
       pitchProposed: proposed,
       datedFact: datedFact(item, input.now),
-      blocked: criteria.some((row, rowIndex) => row.mustHave && marks[rowIndex]?.mark === 'no'),
+      blocked: blockedBy.length > 0,
+      blockedBy,
     };
   });
   const wordsProposed = proposedBuyerWords(input.buyer);
+  const lead = leadOf(items);
   return {
     buyerId: input.buyerId,
     buyerName: input.buyer.name,
@@ -476,7 +489,8 @@ export function buildBuyerDeck(input: {
     wordsProposed,
     criteria,
     items,
-    lead: leadSentence(items),
+    lead: lead?.sentence ?? null,
+    leadLetter: lead?.letter ?? null,
   };
 }
 

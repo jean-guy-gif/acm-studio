@@ -3,27 +3,40 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeSupabase, type FakeCall } from '@/test-fixtures/fake-supabase';
 
 // Mission 122 — les gestes du dossier qui fait agir : écrits par le serveur dans l'agence de
-// l'appelant ; une présentation terminée ou un acquéreur archivé ne se modifient plus ; un appel
-// refusé n'écrit rien.
+// l'appelant ; la réponse et « Terminer » passent chacun par UNE transaction en base ; un retrait
+// est doux et réservé à un bien qui porte ✗ sur un indispensable ; un appel refusé n'écrit rien.
 const state = vi.hoisted(() => ({
   profile: null as null | { id: string; agency_id: string; removed_at: string | null },
   respond: (() => ({ data: null })) as (
-    table: string,
+    target: string,
     methods: string[],
   ) => { data?: unknown; error?: unknown },
+  blocked: true,
+  // Sous Promise.all, la dernière table ouverte ne dit pas à quelle requête on répond : une file,
+  // dans l'ordre où l'action attend ses requêtes, quand elle est remplie.
+  queue: [] as { data?: unknown; error?: unknown }[],
 }));
-// La réponse d'un appel dépend de sa table et de ses méthodes (celles qui suivent le dernier `from`).
+// La réponse d'un appel dépend de sa cible (table ou fonction) et des méthodes qui la suivent.
 const service = fakeSupabase((calls: FakeCall[]) => {
-  const start = calls.map((call) => call.method).lastIndexOf('from');
-  const table = String(calls[start]?.args[0]);
+  if (state.queue.length > 0) return state.queue.shift()!;
+  const start = calls.map((call) => call.method).findLastIndex((m) => m === 'from' || m === 'rpc');
+  const target = `${calls[start]?.method} ${String(calls[start]?.args[0])}`;
   return state.respond(
-    table,
+    target,
     calls.slice(start).map((call) => call.method),
   );
 });
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+// Le déroulé recalculé par le serveur : un bien, bloqué ou non selon le test.
+vi.mock('@/features/buyer-deck/queries/load-deck', () => ({
+  computeDeck: async () => ({
+    words: 'Un 3 pièces à Antibes.',
+    criteria: [],
+    items: [{ item: { itemId: ITEM }, blocked: state.blocked, blockedBy: [] }],
+  }),
+}));
 vi.mock('@/features/buyer-deck/queries/get-buyer-answers', () => ({
   getBuyerAnswers: async () => ({
     lines: [],
@@ -48,18 +61,19 @@ vi.mock('@/features/buyer-deck/queries/get-buyer-answers', () => ({
   }),
 }));
 
+const ITEM = '11111111-1111-4111-8111-111111111111';
+const SELECTION = '22222222-2222-4222-8222-222222222222';
+const BUYER = '33333333-3333-4333-8333-333333333333';
+
 const {
   answerItem,
+  finishPresentation,
   saveItemPitch,
   saveBuyerWords,
   removeSelectionItem,
   applySuggestion,
   ignoreSuggestion,
 } = await import('@/features/buyer-deck/actions/deck-actions');
-
-const ITEM = '11111111-1111-4111-8111-111111111111';
-const SELECTION = '22222222-2222-4222-8222-222222222222';
-const BUYER = '33333333-3333-4333-8333-333333333333';
 
 const itemRow = (presentedAt: string | null = null, archivedAt: string | null = null) => ({
   id: ITEM,
@@ -81,20 +95,6 @@ const responseRow = (answer: string, reasons: string[] = []) => ({
   answered_at: '2026-10-25T10:00:00Z',
   created_at: '2026-10-25T10:00:00Z',
 });
-const requestRow = {
-  id: 'v1',
-  agency_id: 'agency-a',
-  buyer_id: BUYER,
-  buyer_selection_item_id: ITEM,
-  requested_at: '2026-10-25T10:00:00Z',
-  requested_during: 'presentation',
-  cancelled_at: null,
-  visited_at: null,
-  feedback: null,
-  outcome: 'to_plan',
-  availability: [],
-  created_at: '2026-10-25T10:00:00Z',
-};
 const buyerRow = {
   id: BUYER,
   agency_id: 'agency-a',
@@ -108,9 +108,19 @@ const buyerRow = {
   ignored_suggestions: [],
   demo: false,
 };
+const selectionRow = (presentedAt: string | null = null) => ({
+  id: SELECTION,
+  agency_id: 'agency-a',
+  buyer_id: BUYER,
+  created_at: '2026-10-24T10:00:00Z',
+  created_by: null,
+  presented_at: presentedAt,
+  buyer_words: null,
+  presented_deck: null,
+});
 
-const upsertArgs = (): Record<string, unknown> | undefined =>
-  service.calls.find((call) => call.method === 'upsert')?.args[0] as
+const rpcArgs = (name: string): Record<string, unknown> | undefined =>
+  service.calls.find((call) => call.method === 'rpc' && call.args[0] === name)?.args[1] as
     Record<string, unknown> | undefined;
 
 describe('les gestes du dossier qui fait agir', () => {
@@ -118,12 +128,15 @@ describe('les gestes du dossier qui fait agir', () => {
     service.reset();
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
     state.respond = () => ({ data: null });
+    state.blocked = true;
+    state.queue = [];
   });
 
   it('sans profil, ou retiré : rien n’est écrit', async () => {
     state.profile = null;
     expect((await answerItem(ITEM, 'visit', [])).ok).toBe(false);
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: '2026-10-01' };
+    expect((await finishPresentation(BUYER, SELECTION, [])).ok).toBe(false);
     expect((await saveItemPitch(ITEM, 'Il coche tout.')).ok).toBe(false);
     expect((await saveBuyerWords(SELECTION, 'Un 3 pièces.')).ok).toBe(false);
     expect((await removeSelectionItem(ITEM)).ok).toBe(false);
@@ -132,74 +145,107 @@ describe('les gestes du dossier qui fait agir', () => {
     expect(service.writes()).toEqual([]);
   });
 
-  it('« Je veux le visiter » : la réponse datée et la demande de visite de M119', async () => {
-    state.respond = (table, methods) => {
-      if (table === 'buyer_selection_items') return { data: itemRow() };
-      if (table === 'buyer_item_responses') return { data: responseRow('visit') };
-      if (table === 'buyer_visit_requests' && methods.includes('insert')) return { data: null };
-      if (table === 'buyer_visit_requests' && methods.includes('order'))
-        return { data: [requestRow] };
-      return { data: [] };
-    };
+  it('une réponse : UNE transaction en base, l’agence du profil, les raisons à « Pas pour moi » seulement', async () => {
+    state.respond = (target) =>
+      target === 'rpc answer_buyer_item' ? { data: responseRow('visit') } : { data: null };
     const result = await answerItem(ITEM, 'visit', ['surface']);
     expect(result.ok).toBe(true);
-    expect(service.writes()).toEqual([
-      'upsert buyer_item_responses',
-      'insert buyer_visit_requests',
-    ]);
-    // Des raisons ne se donnent qu'à « Pas pour moi » ; le moment est la présentation.
-    expect(upsertArgs()).toMatchObject({
-      answer: 'visit',
-      reasons: [],
-      answered_during: 'presentation',
-      agency_id: 'agency-a',
+    expect(service.writes()).toEqual(['rpc answer_buyer_item']);
+    expect(rpcArgs('answer_buyer_item')).toEqual({
+      p_agency_id: 'agency-a',
+      p_item_id: ITEM,
+      p_answer: 'visit',
+      p_reasons: [],
     });
-    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toMatchObject({
-      requested_during: 'presentation',
-      buyer_selection_item_id: ITEM,
-    });
+    service.reset();
+    state.respond = () => ({ data: responseRow('no', ['surface']) });
+    await answerItem(ITEM, 'no', ['surface', 'le voisin', 'surface']);
+    expect(rpcArgs('answer_buyer_item')).toMatchObject({ p_answer: 'no', p_reasons: ['surface'] });
   });
 
-  it('« Pas pour moi » : ses raisons relues, la demande de la présentation annulée', async () => {
-    state.respond = (table, methods) => {
-      if (table === 'buyer_selection_items') return { data: itemRow() };
-      if (table === 'buyer_item_responses') return { data: responseRow('no', ['surface']) };
-      if (table === 'buyer_visit_requests' && methods.includes('update')) return { data: null };
-      if (table === 'buyer_visit_requests' && methods.includes('order')) return { data: [] };
-      return { data: [requestRow] };
-    };
-    const result = await answerItem(ITEM, 'no', ['surface', 'le voisin', 'surface']);
-    expect(result.ok).toBe(true);
-    expect(upsertArgs()).toMatchObject({ answer: 'no', reasons: ['surface'] });
-    expect(service.writes()).toEqual([
-      'upsert buyer_item_responses',
-      'update buyer_visit_requests',
-    ]);
-  });
-
-  it('présentation terminée, acquéreur archivé, réponse hors liste : rien n’est écrit', async () => {
-    state.respond = (table) =>
-      table === 'buyer_selection_items' ? { data: itemRow('2026-10-25T11:00:00Z') } : { data: [] };
+  it('les refus de la base deviennent des messages ; une réponse hors liste n’atteint pas la base', async () => {
+    state.respond = () => ({ data: null, error: { message: 'presentation_finished' } });
     expect(await answerItem(ITEM, 'visit', [])).toEqual({
       ok: false,
       error: 'La présentation est terminée : elle se relit sans se modifier.',
     });
-    expect((await saveItemPitch(ITEM, 'Une phrase.')).ok).toBe(false);
-    expect((await removeSelectionItem(ITEM)).ok).toBe(false);
-    state.respond = (table) =>
-      table === 'buyer_selection_items' ? { data: itemRow(null, '2026-10-20') } : { data: [] };
+    state.respond = () => ({ data: null, error: { message: 'buyer_archived' } });
     expect(await answerItem(ITEM, 'visit', [])).toEqual({
       ok: false,
       error: 'Cet acquéreur est archivé.',
     });
+    service.reset();
     expect((await answerItem(ITEM, 'oui', [])).ok).toBe(false);
     expect((await answerItem('pas-un-uuid', 'visit', [])).ok).toBe(false);
     expect(service.writes()).toEqual([]);
   });
 
+  it('« Terminer » : le déroulé recalculé par le serveur et ses créneaux, en UNE transaction', async () => {
+    state.queue = [{ data: buyerRow }, { data: selectionRow() }, { data: [] }, { data: true }];
+    expect(await finishPresentation(BUYER, SELECTION, ['sat_morning', 'minuit', 'sunday'])).toEqual(
+      { ok: true },
+    );
+    expect(service.writes()).toEqual(['rpc finish_buyer_presentation']);
+    expect(rpcArgs('finish_buyer_presentation')).toMatchObject({
+      p_agency_id: 'agency-a',
+      p_selection_id: SELECTION,
+      p_availability: ['sat_morning', 'sunday'],
+      p_deck: { words: 'Un 3 pièces à Antibes.' },
+    });
+  });
+
+  it('« Terminer » sur une présentation déjà terminée : rien ne se réécrit', async () => {
+    state.queue = [
+      { data: buyerRow },
+      { data: selectionRow('2026-10-25T11:00:00Z') },
+      { data: [] },
+    ];
+    expect(await finishPresentation(BUYER, SELECTION, ['sunday'])).toEqual({ ok: true });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('« Retirer de la sélection » : doux, et seulement pour un bien bloqué sur un indispensable', async () => {
+    const replies = () => [
+      { data: itemRow() },
+      { data: buyerRow },
+      { data: selectionRow() },
+      { data: [] },
+      { data: null },
+    ];
+    state.queue = replies();
+    state.blocked = false;
+    expect((await removeSelectionItem(ITEM)).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+    state.queue = replies();
+    state.blocked = true;
+    expect((await removeSelectionItem(ITEM)).ok).toBe(true);
+    // Un retrait doux : une date posée, jamais une suppression.
+    expect(service.writes()).toEqual(['update buyer_selection_items']);
+    expect(
+      Object.keys(
+        service.calls.find((call) => call.method === 'update')?.args[0] as Record<string, unknown>,
+      ),
+    ).toEqual(['removed_at']);
+  });
+
+  it('présentation terminée ou acquéreur archivé : ni phrase ni retrait', async () => {
+    state.respond = (target) =>
+      target === 'from buyer_selection_items'
+        ? { data: itemRow('2026-10-25T11:00:00Z') }
+        : { data: [] };
+    expect((await saveItemPitch(ITEM, 'Une phrase.')).ok).toBe(false);
+    expect((await removeSelectionItem(ITEM)).ok).toBe(false);
+    state.respond = (target) =>
+      target === 'from buyer_selection_items'
+        ? { data: itemRow(null, '2026-10-20') }
+        : { data: [] };
+    expect((await saveItemPitch(ITEM, 'Une phrase.')).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+  });
+
   it('« Pourquoi » : 140 caractères au plus ; vide, la phrase proposée revient', async () => {
-    state.respond = (table) =>
-      table === 'buyer_selection_items' ? { data: itemRow() } : { data: null };
+    state.respond = (target) =>
+      target === 'from buyer_selection_items' ? { data: itemRow() } : { data: null };
     expect((await saveItemPitch(ITEM, 'x'.repeat(141))).ok).toBe(false);
     expect(service.writes()).toEqual([]);
     expect((await saveItemPitch(ITEM, '   ')).ok).toBe(true);
@@ -222,7 +268,7 @@ describe('les gestes du dossier qui fait agir', () => {
   });
 
   it('une suggestion acceptée est relue au serveur, puis appliquée ; ignorée, elle est retenue', async () => {
-    state.respond = (table) => (table === 'buyers' ? { data: buyerRow } : { data: null });
+    state.respond = (target) => (target === 'from buyers' ? { data: buyerRow } : { data: null });
     expect((await applySuggestion(BUYER, 'surface')).ok).toBe(true);
     expect(service.calls.find((call) => call.method === 'update')?.args[0]).toMatchObject({
       surface_min: 70,

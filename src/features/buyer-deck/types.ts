@@ -126,6 +126,8 @@ export type DeckItem = {
   // Un indispensable que le bien ne satisfait pas (cas restant, décision du 25/10) : signalé au
   // conseiller avant de présenter, jamais recommandé par la phrase de tête.
   blocked: boolean;
+  // Le fait de chaque indispensable ✗, et lui seul : ce que l'écran conseiller signale.
+  blockedBy: string[];
 };
 
 export type BuyerDeck = {
@@ -141,6 +143,8 @@ export type BuyerDeck = {
   items: DeckItem[];
   // « Le bien A coche tous vos critères : … » ; null si aucun bien ne peut être recommandé.
   lead: string | null;
+  // La lettre du bien de tête, donnée par le service (jamais relue dans la phrase).
+  leadLetter: string | null;
 };
 
 export const PITCH_MAX = 140;

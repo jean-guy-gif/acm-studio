@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { observedPriceDrops } from '@/features/buyer-presentation/queries/observed-price-drops';
 import { agencyPriceForBuyer } from '@/features/buyer-presentation/services/agency-price';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 import type { IdealSelectionItem } from '@/features/ideal-properties/types';
@@ -20,20 +21,6 @@ const num = (value: unknown): number | null =>
 const str = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value : null;
 const bool = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
-
-// La dernière baisse de prix datée que Stream Estate donne (M101), avec son montant.
-function lastPriceDrop(
-  streamEstate: Record<string, unknown> | null,
-): { amount: number; at: string | null } | null {
-  const changes = Array.isArray(streamEstate?.priceChanges) ? streamEstate.priceChanges : [];
-  for (const change of [...changes].reverse()) {
-    if (typeof change !== 'object' || change == null) continue;
-    const { from, to, at } = change as { from?: unknown; to?: unknown; at?: unknown };
-    const amount = num(from) != null && num(to) != null ? num(from)! - num(to)! : null;
-    if (amount != null && amount > 0) return { amount, at: str(at) };
-  }
-  return null;
-}
 
 const list = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
@@ -73,7 +60,7 @@ export async function presentedItems(
         ? supabase
             .from('comparables')
             .select(
-              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, general_condition, listing_published_at, price_drop_amount',
+              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, general_condition, listing_published_at',
             )
             .eq('agency_id', agencyId)
             .in('id', competitorIds)
@@ -100,6 +87,8 @@ export async function presentedItems(
   const competitorById = new Map((competitors ?? []).map((row) => [row.id, row]));
   const dataById = new Map((rawItems ?? []).map((row) => [row.id, row]));
 
+  // Mission 122 — la baisse de prix, datée par les seules observations de l'agence (M47).
+  const drops = await observedPriceDrops(supabase, items, agencyId);
   // Les photos du bien vendeur : des chemins du stockage, signés une heure.
   const propertyPaths = (properties ?? []).flatMap((row) => strings(row.photo_urls));
   const signed = new Map(
@@ -165,10 +154,7 @@ export async function presentedItems(
         hasElevator: null,
         condition: competitor?.general_condition ?? null,
         listedSince: competitor?.listing_published_at ?? null,
-        priceDrop:
-          competitor?.price_drop_amount != null && competitor.price_drop_amount > 0
-            ? { amount: competitor.price_drop_amount, at: null }
-            : null,
+        priceDrop: drops.get(item.id) ?? null,
       };
     }
     // Une annonce du marché : ce que l'import en a lu, sinon ce que la recherche en a dit.
@@ -195,7 +181,12 @@ export async function presentedItems(
         : outdoorAbsent
           ? ['none']
           : list(outdoorFeature?.present),
-      parking: imported ? list(imported.parkingTypes) : list(features?.parking),
+      // Un parking connu comme absent (la carte n'en nomme aucun) se dit « Pas de parking » (M118).
+      parking: imported
+        ? list(imported.parkingTypes)
+        : Array.isArray(features?.parking) && features.parking.length === 0
+          ? ['none']
+          : list(features?.parking),
       energyRating: str(imported?.energyRating) ?? str(snapshot?.energyClass),
       photos: httpsOnly(imported ? list(imported.photoUrls) : list(snapshot?.photoUrls)),
       propertyType: str(imported?.propertyType) ?? str(snapshot?.propertyType),
@@ -206,7 +197,7 @@ export async function presentedItems(
       // La date de mise en vente que l'annonce publie (M47) ; jamais le premier passage de Stream
       // Estate, qui n'est pas la date du portail (M101).
       listedSince: str(imported?.listingPublishedAt),
-      priceDrop: lastPriceDrop(streamEstate),
+      priceDrop: drops.get(item.id) ?? null,
     };
   });
 }

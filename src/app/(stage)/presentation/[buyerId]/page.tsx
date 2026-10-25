@@ -22,7 +22,7 @@ export default async function PresentationPage({
     <DeckPresentation
       deck={loaded.deck}
       initialResponses={loaded.responses}
-      initialRequests={loaded.requests}
+      initialAvailability={loaded.initialAvailability}
       logoLightUrl={loaded.logoLightUrl}
       logoDarkUrl={loaded.logoDarkUrl}
       agencyName={loaded.agencyName}

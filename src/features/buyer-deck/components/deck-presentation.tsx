@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
 import { Logo } from '@/components/brand/logo';
 import { RemoteImage } from '@/components/ui/remote-image';
-import { answerItem } from '@/features/buyer-deck/actions/deck-actions';
+import { answerItem, finishPresentation } from '@/features/buyer-deck/actions/deck-actions';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
   AVAILABILITY_LABELS,
@@ -24,9 +24,6 @@ import {
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { finishPresentation } from '@/features/buyer-presentation/actions/visit-requests';
-import { isPendingVisit } from '@/features/buyer-presentation/services/visit-request-row';
-import type { VisitRequest } from '@/features/buyer-presentation/types';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import {
   kicker,
@@ -86,7 +83,7 @@ const lettersOf = (items: DeckItem[]): string =>
 export function DeckPresentation({
   deck,
   initialResponses,
-  initialRequests,
+  initialAvailability,
   logoLightUrl,
   logoDarkUrl,
   agencyName,
@@ -96,7 +93,7 @@ export function DeckPresentation({
 }: {
   deck: BuyerDeck;
   initialResponses: ItemResponse[];
-  initialRequests: VisitRequest[];
+  initialAvailability: AvailabilitySlot[];
   logoLightUrl: string | null;
   logoDarkUrl: string | null;
   agencyName: string | null;
@@ -118,13 +115,7 @@ export function DeckPresentation({
   const [quitOpen, setQuitOpen] = useState(false);
   const [responses, setResponses] = useState<ItemResponse[]>(initialResponses);
   const readOnly = deck.presentedAt != null;
-  const [availability, setAvailability] = useState<AvailabilitySlot[]>(() => [
-    ...new Set(
-      initialRequests
-        .filter((request) => request.requestedDuring === 'presentation' && isPendingVisit(request))
-        .flatMap((request) => request.availability),
-    ),
-  ]);
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>(initialAvailability);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [finishing, setFinishing] = useState(false);
@@ -218,8 +209,8 @@ export function DeckPresentation({
   const visits = answered('visit');
   const maybes = answered('maybe');
   const noes = answered('no');
-  const leadItem = deck.lead
-    ? deck.items.find((item) => deck.lead!.startsWith(`Le bien ${item.letter} `))
+  const leadItem = deck.leadLetter
+    ? deck.items.find((item) => item.letter === deck.leadLetter)
     : undefined;
   const itemScreenIndex = (item: DeckItem): number => 2 + deck.items.indexOf(item);
 

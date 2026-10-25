@@ -59,6 +59,8 @@ export async function requestVisitsFromDossier(
       .select('id')
       .eq('selection_id', link.selection_id)
       .eq('agency_id', link.agency_id)
+      // Mission 122 — un bien retiré de la sélection ne se demande plus.
+      .is('removed_at', null)
       .in('id', itemIds),
     admin
       .from('buyer_visit_requests')

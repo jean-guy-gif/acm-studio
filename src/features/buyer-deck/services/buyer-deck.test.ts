@@ -149,8 +149,12 @@ describe('la grille', () => {
       item({ itemId: 'b', position: 2, parking: ['none'] }),
     ]);
     expect(outside.items[0]!.blocked).toBe(true);
+    // Le signalement ne nomme que l'indispensable en cause, pas les préférences ✗.
+    expect(outside.items[0]!.blockedBy).toEqual(['Pas d’extérieur']);
     expect(outside.items[1]!.blocked).toBe(false);
     expect(outside.lead).toBe('Le bien B en coche le plus : 8 sur 9.');
+    // La lettre du bien de tête vient du service.
+    expect(outside.leadLetter).toBe('B');
     // Une préférence ✗ n'est pas un blocage ; un indispensable « ? » non plus.
     expect(deck([item({ outdoor: [] })]).items[0]!.blocked).toBe(false);
   });
@@ -182,6 +186,10 @@ describe('la phrase de tête', () => {
     expect(leadSentence([entry('A', 6, 7), entry('B', 6, 7)])).toBe(
       'Le bien A en coche le plus : 6 sur 7.',
     );
+  });
+
+  it('aucun bien ne coche rien : pas de phrase', () => {
+    expect(leadSentence([entry('A', 0, 7), entry('B', 0, 7)])).toBeNull();
   });
 
   it('jamais un bien bloqué ; aucun bien recommandable : pas de phrase', () => {

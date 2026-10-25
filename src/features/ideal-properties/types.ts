@@ -63,5 +63,7 @@ export type IdealSelection = {
   presentedAt: string | null;
   // Mission 122 — « Vous m'avez dit », modifiée par le conseiller ; null = proposée.
   buyerWords: string | null;
+  // Mission 122 — le déroulé figé à « Terminer » (relu sans recalcul) ; null avant.
+  presentedDeck: unknown;
   items: IdealSelectionItem[];
 };
