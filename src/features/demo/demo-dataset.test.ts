@@ -244,7 +244,7 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
       }
       // Deux colonnes de la grille ne montrent jamais la même miniature : la photo principale d'un
       // concurrent n'est pas celle du bien vendeur (relecture des rendus, 25/10).
-      if (scenario.id !== 'antibes') {
+      {
         for (const listing of scenario.listings) {
           expect(listing.photos[0], `${scenario.id} ${listing.id}`).not.toBe(
             scenario.subject.photos[0],
