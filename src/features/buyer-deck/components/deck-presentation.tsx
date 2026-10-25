@@ -65,9 +65,9 @@ export const NEXT_TITLE = 'Ce que je fais ensuite';
 const chromeBtn =
   'inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
 const navBtn =
-  'inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
+  'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
 const primaryBtn =
-  'inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50';
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
     on
@@ -124,6 +124,11 @@ export function DeckPresentation({
   const [pending, startTransition] = useTransition();
   const [finishing, setFinishing] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState<string | null>(null);
+  const confirmRef = useRef<HTMLDivElement | null>(null);
+  // La confirmation de « Terminer » prend le focus dès qu'elle s'ouvre.
+  useEffect(() => {
+    if (confirmFinish) confirmRef.current?.focus();
+  }, [confirmFinish]);
   const itemCount = deck.items.length;
   const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
   const next = nextScreen(screen, itemCount);
@@ -447,11 +452,16 @@ export function DeckPresentation({
             <div className="flex flex-col items-start gap-3 border-t border-zinc-200 pt-5 stage:border-white/10">
               {confirmFinish ? (
                 <div
-                  className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 stage:border-amber-400/40 stage:bg-amber-500/10 stage:text-amber-100"
+                  ref={confirmRef}
+                  tabIndex={-1}
+                  className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 stage:border-amber-400/40 stage:bg-amber-500/10 stage:text-amber-100"
                   data-testid="deck-finish-confirm"
                   role="alertdialog"
+                  aria-labelledby="deck-finish-confirm-text"
                 >
-                  <p className="font-semibold">{confirmFinish}</p>
+                  <p id="deck-finish-confirm-text" className="font-semibold">
+                    {confirmFinish}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" className={navBtn} onClick={() => setConfirmFinish(null)}>
                       Annuler
@@ -488,8 +498,13 @@ export function DeckPresentation({
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur stage:border-white/10 stage:bg-brand-darkest/90">
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Une seule ligne, « Suivant » à droite (essai du 25/10) : sous 1024 px, les libellés se
+            raccourcissent ; le libellé accessible reste entier. */}
+        <div
+          className="mx-auto flex w-full max-w-5xl flex-nowrap items-center justify-between gap-2"
+          data-testid="deck-nav-bar"
+        >
+          <div className="flex flex-nowrap items-center gap-2">
             <button
               type="button"
               className={navBtn}
@@ -504,21 +519,25 @@ export function DeckPresentation({
                 type="button"
                 className={navBtn}
                 onClick={() => go(GRID)}
+                aria-label="Revenir à la grille"
                 data-testid="deck-back-to-grid"
               >
-                Revenir à la grille
+                <span className="lg:hidden">Grille</span>
+                <span className="hidden lg:inline">Revenir à la grille</span>
               </button>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2">
             {screen.type === 'grid' || screen.type === 'item' ? (
               <button
                 type="button"
                 className={navBtn}
                 onClick={() => go(ANSWER)}
+                aria-label="Passer à ses disponibilités"
                 data-testid="deck-go-answer"
               >
-                Passer à ses disponibilités
+                <span className="lg:hidden">Ses disponibilités</span>
+                <span className="hidden lg:inline">Passer à ses disponibilités</span>
               </button>
             ) : null}
             {screen.type !== 'answer' ? (
