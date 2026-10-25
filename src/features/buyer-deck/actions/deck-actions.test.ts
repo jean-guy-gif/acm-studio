@@ -1,3 +1,4 @@
+import { meetingSlots } from '@/features/buyer-deck/services/meeting-slots';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fakeSupabase, type FakeCall } from '@/test-fixtures/fake-supabase';
@@ -192,6 +193,16 @@ describe('les gestes du dossier qui fait agir', () => {
       p_availability: ['sat_morning', 'sunday'],
       p_deck: { words: 'Un 3 pièces à Antibes.' },
     });
+    // Aucun bien à visiter relu en base : aucun créneau n'est figé comme donné en rendez-vous.
+    expect(
+      (rpcArgs('finish_buyer_presentation')?.p_deck as { meetingAvailability: string[] })
+        .meetingAvailability,
+    ).toEqual([]);
+  });
+
+  it('les créneaux figés : ceux choisis, s’il veut visiter au moins un bien ; sinon aucun', () => {
+    expect(meetingSlots(['sat_morning', 'sunday'], true)).toEqual(['sat_morning', 'sunday']);
+    expect(meetingSlots(['sat_morning', 'sunday'], false)).toEqual([]);
   });
 
   it('« Terminer » sur une présentation déjà terminée : rien ne se réécrit', async () => {
