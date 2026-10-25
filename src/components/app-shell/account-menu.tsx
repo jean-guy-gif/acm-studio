@@ -6,13 +6,19 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 
 import { useAppStage } from '@/components/theme/app-stage';
 import { softPanel } from '@/components/ui/styles';
-import { accountMenuFor } from '@/features/workspace-mode/services/workspace-mode';
+import {
+  accountMenuFor,
+  type AccountLink,
+} from '@/features/workspace-mode/services/workspace-mode';
 
 // Mission 100 — la pastille des erreurs, pour les seuls opérateurs : le layout ne transmet
 // `errorsBadge` que pour eux (la page /erreurs, elle, se garde seule). Elle se tait à zéro.
 export type ErrorsBadge = { count: number; label: string };
 
 export const ACCOUNT_MENU_LABEL = 'Mon compte et l’agence';
+
+const entry =
+  'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 stage:text-white/80 stage:hover:bg-white/10 stage:focus-visible:bg-white/10';
 
 // Mission 125 — la carte du conseiller, en bas du menu de gauche, est un bouton qui ouvre le menu
 // de tout ce qui n'est pas le travail : Mon profil · Administration · Aide · Ma démo (agence de
@@ -79,9 +85,6 @@ export function AccountMenu({
     else if (event.key === 'Tab') setOpen(false);
   };
 
-  const entry =
-    'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 outline-none hover:bg-zinc-100 focus-visible:bg-zinc-100 stage:text-white/80 stage:hover:bg-white/10 stage:focus-visible:bg-white/10';
-
   return (
     <div ref={container} className="relative">
       <button
@@ -129,50 +132,78 @@ export function AccountMenu({
           data-testid="account-menu"
           className="absolute right-0 bottom-full left-0 z-50 mb-2 flex flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
         >
-          {links.map((link) => {
-            const current = pathname === link.href || pathname.startsWith(`${link.href}/`);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                role="menuitem"
-                tabIndex={-1}
-                aria-current={current ? 'page' : undefined}
-                onClick={() => close(false)}
-                className={entry}
-              >
-                <span>{link.label}</span>
-                {link.href === '/erreurs' && showBadge ? (
-                  <span
-                    data-testid="account-errors-label"
-                    className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white"
-                  >
-                    {errorsBadge.label}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-          <div className="my-1 border-t border-zinc-100 stage:border-white/10" />
-          <button
-            type="button"
-            role="menuitem"
-            tabIndex={-1}
-            onClick={() => {
+          <AccountMenuEntries
+            links={links}
+            pathname={pathname}
+            errorsBadge={errorsBadge}
+            themeLabel={theme === 'dark' ? 'Clair' : 'Sombre'}
+            onLink={() => close(false)}
+            onTheme={() => {
               toggle();
               close(true);
             }}
-            className={entry}
-          >
-            {theme === 'dark' ? 'Clair' : 'Sombre'}
-          </button>
-          <form action={signOutAction}>
-            <button type="submit" role="menuitem" tabIndex={-1} className={entry}>
-              Déconnexion
-            </button>
-          </form>
+            signOutAction={signOutAction}
+          />
         </div>
       ) : null}
     </div>
+  );
+}
+
+// Les entrées du menu ouvert, sans état : les liens du compte (« Erreurs » porte la pastille des
+// erreurs depuis hier, pour un opérateur, s'il y en a), puis Sombre / Clair et Déconnexion.
+export function AccountMenuEntries({
+  links,
+  pathname,
+  errorsBadge,
+  themeLabel,
+  onLink,
+  onTheme,
+  signOutAction,
+}: {
+  links: AccountLink[];
+  pathname: string;
+  errorsBadge: ErrorsBadge | null;
+  themeLabel: 'Sombre' | 'Clair';
+  onLink: () => void;
+  onTheme: () => void;
+  signOutAction: () => Promise<void>;
+}) {
+  return (
+    <>
+      {links.map((link) => {
+        const current = pathname === link.href || pathname.startsWith(`${link.href}/`);
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            role="menuitem"
+            tabIndex={-1}
+            aria-current={current ? 'page' : undefined}
+            onClick={onLink}
+            className={entry}
+          >
+            <span>{link.label}</span>
+            {link.href === '/erreurs' && errorsBadge != null && errorsBadge.count > 0 ? (
+              <span
+                data-testid="account-errors-label"
+                className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white"
+              >
+                {errorsBadge.label}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
+      <div className="my-1 border-t border-zinc-100 stage:border-white/10" />
+      <button type="button" role="menuitem" tabIndex={-1} onClick={onTheme} className={entry}>
+        {themeLabel}
+      </button>
+      <form action={signOutAction}>
+        <button type="submit" role="menuitem" tabIndex={-1} className={entry}>
+          Déconnexion
+        </button>
+      </form>
+    </>
   );
 }
