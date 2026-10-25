@@ -5,11 +5,23 @@
 -- demande de visite avec ses créneaux — une demande déjà vivante (pendant la présentation, par
 -- exemple) reçoit les créneaux en plus, sans doublon, jamais en écrasement ; sinon une demande
 -- « depuis le dossier » naît. Une seule réponse : si la sélection a déjà une réponse « depuis le
--- lien », tout est refusé (« Merci, j'ai bien reçu votre réponse »). Un acquéreur archivé, un bien
--- retiré ou hors de la sélection : refusé. La sélection est verrouillée le temps de l'écriture.
+-- lien », tout est refusé (« Merci, j'ai bien reçu votre réponse ») : une seule réponse PAR
+-- SÉLECTION (décision de Jean-Guy, 25/10). Une présentation terminée (`presented_at` posé), un
+-- acquéreur archivé, un bien retiré ou hors de la sélection : refusé (règle de la M122 A, comme
+-- `answer_buyer_item`). La sélection est verrouillée le temps de l'écriture.
+--
+-- `buyer_selections.dossier_availability` : les créneaux donnés SUR LE LIEN, et eux seuls, pour que
+-- la seconde ouverture redise ce qu'il a répondu, sans les créneaux de la présentation que les
+-- demandes de visite portent aussi.
 --
 -- Réservée au serveur (clé service), après la vérification du jeton : le navigateur n'a que la
--- lecture. Compatible avec le code de `main` : une fonction neuve, aucune ligne écrite.
+-- lecture. Compatible avec le code de `main` : une colonne vide par défaut, que `main` ne lit ni
+-- n'écrit, et une fonction neuve ; aucune ligne modifiée.
+
+alter table public.buyer_selections add column dossier_availability text[] not null default '{}'
+  check (dossier_availability <@ array['sat_morning', 'sat_afternoon', 'sunday', 'weekday_day', 'weekday_evening']::text[]);
+comment on column public.buyer_selections.dossier_availability is
+  'Mission 122 B — les créneaux donnés par l''acquéreur sur le lien du dossier ; écrits par submit_buyer_dossier_answers seule.';
 
 create function public.submit_buyer_dossier_answers(
   p_agency_id uuid,
@@ -23,14 +35,16 @@ as $$
 declare
   v_buyer uuid;
   v_archived timestamptz;
+  v_presented timestamptz;
   v_answer jsonb;
   v_item uuid;
   v_kind text;
   v_reasons text[];
   v_slots text[];
   v_count integer := 0;
+  v_visits integer := 0;
 begin
-  select s.buyer_id, b.archived_at into v_buyer, v_archived
+  select s.buyer_id, b.archived_at, s.presented_at into v_buyer, v_archived, v_presented
   from public.buyer_selections s
   join public.buyers b on b.id = s.buyer_id and b.agency_id = p_agency_id
   where s.id = p_selection_id and s.agency_id = p_agency_id
@@ -40,6 +54,9 @@ begin
   end if;
   if v_archived is not null then
     raise exception 'buyer_archived' using errcode = 'P0001';
+  end if;
+  if v_presented is not null then
+    raise exception 'presentation_finished' using errcode = 'P0001';
   end if;
   if exists (
     select 1
@@ -83,6 +100,7 @@ begin
     values (p_agency_id, v_buyer, v_item, v_kind, v_reasons, 'dossier');
 
     if v_kind = 'visit' then
+      v_visits := v_visits + 1;
       update public.buyer_visit_requests r
         set availability = array(
           select slot
@@ -101,6 +119,10 @@ begin
     end if;
     v_count := v_count + 1;
   end loop;
+  -- Ses créneaux du lien, gardés seulement s'il veut visiter au moins un bien.
+  update public.buyer_selections
+    set dossier_availability = case when v_visits > 0 then v_slots else '{}' end
+  where id = p_selection_id and agency_id = p_agency_id;
   return v_count;
 end;
 $$;

@@ -39,9 +39,16 @@ export type BuyerDossier = {
   // proposées, signalement) et sans les photos retirées (« Sans photo »).
   deck: BuyerDeck;
   photoChoices: DossierPhotoChoice[];
-  // Sa réponse déjà envoyée depuis le lien, et ses créneaux : une seule réponse.
+  // Sa réponse déjà envoyée depuis le lien : une seule par sélection. `answered` la sait même quand
+  // les biens répondus ont été retirés depuis ; `answers` et `availability` (les créneaux donnés
+  // SUR LE LIEN, et eux seuls) la redisent, sur les biens encore dans la sélection.
+  answered: boolean;
   answers: ItemResponse[];
   availability: AvailabilitySlot[];
+  // La présentation terminée : le lien devient « Ce que nous avons vu ensemble », ses réponses du
+  // rendez-vous et ses créneaux, en lecture seule (décision de Jean-Guy, 25/10).
+  meetingAnswers: ItemResponse[];
+  meetingAvailability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
 };
@@ -52,5 +59,9 @@ export const DOSSIER_CHOICES_TITLE = 'Mes choix';
 export const DOSSIER_THANKS = 'Merci, j’ai bien reçu votre réponse';
 export const DOSSIER_NO_ANSWER = 'Répondez au moins pour un bien.';
 export const DOSSIER_SEND = 'Envoyer ma réponse';
+export const DOSSIER_SEEN_TOGETHER = 'Ce que nous avons vu ensemble';
+export const DOSSIER_DOWNLOAD = 'Télécharger en PDF';
+export const DOSSIER_PRESENTED =
+  'Nous avons vu cette sélection ensemble : votre réponse est enregistrée.';
 export const DOSSIER_ALREADY_ANSWERED =
   'Merci, j’ai bien reçu votre réponse : elle ne se renvoie pas.';

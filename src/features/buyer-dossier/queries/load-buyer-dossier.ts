@@ -75,6 +75,9 @@ export async function loadBuyerDossier(
     ...new Set([buyer.advisorId, connectedAdvisorId].filter(Boolean)),
   ] as string[];
   const itemIds = selection.items.map((item) => item.id);
+  // Tous les biens de la sélection, retirés compris : une réponse donnée sur un bien retiré depuis
+  // compte encore pour « une seule réponse ».
+  const allItemIds = (itemRows ?? []).map((row) => row.id);
   const [computed, { data: requestRows }, { data: responseRows }, agency, branding, advisorRows] =
     await Promise.all([
       computeDeck(supabase, buyer, selection, agencyId),
@@ -87,8 +90,7 @@ export async function loadBuyerDossier(
         .from('buyer_item_responses')
         .select('*')
         .eq('agency_id', agencyId)
-        .eq('answered_during', 'dossier')
-        .in('selection_item_id', itemIds),
+        .in('selection_item_id', allItemIds),
       supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
       supabase
         .from('agency_branding')
@@ -117,12 +119,23 @@ export async function loadBuyerDossier(
     presentedDeck: selection.presentedDeck,
     computed,
   });
-  // Sa réponse déjà envoyée depuis le lien, et les créneaux portés par ses demandes vivantes.
-  const answers = (responseRows ?? []).map(toItemResponse);
-  const toVisit = new Set(
-    answers.filter((answer) => answer.answer === 'visit').map((answer) => answer.itemId),
+  // Sa réponse déjà envoyée depuis le lien (une seule par sélection), et les créneaux donnés sur
+  // le lien, et eux seuls (`dossier_availability`, décision de Jean-Guy, 25/10).
+  const live = new Set(itemIds);
+  const responses = (responseRows ?? []).map(toItemResponse);
+  const fromLink = responses.filter((response) => response.answeredDuring === 'dossier');
+  const answers = fromLink.filter((response) => live.has(response.itemId));
+  const linkSlots = new Set<string>(selectionRow.dossier_availability ?? []);
+  const availability = AVAILABILITY_SLOTS.filter((slot) => linkSlots.has(slot));
+  // La présentation terminée : ses réponses du rendez-vous, et les créneaux que portent ses
+  // demandes de visite vivantes sur les biens qu'il a voulu visiter.
+  const meetingAnswers = responses.filter(
+    (response) => response.answeredDuring === 'presentation' && live.has(response.itemId),
   );
-  const availability = AVAILABILITY_SLOTS.filter((slot) =>
+  const toVisit = new Set(
+    meetingAnswers.filter((answer) => answer.answer === 'visit').map((answer) => answer.itemId),
+  );
+  const meetingAvailability = AVAILABILITY_SLOTS.filter((slot) =>
     (requestRows ?? [])
       .map(toVisitRequest)
       .filter((request) => isPendingVisit(request) && toVisit.has(request.itemId))
@@ -148,8 +161,11 @@ export async function loadBuyerDossier(
     sector: buyer.cities.join(', '),
     deck,
     hidden,
+    answered: fromLink.length > 0,
     answers,
     availability,
+    meetingAnswers,
+    meetingAvailability,
     agency: {
       name: agencyName,
       logoUrl: logoPath

@@ -55,8 +55,8 @@ export function DossierLinkButton({
           </p>
           <p className={hintText}>
             Copiez ce lien pour l’envoyer à l’acquéreur : il ne s’affichera plus. Il expire dans 30
-            jours ; l’outil n’envoie rien. Sur ce lien, l’acquéreur coche les biens qu’il veut
-            visiter : ses demandes arrivent sur Visites.
+            jours ; l’outil n’envoie rien. Sur ce lien, l’acquéreur répond depuis son téléphone, une
+            seule fois : sa réponse arrive sur sa fiche et sur Visites.
           </p>
         </>
       ) : null}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { GridScreen, ItemScreen } from '@/features/buyer-deck/components/deck-presentation';
 import { criteriaCountLabel } from '@/features/buyer-deck/services/buyer-deck';
@@ -9,6 +10,8 @@ import {
   WORDS,
   nextScreen,
   previousScreen,
+  sendConfirmation,
+  unansweredLetters,
   type DeckScreen,
 } from '@/features/buyer-deck/services/deck-navigation';
 import {
@@ -25,12 +28,21 @@ import {
   type NoReason,
 } from '@/features/buyer-deck/types';
 import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
-import { DOSSIER_NO_ANSWER, DOSSIER_SEND, DOSSIER_THANKS } from '@/features/buyer-dossier/types';
+import {
+  DOSSIER_DOWNLOAD,
+  DOSSIER_NO_ANSWER,
+  DOSSIER_SEEN_TOGETHER,
+  DOSSIER_SEND,
+  DOSSIER_THANKS,
+} from '@/features/buyer-dossier/types';
 
 // Mission 122 (partie B) — le lien du dossier, pensé pour le téléphone : le même déroulé que la
 // présentation (M122 A), un écran à la fois, défilement vertical, boutons au pouce. Ses réponses
 // restent sur l'appareil jusqu'à « Envoyer ma réponse » ; une seconde ouverture montre « Merci, j'ai
-// bien reçu votre réponse » et ce qu'il a répondu, sans pouvoir répondre deux fois.
+// bien reçu votre réponse » et ce qu'il a répondu, sans pouvoir répondre deux fois. Décisions de
+// Jean-Guy (25/10) : l'envoi demande confirmation s'il reste des biens sans réponse ; la présentation
+// terminée, le lien devient « Ce que nous avons vu ensemble », en lecture seule ; « Télécharger en
+// PDF », discret, à la fin, imprime le dossier (le document est dans la page, caché à l'écran).
 
 type LocalAnswer = { answer: ItemAnswer; reasons: NoReason[] };
 
@@ -42,6 +54,27 @@ const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold ${
     on ? 'border-brand bg-brand text-white' : 'border-zinc-300 bg-white text-zinc-700'
   }`;
+
+const toLocal = (responses: ItemResponse[]): Map<string, LocalAnswer> =>
+  new Map(
+    responses.map((response) => [
+      response.itemId,
+      { answer: response.answer, reasons: response.reasons },
+    ]),
+  );
+
+function DownloadButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className="self-center py-3 text-sm font-medium text-zinc-500 underline underline-offset-4"
+      data-testid="dossier-download"
+    >
+      {DOSSIER_DOWNLOAD}
+    </button>
+  );
+}
 
 const lettersOf = (items: DeckItem[]): string =>
   items.length <= 1
@@ -96,8 +129,11 @@ function Recap({
 export function DossierPhoneDeck({
   token,
   deck,
+  answered,
   initialAnswers,
   initialAvailability,
+  meetingAnswers,
+  meetingAvailability,
   agencyName,
   logoUrl,
   advisorName,
@@ -105,27 +141,32 @@ export function DossierPhoneDeck({
 }: {
   token: string;
   deck: BuyerDeck;
+  answered: boolean;
   initialAnswers: ItemResponse[];
   initialAvailability: AvailabilitySlot[];
+  meetingAnswers: ItemResponse[];
+  meetingAvailability: AvailabilitySlot[];
   agencyName: string;
   logoUrl: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
 }) {
+  const router = useRouter();
   const [screen, setScreen] = useState<DeckScreen>(WORDS);
-  const [answers, setAnswers] = useState<Map<string, LocalAnswer>>(
-    () =>
-      new Map(
-        initialAnswers.map((response) => [
-          response.itemId,
-          { answer: response.answer, reasons: response.reasons },
-        ]),
-      ),
-  );
-  const [availability, setAvailability] = useState<AvailabilitySlot[]>(initialAvailability);
-  const [sent, setSent] = useState(initialAnswers.length > 0);
+  const [answers, setAnswers] = useState<Map<string, LocalAnswer>>(() => new Map());
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  // Envoyée depuis cet écran ; ou refusée parce que déjà donnée (ou la présentation terminée) :
+  // le merci, jamais de nouveau le formulaire, et la page se recharge pour relire ce qui est en base.
+  const [sent, setSent] = useState(false);
+  const [closed, setClosed] = useState<string | null>(null);
+  const [confirmSend, setConfirmSend] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const confirmRef = useRef<HTMLDivElement | null>(null);
+  // La confirmation de l'envoi prend le focus dès qu'elle s'ouvre.
+  useEffect(() => {
+    if (confirmSend) confirmRef.current?.focus();
+  }, [confirmSend]);
   const itemCount = deck.items.length;
   const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
   const next = nextScreen(screen, itemCount);
@@ -175,12 +216,27 @@ export function DossierPhoneDeck({
   const maybes = answeredWith('maybe');
   const noes = answeredWith('no');
 
-  const send = () => {
+  const askSend = () => {
     if (answers.size === 0) {
       setError(DOSSIER_NO_ANSWER);
       return;
     }
     setError(null);
+    const question = sendConfirmation(
+      unansweredLetters(
+        deck.items.map((entry) => ({ letter: entry.letter, itemId: entry.item.itemId })),
+        asResponses,
+      ),
+    );
+    if (question) {
+      setConfirmSend(question);
+      return;
+    }
+    send();
+  };
+
+  const send = () => {
+    setConfirmSend(null);
     startTransition(async () => {
       const result = await submitDossierAnswers(
         token,
@@ -188,6 +244,12 @@ export function DossierPhoneDeck({
         visits.length > 0 ? availability : [],
       ).catch(() => ({ ok: false as const, error: 'Connexion perdue — réessayez.' }));
       if (!result.ok) {
+        if ('closed' in result && result.closed) {
+          setClosed(result.error);
+          router.refresh();
+          window.scrollTo({ top: 0 });
+          return;
+        }
         setError(result.error);
         return;
       }
@@ -207,23 +269,65 @@ export function DossierPhoneDeck({
     </header>
   );
 
-  if (sent) {
+  const advisorLine = advisorName ? (
+    <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
+      {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+    </p>
+  ) : null;
+
+  // La présentation terminée : « Ce que nous avons vu ensemble », ses réponses du rendez-vous.
+  if (deck.presentedAt) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-seen-together">
+        {header}
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
+          <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_SEEN_TOGETHER}</h1>
+          {meetingAnswers.length > 0 ? (
+            <>
+              <p className="text-base text-zinc-700">Ce que vous m’avez répondu :</p>
+              <Recap
+                deck={deck}
+                answers={toLocal(meetingAnswers)}
+                availability={meetingAvailability}
+              />
+            </>
+          ) : (
+            <p className="text-base text-zinc-700">
+              {deck.items.length > 1 ? 'Les biens' : 'Le bien'} {lettersOf(deck.items)}, que nous
+              avons regardés ensemble.
+            </p>
+          )}
+          {advisorLine}
+          <DownloadButton />
+        </main>
+      </div>
+    );
+  }
+
+  // Sa réponse déjà donnée (relue en base), ou refusée parce qu'elle l'était : le merci, et ce
+  // qu'il a répondu sur le lien ; envoyée depuis cet écran : ce qu'il vient de répondre.
+  if (answered || closed || sent) {
+    const fromServer = answered || !sent;
     return (
       <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-thanks">
         {header}
         <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
           <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_THANKS}</h1>
-          <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
-          <Recap
-            deck={deck}
-            answers={answers}
-            availability={visits.length > 0 ? availability : []}
-          />
-          {advisorName ? (
-            <p className="text-sm font-semibold text-zinc-700">
-              {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
-            </p>
-          ) : null}
+          {closed && !answered ? <p className="text-base text-zinc-700">{closed}</p> : null}
+          {fromServer && initialAnswers.length === 0 ? null : (
+            <>
+              <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
+              <Recap
+                deck={deck}
+                answers={fromServer ? toLocal(initialAnswers) : answers}
+                availability={
+                  fromServer ? initialAvailability : visits.length > 0 ? availability : []
+                }
+              />
+            </>
+          )}
+          {advisorLine}
+          <DownloadButton />
         </main>
       </div>
     );
@@ -364,15 +468,44 @@ export function DossierPhoneDeck({
                 ) : null}
               </section>
             ) : null}
+            {confirmSend ? (
+              <div
+                ref={confirmRef}
+                tabIndex={-1}
+                className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                data-testid="dossier-send-confirm"
+                role="alertdialog"
+                aria-labelledby="dossier-send-confirm-text"
+              >
+                <p id="dossier-send-confirm-text" className="font-semibold">
+                  {confirmSend}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={navBtn} onClick={() => setConfirmSend(null)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className={primaryBtn}
+                    disabled={pending}
+                    onClick={send}
+                    data-testid="dossier-send-anyway"
+                  >
+                    Envoyer quand même
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <button
               type="button"
               className={primaryBtn}
               disabled={pending}
-              onClick={send}
+              onClick={askSend}
               data-testid="dossier-send"
             >
               {pending ? 'Envoi…' : DOSSIER_SEND}
             </button>
+            <DownloadButton />
           </div>
         )}
         {error ? (

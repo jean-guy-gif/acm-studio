@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { BuyerDossierDocument } from '@/features/buyer-dossier/components/buyer-dossier-document';
 import { DossierPhoneDeck } from '@/features/buyer-dossier/components/dossier-phone-deck';
 import { loadBuyerDossier } from '@/features/buyer-dossier/queries/load-buyer-dossier';
 import {
@@ -45,24 +46,34 @@ export default async function PublicBuyerDossierPage({
   );
   if (!dossier) notFound();
   // Mission 122 (partie B) — le déroulé sur téléphone, aux couleurs de l'agence ; sa réponse déjà
-  // envoyée s'affiche à la seconde ouverture, sans pouvoir répondre deux fois.
+  // envoyée s'affiche à la seconde ouverture, sans pouvoir répondre deux fois ; la présentation
+  // terminée, « Ce que nous avons vu ensemble ». « Télécharger en PDF » imprime le dossier, présent
+  // dans la page et caché à l'écran (décision de Jean-Guy, 25/10).
   return (
-    <div data-dossier="">
+    <div data-dossier="" className="print:bg-white">
       {dossier.brandDeclarations ? (
         <style
           dangerouslySetInnerHTML={{ __html: `[data-dossier]{${dossier.brandDeclarations}}` }}
         />
       ) : null}
-      <DossierPhoneDeck
-        token={token}
-        deck={dossier.deck}
-        initialAnswers={dossier.answers}
-        initialAvailability={dossier.availability}
-        agencyName={dossier.agency.name}
-        logoUrl={dossier.agency.logoUrl}
-        advisorName={dossier.agency.advisorName}
-        advisorPhone={dossier.agency.advisorPhone}
-      />
+      <div className="print:hidden">
+        <DossierPhoneDeck
+          token={token}
+          deck={dossier.deck}
+          answered={dossier.answered}
+          initialAnswers={dossier.answers}
+          initialAvailability={dossier.availability}
+          meetingAnswers={dossier.meetingAnswers}
+          meetingAvailability={dossier.meetingAvailability}
+          agencyName={dossier.agency.name}
+          logoUrl={dossier.agency.logoUrl}
+          advisorName={dossier.agency.advisorName}
+          advisorPhone={dossier.agency.advisorPhone}
+        />
+      </div>
+      <div className="hidden print:block" data-testid="dossier-print">
+        <BuyerDossierDocument dossier={dossier} />
+      </div>
     </div>
   );
 }

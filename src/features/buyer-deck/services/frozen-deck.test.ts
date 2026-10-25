@@ -11,7 +11,16 @@ const item = (
 ) =>
   ({
     letter: itemId.toUpperCase(),
-    item: { itemId, source, photos: [photo], label: `${itemId} label` },
+    item: {
+      itemId,
+      source,
+      photos: [photo],
+      label: `${itemId} label`,
+      outdoor: [],
+      parking: [],
+      gaps: [],
+      priceDrop: null,
+    },
     photos: [photo],
     marks: [{ criterion: 'surface', mark: 'ok', text: '68 m²' }],
     okCount: 1,
@@ -84,6 +93,25 @@ describe('la relecture d’une présentation terminée', () => {
       deckForReading({ presentedAt: '2026-10-20T11:00:00Z', presentedDeck: null, computed }),
     ).toBe(computed);
     expect(deckForReading({ presentedAt: null, presentedDeck: frozen, computed })).toBe(computed);
+  });
+
+  it('chaque bien relu repasse par la liste d’autorisation : une colonne glissée n’en sort pas', () => {
+    const spiked = deck('Un 3 pièces.', [
+      {
+        ...item('b', 'listing', 'https://annonce.example/photo.jpg', 'Une phrase.'),
+        item: {
+          ...item('b', 'listing', 'https://annonce.example/photo.jpg', 'Une phrase.').item,
+          title: 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas',
+          listingUrl: 'https://www.seloger.com/annonces/piege.htm',
+        } as unknown as DeckItem['item'],
+      },
+    ]);
+    const shown = JSON.stringify(
+      deckForReading({ presentedAt: '2026-10-25T11:00:00Z', presentedDeck: spiked, computed }),
+    );
+    expect(shown).not.toContain('Agence Dupont');
+    expect(shown).not.toContain('piege.htm');
+    expect(shown).toContain('https://annonce.example/photo.jpg');
   });
 
   it('un déroulé stocké de forme inattendue ne vaut rien', () => {

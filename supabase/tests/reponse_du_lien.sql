@@ -5,8 +5,10 @@
 --      les raisons à « Pas pour moi » seulement ;
 --      une demande « depuis le dossier » écrite par le code d'avant reçoit les créneaux ; une annulée
 --      n'est pas touchée ;
+--      ses créneaux du lien, et eux seuls, gardés sur la sélection ;
 --   §3 une seule réponse par sélection : un second envoi est refusé et n'écrit rien ; un bien retiré
---      ou hors de la sélection, un acquéreur archivé, une autre agence, un envoi vide : refusés, rien
+--      ou hors de la sélection, une présentation terminée, un acquéreur archivé, une autre agence,
+--      un envoi vide : refusés, rien
 --      d'écrit, ni réponse ni créneau.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
@@ -35,6 +37,11 @@ insert into public.buyer_selection_items (id, agency_id, selection_id, position,
   ('122bbbbb-4444-0000-0000-0000000000ff', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000ff', 1, 'listing', 'https://exemple.invalid/z', 'Z'),
   ('122bbbbb-4444-0000-0000-0000000000ee', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000ee', 1, 'listing', 'https://exemple.invalid/y', 'Y');
 update public.buyer_selection_items set removed_at = now() where id = '122bbbbb-4444-0000-0000-00000000000c';
+-- Une sélection dont la présentation est terminée.
+insert into public.buyer_selections (id, agency_id, buyer_id, presented_at) values
+  ('122bbbbb-3333-0000-0000-0000000000cc', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000', now());
+insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
+  ('122bbbbb-4444-0000-0000-0000000000cc', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000cc', 1, 'listing', 'https://exemple.invalid/x', 'X');
 -- Une demande vivante « pendant la présentation » sur A, avec un créneau.
 insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during, availability) values
   ('122bbbbb-5555-0000-0000-00000000000a', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000',
@@ -88,6 +95,10 @@ select pg_temp.expect('§3 un acquéreur archivé : refusé',
   pg_temp.attempt($$select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000ff',
     '[{"itemId":"122bbbbb-4444-0000-0000-0000000000ff","answer":"visit"}]'::jsonb, '{}')$$),
   'refus métier : buyer_archived');
+select pg_temp.expect('§3 une présentation terminée : refusée',
+  pg_temp.attempt($$select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000cc',
+    '[{"itemId":"122bbbbb-4444-0000-0000-0000000000cc","answer":"visit"}]'::jsonb, array['sunday'])$$),
+  'refus métier : presentation_finished');
 select pg_temp.expect('§3 une autre agence : refusée',
   pg_temp.attempt($$select public.submit_buyer_dossier_answers('99999999-0000-0000-0000-000000000000', '122bbbbb-3333-0000-0000-000000000000',
     '[{"itemId":"122bbbbb-4444-0000-0000-00000000000a","answer":"visit"}]'::jsonb, '{}')$$),
@@ -99,6 +110,8 @@ select pg_temp.expect('§3 la demande vivante de A n''a pas reçu les créneaux 
   '{weekday_evening}');
 select pg_temp.expect('§3 aucune demande créée par les refus',
   (select count(*)::text from public.buyer_visit_requests), '1');
+select pg_temp.expect('§3 aucun créneau du lien gardé par les refus',
+  (select count(*)::text from public.buyer_selections where cardinality(dossier_availability) > 0), '0');
 
 -- §2
 select pg_temp.expect('§2 deux réponses écrites',
@@ -112,6 +125,9 @@ select pg_temp.expect('§2 « depuis le lien », raisons à « Pas pour moi » s
 select pg_temp.expect('§2 la demande vivante de A reçoit les créneaux en plus, sans doublon, dans l''ordre',
   (select availability::text from public.buyer_visit_requests where id = '122bbbbb-5555-0000-0000-00000000000a'),
   '{sat_morning,sunday,weekday_evening}');
+select pg_temp.expect('§2 la sélection garde les créneaux du lien, et eux seuls',
+  (select dossier_availability::text from public.buyer_selections where id = '122bbbbb-3333-0000-0000-000000000000'),
+  '{sat_morning,sunday}');
 select pg_temp.expect('§2 aucune demande « depuis le dossier » en double sur A',
   (select count(*)::text from public.buyer_visit_requests where buyer_selection_item_id = '122bbbbb-4444-0000-0000-00000000000a'), '1');
 select pg_temp.expect('§2 « Pas pour moi » ne crée pas de demande',

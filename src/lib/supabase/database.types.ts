@@ -451,6 +451,7 @@ export type Database = {
           buyer_words: string | null
           created_at: string
           created_by: string | null
+          dossier_availability: string[]
           id: string
           presented_at: string | null
           presented_deck: Json | null
@@ -461,6 +462,7 @@ export type Database = {
           buyer_words?: string | null
           created_at?: string
           created_by?: string | null
+          dossier_availability?: string[]
           id?: string
           presented_at?: string | null
           presented_deck?: Json | null
@@ -471,6 +473,7 @@ export type Database = {
           buyer_words?: string | null
           created_at?: string
           created_by?: string | null
+          dossier_availability?: string[]
           id?: string
           presented_at?: string | null
           presented_deck?: Json | null

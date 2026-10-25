@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => s
 
 const { submitDossierAnswers } =
   await import('@/features/buyer-dossier/actions/submit-dossier-answers');
-const { DOSSIER_ALREADY_ANSWERED, DOSSIER_NO_ANSWER } =
+const { DOSSIER_ALREADY_ANSWERED, DOSSIER_NO_ANSWER, DOSSIER_PRESENTED } =
   await import('@/features/buyer-dossier/types');
 
 const TOKEN = 'A'.repeat(43);
@@ -83,6 +83,16 @@ describe('submitDossierAnswers', () => {
     expect(await submitDossierAnswers(TOKEN, [{ itemId: A, answer: 'visit' }], [])).toEqual({
       ok: false,
       error: DOSSIER_ALREADY_ANSWERED,
+      closed: true,
+    });
+  });
+
+  it('une présentation terminée : plus de réponse sur le lien, la page passe au récapitulatif', async () => {
+    state.queue = [{ data: link }, { data: null, error: { message: 'presentation_finished' } }];
+    expect(await submitDossierAnswers(TOKEN, [{ itemId: A, answer: 'visit' }], [])).toEqual({
+      ok: false,
+      error: DOSSIER_PRESENTED,
+      closed: true,
     });
   });
 

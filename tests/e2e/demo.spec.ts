@@ -1061,6 +1061,82 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
+  // Mission 122 (partie B) — avant la présentation, le lien du dossier des Keller, répondu depuis
+  // un téléphone (390 × 844) : A « Pas pour moi » (le prix), B « Peut-être », C sans réponse —
+  // « Envoyer ma réponse » demande confirmation (décision de Jean-Guy, 25/10) ; le merci, puis une
+  // seconde ouverture sans formulaire ; la réponse se lit sur la fiche, « depuis le lien ».
+  await page.getByTestId('buyer-dossier').click();
+  const dossier = page.getByTestId('buyer-dossier');
+  await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
+  await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(3);
+  await expectUnspoken(page, 'Dossier acquéreur');
+  await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
+  const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
+  const phoneContext = () =>
+    page
+      .context()
+      .browser()!
+      .newContext({
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        ...(process.env.E2E_VERCEL_BYPASS
+          ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': process.env.E2E_VERCEL_BYPASS } }
+          : {}),
+      });
+  const answering = await phoneContext();
+  try {
+    const visitor = await answering.newPage();
+    const response = await visitor.goto(dossierLink);
+    expect(response?.headers()['x-robots-tag']).toContain('noindex');
+    const phone = visitor.getByTestId('dossier-phone-deck');
+    await expect(phone).toHaveAttribute('data-screen', 'words');
+    expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+    await visitor.getByTestId('dossier-next').click();
+    await expect(phone).toHaveAttribute('data-screen', 'grid');
+    const linkAnswer = (value: string) =>
+      visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+    for (const [letter, value] of [
+      ['A', 'no'],
+      ['B', 'maybe'],
+    ] as const) {
+      await visitor.getByTestId('dossier-next').click();
+      await expect(phone).toHaveAttribute('data-screen', 'item');
+      await expect(visitor.getByText(`Bien ${letter} · `).first()).toBeVisible();
+      expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+      await linkAnswer(value).click();
+      await expect(linkAnswer(value)).toHaveAttribute('aria-pressed', 'true');
+    }
+    await visitor.getByTestId('dossier-go-answer').click();
+    const answerScreen = visitor.getByTestId('dossier-answer');
+    await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
+    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).click();
+    await expect(visitor.getByTestId('dossier-download')).toHaveText('Télécharger en PDF');
+    await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
+    await visitor.getByTestId('dossier-send').click();
+    const confirm = visitor.getByTestId('dossier-send-confirm');
+    await expect(confirm).toContainText('1 bien sans réponse : C. Envoyer quand même ?');
+    await expect(confirm).toBeFocused();
+    await confirm.getByRole('button', { name: 'Annuler' }).click();
+    await expect(confirm).toHaveCount(0);
+    await visitor.getByTestId('dossier-send').click();
+    await visitor.getByTestId('dossier-send-anyway').click();
+    await expect(visitor.getByTestId('dossier-thanks')).toContainText(
+      'Merci, j’ai bien reçu votre réponse',
+    );
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(2);
+    await visitor.goto(dossierLink);
+    await expect(visitor.getByTestId('dossier-thanks')).toBeVisible();
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(2);
+    await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
+  } finally {
+    await answering.close();
+  }
+  await page.goto('/acquereurs');
+  await page.getByRole('link', { name: 'Famille Keller' }).click();
+  await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
+  await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
+
   // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
   // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
   // grille qui montre la réponse ; A : « Pas pour moi » (la surface) ; « Terminer » avec B sans
@@ -1179,7 +1255,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByTestId('presentation-finish').click();
   await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
   const answers = page.getByTestId('buyer-answers');
-  await expect(answers.getByTestId('buyer-answer')).toHaveCount(3);
+  // Trois réponses de la présentation, deux du lien.
+  await expect(answers.getByTestId('buyer-answer')).toHaveCount(5);
   await expect(answers).toContainText('Veut le visiter');
   await expect(answers).toContainText('Pas pour lui : La surface');
   await expect(answers).toContainText('Peut-être');
@@ -1200,79 +1277,30 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
 
-  // Mission 122 (partie B) — le dossier des Keller : le PDF (trois pages de biens, « Mes choix »),
-  // puis le lien répondu depuis un téléphone (390 × 844) : B à visiter, A « pas pour moi », C
-  // peut-être ; la réponse arrive sur Visites « depuis le dossier » ; le lien retiré ne s'ouvre plus.
+  // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu
+  // ensemble » : ses réponses du rendez-vous, le conseiller, « Télécharger en PDF », sans
+  // formulaire (décision de Jean-Guy, 25/10) ; le lien retiré ne s'ouvre plus.
   await page.goto('/acquereurs');
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await page.getByTestId('buyer-dossier').click();
-  const dossier = page.getByTestId('buyer-dossier');
-  await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
-  await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(3);
-  await expectUnspoken(page, 'Dossier acquéreur');
-  await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
-  const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
-  const stranger = await page
-    .context()
-    .browser()!
-    .newContext({
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-      ...(process.env.E2E_VERCEL_BYPASS
-        ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': process.env.E2E_VERCEL_BYPASS } }
-        : {}),
-    });
+  await expect(page.getByTestId('buyer-dossier').getByTestId('dossier-item')).toHaveCount(3);
+  const rereading = await phoneContext();
   try {
-    const visitor = await stranger.newPage();
-    const response = await visitor.goto(dossierLink);
-    expect(response?.headers()['x-robots-tag']).toContain('noindex');
-    const phone = visitor.getByTestId('dossier-phone-deck');
-    await expect(phone).toHaveAttribute('data-screen', 'words');
-    expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
-    await visitor.getByTestId('dossier-next').click();
-    await expect(phone).toHaveAttribute('data-screen', 'grid');
-    const linkAnswer = (value: string) =>
-      visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
-    for (const [letter, value] of [
-      ['A', 'no'],
-      ['B', 'visit'],
-      ['C', 'maybe'],
-    ] as const) {
-      await visitor.getByTestId('dossier-next').click();
-      await expect(phone).toHaveAttribute('data-screen', 'item');
-      await expect(visitor.getByText(`Bien ${letter} · `).first()).toBeVisible();
-      expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
-      await linkAnswer(value).click();
-      await expect(linkAnswer(value)).toHaveAttribute('aria-pressed', 'true');
-    }
-    await visitor.getByTestId('dossier-go-answer').click();
-    const answerScreen = visitor.getByTestId('dossier-answer');
-    await expect(answerScreen).toContainText('Vous voulez visiter le bien B.');
-    await expect(answerScreen).toContainText('Vous hésitez pour le bien C.');
-    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).click();
-    await visitor
-      .getByTestId('dossier-availability')
-      .filter({ hasText: 'En semaine en soirée' })
-      .click();
-    await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
-    await visitor.getByTestId('dossier-send').click();
-    await expect(visitor.getByTestId('dossier-thanks')).toContainText(
-      'Merci, j’ai bien reçu votre réponse',
-    );
-    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
-    // Une seconde ouverture : le merci, sans formulaire.
+    const visitor = await rereading.newPage();
     await visitor.goto(dossierLink);
-    await expect(visitor.getByTestId('dossier-thanks')).toBeVisible();
-    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
+    const seen = visitor.getByTestId('dossier-seen-together');
+    await expect(seen).toContainText('Ce que nous avons vu ensemble');
+    await expect(seen).toContainText('Je veux le visiter');
+    await expect(seen).toContainText('Peut-être');
+    await expect(visitor.getByTestId('dossier-download')).toBeVisible();
     await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
-    await page.goto('/visites');
-    await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
-    await page.goBack();
+    await expect(visitor.getByTestId('dossier-phone-deck')).toHaveCount(0);
+    expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+    await expectNoHorizontalScroll(visitor, 'Le lien — ce que nous avons vu ensemble (390 × 844)');
     await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
     await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
     expect((await visitor.goto(dossierLink))?.status()).toBe(404);
   } finally {
-    await stranger.close();
+    await rereading.close();
   }
 }

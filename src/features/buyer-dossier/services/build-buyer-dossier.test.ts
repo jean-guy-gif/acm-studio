@@ -107,8 +107,11 @@ const build = (items: DeckItemInput[], hidden: Record<string, boolean> = {}) =>
     sector: 'Mougins, Valbonne',
     deck: deck(items, 'Une maison à Mougins, avec une piscine.'),
     hidden: new Map(Object.entries(hidden)),
+    answered: false,
     answers: [],
     availability: [],
+    meetingAnswers: [],
+    meetingAvailability: [],
     agency,
     brandDeclarations: '',
   });
@@ -129,6 +132,35 @@ describe('le déroulé remis à l’acquéreur', () => {
     expect(shown.items[0]!.pitchProposed).toBe('Le calme à deux pas.');
     expect(shown.items[0]!.blocked).toBe(false);
     expect(shown.items[0]!.blockedBy).toEqual([]);
+  });
+
+  it('une liste d’autorisation : un champ glissé dans le déroulé, le bien ou une marque n’en sort pas', () => {
+    const base = deck([item()], 'Sa phrase.');
+    const spiked = {
+      ...base,
+      notes: 'NOTE-SECRETE',
+      items: base.items.map((entry) => ({
+        ...entry,
+        advisorComment: 'COMMENTAIRE-CONSEILLER',
+        item: {
+          ...entry.item,
+          title: 'EXCLUSIVITÉ Agence Dupont',
+          listingUrl: 'https://x/piege.htm',
+        },
+        marks: entry.marks.map((mark) => ({ ...mark, internal: 'MARQUE-INTERNE' })),
+      })),
+    } as unknown as typeof base;
+    const shown = JSON.stringify(publicDeck(spiked, new Map()));
+    for (const leak of [
+      'NOTE-SECRETE',
+      'COMMENTAIRE-CONSEILLER',
+      'Agence Dupont',
+      'piege.htm',
+      'MARQUE-INTERNE',
+    ]) {
+      expect(shown).not.toContain(leak);
+    }
+    expect(publicDeck(spiked, new Map()).items[0]!.marks).toEqual(base.items[0]!.marks);
   });
 
   it('« Sans photo » retire les photos du bien, sur le lien comme sur le PDF', () => {
