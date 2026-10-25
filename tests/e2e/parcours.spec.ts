@@ -2,8 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 import {
   expectNoHorizontalScroll,
+  goViaAccountMenu,
   login,
   mainText,
+  openAccountMenu,
   pagePayload,
   TEST_PRICE_DROP,
   ageTestFollowUp,
@@ -679,16 +681,31 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs$/);
     await expect(switcher).toHaveAttribute('data-mode', 'buyer');
     await expect(modeWord).toHaveText('Mode Acquéreur');
-    for (const label of [
-      'Acquéreurs',
-      'Biens idéaux',
-      'Visites',
-      'Prospection',
-      'Administration',
-      'Aide',
-    ]) {
+    for (const label of ['Acquéreurs', 'Biens idéaux', 'Visites', 'Prospection']) {
       await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
+    // Mission 125 — le menu de gauche n'a que les quatre espaces du mode ; le reste est derrière la
+    // carte du conseiller, qui se ferme par Échap et par un clic dehors.
+    const sideNav = page.locator('nav[data-mode]');
+    await expect(sideNav.locator('a')).toHaveCount(4);
+    await expect(
+      sideNav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ }),
+    ).toHaveCount(0);
+    const accountMenu = await openAccountMenu(page);
+    for (const label of ['Mon profil', 'Administration', 'Aide', 'Sombre', 'Déconnexion']) {
+      await expect(
+        accountMenu.getByRole('menuitem', { name: new RegExp(`^${label}`) }),
+      ).toBeVisible();
+    }
+    await expect(accountMenu.getByRole('menuitem').first()).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(accountMenu.getByRole('menuitem', { name: /^Administration/ })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(accountMenu).toHaveCount(0);
+    await expect(page.getByTestId('account-card')).toBeFocused();
+    await openAccountMenu(page);
+    await page.getByRole('heading').first().click();
+    await expect(accountMenu).toHaveCount(0);
     for (const label of ['Préparation', 'Live', 'Suivi']) {
       await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toHaveCount(0);
     }
@@ -700,8 +717,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.goto('/suivi');
     await expect(switcher).toHaveAttribute('data-mode', 'seller');
     await expect(page.getByRole('link', { name: /^Live/ })).toBeVisible();
-    await page.goto('/admin');
+    // Administration, par la carte : l'adresse ne change pas, aucun des quatre espaces n'est surligné.
+    await goViaAccountMenu(page, 'Administration');
+    await expect(page).toHaveURL(/\/admin$/);
     await expect(switcher).toHaveAttribute('data-mode', 'buyer');
+    await expect(sideNav.locator('[aria-current="page"]')).toHaveCount(0);
     // « Biens idéaux » mène aux fiches et à « Rapprocher » (partie B à venir).
     await page.getByRole('link', { name: /^Biens idéaux/ }).click();
     await expect(page).toHaveURL(/\/biens-ideaux$/);

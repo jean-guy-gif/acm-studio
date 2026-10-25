@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { expectNoHorizontalScroll, login, ensureSellerMode } from './support';
+import { expectNoHorizontalScroll, login, ensureSellerMode, openAccountMenu } from './support';
 
 // Mission 72 — le Live tient sur tablette, quoi qu'il arrive. Deux vérifications courtes,
 // à part du parcours complet : la scène ne peut être décalée dans aucune taille (fenêtre et
@@ -192,4 +192,38 @@ test('un nom d’agence de 60 caractères ne pousse pas les boutons (768 px)', a
   await controls[0].click();
   await expect(page.locator('[data-stage]')).not.toHaveAttribute('data-stage', before ?? '');
   await expectNoHorizontalScroll(page, 'Live avec un nom d’agence long, thème basculé');
+});
+
+// Mission 125 — la carte du conseiller et son menu tiennent sur tablette, dans les deux sens (M72) :
+// chaque entrée est dans la fenêtre, la page ne déborde pas, Échap referme.
+test('la carte du conseiller et son menu tiennent sur tablette', async ({ page }) => {
+  await login(page);
+  await ensureSellerMode(page);
+  for (const viewport of [
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+  ]) {
+    const size = `${viewport.width} × ${viewport.height}`;
+    await page.setViewportSize(viewport);
+    await page.goto('/builder');
+    await expect(page.locator('nav[data-mode] a')).toHaveCount(4);
+    const menu = await openAccountMenu(page);
+    const entries = menu.getByRole('menuitem');
+    expect(await entries.count(), `Menu de la carte vide en ${size}`).toBeGreaterThanOrEqual(5);
+    for (const entry of await entries.all()) {
+      const box = await entry.boundingBox();
+      const label = (await entry.innerText()).trim();
+      expect(box, `« ${label} » invisible en ${size}`).not.toBeNull();
+      expect(box!.y, `« ${label} » sort par le haut en ${size}`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `« ${label} » sort à droite en ${size}`).toBeLessThanOrEqual(
+        viewport.width,
+      );
+      expect(box!.y + box!.height, `« ${label} » sort par le bas en ${size}`).toBeLessThanOrEqual(
+        viewport.height,
+      );
+    }
+    await expectNoHorizontalScroll(page, `Menu de la carte en ${size}`);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+  }
 });

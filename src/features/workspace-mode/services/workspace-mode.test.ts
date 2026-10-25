@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  SHARED_NAV,
+  accountMenuFor,
   effectiveMode,
   homeForMode,
   modeForPath,
@@ -36,8 +36,27 @@ describe('le mode du menu, Vendeur ou Acquéreur', () => {
     ]);
   });
 
-  it('communs aux deux modes : Administration et Aide', () => {
-    expect(SHARED_NAV.map((item) => item.href)).toEqual(['/admin', '/bienvenue']);
+  // Mission 125 — le menu de la carte du conseiller : tout ce qui n'est pas le travail.
+  it('la carte : Mon profil, Administration, Aide ; Ma démo à la démo ; Erreurs à un opérateur', () => {
+    const labels = (demo: boolean, operator: boolean) =>
+      accountMenuFor({ demo, operator }).map((link) => link.label);
+    expect(labels(false, false)).toEqual(['Mon profil', 'Administration', 'Aide']);
+    expect(labels(true, false)).toEqual(['Mon profil', 'Administration', 'Aide', 'Ma démo']);
+    expect(labels(false, true)).toEqual(['Mon profil', 'Administration', 'Aide', 'Erreurs']);
+    expect(accountMenuFor({ demo: true, operator: true }).map((link) => link.href)).toEqual([
+      '/profil',
+      '/admin',
+      '/bienvenue',
+      '/ma-demo',
+      '/erreurs',
+    ]);
+  });
+
+  it('aucune entrée de la carte n’est un des quatre espaces, dans aucun mode', () => {
+    const spaces = [...navForMode('seller'), ...navForMode('buyer')].map((item) => item.href);
+    for (const link of accountMenuFor({ demo: true, operator: true })) {
+      expect(spaces).not.toContain(link.href);
+    }
   });
 
   it('une page d’un mode désigne son mode ; une page commune ne désigne rien', () => {

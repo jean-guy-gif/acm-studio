@@ -1,11 +1,9 @@
-import Link from 'next/link';
-
-import { SidebarNav, type ErrorsBadge } from '@/components/app-shell/sidebar-nav';
+import { AccountMenu, type ErrorsBadge } from '@/components/app-shell/account-menu';
+import { SidebarNav } from '@/components/app-shell/sidebar-nav';
 import { AppLogo } from '@/components/theme/app-logo';
-import { AppStage, AppThemeToggle } from '@/components/theme/app-stage';
+import { AppStage } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
 import type { WorkspaceMode } from '@/features/workspace-mode/types';
-import { btnGhost, softPanel } from '@/components/ui/styles';
 
 // Shell applicatif présentational : barre latérale + zone principale, dans le
 // thème choisi par l'utilisateur (bouton Clair/Sombre). Aucune donnée chargée
@@ -49,51 +47,25 @@ export function AppShell({
 
         <aside className="flex shrink-0 flex-col gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:sticky md:top-0 md:h-screen md:w-64 md:justify-between md:gap-6 md:border-r md:border-b-0 md:px-5 md:py-6 stage:border-white/10 stage:bg-white/[0.03]">
           <div className="flex flex-col gap-4 md:gap-8">
-            <div className="flex items-center justify-between gap-3">
-              <AppLogo
-                className="h-9"
-                lightUrl={logoLightUrl}
-                darkUrl={logoDarkUrl}
-                fallbackName={agencyName}
-              />
-              <span className="md:hidden">
-                <AppThemeToggle />
-              </span>
-            </div>
-            <SidebarNav
-              errorsBadge={errorsBadge}
-              demoEntry={demoEntry}
-              workspaceMode={workspaceMode}
+            <AppLogo
+              className="h-9"
+              lightUrl={logoLightUrl}
+              darkUrl={logoDarkUrl}
+              fallbackName={agencyName}
             />
+            <SidebarNav workspaceMode={workspaceMode} />
           </div>
 
-          <div className="hidden flex-col gap-3 md:flex">
-            <div className={`${softPanel} flex flex-col gap-0.5 px-3.5 py-3`}>
-              <span className="text-sm font-semibold text-zinc-800 stage:text-white">
-                {profileName}
-              </span>
-              <span className="truncate text-xs text-zinc-500 stage:text-white/50">
-                {profileEmail}
-              </span>
-              <span className="truncate text-xs text-zinc-400 stage:text-white/40">
-                {agencyName}
-              </span>
-              <Link
-                href="/profil"
-                className="mt-1 text-xs font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
-              >
-                Mon profil
-              </Link>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <AppThemeToggle />
-              <form action={signOutAction}>
-                <button type="submit" className={btnGhost}>
-                  Déconnexion
-                </button>
-              </form>
-            </div>
-          </div>
+          {/* Mission 125 — tout ce qui n'est pas le travail passe derrière la carte du conseiller,
+              visible à toutes les largeurs (Administration et Aide n'ont plus d'autre entrée). */}
+          <AccountMenu
+            profileName={profileName}
+            profileEmail={profileEmail}
+            agencyName={agencyName}
+            signOutAction={signOutAction}
+            errorsBadge={errorsBadge}
+            demoEntry={demoEntry}
+          />
         </aside>
 
         <main className="min-w-0 flex-1">

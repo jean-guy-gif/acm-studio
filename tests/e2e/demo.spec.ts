@@ -3,8 +3,10 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import {
   demoCredentials,
   expectNoHorizontalScroll,
+  goViaAccountMenu,
   login,
   mainText,
+  openAccountMenu,
   pagePayload,
   removeDemoRunDossiers,
   uniqueDossierName,
@@ -89,7 +91,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Connexion : rien ne dit « démonstration », « Bienvenue » sans extension', async () => {
       await login(page, demoCredentials());
       await expectUnspoken(page, 'Mes dossiers');
-      await page.getByRole('link', { name: /^Aide/ }).click();
+      await goViaAccountMenu(page, 'Aide');
       await expect(page).toHaveURL(/\/bienvenue$/);
       // Sans extension ni Localisateur, tout est coché : rien à installer, et rien ne le commente.
       await expect(page.getByTestId('need-extension')).toHaveAttribute('data-state', 'done');
@@ -141,8 +143,14 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         'Freins : Le prix · Le délai',
       );
       await expect(followUp.getByText(/Dernier contact il y a 8 jours/)).toBeVisible();
-      // L'entrée « Ma démo » est au menu de l'agence de démo.
-      await expect(page.getByRole('link', { name: /^Ma démo/ })).toBeVisible();
+      // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
+      // réservé aux opérateurs ; le menu de gauche n'a que ses quatre espaces.
+      await expect(page.locator('nav[data-mode] a')).toHaveCount(4);
+      const menu = await openAccountMenu(page);
+      await expect(menu.getByRole('menuitem', { name: /^Ma démo/ })).toBeVisible();
+      await expect(menu.getByRole('menuitem', { name: /^Erreurs/ })).toHaveCount(0);
+      await page.keyboard.press('Escape');
+      await expect(menu).toHaveCount(0);
     });
 
     await test.step('Nouveau dossier', async () => {
