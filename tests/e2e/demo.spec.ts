@@ -1061,9 +1061,10 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
-  // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens, un bien par
-  // écran ; A : « Je veux le visiter », B : « Pas pour moi » (la surface), C : « Peut-être » ; ses
-  // créneaux ; « Terminer » ; la fiche montre ses réponses.
+  // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
+  // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
+  // grille qui montre la réponse ; A : « Pas pour moi » (la surface) ; « Terminer » avec B sans
+  // réponse demande confirmation ; B : « Peut-être » ; ses créneaux ; la fiche montre ses réponses.
   await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
   await page.getByTestId('present-selection').click();
   const scene = page.getByTestId('buyer-presentation');
@@ -1078,17 +1079,51 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expectUnspoken(page, 'Présentation — la grille');
   const answer = (value: string) =>
     page.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
-  for (const value of ['visit', 'no', 'maybe']) {
-    await page.getByTestId('presentation-next').click();
+  const openItem = async (letter: string) => {
+    await page.locator(`[data-testid="deck-open-item"][data-letter="${letter}"]`).click();
     await expect(scene).toHaveAttribute('data-screen', 'item');
-    await expectUnspoken(page, `Présentation — un bien (${value})`);
-    await answer(value).click();
-    await expect(answer(value)).toHaveAttribute('aria-pressed', 'true');
-  }
+    await expect(page.getByTestId('deck-kicker')).toContainText(`Bien ${letter}`);
+  };
+  const gridAnswer = (letter: string) =>
+    page.locator(`[data-testid="deck-grid-answer"][data-letter="${letter}"]`);
+  // C d'abord : « Je veux le visiter » ne fait pas avancer, la présentation n'est pas terminée.
+  await openItem('C');
+  await expectUnspoken(page, 'Présentation — le bien C');
+  await answer('visit').click();
+  await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
+  await expect(scene).toHaveAttribute('data-screen', 'item');
+  await expect(page.getByTestId('presentation-next')).toBeDisabled();
+  await expect(page.getByTestId('presentation-finished')).toHaveCount(0);
+  await page.getByTestId('deck-back-to-grid').click();
+  await expect(scene).toHaveAttribute('data-screen', 'grid');
+  await expect(gridAnswer('C')).toHaveAttribute('data-answer', 'visit');
+  await expect(gridAnswer('C')).toHaveText('À visiter');
+  // Puis A, et « Suivant » mène à B.
+  await openItem('A');
+  await answer('no').click();
+  await expect(answer('no')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('presentation-next').click();
+  await expect(page.getByTestId('deck-kicker')).toContainText('Bien B');
+  // « Terminer » avec B sans réponse : confirmation, et l'on revient.
+  await page.getByTestId('deck-go-answer').click();
   await expect(scene).toHaveAttribute('data-screen', 'answer');
-  await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien A.');
-  await expect(page.getByTestId('deck-response')).toContainText('Vous hésitez pour le bien C.');
+  await page.getByTestId('presentation-finish').click();
+  await expect(page.getByTestId('deck-finish-confirm')).toContainText(
+    '1 bien sans réponse : B. Terminer quand même ?',
+  );
+  await page.getByTestId('deck-finish-confirm').getByRole('button', { name: 'Annuler' }).click();
+  await expect(page.getByTestId('deck-finish-confirm')).toHaveCount(0);
+  await page.getByTestId('deck-back-to-grid').click();
+  await openItem('B');
+  await answer('maybe').click();
+  await expect(answer('maybe')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('deck-back-to-grid').click();
+  await expect(gridAnswer('A')).toHaveAttribute('data-answer', 'no');
+  await expect(gridAnswer('B')).toHaveAttribute('data-answer', 'maybe');
+  await page.getByTestId('deck-go-answer').click();
+  await expect(scene).toHaveAttribute('data-screen', 'answer');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien C.');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous hésitez pour le bien B.');
   const surface = page.getByTestId('deck-reason').filter({ hasText: 'La surface' });
   await surface.click();
   await expect(surface).toHaveAttribute('aria-pressed', 'true');
