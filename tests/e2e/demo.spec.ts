@@ -1292,6 +1292,10 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(seen).toContainText('Ce que nous avons vu ensemble');
     await expect(seen).toContainText('Je veux le visiter');
     await expect(seen).toContainText('Peut-être');
+    // Ses seuls créneaux du rendez-vous, rangés à « Terminer » (décision de Jean-Guy, 25/10).
+    await expect(seen.getByTestId('dossier-recap-availability')).toHaveText(
+      'Vos créneaux : Samedi matin',
+    );
     await expect(visitor.getByTestId('dossier-download')).toBeVisible();
     await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
     await expect(visitor.getByTestId('dossier-phone-deck')).toHaveCount(0);

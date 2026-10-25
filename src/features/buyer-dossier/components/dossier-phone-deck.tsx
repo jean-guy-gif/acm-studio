@@ -28,6 +28,7 @@ import {
   type NoReason,
 } from '@/features/buyer-deck/types';
 import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
+import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/link-screen';
 import {
   DOSSIER_DOWNLOAD,
   DOSSIER_NO_ANSWER,
@@ -126,6 +127,108 @@ function Recap({
   );
 }
 
+type FrameProps = {
+  agencyName: string;
+  logoUrl: string | null;
+  advisorName: string | null;
+  advisorPhone: string | null;
+};
+
+function LinkHeader({ agencyName, logoUrl }: Pick<FrameProps, 'agencyName' | 'logoUrl'>) {
+  return (
+    <header className="flex items-center justify-between gap-3 px-4 pt-4">
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt={agencyName} className="max-h-9 max-w-36 object-contain" />
+      ) : (
+        <span className="font-title text-base font-semibold text-brand-deep">{agencyName}</span>
+      )}
+    </header>
+  );
+}
+
+function AdvisorLine({
+  advisorName,
+  advisorPhone,
+}: Pick<FrameProps, 'advisorName' | 'advisorPhone'>) {
+  return advisorName ? (
+    <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
+      {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+    </p>
+  ) : null;
+}
+
+// La présentation terminée : « Ce que nous avons vu ensemble », ses réponses du rendez-vous et ses
+// créneaux du rendez-vous (rangés dans le déroulé figé), le conseiller, en lecture seule.
+export function SeenTogetherView({
+  deck,
+  answers,
+  availability,
+  note,
+  ...frame
+}: FrameProps & {
+  deck: BuyerDeck;
+  answers: ItemResponse[];
+  availability: AvailabilitySlot[];
+  note: string | null;
+}) {
+  return (
+    <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-seen-together">
+      <LinkHeader agencyName={frame.agencyName} logoUrl={frame.logoUrl} />
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
+        <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_SEEN_TOGETHER}</h1>
+        {note ? <p className="text-base text-zinc-700">{note}</p> : null}
+        {answers.length > 0 ? (
+          <>
+            <p className="text-base text-zinc-700">Ce que vous m’avez répondu :</p>
+            <Recap deck={deck} answers={toLocal(answers)} availability={availability} />
+          </>
+        ) : (
+          <p className="text-base text-zinc-700">
+            {deck.items.length > 1 ? 'Les biens' : 'Le bien'} {lettersOf(deck.items)}, que nous
+            avons regardés ensemble.
+          </p>
+        )}
+        <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
+        <DownloadButton />
+      </main>
+    </div>
+  );
+}
+
+// Sa réponse donnée : « Merci, j'ai bien reçu votre réponse » et ce qu'il a répondu sur le lien,
+// sans formulaire ; `note` dit pourquoi un envoi a été refusé (déjà répondu).
+export function ThanksView({
+  deck,
+  answers,
+  availability,
+  note,
+  ...frame
+}: FrameProps & {
+  deck: BuyerDeck;
+  answers: Map<string, LocalAnswer>;
+  availability: AvailabilitySlot[];
+  note: string | null;
+}) {
+  return (
+    <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-thanks">
+      <LinkHeader agencyName={frame.agencyName} logoUrl={frame.logoUrl} />
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
+        <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_THANKS}</h1>
+        {note ? <p className="text-base text-zinc-700">{note}</p> : null}
+        {answers.size > 0 ? (
+          <>
+            <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
+            <Recap deck={deck} answers={answers} availability={availability} />
+          </>
+        ) : null}
+        <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
+        <DownloadButton />
+      </main>
+    </div>
+  );
+}
+
 export function DossierPhoneDeck({
   token,
   deck,
@@ -158,7 +261,7 @@ export function DossierPhoneDeck({
   // Envoyée depuis cet écran ; ou refusée parce que déjà donnée (ou la présentation terminée) :
   // le merci, jamais de nouveau le formulaire, et la page se recharge pour relire ce qui est en base.
   const [sent, setSent] = useState(false);
-  const [closed, setClosed] = useState<string | null>(null);
+  const [closed, setClosed] = useState<{ kind: LinkClosed; message: string } | null>(null);
   const [confirmSend, setConfirmSend] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -245,7 +348,7 @@ export function DossierPhoneDeck({
       ).catch(() => ({ ok: false as const, error: 'Connexion perdue — réessayez.' }));
       if (!result.ok) {
         if ('closed' in result && result.closed) {
-          setClosed(result.error);
+          setClosed({ kind: result.closed, message: result.error });
           router.refresh();
           window.scrollTo({ top: 0 });
           return;
@@ -258,78 +361,36 @@ export function DossierPhoneDeck({
     });
   };
 
-  const header = (
-    <header className="flex items-center justify-between gap-3 px-4 pt-4">
-      {logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt={agencyName} className="max-h-9 max-w-36 object-contain" />
-      ) : (
-        <span className="font-title text-base font-semibold text-brand-deep">{agencyName}</span>
-      )}
-    </header>
-  );
-
-  const advisorLine = advisorName ? (
-    <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
-      {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
-    </p>
-  ) : null;
-
-  // La présentation terminée : « Ce que nous avons vu ensemble », ses réponses du rendez-vous.
-  if (deck.presentedAt) {
+  const frame = { agencyName, logoUrl, advisorName, advisorPhone };
+  const header = <LinkHeader agencyName={agencyName} logoUrl={logoUrl} />;
+  const shown = linkScreen({
+    presented: deck.presentedAt != null,
+    answered,
+    sent,
+    closed: closed?.kind ?? null,
+  });
+  if (shown === 'seen-together') {
     return (
-      <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-seen-together">
-        {header}
-        <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
-          <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_SEEN_TOGETHER}</h1>
-          {meetingAnswers.length > 0 ? (
-            <>
-              <p className="text-base text-zinc-700">Ce que vous m’avez répondu :</p>
-              <Recap
-                deck={deck}
-                answers={toLocal(meetingAnswers)}
-                availability={meetingAvailability}
-              />
-            </>
-          ) : (
-            <p className="text-base text-zinc-700">
-              {deck.items.length > 1 ? 'Les biens' : 'Le bien'} {lettersOf(deck.items)}, que nous
-              avons regardés ensemble.
-            </p>
-          )}
-          {advisorLine}
-          <DownloadButton />
-        </main>
-      </div>
+      <SeenTogetherView
+        {...frame}
+        deck={deck}
+        answers={meetingAnswers}
+        availability={meetingAvailability}
+        note={deck.presentedAt == null ? (closed?.message ?? null) : null}
+      />
     );
   }
-
-  // Sa réponse déjà donnée (relue en base), ou refusée parce qu'elle l'était : le merci, et ce
-  // qu'il a répondu sur le lien ; envoyée depuis cet écran : ce qu'il vient de répondre.
-  if (answered || closed || sent) {
+  if (shown === 'thanks') {
+    // Relue en base (déjà répondu, ou refusé parce qu'elle l'était), ou envoyée depuis cet écran.
     const fromServer = answered || !sent;
     return (
-      <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-thanks">
-        {header}
-        <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
-          <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_THANKS}</h1>
-          {closed && !answered ? <p className="text-base text-zinc-700">{closed}</p> : null}
-          {fromServer && initialAnswers.length === 0 ? null : (
-            <>
-              <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
-              <Recap
-                deck={deck}
-                answers={fromServer ? toLocal(initialAnswers) : answers}
-                availability={
-                  fromServer ? initialAvailability : visits.length > 0 ? availability : []
-                }
-              />
-            </>
-          )}
-          {advisorLine}
-          <DownloadButton />
-        </main>
-      </div>
+      <ThanksView
+        {...frame}
+        deck={deck}
+        answers={fromServer ? toLocal(initialAnswers) : answers}
+        availability={fromServer ? initialAvailability : visits.length > 0 ? availability : []}
+        note={closed && !answered ? closed.message : null}
+      />
     );
   }
 

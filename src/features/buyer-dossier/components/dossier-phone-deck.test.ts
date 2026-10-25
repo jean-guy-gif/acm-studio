@@ -11,7 +11,20 @@ vi.mock('@/features/buyer-dossier/actions/submit-dossier-answers', () => ({
   submitDossierAnswers: async () => ({ ok: true, answered: 1 }),
 }));
 
-const { DossierPhoneDeck } = await import('@/features/buyer-dossier/components/dossier-phone-deck');
+const { DossierPhoneDeck, SeenTogetherView, ThanksView } =
+  await import('@/features/buyer-dossier/components/dossier-phone-deck');
+const { DossierPublicView } =
+  await import('@/features/buyer-dossier/components/dossier-public-view');
+const { buildBuyerDossier } = await import('@/features/buyer-dossier/services/build-buyer-dossier');
+const { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } =
+  await import('@/features/buyer-dossier/types');
+
+const frame = {
+  agencyName: 'Agence Test',
+  logoUrl: null,
+  advisorName: 'Carl Conseiller',
+  advisorPhone: '06 11 22 33 44',
+};
 
 const buyer = {
   name: 'Famille Test',
@@ -166,5 +179,94 @@ describe('le lien du dossier sur téléphone', () => {
     ]) {
       expect(page).not.toContain(`data-testid="${form}"`);
     }
+  });
+
+  it('un second envoi refusé (déjà répondu) : le merci et sa raison, jamais le formulaire', () => {
+    const page = renderToStaticMarkup(
+      createElement(ThanksView, {
+        ...frame,
+        deck: deck(null),
+        answers: new Map(),
+        availability: [],
+        note: DOSSIER_ALREADY_ANSWERED,
+      }),
+    );
+    expect(page).toContain('data-testid="dossier-thanks"');
+    expect(page).toContain('Merci, j’ai bien reçu votre réponse');
+    expect(page).toContain(DOSSIER_ALREADY_ANSWERED);
+    for (const form of [
+      'dossier-send',
+      'dossier-phone-deck',
+      'deck-answer',
+      'dossier-availability',
+    ]) {
+      expect(page).not.toContain(`data-testid="${form}"`);
+    }
+  });
+
+  it('un envoi refusé parce que la présentation est terminée : ni merci, ni « réponse enregistrée »', () => {
+    const page = renderToStaticMarkup(
+      createElement(SeenTogetherView, {
+        ...frame,
+        deck: deck(null),
+        answers: [],
+        availability: [],
+        note: DOSSIER_PRESENTED,
+      }),
+    );
+    expect(page).toContain('Ce que nous avons vu ensemble');
+    expect(page).toContain(DOSSIER_PRESENTED);
+    expect(page).not.toContain('bien reçu');
+    expect(page).not.toMatch(/réponse est enregistrée/);
+    expect(page).not.toContain('data-testid="dossier-send"');
+  });
+});
+
+// « Télécharger en PDF » : le dossier imprimable est dans la page du lien, caché à l'écran, et le
+// déroulé disparaît à l'impression (décision de Jean-Guy, 25/10).
+describe('la page du lien et son document imprimable', () => {
+  const dossier = buildBuyerDossier({
+    buyerId: 'b',
+    selectionId: 's',
+    selectedAt: '2026-10-24T10:00:00Z',
+    sector: 'Mougins',
+    deck: deck(null),
+    hidden: new Map(),
+    answered: false,
+    answers: [],
+    availability: [],
+    meetingAnswers: [],
+    meetingAvailability: [],
+    agency: {
+      name: frame.agencyName,
+      logoUrl: null,
+      advisorName: frame.advisorName,
+      advisorPhone: frame.advisorPhone,
+      postalAddress: null,
+      professionalCard: null,
+      professionalCardIssuer: null,
+      financialGuarantee: null,
+      advisorEmail: null,
+      advisorPhotoUrl: null,
+      advisorQr: null,
+    },
+    brandDeclarations: '',
+  });
+  const page = renderToStaticMarkup(
+    createElement(DossierPublicView, { token: 'A'.repeat(43), dossier }),
+  );
+  const printPart = page.slice(page.indexOf('data-testid="dossier-print"'));
+  const screenPart = page.slice(
+    page.indexOf('data-testid="dossier-screen"'),
+    page.indexOf('data-testid="dossier-print"'),
+  );
+
+  it('le document est présent, caché à l’écran, seul à l’impression', () => {
+    expect(page).toMatch(/class="hidden print:block" data-testid="dossier-print"/);
+    expect(printPart).toContain('data-testid="buyer-dossier"');
+    expect(printPart).toContain('data-testid="dossier-choices"');
+    expect(page).toMatch(/class="print:hidden" data-testid="dossier-screen"/);
+    expect(screenPart).toContain('data-testid="dossier-phone-deck"');
+    expect(screenPart).not.toContain('data-testid="buyer-dossier"');
   });
 });

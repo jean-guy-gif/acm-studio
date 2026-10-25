@@ -289,6 +289,7 @@ describe('le code du dossier', () => {
     const files = [
       join(root, 'features', 'buyer-dossier', 'components', 'buyer-dossier-document.tsx'),
       join(root, 'features', 'buyer-dossier', 'components', 'dossier-phone-deck.tsx'),
+      join(root, 'features', 'buyer-dossier', 'components', 'dossier-public-view.tsx'),
       join(root, 'features', 'buyer-dossier', 'services', 'build-buyer-dossier.ts'),
       join(root, 'app', 'dossier', '[token]', 'page.tsx'),
     ];

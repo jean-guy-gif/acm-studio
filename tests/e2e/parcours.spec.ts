@@ -1004,6 +1004,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       const seen = visitor.getByTestId('dossier-seen-together');
       await expect(seen).toContainText('Ce que nous avons vu ensemble');
       await expect(seen).toContainText('Je veux le visiter');
+      // Ses créneaux du rendez-vous, rangés à « Terminer » : la visite faite ne les efface pas.
+      await expect(seen.getByTestId('dossier-recap-availability')).toHaveText(
+        'Vos créneaux : Samedi matin',
+      );
       await expect(visitor.getByTestId('dossier-download')).toHaveText('Télécharger en PDF');
       await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
       await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — vu ensemble');

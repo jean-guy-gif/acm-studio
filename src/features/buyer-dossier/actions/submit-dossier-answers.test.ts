@@ -83,7 +83,7 @@ describe('submitDossierAnswers', () => {
     expect(await submitDossierAnswers(TOKEN, [{ itemId: A, answer: 'visit' }], [])).toEqual({
       ok: false,
       error: DOSSIER_ALREADY_ANSWERED,
-      closed: true,
+      closed: 'answered',
     });
   });
 
@@ -92,7 +92,7 @@ describe('submitDossierAnswers', () => {
     expect(await submitDossierAnswers(TOKEN, [{ itemId: A, answer: 'visit' }], [])).toEqual({
       ok: false,
       error: DOSSIER_PRESENTED,
-      closed: true,
+      closed: 'presented',
     });
   });
 

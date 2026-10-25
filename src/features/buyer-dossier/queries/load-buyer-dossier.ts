@@ -11,10 +11,6 @@ import { computeDeck } from '@/features/buyer-deck/queries/load-deck';
 import { deckForReading } from '@/features/buyer-deck/services/frozen-deck';
 import { toItemResponse } from '@/features/buyer-deck/services/response-row';
 import { AVAILABILITY_SLOTS } from '@/features/buyer-deck/types';
-import {
-  toVisitRequest,
-  isPendingVisit,
-} from '@/features/buyer-presentation/services/visit-request-row';
 import { toBuyer } from '@/features/buyers/services/buyer-row';
 import { toSelection } from '@/features/ideal-properties/services/ideal-selection';
 import { buildQrCode } from '@/features/contact-card/services/qr-code';
@@ -78,33 +74,27 @@ export async function loadBuyerDossier(
   // Tous les biens de la sélection, retirés compris : une réponse donnée sur un bien retiré depuis
   // compte encore pour « une seule réponse ».
   const allItemIds = (itemRows ?? []).map((row) => row.id);
-  const [computed, { data: requestRows }, { data: responseRows }, agency, branding, advisorRows] =
-    await Promise.all([
-      computeDeck(supabase, buyer, selection, agencyId),
-      supabase
-        .from('buyer_visit_requests')
-        .select('*')
-        .eq('agency_id', agencyId)
-        .in('buyer_selection_item_id', itemIds),
-      supabase
-        .from('buyer_item_responses')
-        .select('*')
-        .eq('agency_id', agencyId)
-        .in('selection_item_id', allItemIds),
-      supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
-      supabase
-        .from('agency_branding')
-        .select(
-          'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, font_family, validated_at, logo_light_path, postal_address, professional_card, professional_card_issuer, financial_guarantee, document_name',
-        )
-        .eq('agency_id', agencyId)
-        .maybeSingle(),
-      supabase
-        .from('profiles')
-        .select('id, first_name, last_name, phone, email, photo_path, removed_at')
-        .eq('agency_id', agencyId)
-        .in('id', advisorIds),
-    ]);
+  const [computed, { data: responseRows }, agency, branding, advisorRows] = await Promise.all([
+    computeDeck(supabase, buyer, selection, agencyId),
+    supabase
+      .from('buyer_item_responses')
+      .select('*')
+      .eq('agency_id', agencyId)
+      .in('selection_item_id', allItemIds),
+    supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
+    supabase
+      .from('agency_branding')
+      .select(
+        'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, font_family, validated_at, logo_light_path, postal_address, professional_card, professional_card_issuer, financial_guarantee, document_name',
+      )
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('id, first_name, last_name, phone, email, photo_path, removed_at')
+      .eq('agency_id', agencyId)
+      .in('id', advisorIds),
+  ]);
   const profiles = advisorRows.data ?? [];
   const advisor = {
     data: chooseDossierAdvisor(
@@ -127,20 +117,13 @@ export async function loadBuyerDossier(
   const answers = fromLink.filter((response) => live.has(response.itemId));
   const linkSlots = new Set<string>(selectionRow.dossier_availability ?? []);
   const availability = AVAILABILITY_SLOTS.filter((slot) => linkSlots.has(slot));
-  // La présentation terminée : ses réponses du rendez-vous, et les créneaux que portent ses
-  // demandes de visite vivantes sur les biens qu'il a voulu visiter.
+  // La présentation terminée : ses réponses du rendez-vous, et les seuls créneaux donnés en
+  // rendez-vous, rangés dans le déroulé figé à « Terminer » — jamais lus sur les demandes de visite
+  // vivantes, que la visite faite ou le lien changent (décision de Jean-Guy, 25/10).
   const meetingAnswers = responses.filter(
     (response) => response.answeredDuring === 'presentation' && live.has(response.itemId),
   );
-  const toVisit = new Set(
-    meetingAnswers.filter((answer) => answer.answer === 'visit').map((answer) => answer.itemId),
-  );
-  const meetingAvailability = AVAILABILITY_SLOTS.filter((slot) =>
-    (requestRows ?? [])
-      .map(toVisitRequest)
-      .filter((request) => isPendingVisit(request) && toVisit.has(request.itemId))
-      .some((request) => request.availability.includes(slot)),
-  );
+  const meetingAvailability = deck.meetingAvailability;
 
   const advisorPhotoPath = advisor.data?.photo_path?.startsWith(`${agencyId}/`)
     ? advisor.data.photo_path

@@ -61,7 +61,8 @@ export const DOSSIER_NO_ANSWER = 'Répondez au moins pour un bien.';
 export const DOSSIER_SEND = 'Envoyer ma réponse';
 export const DOSSIER_SEEN_TOGETHER = 'Ce que nous avons vu ensemble';
 export const DOSSIER_DOWNLOAD = 'Télécharger en PDF';
+// Un envoi refusé parce que la présentation est terminée : rien ne dit qu'il a répondu sur le lien.
 export const DOSSIER_PRESENTED =
-  'Nous avons vu cette sélection ensemble : votre réponse est enregistrée.';
+  'Nous avons regardé cette sélection ensemble : ce lien ne prend plus de réponse.';
 export const DOSSIER_ALREADY_ANSWERED =
   'Merci, j’ai bien reçu votre réponse : elle ne se renvoie pas.';

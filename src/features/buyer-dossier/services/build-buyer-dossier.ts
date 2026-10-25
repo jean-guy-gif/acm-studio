@@ -4,7 +4,7 @@ import type {
   DeckItem,
   ItemResponse,
 } from '@/features/buyer-deck/types';
-import { allowedItem } from '@/features/buyer-presentation/services/build-presentation';
+import { allowedDeck } from '@/features/buyer-deck/services/frozen-deck';
 import type {
   BuyerDossier,
   DossierAgency,
@@ -14,47 +14,24 @@ import type {
 // Mission 122 (partie B) — le déroulé que reçoit l'acquéreur, sur le lien comme sur le PDF : rien de
 // ce qui est réservé au conseiller — ni les phrases proposées par l'outil quand il les a modifiées,
 // ni le signalement d'un indispensable avant de présenter — et, pour un bien « Sans photo », aucune
-// photo. Une LISTE D'AUTORISATION, champ par champ (M51) : rien d'autre ne sort, même d'un déroulé
-// figé relu de la base ; les faits d'un bien repassent par celle de la présentation (M119). Pur.
+// photo. Il part de la LISTE D'AUTORISATION du déroulé (`allowedDeck`, M51), puis retire ce qui est
+// réservé au conseiller. Pur.
 export function publicDeck(deck: BuyerDeck, hidden: ReadonlyMap<string, boolean>): BuyerDeck {
+  const allowed = allowedDeck(deck);
   return {
-    buyerId: deck.buyerId,
-    buyerName: deck.buyerName,
-    selectionId: deck.selectionId,
-    selectedAt: deck.selectedAt,
-    presentedAt: deck.presentedAt,
-    words: deck.words,
-    wordsProposed: deck.words,
-    criteria: deck.criteria.map((row) => ({
-      criterion: row.criterion,
-      label: row.label,
-      mustHave: row.mustHave,
-    })),
-    items: deck.items.map((entry): DeckItem => {
+    ...allowed,
+    wordsProposed: allowed.words,
+    items: allowed.items.map((entry): DeckItem => {
       const noPhoto = hidden.get(entry.item.itemId) === true;
-      const item = allowedItem(entry.item);
       return {
-        letter: entry.letter,
-        item: { ...item, photos: noPhoto ? [] : item.photos },
-        photos: noPhoto ? [] : [...entry.photos],
-        marks: entry.marks.map((mark) => ({
-          criterion: mark.criterion,
-          mark: mark.mark,
-          text: mark.text,
-        })),
-        okCount: entry.okCount,
-        total: entry.total,
-        priceLine: entry.priceLine,
-        pricePerSqm: entry.pricePerSqm,
-        pitch: entry.pitch,
+        ...entry,
+        item: { ...entry.item, photos: noPhoto ? [] : entry.item.photos },
+        photos: noPhoto ? [] : entry.photos,
         pitchProposed: entry.pitch,
-        datedFact: entry.datedFact,
         blocked: false,
         blockedBy: [],
       };
     }),
-    lead: deck.lead,
-    leadLetter: deck.leadLetter,
   };
 }
 
