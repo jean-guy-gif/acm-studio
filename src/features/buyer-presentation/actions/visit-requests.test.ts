@@ -19,7 +19,7 @@ vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 
-const { requestVisit, cancelVisitRequest, finishPresentation, recordVisitDone } =
+const { requestVisit, cancelVisitRequest, recordVisitDone } =
   await import('@/features/buyer-presentation/actions/visit-requests');
 
 const requestRow = {
@@ -53,56 +53,41 @@ describe('les demandes de visite', () => {
 
   it('sans profil, ou retiré : rien n’est écrit', async () => {
     state.profile = null;
-    expect((await requestVisit('i1', 'presentation')).ok).toBe(false);
+    expect((await requestVisit('i1')).ok).toBe(false);
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: '2026-10-01' };
     expect((await cancelVisitRequest('r1')).ok).toBe(false);
-    expect((await finishPresentation('b1', 's1')).ok).toBe(false);
     expect((await recordVisitDone('r1', 'x', 'visited')).ok).toBe(false);
     expect(service.writes()).toEqual([]);
   });
 
-  it('demander : le bien relu dans l’agence, la demande datée « pendant la présentation »', async () => {
+  it('demander : le bien relu dans l’agence, la demande datée « par le conseiller » (M122)', async () => {
     state.respond = (table) =>
-      table === 'buyer_selection_items' ? { data: itemRow(null) } : { data: requestRow };
-    const result = await requestVisit('i1', 'presentation');
+      table === 'buyer_selection_items'
+        ? { data: itemRow(null) }
+        : { data: { ...requestRow, requested_during: 'conseiller' } };
+    const result = await requestVisit('i1');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.request).toMatchObject({
-      itemId: 'i1',
-      requestedDuring: 'presentation',
-      outcome: 'to_plan',
-    });
+    expect(result.request).toMatchObject({ itemId: 'i1', requestedDuring: 'conseiller' });
     expect(service.writes()).toEqual(['insert buyer_visit_requests']);
     expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
       agency_id: 'agency-a',
       buyer_id: 'b1',
       buyer_selection_item_id: 'i1',
-      requested_during: 'presentation',
+      requested_during: 'conseiller',
     });
+    // Un bien retiré de la sélection (retrait doux) ne se demande plus.
+    expect(
+      service.calls.some((call) => call.method === 'is' && call.args[0] === 'removed_at'),
+    ).toBe(true);
   });
 
-  it('un « pendant quoi » inconnu vaut « par le conseiller » ; un acquéreur archivé ou une présentation terminée refusent', async () => {
-    state.respond = (table) =>
-      table === 'buyer_selection_items'
-        ? { data: itemRow(null) }
-        : { data: { ...requestRow, requested_during: 'conseiller' } };
-    const loose = await requestVisit('i1', 'live');
-    expect(loose.ok && loose.request.requestedDuring).toBe('conseiller');
-    service.reset();
-    state.respond = (table) =>
-      table === 'buyer_selection_items'
-        ? { data: itemRow('2026-10-24T11:00:00Z') }
-        : { data: requestRow };
-    expect(await requestVisit('i1', 'presentation')).toEqual({
-      ok: false,
-      error: 'La présentation est terminée : elle se relit sans se modifier.',
-    });
-    expect(service.writes()).toEqual([]);
+  it('un acquéreur archivé refuse ; rien n’est écrit', async () => {
     state.respond = (table) =>
       table === 'buyer_selection_items'
         ? { data: itemRow(null, '2026-10-20') }
         : { data: requestRow };
-    expect((await requestVisit('i1', 'presentation')).ok).toBe(false);
+    expect((await requestVisit('i1')).ok).toBe(false);
     expect(service.writes()).toEqual([]);
   });
 
@@ -123,33 +108,6 @@ describe('les demandes de visite', () => {
       .filter((call) => call.method === 'is')
       .map((call) => call.args[0]);
     expect(filters).toEqual(['visited_at', 'cancelled_at']);
-  });
-
-  it('terminer : pose presented_at une fois, sur la sélection présentée', async () => {
-    state.respond = () => ({ data: { id: 's1', presented_at: null } });
-    expect(await finishPresentation('b1', 's1')).toEqual({ ok: true });
-    expect(service.writes()).toEqual(['update buyer_selections']);
-    expect(
-      service.calls.some(
-        (call) => call.method === 'eq' && call.args[0] === 'id' && call.args[1] === 's1',
-      ),
-    ).toBe(true);
-    service.reset();
-    state.respond = () => ({ data: { id: 's1', presented_at: '2026-10-24T11:00:00Z' } });
-    expect(await finishPresentation('b1', 's1')).toEqual({ ok: true });
-    expect(service.writes()).toEqual([]);
-  });
-
-  it('« depuis le dossier » est réservé au lien public : d’un conseiller, c’est « par le conseiller »', async () => {
-    state.respond = (table) =>
-      table === 'buyer_selection_items'
-        ? { data: itemRow(null) }
-        : { data: { ...requestRow, requested_during: 'conseiller' } };
-    const result = await requestVisit('i1', 'dossier');
-    expect(result.ok && result.request.requestedDuring).toBe('conseiller');
-    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toMatchObject({
-      requested_during: 'conseiller',
-    });
   });
 
   it('annuler après « Terminer » : refusé, rien n’est écrit', async () => {

@@ -10,23 +10,25 @@ import {
   isItemAnswer,
   onlyReasons,
   toItemResponse,
+  type ItemResponseRow,
 } from '@/features/buyer-deck/services/response-row';
 import {
+  AVAILABILITY_SLOTS,
   NO_REASONS,
   PITCH_MAX,
   WORDS_MAX,
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { toVisitRequest } from '@/features/buyer-presentation/services/visit-request-row';
-import type { VisitRequest } from '@/features/buyer-presentation/types';
+import { computeDeck } from '@/features/buyer-deck/queries/load-deck';
 import { toBuyer } from '@/features/buyers/services/buyer-row';
+import { toSelection } from '@/features/ideal-properties/services/ideal-selection';
+import type { Json } from '@/lib/supabase/database.types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type PlainResult = { ok: true } | { ok: false; error: string };
-export type AnswerResult =
-  { ok: true; response: ItemResponse; requests: VisitRequest[] } | { ok: false; error: string };
+export type AnswerResult = { ok: true; response: ItemResponse } | { ok: false; error: string };
 
 const NOT_CONNECTED = 'Vous devez être connecté.';
 const PRESENTED = 'La présentation est terminée : elle se relit sans se modifier.';
@@ -64,6 +66,8 @@ async function itemContext(
     )
     .eq('id', itemId as string)
     .eq('agency_id', agencyId)
+    // Un bien retiré (retrait doux) n'est plus dans la sélection.
+    .is('removed_at', null)
     .maybeSingle();
   const selection = (data?.buyer_selections ?? null) as unknown as {
     buyer_id: string;
@@ -139,27 +143,86 @@ export async function saveItemPitch(itemId: unknown, rawText: unknown): Promise<
   return { ok: true };
 }
 
-// « Retirer de la sélection », avant de présenter : le bien qu'un indispensable ne satisfait plus
-// (décision du 25/10). Ses réponses et ses demandes partent avec lui (cascade).
+// « Retirer de la sélection », avant de présenter : un retrait DOUX (décision de Jean-Guy, 25/10)
+// — le bien quitte la sélection, ses réponses et ses demandes de visite restent. Le serveur ne
+// retire qu'un bien qui porte ✗ sur un indispensable, relu sur la fiche et les faits du moment.
 export async function removeSelectionItem(itemId: unknown): Promise<PlainResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
   const context = await itemContext(itemId, profile.agency_id);
   if ('error' in context) return { ok: false, error: context.error };
   if (context.presentedAt != null) return { ok: false, error: PRESENTED };
-  const { error } = await createServiceRoleClient()
+  const client = createServiceRoleClient();
+  const loaded = await selectionForDeck(
+    client,
+    context.buyerId,
+    context.selectionId,
+    profile.agency_id,
+  );
+  if (!loaded) return { ok: false, error: FAILED };
+  const deck = await computeDeck(client, loaded.buyer, loaded.selection, profile.agency_id);
+  const target = deck.items.find((item) => item.item.itemId === itemId);
+  if (!target?.blocked) {
+    return {
+      ok: false,
+      error: 'Seul un bien qui ne satisfait plus un critère indispensable se retire ici.',
+    };
+  }
+  const { error } = await client
     .from('buyer_selection_items')
-    .delete()
+    .update({ removed_at: new Date().toISOString() })
     .eq('id', itemId as string)
-    .eq('agency_id', profile.agency_id);
+    .eq('agency_id', profile.agency_id)
+    .is('removed_at', null);
   if (error) return { ok: false, error: FAILED };
   revalidate(context.buyerId);
   return { ok: true };
 }
 
+// La fiche et la sélection d'un acquéreur, relues par le serveur dans l'agence de l'appelant.
+async function selectionForDeck(
+  client: ReturnType<typeof createServiceRoleClient>,
+  buyerId: string,
+  selectionId: string,
+  agencyId: string,
+) {
+  const [{ data: buyerRow }, { data: selectionRow }, { data: itemRows }] = await Promise.all([
+    client
+      .from('buyers')
+      .select('*')
+      .eq('id', buyerId)
+      .eq('agency_id', agencyId)
+      .is('archived_at', null)
+      .maybeSingle(),
+    client
+      .from('buyer_selections')
+      .select('*')
+      .eq('id', selectionId)
+      .eq('buyer_id', buyerId)
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    client
+      .from('buyer_selection_items')
+      .select('*')
+      .eq('selection_id', selectionId)
+      .eq('agency_id', agencyId),
+  ]);
+  if (!buyerRow || !selectionRow) return null;
+  return { buyer: toBuyer(buyerRow), selection: toSelection(selectionRow, itemRows ?? []) };
+}
+
+const ANSWER_ERRORS: Record<string, string> = {
+  presentation_finished: PRESENTED,
+  buyer_archived: ARCHIVED,
+  item_removed: 'Ce bien n’est plus dans la sélection.',
+  buyer_item_not_found: 'Ce bien n’est plus dans la sélection.',
+};
+
 // Sa réponse à un bien, touchée par le conseiller pendant la présentation : un fait daté, une
-// réponse par bien (la dernière touchée vaut, jusqu'à « Terminer »). « Je veux le visiter » crée
-// la demande de visite de M119 ; une autre réponse annule celle de la présentation encore à faire.
+// réponse par bien (la dernière touchée vaut, jusqu'à « Terminer »). La réponse et la demande de
+// visite s'écrivent en UNE transaction (`answer_buyer_item`) : « Je veux le visiter » crée la
+// demande de M119, ou garde une demande déjà vivante (« depuis le dossier » comprise) ; une autre
+// réponse annule celle faite pendant la présentation.
 export async function answerItem(
   itemId: unknown,
   rawAnswer: unknown,
@@ -167,73 +230,64 @@ export async function answerItem(
 ): Promise<AnswerResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
-  if (!isItemAnswer(rawAnswer)) return { ok: false, error: FAILED };
+  if (!isItemAnswer(rawAnswer) || !z.uuid().safeParse(itemId).success) {
+    return { ok: false, error: FAILED };
+  }
   const reasons: NoReason[] = rawAnswer === 'no' ? onlyReasons(rawReasons) : [];
-  const context = await itemContext(itemId, profile.agency_id);
-  if ('error' in context) return { ok: false, error: context.error };
-  if (context.presentedAt != null) return { ok: false, error: PRESENTED };
-  const client = createServiceRoleClient();
-  const now = new Date().toISOString();
-  const { data: row, error } = await client
-    .from('buyer_item_responses')
-    .upsert(
-      {
-        agency_id: profile.agency_id,
-        buyer_id: context.buyerId,
-        selection_item_id: itemId as string,
-        answer: rawAnswer,
-        reasons,
-        answered_during: 'presentation',
-        answered_at: now,
-      },
-      { onConflict: 'selection_item_id,answered_during' },
-    )
-    .select('*')
-    .single();
-  if (error || !row) return { ok: false, error: FAILED };
+  const { data, error } = await createServiceRoleClient().rpc('answer_buyer_item', {
+    p_agency_id: profile.agency_id,
+    p_item_id: itemId as string,
+    p_answer: rawAnswer,
+    p_reasons: reasons,
+  });
+  if (error || !data) {
+    const known = Object.keys(ANSWER_ERRORS).find((code) => error?.message?.includes(code));
+    return { ok: false, error: known ? ANSWER_ERRORS[known]! : FAILED };
+  }
+  const row = data as ItemResponseRow;
+  revalidate(row.buyer_id);
+  return { ok: true, response: toItemResponse(row) };
+}
 
-  const { data: existing } = await client
-    .from('buyer_visit_requests')
-    .select('*')
-    .eq('buyer_selection_item_id', itemId as string)
-    .eq('agency_id', profile.agency_id)
-    .is('cancelled_at', null)
-    .is('visited_at', null);
-  const pending = existing ?? [];
-  if (rawAnswer === 'visit' && pending.length === 0) {
-    const { error: insertError } = await client.from('buyer_visit_requests').insert({
-      agency_id: profile.agency_id,
-      buyer_id: context.buyerId,
-      buyer_selection_item_id: itemId as string,
-      requested_during: 'presentation',
-    });
-    if (insertError) return { ok: false, error: FAILED };
+// « Terminer » : le serveur recalcule le déroulé tel qu'affiché et le fige avec la date, après
+// avoir porté ses disponibilités sur les demandes des biens qu'il veut visiter — en UNE
+// transaction (`finish_buyer_presentation`) ; la relecture lit ce qui est stocké (décision de
+// Jean-Guy, 25/10). Une présentation déjà terminée ne se réécrit pas.
+export async function finishPresentation(
+  buyerId: unknown,
+  selectionId: unknown,
+  rawAvailability: unknown = [],
+): Promise<PlainResult> {
+  const profile = await activeProfile();
+  if (!profile) return { ok: false, error: NOT_CONNECTED };
+  if (!z.uuid().safeParse(buyerId).success || !z.uuid().safeParse(selectionId).success) {
+    return { ok: false, error: FAILED };
   }
-  if (rawAnswer !== 'visit') {
-    const ids = pending
-      .filter((request) => request.requested_during === 'presentation')
-      .map((request) => request.id);
-    if (ids.length > 0) {
-      const { error: cancelError } = await client
-        .from('buyer_visit_requests')
-        .update({ cancelled_at: now })
-        .in('id', ids)
-        .eq('agency_id', profile.agency_id);
-      if (cancelError) return { ok: false, error: FAILED };
-    }
+  const client = createServiceRoleClient();
+  const loaded = await selectionForDeck(
+    client,
+    buyerId as string,
+    selectionId as string,
+    profile.agency_id,
+  );
+  if (!loaded) return { ok: false, error: 'Aucune sélection à présenter.' };
+  if (loaded.selection.presentedAt != null) {
+    revalidate(loaded.buyer.id);
+    return { ok: true };
   }
-  const { data: requests } = await client
-    .from('buyer_visit_requests')
-    .select('*')
-    .eq('buyer_selection_item_id', itemId as string)
-    .eq('agency_id', profile.agency_id)
-    .order('requested_at');
-  revalidate(context.buyerId);
-  return {
-    ok: true,
-    response: toItemResponse(row),
-    requests: (requests ?? []).map(toVisitRequest),
-  };
+  const deck = await computeDeck(client, loaded.buyer, loaded.selection, profile.agency_id);
+  const availability = AVAILABILITY_SLOTS.filter(
+    (slot) => Array.isArray(rawAvailability) && rawAvailability.includes(slot),
+  );
+  const { error } = await client.rpc('finish_buyer_presentation', {
+    p_agency_id: profile.agency_id,
+    p_selection_id: loaded.selection.id,
+    p_deck: deck as unknown as Json,
+    p_availability: availability,
+  });
+  if (error) return { ok: false, error: 'La fin de la présentation n’a pas pu être enregistrée.' };
+  revalidate(loaded.buyer.id);
+  return { ok: true };
 }
 
 const isReasonKind = (value: unknown): value is NoReason =>

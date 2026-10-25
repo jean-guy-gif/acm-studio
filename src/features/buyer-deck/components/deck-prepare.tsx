@@ -89,12 +89,8 @@ function PrepareItem({ item }: { item: DeckItem }) {
       {item.blocked ? (
         <div className={`${alertError} flex flex-col gap-2`} data-testid="deck-blocked">
           <p>
-            Ce bien ne satisfait plus un critère indispensable :{' '}
-            {item.marks
-              .filter((mark) => mark.mark === 'no')
-              .map((mark) => mark.text)
-              .join(' · ')}
-            . Il ne sera pas recommandé en tête.
+            Ce bien ne satisfait plus un critère indispensable : {item.blockedBy.join(' · ')}. Il ne
+            sera pas recommandé en tête.
           </p>
           {confirming ? (
             <div className="flex flex-wrap items-center gap-2">

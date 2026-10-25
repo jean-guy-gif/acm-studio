@@ -93,6 +93,11 @@ export function toSelection(row: SelectionRow, items: SelectionItemRow[]): Ideal
     createdAt: row.created_at,
     presentedAt: row.presented_at ?? null,
     buyerWords: row.buyer_words ?? null,
-    items: [...items].sort((a, b) => a.position - b.position).map(toSelectionItem),
+    presentedDeck: row.presented_deck ?? null,
+    // Mission 122 — un bien retiré (retrait doux) quitte la sélection ; sa ligne reste en base.
+    items: [...items]
+      .filter((item) => item.removed_at == null)
+      .sort((a, b) => a.position - b.position)
+      .map(toSelectionItem),
   };
 }

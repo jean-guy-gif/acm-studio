@@ -56,6 +56,7 @@ describe('la sélection de biens idéaux', () => {
       created_at: '2026-10-24T10:00:00Z',
       presented_at: null,
       buyer_words: null,
+      presented_deck: null,
     };
     const base = {
       agency_id: 'a',
@@ -66,6 +67,7 @@ describe('la sélection de biens idéaux', () => {
       created_at: '2026-10-24T10:00:00Z',
       dossier_hide_photo: false,
       pitch: null,
+      removed_at: null,
     };
     const selection = toSelection(row, [
       {
@@ -102,5 +104,32 @@ describe('la sélection de biens idéaux', () => {
       imported: false,
       source: 'project',
     });
+    // Mission 122 — un bien retiré (retrait doux) quitte la sélection ; sa ligne reste en base.
+    const withRemoved = toSelection(row, [
+      {
+        ...base,
+        id: 'i1',
+        position: 1,
+        source: 'project',
+        reference: 'p1',
+        label: 'A',
+        category: 'agency',
+        snapshot: null,
+        imported: null,
+      },
+      {
+        ...base,
+        id: 'i3',
+        position: 3,
+        source: 'listing',
+        reference: 'u3',
+        label: 'C',
+        category: 'strong',
+        snapshot: null,
+        imported: null,
+        removed_at: '2026-10-25T10:00:00Z',
+      },
+    ]);
+    expect(withRemoved.items.map((entry) => entry.id)).toEqual(['i1']);
   });
 });
