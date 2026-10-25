@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  buildBuyerPresentation,
+  allowedItem,
   criteriaLines,
   itemFacts,
   whyItMatches,
@@ -55,35 +55,25 @@ const item = (over: Partial<PresentedItemInput> = {}): PresentedItemInput => ({
   energyRating: 'C',
   photos: ['https://photos.example/1.jpg'],
   gaps: ['Pas de piscine'],
+  propertyType: 'house',
+  floor: null,
+  hasPool: false,
+  hasElevator: null,
+  condition: null,
+  listedSince: null,
+  priceDrop: null,
   ...over,
 });
 
 const plain = (value: unknown): string => JSON.stringify(value).replace(/[  ]/g, ' ');
 
-// Mission 119 — la présentation : un écran d'ouverture, un bien par écran, la fin ; le prix
-// affiché toujours ; « Pourquoi » depuis les indispensables de la fiche ; « À savoir » = les écarts.
-describe('la présentation de la sélection', () => {
-  it('ouverture, un bien par écran dans l’ordre, fin', () => {
-    const presentation = buildBuyerPresentation({
-      buyerId: 'b',
-      buyer,
-      selectionId: 's',
-      selectedAt: '2026-10-24T10:00:00Z',
-      presentedAt: null,
-      items: [item({ itemId: 'i2', position: 2 }), item()],
-    });
-    expect(presentation.screens.map((screen) => screen.type)).toEqual([
-      'intro',
-      'item',
-      'item',
-      'end',
-    ]);
-    const first = presentation.screens[1];
-    if (first?.type !== 'item') throw new Error('attendu un bien');
-    expect(first.item.itemId).toBe('i1');
-    expect(first.pricePerSqm).toBe(7807);
-    expect(first.seenOnLabel).toBe('affiché le 24/10/2026');
-    expect(first.facts.map((fact) => fact.label)).toEqual([
+// Mission 119 — ce que la présentation (M122 : le déroulé) et le dossier (M119 B) partagent : les
+// mots de la fiche, « Pourquoi » depuis ses indispensables, les faits d'un bien, et la liste
+// d'autorisation appliquée.
+describe('les biens présentés à l’acquéreur', () => {
+  it('les faits d’un bien, dans l’ordre', () => {
+    const facts = itemFacts(item());
+    expect(facts.map((fact) => fact.label)).toEqual([
       'Surface',
       'Pièces',
       'Chambres',
@@ -91,7 +81,14 @@ describe('la présentation de la sélection', () => {
       'Parking',
       'DPE',
     ]);
-    expect(first.facts.find((fact) => fact.label === 'Extérieur')?.value).toBe('Terrasse, Jardin');
+    expect(facts.find((fact) => fact.label === 'Extérieur')?.value).toBe('Terrasse, Jardin');
+    expect(
+      itemFacts(item({ outdoor: ['none'], parking: [] })).find((fact) => fact.label === 'Extérieur')
+        ?.value,
+    ).toBe('Aucun');
+    expect(itemFacts(item({ outdoor: [], parking: [] })).map((fact) => fact.label)).not.toContain(
+      'Parking',
+    );
   });
 
   it('« Votre recherche » reprend les mots de la fiche ; « Pourquoi » ne garde que les indispensables non contredits', () => {
@@ -112,48 +109,7 @@ describe('la présentation de la sélection', () => {
     ).toBe(false);
   });
 
-  it('un bien sans prix public n’a pas de prix au m² ; un bien de l’agence n’a pas « affiché le »', () => {
-    const presentation = buildBuyerPresentation({
-      buyerId: 'b',
-      buyer,
-      selectionId: 's',
-      selectedAt: 'x',
-      presentedAt: null,
-      items: [item({ source: 'project', price: null, priceSeenOn: null })],
-    });
-    const screen = presentation.screens[1];
-    if (screen?.type !== 'item') throw new Error('attendu un bien');
-    expect(screen.pricePerSqm).toBeNull();
-    expect(screen.seenOnLabel).toBeNull();
-    expect(
-      itemFacts(item({ outdoor: ['none'], parking: [] })).find((fact) => fact.label === 'Extérieur')
-        ?.value,
-    ).toBe('Aucun');
-    expect(itemFacts(item({ outdoor: [], parking: [] })).map((fact) => fact.label)).not.toContain(
-      'Parking',
-    );
-  });
-
-  it('jamais côté acquéreur : ni notes ni critères éliminatoires de la fiche, ni rien hors de la liste d’autorisation', () => {
-    const presentation = buildBuyerPresentation({
-      buyerId: 'b',
-      buyer,
-      selectionId: 's',
-      selectedAt: 'x',
-      presentedAt: null,
-      items: [item()],
-    });
-    const payload = JSON.stringify(presentation);
-    for (const leak of [
-      'NOTE-SECRETE',
-      'Route passante',
-      'dealBreakers',
-      'notes',
-      'phone',
-      'email',
-    ]) {
-      expect(payload).not.toContain(leak);
-    }
+  it('la liste d’autorisation est appliquée : un titre piège, une adresse, un lien, un vendeur ne sortent pas', () => {
     // Le type d'entrée n'a pas de place pour un titre, une adresse, un lien, un vendeur : un
     // appelant qui les passerait quand même ne les verrait pas sortir.
     const trap = {
@@ -166,18 +122,7 @@ describe('la présentation de la sélection', () => {
       advisorPriceMin: 1,
       commercializationPrice: 2,
     } as unknown as PresentedItemInput;
-    const spiked = JSON.stringify(
-      buildBuyerPresentation({
-        buyerId: 'b',
-        buyer,
-        selectionId: 's',
-        selectedAt: 'x',
-        presentedAt: null,
-        items: [trap],
-      }),
-    );
-    // Le constructeur applique la liste d'autorisation : le titre piège (M107), l'adresse, le lien,
-    // le vendeur, l'exclusivité, la fourchette et le prix convenu ne sortent pas de la charge.
+    const spiked = JSON.stringify(allowedItem(trap));
     expect(spiked).toContain('Maison · 7 pièces');
     for (const leak of [
       'EXCLUSIVITÉ Agence Dupont',
@@ -195,8 +140,9 @@ describe('la présentation de la sélection', () => {
     }
   });
 
-  it('le code de la présentation ne lit ni titre, ni adresse, ni lien, ni vendeur, ni exclusivité, ni fourchette, ni prix convenu, ni « estimation »', () => {
+  it('le code de la présentation ne lit ni titre, ni adresse, ni lien, ni vendeur, ni exclusivité, ni fourchette, ni prix convenu, ni « estimation », ni « disponible »', () => {
     const dir = join(process.cwd(), 'src', 'features', 'buyer-presentation');
+    const deck = join(process.cwd(), 'src', 'features', 'buyer-deck');
     const files = (path: string): string[] =>
       readdirSync(path, { withFileTypes: true }).flatMap((entry) =>
         entry.isDirectory()
@@ -205,8 +151,10 @@ describe('la présentation de la sélection', () => {
             ? [join(path, entry.name)]
             : [],
       );
+    // Mission 122 — la scène est désormais le déroulé : ses composants et ses services.
     const scene = [
-      ...files(join(dir, 'components')),
+      ...files(join(deck, 'components')),
+      ...files(join(deck, 'services')),
       join(dir, 'services', 'build-presentation.ts'),
       join(process.cwd(), 'src', 'app', '(stage)', 'presentation', '[buyerId]', 'page.tsx'),
     ]

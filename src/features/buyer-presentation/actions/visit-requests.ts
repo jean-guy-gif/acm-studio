@@ -12,6 +12,7 @@ import {
   type VisitRequest,
   type VisitRequestDuring,
 } from '@/features/buyer-presentation/types';
+import { AVAILABILITY_SLOTS } from '@/features/buyer-deck/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -116,10 +117,12 @@ export async function cancelVisitRequest(requestId: string): Promise<VisitAction
 }
 
 // « Terminer » : la présentation de cette sélection est faite ; elle se relit ensuite en lecture
-// seule, « Terminé le [date] », sans se recalculer (M111).
+// seule, « Terminé le [date] », sans se recalculer (M111). Mission 122 — ses disponibilités,
+// touchées par le conseiller, s'écrivent sur les demandes de visite de cette présentation.
 export async function finishPresentation(
   buyerId: string,
   selectionId: string,
+  rawAvailability: unknown = [],
 ): Promise<PlainResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
@@ -141,6 +144,29 @@ export async function finishPresentation(
       .eq('agency_id', profile.agency_id);
     if (error)
       return { ok: false, error: 'La fin de la présentation n’a pas pu être enregistrée.' };
+    const availability = AVAILABILITY_SLOTS.filter(
+      (slot) => Array.isArray(rawAvailability) && rawAvailability.includes(slot),
+    );
+    if (availability.length > 0) {
+      const { data: items } = await client
+        .from('buyer_selection_items')
+        .select('id')
+        .eq('selection_id', selection.id)
+        .eq('agency_id', profile.agency_id);
+      const itemIds = (items ?? []).map((item) => item.id);
+      if (itemIds.length > 0) {
+        const { error: availabilityError } = await client
+          .from('buyer_visit_requests')
+          .update({ availability })
+          .in('buyer_selection_item_id', itemIds)
+          .eq('agency_id', profile.agency_id)
+          .eq('requested_during', 'presentation')
+          .is('cancelled_at', null)
+          .is('visited_at', null);
+        if (availabilityError)
+          return { ok: false, error: 'Les disponibilités n’ont pas pu être enregistrées.' };
+      }
+    }
   }
   revalidate(buyerId);
   return { ok: true };

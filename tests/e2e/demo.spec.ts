@@ -1061,28 +1061,52 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
-  // Mission 119 — « Présenter la sélection » : l'ouverture, trois biens avec leur prix affiché,
-  // une visite demandée sur le 2e, la fin ; puis Visites la montre et la visite est faite.
+  // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens, un bien par
+  // écran ; A : « Je veux le visiter », B : « Pas pour moi » (la surface), C : « Peut-être » ; ses
+  // créneaux ; « Terminer » ; la fiche montre ses réponses.
+  await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
   await page.getByTestId('present-selection').click();
   const scene = page.getByTestId('buyer-presentation');
-  await expect(scene).toHaveAttribute('data-screen', 'intro');
-  await expectUnspoken(page, 'Présentation — ouverture');
-  await expect(page.getByTestId('presentation-criteria')).toContainText('Une piscine');
+  await expect(scene).toHaveAttribute('data-screen', 'words');
+  await expectUnspoken(page, 'Présentation — ses mots');
+  await expect(page.getByTestId('deck-words')).toContainText('Une maison');
   await page.getByTestId('presentation-next').click();
-  await expect(page.getByTestId('presentation-price')).toBeVisible();
-  await expectUnspoken(page, 'Présentation — bien 1');
+  await expect(scene).toHaveAttribute('data-screen', 'grid');
+  await expect(page.getByTestId('deck-grid-row').first()).toBeVisible();
+  const gridRows = await page.getByTestId('deck-grid-row').count();
+  await expect(page.getByTestId('deck-grid-cell')).toHaveCount(gridRows * 3);
+  await expectUnspoken(page, 'Présentation — la grille');
+  const answer = (value: string) =>
+    page.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+  for (const value of ['visit', 'no', 'maybe']) {
+    await page.getByTestId('presentation-next').click();
+    await expect(scene).toHaveAttribute('data-screen', 'item');
+    await expectUnspoken(page, `Présentation — un bien (${value})`);
+    await answer(value).click();
+    await expect(answer(value)).toHaveAttribute('aria-pressed', 'true');
+  }
   await page.getByTestId('presentation-next').click();
-  await page.getByTestId('presentation-visit').click();
-  await expect(page.getByTestId('presentation-visit')).toHaveText(/Visite demandée/);
-  await page.getByTestId('presentation-next').click();
-  await page.getByTestId('presentation-next').click();
-  await expect(scene).toHaveAttribute('data-screen', 'end');
-  await expect(page.getByTestId('presentation-recap').locator('li')).toHaveCount(1);
+  await expect(scene).toHaveAttribute('data-screen', 'answer');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien A.');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous hésitez pour le bien C.');
+  const surface = page.getByTestId('deck-reason').filter({ hasText: 'La surface' });
+  await surface.click();
+  await expect(surface).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('deck-availability').filter({ hasText: 'Samedi matin' }).click();
+  await expectUnspoken(page, 'Présentation — sa réponse');
   await page.getByTestId('presentation-finish').click();
   await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
+  const answers = page.getByTestId('buyer-answers');
+  await expect(answers.getByTestId('buyer-answer')).toHaveCount(3);
+  await expect(answers).toContainText('Veut le visiter');
+  await expect(answers).toContainText('Pas pour lui : La surface');
+  await expect(answers).toContainText('Peut-être');
   await page.goto('/visites');
   await expectUnspoken(page, 'Visites');
   await expect(page.getByTestId('visits-pending')).toContainText('Famille Keller');
+  await expect(page.getByTestId('visit-availability').first()).toContainText('Samedi matin');
+  await expect(page.getByTestId('visits-other-answers')).toContainText('Pas pour lui : La surface');
+  await expect(page.getByTestId('visits-other-answers')).toContainText('Peut-être');
   await page
     .getByTestId('visits-pending')
     .getByRole('button', { name: 'Visite faite' })

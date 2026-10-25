@@ -3,12 +3,7 @@ import {
   type BuyerCriterion,
   type BuyerInput,
 } from '@/features/buyers/types';
-import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
-import type {
-  BuyerPresentation,
-  PresentationScreen,
-  PresentedItemInput,
-} from '@/features/buyer-presentation/types';
+import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 import {
   OUTDOOR_SPACE_LABELS,
   PARKING_TYPE_LABELS,
@@ -16,15 +11,12 @@ import {
   type OutdoorSpace,
   type ParkingType,
 } from '@/features/subject-property/constants/property-options';
-import { formatEuro, formatEuroPerSquareMeter, formatSquareMeters } from '@/lib/format';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 119 — le constructeur de la présentation, PUR : il ne reçoit que des biens en liste
 // d'autorisation (types.ts) et la fiche de l'acquéreur. Un écran d'ouverture (« Votre recherche »),
 // un bien par écran dans l'ordre de la sélection, un écran de fin. Rien ne se recalcule : prix et
 // écarts sont ceux figés à la sélection (M111).
-
-const plural = (count: number, one: string, many: string): string =>
-  `${count} ${count > 1 ? many : one}`;
 
 // Les critères de la fiche, en mots, pour « Votre recherche » et pour « Pourquoi ce bien
 // correspond » : une ligne par critère renseigné, dans l'ordre de la fiche.
@@ -163,48 +155,16 @@ export function allowedItem(item: PresentedItemInput): PresentedItemInput {
     energyRating: item.energyRating,
     photos: [...item.photos],
     gaps: [...item.gaps],
+    propertyType: item.propertyType,
+    floor: item.floor,
+    hasPool: item.hasPool,
+    hasElevator: item.hasElevator,
+    condition: item.condition,
+    listedSince: item.listedSince,
+    priceDrop: item.priceDrop ? { amount: item.priceDrop.amount, at: item.priceDrop.at } : null,
   };
 }
 
-export function buildBuyerPresentation(input: {
-  buyerId: string;
-  buyer: BuyerInput;
-  selectionId: string;
-  selectedAt: string;
-  presentedAt: string | null;
-  items: PresentedItemInput[];
-}): BuyerPresentation {
-  const items = input.items.map(allowedItem).sort((a, b) => a.position - b.position);
-  const screens: PresentationScreen[] = [
-    {
-      type: 'intro',
-      buyerName: input.buyer.name,
-      criteria: criteriaLines(input.buyer),
-      count: items.length,
-    },
-    ...items.map((item): PresentationScreen => ({
-      type: 'item',
-      item,
-      pricePerSqm:
-        item.price != null && item.surfaceArea != null && item.surfaceArea > 0
-          ? Math.round(item.price / item.surfaceArea)
-          : null,
-      why: whyItMatches(input.buyer, item),
-      seenOnLabel: item.source === 'listing' ? seenOnLabel(item.priceSeenOn) : null,
-      facts: itemFacts(item),
-    })),
-    { type: 'end', count: items.length },
-  ];
-  return {
-    buyerId: input.buyerId,
-    buyerName: input.buyer.name,
-    selectionId: input.selectionId,
-    selectedAt: input.selectedAt,
-    presentedAt: input.presentedAt,
-    screens,
-  };
-}
-
-// « 3 biens » pour l'ouverture, « Prix au m² » pour l'écran du bien.
-export const countLabel = (count: number): string => plural(count, 'bien', 'biens');
-export const pricePerSqmLabel = (value: number): string => formatEuroPerSquareMeter(value);
+// Les titres des deux encadrés d'un bien, repris par le dossier (M119 B).
+export const WHY_TITLE = 'Pourquoi ce bien correspond à votre recherche';
+export const KNOW_TITLE = 'À savoir';
