@@ -60,7 +60,8 @@ l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
   `SellerResponse`. `comparable` reste dans le code existant (table `comparables`, features
   `comparable*`) ; le nouveau code dit `competitor`, jamais `dossier` seul, `diaporama`, `estimation`.
   Exception (Jean-Guy, 25/10) : « Dossier acquéreur » est le nom du document remis à l'acquéreur
-  (M119) ; `buyer-dossier`, `buyer_dossier_links`, `DossierItem` sont donc permis dans ce seul composé.
+  (M119) ; ses identifiants sont donc permis : `buyer-dossier`, `buyer_dossier_links`, `DossierItem`,
+  et les préfixes `dossier_` / `DOSSIER_` / `Dossier` qui ne désignent que lui (Jean-Guy, 25/10, M122 B).
 - Écran : Dossier vendeur · Votre bien / Bien vendeur · toujours « Concurrent » · Rendez-vous
   vendeur · Marché calculé, Analyse du conseiller, Prix des concurrents, Prix de commercialisation.
 
