@@ -136,6 +136,16 @@ describe('la sélection des Keller', async () => {
     expect(new Set(sets.map((photos) => photos[0])).size).toBe(3);
     const [b, c] = [sets[1]!, sets[2]!];
     expect(b.filter((photo) => c.includes(photo))).toEqual([]);
+    // Les miniatures de B et C ne sont aucune des photos montrées pour A (les trois premières).
+    const shownForA = scenario.subject.photos.slice(0, 3);
+    expect(shownForA).not.toContain(b[0]);
+    expect(shownForA).not.toContain(c[0]);
+  });
+
+  it('les cinq concurrents du dossier de Mougins ont cinq photos principales différentes', () => {
+    const signed = demoSeedPlan('signed', NOW);
+    const mains = signed.competitors.map((competitor) => competitor.listing.photos[0]);
+    expect(new Set(mains).size).toBe(mains.length);
   });
 
   it('les annonces portent leur type de bien : aucun « ? Type de bien »', () => {
