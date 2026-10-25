@@ -1200,35 +1200,72 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
 
-  // Mission 119 (partie B) — le dossier acquéreur des Keller : trois pages de biens, le lien public
-  // sans compte, une coche qui arrive sur Visites « depuis le dossier », le lien retiré.
+  // Mission 122 (partie B) — le dossier des Keller : le PDF (trois pages de biens, « Mes choix »),
+  // puis le lien répondu depuis un téléphone (390 × 844) : B à visiter, A « pas pour moi », C
+  // peut-être ; la réponse arrive sur Visites « depuis le dossier » ; le lien retiré ne s'ouvre plus.
   await page.goto('/acquereurs');
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await page.getByTestId('buyer-dossier').click();
   const dossier = page.getByTestId('buyer-dossier');
   await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
+  await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(3);
   await expectUnspoken(page, 'Dossier acquéreur');
   await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
   const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
   const stranger = await page
     .context()
     .browser()!
-    .newContext(
-      process.env.E2E_VERCEL_BYPASS
+    .newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      ...(process.env.E2E_VERCEL_BYPASS
         ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': process.env.E2E_VERCEL_BYPASS } }
-        : {},
-    );
+        : {}),
+    });
   try {
     const visitor = await stranger.newPage();
     const response = await visitor.goto(dossierLink);
     expect(response?.headers()['x-robots-tag']).toContain('noindex');
-    await expect(visitor.getByTestId('buyer-dossier')).toBeVisible();
+    const phone = visitor.getByTestId('dossier-phone-deck');
+    await expect(phone).toHaveAttribute('data-screen', 'words');
     expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
-    await visitor.getByTestId('dossier-visit-check').first().check();
-    await visitor.getByTestId('dossier-visit-send').click();
-    await expect(visitor.getByTestId('dossier-visit-message')).toContainText(
-      'Votre demande est envoyée',
+    await visitor.getByTestId('dossier-next').click();
+    await expect(phone).toHaveAttribute('data-screen', 'grid');
+    const linkAnswer = (value: string) =>
+      visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+    for (const [letter, value] of [
+      ['A', 'no'],
+      ['B', 'visit'],
+      ['C', 'maybe'],
+    ] as const) {
+      await visitor.getByTestId('dossier-next').click();
+      await expect(phone).toHaveAttribute('data-screen', 'item');
+      await expect(visitor.getByText(`Bien ${letter} · `).first()).toBeVisible();
+      expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+      await linkAnswer(value).click();
+      await expect(linkAnswer(value)).toHaveAttribute('aria-pressed', 'true');
+    }
+    await visitor.getByTestId('dossier-go-answer').click();
+    const answerScreen = visitor.getByTestId('dossier-answer');
+    await expect(answerScreen).toContainText('Vous voulez visiter le bien B.');
+    await expect(answerScreen).toContainText('Vous hésitez pour le bien C.');
+    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).click();
+    await visitor
+      .getByTestId('dossier-availability')
+      .filter({ hasText: 'En semaine en soirée' })
+      .click();
+    await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
+    await visitor.getByTestId('dossier-send').click();
+    await expect(visitor.getByTestId('dossier-thanks')).toContainText(
+      'Merci, j’ai bien reçu votre réponse',
     );
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
+    // Une seconde ouverture : le merci, sans formulaire.
+    await visitor.goto(dossierLink);
+    await expect(visitor.getByTestId('dossier-thanks')).toBeVisible();
+    await expect(visitor.getByTestId('dossier-recap-item')).toHaveCount(3);
+    await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
     await page.goto('/visites');
     await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
     await page.goBack();

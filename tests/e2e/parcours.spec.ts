@@ -954,18 +954,21 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('visits-done')).toContainText('Pas pour lui');
     await expect(page.getByTestId('visits-pending')).toHaveCount(0);
 
-    // Mission 119 (partie B) — « Dossier acquéreur » : la même sélection, une page par bien, la
-    // dernière page à cocher ; un lien public sans compte, « noindex » ; une coche crée une demande
-    // « depuis le dossier » sur Visites ; le lien retiré ne s'ouvre plus.
+    // Mission 122 (partie B) — le dossier : le PDF (couverture, grille, un bien par page, « Mes
+    // choix »), puis le lien, répondu depuis un téléphone (390 × 844) : une seule réponse, qui arrive
+    // sur Visites « depuis le dossier » ; une seconde ouverture dit merci, sans formulaire ; le lien
+    // retiré ne s'ouvre plus.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-dossier').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
     const dossier = page.getByTestId('buyer-dossier');
     await expect(dossier).toBeVisible();
-    await expect(dossier).toContainText('Votre sélection');
+    await expect(dossier.getByTestId('dossier-cover')).toContainText('Votre sélection du');
+    await expect(dossier.getByTestId('dossier-grid')).toBeVisible();
     await expect(dossier.getByTestId('dossier-item')).toHaveCount(1);
-    await expect(dossier.getByTestId('dossier-price')).toBeVisible();
-    await expect(dossier).toContainText('Quels biens souhaitez-vous visiter ?');
+    await expect(dossier.getByTestId('dossier-choices')).toContainText('Mes choix');
+    await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(1);
+    await expect(dossier.getByTestId('dossier-choice-box')).toHaveCount(3 + 5);
     const dossierCheck = async (text: string, where: string) => {
       for (const competitor of COMPETITORS) {
         expect(text, `${where} : le titre « ${competitor.title} »`).not.toContain(competitor.title);
@@ -983,26 +986,61 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const stranger = await page
       .context()
       .browser()!
-      .newContext(
-        dossierBypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': dossierBypass } } : {},
-      );
+      .newContext({
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        ...(dossierBypass
+          ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': dossierBypass } }
+          : {}),
+      });
     try {
       const visitor = await stranger.newPage();
       const response = await visitor.goto(dossierLink);
       expect(response?.headers()['x-robots-tag']).toContain('noindex');
-      const publicDossier = visitor.getByTestId('buyer-dossier');
-      await expect(publicDossier).toBeVisible();
-      await dossierCheck(await publicDossier.innerText(), 'Le lien public du dossier');
-      // Sans compte : une coche, « Envoyer », et la demande arrive sur Visites.
-      await visitor.getByTestId('dossier-visit-send').click();
-      await expect(visitor.getByTestId('dossier-visit-message')).toHaveText(
-        'Cochez au moins un bien.',
+      const phone = visitor.getByTestId('dossier-phone-deck');
+      await expect(phone).toHaveAttribute('data-screen', 'words');
+      await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — ses mots');
+      await expectNoHorizontalScroll(visitor, 'Le lien — ses mots (390 × 844)');
+      // Sans réponse, « Envoyer ma réponse » ne part pas.
+      await visitor.getByTestId('dossier-next').click();
+      await expect(phone).toHaveAttribute('data-screen', 'grid');
+      await visitor.getByTestId('dossier-go-answer').click();
+      await expect(phone).toHaveAttribute('data-screen', 'answer');
+      await visitor.getByTestId('dossier-send').click();
+      await expect(visitor.getByTestId('dossier-error')).toHaveText(
+        'Répondez au moins pour un bien.',
       );
-      await visitor.getByTestId('dossier-visit-check').first().check();
-      await visitor.getByTestId('dossier-visit-send').click();
-      await expect(visitor.getByTestId('dossier-visit-message')).toContainText(
-        'Votre demande est envoyée',
+      // Le bien A, un écran à la fois, puis « Je veux le visiter ».
+      await visitor.getByTestId('dossier-previous').click();
+      await expect(phone).toHaveAttribute('data-screen', 'grid');
+      await visitor.getByTestId('dossier-next').click();
+      await expect(phone).toHaveAttribute('data-screen', 'item');
+      await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — bien A');
+      await expectNoHorizontalScroll(visitor, 'Le lien — bien A (390 × 844)');
+      const visitAnswer = visitor.locator('[data-testid="deck-answer"][data-answer="visit"]');
+      await visitAnswer.click();
+      await expect(visitAnswer).toHaveAttribute('aria-pressed', 'true');
+      await visitor.getByTestId('dossier-go-answer').click();
+      await expect(visitor.getByTestId('dossier-answer')).toContainText(
+        'Vous voulez visiter le bien A.',
       );
+      await visitor.getByTestId('dossier-availability').filter({ hasText: 'Samedi matin' }).click();
+      await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
+      await visitor.getByTestId('dossier-send').click();
+      const thanks = visitor.getByTestId('dossier-thanks');
+      await expect(thanks).toContainText('Merci, j’ai bien reçu votre réponse');
+      await expect(thanks.getByTestId('dossier-recap-item')).toHaveCount(1);
+      await expect(thanks.getByTestId('dossier-recap-item')).toContainText('Je veux le visiter');
+      await expect(thanks.getByTestId('dossier-recap-availability')).toContainText('Samedi matin');
+      // Une seconde ouverture : le merci et ce qu'il a répondu, sans formulaire.
+      await visitor.goto(dossierLink);
+      await expect(visitor.getByTestId('dossier-thanks')).toContainText(
+        'Merci, j’ai bien reçu votre réponse',
+      );
+      await expect(visitor.getByTestId('dossier-recap-item')).toContainText('Je veux le visiter');
+      await expect(visitor.getByTestId('dossier-phone-deck')).toHaveCount(0);
+      await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
       await page.goto('/visites');
       await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
       // « Retirer le lien » : il ne s'ouvre plus, tout de suite.

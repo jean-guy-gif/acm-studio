@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { BuyerDossierDocument } from '@/features/buyer-dossier/components/buyer-dossier-document';
+import { DossierPhoneDeck } from '@/features/buyer-dossier/components/dossier-phone-deck';
 import { loadBuyerDossier } from '@/features/buyer-dossier/queries/load-buyer-dossier';
 import {
   DOSSIER_TOKEN_PATTERN,
@@ -44,9 +44,25 @@ export default async function PublicBuyerDossierPage({
     link.created_by,
   );
   if (!dossier) notFound();
+  // Mission 122 (partie B) — le déroulé sur téléphone, aux couleurs de l'agence ; sa réponse déjà
+  // envoyée s'affiche à la seconde ouverture, sans pouvoir répondre deux fois.
   return (
-    <main className="min-h-screen bg-zinc-100 p-4 print:bg-white print:p-0">
-      <BuyerDossierDocument dossier={dossier} token={token} />
-    </main>
+    <div data-dossier="">
+      {dossier.brandDeclarations ? (
+        <style
+          dangerouslySetInnerHTML={{ __html: `[data-dossier]{${dossier.brandDeclarations}}` }}
+        />
+      ) : null}
+      <DossierPhoneDeck
+        token={token}
+        deck={dossier.deck}
+        initialAnswers={dossier.answers}
+        initialAvailability={dossier.availability}
+        agencyName={dossier.agency.name}
+        logoUrl={dossier.agency.logoUrl}
+        advisorName={dossier.agency.advisorName}
+        advisorPhone={dossier.agency.advisorPhone}
+      />
+    </div>
   );
 }

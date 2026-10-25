@@ -579,7 +579,8 @@ export function DeckPresentation({
   );
 }
 
-function GridScreen({
+// Mission 122 (partie B) — partagé avec le lien du dossier, sur téléphone.
+export function GridScreen({
   deck,
   responses,
   onOpen,
@@ -684,7 +685,8 @@ function GridScreen({
   );
 }
 
-function ItemScreen({
+// Mission 122 (partie B) — partagé avec le lien du dossier, sur téléphone.
+export function ItemScreen({
   item,
   answer,
   readOnly,

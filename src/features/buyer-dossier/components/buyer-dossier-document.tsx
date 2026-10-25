@@ -1,121 +1,109 @@
-import { DossierVisitForm } from '@/features/buyer-dossier/components/dossier-visit-form';
+import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
+  AVAILABILITY_LABELS,
+  AVAILABILITY_SLOTS,
+  GRID_LEGEND,
+  ITEM_ANSWER_LABELS,
+  ITEM_ANSWERS,
+  type DeckItem,
+  type GridMark,
+} from '@/features/buyer-deck/types';
+import {
+  DOSSIER_CHOICES_TITLE,
   DOSSIER_DISCLAIMER,
-  DOSSIER_VISIT_QUESTION,
   type BuyerDossier,
-  type DossierItem,
 } from '@/features/buyer-dossier/types';
-import { PRICE_TO_CONFIRM } from '@/features/buyer-presentation/services/agency-price';
-import { KNOW_TITLE, WHY_TITLE } from '@/features/buyer-presentation/services/build-presentation';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
-import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 
-// Mission 119 (partie B) — le dossier acquéreur, dans la forme de la synthèse vendeur (M113) :
-// couverture, rappel de la recherche, une fiche par bien (une page chacune à l'impression), la
-// dernière page « Quels biens souhaitez-vous visiter ? », le conseiller et les mentions de l'agence
-// (M84, M102). Le même document à l'écran du conseiller, à l'impression et sur le lien public.
+// Mission 122 (partie B) — le PDF du dossier qui fait agir : la même logique sur papier. Couverture
+// (sa phrase, la photo du bien A, « Votre sélection du [date] »), la grille en page 2, un bien par
+// page décrit par ses critères, et la dernière page « Mes choix » : pour chaque bien, trois cases à
+// cocher au stylo, ses disponibilités à cocher, le conseiller et son QR, les mentions de l'agence
+// (M84, M102). Imprimé par le navigateur (M84), aux couleurs de l'agence (M55).
 
 const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
-const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
+const MARK_COLORS: Record<GridMark, string> = {
+  ok: 'text-emerald-700',
+  near: 'text-amber-700',
+  no: 'text-red-700',
+  check: 'text-sky-700',
+};
 
 const cssString = (value: string): string => `"${value.replace(/["\\]/g, '')}"`;
 
-function Photo({ url, alt }: { url: string | null; alt: string }) {
-  if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt={alt} className="h-56 w-full object-cover sm:h-72" />;
+// Une case à cocher au stylo.
+function Box({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2" data-testid="dossier-choice-box">
+      <span aria-hidden className="inline-block h-4 w-4 shrink-0 border-2 border-zinc-700" />
+      <span>{label}</span>
+    </span>
+  );
 }
 
-function ItemPage({ item }: { item: DossierItem }) {
+function ItemPage({ entry }: { entry: DeckItem }) {
+  const { item } = entry;
+  const where = [item.district, item.city]
+    .filter((part): part is string => part != null && part !== '')
+    .join(' · ');
   return (
     <section
       className="flex flex-col gap-4 break-inside-avoid break-after-page"
       data-testid="dossier-item"
     >
       <div className="flex flex-col gap-1">
-        <span className={kicker}>Bien {item.position}</span>
+        <span className={kicker}>
+          Bien {entry.letter} · {criteriaCountLabel(entry)}
+        </span>
         <h2 className="font-title text-2xl font-bold text-brand-darker">{item.label}</h2>
-        {item.where ? <p className="text-sm text-zinc-600">{item.where}</p> : null}
+        {where ? <p className="text-sm text-zinc-600">{where}</p> : null}
       </div>
-      <Photo url={item.photoUrl} alt="" />
-      <div className="grid gap-3 sm:grid-cols-[1.2fr_2fr]">
-        <div className={card}>
-          <div className={kicker}>Prix affiché</div>
-          {item.price != null ? (
-            <div
-              className="font-title text-3xl font-bold text-brand-darker"
-              data-testid="dossier-price"
-            >
-              {formatEuro(item.price)}
-            </div>
-          ) : (
-            <div className="font-title text-base font-semibold text-brand-darker">
-              {PRICE_TO_CONFIRM}
-            </div>
-          )}
-          <div className="text-xs text-zinc-500">
-            {[
-              item.pricePerSqm != null ? formatEuroPerSquareMeter(item.pricePerSqm) : null,
-              item.seenOnLabel,
-            ]
-              .filter((part): part is string => part != null)
-              .join(' · ')}
-          </div>
-        </div>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border border-zinc-200 bg-white px-3.5 py-3 sm:grid-cols-3">
-          {item.facts.map((fact) => (
-            <div key={fact.label} className="flex flex-col">
-              <dt className={kicker}>{fact.label}</dt>
-              <dd className="font-semibold">{fact.value}</dd>
-            </div>
+      {entry.photos.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {entry.photos.slice(0, 3).map((photo, index) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={photo}
+              src={photo}
+              alt=""
+              className={`h-40 w-full bg-zinc-100 object-cover ${index === 0 ? 'col-span-3 h-64' : ''}`}
+            />
           ))}
-        </dl>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className={card}>
-          <div className={kicker}>{WHY_TITLE}</div>
-          {item.why.length > 0 ? (
-            <ul className="mt-1 flex flex-col gap-1 text-sm">
-              {item.why.map((line) => (
-                <li key={line}>✓ {line}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1 text-sm text-zinc-500">
-              Aucun critère indispensable sur votre recherche.
-            </p>
-          )}
         </div>
-        <div className={card}>
-          <div className={kicker}>{KNOW_TITLE}</div>
-          {item.gaps.length > 0 ? (
-            <ul className="mt-1 flex flex-col gap-1 text-sm">
-              {item.gaps.map((gap) => (
-                <li key={gap}>{gap}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1 text-sm text-zinc-500">Rien de particulier à signaler.</p>
-          )}
+      ) : null}
+      <ul className="flex flex-col gap-1.5 border border-zinc-200 bg-white px-4 py-3">
+        {entry.marks.map((mark) => (
+          <li key={mark.criterion} data-testid="dossier-mark" data-mark={mark.mark}>
+            <span className={`font-medium ${MARK_COLORS[mark.mark]}`}>
+              {markSymbol(mark.mark)} {mark.text}
+            </span>
+            {mark.criterion === 'budget' && entry.priceLine ? (
+              <span className="block pl-5 text-xs text-zinc-500">{entry.priceLine}</span>
+            ) : null}
+          </li>
+        ))}
+        {!entry.marks.some((mark) => mark.criterion === 'budget') && entry.priceLine ? (
+          <li className="text-xs text-zinc-500">{entry.priceLine}</li>
+        ) : null}
+      </ul>
+      {entry.pitch ? (
+        <div className="border-l-4 border-brand bg-white px-4 py-3" data-testid="dossier-pitch">
+          <div className={kicker}>Pourquoi je vous le propose</div>
+          <p className="mt-1 text-base">« {entry.pitch} »</p>
         </div>
-      </div>
+      ) : null}
+      {entry.datedFact ? <p className="text-sm text-zinc-600">● {entry.datedFact}</p> : null}
     </section>
   );
 }
 
-export function BuyerDossierDocument({
-  dossier,
-  token = null,
-}: {
-  dossier: BuyerDossier;
-  // Le jeton du lien public : les coches de la dernière page s'envoient ; absent, elles sont inertes.
-  token?: string | null;
-}) {
-  const { agency } = dossier;
+export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
+  const { agency, deck } = dossier;
   const day = buyerDateLabel(dossier.selectedAt);
   const footer = `Sélection confidentielle · ${dossier.sector} · ${day}`;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
-  const cover = dossier.items.find((item) => item.photoUrl)?.photoUrl ?? null;
+  // La photo du bien A, sauf « Sans photo ».
+  const cover = deck.items[0]?.photos[0] ?? null;
 
   return (
     <article
@@ -129,12 +117,15 @@ export function BuyerDossierDocument({
         }}
       />
 
-      <section className="relative flex min-h-[150mm] flex-col overflow-hidden bg-brand-deep text-white break-after-page print:h-[297mm] print:min-h-0">
+      <section
+        className="relative flex min-h-[150mm] flex-col overflow-hidden bg-brand-deep text-white break-after-page print:h-[297mm] print:min-h-0"
+        data-testid="dossier-cover"
+      >
         {cover ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-b from-transparent via-brand-darker/75 to-brand-darker/95" />
+            <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-b from-transparent via-brand-darker/75 to-brand-darker/95" />
           </>
         ) : null}
         <div className="relative flex items-center justify-between gap-4 px-8 pt-8 sm:px-12">
@@ -154,17 +145,15 @@ export function BuyerDossierDocument({
         </div>
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
-          <span className="self-start border border-white/80 px-3 py-1 text-[0.65rem] tracking-[0.2em] uppercase">
-            Dossier acquéreur
-          </span>
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            Votre sélection
-            <br />
-            du {day}
+            Votre sélection du {day}
           </h1>
-          <p className="text-sm opacity-90">Pour {dossier.buyerName}</p>
+          <p className="text-xs tracking-[0.16em] uppercase opacity-90">Vous m’avez dit :</p>
+          <p className="font-title text-xl leading-snug font-semibold" data-testid="dossier-words">
+            « {deck.words} »
+          </p>
           <p className="text-sm opacity-90">
-            {dossier.sector} · {dossier.items.length} bien{dossier.items.length > 1 ? 's' : ''}
+            {deck.items.length} bien{deck.items.length > 1 ? 's' : ''} · {dossier.sector}
           </p>
         </div>
       </section>
@@ -172,33 +161,95 @@ export function BuyerDossierDocument({
       <div className="flex flex-col gap-6 p-5 sm:p-8 print:px-[14mm] print:py-0">
         <section
           className="flex flex-col gap-3 break-inside-avoid break-after-page"
-          data-testid="dossier-search"
+          data-testid="dossier-grid"
         >
-          <h2 className="font-title text-2xl font-bold text-brand-darker">Votre recherche</h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {dossier.criteria.map((line) => (
-              <li key={line} className={card}>
-                {line}
+          <h2 className="font-title text-2xl font-bold text-brand-darker">Vos critères</h2>
+          <table className="w-full border-collapse border border-zinc-200 bg-white text-left">
+            <thead>
+              <tr>
+                <th className={`${kicker} border-b border-zinc-200 px-3 py-2`}>Critère</th>
+                {deck.items.map((entry) => (
+                  <th
+                    key={entry.item.itemId}
+                    className="border-b border-zinc-200 px-3 py-2 text-center font-title text-base font-bold text-brand-darker"
+                  >
+                    {entry.letter}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {deck.criteria.map((row, rowIndex) => (
+                <tr key={row.criterion} data-testid="dossier-grid-row">
+                  <th scope="row" className="border-t border-zinc-100 px-3 py-1.5 font-medium">
+                    {row.label}
+                    {row.mustHave ? ' ★' : ''}
+                  </th>
+                  {deck.items.map((entry) => {
+                    const mark = entry.marks[rowIndex]!;
+                    return (
+                      <td
+                        key={entry.item.itemId}
+                        title={mark.text}
+                        className={`border-t border-zinc-100 px-3 py-1.5 text-center font-title text-lg font-bold ${MARK_COLORS[mark.mark]}`}
+                      >
+                        {markSymbol(mark.mark)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-xs text-zinc-500">{GRID_LEGEND}</p>
+          {deck.lead ? (
+            <p className="font-title text-lg font-semibold text-brand-darker">{deck.lead}</p>
+          ) : null}
+        </section>
+
+        {deck.items.map((entry) => (
+          <ItemPage key={entry.item.itemId} entry={entry} />
+        ))}
+
+        <section className="flex flex-col gap-4 break-inside-avoid" data-testid="dossier-choices">
+          <h2 className="font-title text-2xl font-bold text-brand-darker">
+            {DOSSIER_CHOICES_TITLE}
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {deck.items.map((entry) => (
+              <li
+                key={entry.item.itemId}
+                className="flex flex-col gap-2 border border-zinc-200 bg-white px-4 py-3"
+                data-testid="dossier-choice-row"
+              >
+                <span className="font-semibold">
+                  Bien {entry.letter} · {entry.item.label}
+                </span>
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                  {ITEM_ANSWERS.map((answer) => (
+                    <Box key={answer} label={ITEM_ANSWER_LABELS[answer]} />
+                  ))}
+                </div>
               </li>
             ))}
           </ul>
-        </section>
-
-        {dossier.items.map((item) => (
-          <ItemPage key={item.itemId} item={item} />
-        ))}
-
-        <section className="flex flex-col gap-4 break-inside-avoid" data-testid="dossier-last-page">
-          <h2 className="font-title text-2xl font-bold text-brand-darker">
-            {DOSSIER_VISIT_QUESTION}
-          </h2>
-          <DossierVisitForm items={dossier.items} token={token} />
+          <div className="flex flex-col gap-2 border border-zinc-200 bg-white px-4 py-3">
+            <span className="font-semibold">Quand pouvez-vous visiter ?</span>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {AVAILABILITY_SLOTS.map((slot) => (
+                <Box key={slot} label={AVAILABILITY_LABELS[slot]} />
+              ))}
+            </div>
+          </div>
           <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
             <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">
               {DOSSIER_DISCLAIMER}
             </p>
             {agency.advisorName ? (
-              <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">
+              <div
+                className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3"
+                data-testid="dossier-advisor"
+              >
                 {agency.advisorPhotoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

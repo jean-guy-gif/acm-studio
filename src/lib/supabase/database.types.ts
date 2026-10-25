@@ -2571,6 +2571,15 @@ export type Database = {
           agency_id: string
         }[]
       }
+      submit_buyer_dossier_answers: {
+        Args: {
+          p_agency_id: string
+          p_answers: Json
+          p_availability: string[]
+          p_selection_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,62 +1,65 @@
-import {
-  allowedItem,
-  criteriaLines,
-  itemFacts,
-  whyItMatches,
-} from '@/features/buyer-presentation/services/build-presentation';
-import type { PresentedItemInput } from '@/features/buyer-presentation/types';
-import type { BuyerDossier, DossierAgency, DossierItem } from '@/features/buyer-dossier/types';
-import type { BuyerInput } from '@/features/buyers/types';
-import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
+import type {
+  AvailabilitySlot,
+  BuyerDeck,
+  DeckItem,
+  ItemResponse,
+} from '@/features/buyer-deck/types';
+import type {
+  BuyerDossier,
+  DossierAgency,
+  DossierPhotoChoice,
+} from '@/features/buyer-dossier/types';
 
-// Mission 119 (partie B) — le constructeur du dossier, PUR : les biens passent par la liste
-// d'autorisation de la présentation (`allowedItem`), le prix et les écarts sont ceux figés à la
-// sélection (M111), « Pourquoi » et « À savoir » sont ceux de la présentation ; une photo par bien,
-// la première, sauf « Sans photo ».
+// Mission 122 (partie B) — le déroulé que reçoit l'acquéreur, sur le lien comme sur le PDF : rien de
+// ce qui est réservé au conseiller — ni les phrases proposées par l'outil quand il les a modifiées,
+// ni le signalement d'un indispensable avant de présenter — et, pour un bien « Sans photo », aucune
+// photo. Le reste est le déroulé lui-même (liste d'autorisation de M119, prix du 24/10). Pur.
+export function publicDeck(deck: BuyerDeck, hidden: ReadonlyMap<string, boolean>): BuyerDeck {
+  return {
+    ...deck,
+    wordsProposed: deck.words,
+    items: deck.items.map((entry): DeckItem => {
+      const noPhoto = hidden.get(entry.item.itemId) === true;
+      return {
+        ...entry,
+        pitchProposed: entry.pitch,
+        blocked: false,
+        blockedBy: [],
+        photos: noPhoto ? [] : entry.photos,
+        item: { ...entry.item, photos: noPhoto ? [] : entry.item.photos },
+      };
+    }),
+  };
+}
+
 export function buildBuyerDossier(input: {
   buyerId: string;
   selectionId: string;
-  buyer: BuyerInput;
   selectedAt: string;
-  items: (PresentedItemInput & { photoHidden: boolean; visitRequested: boolean })[];
+  sector: string;
+  deck: BuyerDeck;
+  hidden: ReadonlyMap<string, boolean>;
+  answers: ItemResponse[];
+  availability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
 }): BuyerDossier {
-  const items: DossierItem[] = [...input.items]
-    .sort((a, b) => a.position - b.position)
-    .map((raw) => {
-      const item = allowedItem(raw);
-      return {
-        itemId: item.itemId,
-        position: item.position,
-        label: item.label,
-        where:
-          [item.district, item.city]
-            .filter((part): part is string => part != null && part !== '')
-            .join(' · ') || null,
-        price: item.price,
-        pricePerSqm:
-          item.price != null && item.surfaceArea != null && item.surfaceArea > 0
-            ? Math.round(item.price / item.surfaceArea)
-            : null,
-        seenOnLabel: item.source === 'listing' ? seenOnLabel(item.priceSeenOn) : null,
-        facts: itemFacts(item),
-        why: whyItMatches(input.buyer, item),
-        gaps: item.gaps,
-        photoUrl: raw.photoHidden ? null : (item.photos[0] ?? null),
-        hasPhoto: item.photos.length > 0,
-        photoHidden: raw.photoHidden,
-        visitRequested: raw.visitRequested,
-      };
-    });
+  const photoChoices: DossierPhotoChoice[] = input.deck.items.map((entry) => ({
+    itemId: entry.item.itemId,
+    letter: entry.letter,
+    label: entry.item.label,
+    hasPhoto: entry.item.photos.length > 0,
+    photoHidden: input.hidden.get(entry.item.itemId) === true,
+  }));
   return {
     buyerId: input.buyerId,
     selectionId: input.selectionId,
-    buyerName: input.buyer.name,
     selectedAt: input.selectedAt,
-    sector: input.buyer.cities.join(', '),
-    criteria: criteriaLines(input.buyer),
-    items,
+    sector: input.sector,
+    deck: publicDeck(input.deck, input.hidden),
+    photoChoices,
+    answers: input.answers,
+    availability: input.availability,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
   };
