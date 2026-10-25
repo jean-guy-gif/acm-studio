@@ -110,9 +110,8 @@ describe('le plan des dossiers de démo', () => {
 describe('la sélection des Keller', async () => {
   const { demoKellerSelectionPlan } = await import('@/features/demo/services/demo-seed');
   const { priceAlignment } = await import('@/features/price-positioning/services/price-alignment');
-  const { poolFromLabels } = await import(
-    '@/features/competitor-search/services/stream-estate-features'
-  );
+  const { poolFromLabels } =
+    await import('@/features/competitor-search/services/stream-estate-features');
   const plan = demoKellerSelectionPlan(NOW);
 
   it('le mandat de Mougins, puis mou-02, puis mou-07', () => {
