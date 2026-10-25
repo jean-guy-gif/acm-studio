@@ -305,6 +305,31 @@ describe('le PDF du dossier qui fait agir', () => {
     expect(count(red, 'data-tone="red"')).toBe(2);
   });
 
+  it('la grille : une miniature de chaque bien en tête de sa colonne, et sa lettre', () => {
+    const page = html([
+      item(),
+      item({ itemId: 'i2', position: 2, photos: ['https://photos.example/b.jpg'] }),
+    ]);
+    const grid = page.slice(
+      page.indexOf('data-testid="dossier-grid"'),
+      page.indexOf('data-testid="dossier-item"'),
+    );
+    expect(count(grid, 'data-testid="dossier-grid-thumb"')).toBe(2);
+    expect(grid).toContain('https://photos.example/b.jpg');
+  });
+
+  it('la couverture : la photo posée en bas, son haut rogné, le dégradé sombre en bas seulement', () => {
+    const page = html([item()]);
+    expect(page).toMatch(
+      /class="[^"]*h-\[135%\][^"]*object-bottom[^"]*" data-testid="dossier-cover-photo"/,
+    );
+    const cover = page.slice(
+      page.indexOf('data-testid="dossier-cover"'),
+      page.indexOf('data-testid="dossier-grid"'),
+    );
+    expect(cover).not.toContain('via-');
+  });
+
   it('un bien « Sans photo » n’en a aucune, couverture comprise', () => {
     const page = html([item()], { i1: true });
     expect(page).not.toContain('https://photos.example/1.jpg');

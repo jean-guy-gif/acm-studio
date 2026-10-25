@@ -1045,13 +1045,24 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('ideal-market-hit').first()).toContainText(
     /affiché le \d{2}\/\d{2}\/\d{4}/,
   );
-  // Trois biens : le mandat de l'agence, puis les deux premiers du marché.
+  // Trois biens : le mandat de l'agence, puis deux biens du marché choisis par leurs faits.
   await mandate.getByRole('checkbox').check();
-  const marketBoxes = page.getByTestId('ideal-market-hit').getByRole('checkbox');
-  await marketBoxes.nth(0).check();
-  await marketBoxes.nth(1).check();
+  // Essai de Jean-Guy (25/10) : un bien qui coche tout (le mandat), un bon compromis au budget en
+  // orange (au plafond + 5 % pile) et un bien avec un « ? » (sa piscine n'est pas indiquée).
+  const marketHits = page.getByTestId('ideal-market-hit');
+  await marketHits
+    .filter({ hasText: /1\s732\s500/ })
+    .getByRole('checkbox')
+    .check();
+  await page
+    .getByTestId('ideal-category-explore')
+    .getByTestId('ideal-market-hit')
+    .filter({ hasText: /piscine/i })
+    .first()
+    .getByRole('checkbox')
+    .check();
   await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (3/3)');
-  await expect(marketBoxes.nth(2)).toBeDisabled();
+  await expect(marketHits.getByRole('checkbox', { checked: false }).first()).toBeDisabled();
   await page.getByTestId('ideal-retain').click();
   await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 3 biens.', {
     timeout: 30_000,
@@ -1180,6 +1191,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(scene).toHaveAttribute('data-screen', 'grid');
   await expect(page.getByTestId('deck-grid-row').first()).toBeVisible();
   const gridRows = await page.getByTestId('deck-grid-row').count();
+  // Relecture des rendus par Jean-Guy (25/10) : une miniature et sa lettre en tête de chaque
+  // colonne ; le budget du compromis en orange ; une seule phrase de tête, sur le bien qui coche tout.
+  await expect(page.getByTestId('deck-open-item').locator('img')).toHaveCount(3);
+  await expect(page.locator('[data-testid="deck-grid-cell"][data-tone="orange"]')).toHaveCount(1);
+  await expect(page.getByTestId('deck-lead')).toContainText('Le bien A coche tous vos critères');
   await expect(page.getByTestId('deck-grid-cell')).toHaveCount(gridRows * 3);
   await expectUnspoken(page, 'Présentation — la grille');
   const answer = (value: string) =>

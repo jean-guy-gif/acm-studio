@@ -1153,8 +1153,9 @@ const mouginsListings = seed(
   },
   {
     id: 'mou-02',
+    // Essai de Jean-Guy (25/10) : au plafond des Keller + 5 % pile — « à négocier », le budget en orange.
     title: 'Villa 7 pièces 220 m² piscine — Mougins',
-    price: 1720000,
+    price: 1732500,
     surfaceArea: 220,
     landArea: 2200,
     roomsCount: 7,
@@ -1177,7 +1178,7 @@ const mouginsListings = seed(
     address: addr('12', 'rue de la Maquette'),
     location: at(43.5998, 6.9961),
     publishedDaysAgo: 120,
-    priceChanges: [drop(40, 1790000, 1720000)],
+    priceChanges: [drop(40, 1790000, 1732500)],
     seller: sold('Agence Littoral & Pins', 'no'),
     description: 'Villa de 220 m² sur 2 200 m² avec piscine, cinq chambres, garage double.',
     priceAfterMeeting: null,
@@ -1309,6 +1310,7 @@ const mouginsListings = seed(
   },
   {
     id: 'mou-07',
+    // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
     title: 'Villa 7 pièces 200 m² piscine — Mouans-Sartoux',
     price: 1620000,
     surfaceArea: 200,
@@ -1327,7 +1329,7 @@ const mouginsListings = seed(
     exposure: 'south',
     outdoorSpaces: ['terrace', 'garden'],
     parkingTypes: ['garage'],
-    hasPool: true,
+    hasPool: null,
     inseeCode: MOUANS_SARTOUX,
     district: null,
     address: addr('8', 'allée du Décor'),

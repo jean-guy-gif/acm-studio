@@ -128,8 +128,16 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
         {cover ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-b from-transparent via-brand-darker/75 to-brand-darker/95" />
+            {/* Essai de Jean-Guy (25/10) : la photo cadrée sur le bien, pas sur le ciel — plus haute
+                que la page et posée en bas, son haut est rogné ; le dégradé sombre n'est qu'en
+                bas, sous le texte ; jamais de voile sur la photo. */}
+            <img
+              src={cover}
+              alt=""
+              className="absolute inset-x-0 bottom-0 h-[135%] w-full object-cover object-bottom"
+              data-testid="dossier-cover-photo"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-b from-transparent to-brand-darker/95" />
           </>
         ) : null}
         <div className="relative flex items-center justify-between gap-4 px-8 pt-8 sm:px-12">
@@ -143,9 +151,13 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
               />
             </span>
           ) : (
-            <span className="font-title text-lg font-semibold">{agency.name}</span>
+            <span className="rounded bg-brand-darker/80 px-3 py-1.5 font-title text-lg font-semibold">
+              {agency.name}
+            </span>
           )}
-          <span className="text-xs tracking-[0.16em] uppercase">{day}</span>
+          <span className="rounded bg-brand-darker/80 px-3 py-1.5 text-xs tracking-[0.16em] uppercase">
+            {day}
+          </span>
         </div>
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
@@ -181,9 +193,22 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                 {deck.items.map((entry) => (
                   <th
                     key={entry.item.itemId}
-                    className="border-b border-zinc-200 px-3 py-2 text-center font-title text-base font-bold text-brand-darker"
+                    className="border-b border-zinc-200 px-3 py-3 text-center align-bottom font-title text-lg font-bold text-brand-darker"
+                    data-testid="dossier-grid-head"
                   >
-                    {entry.letter}
+                    {/* La miniature du bien et sa lettre (essai de Jean-Guy, 25/10). */}
+                    <span className="flex flex-col items-center gap-1.5">
+                      {entry.photos[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={entry.photos[0]}
+                          alt=""
+                          className="h-24 w-36 bg-zinc-100 object-cover"
+                          data-testid="dossier-grid-thumb"
+                        />
+                      ) : null}
+                      <span>{entry.letter}</span>
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -191,7 +216,10 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
             <tbody>
               {deck.criteria.map((row, rowIndex) => (
                 <tr key={row.criterion} data-testid="dossier-grid-row">
-                  <th scope="row" className="border-t border-zinc-100 px-3 py-1.5 font-medium">
+                  <th
+                    scope="row"
+                    className="border-t border-zinc-100 px-4 py-3.5 text-base font-medium"
+                  >
                     {row.label}
                     {row.mustHave ? (
                       <>
@@ -207,7 +235,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                         key={entry.item.itemId}
                         title={mark.text}
                         data-tone={mark.tone ?? undefined}
-                        className={`border-t border-zinc-100 px-3 py-1.5 text-center font-title text-lg font-bold ${markClass(mark)}`}
+                        className={`border-t border-zinc-100 px-3 py-3.5 text-center font-title text-2xl font-bold ${markClass(mark)}`}
                       >
                         {markSymbol(mark.mark)}
                       </td>
@@ -217,9 +245,11 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
               ))}
             </tbody>
           </table>
-          <GridLegend className="text-xs text-zinc-500" />
+          <GridLegend className="text-sm text-zinc-500" />
           {deck.lead ? (
-            <p className="font-title text-lg font-semibold text-brand-darker">{deck.lead}</p>
+            <p className="mt-4 border-l-4 border-brand bg-white px-5 py-4 font-title text-2xl font-semibold text-brand-darker">
+              {deck.lead}
+            </p>
           ) : null}
         </section>
 

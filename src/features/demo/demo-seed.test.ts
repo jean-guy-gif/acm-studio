@@ -104,3 +104,35 @@ describe('le plan des dossiers de démo', () => {
     }
   });
 });
+
+// Essai de Jean-Guy (25/10) — la sélection des Keller de « Préparer ma démo » : un bien qui coche
+// tout, un compromis au budget en orange, un bien avec un « ? ».
+describe('la sélection des Keller', async () => {
+  const { demoKellerSelectionPlan } = await import('@/features/demo/services/demo-seed');
+  const { priceAlignment } = await import('@/features/price-positioning/services/price-alignment');
+  const { poolFromLabels } = await import(
+    '@/features/competitor-search/services/stream-estate-features'
+  );
+  const plan = demoKellerSelectionPlan(NOW);
+
+  it('le mandat de Mougins, puis mou-02, puis mou-07', () => {
+    expect(plan.map((item) => [item.source, item.listingId, item.category])).toEqual([
+      ['project', null, 'agency'],
+      ['listing', 'mou-02', 'compromise'],
+      ['listing', 'mou-07', 'explore'],
+    ]);
+  });
+
+  it('le compromis : au plafond + 5 %, « à négocier », le budget en orange', () => {
+    expect(plan[1]!.listedPrice).toBe(1_732_500);
+    expect(priceAlignment(plan[1]!.listedPrice, 1_650_000)?.tone).toBe('orange');
+    expect(plan[1]!.gaps[0]).toMatch(/au-dessus du budget, à négocier$/);
+  });
+
+  it('le bien à vérifier : sa piscine n’est pas indiquée', () => {
+    expect(poolFromLabels(plan[2]!.imported!.listingFeatures)).toBeNull();
+    expect(plan[2]!.gaps).toEqual(['À vérifier : Piscine']);
+    // Le compromis, lui, a sa piscine.
+    expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
+  });
+});
