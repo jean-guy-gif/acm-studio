@@ -177,9 +177,11 @@ export default function ConfidentialitePage() {
               le titre ou le lien d’une annonce, ni l’agence qui le vend ; le conseiller peut
               retirer cette photo (« Sans photo »). Le dossier s’imprime ou part par un lien qui
               s’ouvre sans compte, n’est jamais indexé et expire après 30 jours ; le conseiller peut
-              le retirer. Sur ce lien, l’acquéreur peut cocher les biens qu’il souhaite visiter et
-              envoyer ce choix : ACM Studio n’enregistre alors que ces coches, datées, pour le
-              conseiller, sans compte ni adresse e-mail ; rien d’autre n’est saisi.
+              le retirer. Sur ce lien, l’acquéreur peut répondre une fois, depuis son téléphone :
+              pour chaque bien, le visiter, peut-être ou pas pour lui, avec la raison parmi une
+              liste, et ses créneaux de visite parmi une liste ; ACM Studio n’enregistre que ces
+              réponses, datées, pour le conseiller, sans compte ni adresse e-mail ; aucun texte
+              libre.
             </li>
             <li>
               Les réponses de l’acquéreur : quand le conseiller lui présente sa sélection, il note,

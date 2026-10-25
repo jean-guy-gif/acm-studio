@@ -1,0 +1,557 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
+
+import { GridScreen, ItemScreen } from '@/features/buyer-deck/components/deck-presentation';
+import { criteriaCountLabel } from '@/features/buyer-deck/services/buyer-deck';
+import {
+  ANSWER,
+  WORDS,
+  nextScreen,
+  previousScreen,
+  sendConfirmation,
+  unansweredLetters,
+  type DeckScreen,
+} from '@/features/buyer-deck/services/deck-navigation';
+import {
+  AVAILABILITY_LABELS,
+  AVAILABILITY_SLOTS,
+  ITEM_ANSWER_LABELS,
+  NO_REASON_LABELS,
+  NO_REASONS,
+  type AvailabilitySlot,
+  type BuyerDeck,
+  type DeckItem,
+  type ItemAnswer,
+  type ItemResponse,
+  type NoReason,
+} from '@/features/buyer-deck/types';
+import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
+import {
+  DOSSIER_DOWNLOAD,
+  DOSSIER_NO_ANSWER,
+  DOSSIER_SEEN_TOGETHER,
+  DOSSIER_SEND,
+  DOSSIER_THANKS,
+} from '@/features/buyer-dossier/types';
+
+// Mission 122 (partie B) — le lien du dossier, pensé pour le téléphone : le même déroulé que la
+// présentation (M122 A), un écran à la fois, défilement vertical, boutons au pouce. Ses réponses
+// restent sur l'appareil jusqu'à « Envoyer ma réponse » ; une seconde ouverture montre « Merci, j'ai
+// bien reçu votre réponse » et ce qu'il a répondu, sans pouvoir répondre deux fois. Décisions de
+// Jean-Guy (25/10) : l'envoi demande confirmation s'il reste des biens sans réponse ; la présentation
+// terminée, le lien devient « Ce que nous avons vu ensemble », en lecture seule ; « Télécharger en
+// PDF », discret, à la fin, imprime le dossier (le document est dans la page, caché à l'écran).
+
+type LocalAnswer = { answer: ItemAnswer; reasons: NoReason[] };
+
+const navBtn =
+  'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-300 bg-white px-3 py-3 font-title text-base font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-40';
+const primaryBtn =
+  'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-4 py-3 font-title text-base font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-50';
+const chip = (on: boolean): string =>
+  `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold ${
+    on ? 'border-brand bg-brand text-white' : 'border-zinc-300 bg-white text-zinc-700'
+  }`;
+
+const toLocal = (responses: ItemResponse[]): Map<string, LocalAnswer> =>
+  new Map(
+    responses.map((response) => [
+      response.itemId,
+      { answer: response.answer, reasons: response.reasons },
+    ]),
+  );
+
+function DownloadButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className="self-center py-3 text-sm font-medium text-zinc-500 underline underline-offset-4"
+      data-testid="dossier-download"
+    >
+      {DOSSIER_DOWNLOAD}
+    </button>
+  );
+}
+
+const lettersOf = (items: DeckItem[]): string =>
+  items.length <= 1
+    ? (items[0]?.letter ?? '')
+    : `${items
+        .slice(0, -1)
+        .map((item) => item.letter)
+        .join(', ')} et ${items.at(-1)!.letter}`;
+
+function Recap({
+  deck,
+  answers,
+  availability,
+}: {
+  deck: BuyerDeck;
+  answers: Map<string, LocalAnswer>;
+  availability: AvailabilitySlot[];
+}) {
+  return (
+    <ul className="flex flex-col gap-2" data-testid="dossier-recap">
+      {deck.items.map((entry) => {
+        const given = answers.get(entry.item.itemId);
+        if (!given) return null;
+        return (
+          <li
+            key={entry.item.itemId}
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-3"
+            data-testid="dossier-recap-item"
+            data-answer={given.answer}
+          >
+            <span className="block font-semibold">
+              Bien {entry.letter} · {entry.item.label}
+            </span>
+            <span className="text-sm text-zinc-700">
+              {ITEM_ANSWER_LABELS[given.answer]}
+              {given.reasons.length > 0
+                ? ` : ${given.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
+                : ''}
+            </span>
+          </li>
+        );
+      })}
+      {availability.length > 0 ? (
+        <li className="text-sm text-zinc-700" data-testid="dossier-recap-availability">
+          Vos créneaux : {availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
+        </li>
+      ) : null}
+    </ul>
+  );
+}
+
+export function DossierPhoneDeck({
+  token,
+  deck,
+  answered,
+  initialAnswers,
+  initialAvailability,
+  meetingAnswers,
+  meetingAvailability,
+  agencyName,
+  logoUrl,
+  advisorName,
+  advisorPhone,
+}: {
+  token: string;
+  deck: BuyerDeck;
+  answered: boolean;
+  initialAnswers: ItemResponse[];
+  initialAvailability: AvailabilitySlot[];
+  meetingAnswers: ItemResponse[];
+  meetingAvailability: AvailabilitySlot[];
+  agencyName: string;
+  logoUrl: string | null;
+  advisorName: string | null;
+  advisorPhone: string | null;
+}) {
+  const router = useRouter();
+  const [screen, setScreen] = useState<DeckScreen>(WORDS);
+  const [answers, setAnswers] = useState<Map<string, LocalAnswer>>(() => new Map());
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  // Envoyée depuis cet écran ; ou refusée parce que déjà donnée (ou la présentation terminée) :
+  // le merci, jamais de nouveau le formulaire, et la page se recharge pour relire ce qui est en base.
+  const [sent, setSent] = useState(false);
+  const [closed, setClosed] = useState<string | null>(null);
+  const [confirmSend, setConfirmSend] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const confirmRef = useRef<HTMLDivElement | null>(null);
+  // La confirmation de l'envoi prend le focus dès qu'elle s'ouvre.
+  useEffect(() => {
+    if (confirmSend) confirmRef.current?.focus();
+  }, [confirmSend]);
+  const itemCount = deck.items.length;
+  const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
+  const next = nextScreen(screen, itemCount);
+  const previous = previousScreen(screen);
+
+  const go = (target: DeckScreen | null) => {
+    if (!target) return;
+    setScreen(target);
+    setError(null);
+    window.scrollTo({ top: 0 });
+  };
+
+  const setAnswer = (itemId: string, answer: ItemAnswer) =>
+    setAnswers((map) => {
+      const copy = new Map(map);
+      copy.set(itemId, {
+        answer,
+        reasons: answer === 'no' ? (map.get(itemId)?.reasons ?? []) : [],
+      });
+      return copy;
+    });
+  const toggleReason = (itemId: string, reason: NoReason) =>
+    setAnswers((map) => {
+      const copy = new Map(map);
+      const reasons = map.get(itemId)?.reasons ?? [];
+      copy.set(itemId, {
+        answer: 'no',
+        reasons: reasons.includes(reason)
+          ? reasons.filter((entry) => entry !== reason)
+          : [...reasons, reason],
+      });
+      return copy;
+    });
+
+  // Les réponses locales, sous la forme que la grille sait lire.
+  const asResponses: ItemResponse[] = [...answers.entries()].map(([itemId, given]) => ({
+    id: itemId,
+    itemId,
+    answer: given.answer,
+    reasons: given.reasons,
+    answeredDuring: 'dossier',
+    answeredAt: '',
+  }));
+  const answeredWith = (answer: ItemAnswer): DeckItem[] =>
+    deck.items.filter((entry) => answers.get(entry.item.itemId)?.answer === answer);
+  const visits = answeredWith('visit');
+  const maybes = answeredWith('maybe');
+  const noes = answeredWith('no');
+
+  const askSend = () => {
+    if (answers.size === 0) {
+      setError(DOSSIER_NO_ANSWER);
+      return;
+    }
+    setError(null);
+    const question = sendConfirmation(
+      unansweredLetters(
+        deck.items.map((entry) => ({ letter: entry.letter, itemId: entry.item.itemId })),
+        asResponses,
+      ),
+    );
+    if (question) {
+      setConfirmSend(question);
+      return;
+    }
+    send();
+  };
+
+  const send = () => {
+    setConfirmSend(null);
+    startTransition(async () => {
+      const result = await submitDossierAnswers(
+        token,
+        [...answers.entries()].map(([itemId, given]) => ({ itemId, ...given })),
+        visits.length > 0 ? availability : [],
+      ).catch(() => ({ ok: false as const, error: 'Connexion perdue — réessayez.' }));
+      if (!result.ok) {
+        if ('closed' in result && result.closed) {
+          setClosed(result.error);
+          router.refresh();
+          window.scrollTo({ top: 0 });
+          return;
+        }
+        setError(result.error);
+        return;
+      }
+      setSent(true);
+      window.scrollTo({ top: 0 });
+    });
+  };
+
+  const header = (
+    <header className="flex items-center justify-between gap-3 px-4 pt-4">
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt={agencyName} className="max-h-9 max-w-36 object-contain" />
+      ) : (
+        <span className="font-title text-base font-semibold text-brand-deep">{agencyName}</span>
+      )}
+    </header>
+  );
+
+  const advisorLine = advisorName ? (
+    <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
+      {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+    </p>
+  ) : null;
+
+  // La présentation terminée : « Ce que nous avons vu ensemble », ses réponses du rendez-vous.
+  if (deck.presentedAt) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-seen-together">
+        {header}
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
+          <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_SEEN_TOGETHER}</h1>
+          {meetingAnswers.length > 0 ? (
+            <>
+              <p className="text-base text-zinc-700">Ce que vous m’avez répondu :</p>
+              <Recap
+                deck={deck}
+                answers={toLocal(meetingAnswers)}
+                availability={meetingAvailability}
+              />
+            </>
+          ) : (
+            <p className="text-base text-zinc-700">
+              {deck.items.length > 1 ? 'Les biens' : 'Le bien'} {lettersOf(deck.items)}, que nous
+              avons regardés ensemble.
+            </p>
+          )}
+          {advisorLine}
+          <DownloadButton />
+        </main>
+      </div>
+    );
+  }
+
+  // Sa réponse déjà donnée (relue en base), ou refusée parce qu'elle l'était : le merci, et ce
+  // qu'il a répondu sur le lien ; envoyée depuis cet écran : ce qu'il vient de répondre.
+  if (answered || closed || sent) {
+    const fromServer = answered || !sent;
+    return (
+      <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-thanks">
+        {header}
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
+          <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_THANKS}</h1>
+          {closed && !answered ? <p className="text-base text-zinc-700">{closed}</p> : null}
+          {fromServer && initialAnswers.length === 0 ? null : (
+            <>
+              <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
+              <Recap
+                deck={deck}
+                answers={fromServer ? toLocal(initialAnswers) : answers}
+                availability={
+                  fromServer ? initialAvailability : visits.length > 0 ? availability : []
+                }
+              />
+            </>
+          )}
+          {advisorLine}
+          <DownloadButton />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex min-h-[100dvh] flex-col bg-white"
+      data-testid="dossier-phone-deck"
+      data-screen={screen.type}
+    >
+      {header}
+      <p className="px-4 pt-3 text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
+        {screen.type === 'words'
+          ? `Votre sélection · ${itemCount} bien${itemCount > 1 ? 's' : ''}`
+          : screen.type === 'grid'
+            ? 'Vos critères'
+            : current
+              ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
+              : 'Votre réponse'}
+      </p>
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-40">
+        {screen.type === 'words' ? (
+          <div className="flex flex-col gap-4">
+            <h1 className="font-title text-2xl font-bold text-zinc-900">Vous m’avez dit :</h1>
+            <p className="font-title text-xl leading-snug font-semibold text-zinc-900">
+              « {deck.words} »
+            </p>
+          </div>
+        ) : screen.type === 'grid' ? (
+          <GridScreen
+            deck={deck}
+            responses={asResponses}
+            onOpen={(item) => go({ type: 'item', index: deck.items.indexOf(item) })}
+            onLead={
+              deck.leadLetter
+                ? () =>
+                    go({
+                      type: 'item',
+                      index: deck.items.findIndex((item) => item.letter === deck.leadLetter),
+                    })
+                : null
+            }
+            leadLetter={deck.leadLetter}
+          />
+        ) : current ? (
+          <ItemScreen
+            item={current}
+            answer={answers.get(current.item.itemId)?.answer ?? null}
+            readOnly={false}
+            busy={false}
+            onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
+          />
+        ) : (
+          <div className="flex flex-col gap-6" data-testid="dossier-answer">
+            {answers.size === 0 ? (
+              <p className="text-base text-zinc-600">
+                Vous n’avez pas encore répondu : ouvrez un bien depuis la grille.
+              </p>
+            ) : null}
+            {visits.length > 0 ? (
+              <section className="flex flex-col gap-3">
+                <h1 className="font-title text-xl font-bold text-zinc-900">
+                  Vous voulez visiter {visits.length > 1 ? 'les biens' : 'le bien'}{' '}
+                  {lettersOf(visits)}.
+                </h1>
+                <p className="text-base text-zinc-700">Quand pouvez-vous visiter ?</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABILITY_SLOTS.map((slot) => {
+                    const on = availability.includes(slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        className={chip(on)}
+                        aria-pressed={on}
+                        data-testid="dossier-availability"
+                        onClick={() =>
+                          setAvailability((list) =>
+                            list.includes(slot)
+                              ? list.filter((entry) => entry !== slot)
+                              : [...list, slot],
+                          )
+                        }
+                      >
+                        {AVAILABILITY_LABELS[slot]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+            {maybes.length > 0 ? (
+              <p className="text-base text-zinc-700">
+                Vous hésitez pour {maybes.length > 1 ? 'les biens' : 'le bien'} {lettersOf(maybes)}.
+              </p>
+            ) : null}
+            {noes.map((entry) => {
+              const reasons = answers.get(entry.item.itemId)?.reasons ?? [];
+              return (
+                <section key={entry.item.itemId} className="flex flex-col gap-3">
+                  <p className="font-semibold text-zinc-900">
+                    Le bien {entry.letter} : pas pour vous. Pourquoi ?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {NO_REASONS.map((reason) => {
+                      const on = reasons.includes(reason);
+                      return (
+                        <button
+                          key={reason}
+                          type="button"
+                          className={chip(on)}
+                          aria-pressed={on}
+                          data-testid="dossier-reason"
+                          onClick={() => toggleReason(entry.item.itemId, reason)}
+                        >
+                          {NO_REASON_LABELS[reason]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+            {visits.length > 0 ? (
+              <section className="flex flex-col gap-1 rounded-xl bg-zinc-50 px-4 py-3">
+                <h2 className="text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
+                  Ce que je fais ensuite
+                </h2>
+                <p className="text-base text-zinc-800">
+                  Je contacte {visits.length > 1 ? 'les propriétaires' : 'le propriétaire'} de{' '}
+                  {lettersOf(visits)} et je vous confirme les visites sous 24 h.
+                </p>
+                {advisorName ? (
+                  <p className="text-sm font-semibold text-zinc-700">
+                    {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+            {confirmSend ? (
+              <div
+                ref={confirmRef}
+                tabIndex={-1}
+                className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                data-testid="dossier-send-confirm"
+                role="alertdialog"
+                aria-labelledby="dossier-send-confirm-text"
+              >
+                <p id="dossier-send-confirm-text" className="font-semibold">
+                  {confirmSend}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={navBtn} onClick={() => setConfirmSend(null)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className={primaryBtn}
+                    disabled={pending}
+                    onClick={send}
+                    data-testid="dossier-send-anyway"
+                  >
+                    Envoyer quand même
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={primaryBtn}
+              disabled={pending}
+              onClick={askSend}
+              data-testid="dossier-send"
+            >
+              {pending ? 'Envoi…' : DOSSIER_SEND}
+            </button>
+            <DownloadButton />
+          </div>
+        )}
+        {error ? (
+          <p role="alert" className="text-sm font-medium text-red-600" data-testid="dossier-error">
+            {error}
+          </p>
+        ) : null}
+      </main>
+
+      <nav
+        className="fixed inset-x-0 bottom-0 z-10 flex flex-col gap-2 border-t border-zinc-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] backdrop-blur"
+        data-testid="dossier-nav"
+      >
+        {screen.type === 'grid' || screen.type === 'item' ? (
+          <button
+            type="button"
+            className={navBtn}
+            onClick={() => go(ANSWER)}
+            data-testid="dossier-go-answer"
+          >
+            Ma réponse
+          </button>
+        ) : null}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={navBtn}
+            disabled={previous == null}
+            onClick={() => go(previous)}
+            data-testid="dossier-previous"
+          >
+            Précédent
+          </button>
+          {screen.type !== 'answer' ? (
+            <button
+              type="button"
+              className={primaryBtn}
+              disabled={next == null}
+              onClick={() => go(next)}
+              data-testid="dossier-next"
+            >
+              Suivant
+            </button>
+          ) : null}
+        </div>
+      </nav>
+    </div>
+  );
+}

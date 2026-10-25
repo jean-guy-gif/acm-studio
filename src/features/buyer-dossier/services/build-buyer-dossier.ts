@@ -1,62 +1,97 @@
-import {
-  allowedItem,
-  criteriaLines,
-  itemFacts,
-  whyItMatches,
-} from '@/features/buyer-presentation/services/build-presentation';
-import type { PresentedItemInput } from '@/features/buyer-presentation/types';
-import type { BuyerDossier, DossierAgency, DossierItem } from '@/features/buyer-dossier/types';
-import type { BuyerInput } from '@/features/buyers/types';
-import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
+import type {
+  AvailabilitySlot,
+  BuyerDeck,
+  DeckItem,
+  ItemResponse,
+} from '@/features/buyer-deck/types';
+import { allowedItem } from '@/features/buyer-presentation/services/build-presentation';
+import type {
+  BuyerDossier,
+  DossierAgency,
+  DossierPhotoChoice,
+} from '@/features/buyer-dossier/types';
 
-// Mission 119 (partie B) — le constructeur du dossier, PUR : les biens passent par la liste
-// d'autorisation de la présentation (`allowedItem`), le prix et les écarts sont ceux figés à la
-// sélection (M111), « Pourquoi » et « À savoir » sont ceux de la présentation ; une photo par bien,
-// la première, sauf « Sans photo ».
+// Mission 122 (partie B) — le déroulé que reçoit l'acquéreur, sur le lien comme sur le PDF : rien de
+// ce qui est réservé au conseiller — ni les phrases proposées par l'outil quand il les a modifiées,
+// ni le signalement d'un indispensable avant de présenter — et, pour un bien « Sans photo », aucune
+// photo. Une LISTE D'AUTORISATION, champ par champ (M51) : rien d'autre ne sort, même d'un déroulé
+// figé relu de la base ; les faits d'un bien repassent par celle de la présentation (M119). Pur.
+export function publicDeck(deck: BuyerDeck, hidden: ReadonlyMap<string, boolean>): BuyerDeck {
+  return {
+    buyerId: deck.buyerId,
+    buyerName: deck.buyerName,
+    selectionId: deck.selectionId,
+    selectedAt: deck.selectedAt,
+    presentedAt: deck.presentedAt,
+    words: deck.words,
+    wordsProposed: deck.words,
+    criteria: deck.criteria.map((row) => ({
+      criterion: row.criterion,
+      label: row.label,
+      mustHave: row.mustHave,
+    })),
+    items: deck.items.map((entry): DeckItem => {
+      const noPhoto = hidden.get(entry.item.itemId) === true;
+      const item = allowedItem(entry.item);
+      return {
+        letter: entry.letter,
+        item: { ...item, photos: noPhoto ? [] : item.photos },
+        photos: noPhoto ? [] : [...entry.photos],
+        marks: entry.marks.map((mark) => ({
+          criterion: mark.criterion,
+          mark: mark.mark,
+          text: mark.text,
+        })),
+        okCount: entry.okCount,
+        total: entry.total,
+        priceLine: entry.priceLine,
+        pricePerSqm: entry.pricePerSqm,
+        pitch: entry.pitch,
+        pitchProposed: entry.pitch,
+        datedFact: entry.datedFact,
+        blocked: false,
+        blockedBy: [],
+      };
+    }),
+    lead: deck.lead,
+    leadLetter: deck.leadLetter,
+  };
+}
+
 export function buildBuyerDossier(input: {
   buyerId: string;
   selectionId: string;
-  buyer: BuyerInput;
   selectedAt: string;
-  items: (PresentedItemInput & { photoHidden: boolean; visitRequested: boolean })[];
+  sector: string;
+  deck: BuyerDeck;
+  hidden: ReadonlyMap<string, boolean>;
+  answered: boolean;
+  answers: ItemResponse[];
+  availability: AvailabilitySlot[];
+  meetingAnswers: ItemResponse[];
+  meetingAvailability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
 }): BuyerDossier {
-  const items: DossierItem[] = [...input.items]
-    .sort((a, b) => a.position - b.position)
-    .map((raw) => {
-      const item = allowedItem(raw);
-      return {
-        itemId: item.itemId,
-        position: item.position,
-        label: item.label,
-        where:
-          [item.district, item.city]
-            .filter((part): part is string => part != null && part !== '')
-            .join(' · ') || null,
-        price: item.price,
-        pricePerSqm:
-          item.price != null && item.surfaceArea != null && item.surfaceArea > 0
-            ? Math.round(item.price / item.surfaceArea)
-            : null,
-        seenOnLabel: item.source === 'listing' ? seenOnLabel(item.priceSeenOn) : null,
-        facts: itemFacts(item),
-        why: whyItMatches(input.buyer, item),
-        gaps: item.gaps,
-        photoUrl: raw.photoHidden ? null : (item.photos[0] ?? null),
-        hasPhoto: item.photos.length > 0,
-        photoHidden: raw.photoHidden,
-        visitRequested: raw.visitRequested,
-      };
-    });
+  const photoChoices: DossierPhotoChoice[] = input.deck.items.map((entry) => ({
+    itemId: entry.item.itemId,
+    letter: entry.letter,
+    label: entry.item.label,
+    hasPhoto: entry.item.photos.length > 0,
+    photoHidden: input.hidden.get(entry.item.itemId) === true,
+  }));
   return {
     buyerId: input.buyerId,
     selectionId: input.selectionId,
-    buyerName: input.buyer.name,
     selectedAt: input.selectedAt,
-    sector: input.buyer.cities.join(', '),
-    criteria: criteriaLines(input.buyer),
-    items,
+    sector: input.sector,
+    deck: publicDeck(input.deck, input.hidden),
+    photoChoices,
+    answered: input.answered,
+    answers: input.answers,
+    availability: input.availability,
+    meetingAnswers: input.meetingAnswers,
+    meetingAvailability: input.meetingAvailability,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
   };

@@ -7,7 +7,10 @@ import { brandingFontDeclarations } from '@/features/branding/services/branding-
 import { buildBuyerDossier } from '@/features/buyer-dossier/services/build-buyer-dossier';
 import { chooseDossierAdvisor } from '@/features/buyer-dossier/services/dossier-advisor';
 import type { BuyerDossier } from '@/features/buyer-dossier/types';
-import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
+import { computeDeck } from '@/features/buyer-deck/queries/load-deck';
+import { deckForReading } from '@/features/buyer-deck/services/frozen-deck';
+import { toItemResponse } from '@/features/buyer-deck/services/response-row';
+import { AVAILABILITY_SLOTS } from '@/features/buyer-deck/types';
 import {
   toVisitRequest,
   isPendingVisit,
@@ -29,7 +32,8 @@ const PHOTO_URL_TTL_SECONDS = 60 * 60;
 // ni adresse, ni lien, ni vendeur ; le prix d'un bien de l'agence selon la règle du 24/10). Sert à
 // l'écran du conseiller (son client, RLS) et à la page publique du lien (clé de service, après
 // vérification du jeton, sur la sélection du lien). null : fiche archivée, d'une autre agence, ou
-// sans sélection. Le conseiller imprimé est celui de la fiche ; s'il est un membre retiré, c'est le
+// sans sélection. Mission 122 (partie B) — le dossier suit le déroulé de la présentation (M122 A).
+// Le conseiller imprimé est celui de la fiche ; s'il est un membre retiré, c'est le
 // conseiller connecté — ou, sur le lien, celui qui l'a créé — (décision de Jean-Guy, 25/10).
 export async function loadBuyerDossier(
   supabase: Client,
@@ -70,29 +74,37 @@ export async function loadBuyerDossier(
   const advisorIds = [
     ...new Set([buyer.advisorId, connectedAdvisorId].filter(Boolean)),
   ] as string[];
-  const [items, { data: requestRows }, agency, branding, advisorRows] = await Promise.all([
-    presentedItems(supabase, selection.items, agencyId),
-    supabase
-      .from('buyer_visit_requests')
-      .select('*')
-      .in(
-        'buyer_selection_item_id',
-        selection.items.map((item) => item.id),
-      ),
-    supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
-    supabase
-      .from('agency_branding')
-      .select(
-        'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, font_family, validated_at, logo_light_path, postal_address, professional_card, professional_card_issuer, financial_guarantee, document_name',
-      )
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    supabase
-      .from('profiles')
-      .select('id, first_name, last_name, phone, email, photo_path, removed_at')
-      .eq('agency_id', agencyId)
-      .in('id', advisorIds),
-  ]);
+  const itemIds = selection.items.map((item) => item.id);
+  // Tous les biens de la sélection, retirés compris : une réponse donnée sur un bien retiré depuis
+  // compte encore pour « une seule réponse ».
+  const allItemIds = (itemRows ?? []).map((row) => row.id);
+  const [computed, { data: requestRows }, { data: responseRows }, agency, branding, advisorRows] =
+    await Promise.all([
+      computeDeck(supabase, buyer, selection, agencyId),
+      supabase
+        .from('buyer_visit_requests')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .in('buyer_selection_item_id', itemIds),
+      supabase
+        .from('buyer_item_responses')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .in('selection_item_id', allItemIds),
+      supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
+      supabase
+        .from('agency_branding')
+        .select(
+          'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, font_family, validated_at, logo_light_path, postal_address, professional_card, professional_card_issuer, financial_guarantee, document_name',
+        )
+        .eq('agency_id', agencyId)
+        .maybeSingle(),
+      supabase
+        .from('profiles')
+        .select('id, first_name, last_name, phone, email, photo_path, removed_at')
+        .eq('agency_id', agencyId)
+        .in('id', advisorIds),
+    ]);
   const profiles = advisorRows.data ?? [];
   const advisor = {
     data: chooseDossierAdvisor(
@@ -101,11 +113,33 @@ export async function loadBuyerDossier(
     ),
   };
   const hidden = new Map((itemRows ?? []).map((row) => [row.id, row.dossier_hide_photo]));
-  const requested = new Set(
+  // Mission 122 (partie B) — le déroulé tel qu'affiché : figé à « Terminer » s'il l'a été (M122 A).
+  const deck = deckForReading({
+    presentedAt: selection.presentedAt,
+    presentedDeck: selection.presentedDeck,
+    computed,
+  });
+  // Sa réponse déjà envoyée depuis le lien (une seule par sélection), et les créneaux donnés sur
+  // le lien, et eux seuls (`dossier_availability`, décision de Jean-Guy, 25/10).
+  const live = new Set(itemIds);
+  const responses = (responseRows ?? []).map(toItemResponse);
+  const fromLink = responses.filter((response) => response.answeredDuring === 'dossier');
+  const answers = fromLink.filter((response) => live.has(response.itemId));
+  const linkSlots = new Set<string>(selectionRow.dossier_availability ?? []);
+  const availability = AVAILABILITY_SLOTS.filter((slot) => linkSlots.has(slot));
+  // La présentation terminée : ses réponses du rendez-vous, et les créneaux que portent ses
+  // demandes de visite vivantes sur les biens qu'il a voulu visiter.
+  const meetingAnswers = responses.filter(
+    (response) => response.answeredDuring === 'presentation' && live.has(response.itemId),
+  );
+  const toVisit = new Set(
+    meetingAnswers.filter((answer) => answer.answer === 'visit').map((answer) => answer.itemId),
+  );
+  const meetingAvailability = AVAILABILITY_SLOTS.filter((slot) =>
     (requestRows ?? [])
       .map(toVisitRequest)
-      .filter(isPendingVisit)
-      .map((request) => request.itemId),
+      .filter((request) => isPendingVisit(request) && toVisit.has(request.itemId))
+      .some((request) => request.availability.includes(slot)),
   );
 
   const advisorPhotoPath = advisor.data?.photo_path?.startsWith(`${agencyId}/`)
@@ -123,13 +157,15 @@ export async function loadBuyerDossier(
   return buildBuyerDossier({
     buyerId: buyer.id,
     selectionId: selection.id,
-    buyer,
     selectedAt: selection.createdAt,
-    items: items.map((item) => ({
-      ...item,
-      photoHidden: hidden.get(item.itemId) ?? false,
-      visitRequested: requested.has(item.itemId),
-    })),
+    sector: buyer.cities.join(', '),
+    deck,
+    hidden,
+    answered: fromLink.length > 0,
+    answers,
+    availability,
+    meetingAnswers,
+    meetingAvailability,
     agency: {
       name: agencyName,
       logoUrl: logoPath
