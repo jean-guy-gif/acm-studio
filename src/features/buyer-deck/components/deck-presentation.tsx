@@ -9,8 +9,21 @@ import { RemoteImage } from '@/components/ui/remote-image';
 import { answerItem, finishPresentation } from '@/features/buyer-deck/actions/deck-actions';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
+  ANSWER,
+  GRID,
+  WORDS,
+  answerOf,
+  finishConfirmation,
+  nextScreen,
+  previousScreen,
+  screenPosition,
+  unansweredLetters,
+  type DeckScreen,
+} from '@/features/buyer-deck/services/deck-navigation';
+import {
   AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
+  GRID_ANSWER_LABELS,
   GRID_LEGEND,
   ITEM_ANSWER_LABELS,
   ITEM_ANSWERS,
@@ -48,9 +61,6 @@ import type { LiveStageTheme } from '@/features/live-seller/components/live-comp
 export const WORDS_TITLE = 'Vous m’avez dit :';
 export const PITCH_TITLE = 'Pourquoi je vous le propose';
 export const NEXT_TITLE = 'Ce que je fais ensuite';
-
-type Screen =
-  { type: 'words' } | { type: 'grid' } | { type: 'item'; item: DeckItem } | { type: 'answer' };
 
 const chromeBtn =
   'inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
@@ -103,13 +113,7 @@ export function DeckPresentation({
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const screens: Screen[] = [
-    { type: 'words' },
-    { type: 'grid' },
-    ...deck.items.map((item): Screen => ({ type: 'item', item })),
-    { type: 'answer' },
-  ];
-  const [index, setIndex] = useState(0);
+  const [screen, setScreen] = useState<DeckScreen>(WORDS);
   const [stage, setStage] = useState<LiveStageTheme>(initialStage);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [quitOpen, setQuitOpen] = useState(false);
@@ -119,16 +123,19 @@ export function DeckPresentation({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [finishing, setFinishing] = useState(false);
-  const screen = screens[Math.min(index, screens.length - 1)]!;
+  const [confirmFinish, setConfirmFinish] = useState<string | null>(null);
+  const itemCount = deck.items.length;
+  const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
+  const next = nextScreen(screen, itemCount);
+  const previous = previousScreen(screen);
+  const screenTotal = itemCount + 3;
 
-  const screenCount = deck.items.length + 3;
-  const go = useCallback(
-    (target: number) => {
-      setIndex(Math.min(screenCount - 1, Math.max(0, target)));
-      rootRef.current?.scrollTo({ top: 0 });
-    },
-    [screenCount],
-  );
+  const go = useCallback((target: DeckScreen | null) => {
+    if (!target) return;
+    setScreen(target);
+    setConfirmFinish(null);
+    rootRef.current?.scrollTo({ top: 0 });
+  }, []);
 
   const toggleFullscreen = useCallback(() => {
     const element = rootRef.current;
@@ -146,12 +153,13 @@ export function DeckPresentation({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (document.body.dataset.lightbox === 'open') return;
-      if (event.key === 'ArrowRight') go(index + 1);
-      if (event.key === 'ArrowLeft') go(index - 1);
+      // Les flèches suivent la navigation : jamais vers « Sa réponse ».
+      if (event.key === 'ArrowRight') go(next);
+      if (event.key === 'ArrowLeft') go(previous);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, index]);
+  }, [go, next, previous]);
 
   const responseFor = (itemId: string): ItemResponse | undefined =>
     responses.find((response) => response.itemId === itemId);
@@ -184,8 +192,26 @@ export function DeckPresentation({
     );
   };
 
+  // « Terminer » : secondaire, en bas de « Sa réponse » ; s'il reste des biens sans réponse, il
+  // demande d'abord confirmation (essai de Jean-Guy, 25/10).
+  const askFinish = () => {
+    if (readOnly) {
+      finish();
+      return;
+    }
+    const question = finishConfirmation(
+      unansweredLetters(
+        deck.items.map((item) => ({ letter: item.letter, itemId: item.item.itemId })),
+        responses,
+      ),
+    );
+    if (question) setConfirmFinish(question);
+    else finish();
+  };
+
   const finish = () => {
     setError(null);
+    setConfirmFinish(null);
     setFinishing(true);
     startTransition(async () => {
       const result = readOnly
@@ -212,15 +238,18 @@ export function DeckPresentation({
   const leadItem = deck.leadLetter
     ? deck.items.find((item) => item.letter === deck.leadLetter)
     : undefined;
-  const itemScreenIndex = (item: DeckItem): number => 2 + deck.items.indexOf(item);
+  const openItem = (item: DeckItem): DeckScreen => ({
+    type: 'item',
+    index: deck.items.indexOf(item),
+  });
 
   const kickerText =
     screen.type === 'words'
       ? `Votre sélection · ${deck.items.length} bien${deck.items.length > 1 ? 's' : ''}`
       : screen.type === 'grid'
         ? 'Vos critères'
-        : screen.type === 'item'
-          ? `Bien ${screen.item.letter} · ${criteriaCountLabel(screen.item)}`
+        : current
+          ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
           : 'Votre réponse';
 
   return (
@@ -271,13 +300,13 @@ export function DeckPresentation({
             {kickerText}
           </span>
           <span className="text-xs text-zinc-400 stage:text-white/40">
-            {index + 1} / {screens.length}
+            {screenPosition(screen, itemCount) + 1} / {screenTotal}
           </span>
         </div>
         <div className="h-1 overflow-hidden rounded-full bg-zinc-200 stage:bg-white/10">
           <div
             className="h-full rounded-full bg-brand transition-all duration-500"
-            style={{ width: `${((index + 1) / screens.length) * 100}%` }}
+            style={{ width: `${((screenPosition(screen, itemCount) + 1) / screenTotal) * 100}%` }}
           />
         </div>
       </div>
@@ -299,7 +328,7 @@ export function DeckPresentation({
       ) : null}
 
       <main
-        key={index}
+        key={`${screen.type}-${screen.type === 'item' ? screen.index : ''}`}
         className="live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-32 sm:px-8 sm:pt-8"
       >
         {screen.type === 'words' ? (
@@ -312,20 +341,22 @@ export function DeckPresentation({
         ) : screen.type === 'grid' ? (
           <GridScreen
             deck={deck}
-            onLead={leadItem ? () => go(itemScreenIndex(leadItem)) : null}
+            responses={responses}
+            onOpen={(item) => go(openItem(item))}
+            onLead={leadItem ? () => go(openItem(leadItem)) : null}
             leadLetter={leadItem?.letter ?? null}
           />
-        ) : screen.type === 'item' ? (
+        ) : current ? (
           <ItemScreen
-            item={screen.item}
-            answer={responseFor(screen.item.item.itemId)?.answer ?? null}
+            item={current}
+            answer={responseFor(current.item.itemId)?.answer ?? null}
             readOnly={readOnly}
             busy={pending}
             onAnswer={(answer) =>
               send(
-                screen.item.item.itemId,
+                current.item.itemId,
                 answer,
-                answer === 'no' ? (responseFor(screen.item.item.itemId)?.reasons ?? []) : [],
+                answer === 'no' ? (responseFor(current.item.itemId)?.reasons ?? []) : [],
               )
             }
           />
@@ -412,6 +443,41 @@ export function DeckPresentation({
                 ) : null}
               </section>
             ) : null}
+            {/* « Terminer » n'est jamais le bouton principal : il vit en bas de « Sa réponse ». */}
+            <div className="flex flex-col items-start gap-3 border-t border-zinc-200 pt-5 stage:border-white/10">
+              {confirmFinish ? (
+                <div
+                  className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 stage:border-amber-400/40 stage:bg-amber-500/10 stage:text-amber-100"
+                  data-testid="deck-finish-confirm"
+                  role="alertdialog"
+                >
+                  <p className="font-semibold">{confirmFinish}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" className={navBtn} onClick={() => setConfirmFinish(null)}>
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      className={navBtn}
+                      disabled={finishing || pending}
+                      onClick={finish}
+                      data-testid="deck-finish-anyway"
+                    >
+                      Terminer quand même
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className={navBtn}
+                disabled={finishing || pending}
+                onClick={askFinish}
+                data-testid="presentation-finish"
+              >
+                {readOnly ? 'Fermer' : finishing ? 'Enregistrement…' : 'Terminer la présentation'}
+              </button>
+            </div>
           </div>
         )}
         {error ? (
@@ -422,35 +488,51 @@ export function DeckPresentation({
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur stage:border-white/10 stage:bg-brand-darkest/90">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-          <button
-            type="button"
-            className={navBtn}
-            disabled={index === 0}
-            onClick={() => go(index - 1)}
-          >
-            Précédent
-          </button>
-          {screen.type === 'answer' ? (
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className={primaryBtn}
-              disabled={finishing || pending}
-              onClick={finish}
-              data-testid="presentation-finish"
+              className={navBtn}
+              disabled={previous == null}
+              onClick={() => go(previous)}
+              data-testid="presentation-previous"
             >
-              {readOnly ? 'Fermer' : finishing ? 'Enregistrement…' : 'Terminer'}
+              Précédent
             </button>
-          ) : (
-            <button
-              type="button"
-              className={primaryBtn}
-              onClick={() => go(index + 1)}
-              data-testid="presentation-next"
-            >
-              Suivant
-            </button>
-          )}
+            {screen.type === 'item' || screen.type === 'answer' ? (
+              <button
+                type="button"
+                className={navBtn}
+                onClick={() => go(GRID)}
+                data-testid="deck-back-to-grid"
+              >
+                Revenir à la grille
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {screen.type === 'grid' || screen.type === 'item' ? (
+              <button
+                type="button"
+                className={navBtn}
+                onClick={() => go(ANSWER)}
+                data-testid="deck-go-answer"
+              >
+                Passer à ses disponibilités
+              </button>
+            ) : null}
+            {screen.type !== 'answer' ? (
+              <button
+                type="button"
+                className={primaryBtn}
+                disabled={next == null}
+                onClick={() => go(next)}
+                data-testid="presentation-next"
+              >
+                Suivant
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -480,10 +562,14 @@ export function DeckPresentation({
 
 function GridScreen({
   deck,
+  responses,
+  onOpen,
   onLead,
   leadLetter,
 }: {
   deck: BuyerDeck;
+  responses: ItemResponse[];
+  onOpen: (item: DeckItem) => void;
   onLead: (() => void) | null;
   leadLetter: string | null;
 }) {
@@ -497,10 +583,37 @@ function GridScreen({
             <tr>
               <th className={`${statLabel} pb-2`}>Vos critères</th>
               {deck.items.map((item) => (
-                <th key={item.item.itemId} className={`${statLabel} pb-2 text-center`}>
-                  {item.letter}
+                <th key={item.item.itemId} className="pb-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => onOpen(item)}
+                    aria-label={`Voir le bien ${item.letter}`}
+                    data-testid="deck-open-item"
+                    data-letter={item.letter}
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-zinc-300 px-3 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand"
+                  >
+                    {item.letter}
+                  </button>
                 </th>
               ))}
+            </tr>
+            {/* Les réponses déjà données, sur chaque colonne. */}
+            <tr>
+              <th className="sr-only">Votre réponse</th>
+              {deck.items.map((item) => {
+                const answer = answerOf(item.item.itemId, responses);
+                return (
+                  <td
+                    key={item.item.itemId}
+                    className="pb-2 text-center text-xs font-semibold text-zinc-600 stage:text-white/70"
+                    data-testid="deck-grid-answer"
+                    data-letter={item.letter}
+                    data-answer={answer ?? ''}
+                  >
+                    {answer ? GRID_ANSWER_LABELS[answer] : ''}
+                  </td>
+                );
+              })}
             </tr>
           </thead>
           <tbody>

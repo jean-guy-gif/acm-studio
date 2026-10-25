@@ -896,7 +896,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(answer('maybe')).toHaveAttribute('aria-pressed', 'true');
     await answer('visit').click();
     await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
-    await page.getByTestId('presentation-next').click();
+    // Répondre n'avance pas ; sur le dernier bien, « Suivant » ne mène nulle part : « Sa réponse »
+    // s'atteint par son propre bouton (essai de Jean-Guy, 25/10).
+    await expect(scene).toHaveAttribute('data-screen', 'item');
+    await expect(page.getByTestId('presentation-next')).toBeDisabled();
+    await page.getByTestId('deck-go-answer').click();
     await expect(scene).toHaveAttribute('data-screen', 'answer');
     await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien A.');
     await page.getByTestId('deck-availability').filter({ hasText: 'Samedi matin' }).click();

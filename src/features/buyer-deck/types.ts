@@ -14,6 +14,12 @@ export const ITEM_ANSWER_LABELS: Record<ItemAnswer, string> = {
   maybe: 'Peut-être',
   no: 'Pas pour moi',
 };
+// Sur la grille, sous la lettre de chaque bien : la réponse déjà donnée.
+export const GRID_ANSWER_LABELS: Record<ItemAnswer, string> = {
+  visit: 'À visiter',
+  maybe: 'Peut-être',
+  no: 'Pas pour moi',
+};
 // Les mêmes, dits par le conseiller (fiche, Visites).
 export const ITEM_ANSWER_REPORT: Record<ItemAnswer, string> = {
   visit: 'Veut le visiter',
