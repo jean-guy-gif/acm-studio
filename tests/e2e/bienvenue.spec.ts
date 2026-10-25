@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { login, ensureSellerMode } from './support';
+import { goViaAccountMenu, login, ensureSellerMode } from './support';
 
 // Mission 97 — le junior autonome : « Bienvenue », le dossier d'exemple, et le Live.
 // Le compte de test a déjà des dossiers : il arrive donc sur la Préparation, et revient à
@@ -35,8 +35,8 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
   await archiveExamples(page);
 
   try {
-    await test.step('« Aide » ouvre « Bienvenue »', async () => {
-      await page.getByRole('link', { name: /^Aide/ }).click();
+    await test.step('« Aide », dans le menu de la carte, ouvre « Bienvenue »', async () => {
+      await goViaAccountMenu(page, 'Aide');
       await expect(page).toHaveURL(/\/bienvenue$/);
       await expect(page.getByRole('heading', { name: /^Bienvenue/ })).toBeVisible();
 
