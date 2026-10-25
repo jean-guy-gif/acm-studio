@@ -311,6 +311,64 @@ export type Database = {
           },
         ]
       }
+      buyer_item_responses: {
+        Row: {
+          agency_id: string
+          answer: string
+          answered_at: string
+          answered_during: string
+          buyer_id: string
+          created_at: string
+          id: string
+          reasons: string[]
+          selection_item_id: string
+        }
+        Insert: {
+          agency_id: string
+          answer: string
+          answered_at?: string
+          answered_during: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          reasons?: string[]
+          selection_item_id: string
+        }
+        Update: {
+          agency_id?: string
+          answer?: string
+          answered_at?: string
+          answered_during?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          reasons?: string[]
+          selection_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_item_responses_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_item_responses_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_item_responses_selection_item_id_fkey"
+            columns: ["selection_item_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selection_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_selection_items: {
         Row: {
           agency_id: string
@@ -322,9 +380,11 @@ export type Database = {
           imported: Json | null
           label: string
           listed_price: number | null
+          pitch: string | null
           position: number
           price_seen_on: string | null
           reference: string
+          removed_at: string | null
           selection_id: string
           snapshot: Json | null
           source: string
@@ -339,9 +399,11 @@ export type Database = {
           imported?: Json | null
           label: string
           listed_price?: number | null
+          pitch?: string | null
           position: number
           price_seen_on?: string | null
           reference: string
+          removed_at?: string | null
           selection_id: string
           snapshot?: Json | null
           source: string
@@ -356,9 +418,11 @@ export type Database = {
           imported?: Json | null
           label?: string
           listed_price?: number | null
+          pitch?: string | null
           position?: number
           price_seen_on?: string | null
           reference?: string
+          removed_at?: string | null
           selection_id?: string
           snapshot?: Json | null
           source?: string
@@ -384,26 +448,32 @@ export type Database = {
         Row: {
           agency_id: string
           buyer_id: string
+          buyer_words: string | null
           created_at: string
           created_by: string | null
           id: string
           presented_at: string | null
+          presented_deck: Json | null
         }
         Insert: {
           agency_id: string
           buyer_id: string
+          buyer_words?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           presented_at?: string | null
+          presented_deck?: Json | null
         }
         Update: {
           agency_id?: string
           buyer_id?: string
+          buyer_words?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           presented_at?: string | null
+          presented_deck?: Json | null
         }
         Relationships: [
           {
@@ -432,6 +502,7 @@ export type Database = {
       buyer_visit_requests: {
         Row: {
           agency_id: string
+          availability: string[]
           buyer_id: string
           buyer_selection_item_id: string
           cancelled_at: string | null
@@ -445,6 +516,7 @@ export type Database = {
         }
         Insert: {
           agency_id: string
+          availability?: string[]
           buyer_id: string
           buyer_selection_item_id: string
           cancelled_at?: string | null
@@ -458,6 +530,7 @@ export type Database = {
         }
         Update: {
           agency_id?: string
+          availability?: string[]
           buyer_id?: string
           buyer_selection_item_id?: string
           cancelled_at?: string | null
@@ -510,6 +583,7 @@ export type Database = {
           energy_rating_max: string | null
           floor_min: number | null
           id: string
+          ignored_suggestions: string[]
           must_have: string[]
           name: string
           notes: string | null
@@ -543,6 +617,7 @@ export type Database = {
           energy_rating_max?: string | null
           floor_min?: number | null
           id?: string
+          ignored_suggestions?: string[]
           must_have?: string[]
           name: string
           notes?: string | null
@@ -576,6 +651,7 @@ export type Database = {
           energy_rating_max?: string | null
           floor_min?: number | null
           id?: string
+          ignored_suggestions?: string[]
           must_have?: string[]
           name?: string
           notes?: string | null
@@ -2339,6 +2415,31 @@ export type Database = {
           profile_id: string
         }[]
       }
+      answer_buyer_item: {
+        Args: {
+          p_agency_id: string
+          p_answer: string
+          p_item_id: string
+          p_reasons: string[]
+        }
+        Returns: {
+          agency_id: string
+          answer: string
+          answered_at: string
+          answered_during: string
+          buyer_id: string
+          created_at: string
+          id: string
+          reasons: string[]
+          selection_item_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "buyer_item_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       bootstrap_agency_owner: {
         Args: { agency_name: string; first_name: string; last_name: string }
         Returns: {
@@ -2386,6 +2487,15 @@ export type Database = {
         Returns: boolean
       }
       current_agency_id_text: { Args: never; Returns: string }
+      finish_buyer_presentation: {
+        Args: {
+          p_agency_id: string
+          p_availability: string[]
+          p_deck: Json
+          p_selection_id: string
+        }
+        Returns: boolean
+      }
       get_current_agency_id: { Args: never; Returns: string }
       has_pending_invitation: { Args: never; Returns: boolean }
       is_current_manager: { Args: never; Returns: boolean }

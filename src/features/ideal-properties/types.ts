@@ -52,6 +52,8 @@ export type IdealSelectionItem = {
   // Pour une annonce : les photos et ce que la recherche puis l'import en ont dit.
   photoUrl: string | null;
   imported: boolean;
+  // Mission 122 — « Pourquoi je vous le propose », modifiée par le conseiller ; null = proposée.
+  pitch: string | null;
 };
 
 export type IdealSelection = {
@@ -59,5 +61,9 @@ export type IdealSelection = {
   createdAt: string;
   // Mission 119 — la présentation de cette sélection s'est terminée (lecture seule ensuite).
   presentedAt: string | null;
+  // Mission 122 — « Vous m'avez dit », modifiée par le conseiller ; null = proposée.
+  buyerWords: string | null;
+  // Mission 122 — le déroulé figé à « Terminer » (relu sans recalcul) ; null avant.
+  presentedDeck: unknown;
   items: IdealSelectionItem[];
 };

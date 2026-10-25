@@ -36,6 +36,7 @@ export function toBuyer(row: BuyerRow): Buyer {
     status: oneOf(BUYER_STATUSES, row.status) ?? 'searching',
     statusChangedAt: row.status_changed_at,
     demo: row.demo,
+    ignoredSuggestions: row.ignored_suggestions ?? [],
     name: row.name,
     phone: row.phone,
     email: row.email,

@@ -1061,28 +1061,134 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
-  // Mission 119 — « Présenter la sélection » : l'ouverture, trois biens avec leur prix affiché,
-  // une visite demandée sur le 2e, la fin ; puis Visites la montre et la visite est faite.
+  // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
+  // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
+  // grille qui montre la réponse ; A : « Pas pour moi » (la surface) ; « Terminer » avec B sans
+  // réponse demande confirmation ; B : « Peut-être » ; ses créneaux ; la fiche montre ses réponses.
+  await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
   await page.getByTestId('present-selection').click();
   const scene = page.getByTestId('buyer-presentation');
-  await expect(scene).toHaveAttribute('data-screen', 'intro');
-  await expectUnspoken(page, 'Présentation — ouverture');
-  await expect(page.getByTestId('presentation-criteria')).toContainText('Une piscine');
+  await expect(scene).toHaveAttribute('data-screen', 'words');
+  await expectUnspoken(page, 'Présentation — ses mots');
+  await expect(page.getByTestId('deck-words')).toContainText('Une maison');
   await page.getByTestId('presentation-next').click();
-  await expect(page.getByTestId('presentation-price')).toBeVisible();
-  await expectUnspoken(page, 'Présentation — bien 1');
+  await expect(scene).toHaveAttribute('data-screen', 'grid');
+  await expect(page.getByTestId('deck-grid-row').first()).toBeVisible();
+  const gridRows = await page.getByTestId('deck-grid-row').count();
+  await expect(page.getByTestId('deck-grid-cell')).toHaveCount(gridRows * 3);
+  await expectUnspoken(page, 'Présentation — la grille');
+  const answer = (value: string) =>
+    page.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
+  const openItem = async (letter: string) => {
+    await page.locator(`[data-testid="deck-open-item"][data-letter="${letter}"]`).click();
+    await expect(scene).toHaveAttribute('data-screen', 'item');
+    await expect(page.getByTestId('deck-kicker')).toContainText(`Bien ${letter}`);
+  };
+  const gridAnswer = (letter: string) =>
+    page.locator(`[data-testid="deck-grid-answer"][data-letter="${letter}"]`);
+  // C d'abord : « Je veux le visiter » ne fait pas avancer, la présentation n'est pas terminée.
+  await openItem('C');
+  await expectUnspoken(page, 'Présentation — le bien C');
+  // La barre d'un écran de bien, en tablette dans les deux sens : une seule ligne, « Suivant » à
+  // droite, et rien du contenu caché dessous (essai du 25/10).
+  for (const viewport of [
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+  ]) {
+    const size = `${viewport.width} × ${viewport.height}`;
+    await page.setViewportSize(viewport);
+    const bar = page.getByTestId('deck-nav-bar');
+    const boxes = await bar.locator('button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { id: button.getAttribute('data-testid'), top: rect.top, right: rect.right };
+      }),
+    );
+    expect(
+      boxes.map((box) => box.id),
+      `boutons de la barre en ${size}`,
+    ).toEqual([
+      'presentation-previous',
+      'deck-back-to-grid',
+      'deck-go-answer',
+      'presentation-next',
+    ]);
+    const tops = boxes.map((box) => box.top);
+    expect(
+      Math.max(...tops) - Math.min(...tops),
+      `la barre tient sur une ligne en ${size}`,
+    ).toBeLessThan(2);
+    expect(boxes.at(-1)!.right, `« Suivant » à droite en ${size}`).toBe(
+      Math.max(...boxes.map((box) => box.right)),
+    );
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const barTop = await bar.evaluate((element) => element.getBoundingClientRect().top);
+    const lastAnswer = await page
+      .locator('[data-testid="deck-answer"]')
+      .last()
+      .evaluate((element) => element.getBoundingClientRect().bottom);
+    expect(lastAnswer, `rien du contenu sous la barre en ${size}`).toBeLessThanOrEqual(barTop);
+    await expectNoHorizontalScroll(page, `Présentation — un bien (${size})`);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await answer('visit').click();
+  await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
+  await expect(scene).toHaveAttribute('data-screen', 'item');
+  await expect(page.getByTestId('presentation-next')).toBeDisabled();
+  await expect(page.getByTestId('presentation-finished')).toHaveCount(0);
+  await page.getByTestId('deck-back-to-grid').click();
+  await expect(scene).toHaveAttribute('data-screen', 'grid');
+  await expect(gridAnswer('C')).toHaveAttribute('data-answer', 'visit');
+  await expect(gridAnswer('C')).toHaveText('À visiter');
+  // Puis A, et « Suivant » mène à B.
+  await openItem('A');
+  await expectUnspoken(page, 'Présentation — le bien A');
+  await answer('no').click();
+  await expect(answer('no')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('presentation-next').click();
-  await page.getByTestId('presentation-visit').click();
-  await expect(page.getByTestId('presentation-visit')).toHaveText(/Visite demandée/);
-  await page.getByTestId('presentation-next').click();
-  await page.getByTestId('presentation-next').click();
-  await expect(scene).toHaveAttribute('data-screen', 'end');
-  await expect(page.getByTestId('presentation-recap').locator('li')).toHaveCount(1);
+  await expect(page.getByTestId('deck-kicker')).toContainText('Bien B');
+  // « Terminer » avec B sans réponse : confirmation, et l'on revient.
+  await page.getByTestId('deck-go-answer').click();
+  await expect(scene).toHaveAttribute('data-screen', 'answer');
+  await page.getByTestId('presentation-finish').click();
+  await expect(page.getByTestId('deck-finish-confirm')).toContainText(
+    '1 bien sans réponse : B. Terminer quand même ?',
+  );
+  // La confirmation prend le focus dès qu'elle s'ouvre.
+  await expect(page.getByTestId('deck-finish-confirm')).toBeFocused();
+  await page.getByTestId('deck-finish-confirm').getByRole('button', { name: 'Annuler' }).click();
+  await expect(page.getByTestId('deck-finish-confirm')).toHaveCount(0);
+  await page.getByTestId('deck-back-to-grid').click();
+  await openItem('B');
+  await expectUnspoken(page, 'Présentation — le bien B');
+  await answer('maybe').click();
+  await expect(answer('maybe')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('deck-back-to-grid').click();
+  await expect(gridAnswer('A')).toHaveAttribute('data-answer', 'no');
+  await expect(gridAnswer('B')).toHaveAttribute('data-answer', 'maybe');
+  await expectUnspoken(page, 'Présentation — la grille, ses réponses affichées');
+  await page.getByTestId('deck-go-answer').click();
+  await expect(scene).toHaveAttribute('data-screen', 'answer');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien C.');
+  await expect(page.getByTestId('deck-response')).toContainText('Vous hésitez pour le bien B.');
+  const surface = page.getByTestId('deck-reason').filter({ hasText: 'La surface' });
+  await surface.click();
+  await expect(surface).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('deck-availability').filter({ hasText: 'Samedi matin' }).click();
+  await expectUnspoken(page, 'Présentation — sa réponse');
   await page.getByTestId('presentation-finish').click();
   await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
+  const answers = page.getByTestId('buyer-answers');
+  await expect(answers.getByTestId('buyer-answer')).toHaveCount(3);
+  await expect(answers).toContainText('Veut le visiter');
+  await expect(answers).toContainText('Pas pour lui : La surface');
+  await expect(answers).toContainText('Peut-être');
   await page.goto('/visites');
   await expectUnspoken(page, 'Visites');
   await expect(page.getByTestId('visits-pending')).toContainText('Famille Keller');
+  await expect(page.getByTestId('visit-availability').first()).toContainText('Samedi matin');
+  await expect(page.getByTestId('visits-other-answers')).toContainText('Pas pour lui : La surface');
+  await expect(page.getByTestId('visits-other-answers')).toContainText('Peut-être');
   await page
     .getByTestId('visits-pending')
     .getByRole('button', { name: 'Visite faite' })

@@ -65,8 +65,8 @@ const photoOf = (snapshot: unknown): string | null => {
   return typeof first === 'string' && /^https:\/\//i.test(first) ? first : null;
 };
 
-export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {
-  const toItem = (item: SelectionItemRow): IdealSelectionItem => ({
+export function toSelectionItem(item: SelectionItemRow): IdealSelectionItem {
+  return {
     id: item.id,
     position: item.position,
     source: (SELECTION_SOURCES as readonly string[]).includes(item.source)
@@ -83,11 +83,21 @@ export function toSelection(row: SelectionRow, items: SelectionItemRow[]): Ideal
     gaps: item.gaps,
     photoUrl: photoOf(item.imported) ?? photoOf(item.snapshot),
     imported: item.imported != null,
-  });
+    pitch: item.pitch ?? null,
+  };
+}
+
+export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {
   return {
     id: row.id,
     createdAt: row.created_at,
     presentedAt: row.presented_at ?? null,
-    items: [...items].sort((a, b) => a.position - b.position).map(toItem),
+    buyerWords: row.buyer_words ?? null,
+    presentedDeck: row.presented_deck ?? null,
+    // Mission 122 — un bien retiré (retrait doux) quitte la sélection ; sa ligne reste en base.
+    items: [...items]
+      .filter((item) => item.removed_at == null)
+      .sort((a, b) => a.position - b.position)
+      .map(toSelectionItem),
   };
 }

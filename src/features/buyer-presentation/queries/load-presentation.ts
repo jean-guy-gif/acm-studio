@@ -2,34 +2,18 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
+import { observedPriceDrops } from '@/features/buyer-presentation/queries/observed-price-drops';
 import { agencyPriceForBuyer } from '@/features/buyer-presentation/services/agency-price';
-import { buildBuyerPresentation } from '@/features/buyer-presentation/services/build-presentation';
-import { toVisitRequest } from '@/features/buyer-presentation/services/visit-request-row';
-import type {
-  BuyerPresentation,
-  PresentedItemInput,
-  VisitRequest,
-} from '@/features/buyer-presentation/types';
-import { getBuyer } from '@/features/buyers/queries/get-buyers';
-import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
+import {
+  listingOutdoor,
+  listingParking,
+} from '@/features/buyer-presentation/services/listing-facts';
+import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 import type { IdealSelectionItem } from '@/features/ideal-properties/types';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
-import { getAgency } from '@/lib/auth/get-agency';
-import { getProfile } from '@/lib/auth/get-profile';
 import type { Database, Json } from '@/lib/supabase/database.types';
-import { createClient } from '@/lib/supabase/server';
 
 export type PresentationClient = SupabaseClient<Database>;
-
-export type LoadedPresentation = {
-  presentation: BuyerPresentation;
-  requests: VisitRequest[];
-  logoLightUrl: string | null;
-  logoDarkUrl: string | null;
-  agencyName: string | null;
-  advisorFirstName: string | null;
-};
 
 const PHOTO_TTL_SECONDS = 60 * 60;
 
@@ -40,6 +24,8 @@ const num = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 const str = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value : null;
+const bool = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
+
 const list = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 
@@ -69,7 +55,7 @@ export async function presentedItems(
         ? supabase
             .from('subject_properties')
             .select(
-              'project_id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
+              'project_id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, floor, has_pool, has_elevator, general_condition',
             )
             .eq('agency_id', agencyId)
             .in('project_id', projectIds)
@@ -78,7 +64,7 @@ export async function presentedItems(
         ? supabase
             .from('comparables')
             .select(
-              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls',
+              'id, city, district, surface_area, rooms_count, bedrooms_count, outdoor_spaces, parking_types, energy_rating, photo_urls, property_type, general_condition, listing_published_at',
             )
             .eq('agency_id', agencyId)
             .in('id', competitorIds)
@@ -105,6 +91,8 @@ export async function presentedItems(
   const competitorById = new Map((competitors ?? []).map((row) => [row.id, row]));
   const dataById = new Map((rawItems ?? []).map((row) => [row.id, row]));
 
+  // Mission 122 — la baisse de prix, datée par les seules observations de l'agence (M47).
+  const drops = await observedPriceDrops(supabase, items, agencyId);
   // Les photos du bien vendeur : des chemins du stockage, signés une heure.
   const propertyPaths = (properties ?? []).flatMap((row) => strings(row.photo_urls));
   const signed = new Map(
@@ -141,6 +129,14 @@ export async function presentedItems(
         photos: strings(property?.photo_urls)
           .map((path) => signed.get(path) ?? null)
           .filter((url): url is string => url != null),
+        propertyType: property?.property_type ?? null,
+        floor: property?.floor ?? null,
+        hasPool: property?.has_pool ?? null,
+        hasElevator: property?.has_elevator ?? null,
+        condition: property?.general_condition ?? null,
+        // Un bien de l'agence n'a pas d'annonce publiée : aucun fait daté.
+        listedSince: null,
+        priceDrop: null,
       };
     }
     if (item.source === 'competitor') {
@@ -156,6 +152,13 @@ export async function presentedItems(
         parking: competitor?.parking_types ?? [],
         energyRating: competitor?.energy_rating ?? null,
         photos: httpsOnly(strings(competitor?.photo_urls)),
+        propertyType: competitor?.property_type ?? null,
+        floor: null,
+        hasPool: null,
+        hasElevator: null,
+        condition: competitor?.general_condition ?? null,
+        listedSince: competitor?.listing_published_at ?? null,
+        priceDrop: drops.get(item.id) ?? null,
       };
     }
     // Une annonce du marché : ce que l'import en a lu, sinon ce que la recherche en a dit.
@@ -165,6 +168,7 @@ export async function presentedItems(
     const features = (snapshot?.features ?? null) as Record<string, unknown> | null;
     const outdoorFeature = (features?.outdoor ?? null) as { present?: unknown } | null;
     const streamEstate = (snapshot?.streamEstate ?? null) as Record<string, unknown> | null;
+    const features122 = features ?? {};
     return {
       ...base,
       city: str(imported?.city) ?? str(snapshot?.city),
@@ -172,51 +176,20 @@ export async function presentedItems(
       surfaceArea: num(imported?.surfaceArea) ?? num(snapshot?.surfaceArea),
       roomsCount: num(imported?.roomsCount) ?? num(snapshot?.roomsCount),
       bedroomsCount: num(imported?.bedroomsCount) ?? num(streamEstate?.bedrooms),
-      outdoor: imported ? list(imported.outdoorSpaces) : list(outdoorFeature?.present),
-      parking: imported ? list(imported.parkingTypes) : list(features?.parking),
+      // Extérieur et parking connus comme absents : « ✗ », jamais « à vérifier » (M118).
+      outdoor: listingOutdoor(imported, outdoorFeature),
+      parking: listingParking(imported, features),
       energyRating: str(imported?.energyRating) ?? str(snapshot?.energyClass),
       photos: httpsOnly(imported ? list(imported.photoUrls) : list(snapshot?.photoUrls)),
+      propertyType: str(imported?.propertyType) ?? str(snapshot?.propertyType),
+      floor: num(imported?.floor) ?? num(features122.floor),
+      hasPool: bool(features122.hasPool),
+      hasElevator: bool(features122.hasElevator),
+      condition: str(imported?.generalCondition) ?? str(features122.condition),
+      // La date de mise en vente que l'annonce publie (M47) ; jamais le premier passage de Stream
+      // Estate, qui n'est pas la date du portail (M101).
+      listedSince: str(imported?.listingPublishedAt),
+      priceDrop: drops.get(item.id) ?? null,
     };
   });
-}
-
-// La présentation d'un acquéreur de l'agence : sa dernière sélection, ses demandes de visite,
-// l'identité de l'agence et le prénom du conseiller. null : fiche archivée, d'une autre agence,
-// ou sans sélection.
-export async function loadPresentation(buyerId: string): Promise<LoadedPresentation | null> {
-  const [buyer, profile] = await Promise.all([getBuyer(buyerId), getProfile()]);
-  if (!buyer || !profile) return null;
-  const selection = await getIdealSelection(buyer.id);
-  if (!selection) return null;
-  const supabase = await createClient();
-  const [{ data: selectionRow }, { data: requestRows }, items, branding, agency] =
-    await Promise.all([
-      supabase.from('buyer_selections').select('presented_at').eq('id', selection.id).maybeSingle(),
-      supabase
-        .from('buyer_visit_requests')
-        .select('*')
-        .in(
-          'buyer_selection_item_id',
-          selection.items.map((item) => item.id),
-        )
-        .order('requested_at'),
-      presentedItems(supabase, selection.items, profile.agency_id),
-      getAgencyBranding(),
-      getAgency(profile.agency_id),
-    ]);
-  return {
-    presentation: buildBuyerPresentation({
-      buyerId: buyer.id,
-      buyer,
-      selectionId: selection.id,
-      selectedAt: selection.createdAt,
-      presentedAt: selectionRow?.presented_at ?? null,
-      items,
-    }),
-    requests: (requestRows ?? []).map(toVisitRequest),
-    logoLightUrl: branding?.logoLightUrl ?? null,
-    logoDarkUrl: branding?.logoDarkUrl ?? null,
-    agencyName: agency?.name ?? null,
-    advisorFirstName: profile.first_name?.trim() || null,
-  };
 }
