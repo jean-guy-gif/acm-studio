@@ -57,6 +57,17 @@ describe('le plan des dossiers de démo', () => {
     expect(plan.conclusion).toBeNull();
   });
 
+  it('la piscine et l’ascenseur du bien vendeur sont ceux du scénario : la villa de Mougins a sa piscine', () => {
+    const signed = demoSeedPlan('signed', NOW);
+    expect(signed.scenario.id).toBe('mougins');
+    expect(signed.property!.has_pool).toBe(true);
+    for (const stage of ['ready', 'signed', 'follow_up'] as const) {
+      const plan = demoSeedPlan(stage, NOW);
+      expect(plan.property!.has_pool).toBe(plan.scenario.subject.hasPool);
+      expect(plan.property!.has_elevator).toBe(plan.scenario.subject.hasElevator);
+    }
+  });
+
   it('« Mandat signé » : un Live mené, un mandat exclusif, une adresse « Ne plus solliciter »', () => {
     const plan = demoSeedPlan('signed', NOW);
     expect(plan.scenario.id).toBe('mougins');

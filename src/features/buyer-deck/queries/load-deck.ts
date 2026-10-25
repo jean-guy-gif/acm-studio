@@ -93,14 +93,23 @@ export async function loadDeck(buyerId: string): Promise<LoadedDeck | null> {
   return {
     deck,
     responses: (responseRows ?? []).map(toItemResponse),
-    initialAvailability: [
-      ...new Set(
-        (requestRows ?? [])
-          .map(toVisitRequest)
-          .filter(isPendingVisit)
-          .flatMap((request) => request.availability),
-      ),
-    ],
+    // Ses créneaux du rendez-vous, et eux seuls (décision de Jean-Guy, 25/10) : relue, la
+    // présentation redit ceux du déroulé figé ; avant « Terminer », ceux des demandes vivantes
+    // faites pendant la présentation — jamais ceux donnés sur le lien.
+    initialAvailability:
+      selection.presentedAt && deck.meetingAvailability.length > 0
+        ? [...deck.meetingAvailability]
+        : [
+            ...new Set(
+              (requestRows ?? [])
+                .map(toVisitRequest)
+                .filter(
+                  (request) =>
+                    isPendingVisit(request) && request.requestedDuring === 'presentation',
+                )
+                .flatMap((request) => request.availability),
+            ),
+          ],
     logoLightUrl: branding?.logoLightUrl ?? null,
     logoDarkUrl: branding?.logoDarkUrl ?? null,
     agencyName: agency?.name ?? null,
