@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 // Mission 66 — outils du parcours de bout en bout. Rien ici ne touche la base
 // directement : tout passe par l'écran, comme le ferait le conseiller. Exceptions, écrites
@@ -83,6 +83,21 @@ export async function ensureSellerMode(page: Page): Promise<void> {
     await switcher.getByRole('button', { name: 'Vendeur' }).click();
     await expect(switcher).toHaveAttribute('data-mode', 'seller');
   }
+}
+
+// Mission 125 — Mon profil, Administration, Aide, Ma démo et Erreurs sont derrière la carte du
+// conseiller, en bas du menu de gauche : on l'ouvre, puis on choisit l'entrée.
+export async function openAccountMenu(page: Page): Promise<Locator> {
+  await page.getByTestId('account-card').click();
+  const menu = page.getByTestId('account-menu');
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
+export async function goViaAccountMenu(page: Page, label: string): Promise<void> {
+  const menu = await openAccountMenu(page);
+  await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();
+  await expect(menu).toHaveCount(0);
 }
 
 export async function login(page: Page, credentials?: Credentials): Promise<void> {

@@ -97,7 +97,7 @@ describe('« Bienvenue » (mission 97)', () => {
   });
 
   it('« Aide » ramène à « Bienvenue » depuis le menu', () => {
-    // Mission 118 — le menu commun aux deux modes vit dans le service du mode.
+    // Mission 125 — « Aide » est au menu de la carte du conseiller, dans le service du mode.
     expect(read('features', 'workspace-mode', 'services', 'workspace-mode.ts')).toContain(
       "{ href: '/bienvenue', label: 'Aide'",
     );

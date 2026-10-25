@@ -19,12 +19,28 @@ const BUYER_NAV: NavItem[] = [
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
 ];
 
-// Communs aux deux modes (Erreurs et Ma démo s'ajoutent selon le compte, dans le menu lui-même).
-export const SHARED_NAV: NavItem[] = [
-  { href: '/admin', label: 'Administration', hint: 'Agence et équipe' },
-  // Mission 97 — « Bienvenue », où l'on revient quand on veut.
-  { href: '/bienvenue', label: 'Aide', hint: 'Premiers pas' },
-];
+// Mission 125 — le menu de gauche ne montre que le travail : les quatre espaces du mode. Tout le
+// reste passe derrière la carte du conseiller, en bas (décision de Jean-Guy, 25/10) : Mon profil,
+// Administration, Aide (« Bienvenue », M97), Ma démo pour l'agence de démonstration seulement (M114),
+// Erreurs pour un opérateur seulement (M100). Les adresses ne changent pas ; aucun droit ne change :
+// chaque page se garde seule. Sombre / Clair et Déconnexion, des gestes, sont ajoutés par la carte.
+export type AccountLink = { href: string; label: string };
+
+export function accountMenuFor({
+  demo,
+  operator,
+}: {
+  demo: boolean;
+  operator: boolean;
+}): AccountLink[] {
+  return [
+    { href: '/profil', label: 'Mon profil' },
+    { href: '/admin', label: 'Administration' },
+    { href: '/bienvenue', label: 'Aide' },
+    ...(demo ? [{ href: '/ma-demo', label: 'Ma démo' }] : []),
+    ...(operator ? [{ href: '/erreurs', label: 'Erreurs' }] : []),
+  ];
+}
 
 export function navForMode(mode: WorkspaceMode): NavItem[] {
   return mode === 'buyer' ? BUYER_NAV : SELLER_NAV;
@@ -38,13 +54,12 @@ export function homeForMode(mode: WorkspaceMode): string {
 const under = (pathname: string, href: string): boolean =>
   pathname === href || pathname.startsWith(`${href}/`);
 
-// Le mode d'une adresse : une page propre à un mode le désigne ; une page commune (Prospection,
-// Administration, Aide, profil…) ne désigne rien.
+// Le mode d'une adresse : une page propre à un mode le désigne ; une page commune (Prospection, et
+// celles du menu de la carte : profil, Administration, Aide…) ne désigne rien.
 export function modeForPath(pathname: string): WorkspaceMode | null {
-  const shared = new Set(SHARED_NAV.map((item) => item.href));
   for (const mode of ['buyer', 'seller'] as const) {
     for (const item of navForMode(mode)) {
-      if (shared.has(item.href) || item.href === '/prospection') continue;
+      if (item.href === '/prospection') continue;
       if (under(pathname, item.href)) return mode;
     }
   }
