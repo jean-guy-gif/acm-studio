@@ -3,8 +3,11 @@
 --   §2 les réponses « depuis le lien » et les demandes de visite en une transaction : une demande
 --      « depuis le dossier » avec ses créneaux, ou les créneaux ajoutés à une demande vivante ;
 --      les raisons à « Pas pour moi » seulement ;
---   §3 une seule réponse : un second envoi est refusé et n'écrit rien ; un bien retiré ou hors de la
---      sélection, un acquéreur archivé, une autre agence, un envoi vide : refusés, rien d'écrit.
+--      une demande « depuis le dossier » écrite par le code d'avant reçoit les créneaux ; une annulée
+--      n'est pas touchée ;
+--   §3 une seule réponse par sélection : un second envoi est refusé et n'écrit rien ; un bien retiré
+--      ou hors de la sélection, un acquéreur archivé, une autre agence, un envoi vide : refusés, rien
+--      d'écrit, ni réponse ni créneau.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/reponse_du_lien.sql
@@ -75,7 +78,7 @@ select pg_temp.expect('§3 un envoi vide : refusé',
   'refus métier : no_answer');
 select pg_temp.expect('§3 un bien retiré : refusé',
   pg_temp.attempt($$select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-000000000000',
-    '[{"itemId":"122bbbbb-4444-0000-0000-00000000000b","answer":"maybe"},{"itemId":"122bbbbb-4444-0000-0000-00000000000c","answer":"visit"}]'::jsonb, '{}')$$),
+    '[{"itemId":"122bbbbb-4444-0000-0000-00000000000a","answer":"visit"},{"itemId":"122bbbbb-4444-0000-0000-00000000000c","answer":"visit"}]'::jsonb, array['sat_morning'])$$),
   'refus métier : item_not_in_selection');
 select pg_temp.expect('§3 un bien d''une autre sélection : refusé',
   pg_temp.attempt($$select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-000000000000',
@@ -91,6 +94,11 @@ select pg_temp.expect('§3 une autre agence : refusée',
   'refus métier : buyer_selection_not_found');
 select pg_temp.expect('§3 rien n''a été écrit par les refus',
   (select count(*)::text from public.buyer_item_responses), '0');
+select pg_temp.expect('§3 la demande vivante de A n''a pas reçu les créneaux du refus',
+  (select availability::text from public.buyer_visit_requests where id = '122bbbbb-5555-0000-0000-00000000000a'),
+  '{weekday_evening}');
+select pg_temp.expect('§3 aucune demande créée par les refus',
+  (select count(*)::text from public.buyer_visit_requests), '1');
 
 -- §2
 select pg_temp.expect('§2 deux réponses écrites',
@@ -116,6 +124,37 @@ select public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000
 select pg_temp.expect('§2 une demande « depuis le dossier » avec ses créneaux',
   (select requested_during || ' ' || availability::text from public.buyer_visit_requests where buyer_selection_item_id = '122bbbbb-4444-0000-0000-0000000000ee'),
   'dossier {weekday_day}');
+
+-- Le code de main écrivait une demande « depuis le dossier » sans réponse : l'envoi est accepté, la
+-- demande reçoit les créneaux, sans seconde demande ; une demande annulée reste telle quelle, et une
+-- demande « depuis le dossier » naît à côté.
+insert into public.buyer_selections (id, agency_id, buyer_id) values
+  ('122bbbbb-3333-0000-0000-0000000000dd', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000');
+insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
+  ('122bbbbb-4444-0000-0000-0000000000dd', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000dd', 1, 'listing', 'https://exemple.invalid/d', 'D'),
+  ('122bbbbb-4444-0000-0000-0000000000dc', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000dd', 2, 'listing', 'https://exemple.invalid/e', 'E');
+insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during) values
+  ('122bbbbb-5555-0000-0000-0000000000dd', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000',
+   '122bbbbb-4444-0000-0000-0000000000dd', 'dossier');
+insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during, cancelled_at) values
+  ('122bbbbb-5555-0000-0000-0000000000dc', '122bbbbb-1111-0000-0000-000000000000', '122bbbbb-2222-0000-0000-000000000000',
+   '122bbbbb-4444-0000-0000-0000000000dc', 'presentation', now());
+select pg_temp.expect('§2 une demande « dossier » du code de main : l''envoi est accepté',
+  public.submit_buyer_dossier_answers('122bbbbb-1111-0000-0000-000000000000', '122bbbbb-3333-0000-0000-0000000000dd',
+    '[{"itemId":"122bbbbb-4444-0000-0000-0000000000dd","answer":"visit"},
+      {"itemId":"122bbbbb-4444-0000-0000-0000000000dc","answer":"visit"}]'::jsonb, array['sunday'])::text, '2');
+select pg_temp.expect('§2 elle reçoit les créneaux, sans seconde demande',
+  (select string_agg(requested_during || ' ' || availability::text, ' / ') from public.buyer_visit_requests
+   where buyer_selection_item_id = '122bbbbb-4444-0000-0000-0000000000dd'),
+  'dossier {sunday}');
+select pg_temp.expect('§2 une demande annulée n''est pas modifiée',
+  (select availability::text || ' ' || (cancelled_at is not null)::text from public.buyer_visit_requests
+   where id = '122bbbbb-5555-0000-0000-0000000000dc'),
+  '{} true');
+select pg_temp.expect('§2 et une demande « depuis le dossier » naît à côté',
+  (select string_agg(requested_during || ' ' || availability::text, ' / ') from public.buyer_visit_requests
+   where buyer_selection_item_id = '122bbbbb-4444-0000-0000-0000000000dc' and cancelled_at is null),
+  'dossier {sunday}');
 
 -- §3 une seule réponse
 select pg_temp.expect('§3 un second envoi sur la même sélection : refusé',
