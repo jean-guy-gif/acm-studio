@@ -174,8 +174,10 @@ const antibesSubject: DemoSubject = {
 const antibesListings = seed(
   'antibes',
   'apartment',
-  [...DEMO_PHOTO_POOLS.apartment],
-  rotate(8),
+  // Jamais la photo principale du bien vendeur (appartement-01) : le dossier « À relancer »
+  // d'Antibes et ses concurrents peuvent se trouver dans la même grille (relecture, 25/10).
+  DEMO_PHOTO_POOLS.apartment.slice(1),
+  rotate(7),
 )([
   {
     id: 'ant-01',
@@ -1314,6 +1316,9 @@ const mouginsListings = seed(
   {
     id: 'mou-07',
     // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
+    // Ses propres photos : aucune n'est celle de la villa vendue ni de mou-02, retenus avec lui pour
+    // les Keller (relecture des rendus, 25/10).
+    photos: ['villa-06.jpg', 'villa-02.jpg'],
     title: 'Villa 7 pièces 200 m² — Mouans-Sartoux',
     price: 1620000,
     surfaceArea: 200,

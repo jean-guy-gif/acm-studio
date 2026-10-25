@@ -128,6 +128,16 @@ describe('la sélection des Keller', async () => {
     expect(plan[1]!.gaps[0]).toMatch(/au-dessus du budget, à négocier$/);
   });
 
+  it('trois miniatures différentes, et les deux annonces sans photo commune', () => {
+    const scenario = DEMO_SCENARIOS.find((item) => item.id === 'mougins')!;
+    const photosOf = (id: string | null) =>
+      id == null ? scenario.subject.photos : scenario.listings.find((l) => l.id === id)!.photos;
+    const sets = plan.map((item) => photosOf(item.listingId));
+    expect(new Set(sets.map((photos) => photos[0])).size).toBe(3);
+    const [b, c] = [sets[1]!, sets[2]!];
+    expect(b.filter((photo) => c.includes(photo))).toEqual([]);
+  });
+
   it('les annonces portent leur type de bien : aucun « ? Type de bien »', () => {
     expect(plan[1]!.snapshot?.propertyType).toBe('house');
     expect(plan[2]!.snapshot?.propertyType).toBe('house');
