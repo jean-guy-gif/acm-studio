@@ -15,7 +15,10 @@
 -- Compatible avec le code de `main` : deux colonnes nullables, deux fonctions neuves, aucune
 -- ligne écrite.
 
-alter table public.buyer_selections add column presented_deck jsonb;
+alter table public.buyer_selections add column presented_deck jsonb
+  -- Un objet, de taille bornée (un déroulé tient en quelques dizaines de kilo-octets).
+  check (presented_deck is null
+    or (jsonb_typeof(presented_deck) = 'object' and pg_column_size(presented_deck) <= 524288));
 comment on column public.buyer_selections.presented_deck is
   'Mission 122 — le déroulé tel qu''affiché à « Terminer » ; la relecture le lit sans recalculer.';
 
@@ -46,7 +49,9 @@ begin
   join public.buyer_selections s on s.id = i.selection_id and s.agency_id = p_agency_id
   join public.buyers b on b.id = s.buyer_id and b.agency_id = p_agency_id
   where i.id = p_item_id and i.agency_id = p_agency_id
-  for update of i;
+  -- La sélection est verrouillée en partage : « Terminer » attend une réponse en cours, et une
+  -- réponse attend « Terminer » puis relit `presented_at` à jour.
+  for update of i for share of s;
   if v_buyer is null then
     raise exception 'buyer_item_not_found' using errcode = 'P0002';
   end if;
@@ -112,6 +117,9 @@ declare
   v_presented timestamptz;
   v_found boolean;
 begin
+  if p_deck is null or jsonb_typeof(p_deck) <> 'object' then
+    raise exception 'presented_deck_missing' using errcode = 'P0001';
+  end if;
   select true, presented_at into v_found, v_presented
   from public.buyer_selections
   where id = p_selection_id and agency_id = p_agency_id

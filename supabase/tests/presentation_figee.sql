@@ -82,7 +82,8 @@ select pg_temp.expect('§1 terminer : fermé au navigateur',
   (has_function_privilege('authenticated', 'public.finish_buyer_presentation(uuid, uuid, jsonb, text[])', 'execute')
    or has_function_privilege('anon', 'public.finish_buyer_presentation(uuid, uuid, jsonb, text[])', 'execute'))::text, 'false');
 select pg_temp.expect('§1 ouvert au serveur',
-  has_function_privilege('service_role', 'public.answer_buyer_item(uuid, uuid, text, text[])', 'execute')::text, 'true');
+  (has_function_privilege('service_role', 'public.answer_buyer_item(uuid, uuid, text, text[])', 'execute')
+   and has_function_privilege('service_role', 'public.finish_buyer_presentation(uuid, uuid, jsonb, text[])', 'execute'))::text, 'true');
 
 -- §2
 select pg_temp.act_as_service();
@@ -113,11 +114,29 @@ update public.buyer_selection_items set removed_at = now() where id = '122fffff-
 select pg_temp.expect('§2 un bien retiré ne reçoit plus de réponse',
   pg_temp.attempt($$select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-00000000000c', 'visit', '{}')$$),
   'refus métier : item_removed');
+insert into public.buyers (id, agency_id, advisor_id, name, cities, archived_at) values
+  ('122fffff-1111-0000-0000-0000000000ff', '122fffff-0000-0000-0000-000000000000', '12221111-0000-0000-0000-0000000000a1', 'Archivé', array['Antibes'], now());
+insert into public.buyer_selections (id, agency_id, buyer_id) values
+  ('122fffff-2222-0000-0000-0000000000ff', '122fffff-0000-0000-0000-000000000000', '122fffff-1111-0000-0000-0000000000ff');
+insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
+  ('122fffff-3333-0000-0000-0000000000ff', '122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-0000000000ff', 1, 'listing', 'https://exemple.invalid/z', 'Z');
+select pg_temp.expect('§2 un acquéreur archivé ne répond plus',
+  pg_temp.attempt($$select public.answer_buyer_item('122fffff-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-0000000000ff', 'visit', '{}')$$),
+  'refus métier : buyer_archived');
 select pg_temp.expect('§2 une autre agence ne répond pas',
   pg_temp.attempt($$select public.answer_buyer_item('99999999-0000-0000-0000-000000000000', '122fffff-3333-0000-0000-00000000000a', 'visit', '{}')$$),
   'refus métier : buyer_item_not_found');
 
 -- §3
+select pg_temp.expect('§3 une autre agence ne termine pas',
+  pg_temp.attempt($$select public.finish_buyer_presentation('99999999-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000', '{}'::jsonb, '{}')$$),
+  'refus métier : buyer_selection_not_found');
+select pg_temp.expect('§3 « Terminer » sans déroulé : refusé',
+  pg_temp.attempt($$select public.finish_buyer_presentation('122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000', null, '{}')$$),
+  'refus métier : presented_deck_missing');
+select pg_temp.expect('§3 un déroulé qui n''est pas un objet : refusé par la base',
+  pg_temp.attempt($$update public.buyer_selections set presented_deck = '[1]'::jsonb where id = '122fffff-2222-0000-0000-000000000000'$$),
+  'contrainte');
 select pg_temp.expect('§3 « Terminer » répond vrai la première fois',
   public.finish_buyer_presentation('122fffff-0000-0000-0000-000000000000', '122fffff-2222-0000-0000-000000000000',
     '{"words":"Un 3 pièces"}'::jsonb, array['sat_morning', 'sunday'])::text, 'true');
