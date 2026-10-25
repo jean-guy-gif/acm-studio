@@ -6,7 +6,8 @@ import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 // sélection du lien comptent, une demande vivante ne se redouble pas, chaque coche crée une demande
 // « depuis le dossier » ; sans compte ni e-mail.
 const state = vi.hoisted(() => ({
-  // Les réponses, dans l'ordre où l'action attend ses requêtes : lien, biens, demandes, insertion.
+  // Les réponses, dans l'ordre où l'action attend ses requêtes : lien, fiche, biens, demandes,
+  // insertion.
   queue: [] as { data?: unknown; error?: unknown }[],
 }));
 const service = fakeSupabase(() => state.queue.shift() ?? { data: null });
@@ -65,9 +66,22 @@ describe('requestVisitsFromDossier', () => {
     expect(service.writes()).toEqual([]);
   });
 
+  it('acquéreur archivé : le lien ne vaut plus, rien n’est écrit (décision du 25/10)', async () => {
+    state.queue = [{ data: link }, { data: null }];
+    expect(await requestVisitsFromDossier(TOKEN, [ITEM_A])).toEqual({
+      ok: false,
+      error: 'Ce lien n’est plus valable.',
+    });
+    expect(
+      service.calls.some((call) => call.method === 'is' && call.args[0] === 'archived_at'),
+    ).toBe(true);
+    expect(service.writes()).toEqual([]);
+  });
+
   it('crée une demande « depuis le dossier » par bien coché de la sélection ; un bien d’une autre sélection est ignoré ; une demande vivante ne se redouble pas', async () => {
     state.queue = [
       { data: link },
+      { data: { id: 'b1' } },
       { data: [{ id: ITEM_A }, { id: ITEM_B }] },
       { data: [pending(ITEM_B)] },
       { data: null },

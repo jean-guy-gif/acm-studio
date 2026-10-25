@@ -1,9 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
+import { BuyerDossierDocument } from '@/features/buyer-dossier/components/buyer-dossier-document';
 import { buildBuyerDossier } from '@/features/buyer-dossier/services/build-buyer-dossier';
+import {
+  PRICE_TO_CONFIRM,
+  agencyPriceForBuyer,
+} from '@/features/buyer-presentation/services/agency-price';
 import type { DossierAgency } from '@/features/buyer-dossier/types';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 import type { BuyerInput } from '@/features/buyers/types';
@@ -182,5 +189,31 @@ describe('le dossier acquéreur', () => {
     ]) {
       expect(query).not.toMatch(new RegExp(`select\\([^)]*\\b${forbidden}\\b`));
     }
+  });
+});
+
+// Décision de Jean-Guy (24/10, test demandé le 25/10) : devant l'acquéreur, un bien de l'agence en
+// mandat signé montre son prix de commercialisation ; un vendeur à relancer ne montre aucun prix,
+// mais « Prix à confirmer avec le propriétaire » — sur le document imprimé comme sur le lien.
+describe('le prix d’un bien de l’agence sur le dossier', () => {
+  const render = (outcome: string) =>
+    renderToStaticMarkup(
+      createElement(BuyerDossierDocument, {
+        dossier: build([item({ source: 'project', price: agencyPriceForBuyer(outcome, 452_000) })]),
+      }),
+    );
+
+  it('vendeur à relancer : « Prix à confirmer avec le propriétaire », aucun montant', () => {
+    const html = render('follow_up');
+    expect(html).toContain(PRICE_TO_CONFIRM);
+    expect(html).not.toContain('452');
+    expect(html).not.toContain('data-testid="dossier-price"');
+  });
+
+  it('mandat signé : le prix de commercialisation, comme « Prix affiché »', () => {
+    const html = render('signed');
+    expect(html).toContain('data-testid="dossier-price"');
+    expect(html.replace(/[\u00a0\u202f]/g, ' ')).toContain('452 000 €');
+    expect(html).not.toContain(PRICE_TO_CONFIRM);
   });
 });
