@@ -115,7 +115,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
     // les remet à zéro.
     await test.step('Ma démo : quatre dossiers, un par étape', async () => {
-      await page.goto('/ma-demo');
+      // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
+      await goViaAccountMenu(page, 'Ma démo');
+      await expect(page).toHaveURL(/\/ma-demo$/);
       await expect(page.getByTestId('demo-dossiers')).toBeVisible();
       await expectUnspoken(page, 'Ma démo');
       const prepared = (await page.getByTestId('demo-dossier').count()) === 0;
@@ -640,7 +642,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     // dossiers neufs (d'autres identifiants) ; les dossiers des collègues ne bougent pas (prouvé par
     // les tests unitaires : ce passage n'a qu'un compte de démo).
     await test.step('Remettre ma démo à zéro', async () => {
-      await page.goto('/ma-demo');
+      await goViaAccountMenu(page, 'Ma démo');
+      await expect(page).toHaveURL(/\/ma-demo$/);
       const before = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));

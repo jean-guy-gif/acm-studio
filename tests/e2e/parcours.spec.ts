@@ -62,6 +62,9 @@ const CHOSEN_STREET = `${RUN_NUMBER + 2} rue du Refus Automatique`;
 const CHOSEN_ADDRESS = `${CHOSEN_STREET}, 06530 Peymeinade`;
 const TOUR_ADDRESS = `${RUN_NUMBER} boulevard de la Tournée, 06160 Juan-les-Pins`;
 
+// Budget du parcours : 8 minutes, comme la démo (décision de Jean-Guy, 25/10 ; 6 minutes avant).
+test.setTimeout(8 * 60_000);
+
 test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   const dossierName = uniqueDossierName();
   let projectId = '';

@@ -11,7 +11,9 @@ vi.mock('@/features/workspace-mode/actions/set-workspace-mode', () => ({
   setWorkspaceMode: vi.fn(),
 }));
 
-const { AccountMenu, ACCOUNT_MENU_LABEL } = await import('@/components/app-shell/account-menu');
+const { AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
+  await import('@/components/app-shell/account-menu');
+const { accountMenuFor } = await import('@/features/workspace-mode/services/workspace-mode');
 const { SidebarNav } = await import('@/components/app-shell/sidebar-nav');
 const { AppStage } = await import('@/components/theme/app-stage');
 // La carte lit le thème (Sombre / Clair) : rendue sous la scène, l'enfant passé en argument.
@@ -92,5 +94,44 @@ describe('la carte du conseiller', () => {
     const html = card({ errorsBadge: { count: 3, label: '3 erreurs depuis hier' } });
     expect(html).toContain('data-testid="account-errors-badge"');
     expect(html).toContain('title="3 erreurs depuis hier"');
+  });
+});
+
+// Le menu ouvert : « Erreurs » et sa pastille pour un opérateur ; ni l'un ni l'autre pour un
+// conseiller (le layout ne transmet la pastille qu'aux opérateurs, M100).
+describe('le menu ouvert de la carte', () => {
+  const entries = (operator: boolean, errorsBadge: { count: number; label: string } | null) =>
+    renderToStaticMarkup(
+      createElement(AccountMenuEntries, {
+        links: accountMenuFor({ demo: false, operator }),
+        pathname: '/builder',
+        errorsBadge,
+        themeLabel: 'Sombre',
+        onLink: () => {},
+        onTheme: () => {},
+        signOutAction: async () => {},
+      }),
+    );
+
+  it('un opérateur : « Erreurs », avec la pastille à côté', () => {
+    const html = entries(true, { count: 2, label: '2 erreurs depuis hier' });
+    expect(links(html)).toContain('/erreurs');
+    expect(html).toMatch(
+      /href="\/erreurs"[^>]*>.*Erreurs.*data-testid="account-errors-label"[^>]*>2 erreurs depuis hier</,
+    );
+  });
+
+  it('un opérateur sans erreur depuis hier : « Erreurs », sans pastille', () => {
+    const html = entries(true, { count: 0, label: '0 erreur depuis hier' });
+    expect(links(html)).toContain('/erreurs');
+    expect(html).not.toContain('account-errors-label');
+  });
+
+  it('un conseiller : ni « Erreurs », ni pastille', () => {
+    const html = entries(false, null);
+    expect(links(html)).toEqual(['/profil', '/admin', '/bienvenue']);
+    expect(html).not.toContain('Erreurs');
+    expect(html).not.toContain('account-errors-label');
+    for (const label of ['Sombre', 'Déconnexion']) expect(html).toContain(label);
   });
 });
