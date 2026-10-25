@@ -13,13 +13,14 @@ import {
   DOSSIER_NO_ANSWER,
   DOSSIER_PRESENTED,
 } from '@/features/buyer-dossier/types';
+import type { LinkClosed } from '@/features/buyer-dossier/services/link-screen';
 import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 // `closed` : la réponse ne se donne plus sur ce lien (déjà donnée, ou présentation terminée) ; la
 // page se recharge et montre le merci ou le récapitulatif, jamais de nouveau le formulaire.
 export type SubmitDossierResult =
-  { ok: true; answered: number } | { ok: false; error: string; closed?: true };
+  { ok: true; answered: number } | { ok: false; error: string; closed?: LinkClosed };
 
 const FAILURE = 'Votre réponse n’a pas pu être envoyée. Réessayez.';
 const EXPIRED = 'Ce lien n’est plus valable.';
@@ -77,10 +78,10 @@ export async function submitDossierAnswers(
   if (error) {
     const message = error.message ?? '';
     if (message.includes('already_answered')) {
-      return { ok: false, error: DOSSIER_ALREADY_ANSWERED, closed: true };
+      return { ok: false, error: DOSSIER_ALREADY_ANSWERED, closed: 'answered' };
     }
     if (message.includes('presentation_finished')) {
-      return { ok: false, error: DOSSIER_PRESENTED, closed: true };
+      return { ok: false, error: DOSSIER_PRESENTED, closed: 'presented' };
     }
     if (message.includes('buyer_archived') || message.includes('buyer_selection_not_found')) {
       return { ok: false, error: EXPIRED };

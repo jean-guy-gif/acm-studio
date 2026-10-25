@@ -151,6 +151,9 @@ export type BuyerDeck = {
   lead: string | null;
   // La lettre du bien de tête, donnée par le service (jamais relue dans la phrase).
   leadLetter: string | null;
+  // Les créneaux donnés en rendez-vous, rangés dans le déroulé figé à « Terminer » (décision de
+  // Jean-Guy, 25/10) ; vide avant, et pour une présentation terminée sans eux.
+  meetingAvailability: AvailabilitySlot[];
 };
 
 export const PITCH_MAX = 140;

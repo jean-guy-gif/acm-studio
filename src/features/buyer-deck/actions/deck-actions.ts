@@ -282,7 +282,8 @@ export async function finishPresentation(
   const { error } = await client.rpc('finish_buyer_presentation', {
     p_agency_id: profile.agency_id,
     p_selection_id: loaded.selection.id,
-    p_deck: deck as unknown as Json,
+    // Le déroulé figé garde aussi ses créneaux du rendez-vous, et eux seuls (décision du 25/10).
+    p_deck: { ...deck, meetingAvailability: availability } as unknown as Json,
     p_availability: availability,
   });
   if (error) return { ok: false, error: 'La fin de la présentation n’a pas pu être enregistrée.' };

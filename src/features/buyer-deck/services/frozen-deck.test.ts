@@ -46,6 +46,7 @@ const deck = (words: string, items: DeckItem[]): BuyerDeck => ({
   items,
   lead: null,
   leadLetter: null,
+  meetingAvailability: [],
 });
 
 // Ce qui a été affiché à « Terminer »…
@@ -112,6 +113,43 @@ describe('la relecture d’une présentation terminée', () => {
     expect(shown).not.toContain('Agence Dupont');
     expect(shown).not.toContain('piege.htm');
     expect(shown).toContain('https://annonce.example/photo.jpg');
+  });
+
+  it('tout le déroulé figé relu passe par la liste d’autorisation : déroulé, bien, marque', () => {
+    const spiked = {
+      ...frozen,
+      notes: 'NOTE-SECRETE',
+      items: frozen.items.map((entry) => ({
+        ...entry,
+        advisorComment: 'COMMENTAIRE-CONSEILLER',
+        marks: entry.marks.map((mark) => ({ ...mark, internal: 'MARQUE-INTERNE' })),
+      })),
+    };
+    const shown = JSON.stringify(
+      deckForReading({ presentedAt: '2026-10-25T11:00:00Z', presentedDeck: spiked, computed }),
+    );
+    for (const leak of ['NOTE-SECRETE', 'COMMENTAIRE-CONSEILLER', 'MARQUE-INTERNE']) {
+      expect(shown).not.toContain(leak);
+    }
+    expect(shown).toContain('Il coche vos critères.');
+  });
+
+  it('les créneaux du rendez-vous se relisent du déroulé figé, et eux seuls', () => {
+    const withSlots = {
+      ...frozen,
+      meetingAvailability: ['sunday', 'pas-un-creneau', 'sat_morning'],
+    } as unknown as BuyerDeck;
+    expect(
+      deckForReading({ presentedAt: '2026-10-25T11:00:00Z', presentedDeck: withSlots, computed })
+        .meetingAvailability,
+    ).toEqual(['sat_morning', 'sunday']);
+    // Un déroulé figé avant que les créneaux y soient rangés : aucun, rien n'est reconstitué.
+    const { meetingAvailability: _none, ...older } = frozen;
+    void _none;
+    expect(
+      deckForReading({ presentedAt: '2026-10-25T11:00:00Z', presentedDeck: older, computed })
+        .meetingAvailability,
+    ).toEqual([]);
   });
 
   it('un déroulé stocké de forme inattendue ne vaut rien', () => {

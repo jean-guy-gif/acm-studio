@@ -491,6 +491,7 @@ export function buildBuyerDeck(input: {
     items,
     lead: lead?.sentence ?? null,
     leadLetter: lead?.letter ?? null,
+    meetingAvailability: [],
   };
 }
 
