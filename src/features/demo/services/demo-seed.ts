@@ -193,8 +193,6 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
 // + 5 % pile, « à négocier ») et un bien à vérifier ensemble (mou-07, piscine non indiquée). Les
 // mêmes lignes que « Retenir la sélection » écrirait (M118) ; le mandat est désigné par son dossier,
 // que l'action connaît. Pur.
-export const DEMO_KELLER_LISTINGS = ['mou-02', 'mou-07'] as const;
-
 export type DemoSelectionItemPlan = {
   source: 'project' | 'listing';
   listingId: string | null;
@@ -204,6 +202,8 @@ export type DemoSelectionItemPlan = {
   category: 'agency' | 'compromise' | 'explore';
   gaps: string[];
   imported: ImportedComparableData | null;
+  // Ce que la recherche aurait dit du bien, pour les faits que l'import ne porte pas (le type).
+  snapshot: Record<string, unknown> | null;
 };
 
 const labelOf = (propertyType: string, data: ImportedComparableData): string =>
@@ -237,6 +237,12 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
       category,
       gaps,
       imported: data,
+      snapshot: {
+        propertyType: listing(id).propertyType,
+        city: data.city ?? null,
+        surfaceArea: data.surfaceArea ?? null,
+        roomsCount: data.roomsCount ?? null,
+      },
     };
   };
   const orange = listing('mou-02');
@@ -250,6 +256,7 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
       category: 'agency',
       gaps: [],
       imported: null,
+      snapshot: null,
     },
     fromListing('mou-02', 'compromise', [
       `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
