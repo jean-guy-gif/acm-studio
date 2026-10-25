@@ -67,6 +67,15 @@ const navBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
 const primaryBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50';
+// Essai de Jean-Guy (25/10) : la navigation est discrète, jamais plus visible que la réponse.
+export const quietNavBtn =
+  'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl px-4 py-2.5 font-title text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 stage:text-white/65 stage:hover:bg-white/10 stage:hover:text-white';
+// Sur un bien, « Je veux le visiter » est le bouton principal, à la couleur de l'agence ;
+// « Peut-être » et « Pas pour moi » sont secondaires ; la réponse donnée porte « ✓ ».
+export function answerBtn(value: ItemAnswer, on: boolean): string {
+  if (value === 'visit') return `${primaryBtn} ${on ? 'ring-4 ring-brand/35' : ''}`;
+  return `${navBtn} ${on ? 'border-2 border-brand-deep text-brand-deep stage:border-white stage:text-white' : ''}`;
+}
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
     on
@@ -499,7 +508,7 @@ export function DeckPresentation({
           <div className="flex flex-nowrap items-center gap-2">
             <button
               type="button"
-              className={navBtn}
+              className={quietNavBtn}
               disabled={previous == null}
               onClick={() => go(previous)}
               data-testid="presentation-previous"
@@ -509,7 +518,7 @@ export function DeckPresentation({
             {screen.type === 'item' || screen.type === 'answer' ? (
               <button
                 type="button"
-                className={navBtn}
+                className={quietNavBtn}
                 onClick={() => go(GRID)}
                 aria-label="Revenir à la grille"
                 data-testid="deck-back-to-grid"
@@ -523,7 +532,7 @@ export function DeckPresentation({
             {screen.type === 'grid' || screen.type === 'item' ? (
               <button
                 type="button"
-                className={navBtn}
+                className={quietNavBtn}
                 onClick={() => go(ANSWER)}
                 aria-label="Passer à ses disponibilités"
                 data-testid="deck-go-answer"
@@ -535,7 +544,7 @@ export function DeckPresentation({
             {screen.type !== 'answer' ? (
               <button
                 type="button"
-                className={primaryBtn}
+                className={quietNavBtn}
                 disabled={next == null}
                 onClick={() => go(next)}
                 data-testid="presentation-next"
@@ -595,16 +604,27 @@ export function GridScreen({
             <tr>
               <th className={`${statLabel} pb-2`}>Vos critères</th>
               {deck.items.map((item) => (
-                <th key={item.item.itemId} className="pb-2 text-center">
+                <th key={item.item.itemId} className="px-1 pb-2 text-center align-bottom">
+                  {/* Essai de Jean-Guy (25/10) : en tête de chaque colonne, la miniature du bien
+                      et sa lettre. */}
                   <button
                     type="button"
                     onClick={() => onOpen(item)}
                     aria-label={`Voir le bien ${item.letter}`}
                     data-testid="deck-open-item"
                     data-letter={item.letter}
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-zinc-300 px-3 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand"
+                    className="mx-auto flex w-full max-w-28 flex-col items-center gap-1 rounded-xl border border-zinc-300 p-1 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand"
                   >
-                    {item.letter}
+                    {item.photos[0] ? (
+                      <RemoteImage
+                        src={item.photos[0]}
+                        alt=""
+                        className="aspect-[4/3] w-full rounded-lg object-cover"
+                        fallbackClassName="aspect-[4/3] w-full rounded-lg bg-zinc-100 text-[0.6rem] text-zinc-400 stage:bg-white/10"
+                        fallbackLabel=""
+                      />
+                    ) : null}
+                    <span data-testid="deck-grid-thumb-letter">{item.letter}</span>
                   </button>
                 </th>
               ))}
@@ -774,7 +794,7 @@ export function ItemScreen({
             <button
               key={value}
               type="button"
-              className={on ? primaryBtn : navBtn}
+              className={answerBtn(value, on)}
               aria-pressed={on}
               disabled={readOnly || busy}
               data-testid="deck-answer"

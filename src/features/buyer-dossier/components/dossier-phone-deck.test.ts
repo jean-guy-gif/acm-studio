@@ -11,6 +11,8 @@ vi.mock('@/features/buyer-dossier/actions/submit-dossier-answers', () => ({
   submitDossierAnswers: async () => ({ ok: true, answered: 1 }),
 }));
 
+const { GridScreen, ItemScreen } =
+  await import('@/features/buyer-deck/components/deck-presentation');
 const { DossierPhoneDeck, SeenTogetherView, ThanksView } =
   await import('@/features/buyer-dossier/components/dossier-phone-deck');
 const { DossierPublicView } =
@@ -279,5 +281,62 @@ describe('la page du lien et son document imprimable', () => {
     expect(page).toMatch(/class="print:hidden" data-testid="dossier-screen"/);
     expect(screenPart).toContain('data-testid="dossier-phone-deck"');
     expect(screenPart).not.toContain('data-testid="buyer-dossier"');
+  });
+});
+
+// Relecture des rendus par Jean-Guy (25/10) : une miniature et sa lettre en tête de chaque colonne ;
+// « Je veux le visiter » est le bouton principal, « Peut-être » et « Pas pour moi » secondaires ;
+// la navigation discrète.
+describe('la grille et l’écran d’un bien, au même dessin partout', () => {
+  const withPhotos = {
+    ...deck(null),
+    items: deck(null).items.map((entry, index) => ({
+      ...entry,
+      photos: [`https://photos.example/${index}.jpg`],
+    })),
+  };
+
+  it('la grille : une miniature et la lettre en tête de chaque colonne', () => {
+    const page = renderToStaticMarkup(
+      createElement(GridScreen, {
+        deck: withPhotos,
+        responses: [],
+        onOpen: () => undefined,
+        onLead: null,
+        leadLetter: null,
+      }),
+    );
+    expect(page).toContain('https://photos.example/0.jpg');
+    expect(page).toContain('https://photos.example/1.jpg');
+    expect(page.split('data-testid="deck-grid-thumb-letter"').length - 1).toBe(2);
+  });
+
+  it('« Je veux le visiter » à la couleur de l’agence, les deux autres réponses secondaires', () => {
+    const page = renderToStaticMarkup(
+      createElement(ItemScreen, {
+        item: withPhotos.items[0]!,
+        answer: null,
+        readOnly: false,
+        busy: false,
+        onAnswer: () => undefined,
+      }),
+    );
+    const button = (value: string) => {
+      const at = page.indexOf(`data-answer="${value}"`);
+      return page.slice(page.lastIndexOf('<button', at), at);
+    };
+    expect(button('visit')).toMatch(/\bbg-brand\b/);
+    expect(button('maybe')).not.toMatch(/\bbg-brand\b/);
+    expect(button('no')).not.toMatch(/\bbg-brand\b/);
+  });
+
+  it('sur le lien, « Suivant » et « Précédent » sont discrets', () => {
+    const page = render();
+    const next = page.slice(
+      page.lastIndexOf('<button', page.indexOf('data-testid="dossier-next"')),
+      page.indexOf('data-testid="dossier-next"'),
+    );
+    expect(next).not.toMatch(/\bbg-brand\b/);
+    expect(next).not.toMatch(/\bborder\b/);
   });
 });

@@ -355,62 +355,48 @@ export function clampPitch(text: string): string {
   return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:]+$/, '')}…`;
 }
 
-// Les faits les plus forts, dans cet ordre, parmi ses indispensables satisfaits (décision de
-// Jean-Guy, 25/10) : par eux commence « Pourquoi je vous le propose », jamais par un doute.
-const STRONG_CRITERIA: BuyerCriterion[] = ['surface', 'outdoor', 'pool', 'cities', 'budget'];
-
-function strongFact(mark: DeckMark): string | null {
-  switch (mark.criterion) {
-    case 'surface':
-      return mark.text;
-    case 'outdoor':
-      return mark.text.toLocaleLowerCase('fr-FR');
-    case 'pool':
-      return 'une piscine';
-    case 'cities':
-      return mark.text.replace(/^À /, 'à ');
-    case 'budget':
-      return 'dans votre budget';
-    default:
-      return null;
-  }
-}
+// « Pourquoi je vous le propose » (essai de Jean-Guy, 25/10) — proposée par l'outil depuis les
+// SEULS faits de la grille, dans cet ordre : la surface, puis jusqu'à deux extérieurs ou
+// équipements satisfaits (piscine, jardin, terrasse, garage), puis la commune, puis la marge de
+// budget s'il y en a une — « 210 m², piscine et jardin à Mougins, 10 500 € sous votre budget. » ;
+// jamais « Il coche vos N critères », jamais un doute en tête (les « ? » restent dans la liste du
+// bien). Sans aucun de ces faits : combien de critères il coche, et ceux à voir ensemble. Jamais
+// un adjectif que les faits ne portent pas.
+const okMark = (marks: DeckMark[], criterion: BuyerCriterion): DeckMark | undefined =>
+  marks.find((mark) => mark.criterion === criterion && mark.mark === 'ok');
 
 const capitalize = (text: string): string =>
   text.length > 0 ? `${text[0]!.toLocaleUpperCase('fr-FR')}${text.slice(1)}` : text;
 
-// « Pourquoi je vous le propose » — proposée par l'outil depuis les SEULS faits de la grille.
-// Elle commence par les faits les plus forts parmi ses indispensables satisfaits (« 210 m²,
-// terrasse, jardin, une piscine, à Mougins, dans votre budget. »), puis dit combien de critères il
-// coche ; les « ? » restent dans la liste du bien, jamais en tête. Sans indispensable satisfait
-// parmi eux : combien il en coche, et ceux qui sont à voir ensemble. Jamais un adjectif que les
-// faits ne portent pas.
 export function proposedPitch(
   marks: DeckMark[],
-  mustHave: ReadonlySet<BuyerCriterion> = new Set(),
+  item: Pick<PresentedItemInput, 'outdoor' | 'parking' | 'city' | 'price'> | null = null,
+  budgetMax: number | null = null,
 ): string | null {
   const total = marks.length;
   if (total === 0) return null;
+  const surface = okMark(marks, 'surface')?.text ?? null;
+  const equipments = [
+    okMark(marks, 'pool') ? 'piscine' : null,
+    okMark(marks, 'outdoor') && item?.outdoor.includes('garden') ? 'jardin' : null,
+    okMark(marks, 'outdoor') && item?.outdoor.includes('terrace') ? 'terrasse' : null,
+    okMark(marks, 'parking') && item?.parking.includes('garage') ? 'garage' : null,
+  ]
+    .filter((fact): fact is string => fact != null)
+    .slice(0, 2);
+  const place = okMark(marks, 'cities') && item?.city ? `à ${item.city}` : null;
+  const margin =
+    okMark(marks, 'budget') && item?.price != null && budgetMax != null && budgetMax > item.price
+      ? `${formatEuro(budgetMax - item.price)} sous votre budget`
+      : null;
+  const core = [surface, equipments.length > 0 ? joinNouns(equipments) : null]
+    .filter((part): part is string => part != null)
+    .join(', ');
+  const located = [core, place].filter((part) => part != null && part !== '').join(' ');
+  const sentence = [located, margin].filter((part) => part != null && part !== '').join(', ');
+  if (sentence !== '') return clampPitch(`${capitalize(sentence)}.`);
   const ok = marks.filter((mark) => mark.mark === 'ok').length;
-  const strong = STRONG_CRITERIA.map((criterion) =>
-    marks.find(
-      (mark) => mark.criterion === criterion && mark.mark === 'ok' && mustHave.has(criterion),
-    ),
-  )
-    .map((mark) => (mark ? strongFact(mark) : null))
-    .filter((fact): fact is string => fact != null && fact !== '');
-  if (strong.length > 0) {
-    const count =
-      ok === total
-        ? total === 1
-          ? 'Il coche votre critère.'
-          : `Il coche vos ${total} critères.`
-        : `Il coche ${plural(ok, 'critère', 'critères')} sur ${total}.`;
-    return clampPitch(`${capitalize(strong.join(', '))}. ${count}`);
-  }
-  if (ok === total) {
-    return total === 1 ? 'Il coche votre critère.' : `Il coche vos ${total} critères.`;
-  }
+  if (ok === total) return null;
   const open = marks
     .filter((mark) => mark.mark !== 'ok')
     .map((mark) => CRITERION_NOUNS[mark.criterion]);
@@ -464,6 +450,16 @@ export function leadOf(items: DeckItem[]): { letter: string; sentence: string } 
   if (candidates.length === 0) return null;
   const best = candidates.reduce((top, item) => (item.okCount > top.okCount ? item : top));
   if (best.okCount === 0) return null;
+  // Essai de Jean-Guy (25/10) : plusieurs biens cochent tout — la phrase les nomme tous, sans en
+  // choisir un ; « Voir le bien » ouvre le premier.
+  const full = candidates.filter((item) => item.okCount === item.total);
+  if (full.length > 1) {
+    const letters = full.map((item) => item.letter);
+    return {
+      letter: full[0]!.letter,
+      sentence: `Les biens ${letters.slice(0, -1).join(', ')} et ${letters.at(-1)} cochent tous vos critères.`,
+    };
+  }
   return {
     letter: best.letter,
     sentence:
@@ -498,10 +494,7 @@ export function buildBuyerDeck(input: {
         tone: row.criterion === 'budget' ? budgetTone : null,
       };
     });
-    const proposed = proposedPitch(
-      marks,
-      new Set(criteria.filter((row) => row.mustHave).map((row) => row.criterion)),
-    );
+    const proposed = proposedPitch(marks, item, input.buyer.budgetMax);
     const blockedBy = marks
       .filter((mark, rowIndex) => criteria[rowIndex]?.mustHave && mark.mark === 'no')
       .map((mark) => mark.text);

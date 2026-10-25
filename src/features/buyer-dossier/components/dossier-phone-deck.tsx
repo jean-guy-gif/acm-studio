@@ -3,7 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
-import { GridScreen, ItemScreen } from '@/features/buyer-deck/components/deck-presentation';
+import {
+  GridScreen,
+  ItemScreen,
+  quietNavBtn,
+} from '@/features/buyer-deck/components/deck-presentation';
 import { criteriaCountLabel } from '@/features/buyer-deck/services/buyer-deck';
 import {
   ANSWER,
@@ -587,7 +591,7 @@ export function DossierPhoneDeck({
         {screen.type === 'grid' || screen.type === 'item' ? (
           <button
             type="button"
-            className={navBtn}
+            className={quietNavBtn}
             onClick={() => go(ANSWER)}
             data-testid="dossier-go-answer"
           >
@@ -597,7 +601,7 @@ export function DossierPhoneDeck({
         <div className="flex gap-2">
           <button
             type="button"
-            className={navBtn}
+            className={quietNavBtn}
             disabled={previous == null}
             onClick={() => go(previous)}
             data-testid="dossier-previous"
@@ -607,7 +611,7 @@ export function DossierPhoneDeck({
           {screen.type !== 'answer' ? (
             <button
               type="button"
-              className={primaryBtn}
+              className={quietNavBtn}
               disabled={next == null}
               onClick={() => go(next)}
               data-testid="dossier-next"

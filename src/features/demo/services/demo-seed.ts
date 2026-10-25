@@ -1,3 +1,4 @@
+import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 import type { DemoListing, DemoScenario, DemoScenarioId } from '@/features/demo/data/types';
@@ -6,6 +7,9 @@ import {
   demoImportedData,
   demoSubjectImportedData,
 } from '@/features/demo/services/demo-listing-data';
+import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
+import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { formatEuro } from '@/lib/format';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 
 // Mission 114 (partie B) — les quatre dossiers de démonstration d'un closer, à quatre étapes,
@@ -182,4 +186,74 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     opposedAddress:
       stage === 'signed' ? demoAddressLine(competitors[competitors.length - 1].listing) : null,
   };
+}
+
+// Essai de Jean-Guy (25/10) — la sélection des Keller que « Préparer ma démo » retient : un bien
+// qui coche tout (le mandat de Mougins), un bon compromis au budget en orange (mou-02, au plafond
+// + 5 % pile, « à négocier ») et un bien à vérifier ensemble (mou-07, piscine non indiquée). Les
+// mêmes lignes que « Retenir la sélection » écrirait (M118) ; le mandat est désigné par son dossier,
+// que l'action connaît. Pur.
+export const DEMO_KELLER_LISTINGS = ['mou-02', 'mou-07'] as const;
+
+export type DemoSelectionItemPlan = {
+  source: 'project' | 'listing';
+  listingId: string | null;
+  label: string;
+  listedPrice: number | null;
+  priceSeenOn: string | null;
+  category: 'agency' | 'compromise' | 'explore';
+  gaps: string[];
+  imported: ImportedComparableData | null;
+};
+
+const labelOf = (propertyType: string, data: ImportedComparableData): string =>
+  idealLabel({
+    propertyType,
+    roomsCount: data.roomsCount ?? null,
+    surfaceArea: data.surfaceArea ?? null,
+    city: data.city ?? null,
+  });
+
+export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === 'mougins')!;
+  const keller = DEMO_BUYERS.find((buyer) => buyer.name === 'Famille Keller')!;
+  const budgetMax = keller.budgetMax ?? 0;
+  const subject = demoSubjectImportedData(scenario, now);
+  const signed = demoSeedPlan('signed', now);
+  const seenOn = now.toISOString().slice(0, 10);
+  const listing = (id: string) => scenario.listings.find((entry) => entry.id === id)!;
+  const fromListing = (
+    id: string,
+    category: DemoSelectionItemPlan['category'],
+    gaps: string[],
+  ): DemoSelectionItemPlan => {
+    const data = demoImportedData(listing(id), now);
+    return {
+      source: 'listing',
+      listingId: id,
+      label: labelOf(listing(id).propertyType, data),
+      listedPrice: data.price,
+      priceSeenOn: seenOn,
+      category,
+      gaps,
+      imported: data,
+    };
+  };
+  const orange = listing('mou-02');
+  return [
+    {
+      source: 'project',
+      listingId: null,
+      label: labelOf(scenario.subject.propertyType, subject),
+      listedPrice: signed.live?.agreedPrice ?? null,
+      priceSeenOn: null,
+      category: 'agency',
+      gaps: [],
+      imported: null,
+    },
+    fromListing('mou-02', 'compromise', [
+      `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
+    ]),
+    fromListing('mou-07', 'explore', [`À vérifier : ${BUYER_CRITERION_LABELS.pool}`]),
+  ];
 }
