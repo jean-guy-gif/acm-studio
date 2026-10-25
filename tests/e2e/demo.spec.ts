@@ -1089,6 +1089,48 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // C d'abord : « Je veux le visiter » ne fait pas avancer, la présentation n'est pas terminée.
   await openItem('C');
   await expectUnspoken(page, 'Présentation — le bien C');
+  // La barre d'un écran de bien, en tablette dans les deux sens : une seule ligne, « Suivant » à
+  // droite, et rien du contenu caché dessous (essai du 25/10).
+  for (const viewport of [
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+  ]) {
+    const size = `${viewport.width} × ${viewport.height}`;
+    await page.setViewportSize(viewport);
+    const bar = page.getByTestId('deck-nav-bar');
+    const boxes = await bar.locator('button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { id: button.getAttribute('data-testid'), top: rect.top, right: rect.right };
+      }),
+    );
+    expect(
+      boxes.map((box) => box.id),
+      `boutons de la barre en ${size}`,
+    ).toEqual([
+      'presentation-previous',
+      'deck-back-to-grid',
+      'deck-go-answer',
+      'presentation-next',
+    ]);
+    const tops = boxes.map((box) => box.top);
+    expect(
+      Math.max(...tops) - Math.min(...tops),
+      `la barre tient sur une ligne en ${size}`,
+    ).toBeLessThan(2);
+    expect(boxes.at(-1)!.right, `« Suivant » à droite en ${size}`).toBe(
+      Math.max(...boxes.map((box) => box.right)),
+    );
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const barTop = await bar.evaluate((element) => element.getBoundingClientRect().top);
+    const lastAnswer = await page
+      .locator('[data-testid="deck-answer"]')
+      .last()
+      .evaluate((element) => element.getBoundingClientRect().bottom);
+    expect(lastAnswer, `rien du contenu sous la barre en ${size}`).toBeLessThanOrEqual(barTop);
+    await expectNoHorizontalScroll(page, `Présentation — un bien (${size})`);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
   await answer('visit').click();
   await expect(answer('visit')).toHaveAttribute('aria-pressed', 'true');
   await expect(scene).toHaveAttribute('data-screen', 'item');
@@ -1100,6 +1142,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(gridAnswer('C')).toHaveText('À visiter');
   // Puis A, et « Suivant » mène à B.
   await openItem('A');
+  await expectUnspoken(page, 'Présentation — le bien A');
   await answer('no').click();
   await expect(answer('no')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('presentation-next').click();
@@ -1111,15 +1154,19 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('deck-finish-confirm')).toContainText(
     '1 bien sans réponse : B. Terminer quand même ?',
   );
+  // La confirmation prend le focus dès qu'elle s'ouvre.
+  await expect(page.getByTestId('deck-finish-confirm')).toBeFocused();
   await page.getByTestId('deck-finish-confirm').getByRole('button', { name: 'Annuler' }).click();
   await expect(page.getByTestId('deck-finish-confirm')).toHaveCount(0);
   await page.getByTestId('deck-back-to-grid').click();
   await openItem('B');
+  await expectUnspoken(page, 'Présentation — le bien B');
   await answer('maybe').click();
   await expect(answer('maybe')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('deck-back-to-grid').click();
   await expect(gridAnswer('A')).toHaveAttribute('data-answer', 'no');
   await expect(gridAnswer('B')).toHaveAttribute('data-answer', 'maybe');
+  await expectUnspoken(page, 'Présentation — la grille, ses réponses affichées');
   await page.getByTestId('deck-go-answer').click();
   await expect(scene).toHaveAttribute('data-screen', 'answer');
   await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien C.');
