@@ -82,7 +82,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       ) : null}
 
       {/* Essai de Jean-Guy (26/10) : les trois étapes, dans l'ordre, en haut de la fiche. */}
-      <BuyerSteps buyerId={buyer.id} facts={facts} />
+      <BuyerSteps buyerId={buyer.id} facts={facts} answersShown={answers.lines.length > 0} />
 
       <section className={`${card} flex flex-wrap items-center justify-between gap-4 p-5`}>
         <BuyerStatusActions buyer={buyer} />

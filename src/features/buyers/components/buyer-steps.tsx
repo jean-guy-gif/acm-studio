@@ -11,7 +11,17 @@ import {
 // Essai de Jean-Guy (26/10) — en haut de la fiche, les trois étapes dans l'ordre, chacune avec son
 // bouton et son état : « 1 · Biens idéaux » → « 2 · Présenter la sélection » → « 3 · Dossier
 // acquéreur ». Le bouton de l'étape suivante est le bouton principal.
-export function BuyerSteps({ buyerId, facts }: { buyerId: string; facts: BuyerProgressFacts }) {
+export function BuyerSteps({
+  buyerId,
+  facts,
+  answersShown = false,
+}: {
+  buyerId: string;
+  facts: BuyerProgressFacts;
+  // La fiche montre déjà « Ce qu'il a répondu » (qui porte l'ancre « reponses ») : l'étape ne la
+  // reprend pas — un identifiant n'est jamais en double.
+  answersShown?: boolean;
+}) {
   const steps = buyerSteps(facts);
   const next = buyerNextStep(buyerId, facts).step;
   const style = (key: BuyerStepKey) => (key === next ? btnPrimary : btnSecondary);
@@ -59,7 +69,7 @@ export function BuyerSteps({ buyerId, facts }: { buyerId: string; facts: BuyerPr
           data-step={step.key}
           data-done={step.done}
           // « Voir sa réponse » mène ici quand la réponse n'est pas encore là.
-          id={step.key === 'buyerDossier' && !facts.answeredOnLink ? 'reponses' : undefined}
+          id={step.key === 'buyerDossier' && !answersShown ? 'reponses' : undefined}
         >
           <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
             {step.number} · {step.title}
