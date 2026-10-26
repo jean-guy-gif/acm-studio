@@ -405,7 +405,9 @@ export function DossierPhoneDeck({
 
   return (
     <div
-      className="flex min-h-[100dvh] flex-col bg-white"
+      // La place de la barre d'envoi est gardée sous TOUTE la page, navigation comprise : en fin
+      // de défilement, ni une réponse ni « Précédent » / « Suivant » ne sont sous elle.
+      className={`flex min-h-[100dvh] flex-col bg-white ${sendBar ? 'pb-28' : ''}`}
       data-testid="dossier-phone-deck"
       data-screen={screen.type}
     >
@@ -419,9 +421,7 @@ export function DossierPhoneDeck({
               ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
               : 'Votre réponse'}
       </p>
-      <main
-        className={`mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 ${sendBar ? 'pb-28' : 'pb-6'}`}
-      >
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-6">
         {screen.type === 'words' ? (
           <div className="flex flex-col gap-4">
             <h1 className="font-title text-2xl font-bold text-zinc-900">Vous m’avez dit :</h1>

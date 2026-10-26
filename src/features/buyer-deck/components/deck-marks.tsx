@@ -12,8 +12,9 @@ export const MARK_STYLES: Record<GridMark, string> = {
   check: 'text-sky-700 stage:text-sky-300',
 };
 
-// Le budget prend la couleur de la M116 (vert, orange, rouge face au budget plafond) ; les autres
-// critères, celle de leur marque. Jamais la couleur seule : la marque et son fait restent écrits.
+// Le budget prend sa couleur (`buyerBudgetTone` : vert dans le budget, orange au-dessus, jamais
+// rouge) ; les autres critères, celle de leur marque. Jamais la couleur seule : la marque et son
+// fait restent écrits.
 export function markClass(mark: DeckMark): string {
   return mark.tone ? PRICE_ALIGNMENT_TEXT[mark.tone] : MARK_STYLES[mark.mark];
 }

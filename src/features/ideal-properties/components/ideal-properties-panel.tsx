@@ -288,6 +288,27 @@ export function IdealPropertiesPanel({
 
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
+      {/* Essai de Jean-Guy (26/10) : la sélection actuelle, cochée, chaque bien avec sa case — une
+          annonce du marché se décoche ici, sans relancer une recherche payante (M118). */}
+      {current.length > 0 ? (
+        <section className={`${card} flex flex-col gap-2 p-5`} data-testid="ideal-current-items">
+          <h2 className={sectionTitle}>Votre sélection actuelle</h2>
+          <ul className="flex flex-col gap-2">
+            {current.map((item, index) => (
+              <li
+                key={keyOf(item)}
+                className="flex flex-wrap items-center justify-between gap-3"
+                data-testid="ideal-current-item"
+              >
+                <span className="text-sm font-medium text-zinc-800 stage:text-white/90">
+                  {String.fromCharCode(65 + index)} · {item.label}
+                </span>
+                {checkbox(item)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-agency">
         <div className="flex flex-col gap-0.5">
           <h2 className={sectionTitle}>Ce que l’agence a déjà</h2>

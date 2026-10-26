@@ -23,7 +23,7 @@ export const NO_PROGRESS: BuyerProgressFacts = {
   answeredOnLink: false,
 };
 
-export type BuyerStepKey = 'ideal' | 'present' | 'dossier';
+export type BuyerStepKey = 'ideal' | 'present' | 'buyerDossier';
 
 export type BuyerStep = {
   key: BuyerStepKey;
@@ -63,7 +63,7 @@ export function buyerSteps(facts: BuyerProgressFacts): BuyerStep[] {
       available: hasSelection,
     },
     {
-      key: 'dossier',
+      key: 'buyerDossier',
       number: 3,
       title: 'Dossier acquéreur',
       states: !hasSelection
@@ -97,7 +97,11 @@ export function buyerNextStep(buyerId: string, facts: BuyerProgressFacts): Buyer
     return { label: 'Présenter', href: `/presentation/${buyerId}`, step: 'present' };
   }
   if (!facts.linkCreated) {
-    return { label: 'Créer le lien', href: `/acquereurs/${buyerId}/dossier`, step: 'dossier' };
+    return { label: 'Créer le lien', href: `/acquereurs/${buyerId}/dossier`, step: 'buyerDossier' };
   }
-  return { label: 'Voir sa réponse', href: `/acquereurs/${buyerId}#reponses`, step: 'dossier' };
+  return {
+    label: 'Voir sa réponse',
+    href: `/acquereurs/${buyerId}#reponses`,
+    step: 'buyerDossier',
+  };
 }

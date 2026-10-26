@@ -189,8 +189,9 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
 }
 
 // Essai de Jean-Guy (25/10) — la sélection des Keller que « Préparer ma démo » retient : un bien
-// qui coche tout (le mandat de Mougins), un bon compromis au budget en orange (mou-02, au plafond
-// + 5 % pile, « à négocier ») et un bien à vérifier ensemble (mou-07, piscine non indiquée). Les
+// qui coche tout (le mandat de Mougins), un bon compromis au budget en orange (mou-02, au-dessus
+// du plafond, sous +5 %, « à négocier ») et un bien à vérifier ensemble (mou-07, piscine non
+// indiquée). Les
 // mêmes lignes que « Retenir la sélection » écrirait (M118) ; le mandat est désigné par son dossier,
 // que l'action connaît. Pur.
 export type DemoSelectionItemPlan = {

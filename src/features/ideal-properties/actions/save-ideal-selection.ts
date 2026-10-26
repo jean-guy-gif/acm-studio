@@ -48,6 +48,30 @@ export async function saveIdealSelection(
   if (!buyer) return { ok: false, error: 'Cette fiche acquéreur n’existe plus.' };
 
   const demo = await isDemoAgency(profile.agency_id);
+  // Essai de Jean-Guy (26/10) — une annonce gardée de la sélection précédente, au même prix, garde
+  // sa date « affiché le » et ses données importées : jamais une date du jour qu'elle n'a pas eue,
+  // jamais une page à relire pour rien. Lue avant d'écrire la nouvelle sélection.
+  const { data: previous } = await client
+    .from('buyer_selections')
+    .select('id')
+    .eq('buyer_id', buyerId)
+    .eq('agency_id', profile.agency_id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { data: previousItems } = previous?.id
+    ? await client
+        .from('buyer_selection_items')
+        .select('source, reference, listed_price, price_seen_on, imported, snapshot')
+        .eq('selection_id', previous.id)
+        .eq('agency_id', profile.agency_id)
+    : { data: [] };
+  const kept = new Map(
+    (Array.isArray(previousItems) ? previousItems : []).map((row) => [
+      `${row.source}:${row.reference}`,
+      row,
+    ]),
+  );
   const { data: selection, error } = await client
     .from('buyer_selections')
     .insert({ agency_id: profile.agency_id, buyer_id: buyerId, created_by: profile.id })
@@ -58,6 +82,9 @@ export async function saveIdealSelection(
   const now = new Date();
   const rows = read.items.map((item, index) => {
     const demoListing = demo && item.source === 'listing' ? findDemoListing(item.reference) : null;
+    const before =
+      item.source === 'listing' ? kept.get(`${item.source}:${item.reference}`) : undefined;
+    const reuse = before != null && before.listed_price === item.listedPrice;
     return {
       agency_id: profile.agency_id,
       selection_id: selection.id,
@@ -66,11 +93,16 @@ export async function saveIdealSelection(
       reference: item.reference,
       label: item.label,
       listed_price: item.listedPrice,
-      price_seen_on: item.source === 'listing' ? priceSeenOn : null,
+      price_seen_on:
+        item.source === 'listing' ? (reuse ? before.price_seen_on : priceSeenOn) : null,
       category: item.category,
       gaps: item.gaps,
-      snapshot: (item.snapshot ?? null) as Json | null,
-      imported: (demoListing ? demoImportedData(demoListing, now) : null) as unknown as Json | null,
+      snapshot: (item.snapshot ?? (reuse ? before.snapshot : null) ?? null) as Json | null,
+      imported: (demoListing
+        ? demoImportedData(demoListing, now)
+        : reuse
+          ? (before.imported ?? null)
+          : null) as unknown as Json | null,
     };
   });
   const { data: items, error: itemsError } = await client
@@ -89,7 +121,7 @@ export async function saveIdealSelection(
     toImport: demo
       ? []
       : items
-          .filter((item) => item.source === 'listing')
+          .filter((item) => item.source === 'listing' && item.imported == null)
           .map((item) => ({ itemId: item.id, url: item.reference })),
   };
 }

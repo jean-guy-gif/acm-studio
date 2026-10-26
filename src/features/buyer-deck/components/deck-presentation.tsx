@@ -74,7 +74,8 @@ export const quietNavBtn =
 // « ✓ » ; les deux autres restent en contour — « Je veux le visiter » n'est jamais plein s'il
 // n'est pas choisi.
 export function answerBtn(_value: ItemAnswer, on: boolean): string {
-  return on ? primaryBtn : navBtn;
+  // Relue, la réponse choisie reste pleine, jamais pâlie (un bouton désactivé l'était).
+  return on ? `${primaryBtn} disabled:opacity-100` : navBtn;
 }
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
