@@ -841,7 +841,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(paid).toHaveCount(0);
     await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);
     await expect(page.getByTestId('ideal-retain')).toBeDisabled();
-    await mandateHit.getByRole('checkbox').check();
+    // Coché, le mandat monte aussitôt dans le bandeau « Sélection actuelle », « À retenir ».
+    await mandateHit.getByRole('checkbox').click();
+    await expect(page.getByTestId('ideal-current-item')).toHaveCount(1);
+    await expect(page.getByTestId('ideal-current-item').first()).toContainText('À retenir');
     await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
     await page.getByTestId('ideal-retain').click();
     await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');

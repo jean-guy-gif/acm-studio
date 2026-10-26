@@ -155,13 +155,28 @@ function LinkHeader({ agencyName, logoUrl }: Pick<FrameProps, 'agencyName' | 'lo
   );
 }
 
+// Le numéro ne se coupe jamais en deux lignes (rendus du 26/10 : « 06 00 / 00 00 01 »).
+function AdvisorContact({ name, phone }: { name: string; phone: string | null }) {
+  return (
+    <>
+      {name}
+      {phone ? (
+        <>
+          {' · '}
+          <span className="whitespace-nowrap">{phone}</span>
+        </>
+      ) : null}
+    </>
+  );
+}
+
 function AdvisorLine({
   advisorName,
   advisorPhone,
 }: Pick<FrameProps, 'advisorName' | 'advisorPhone'>) {
   return advisorName ? (
     <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
-      {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+      <AdvisorContact name={advisorName} phone={advisorPhone} />
     </p>
   ) : null;
 }
@@ -432,7 +447,7 @@ export function DossierPhoneDeck({
           // Essai de Jean-Guy (26/10) : le premier écran est la couverture du PDF — la photo du
           // bien A, « Votre sélection du [date] », sa phrase, le conseiller — et un seul bouton
           // principal, « Voir ma sélection → ».
-          <div className="flex flex-col gap-5" data-testid="dossier-cover">
+          <div className="flex flex-col gap-5" data-testid="dossier-link-cover">
             {coverPhoto ? (
               <RemoteImage
                 src={coverPhoto}
@@ -458,7 +473,7 @@ export function DossierPhoneDeck({
             </div>
             {advisorName ? (
               <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
-                Votre conseiller : {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+                Votre conseiller : <AdvisorContact name={advisorName} phone={advisorPhone} />
               </p>
             ) : null}
             <button
@@ -578,7 +593,7 @@ export function DossierPhoneDeck({
                 </p>
                 {advisorName ? (
                   <p className="text-sm font-semibold text-zinc-700">
-                    {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+                    <AdvisorContact name={advisorName} phone={advisorPhone} />
                   </p>
                 ) : null}
               </section>

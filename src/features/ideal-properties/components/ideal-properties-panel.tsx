@@ -41,7 +41,7 @@ import {
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
-import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { idealPageLayout, selectionKey } from '@/features/ideal-properties/services/ideal-page';
 import {
   seenOnLabel,
   selectionChanged,
@@ -76,8 +76,7 @@ export const RETAIN_BUTTON = 'Retenir la sélection';
 
 type Market = IdealSearchResult & { ok: true };
 
-const keyOf = (item: Pick<SelectionItemInput, 'source' | 'reference'>): string =>
-  `${item.source}:${item.reference}`;
+const keyOf = selectionKey;
 
 const CATEGORY_TONE: Record<IdealCategory, string> = {
   strong:
@@ -286,41 +285,24 @@ export function IdealPropertiesPanel({
     );
   };
 
-  // Le bandeau « Sélection actuelle » (essai de Jean-Guy, 26/10) : la sélection enregistrée, puis
-  // les biens cochés depuis ; chacun avec sa case. Mis à jour dès « Retenir », sans rechargement.
-  const bannerItems = [
-    ...baseline,
-    ...[...selected.values()].filter(
-      (item) => !baseline.some((kept) => keyOf(kept) === keyOf(item)),
-    ),
-  ];
-  const inBanner = new Set(bannerItems.map(keyOf));
-  // Un même bien n'apparaît qu'une fois sur la page : ni deux fois (bandeau et liste), ni comme
-  // annonce du marché quand l'agence le connaît déjà comme concurrent (même annonce publiée).
+  // Le bandeau « Sélection actuelle » (essai de Jean-Guy, 26/10) et les listes sans doublon : la
+  // règle vit dans `idealPageLayout`.
   const allAgencyHits = BUYER_GROUPS.flatMap((group) =>
     agency.matches[group].map((hit) => ({ group, hit })),
   );
-  const agencyListings = new Set(
-    allAgencyHits
-      .map(({ hit }) => listingIdentityKey(hit.candidate.listingUrl))
-      .filter((key): key is string => key != null),
-  );
-  const bannerListings = new Set(
-    bannerItems
-      .filter((item) => item.source === 'listing')
-      .map((item) => listingIdentityKey(item.reference))
-      .filter((key): key is string => key != null),
-  );
-  const agencyHits = allAgencyHits.filter(({ hit }) => {
-    if (inBanner.has(keyOf(agencyItem(hit)))) return false;
-    const listing = listingIdentityKey(hit.candidate.listingUrl);
-    return listing == null || !bannerListings.has(listing);
+  const asEntry = (hit: BuyerHit) => ({
+    item: agencyItem(hit),
+    listingUrl: hit.candidate.listingUrl,
   });
-  const showMarket = (entry: CategorizedCandidate): boolean => {
-    if (inBanner.has(keyOf(marketItem(entry)))) return false;
-    const key = listingIdentityKey(entry.candidate.url);
-    return key == null || !agencyListings.has(key);
-  };
+  const layout = idealPageLayout({
+    baseline,
+    selected: [...selected.values()],
+    agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
+  });
+  const bannerItems = layout.banner;
+  const agencyHits = allAgencyHits.filter(({ hit }) => layout.showAgency(asEntry(hit)));
+  const showMarket = (entry: CategorizedCandidate): boolean =>
+    layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url });
 
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">

@@ -146,7 +146,7 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).not.toContain('data-testid="dossier-thanks"');
     // Essai de Jean-Guy (26/10) : le premier écran est une couverture, avec un seul bouton
     // principal ; « Précédent » / « Suivant » n'y sont pas montrés.
-    expect(page).toContain('data-testid="dossier-cover"');
+    expect(page).toContain('data-testid="dossier-link-cover"');
     expect(page).toContain('Votre sélection du 24/10/2026');
     expect(page).toContain('Votre conseiller : Carl Conseiller');
     expect(page).toContain('Voir ma sélection →');
@@ -187,7 +187,10 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).toContain('Je veux le visiter');
     expect(page).toContain('Pas pour moi');
     expect(page).toContain('Vos créneaux : Samedi matin');
-    expect(page).toContain('Carl Conseiller · 06 11 22 33 44');
+    // Le numéro tient sur une ligne (rendus du 26/10).
+    expect(page).toMatch(
+      /Carl Conseiller(<!-- -->)? · <span class="whitespace-nowrap">06 11 22 33 44<\/span>/,
+    );
     expect(page).toContain('Télécharger en PDF');
     for (const form of [
       'dossier-send',

@@ -1150,7 +1150,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
     // Essai de Jean-Guy (26/10) : le premier écran est la couverture du PDF — la photo du bien A,
     // « Votre sélection du [date] », sa phrase, le conseiller — avec un seul bouton principal.
-    const cover = visitor.getByTestId('dossier-cover');
+    // Le document imprimé porte déjà `dossier-cover` : la couverture du téléphone a son propre nom.
+    const cover = visitor.getByTestId('dossier-link-cover');
     await expect(cover.locator('img')).toHaveCount(1);
     await expect(cover).toContainText(/Votre sélection du \d{2}\/\d{2}\/\d{4}/);
     await expect(cover).toContainText('« ');
