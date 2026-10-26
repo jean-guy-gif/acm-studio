@@ -22,8 +22,13 @@ const FAILURE = 'Le lien n’a pas pu être créé. Réessayez.';
 
 // Mission 119 (partie B) — « Créer un lien pour l'acquéreur » : valable 30 jours, jamais indexé,
 // retirable ; un membre non retiré de l'agence, sur une fiche de son agence qui a une sélection.
-// Le jeton n'est montré qu'ici, une fois ; la base n'en garde que le condensat.
-export async function createDossierLink(buyerId: string): Promise<CreateDossierLinkResult> {
+// Le jeton n'est montré qu'ici, une fois ; la base n'en garde que le condensat. Essai de Jean-Guy
+// (26/10) : « Créer un nouveau lien » (`replace`) retire les liens précédents de la fiche, qui
+// cessent de marcher ; les réponses déjà reçues restent (elles ne dépendent pas du lien).
+export async function createDossierLink(
+  buyerId: string,
+  replace: unknown = false,
+): Promise<CreateDossierLinkResult> {
   const profile = await getProfile();
   if (!profile || profile.removed_at || !z.uuid().safeParse(buyerId).success) {
     return { ok: false, error: FAILURE };
@@ -37,7 +42,8 @@ export async function createDossierLink(buyerId: string): Promise<CreateDossierL
   );
   if (!dossier) return { ok: false, error: 'Pas de dossier sans sélection retenue.' };
   const token = newDossierToken();
-  const { data, error } = await createServiceRoleClient()
+  const client = createServiceRoleClient();
+  const { data, error } = await client
     .from('buyer_dossier_links')
     .insert({
       agency_id: profile.agency_id,
@@ -49,6 +55,19 @@ export async function createDossierLink(buyerId: string): Promise<CreateDossierL
     .select('id, expires_at')
     .single();
   if (error || !data) return { ok: false, error: FAILURE };
+  if (replace === true) {
+    const { error: removeError } = await client
+      .from('buyer_dossier_links')
+      .delete()
+      .eq('buyer_id', buyerId)
+      .eq('agency_id', profile.agency_id)
+      .neq('id', data.id);
+    if (removeError) {
+      // L'ancien lien marcherait encore : le nouveau est retiré, rien n'a changé.
+      await client.from('buyer_dossier_links').delete().eq('id', data.id);
+      return { ok: false, error: 'Le lien n’a pas pu être remplacé. Réessayez.' };
+    }
+  }
   revalidatePath(`/acquereurs/${buyerId}/dossier`);
   return {
     ok: true,

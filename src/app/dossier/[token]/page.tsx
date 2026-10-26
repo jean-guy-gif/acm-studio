@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { BuyerDossierDocument } from '@/features/buyer-dossier/components/buyer-dossier-document';
+import { DossierPublicView } from '@/features/buyer-dossier/components/dossier-public-view';
 import { loadBuyerDossier } from '@/features/buyer-dossier/queries/load-buyer-dossier';
 import {
   DOSSIER_TOKEN_PATTERN,
@@ -44,9 +44,5 @@ export default async function PublicBuyerDossierPage({
     link.created_by,
   );
   if (!dossier) notFound();
-  return (
-    <main className="min-h-screen bg-zinc-100 p-4 print:bg-white print:p-0">
-      <BuyerDossierDocument dossier={dossier} token={token} />
-    </main>
-  );
+  return <DossierPublicView token={token} dossier={dossier} />;
 }

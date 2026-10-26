@@ -9,6 +9,7 @@ import { importedToComparableInput } from '@/features/comparables/utils/imported
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
+import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
@@ -19,10 +20,11 @@ import {
   DEMO_LIVE_MINUTES,
   DEMO_READINESS_MISSING,
   DEMO_STAGES,
+  demoKellerSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
-import { demoPhotoUrl } from '@/features/demo/services/demo-urls';
+import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
 import { addressKey } from '@/features/prospecting/services/address-key';
@@ -31,7 +33,7 @@ import { depositPropertyPhoto } from '@/features/subject-property-photos/service
 import { validatePhotoBytes } from '@/features/subject-property-photos/services/validate-photo-upload';
 import { exampleDecisionRow } from '@/features/welcome/services/example-decision';
 import { getProfile } from '@/lib/auth/get-profile';
-import type { Database } from '@/lib/supabase/database.types';
+import type { Database, Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 type Client = SupabaseClient<Database>;
@@ -102,15 +104,64 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
 }
 
 export async function seedDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
-  const { error } = await supabase.from('buyers').insert(
-    DEMO_BUYERS.map((buyer) => ({
-      ...buyerColumns(buyer),
+  return (await insertDemoBuyers(supabase, closer)) != null;
+}
+
+async function insertDemoBuyers(
+  supabase: Client,
+  closer: Closer,
+): Promise<{ id: string; name: string }[] | null> {
+  const { data, error } = await supabase
+    .from('buyers')
+    .insert(
+      DEMO_BUYERS.map((buyer) => ({
+        ...buyerColumns(buyer),
+        agency_id: closer.agencyId,
+        advisor_id: closer.id,
+        demo: true,
+      })),
+    )
+    .select('id, name');
+  return error ? null : (data ?? []);
+}
+
+// Essai de Jean-Guy (25/10) — la sélection des Keller retenue par « Préparer ma démo » : le mandat
+// de Mougins, un bon compromis au budget en orange, un bien à vérifier (`demoKellerSelectionPlan`).
+// Les mêmes tables que « Retenir la sélection » (M118), par la clé service après le garde.
+async function seedKellerSelection(
+  supabase: Client,
+  closer: Closer,
+  buyerId: string,
+  mouginsProjectId: string,
+  now: Date,
+): Promise<boolean> {
+  const { data: selection, error } = await supabase
+    .from('buyer_selections')
+    .insert({ agency_id: closer.agencyId, buyer_id: buyerId, created_by: closer.id })
+    .select('id')
+    .single();
+  if (error || !selection) return false;
+  const rows = demoKellerSelectionPlan(now).map((item, index) => {
+    const listing = item.listingId
+      ? DEMO_LISTINGS.find((entry) => entry.id === item.listingId)
+      : null;
+    return {
       agency_id: closer.agencyId,
-      advisor_id: closer.id,
-      demo: true,
-    })),
-  );
-  return !error;
+      selection_id: selection.id,
+      position: index + 1,
+      source: item.source,
+      reference: listing ? demoListingUrl(listing) : mouginsProjectId,
+      label: item.label,
+      listed_price: item.listedPrice,
+      price_seen_on: item.priceSeenOn,
+      category: item.category,
+      gaps: item.gaps,
+      snapshot: (item.snapshot ?? null) as Json | null,
+      imported: (item.imported ?? null) as unknown as Json | null,
+    };
+  });
+  const { error: itemsError } = await supabase.from('buyer_selection_items').insert(rows);
+  return !itemsError;
 }
 
 export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
@@ -439,12 +490,19 @@ export async function seedDemoDossiers(
   closer: Closer,
   now: Date,
 ): Promise<boolean> {
+  let mouginsProjectId: string | null = null;
   for (const stage of DEMO_STAGES) {
     const id = await seedDemoDossier(supabase, closer, demoSeedPlan(stage, now), now);
     if (!id) return false;
+    if (stage === 'signed') mouginsProjectId = id;
   }
-  // Mission 117 — et ses deux acquéreurs, qui vont avec les scénarios.
-  return seedDemoBuyers(supabase, closer);
+  // Mission 117 — et ses deux acquéreurs, qui vont avec les scénarios ; les Keller avec leur
+  // sélection (essai de Jean-Guy, 25/10).
+  const buyers = await insertDemoBuyers(supabase, closer);
+  if (!buyers) return false;
+  const keller = buyers.find((buyer) => buyer.name === 'Famille Keller');
+  if (!keller || !mouginsProjectId) return true;
+  return seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now);
 }
 
 // « Préparer ma démo » : quatre dossiers, s'il n'en a pas encore.

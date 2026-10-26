@@ -451,6 +451,7 @@ export type Database = {
           buyer_words: string | null
           created_at: string
           created_by: string | null
+          dossier_availability: string[]
           id: string
           presented_at: string | null
           presented_deck: Json | null
@@ -461,6 +462,7 @@ export type Database = {
           buyer_words?: string | null
           created_at?: string
           created_by?: string | null
+          dossier_availability?: string[]
           id?: string
           presented_at?: string | null
           presented_deck?: Json | null
@@ -471,6 +473,7 @@ export type Database = {
           buyer_words?: string | null
           created_at?: string
           created_by?: string | null
+          dossier_availability?: string[]
           id?: string
           presented_at?: string | null
           presented_deck?: Json | null
@@ -2570,6 +2573,15 @@ export type Database = {
           adverts: number
           agency_id: string
         }[]
+      }
+      submit_buyer_dossier_answers: {
+        Args: {
+          p_agency_id: string
+          p_answers: Json
+          p_availability: string[]
+          p_selection_id: string
+        }
+        Returns: number
       }
     }
     Enums: {

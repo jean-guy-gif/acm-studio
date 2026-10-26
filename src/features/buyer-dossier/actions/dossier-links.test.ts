@@ -71,6 +71,56 @@ describe('le lien du dossier acquéreur', () => {
     expect(result.url).not.toContain(insert.token_hash);
   });
 
+  it('« Créer un nouveau lien » retire les liens précédents de la fiche, dans l’agence, jamais le nouveau', async () => {
+    state.respond = () => ({ data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } });
+    expect((await createDossierLink(BUYER, true)).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert buyer_dossier_links', 'delete buyer_dossier_links']);
+    const afterDelete = service.calls.slice(
+      service.calls.findIndex((call) => call.method === 'delete'),
+    );
+    expect(afterDelete.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['buyer_id', BUYER],
+      ['agency_id', 'agency-a'],
+    ]);
+    expect(afterDelete.find((call) => call.method === 'neq')?.args).toEqual(['id', LINK]);
+  });
+
+  it('« Créer un nouveau lien » dont l’ancien ne se retire pas : le nouveau est retiré, rien ne change', async () => {
+    const answers = [
+      { data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } },
+      { error: { message: 'refusé' } },
+      { data: null },
+    ];
+    state.respond = () => answers.shift() ?? { data: null };
+    expect(await createDossierLink(BUYER, true)).toEqual({
+      ok: false,
+      error: 'Le lien n’a pas pu être remplacé. Réessayez.',
+    });
+    expect(service.writes()).toEqual([
+      'insert buyer_dossier_links',
+      'delete buyer_dossier_links',
+      'delete buyer_dossier_links',
+    ]);
+    const lastDelete = service.calls.slice(
+      service.calls.map((call) => call.method).lastIndexOf('delete'),
+    );
+    expect(lastDelete.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['id', LINK],
+    ]);
+  });
+
+  it('« nouveau lien » ne se lit que s’il vaut exactement vrai', async () => {
+    state.respond = () => ({ data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } });
+    expect((await createDossierLink(BUYER, 'true')).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert buyer_dossier_links']);
+  });
+
+  it('un lien créé sans « nouveau lien » ne retire rien', async () => {
+    state.respond = () => ({ data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } });
+    expect((await createDossierLink(BUYER)).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert buyer_dossier_links']);
+  });
+
   it('retire le lien dans l’agence seulement', async () => {
     state.respond = () => ({ data: [{ id: LINK }] });
     expect(await removeDossierLink(BUYER, LINK)).toEqual({ ok: true });

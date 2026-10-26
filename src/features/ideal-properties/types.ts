@@ -54,6 +54,9 @@ export type IdealSelectionItem = {
   imported: boolean;
   // Mission 122 — « Pourquoi je vous le propose », modifiée par le conseiller ; null = proposée.
   pitch: string | null;
+  // Ce que la recherche en a dit (une annonce du marché), pour la cocher de nouveau à l'identique
+  // sur « Biens idéaux » (essai de Jean-Guy, 26/10) ; null sinon.
+  snapshot: Record<string, unknown> | null;
 };
 
 export type IdealSelection = {

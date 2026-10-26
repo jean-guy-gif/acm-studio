@@ -57,6 +57,7 @@ describe('la sélection de biens idéaux', () => {
       presented_at: null,
       buyer_words: null,
       presented_deck: null,
+      dossier_availability: [],
     };
     const base = {
       agency_id: 'a',

@@ -9,6 +9,7 @@ import {
   WORDS,
   answerOf,
   finishConfirmation,
+  sendConfirmation,
   nextScreen,
   previousScreen,
   screenPosition,
@@ -59,6 +60,14 @@ describe('la navigation de la présentation', () => {
   it('la grille montre la réponse déjà donnée à chaque bien', () => {
     const responses = [response('c', 'visit'), response('a', 'no')];
     expect(items.map((item) => answerOf(item.itemId, responses))).toEqual(['no', null, 'visit']);
+  });
+
+  it('sur le lien, « Envoyer ma réponse » avec des biens sans réponse demande confirmation', () => {
+    expect(sendConfirmation(unansweredLetters(items, [response('c', 'visit')]))).toBe(
+      '2 biens sans réponse : A et B. Envoyer quand même ?',
+    );
+    expect(sendConfirmation(['B'])).toBe('1 bien sans réponse : B. Envoyer quand même ?');
+    expect(sendConfirmation([])).toBeNull();
   });
 
   it('« Terminer » avec des biens sans réponse demande confirmation, en les nommant', () => {

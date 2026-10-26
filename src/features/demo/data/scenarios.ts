@@ -97,6 +97,30 @@ export const DEMO_PHOTO_POOLS = {
   villa: Array.from({ length: 8 }, (_, i) => `villa-${String(i + 1).padStart(2, '0')}.jpg`),
 } as const;
 
+// Les photos d'extérieur de chaque famille (docs/DEMO.md) : la photo principale d'une maison n'est
+// jamais un intérieur ni un immeuble, et la villa de Mougins ne montre que des extérieurs de villa
+// (essai de Jean-Guy, 25/10).
+export const DEMO_PHOTO_EXTERIORS = {
+  house: DEMO_PHOTO_POOLS.house.slice(0, 4),
+  villa: DEMO_PHOTO_POOLS.villa.slice(0, 6),
+} as const;
+
+// 2 à 4 photos par bien, en tournant dans une liste d'extérieurs : la première, toujours un
+// extérieur, distingue le bien ; les suivantes, d'autres extérieurs puis, s'il y en a, des
+// intérieurs de la même famille.
+const exteriorsFirst =
+  (exteriors: readonly string[], interiors: readonly string[]) => (index: number) => {
+    const count = 2 + (index % 3); // 2, 3, 4, 2, 3, 4…
+    const main = exteriors[index % exteriors.length]!;
+    const others = [
+      ...exteriors.slice((index % exteriors.length) + 1),
+      ...exteriors.slice(0, index % exteriors.length),
+      ...interiors.slice(index % Math.max(interiors.length, 1)),
+      ...interiors.slice(0, index % Math.max(interiors.length, 1)),
+    ];
+    return [main, ...others.slice(0, count - 1)];
+  };
+
 // 2 à 4 photos par bien, en tournant dans la famille : la première distingue le bien, les
 // suivantes montrent l'intérieur.
 const rotate = (size: number) => (index: number) => {
@@ -150,8 +174,10 @@ const antibesSubject: DemoSubject = {
 const antibesListings = seed(
   'antibes',
   'apartment',
-  [...DEMO_PHOTO_POOLS.apartment],
-  rotate(8),
+  // Jamais la photo principale du bien vendeur (appartement-01) : le dossier « À relancer »
+  // d'Antibes et ses concurrents peuvent se trouver dans la même grille (relecture, 25/10).
+  DEMO_PHOTO_POOLS.apartment.slice(1),
+  rotate(7),
 )([
   {
     id: 'ant-01',
@@ -637,7 +663,8 @@ const venceListings = seed(
   'vence',
   'house',
   [...DEMO_PHOTO_POOLS.house],
-  rotate(8),
+  // La photo principale d'un concurrent n'est jamais celle du bien vendeur (maison-01).
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.house.slice(1), DEMO_PHOTO_POOLS.house.slice(4)),
 )([
   {
     id: 'ven-01',
@@ -1094,7 +1121,9 @@ const mouginsListings = seed(
   'mougins',
   'house',
   [...DEMO_PHOTO_POOLS.villa],
-  rotate(8),
+  // La photo principale d'une annonce n'est jamais celle de la villa vendue (villa-01) : deux
+  // colonnes de la grille ne montrent pas la même miniature (relecture des rendus, 25/10).
+  exteriorsFirst(DEMO_PHOTO_EXTERIORS.villa.slice(1), []),
 )([
   {
     id: 'mou-01',
@@ -1129,6 +1158,11 @@ const mouginsListings = seed(
   },
   {
     id: 'mou-02',
+    // Essai de Jean-Guy (26/10) : au-dessus du plafond des Keller, sous +5 % — « à négocier », le
+    // budget en orange.
+    // Sa photo principale n'est aucune de celles de la villa vendue, ni celle d'un autre concurrent
+    // du dossier de Mougins (mou-12 s'ouvrait aussi sur villa-03).
+    photos: ['villa-05.jpg', 'villa-04.jpg', 'villa-02.jpg'],
     title: 'Villa 7 pièces 220 m² piscine — Mougins',
     price: 1720000,
     surfaceArea: 220,
@@ -1285,7 +1319,13 @@ const mouginsListings = seed(
   },
   {
     id: 'mou-07',
-    title: 'Villa 7 pièces 200 m² piscine — Mouans-Sartoux',
+    // Essai de Jean-Guy (25/10) : la piscine n'est pas indiquée — un « ? » à vérifier ensemble.
+    // Ses propres photos : sa photo principale n'est aucune de celles de la villa vendue ni de
+    // mou-02, retenus avec lui pour les Keller, et il ne partage aucune photo avec mou-02 (relecture
+    // des rendus, 25/10). Avec six extérieurs de villa pour huit photos montrées, deux répétitions
+    // restent, toujours en photo secondaire.
+    photos: ['villa-06.jpg', 'villa-03.jpg'],
+    title: 'Villa 7 pièces 200 m² — Mouans-Sartoux',
     price: 1620000,
     surfaceArea: 200,
     landArea: 1500,
@@ -1303,7 +1343,7 @@ const mouginsListings = seed(
     exposure: 'south',
     outdoorSpaces: ['terrace', 'garden'],
     parkingTypes: ['garage'],
-    hasPool: true,
+    hasPool: null,
     inseeCode: MOUANS_SARTOUX,
     district: null,
     address: addr('8', 'allée du Décor'),
@@ -1311,7 +1351,7 @@ const mouginsListings = seed(
     publishedDaysAgo: 30,
     priceChanges: [],
     seller: sold('Collines & Vallons Immobilier', 'no'),
-    description: 'Villa de 2012 de 200 m² avec piscine, quatre chambres, terrain de 1 500 m².',
+    description: 'Villa de 2012 de 200 m², quatre chambres, terrain de 1 500 m².',
     priceAfterMeeting: null,
   },
   {

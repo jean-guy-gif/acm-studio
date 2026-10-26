@@ -88,7 +88,11 @@ describe('saveIdealSelection', () => {
             created_at: '2026-10-24T10:00:00Z',
           },
         };
-      const insert = lastTable(calls, 'insert').at(-1)?.args[0] as Record<string, unknown>[];
+      const insert = lastTable(calls, 'insert').at(-1)?.args[0] as
+        Record<string, unknown>[] | undefined;
+      // Avant l'écriture : les biens de la sélection précédente (aucun ici).
+      if (!insert || table !== 'buyer_selection_items' || !calls.some((c) => c.method === 'insert'))
+        return { data: [] };
       return {
         data: insert.map((row, index) => ({
           ...row,
@@ -136,7 +140,11 @@ describe('saveIdealSelection', () => {
             created_at: '2026-10-24T10:00:00Z',
           },
         };
-      const insert = lastTable(calls, 'insert').at(-1)?.args[0] as Record<string, unknown>[];
+      const insert = lastTable(calls, 'insert').at(-1)?.args[0] as
+        Record<string, unknown>[] | undefined;
+      // Avant l'écriture : les biens de la sélection précédente (aucun ici).
+      if (!insert || table !== 'buyer_selection_items' || !calls.some((c) => c.method === 'insert'))
+        return { data: [] };
       return {
         data: insert.map((row, index) => ({ ...row, id: `item-${index + 1}`, created_at: 'x' })),
       };
@@ -152,5 +160,49 @@ describe('saveIdealSelection', () => {
     });
     expect(result.toImport).toEqual([]);
     expect(result.selection.items[0]!.imported).toBe(true);
+  });
+
+  // Essai de Jean-Guy (26/10) : une annonce gardée de la sélection précédente, au même prix, garde
+  // sa date « affiché le » et ses données importées ; elle n'est pas à relire.
+  it('une annonce gardée, au même prix : sa date et ses données importées, rien à relire', async () => {
+    const url = 'https://www.seloger.com/annonces/1.htm';
+    const previousRow = {
+      source: 'listing',
+      reference: url,
+      listed_price: 1_639_500,
+      price_seen_on: '2026-10-20',
+      imported: { price: 1_639_500, listingFeatures: ['Piscine'] },
+      snapshot: { propertyType: 'house' },
+    };
+    const fake = fakeSupabase((calls) => {
+      const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
+      if (table === 'buyers') return { data: { id: BUYER } };
+      if (table === 'buyer_selections')
+        return {
+          data: {
+            id: 'sel-0',
+            agency_id: 'agency-a',
+            buyer_id: BUYER,
+            created_by: null,
+            created_at: '2026-10-24T10:00:00Z',
+          },
+        };
+      const insert = lastTable(calls, 'insert').filter(
+        (call) => (call.args[0] as unknown[])?.length !== undefined,
+      );
+      if (insert.length === 0) return { data: [previousRow] };
+      const rows = insert.at(-1)!.args[0] as Record<string, unknown>[];
+      return {
+        data: rows.map((row, index) => ({ ...row, id: `item-${index + 1}`, created_at: 'x' })),
+      };
+    });
+    state.client = fake.client;
+    const result = await saveIdealSelection(BUYER, [item(url)], '2026-10-26');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const rows = lastTable(fake.calls, 'insert')[1]?.args[0] as Record<string, unknown>[];
+    expect(rows[0]!.price_seen_on).toBe('2026-10-20');
+    expect(rows[0]!.imported).toEqual(previousRow.imported);
+    expect(result.toImport).toEqual([]);
   });
 });

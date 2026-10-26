@@ -1,3 +1,4 @@
+import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 import type { DemoListing, DemoScenario, DemoScenarioId } from '@/features/demo/data/types';
@@ -6,6 +7,9 @@ import {
   demoImportedData,
   demoSubjectImportedData,
 } from '@/features/demo/services/demo-listing-data';
+import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
+import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { formatEuro } from '@/lib/format';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 
 // Mission 114 (partie B) — les quatre dossiers de démonstration d'un closer, à quatre étapes,
@@ -128,6 +132,11 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     monthly_charges: subject.monthlyCharges,
     property_tax: subject.propertyTax,
     fields_to_verify: [],
+    // La piscine et l'ascenseur du bien (oui / non / non renseigné) : l'import d'une annonce ne
+    // les écrit pas (le conseiller les renseigne, Stream Estate, 05/10) ; la démo pose ceux de son
+    // scénario, sans quoi la villa de Mougins montrait « ? Piscine » aux Keller (essai, 25/10).
+    has_pool: subject.hasPool,
+    has_elevator: subject.hasElevator,
   };
   const competitors = demoSeedCompetitors(scenario).map((listing) => ({
     listing,
@@ -177,4 +186,82 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     opposedAddress:
       stage === 'signed' ? demoAddressLine(competitors[competitors.length - 1].listing) : null,
   };
+}
+
+// Essai de Jean-Guy (25/10) — la sélection des Keller que « Préparer ma démo » retient : un bien
+// qui coche tout (le mandat de Mougins), un bon compromis au budget en orange (mou-02, au-dessus
+// du plafond, sous +5 %, « à négocier ») et un bien à vérifier ensemble (mou-07, piscine non
+// indiquée). Les
+// mêmes lignes que « Retenir la sélection » écrirait (M118) ; le mandat est désigné par son dossier,
+// que l'action connaît. Pur.
+export type DemoSelectionItemPlan = {
+  source: 'project' | 'listing';
+  listingId: string | null;
+  label: string;
+  listedPrice: number | null;
+  priceSeenOn: string | null;
+  category: 'agency' | 'compromise' | 'explore';
+  gaps: string[];
+  imported: ImportedComparableData | null;
+  // Ce que la recherche aurait dit du bien, pour les faits que l'import ne porte pas (le type).
+  snapshot: Record<string, unknown> | null;
+};
+
+const labelOf = (propertyType: string, data: ImportedComparableData): string =>
+  idealLabel({
+    propertyType,
+    roomsCount: data.roomsCount ?? null,
+    surfaceArea: data.surfaceArea ?? null,
+    city: data.city ?? null,
+  });
+
+export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === 'mougins')!;
+  const keller = DEMO_BUYERS.find((buyer) => buyer.name === 'Famille Keller')!;
+  const budgetMax = keller.budgetMax ?? 0;
+  const subject = demoSubjectImportedData(scenario, now);
+  const signed = demoSeedPlan('signed', now);
+  const seenOn = now.toISOString().slice(0, 10);
+  const listing = (id: string) => scenario.listings.find((entry) => entry.id === id)!;
+  const fromListing = (
+    id: string,
+    category: DemoSelectionItemPlan['category'],
+    gaps: string[],
+  ): DemoSelectionItemPlan => {
+    const data = demoImportedData(listing(id), now);
+    return {
+      source: 'listing',
+      listingId: id,
+      label: labelOf(listing(id).propertyType, data),
+      listedPrice: data.price,
+      priceSeenOn: seenOn,
+      category,
+      gaps,
+      imported: data,
+      snapshot: {
+        propertyType: listing(id).propertyType,
+        city: data.city ?? null,
+        surfaceArea: data.surfaceArea ?? null,
+        roomsCount: data.roomsCount ?? null,
+      },
+    };
+  };
+  const orange = listing('mou-02');
+  return [
+    {
+      source: 'project',
+      listingId: null,
+      label: labelOf(scenario.subject.propertyType, subject),
+      listedPrice: signed.live?.agreedPrice ?? null,
+      priceSeenOn: null,
+      category: 'agency',
+      gaps: [],
+      imported: null,
+      snapshot: null,
+    },
+    fromListing('mou-02', 'compromise', [
+      `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
+    ]),
+    fromListing('mou-07', 'explore', [`À vérifier : ${BUYER_CRITERION_LABELS.pool}`]),
+  ];
 }

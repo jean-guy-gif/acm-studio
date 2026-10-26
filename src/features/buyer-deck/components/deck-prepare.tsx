@@ -29,13 +29,34 @@ const LOST = { ok: false as const, error: 'Connexion perdue — réessayez.' };
 // dit » et la phrase « Pourquoi je vous le propose » de chaque bien (140 caractères au plus) ; un
 // bien qui ne satisfait plus un indispensable est signalé, avec « Retirer de la sélection »
 // (décision du 25/10). Une fois la sélection présentée, tout est figé (M111).
-export function DeckPrepare({ deck }: { deck: BuyerDeck }) {
+// Essai de Jean-Guy (26/10) : replié (`folded`) une fois que l'acquéreur a répondu par le lien.
+export function DeckPrepare({ deck, folded = false }: { deck: BuyerDeck; folded?: boolean }) {
+  if (folded) {
+    return (
+      <details className={`${card} group p-5`} data-testid="deck-prepare-folded">
+        <summary className="cursor-pointer font-title text-lg font-semibold text-brand-deep stage:text-white">
+          Avant de présenter
+        </summary>
+        <div className="mt-4">
+          <DeckPrepareBody deck={deck} />
+        </div>
+      </details>
+    );
+  }
   return (
     <section className={`${card} flex flex-col gap-5 p-5`} data-testid="deck-prepare">
+      <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+        Avant de présenter
+      </h2>
+      <DeckPrepareBody deck={deck} />
+    </section>
+  );
+}
+
+function DeckPrepareBody({ deck }: { deck: BuyerDeck }) {
+  return (
+    <div className="flex flex-col gap-5" data-testid="deck-prepare-body">
       <div className="flex flex-col gap-1">
-        <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-          Avant de présenter
-        </h2>
         <p className={hintText}>
           Relisez ses mots et la phrase de chaque bien : c’est ce que l’acquéreur verra. Les phrases
           proposées ne disent que ce que la grille dit.
@@ -55,7 +76,7 @@ export function DeckPrepare({ deck }: { deck: BuyerDeck }) {
           <PrepareItem key={item.item.itemId} item={item} />
         ))}
       </ol>
-    </section>
+    </div>
   );
 }
 

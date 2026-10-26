@@ -1,3 +1,4 @@
+import type { PriceAlignmentTone } from '@/features/price-positioning/services/price-alignment';
 import type { BuyerCriterion } from '@/features/buyers/types';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
 
@@ -92,7 +93,8 @@ export const GRID_SYMBOLS: Record<GridMark, string> = {
   no: '✗',
   check: '?',
 };
-export const GRID_LEGEND = '★ indispensable · ✓ oui · ≈ proche · ✗ non · ? à vérifier ensemble';
+export const GRID_LEGEND_MARKS = '✓ oui · ≈ proche · ✗ non · ? à vérifier ensemble';
+export const GRID_LEGEND = `★ indispensable · ${GRID_LEGEND_MARKS}`;
 
 // Une ligne de la grille : un critère de la fiche, indispensable ou préférence.
 export type DeckCriterion = {
@@ -101,11 +103,15 @@ export type DeckCriterion = {
   mustHave: boolean;
 };
 
-// Un critère vu sur un bien : sa marque et son fait (« ✓ 2 chambres, comme demandé »).
+// Un critère vu sur un bien : sa marque et son fait (« ✓ 2 chambres, comme demandé »). Le budget
+// porte aussi une couleur (`buyerBudgetTone`, essai de Jean-Guy du 26/10) : vert dans son budget,
+// orange au-dessus, jamais rouge ; null sans prix montré ou sans budget, et pour les autres
+// critères.
 export type DeckMark = {
   criterion: BuyerCriterion;
   mark: GridMark;
   text: string;
+  tone?: PriceAlignmentTone | null;
 };
 
 // Les faits d'un bien que le déroulé lit : la liste d'autorisation de la présentation (M119), plus
@@ -151,6 +157,9 @@ export type BuyerDeck = {
   lead: string | null;
   // La lettre du bien de tête, donnée par le service (jamais relue dans la phrase).
   leadLetter: string | null;
+  // Les créneaux donnés en rendez-vous, rangés dans le déroulé figé à « Terminer » (décision de
+  // Jean-Guy, 25/10) ; vide avant, et pour une présentation terminée sans eux.
+  meetingAvailability: AvailabilitySlot[];
 };
 
 export const PITCH_MAX = 140;

@@ -20,6 +20,7 @@ import { normalizePropertyType } from '@/features/competitor-search/utils/normal
 import { DPE_CLASSES, dpeClass } from '@/features/dpe/services/dpe';
 import { BUDGET_MARGIN_PERCENT } from '@/features/ideal-properties/services/ideal-criteria';
 import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
+import { buyerBudgetTone } from '@/features/buyer-deck/services/buyer-budget-tone';
 import {
   buyerCommuneKey,
   communeCovered,
@@ -354,16 +355,48 @@ export function clampPitch(text: string): string {
   return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:]+$/, '')}…`;
 }
 
-// « Pourquoi je vous le propose » — proposée par l'outil depuis les SEULS faits de la grille :
-// combien de critères il coche, et ceux qui sont à voir ensemble. Jamais un adjectif que les faits
-// ne portent pas.
-export function proposedPitch(marks: DeckMark[]): string | null {
+// « Pourquoi je vous le propose » (essai de Jean-Guy, 25/10) — proposée par l'outil depuis les
+// SEULS faits de la grille, dans cet ordre : la surface, puis jusqu'à deux extérieurs ou
+// équipements satisfaits (piscine, jardin, terrasse, garage), puis la commune, puis la marge de
+// budget s'il y en a une — « 210 m², piscine et jardin à Mougins, 10 500 € sous votre budget. » ;
+// jamais « Il coche vos N critères », jamais un doute en tête (les « ? » restent dans la liste du
+// bien). Sans aucun de ces faits : combien de critères il coche, et ceux à voir ensemble. Jamais
+// un adjectif que les faits ne portent pas.
+const okMark = (marks: DeckMark[], criterion: BuyerCriterion): DeckMark | undefined =>
+  marks.find((mark) => mark.criterion === criterion && mark.mark === 'ok');
+
+const capitalize = (text: string): string =>
+  text.length > 0 ? `${text[0]!.toLocaleUpperCase('fr-FR')}${text.slice(1)}` : text;
+
+export function proposedPitch(
+  marks: DeckMark[],
+  item: Pick<PresentedItemInput, 'outdoor' | 'parking' | 'city' | 'price'> | null = null,
+  budgetMax: number | null = null,
+): string | null {
   const total = marks.length;
   if (total === 0) return null;
+  const surface = okMark(marks, 'surface')?.text ?? null;
+  const equipments = [
+    okMark(marks, 'pool') ? 'piscine' : null,
+    okMark(marks, 'outdoor') && item?.outdoor.includes('garden') ? 'jardin' : null,
+    okMark(marks, 'outdoor') && item?.outdoor.includes('terrace') ? 'terrasse' : null,
+    okMark(marks, 'parking') && item?.parking.includes('garage') ? 'garage' : null,
+  ]
+    .filter((fact): fact is string => fact != null)
+    .slice(0, 2);
+  const place = okMark(marks, 'cities') && item?.city ? `à ${item.city}` : null;
+  const margin =
+    okMark(marks, 'budget') && item?.price != null && budgetMax != null && budgetMax > item.price
+      ? `${formatEuro(budgetMax - item.price)} sous votre budget`
+      : null;
+  const core = [surface, equipments.length > 0 ? joinNouns(equipments) : null]
+    .filter((part): part is string => part != null)
+    .join(', ');
+  const located = [core, place].filter((part) => part != null && part !== '').join(' ');
+  const sentence = [located, margin].filter((part) => part != null && part !== '').join(', ');
+  if (sentence !== '') return clampPitch(`${capitalize(sentence)}.`);
   const ok = marks.filter((mark) => mark.mark === 'ok').length;
-  if (ok === total) {
-    return total === 1 ? 'Il coche votre critère.' : `Il coche vos ${total} critères.`;
-  }
+  if (ok === total) return null;
   const open = marks
     .filter((mark) => mark.mark !== 'ok')
     .map((mark) => CRITERION_NOUNS[mark.criterion]);
@@ -417,6 +450,16 @@ export function leadOf(items: DeckItem[]): { letter: string; sentence: string } 
   if (candidates.length === 0) return null;
   const best = candidates.reduce((top, item) => (item.okCount > top.okCount ? item : top));
   if (best.okCount === 0) return null;
+  // Essai de Jean-Guy (25/10) : plusieurs biens cochent tout — la phrase les nomme tous, sans en
+  // choisir un ; « Voir le bien » ouvre le premier.
+  const full = candidates.filter((item) => item.okCount === item.total);
+  if (full.length > 1) {
+    const letters = full.map((item) => item.letter);
+    return {
+      letter: full[0]!.letter,
+      sentence: `Les biens ${letters.slice(0, -1).join(', ')} et ${letters.at(-1)} cochent tous vos critères.`,
+    };
+  }
   return {
     letter: best.letter,
     sentence:
@@ -442,11 +485,16 @@ export function buildBuyerDeck(input: {
   const ordered = [...input.items].sort((a, b) => a.position - b.position);
   const items = ordered.map((raw, index): DeckItem => {
     const item = allowedItem(raw);
+    const budgetTone = buyerBudgetTone(item.price, input.buyer.budgetMax);
     const marks = criteria.map((row): DeckMark => {
       const verdict = judgeForBuyer(row.criterion, input.buyer, item);
-      return { criterion: row.criterion, ...verdict };
+      return {
+        criterion: row.criterion,
+        ...verdict,
+        tone: row.criterion === 'budget' ? budgetTone : null,
+      };
     });
-    const proposed = proposedPitch(marks);
+    const proposed = proposedPitch(marks, item, input.buyer.budgetMax);
     const blockedBy = marks
       .filter((mark, rowIndex) => criteria[rowIndex]?.mustHave && mark.mark === 'no')
       .map((mark) => mark.text);
@@ -491,6 +539,7 @@ export function buildBuyerDeck(input: {
     items,
     lead: lead?.sentence ?? null,
     leadLetter: lead?.letter ?? null,
+    meetingAvailability: [],
   };
 }
 

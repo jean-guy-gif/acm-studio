@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { hintText } from '@/components/ui/styles';
 import { setDossierPhoto } from '@/features/buyer-dossier/actions/dossier-links';
 
-export type DossierPhotoChoice = { id: string; position: number; label: string; hidden: boolean };
+export type DossierPhotoChoice = { id: string; position: string; label: string; hidden: boolean };
 
 // Mission 119 (partie B) — « Sans photo » par bien, comme la synthèse (M113) : décoché par défaut ;
 // coché, la photo quitte le document et le lien. Écran du conseiller, jamais imprimé.
@@ -49,7 +49,7 @@ export function DossierPhotoChoices({
                   });
                 }}
               />
-              Sans photo — {item.position}. {item.label}
+              Sans photo — Bien {item.position} · {item.label}
             </label>
           </li>
         ))}

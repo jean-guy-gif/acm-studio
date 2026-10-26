@@ -1,5 +1,6 @@
 'use server';
 
+import { meetingSlots } from '@/features/buyer-deck/services/meeting-slots';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -279,10 +280,26 @@ export async function finishPresentation(
   const availability = AVAILABILITY_SLOTS.filter(
     (slot) => Array.isArray(rawAvailability) && rawAvailability.includes(slot),
   );
+  // Ses créneaux du rendez-vous ne se figent que s'il veut visiter au moins un bien encore dans la
+  // sélection, relu en base (« s'il veut visiter au moins un bien… ses créneaux », M122) : jamais
+  // ceux que le navigateur renverrait après un passage de « visiter » à « Peut-être ».
+  const liveIds = loaded.selection.items.map((item) => item.id);
+  const { data: visitRows } =
+    liveIds.length > 0
+      ? await client
+          .from('buyer_item_responses')
+          .select('selection_item_id')
+          .eq('agency_id', profile.agency_id)
+          .eq('answered_during', 'presentation')
+          .eq('answer', 'visit')
+          .in('selection_item_id', liveIds)
+      : { data: [] };
+  const meetingAvailability = meetingSlots(availability, (visitRows ?? []).length > 0);
   const { error } = await client.rpc('finish_buyer_presentation', {
     p_agency_id: profile.agency_id,
     p_selection_id: loaded.selection.id,
-    p_deck: deck as unknown as Json,
+    // Le déroulé figé garde aussi ses créneaux du rendez-vous, et eux seuls (décision du 25/10).
+    p_deck: { ...deck, meetingAvailability } as unknown as Json,
     p_availability: availability,
   });
   if (error) return { ok: false, error: 'La fin de la présentation n’a pas pu être enregistrée.' };

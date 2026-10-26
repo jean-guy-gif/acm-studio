@@ -182,6 +182,20 @@ describe('la phrase de tête', () => {
     );
   });
 
+  // Essai de Jean-Guy (25/10) : plusieurs biens cochent tout, la phrase les nomme tous.
+  it('plusieurs biens cochent tout : « Les biens A et B cochent tous vos critères »', () => {
+    expect(leadSentence([entry('A', 7, 7), entry('B', 7, 7), entry('C', 6, 7)])).toBe(
+      'Les biens A et B cochent tous vos critères.',
+    );
+    expect(leadSentence([entry('A', 7, 7), entry('B', 7, 7), entry('C', 7, 7)])).toBe(
+      'Les biens A, B et C cochent tous vos critères.',
+    );
+    // Un bien bloqué n'y est jamais nommé.
+    expect(leadSentence([entry('A', 7, 7, true), entry('B', 7, 7), entry('C', 7, 7)])).toBe(
+      'Les biens B et C cochent tous vos critères.',
+    );
+  });
+
   it('sinon le plus de ✓ ; à égalité, l’ordre de la sélection', () => {
     expect(leadSentence([entry('A', 6, 7), entry('B', 6, 7)])).toBe(
       'Le bien A en coche le plus : 6 sur 7.',
@@ -201,14 +215,75 @@ describe('la phrase de tête', () => {
 });
 
 describe('« Pourquoi je vous le propose »', () => {
-  it('tirée des seuls faits de la grille', () => {
+  // Essai de Jean-Guy (25/10) : la surface, puis deux extérieurs ou équipements satisfaits au plus
+  // (piscine, jardin, terrasse, garage), puis la commune, puis la marge de budget ; jamais « Il
+  // coche vos N critères », jamais un doute en tête.
+  const spaced = (text: string | null) => (text ?? '').replace(/[\u00a0\u202f]/g, ' ');
+  it('la surface, les équipements, la commune, la marge de budget', () => {
     const full = deck([item()]).items[0]!;
-    expect(full.okCount).toBe(full.total);
-    expect(full.pitch).toBe(`Il coche vos ${full.total} critères.`);
-    const partial = deck([item({ surfaceArea: 62, hasElevator: null })]).items[0]!;
-    expect(partial.pitch).toBe(
-      'Il coche 7 critères sur 9 : la surface et l’ascenseur sont à voir ensemble.',
+    expect(spaced(full.pitch)).toBe(
+      '68 m², terrasse et garage à Antibes, 15 000 € sous votre budget.',
     );
+    expect(full.pitch).not.toMatch(/Il coche/);
+    // La surface en dessous du minimum (≈) n'est pas un fait satisfait : elle n'y est pas.
+    const partial = deck([item({ surfaceArea: 62, hasElevator: null })]).items[0]!;
+    expect(spaced(partial.pitch)).toBe('Terrasse et garage à Antibes, 15 000 € sous votre budget.');
+  });
+
+  it('une villa : « 210 m², piscine et jardin à Mougins… » ; un doute jamais en tête', () => {
+    const villaBuyer = {
+      ...buyer,
+      propertyTypes: ['house'],
+      cities: ['Mougins'],
+      surfaceMin: 180,
+      pool: true,
+      mustHave: ['pool', 'cities'],
+    } as BuyerInput;
+    const villa = (over: Partial<DeckItemInput>) =>
+      buildBuyerDeck({
+        buyerId: 'b',
+        buyer: villaBuyer,
+        selectionId: 's',
+        selectedAt: '2026-10-24T10:00:00Z',
+        presentedAt: null,
+        buyerWords: null,
+        items: [
+          item({
+            propertyType: 'Maison',
+            city: 'Mougins',
+            surfaceArea: 210,
+            outdoor: ['terrace', 'garden'],
+            hasPool: true,
+            ...over,
+          }),
+        ],
+        now: new Date('2026-10-25T10:00:00Z'),
+      }).items[0]!;
+    expect(spaced(villa({}).pitch)).toBe(
+      '210 m², piscine et jardin à Mougins, 15 000 € sous votre budget.',
+    );
+    // La piscine non indiquée : elle n'est pas dans la phrase, et reste « ? » dans la liste.
+    const unknownPool = villa({ hasPool: null });
+    expect(spaced(unknownPool.pitch)).toBe(
+      '210 m², jardin et terrasse à Mougins, 15 000 € sous votre budget.',
+    );
+    expect(unknownPool.marks.find((mark) => mark.criterion === 'pool')?.mark).toBe('check');
+    // Au-dessus du budget : pas de marge, rien n'est dit du prix.
+    expect(spaced(villa({ price: 440_000 }).pitch)).toBe('210 m², piscine et jardin à Mougins.');
+  });
+
+  it('aucun de ces faits : combien il en coche, et ce qui est à voir ensemble', () => {
+    const bare = deck([
+      item({
+        surfaceArea: 62,
+        outdoor: [],
+        parking: [],
+        city: null,
+        price: null,
+        hasElevator: null,
+      }),
+    ]).items[0]!;
+    expect(bare.pitch).toMatch(/^Il coche \d+ critères? sur \d+ : .* à voir ensemble\.$/);
   });
 
   it('140 caractères au plus, coupée à un mot', () => {
@@ -223,7 +298,28 @@ describe('« Pourquoi je vous le propose »', () => {
   it('la phrase du conseiller l’emporte, la proposée reste à côté', () => {
     const [entry] = deck([item({ pitch: 'Le calme, à 5 minutes du marché.' })]).items;
     expect(entry!.pitch).toBe('Le calme, à 5 minutes du marché.');
-    expect(entry!.pitchProposed).toMatch(/^Il coche/);
+    expect(entry!.pitchProposed).toMatch(/sous votre budget\.$/);
+  });
+});
+
+// Essai de Jean-Guy (26/10) : le budget de l'acquéreur est vert dans son budget, orange au-dessus
+// (« à négocier » jusqu'à +5 %), jamais rouge ; les autres critères n'ont pas de couleur à part.
+describe('le budget en couleur', () => {
+  const toneAt = (price: number | null) =>
+    deck([item({ price })]).items[0]!.marks.find((mark) => mark.criterion === 'budget')?.tone;
+  it('vert dans le budget, orange au-dessus, jamais rouge', () => {
+    expect(toneAt(415_000)).toBe('green');
+    expect(toneAt(430_000)).toBe('green');
+    expect(toneAt(430_001)).toBe('orange');
+    expect(toneAt(451_500)).toBe('orange');
+    expect(toneAt(600_000)).toBe('orange');
+    expect(toneAt(null)).toBeNull();
+  });
+  it('seul le budget porte une couleur', () => {
+    const marks = deck([item()]).items[0]!.marks;
+    for (const mark of marks.filter((entry) => entry.criterion !== 'budget')) {
+      expect(mark.tone ?? null).toBeNull();
+    }
   });
 });
 

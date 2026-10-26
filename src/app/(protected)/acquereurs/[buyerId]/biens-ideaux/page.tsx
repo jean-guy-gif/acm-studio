@@ -8,8 +8,8 @@ import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
-import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
+import { selectionAsInputs } from '@/features/ideal-properties/services/ideal-selection';
 import {
   IDEAL_CRITERIA_MESSAGES,
   idealSearchCriteria,
@@ -81,8 +81,9 @@ export default async function IdealPropertiesPage({ params }: Props) {
           Cet écran est pour vous : le dossier remis à l’acquéreur viendra ensuite.
         </p>
       </div>
-      {selection ? <IdealSelectionList selection={selection} /> : null}
       <IdealPropertiesPanel
+        current={selection ? selectionAsInputs(selection) : []}
+        presented={selection?.presentedAt != null}
         buyerId={buyer.id}
         agency={agency}
         marketReady={marketBlocked == null}

@@ -46,24 +46,25 @@ export default async function BuyerDossierPage({
           <SynthesisPrintButton />
         </div>
         <p className={hintText}>
-          Ce dossier reprend la sélection retenue, dans la forme de la synthèse : une page par bien,
-          avec son prix affiché, pourquoi il correspond et ce qu’il faut savoir. Il ne contient ni
-          adresse, ni titre, ni lien d’annonce. Sur le lien, l’acquéreur coche les biens qu’il veut
-          visiter.
+          Ce dossier suit sa recherche : ses mots, la grille de ses critères, un bien par page
+          décrit par ses critères, puis « Mes choix », à cocher au stylo. Il ne contient ni adresse,
+          ni titre, ni lien d’annonce. Sur le lien, l’acquéreur répond depuis son téléphone : une
+          seule réponse, qui arrive sur sa fiche et sur Visites.
         </p>
         <DossierPhotoChoices
           buyerId={buyerId}
-          items={dossier.items
-            .filter((item) => item.hasPhoto)
-            .map((item) => ({
-              id: item.itemId,
-              position: item.position,
-              label: item.label,
-              hidden: item.photoHidden,
+          items={dossier.photoChoices
+            .filter((choice) => choice.hasPhoto)
+            .map((choice) => ({
+              id: choice.itemId,
+              position: choice.letter,
+              label: choice.label,
+              hidden: choice.photoHidden,
             }))}
         />
         <DossierLinkButton
           buyerId={buyerId}
+          advisorFirstName={profile.first_name}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,

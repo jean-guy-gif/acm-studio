@@ -57,6 +57,17 @@ describe('le plan des dossiers de démo', () => {
     expect(plan.conclusion).toBeNull();
   });
 
+  it('la piscine et l’ascenseur du bien vendeur sont ceux du scénario : la villa de Mougins a sa piscine', () => {
+    const signed = demoSeedPlan('signed', NOW);
+    expect(signed.scenario.id).toBe('mougins');
+    expect(signed.property!.has_pool).toBe(true);
+    for (const stage of ['ready', 'signed', 'follow_up'] as const) {
+      const plan = demoSeedPlan(stage, NOW);
+      expect(plan.property!.has_pool).toBe(plan.scenario.subject.hasPool);
+      expect(plan.property!.has_elevator).toBe(plan.scenario.subject.hasElevator);
+    }
+  });
+
   it('« Mandat signé » : un Live mené, un mandat exclusif, une adresse « Ne plus solliciter »', () => {
     const plan = demoSeedPlan('signed', NOW);
     expect(plan.scenario.id).toBe('mougins');
@@ -91,5 +102,61 @@ describe('le plan des dossiers de démo', () => {
         true,
       );
     }
+  });
+});
+
+// Essai de Jean-Guy (25/10) — la sélection des Keller de « Préparer ma démo » : un bien qui coche
+// tout, un compromis au budget en orange, un bien avec un « ? ».
+describe('la sélection des Keller', async () => {
+  const { demoKellerSelectionPlan } = await import('@/features/demo/services/demo-seed');
+  const { buyerBudgetTone } = await import('@/features/buyer-deck/services/buyer-budget-tone');
+  const { poolFromLabels } =
+    await import('@/features/competitor-search/services/stream-estate-features');
+  const plan = demoKellerSelectionPlan(NOW);
+
+  it('le mandat de Mougins, puis mou-02, puis mou-07', () => {
+    expect(plan.map((item) => [item.source, item.listingId, item.category])).toEqual([
+      ['project', null, 'agency'],
+      ['listing', 'mou-02', 'compromise'],
+      ['listing', 'mou-07', 'explore'],
+    ]);
+  });
+
+  it('le compromis : au-dessus du budget, sous +5 %, « à négocier », le budget en orange', () => {
+    expect(plan[1]!.listedPrice).toBe(1_720_000);
+    expect(buyerBudgetTone(plan[1]!.listedPrice, 1_650_000)).toBe('orange');
+    expect(plan[1]!.gaps[0]).toMatch(/au-dessus du budget, à négocier$/);
+  });
+
+  it('trois miniatures différentes, et les deux annonces sans photo commune', () => {
+    const scenario = DEMO_SCENARIOS.find((item) => item.id === 'mougins')!;
+    const photosOf = (id: string | null) =>
+      id == null ? scenario.subject.photos : scenario.listings.find((l) => l.id === id)!.photos;
+    const sets = plan.map((item) => photosOf(item.listingId));
+    expect(new Set(sets.map((photos) => photos[0])).size).toBe(3);
+    const [b, c] = [sets[1]!, sets[2]!];
+    expect(b.filter((photo) => c.includes(photo))).toEqual([]);
+    // Les miniatures de B et C ne sont aucune des photos montrées pour A (les trois premières).
+    const shownForA = scenario.subject.photos.slice(0, 3);
+    expect(shownForA).not.toContain(b[0]);
+    expect(shownForA).not.toContain(c[0]);
+  });
+
+  it('les cinq concurrents du dossier de Mougins ont cinq photos principales différentes', () => {
+    const signed = demoSeedPlan('signed', NOW);
+    const mains = signed.competitors.map((competitor) => competitor.listing.photos[0]);
+    expect(new Set(mains).size).toBe(mains.length);
+  });
+
+  it('les annonces portent leur type de bien : aucun « ? Type de bien »', () => {
+    expect(plan[1]!.snapshot?.propertyType).toBe('house');
+    expect(plan[2]!.snapshot?.propertyType).toBe('house');
+  });
+
+  it('le bien à vérifier : sa piscine n’est pas indiquée', () => {
+    expect(poolFromLabels(plan[2]!.imported!.listingFeatures)).toBeNull();
+    expect(plan[2]!.gaps).toEqual(['À vérifier : Piscine']);
+    // Le compromis, lui, a sa piscine.
+    expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
   });
 });

@@ -9,6 +9,11 @@ import {
   buyerStatusLabel,
   buyerTypesLabel,
 } from '@/features/buyers/services/buyer-criteria';
+import {
+  NO_PROGRESS,
+  buyerNextStep,
+  type BuyerProgressFacts,
+} from '@/features/buyers/services/buyer-progress';
 import type { Buyer } from '@/features/buyers/types';
 
 // Mission 117 — la liste des acquéreurs : une ligne par fiche, nom, type, communes, budget,
@@ -17,10 +22,13 @@ export function BuyerList({
   buyers,
   advisorId,
   query,
+  progress = new Map(),
 }: {
   buyers: Buyer[];
   advisorId: string | null;
   query: string | null;
+  // Essai de Jean-Guy (26/10) : les faits des étapes, pour le bouton de chaque carte.
+  progress?: ReadonlyMap<string, BuyerProgressFacts>;
 }) {
   if (buyers.length === 0) {
     return (
@@ -62,12 +70,19 @@ export function BuyerList({
                 <span className="text-xs text-zinc-500 stage:text-white/60">
                   Modifiée le {buyerDateLabel(buyer.updatedAt)}
                 </span>
-                <Link
-                  href={`/acquereurs/${buyer.id}`}
-                  className="text-sm font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
-                >
-                  Ouvrir →
-                </Link>
+                {/* Essai de Jean-Guy (26/10) : le bouton dit l'étape suivante, plus « Ouvrir ». */}
+                {(() => {
+                  const next = buyerNextStep(buyer.id, progress.get(buyer.id) ?? NO_PROGRESS);
+                  return (
+                    <Link
+                      href={next.href}
+                      className="text-sm font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
+                      data-testid="buyer-next-step"
+                    >
+                      {next.label} →
+                    </Link>
+                  );
+                })()}
               </div>
             </div>
           </li>

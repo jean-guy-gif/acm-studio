@@ -9,6 +9,7 @@ import {
   DEMO_AGENCIES,
   DEMO_LISTINGS,
   DEMO_PHOTO_POOLS,
+  DEMO_PHOTO_EXTERIORS,
   DEMO_SCENARIOS,
   DEMO_STREETS,
 } from '@/features/demo/data/scenarios';
@@ -220,6 +221,40 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
         expect(listing.photos.length).toBeGreaterThanOrEqual(2);
         expect(listing.photos.length).toBeLessThanOrEqual(4);
         for (const file of listing.photos) expect(pool.has(file)).toBe(true);
+      }
+    }
+  });
+
+  // Essai de Jean-Guy (25/10) : chaque scénario n'utilise que des photos de son type de bien ; la
+  // villa de Mougins ne montre que des extérieurs de villa ; la photo principale d'une maison n'est
+  // jamais un intérieur ni un immeuble.
+  it('chaque scénario, les photos de son type de bien ; une maison s’ouvre sur un extérieur', () => {
+    const family = { antibes: 'apartment', vence: 'house', mougins: 'villa' } as const;
+    for (const scenario of DEMO_SCENARIOS) {
+      const own = new Set<string>(DEMO_PHOTO_POOLS[family[scenario.id]]);
+      const all = [scenario.subject.photos, ...scenario.listings.map((listing) => listing.photos)];
+      for (const photos of all) {
+        for (const file of photos) expect(own.has(file), `${scenario.id} : ${file}`).toBe(true);
+      }
+      if (scenario.id === 'mougins') {
+        const exteriors = new Set<string>(DEMO_PHOTO_EXTERIORS.villa);
+        for (const photos of all) {
+          for (const file of photos) expect(exteriors.has(file), `Mougins : ${file}`).toBe(true);
+        }
+      }
+      // Deux colonnes de la grille ne montrent jamais la même miniature : la photo principale d'un
+      // concurrent n'est pas celle du bien vendeur (relecture des rendus, 25/10).
+      {
+        for (const listing of scenario.listings) {
+          expect(listing.photos[0], `${scenario.id} ${listing.id}`).not.toBe(
+            scenario.subject.photos[0],
+          );
+        }
+      }
+      if (scenario.id === 'vence') {
+        const exteriors = new Set<string>(DEMO_PHOTO_EXTERIORS.house);
+        for (const photos of all)
+          expect(exteriors.has(photos[0]!), `Vence : ${photos[0]}`).toBe(true);
       }
     }
   });

@@ -41,8 +41,10 @@ import {
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { idealPageLayout, selectionKey } from '@/features/ideal-properties/services/ideal-page';
 import {
   seenOnLabel,
+  selectionChanged,
   SELECTION_TOO_MANY,
   type SelectionItemInput,
 } from '@/features/ideal-properties/services/ideal-selection';
@@ -74,8 +76,7 @@ export const RETAIN_BUTTON = 'Retenir la sélection';
 
 type Market = IdealSearchResult & { ok: true };
 
-const keyOf = (item: Pick<SelectionItemInput, 'source' | 'reference'>): string =>
-  `${item.source}:${item.reference}`;
+const keyOf = selectionKey;
 
 const CATEGORY_TONE: Record<IdealCategory, string> = {
   strong:
@@ -119,9 +120,15 @@ export function IdealPropertiesPanel({
   marketReady,
   marketBlocked,
   budgetWarning,
+  current = [],
+  presented = false,
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
+  // Essai de Jean-Guy (26/10) : la sélection actuelle, cochée en arrivant.
+  current?: SelectionItemInput[];
+  // Sa présentation est terminée : le bandeau propose de la revoir.
+  presented?: boolean;
   // La fiche permet la recherche du marché (un type, une commune) ; sinon la raison.
   marketReady: boolean;
   marketBlocked: string | null;
@@ -134,7 +141,12 @@ export function IdealPropertiesPanel({
   const [market, setMarket] = useState<Market | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
-  const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(new Map());
+  const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
+    () => new Map(current.map((item) => [keyOf(item), item])),
+  );
+  // La sélection enregistrée : « Retenir » ne s'active que si la sélection cochée en diffère.
+  const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
+  const changed = selectionChanged([...selected.values()], baseline);
   const [saving, startSaving] = useTransition();
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
@@ -229,7 +241,7 @@ export function IdealPropertiesPanel({
       setSaved(
         `Sélection retenue : ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
       );
-      setSelected(new Map());
+      setBaseline([...selected.values()]);
       // Les annonces du marché retenues s'importent comme des concurrents, par l'extension.
       if (result.toImport.length > 0) {
         let imported = 0;
@@ -273,21 +285,92 @@ export function IdealPropertiesPanel({
     );
   };
 
-  const agencyHits = BUYER_GROUPS.flatMap((group) =>
+  // Le bandeau « Sélection actuelle » (essai de Jean-Guy, 26/10) et les listes sans doublon : la
+  // règle vit dans `idealPageLayout`.
+  const allAgencyHits = BUYER_GROUPS.flatMap((group) =>
     agency.matches[group].map((hit) => ({ group, hit })),
   );
+  const asEntry = (hit: BuyerHit) => ({
+    item: agencyItem(hit),
+    listingUrl: hit.candidate.listingUrl,
+  });
+  const layout = idealPageLayout({
+    baseline,
+    selected: [...selected.values()],
+    agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
+  });
+  const bannerItems = layout.banner;
+  const agencyHits = allAgencyHits.filter(({ hit }) => layout.showAgency(asEntry(hit)));
+  const showMarket = (entry: CategorizedCandidate): boolean =>
+    layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url });
 
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
+      {/* Essai de Jean-Guy (26/10) : la sélection n'apparaît qu'une fois, ici, chaque bien avec sa
+          case — une annonce du marché se décoche sans relancer une recherche payante. */}
+      {bannerItems.length > 0 ? (
+        <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-current">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className={sectionTitle}>
+              Sélection actuelle :{' '}
+              {baseline.length > 0
+                ? baseline.map((_, index) => String.fromCharCode(65 + index)).join(', ')
+                : 'aucune'}
+            </h2>
+            {baseline.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/presentation/${buyerId}`} className={btnPrimary}>
+                  {presented ? 'Revoir la présentation' : 'Présenter'}
+                </Link>
+                <Link href={`/acquereurs/${buyerId}/dossier`} className={btnSecondary}>
+                  Dossier acquéreur
+                </Link>
+              </div>
+            ) : null}
+          </div>
+          <ul className="flex flex-col gap-2">
+            {bannerItems.map((item, index) => (
+              <li
+                key={keyOf(item)}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
+                data-testid="ideal-current-item"
+                data-letter={index < baseline.length ? String.fromCharCode(65 + index) : undefined}
+              >
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                    {index < baseline.length ? `${String.fromCharCode(65 + index)} · ` : ''}
+                    {item.label}
+                  </span>
+                  <span className="text-sm text-zinc-600 stage:text-white/70">
+                    {[
+                      item.listedPrice != null ? formatEuro(item.listedPrice) : null,
+                      item.source === 'listing' ? 'Annonce du marché' : 'Dans l’agence',
+                      index < baseline.length ? null : 'À retenir',
+                    ]
+                      .filter((part): part is string => part != null)
+                      .join(' · ')}
+                  </span>
+                </span>
+                {checkbox(item)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-agency">
         <div className="flex flex-col gap-0.5">
           <h2 className={sectionTitle}>Ce que l’agence a déjà</h2>
           <p className={hintText}>
             Vos mandats signés, vos vendeurs à relancer et les concurrents à prospecter qui
-            correspondent à sa recherche (règles du rapprochement, M86). Gratuit.
+            correspondent à sa recherche. Gratuit.
           </p>
         </div>
-        {agencyHits.length === 0 ? (
+        {allAgencyHits.length > 0 && agencyHits.length === 0 ? (
+          <p className="text-sm text-zinc-600 stage:text-white/70">
+            Les biens de l’agence qui correspondent sont dans la sélection actuelle.
+          </p>
+        ) : null}
+        {allAgencyHits.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Rien de ce côté pour l’instant : aucun bien de l’agence ne correspond exactement.
             {agency.near.length > 0
@@ -400,7 +483,7 @@ export function IdealPropertiesPanel({
                 : ''}
             </p>
             {IDEAL_CATEGORIES.map((category) => {
-              const entries = market.categorized.byCategory[category];
+              const entries = market.categorized.byCategory[category].filter(showMarket);
               return (
                 <div
                   key={category}
@@ -448,8 +531,8 @@ export function IdealPropertiesPanel({
                                     ? formatEuro(entry.candidate.price)
                                     : null,
                                   seenOnLabel(market.seenOn),
-                                  entry.percent != null
-                                    ? `${entry.percent} % de correspondance`
+                                  entry.criteriaTotal > 0
+                                    ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
                                     : null,
                                 ]
                                   .filter((part): part is string => part != null)
@@ -501,7 +584,7 @@ export function IdealPropertiesPanel({
         <button
           type="button"
           className={btnPrimary}
-          disabled={saving || selected.size === 0}
+          disabled={saving || selected.size === 0 || !changed}
           onClick={retain}
           data-testid="ideal-retain"
         >

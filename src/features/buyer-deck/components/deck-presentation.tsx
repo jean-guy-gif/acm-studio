@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { RemoteImage } from '@/components/ui/remote-image';
 import { answerItem, finishPresentation } from '@/features/buyer-deck/actions/deck-actions';
+import { GridLegend, MustHaveStar, markClass } from '@/features/buyer-deck/components/deck-marks';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
 import {
   ANSWER,
@@ -24,7 +25,6 @@ import {
   AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
   GRID_ANSWER_LABELS,
-  GRID_LEGEND,
   ITEM_ANSWER_LABELS,
   ITEM_ANSWERS,
   NO_REASON_LABELS,
@@ -32,7 +32,6 @@ import {
   type AvailabilitySlot,
   type BuyerDeck,
   type DeckItem,
-  type GridMark,
   type ItemAnswer,
   type ItemResponse,
   type NoReason,
@@ -68,19 +67,22 @@ const navBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
 const primaryBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50';
+// Essai de Jean-Guy (25/10) : la navigation est discrète, jamais plus visible que la réponse.
+export const quietNavBtn =
+  'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl px-4 py-2.5 font-title text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 stage:text-white/65 stage:hover:bg-white/10 stage:hover:text-white';
+// Essai de Jean-Guy (26/10) : la réponse choisie devient pleine, à la couleur de l'agence, avec
+// « ✓ » ; les deux autres restent en contour — « Je veux le visiter » n'est jamais plein s'il
+// n'est pas choisi.
+export function answerBtn(_value: ItemAnswer, on: boolean): string {
+  // Relue, la réponse choisie reste pleine, jamais pâlie (un bouton désactivé l'était).
+  return on ? `${primaryBtn} disabled:opacity-100` : navBtn;
+}
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
     on
       ? 'border-brand bg-brand text-white'
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/25 stage:bg-white/5 stage:text-white/80'
   }`;
-
-const MARK_STYLES: Record<GridMark, string> = {
-  ok: 'text-emerald-700 stage:text-emerald-300',
-  near: 'text-amber-700 stage:text-amber-300',
-  no: 'text-red-700 stage:text-red-300',
-  check: 'text-sky-700 stage:text-sky-300',
-};
 
 const lettersOf = (items: DeckItem[]): string =>
   items.length <= 1
@@ -350,6 +352,7 @@ export function DeckPresentation({
             onOpen={(item) => go(openItem(item))}
             onLead={leadItem ? () => go(openItem(leadItem)) : null}
             leadLetter={leadItem?.letter ?? null}
+            compact
           />
         ) : current ? (
           <ItemScreen
@@ -507,7 +510,7 @@ export function DeckPresentation({
           <div className="flex flex-nowrap items-center gap-2">
             <button
               type="button"
-              className={navBtn}
+              className={quietNavBtn}
               disabled={previous == null}
               onClick={() => go(previous)}
               data-testid="presentation-previous"
@@ -517,7 +520,7 @@ export function DeckPresentation({
             {screen.type === 'item' || screen.type === 'answer' ? (
               <button
                 type="button"
-                className={navBtn}
+                className={quietNavBtn}
                 onClick={() => go(GRID)}
                 aria-label="Revenir à la grille"
                 data-testid="deck-back-to-grid"
@@ -531,7 +534,7 @@ export function DeckPresentation({
             {screen.type === 'grid' || screen.type === 'item' ? (
               <button
                 type="button"
-                className={navBtn}
+                className={quietNavBtn}
                 onClick={() => go(ANSWER)}
                 aria-label="Passer à ses disponibilités"
                 data-testid="deck-go-answer"
@@ -543,7 +546,7 @@ export function DeckPresentation({
             {screen.type !== 'answer' ? (
               <button
                 type="button"
-                className={primaryBtn}
+                className={quietNavBtn}
                 disabled={next == null}
                 onClick={() => go(next)}
                 data-testid="presentation-next"
@@ -579,39 +582,80 @@ export function DeckPresentation({
   );
 }
 
-function GridScreen({
+// Mission 122 (partie B) — partagé avec le lien du dossier, sur téléphone.
+export function GridScreen({
   deck,
   responses,
   onOpen,
   onLead,
   leadLetter,
+  compact = false,
 }: {
   deck: BuyerDeck;
   responses: ItemResponse[];
   onOpen: (item: DeckItem) => void;
   onLead: (() => void) | null;
   leadLetter: string | null;
+  // En présentation (essai de Jean-Guy, 26/10) : la grille, sa légende, la phrase de tête et
+  // « Voir le bien A » tiennent dans l'écran en 1024 × 768 et 1280 × 800, sans défiler.
+  compact?: boolean;
 }) {
+  const tablePanel = compact
+    ? 'rounded-2xl border border-zinc-200 bg-white px-4 py-2 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm'
+    : panel;
+  const rowPad = compact ? 'py-1' : 'py-2';
   return (
-    <div className="flex flex-col gap-5" data-testid="deck-grid">
+    <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-5'}`} data-testid="deck-grid">
+      {/* La phrase de tête au-dessus de la grille, avec « Voir le bien A » (essai, 26/10). */}
+      {deck.lead ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p
+            className={`font-title font-semibold text-zinc-900 stage:text-white ${compact ? 'text-lg' : 'text-xl'}`}
+            data-testid="deck-lead"
+          >
+            {deck.lead}
+          </p>
+          {onLead && leadLetter ? (
+            <button
+              type="button"
+              className={primaryBtn}
+              onClick={onLead}
+              data-testid="deck-lead-open"
+            >
+              Voir le bien {leadLetter} →
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="-mx-4 overflow-x-auto px-4">
         <table
-          className={`${panel} w-full min-w-[20rem] border-separate border-spacing-0 text-left`}
+          className={`${tablePanel} w-full min-w-[20rem] border-separate border-spacing-0 text-left`}
         >
           <thead>
             <tr>
-              <th className={`${statLabel} pb-2`}>Vos critères</th>
+              <th className={`${statLabel} pb-1.5`}>Vos critères</th>
               {deck.items.map((item) => (
-                <th key={item.item.itemId} className="pb-2 text-center">
+                <th key={item.item.itemId} className="px-1 pb-1.5 text-center align-bottom">
+                  {/* Essai de Jean-Guy (25/10) : en tête de chaque colonne, la miniature du bien
+                      et sa lettre. */}
                   <button
                     type="button"
                     onClick={() => onOpen(item)}
                     aria-label={`Voir le bien ${item.letter}`}
                     data-testid="deck-open-item"
                     data-letter={item.letter}
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-zinc-300 px-3 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand"
+                    className={`mx-auto flex w-full flex-col items-center gap-0.5 rounded-xl border border-zinc-300 p-1 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand ${compact ? 'max-w-20' : 'max-w-28'}`}
                   >
-                    {item.letter}
+                    {item.photos[0] ? (
+                      <RemoteImage
+                        src={item.photos[0]}
+                        alt=""
+                        className="aspect-[4/3] w-full rounded-lg object-cover"
+                        fallbackClassName="aspect-[4/3] w-full rounded-lg bg-zinc-100 text-[0.6rem] text-zinc-400 stage:bg-white/10"
+                        fallbackLabel=""
+                      />
+                    ) : null}
+                    <span data-testid="deck-grid-thumb-letter">{item.letter}</span>
                   </button>
                 </th>
               ))}
@@ -624,7 +668,7 @@ function GridScreen({
                 return (
                   <td
                     key={item.item.itemId}
-                    className="pb-2 text-center text-xs font-semibold text-zinc-600 stage:text-white/70"
+                    className="pb-1 text-center text-xs font-semibold text-zinc-600 stage:text-white/70"
                     data-testid="deck-grid-answer"
                     data-letter={item.letter}
                     data-answer={answer ?? ''}
@@ -640,10 +684,15 @@ function GridScreen({
               <tr key={row.criterion} data-testid="deck-grid-row" data-must={row.mustHave}>
                 <th
                   scope="row"
-                  className="border-t border-zinc-100 py-2 pr-3 text-base font-medium text-zinc-800 stage:border-white/10 stage:text-white/90"
+                  className={`border-t border-zinc-100 ${rowPad} pr-3 font-medium text-zinc-800 stage:border-white/10 stage:text-white/90 ${compact ? 'text-sm' : 'text-base'}`}
                 >
                   {row.label}
-                  {row.mustHave ? ' ★' : ''}
+                  {row.mustHave ? (
+                    <>
+                      {' '}
+                      <MustHaveStar />
+                    </>
+                  ) : null}
                 </th>
                 {deck.items.map((item) => {
                   const mark = item.marks[rowIndex]!;
@@ -653,7 +702,8 @@ function GridScreen({
                       title={mark.text}
                       data-testid="deck-grid-cell"
                       data-mark={mark.mark}
-                      className={`border-t border-zinc-100 py-2 text-center font-title text-xl font-bold stage:border-white/10 ${MARK_STYLES[mark.mark]}`}
+                      data-tone={mark.tone ?? undefined}
+                      className={`border-t border-zinc-100 ${rowPad} text-center font-title font-bold stage:border-white/10 ${compact ? 'text-base leading-6' : 'text-xl'} ${markClass(mark)}`}
                     >
                       {markSymbol(mark.mark)}
                     </td>
@@ -664,38 +714,30 @@ function GridScreen({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-zinc-500 stage:text-white/50">{GRID_LEGEND}</p>
-      {deck.lead ? (
-        <div className="flex flex-col items-start gap-3">
-          <p
-            className="font-title text-xl font-semibold text-zinc-900 stage:text-white"
-            data-testid="deck-lead"
-          >
-            {deck.lead}
-          </p>
-          {onLead && leadLetter ? (
-            <button type="button" className={primaryBtn} onClick={onLead}>
-              Voir le bien {leadLetter} →
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <GridLegend className="text-xs text-zinc-500 stage:text-white/50" />
     </div>
   );
 }
 
-function ItemScreen({
+// Mission 122 (partie B) — partagé avec le lien du dossier, sur téléphone.
+export function ItemScreen({
   item,
   answer,
   readOnly,
   busy,
   onAnswer,
+  reasons,
+  onReason,
 }: {
   item: DeckItem;
   answer: ItemAnswer | null;
   readOnly: boolean;
   busy: boolean;
   onAnswer: (answer: ItemAnswer) => void;
+  // Sur le lien (essai de Jean-Guy, 26/10) : « Pas pour moi » choisi, ses raisons s'affichent
+  // tout de suite dessous.
+  reasons?: NoReason[];
+  onReason?: (reason: NoReason) => void;
 }) {
   const where = [item.item.district, item.item.city]
     .filter((part): part is string => part != null && part !== '')
@@ -727,8 +769,13 @@ function ItemScreen({
         </p>
         <ul className="flex flex-col gap-2">
           {item.marks.map((mark) => (
-            <li key={mark.criterion} data-testid="deck-mark" data-mark={mark.mark}>
-              <span className={`text-base font-medium ${MARK_STYLES[mark.mark]}`}>
+            <li
+              key={mark.criterion}
+              data-testid="deck-mark"
+              data-mark={mark.mark}
+              data-tone={mark.tone ?? undefined}
+            >
+              <span className={`text-base font-medium ${markClass(mark)}`}>
                 {markSymbol(mark.mark)} {mark.text}
               </span>
               {mark.criterion === 'budget' && item.priceLine ? (
@@ -769,7 +816,7 @@ function ItemScreen({
             <button
               key={value}
               type="button"
-              className={on ? primaryBtn : navBtn}
+              className={answerBtn(value, on)}
               aria-pressed={on}
               disabled={readOnly || busy}
               data-testid="deck-answer"
@@ -781,6 +828,29 @@ function ItemScreen({
           );
         })}
       </div>
+      {answer === 'no' && onReason ? (
+        <div className="flex flex-col gap-2" data-testid="item-reasons">
+          <p className="text-base font-semibold text-zinc-900 stage:text-white">Pourquoi ?</p>
+          <div className="flex flex-wrap gap-2">
+            {NO_REASONS.map((reason) => {
+              const on = (reasons ?? []).includes(reason);
+              return (
+                <button
+                  key={reason}
+                  type="button"
+                  className={chip(on)}
+                  aria-pressed={on}
+                  disabled={readOnly || busy}
+                  data-testid="item-reason"
+                  onClick={() => onReason(reason)}
+                >
+                  {NO_REASON_LABELS[reason]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

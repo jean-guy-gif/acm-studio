@@ -765,6 +765,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const buyerUrl = page.url().replace(/\?.*$/, '');
     await expect(page.getByTestId('buyer-name')).toHaveText(buyerName);
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
+    // Essai de Jean-Guy (26/10) : sur la fiche, la recherche est repliée sous « Modifier sa
+    // recherche ».
+    const searchDetails = page.getByTestId('buyer-form-details');
+    await expect(searchDetails).not.toHaveAttribute('open', '');
+    await searchDetails.getByText('Modifier sa recherche').click();
+    await expect(searchDetails).toHaveAttribute('open', '');
     // Les communes dédoublonnées, la fiche relue.
     await expect(field('Communes')).toHaveValue('Nice, Cagnes-sur-Mer');
     await expect(typeBox).toBeChecked();
@@ -835,12 +841,25 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(paid).toHaveCount(0);
     await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);
     await expect(page.getByTestId('ideal-retain')).toBeDisabled();
-    await mandateHit.getByRole('checkbox').check();
+    // Coché, le mandat monte aussitôt dans le bandeau « Sélection actuelle », « À retenir ».
+    await mandateHit.getByRole('checkbox').click();
+    await expect(page.getByTestId('ideal-current-item')).toHaveCount(1);
+    await expect(page.getByTestId('ideal-current-item').first()).toContainText('À retenir');
     await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
     await page.getByTestId('ideal-retain').click();
     await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
-    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(1);
-    await expect(page.getByTestId('ideal-selection-item').first()).toContainText('Dans l’agence');
+    // Essai de Jean-Guy (26/10) : sans rechargement, la sélection n'apparaît qu'une fois, dans le
+    // bandeau « Sélection actuelle : A » ; le mandat ne se répète plus dans « Ce que l'agence a
+    // déjà » ; aucun texte interne à l'écran.
+    await expect(page.getByTestId('ideal-current')).toContainText('Sélection actuelle : A');
+    await expect(page.getByTestId('ideal-current-item')).toHaveCount(1);
+    await expect(page.getByTestId('ideal-current-item').first()).toContainText('Dans l’agence');
+    await expect(
+      page.getByTestId('ideal-current-item').first().getByRole('checkbox'),
+    ).toBeChecked();
+    await expect(mandateHit).toHaveCount(0);
+    await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+    await expect(page.getByText(/\bM\d{2,3}\b|règles? du rapprochement/)).toHaveCount(0);
     await page.goto(buyerUrl);
     await expect(page.getByTestId('ideal-selection')).toContainText(
       'Appartement · 3 pièces · 65 m²',
@@ -875,9 +894,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const rows = await page.getByTestId('deck-grid-row').count();
     expect(rows, 'la grille a une ligne par critère de la fiche').toBeGreaterThan(0);
     await expect(page.getByTestId('deck-grid-cell')).toHaveCount(rows);
+    // L'étoile des indispensables, dessinée (essai de Jean-Guy, 25/10), dans la grille et la légende.
     await expect(
-      page.locator('[data-testid="deck-grid-row"][data-must="true"]').first(),
-    ).toContainText('★');
+      page
+        .locator('[data-testid="deck-grid-row"][data-must="true"]')
+        .first()
+        .getByTestId('must-star'),
+    ).toBeVisible();
+    await expect(page.getByTestId('grid-legend').getByTestId('must-star')).toBeVisible();
     await page.getByTestId('presentation-next').click();
     await expect(scene).toHaveAttribute('data-screen', 'item');
     await expect(page.getByTestId('deck-item-count')).toHaveText(/^\d+ critères? sur \d+$/);
@@ -954,18 +978,20 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('visits-done')).toContainText('Pas pour lui');
     await expect(page.getByTestId('visits-pending')).toHaveCount(0);
 
-    // Mission 119 (partie B) — « Dossier acquéreur » : la même sélection, une page par bien, la
-    // dernière page à cocher ; un lien public sans compte, « noindex » ; une coche crée une demande
-    // « depuis le dossier » sur Visites ; le lien retiré ne s'ouvre plus.
+    // Mission 122 (partie B) — le dossier : le PDF (couverture, grille, un bien par page, « Mes
+    // choix ») ; la présentation terminée, son lien est « Ce que nous avons vu ensemble », en lecture
+    // seule (décision de Jean-Guy, 25/10) ; le lien retiré ne s'ouvre plus.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-dossier').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
     const dossier = page.getByTestId('buyer-dossier');
     await expect(dossier).toBeVisible();
-    await expect(dossier).toContainText('Votre sélection');
+    await expect(dossier.getByTestId('dossier-cover')).toContainText('Votre sélection du');
+    await expect(dossier.getByTestId('dossier-grid')).toBeVisible();
     await expect(dossier.getByTestId('dossier-item')).toHaveCount(1);
-    await expect(dossier.getByTestId('dossier-price')).toBeVisible();
-    await expect(dossier).toContainText('Quels biens souhaitez-vous visiter ?');
+    await expect(dossier.getByTestId('dossier-choices')).toContainText('Mes choix');
+    await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(1);
+    await expect(dossier.getByTestId('dossier-choice-box')).toHaveCount(3 + 5);
     const dossierCheck = async (text: string, where: string) => {
       for (const competitor of COMPETITORS) {
         expect(text, `${where} : le titre « ${competitor.title} »`).not.toContain(competitor.title);
@@ -976,36 +1002,46 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       expect(text, `${where} : la fourchette`).not.toContain(String(FOURCHETTE.min));
     };
     await dossierCheck(await dossier.innerText(), 'Le dossier acquéreur');
-    await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
-    const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
-    expect(dossierLink).toMatch(/\/dossier\/[A-Za-z0-9_-]{43}$/);
     const dossierBypass = process.env.E2E_VERCEL_BYPASS;
     const stranger = await page
       .context()
       .browser()!
-      .newContext(
-        dossierBypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': dossierBypass } } : {},
-      );
+      .newContext({
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        ...(dossierBypass
+          ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': dossierBypass } }
+          : {}),
+      });
     try {
       const visitor = await stranger.newPage();
-      const response = await visitor.goto(dossierLink);
-      expect(response?.headers()['x-robots-tag']).toContain('noindex');
-      const publicDossier = visitor.getByTestId('buyer-dossier');
-      await expect(publicDossier).toBeVisible();
-      await dossierCheck(await publicDossier.innerText(), 'Le lien public du dossier');
-      // Sans compte : une coche, « Envoyer », et la demande arrive sur Visites.
-      await visitor.getByTestId('dossier-visit-send').click();
-      await expect(visitor.getByTestId('dossier-visit-message')).toHaveText(
-        'Cochez au moins un bien.',
+      // La sélection présentée : « Ce que nous avons vu ensemble », sans formulaire.
+      await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
+      const presentedLink = (await page.getByTestId('dossier-link').innerText()).trim();
+      expect(presentedLink).toMatch(/\/dossier\/[A-Za-z0-9_-]{43}$/);
+      const first = await visitor.goto(presentedLink);
+      expect(first?.headers()['x-robots-tag']).toContain('noindex');
+      const seen = visitor.getByTestId('dossier-seen-together');
+      await expect(seen).toContainText('Ce que nous avons vu ensemble');
+      await expect(seen).toContainText('Je veux le visiter');
+      // Ses créneaux du rendez-vous, rangés à « Terminer » : la visite faite ne les efface pas.
+      await expect(seen.getByTestId('dossier-recap-availability')).toHaveText(
+        'Vos créneaux : Samedi matin',
       );
-      await visitor.getByTestId('dossier-visit-check').first().check();
-      await visitor.getByTestId('dossier-visit-send').click();
-      await expect(visitor.getByTestId('dossier-visit-message')).toContainText(
-        'Votre demande est envoyée',
-      );
-      await page.goto('/visites');
-      await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
-      // « Retirer le lien » : il ne s'ouvre plus, tout de suite.
+      await expect(visitor.getByTestId('dossier-download')).toHaveText('Télécharger en PDF');
+      await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
+      await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — vu ensemble');
+      await expectNoHorizontalScroll(visitor, 'Le lien — vu ensemble (390 × 844)');
+
+      // Essai de Jean-Guy (26/10) : « Retenir » ne s'active que si la sélection cochée change ;
+      // ce parcours n'a qu'un bien, sa sélection est déjà retenue : le lien répondu au téléphone
+      // (390 × 844), la base relue, Visites et la fiche se prouvent sur la démo.
+      await page.goto(`${buyerUrl}/biens-ideaux`);
+      await expect(page.getByTestId('ideal-current')).toContainText('Sélection actuelle : A');
+      await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+      const dossierLink = presentedLink;
+      // « Retirer le lien » : il ne s'ouvre plus, tout de suite (le plus récent est en tête).
       await page.goto(`${buyerUrl}/dossier`);
       await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
       await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();

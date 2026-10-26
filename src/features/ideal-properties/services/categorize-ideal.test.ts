@@ -91,6 +91,17 @@ describe('les trois catégories des biens idéaux', () => {
     });
   });
 
+  // Essai de Jean-Guy (26/10) : « N critères sur M » remplace le % de correspondance.
+  it('« N critères sur M » : ceux qu’il satisfait, sur les critères renseignés', () => {
+    const all = judgeCandidate(buyer, candidate({}));
+    expect(all.kind === 'kept' && all.criteriaOk === all.criteriaTotal).toBe(true);
+    const twoGaps = judgeCandidate(
+      buyer,
+      candidate({ roomsCount: 2, features: { parking: [], floor: 0 } }),
+    );
+    expect(twoGaps.kind === 'kept' && twoGaps.criteriaTotal - twoGaps.criteriaOk).toBe(3);
+  });
+
   it('un indispensable contredit écarte, avec sa raison : budget dépassé, pas d’extérieur', () => {
     expect(plain(judgeCandidate(buyer, candidate({ price: 430_000 })))).toEqual({
       kind: 'excluded',

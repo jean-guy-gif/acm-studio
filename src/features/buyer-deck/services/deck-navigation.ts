@@ -76,10 +76,20 @@ const joinLetters = (letters: string[]): string =>
     ? (letters[0] ?? '')
     : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`;
 
+const unansweredQuestion = (letters: string[], verb: string): string | null =>
+  letters.length === 0
+    ? null
+    : `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse : ${joinLetters(
+        letters,
+      )}. ${verb} quand même ?`;
+
 // « 2 biens sans réponse : A et B. Terminer quand même ? » ; null quand tout a une réponse.
 export function finishConfirmation(letters: string[]): string | null {
-  if (letters.length === 0) return null;
-  return `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse : ${joinLetters(
-    letters,
-  )}. Terminer quand même ?`;
+  return unansweredQuestion(letters, 'Terminer');
+}
+
+// Mission 122 (partie B, décision de Jean-Guy, 25/10) — sur le lien, l'envoi est définitif :
+// « 2 biens sans réponse : A et B. Envoyer quand même ? » ; null quand tout a une réponse.
+export function sendConfirmation(letters: string[]): string | null {
+  return unansweredQuestion(letters, 'Envoyer');
 }
