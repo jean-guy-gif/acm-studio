@@ -302,17 +302,17 @@ describe('« Pourquoi je vous le propose »', () => {
   });
 });
 
-// Décision de Jean-Guy (25/10) : le budget prend les couleurs de la M116, le même service
-// (`priceAlignment`) appliqué au budget plafond ; les autres critères n'ont pas de couleur à part.
+// Essai de Jean-Guy (26/10) : le budget de l'acquéreur est vert dans son budget, orange au-dessus
+// (« à négocier » jusqu'à +5 %), jamais rouge ; les autres critères n'ont pas de couleur à part.
 describe('le budget en couleur', () => {
   const toneAt = (price: number | null) =>
     deck([item({ price })]).items[0]!.marks.find((mark) => mark.criterion === 'budget')?.tone;
-  it('vert sous +5 %, orange de +5 % à moins de +10 %, rouge à +10 % et plus', () => {
+  it('vert dans le budget, orange au-dessus, jamais rouge', () => {
     expect(toneAt(415_000)).toBe('green');
-    expect(toneAt(451_000)).toBe('green');
+    expect(toneAt(430_000)).toBe('green');
+    expect(toneAt(430_001)).toBe('orange');
     expect(toneAt(451_500)).toBe('orange');
-    expect(toneAt(472_999)).toBe('orange');
-    expect(toneAt(473_000)).toBe('red');
+    expect(toneAt(600_000)).toBe('orange');
     expect(toneAt(null)).toBeNull();
   });
   it('seul le budget porte une couleur', () => {

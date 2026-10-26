@@ -311,23 +311,42 @@ describe('la grille et l’écran d’un bien, au même dessin partout', () => {
     expect(page.split('data-testid="deck-grid-thumb-letter"').length - 1).toBe(2);
   });
 
-  it('« Je veux le visiter » à la couleur de l’agence, les deux autres réponses secondaires', () => {
-    const page = renderToStaticMarkup(
+  // Essai de Jean-Guy (26/10) : la réponse choisie devient pleine ; les autres restent en contour.
+  const itemPage = (answer: 'visit' | 'maybe' | 'no' | null, withReasons = false) =>
+    renderToStaticMarkup(
       createElement(ItemScreen, {
         item: withPhotos.items[0]!,
-        answer: null,
+        answer,
         readOnly: false,
         busy: false,
         onAnswer: () => undefined,
+        ...(withReasons ? { reasons: ['price' as const], onReason: () => undefined } : {}),
       }),
     );
-    const button = (value: string) => {
-      const at = page.indexOf(`data-answer="${value}"`);
-      return page.slice(page.lastIndexOf('<button', at), at);
-    };
-    expect(button('visit')).toMatch(/\bbg-brand\b/);
-    expect(button('maybe')).not.toMatch(/\bbg-brand\b/);
-    expect(button('no')).not.toMatch(/\bbg-brand\b/);
+  const button = (page: string, value: string) => {
+    const at = page.indexOf(`data-answer="${value}"`);
+    return page.slice(page.lastIndexOf('<button', at), at);
+  };
+
+  it('rien de choisi : aucun bouton plein, « Je veux le visiter » compris', () => {
+    const page = itemPage(null);
+    for (const value of ['visit', 'maybe', 'no']) {
+      expect(button(page, value)).not.toMatch(/\bbg-brand\b/);
+    }
+  });
+
+  it('la réponse choisie est pleine, les deux autres en contour', () => {
+    const page = itemPage('maybe');
+    expect(button(page, 'maybe')).toMatch(/\bbg-brand\b/);
+    expect(button(page, 'visit')).not.toMatch(/\bbg-brand\b/);
+    expect(button(page, 'no')).not.toMatch(/\bbg-brand\b/);
+  });
+
+  it('sur le lien, « Pas pour moi » choisi : ses raisons tout de suite dessous', () => {
+    expect(itemPage('no', true)).toContain('data-testid="item-reasons"');
+    expect(itemPage('maybe', true)).not.toContain('data-testid="item-reasons"');
+    // En présentation (sans raisons passées), rien ne s'ajoute à l'écran du bien.
+    expect(itemPage('no')).not.toContain('data-testid="item-reasons"');
   });
 
   it('sur le lien, « Suivant » et « Précédent » sont discrets', () => {

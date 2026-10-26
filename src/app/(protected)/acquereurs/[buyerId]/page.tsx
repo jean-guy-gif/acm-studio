@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation';
 import {
   alertOk,
   backLink,
-  btnPrimary,
   btnSecondary,
   card,
   kickerLabel,
@@ -20,7 +19,10 @@ import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggest
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
+import { BuyerSteps } from '@/features/buyers/components/buyer-steps';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
+import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
@@ -44,12 +46,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   // Mission 118 — la dernière sélection de biens idéaux, si elle existe. Mission 122 — son
   // déroulé (« Avant de présenter ») et ses réponses, toutes sélections confondues.
   const [selection, profile] = await Promise.all([getIdealSelection(buyer.id), getProfile()]);
-  const [loadedDeck, answers] = await Promise.all([
+  const supabase = await createClient();
+  const [loadedDeck, answers, progress] = await Promise.all([
     selection && !selection.presentedAt ? loadDeck(buyer.id) : Promise.resolve(null),
     profile
-      ? getBuyerAnswers(await createClient(), buyer.id, profile.agency_id)
+      ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
       : Promise.resolve({ lines: [], forSuggestions: [] }),
+    profile
+      ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
+      : Promise.resolve(new Map()),
   ]);
+  const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
 
   return (
@@ -74,33 +81,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         </p>
       ) : null}
 
+      {/* Essai de Jean-Guy (26/10) : les trois étapes, dans l'ordre, en haut de la fiche. */}
+      <BuyerSteps buyerId={buyer.id} facts={facts} />
+
       <section className={`${card} flex flex-wrap items-center justify-between gap-4 p-5`}>
         <BuyerStatusActions buyer={buyer} />
         <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={`/acquereurs/${buyer.id}/biens-ideaux`}
-            className={selection ? btnSecondary : btnPrimary}
-          >
-            Trouver les biens idéaux
-          </Link>
-          {selection ? (
-            <Link
-              href={`/presentation/${buyer.id}`}
-              className={btnPrimary}
-              data-testid="present-selection"
-            >
-              {selection.presentedAt ? 'Revoir la présentation' : 'Présenter la sélection'}
-            </Link>
-          ) : null}
-          {selection ? (
-            <Link
-              href={`/acquereurs/${buyer.id}/dossier`}
-              className={btnSecondary}
-              data-testid="buyer-dossier"
-            >
-              Dossier acquéreur
-            </Link>
-          ) : null}
           <Link href={`/suivi?acquereur=${buyer.id}#rapprochement`} className={btnSecondary}>
             Rapprocher
           </Link>
@@ -113,7 +99,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       {loadedDeck ? <DeckPrepare deck={loadedDeck.deck} /> : null}
 
       {answers.lines.length > 0 ? (
-        <BuyerAnswers buyerId={buyer.id} answers={answers.lines} suggestions={suggestions} />
+        <div id="reponses" className="scroll-mt-6">
+          <BuyerAnswers buyerId={buyer.id} answers={answers.lines} suggestions={suggestions} />
+        </div>
       ) : null}
 
       <BuyerForm buyer={buyer} />

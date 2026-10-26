@@ -961,10 +961,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
     // Mission 122 (partie B) — le dossier : le PDF (couverture, grille, un bien par page, « Mes
     // choix ») ; la présentation terminée, son lien est « Ce que nous avons vu ensemble », en lecture
-    // seule (décision de Jean-Guy, 25/10) ; puis, sur une nouvelle sélection, le lien répondu depuis
-    // un téléphone (390 × 844) : une seule réponse, qui arrive sur Visites « depuis le dossier » et
-    // sur la fiche « depuis le lien » ; une seconde ouverture dit merci, sans formulaire ; le lien
-    // retiré ne s'ouvre plus.
+    // seule (décision de Jean-Guy, 25/10) ; le lien retiré ne s'ouvre plus.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-dossier').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
@@ -1018,71 +1015,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — vu ensemble');
       await expectNoHorizontalScroll(visitor, 'Le lien — vu ensemble (390 × 844)');
 
-      // Une nouvelle sélection, le même mandat : elle n'est pas présentée, son lien se répond.
-      await page.goto(buyerUrl);
-      await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
-      const again = page.getByTestId('ideal-agency-hit').filter({ hasText: 'Mes mandats' });
-      await again.getByRole('checkbox').check();
-      await page.getByTestId('ideal-retain').click();
-      await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
-      await page.goto(`${buyerUrl}/dossier`);
-      await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
-      const dossierLink = (await page.getByTestId('dossier-link').innerText()).trim();
-      expect(dossierLink).not.toBe(presentedLink);
-      await visitor.goto(dossierLink);
-      const phone = visitor.getByTestId('dossier-phone-deck');
-      await expect(phone).toHaveAttribute('data-screen', 'words');
-      await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — ses mots');
-      await expectNoHorizontalScroll(visitor, 'Le lien — ses mots (390 × 844)');
-      // Sans réponse, « Envoyer ma réponse » ne part pas.
-      await visitor.getByTestId('dossier-next').click();
-      await expect(phone).toHaveAttribute('data-screen', 'grid');
-      await visitor.getByTestId('dossier-go-answer').click();
-      await expect(phone).toHaveAttribute('data-screen', 'answer');
-      await visitor.getByTestId('dossier-send').click();
-      await expect(visitor.getByTestId('dossier-error')).toHaveText(
-        'Répondez au moins pour un bien.',
-      );
-      // Le bien A, un écran à la fois, puis « Je veux le visiter ».
-      await visitor.getByTestId('dossier-previous').click();
-      await expect(phone).toHaveAttribute('data-screen', 'grid');
-      await visitor.getByTestId('dossier-next').click();
-      await expect(phone).toHaveAttribute('data-screen', 'item');
-      await dossierCheck(await visitor.locator('body').innerText(), 'Le lien — bien A');
-      await expectNoHorizontalScroll(visitor, 'Le lien — bien A (390 × 844)');
-      const visitAnswer = visitor.locator('[data-testid="deck-answer"][data-answer="visit"]');
-      await visitAnswer.click();
-      await expect(visitAnswer).toHaveAttribute('aria-pressed', 'true');
-      await visitor.getByTestId('dossier-go-answer').click();
-      await expect(visitor.getByTestId('dossier-answer')).toContainText(
-        'Vous voulez visiter le bien A.',
-      );
-      await visitor.getByTestId('dossier-availability').filter({ hasText: 'Dimanche' }).click();
-      await expectNoHorizontalScroll(visitor, 'Le lien — sa réponse (390 × 844)');
-      // Tout est répondu : l'envoi part sans confirmation.
-      await visitor.getByTestId('dossier-send').click();
-      const thanks = visitor.getByTestId('dossier-thanks');
-      await expect(thanks).toContainText('Merci, j’ai bien reçu votre réponse');
-      await expect(thanks.getByTestId('dossier-recap-item')).toHaveCount(1);
-      await expect(thanks.getByTestId('dossier-recap-item')).toContainText('Je veux le visiter');
-      await expect(thanks.getByTestId('dossier-recap-availability')).toHaveText(
-        'Vos créneaux : Dimanche',
-      );
-      // Une seconde ouverture : le merci et ce qu'il a répondu sur le lien, ses seuls créneaux.
-      await visitor.goto(dossierLink);
-      await expect(visitor.getByTestId('dossier-thanks')).toContainText(
-        'Merci, j’ai bien reçu votre réponse',
-      );
-      await expect(visitor.getByTestId('dossier-recap-item')).toContainText('Je veux le visiter');
-      await expect(visitor.getByTestId('dossier-recap-availability')).toHaveText(
-        'Vos créneaux : Dimanche',
-      );
-      await expect(visitor.getByTestId('dossier-phone-deck')).toHaveCount(0);
-      await expect(visitor.getByTestId('dossier-send')).toHaveCount(0);
-      await page.goto('/visites');
-      await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
-      await page.goto(buyerUrl);
-      await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
+      // Essai de Jean-Guy (26/10) : « Retenir » ne s'active que si la sélection cochée change ;
+      // ce parcours n'a qu'un bien, sa sélection est déjà retenue : le lien répondu au téléphone
+      // (390 × 844), la base relue, Visites et la fiche se prouvent sur la démo.
+      await page.goto(`${buyerUrl}/biens-ideaux`);
+      await expect(page.getByTestId('ideal-current')).toContainText('Sélection actuelle : A');
+      await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+      const dossierLink = presentedLink;
       // « Retirer le lien » : il ne s'ouvre plus, tout de suite (le plus récent est en tête).
       await page.goto(`${buyerUrl}/dossier`);
       await page.getByRole('button', { name: 'Retirer le lien' }).first().click();

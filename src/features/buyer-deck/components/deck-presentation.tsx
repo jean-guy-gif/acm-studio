@@ -70,11 +70,11 @@ const primaryBtn =
 // Essai de Jean-Guy (25/10) : la navigation est discrète, jamais plus visible que la réponse.
 export const quietNavBtn =
   'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl px-4 py-2.5 font-title text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 stage:text-white/65 stage:hover:bg-white/10 stage:hover:text-white';
-// Sur un bien, « Je veux le visiter » est le bouton principal, à la couleur de l'agence ;
-// « Peut-être » et « Pas pour moi » sont secondaires ; la réponse donnée porte « ✓ ».
-export function answerBtn(value: ItemAnswer, on: boolean): string {
-  if (value === 'visit') return `${primaryBtn} ${on ? 'ring-4 ring-brand/35' : ''}`;
-  return `${navBtn} ${on ? 'border-2 border-brand-deep text-brand-deep stage:border-white stage:text-white' : ''}`;
+// Essai de Jean-Guy (26/10) : la réponse choisie devient pleine, à la couleur de l'agence, avec
+// « ✓ » ; les deux autres restent en contour — « Je veux le visiter » n'est jamais plein s'il
+// n'est pas choisi.
+export function answerBtn(_value: ItemAnswer, on: boolean): string {
+  return on ? primaryBtn : navBtn;
 }
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
@@ -351,6 +351,7 @@ export function DeckPresentation({
             onOpen={(item) => go(openItem(item))}
             onLead={leadItem ? () => go(openItem(leadItem)) : null}
             leadLetter={leadItem?.letter ?? null}
+            compact
           />
         ) : current ? (
           <ItemScreen
@@ -587,24 +588,53 @@ export function GridScreen({
   onOpen,
   onLead,
   leadLetter,
+  compact = false,
 }: {
   deck: BuyerDeck;
   responses: ItemResponse[];
   onOpen: (item: DeckItem) => void;
   onLead: (() => void) | null;
   leadLetter: string | null;
+  // En présentation (essai de Jean-Guy, 26/10) : la grille, sa légende, la phrase de tête et
+  // « Voir le bien A » tiennent dans l'écran en 1024 × 768 et 1280 × 800, sans défiler.
+  compact?: boolean;
 }) {
+  const tablePanel = compact
+    ? 'rounded-2xl border border-zinc-200 bg-white px-4 py-2 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm'
+    : panel;
+  const rowPad = compact ? 'py-1' : 'py-2';
   return (
-    <div className="flex flex-col gap-5" data-testid="deck-grid">
+    <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-5'}`} data-testid="deck-grid">
+      {/* La phrase de tête au-dessus de la grille, avec « Voir le bien A » (essai, 26/10). */}
+      {deck.lead ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p
+            className={`font-title font-semibold text-zinc-900 stage:text-white ${compact ? 'text-lg' : 'text-xl'}`}
+            data-testid="deck-lead"
+          >
+            {deck.lead}
+          </p>
+          {onLead && leadLetter ? (
+            <button
+              type="button"
+              className={primaryBtn}
+              onClick={onLead}
+              data-testid="deck-lead-open"
+            >
+              Voir le bien {leadLetter} →
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="-mx-4 overflow-x-auto px-4">
         <table
-          className={`${panel} w-full min-w-[20rem] border-separate border-spacing-0 text-left`}
+          className={`${tablePanel} w-full min-w-[20rem] border-separate border-spacing-0 text-left`}
         >
           <thead>
             <tr>
-              <th className={`${statLabel} pb-2`}>Vos critères</th>
+              <th className={`${statLabel} pb-1.5`}>Vos critères</th>
               {deck.items.map((item) => (
-                <th key={item.item.itemId} className="px-1 pb-2 text-center align-bottom">
+                <th key={item.item.itemId} className="px-1 pb-1.5 text-center align-bottom">
                   {/* Essai de Jean-Guy (25/10) : en tête de chaque colonne, la miniature du bien
                       et sa lettre. */}
                   <button
@@ -613,7 +643,7 @@ export function GridScreen({
                     aria-label={`Voir le bien ${item.letter}`}
                     data-testid="deck-open-item"
                     data-letter={item.letter}
-                    className="mx-auto flex w-full max-w-28 flex-col items-center gap-1 rounded-xl border border-zinc-300 p-1 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand"
+                    className={`mx-auto flex w-full flex-col items-center gap-0.5 rounded-xl border border-zinc-300 p-1 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand ${compact ? 'max-w-20' : 'max-w-28'}`}
                   >
                     {item.photos[0] ? (
                       <RemoteImage
@@ -637,7 +667,7 @@ export function GridScreen({
                 return (
                   <td
                     key={item.item.itemId}
-                    className="pb-2 text-center text-xs font-semibold text-zinc-600 stage:text-white/70"
+                    className="pb-1 text-center text-xs font-semibold text-zinc-600 stage:text-white/70"
                     data-testid="deck-grid-answer"
                     data-letter={item.letter}
                     data-answer={answer ?? ''}
@@ -653,7 +683,7 @@ export function GridScreen({
               <tr key={row.criterion} data-testid="deck-grid-row" data-must={row.mustHave}>
                 <th
                   scope="row"
-                  className="border-t border-zinc-100 py-2 pr-3 text-base font-medium text-zinc-800 stage:border-white/10 stage:text-white/90"
+                  className={`border-t border-zinc-100 ${rowPad} pr-3 font-medium text-zinc-800 stage:border-white/10 stage:text-white/90 ${compact ? 'text-sm' : 'text-base'}`}
                 >
                   {row.label}
                   {row.mustHave ? (
@@ -672,7 +702,7 @@ export function GridScreen({
                       data-testid="deck-grid-cell"
                       data-mark={mark.mark}
                       data-tone={mark.tone ?? undefined}
-                      className={`border-t border-zinc-100 py-2 text-center font-title text-xl font-bold stage:border-white/10 ${markClass(mark)}`}
+                      className={`border-t border-zinc-100 ${rowPad} text-center font-title font-bold stage:border-white/10 ${compact ? 'text-lg' : 'text-xl'} ${markClass(mark)}`}
                     >
                       {markSymbol(mark.mark)}
                     </td>
@@ -684,21 +714,6 @@ export function GridScreen({
         </table>
       </div>
       <GridLegend className="text-xs text-zinc-500 stage:text-white/50" />
-      {deck.lead ? (
-        <div className="flex flex-col items-start gap-3">
-          <p
-            className="font-title text-xl font-semibold text-zinc-900 stage:text-white"
-            data-testid="deck-lead"
-          >
-            {deck.lead}
-          </p>
-          {onLead && leadLetter ? (
-            <button type="button" className={primaryBtn} onClick={onLead}>
-              Voir le bien {leadLetter} →
-            </button>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -710,12 +725,18 @@ export function ItemScreen({
   readOnly,
   busy,
   onAnswer,
+  reasons,
+  onReason,
 }: {
   item: DeckItem;
   answer: ItemAnswer | null;
   readOnly: boolean;
   busy: boolean;
   onAnswer: (answer: ItemAnswer) => void;
+  // Sur le lien (essai de Jean-Guy, 26/10) : « Pas pour moi » choisi, ses raisons s'affichent
+  // tout de suite dessous.
+  reasons?: NoReason[];
+  onReason?: (reason: NoReason) => void;
 }) {
   const where = [item.item.district, item.item.city]
     .filter((part): part is string => part != null && part !== '')
@@ -806,6 +827,29 @@ export function ItemScreen({
           );
         })}
       </div>
+      {answer === 'no' && onReason ? (
+        <div className="flex flex-col gap-2" data-testid="item-reasons">
+          <p className="text-base font-semibold text-zinc-900 stage:text-white">Pourquoi ?</p>
+          <div className="flex flex-wrap gap-2">
+            {NO_REASONS.map((reason) => {
+              const on = (reasons ?? []).includes(reason);
+              return (
+                <button
+                  key={reason}
+                  type="button"
+                  className={chip(on)}
+                  aria-pressed={on}
+                  disabled={readOnly || busy}
+                  data-testid="item-reason"
+                  onClick={() => onReason(reason)}
+                >
+                  {NO_REASON_LABELS[reason]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
