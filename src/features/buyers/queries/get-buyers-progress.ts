@@ -18,6 +18,18 @@ export async function getBuyersProgress(
     buyerIds.map((id) => [id, { ...NO_PROGRESS }]),
   );
   if (buyerIds.length === 0) return progress;
+  // Ses demandes de visite à organiser, toutes sélections confondues.
+  const { data: visits } = await supabase
+    .from('buyer_visit_requests')
+    .select('buyer_id')
+    .eq('agency_id', agencyId)
+    .in('buyer_id', buyerIds)
+    .is('cancelled_at', null)
+    .is('visited_at', null);
+  for (const row of visits ?? []) {
+    const facts = progress.get(row.buyer_id);
+    if (facts) facts.visitsToOrganize += 1;
+  }
   const { data: selections } = await supabase
     .from('buyer_selections')
     .select('id, buyer_id, presented_at, created_at')
@@ -68,6 +80,7 @@ export async function getBuyersProgress(
       presentedAt: selection.presentedAt,
       linkCreated: linked.has(selection.id),
       answeredOnLink: answered.has(selection.id),
+      visitsToOrganize: progress.get(buyerId)?.visitsToOrganize ?? 0,
     });
   }
   return progress;

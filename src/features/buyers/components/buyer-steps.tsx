@@ -43,6 +43,16 @@ export function BuyerSteps({
             {facts.presentedAt ? 'Revoir la présentation' : 'Présenter la sélection'}
           </Link>
         );
+      case 'visits':
+        return (
+          <Link
+            href={facts.visitsToOrganize > 0 ? '/visites' : `/acquereurs/${buyerId}#reponses`}
+            className={style(key)}
+            data-testid="buyer-visits"
+          >
+            {facts.visitsToOrganize > 0 ? 'Organiser les visites' : 'Voir sa réponse'}
+          </Link>
+        );
       case 'buyerDossier':
         return (
           <Link
@@ -57,7 +67,7 @@ export function BuyerSteps({
   };
   return (
     <ol
-      className={`${card} grid gap-4 p-5 md:grid-cols-3 md:gap-3`}
+      className={`${card} grid gap-4 p-5 md:gap-3 ${steps.length > 3 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}
       data-testid="buyer-steps"
       aria-label="Les étapes de cet acquéreur"
     >
@@ -68,6 +78,7 @@ export function BuyerSteps({
           data-testid="buyer-step"
           data-step={step.key}
           data-done={step.done}
+          data-next={step.key === next}
           // « Voir sa réponse » mène ici quand la réponse n'est pas encore là.
           id={step.key === 'buyerDossier' && !answersShown ? 'reponses' : undefined}
         >

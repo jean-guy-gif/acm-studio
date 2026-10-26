@@ -144,6 +144,13 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).toContain('data-testid="dossier-phone-deck"');
     expect(page).toContain('Vous m’avez dit :');
     expect(page).not.toContain('data-testid="dossier-thanks"');
+    // Essai de Jean-Guy (26/10) : le premier écran est une couverture, avec un seul bouton
+    // principal ; « Précédent » / « Suivant » n'y sont pas montrés.
+    expect(page).toContain('data-testid="dossier-cover"');
+    expect(page).toContain('Votre sélection du 24/10/2026');
+    expect(page).toContain('Votre conseiller : Carl Conseiller');
+    expect(page).toContain('Voir ma sélection →');
+    expect(page).toMatch(/<nav hidden=""[^>]*data-testid="dossier-nav"/);
   });
 
   it('déjà répondu : le merci et ses créneaux du lien, sans formulaire', () => {

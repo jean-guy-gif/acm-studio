@@ -64,6 +64,7 @@ export default async function BuyerDossierPage({
         />
         <DossierLinkButton
           buyerId={buyerId}
+          advisorFirstName={profile.first_name}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,

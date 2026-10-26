@@ -765,6 +765,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const buyerUrl = page.url().replace(/\?.*$/, '');
     await expect(page.getByTestId('buyer-name')).toHaveText(buyerName);
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
+    // Essai de Jean-Guy (26/10) : sur la fiche, la recherche est repliée sous « Modifier sa
+    // recherche ».
+    const searchDetails = page.getByTestId('buyer-form-details');
+    await expect(searchDetails).not.toHaveAttribute('open', '');
+    await searchDetails.getByText('Modifier sa recherche').click();
+    await expect(searchDetails).toHaveAttribute('open', '');
     // Les communes dédoublonnées, la fiche relue.
     await expect(field('Communes')).toHaveValue('Nice, Cagnes-sur-Mer');
     await expect(typeBox).toBeChecked();
@@ -839,8 +845,18 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (1/3)');
     await page.getByTestId('ideal-retain').click();
     await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
-    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(1);
-    await expect(page.getByTestId('ideal-selection-item').first()).toContainText('Dans l’agence');
+    // Essai de Jean-Guy (26/10) : sans rechargement, la sélection n'apparaît qu'une fois, dans le
+    // bandeau « Sélection actuelle : A » ; le mandat ne se répète plus dans « Ce que l'agence a
+    // déjà » ; aucun texte interne à l'écran.
+    await expect(page.getByTestId('ideal-current')).toContainText('Sélection actuelle : A');
+    await expect(page.getByTestId('ideal-current-item')).toHaveCount(1);
+    await expect(page.getByTestId('ideal-current-item').first()).toContainText('Dans l’agence');
+    await expect(
+      page.getByTestId('ideal-current-item').first().getByRole('checkbox'),
+    ).toBeChecked();
+    await expect(mandateHit).toHaveCount(0);
+    await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+    await expect(page.getByText(/\bM\d{2,3}\b|règles? du rapprochement/)).toHaveCount(0);
     await page.goto(buyerUrl);
     await expect(page.getByTestId('ideal-selection')).toContainText(
       'Appartement · 3 pièces · 65 m²',

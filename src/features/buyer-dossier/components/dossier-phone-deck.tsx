@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
+import { RemoteImage } from '@/components/ui/remote-image';
+
 import {
   GridScreen,
   ItemScreen,
@@ -11,6 +13,7 @@ import {
 import { criteriaCountLabel } from '@/features/buyer-deck/services/buyer-deck';
 import {
   ANSWER,
+  GRID,
   WORDS,
   nextScreen,
   previousScreen,
@@ -31,6 +34,7 @@ import {
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
+import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
 import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/link-screen';
 import {
@@ -275,6 +279,8 @@ export function DossierPhoneDeck({
     if (confirmSend) confirmRef.current?.focus();
   }, [confirmSend]);
   const itemCount = deck.items.length;
+  // La photo de couverture : la première du bien A, sinon la première de la sélection (comme le PDF).
+  const coverPhoto = deck.items.flatMap((entry) => entry.photos)[0] ?? null;
   const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
   const next = nextScreen(screen, itemCount);
   const previous = previousScreen(screen);
@@ -412,22 +418,57 @@ export function DossierPhoneDeck({
       data-screen={screen.type}
     >
       {header}
-      <p className="px-4 pt-3 text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
-        {screen.type === 'words'
-          ? `Votre sélection · ${itemCount} bien${itemCount > 1 ? 's' : ''}`
-          : screen.type === 'grid'
+      {screen.type === 'words' ? null : (
+        <p className="px-4 pt-3 text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
+          {screen.type === 'grid'
             ? 'Vos critères'
             : current
               ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
               : 'Votre réponse'}
-      </p>
+        </p>
+      )}
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-6">
         {screen.type === 'words' ? (
-          <div className="flex flex-col gap-4">
-            <h1 className="font-title text-2xl font-bold text-zinc-900">Vous m’avez dit :</h1>
-            <p className="font-title text-xl leading-snug font-semibold text-zinc-900">
-              « {deck.words} »
-            </p>
+          // Essai de Jean-Guy (26/10) : le premier écran est la couverture du PDF — la photo du
+          // bien A, « Votre sélection du [date] », sa phrase, le conseiller — et un seul bouton
+          // principal, « Voir ma sélection → ».
+          <div className="flex flex-col gap-5" data-testid="dossier-cover">
+            {coverPhoto ? (
+              <RemoteImage
+                src={coverPhoto}
+                alt=""
+                className="aspect-[4/3] w-full rounded-2xl object-cover"
+                fallbackClassName="aspect-[4/3] w-full rounded-2xl bg-zinc-100"
+                fallbackLabel=""
+              />
+            ) : null}
+            <div className="flex flex-col gap-2">
+              <h1 className="font-title text-2xl font-bold text-zinc-900">
+                Votre sélection du {buyerDateLabel(deck.selectedAt)}
+              </h1>
+              <p className="text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
+                Vous m’avez dit :
+              </p>
+              <p className="font-title text-lg leading-snug font-semibold text-zinc-800">
+                « {deck.words} »
+              </p>
+              <p className="text-sm text-zinc-600">
+                {itemCount} bien{itemCount > 1 ? 's' : ''} pour vous
+              </p>
+            </div>
+            {advisorName ? (
+              <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
+                Votre conseiller : {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className={`${primaryBtn} w-full`}
+              onClick={() => go(GRID)}
+              data-testid="dossier-start"
+            >
+              Voir ma sélection →
+            </button>
           </div>
         ) : screen.type === 'grid' ? (
           <GridScreen
@@ -594,6 +635,7 @@ export function DossierPhoneDeck({
           iPhone). La barre suit le contenu, sous les réponses, séparée d'elles : rien ne se
           superpose jamais. */}
       <nav
+        hidden={screen.type === 'words'}
         className="mx-auto mt-2 flex w-full max-w-xl flex-col gap-2 border-t border-zinc-200 px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
         data-testid="dossier-nav"
       >

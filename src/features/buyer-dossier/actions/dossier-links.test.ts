@@ -71,6 +71,26 @@ describe('le lien du dossier acquéreur', () => {
     expect(result.url).not.toContain(insert.token_hash);
   });
 
+  it('« Créer un nouveau lien » retire les liens précédents de la fiche, dans l’agence, jamais le nouveau', async () => {
+    state.respond = () => ({ data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } });
+    expect((await createDossierLink(BUYER, true)).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert buyer_dossier_links', 'delete buyer_dossier_links']);
+    const afterDelete = service.calls.slice(
+      service.calls.findIndex((call) => call.method === 'delete'),
+    );
+    expect(afterDelete.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['buyer_id', BUYER],
+      ['agency_id', 'agency-a'],
+    ]);
+    expect(afterDelete.find((call) => call.method === 'neq')?.args).toEqual(['id', LINK]);
+  });
+
+  it('un lien créé sans « nouveau lien » ne retire rien', async () => {
+    state.respond = () => ({ data: { id: LINK, expires_at: '2026-11-23T10:00:00Z' } });
+    expect((await createDossierLink(BUYER)).ok).toBe(true);
+    expect(service.writes()).toEqual(['insert buyer_dossier_links']);
+  });
+
   it('retire le lien dans l’agence seulement', async () => {
     state.respond = () => ({ data: [{ id: LINK }] });
     expect(await removeDossierLink(BUYER, LINK)).toEqual({ ok: true });
