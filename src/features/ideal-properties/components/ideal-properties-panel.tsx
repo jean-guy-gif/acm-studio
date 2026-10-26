@@ -43,6 +43,7 @@ import {
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import {
   seenOnLabel,
+  selectionChanged,
   SELECTION_TOO_MANY,
   type SelectionItemInput,
 } from '@/features/ideal-properties/services/ideal-selection';
@@ -119,9 +120,12 @@ export function IdealPropertiesPanel({
   marketReady,
   marketBlocked,
   budgetWarning,
+  current = [],
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
+  // Essai de Jean-Guy (26/10) : la sélection actuelle, cochée en arrivant.
+  current?: SelectionItemInput[];
   // La fiche permet la recherche du marché (un type, une commune) ; sinon la raison.
   marketReady: boolean;
   marketBlocked: string | null;
@@ -134,7 +138,12 @@ export function IdealPropertiesPanel({
   const [market, setMarket] = useState<Market | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
-  const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(new Map());
+  const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
+    () => new Map(current.map((item) => [keyOf(item), item])),
+  );
+  // La sélection enregistrée : « Retenir » ne s'active que si la sélection cochée en diffère.
+  const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
+  const changed = selectionChanged([...selected.values()], baseline);
   const [saving, startSaving] = useTransition();
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
@@ -229,7 +238,7 @@ export function IdealPropertiesPanel({
       setSaved(
         `Sélection retenue : ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
       );
-      setSelected(new Map());
+      setBaseline([...selected.values()]);
       // Les annonces du marché retenues s'importent comme des concurrents, par l'extension.
       if (result.toImport.length > 0) {
         let imported = 0;
@@ -448,8 +457,8 @@ export function IdealPropertiesPanel({
                                     ? formatEuro(entry.candidate.price)
                                     : null,
                                   seenOnLabel(market.seenOn),
-                                  entry.percent != null
-                                    ? `${entry.percent} % de correspondance`
+                                  entry.criteriaTotal > 0
+                                    ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
                                     : null,
                                 ]
                                   .filter((part): part is string => part != null)
@@ -501,7 +510,7 @@ export function IdealPropertiesPanel({
         <button
           type="button"
           className={btnPrimary}
-          disabled={saving || selected.size === 0}
+          disabled={saving || selected.size === 0 || !changed}
           onClick={retain}
           data-testid="ideal-retain"
         >

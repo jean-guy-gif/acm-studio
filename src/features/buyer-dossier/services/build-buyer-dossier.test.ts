@@ -298,11 +298,12 @@ describe('le PDF du dossier qui fait agir', () => {
   });
 
   it('le budget en couleur, dans la grille et sur la ligne du bien', () => {
-    const page = html([item({ price: 1_700_000 })]);
-    // 1 700 000 € pour un plafond de 1 650 000 € : +3 %, vert.
-    expect(page).toMatch(/data-tone="green"/);
-    const red = html([item({ price: 1_900_000 })]);
-    expect(count(red, 'data-tone="red"')).toBe(2);
+    // Plafond de 1 650 000 € : dans le budget, vert ; au-dessus, orange ; jamais rouge (26/10).
+    const within = html([item({ price: 1_600_000 })]);
+    expect(count(within, 'data-tone="green"')).toBe(2);
+    const over = html([item({ price: 1_900_000 })]);
+    expect(count(over, 'data-tone="orange"')).toBe(2);
+    expect(over).not.toContain('data-tone="red"');
   });
 
   it('la grille : une miniature de chaque bien en tête de sa colonne, et sa lettre', () => {

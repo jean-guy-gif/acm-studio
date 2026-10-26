@@ -20,7 +20,7 @@ import { normalizePropertyType } from '@/features/competitor-search/utils/normal
 import { DPE_CLASSES, dpeClass } from '@/features/dpe/services/dpe';
 import { BUDGET_MARGIN_PERCENT } from '@/features/ideal-properties/services/ideal-criteria';
 import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
-import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
+import { buyerBudgetTone } from '@/features/buyer-deck/services/buyer-budget-tone';
 import {
   buyerCommuneKey,
   communeCovered,
@@ -485,7 +485,7 @@ export function buildBuyerDeck(input: {
   const ordered = [...input.items].sort((a, b) => a.position - b.position);
   const items = ordered.map((raw, index): DeckItem => {
     const item = allowedItem(raw);
-    const budgetTone = priceAlignment(item.price, input.buyer.budgetMax)?.tone ?? null;
+    const budgetTone = buyerBudgetTone(item.price, input.buyer.budgetMax);
     const marks = criteria.map((row): DeckMark => {
       const verdict = judgeForBuyer(row.criterion, input.buyer, item);
       return {

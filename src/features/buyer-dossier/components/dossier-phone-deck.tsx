@@ -278,6 +278,11 @@ export function DossierPhoneDeck({
   const current = screen.type === 'item' ? deck.items[screen.index] : undefined;
   const next = nextScreen(screen, itemCount);
   const previous = previousScreen(screen);
+  const lastItem = screen.type === 'item' && next == null;
+  // La barre fixée « Envoyer ma réponse » : dès la première réponse, sur la grille et les biens,
+  // sauf le dernier, où le bouton tient la place de « Suivant ».
+  const sendBar =
+    answers.size > 0 && (screen.type === 'grid' || (screen.type === 'item' && !lastItem));
 
   const go = (target: DeckScreen | null) => {
     if (!target) return;
@@ -414,7 +419,9 @@ export function DossierPhoneDeck({
               ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
               : 'Votre réponse'}
       </p>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-6">
+      <main
+        className={`mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 ${sendBar ? 'pb-28' : 'pb-6'}`}
+      >
         {screen.type === 'words' ? (
           <div className="flex flex-col gap-4">
             <h1 className="font-title text-2xl font-bold text-zinc-900">Vous m’avez dit :</h1>
@@ -445,6 +452,8 @@ export function DossierPhoneDeck({
             readOnly={false}
             busy={false}
             onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
+            reasons={answers.get(current.item.itemId)?.reasons ?? []}
+            onReason={(reason) => toggleReason(current.item.itemId, reason)}
           />
         ) : (
           <div className="flex flex-col gap-6" data-testid="dossier-answer">
@@ -588,16 +597,6 @@ export function DossierPhoneDeck({
         className="mx-auto mt-2 flex w-full max-w-xl flex-col gap-2 border-t border-zinc-200 px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
         data-testid="dossier-nav"
       >
-        {screen.type === 'grid' || screen.type === 'item' ? (
-          <button
-            type="button"
-            className={quietNavBtn}
-            onClick={() => go(ANSWER)}
-            data-testid="dossier-go-answer"
-          >
-            Ma réponse
-          </button>
-        ) : null}
         <div className="flex gap-2">
           <button
             type="button"
@@ -608,7 +607,17 @@ export function DossierPhoneDeck({
           >
             Précédent
           </button>
-          {screen.type !== 'answer' ? (
+          {lastItem ? (
+            // Sur le dernier bien, à la place de « Suivant » grisé (essai de Jean-Guy, 26/10).
+            <button
+              type="button"
+              className={`${primaryBtn} flex-1`}
+              onClick={() => go(ANSWER)}
+              data-testid="dossier-last-send"
+            >
+              {DOSSIER_SEND}
+            </button>
+          ) : screen.type !== 'answer' ? (
             <button
               type="button"
               className={quietNavBtn}
@@ -621,6 +630,26 @@ export function DossierPhoneDeck({
           ) : null}
         </div>
       </nav>
+
+      {/* Essai de Jean-Guy (26/10) : dès qu'un bien a une réponse, « Envoyer ma réponse » est le
+          bouton principal, fixé en bas de chaque bien et de la grille ; il mène à ses créneaux,
+          puis à l'envoi avec sa confirmation. Le contenu garde sous lui la place de la barre :
+          aucune réponse n'y reste cachée en fin de défilement. */}
+      {sendBar ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
+          data-testid="dossier-send-bar"
+        >
+          <button
+            type="button"
+            className={`${primaryBtn} mx-auto w-full max-w-xl`}
+            onClick={() => go(ANSWER)}
+            data-testid="dossier-to-answer"
+          >
+            {DOSSIER_SEND}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

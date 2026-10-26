@@ -84,7 +84,37 @@ export function toSelectionItem(item: SelectionItemRow): IdealSelectionItem {
     photoUrl: photoOf(item.imported) ?? photoOf(item.snapshot),
     imported: item.imported != null,
     pitch: item.pitch ?? null,
+    snapshot:
+      typeof item.snapshot === 'object' && item.snapshot != null && !Array.isArray(item.snapshot)
+        ? (item.snapshot as Record<string, unknown>)
+        : null,
   };
+}
+
+// Essai de Jean-Guy (26/10) — la sélection actuelle, cochée en arrivant sur « Biens idéaux » :
+// chaque bien sous la forme que « Retenir la sélection » envoie. Pur.
+export function selectionAsInputs(selection: IdealSelection): SelectionItemInput[] {
+  return selection.items.map((item) => ({
+    source: item.source,
+    reference: item.reference,
+    label: item.label,
+    listedPrice: item.listedPrice,
+    category: item.category,
+    gaps: [...item.gaps],
+    snapshot: item.snapshot,
+  }));
+}
+
+// « Retenir » ne s'active que si la sélection cochée change : les mêmes biens, dans n'importe quel
+// ordre, ne changent rien. Pur.
+export function selectionChanged(
+  checked: readonly Pick<SelectionItemInput, 'source' | 'reference'>[],
+  current: readonly Pick<SelectionItemInput, 'source' | 'reference'>[],
+): boolean {
+  const key = (item: Pick<SelectionItemInput, 'source' | 'reference'>) =>
+    `${item.source}:${item.reference}`;
+  const now = new Set(current.map(key));
+  return checked.length !== now.size || checked.some((item) => !now.has(key(item)));
 }
 
 export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {

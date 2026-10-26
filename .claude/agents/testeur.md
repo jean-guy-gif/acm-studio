@@ -16,8 +16,14 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
    quelle durée) ; rouge deux fois, c'est un **défaut**.
 3. Pour chaque défaut : le test, le pas qui échoue, la ligne d'erreur, et ta lecture en une phrase
    (le code, le test, ou la donnée de l'essai). Pas de correctif.
-4. Note les durées des quatre suites et dis si l'une approche son budget (6 min pour le parcours).
-5. Rapport, 15 lignes au plus : vert / aléas / défauts, puis les durées.
+4. **Si la mission touche un écran ou un document remis au client** (Live, présentation, lien, PDF,
+   courrier, synthèse) : avec Playwright sur l'essai, enregistre dans
+   `test-results/rendus-<mission>/` le PDF imprimé (A4) et des captures pleine page des écrans touchés,
+   en 1280 × 800, 1024 × 768 et 390 × 844, sur le compte de démo. Liste les fichiers dans ton rapport.
+   Jean-Guy et son relecteur produit les regardent AVANT l'essai : un test vert ne dit pas qu'un
+   document donne envie.
+5. Note les durées des quatre suites et dis si l'une approche son budget (6 min pour le parcours).
+6. Rapport, 15 lignes au plus : vert / aléas / défauts, puis les durées.
 
 Si une suite ne peut pas tourner (variables manquantes, essai pas à jour), dis-le et arrête-toi : tu
 n'inventes ni résultat ni raison.

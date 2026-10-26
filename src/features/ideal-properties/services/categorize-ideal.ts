@@ -40,6 +40,11 @@ export type IdealVerdict =
       gaps: string[];
       toCheck: string[];
       percent: number | null;
+      // Essai de Jean-Guy (26/10) : « N critères sur M » remplace le % de correspondance — les
+      // critères renseignés de la fiche que l'annonce satisfait, sur tous les critères renseignés
+      // (un critère que l'annonce n'indique pas compte dans M, comme dans la grille du déroulé).
+      criteriaOk: number;
+      criteriaTotal: number;
     }
   | { kind: 'excluded'; reasons: string[] };
 
@@ -49,6 +54,8 @@ export type CategorizedCandidate = {
   gaps: string[];
   toCheck: string[];
   percent: number | null;
+  criteriaOk: number;
+  criteriaTotal: number;
 };
 
 export type IdealCategorization = {
@@ -218,9 +225,16 @@ export function judgeCandidate(
   const reasons: string[] = [];
   const gaps: string[] = [];
   const toCheck: string[] = [];
+  let criteriaOk = 0;
+  let criteriaTotal = 0;
   for (const criterion of CRITERIA_ORDER) {
     const verdict = judgeCriterion(criterion, buyer, candidate);
-    if (verdict == null || verdict.kind === 'ok') continue;
+    if (verdict == null) continue;
+    criteriaTotal += 1;
+    if (verdict.kind === 'ok') {
+      criteriaOk += 1;
+      continue;
+    }
     const essential = mustHave.has(criterion);
     if (verdict.kind === 'gap') {
       // Mission 118 — un indispensable contredit écarte ; le budget indispensable est strict.
@@ -233,7 +247,15 @@ export function judgeCandidate(
   if (reasons.length > 0) return { kind: 'excluded', reasons };
   const category: IdealCategory =
     toCheck.length > 0 ? 'explore' : gaps.length > 0 ? 'compromise' : 'strong';
-  return { kind: 'kept', category, gaps, toCheck, percent: percentOf(criteria, buyer, candidate) };
+  return {
+    kind: 'kept',
+    category,
+    gaps,
+    toCheck,
+    percent: percentOf(criteria, buyer, candidate),
+    criteriaOk,
+    criteriaTotal,
+  };
 }
 
 // Le % de correspondance de M71, sur les critères de la fiche ; la commune compte comme « même

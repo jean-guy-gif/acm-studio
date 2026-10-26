@@ -11,8 +11,10 @@ import {
 } from '@/components/ui/styles';
 import { BuyerList } from '@/features/buyers/components/buyer-list';
 import { getBuyers } from '@/features/buyers/queries/get-buyers';
+import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { filterBuyersByName, sortBuyers } from '@/features/buyers/services/buyer-criteria';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Acquéreurs — ACM Studio' };
 
@@ -25,6 +27,13 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   const query = q?.trim() || null;
   const [profile, all] = await Promise.all([getProfile(), getBuyers()]);
   const buyers = filterBuyersByName(sortBuyers(all, profile?.id ?? null), query);
+  const progress = profile
+    ? await getBuyersProgress(
+        await createClient(),
+        profile.agency_id,
+        buyers.map((buyer) => buyer.id),
+      )
+    : new Map();
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -73,7 +82,12 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         ) : null}
       </form>
 
-      <BuyerList buyers={buyers} advisorId={profile?.id ?? null} query={query} />
+      <BuyerList
+        buyers={buyers}
+        advisorId={profile?.id ?? null}
+        query={query}
+        progress={progress}
+      />
     </div>
   );
 }

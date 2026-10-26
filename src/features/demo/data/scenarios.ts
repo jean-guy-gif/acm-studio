@@ -1158,12 +1158,13 @@ const mouginsListings = seed(
   },
   {
     id: 'mou-02',
-    // Essai de Jean-Guy (25/10) : au plafond des Keller + 5 % pile — « à négocier », le budget en orange.
+    // Essai de Jean-Guy (26/10) : au-dessus du plafond des Keller, sous +5 % — « à négocier », le
+    // budget en orange.
     // Sa photo principale n'est aucune de celles de la villa vendue, ni celle d'un autre concurrent
     // du dossier de Mougins (mou-12 s'ouvrait aussi sur villa-03).
     photos: ['villa-05.jpg', 'villa-04.jpg', 'villa-02.jpg'],
     title: 'Villa 7 pièces 220 m² piscine — Mougins',
-    price: 1732500,
+    price: 1720000,
     surfaceArea: 220,
     landArea: 2200,
     roomsCount: 7,
@@ -1186,7 +1187,7 @@ const mouginsListings = seed(
     address: addr('12', 'rue de la Maquette'),
     location: at(43.5998, 6.9961),
     publishedDaysAgo: 120,
-    priceChanges: [drop(40, 1790000, 1732500)],
+    priceChanges: [drop(40, 1790000, 1720000)],
     seller: sold('Agence Littoral & Pins', 'no'),
     description: 'Villa de 220 m² sur 2 200 m² avec piscine, cinq chambres, garage double.',
     priceAfterMeeting: null,

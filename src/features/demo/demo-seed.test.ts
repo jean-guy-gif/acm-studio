@@ -109,7 +109,7 @@ describe('le plan des dossiers de démo', () => {
 // tout, un compromis au budget en orange, un bien avec un « ? ».
 describe('la sélection des Keller', async () => {
   const { demoKellerSelectionPlan } = await import('@/features/demo/services/demo-seed');
-  const { priceAlignment } = await import('@/features/price-positioning/services/price-alignment');
+  const { buyerBudgetTone } = await import('@/features/buyer-deck/services/buyer-budget-tone');
   const { poolFromLabels } =
     await import('@/features/competitor-search/services/stream-estate-features');
   const plan = demoKellerSelectionPlan(NOW);
@@ -122,9 +122,9 @@ describe('la sélection des Keller', async () => {
     ]);
   });
 
-  it('le compromis : au plafond + 5 %, « à négocier », le budget en orange', () => {
-    expect(plan[1]!.listedPrice).toBe(1_732_500);
-    expect(priceAlignment(plan[1]!.listedPrice, 1_650_000)?.tone).toBe('orange');
+  it('le compromis : au-dessus du budget, sous +5 %, « à négocier », le budget en orange', () => {
+    expect(plan[1]!.listedPrice).toBe(1_720_000);
+    expect(buyerBudgetTone(plan[1]!.listedPrice, 1_650_000)).toBe('orange');
     expect(plan[1]!.gaps[0]).toMatch(/au-dessus du budget, à négocier$/);
   });
 

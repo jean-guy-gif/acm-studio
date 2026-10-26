@@ -1009,8 +1009,22 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   );
   const keller = rows.filter({ hasText: 'Famille Keller' });
   await expect(keller).toContainText('Maison · Mougins');
+  // Essai de Jean-Guy (26/10) : le bouton de la carte dit l'étape suivante — sa sélection est
+  // retenue (« Préparer ma démo »), elle est à présenter.
+  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Présenter →');
+  await expect(
+    rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
+  ).toHaveText('Trouver les biens idéaux →');
   await keller.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+  // Les trois étapes, en haut de la fiche, dans l'ordre, avec leur état.
+  const steps = page.getByTestId('buyer-step');
+  await expect(steps).toHaveCount(3);
+  await expect(steps.nth(0)).toContainText('1 · Biens idéaux');
+  await expect(steps.nth(0)).toContainText('Sélection : 3 biens ✓');
+  await expect(steps.nth(1)).toContainText('2 · Présenter la sélection');
+  await expect(steps.nth(2)).toContainText('3 · Dossier acquéreur');
+  await expect(steps.nth(2)).toContainText('Lien à créer');
   await page.getByRole('link', { name: 'Rapprocher' }).click();
   const panel = page.getByTestId('buyer-search');
   await expect(panel.locator('input[name="city"]')).toHaveValue(
@@ -1048,28 +1062,34 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('ideal-market-hit').first()).toContainText(
     /affiché le \d{2}\/\d{2}\/\d{4}/,
   );
-  // Trois biens : le mandat de l'agence, puis deux biens du marché choisis par leurs faits.
-  await mandate.getByRole('checkbox').check();
-  // Essai de Jean-Guy (25/10) : un bien qui coche tout (le mandat), un bon compromis au budget en
-  // orange (au plafond + 5 % pile) et un bien avec un « ? » (sa piscine n'est pas indiquée).
+  // Essai de Jean-Guy (26/10) : la sélection actuelle est cochée en arrivant — le mandat (il coche
+  // tout), le compromis au budget en orange et le bien avec un « ? » —, sous un bandeau
+  // « Sélection actuelle : A, B, C » ; « Retenir » ne s'active que si la sélection cochée change.
+  const current = page.getByTestId('ideal-current');
+  await expect(current).toContainText('Sélection actuelle : A, B, C');
+  await expect(current.getByRole('link', { name: 'Présenter' })).toBeVisible();
+  await expect(current.getByRole('link', { name: 'Dossier acquéreur' })).toBeVisible();
   const marketHits = page.getByTestId('ideal-market-hit');
-  await marketHits
-    .filter({ hasText: /1\s732\s500/ })
-    .getByRole('checkbox')
-    .check();
-  await page
+  const orange = marketHits.filter({ hasText: /1\s720\s000/ }).getByRole('checkbox');
+  const toCheck = page
     .getByTestId('ideal-category-explore')
     .getByTestId('ideal-market-hit')
     .filter({ hasText: /piscine/i })
     .first()
-    .getByRole('checkbox')
-    .check();
+    .getByRole('checkbox');
+  await expect(mandate.getByRole('checkbox')).toBeChecked();
+  await expect(orange).toBeChecked();
+  await expect(toCheck).toBeChecked();
+  await expect(marketHits.first()).toContainText(/\d+ critères? sur \d+/);
+  await expect(page.getByText(/% de correspondance/)).toHaveCount(0);
   await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (3/3)');
+  await expect(page.getByTestId('ideal-retain')).toBeDisabled();
   await expect(marketHits.getByRole('checkbox', { checked: false }).first()).toBeDisabled();
-  await page.getByTestId('ideal-retain').click();
-  await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 3 biens.', {
-    timeout: 30_000,
-  });
+  // Décocher C active « Retenir » ; le recocher revient à la sélection actuelle.
+  await toCheck.uncheck();
+  await expect(page.getByTestId('ideal-retain')).toBeEnabled();
+  await toCheck.check();
+  await expect(page.getByTestId('ideal-retain')).toBeDisabled();
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
   await expectUnspoken(page, 'Biens idéaux, sélection retenue');
   await page.goto('/acquereurs');
@@ -1113,6 +1133,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     const linkAnswer = (value: string) =>
       visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
     // Essai de Jean-Guy (25/10) : A « Je veux le visiter », B « Peut-être », au doigt.
+    const sendBar = visitor.getByTestId('dossier-send-bar');
     for (const [letter, value] of [
       ['A', 'visit'],
       ['B', 'maybe'],
@@ -1121,17 +1142,23 @@ async function expectDemoBuyers(page: Page): Promise<void> {
       await expect(phone).toHaveAttribute('data-screen', 'item');
       await expect(visitor.getByText(`Bien ${letter} · `).first()).toBeVisible();
       expect(await visitor.locator('body').innerText()).not.toMatch(UNSPOKEN);
+      // Essai de Jean-Guy (26/10) : rien n'est plein avant d'être choisi, « Je veux le visiter »
+      // compris ; la réponse choisie devient pleine.
+      await expect(linkAnswer('visit')).toHaveAttribute('aria-pressed', 'false');
       await linkAnswer(value).tap();
       await expect(linkAnswer(value)).toHaveAttribute('aria-pressed', 'true');
-      // La barre suit le contenu : elle ne recouvre jamais une réponse.
-      const nav = await visitor.getByTestId('dossier-nav').boundingBox();
+      // Dès la première réponse, « Envoyer ma réponse » est fixé en bas ; en fin de défilement,
+      // aucune réponse n'est sous lui.
+      await expect(sendBar).toBeVisible();
+      await visitor.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const bar = await sendBar.boundingBox();
       const last = await linkAnswer('no').boundingBox();
       expect(
         last!.y + last!.height,
-        `bien ${letter} : la barre sous les réponses`,
-      ).toBeLessThanOrEqual(nav!.y);
+        `bien ${letter} : aucune réponse sous la barre d'envoi`,
+      ).toBeLessThanOrEqual(bar!.y);
     }
-    await visitor.getByTestId('dossier-go-answer').tap();
+    await visitor.getByTestId('dossier-to-answer').tap();
     const answerScreen = visitor.getByTestId('dossier-answer');
     await expect(answerScreen).toContainText('Vous voulez visiter le bien A.');
     await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
@@ -1152,10 +1179,20 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(visitor.getByText('Bien C · ').first()).toBeVisible();
     await linkAnswer('no').tap();
     await expect(linkAnswer('no')).toHaveAttribute('aria-pressed', 'true');
-    await visitor.getByTestId('dossier-go-answer').tap();
+    // « Pas pour moi » : ses raisons tout de suite dessous.
+    await visitor.getByTestId('item-reason').filter({ hasText: 'Le prix' }).tap();
+    await expect(visitor.getByTestId('item-reason').filter({ hasText: 'Le prix' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    // Le dernier bien : « Envoyer ma réponse » à la place de « Suivant ».
+    await expect(visitor.getByTestId('dossier-next')).toHaveCount(0);
+    await visitor.getByTestId('dossier-last-send').tap();
     await expect(answerScreen).toContainText('Le bien C : pas pour vous. Pourquoi ?');
     await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
-    await visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }).tap();
+    await expect(
+      visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }),
+    ).toHaveAttribute('aria-pressed', 'true');
     await visitor.getByTestId('dossier-send').tap();
     await expect(visitor.getByTestId('dossier-thanks')).toContainText(
       'Merci, j’ai bien reçu votre réponse',
@@ -1179,6 +1216,13 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
   await expect(page.getByTestId('buyer-answers')).toContainText('Peut-être');
+  // Sa réponse sur le lien : l'étape 3 de la fiche la dit, et « Je veux le visiter » est sur
+  // Visites, « depuis le dossier ».
+  await expect(page.getByTestId('buyer-step').nth(2)).toContainText('Réponse reçue ✓');
+  await page.goto('/visites');
+  await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
+  await page.goto('/acquereurs');
+  await page.getByRole('link', { name: 'Famille Keller' }).click();
 
   // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
   // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
@@ -1203,6 +1247,38 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     0,
   );
   await expect(page.getByTestId('deck-lead')).toContainText('Le bien A coche tous vos critères');
+  // Essai de Jean-Guy (26/10) : en 1024 × 768 et 1280 × 800, la phrase de tête (au-dessus de la
+  // grille), « Voir le bien A », la grille et sa légende tiennent dans l'écran, sans défiler.
+  for (const viewport of [
+    { width: 1024, height: 768 },
+    { width: 1280, height: 800 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const size = `${viewport.width} × ${viewport.height}`;
+    const barTop = await page
+      .getByTestId('deck-nav-bar')
+      .evaluate((element) => element.parentElement!.getBoundingClientRect().top);
+    const bottomOf = (testId: string) =>
+      page
+        .getByTestId(testId)
+        .last()
+        .evaluate((element) => element.getBoundingClientRect().bottom);
+    const leadBottom = await bottomOf('deck-lead');
+    const tableTop = await page
+      .getByTestId('deck-grid-row')
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().top);
+    expect(leadBottom, `la phrase de tête au-dessus de la grille en ${size}`).toBeLessThan(
+      tableTop,
+    );
+    for (const testId of ['deck-lead-open', 'deck-grid-row', 'grid-legend']) {
+      expect(await bottomOf(testId), `${testId} dans l'écran en ${size}`).toBeLessThanOrEqual(
+        barTop,
+      );
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByTestId('deck-grid-cell')).toHaveCount(gridRows * 3);
   await expectUnspoken(page, 'Présentation — la grille');
   const answer = (value: string) =>

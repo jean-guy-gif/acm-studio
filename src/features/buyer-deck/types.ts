@@ -104,9 +104,9 @@ export type DeckCriterion = {
 };
 
 // Un critère vu sur un bien : sa marque et son fait (« ✓ 2 chambres, comme demandé »). Le budget
-// porte aussi la couleur de la M116 (`priceAlignment`, appliqué au budget plafond : vert sous +5 %,
-// orange de +5 % à moins de +10 %, rouge à +10 % et plus ; décision de Jean-Guy, 25/10) ; null
-// sans prix montré ou sans budget, et pour les autres critères.
+// porte aussi une couleur (`buyerBudgetTone`, essai de Jean-Guy du 26/10) : vert dans son budget,
+// orange au-dessus, jamais rouge ; null sans prix montré ou sans budget, et pour les autres
+// critères.
 export type DeckMark = {
   criterion: BuyerCriterion;
   mark: GridMark;
