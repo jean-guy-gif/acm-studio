@@ -2,21 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import {
-  backLink,
-  btnPrimary,
-  btnSecondary,
-  card,
-  kickerLabel,
-  pageSubtitle,
-  pageTitle,
-} from '@/components/ui/styles';
+import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
-import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import { selectionAsInputs } from '@/features/ideal-properties/services/ideal-selection';
 import {
@@ -90,34 +81,9 @@ export default async function IdealPropertiesPage({ params }: Props) {
           Cet écran est pour vous : le dossier remis à l’acquéreur viendra ensuite.
         </p>
       </div>
-      {/* Essai de Jean-Guy (26/10) : la sélection actuelle, et ce qui la suit. */}
-      {selection && selection.items.length > 0 ? (
-        <section
-          className={`${card} flex flex-wrap items-center justify-between gap-3 p-5`}
-          data-testid="ideal-current"
-        >
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
-              Sélection actuelle :{' '}
-              {selection.items.map((_, index) => String.fromCharCode(65 + index)).join(', ')}
-            </span>
-            <span className="text-sm text-zinc-600 stage:text-white/70">
-              Elle est cochée ci-dessous ; « Retenir » ne s’active que si vous la changez.
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/presentation/${buyer.id}`} className={btnPrimary}>
-              {selection.presentedAt ? 'Revoir la présentation' : 'Présenter'}
-            </Link>
-            <Link href={`/acquereurs/${buyer.id}/dossier`} className={btnSecondary}>
-              Dossier acquéreur
-            </Link>
-          </div>
-        </section>
-      ) : null}
-      {selection ? <IdealSelectionList selection={selection} /> : null}
       <IdealPropertiesPanel
         current={selection ? selectionAsInputs(selection) : []}
+        presented={selection?.presentedAt != null}
         buyerId={buyer.id}
         agency={agency}
         marketReady={marketBlocked == null}

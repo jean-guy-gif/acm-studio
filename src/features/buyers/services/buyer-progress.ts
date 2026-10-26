@@ -14,6 +14,8 @@ export type BuyerProgressFacts = {
   linkCreated: boolean;
   // Sa réponse donnée depuis le lien, sur cette sélection.
   answeredOnLink: boolean;
+  // Ses demandes de visite à organiser (ni annulées, ni faites), toutes sélections confondues.
+  visitsToOrganize: number;
 };
 
 export const NO_PROGRESS: BuyerProgressFacts = {
@@ -21,13 +23,14 @@ export const NO_PROGRESS: BuyerProgressFacts = {
   presentedAt: null,
   linkCreated: false,
   answeredOnLink: false,
+  visitsToOrganize: 0,
 };
 
-export type BuyerStepKey = 'ideal' | 'present' | 'buyerDossier';
+export type BuyerStepKey = 'ideal' | 'present' | 'buyerDossier' | 'visits';
 
 export type BuyerStep = {
   key: BuyerStepKey;
-  number: 1 | 2 | 3;
+  number: 1 | 2 | 3 | 4;
   title: string;
   // Ce qui est fait, avec « ✓ », ou ce qui reste à faire.
   states: string[];
@@ -39,9 +42,19 @@ export type BuyerStep = {
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
+// Essai de Jean-Guy (26/10) : une fois sa réponse reçue (sur le lien, ou des visites demandées en
+// présentation), l'étape mise en avant devient « 4 · Visites : N visites à organiser ».
+export const visitsStepShown = (facts: BuyerProgressFacts): boolean =>
+  facts.answeredOnLink || (facts.presentedAt != null && facts.visitsToOrganize > 0);
+
+const visitsLabel = (count: number): string =>
+  count === 0
+    ? 'Visites : aucune visite à organiser'
+    : `Visites : ${plural(count, 'visite', 'visites')} à organiser`;
+
 export function buyerSteps(facts: BuyerProgressFacts): BuyerStep[] {
   const hasSelection = facts.selectionCount > 0;
-  return [
+  const steps: BuyerStep[] = [
     {
       key: 'ideal',
       number: 1,
@@ -80,12 +93,32 @@ export function buyerSteps(facts: BuyerProgressFacts): BuyerStep[] {
       available: hasSelection,
     },
   ];
+  if (visitsStepShown(facts)) {
+    steps.push({
+      key: 'visits',
+      number: 4,
+      title: visitsLabel(facts.visitsToOrganize),
+      states: [],
+      done: false,
+      available: true,
+    });
+  }
+  return steps;
 }
 
 export type BuyerNextStep = { label: string; href: string; step: BuyerStepKey };
 
 // Le bouton d'une carte de la liste : l'étape suivante, dans l'ordre des trois.
 export function buyerNextStep(buyerId: string, facts: BuyerProgressFacts): BuyerNextStep {
+  if (visitsStepShown(facts)) {
+    return facts.visitsToOrganize > 0
+      ? { label: 'Organiser les visites', href: '/visites', step: 'visits' }
+      : {
+          label: 'Voir sa réponse',
+          href: `/acquereurs/${buyerId}#reponses`,
+          step: 'visits',
+        };
+  }
   if (facts.selectionCount === 0) {
     return {
       label: 'Trouver les biens idéaux',

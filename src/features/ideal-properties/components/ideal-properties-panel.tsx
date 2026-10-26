@@ -41,6 +41,7 @@ import {
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import {
   seenOnLabel,
   selectionChanged,
@@ -121,11 +122,14 @@ export function IdealPropertiesPanel({
   marketBlocked,
   budgetWarning,
   current = [],
+  presented = false,
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
   // Essai de Jean-Guy (26/10) : la sélection actuelle, cochée en arrivant.
   current?: SelectionItemInput[];
+  // Sa présentation est terminée : le bandeau propose de la revoir.
+  presented?: boolean;
   // La fiche permet la recherche du marché (un type, une commune) ; sinon la raison.
   marketReady: boolean;
   marketBlocked: string | null;
@@ -282,26 +286,88 @@ export function IdealPropertiesPanel({
     );
   };
 
-  const agencyHits = BUYER_GROUPS.flatMap((group) =>
+  // Le bandeau « Sélection actuelle » (essai de Jean-Guy, 26/10) : la sélection enregistrée, puis
+  // les biens cochés depuis ; chacun avec sa case. Mis à jour dès « Retenir », sans rechargement.
+  const bannerItems = [
+    ...baseline,
+    ...[...selected.values()].filter(
+      (item) => !baseline.some((kept) => keyOf(kept) === keyOf(item)),
+    ),
+  ];
+  const inBanner = new Set(bannerItems.map(keyOf));
+  // Un même bien n'apparaît qu'une fois sur la page : ni deux fois (bandeau et liste), ni comme
+  // annonce du marché quand l'agence le connaît déjà comme concurrent (même annonce publiée).
+  const allAgencyHits = BUYER_GROUPS.flatMap((group) =>
     agency.matches[group].map((hit) => ({ group, hit })),
   );
+  const agencyListings = new Set(
+    allAgencyHits
+      .map(({ hit }) => listingIdentityKey(hit.candidate.listingUrl))
+      .filter((key): key is string => key != null),
+  );
+  const bannerListings = new Set(
+    bannerItems
+      .filter((item) => item.source === 'listing')
+      .map((item) => listingIdentityKey(item.reference))
+      .filter((key): key is string => key != null),
+  );
+  const agencyHits = allAgencyHits.filter(({ hit }) => {
+    if (inBanner.has(keyOf(agencyItem(hit)))) return false;
+    const listing = listingIdentityKey(hit.candidate.listingUrl);
+    return listing == null || !bannerListings.has(listing);
+  });
+  const showMarket = (entry: CategorizedCandidate): boolean => {
+    if (inBanner.has(keyOf(marketItem(entry)))) return false;
+    const key = listingIdentityKey(entry.candidate.url);
+    return key == null || !agencyListings.has(key);
+  };
 
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
-      {/* Essai de Jean-Guy (26/10) : la sélection actuelle, cochée, chaque bien avec sa case — une
-          annonce du marché se décoche ici, sans relancer une recherche payante (M118). */}
-      {current.length > 0 ? (
-        <section className={`${card} flex flex-col gap-2 p-5`} data-testid="ideal-current-items">
-          <h2 className={sectionTitle}>Votre sélection actuelle</h2>
+      {/* Essai de Jean-Guy (26/10) : la sélection n'apparaît qu'une fois, ici, chaque bien avec sa
+          case — une annonce du marché se décoche sans relancer une recherche payante. */}
+      {bannerItems.length > 0 ? (
+        <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-current">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className={sectionTitle}>
+              Sélection actuelle :{' '}
+              {baseline.length > 0
+                ? baseline.map((_, index) => String.fromCharCode(65 + index)).join(', ')
+                : 'aucune'}
+            </h2>
+            {baseline.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/presentation/${buyerId}`} className={btnPrimary}>
+                  {presented ? 'Revoir la présentation' : 'Présenter'}
+                </Link>
+                <Link href={`/acquereurs/${buyerId}/dossier`} className={btnSecondary}>
+                  Dossier acquéreur
+                </Link>
+              </div>
+            ) : null}
+          </div>
           <ul className="flex flex-col gap-2">
-            {current.map((item, index) => (
+            {bannerItems.map((item, index) => (
               <li
                 key={keyOf(item)}
-                className="flex flex-wrap items-center justify-between gap-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
                 data-testid="ideal-current-item"
+                data-letter={index < baseline.length ? String.fromCharCode(65 + index) : undefined}
               >
-                <span className="text-sm font-medium text-zinc-800 stage:text-white/90">
-                  {String.fromCharCode(65 + index)} · {item.label}
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                    {index < baseline.length ? `${String.fromCharCode(65 + index)} · ` : ''}
+                    {item.label}
+                  </span>
+                  <span className="text-sm text-zinc-600 stage:text-white/70">
+                    {[
+                      item.listedPrice != null ? formatEuro(item.listedPrice) : null,
+                      item.source === 'listing' ? 'Annonce du marché' : 'Dans l’agence',
+                      index < baseline.length ? null : 'À retenir',
+                    ]
+                      .filter((part): part is string => part != null)
+                      .join(' · ')}
+                  </span>
                 </span>
                 {checkbox(item)}
               </li>
@@ -314,10 +380,15 @@ export function IdealPropertiesPanel({
           <h2 className={sectionTitle}>Ce que l’agence a déjà</h2>
           <p className={hintText}>
             Vos mandats signés, vos vendeurs à relancer et les concurrents à prospecter qui
-            correspondent à sa recherche (règles du rapprochement, M86). Gratuit.
+            correspondent à sa recherche. Gratuit.
           </p>
         </div>
-        {agencyHits.length === 0 ? (
+        {allAgencyHits.length > 0 && agencyHits.length === 0 ? (
+          <p className="text-sm text-zinc-600 stage:text-white/70">
+            Les biens de l’agence qui correspondent sont dans la sélection actuelle.
+          </p>
+        ) : null}
+        {allAgencyHits.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Rien de ce côté pour l’instant : aucun bien de l’agence ne correspond exactement.
             {agency.near.length > 0
@@ -430,7 +501,7 @@ export function IdealPropertiesPanel({
                 : ''}
             </p>
             {IDEAL_CATEGORIES.map((category) => {
-              const entries = market.categorized.byCategory[category];
+              const entries = market.categorized.byCategory[category].filter(showMarket);
               return (
                 <div
                   key={category}

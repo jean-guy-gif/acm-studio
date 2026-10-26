@@ -96,7 +96,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
 
       {selection ? <IdealSelectionList selection={selection} /> : null}
 
-      {loadedDeck ? <DeckPrepare deck={loadedDeck.deck} /> : null}
+      {/* Essai de Jean-Guy (26/10) : « Avant de présenter » se replie une fois le lien répondu ;
+          une fois la présentation faite, le déroulé est figé et n'a plus rien à relire. */}
+      {loadedDeck ? <DeckPrepare deck={loadedDeck.deck} folded={facts.answeredOnLink} /> : null}
 
       {answers.lines.length > 0 ? (
         <div id="reponses" className="scroll-mt-6">
@@ -104,7 +106,15 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         </div>
       ) : null}
 
-      <BuyerForm buyer={buyer} />
+      {/* Essai de Jean-Guy (26/10) : la recherche se modifie sur demande, repliée. */}
+      <details className="group" data-testid="buyer-form-details">
+        <summary className="cursor-pointer font-title text-lg font-semibold text-brand-deep stage:text-white">
+          Modifier sa recherche
+        </summary>
+        <div className="mt-5">
+          <BuyerForm buyer={buyer} />
+        </div>
+      </details>
     </div>
   );
 }

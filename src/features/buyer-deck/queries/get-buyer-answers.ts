@@ -9,7 +9,13 @@ import { presentedItems } from '@/features/buyer-presentation/queries/load-prese
 import { toSelectionItem } from '@/features/ideal-properties/services/ideal-selection';
 import type { Database } from '@/lib/supabase/database.types';
 
-export type BuyerAnswerLine = ItemResponse & { label: string };
+// Essai de Jean-Guy (26/10) : chaque réponse porte sa sélection, pour « Ce qu'il a répondu »
+// groupé par sélection, la plus récente en premier.
+export type BuyerAnswerLine = ItemResponse & {
+  label: string;
+  selectionId: string;
+  selectionAt: string;
+};
 
 // Mission 122 — « Ce qu'il a répondu », toutes sélections confondues, de la plus récente à la plus
 // ancienne, et ce qu'il faut pour les suggestions : chaque bien désigné par sa source et sa
@@ -35,6 +41,17 @@ export async function getBuyerAnswers(
     .eq('agency_id', agencyId)
     .in('id', [...new Set(responses.map((response) => response.itemId))]);
   const items = (itemRows ?? []).map(toSelectionItem);
+  const selectionOf = new Map((itemRows ?? []).map((row) => [row.id, row.selection_id]));
+  const selectionIds = [...new Set((itemRows ?? []).map((row) => row.selection_id))];
+  const { data: selectionRows } =
+    selectionIds.length > 0
+      ? await supabase
+          .from('buyer_selections')
+          .select('id, created_at')
+          .eq('agency_id', agencyId)
+          .in('id', selectionIds)
+      : { data: [] };
+  const selectionAt = new Map((selectionRows ?? []).map((row) => [row.id, row.created_at]));
   const shown = new Map(
     (await presentedItems(supabase, items, agencyId)).map((item) => [item.itemId, item]),
   );
@@ -44,7 +61,13 @@ export async function getBuyerAnswers(
   for (const response of responses) {
     const item = byId.get(response.itemId);
     if (!item) continue;
-    lines.push({ ...response, label: item.label });
+    const selectionId = selectionOf.get(item.id) ?? '';
+    lines.push({
+      ...response,
+      label: item.label,
+      selectionId,
+      selectionAt: selectionAt.get(selectionId) ?? '',
+    });
     forSuggestions.push({
       bienKey: `${item.source}:${item.reference}`,
       answer: response.answer,

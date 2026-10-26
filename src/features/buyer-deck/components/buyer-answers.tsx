@@ -12,9 +12,17 @@ import {
   NO_REASON_LABELS,
   type ItemResponse,
 } from '@/features/buyer-deck/types';
+import {
+  answersBySelection,
+  type AnswerGroup,
+} from '@/features/buyer-deck/services/answers-by-selection';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 
-export type BuyerAnswerView = ItemResponse & { label: string };
+export type BuyerAnswerView = ItemResponse & {
+  label: string;
+  selectionId: string;
+  selectionAt: string;
+};
 
 // Mission 122 — « Ce qu'il a répondu », sur la fiche : chaque réponse, datée, avec ses raisons et
 // le moment où il l'a donnée ; et quand une même raison revient sur deux biens, une suggestion que
@@ -40,28 +48,28 @@ export function BuyerAnswers({
           ))}
         </ul>
       ) : null}
-      <ul className="flex flex-col gap-2">
-        {answers.map((answer) => (
-          <li
-            key={answer.id}
-            data-testid="buyer-answer"
-            data-answer={answer.answer}
-            className="flex flex-col gap-0.5 rounded-xl border border-zinc-200 px-4 py-2.5 stage:border-white/10"
-          >
-            <span className="font-medium text-zinc-900 stage:text-white">{answer.label}</span>
-            <span className="text-sm text-zinc-700 stage:text-white/80">
-              {ITEM_ANSWER_REPORT[answer.answer]}
-              {answer.reasons.length > 0
-                ? ` : ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
-                : ''}
-            </span>
-            <span className={hintText}>
-              {ANSWERED_DURING_LABELS[answer.answeredDuring]}, le{' '}
-              {buyerDateLabel(answer.answeredAt)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {/* Essai de Jean-Guy (26/10) : groupé par sélection, la plus récente en premier ; les
+          anciennes repliées sous « Sélections précédentes ». */}
+      {(() => {
+        const [latest, ...older] = answersBySelection(answers);
+        return (
+          <>
+            {latest ? <AnswerGroupView group={latest} /> : null}
+            {older.length > 0 ? (
+              <details className="flex flex-col gap-3" data-testid="buyer-answers-older">
+                <summary className="cursor-pointer text-sm font-semibold text-brand-deep stage:text-brand">
+                  Sélections précédentes ({older.length})
+                </summary>
+                <div className="mt-3 flex flex-col gap-4">
+                  {older.map((group) => (
+                    <AnswerGroupView key={group.selectionId} group={group} />
+                  ))}
+                </div>
+              </details>
+            ) : null}
+          </>
+        );
+      })()}
     </section>
   );
 }
@@ -114,5 +122,39 @@ function SuggestionRow({ buyerId, suggestion }: { buyerId: string; suggestion: A
         {error ? <span className="text-sm font-medium text-red-600">{error}</span> : null}
       </div>
     </li>
+  );
+}
+
+function AnswerGroupView({ group }: { group: AnswerGroup<BuyerAnswerView> }) {
+  return (
+    <div className="flex flex-col gap-2" data-testid="buyer-answer-group">
+      {group.selectionAt ? (
+        <h3 className="text-xs font-semibold tracking-[0.12em] text-zinc-500 uppercase stage:text-white/60">
+          Sélection du {buyerDateLabel(group.selectionAt)}
+        </h3>
+      ) : null}
+      <ul className="flex flex-col gap-2">
+        {group.answers.map((answer) => (
+          <li
+            key={answer.id}
+            data-testid="buyer-answer"
+            data-answer={answer.answer}
+            className="flex flex-col gap-0.5 rounded-xl border border-zinc-200 px-4 py-2.5 stage:border-white/10"
+          >
+            <span className="font-medium text-zinc-900 stage:text-white">{answer.label}</span>
+            <span className="text-sm text-zinc-700 stage:text-white/80">
+              {ITEM_ANSWER_REPORT[answer.answer]}
+              {answer.reasons.length > 0
+                ? ` : ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
+                : ''}
+            </span>
+            <span className={hintText}>
+              {ANSWERED_DURING_LABELS[answer.answeredDuring]}, le{' '}
+              {buyerDateLabel(answer.answeredAt)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
