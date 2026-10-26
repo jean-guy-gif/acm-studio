@@ -34,7 +34,7 @@ describe('les étapes d’un acquéreur', () => {
     expect(buyerNextStep('b', answered)).toEqual({
       label: 'Voir sa réponse',
       href: '/acquereurs/b#reponses',
-      step: 'dossier',
+      step: 'buyerDossier',
     });
   });
 });

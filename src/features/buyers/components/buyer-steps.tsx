@@ -33,7 +33,7 @@ export function BuyerSteps({ buyerId, facts }: { buyerId: string; facts: BuyerPr
             {facts.presentedAt ? 'Revoir la présentation' : 'Présenter la sélection'}
           </Link>
         );
-      case 'dossier':
+      case 'buyerDossier':
         return (
           <Link
             href={`/acquereurs/${buyerId}/dossier`}
@@ -58,6 +58,8 @@ export function BuyerSteps({ buyerId, facts }: { buyerId: string; facts: BuyerPr
           data-testid="buyer-step"
           data-step={step.key}
           data-done={step.done}
+          // « Voir sa réponse » mène ici quand la réponse n'est pas encore là.
+          id={step.key === 'buyerDossier' && !facts.answeredOnLink ? 'reponses' : undefined}
         >
           <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
             {step.number} · {step.title}

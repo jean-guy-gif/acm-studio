@@ -1078,6 +1078,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     .first()
     .getByRole('checkbox');
   await expect(mandate.getByRole('checkbox')).toBeChecked();
+  // La sélection actuelle a sa propre liste, chaque bien avec sa case : une annonce du marché s'y
+  // décoche sans relancer de recherche payante.
+  await expect(page.getByTestId('ideal-current-item')).toHaveCount(3);
   await expect(orange).toBeChecked();
   await expect(toCheck).toBeChecked();
   await expect(marketHits.first()).toContainText(/\d+ critères? sur \d+/);
@@ -1156,6 +1159,12 @@ async function expectDemoBuyers(page: Page): Promise<void> {
       expect(
         last!.y + last!.height,
         `bien ${letter} : aucune réponse sous la barre d'envoi`,
+      ).toBeLessThanOrEqual(bar!.y);
+      // Ni « Précédent », ni « Suivant » : la navigation reste au-dessus de la barre d'envoi.
+      const previousBox = await visitor.getByTestId('dossier-previous').boundingBox();
+      expect(
+        previousBox!.y + previousBox!.height,
+        `bien ${letter} : la navigation au-dessus de la barre d'envoi`,
       ).toBeLessThanOrEqual(bar!.y);
     }
     await visitor.getByTestId('dossier-to-answer').tap();
