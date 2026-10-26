@@ -702,7 +702,7 @@ export function GridScreen({
                       data-testid="deck-grid-cell"
                       data-mark={mark.mark}
                       data-tone={mark.tone ?? undefined}
-                      className={`border-t border-zinc-100 ${rowPad} text-center font-title font-bold stage:border-white/10 ${compact ? 'text-lg' : 'text-xl'} ${markClass(mark)}`}
+                      className={`border-t border-zinc-100 ${rowPad} text-center font-title font-bold stage:border-white/10 ${compact ? 'text-base leading-6' : 'text-xl'} ${markClass(mark)}`}
                     >
                       {markSymbol(mark.mark)}
                     </td>
