@@ -100,7 +100,36 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
     .eq('advisor_id', closer.id)
     .eq('demo', true)
     .select('id');
+  await deleteOrphanDemoProspects(supabase, closer);
   return data?.length ?? 0;
+}
+
+// Mission 120 — les biens démarchés depuis les recherches de ses acquéreurs de démo : leurs origines
+// sont parties avec les fiches (cascade) ; les biens que plus aucune recherche ne vise, et que le
+// closer a fait naître, partent aussi — une démo neuve ne retrouve pas un courrier déjà « remis ».
+// Un bien visé par la recherche d'un collègue reste.
+async function deleteOrphanDemoProspects(supabase: Client, closer: Closer): Promise<void> {
+  const { data: prospects } = await supabase
+    .from('buyer_prospects')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('created_by', closer.id);
+  const ids = (prospects ?? []).map((prospect) => prospect.id);
+  if (ids.length === 0) return;
+  const { data: origins } = await supabase
+    .from('buyer_prospect_origins')
+    .select('prospect_id')
+    .eq('agency_id', closer.agencyId)
+    .in('prospect_id', ids);
+  const kept = new Set((origins ?? []).map((origin) => origin.prospect_id));
+  const orphans = ids.filter((id) => !kept.has(id));
+  if (orphans.length > 0) {
+    await supabase
+      .from('buyer_prospects')
+      .delete()
+      .in('id', orphans)
+      .eq('agency_id', closer.agencyId);
+  }
 }
 
 export async function seedDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {

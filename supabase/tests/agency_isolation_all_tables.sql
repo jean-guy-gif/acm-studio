@@ -77,6 +77,11 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     -- Mission 122 — une réponse à un bien, et le moment où elle a été donnée, sont en liste.
     when 'buyer_item_responses.answer' then $v$'maybe'$v$
     when 'buyer_item_responses.answered_during' then $v$'presentation'$v$
+    -- Mission 120 — un bien démarché porte une annonce (adresse web) et son identité publiée.
+    when 'buyer_prospects.listing_url' then $v$'https://exemple.invalid/' || substr(md5(random()::text), 1, 8)$v$
+    when 'buyer_prospects.listing_key' then $v$'exemple:' || substr(md5(random()::text), 1, 8)$v$
+    -- Mission 120 — une origine désigne un bien démarché OU un concurrent, jamais les deux.
+    when 'buyer_prospect_origins.comparable_id' then $v$null$v$
     else null
   end
 $$;

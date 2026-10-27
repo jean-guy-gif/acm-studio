@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { btnSecondary, link } from '@/components/ui/styles';
+import { addBuyerProspectOpposition } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { addProspectingOpposition } from '@/features/prospecting/actions/add-prospecting-opposition';
 import { announceOppositionRecorded } from '@/features/prospecting/components/opposition-notice';
 
@@ -14,9 +15,12 @@ const small = 'px-3 py-1.5 text-xs';
 export function OppositionButton({
   projectId,
   competitorId,
+  buyerProspectId = null,
 }: {
   projectId: string;
   competitorId: string;
+  // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent.
+  buyerProspectId?: string | null;
 }) {
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +29,11 @@ export function OppositionButton({
   const confirm = () => {
     setError(null);
     startTransition(async () => {
-      const result = await addProspectingOpposition(projectId, competitorId).catch(() => ({
+      const result = await (
+        buyerProspectId
+          ? addBuyerProspectOpposition(buyerProspectId)
+          : addProspectingOpposition(projectId, competitorId)
+      ).catch(() => ({
         ok: false as const,
         error: 'L’inscription n’a pas été confirmée : vérifiez la connexion, puis réessayez.',
       }));

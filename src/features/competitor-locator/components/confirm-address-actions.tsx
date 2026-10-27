@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { btnPrimary, btnSecondary, inputBase } from '@/components/ui/styles';
+import { confirmBuyerProspectAddress } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { confirmCompetitorAddress } from '@/features/competitor-locator/actions/confirm-competitor-address';
 import { openLocatorProperty } from '@/features/competitor-locator/client';
 import { ADDRESS_MAX_LENGTH } from '@/features/competitor-locator/services/advisor-address';
@@ -22,6 +23,7 @@ export function ConfirmAddressActions({
   listingUrl,
   canAccept,
   confirmed,
+  buyerProspectId = null,
 }: {
   projectId: string;
   competitorId: string;
@@ -29,6 +31,8 @@ export function ConfirmAddressActions({
   // Le Localisateur propose une adresse, pas encore confirmée.
   canAccept: boolean;
   confirmed: boolean;
+  // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent.
+  buyerProspectId?: string | null;
 }) {
   const [typing, setTyping] = useState(false);
   const [address, setAddress] = useState('');
@@ -39,7 +43,9 @@ export function ConfirmAddressActions({
   const submit = (input: { mode: 'accept' } | { mode: 'typed'; address: string }) => {
     setMessage(null);
     startTransition(async () => {
-      const result = await confirmCompetitorAddress(projectId, competitorId, input);
+      const result = buyerProspectId
+        ? await confirmBuyerProspectAddress(buyerProspectId, input)
+        : await confirmCompetitorAddress(projectId, competitorId, input);
       if (!result.ok) {
         setMessage(result.error);
         return;

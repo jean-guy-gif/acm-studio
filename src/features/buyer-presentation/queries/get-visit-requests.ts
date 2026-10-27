@@ -11,9 +11,11 @@ export type VisitLine = VisitRequest & {
   itemLabel: string;
   itemSource: SelectionSource;
   itemPrice: number | null;
-  // Mission 119 — une visite sur un concurrent ou une exclusivité : « Propriétaire ou confrère à
-  // contacter » (le courrier est la M120). Côté conseiller seulement.
-  contactReminder: boolean;
+  // Mission 120 — le bien retenu (sa référence : dossier, concurrent ou annonce) et l'exclusivité
+  // lue à l'import, pour l'action que la visite propose. Côté conseiller seulement.
+  itemId: string;
+  itemReference: string;
+  itemExclusivity: string | null;
 };
 
 // Mission 119 — toutes les demandes de visite de l'agence, par acquéreur, avec le bien retenu ;
@@ -23,13 +25,15 @@ export async function getVisitLines(): Promise<VisitLine[]> {
   const { data } = await supabase
     .from('buyer_visit_requests')
     .select(
-      '*, buyers!inner(name, archived_at), buyer_selection_items!inner(label, source, listed_price, imported)',
+      '*, buyers!inner(name, archived_at), buyer_selection_items!inner(id, label, source, reference, listed_price, imported)',
     )
     .is('cancelled_at', null)
     .order('requested_at', { ascending: false });
   return (data ?? []).map((row) => {
     const buyer = row.buyers as unknown as { name: string; archived_at: string | null };
     const item = row.buyer_selection_items as unknown as {
+      id: string;
+      reference: string;
       label: string;
       source: string;
       listed_price: number | null;
@@ -47,7 +51,10 @@ export async function getVisitLines(): Promise<VisitLine[]> {
       itemLabel: item.label,
       itemSource: source,
       itemPrice: item.listed_price,
-      contactReminder: source === 'competitor' || item.imported?.exclusivity === 'yes',
+      itemId: item.id,
+      itemReference: item.reference,
+      itemExclusivity:
+        typeof item.imported?.exclusivity === 'string' ? item.imported.exclusivity : null,
     };
   });
 }

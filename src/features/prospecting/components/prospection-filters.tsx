@@ -3,6 +3,11 @@
 import { useRouter } from 'next/navigation';
 
 import { inputBase } from '@/components/ui/styles';
+import {
+  PROSPECTING_ORIGINS,
+  PROSPECTING_ORIGIN_LABELS,
+  type ProspectingOrigin,
+} from '@/features/buyer-prospecting/services/buyer-prospect-card';
 import { prospectionHref } from '@/features/prospecting/services/filter-prospecting';
 import {
   PROSPECTING_TARGETS,
@@ -18,10 +23,13 @@ export function ProspectionFilters({
   sellers,
   sellerId,
   target,
+  origin = 'all',
 }: {
   sellers: ProspectingSeller[];
   sellerId: string | null;
   target: ProspectingTarget;
+  // Mission 120 — l'origine des cartes : dossiers vendeurs, recherches acquéreur, ou toutes.
+  origin?: ProspectingOrigin;
 }) {
   const router = useRouter();
   const select = `${inputBase} w-auto max-w-full py-2 text-sm font-semibold`;
@@ -31,7 +39,9 @@ export function ProspectionFilters({
       <select
         aria-label="Bien vendeur"
         value={sellerId ?? ''}
-        onChange={(event) => router.push(prospectionHref(event.target.value || null, target))}
+        onChange={(event) =>
+          router.push(prospectionHref(event.target.value || null, target, origin))
+        }
         className={select}
       >
         <option value="">Bien vendeur : tous</option>
@@ -45,13 +55,28 @@ export function ProspectionFilters({
         aria-label="Confrères ou propriétaires"
         value={target}
         onChange={(event) =>
-          router.push(prospectionHref(sellerId, event.target.value as ProspectingTarget))
+          router.push(prospectionHref(sellerId, event.target.value as ProspectingTarget, origin))
         }
         className={select}
       >
         {PROSPECTING_TARGETS.map((value) => (
           <option key={value} value={value}>
             {PROSPECTING_TARGET_LABELS[value]}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Origine"
+        value={origin}
+        onChange={(event) =>
+          router.push(prospectionHref(sellerId, target, event.target.value as ProspectingOrigin))
+        }
+        className={select}
+        data-testid="prospection-origin"
+      >
+        {PROSPECTING_ORIGINS.map((value) => (
+          <option key={value} value={value}>
+            {PROSPECTING_ORIGIN_LABELS[value]}
           </option>
         ))}
       </select>

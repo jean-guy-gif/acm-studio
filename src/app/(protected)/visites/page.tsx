@@ -3,8 +3,6 @@ import Link from 'next/link';
 
 import {
   badgeBrand,
-  badgeNeutral,
-  badgeRejected,
   card,
   emptyState,
   kickerLabel,
@@ -12,31 +10,20 @@ import {
   pageTitle,
 } from '@/components/ui/styles';
 import { getOtherAnswers } from '@/features/buyer-deck/queries/get-other-answers';
-import {
-  AVAILABILITY_LABELS,
-  ITEM_ANSWER_REPORT,
-  NO_REASON_LABELS,
-} from '@/features/buyer-deck/types';
-import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
+import { ITEM_ANSWER_REPORT, NO_REASON_LABELS } from '@/features/buyer-deck/types';
+import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
 import {
   getVisitLines,
   type VisitLine,
 } from '@/features/buyer-presentation/queries/get-visit-requests';
-import {
-  VISIT_OUTCOME_LABELS,
-  VISIT_REQUEST_DURING_LABELS,
-} from '@/features/buyer-presentation/types';
+import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
-import { SELECTION_SOURCE_LABELS } from '@/features/ideal-properties/types';
-import { formatEuro } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Visites — ACM Studio' };
 
-export const CONTACT_REMINDER = 'Propriétaire ou confrère à contacter';
-
 // Mission 119 — la page Visites du mode Acquéreur : les demandes à planifier, puis les visites
-// faites avec leur retour et leur issue, par acquéreur ; une visite sur un concurrent ou une
-// exclusivité rappelle qu'il y a un propriétaire ou un confrère à contacter (le courrier, M120).
+// faites avec leur retour et leur issue, par acquéreur. Mission 120 — chaque visite demandée
+// porte l'action qui convient à l'origine du bien, et l'état de son courrier.
 function groupByBuyer(
   lines: VisitLine[],
 ): { buyerId: string; buyerName: string; lines: VisitLine[] }[] {
@@ -53,56 +40,11 @@ function groupByBuyer(
   return [...groups.values()];
 }
 
-function VisitRow({ line }: { line: VisitLine }) {
-  const done = line.visitedAt != null;
-  return (
-    <li
-      data-testid="visit-line"
-      data-state={done ? 'done' : 'pending'}
-      className="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
-          {line.itemLabel}
-        </span>
-        {line.itemPrice != null ? (
-          <span className="text-sm text-zinc-600 stage:text-white/70">
-            {formatEuro(line.itemPrice)}
-          </span>
-        ) : null}
-        <span className={badgeNeutral}>{SELECTION_SOURCE_LABELS[line.itemSource]}</span>
-        <span className={done ? badgeBrand : badgeNeutral}>
-          {VISIT_OUTCOME_LABELS[line.outcome]}
-        </span>
-        {line.contactReminder ? <span className={badgeRejected}>{CONTACT_REMINDER}</span> : null}
-      </div>
-      <p className="text-xs text-zinc-500 stage:text-white/60">
-        Demandée le {buyerDateLabel(line.requestedAt)}{' '}
-        {VISIT_REQUEST_DURING_LABELS[line.requestedDuring]}
-        {done ? ` · visitée le ${buyerDateLabel(line.visitedAt!)}` : ''}
-      </p>
-      {/* Mission 122 — ses créneaux, donnés à la fin de la présentation. */}
-      {line.availability.length > 0 ? (
-        <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-availability">
-          Ses créneaux : {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
-        </p>
-      ) : null}
-      {done ? (
-        line.feedback ? (
-          <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-feedback">
-            « {line.feedback} »
-          </p>
-        ) : null
-      ) : (
-        <VisitDoneForm requestId={line.id} />
-      )}
-    </li>
-  );
-}
-
 export default async function VisitsPage() {
   const [allLines, others] = await Promise.all([getVisitLines(), getOtherAnswers()]);
   const lines = allLines.filter((line) => !line.buyerArchived);
+  // Mission 120 — l'action de chaque visite et l'état de son courrier.
+  const letters = await getVisitLetters(lines.filter((line) => line.visitedAt == null));
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
   return (
@@ -143,7 +85,7 @@ export default async function VisitsPage() {
                 </Link>
                 <ul className="flex flex-col gap-2">
                   {group.lines.map((line) => (
-                    <VisitRow key={line.id} line={line} />
+                    <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
                   ))}
                 </ul>
               </div>

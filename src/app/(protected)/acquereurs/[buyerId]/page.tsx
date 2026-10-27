@@ -16,6 +16,9 @@ import { DeckPrepare } from '@/features/buyer-deck/components/deck-prepare';
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
+import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
+import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
@@ -57,6 +60,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       : Promise.resolve(new Map()),
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
+  // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
+  const visits = (await getVisitLines()).filter(
+    (line) => line.buyerId === buyer.id && line.visitedAt == null,
+  );
+  const letters = await getVisitLetters(visits);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
 
   return (
@@ -104,6 +112,19 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         <div id="reponses" className="scroll-mt-6">
           <BuyerAnswers buyerId={buyer.id} answers={answers.lines} suggestions={suggestions} />
         </div>
+      ) : null}
+
+      {visits.length > 0 ? (
+        <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-visits-section">
+          <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+            Ses visites à organiser
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {visits.map((line) => (
+              <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {/* Essai de Jean-Guy (26/10) : la recherche se modifie sur demande, repliée. */}
