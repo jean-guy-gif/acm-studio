@@ -124,10 +124,32 @@ describe('les acquéreurs de la démo', () => {
     });
     expect(removed).toBe(2);
     expect(service.writes()).toEqual(['delete buyers']);
+    // Les filtres de la suppression des fiches, avant celle des biens démarchés (M120).
+    const secondFrom = service.calls.findIndex(
+      (call, index) => index > 0 && call.method === 'from',
+    );
     const filters = service.calls
+      .slice(0, secondFrom < 0 ? undefined : secondFrom)
       .filter((call) => call.method === 'eq')
       .map((call) => `${String(call.args[0])}=${String(call.args[1])}`);
     expect(filters).toEqual([`agency_id=${AGENCY}`, 'advisor_id=u-closer', 'demo=true']);
+  });
+
+  it('la remise à zéro retire les biens démarchés du closer que plus aucune recherche ne vise (M120)', async () => {
+    const { deleteDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
+    state.respond = (table) =>
+      table === 'buyer_prospects'
+        ? { data: [{ id: 'p-orphelin' }, { id: 'p-vise' }] }
+        : table === 'buyer_prospect_origins'
+          ? { data: [{ prospect_id: 'p-vise' }] }
+          : { data: [] };
+    await deleteDemoBuyers(service.client as never, { id: 'u-closer', agencyId: AGENCY });
+    expect(service.writes()).toEqual(['delete buyers', 'delete buyer_prospects']);
+    const deletion = service.calls.slice(
+      service.calls.map((call) => call.method).lastIndexOf('delete'),
+    );
+    expect(deletion.find((call) => call.method === 'in')?.args).toEqual(['id', ['p-orphelin']]);
+    expect(deletion.find((call) => call.method === 'eq')?.args).toEqual(['agency_id', AGENCY]);
   });
 
   it('« Préparer ma démo » sème deux acquéreurs marqués, au closer, dans son agence', async () => {

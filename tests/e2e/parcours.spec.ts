@@ -967,6 +967,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Un bien de l'agence : pas de « Propriétaire ou confrère à contacter » (réservé aux
     // concurrents et aux exclusivités).
     await expect(page.getByTestId('visits-pending')).not.toContainText('confrère à contacter');
+    // Mission 120 — un mandat signé de l'agence : « Proposer une visite » (M86), aucun courrier.
+    await expect(
+      page.getByTestId('visits-pending').getByTestId('visit-seller-action').first(),
+    ).toHaveText('Proposer une visite');
+    await expect(page.getByTestId('visit-prepare-owner-letter')).toHaveCount(0);
     await visitLine.first().getByRole('button', { name: 'Visite faite' }).click();
     const doneForm = page.getByTestId('visit-done-form');
     await doneForm.getByLabel('Retour de visite').fill('Trop sombre, d’après le test automatique');
@@ -1086,11 +1091,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`/prospection\\?bien=${projectId}$`));
     await expect(page.getByRole('heading', { name: 'Prospection', exact: true })).toBeVisible();
 
-    // Filtrée : les seuls concurrents de ce bien, et chaque carte dit pour quel bien vendeur.
+    // Filtrée : les seuls concurrents de ce bien, et chaque carte dit son origine, le bien
+    // vendeur (mission 120 : « Dossier vendeur : … »).
     const cards = page.getByTestId('prospecting-card');
     await expect(cards).toHaveCount(COMPETITORS.length);
     for (const card of await cards.all()) {
-      await expect(card.getByText('Pour :')).toBeVisible();
+      await expect(card.getByTestId('seller-origin')).toContainText('Dossier vendeur :');
       await expect(card.getByRole('link', { name: dossierName })).toBeVisible();
     }
 

@@ -45,7 +45,7 @@ function Emphasis({ text, as: Tag }: { text: string; as: 'em' | 'b' }) {
   );
 }
 
-function Title({ text }: { text: string }) {
+export function Title({ text }: { text: string }) {
   return (
     <>
       {lines(text).map((line, index) => (
@@ -84,7 +84,7 @@ function Header({ file, sender }: { file: ProspectingFile; sender: ProspectingSe
 }
 
 // Pied de page : le nom de l'agence sur une seule ligne, puis les mentions facultatives.
-function Mentions({
+export function Mentions({
   sender,
   withAddress,
   withCard = true,
@@ -105,7 +105,7 @@ function Mentions({
 // La photo du bien concurrent choisie par le conseiller. Si elle ne se charge pas (lien expiré,
 // portail qui bloque), le cadre gris la remplace : jamais une image cassée sur la feuille.
 // Mission 115 — sans photo choisie, aucun cadre : le composant n'est pas rendu.
-function TheirPhoto({ url, placeholder }: { url: string | null; placeholder: string[] }) {
+export function TheirPhoto({ url, placeholder }: { url: string | null; placeholder: string[] }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   return (
     <div className="pf-ph" data-testid="their-photo">
@@ -192,7 +192,15 @@ function Chain({ steps }: { steps: [string, string, string] }) {
   );
 }
 
-function Contact({ sender, hook, qr }: { sender: ProspectingSender; hook: string; qr: QrCode }) {
+export function Contact({
+  sender,
+  hook,
+  qr,
+}: {
+  sender: ProspectingSender;
+  hook: string;
+  qr: QrCode;
+}) {
   const reach = [sender.phone, sender.email].filter(Boolean).join(' · ');
   // « Conseiller · [agence] » tient sur une ligne, quel que soit le nom de l'agence.
   const agencyLine = contactAgencyLine(sender.agencyName);
@@ -220,7 +228,7 @@ function Contact({ sender, hook, qr }: { sender: ProspectingSender; hook: string
   );
 }
 
-function Letter({ text }: { text: string }) {
+export function Letter({ text }: { text: string }) {
   return (
     <>
       {paragraphs(text).map((paragraph, index) => (

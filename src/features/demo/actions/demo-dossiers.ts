@@ -4,6 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import {
+  buyerLetterOriginsOf,
+  removeBuyerLetterPhotos,
+} from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
 import { buyerColumns } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
@@ -93,6 +97,16 @@ export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promi
 // retrouve.
 // Mission 117 — les deux acquéreurs de la démo du closer : marqués, à lui, dans son agence.
 export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<number> {
+  // Mission 120 — les courriers nés de leurs recherches partent en cascade : leurs photos aussi.
+  const { data: own } = await supabase
+    .from('buyers')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('advisor_id', closer.id)
+    .eq('demo', true);
+  const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, {
+    buyerIds: (own ?? []).map((buyer) => buyer.id),
+  });
   const { data } = await supabase
     .from('buyers')
     .delete()
@@ -100,7 +114,37 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
     .eq('advisor_id', closer.id)
     .eq('demo', true)
     .select('id');
+  await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
+  await deleteOrphanDemoProspects(supabase, closer);
   return data?.length ?? 0;
+}
+
+// Mission 120 — les biens démarchés depuis les recherches de ses acquéreurs de démo : leurs origines
+// sont parties avec les fiches (cascade) ; les biens que plus aucune recherche ne vise, et que le
+// closer a fait naître, partent aussi — une démo neuve ne retrouve pas un courrier déjà « remis ».
+// Un bien visé par la recherche d'un collègue reste.
+async function deleteOrphanDemoProspects(supabase: Client, closer: Closer): Promise<void> {
+  const { data: prospects } = await supabase
+    .from('buyer_prospects')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('created_by', closer.id);
+  const ids = (prospects ?? []).map((prospect) => prospect.id);
+  if (ids.length === 0) return;
+  const { data: origins } = await supabase
+    .from('buyer_prospect_origins')
+    .select('prospect_id')
+    .eq('agency_id', closer.agencyId)
+    .in('prospect_id', ids);
+  const kept = new Set((origins ?? []).map((origin) => origin.prospect_id));
+  const orphans = ids.filter((id) => !kept.has(id));
+  if (orphans.length > 0) {
+    await supabase
+      .from('buyer_prospects')
+      .delete()
+      .in('id', orphans)
+      .eq('agency_id', closer.agencyId);
+  }
 }
 
 export async function seedDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {

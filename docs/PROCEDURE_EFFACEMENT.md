@@ -119,8 +119,10 @@ pour lequel rien ne s'est passé depuis **3 ans** — ni adresse connue ou corri
 ni rendez-vous, ni mandat, ni « pas intéressé » — est effacée avec sa position
 (`purge_stale_owner_addresses`, tâche `purge-stale-owner-addresses` de `pg_cron`). Le concurrent
 reste retenu, l'annonce reste, et le Localisateur n'est plus interrogé pour lui
-(`locator_purged_at`). La liste « Ne plus solliciter » n'est jamais purgée. Vérifier la tâche :
-`select jobname, schedule, active from cron.job;`.
+(`locator_purged_at`). Mission 120 — même règle, deux minutes plus tard, pour l'adresse d'un bien
+démarché depuis une recherche acquéreur (`purge_stale_buyer_prospect_addresses`, tâche
+`purge-stale-buyer-prospect-addresses`). La liste « Ne plus solliciter » n'est jamais purgée.
+Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 
 ### 1. Retrouver son bien, dans tous les dossiers
 
@@ -148,7 +150,22 @@ select
      and (address is not null or locator_address is not null
           or locator_latitude is not null)) as avec_adresse,
   (select count(*) from competitor_prospecting_files where comparable_id in (:liste)) as dossiers_prospection,
-  (select count(*) from comparables where id in (:liste) and is_selected) as retenus;
+  (select count(*) from comparables where id in (:liste) and is_selected) as retenus,
+  -- Mission 120 — les courriers d'une recherche acquéreur qui visent ce bien : par son concurrent,
+  -- ou par son annonce (un bien démarché sans concurrent, `buyer_prospects`).
+  (select count(*) from buyer_prospect_origins where comparable_id in (:liste)) as courriers_acquereur,
+  (select count(*) from buyer_prospects where listing_key in
+     (select listing_key from buyer_prospects p join comparables c
+        on c.listing_url = p.listing_url where c.id in (:liste))) as biens_demarches;
+```
+
+Et les biens démarchés depuis une recherche acquéreur qui portent cette adresse ou cette annonce,
+même sans concurrent (`:prospects` = leurs `id`) :
+
+```sql
+select id, agency_id, listing_url, locator_address, prospecting_handed_at
+from buyer_prospects
+where locator_address ilike '%RUE%' or listing_url ilike '%IDENTIFIANT_ANNONCE%';
 ```
 
 Et, pour chaque concurrent, ses photos copiées :
@@ -227,6 +244,37 @@ Puis, pour chaque concurrent :
 ```sh
 supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
 ```
+
+Mission 120 — les courriers d'une recherche acquéreur (leurs textes et la photo copiée) et
+l'adresse des biens démarchés sans concurrent. Les origines se listent AVANT (leurs dossiers de
+stockage portent leur `id`) :
+
+```sql
+select id, agency_id from buyer_prospect_origins
+where comparable_id in (:liste) or prospect_id in (:prospects);
+begin;
+update buyer_prospect_origins set
+  letter_title = null, letter_body = null, letter_contact_hook = null,
+  their_photo_mode = 'none', their_photo_source_url = null, their_photo_path = null,
+  updated_at = now()
+where comparable_id in (:liste) or prospect_id in (:prospects);
+update buyer_prospects set
+  locator_address = null, locator_latitude = null, locator_longitude = null,
+  locator_property_id = null, locator_label = null, locator_label_key = null,
+  locator_source = null, locator_state = null, locator_confirmed = null,
+  locator_analyzed_at = null, locator_purged_at = now(), updated_at = now()
+where id in (:prospects);
+commit;
+```
+
+Puis, pour chaque origine listée :
+
+```sh
+supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/buyer-prospecting/:origine/"
+```
+
+La carte « Recherche acquéreur » reste, sans adresse ni courrier : elle porte « Ne plus
+solliciter » dès le point 3, et le courrier est refusé.
 
 ### 5. Compter après
 

@@ -1462,6 +1462,68 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('visit-availability').first()).toContainText('Samedi matin');
   await expect(page.getByTestId('visits-other-answers')).toContainText('Pas pour lui : La surface');
   await expect(page.getByTestId('visits-other-answers')).toContainText('Peut-être');
+
+  // Mission 120 — « J'ai un acquéreur pour votre bien » : C, une annonce du marché sans
+  // exclusivité, que les Keller veulent visiter, reçoit le courrier au propriétaire ; A, le mandat
+  // de l'agence, se fait visiter (M86). Le courrier ne dit ni leur nom ni leur budget, ne promet
+  // rien, porte les mentions de tout courrier propriétaire ; un mot interdit est refusé. Il se
+  // retrouve dans Prospection, « Recherche acquéreur : Famille Keller », et se marque remis ; la
+  // visite relit son état et attend le propriétaire.
+  const pendingVisits = page.getByTestId('visits-pending');
+  const visitC = pendingVisits.getByTestId('visit-line').filter({ hasText: 'Mouans-Sartoux' });
+  await expect(visitC).toHaveCount(1);
+  await expect(
+    pendingVisits
+      .getByTestId('visit-line')
+      .filter({ hasText: 'Mougins' })
+      .getByTestId('visit-seller-action'),
+  ).toHaveText('Proposer une visite');
+  await visitC.getByTestId('visit-prepare-owner-letter').click();
+  await expect(page).toHaveURL(/\/acquereurs\/courrier\/[0-9a-f-]{36}$/);
+  const letterDocument = page.getByTestId('buyer-letter-document');
+  await expect(letterDocument).toContainText(
+    'J’accompagne une recherche qui correspond aux caractéristiques de votre bien',
+  );
+  await expect(letterDocument).toContainText(
+    'Je souhaiterais vérifier avec vous si une visite est envisageable.',
+  );
+  await expect(page.getByTestId('buyer-letter-addressee')).toContainText('Au propriétaire du');
+  await expect(page.getByTestId('legal-mention')).toContainText(
+    'Finalité : vous présenter une recherche qui correspond à votre bien.',
+  );
+  expect(await letterDocument.innerText()).not.toMatch(
+    /Keller|1\s?500\s?000|1\s?650\s?000|certain|offre|prête/i,
+  );
+  await expectUnspoken(page, 'Courrier au propriétaire — recherche acquéreur');
+  const letterText = page.getByTestId('buyer-letter-text');
+  const proposedLetter = await letterText.inputValue();
+  await letterText.fill(`${proposedLetter}\n\nLa famille Keller fera une offre.`);
+  await page.getByTestId('buyer-letter-save').click();
+  await expect(page.getByRole('status')).toContainText('ne nomme ni l’acquéreur');
+  await letterText.fill(proposedLetter);
+  await page.getByTestId('buyer-letter-save').click();
+  await expect(page.getByRole('status')).toHaveText('Enregistré.');
+  await page.goto('/prospection?origine=acquereur');
+  const kellerCard = (column: string) =>
+    page
+      .getByTestId(`prospecting-column-${column}`)
+      .getByTestId('prospecting-card')
+      .filter({ has: page.getByTestId('buyer-origin').filter({ hasText: 'Famille Keller' }) });
+  await expect(kellerCard('ready')).toHaveCount(1);
+  await expect(kellerCard('ready').getByTestId('buyer-origin')).toContainText(
+    /Recherche acquéreur\s*:\s*Famille Keller/,
+  );
+  await expectUnspoken(page, 'Prospection — recherche acquéreur');
+  await kellerCard('ready').getByRole('button', { name: 'Marquer remis' }).click();
+  await expect(kellerCard('handed')).toHaveCount(1);
+  await page.goto('/visites');
+  const visitCAfter = page
+    .getByTestId('visits-pending')
+    .getByTestId('visit-line')
+    .filter({ hasText: 'Mouans-Sartoux' });
+  await expect(visitCAfter.getByTestId('visit-letter-state')).toHaveText(/^Remis le \d{2}\/\d{2}$/);
+  await expect(visitCAfter.getByTestId('visit-outcome')).toHaveText('En attente du propriétaire');
+
   await page
     .getByTestId('visits-pending')
     .getByRole('button', { name: 'Visite faite' })

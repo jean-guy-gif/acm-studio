@@ -1,7 +1,15 @@
 import { competitorFacts } from '@/features/prospecting/services/competitor-facts';
 import Link from 'next/link';
 
-import { badgeBrand, badgeNeutral, badgeRejected, badgeSelected } from '@/components/ui/styles';
+import {
+  badgeBrand,
+  badgeNeutral,
+  badgeRejected,
+  badgeSelected,
+  btnPrimary,
+} from '@/components/ui/styles';
+import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
+import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
 import { GONE_SINCE_MEETING_LABEL } from '@/features/competitor-refresh/services/price-refresh';
 import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
@@ -32,9 +40,15 @@ export { competitorFacts };
 export function ProspectingCard({
   card,
   sellerId = null,
+  buyerOrigins = [],
+  buyerProspectId = null,
 }: {
   card: Card;
   sellerId?: string | null;
+  // Mission 120 — les recherches acquéreur d'où vient la démarche, chacune avec son courrier.
+  buyerOrigins?: BuyerOriginLabel[];
+  // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent ni dossier vendeur.
+  buyerProspectId?: string | null;
 }) {
   const { row: shared, sellers } = card;
   const { row, seller } = cardCopy(card, sellerId);
@@ -49,6 +63,7 @@ export function ProspectingCard({
   return (
     <li
       data-testid="prospecting-card"
+      data-origin={buyerProspectId ? 'buyer' : 'seller'}
       className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3.5 text-sm stage:border-white/10 stage:bg-white/[0.04]"
     >
       <div className="flex flex-col gap-0.5">
@@ -135,7 +150,9 @@ export function ProspectingCard({
       ) : (
         <>
           {/* ACM ne sait pas à qui s'adresser : le conseiller le dit ici (M83). */}
-          {step === 'check' && (status === 'to_confirm' || status === 'ready') ? (
+          {!buyerProspectId &&
+          step === 'check' &&
+          (status === 'to_confirm' || status === 'ready') ? (
             <CompetitorMandateLine competitor={row.mandate} />
           ) : null}
 
@@ -150,13 +167,25 @@ export function ProspectingCard({
               listingUrl={row.listingUrl}
               canAccept={row.canAcceptAddress}
               confirmed={addressConfirmed}
+              buyerProspectId={buyerProspectId}
             />
           ) : null}
 
           {/* Prêt à envoyer — et, dès avant, la version confrère, qui n'attend pas l'adresse
               (M84). */}
           <div className="flex flex-wrap items-center gap-2">
-            {status === 'ready' || (status === 'to_confirm' && step === 'colleague') ? (
+            {buyerProspectId && status === 'ready' && buyerOrigins[0] ? (
+              <Link
+                href={buyerLetterHref(buyerOrigins[0].originId)}
+                target="_blank"
+                className={`${btnPrimary} px-3 py-1.5 text-xs`}
+                data-testid="buyer-letter-link"
+              >
+                Préparer le courrier
+              </Link>
+            ) : null}
+            {!buyerProspectId &&
+            (status === 'ready' || (status === 'to_confirm' && step === 'colleague')) ? (
               <PrepareFileLinks
                 projectId={seller.projectId}
                 competitorId={row.id}
@@ -172,30 +201,69 @@ export function ProspectingCard({
               step={step}
               primary={status === 'handed' || status === 'meeting'}
               refusedCollaboration={shared.collaborationDeclinedAt != null}
+              buyerProspectId={buyerProspectId}
             />
           </div>
 
           {/* Mission 107 — « Ne plus solliciter » sur toute carte : sans adresse confirmée, il
               porte sur ses annonces (M102). */}
-          <OppositionButton projectId={card.seller.projectId} competitorId={shared.id} />
+          <OppositionButton
+            projectId={card.seller.projectId}
+            competitorId={shared.id}
+            buyerProspectId={buyerProspectId}
+          />
         </>
       )}
 
-      <p className="border-t border-dashed border-zinc-200 pt-2 text-xs text-zinc-500 stage:border-white/10 stage:text-white/55">
-        Pour&nbsp;:{' '}
-        {sellers.map((item, index) => (
-          <span key={item.projectId}>
-            {index > 0 ? ' ; ' : ''}
-            <Link
-              href={`/builder/${item.projectId}`}
-              className="font-semibold text-brand-deep hover:underline stage:text-brand"
-            >
-              {item.name}
-            </Link>
-            {item.label ? ` · ${item.label}` : ''}
-          </span>
-        ))}
-      </p>
+      {/* Mission 120 — l'origine de la carte : le dossier vendeur, la recherche acquéreur, ou les
+          deux (un même bien n'a qu'une carte). */}
+      {buyerOrigins.length > 0 ? (
+        <p
+          className="border-t border-dashed border-zinc-200 pt-2 text-xs text-zinc-500 stage:border-white/10 stage:text-white/55"
+          data-testid="buyer-origin"
+        >
+          Recherche acquéreur&nbsp;:{' '}
+          {buyerOrigins.map((origin, index) => (
+            <span key={origin.originId}>
+              {index > 0 ? ' ; ' : ''}
+              <Link
+                href={`/acquereurs/${origin.buyerId}`}
+                className="font-semibold text-brand-deep hover:underline stage:text-brand"
+              >
+                {origin.buyerName}
+              </Link>
+              {' · '}
+              <Link
+                href={buyerLetterHref(origin.originId)}
+                target="_blank"
+                className="hover:underline"
+              >
+                courrier
+              </Link>
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {sellers.length > 0 ? (
+        <p
+          className="border-t border-dashed border-zinc-200 pt-2 text-xs text-zinc-500 stage:border-white/10 stage:text-white/55"
+          data-testid="seller-origin"
+        >
+          Dossier vendeur&nbsp;:{' '}
+          {sellers.map((item, index) => (
+            <span key={item.projectId}>
+              {index > 0 ? ' ; ' : ''}
+              <Link
+                href={`/builder/${item.projectId}`}
+                className="font-semibold text-brand-deep hover:underline stage:text-brand"
+              >
+                {item.name}
+              </Link>
+              {item.label ? ` · ${item.label}` : ''}
+            </span>
+          ))}
+        </p>
+      ) : null}
     </li>
   );
 }

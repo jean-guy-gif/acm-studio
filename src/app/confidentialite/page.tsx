@@ -118,6 +118,19 @@ export default function ConfidentialitePage() {
               lui-même aucun courrier.
             </li>
             <li>
+              Les courriers nés d’une recherche acquéreur : quand un acquéreur de l’agence veut
+              visiter un bien que l’agence n’a pas en mandat, le conseiller peut préparer un
+              courrier au propriétaire de ce bien. ACM Studio garde l’annonce du bien, ce qu’elle
+              publie (type, surface, pièces, extérieurs, commune, prix, photos), qui le vend et son
+              exclusivité, son adresse — déterminée et confirmée comme celle d’un bien concurrent —
+              et les étapes de la démarche (courrier remis, rendez-vous, mandat), avec la recherche
+              acquéreur dont elle est née. Le courrier porte les mêmes mentions que tout courrier à
+              un propriétaire, avec sa propre finalité (présenter une recherche qui correspond au
+              bien) ; il ne dit ni le nom ni le budget de l’acquéreur. L’adresse d’un bien sans
+              contact depuis {OWNER_ADDRESS_RETENTION_YEARS} ans est effacée, comme celle d’un bien
+              concurrent, et la liste « Ne plus solliciter » s’applique de la même façon.
+            </li>
+            <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
               contacté, le conseiller inscrit le bien sur la liste d’opposition de son agence —
               depuis sa carte, ou en saisissant son adresse. ACM Studio en conserve l’adresse de
