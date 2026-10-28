@@ -2,7 +2,8 @@
 --   §1 l'agence lit ses biens démarchés et leurs origines, jamais ceux d'une autre agence, un membre
 --      retiré rien ; le navigateur n'écrit, ne modifie ni ne retire rien ;
 --   §2 une carte par annonce et par agence ; une origine par bien retenu ; une origine désigne
---      un bien démarché OU un concurrent, jamais les deux ni aucun ; listes fermées ;
+--      un bien démarché OU un concurrent, jamais les deux ni aucun ; listes fermées ; l'agence de
+--      l'origine est celle de sa fiche, de son bien retenu et de sa carte, vérifiée par la base ;
 --   §3 la date de l'adresse est posée par la base ; la collaboration suit le contact (M115) ;
 --   §4 la purge efface l'adresse après 3 ans sans contact, et elle seule ; fermée au navigateur ;
 --   §5 une origine part avec son bien retenu, sa fiche, son bien démarché ou son concurrent.
@@ -105,6 +106,11 @@ select pg_temp.expect('§1 ni aucune origine', (select count(*)::text from publi
 select pg_temp.act_as('12011111-0000-0000-0000-0000000000a2');
 select pg_temp.expect('§1 un membre retiré ne lit rien',
   (select count(*)::text from public.buyer_prospects) || '/' || (select count(*)::text from public.buyer_prospect_origins), '0/0');
+reset role;
+set local role anon;
+select pg_temp.expect('§1 un invité (anon) ne lit rien',
+  pg_temp.attempt($$select * from public.buyer_prospects$$) || '/' || pg_temp.attempt($$select * from public.buyer_prospect_origins$$), 'refus/refus');
+reset role;
 
 -- §2
 select pg_temp.act_as_service();
@@ -131,6 +137,12 @@ select pg_temp.expect('§2 une origine sur deux cartes : refusée',
   pg_temp.attempt($$update public.buyer_prospect_origins set comparable_id = '120aaaaa-6666-0000-0000-000000000000' where id = '120aaaaa-7777-0000-0000-000000000001'$$), 'contrainte');
 select pg_temp.expect('§2 une version de courrier hors liste : refusée',
   pg_temp.attempt($$update public.buyer_prospect_origins set letter_version = 'vendeur' where id = '120aaaaa-7777-0000-0000-000000000001'$$), 'contrainte');
+select pg_temp.expect('§2 une origine dont la fiche est d''une autre agence : refusée',
+  pg_temp.attempt($$update public.buyer_prospect_origins set agency_id = '120bbbbb-0000-0000-0000-000000000000' where id = '120aaaaa-7777-0000-0000-000000000001'$$), 'contrainte');
+insert into public.buyer_prospects (id, agency_id, listing_url, listing_key) values
+  ('120bbbbb-4444-0000-0000-000000000000', '120bbbbb-0000-0000-0000-000000000000', 'https://exemple.invalid/b', 'exemple:b-120');
+select pg_temp.expect('§2 une origine sur le bien démarché d''une autre agence : refusée',
+  pg_temp.attempt($$update public.buyer_prospect_origins set prospect_id = '120bbbbb-4444-0000-0000-000000000000' where id = '120aaaaa-7777-0000-0000-000000000001'$$), 'contrainte');
 select pg_temp.expect('§2 la clé service écrit un courrier',
   pg_temp.attempt($$update public.buyer_prospect_origins set letter_version = 'owner', letter_body = 'texte' where id = '120aaaaa-7777-0000-0000-000000000001'$$), '1');
 
@@ -155,12 +167,19 @@ alter table public.buyer_prospects disable trigger buyer_prospects_stamp_locator
 update public.buyer_prospects set locator_address_at = now() - interval '3 years 1 day', updated_at = now() - interval '3 years 1 day'
   where id = '120aaaaa-4444-0000-0000-000000000000';
 alter table public.buyer_prospects enable trigger buyer_prospects_stamp_locator_address_at;
+-- Un refus de collaboration récent est un contact : l'adresse reste (« et elle seule »).
+update public.buyer_prospects set prospecting_handed_at = now() - interval '4 years', prospecting_collaboration_declined_at = now() - interval '1 day'
+  where id = '120aaaaa-4444-0000-0000-000000000000';
+select pg_temp.expect('§4 un contact récent garde l''adresse', (select public.purge_stale_buyer_prospect_addresses()::text), '0');
+update public.buyer_prospects set prospecting_handed_at = null, prospecting_collaboration_declined_at = null
+  where id = '120aaaaa-4444-0000-0000-000000000000';
 select pg_temp.expect('§4 trois ans sans contact : l''adresse est effacée', (select public.purge_stale_buyer_prospect_addresses()::text), '1');
 select pg_temp.expect('§4 l''annonce et la carte restent, la purge datée',
   (select (locator_address is null and listing_url is not null and locator_purged_at is not null)::text
    from public.buyer_prospects where id = '120aaaaa-4444-0000-0000-000000000000'), 'true');
 
 -- §5
+select pg_temp.act_as_service();
 delete from public.comparables where id = '120aaaaa-6666-0000-0000-000000000000';
 select pg_temp.expect('§5 une origine part avec son concurrent',
   (select count(*)::text from public.buyer_prospect_origins where id = '120aaaaa-7777-0000-0000-000000000002'), '0');
@@ -172,6 +191,11 @@ insert into public.buyer_prospects (id, agency_id, listing_url, listing_key) val
 insert into public.buyer_prospect_origins (agency_id, buyer_id, selection_item_id, prospect_id) values
   ('120aaaaa-0000-0000-0000-000000000000', '120aaaaa-1111-0000-0000-000000000000',
    '120aaaaa-3333-0000-0000-000000000001', '120aaaaa-4444-0000-0000-000000000009');
+delete from public.buyer_selection_items where id = '120aaaaa-3333-0000-0000-000000000001';
+select pg_temp.expect('§5 et avec son bien retenu', (select count(*)::text from public.buyer_prospect_origins), '0');
+insert into public.buyer_prospect_origins (agency_id, buyer_id, selection_item_id, prospect_id) values
+  ('120aaaaa-0000-0000-0000-000000000000', '120aaaaa-1111-0000-0000-000000000000',
+   '120aaaaa-3333-0000-0000-000000000002', '120aaaaa-4444-0000-0000-000000000009');
 delete from public.buyers where id = '120aaaaa-1111-0000-0000-000000000000';
 select pg_temp.expect('§5 et avec sa fiche', (select count(*)::text from public.buyer_prospect_origins), '0');
 select pg_temp.expect('§5 le bien démarché reste (son statut, son opposition éventuelle)',

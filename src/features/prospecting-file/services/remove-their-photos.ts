@@ -30,25 +30,29 @@ export function prospectingFolder(agencyId: string, projectId: string): string {
   return `${agencyId}/${projectId}/prospecting`;
 }
 
-async function emptyCompetitorFolder(
-  storage: PhotoStorage,
-  folder: string,
-  competitorId: string,
-): Promise<number> {
+// Vide un dossier du stockage, lu sur place. Mission 120 — sert aussi aux courriers d'une
+// recherche acquéreur, rangés sous leur propre dossier.
+export async function emptyStorageFolder(storage: PhotoStorage, path: string): Promise<number> {
   const bucket = storage.from(PROPERTY_PHOTO_BUCKET);
-  const { data, error } = await bucket.list(`${folder}/${competitorId}`, { limit: LIST_LIMIT });
+  const { data, error } = await bucket.list(path, { limit: LIST_LIMIT });
   if (error || !data) {
     return 0;
   }
   // Un fichier a un identifiant ; un sous-dossier n'en a pas (il n'y en a pas ici).
-  const paths = data
-    .filter((entry) => entry.id != null)
-    .map((entry) => `${folder}/${competitorId}/${entry.name}`);
+  const paths = data.filter((entry) => entry.id != null).map((entry) => `${path}/${entry.name}`);
   if (paths.length === 0) {
     return 0;
   }
   const removed = await bucket.remove(paths);
   return removed.error ? 0 : paths.length;
+}
+
+async function emptyCompetitorFolder(
+  storage: PhotoStorage,
+  folder: string,
+  competitorId: string,
+): Promise<number> {
+  return emptyStorageFolder(storage, `${folder}/${competitorId}`);
 }
 
 // Les photos des concurrents supprimés. Un identifiant qui n'en est pas un est ignoré.

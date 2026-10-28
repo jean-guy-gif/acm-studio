@@ -93,9 +93,47 @@ create table public.buyer_prospect_origins (
   letter_saved_by uuid references public.profiles (id) on delete set null
 );
 
+create index buyer_prospect_origins_agency on public.buyer_prospect_origins (agency_id);
 create index buyer_prospect_origins_buyer on public.buyer_prospect_origins (buyer_id);
 create index buyer_prospect_origins_prospect on public.buyer_prospect_origins (prospect_id);
 create index buyer_prospect_origins_comparable on public.buyer_prospect_origins (comparable_id);
+create index buyer_prospect_origins_created_by on public.buyer_prospect_origins (created_by);
+create index buyer_prospect_origins_letter_saved_by on public.buyer_prospect_origins (letter_saved_by);
+create index buyer_prospects_created_by on public.buyer_prospects (created_by);
+
+-- L'agence d'une origine est celle de sa fiche, de son bien retenu et de sa carte — vérifié par la
+-- base, quel que soit le chemin, clé service comprise (relecture du gardien-sql ; même intention que
+-- les règles de M108 et M111 sur les tables rattachées à un dossier).
+create function public.check_buyer_prospect_origin_agency()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.buyers b where b.id = new.buyer_id and b.agency_id = new.agency_id) then
+    raise exception 'buyer_prospect_origins : la fiche n''est pas de cette agence' using errcode = 'check_violation';
+  end if;
+  if not exists (select 1 from public.buyer_selection_items i
+                 where i.id = new.selection_item_id and i.agency_id = new.agency_id) then
+    raise exception 'buyer_prospect_origins : le bien retenu n''est pas de cette agence' using errcode = 'check_violation';
+  end if;
+  if new.prospect_id is not null and not exists (
+    select 1 from public.buyer_prospects p where p.id = new.prospect_id and p.agency_id = new.agency_id
+  ) then
+    raise exception 'buyer_prospect_origins : le bien démarché n''est pas de cette agence' using errcode = 'check_violation';
+  end if;
+  if new.comparable_id is not null and not exists (
+    select 1 from public.comparables c where c.id = new.comparable_id and c.agency_id = new.agency_id
+  ) then
+    raise exception 'buyer_prospect_origins : le concurrent n''est pas de cette agence' using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+create trigger buyer_prospect_origins_check_agency
+  before insert or update of agency_id, buyer_id, selection_item_id, prospect_id, comparable_id
+  on public.buyer_prospect_origins
+  for each row execute function public.check_buyer_prospect_origin_agency();
 
 comment on table public.buyer_prospect_origins is
   'Mission 120 — l''origine « Recherche acquéreur » d''une carte de Prospection : la fiche, son bien retenu, la carte (bien démarché ou concurrent existant) et le courrier de cette recherche.';

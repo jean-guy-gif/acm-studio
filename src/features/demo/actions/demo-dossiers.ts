@@ -4,6 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import {
+  buyerLetterOriginsOf,
+  removeBuyerLetterPhotos,
+} from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
 import { buyerColumns } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
@@ -93,6 +97,16 @@ export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promi
 // retrouve.
 // Mission 117 — les deux acquéreurs de la démo du closer : marqués, à lui, dans son agence.
 export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<number> {
+  // Mission 120 — les courriers nés de leurs recherches partent en cascade : leurs photos aussi.
+  const { data: own } = await supabase
+    .from('buyers')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('advisor_id', closer.id)
+    .eq('demo', true);
+  const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, {
+    buyerIds: (own ?? []).map((buyer) => buyer.id),
+  });
   const { data } = await supabase
     .from('buyers')
     .delete()
@@ -100,6 +114,7 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
     .eq('advisor_id', closer.id)
     .eq('demo', true)
     .select('id');
+  await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
   await deleteOrphanDemoProspects(supabase, closer);
   return data?.length ?? 0;
 }
