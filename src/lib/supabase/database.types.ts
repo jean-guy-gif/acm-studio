@@ -488,6 +488,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           exclusivity: string | null
+          exclusivity_source: string | null
           facts: Json
           id: string
           listing_key: string
@@ -511,6 +512,7 @@ export type Database = {
           prospecting_mandate_at: string | null
           prospecting_meeting_at: string | null
           sold_by: string | null
+          sold_by_source: string | null
           updated_at: string
         }
         Insert: {
@@ -518,6 +520,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           exclusivity?: string | null
+          exclusivity_source?: string | null
           facts?: Json
           id?: string
           listing_key: string
@@ -541,6 +544,7 @@ export type Database = {
           prospecting_mandate_at?: string | null
           prospecting_meeting_at?: string | null
           sold_by?: string | null
+          sold_by_source?: string | null
           updated_at?: string
         }
         Update: {
@@ -548,6 +552,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           exclusivity?: string | null
+          exclusivity_source?: string | null
           facts?: Json
           id?: string
           listing_key?: string
@@ -571,6 +576,7 @@ export type Database = {
           prospecting_mandate_at?: string | null
           prospecting_meeting_at?: string | null
           sold_by?: string | null
+          sold_by_source?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2632,6 +2638,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      absorb_buyer_prospect: {
+        Args: {
+          p_agency_id: string
+          p_comparable_id: string
+          p_listing_key: string
+        }
+        Returns: number
+      }
       accept_invitation: {
         Args: { first_name: string; last_name: string }
         Returns: {

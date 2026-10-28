@@ -11,6 +11,7 @@ import {
 import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
 import { visitAction } from '@/features/buyer-prospecting/services/visit-action';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { isMandateSource, type MandateSource } from '@/features/competitor-mandate/types';
 import { poolFromLabels } from '@/features/competitor-search/services/stream-estate-features';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import type { SelectionSource } from '@/features/ideal-properties/types';
@@ -27,12 +28,17 @@ const NOT_A_LETTER = 'Ce bien ne demande pas de courrier au propriétaire.';
 type Imported = {
   listingUrl?: unknown;
   soldBy?: unknown;
+  soldBySource?: unknown;
   exclusivity?: unknown;
+  exclusivitySource?: unknown;
   listingFeatures?: unknown;
 };
 
+const mandateSource = (value: unknown): MandateSource | null =>
+  isMandateSource(value) ? value : null;
+
 const COMPARABLE_COLUMNS =
-  'id, listing_url, sold_by, exclusivity, property_type, surface_area, rooms_count, land_area, outdoor_spaces, parking_types, listing_features, energy_rating, district, city, price, photo_urls';
+  'id, listing_url, sold_by, sold_by_source, exclusivity, exclusivity_source, property_type, surface_area, rooms_count, land_area, outdoor_spaces, parking_types, listing_features, energy_rating, district, city, price, photo_urls';
 
 // Mission 120 — « Préparer le courrier au propriétaire », depuis une visite demandée (Visites, fiche).
 // La visite vient du navigateur : relue ici, dans l'agence, vivante, sur une fiche non archivée. Le
@@ -167,6 +173,13 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
           facts: facts as unknown as Json,
           sold_by: soldBy === 'agency' || soldBy === 'private' ? soldBy : null,
           exclusivity: exclusivity === 'yes' || exclusivity === 'no' ? exclusivity : null,
+          // La provenance de chaque valeur (M83), gardée pour qu'un concurrent la reprenne.
+          sold_by_source: mandateSource(
+            competitor ? competitor.sold_by_source : imported?.soldBySource,
+          ),
+          exclusivity_source: mandateSource(
+            competitor ? competitor.exclusivity_source : imported?.exclusivitySource,
+          ),
         })
         .select('id')
         .single();
@@ -179,7 +192,7 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
     target = { prospect_id: prospect.id };
   }
 
-  const { data: origin, error: originError } = await client
+  const { data: inserted, error: originError } = await client
     .from('buyer_prospect_origins')
     .insert({
       agency_id: agencyId,
@@ -191,7 +204,21 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
     })
     .select('id')
     .single();
-  if (originError || !origin) {
+  // Deux préparations au même instant (décision du 28/10) : la seconde rouvre le courrier de la
+  // première (unicité du bien retenu), jamais « Réessayez ».
+  const origin =
+    inserted ??
+    (originError
+      ? (
+          await client
+            .from('buyer_prospect_origins')
+            .select('id')
+            .eq('selection_item_id', item.id)
+            .eq('agency_id', agencyId)
+            .maybeSingle()
+        ).data
+      : null);
+  if (!origin) {
     return { ok: false, error: FAILURE };
   }
 

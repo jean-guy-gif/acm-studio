@@ -6,7 +6,9 @@
 --      l'origine est celle de sa fiche, de son bien retenu et de sa carte, vérifiée par la base ;
 --   §3 la date de l'adresse est posée par la base ; la collaboration suit le contact (M115) ;
 --   §4 la purge efface l'adresse après 3 ans sans contact, et elle seule ; fermée au navigateur ;
---   §5 une origine part avec son bien retenu, sa fiche, son bien démarché ou son concurrent.
+--   §5 une origine part avec son bien retenu, sa fiche, son bien démarché ou son concurrent ;
+--   §6 une carte par bien dans les deux sens (décision du 28/10) : un concurrent qui reprend une
+--      annonce déjà démarchée en reprend les faits et les origines, le bien démarché disparaît.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/acquereur_pour_votre_bien.sql
@@ -200,5 +202,61 @@ delete from public.buyers where id = '120aaaaa-1111-0000-0000-000000000000';
 select pg_temp.expect('§5 et avec sa fiche', (select count(*)::text from public.buyer_prospect_origins), '0');
 select pg_temp.expect('§5 le bien démarché reste (son statut, son opposition éventuelle)',
   (select count(*)::text from public.buyer_prospects where id = '120aaaaa-4444-0000-0000-000000000009'), '1');
+
+-- §6
+select pg_temp.expect('§6 le navigateur n''appelle pas la fusion',
+  (select has_function_privilege('authenticated', 'public.absorb_buyer_prospect(uuid, uuid, text)', 'execute')::text), 'false');
+insert into public.buyers (id, agency_id, advisor_id, name, cities) values
+  ('120aaaaa-1111-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000', '12011111-0000-0000-0000-0000000000a1', 'Famille Six', array['Mougins']);
+insert into public.buyer_selections (id, agency_id, buyer_id) values
+  ('120aaaaa-2222-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000', '120aaaaa-1111-0000-0000-000000000006');
+insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
+  ('120aaaaa-3333-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000', '120aaaaa-2222-0000-0000-000000000006', 1, 'listing', 'https://exemple.invalid/six', 'Maison · Mougins');
+insert into public.buyer_prospects (id, agency_id, listing_url, listing_key, sold_by, sold_by_source, exclusivity, exclusivity_source,
+  locator_address, locator_confirmed, locator_source, locator_label_key, prospecting_handed_at) values
+  ('120aaaaa-4444-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000', 'https://exemple.invalid/six', 'exemple:six-120',
+   'agency', 'advisor', 'no', 'advisor', '6 rue des Six, 06250 Mougins', true, 'vous', 'vous', now() - interval '2 days');
+insert into public.buyer_prospect_origins (id, agency_id, buyer_id, selection_item_id, prospect_id, letter_version, letter_body) values
+  ('120aaaaa-7777-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000', '120aaaaa-1111-0000-0000-000000000006',
+   '120aaaaa-3333-0000-0000-000000000006', '120aaaaa-4444-0000-0000-000000000006', 'owner', 'Mon courrier.');
+-- La même annonce, retenue ensuite comme concurrent d'un dossier vendeur : le concurrent ne sait
+-- encore ni l'adresse, ni le vendeur.
+insert into public.comparables (id, agency_id, project_id, title, price, is_selected, display_order, listing_url) values
+  ('120aaaaa-6666-0000-0000-000000000006', '120aaaaa-0000-0000-0000-000000000000',
+   '120aaaaa-5555-0000-0000-000000000000', 'Concurrent six', 300000, true, 6, 'https://exemple.invalid/six');
+-- L'agence B démarche la même annonce : sa carte ne fusionne pas dans un concurrent de l'agence A.
+insert into public.buyer_prospects (id, agency_id, listing_url, listing_key) values
+  ('120bbbbb-4444-0000-0000-000000000006', '120bbbbb-0000-0000-0000-000000000000', 'https://exemple.invalid/six', 'exemple:six-120');
+select pg_temp.expect('§6 un concurrent d''une autre agence : refusé',
+  pg_temp.attempt($$select public.absorb_buyer_prospect('120bbbbb-0000-0000-0000-000000000000', '120aaaaa-6666-0000-0000-000000000006', 'exemple:six-120')$$), 'contrainte');
+select pg_temp.expect('§6 et la carte de l''agence B reste',
+  (select count(*)::text from public.buyer_prospects where id = '120bbbbb-4444-0000-0000-000000000006'), '1');
+select pg_temp.expect('§6 la fusion : 1 carte reprise',
+  (select public.absorb_buyer_prospect('120aaaaa-0000-0000-0000-000000000000', '120aaaaa-6666-0000-0000-000000000006', 'exemple:six-120')::text), '1');
+select pg_temp.expect('§6 le concurrent reprend l''adresse, la remise, le vendeur et sa provenance',
+  (select locator_address || '|' || locator_confirmed::text || '|' || (prospecting_handed_at is not null)::text || '|' || sold_by || '/' || sold_by_source || '|' || exclusivity || '/' || exclusivity_source
+   from public.comparables where id = '120aaaaa-6666-0000-0000-000000000006'),
+  '6 rue des Six, 06250 Mougins|true|true|agency/advisor|no/advisor');
+select pg_temp.expect('§6 l''origine et son courrier passent sur le concurrent',
+  (select (prospect_id is null)::text || '|' || comparable_id::text || '|' || letter_body
+   from public.buyer_prospect_origins where id = '120aaaaa-7777-0000-0000-000000000006'),
+  'true|120aaaaa-6666-0000-0000-000000000006|Mon courrier.');
+select pg_temp.expect('§6 le bien démarché disparaît : une seule carte (celle de l''agence B reste)',
+  (select count(*)::text from public.buyer_prospects where listing_key = 'exemple:six-120'), '1');
+select pg_temp.expect('§6 fusionner de nouveau ne fait rien',
+  (select public.absorb_buyer_prospect('120aaaaa-0000-0000-0000-000000000000', '120aaaaa-6666-0000-0000-000000000006', 'exemple:six-120')::text), '0');
+-- Un concurrent qui sait déjà le vendeur ne se fait pas réécrire.
+insert into public.buyer_prospects (id, agency_id, listing_url, listing_key, sold_by, sold_by_source, exclusivity, exclusivity_source) values
+  ('120aaaaa-4444-0000-0000-000000000007', '120aaaaa-0000-0000-0000-000000000000', 'https://exemple.invalid/sept', 'exemple:sept-120', 'private', 'advisor', null, null);
+insert into public.comparables (id, agency_id, project_id, title, price, is_selected, display_order, listing_url, sold_by, sold_by_source, exclusivity, exclusivity_source) values
+  ('120aaaaa-6666-0000-0000-000000000007', '120aaaaa-0000-0000-0000-000000000000',
+   '120aaaaa-5555-0000-0000-000000000000', 'Concurrent sept', 300000, true, 7, 'https://exemple.invalid/sept', 'agency', 'badge', 'yes', 'badge');
+select public.absorb_buyer_prospect('120aaaaa-0000-0000-0000-000000000000', '120aaaaa-6666-0000-0000-000000000007', 'exemple:sept-120');
+select pg_temp.expect('§6 ce que le concurrent sait déjà n''est pas écrasé',
+  (select sold_by || '/' || sold_by_source || '|' || exclusivity || '/' || exclusivity_source
+   from public.comparables where id = '120aaaaa-6666-0000-0000-000000000007'), 'agency/badge|yes/badge');
+select pg_temp.expect('§6 une provenance hors liste : refusée',
+  pg_temp.attempt($$insert into public.buyer_prospects (agency_id, listing_url, listing_key, sold_by_source) values
+    ('120aaaaa-0000-0000-0000-000000000000', 'https://exemple.invalid/huit', 'exemple:huit-120', 'devine')$$), 'contrainte');
 
 rollback;
