@@ -12,10 +12,26 @@
 --    concurrent (M83) : leur provenance se garde (`sold_by_source`, `exclusivity_source`, même
 --    liste que `comparables`), pour que le concurrent la reprenne sans rien inventer.
 --
--- Compatible avec le code de `main` : deux colonnes nulles, une fonction ; aucune ligne écrite.
+-- Ce que la fusion fait des dates (relecture du gardien-sql) : `locator_address_at` n'est pas repris,
+-- le déclencheur `comparables_stamp_locator_address_at` redate l'adresse sur le concurrent — l'horloge
+-- des 3 ans (M102) repart, par la base ; `locator_purged_at` EST repris : une carte purgée rend le
+-- concurrent muet au Localisateur (M102). Les CHECK de M115 sur les dates de collaboration tiennent :
+-- le concurrent qui vient de naître n'a aucun fait, `coalesce` prend ceux de la carte, qui satisfont
+-- des CHECK identiques ; la fonction n'est appelée que là (`insertCompetitor`).
+--
+-- Les listes de `buyer_prospects` sont alignées sur celles de `comparables` (0 ligne) : un « Vendu
+-- par » ou une exclusivité « inconnu » est NULL, jamais une valeur ; `no_mention` ne vaut que pour la
+-- provenance de l'exclusivité (M83). Sans cela, une carte qui les porterait ferait échouer la fusion.
+--
+-- Compatible avec le code de `main` : deux colonnes nulles, une fonction, deux contraintes resserrées
+-- sur une table vide que `main` ne connaît pas ; aucune ligne écrite.
 
 alter table public.buyer_prospects
-  add column sold_by_source text check (sold_by_source in ('listing_data', 'badge', 'advertiser', 'title', 'description', 'no_mention', 'advisor')),
+  drop constraint buyer_prospects_sold_by_check,
+  add constraint buyer_prospects_sold_by_check check (sold_by in ('agency', 'private')),
+  drop constraint buyer_prospects_exclusivity_check,
+  add constraint buyer_prospects_exclusivity_check check (exclusivity in ('yes', 'no')),
+  add column sold_by_source text check (sold_by_source in ('listing_data', 'badge', 'advertiser', 'title', 'description', 'advisor')),
   add column exclusivity_source text check (exclusivity_source in ('listing_data', 'badge', 'advertiser', 'title', 'description', 'no_mention', 'advisor'));
 
 create function public.absorb_buyer_prospect(
