@@ -1,14 +1,29 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { commande, dateDeVersion, lireProduction } from './cartes.mjs';
+import { commande, dateDeVersion, derniereFusion } from './cartes.mjs';
 import { creerAtelier, journaliser, lireOptions, LIGNES_DE_MARCHE_MAXIMUM } from './serveur.mjs';
 
 // Mission 126 — constat A de Jean-Guy (29/10) : une lecture de carte ne bloque ni ne fait tomber
-// le serveur, chacune a son délai et son erreur dans sa carte.
+// le serveur, chacune a son délai et son erreur dans sa carte. Un test n'écrit jamais chez
+// l'utilisateur : `ATELIER_HOME` part dans un dossier temporaire (relecteur, 29/10).
+let home;
+let ancienHome;
+beforeAll(() => {
+  home = mkdtempSync(join(tmpdir(), 'atelier-cartes-'));
+  ancienHome = process.env.ATELIER_HOME;
+  process.env.ATELIER_HOME = home;
+});
+afterAll(() => {
+  if (ancienHome === undefined) delete process.env.ATELIER_HOME;
+  else process.env.ATELIER_HOME = ancienHome;
+  rmSync(home, { recursive: true, force: true });
+});
+
 describe('une lecture de carte, bornée', () => {
   it('une commande qui pend est tuée au délai et rejette « délai dépassé »', async () => {
     const debut = Date.now();
@@ -33,7 +48,7 @@ describe('une lecture de carte, bornée', () => {
   it('/etat répond pendant qu’une lecture de carte pend, et dit la lecture en cours', async () => {
     const jamais = () => new Promise(() => undefined);
     const atelier = creerAtelier({
-      ...lireOptions(['--port', '0', '--journal', join(tmpdir(), 'atelier-vide.jsonl')]),
+      ...lireOptions(['--port', '0', '--journal', join(home, 'journal.jsonl')]),
       lecteurs: { lireBase: jamais, lireEssai: jamais, lireProduction: jamais },
     });
     const port = await atelier.ecouter();
@@ -56,7 +71,7 @@ describe('une lecture de carte, bornée', () => {
       throw new Error('panne E2E_VERCEL_BYPASS=Ab3dEfGh1jKlMnOpQrStUvWxYz012345');
     };
     const atelier = creerAtelier({
-      ...lireOptions(['--port', '0', '--journal', join(tmpdir(), 'atelier-vide.jsonl')]),
+      ...lireOptions(['--port', '0', '--journal', join(home, 'journal.jsonl')]),
       lecteurs: { lireBase: leve, lireEssai: leve, lireProduction: leve },
     });
     const port = await atelier.ecouter();
@@ -72,11 +87,28 @@ describe('une lecture de carte, bornée', () => {
     }
   });
 
-  it('la production lit la dernière fusion par ls-remote, sans toucher aux refs du dépôt', async () => {
-    const p = await lireProduction(process.cwd());
-    expect(p.fusion).toBeTruthy();
-    expect(typeof p.fusion.commit === 'string' || p.fusion.commit === null).toBe(true);
-    expect(p.lueA).toBeTruthy();
+  it('la dernière fusion se lit par ls-remote : aucune ref locale touchée, aucun .lock', async () => {
+    const depot = process.cwd();
+    const refs = () =>
+      execFileSync('git', ['for-each-ref', '--format=%(refname) %(objectname)'], {
+        cwd: depot,
+        encoding: 'utf8',
+      });
+    const fetchHead = join(depot, '.git', 'FETCH_HEAD');
+    const avant = {
+      refs: refs(),
+      fetch: existsSync(fetchHead) ? statSync(fetchHead).mtimeMs : null,
+    };
+    const fusion = await derniereFusion(depot, Date.now());
+    expect(fusion.commit).toMatch(/^[0-9a-f]{7}$/);
+    expect(refs()).toBe(avant.refs);
+    expect(existsSync(fetchHead) ? statSync(fetchHead).mtimeMs : null).toBe(avant.fetch);
+    const verrous = readdirSync(join(depot, '.git'), { recursive: true }).filter((f) =>
+      String(f).endsWith('.lock'),
+    );
+    expect(verrous).toEqual([]);
+    // Relue dans les 5 min : la même, sans nouvel appel (cache).
+    expect(await derniereFusion(depot, Date.now())).toEqual(fusion);
   }, 30_000);
 
   it('la date d’une migration se lit dans sa version', () => {
