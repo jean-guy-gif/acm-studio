@@ -918,6 +918,10 @@ export type Database = {
       }
       comparables: {
         Row: {
+          meeting_days_on_market: number | null
+          meeting_frozen_at: string | null
+          meeting_price: number | null
+          meeting_price_source: string | null
           address: string | null
           advisor_notes: string | null
           agency_id: string
@@ -987,6 +991,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          meeting_days_on_market?: number | null
+          meeting_frozen_at?: string | null
+          meeting_price?: number | null
+          meeting_price_source?: string | null
           address?: string | null
           advisor_notes?: string | null
           agency_id: string
@@ -1056,6 +1064,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          meeting_days_on_market?: number | null
+          meeting_frozen_at?: string | null
+          meeting_price?: number | null
+          meeting_price_source?: string | null
           address?: string | null
           advisor_notes?: string | null
           agency_id?: string
@@ -2180,6 +2192,120 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_market_update_links: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          project_id: string
+          token_hash: string
+          update_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          project_id: string
+          token_hash: string
+          update_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          project_id?: string
+          token_hash?: string
+          update_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_market_update_links_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_market_update_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_market_update_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_market_update_links_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "project_market_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_market_updates: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          made_at: string
+          made_by: string | null
+          project_id: string
+          summary: Json
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          made_at?: string
+          made_by?: string | null
+          project_id: string
+          summary?: Json
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          made_at?: string
+          made_by?: string | null
+          project_id?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_market_updates_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_market_updates_made_by_fkey"
+            columns: ["made_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_market_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

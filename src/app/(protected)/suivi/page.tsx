@@ -5,6 +5,7 @@ import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { BuyerSearchPanel } from '@/features/meeting-conclusion/components/buyer-search-panel';
 import { SuiviRow } from '@/features/meeting-conclusion/components/suivi-row';
+import { listMarketUpdates } from '@/features/market-update/queries/list-market-updates';
 import {
   emptySellerInsights,
   getSellerInsights,
@@ -45,6 +46,7 @@ import {
 } from '@/features/prospecting/services/prospecting-status';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 import { formatPercent } from '@/lib/format';
 
 type SuiviPageProps = {
@@ -96,6 +98,14 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     getAgencyBranding(),
   ]);
   const agency = profile ? await getAgency(profile.agency_id) : null;
+  // Mission 127 — les points marché de chaque dossier.
+  const marketUpdates = profile
+    ? await listMarketUpdates(
+        await createClient(),
+        profile.agency_id,
+        allDossiers.map((dossier) => dossier.project.id),
+      )
+    : new Map();
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
     agencyName: documentAgencyName(branding?.documentName, agency?.name) || null,
@@ -278,6 +288,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                     key={dossier.project.id}
                     dossier={dossier}
                     followUp={followUps.get(dossier.project.id)!}
+                    marketUpdates={marketUpdates.get(dossier.project.id) ?? []}
                     prospecting={
                       dossier.conclusion?.outcome === 'signed' && !dossier.project.is_example
                         ? { count: statuses.length, progress: prospectingProgress(statuses) }

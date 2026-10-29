@@ -2,11 +2,11 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { brandingCssVariables } from '@/features/branding/services/branding-css';
-import { brandingFontDeclarations } from '@/features/branding/services/branding-typography';
-import { buildQrCode } from '@/features/contact-card/services/qr-code';
-import { buildVCard } from '@/features/contact-card/services/vcard';
 import { buildSellerSynthesis } from '@/features/seller-synthesis/services/build-seller-synthesis';
+import {
+  DOCUMENT_PHOTO_URL_TTL_SECONDS,
+  loadDocumentAgency,
+} from '@/features/seller-synthesis/queries/load-document-agency';
 import type { SellerSynthesis } from '@/features/seller-synthesis/types';
 import {
   propertyPhotoPrefix,
@@ -16,10 +16,9 @@ import type { Database } from '@/lib/supabase/database.types';
 
 type Client = SupabaseClient<Database>;
 
-const BRANDING_BUCKET = 'agency-branding';
-// Mission 113 — les photos du bien vendeur et celle du conseiller sont signées à chaque ouverture
-// de la page (M37) ; une heure suffit à lire et imprimer le document.
-const PHOTO_URL_TTL_SECONDS = 60 * 60;
+// Mission 113 — les photos du bien vendeur sont signées à chaque ouverture de la page (M37) ; une
+// heure suffit à lire et imprimer le document.
+const PHOTO_URL_TTL_SECONDS = DOCUMENT_PHOTO_URL_TTL_SECONDS;
 
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
@@ -45,81 +44,57 @@ export async function loadSellerSynthesis(
   if (!project) {
     return null;
   }
-  const [
-    property,
-    competitors,
-    responses,
-    summary,
-    decision,
-    conclusion,
-    agency,
-    branding,
-    advisor,
-  ] = await Promise.all([
-    supabase
-      .from('subject_properties')
-      .select(
-        'property_type, city, district, surface_area, land_area, rooms_count, bedrooms_count, floor, building_floors, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, strengths, photo_urls',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    supabase
-      .from('comparables')
-      .select(
-        'id, price, property_type, rooms_count, bedrooms_count, surface_area, city, district, is_selected, excluded_from_live, display_order, created_at, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, price_drop_amount, price_drop_percentage, days_on_market, listing_published_at, synthesis_hide_photo',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .eq('is_selected', true),
-    supabase
-      .from('live_seller_responses')
-      .select(
-        'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId),
-    supabase
-      .from('live_seller_summary')
-      .select(
-        'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    supabase
-      .from('project_price_positionings')
-      .select(
-        'advisor_price, advisor_comparative_market_price, justification, range_central, calculation_snapshot',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    supabase
-      .from('project_meeting_conclusions')
-      .select(
-        'commercialization_price, concluded_at, outcome, frozen_advisor_price, frozen_advisor_analysis, frozen_market_computed',
-      )
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    supabase.from('agencies').select('name').eq('id', agencyId).maybeSingle(),
-    supabase
-      .from('agency_branding')
-      .select(
-        'brand, brand_deep, brand_soft, brand_darker, brand_darkest, on_brand_text, font_family, validated_at, logo_light_path, postal_address, professional_card, professional_card_issuer, financial_guarantee, document_name',
-      )
-      .eq('agency_id', agencyId)
-      .maybeSingle(),
-    project.advisor_id
-      ? supabase
-          .from('profiles')
-          .select('first_name, last_name, phone, email, photo_path')
-          .eq('id', project.advisor_id)
-          .eq('agency_id', agencyId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
+  const [property, competitors, responses, summary, decision, conclusion, document] =
+    await Promise.all([
+      supabase
+        .from('subject_properties')
+        .select(
+          'property_type, city, district, surface_area, land_area, rooms_count, bedrooms_count, floor, building_floors, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, strengths, photo_urls',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId)
+        .maybeSingle(),
+      supabase
+        .from('comparables')
+        .select(
+          'id, price, property_type, rooms_count, bedrooms_count, surface_area, city, district, is_selected, excluded_from_live, display_order, created_at, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, price_drop_amount, price_drop_percentage, days_on_market, listing_published_at, synthesis_hide_photo',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId)
+        .eq('is_selected', true),
+      supabase
+        .from('live_seller_responses')
+        .select(
+          'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId),
+      supabase
+        .from('live_seller_summary')
+        .select(
+          'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId)
+        .maybeSingle(),
+      supabase
+        .from('project_price_positionings')
+        .select(
+          'advisor_price, advisor_comparative_market_price, justification, range_central, calculation_snapshot',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId)
+        .maybeSingle(),
+      supabase
+        .from('project_meeting_conclusions')
+        .select(
+          'commercialization_price, concluded_at, outcome, frozen_advisor_price, frozen_advisor_analysis, frozen_market_computed',
+        )
+        .eq('project_id', projectId)
+        .eq('agency_id', agencyId)
+        .maybeSingle(),
+      loadDocumentAgency(supabase, agencyId, project.advisor_id),
+    ]);
   // Sans réponse du vendeur, il n'y a pas eu de Live : pas de synthèse.
   if (summary.data == null && (responses.data ?? []).length === 0) {
     return null;
@@ -130,21 +105,11 @@ export async function loadSellerSynthesis(
   const propertyPaths = strings(property.data?.photo_urls).filter((path) =>
     path.startsWith(prefix),
   );
-  const advisorPhotoPath = advisor.data?.photo_path?.startsWith(`${agencyId}/`)
-    ? advisor.data.photo_path
-    : null;
-  const [propertyPhotos, advisorPhoto] = await Promise.all([
-    signPropertyPhotos(supabase, propertyPaths.slice(0, 3), PHOTO_URL_TTL_SECONDS),
-    advisorPhotoPath
-      ? signPropertyPhotos(supabase, [advisorPhotoPath], PHOTO_URL_TTL_SECONDS)
-      : Promise.resolve([]),
-  ]);
-
-  const brand = branding.data;
-  const agencyName = brand?.document_name?.trim() || agency.data?.name || '';
-  const advisorName =
-    [advisor.data?.first_name, advisor.data?.last_name].filter(Boolean).join(' ').trim() || null;
-  const logoPath = brand?.logo_light_path ?? null;
+  const propertyPhotos = await signPropertyPhotos(
+    supabase,
+    propertyPaths.slice(0, 3),
+    PHOTO_URL_TTL_SECONDS,
+  );
   const concluded = project.status === 'meeting_completed' && conclusion.data?.outcome != null;
 
   return buildSellerSynthesis({
@@ -168,42 +133,7 @@ export async function loadSellerSynthesis(
         }
       : null,
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
-    agency: {
-      name: agencyName,
-      logoUrl: logoPath
-        ? supabase.storage.from(BRANDING_BUCKET).getPublicUrl(logoPath).data.publicUrl
-        : null,
-      postalAddress: brand?.postal_address ?? null,
-      professionalCard: brand?.professional_card ?? null,
-      professionalCardIssuer: brand?.professional_card_issuer ?? null,
-      financialGuarantee: brand?.financial_guarantee ?? null,
-      advisorName,
-      advisorPhone: advisor.data?.phone ?? null,
-      advisorEmail: advisor.data?.email ?? null,
-      advisorPhotoUrl: advisorPhoto[0]?.url ?? null,
-      advisorQr:
-        advisor.data?.email && advisorName
-          ? buildQrCode(
-              buildVCard({
-                firstName: advisor.data.first_name ?? '',
-                lastName: advisor.data.last_name ?? '',
-                agencyName,
-                phone: advisor.data.phone ?? null,
-                email: advisor.data.email,
-              }),
-            )
-          : null,
-    },
-    // Mission 55 — la charte VALIDÉE de l'agence, filtrée (#RRGGBB, police embarquée connue).
-    brandDeclarations: brand?.validated_at
-      ? `${brandingCssVariables({
-          brand: brand.brand,
-          brandDeep: brand.brand_deep,
-          brandSoft: brand.brand_soft,
-          brandDarker: brand.brand_darker,
-          brandDarkest: brand.brand_darkest,
-          onBrandText: brand.on_brand_text,
-        })} ${brandingFontDeclarations(brand.font_family)}`.trim()
-      : '',
+    agency: document.agency,
+    brandDeclarations: document.brandDeclarations,
   });
 }

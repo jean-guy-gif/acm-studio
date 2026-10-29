@@ -1670,3 +1670,132 @@ describe('marquer une agence de démonstration', () => {
     expect(server.writes()).toEqual([]);
   });
 });
+
+// Mission 127 — le point marché et son lien : écrits par le serveur seul, après le garde.
+describe('Mission 127 — le point marché', () => {
+  const UPDATE = '77777777-7777-4777-8777-777777777777';
+  const LINK = '88888888-8888-4888-8888-888888888888';
+  const inSuivi = (table: string): FakeResponse =>
+    table === 'projects'
+      ? { data: { id: PROJECT, status: 'meeting_completed' } }
+      : table === 'project_market_updates'
+        ? { data: { id: UPDATE, made_at: '2026-11-15T10:00:00.000Z' } }
+        : { data: [] };
+
+  it('le point : refusé sans session, membre retiré ou dossier hors Suivi, sans rien écrire', async () => {
+    const { recordMarketUpdate } =
+      await import('@/features/market-update/actions/record-market-update');
+    state.profile = null;
+    expect((await recordMarketUpdate(PROJECT)).ok).toBe(false);
+    noWrite();
+    state.profile = removed;
+    expect((await recordMarketUpdate(PROJECT)).ok).toBe(false);
+    noWrite();
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects' ? { data: { id: PROJECT, status: 'ready_for_meeting' } } : { data: [] };
+    expect((await recordMarketUpdate(PROJECT)).ok).toBe(false);
+    noWrite();
+  });
+
+  it('le point : relu en base, écrit par la clé service dans l’agence de la session', async () => {
+    const { recordMarketUpdate } =
+      await import('@/features/market-update/actions/record-market-update');
+    state.respond = inSuivi;
+    const result = await recordMarketUpdate(PROJECT);
+    expect(result).toMatchObject({ ok: true, updateId: UPDATE });
+    expect(server.writes()).toEqual([]);
+    expect(service.writes()).toEqual(['insert project_market_updates']);
+    const inserted = service.calls.find((call) => call.method === 'insert')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(inserted).toMatchObject({ agency_id: AGENCY, project_id: PROJECT, made_by: advisor.id });
+    expect(JSON.stringify(inserted.summary)).not.toContain('listing_url');
+  });
+
+  it('le lien : refusé sans session ou sur un point hors de son agence, sans rien écrire', async () => {
+    const { createMarketUpdateLink } =
+      await import('@/features/market-update/actions/create-market-update-link');
+    state.profile = removed;
+    expect((await createMarketUpdateLink(PROJECT, UPDATE)).ok).toBe(false);
+    noWrite();
+    state.profile = advisor;
+    state.respond = () => ({ data: null });
+    expect((await createMarketUpdateLink(PROJECT, UPDATE)).ok).toBe(false);
+    noWrite();
+  });
+
+  it('le lien : créé avec son seul condensat, et remplace les liens précédents du point', async () => {
+    const { createMarketUpdateLink } =
+      await import('@/features/market-update/actions/create-market-update-link');
+    state.respond = (table) =>
+      table === 'project_market_updates'
+        ? { data: { id: UPDATE } }
+        : table === 'project_market_update_links'
+          ? { data: { id: LINK, expires_at: '2026-12-15T10:00:00.000Z' } }
+          : {};
+    const result = await createMarketUpdateLink(PROJECT, UPDATE);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.url).toMatch(/\/point-marche\/[A-Za-z0-9_-]{43}$/);
+    expect(service.writes()).toEqual([
+      'insert project_market_update_links',
+      'delete project_market_update_links',
+    ]);
+    const inserted = service.calls.find((call) => call.method === 'insert')?.args[0] as Record<
+      string,
+      string
+    >;
+    expect(inserted).toMatchObject({ agency_id: AGENCY, project_id: PROJECT, update_id: UPDATE });
+    expect(inserted.token_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.url).not.toContain(inserted.token_hash);
+    const afterDelete = service.calls.slice(
+      service.calls.findIndex((call) => call.method === 'delete'),
+    );
+    expect(afterDelete.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['update_id', UPDATE],
+      ['agency_id', AGENCY],
+    ]);
+    expect(afterDelete.find((call) => call.method === 'neq')?.args).toEqual(['id', LINK]);
+  });
+
+  it('le lien : si les anciens ne se retirent pas, le nouveau est retiré et rien ne change', async () => {
+    const { createMarketUpdateLink } =
+      await import('@/features/market-update/actions/create-market-update-link');
+    state.respond = (table, write) =>
+      table === 'project_market_updates'
+        ? { data: { id: UPDATE } }
+        : write === 'insert'
+          ? { data: { id: LINK, expires_at: '2026-12-15T10:00:00.000Z' } }
+          : write === 'delete' && service.writes().length === 2
+            ? { error: { message: 'refusé' } }
+            : {};
+    expect((await createMarketUpdateLink(PROJECT, UPDATE)).ok).toBe(false);
+    expect(service.writes()).toEqual([
+      'insert project_market_update_links',
+      'delete project_market_update_links',
+      'delete project_market_update_links',
+    ]);
+    const last = service.calls.slice(
+      service.calls.map((call) => call.method).lastIndexOf('delete'),
+    );
+    expect(last.find((call) => call.method === 'eq')?.args).toEqual(['id', LINK]);
+  });
+
+  it('retirer le lien : cadré sur le dossier et l’agence de la session', async () => {
+    const { removeMarketUpdateLink } =
+      await import('@/features/market-update/actions/remove-market-update-link');
+    state.respond = () => ({ data: [] });
+    expect((await removeMarketUpdateLink(PROJECT, LINK)).ok).toBe(false);
+    service.reset();
+    state.respond = (table) =>
+      table === 'project_market_update_links' ? { data: [{ id: LINK }] } : {};
+    expect(await removeMarketUpdateLink(PROJECT, LINK)).toEqual({ ok: true });
+    expect(service.calls.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['id', LINK],
+      ['project_id', PROJECT],
+      ['agency_id', AGENCY],
+    ]);
+  });
+});

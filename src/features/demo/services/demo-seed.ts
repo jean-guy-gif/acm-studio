@@ -48,6 +48,9 @@ export const DEMO_JUSTIFICATION =
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine dans 22 jours.
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 22 } as const;
+// « Conclu, mandat signé » : rendez-vous d'il y a trois semaines, pour que le Point marché (M127)
+// dise « depuis notre rendez-vous du … » avec un vrai écart (designer, 29/10).
+export const DEMO_SIGNED_MEETING_DAYS_AGO = 21;
 
 export type DemoSeedCompetitor = {
   listing: DemoListing;
@@ -102,6 +105,19 @@ export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
   );
   if (dropped && !chosen.includes(dropped)) {
     chosen[chosen.length - 1] = dropped;
+  }
+  // Mission 127 — les annonces qui disparaîtront après le rendez-vous (une vente probable, un
+  // retrait sans vente) prennent la place des derniers choisis qui ne baissent pas.
+  const gone = byCloseness.filter(
+    (listing) => listing.goneAfterMeeting && !chosen.includes(listing),
+  );
+  for (const listing of gone) {
+    const slot = chosen
+      .map((item, index) => ({ item, index }))
+      .reverse()
+      .find(({ item }) => item !== dropped && !item.goneAfterMeeting);
+    if (!slot) break;
+    chosen[slot.index] = listing;
   }
   return chosen;
 }

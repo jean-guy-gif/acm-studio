@@ -16,6 +16,11 @@ import {
 } from '@/components/ui/styles';
 import { FollowUpContactForm } from '@/features/meeting-conclusion/components/follow-up-contact-form';
 import { RefreshPricesButton } from '@/features/competitor-refresh/components/refresh-prices-button';
+import {
+  MarketUpdateLinesCompact,
+  MarketUpdateList,
+} from '@/features/market-update/components/market-update-panel';
+import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import { FollowUpHistory } from '@/features/meeting-conclusion/components/follow-up-history';
 import { FollowUpMessage } from '@/features/meeting-conclusion/components/follow-up-message';
 import { SellerSaidBlock } from '@/features/meeting-conclusion/components/seller-said-block';
@@ -81,15 +86,20 @@ export function SuiviRow({
   dossier,
   prospecting,
   followUp,
+  marketUpdates,
 }: {
   dossier: SuiviDossier;
   prospecting: SuiviProspecting | null;
   // Mission 96 — ce que le vendeur a dit, l'historique des relances, le délai depuis le dernier
   // contact et le message proposé (calculés par la page, côté serveur).
   followUp: DossierFollowUp;
+  // Mission 127 — les points marché du dossier, du plus récent au plus ancien.
+  marketUpdates?: MarketUpdateEntry[];
 }) {
   const [open, setOpen] = useState(false);
   const { project, property, conclusion } = dossier;
+  const points = marketUpdates ?? [];
+  const latestPoint = points[0] ?? null;
   const outcome = conclusion?.outcome ?? null;
   const group = suiviGroup(outcome);
   const bien = propertyLabel(property);
@@ -336,16 +346,25 @@ export function SuiviRow({
           {outcome === 'follow_up' && followUp.message ? (
             <FollowUpMessage proposed={followUp.message} />
           ) : null}
-          {/* Mission 105 — relire les annonces des concurrents, par l'extension, sans payer. */}
+          {/* Mission 105, 127 — relire les annonces des concurrents, par l'extension, sans payer,
+              puis écrire le point daté. */}
           <RefreshPricesButton projectId={project.id} />
         </div>
+        {/* Mission 127 — les points marché de ce mandat. */}
+        <MarketUpdateList projectId={project.id} updates={points} signed={outcome === 'signed'} />
 
         {open ? (
           <div
             id={detailsId}
             className="flex flex-col gap-4 border-t border-zinc-100 p-4 stage:border-white/10"
           >
-            {followUp.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
+            {/* Mission 127 — « Ce que le vendeur a dit » à côté des trois lignes du dernier point. */}
+            {followUp.sellerSaid || latestPoint ? (
+              <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
+                {followUp.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
+                {latestPoint ? <MarketUpdateLinesCompact update={latestPoint} /> : null}
+              </div>
+            ) : null}
             <FollowUpHistory contacts={followUp.contacts} />
 
             {conclusion ? (

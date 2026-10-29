@@ -361,11 +361,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page).toHaveURL(/\/suivi/);
     });
 
-    await test.step('Suivi : « Mettre à jour les prix » lit le jeu de données, une baisse apparaît', async () => {
+    await test.step('Suivi : « Mettre à jour les concurrents » lit le jeu de données, une baisse apparaît, le point s’écrit', async () => {
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
       await expect(row).toBeVisible();
       await expect(row.getByText('À relancer', { exact: true })).toBeVisible();
-      await row.getByRole('button', { name: 'Mettre à jour les prix des concurrents' }).click();
+      await row.getByRole('button', { name: 'Mettre à jour les concurrents' }).click();
       const summary = row.getByTestId('price-refresh-summary');
       await expect(summary).toBeVisible({ timeout: 60_000 });
       const summaryText = await summary.innerText();
@@ -373,6 +373,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       expect(summaryText).toMatch(/\d+ annonces? relues?/);
       expect(summaryText, 'Aucune baisse simulée après le rendez-vous').toMatch(
         /[1-9]\d* baisses? de prix/,
+      );
+      // Mission 127 — le point daté s'écrit à la fin de la mise à jour.
+      await expect(row.getByTestId('market-update-recorded')).toBeVisible({ timeout: 30_000 });
+      await expect(row.getByTestId('market-update-recorded')).toContainText(
+        /Point du \d{2}\/\d{2}\/\d{4} enregistré/,
       );
       await expect(page.getByText(/Installer l’extension|extension ACM/)).toHaveCount(0);
       await expectUnspoken(page, 'Suivi');
@@ -599,6 +604,82 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         expect(response?.headers()['x-robots-tag']).toContain('noindex');
         await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
         await expectUnspoken(visitor, 'Synthèse, lien public');
+        await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+        await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+        const after = await visitor.goto(link);
+        expect(after?.status(), 'Un lien retiré s’ouvre encore').toBe(404);
+      } finally {
+        await stranger.close();
+      }
+    });
+
+    await test.step('Le Point marché (mission 127) : sur le mandat signé de Mougins, une baisse, une vente probable, un retrait', async () => {
+      // Le dossier « Conclu, mandat signé » de « Préparer ma démo » : cinq concurrents, dont une
+      // annonce qui baisse, une qui disparaît à 150 jours, une à 320 jours.
+      await page.goto('/suivi');
+      const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+      await expect(row).toBeVisible();
+      await row.getByRole('button', { name: 'Mettre à jour les concurrents' }).click();
+      const recorded = row.getByTestId('market-update-recorded');
+      await expect(recorded).toBeVisible({ timeout: 60_000 });
+      const recordedText = await recorded.innerText();
+      console.log(
+        'Point marché (démo, Mougins) :',
+        recordedText.split('\n').slice(0, 2).join(' · '),
+      );
+      expect(recordedText).toMatch(/[1-9] baisses?/);
+      expect(recordedText).toContain('1 vente probable');
+      expect(recordedText).toContain('1 retiré sans vente');
+      expect(recordedText).toMatch(/négociation estimée de 5 à 10 %/);
+      await expect(row.getByTestId('market-updates')).toContainText(/Point du \d{2}\/\d{2}\/\d{4}/);
+      await expect(row.getByTestId('dropped-since-meeting')).toContainText(
+        /Ont baissé depuis le rendez-vous : 1 sur 5/,
+      );
+      await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
+      await expect(row.getByTestId('market-update-lines-compact')).toBeVisible();
+      await row.getByTestId('open-market-update').click();
+      await expect(page).toHaveURL(/\/builder\/[0-9a-f-]+\/point-marche/);
+      const document = page.getByTestId('market-update');
+      await expect(document).toBeVisible();
+      await expectUnspoken(page, 'Point marché');
+      await expect(document.getByTestId('market-update-competitor')).toHaveCount(5);
+      await expect(
+        document.getByText('Vente probable, négociation estimée de 5 à 10 %'),
+      ).toBeVisible();
+      await expect(document.getByText('Retiré du marché sans vente').first()).toBeVisible();
+      await expect(document.getByTestId('market-update-line')).toHaveCount(3);
+      await expect(
+        document.getByText('Aucun nouveau venu retenu depuis le rendez-vous'),
+      ).toBeVisible();
+      await expect(document.getByTestId('price-alignment')).toContainText(
+        'Prix aligné sur le marché',
+      );
+      const text = await document.innerText();
+      expect(text).not.toMatch(
+        /Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid|Publié le/,
+      );
+      for (const bound of [FOURCHETTE.min, FOURCHETTE.max]) {
+        expect(
+          withoutSpaces(text),
+          'La fourchette du conseiller est dans le Point marché',
+        ).not.toContain(String(bound));
+      }
+      await page.getByRole('button', { name: /Créer un lien pour le vendeur/ }).click();
+      const link = (await page.getByTestId('market-update-link').innerText()).trim();
+      expect(link).toMatch(/\/point-marche\/[A-Za-z0-9_-]{43}$/);
+      const bypass = process.env.E2E_VERCEL_BYPASS;
+      const stranger = await page
+        .context()
+        .browser()!
+        .newContext(bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {});
+      try {
+        await blockOutsideHosts(stranger, blocked);
+        const visitor = await stranger.newPage();
+        const response = await visitor.goto(link);
+        expect(response?.headers()['x-robots-tag']).toContain('noindex');
+        await expect(visitor.getByTestId('market-update')).toBeVisible();
+        await expect(visitor.getByTestId('market-update-line')).toHaveCount(3);
+        await expectUnspoken(visitor, 'Point marché, lien public');
         await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
         await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
         const after = await visitor.goto(link);

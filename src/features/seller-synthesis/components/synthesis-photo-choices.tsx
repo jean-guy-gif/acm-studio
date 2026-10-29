@@ -17,9 +17,12 @@ export type SynthesisPhotoChoice = {
 export function SynthesisPhotoChoices({
   projectId,
   competitors,
+  hint,
 }: {
   projectId: string;
   competitors: SynthesisPhotoChoice[];
+  // Mission 127 — le Point marché lit le même choix, avec sa propre phrase.
+  hint?: string;
 }) {
   const [hidden, setHidden] = useState(
     () => new Map(competitors.map((item) => [item.id, item.hidden])),
@@ -45,8 +48,8 @@ export function SynthesisPhotoChoices({
     <fieldset className="flex flex-col gap-2" data-testid="synthesis-photo-choices">
       <legend className="text-sm font-semibold text-zinc-800">Photos des concurrents</legend>
       <p className={hintText}>
-        Chaque photo est celle de l’annonce, telle que le vendeur l’a vue pendant le rendez-vous.
-        Elle appartient à son auteur : cochez « Sans photo » pour la retirer du document et du lien.
+        {hint ??
+          'Chaque photo est celle de l’annonce, telle que le vendeur l’a vue pendant le rendez-vous. Elle appartient à son auteur : cochez « Sans photo » pour la retirer du document et du lien.'}
       </p>
       <ul className="flex flex-col gap-1.5">
         {competitors.map((item) => (
