@@ -159,7 +159,9 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
   ];
   return (
     <div className="flex flex-col gap-3" data-testid="market-update-lines-compact">
-      <span className={metaLabel}>Où en est son prix · Point du {shortDay(update.madeAt)}</span>
+      <span className={metaLabel}>
+        Où en est son prix, tel que le vendeur le lira · Point du {shortDay(update.madeAt)}
+      </span>
       {blocks.map((block) => (
         <div key={block.number} className="flex flex-col gap-1">
           <span className="text-sm font-semibold text-zinc-800 stage:text-white">
