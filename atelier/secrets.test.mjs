@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 
 import { MASQUE, contientSecret, masquerSecrets, premierePhrase } from './secrets.mjs';
@@ -40,6 +42,27 @@ describe('le masque des secrets', () => {
     }
     // Un vrai jeton de 43 caractères, lui, reste masqué.
     expect(masquerSecrets('jeton abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ')).toContain(MASQUE);
+  });
+
+  it('masque les jetons de synthèse et de dossier tels que l’outil les fabrique, bords compris', () => {
+    // Le jeton réel : randomBytes(32).toString('base64url') (synthesis-token.ts, dossier-token.ts) ;
+    // un sur trente-deux commence ou finit par « - » ou « _ », sans frontière de mot (relecteur, 29/10).
+    const jetons = [];
+    while (jetons.length < 400) jetons.push(randomBytes(32).toString('base64url'));
+    jetons.push(
+      '-SifuhbxPzLhH_WKO93pnZHrGTowYdlG0MT0vi2vAZE',
+      '_AifuhbxPzLhH-WKO93pnZHrGTowYdlG0MT0vi2vAZ-',
+    );
+    for (const jeton of jetons) {
+      for (const texte of [
+        `https://acm.test/synthese/${jeton}`,
+        `https://acm.test/dossier/${jeton} ouvert`,
+        JSON.stringify({ phrase: `Lien créé : https://acm.test/synthese/${jeton}` }),
+      ]) {
+        expect(masquerSecrets(texte), texte).not.toContain(jeton);
+        expect(contientSecret(texte), texte).toBe(true);
+      }
+    }
   });
 
   it('laisse une phrase ordinaire telle quelle', () => {
