@@ -58,6 +58,23 @@ export function PriceLineBand({
       : []),
   ];
   const subjectClasses = alignment ? ALIGNMENT_CLASSES[alignment.tone] : null;
+  const RANK: Record<Marker['tone'], number> = { muted: 0, deep: 1, subject: 2 };
+  // Un seul repère par prix, du plus bas au plus haut.
+  const placed: Marker[] = [...markers]
+    .sort((a, b) => a.value - b.value || RANK[b.tone] - RANK[a.tone])
+    .reduce<Marker[]>((acc, marker) => {
+      const last = acc[acc.length - 1];
+      if (last && last.value === marker.value) {
+        acc[acc.length - 1] = {
+          key: `${last.key}+${marker.key}`,
+          label: `${last.label} · ${marker.label}`,
+          value: last.value,
+          tone: RANK[last.tone] >= RANK[marker.tone] ? last.tone : marker.tone,
+        };
+        return acc;
+      }
+      return [...acc, marker];
+    }, []);
   const toneText = (tone: Marker['tone']) =>
     tone === 'subject'
       ? (subjectClasses?.text ?? 'text-brand-deep')
@@ -83,15 +100,27 @@ export function PriceLineBand({
             style={{ left: at(price) }}
           />
         ))}
-        {markers.map((marker, index) => {
+        {/* Les repères, du plus bas au plus haut, un au-dessus puis un au-dessous ; deux repères
+            au même prix n'en font qu'un (« Prix médian · Le plus dangereux, selon vous ») ; près
+            d'un bord, le libellé s'ancre du côté où il a la place (M115). Sous 640 px, seul le
+            trait coloré reste sur la ligne, les libellés passent dans la liste dessous. */}
+        {placed.map((marker, index) => {
           const below = index % 2 === 1;
           const strong = marker.tone !== 'muted';
+          const position = bandPosition(marker.value, all);
+          const anchor = position < 0.12 ? 'start' : position > 0.88 ? 'end' : 'center';
+          const anchorClass =
+            anchor === 'start'
+              ? 'items-start text-left'
+              : anchor === 'end'
+                ? '-translate-x-full items-end text-right'
+                : '-translate-x-1/2 items-center text-center';
           return (
             <div
               key={marker.key}
-              className={`absolute flex -translate-x-1/2 flex-col items-center text-center leading-tight whitespace-nowrap ${toneText(marker.tone)} ${
+              className={`absolute flex flex-col leading-tight whitespace-nowrap ${anchorClass} ${toneText(marker.tone)} ${
                 compact ? 'top-[0.5rem]' : below ? 'top-[2rem] sm:top-[3.5rem]' : 'top-0 sm:top-0'
-              } ${compact ? 'text-[0.6rem]' : 'hidden text-[0.66rem] sm:flex'}`}
+              } ${compact ? 'text-[0.6rem]' : 'text-[0.66rem]'}`}
               style={{ left: at(marker.value) }}
             >
               {compact ? (
@@ -101,10 +130,18 @@ export function PriceLineBand({
                 />
               ) : (
                 <>
-                  {below ? <span className={`mb-0.5 h-4 w-0.5 ${toneDot(marker.tone)}`} /> : null}
-                  <span className={strong ? 'font-semibold' : ''}>{marker.label}</span>
-                  <b>{formatEuro(marker.value)}</b>
-                  {below ? null : <span className={`mt-0.5 h-4 w-0.5 ${toneDot(marker.tone)}`} />}
+                  {below ? (
+                    <span className={`mb-0.5 h-4 w-0.5 ${toneDot(marker.tone)}`} />
+                  ) : (
+                    <span className="hidden sm:block">{/* le texte vient d'abord */}</span>
+                  )}
+                  <span className={`hidden sm:block ${strong ? 'font-semibold' : ''}`}>
+                    {marker.label}
+                  </span>
+                  <b className="hidden sm:block">{formatEuro(marker.value)}</b>
+                  {below ? null : (
+                    <span className={`mt-0.5 h-4 w-0.5 sm:mt-0.5 ${toneDot(marker.tone)}`} />
+                  )}
                 </>
               )}
             </div>
@@ -115,7 +152,7 @@ export function PriceLineBand({
       <ul
         className={`flex flex-wrap gap-x-3 gap-y-0.5 text-[0.7rem] ${compact ? '' : 'sm:hidden'}`}
       >
-        {markers.map((marker) => (
+        {placed.map((marker) => (
           <li key={marker.key} className={`flex items-center gap-1 ${toneText(marker.tone)}`}>
             <span className={`inline-block h-2 w-2 rounded-full ${toneDot(marker.tone)}`} />
             {marker.label} <b>{formatEuro(marker.value)}</b>

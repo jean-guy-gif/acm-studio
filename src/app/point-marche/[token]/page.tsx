@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { MarketUpdateDocument } from '@/features/market-update/components/market-update-document';
+import { MarketUpdateDownloadButton } from '@/features/market-update/components/market-update-download-button';
 import { loadMarketUpdate } from '@/features/market-update/queries/load-market-update';
 import {
   hashMarketUpdateToken,
@@ -39,8 +40,9 @@ export default async function PublicMarketUpdatePage({
   const document = await loadMarketUpdate(admin, link.project_id, link.agency_id, link.update_id);
   if (!document) notFound();
   return (
-    <main className="min-h-screen bg-zinc-100 p-4 print:bg-white print:p-0">
+    <main className="min-h-screen bg-zinc-100 p-4 pb-20 print:bg-white print:p-0">
       <MarketUpdateDocument document={document} />
+      <MarketUpdateDownloadButton />
     </main>
   );
 }

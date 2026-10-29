@@ -62,7 +62,8 @@ const features = (subject: FeatureBundle, competitor: FeatureBundle): SynthesisF
         ],
   );
 
-const MAX_COMPETITOR_PHOTOS = 4;
+// Trois photos au plus : une fiche de concurrent tient toujours sur une page A4 (designer, 29/10).
+const MAX_COMPETITOR_PHOTOS = 3;
 
 // Mission 127 — un Point marché, lu par LISTES DE COLONNES AUTORISÉES, cadré sur le dossier ET
 // son agence : ni le titre, ni le lien, ni l'adresse d'une annonce, ni « Vendu par ». Le point lui-même

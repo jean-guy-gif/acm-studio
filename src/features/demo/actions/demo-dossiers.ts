@@ -27,6 +27,7 @@ import {
   demoKellerSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
+  DEMO_SIGNED_MEETING_DAYS_AGO,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -472,6 +473,13 @@ async function seedDemoDossier(
   });
   if (concludeError) return failed();
 
+  if (plan.conclusion.outcome === 'signed') {
+    // Mission 127 — un rendez-vous d'il y a trois semaines ; le point marché se fait aujourd'hui.
+    await supabase
+      .from('project_meeting_conclusions')
+      .update({ concluded_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO) })
+      .eq('project_id', projectId);
+  }
   if (plan.conclusion.outcome === 'follow_up') {
     // Un rendez-vous d'il y a neuf jours, une relance passée, un concurrent qui a baissé depuis.
     await supabase

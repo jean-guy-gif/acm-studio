@@ -48,6 +48,9 @@ export const DEMO_JUSTIFICATION =
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine dans 22 jours.
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 22 } as const;
+// « Conclu, mandat signé » : rendez-vous d'il y a trois semaines, pour que le Point marché (M127)
+// dise « depuis notre rendez-vous du … » avec un vrai écart (designer, 29/10).
+export const DEMO_SIGNED_MEETING_DAYS_AGO = 21;
 
 export type DemoSeedCompetitor = {
   listing: DemoListing;

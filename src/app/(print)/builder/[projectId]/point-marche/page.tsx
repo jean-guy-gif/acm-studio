@@ -68,6 +68,9 @@ export default async function MarketUpdatePage({
           <SynthesisPrintButton />
         </div>
         <h1 className="font-title text-2xl font-bold text-brand-deep">Point marché</h1>
+        <p className="text-sm text-zinc-600">
+          {[document.sellerName.trim() || null, document.propertyLabel].filter(Boolean).join(' · ')}
+        </p>
         {points.length > 1 ? (
           <nav className="flex flex-wrap gap-2" aria-label="Les points marché de ce mandat">
             {points.map((item) => (
