@@ -20,6 +20,8 @@ const FAILURE = 'Le lien n’a pas pu être créé. Réessayez.';
 
 // Mission 127 — un lien vers un Point marché, à envoyer au vendeur : 30 jours, jamais indexé, le
 // jeton montré une fois ; la base n'en garde que le condensat (modèle de la synthèse, M110).
+// « Créer un nouveau lien » remplace les liens précédents du point, qui cessent de marcher ; si
+// l'ancien ne se retire pas, le nouveau est retiré et rien ne change (M122 B).
 export async function createMarketUpdateLink(
   projectId: string,
   updateId: string,
@@ -55,6 +57,16 @@ export async function createMarketUpdateLink(
     .select('id, expires_at')
     .single();
   if (error || !data) return { ok: false, error: FAILURE };
+  const { error: removal } = await createServiceRoleClient()
+    .from('project_market_update_links')
+    .delete()
+    .eq('update_id', updateId)
+    .eq('agency_id', profile.agency_id)
+    .neq('id', data.id);
+  if (removal) {
+    await createServiceRoleClient().from('project_market_update_links').delete().eq('id', data.id);
+    return { ok: false, error: FAILURE };
+  }
   revalidatePath(`/builder/${projectId}/point-marche`);
   return {
     ok: true,

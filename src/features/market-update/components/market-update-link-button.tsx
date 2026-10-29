@@ -63,9 +63,16 @@ export function MarketUpdateLinkButton({
           })
         }
       >
-        {pending ? '…' : 'Créer un lien pour le vendeur (30 jours)'}
+        {pending
+          ? '…'
+          : links.length > 0 || created
+            ? 'Créer un nouveau lien (30 jours)'
+            : 'Créer un lien pour le vendeur (30 jours)'}
       </button>
-      <p className={hintText}>Sans compte, jamais indexé, 30 jours ; l’outil n’envoie rien.</p>
+      <p className={hintText}>
+        Sans compte, jamais indexé, 30 jours ; l’outil n’envoie rien.
+        {links.length > 0 || created ? ' Un nouveau lien remplace le précédent.' : ''}
+      </p>
       {created ? (
         <>
           <p className="text-sm break-all" data-testid="market-update-link">
