@@ -54,10 +54,12 @@ export const marketUpdateCompetitorSchema = z.object({
   surfaceArea: z.number().nullable(),
   dangerous: z.boolean(),
   // Montré au rendez-vous (M110 : un concurrent retenu peut être hors Live).
-  shownAtMeeting: z.boolean(),
+  // Les champs ajoutés après le premier point écrit ont une valeur par défaut : un point relu
+  // ne disparaît jamais en silence.
+  shownAtMeeting: z.boolean().default(true),
   // Ce que la relecture du jour a lu : true relue, false non relue (illisible ou disparue), null
   // sans annonce (saisi à la main).
-  readToday: z.boolean().nullable(),
+  readToday: z.boolean().nullable().default(null),
   meetingPrice: z.number().nullable(),
   meetingPriceSource: sourceSchema.nullable(),
   currentPrice: z.number().nullable(),
@@ -95,7 +97,7 @@ export const marketUpdateSummarySchema = z.object({
     withdrawn: z.number().int(),
     unread: z.number().int(),
     unreadable: z.number().int(),
-    goneUnknown: z.number().int(),
+    goneUnknown: z.number().int().default(0),
     newcomers: z.number().int(),
   }),
   lines: z.object({
@@ -104,7 +106,7 @@ export const marketUpdateSummarySchema = z.object({
     todayGone: z.object({
       probableSale: z.number().int(),
       withdrawn: z.number().int(),
-      unknown: z.number().int(),
+      unknown: z.number().int().default(0),
     }),
     newcomers: lineSchema.nullable(),
     newcomersCount: z.number().int(),

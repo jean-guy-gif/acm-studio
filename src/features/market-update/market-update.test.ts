@@ -267,6 +267,27 @@ describe('le point daté', () => {
     expect(droppedSinceMeetingLabel(summary)).toBe('Ont baissé depuis le rendez-vous : 2 sur 4');
     expect(parseMarketUpdateSummary(JSON.parse(JSON.stringify(summary)))).toEqual(summary);
     expect(parseMarketUpdateSummary({ version: 2 })).toBeNull();
+    // Un point écrit avant les champs ajoutés ensuite se relit, avec leurs valeurs par défaut.
+    const early = JSON.parse(JSON.stringify(summary)) as Record<string, unknown>;
+    const without = (value: unknown, keys: string[]): Record<string, unknown> =>
+      Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(([key]) => !keys.includes(key)),
+      );
+    const earlyCompetitors = (early.competitors as unknown[]).map((item) =>
+      without(item, ['shownAtMeeting', 'readToday']),
+    );
+    const earlyCounts = without(early.counts, ['goneUnknown']);
+    const earlyLines = early.lines as Record<string, unknown>;
+    const earlyGone = without(earlyLines.todayGone, ['unknown']);
+    const reread = parseMarketUpdateSummary({
+      ...early,
+      competitors: earlyCompetitors,
+      counts: earlyCounts,
+      lines: { ...earlyLines, todayGone: earlyGone },
+    });
+    expect(reread?.competitors[0]).toMatchObject({ shownAtMeeting: true, readToday: null });
+    expect(reread?.counts.goneUnknown).toBe(0);
+    expect(reread?.lines.todayGone.unknown).toBe(0);
     expect(plain(competitorFactLine(summary.competitors[3], MADE_AT.toISOString()))).toBe(
       '1 650 000 € au rendez-vous → 1 590 000 € aujourd’hui · −3,6 % · baisse vue le 15/11/2026 · en vente depuis 142 jours',
     );
@@ -443,6 +464,44 @@ describe('le document Point marché', () => {
     expect(html).toContain('Non relu');
     expect(html).toContain('Prix aligné sur le marché');
     expect(html).toContain('Le plus dangereux, selon vous');
+  });
+
+  it('un concurrent hors Live compte dans les lignes, pas dans les pages (M110, M113)', async () => {
+    const summary = buildMarketUpdateSummary({
+      ...input(),
+      competitors: [row(ids[0], 0, 1690000), row(ids[1], 1, 1700000, { excluded_from_live: true })],
+    });
+    expect(summary.lines.meeting?.prices).toEqual([1690000, 1700000]);
+    const html = renderToStaticMarkup(
+      createElement(MarketUpdateDocument, {
+        document: {
+          updateId: UPDATE,
+          madeAt: MADE_AT.toISOString(),
+          sellerName: '',
+          propertyLabel: null,
+          commune: null,
+          coverPhotoUrl: null,
+          summary,
+          competitors: [],
+          agency: {
+            name: 'Agence Test',
+            logoUrl: null,
+            postalAddress: null,
+            professionalCard: null,
+            professionalCardIssuer: null,
+            financialGuarantee: null,
+            advisorName: null,
+            advisorPhone: null,
+            advisorEmail: null,
+            advisorPhotoUrl: null,
+            advisorQr: null,
+          },
+          brandDeclarations: '',
+        },
+      }),
+    );
+    expect(html.split('data-testid="market-update-competitor"').length - 1).toBe(1);
+    expect(html).not.toContain('Pour </p>');
   });
 
   it('« Sans photo » retire les photos du document et de ce que reçoit la page ; 4 photos au plus', async () => {

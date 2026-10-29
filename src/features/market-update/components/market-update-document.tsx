@@ -55,7 +55,8 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
   const gone = item.goneAt != null;
   // Mission 127 A 2 — un prix du rendez-vous repris à la migration (source 'current') n'est pas un
   // prix relevé au rendez-vous : « Non relu », annonce disparue comprise.
-  const unread = item.state === 'unread' || item.meetingPriceSource === 'current';
+  const unread =
+    item.state === 'unread' || item.meetingPriceSource === 'current' || item.meetingPrice == null;
   const perSquareMeter =
     item.currentPrice != null && item.surfaceArea
       ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea)
@@ -393,14 +394,18 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             title="Les concurrents, depuis le rendez-vous"
             hint="Pour chaque concurrent retenu : son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu."
           />
-          {summary.competitors.map((item) => (
-            <CompetitorPage
-              key={item.id}
-              item={item}
-              view={viewById.get(item.id)}
-              madeAt={document.madeAt}
-            />
-          ))}
+          {/* M110, M113 : une page par concurrent MONTRÉ au rendez-vous ; les concurrents retenus
+              hors Live comptent dans les lignes de prix, pas dans les pages. */}
+          {summary.competitors
+            .filter((item) => item.shownAtMeeting)
+            .map((item) => (
+              <CompetitorPage
+                key={item.id}
+                item={item}
+                view={viewById.get(item.id)}
+                madeAt={document.madeAt}
+              />
+            ))}
         </section>
 
         {/* 03 · Où en est votre prix — trois lignes à la même échelle. */}
