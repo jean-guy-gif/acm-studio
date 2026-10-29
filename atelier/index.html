@@ -705,7 +705,17 @@
       const horloge = (iso) =>
         `${new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} · ${new Date(iso).toLocaleTimeString('fr-FR')}`;
 
-      const migrationEnAttente = (etat) => etat.cartes.base?.enAttente?.[0] ?? null;
+      // La migration en attente d'UNE mission : celle dont le dossier porte le fichier ; une migration
+      // sans dossier connu (ancienne carte) ne vaut que s'il n'y a qu'une mission.
+      const migrationDe = (etat, m) => {
+        const attente = etat.cartes.base?.enAttente ?? [];
+        return (
+          attente.find((x) => x.dossier && m && x.dossier === m.dossier) ??
+          (etat.missions.length <= 1 ? (attente.find((x) => !x.dossier) ?? null) : null)
+        );
+      };
+      const missionDeMigration = (etat, x) =>
+        etat.missions.find((m) => x.dossier && m.dossier === x.dossier) ?? null;
       const dateDeVersion = (v) => {
         const m = /^(\d{4})(\d{2})(\d{2})/.exec(String(v ?? ''));
         return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
@@ -716,15 +726,22 @@
       // Le bandeau : ce qui attend Jean-Guy, par mission, d'après l'état COURANT du chef (jamais une ligne passée).
       function bandeaux(etat) {
         const lignes = [];
-        const migration = migrationEnAttente(etat);
+        const dites = new Set();
         for (const m of etat.missions) {
           if (m.chef.etat !== 'attend Jean-Guy') continue;
+          const migration = migrationDe(etat, m);
+          if (migration) dites.add(migration.version);
           lignes.push(
             `Mission ${missionLisible(m.mission)} attend Jean-Guy : ${migration ? consigneMigration(migration) : m.chef.phrase || 'une réponse.'}`,
           );
         }
-        if (lignes.length === 0 && migration)
-          lignes.push(`Attend Jean-Guy : ${consigneMigration(migration)}`);
+        for (const x of etat.cartes.base?.enAttente ?? []) {
+          if (dites.has(x.version)) continue;
+          const m = missionDeMigration(etat, x);
+          lignes.push(
+            `${m ? `Mission ${missionLisible(m.mission)} attend Jean-Guy` : 'Attend Jean-Guy'} : ${consigneMigration(x)}`,
+          );
+        }
         return lignes.map((l) => `<div class="bandeau attend">${html(l)}</div>`).join('');
       }
 
@@ -784,7 +801,7 @@
           (d) =>
             `<line x1="50%" y1="50%" x2="${d.x}%" y2="${ordonnee(d, compact)}%" stroke="${couleurLigne(agentDe(d.nom))}" stroke-width="1.5" stroke-dasharray="4 3" />`,
         ).join('');
-        const migration = migrationEnAttente(etat);
+        const migration = migrationDe(etat, m);
         const noeuds = NOEUDS.map((d) => {
           const a = agentDe(d.nom);
           const etapeNonJouee = m.etapes.find((e) => e.cle === d.nom)?.etat === 'non jouée';
@@ -849,16 +866,23 @@
           );
         const attente = b.enAttente && b.enAttente.length > 0;
         const etatCarte = b.erreur ? 'illisible' : attente ? 'attend Jean-Guy' : 'à jour';
-        // La prédiction du gardien, lue dans le journal : la dernière phrase d'un gardien terminé.
-        const gardien = missions
-          .flatMap((m) => m.agents)
-          .find((a) => a.nom === 'gardien-sql' && a.etat === 'terminé');
-        const migration = (m) =>
-          `${m.version}_${m.nom}${m.date || dateDeVersion(m.version) ? ` · ${m.date || dateDeVersion(m.version)}` : ''}`;
+        // La prédiction du gardien de la mission qui porte la migration, lue dans le journal.
+        const etatPage = { missions, cartes: { base: b } };
+        const gardienDe = (x) =>
+          (missionDeMigration(etatPage, x) ?? missions[0])?.agents.find(
+            (a) => a.nom === 'gardien-sql' && a.etat === 'terminé',
+          ) ?? null;
+        const migration = (x) => {
+          const m = missions.length > 1 ? missionDeMigration(etatPage, x) : null;
+          return `${x.version}_${x.nom}${x.date || dateDeVersion(x.version) ? ` · ${x.date || dateDeVersion(x.version)}` : ''}${m ? ` · mission ${missionLisible(m.mission)}` : ''}`;
+        };
+        const gardiens = attente
+          ? b.enAttente.map(gardienDe).filter((g, i, l) => g && l.indexOf(g) === i)
+          : [];
         return `<section class="carte">${enteteCarte('Base', etatCarte)}
       <div class="libelle">Dernière migration appliquée</div><div class="valeur">${b.derniereAppliquee ? html(migration(b.derniereAppliquee)) : html(b.erreur ?? '—')}</div>
       <div class="libelle">Migration en attente</div><div class="valeur" style="${attente ? 'color:var(--attend);font-weight:700' : ''}">${attente ? html(b.enAttente.map(migration).join(', ')) + ' · à appliquer par Jean-Guy' : 'Aucune'}</div>
-      ${attente && gardien ? `<div class="valeur gris" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${html(gardien.phrase)}">Gardien SQL : ${html(gardien.phrase)}</div>` : ''}
+      ${gardiens.map((g) => `<div class="valeur gris" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${html(g.phrase)}">Gardien SQL : ${html(g.phrase)}</div>`).join('')}
       <div class="pied">Lue ${html(ilYA(b.lueA))} · relue toutes les 5 min</div></section>`;
       }
       function carteEssai(e, missions) {

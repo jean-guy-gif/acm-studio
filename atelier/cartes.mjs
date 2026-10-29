@@ -136,7 +136,10 @@ export async function lireBase(dossiers) {
       env: { ...process.env, CI: '1' },
     });
     const liste = lireListeMigrations(stdout);
-    const locales = dossiers.flatMap(migrationsLocales);
+    // Chaque migration porte le dossier qui la contient : la consigne suit sa mission (relecteur).
+    const locales = dossiers.flatMap((d) =>
+      migrationsLocales(d).map((m) => ({ ...m, dossier: d })),
+    );
     const vues = new Map(locales.map((m) => [m.version, m]));
     return carteBase(
       liste,
@@ -228,22 +231,43 @@ export async function lireEssai(dossier, branche) {
   };
 }
 
-// La dernière fusion dans `main` : son sujet et sa date, après un `fetch` (sinon « dernière
-// fusion » serait celle du dernier `pull`, relecteur 29/10).
-export async function derniereFusion(dossier) {
+// La dernière fusion dans `main`, lue par `git ls-remote origin main` — jamais un `fetch` dans le
+// dépôt de travail de Jean-Guy (décision du 29/10 : aucune ref locale touchée, pas de `.lock`) —,
+// toutes les 5 min au plus ; le sujet et la date se lisent si le commit est déjà dans le dépôt.
+const FUSION_CACHE_MS = 5 * 60_000;
+const fusions = new Map();
+export async function derniereFusion(dossier, maintenant = Date.now()) {
+  const gardee = fusions.get(dossier);
+  if (gardee && maintenant - gardee.a < FUSION_CACHE_MS) return gardee.fusion;
+  let fusion = { commit: null, sujet: '', date: null };
   try {
-    await commande('git', ['fetch', '-q', 'origin', 'main'], { cwd: dossier, delai: 20_000 }).catch(
-      () => undefined,
-    );
-    const { stdout } = await commande('git', ['log', '-1', '--format=%s%n%cI', 'origin/main'], {
+    const { stdout } = await commande('git', ['ls-remote', 'origin', 'refs/heads/main'], {
       cwd: dossier,
-      delai: 10_000,
+      delai: 20_000,
     });
-    const [sujet, date] = stdout.trim().split('\n');
-    return { sujet: masquerSecrets((sujet ?? '').slice(0, 120)), date: date ?? null };
+    const sha = /^([0-9a-f]{40})\s/.exec(stdout.trim())?.[1] ?? null;
+    if (sha) {
+      fusion = { commit: sha.slice(0, 7), sujet: '', date: null };
+      try {
+        const lu = await commande('git', ['log', '-1', '--format=%s%n%cI', sha], {
+          cwd: dossier,
+          delai: 10_000,
+        });
+        const [sujet, date] = lu.stdout.trim().split('\n');
+        fusion = {
+          commit: sha.slice(0, 7),
+          sujet: masquerSecrets((sujet ?? '').slice(0, 120)),
+          date: date ?? null,
+        };
+      } catch {
+        // Le commit n'est pas encore dans le dépôt : son condensat suffit.
+      }
+    }
   } catch {
-    return { sujet: '', date: null };
+    // Le dépôt distant ne répond pas : la carte le dit par l'absence de fusion.
   }
+  fusions.set(dossier, { a: maintenant, fusion });
+  return fusion;
 }
 
 export async function lireProduction(dossier) {
