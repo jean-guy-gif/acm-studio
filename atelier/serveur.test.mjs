@@ -100,8 +100,12 @@ describe('le serveur de l’atelier', () => {
       expect(refus.code).toBe(1);
       expect(refus.err).toContain('déjà pris');
     } finally {
+      // Le serveur journalise « arrêté par SIGTERM » avant de sortir : on attend sa sortie avant de
+      // retirer son dossier (ENOTEMPTY vu dans la CI, Linux).
+      const sorti = new Promise((resoudre) => enfant.once('exit', resoudre));
       enfant.kill();
-      rmSync(home, { recursive: true, force: true });
+      await sorti;
+      rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     }
   });
 });
