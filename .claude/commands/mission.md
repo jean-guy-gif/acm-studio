@@ -17,6 +17,8 @@ constat dans le rapport : Jean-Guy tranche.
 ci-dessous, note-la toi-même d'une ligne, par exemple :
 `node atelier/note.mjs --etape code "Aucune question : je code"` ; quand quelque chose attend
 Jean-Guy : `node atelier/note.mjs --etat "attend Jean-Guy" --etape accord "Migration soumise"`.
+Un agent que tu lances ne reçoit jamais le port de l'atelier (4871) ni l'ordre de tuer un processus
+par son nom : un serveur d'essai prend `--port 0`.
 Les étapes : `architecte`, `designer`, `questions`, `code`, `gardien-sql`, `accord`, `relecteur`,
 `push`, `testeur`, `parcoureur`, `rendus`, `rapport`.
 
@@ -52,7 +54,9 @@ Les étapes : `architecte`, `designer`, `questions`, `code`, `gardien-sql`, `acc
    existe (mission 64), fusionne aussi ta branche dans `essai` et pousse `essai` (`git fetch` puis
    `git merge --ff-only origin/essai` d'abord : `git pull` échoue sur un auto-stash) : c'est là que
    Jean-Guy essaie. Une fois l'essai déployé (`/api/version` répond ton commit) :
-   - **Testeur** : il joue les barrières et la suite e2e, distingue aléa et défaut, produit le PDF et
+   - **Testeur** : il joue les barrières, toujours ; la suite e2e complète seulement si la mission
+     change `src/`, `extension/` ou `supabase/` (sinon, les barrières et les tests propres à la
+     mission ; décision de Jean-Guy, 29/10) ; il distingue aléa et défaut, produit le PDF et
      les captures hors du dépôt (`~/acm-studio-rendus/<numéro>/`). Un défaut se corrige avant le
      rapport (puis relecteur et testeur sur le delta) ; un aléa se nomme dans le rapport.
    - **Parcoureur** : après le testeur, il joue le scénario d'essai comme un conseiller puis comme un

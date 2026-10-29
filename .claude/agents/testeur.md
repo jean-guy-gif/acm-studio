@@ -11,8 +11,10 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
 
 1. Barrières, dans l'ordre, et tu t'arrêtes à la première rouge : `npm run typecheck`,
    `npm run lint`, `npm test`, `npm run format:check`, `npm run build`.
-2. Si l'essai sert la branche : `npm run e2e` (parcours, bienvenue, Live tablette, démo). Un échec se
-   relance UNE fois. Un test vert au second passage est un **aléa**, à nommer (quel test, quel pas,
+2. **La suite e2e complète seulement si la mission change `src/`, `extension/` ou `supabase/`**
+   (`git diff --name-only main...`, règle de Jean-Guy du 29/10) ; sinon, les barrières et les tests
+   propres à la mission, et tu le dis. Si l'essai sert la branche : `npm run e2e` (parcours,
+   bienvenue, Live tablette, démo). Un échec se relance UNE fois. Un test vert au second passage est un **aléa**, à nommer (quel test, quel pas,
    quelle durée) ; rouge deux fois, c'est un **défaut**.
 3. Pour chaque défaut : le test, le pas qui échoue, la ligne d'erreur, et ta lecture en une phrase
    (le code, le test, ou la donnée de l'essai). Pas de correctif.
@@ -29,8 +31,12 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
    d'`overflow` qui tronque la feuille). Un bouton sous le pli d'un panneau `sticky` est un défaut.
    Vérifie enfin que chaque image attendue est chargée (`naturalWidth > 0`) : une « Photo
    indisponible » sur un écran client est un défaut, à expliquer (URL, hôte, protection).
-5. Note les durées des quatre suites et dis si l'une approche son budget (6 min pour le parcours).
+5. Note les durées des quatre suites et dis si l'une approche son budget (8 min par parcours).
 6. Rapport, 15 lignes au plus : vert / aléas / défauts, puis les durées.
 
 Si une suite ne peut pas tourner (variables manquantes, essai pas à jour), dis-le et arrête-toi : tu
 n'inventes ni résultat ni raison.
+
+Tu ne tues jamais un processus que tu n'as pas lancé (ni `pkill -f`, ni un port que tu n'as pas
+ouvert) : l'atelier de Jean-Guy tourne sur 4871 ; un serveur que tu lances prend `--port 0` et tu
+l'arrêtes par son pid.

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -39,6 +40,8 @@ describe('le serveur de l’atelier', () => {
     expect(etat.missions[0].mission).toBe('120B');
     expect(etat.cartes.base.enAttente).toEqual([{ version: '20261118090000', nom: 'detachement' }]);
     expect(etat.missions[0].chef.etat).toBe('attend Jean-Guy');
+    // Un exemple vit à l'heure de sa dernière ligne (plus 90 s) : ses « depuis » sont stables.
+    expect(etat.maintenant).toBe('2026-10-30T10:57:30.000Z');
     const texte = JSON.stringify(etat);
     expect(texte).not.toMatch(/\b(blocked|done|pending|running)\b/);
     expect(contientSecret(texte)).toBe(false);
@@ -57,12 +60,13 @@ describe('le serveur de l’atelier', () => {
     );
   });
 
-  it('« npm run atelier » démarre et répond', async () => {
+  it('« npm run atelier » démarre, répond, tient son journal de marche et refuse un port pris', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'atelier-serveur-'));
     const enfant = spawn(
       process.execPath,
       [resolve(import.meta.dirname, 'serveur.mjs'), '--port', '0', '--sans-cartes'],
       {
-        env: { ...process.env, ATELIER_HOME: EXEMPLES },
+        env: { ...process.env, ATELIER_HOME: home },
       },
     );
     try {
@@ -77,8 +81,25 @@ describe('le serveur de l’atelier', () => {
         setTimeout(() => rejeter(new Error('pas de réponse')), 10_000);
       });
       expect((await fetch(`http://127.0.0.1:${sortie}/sante`)).status).toBe(200);
+      expect(readFileSync(join(home, 'serveur.log'), 'utf8')).toContain('démarré sur');
+      // Le même port, pris : un refus propre, pas une trace.
+      const second = spawn(
+        process.execPath,
+        [resolve(import.meta.dirname, 'serveur.mjs'), '--port', sortie, '--sans-cartes'],
+        { env: { ...process.env, ATELIER_HOME: home }, encoding: 'utf8' },
+      );
+      const refus = await new Promise((resoudre) => {
+        let err = '';
+        second.stderr.on('data', (d) => {
+          err += d;
+        });
+        second.on('exit', (code) => resoudre({ code, err }));
+      });
+      expect(refus.code).toBe(1);
+      expect(refus.err).toContain('déjà pris');
     } finally {
       enfant.kill();
+      rmSync(home, { recursive: true, force: true });
     }
   });
 });
@@ -99,6 +120,7 @@ describe('les cartes, lues sur des sorties factices', () => {
     expect(carte.derniereAppliquee).toEqual({
       version: '20261116090000',
       nom: 'acquereur_pour_votre_bien',
+      date: '16/11/2026',
     });
     expect(carte.enAttente).toEqual([{ version: '20261117090000', nom: 'une_carte_par_bien' }]);
     expect(lireListeMigrations('20261116090000 | 20261116090000 | 2026-11-16 09:00:00')).toEqual([

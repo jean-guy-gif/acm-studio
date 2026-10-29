@@ -5,7 +5,14 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { dureesE2e, ecrireCetteLigne, ligneDeHook, phraseDurees } from './hook.mjs';
+import {
+  dureesE2e,
+  ecrireCetteLigne,
+  ligneDeHook,
+  phraseDurees,
+  regleDeCommande,
+  sansHeredocs,
+} from './hook.mjs';
 
 // Mission 126 — le hook, joué sur une session factice : chaque événement documenté arrive sur
 // stdin, et l'on relit ce qui est écrit dans un journal à part (`ATELIER_HOME`).
@@ -58,7 +65,7 @@ describe('le hook de l’atelier, sur une session factice', () => {
       mission: '126',
       agent: 'chef',
       etat: 'en cours',
-      phrase: '/mission 126 lancé',
+      phrase: 'Mission 126 lancée par Jean-Guy',
       etape: 'architecte',
       dossier: depot,
     });
@@ -137,24 +144,59 @@ describe('le hook de l’atelier, sur une session factice', () => {
     expect(JSON.stringify(journal())).not.toContain('curl');
   });
 
-  it('une notification ou l’arrêt du chef : « attend Jean-Guy », le type seulement', () => {
+  it('un heredoc qui mentionne « git push » n’a rien poussé ; un jeton coupé reste masqué', () => {
+    const avant = journal().length;
+    jouer({
+      hook_event_name: 'PostToolUse',
+      tool_name: 'Bash',
+      tool_input: {
+        command: `python3 - <<'EOF'\nprint("git push est une chaîne")\nEOF\necho fini`,
+      },
+      tool_response: { stdout: 'ok' },
+    });
+    expect(journal()).toHaveLength(avant);
+    jouer({
+      hook_event_name: 'PostToolUse',
+      tool_name: 'Bash',
+      tool_input: {
+        command: `git commit -q -m "$(cat <<'EOF'\nMission 126 — x\nEOF\n)" && git push -q https://u:${JETON}@github.com/x/y.git mission-126-atelier --force-with-lease=mission-126-atelier:abcdef`,
+      },
+      tool_response: { stdout: 'ok' },
+    });
+    const ligne = journal().at(-1);
+    expect(ligne.evenement).toBe('push');
+    expect(ligne.phrase.startsWith('Poussé : git push -q https://u:[masqué]')).toBe(true);
+    expect(JSON.stringify(journal())).not.toContain(JETON);
+  });
+
+  it('une notification : « attend Jean-Guy », le type seulement ; le Stop ne l’efface pas', () => {
     jouer({
       hook_event_name: 'Notification',
       notification_type: 'permission_prompt',
       message: `secret ${JETON}`,
     });
+    const avant = journal().length;
     jouer({ hook_event_name: 'Stop', last_assistant_message: 'rapport…' });
-    const [notif, stop] = journal().slice(-2);
-    expect(notif).toMatchObject({
+    expect(journal()).toHaveLength(avant);
+    expect(journal().at(-1)).toMatchObject({
       agent: 'chef',
       etat: 'attend Jean-Guy',
       phrase: 'Une permission attend Jean-Guy',
     });
-    expect(stop).toMatchObject({
+    // Jean-Guy répond : la ligne lève l'orange, sans son texte.
+    jouer({ hook_event_name: 'UserPromptSubmit', prompt: `oui, et le jeton ${JETON}` });
+    expect(journal().at(-1)).toMatchObject({
       agent: 'chef',
-      etat: 'attend Jean-Guy',
-      phrase: 'Au repos : attend Jean-Guy',
+      etat: 'en cours',
+      phrase: 'Jean-Guy a répondu',
+      evenement: 'reponse',
     });
+    // Le chef s'arrête sans question posée : « Au repos », en cours.
+    jouer({ hook_event_name: 'Stop', last_assistant_message: 'fin' });
+    expect(journal().at(-1)).toMatchObject({ agent: 'chef', etat: 'en cours', phrase: 'Au repos' });
+    // `/valide` ferme la mission.
+    jouer({ hook_event_name: 'UserPromptSubmit', prompt: '/valide 126' });
+    expect(journal().at(-1)).toMatchObject({ evenement: 'valide', mission: '126' });
     expect(JSON.stringify(journal())).not.toContain(JETON);
   });
 
@@ -190,9 +232,26 @@ describe('les règles du hook, pures', () => {
     expect(
       ligneDeHook({ hook_event_name: 'PostToolUse', tool_name: 'Write' }, contexte),
     ).toBeNull();
+    // Sur une branche de mission, une ligne tapée est une réponse de Jean-Guy ; sur main, rien.
     expect(
       ligneDeHook({ hook_event_name: 'UserPromptSubmit', prompt: 'reprend' }, contexte),
+    ).toMatchObject({ phrase: 'Jean-Guy a répondu', evenement: 'reponse' });
+    expect(
+      ligneDeHook(
+        { hook_event_name: 'UserPromptSubmit', prompt: 'reprend' },
+        { dossier: '/x', branche: 'main', mission: null },
+      ),
     ).toBeNull();
+  });
+
+  it('le motif se teste en tête de segment, hors des heredocs', () => {
+    expect(sansHeredocs("a <<'EOF'\ngit push\nEOF\nb")).toBe("a <<'EOF'\nb");
+    expect(regleDeCommande('cd /x && CI=1 git push -u origin b')?.segment).toBe(
+      'git push -u origin b',
+    );
+    expect(regleDeCommande('(npm run e2e > log 2>&1 &)')?.regle.evenement).toBe('e2e');
+    expect(regleDeCommande('echo "git push" ; grep "gh run" fichier')).toBeNull();
+    expect(regleDeCommande("python3 - <<'EOF'\ngit push\nEOF")).toBeNull();
   });
 
   it('les durées e2e se lisent dans la sortie de Playwright', () => {

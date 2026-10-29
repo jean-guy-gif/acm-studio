@@ -1,15 +1,71 @@
 // Mission 126 — les trois cartes : Base, Essai, Production. Chaque lecture parse la sortie d'une
 // commande ou d'une adresse et n'en garde que des faits nommés : jamais une sortie brute, jamais un
 // secret (le jeton de contournement de l'essai est lu dans `.env.e2e.local` et ne sort jamais).
-import { execFile } from 'node:child_process';
+// Chaque lecture a son délai et rend son erreur dans sa carte : aucune ne bloque ni ne fait tomber
+// le serveur (constat A de Jean-Guy, 29/10).
+import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 
-const run = promisify(execFile);
+import { masquerSecrets } from './secrets.mjs';
+
 const PRODUCTION_URL = (
   process.env.ACM_PRODUCTION_URL ?? 'https://acm-studio-henna.vercel.app'
 ).replace(/\/$/, '');
+export const DELAI_ADRESSE_MS = 15_000;
+
+// Une commande, bornée : l'entrée fermée (une invite de mot de passe n'attend pas), le groupe de
+// processus tué au délai (`npx` lance un enfant qui, sinon, garde la sortie ouverte).
+export function commande(programme, args, { cwd, delai, env } = {}) {
+  return new Promise((resoudre, rejeter) => {
+    let sortie = '';
+    let erreur = '';
+    let fini = false;
+    const enfant = spawn(programme, args, {
+      cwd,
+      env: env ?? process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: process.platform !== 'win32',
+    });
+    const minuterie = setTimeout(() => {
+      if (fini) return;
+      fini = true;
+      try {
+        process.kill(-enfant.pid, 'SIGKILL');
+      } catch {
+        enfant.kill('SIGKILL');
+      }
+      rejeter(new Error(`délai dépassé (${Math.round((delai ?? 0) / 1000)} s)`));
+    }, delai ?? 30_000);
+    enfant.stdout.on('data', (d) => {
+      sortie += d;
+    });
+    enfant.stderr.on('data', (d) => {
+      erreur += d;
+    });
+    enfant.on('error', (e) => {
+      if (fini) return;
+      fini = true;
+      clearTimeout(minuterie);
+      rejeter(e);
+    });
+    enfant.on('close', (code) => {
+      if (fini) return;
+      fini = true;
+      clearTimeout(minuterie);
+      if (code === 0) resoudre({ stdout: sortie, stderr: erreur });
+      else rejeter(new Error(premiereLigne(erreur) || `sortie ${code}`));
+    });
+  });
+}
+
+function premiereLigne(texte) {
+  const ligne = String(texte ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l !== '');
+  return ligne ? masquerSecrets(ligne).slice(0, 80) : '';
+}
 
 // Les variables de `.env.e2e.local` qui servent : l'adresse de l'essai et son jeton. Le jeton reste ici.
 export function lireEnvE2e(dossier) {
@@ -23,6 +79,12 @@ export function lireEnvE2e(dossier) {
   return valeurs;
 }
 
+// « 20261118090000 » → « 18/11/2026 » : la date d'une migration, lue dans sa version.
+export function dateDeVersion(version) {
+  const m = /^(\d{4})(\d{2})(\d{2})/.exec(String(version ?? ''));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+}
+
 // « migration en attente » = un fichier de `supabase/migrations/` sur la branche qui n'est pas dans
 // `migration list --linked` (décision de Jean-Guy du 29/10 : c'est lui qui l'applique, en orange).
 export function migrationsLocales(dossier) {
@@ -30,7 +92,7 @@ export function migrationsLocales(dossier) {
   if (!existsSync(chemin)) return [];
   return readdirSync(chemin)
     .filter((f) => /^\d{14}_.+\.sql$/.test(f))
-    .map((f) => ({ version: f.slice(0, 14), nom: f.slice(15, -4) }))
+    .map((f) => ({ version: f.slice(0, 14), nom: f.slice(15, -4), date: dateDeVersion(f) }))
     .sort((a, b) => a.version.localeCompare(b.version));
 }
 
@@ -54,7 +116,11 @@ export function carteBase(liste, locales) {
   const enAttente = locales.filter((m) => !appliquees.has(m.version));
   return {
     derniereAppliquee: derniere
-      ? { version: derniere, nom: locales.find((m) => m.version === derniere)?.nom ?? '' }
+      ? {
+          version: derniere,
+          nom: locales.find((m) => m.version === derniere)?.nom ?? '',
+          date: dateDeVersion(derniere),
+        }
       : null,
     enAttente,
     lueA: new Date().toISOString(),
@@ -64,9 +130,9 @@ export function carteBase(liste, locales) {
 
 export async function lireBase(dossiers) {
   try {
-    const { stdout } = await run('npx', ['supabase', 'migration', 'list', '--linked'], {
+    const { stdout } = await commande('npx', ['supabase', 'migration', 'list', '--linked'], {
       cwd: dossiers[0],
-      timeout: 60_000,
+      delai: 60_000,
       env: { ...process.env, CI: '1' },
     });
     const liste = lireListeMigrations(stdout);
@@ -76,24 +142,31 @@ export async function lireBase(dossiers) {
       liste,
       [...vues.values()].sort((a, b) => a.version.localeCompare(b.version)),
     );
-  } catch {
+  } catch (e) {
     return {
       derniereAppliquee: null,
       enAttente: [],
       lueA: new Date().toISOString(),
-      erreur: 'Base illisible',
+      erreur: `Base illisible : ${premiereLigne(e?.message) || 'migration list a échoué'}`,
     };
   }
 }
 
 async function commitServi(url, entetes = {}) {
   try {
-    const reponse = await fetch(`${url}/api/version`, { headers: entetes, redirect: 'manual' });
+    const reponse = await fetch(`${url}/api/version`, {
+      headers: entetes,
+      redirect: 'manual',
+      signal: AbortSignal.timeout(DELAI_ADRESSE_MS),
+    });
     if (!reponse.ok) return { commit: null, erreur: `Réponse ${reponse.status}` };
     const lu = await reponse.json();
     return { commit: typeof lu.commit === 'string' ? lu.commit.slice(0, 7) : null, erreur: null };
-  } catch {
-    return { commit: null, erreur: 'Injoignable' };
+  } catch (e) {
+    return {
+      commit: null,
+      erreur: e?.name === 'TimeoutError' ? 'Pas de réponse en 15 s' : 'Injoignable',
+    };
   }
 }
 
@@ -137,30 +210,37 @@ export async function lireEssai(dossier, branche) {
   const [servi, ci] = await Promise.all([
     commitServi(url, entetes),
     branche
-      ? run(
+      ? commande(
           'gh',
           ['run', 'list', '--branch', branche, '-L', '1', '--json', 'headSha,status,conclusion'],
-          {
-            cwd: dossier,
-            timeout: 30_000,
-          },
+          { cwd: dossier, delai: 30_000 },
         )
           .then(({ stdout }) => lireCi(stdout))
           .catch(() => ({ commit: null, etat: 'illisible', verte: null }))
       : Promise.resolve({ commit: null, etat: 'aucune', verte: null }),
   ]);
-  return { ...servi, ci, budgetE2e: budgetE2e(dossier), lueA: new Date().toISOString() };
+  return {
+    ...servi,
+    branche: branche || null,
+    ci,
+    budgetE2e: budgetE2e(dossier),
+    lueA: new Date().toISOString(),
+  };
 }
 
-// La dernière fusion dans `main` : son sujet et sa date, lus dans le dépôt (origin/main).
+// La dernière fusion dans `main` : son sujet et sa date, après un `fetch` (sinon « dernière
+// fusion » serait celle du dernier `pull`, relecteur 29/10).
 export async function derniereFusion(dossier) {
   try {
-    const { stdout } = await run('git', ['log', '-1', '--format=%s%n%cI', 'origin/main'], {
+    await commande('git', ['fetch', '-q', 'origin', 'main'], { cwd: dossier, delai: 20_000 }).catch(
+      () => undefined,
+    );
+    const { stdout } = await commande('git', ['log', '-1', '--format=%s%n%cI', 'origin/main'], {
       cwd: dossier,
-      timeout: 10_000,
+      delai: 10_000,
     });
     const [sujet, date] = stdout.trim().split('\n');
-    return { sujet: (sujet ?? '').slice(0, 120), date: date ?? null };
+    return { sujet: masquerSecrets((sujet ?? '').slice(0, 120)), date: date ?? null };
   } catch {
     return { sujet: '', date: null };
   }
@@ -171,17 +251,20 @@ export async function lireProduction(dossier) {
   return { ...servi, fusion, lueA: new Date().toISOString() };
 }
 
-// Le titre d'une mission, lu dans `missions/MISSION_<NN>_*.md` (« # MISSION 120 — « … » »).
+// Le titre d'une mission, lu dans `missions/MISSION_<NN>_*.md` (« # MISSION 120 — « … » ») ; une
+// partie B (« 120B ») lit la fiche de sa mission (« MISSION_120_… »).
 export function titreDeMission(dossier, mission) {
   try {
+    const numero = String(mission ?? '').replace(/[A-Z]$/, '');
+    if (!/^\d+$/.test(numero)) return null;
     const chemin = join(dossier, 'missions');
     const fichier = readdirSync(chemin).find((f) =>
-      new RegExp(`^MISSION_${mission}_.*\\.md$`, 'i').test(f),
+      new RegExp(`^MISSION_${numero}_.*\\.md$`, 'i').test(f),
     );
     if (!fichier) return null;
     const premiere = readFileSync(join(chemin, fichier), 'utf8').split('\n')[0] ?? '';
     const m = /^#\s*MISSION\s+\S+\s*[—–-]\s*(.+)$/.exec(premiere.trim());
-    return m ? m[1].trim().slice(0, 120) : null;
+    return m ? masquerSecrets(m[1].trim().slice(0, 120)) : null;
   } catch {
     return null;
   }

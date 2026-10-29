@@ -71,3 +71,15 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   `~/acm-studio-atelier/journal.jsonl`.
 - 29/10 · `git pull` sur `essai` depuis une chaîne de commandes échoue sur un auto-stash
   (« fatal: stash failed ») : `git fetch` puis `git merge --ff-only origin/essai`.
+- 29/10 · Premier `/mission` avec les hooks actifs (M126) : `PostToolUse` porte bien `agent_type`
+  pour un sous-agent (les lignes du relecteur et du testeur sont à leur nom) ; le filtre `if` d'un
+  hook n'est PAS honoré — trois handlers `PostToolUse` sur Bash écrivaient trois lignes par
+  commande — : un seul handler, le script filtre ; `last_assistant_message` d'un `SubagentStop`
+  est souvent vide quand l'agent répond par `SubagentHandback` (« Terminé »).
+- 29/10 · Le serveur de l'atelier de Jean-Guy est mort à 15:48 : le parcoureur, à qui le chef avait
+  donné le port 4871, a fait `pkill -f "atelier/serveur.mjs"` puis occupé le port avec ses exemples.
+  Règle (testeur.md, parcoureur.md, mission.md) : un agent ne tue jamais un processus qu'il n'a pas
+  lancé, un serveur d'essai prend `--port 0` ; l'atelier tient désormais `serveur.log`, refuse
+  proprement un port pris, et chaque lecture de carte a son délai (entrée fermée, groupe tué).
+- 29/10 · Barrières toujours ; la suite e2e complète seulement si `src/`, `extension/` ou `supabase/`
+  changent (décision de Jean-Guy) : la 126, pure outillage, n'avait pas à la jouer.
