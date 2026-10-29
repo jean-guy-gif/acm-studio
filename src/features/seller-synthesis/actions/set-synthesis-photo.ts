@@ -40,5 +40,7 @@ export async function setSynthesisPhoto(
   if (error || !data || data.length === 0) return { ok: false, error: FAILURE };
 
   revalidatePath(`/builder/${parsed.data.projectId}/synthese`);
+  // Mission 127 — le Point marché lit le même choix.
+  revalidatePath(`/builder/${parsed.data.projectId}/point-marche`);
   return { ok: true };
 }

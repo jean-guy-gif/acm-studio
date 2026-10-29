@@ -32,10 +32,15 @@ const PUBLIC_SYNTHESIS = /^\/synthese\/[A-Za-z0-9_-]{43}$/;
 // « /dossier/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
 const PUBLIC_BUYER_DOSSIER = /^\/dossier\/[A-Za-z0-9_-]{43}$/;
 
+// Mission 127 — le Point marché remis au vendeur, ouvert par son lien sans compte, de la même
+// forme exacte : « /point-marche/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
+const PUBLIC_MARKET_UPDATE = /^\/point-marche\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
   return (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_SYNTHESIS.test(pathname) ||
-    PUBLIC_BUYER_DOSSIER.test(pathname)
+    PUBLIC_BUYER_DOSSIER.test(pathname) ||
+    PUBLIC_MARKET_UPDATE.test(pathname)
   );
 }

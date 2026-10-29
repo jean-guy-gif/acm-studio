@@ -74,6 +74,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_visit_requests.requested_during' then $v$'conseiller'$v$
     -- Mission 119 — le condensat d'un jeton de dossier acquéreur : 64 caractères hexadécimaux.
     when 'buyer_dossier_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
+    -- Mission 127 — le condensat d'un jeton de point marché : 64 caractères hexadécimaux.
+    when 'project_market_update_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
     -- Mission 122 — une réponse à un bien, et le moment où elle a été donnée, sont en liste.
     when 'buyer_item_responses.answer' then $v$'maybe'$v$
     when 'buyer_item_responses.answered_during' then $v$'presentation'$v$

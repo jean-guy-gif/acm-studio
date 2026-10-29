@@ -75,6 +75,9 @@ export type DemoListing = {
   // Le prix affiché APRÈS le rendez-vous, pour « Mettre à jour les prix des concurrents » (M105) :
   // null = inchangé ; un montant plus bas = une baisse simulée.
   priceAfterMeeting: number | null;
+  // Mission 127 — l'annonce a disparu après le rendez-vous : « Mettre à jour les concurrents » la
+  // marque retirée (preuve simulée, M103), et la règle des annonces disparues conclut.
+  goneAfterMeeting?: true;
 };
 
 export type DemoSubject = {
