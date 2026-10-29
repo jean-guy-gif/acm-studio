@@ -36,7 +36,10 @@ const RULES = [
   // ou de migration (« 20261027090000_live_closed_after_conclusion ») n'en a pas, et une branche de
   // partie B (« mission-120B-… ») est reconnue à sa forme (bloquant du relecteur, 29/10).
   {
-    motif: /\b(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*[a-z])[A-Za-z0-9_-]{43,}\b/g,
+    // Bornes explicites, pas `\b` : un jeton qui commence ou finit par « - » ou « _ » (1 sur 32)
+    // n'a pas de frontière de mot après « /synthese/ » (second bloquant du relecteur, 29/10).
+    motif:
+      /(?<![A-Za-z0-9_-])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*[a-z])[A-Za-z0-9_-]{43,}(?![A-Za-z0-9_-])/g,
     sauf: BRANCHE_DE_MISSION,
   },
   {
