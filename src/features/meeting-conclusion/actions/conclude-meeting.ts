@@ -22,6 +22,7 @@ import {
   readFirstFollowUpOn,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { readObjections } from '@/features/meeting-conclusion/services/objections';
+import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -135,6 +136,12 @@ export async function concludeMeeting(
     };
   }
 
+  // Mission 120 — mandat signé : ses concurrents retenus arrivent en Prospection, et chacun
+  // reprend la carte d'une recherche acquéreur sur la même annonce, s'il y en a une.
+  if (decision.value.outcome === 'signed') {
+    await absorbBuyerProspectsForProject(serviceClient, profile.agency_id, projectId);
+    revalidatePath('/prospection');
+  }
   revalidatePath('/live');
   revalidatePath('/builder');
   revalidatePath(`/builder/${projectId}`);

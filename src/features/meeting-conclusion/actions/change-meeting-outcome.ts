@@ -15,6 +15,7 @@ import {
   readFirstFollowUpOn,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { readObjections } from '@/features/meeting-conclusion/services/objections';
+import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -101,6 +102,11 @@ export async function changeMeetingOutcome(
     return { ok: false, error: 'Le changement d’issue a échoué. Réessayez.' };
   }
 
+  // Mission 120 — passé « mandat signé », ses concurrents retenus arrivent en Prospection.
+  if (decision.value.outcome === 'signed') {
+    await absorbBuyerProspectsForProject(serviceClient, profile.agency_id, projectId);
+    revalidatePath('/prospection');
+  }
   revalidatePath('/suivi');
   revalidatePath(`/builder/${projectId}/conclusion`);
   return { ok: true };
