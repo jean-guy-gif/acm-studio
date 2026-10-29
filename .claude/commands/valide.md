@@ -14,6 +14,9 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
    doit être le dernier commit de la branche, la course terminée, et chaque tâche (`checks`, `sql`)
    en succès (`gh run view <id> --json jobs`). Course en cours : attends-la (`gh run watch`).
    CI rouge ou absente : **arrête-toi**, dis quelle tâche échoue et pourquoi — pas de fusion.
+   Exception (décision de Jean-Guy, 29/10) : une CI rouge pour une **cause extérieure** (registre
+   d'images, réseau — « toomanyrequests », image introuvable, délai dépassé) ne bloque pas une
+   mission **sans migration** : dis-la, et continue. Une mission avec migration attend la CI verte.
 3. Si la mission contient une migration : lance `npx supabase migration list --linked` et dis-moi si
    elle est appliquée. Si elle ne l'est pas, **arrête-toi** : on l'applique ensemble (règle
    « Migrations » de CLAUDE.md).

@@ -90,3 +90,11 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   aucune ligne — l'orange reste jusqu'au prochain prompt ou à une note du chef ; après 24 h sans
   ligne, une migration encore en attente dans un worktree quitte la page avec sa mission ; un agent
   dont le `SubagentStop` n'arrive jamais laisse le chef « attend ses agents » jusqu'à la fermeture.
+- 29/10 · Soir du 29/10 : ghcr.io a jeté « toomanyrequests » sur toutes les courses de la CI
+  (tâche `sql`), identifiées ou non, trois relances comprises ; `checks` verte à chaque fois. Décision
+  de Jean-Guy : une CI rouge pour une cause extérieure (registre, réseau) ne bloque pas une mission
+  sans migration (`valide.md`). `supabase db start` tire QUATRE images (postgres, gotrue, realtime,
+  storage-api), pas une : la branche `ci-image-postgres` les garde dans le cache des Actions.
+- 29/10 · Durées de la mission 126 (outillage) : barrières ~3 min, suite e2e 12,8 min (jouée une
+  fois, avant la règle « e2e seulement si src/, extension/ ou supabase/ changent »), relecteur 4 à
+  6 min par passage (six passages), designer sur les rendus 2 min, parcoureur 6,5 min.
