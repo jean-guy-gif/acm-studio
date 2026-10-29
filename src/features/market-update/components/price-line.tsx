@@ -75,6 +75,27 @@ export function PriceLineBand({
       }
       return [...acc, marker];
     }, []);
+  // Deux repères trop proches ne se superposent jamais (Jean-Guy, 29/10) : chacun prend le côté de
+  // la ligne où le précédent est assez loin — un libellé tient dans un quart de la ligne — ; à
+  // défaut, le côté le plus dégagé.
+  const MIN_GAP = 0.26;
+  const sides: ('above' | 'below')[] = [];
+  const lastAt: Record<'above' | 'below', number> = { above: -1, below: -1 };
+  for (const marker of placed) {
+    const position = bandPosition(marker.value, all);
+    const preferred: 'above' | 'below' = sides[sides.length - 1] === 'above' ? 'below' : 'above';
+    const other: 'above' | 'below' = preferred === 'above' ? 'below' : 'above';
+    const side =
+      position - lastAt[preferred] >= MIN_GAP
+        ? preferred
+        : position - lastAt[other] >= MIN_GAP
+          ? other
+          : position - lastAt[preferred] >= position - lastAt[other]
+            ? preferred
+            : other;
+    sides.push(side);
+    lastAt[side] = position;
+  }
   const toneText = (tone: Marker['tone']) =>
     tone === 'subject'
       ? (subjectClasses?.text ?? 'text-brand-deep')
@@ -106,7 +127,7 @@ export function PriceLineBand({
             d'un bord, le libellé s'ancre du côté où il a la place (M115). Sous 640 px, seul le
             trait coloré reste sur la ligne, les libellés passent dans la liste dessous. */}
         {placed.map((marker, index) => {
-          const below = index % 2 === 1;
+          const below = sides[index] === 'below';
           const strong = marker.tone !== 'muted';
           const position = bandPosition(marker.value, all);
           const anchor = position < 0.12 ? 'start' : position > 0.88 ? 'end' : 'center';

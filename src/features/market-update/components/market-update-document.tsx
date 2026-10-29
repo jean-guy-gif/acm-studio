@@ -331,7 +331,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-b from-transparent via-brand-darker/75 to-brand-darker/95" />
+            {/* Un voile sombre sur toute la photo : le texte blanc reste lisible sur un ciel clair. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-brand-darker/60 via-brand-darker/55 to-brand-darker/95" />
           </>
         ) : null}
         <div className="relative flex items-center justify-between gap-4 px-8 pt-8 sm:px-12">
