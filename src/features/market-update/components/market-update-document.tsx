@@ -41,6 +41,7 @@ const STATE_CARD: Record<MarketUpdateCompetitor['state'], string> = {
   unread: 'border-amber-300 bg-amber-50',
   probable_sale: 'border-orange-300 bg-orange-50',
   withdrawn: 'border-zinc-300 bg-zinc-100',
+  gone: 'border-zinc-300 bg-zinc-100',
 };
 
 function days(item: MarketUpdateCompetitor): string | null {
@@ -51,7 +52,10 @@ function days(item: MarketUpdateCompetitor): string | null {
 
 // Le bloc des prix d'un concurrent : au rendez-vous, aujourd'hui, l'écart — ou ce qu'il est devenu.
 function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: string }) {
-  const gone = item.conclusion != null;
+  const gone = item.goneAt != null;
+  // Mission 127 A 2 — un prix du rendez-vous repris à la migration (source 'current') n'est pas un
+  // prix relevé au rendez-vous : « Non relu », annonce disparue comprise.
+  const unread = item.state === 'unread' || item.meetingPriceSource === 'current';
   const perSquareMeter =
     item.currentPrice != null && item.surfaceArea
       ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea)
@@ -68,7 +72,7 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
       <div className={`${row} text-[0.78rem]`}>
         <div className={card}>
           <div className={kicker}>Au rendez-vous</div>
-          {item.state === 'unread' ? (
+          {unread ? (
             <>
               <div className="font-title text-base font-bold text-amber-800">Non relu</div>
               <div className="text-zinc-500">le prix d’alors n’a pas été relevé</div>
@@ -83,9 +87,7 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
           )}
         </div>
         <div className={`border px-3.5 py-3 break-inside-avoid ${STATE_CARD[item.state]}`}>
-          <div className={kicker}>
-            {gone ? 'Aujourd’hui' : item.state === 'unread' ? 'Prix du jour' : 'Aujourd’hui'}
-          </div>
+          <div className={kicker}>{!gone && unread ? 'Prix du jour' : 'Aujourd’hui'}</div>
           {gone ? (
             <>
               <div className="font-title text-base leading-snug font-bold text-zinc-900">
@@ -116,6 +118,11 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
             <div className="font-title text-base leading-snug font-bold text-zinc-900">
               {item.conclusion.label}
             </div>
+          ) : gone ? (
+            <>
+              <div className="font-title text-base font-bold text-zinc-500">—</div>
+              <div className="text-zinc-600">durée en vente inconnue : aucune conclusion</div>
+            </>
           ) : item.gapPercent != null && item.gapAmount != null ? (
             <>
               <div
@@ -192,6 +199,7 @@ function CompetitorPage({
         <div className={kicker}>
           Concurrent {item.position}
           {item.dangerous ? ' · Le plus dangereux, selon vous' : ''}
+          {!item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
         </div>
         <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
           {item.label}
@@ -359,7 +367,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           <p className="text-sm opacity-90">
             {[
               meeting ? `Depuis notre rendez-vous du ${meeting}` : null,
-              `Pour ${document.sellerName}`,
+              document.sellerName.trim() ? `Pour ${document.sellerName.trim()}` : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -383,7 +391,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           <SectionTitle
             number={sectionNumber('competitors')}
             title="Les concurrents, depuis le rendez-vous"
-            hint="Pour chaque bien regardé ensemble : son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu."
+            hint="Pour chaque concurrent retenu : son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu."
           />
           {summary.competitors.map((item) => (
             <CompetitorPage
@@ -415,7 +423,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             `${lines.today?.prices.length ?? 0} concurrent${(lines.today?.prices.length ?? 0) > 1 ? 's' : ''} encore en vente`,
             lines.today,
             'Votre prix, inchangé',
-            lines.todayGone.probableSale + lines.todayGone.withdrawn > 0 ? (
+            lines.todayGone.probableSale + lines.todayGone.withdrawn + lines.todayGone.unknown >
+              0 ? (
               <p className="self-start rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
                 {[
                   lines.todayGone.probableSale > 0
@@ -423,6 +432,9 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                     : null,
                   lines.todayGone.withdrawn > 0
                     ? `${lines.todayGone.withdrawn} retiré${lines.todayGone.withdrawn > 1 ? 's' : ''} sans vente`
+                    : null,
+                  lines.todayGone.unknown > 0
+                    ? `${lines.todayGone.unknown} retirée${lines.todayGone.unknown > 1 ? 's' : ''}, durée inconnue`
                     : null,
                 ]
                   .filter(Boolean)

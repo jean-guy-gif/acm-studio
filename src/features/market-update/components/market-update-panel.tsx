@@ -28,6 +28,7 @@ const STATE_BADGE: Record<MarketUpdateCompetitor['state'], string> = {
   unread: 'bg-amber-50 text-amber-800 stage:bg-amber-400/20 stage:text-amber-200',
   probable_sale: 'bg-orange-50 text-orange-800 stage:bg-orange-400/20 stage:text-orange-200',
   withdrawn: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
+  gone: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
 };
 
 // La phrase de fait d'un concurrent, pour la ligne du Suivi.
@@ -40,6 +41,9 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     const when = `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}${d ? ` après ${d}` : ''}`;
     if (item.conclusion.kind === 'withdrawn') return `${when} : retiré du marché sans vente`;
     return `${when} : vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
+  }
+  if (item.state === 'gone') {
+    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
   }
   if (item.state === 'unread') {
     return `Prix au rendez-vous non relu ; prix du jour : ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${d ? ` · en vente depuis ${d}` : ''}`;

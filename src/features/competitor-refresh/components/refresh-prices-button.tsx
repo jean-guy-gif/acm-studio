@@ -53,10 +53,9 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
   // Mission 108 — sans extension, le message vient tout de suite ; « Réessayer » redétecte.
   const [missingExtension, setMissingExtension] = useState(false);
 
-  const conclude = async (outcomes: PriceCheckOutcome[]) => {
+  const conclude = async () => {
     setProgress('Le point marché s’écrit…');
-    const unreadable = outcomes.filter((o) => o.status === 'unreadable').length;
-    const result = await recordMarketUpdate(projectId, unreadable);
+    const result = await recordMarketUpdate(projectId);
     if (result.ok) {
       setPoint(result);
       setPointError(null);
@@ -77,7 +76,7 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
         setProgress('Relecture des annonces…');
         const outcomes = await refreshDemoPrices(projectId);
         setMessage(priceRefreshSummary(outcomes));
-        await conclude(outcomes);
+        await conclude();
         router.refresh();
         return;
       }
@@ -109,7 +108,7 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
       }
       await finishPriceRefresh(projectId);
       setMessage(priceRefreshSummary(outcomes));
-      await conclude(outcomes);
+      await conclude();
       router.refresh();
     } catch {
       setMessage('La mise à jour s’est interrompue : réessayez.');

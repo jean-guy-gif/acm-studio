@@ -20,6 +20,8 @@ export const MARKET_UPDATE_STATES = [
   'unread',
   'probable_sale',
   'withdrawn',
+  // Disparue (sur preuve, M103) sans durée de commercialisation connue : la règle ne conclut rien.
+  'gone',
 ] as const;
 export type MarketUpdateState = (typeof MARKET_UPDATE_STATES)[number];
 
@@ -30,6 +32,7 @@ export const MARKET_UPDATE_STATE_LABELS: Record<MarketUpdateState, string> = {
   unread: 'Non relu',
   probable_sale: 'Vente probable',
   withdrawn: 'Retiré sans vente',
+  gone: 'Retirée',
 };
 
 const sourceSchema = z.enum(['conclusion', 'revealed', 'observation', 'current']);
@@ -50,6 +53,11 @@ export const marketUpdateCompetitorSchema = z.object({
   label: z.string(),
   surfaceArea: z.number().nullable(),
   dangerous: z.boolean(),
+  // Montré au rendez-vous (M110 : un concurrent retenu peut être hors Live).
+  shownAtMeeting: z.boolean(),
+  // Ce que la relecture du jour a lu : true relue, false non relue (illisible ou disparue), null
+  // sans annonce (saisi à la main).
+  readToday: z.boolean().nullable(),
   meetingPrice: z.number().nullable(),
   meetingPriceSource: sourceSchema.nullable(),
   currentPrice: z.number().nullable(),
@@ -87,12 +95,17 @@ export const marketUpdateSummarySchema = z.object({
     withdrawn: z.number().int(),
     unread: z.number().int(),
     unreadable: z.number().int(),
+    goneUnknown: z.number().int(),
     newcomers: z.number().int(),
   }),
   lines: z.object({
     meeting: lineSchema.nullable(),
     today: lineSchema.nullable(),
-    todayGone: z.object({ probableSale: z.number().int(), withdrawn: z.number().int() }),
+    todayGone: z.object({
+      probableSale: z.number().int(),
+      withdrawn: z.number().int(),
+      unknown: z.number().int(),
+    }),
     newcomers: lineSchema.nullable(),
     newcomersCount: z.number().int(),
     scale: z.object({ min: z.number(), max: z.number() }).nullable(),
@@ -116,6 +129,9 @@ export type MarketUpdateCompetitorRow = {
   district: string | null;
   display_order: number | null;
   created_at: string;
+  excluded_from_live: boolean | null;
+  // Relue aujourd'hui (une observation datée du jour), non relue, ou sans annonce.
+  read_today: boolean | null;
   listing_published_at: string | null;
   days_on_market: number | null;
   listing_gone_at: string | null;
@@ -125,8 +141,6 @@ export type MarketUpdateCompetitorRow = {
 
 export type MarketUpdateInput = {
   competitors: MarketUpdateCompetitorRow[];
-  // Ce que la relecture de ce point n'a pas pu lire (compté, jamais inventé).
-  unreadableCount: number;
   dangerousCompetitorId: string | null;
   meetingDate: string | null;
   agreedPrice: number | null;
@@ -154,13 +168,15 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
     const state: MarketUpdateState =
       conclusion != null
         ? conclusion.kind
-        : unread
-          ? 'unread'
-          : row.price < (meetingPrice as number)
-            ? 'dropped'
-            : row.price > (meetingPrice as number)
-              ? 'raised'
-              : 'unchanged';
+        : gone != null
+          ? 'gone'
+          : unread
+            ? 'unread'
+            : row.price < (meetingPrice as number)
+              ? 'dropped'
+              : row.price > (meetingPrice as number)
+                ? 'raised'
+                : 'unchanged';
     const gapAmount = !unread && meetingPrice != null ? row.price - meetingPrice : null;
     return {
       id: row.id,
@@ -174,6 +190,8 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
       }),
       surfaceArea: row.surface_area,
       dangerous: row.id === input.dangerousCompetitorId,
+      shownAtMeeting: row.excluded_from_live !== true,
+      readToday: row.read_today,
       meetingPrice,
       meetingPriceSource,
       currentPrice: row.price,
@@ -204,7 +222,7 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
     competitors.map((item) => ({
       meetingPrice: item.meetingPrice,
       currentPrice: item.currentPrice,
-      gone: item.conclusion?.kind ?? null,
+      gone: item.conclusion?.kind ?? (item.state === 'gone' ? 'unknown' : null),
       dangerous: item.dangerous,
     })),
     input.agreedPrice,
@@ -217,13 +235,17 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
     advisorAnalysis: input.advisorAnalysis,
     competitors,
     counts: {
-      read: competitors.filter((item) => item.conclusion == null).length,
+      // Relues : ce que la relecture du jour a réellement lu, relu en base ; illisibles : les
+      // annonces en ligne qu'elle n'a pas pu lire.
+      read: competitors.filter((item) => item.readToday === true).length,
       dropped: count('dropped'),
       raised: count('raised'),
       probableSale: count('probable_sale'),
       withdrawn: count('withdrawn'),
       unread: count('unread'),
-      unreadable: Math.max(0, input.unreadableCount),
+      unreadable: competitors.filter((item) => item.readToday === false && item.goneAt == null)
+        .length,
+      goneUnknown: count('gone'),
       newcomers: 0,
     },
     lines,
@@ -241,6 +263,9 @@ export function marketUpdateLine(summary: MarketUpdateSummary): string {
     c.raised > 0 ? plural(c.raised, 'hausse', 'hausses') : null,
     c.probableSale > 0 ? plural(c.probableSale, 'vente probable', 'ventes probables') : null,
     c.withdrawn > 0 ? plural(c.withdrawn, 'retiré sans vente', 'retirés sans vente') : null,
+    c.goneUnknown > 0
+      ? plural(c.goneUnknown, 'retirée, durée inconnue', 'retirées, durée inconnue')
+      : null,
     c.unread > 0
       ? plural(c.unread, 'prix au rendez-vous non relu', 'prix au rendez-vous non relus')
       : null,

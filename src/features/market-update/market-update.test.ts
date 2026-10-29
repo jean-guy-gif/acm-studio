@@ -53,6 +53,8 @@ const row = (
   district: null,
   display_order: order,
   created_at: '2026-09-01T00:00:00.000Z',
+  excluded_from_live: false,
+  read_today: true,
   listing_published_at: '2026-06-26',
   days_on_market: null,
   listing_gone_at: null,
@@ -75,15 +77,16 @@ const input = () => ({
     row(ids[1], 1, 1699000, {
       listing_gone_at: '2026-11-03T09:00:00.000Z',
       listing_published_at: '2026-06-06',
+      read_today: false,
     }),
     row(ids[2], 2, 1720000, {
       listing_gone_at: '2026-10-20T09:00:00.000Z',
       listing_published_at: '2025-12-04',
+      read_today: false,
     }),
     row(ids[3], 3, 1590000, { meeting_price: 1650000 }),
     row(ids[4], 4, 1695000, { meeting_price: 1745000 }),
   ],
-  unreadableCount: 0,
   dangerousCompetitorId: ids[0],
   meetingDate: '2026-10-12T15:00:00.000Z',
   agreedPrice: 1639500,
@@ -172,13 +175,39 @@ describe('les trois lignes de prix', () => {
       'Au rendez-vous, votre prix retenu était sous le plus bas des 5 concurrents : le moins cher des 6 biens comparés.',
     );
     expect(lines.today).toMatchObject({ prices: [1590000, 1690000, 1695000], median: 1690000 });
-    expect(lines.todayGone).toEqual({ probableSale: 1, withdrawn: 1 });
+    expect(lines.todayGone).toEqual({ probableSale: 1, withdrawn: 1, unknown: 0 });
     expect(lines.today?.sentence).toBe(
-      'Aujourd’hui, 1 concurrent sur 3 est passé sous votre prix : vous êtes le 2e moins cher des 4 biens encore en vente. 2 annonces ont disparu : 1 vente probable, 1 retirée sans vente.',
+      'Aujourd’hui, 1 concurrent sur 3 est sous votre prix, dont 1 passé dessous depuis le rendez-vous : vous êtes le 2e moins cher des 4 biens encore en vente. 2 annonces ont disparu : 1 vente probable, 1 retirée sans vente.',
     );
     expect(lines.newcomers).toBeNull();
     expect(lines.newcomersCount).toBe(0);
     expect(lines.scale).toEqual({ min: 1590000, max: 1745000 });
+  });
+
+  it('« passé dessous » ne compte que ce qui était au niveau ou au-dessus du prix retenu', () => {
+    const lines = buildPriceLines(
+      [
+        { meetingPrice: 1600000, currentPrice: 1590000, gone: null, dangerous: false },
+        { meetingPrice: 1700000, currentPrice: 1690000, gone: null, dangerous: false },
+      ],
+      1639500,
+    );
+    expect(lines.today?.sentence).toBe(
+      'Aujourd’hui, 1 concurrent sur 2 est sous votre prix : vous êtes dans la moyenne des 3 biens encore en vente.',
+    );
+  });
+
+  it('une annonce disparue sans durée connue sort de la ligne 2, comptée à part', () => {
+    const lines = buildPriceLines(
+      [
+        { meetingPrice: 1600000, currentPrice: 1600000, gone: 'unknown', dangerous: false },
+        { meetingPrice: 1700000, currentPrice: 1700000, gone: null, dangerous: false },
+      ],
+      1639500,
+    );
+    expect(lines.today?.prices).toEqual([1700000]);
+    expect(lines.todayGone).toEqual({ probableSale: 0, withdrawn: 0, unknown: 1 });
+    expect(lines.today?.sentence).toContain('1 annonce a disparu : 1 retirée, durée inconnue.');
   });
 
   it('un plus dangereux disparu ne marque pas la ligne d’aujourd’hui', () => {
@@ -230,6 +259,7 @@ describe('le point daté', () => {
       withdrawn: 1,
       unread: 1,
       unreadable: 0,
+      goneUnknown: 0,
     });
     expect(marketUpdateLine(summary)).toBe(
       '3 annonces relues · 2 baisses · 1 vente probable · 1 retiré sans vente · 1 prix au rendez-vous non relu',
@@ -243,6 +273,40 @@ describe('le point daté', () => {
     expect(plain(competitorFactLine(summary.competitors[0], MADE_AT.toISOString()))).toMatch(
       /^Prix au rendez-vous non relu ; prix du jour : 1 690 000 €/,
     );
+  });
+
+  it('une annonce disparue sans durée connue (M101) n’est jamais « toujours en vente »', () => {
+    const summary = buildMarketUpdateSummary({
+      ...input(),
+      competitors: [
+        row(ids[0], 0, 1500000, {
+          listing_gone_at: '2026-11-03T09:00:00.000Z',
+          listing_published_at: null,
+          days_on_market: null,
+          read_today: false,
+        }),
+      ],
+    });
+    expect(summary.competitors[0]).toMatchObject({ state: 'gone', conclusion: null });
+    expect(summary.counts).toMatchObject({ read: 0, unreadable: 0, goneUnknown: 1 });
+    expect(summary.lines.today).toBeNull();
+    expect(marketUpdateLine(summary)).toBe('0 annonce relue · 1 retirée, durée inconnue');
+    expect(competitorFactLine(summary.competitors[0], MADE_AT.toISOString())).toBe(
+      'Retirée le 03/11/2026 : durée en vente inconnue, aucune conclusion',
+    );
+  });
+
+  it('relues et illisibles viennent de la base, jamais du navigateur', () => {
+    const summary = buildMarketUpdateSummary({
+      ...input(),
+      competitors: [
+        row(ids[0], 0, 1500000, { read_today: false }),
+        row(ids[1], 1, 1500000, { read_today: null }),
+        row(ids[2], 2, 1500000, { read_today: true }),
+      ],
+    });
+    expect(summary.counts).toMatchObject({ read: 1, unreadable: 1 });
+    expect(marketUpdateLine(summary)).toContain('1 illisible');
   });
 
   it('un prix du rendez-vous non relu ne devient jamais une baisse de 0 %', () => {

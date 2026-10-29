@@ -26,14 +26,17 @@ export type PriceLine = {
 export type PriceLineCompetitor = {
   meetingPrice: number | null;
   currentPrice: number | null;
-  gone: 'probable_sale' | 'withdrawn' | null;
+  // 'unknown' : disparue sans durée connue — hors de la ligne 2, comptée à part, aucune conclusion.
+  gone: 'probable_sale' | 'withdrawn' | 'unknown' | null;
   dangerous: boolean;
 };
+
+export type GoneCounts = { probableSale: number; withdrawn: number; unknown: number };
 
 export type PriceLines = {
   meeting: PriceLine | null;
   today: PriceLine | null;
-  todayGone: { probableSale: number; withdrawn: number };
+  todayGone: GoneCounts;
   newcomers: PriceLine | null;
   newcomersCount: number;
   // L'échelle commune des trois lignes.
@@ -101,22 +104,38 @@ export function meetingSentence(subjectPrice: number | null, prices: number[]): 
   return `${lead} : ${place}.`;
 }
 
+// Un fait calculé, jamais une recommandation : « sous votre prix » compte les prix du jour
+// inférieurs ; « passé dessous depuis le rendez-vous » ne compte que ceux qui étaient au niveau ou
+// au-dessus du prix retenu au rendez-vous et sont dessous aujourd'hui.
 export function todaySentence(
   subjectPrice: number | null,
-  prices: number[],
-  gone: { probableSale: number; withdrawn: number },
+  stillListed: { meetingPrice: number | null; currentPrice: number | null }[],
+  gone: GoneCounts,
 ): string | null {
   const parts: string[] = [];
+  const prices = stillListed.map((item) => item.currentPrice).filter(positive);
   if (positive(subjectPrice) && prices.length > 0) {
     const under = prices.filter((price) => price < subjectPrice).length;
+    const crossed = stillListed.filter(
+      (item) =>
+        positive(item.currentPrice) &&
+        item.currentPrice < subjectPrice &&
+        item.meetingPrice != null &&
+        item.meetingPrice >= subjectPrice,
+    ).length;
     const place = where(subjectPrice, prices, 'biens encore en vente');
+    const total = plural(prices.length, 'concurrent', 'concurrents');
     const lead =
       under === 0
-        ? `Aujourd’hui, aucun des ${plural(prices.length, 'concurrent', 'concurrents')} n’est passé sous votre prix`
-        : `Aujourd’hui, ${under} concurrent${under > 1 ? 's' : ''} sur ${prices.length} ${under > 1 ? 'sont passés' : 'est passé'} sous votre prix`;
+        ? `Aujourd’hui, aucun des ${total} n’est sous votre prix`
+        : `Aujourd’hui, ${under} concurrent${under > 1 ? 's' : ''} sur ${prices.length} ${under > 1 ? 'sont' : 'est'} sous votre prix${
+            crossed > 0
+              ? `, dont ${crossed} passé${crossed > 1 ? 's' : ''} dessous depuis le rendez-vous`
+              : ''
+          }`;
     parts.push(place ? `${lead} : vous êtes ${place}.` : `${lead}.`);
   }
-  const goneTotal = gone.probableSale + gone.withdrawn;
+  const goneTotal = gone.probableSale + gone.withdrawn + gone.unknown;
   if (goneTotal > 0) {
     const detail = [
       gone.probableSale > 0
@@ -124,6 +143,9 @@ export function todaySentence(
         : null,
       gone.withdrawn > 0
         ? plural(gone.withdrawn, 'retirée sans vente', 'retirées sans vente')
+        : null,
+      gone.unknown > 0
+        ? plural(gone.unknown, 'retirée, durée inconnue', 'retirées, durée inconnue')
         : null,
     ]
       .filter(Boolean)
@@ -167,9 +189,10 @@ export function buildPriceLines(
   );
   const stillListed = competitors.filter((item) => item.gone == null);
   const todayPrices = stillListed.map((item) => item.currentPrice).filter(positive);
-  const todayGone = {
+  const todayGone: GoneCounts = {
     probableSale: competitors.filter((item) => item.gone === 'probable_sale').length,
     withdrawn: competitors.filter((item) => item.gone === 'withdrawn').length,
+    unknown: competitors.filter((item) => item.gone === 'unknown').length,
   };
   const today = line(
     todayPrices,
@@ -177,7 +200,7 @@ export function buildPriceLines(
       ? dangerous.currentPrice
       : null,
     subjectPrice,
-    todaySentence(subjectPrice, todayPrices, todayGone),
+    todaySentence(subjectPrice, stillListed, todayGone),
   );
   const newcomers = line(
     newcomerPrices,

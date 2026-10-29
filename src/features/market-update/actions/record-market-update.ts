@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { listingsReadToday } from '@/features/competitor-refresh/queries/listings-read-today';
 import {
   buildMarketUpdateSummary,
   marketUpdateLine,
@@ -23,11 +24,8 @@ const MARKET_UPDATE_FAILURE = 'Le point n’a pas pu être enregistré. Réessay
 // daté : ce que chaque concurrent est devenu depuis le rendez-vous, et les trois lignes de prix.
 // Un membre non retiré de l'agence, sur un dossier conclu de son agence. Le serveur relit tout en
 // base (colonnes autorisées seulement) et écrit par la clé de service : le navigateur n'écrit
-// jamais un point. `unreadableCount` : ce que la relecture n'a pas pu lire, compté, jamais inventé.
-export async function recordMarketUpdate(
-  projectId: string,
-  unreadableCount = 0,
-): Promise<RecordMarketUpdateResult> {
+// jamais un point ; ce qui a été relu se relit en base (une observation du jour), jamais reçu.
+export async function recordMarketUpdate(projectId: string): Promise<RecordMarketUpdateResult> {
   const profile = await getProfile();
   if (!profile || profile.removed_at || !z.uuid().safeParse(projectId).success) {
     return { ok: false, error: MARKET_UPDATE_FAILURE };
@@ -47,7 +45,7 @@ export async function recordMarketUpdate(
     supabase
       .from('comparables')
       .select(
-        'id, price, property_type, rooms_count, surface_area, city, district, display_order, created_at, listing_published_at, days_on_market, listing_gone_at, meeting_price, meeting_price_source',
+        'id, price, property_type, rooms_count, surface_area, city, district, display_order, created_at, excluded_from_live, listing_url, listing_published_at, days_on_market, listing_gone_at, meeting_price, meeting_price_source',
       )
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
@@ -66,11 +64,15 @@ export async function recordMarketUpdate(
       .maybeSingle(),
   ]);
   const madeAt = new Date();
+  const rows = competitors.data ?? [];
+  const readToday = await listingsReadToday(supabase, agencyId, rows, madeAt);
   const built = buildMarketUpdateSummary({
-    competitors: competitors.data ?? [],
-    unreadableCount: z.number().int().min(0).max(1000).safeParse(unreadableCount).success
-      ? unreadableCount
-      : 0,
+    // L'adresse de l'annonce ne va pas plus loin : seul « relue aujourd'hui » entre dans le point.
+    competitors: rows.map((row) => {
+      const { listing_url, ...rest } = row;
+      void listing_url;
+      return { ...rest, read_today: readToday.get(row.id) ?? null };
+    }),
     dangerousCompetitorId: summary.data?.seller_most_dangerous_comparable_id ?? null,
     meetingDate: conclusion.data?.concluded_at ?? null,
     agreedPrice: conclusion.data?.commercialization_price ?? null,

@@ -97,7 +97,7 @@ export default async function MarketUpdatePage({
         </p>
         <SynthesisPhotoChoices
           projectId={projectId}
-          hint="Cochez « Sans photo » pour retirer la photo du document imprimé et du lien. Rien ici n’est imprimé."
+          hint="Cochez « Sans photo » pour retirer la photo du document imprimé et du lien ; c’est le même choix que sur la synthèse du rendez-vous. Rien ici n’est imprimé."
           competitors={document.competitors
             .filter((competitor) => competitor.hasPhoto)
             .map((competitor) => ({
