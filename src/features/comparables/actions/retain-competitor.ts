@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -53,6 +54,10 @@ export async function retainCompetitor(
   }
 
   await maybePromoteToReady(supabase, projectId, profile.agency_id);
+  // Mission 120 — une carte par bien : retenu dans un mandat signé, il reprend la carte d'une
+  // recherche acquéreur sur la même annonce.
+  await absorbBuyerProspectsForProject(supabase, profile.agency_id, projectId, comparableId);
+  revalidatePath('/prospection');
   revalidatePath(`/builder/${projectId}/comparables`);
   revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
   revalidatePath(`/builder/${projectId}`);

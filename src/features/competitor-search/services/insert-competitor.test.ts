@@ -1,23 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-// Mission 120 — la fusion d'un bien démarché passe par la clé service ; un échec entre au journal.
-const absorb = vi.hoisted(() => ({ calls: [] as unknown[], error: null as unknown }));
-vi.mock('@/lib/supabase/service-role', () => ({
-  createServiceRoleClient: () => ({
-    rpc: async (name: string, args: unknown) => {
-      absorb.calls.push([name, args]);
-      return { data: absorb.error ? null : 0, error: absorb.error };
-    },
-  }),
-}));
-const reported = vi.hoisted(() => [] as string[]);
-vi.mock('@/lib/app-errors/report-server-error', () => ({
-  reportServerError: async (scope: string) => {
-    reported.push(scope);
+// Mission 120 — après l'insertion, le service de fusion décide (mandat signé ou non).
+const absorb = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock('@/features/buyer-prospecting/services/absorb-buyer-prospects', () => ({
+  absorbBuyerProspectsForProject: async (...args: unknown[]) => {
+    absorb.calls.push(args.slice(1));
+    return 0;
   },
 }));
-
 import {
   insertCompetitor,
   isDuplicateListing,
@@ -92,9 +83,9 @@ describe('importer deux fois la même annonce', () => {
 });
 
 // Mission 120 (décision du 28/10) — une carte par bien dans les deux sens : après l'insertion, le
-// serveur demande à la base de fondre le bien démarché de la même annonce dans le concurrent.
+// service de fusion est appelé pour le concurrent créé ; lui seul sait si le dossier est signé.
 describe('un concurrent reprend la carte d’une recherche acquéreur', () => {
-  it('demande la fusion avec l’agence, le concurrent créé et la clé de l’annonce', async () => {
+  it('demande la fusion pour le concurrent créé, dans l’agence et le dossier', async () => {
     absorb.calls.length = 0;
     const supabase = fakeSupabase((calls) =>
       calls.some((c) => c.method === 'insert')
@@ -107,43 +98,22 @@ describe('un concurrent reprend la carte d’une recherche acquéreur', () => {
       listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
     });
     expect(result).toEqual({ status: 'created' });
-    expect(absorb.calls).toEqual([
-      [
-        'absorb_buyer_prospect',
-        {
-          p_agency_id: 'a1',
-          p_comparable_id: 'created-1',
-          p_listing_key: 'seloger:26ZEJMLWB13Y.htm',
-        },
-      ],
-    ]);
+    expect(absorb.calls).toEqual([['a1', 'p1', 'created-1']]);
   });
 
-  it('sans annonce reconnue, aucune fusion ; un échec de la fusion ne défait pas l’insertion', async () => {
+  it('un import refusé (annonce déjà là) ne demande aucune fusion', async () => {
     absorb.calls.length = 0;
-    const plain = fakeSupabase(() => ({ data: { display_order: 1 } }));
-    expect(
-      await insertCompetitor(plain.client as never, 'p1', 'a1', {
-        title: 'x',
-        price: 1,
-        listing_url: null,
-      }),
-    ).toEqual({ status: 'created' });
+    const supabase = fakeSupabase((calls) => {
+      const last = calls[calls.length - 1];
+      if (last?.method === 'insert') return { error: DUPLICATE };
+      if (calls.some((c) => c.method === 'insert')) return { data: { id: 'e', is_selected: true } };
+      return { data: { display_order: 1 } };
+    });
+    await insertCompetitor(supabase.client as never, 'p1', 'a1', {
+      title: 'x',
+      price: 1,
+      listing_url: 'https://www.seloger.com/annonces/1.htm',
+    });
     expect(absorb.calls).toEqual([]);
-    absorb.error = { message: 'refusé' };
-    const supabase = fakeSupabase((calls) =>
-      calls.some((c) => c.method === 'insert')
-        ? { data: { id: 'created-2', is_selected: true } }
-        : { data: { display_order: 1 } },
-    );
-    expect(
-      await insertCompetitor(supabase.client as never, 'p1', 'a1', {
-        title: 'x',
-        price: 1,
-        listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
-      }),
-    ).toEqual({ status: 'created' });
-    expect(reported).toEqual(['fusion d’un bien démarché dans un concurrent']);
-    absorb.error = null;
   });
 });

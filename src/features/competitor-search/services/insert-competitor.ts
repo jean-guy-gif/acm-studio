@@ -2,11 +2,9 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { storedListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
-import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 type CompetitorInsert = Database['public']['Tables']['comparables']['Insert'];
 
@@ -43,31 +41,6 @@ export async function existingListing(
   return data ? { id: data.id, selected: data.is_selected } : null;
 }
 
-// Mission 120 (décision de Jean-Guy du 28/10) — une carte par bien, dans les deux sens : si cette
-// annonce est déjà démarchée depuis une recherche acquéreur, le concurrent qui vient de naître
-// reprend les faits de la carte (contact, remise, adresse, vendeur) et ses origines, et le bien
-// démarché disparaît — en une transaction de la base, par la clé service. Un échec ici ne défait
-// pas l'insertion : il entre au journal, et deux cartes se verraient à l'écran.
-async function absorbBuyerProspect(
-  supabase: SupabaseClient<Database>,
-  projectId: string,
-  agencyId: string,
-  listingUrl: string | null,
-): Promise<void> {
-  const listingKey = listingIdentityKey(listingUrl);
-  if (!listingKey) return;
-  const created = await existingListing(supabase, projectId, agencyId, listingUrl);
-  if (!created) return;
-  const { error } = await createServiceRoleClient().rpc('absorb_buyer_prospect', {
-    p_agency_id: agencyId,
-    p_comparable_id: created.id,
-    p_listing_key: listingKey,
-  });
-  if (error) {
-    await reportServerError('fusion d’un bien démarché dans un concurrent', error);
-  }
-}
-
 // Un concurrent de plus dans le dossier, à la suite des autres : `display_order` = max + 1,
 // recalculé à chaque tentative ; sur collision (contrainte unique, 23505) on réessaie. Partagé
 // par l'import d'une page, la création depuis la recherche (mission 101) et la saisie à la main.
@@ -96,7 +69,12 @@ export async function insertCompetitor(
       display_order: (last?.display_order ?? 0) + 1,
     });
     if (!error) {
-      await absorbBuyerProspect(supabase, projectId, agencyId, listingUrl);
+      // Mission 120 — une carte par bien : dans un dossier déjà « mandat signé », le concurrent qui
+      // vient de naître reprend la carte d'une recherche acquéreur sur la même annonce.
+      const created = await existingListing(supabase, projectId, agencyId, listingUrl);
+      if (created) {
+        await absorbBuyerProspectsForProject(supabase, agencyId, projectId, created.id);
+      }
       return { status: 'created' };
     }
     if (isDuplicateListing(error)) {
