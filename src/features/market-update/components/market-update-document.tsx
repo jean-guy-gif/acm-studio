@@ -210,7 +210,7 @@ function CompetitorPage({
         <div
           className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-[2fr_1fr]'}`}
         >
-          <Photo url={photos[0]} alt={item.label} className="h-40 w-full sm:h-52" />
+          <Photo url={photos[0]} alt={item.label} className="h-36 w-full sm:h-44" />
           {photos.length > 1 ? (
             <div className="grid gap-1.5">
               {photos.slice(1, 4).map((url) => (
@@ -267,7 +267,11 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
       ? { label: 'Prix retenu ensemble', value: formatEuro(summary.agreedPrice) }
       : null,
     { label: 'Concurrents suivis', value: String(summary.competitors.length) },
-    { label: 'Nouveaux venus retenus', value: String(summary.lines.newcomersCount) },
+    // Sans recherche des nouveaux venus (127 B), ce chiffre n'existe pas : « 0 » dirait « rien de
+    // nouveau sur le marché ».
+    summary.lines.newcomersCount > 0
+      ? { label: 'Nouveaux venus retenus', value: String(summary.lines.newcomersCount) }
+      : null,
   ].filter((item): item is { label: string; value: string } => item != null);
 
   const lineBlock = (
@@ -481,7 +485,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           {alignment ? (
             <p className="text-xs text-zinc-500">
               Couleur de votre prix, la même sur les trois lignes : vert sous +5 % de l’analyse de
-              votre conseiller, orange de +5 à +10 %, rouge au-delà.
+              votre conseiller, orange de +5 à +10&nbsp;%, rouge au-delà.
             </p>
           ) : null}
         </section>
