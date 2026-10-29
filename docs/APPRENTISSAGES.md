@@ -28,6 +28,9 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   acquéreur, surveiller.
 - 25/10 · Un passage e2e interrompu (réseau) laisse un dossier « TEST AUTOMATIQUE … » dans l'agence de
   démo et fait rougir la démo suivante (cartes de Prospection partagées, M98) : nettoyer avant de rejouer.
+- 29/10 · La remise à zéro de la démo écrit les photos en URL absolue de l'hôte où elle est faite. Faite
+  depuis l'essai (protégé), la démo montre « Photo indisponible » en production, qui partage la base.
+  Toujours des chemins relatifs dans ce que la démo écrit (M120 B, R3).
 
 ## La base
 
@@ -43,3 +46,55 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   le parcoureur joue le scénario, Jean-Guy et son relecteur produit regardent AVANT l'essai humain.
 - 26/10 · Une réponse touchée sur un téléphone peut tomber sur une barre fixée en bas : jamais de bouton
   sous une barre fixe, et le bouton choisi devient plein, les autres en contour.
+- 29/10 · Une capture pleine page cache ce qui est sous le pli : les boutons « Enregistrer » et
+  « Télécharger le PDF » du courrier étaient invisibles en 1280 × 800 dans un panneau collant, et les
+  18 captures étaient « sans défaut ». Le testeur vérifie désormais chaque action principale dans la
+  fenêtre sans défiler, et chaque image chargée (M120 B, R1 et R3).
+
+## L'atelier et les hooks
+
+- 29/10 · Les hooks de `.claude/settings.json` et les fiches de `.claude/agents/` ne prennent effet
+  qu'au démarrage d'une session Claude Code : après la mission 126 (ou un nouvel agent), relancer
+  la session, sinon l'atelier reste muet et « Agent type 'architecte' not found ».
+- 29/10 · Contrat documenté des hooks (code.claude.com/docs/en/hooks, lu le 29/10, à confirmer sur
+  une vraie session) : stdin JSON avec `session_id`, `cwd`, `hook_event_name` ; `UserPromptSubmit`
+  reçoit `prompt` tel que tapé (`/mission 120`) ; `SubagentStart`/`SubagentStop` reçoivent
+  `agent_type` (le `name` de la fiche) et `agent_id`, le Stop aussi `last_assistant_message` ;
+  `PostToolUse` reçoit `tool_name`, `tool_input`, `tool_response` ; le filtre `if` d'un hook
+  (`Bash(git push *)`) est « au mieux », jamais une garde ; `$CLAUDE_PROJECT_DIR` est fourni. Un hook
+  de journal sort toujours en 0 : un code 2 bloque.
+- 29/10 · La mission n'est pas dans les hooks : elle se lit dans la branche (`mission-NN-…`), et
+  pour un `/mission NN` tapé depuis `main`, dans le prompt, retenu par session. Le chef crée donc la
+  branche AVANT de lancer un agent.
+- 29/10 · Playwright vide `test-results/` à chaque passage : les rendus vont hors du dépôt,
+  `~/acm-studio-rendus/<mission>/`, et le journal de l'atelier hors du dépôt,
+  `~/acm-studio-atelier/journal.jsonl`.
+- 29/10 · `git pull` sur `essai` depuis une chaîne de commandes échoue sur un auto-stash
+  (« fatal: stash failed ») : `git fetch` puis `git merge --ff-only origin/essai`.
+- 29/10 · Premier `/mission` avec les hooks actifs (M126) : `PostToolUse` porte bien `agent_type`
+  pour un sous-agent (les lignes du relecteur et du testeur sont à leur nom) ; le filtre `if` d'un
+  hook n'est PAS honoré — trois handlers `PostToolUse` sur Bash écrivaient trois lignes par
+  commande — : un seul handler, le script filtre ; `last_assistant_message` d'un `SubagentStop`
+  est souvent vide quand l'agent répond par `SubagentHandback` (« Terminé »).
+- 29/10 · Le serveur de l'atelier de Jean-Guy est mort à 15:48 : le parcoureur, à qui le chef avait
+  donné le port 4871, a fait `pkill -f "atelier/serveur.mjs"` puis occupé le port avec ses exemples.
+  Règle (testeur.md, parcoureur.md, mission.md) : un agent ne tue jamais un processus qu'il n'a pas
+  lancé, un serveur d'essai prend `--port 0` ; l'atelier tient désormais `serveur.log`, refuse
+  proprement un port pris, et chaque lecture de carte a son délai (entrée fermée, groupe tué).
+- 29/10 · Barrières toujours ; la suite e2e complète seulement si `src/`, `extension/` ou `supabase/`
+  changent (décision de Jean-Guy) : la 126, pure outillage, n'avait pas à la jouer.
+- 29/10 · Conséquences acceptées de la règle du chef (bleu « attend ses agents » dès qu'un agent
+  tourne, orange seulement sans agent et avec une question posée) et de la fermeture à 24 h : une
+  permission demandée PENDANT qu'un agent tourne s'écrit « attend Jean-Guy » mais s'affiche en bleu
+  jusqu'à la fin de l'agent, et une permission accordée dans la boîte de Claude Code ne laisse
+  aucune ligne — l'orange reste jusqu'au prochain prompt ou à une note du chef ; après 24 h sans
+  ligne, une migration encore en attente dans un worktree quitte la page avec sa mission ; un agent
+  dont le `SubagentStop` n'arrive jamais laisse le chef « attend ses agents » jusqu'à la fermeture.
+- 29/10 · Soir du 29/10 : ghcr.io a jeté « toomanyrequests » sur toutes les courses de la CI
+  (tâche `sql`), identifiées ou non, trois relances comprises ; `checks` verte à chaque fois. Décision
+  de Jean-Guy : une CI rouge pour une cause extérieure (registre, réseau) ne bloque pas une mission
+  sans migration (`valide.md`). `supabase db start` tire QUATRE images (postgres, gotrue, realtime,
+  storage-api), pas une : la branche `ci-image-postgres` les garde dans le cache des Actions.
+- 29/10 · Durées de la mission 126 (outillage) : barrières ~3 min, suite e2e 12,8 min (jouée une
+  fois, avant la règle « e2e seulement si src/, extension/ ou supabase/ changent »), relecteur 4 à
+  6 min par passage (six passages), designer sur les rendus 2 min, parcoureur 6,5 min.

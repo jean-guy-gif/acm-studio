@@ -1,0 +1,40 @@
+{
+  "base": {
+    "derniereAppliquee": {
+      "version": "20261117090000",
+      "nom": "une_carte_par_bien"
+    },
+    "enAttente": [
+      {
+        "version": "20261118090000",
+        "nom": "detachement",
+        "dossier": "/Users/jean-guy/Documents/acm-studio"
+      }
+    ],
+    "lueA": "2026-10-30T10:55:00.000Z",
+    "erreur": null
+  },
+  "essai": {
+    "commit": "5e06dba",
+    "erreur": null,
+    "ci": {
+      "commit": "3c1d9e2",
+      "etat": "verte",
+      "verte": true
+    },
+    "budgetE2e": 480,
+    "lueA": "2026-10-30T10:56:00.000Z"
+  },
+  "production": {
+    "commit": "ebcbc14",
+    "erreur": null,
+    "lueA": "2026-10-30T10:56:00.000Z",
+    "fusion": {
+      "sujet": "Décisions de la mission 120, partie A",
+      "date": "2026-10-29T14:37:00+01:00"
+    }
+  },
+  "titres": {
+    "120B": "« J’ai un acquéreur pour votre bien »"
+  }
+}
