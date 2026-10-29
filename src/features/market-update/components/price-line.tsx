@@ -1,4 +1,5 @@
 import { bandPosition } from '@/features/live-seller/services/market-reading';
+import { placeLabels } from '@/features/market-update/services/label-levels';
 import type { PriceLine } from '@/features/market-update/services/price-lines';
 import type { PriceAlignment } from '@/features/price-positioning/services/price-alignment';
 import { formatEuro } from '@/lib/format';
@@ -75,27 +76,9 @@ export function PriceLineBand({
       }
       return [...acc, marker];
     }, []);
-  // Deux repères trop proches ne se superposent jamais (Jean-Guy, 29/10) : chacun prend le côté de
-  // la ligne où le précédent est assez loin — un libellé tient dans un quart de la ligne — ; à
-  // défaut, le côté le plus dégagé.
-  const MIN_GAP = 0.26;
-  const sides: ('above' | 'below')[] = [];
-  const lastAt: Record<'above' | 'below', number> = { above: -1, below: -1 };
-  for (const marker of placed) {
-    const position = bandPosition(marker.value, all);
-    const preferred: 'above' | 'below' = sides[sides.length - 1] === 'above' ? 'below' : 'above';
-    const other: 'above' | 'below' = preferred === 'above' ? 'below' : 'above';
-    const side =
-      position - lastAt[preferred] >= MIN_GAP
-        ? preferred
-        : position - lastAt[other] >= MIN_GAP
-          ? other
-          : position - lastAt[preferred] >= position - lastAt[other]
-            ? preferred
-            : other;
-    sides.push(side);
-    lastAt[side] = position;
-  }
+  const slots = placeLabels(placed, scale);
+  // La longueur du trait, par niveau (au-delà de 640 px) ; sur téléphone, un trait court.
+  const TICK = ['sm:h-[0.75rem]', 'sm:h-[2.35rem]', 'sm:h-[3.95rem]'] as const;
   const toneText = (tone: Marker['tone']) =>
     tone === 'subject'
       ? (subjectClasses?.text ?? 'text-brand-deep')
@@ -110,38 +93,41 @@ export function PriceLineBand({
         : 'bg-zinc-400';
   return (
     <div className="flex flex-col gap-1" data-testid="price-line">
-      <div className={`relative mx-[6%] ${compact ? 'h-10' : 'h-16 sm:h-24'}`}>
+      <div className={`relative mx-[6%] ${compact ? 'h-10' : 'h-16 sm:h-[11.5rem]'}`}>
         <div
-          className={`absolute inset-x-0 h-[3px] bg-zinc-200 ${compact ? 'top-[1.1rem]' : 'top-[1.75rem] sm:top-[3.25rem]'}`}
+          className={`absolute inset-x-0 h-[3px] bg-zinc-200 ${compact ? 'top-[1.1rem]' : 'top-[1.75rem] sm:top-[5.75rem]'}`}
         />
         {line.prices.map((price, index) => (
           <span
             key={`${price}-${index}`}
-            className={`absolute h-3 w-3 -translate-x-1/2 rounded-full bg-zinc-400 ${compact ? 'top-[0.8rem]' : 'top-[1.45rem] sm:top-[2.95rem]'}`}
+            className={`absolute h-3 w-3 -translate-x-1/2 rounded-full bg-zinc-400 ${compact ? 'top-[0.8rem]' : 'top-[1.45rem] sm:top-[5.45rem]'}`}
             style={{ left: at(price) }}
           />
         ))}
-        {/* Les repères, du plus bas au plus haut, un au-dessus puis un au-dessous ; deux repères
-            au même prix n'en font qu'un, le plus fort en tête (« Le plus dangereux, selon vous ·
-            Prix médian ») ; près
-            d'un bord, le libellé s'ancre du côté où il a la place (M115). Sous 640 px, seul le
-            trait coloré reste sur la ligne, les libellés passent dans la liste dessous. */}
+        {/* Les repères, du plus bas au plus haut, posés sur le premier niveau libre ; deux repères
+            au même prix n'en font qu'un, le plus fort en tête ; près d'un bord, le libellé s'ancre
+            du côté où il a la place (M115). Sous 640 px, seul le trait coloré reste sur la ligne,
+            les libellés passent dans la liste dessous. */}
         {placed.map((marker, index) => {
-          const below = sides[index] === 'below';
+          const { side, level, anchor } = slots[index];
+          const below = side === 'below';
           const strong = marker.tone !== 'muted';
-          const position = bandPosition(marker.value, all);
-          const anchor = position < 0.12 ? 'start' : position > 0.88 ? 'end' : 'center';
           const anchorClass =
             anchor === 'start'
               ? 'items-start text-left'
               : anchor === 'end'
                 ? '-translate-x-full items-end text-right'
                 : '-translate-x-1/2 items-center text-center';
+          const tick = `w-0.5 h-4 ${TICK[level]} ${toneDot(marker.tone)}`;
           return (
             <div
               key={marker.key}
               className={`absolute flex flex-col leading-tight whitespace-nowrap ${anchorClass} ${toneText(marker.tone)} ${
-                compact ? 'top-[0.5rem]' : below ? 'top-[2rem] sm:top-[3.5rem]' : 'top-0 sm:top-0'
+                compact
+                  ? 'top-[0.5rem]'
+                  : below
+                    ? 'top-[1.75rem] sm:top-[5.75rem]'
+                    : 'bottom-[calc(100%-1.75rem)] sm:bottom-[calc(100%-5.75rem)]'
               } ${compact ? 'text-[0.6rem]' : 'text-[0.66rem]'}`}
               style={{ left: at(marker.value) }}
             >
@@ -152,18 +138,12 @@ export function PriceLineBand({
                 />
               ) : (
                 <>
-                  {below ? (
-                    <span className={`mb-0.5 h-4 w-0.5 ${toneDot(marker.tone)}`} />
-                  ) : (
-                    <span className="hidden sm:block">{/* le texte vient d'abord */}</span>
-                  )}
+                  {below ? <span className={`mb-0.5 ${tick}`} /> : null}
                   <span className={`hidden sm:block ${strong ? 'font-semibold' : ''}`}>
                     {marker.label}
                   </span>
                   <b className="hidden sm:block">{formatEuro(marker.value)}</b>
-                  {below ? null : (
-                    <span className={`mt-[0.75rem] h-4 w-0.5 sm:mt-0.5 ${toneDot(marker.tone)}`} />
-                  )}
+                  {below ? null : <span className={`mt-0.5 ${tick}`} />}
                 </>
               )}
             </div>
