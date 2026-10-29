@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>L’atelier — ACM Studio</title>
     <style>
-      /* Mission 126 — la page de l'atelier, d'après les maquettes du designer (missions/maquettes/M126-*). */
+      /* Mission 126 — la page de l'atelier, d'après les maquettes du designer (missions/maquettes/M126-*)
+         et ses retours sur les rendus du 29/10. Tout vient de /etat ; la page ne fait rien, elle montre. */
       :root {
         --fond: #fafafa;
         --carte: #ffffff;
@@ -39,7 +40,7 @@
           Inter,
           system-ui,
           sans-serif;
-        padding: 20px 24px 32px;
+        padding: 12px 24px 12px;
       }
       h1,
       h2,
@@ -50,7 +51,11 @@
         background: var(--carte);
         border: 1px solid var(--ligne);
         border-radius: 14px;
-        padding: 18px;
+        padding: 9px 14px;
+        min-width: 0;
+      }
+      .cartes {
+        min-width: 0;
       }
       .kicker {
         font-size: 10.5px;
@@ -72,17 +77,17 @@
         letter-spacing: 1px;
         color: var(--gris);
         text-transform: uppercase;
-        margin-top: 10px;
+        margin-top: 4px;
       }
       .valeur {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 500;
-        margin-top: 3px;
+        margin-top: 1px;
       }
       .pied {
         font-size: 10px;
         color: var(--gris);
-        margin-top: 12px;
+        margin-top: 4px;
       }
       .pastille {
         display: inline-block;
@@ -98,7 +103,8 @@
         background: var(--actif-fond);
         border-color: var(--actif-ligne);
       }
-      .pastille.termine {
+      .pastille.termine,
+      .pastille.a-jour {
         color: var(--fait);
         background: var(--fait-fond);
         border-color: var(--fait-ligne);
@@ -114,27 +120,25 @@
         border-color: var(--bloque-ligne);
       }
       .pastille.a-venir,
-      .pastille.sans-objet,
-      .pastille.illisible {
+      .pastille.non-jouee,
+      .pastille.illisible,
+      .pastille.lecture {
         color: var(--gris);
         background: var(--carte);
         border-color: var(--gris-clair);
       }
       .bandeau {
-        display: none;
-        margin-top: 12px;
+        margin-top: 8px;
         border-radius: 12px;
-        padding: 12px 18px;
+        padding: 7px 16px;
         font-weight: 600;
       }
       .bandeau.attend {
-        display: block;
         background: var(--attend-fond);
         border: 1px solid var(--attend-ligne);
         color: #92400e;
       }
       .bandeau.gris {
-        display: block;
         background: #f4f4f5;
         border: 1px solid var(--ligne);
         color: var(--gris);
@@ -142,25 +146,25 @@
       .entetes {
         display: grid;
         grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr));
-        gap: 24px;
+        gap: 12px;
       }
       .entete h1 {
-        margin: 10px 0 4px;
-        font-size: 26px;
+        margin: 4px 0 1px;
+        font-size: 22px;
         color: var(--profond);
         font-weight: 700;
       }
       .entete.compact h1 {
-        font-size: 20px;
+        font-size: 19px;
       }
       .sous-titre {
         color: var(--gris);
-        font-size: 12px;
+        font-size: 11.5px;
       }
       .rail {
         display: flex;
         align-items: flex-start;
-        margin-top: 16px;
+        margin-top: 10px;
       }
       .etape {
         flex: 1;
@@ -173,7 +177,7 @@
         width: 14px;
         height: 14px;
         border-radius: 50%;
-        margin: 0 auto 6px;
+        margin: 0 auto 4px;
         border: 1.5px dashed var(--gris-clair);
         background: var(--carte);
         position: relative;
@@ -209,8 +213,14 @@
         color: var(--attend);
         font-weight: 700;
       }
-      .etape.sans-objet {
+      .etape.non-jouee {
         color: var(--gris-clair);
+      }
+      .etape .mention {
+        display: block;
+        font-size: 9px;
+        font-weight: 400;
+        color: var(--gris);
       }
       .etape::before {
         content: '';
@@ -227,7 +237,8 @@
       .etape:last-child::before {
         display: none;
       }
-      .rail.compact .etape .nom {
+      .rail.compact .etape .nom,
+      .rail.compact .etape .mention {
         display: none;
       }
       .rail.compact .etape .point {
@@ -237,18 +248,23 @@
       .rail-resume {
         font-size: 10.5px;
         color: var(--gris);
-        margin-top: 8px;
+        margin-top: 6px;
       }
       .milieu {
         display: grid;
         grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)) 400px;
-        gap: 16px;
-        margin-top: 16px;
-        align-items: start;
+        gap: 12px;
+        margin-top: 10px;
+        align-items: stretch;
       }
       .cartes {
         display: grid;
-        gap: 14px;
+        gap: 10px;
+        align-content: start;
+      }
+      .equipe {
+        display: flex;
+        flex-direction: column;
       }
       .equipe h2 {
         margin: 0;
@@ -268,8 +284,9 @@
       }
       .constellation {
         position: relative;
-        height: 340px;
-        margin-top: 8px;
+        flex: 1;
+        min-height: 280px;
+        margin-top: 22px;
       }
       .constellation svg {
         position: absolute;
@@ -286,12 +303,21 @@
       .noeud.gauche {
         text-align: right;
         transform: translate(-100%, -50%);
-        padding-right: 24px;
+        padding-right: 26px;
+      }
+      .noeud .etat {
+        white-space: nowrap;
+      }
+      .compact .noeud .etat .depuis {
+        display: block;
       }
       .noeud.droite {
         text-align: left;
         transform: translate(0, -50%);
         padding-left: 24px;
+      }
+      .noeud.haut {
+        transform: translate(-50%, -100%);
       }
       .noeud .nom {
         font-size: 12.5px;
@@ -314,10 +340,18 @@
       .noeud .etat.bloque {
         color: var(--bloque);
       }
+      .noeud .etat .depuis {
+        font-weight: 400;
+        color: var(--gris);
+      }
       .noeud .phrase {
         font-size: 10.5px;
         color: var(--gris);
         font-style: italic;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
       .compact .noeud {
         width: 110px;
@@ -336,7 +370,8 @@
         margin-top: 2px;
       }
       .equipe.compact .constellation {
-        height: 330px;
+        min-height: 300px;
+        margin-top: 8px;
       }
       .equipe.compact .chef-etat {
         top: calc(50% + 36px);
@@ -344,12 +379,6 @@
       }
       .equipe.compact .chef-etat .phrase {
         display: none;
-      }
-      .noeud .phrase {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
       }
       .rond {
         position: absolute;
@@ -418,6 +447,9 @@
         border-color: var(--attend);
         box-shadow: 0 0 0 6px var(--attend-fond);
       }
+      .chef.bloque {
+        border-color: var(--bloque);
+      }
       .chef-etat {
         position: absolute;
         left: 50%;
@@ -431,15 +463,24 @@
         color: var(--gris);
         font-style: italic;
         margin-top: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .chef-etat .depuis {
+        font-size: 10px;
+        color: var(--gris);
+        margin-left: 6px;
       }
       .barre {
         display: inline-block;
-        width: 120px;
-        height: 8px;
+        width: 110px;
+        height: 7px;
         border-radius: 4px;
         background: #f4f4f5;
         vertical-align: middle;
-        margin-left: 8px;
+        margin: 0 8px;
         position: relative;
         overflow: hidden;
       }
@@ -454,11 +495,20 @@
       .barre.depasse i {
         background: var(--bloque);
       }
+      .e2e {
+        font-size: 11px;
+        margin-top: 3px;
+      }
+      .e2e b {
+        display: inline-block;
+        width: 60px;
+        font-weight: 600;
+      }
       .fil {
-        margin-top: 16px;
+        margin-top: 10px;
       }
       .fil h2 {
-        margin: 0 0 8px;
+        margin: 0 0 6px;
         font-size: 16px;
         display: flex;
         justify-content: space-between;
@@ -475,44 +525,49 @@
       .fil table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
       .fil th {
         text-align: left;
         font-size: 9px;
         letter-spacing: 1px;
         color: var(--gris);
-        padding: 4px 8px;
+        padding: 0 8px;
+        height: 24px;
         border-bottom: 1px solid var(--ligne);
+        text-transform: uppercase;
       }
       .fil td {
-        padding: 4px 8px;
+        padding: 0 8px;
+        height: 28px;
         font-size: 11px;
-        vertical-align: top;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .fil tr:nth-child(even) td {
         background: var(--fond);
       }
       .fil .heure {
         color: var(--gris);
-        white-space: nowrap;
       }
       .fil .mission {
         color: var(--profond);
         font-weight: 600;
-        white-space: nowrap;
       }
       .fil .agent {
         font-weight: 600;
-        white-space: nowrap;
       }
+      /* Six lignes entières, le reste défile dans la carte (designer, Q4 et retour 7). */
       .fil .defile {
-        max-height: 196px;
+        max-height: 192px;
         overflow-y: auto;
       }
       .vide {
         text-align: center;
         color: var(--gris);
-        padding: 40px 0;
+        padding: 34px 0;
       }
       .vide h1 {
         color: var(--profond);
@@ -532,13 +587,12 @@
   <body>
     <div id="app"></div>
     <script>
-      // Tout vient de /etat, relu toutes les 2 s. La page ne fait rien : elle montre.
-      const ETAPES_NOMS = {
+      const ETAPES_COURTES = {
         architecte: 'Architecte',
         designer: 'Designer',
         questions: 'Questions',
         code: 'Code',
-        'gardien-sql': 'Gardien-sql',
+        'gardien-sql': 'Gardien SQL',
         accord: 'Accord',
         relecteur: 'Relecteur',
         push: 'Essai',
@@ -553,16 +607,20 @@
         bloqué: 'bloque',
         'attend Jean-Guy': 'attend',
         'à venir': 'a-venir',
-        'sans objet': 'sans-objet',
+        'non jouée': 'non-jouee',
         'rien en attente': 'a-venir',
+        'à jour': 'a-jour',
         illisible: 'illisible',
+        'lecture en cours': 'lecture',
+        faite: 'faite',
+        active: 'active',
       };
       const NOEUDS = [
         {
           nom: 'architecte',
           titre: 'Architecte',
           x: 24,
-          y: 40,
+          y: 38,
           cote: 'gauche',
           apres: 'lit la fiche et le code',
         },
@@ -570,15 +628,15 @@
           nom: 'designer',
           titre: 'Designer',
           x: 50,
-          y: 10,
+          y: 14,
           cote: 'haut',
           apres: 'si un écran change',
         },
         {
           nom: 'gardien-sql',
-          titre: 'Gardien-sql',
+          titre: 'Gardien SQL',
           x: 76,
-          y: 40,
+          y: 38,
           cote: 'droite',
           apres: 'après le code, si migration',
         },
@@ -626,79 +684,122 @@
           : '';
       const jour = (iso) =>
         iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
-      const minutes = (s) =>
-        s >= 60 ? `${(s / 60).toFixed(1).replace('.', ',')} min` : `${Math.round(s)} s`;
-      const ilYA = (iso) => {
-        if (!iso) return '';
-        const s = Math.round((Date.now() - new Date(iso)) / 1000);
-        return s < 60 ? 'à l’instant' : `il y a ${Math.round(s / 60)} min`;
-      };
+      const minutes = (s) => `${(s / 60).toFixed(1).replace('.', ',')} min`;
+      const missionLisible = (m) => String(m).replace(/^(\d+)([A-Z])$/, '$1 $2');
+      const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
       const pastille = (etat) =>
         `<span class="pastille ${ETAT_CLASSE[etat] ?? 'a-venir'}">${html(etat)}</span>`;
-      const missionLisible = (m) => String(m).replace(/^(\d+)([A-Z])$/, '$1 $2');
 
-      function attendJeanGuy(etat) {
-        const base = etat.cartes.base;
-        if (base && base.enAttente && base.enAttente.length > 0) {
-          const m = base.enAttente[0];
-          return `Attend Jean-Guy : appliquer la migration ${m.version}_${m.nom} — npm run sauvegarde, puis npx supabase db push --linked, dans un terminal.`;
+      // Toutes les durées se mesurent à l'heure du serveur (`etat.maintenant`), jamais à celle du navigateur.
+      let maintenant = Date.now();
+      const ecart = (iso) => Math.max(0, Math.round((maintenant - new Date(iso)) / 1000));
+      const duree = (s) =>
+        s < 60
+          ? `${s} s`
+          : s < 3600
+            ? `${Math.round(s / 60)} min`
+            : `${Math.floor(s / 3600)} h ${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
+      const ilYA = (iso) =>
+        !iso ? '' : ecart(iso) < 30 ? 'à l’instant' : `il y a ${duree(ecart(iso))}`;
+      const depuis = (iso) => (!iso ? '' : `depuis ${duree(ecart(iso))}`);
+      const horloge = (iso) =>
+        `${new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} · ${new Date(iso).toLocaleTimeString('fr-FR')}`;
+
+      const migrationEnAttente = (etat) => etat.cartes.base?.enAttente?.[0] ?? null;
+      const dateDeVersion = (v) => {
+        const m = /^(\d{4})(\d{2})(\d{2})/.exec(String(v ?? ''));
+        return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+      };
+      const consigneMigration = (m) =>
+        `appliquer la migration ${m.version}_${m.nom} — npm run sauvegarde, puis npx supabase db push --linked, dans un terminal.`;
+
+      // Le bandeau : ce qui attend Jean-Guy, par mission, d'après l'état COURANT du chef (jamais une ligne passée).
+      function bandeaux(etat) {
+        const lignes = [];
+        const migration = migrationEnAttente(etat);
+        for (const m of etat.missions) {
+          if (m.chef.etat !== 'attend Jean-Guy') continue;
+          lignes.push(
+            `Mission ${missionLisible(m.mission)} attend Jean-Guy : ${migration ? consigneMigration(migration) : m.chef.phrase || 'une réponse.'}`,
+          );
         }
-        // L'état COURANT du chef, jamais une ligne passée du fil.
-        for (const mission of etat.missions) {
-          if (mission.chef.etat === 'attend Jean-Guy')
-            return `Attend Jean-Guy : ${mission.chef.phrase || 'le chef attend une réponse'} (mission ${missionLisible(mission.mission)})`;
-        }
-        return null;
+        if (lignes.length === 0 && migration)
+          lignes.push(`Attend Jean-Guy : ${consigneMigration(migration)}`);
+        return lignes.map((l) => `<div class="bandeau attend">${html(l)}</div>`).join('');
       }
 
-      function entete(m, n, maintenant) {
+      function entete(m, n, index, iso) {
         const active = m.etapes.find((e) => e.etat === 'active');
-        const index = active
-          ? m.etapes.indexOf(active) + 1
-          : m.etapes.filter((e) => e.etat === 'faite').length;
+        const faites = m.etapes.filter((e) => e.etat === 'faite').length;
+        const numero = active ? m.etapes.indexOf(active) + 1 : faites;
         const titre = `Mission ${missionLisible(m.mission)}${m.titreFiche ? ` — ${m.titreFiche}` : ''}`;
-        const toutesFaites = m.etapes.every((e) => e.etat === 'faite' || e.etat === 'sans objet');
-        const sous = toutesFaites
+        const terminee = m.etapes.every((e) => e.etat === 'faite' || e.etat === 'non jouée');
+        const sous = terminee
           ? `Terminée à ${heure(m.derniereHeure)} · /valide ${m.mission} quand vous avez essayé`
-          : `Branche ${m.branche || '—'} · ouverte à ${heure(m.ouverteA)} · étape ${index} sur ${m.etapes.length} : ${active ? ETAPES_NOMS[active.cle] : '—'}`;
+          : `Branche ${m.branche || '—'} · ouverte à ${heure(m.ouverteA)} · étape ${numero} sur ${m.etapes.length} : ${active ? ETAPES_COURTES[active.cle] : '—'}`;
         const attend = m.chef.etat === 'attend Jean-Guy';
         const rail = m.etapes
-          .map(
-            (e) =>
-              `<div class="etape ${e.etat === 'active' && attend ? 'attend' : e.etat.replace(' ', '-').replace('à-venir', 'a-venir')}"><div class="point"></div><div class="nom">${html(ETAPES_NOMS[e.cle])}${e.etat === 'sans objet' ? ' —' : ''}</div></div>`,
-          )
+          .map((e) => {
+            const classe =
+              e.etat === 'active' && attend ? 'attend' : (ETAT_CLASSE[e.etat] ?? 'a-venir');
+            const mention = e.etat === 'non jouée' ? '<span class="mention">non jouée</span>' : '';
+            return `<div class="etape ${classe}"><div class="point"></div><div class="nom">${html(ETAPES_COURTES[e.cle])}${mention}</div></div>`;
+          })
           .join('');
+        const suivantes = m.etapes
+          .filter((e) => e.etat === 'à venir')
+          .map((e) => ETAPES_COURTES[e.cle])
+          .slice(0, 3)
+          .join(', ');
         const resume =
           n > 1
-            ? `<div class="rail-resume">${m.etapes.filter((e) => e.etat === 'faite').length} faites · ${active ? `${ETAPES_NOMS[active.cle]} en cours` : 'rien en cours'} · puis ${
-                m.etapes
-                  .filter((e) => e.etat === 'à venir')
-                  .map((e) => ETAPES_NOMS[e.cle])
-                  .slice(0, 3)
-                  .join(', ') || '—'
-              }</div>`
+            ? `<div class="rail-resume">${pluriel(faites, 'faite')} · ${active ? `${ETAPES_COURTES[active.cle]} en cours` : 'rien en cours'}${suivantes ? ` · puis ${suivantes}` : ''}</div>`
+            : '';
+        const kicker =
+          n === 1
+            ? 'L’atelier · mission en cours'
+            : index === 0
+              ? `L’atelier · ${n} missions en parallèle`
+              : 'En parallèle';
+        const horlogeHtml =
+          index === 0
+            ? `<span class="horloge">${html(horloge(iso))} · rafraîchie toutes les 2 s</span>`
             : '';
         return `<section class="carte entete ${n > 1 ? 'compact' : ''}">
-      <div style="display:flex;justify-content:space-between"><span class="kicker">${n > 1 ? 'Mission en parallèle' : 'L’atelier · mission en cours'}</span><span class="horloge">${html(maintenant)} · rafraîchie toutes les 2 s</span></div>
+      <div style="display:flex;justify-content:space-between"><span class="kicker">${kicker}</span>${horlogeHtml}</div>
       <h1>${html(titre)}</h1><div class="sous-titre">${html(sous)}</div>
       <div class="rail ${n > 1 ? 'compact' : ''}">${rail}</div>${resume}</section>`;
       }
 
       // En parallèle (carte étroite), les ronds se resserrent et le libellé passe sous le rond.
-      const ordonnee = (d, compact) => (compact ? 12 + ((d.y - 10) * 70) / 80 : d.y);
-      function equipe(m, n) {
-        const classe = (etat) => ETAT_CLASSE[etat] ?? 'a-venir';
+      const ordonnee = (d, compact) => (compact ? 12 + ((d.y - 14) * 70) / 76 : d.y);
+      function equipe(m, n, etat) {
+        const classe = (e) => ETAT_CLASSE[e] ?? 'a-venir';
         const compact = n > 1;
+        const agentDe = (nom) =>
+          m.agents.find((a) => a.nom === nom) || { etat: 'à venir', phrase: '', heure: null };
+        const couleurLigne = (a) =>
+          a.etat === 'attend Jean-Guy' ? '#d97706' : a.etat === 'en cours' ? '#3ea9ff' : '#e4e4e7';
         const lignes = NOEUDS.map(
           (d) =>
-            `<line x1="50%" y1="50%" x2="${d.x}%" y2="${ordonnee(d, compact)}%" stroke="${['en cours', 'attend Jean-Guy'].includes((m.agents.find((a) => a.nom === d.nom) || {}).etat) ? (m.agents.find((a) => a.nom === d.nom).etat === 'attend Jean-Guy' ? '#d97706' : '#3ea9ff') : '#e4e4e7'}" stroke-width="1.5" stroke-dasharray="4 3" />`,
+            `<line x1="50%" y1="50%" x2="${d.x}%" y2="${ordonnee(d, compact)}%" stroke="${couleurLigne(agentDe(d.nom))}" stroke-width="1.5" stroke-dasharray="4 3" />`,
         ).join('');
+        const migration = migrationEnAttente(etat);
         const noeuds = NOEUDS.map((d) => {
-          const a = m.agents.find((x) => x.nom === d.nom) || { etat: 'à venir', phrase: '' };
-          let etatMot = a.etat;
-          if (d.nom === 'Jean-Guy' && a.etat === 'à venir') etatMot = 'rien en attente';
-          const etapeSansObjet = m.etapes.find((e) => e.cle === d.nom)?.etat === 'sans objet';
-          if (a.etat === 'à venir' && etapeSansObjet) etatMot = 'sans objet';
+          const a = agentDe(d.nom);
+          const etapeNonJouee = m.etapes.find((e) => e.cle === d.nom)?.etat === 'non jouée';
+          const etatMot = a.etat === 'à venir' && etapeNonJouee ? 'non jouée' : a.etat;
+          let phrase = a.phrase ? `« ${a.phrase} »` : a.etat === 'à venir' ? d.apres : '';
+          if (d.nom === 'Jean-Guy') {
+            phrase =
+              a.etat === 'attend Jean-Guy'
+                ? migration
+                  ? 'Appliquer la migration : voir Base'
+                  : a.phrase
+                    ? `« ${a.phrase} »`
+                    : 'Une réponse est attendue'
+                : '';
+          }
           const symbole =
             a.etat === 'terminé'
               ? '✓'
@@ -707,68 +808,99 @@
                 : a.etat === 'bloqué'
                   ? '×'
                   : '';
-          const phrase = a.phrase ? `« ${a.phrase} »` : a.etat === 'à venir' ? d.apres : '';
+          const depuisHtml =
+            a.etat === 'en cours' && a.heure
+              ? ` <span class="depuis">· ${html(depuis(a.heure))}</span>`
+              : '';
           const y = ordonnee(d, compact);
-          const cote = compact
-            ? ''
-            : d.cote === 'gauche'
-              ? 'gauche'
-              : d.cote === 'droite'
-                ? 'droite'
-                : '';
+          const cote = compact ? '' : d.cote;
+          const largeur =
+            !compact && d.cote === 'gauche' ? `width:min(180px, calc(${d.x}% - 6px));` : '';
           const decal = compact
             ? `left:${d.x}%;top:calc(${y}% + 20px)`
             : d.cote === 'haut'
-              ? `left:${d.x}%;top:calc(${y}% - 46px)`
+              ? `left:${d.x}%;top:calc(${y}% - 24px)`
               : `left:${d.x}%;top:${y}%`;
           return `<div class="rond ${classe(a.etat)}" style="left:${d.x}%;top:${y}%">${symbole}</div>
-        <div class="noeud ${cote}" style="${decal}"><div class="nom">${html(d.titre)}</div><div class="etat ${classe(a.etat)}">${html(etatMot)}</div><div class="phrase">${html(phrase)}</div></div>`;
+        <div class="noeud ${cote}" style="${decal};${largeur}"><div class="nom">${html(d.titre)}</div><div class="etat ${classe(a.etat)}">${html(etatMot)}${depuisHtml}</div><div class="phrase" title="${html(a.phrase)}">${html(phrase)}</div></div>`;
         }).join('');
         const chef = m.chef;
-        return `<section class="carte equipe ${n > 1 ? 'compact' : ''}"><h2><span class="titre">${n > 1 ? `${missionLisible(m.mission)} · l’équipe` : 'L’équipe'}</span><span class="aide">${n > 1 ? 'nom et état ; la phrase se lit dans le fil' : 'Le chef au centre. En orange, ce qui attend Jean-Guy.'}</span></h2>
+        const chefDepuis =
+          chef.etat === 'en cours' && chef.heure
+            ? `<span class="depuis">${html(depuis(chef.heure))}</span>`
+            : '';
+        return `<section class="carte equipe ${compact ? 'compact' : ''}"><h2><span class="titre">${compact ? `${missionLisible(m.mission)} · l’équipe` : 'L’équipe'}</span><span class="aide">${compact ? 'nom et état ; la phrase se lit dans le fil' : 'Le chef au centre. En orange, ce qui attend Jean-Guy.'}</span></h2>
       <div class="constellation"><svg>${lignes}</svg>${noeuds}
         <div class="chef ${classe(chef.etat)}">Chef</div>
-        <div class="chef-etat">${pastille(chef.etat)}<div class="phrase">${html(chef.phrase ? `« ${chef.phrase} »` : '')}</div></div></div></section>`;
+        <div class="chef-etat"><span class="pastille ${classe(chef.etat)}">${html(chef.mot || chef.etat)}</span>${chefDepuis}<div class="phrase" title="${html(chef.phrase)}">${html(chef.phrase ? `« ${chef.phrase} »` : '')}</div></div></div></section>`;
       }
 
+      const enteteCarte = (titre, etat) =>
+        `<h2 class="titre" style="margin:0;font-size:15px;display:flex;justify-content:space-between">${titre} ${pastille(etat)}</h2>`;
+      const carteEnLecture = (titre, texte, depuisIso) =>
+        `<section class="carte">${enteteCarte(titre, 'lecture en cours')}<div class="valeur gris" style="margin-top:8px">${html(texte)}${depuisIso ? ` · ${html(depuis(depuisIso))}` : ''}</div></section>`;
+
       function carteBase(b, missions) {
-        if (!b)
-          return carteVide(
+        if (!b || b.enCours)
+          return carteEnLecture(
             'Base',
-            'Lecture en attente (npx supabase migration list --linked, toutes les 5 min)',
+            'Lecture en cours (npx supabase migration list --linked)',
+            b?.depuis,
           );
         const attente = b.enAttente && b.enAttente.length > 0;
-        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Base ${b.erreur ? pastille('illisible') : attente ? pastille('attend Jean-Guy') : pastille('terminé')}</h2>
-      <div class="libelle">Dernière migration appliquée</div><div class="valeur">${b.derniereAppliquee ? html(`${b.derniereAppliquee.version}_${b.derniereAppliquee.nom}`) : b.erreur ? html(`Lecture impossible depuis ${heure(b.lueA)} (migration list)`) : '—'}</div>
-      <div class="libelle">Migration en attente</div><div class="valeur" style="${attente ? 'color:var(--attend);font-weight:700' : ''}">${attente ? b.enAttente.map((m) => html(`${m.version}_${m.nom}`)).join(', ') + ' · à appliquer par Jean-Guy' : 'Aucune'}</div>
-      <div class="pied">Lue ${ilYA(b.lueA)} · relue toutes les 5 min</div></section>`;
+        const etatCarte = b.erreur ? 'illisible' : attente ? 'attend Jean-Guy' : 'à jour';
+        // La prédiction du gardien, lue dans le journal : la dernière phrase d'un gardien terminé.
+        const gardien = missions
+          .flatMap((m) => m.agents)
+          .find((a) => a.nom === 'gardien-sql' && a.etat === 'terminé');
+        const migration = (m) =>
+          `${m.version}_${m.nom}${m.date || dateDeVersion(m.version) ? ` · ${m.date || dateDeVersion(m.version)}` : ''}`;
+        return `<section class="carte">${enteteCarte('Base', etatCarte)}
+      <div class="libelle">Dernière migration appliquée</div><div class="valeur">${b.derniereAppliquee ? html(migration(b.derniereAppliquee)) : html(b.erreur ?? '—')}</div>
+      <div class="libelle">Migration en attente</div><div class="valeur" style="${attente ? 'color:var(--attend);font-weight:700' : ''}">${attente ? html(b.enAttente.map(migration).join(', ')) + ' · à appliquer par Jean-Guy' : 'Aucune'}</div>
+      ${attente && gardien ? `<div class="valeur gris" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${html(gardien.phrase)}">Gardien SQL : ${html(gardien.phrase)}</div>` : ''}
+      <div class="pied">Lue ${html(ilYA(b.lueA))} · relue toutes les 5 min</div></section>`;
       }
       function carteEssai(e, missions) {
-        if (!e) return carteVide('Essai', 'Lecture en attente (/api/version, toutes les 60 s)');
+        if (!e || e.enCours)
+          return carteEnLecture('Essai', 'Lecture en cours (/api/version et gh run)', e?.depuis);
         const m = missions[0];
         const durees = m ? m.dureesE2e : [];
         const budget = e.budgetE2e || 480;
-        const max = Math.max(...durees.map((d) => d.secondes), 0);
         const ci = e.ci || {};
+        const enRetard = Boolean(ci.commit && e.commit && ci.commit !== e.commit);
         const etatCarte = e.erreur
           ? 'illisible'
-          : ci.etat === 'en cours'
-            ? 'en cours'
-            : ci.etat === 'rouge'
-              ? 'bloqué'
-              : 'terminé';
-        const marges = durees
-          .filter((d) => ['demo', 'parcours'].includes(d.suite))
+          : ci.etat === 'rouge'
+            ? 'bloqué'
+            : ci.etat === 'en cours' || enRetard
+              ? 'en cours'
+              : 'à jour';
+        const commit = e.commit
+          ? `servi ${e.commit}${e.branche ? ` · ${e.branche}` : ''}`
+          : (e.erreur ?? 'Pas de commit lu');
+        const ciTexte = ci.etat ? ` · CI ${ci.etat}${ci.commit ? ` sur ${ci.commit}` : ''}` : '';
+        const retard = enRetard ? ' · le dernier commit poussé n’est pas encore servi' : '';
+        const barres = ['demo', 'parcours']
+          .map((suite) => {
+            const d = durees.find((x) => x.suite === suite);
+            if (!d) return '';
+            const marge = budget - d.secondes;
+            return `<div class="e2e"><b>${suite === 'demo' ? 'Démo' : 'Parcours'}</b><span class="barre ${marge < 0 ? 'depasse' : ''}"><i style="width:${Math.min(100, (d.secondes / budget) * 100)}%"></i></span>${html(minutes(d.secondes))} · ${marge >= 0 ? `à ${html(minutes(marge))} du budget` : `dépasse de ${html(minutes(-marge))}`}</div>`;
+          })
+          .join('');
+        const autres = durees
+          .filter((d) => !['demo', 'parcours'].includes(d.suite))
           .map(
             (d) =>
-              `${d.suite === 'demo' ? 'Démo' : 'parcours'} à ${minutes(Math.max(budget - d.secondes, 0))} du budget`,
+              `${d.suite} ${d.secondes >= 60 ? minutes(d.secondes) : `${Math.round(d.secondes)} s`}`,
           )
           .join(' · ');
-        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Essai ${pastille(etatCarte)}</h2>
-      <div class="libelle">Commit servi · CI du dernier commit</div><div class="valeur">${e.commit ? html(e.commit) : html(`Lecture impossible depuis ${heure(e.lueA)} (${e.erreur || 'essai'})`)}${m && m.branche ? ` · ${html(m.branche)}` : ''}${ci.etat ? ` · CI ${html(ci.etat)}${ci.commit ? ` (${html(ci.commit)})` : ''}` : ''}</div>
-      <div class="libelle">E2E, dernier passage · budget ${Math.round(budget / 60)} min <span class="barre ${max > budget ? 'depasse' : ''}"><i style="width:${Math.min(100, (max / budget) * 100)}%"></i></span></div>
-      <div class="valeur">${durees.length ? durees.map((d) => html(`${d.suite === 'demo' ? 'démo' : d.suite} ${minutes(d.secondes)}`)).join(' · ') : 'Aucun passage noté'}</div>
-      <div class="pied">${marges ? html(marges) : 'Les durées arrivent avec le testeur'}${
+        return `<section class="carte">${enteteCarte('Essai', etatCarte)}
+      <div class="libelle">Commit servi · CI du dernier commit</div><div class="valeur">${html(commit)}${html(ciTexte)}${html(retard)}</div>
+      <div class="libelle">E2E, dernier passage · budget ${Math.round(budget / 60)} min</div>
+      ${barres || '<div class="valeur">Aucun passage noté</div>'}${autres ? `<div class="pied" style="margin-top:3px">${html(autres)}</div>` : ''}
+      <div class="pied">Lue ${html(ilYA(e.lueA))}${
         missions.length > 1
           ? ` · ${missions
               .slice(1)
@@ -778,66 +910,78 @@
       }</div></section>`;
       }
       function carteProduction(p) {
-        if (!p)
-          return carteVide('Production', 'Lecture en attente (/api/version, toutes les 60 s)');
-        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Production ${pastille(p.erreur ? 'illisible' : 'terminé')}</h2>
-      <div class="libelle">Commit servi</div><div class="valeur">${p.commit ? html(`${p.commit} · main`) : html(`Lecture impossible depuis ${heure(p.lueA)} (production)`)}${p.fusion && p.fusion.date ? html(` · fusionné le ${jour(p.fusion.date)} à ${heure(p.fusion.date)}`) : ''}</div>
+        if (!p || p.enCours)
+          return carteEnLecture('Production', 'Lecture en cours (/api/version)', p?.depuis);
+        return `<section class="carte">${enteteCarte('Production', p.erreur ? 'illisible' : 'à jour')}
+      <div class="libelle">Commit servi</div><div class="valeur">${p.commit ? html(`${p.commit} · main`) : html(p.erreur ?? '—')}${p.fusion && p.fusion.date ? html(` · fusionné le ${jour(p.fusion.date)} à ${heure(p.fusion.date)}`) : ''}</div>
       <div class="libelle">Dernière fusion</div><div class="valeur">${p.fusion && p.fusion.sujet ? html(p.fusion.sujet) : '—'}</div>
-      <div class="pied">Lue ${ilYA(p.lueA)}</div></section>`;
+      <div class="pied">Lue ${html(ilYA(p.lueA))}</div></section>`;
       }
-      const carteVide = (titre, texte) =>
-        `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">${titre} ${pastille('à venir')}</h2><div class="valeur gris" style="margin-top:10px">${html(texte)}</div></section>`;
 
       function fil(lignes, multi) {
         const rangs = lignes
           .map(
             (l) =>
-              `<tr><td class="heure">${heure(l.heure)}</td>${multi ? `<td class="mission">${html(missionLisible(l.mission ?? '—'))}</td>` : ''}<td class="agent">${html(l.agent)}</td><td>${pastille(l.etat)}</td><td>${html(l.phrase)}</td></tr>`,
+              `<tr><td class="heure">${heure(l.heure)}</td>${multi ? `<td class="mission">${html(missionLisible(l.mission ?? '—'))}</td>` : ''}<td class="agent">${html(l.agent === 'gardien-sql' ? 'Gardien SQL' : l.agent)}</td><td>${pastille(l.etat)}</td><td title="${html(l.phrase)}">${html(l.phrase)}</td></tr>`,
           )
           .join('');
-        return `<section class="carte fil"><h2><span class="titre">Fil d’activité</span><span class="aide">${lignes.length} dernière${lignes.length > 1 ? 's' : ''} ligne${lignes.length > 1 ? 's' : ''}, la plus récente en haut${lignes.length > 6 ? ` · ${lignes.length - 6} plus anciennes en défilant` : ''}</span></h2>
-      <div class="defile"><table><thead><tr><th>Heure</th>${multi ? '<th>Mission</th>' : ''}<th>Agent</th><th>État</th><th>Phrase</th></tr></thead><tbody>${rangs || '<tr><td colspan="5" class="gris">Rien encore : la première ligne arrive au premier hook.</td></tr>'}</tbody></table></div></section>`;
+        const n = lignes.length;
+        const aide =
+          n === 0
+            ? 'rien encore'
+            : `${n} dernière${n > 1 ? 's' : ''} ligne${n > 1 ? 's' : ''}, la plus récente en haut${n > 6 ? ` · ${n - 6} plus anciennes en défilant` : ''}`;
+        const colonnes = multi
+          ? '<col style="width:56px"><col style="width:60px"><col style="width:96px"><col style="width:130px"><col>'
+          : '<col style="width:56px"><col style="width:96px"><col style="width:130px"><col>';
+        return `<section class="carte fil"><h2><span class="titre">Fil d’activité</span><span class="aide">${html(aide)}</span></h2>
+      <div class="defile"><table><colgroup>${colonnes}</colgroup><thead><tr><th>Heure</th>${multi ? '<th>Mission</th>' : ''}<th>Agent</th><th>État</th><th>Phrase</th></tr></thead><tbody>${rangs || `<tr><td colspan="${multi ? 5 : 4}" class="gris">Rien encore : la première ligne arrive au premier hook.</td></tr>`}</tbody></table></div></section>`;
       }
 
-      function rendre(etat, maintenant) {
+      function rendre(etat) {
         const n = etat.missions.length;
-        const attend = attendJeanGuy(etat);
-        const bandeau = attend
-          ? `<div class="bandeau attend">${html(attend)}</div>`
-          : '<div class="bandeau"></div>';
+        const iso = etat.maintenant;
         if (n === 0) {
-          return `<section class="carte vide"><div class="kicker">L’atelier</div><h1>Aucune mission en cours</h1><div>Lancez <code>/mission NN</code> dans VS Code : l’équipe apparaît ici. <span class="gris">${html(maintenant)}</span></div></section>${bandeau}
-        <div class="milieu" style="--n:1"><section class="carte equipe"><h2><span class="titre">L’équipe</span><span class="aide">l’équipe attend</span></h2><div class="constellation" style="height:120px;display:flex;align-items:center;justify-content:center" ><span class="gris">Le chef, six agents et vous : rien ne tourne.</span></div></section>
+          return `<section class="carte vide"><div class="kicker">L’atelier</div><h1>Aucune mission en cours</h1><div>Lancez <code>/mission NN</code> dans VS Code : l’équipe apparaît ici. <span class="gris">${html(horloge(iso))} · rafraîchie toutes les 2 s</span></div></section>${bandeaux(etat)}
+        <div class="milieu" style="--n:1"><section class="carte equipe"><h2><span class="titre">L’équipe</span><span class="aide">l’équipe attend</span></h2><div class="constellation" style="min-height:120px;display:flex;align-items:center;justify-content:center"><span class="gris">Le chef, six agents et vous : rien ne tourne.</span></div></section>
         <div class="cartes">${carteBase(etat.cartes.base, [])}${carteEssai(etat.cartes.essai, [])}${carteProduction(etat.cartes.production)}</div></div>${fil(etat.fil, true)}`;
         }
-        const entetes = `<div class="entetes" style="--n:${n}">${etat.missions.map((m) => entete(m, n, maintenant)).join('')}</div>`;
-        const milieu = `<div class="milieu" style="--n:${n}">${etat.missions.map((m) => equipe(m, n)).join('')}<div class="cartes">${carteBase(etat.cartes.base, etat.missions)}${carteEssai(etat.cartes.essai, etat.missions)}${carteProduction(etat.cartes.production)}</div></div>`;
-        return `${entetes}${bandeau}${milieu}${fil(etat.fil, n > 1)}`;
+        const entetes = `<div class="entetes" style="--n:${n}">${etat.missions.map((m, i) => entete(m, n, i, iso)).join('')}</div>`;
+        const milieu = `<div class="milieu" style="--n:${n}">${etat.missions.map((m) => equipe(m, n, etat)).join('')}<div class="cartes">${carteBase(etat.cartes.base, etat.missions)}${carteEssai(etat.cartes.essai, etat.missions)}${carteProduction(etat.cartes.production)}</div></div>`;
+        return `${entetes}${bandeaux(etat)}${milieu}${fil(etat.fil, n > 1)}`;
       }
 
-      let dernier = null;
+      // Le fil tient dans l'écran : six lignes quand la place le permet, deux au moins, le reste défile.
+      function ajusterLeFil() {
+        const defile = document.querySelector('.fil .defile');
+        if (!defile) return;
+        const place = window.innerHeight - defile.getBoundingClientRect().top - 24;
+        defile.style.maxHeight = `${Math.max(24 + 2 * 28, Math.min(24 + 6 * 28, place))}px`;
+      }
+      window.addEventListener('resize', ajusterLeFil);
+
+      // Serveur arrêté : l'horloge se fige à la dernière lecture et le bandeau reste seul (Jean-Guy, 29/10).
+      let derniereLecture = null;
       async function tick() {
         const app = document.getElementById('app');
-        const maintenant = new Date()
-          .toLocaleString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })
-          .replace(' ', ' · ');
+        let etat;
         try {
           const r = await fetch('/etat', { cache: 'no-store' });
-          const etat = await r.json();
-          if (etat.erreur) {
-            app.innerHTML = `<div class="bandeau gris" style="display:block">${html(etat.erreur)}</div>`;
-            return;
-          }
-          dernier = etat;
-          app.innerHTML = rendre(etat, maintenant);
+          etat = await r.json();
         } catch {
-          app.innerHTML = `<div class="bandeau gris" style="display:block">L’atelier ne répond plus : relancez npm run atelier.</div>${dernier ? rendre(dernier, maintenant) : ''}`;
+          app.innerHTML = `<div class="bandeau gris">L’atelier ne répond plus : relancez npm run atelier.${derniereLecture ? ` Dernière lecture : ${html(horloge(derniereLecture))}.` : ''}</div>`;
+          return;
+        }
+        if (etat.erreur) {
+          app.innerHTML = `<div class="bandeau gris">${html(etat.erreur)}</div>`;
+          return;
+        }
+        try {
+          maintenant = Date.parse(etat.maintenant);
+          app.innerHTML = rendre(etat);
+          derniereLecture = etat.maintenant;
+          ajusterLeFil();
+        } catch (e) {
+          app.innerHTML = `<div class="bandeau gris">La page n’a pas pu se dessiner (${html(e.message)}) : dites-le au chef.</div>`;
         }
       }
       tick();

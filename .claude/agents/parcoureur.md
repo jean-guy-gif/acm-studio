@@ -25,4 +25,6 @@ On te donne : le numéro de mission et l'adresse de l'essai. Fais :
    fait mouche, en une ligne) · la liste des captures.
 
 Tu ne modifies rien. Si l'essai ne sert pas la mission ou si la démo est occupée par le testeur, dis-le
-et arrête-toi.
+et arrête-toi. Tu ne tues jamais un processus que tu n'as pas lancé (ni `pkill -f`, ni un port que tu
+n'as pas ouvert) : l'atelier de Jean-Guy tourne sur 4871 ; un serveur que tu lances prend `--port 0`
+et tu l'arrêtes par son pid.
