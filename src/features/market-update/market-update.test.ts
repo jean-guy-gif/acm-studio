@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { MarketUpdateDocument } from '@/features/market-update/components/market-update-document';
+import { PriceLineBand } from '@/features/market-update/components/price-line';
 import { competitorFactLine } from '@/features/market-update/components/market-update-panel';
 import { loadMarketUpdate } from '@/features/market-update/queries/load-market-update';
 import {
@@ -504,13 +505,34 @@ describe('le document Point marché', () => {
     expect(html).not.toContain('Pour </p>');
   });
 
-  it('« Sans photo » retire les photos du document et de ce que reçoit la page ; 4 photos au plus', async () => {
+  it('« Sans photo » retire les photos du document et de ce que reçoit la page ; 3 photos au plus', async () => {
     const { document, html } = await loadFixture();
     expect(document.competitors[3].photoUrls).toEqual([]);
     expect(document.competitors[3]).toMatchObject({ hasPhoto: true, photoHidden: true });
     expect(html).not.toContain(`${ids[3]}-1.jpg`);
     expect(html).toContain(`${ids[0]}-1.jpg`);
-    expect(document.competitors[0].photoUrls.length).toBeLessThanOrEqual(4);
+    expect(document.competitors[0].photoUrls.length).toBeLessThanOrEqual(3);
+  });
+
+  it('deux repères au même prix n’en font qu’un sur la ligne (un seul concurrent)', () => {
+    const lines = buildPriceLines(
+      [{ meetingPrice: 1690000, currentPrice: 1690000, gone: null, dangerous: true }],
+      1639500,
+    );
+    const html = renderToStaticMarkup(
+      createElement(PriceLineBand, {
+        line: lines.meeting!,
+        scale: lines.scale!,
+        subjectLabel: 'Prix retenu ensemble',
+        alignment: null,
+      }),
+    );
+    // Plus bas = médiane = plus haut = le plus dangereux : un seul libellé fusionné.
+    expect(html.split('data-testid="price-line"').length - 1).toBe(1);
+    expect((html.match(/Le plus bas/g) ?? []).length).toBe(2); // sur la ligne et dans la liste
+    expect(html).toContain(
+      'Le plus dangereux, selon vous · Le plus bas · Prix médian · Le plus haut',
+    );
   });
 
   it('le code du document ne lit ni titre, ni lien, ni adresse, ni vendeur', () => {

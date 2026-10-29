@@ -101,7 +101,8 @@ export function PriceLineBand({
           />
         ))}
         {/* Les repères, du plus bas au plus haut, un au-dessus puis un au-dessous ; deux repères
-            au même prix n'en font qu'un (« Prix médian · Le plus dangereux, selon vous ») ; près
+            au même prix n'en font qu'un, le plus fort en tête (« Le plus dangereux, selon vous ·
+            Prix médian ») ; près
             d'un bord, le libellé s'ancre du côté où il a la place (M115). Sous 640 px, seul le
             trait coloré reste sur la ligne, les libellés passent dans la liste dessous. */}
         {placed.map((marker, index) => {
@@ -140,7 +141,7 @@ export function PriceLineBand({
                   </span>
                   <b className="hidden sm:block">{formatEuro(marker.value)}</b>
                   {below ? null : (
-                    <span className={`mt-0.5 h-4 w-0.5 sm:mt-0.5 ${toneDot(marker.tone)}`} />
+                    <span className={`mt-[0.75rem] h-4 w-0.5 sm:mt-0.5 ${toneDot(marker.tone)}`} />
                   )}
                 </>
               )}
