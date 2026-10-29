@@ -369,6 +369,233 @@ export type Database = {
           },
         ]
       }
+      buyer_prospect_origins: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          comparable_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          letter_body: string | null
+          letter_contact_hook: string | null
+          letter_saved_at: string | null
+          letter_saved_by: string | null
+          letter_title: string | null
+          letter_version: string | null
+          prospect_id: string | null
+          selection_item_id: string
+          their_photo_mode: string | null
+          their_photo_path: string | null
+          their_photo_source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          comparable_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          letter_body?: string | null
+          letter_contact_hook?: string | null
+          letter_saved_at?: string | null
+          letter_saved_by?: string | null
+          letter_title?: string | null
+          letter_version?: string | null
+          prospect_id?: string | null
+          selection_item_id: string
+          their_photo_mode?: string | null
+          their_photo_path?: string | null
+          their_photo_source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          comparable_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          letter_body?: string | null
+          letter_contact_hook?: string | null
+          letter_saved_at?: string | null
+          letter_saved_by?: string | null
+          letter_title?: string | null
+          letter_version?: string | null
+          prospect_id?: string | null
+          selection_item_id?: string
+          their_photo_mode?: string | null
+          their_photo_path?: string | null
+          their_photo_source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_prospect_origins_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_comparable_id_fkey"
+            columns: ["comparable_id"]
+            isOneToOne: false
+            referencedRelation: "comparables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_letter_saved_by_fkey"
+            columns: ["letter_saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospect_origins_selection_item_id_fkey"
+            columns: ["selection_item_id"]
+            isOneToOne: true
+            referencedRelation: "buyer_selection_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_prospects: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          exclusivity: string | null
+          exclusivity_source: string | null
+          facts: Json
+          id: string
+          listing_key: string
+          listing_url: string
+          locator_address: string | null
+          locator_address_at: string | null
+          locator_analyzed_at: string | null
+          locator_confirmed: boolean | null
+          locator_label: string | null
+          locator_label_key: string | null
+          locator_latitude: number | null
+          locator_longitude: number | null
+          locator_property_id: string | null
+          locator_purged_at: string | null
+          locator_source: string | null
+          locator_state: string | null
+          prospecting_collaboration_at: string | null
+          prospecting_collaboration_declined_at: string | null
+          prospecting_declined_at: string | null
+          prospecting_handed_at: string | null
+          prospecting_mandate_at: string | null
+          prospecting_meeting_at: string | null
+          sold_by: string | null
+          sold_by_source: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          exclusivity?: string | null
+          exclusivity_source?: string | null
+          facts?: Json
+          id?: string
+          listing_key: string
+          listing_url: string
+          locator_address?: string | null
+          locator_address_at?: string | null
+          locator_analyzed_at?: string | null
+          locator_confirmed?: boolean | null
+          locator_label?: string | null
+          locator_label_key?: string | null
+          locator_latitude?: number | null
+          locator_longitude?: number | null
+          locator_property_id?: string | null
+          locator_purged_at?: string | null
+          locator_source?: string | null
+          locator_state?: string | null
+          prospecting_collaboration_at?: string | null
+          prospecting_collaboration_declined_at?: string | null
+          prospecting_declined_at?: string | null
+          prospecting_handed_at?: string | null
+          prospecting_mandate_at?: string | null
+          prospecting_meeting_at?: string | null
+          sold_by?: string | null
+          sold_by_source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          exclusivity?: string | null
+          exclusivity_source?: string | null
+          facts?: Json
+          id?: string
+          listing_key?: string
+          listing_url?: string
+          locator_address?: string | null
+          locator_address_at?: string | null
+          locator_analyzed_at?: string | null
+          locator_confirmed?: boolean | null
+          locator_label?: string | null
+          locator_label_key?: string | null
+          locator_latitude?: number | null
+          locator_longitude?: number | null
+          locator_property_id?: string | null
+          locator_purged_at?: string | null
+          locator_source?: string | null
+          locator_state?: string | null
+          prospecting_collaboration_at?: string | null
+          prospecting_collaboration_declined_at?: string | null
+          prospecting_declined_at?: string | null
+          prospecting_handed_at?: string | null
+          prospecting_mandate_at?: string | null
+          prospecting_meeting_at?: string | null
+          sold_by?: string | null
+          sold_by_source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_prospects_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_prospects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_selection_items: {
         Row: {
           agency_id: string
@@ -2411,6 +2638,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      absorb_buyer_prospect: {
+        Args: {
+          p_agency_id: string
+          p_comparable_id: string
+          p_listing_key: string
+        }
+        Returns: number
+      }
       accept_invitation: {
         Args: { first_name: string; last_name: string }
         Returns: {
@@ -2520,6 +2755,7 @@ export type Database = {
         Returns: undefined
       }
       purge_old_app_errors: { Args: never; Returns: number }
+      purge_stale_buyer_prospect_addresses: { Args: never; Returns: number }
       purge_stale_owner_addresses: { Args: never; Returns: number }
       reopen_live: {
         Args: {

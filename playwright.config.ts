@@ -39,7 +39,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  timeout: 6 * 60_000,
+  // Mission 125 (décision de Jean-Guy, 25/10) : 8 minutes par parcours, comme la démo — le
+  // parcours complet tourne à 6 min, le plafond de 6 le faisait échouer sans défaut (M120).
+  timeout: 8 * 60_000,
   expect: { timeout: 20_000 },
   reporter: [['list']],
   use: {

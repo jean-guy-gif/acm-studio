@@ -1,4 +1,8 @@
 import {
+  originParam,
+  type ProspectingOrigin,
+} from '@/features/buyer-prospecting/services/buyer-prospect-card';
+import {
   PROSPECTING_TARGETS,
   type ProspectingEntry,
   type ProspectingSeller,
@@ -46,13 +50,22 @@ export function filterProspecting<T extends ProspectingEntry & { sellers?: Prosp
   });
 }
 
-export function prospectionHref(sellerId: string | null, target: ProspectingTarget): string {
+// Mission 120 — et l'origine des cartes (« ?origine=vendeur » / « ?origine=acquereur »).
+export function prospectionHref(
+  sellerId: string | null,
+  target: ProspectingTarget,
+  origin: ProspectingOrigin = 'all',
+): string {
   const params = new URLSearchParams();
   if (sellerId != null) {
     params.set('bien', sellerId);
   }
   if (target !== 'all') {
     params.set('cible', target);
+  }
+  const originValue = originParam(origin);
+  if (originValue) {
+    params.set('origine', originValue);
   }
   const query = params.toString();
   return query === '' ? '/prospection' : `/prospection?${query}`;

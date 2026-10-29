@@ -2,6 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 
+import {
+  buyerLetterOriginsOf,
+  removeBuyerLetterPhotos,
+} from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
 import { removeCompetitorPhotos } from '@/features/prospecting-file/services/remove-their-photos';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -63,6 +67,11 @@ export async function bulkDeleteComparables(
   }
 
   const supabase = await createClient();
+  // Mission 120 — les courriers d'une recherche acquéreur rattachés à ces concurrents partent en
+  // cascade : leurs origines se lisent avant, leurs photos se retirent après.
+  const buyerOrigins = await buyerLetterOriginsOf(supabase, profile.agency_id, {
+    comparableIds: targets,
+  });
   // Suppression irréversible du bien dans le dossier. competitor_decisions n'est pas
   // touché : l'apprentissage de l'agence reste intact.
   const { error } = await supabase
@@ -76,6 +85,7 @@ export async function bulkDeleteComparables(
   }
   // Mission 87 — leurs dossiers de prospection sont partis avec eux (cascade) : leurs photos aussi.
   await removeCompetitorPhotos(supabase.storage, profile.agency_id, projectId, targets);
+  await removeBuyerLetterPhotos(supabase.storage, profile.agency_id, buyerOrigins);
 
   revalidatePath(`/builder/${projectId}/comparables`);
   return { ok: true, count: targets.length };

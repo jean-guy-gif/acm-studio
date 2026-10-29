@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { storedListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -67,7 +68,15 @@ export async function insertCompetitor(
       agency_id: agencyId,
       display_order: (last?.display_order ?? 0) + 1,
     });
-    if (!error) return { status: 'created' };
+    if (!error) {
+      // Mission 120 — une carte par bien : dans un dossier déjà « mandat signé », le concurrent qui
+      // vient de naître reprend la carte d'une recherche acquéreur sur la même annonce.
+      const created = await existingListing(supabase, projectId, agencyId, listingUrl);
+      if (created) {
+        await absorbBuyerProspectsForProject(supabase, agencyId, projectId, created.id);
+      }
+      return { status: 'created' };
+    }
     if (isDuplicateListing(error)) {
       const existing = await existingListing(supabase, projectId, agencyId, listingUrl);
       return existing ? { status: 'existing', ...existing } : { status: 'failed' };

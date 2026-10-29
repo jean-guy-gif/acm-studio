@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 
 import { btnPrimary, btnSecondary, link } from '@/components/ui/styles';
+import { setBuyerProspectStatus } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { setProspectingStatus } from '@/features/prospecting/actions/set-prospecting-status';
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
 import type {
@@ -55,6 +56,7 @@ export function ProspectingStatusActions({
   step,
   primary = false,
   refusedCollaboration = false,
+  buyerProspectId = null,
 }: {
   projectId: string;
   competitorId: string;
@@ -64,6 +66,8 @@ export function ProspectingStatusActions({
   primary?: boolean;
   // Mission 115 — un refus de collaboration est posé : s'il est le dernier fait, il s'annule.
   refusedCollaboration?: boolean;
+  // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent.
+  buyerProspectId?: string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -78,7 +82,9 @@ export function ProspectingStatusActions({
   const run = (move: ProspectingMove) => {
     setError(null);
     startTransition(async () => {
-      const result = await setProspectingStatus(projectId, competitorId, move);
+      const result = buyerProspectId
+        ? await setBuyerProspectStatus(buyerProspectId, move)
+        : await setProspectingStatus(projectId, competitorId, move);
       if (!result.ok) {
         setError(result.error);
       }

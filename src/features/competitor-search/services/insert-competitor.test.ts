@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-
+// Mission 120 — après l'insertion, le service de fusion décide (mandat signé ou non).
+const absorb = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock('@/features/buyer-prospecting/services/absorb-buyer-prospects', () => ({
+  absorbBuyerProspectsForProject: async (...args: unknown[]) => {
+    absorb.calls.push(args.slice(1));
+    return 0;
+  },
+}));
 import {
   insertCompetitor,
   isDuplicateListing,
@@ -72,5 +79,41 @@ describe('importer deux fois la même annonce', () => {
       await insertCompetitor(retried.client as never, 'p1', 'a1', { title: 'x', price: 1 }),
     ).toEqual({ status: 'created' });
     expect(retried.writes()).toEqual(['insert comparables', 'insert comparables']);
+  });
+});
+
+// Mission 120 (décision du 28/10) — une carte par bien dans les deux sens : après l'insertion, le
+// service de fusion est appelé pour le concurrent créé ; lui seul sait si le dossier est signé.
+describe('un concurrent reprend la carte d’une recherche acquéreur', () => {
+  it('demande la fusion pour le concurrent créé, dans l’agence et le dossier', async () => {
+    absorb.calls.length = 0;
+    const supabase = fakeSupabase((calls) =>
+      calls.some((c) => c.method === 'insert')
+        ? { data: { id: 'created-1', is_selected: true } }
+        : { data: { display_order: 1 } },
+    );
+    const result = await insertCompetitor(supabase.client as never, 'p1', 'a1', {
+      title: 'x',
+      price: 300_000,
+      listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
+    });
+    expect(result).toEqual({ status: 'created' });
+    expect(absorb.calls).toEqual([['a1', 'p1', 'created-1']]);
+  });
+
+  it('un import refusé (annonce déjà là) ne demande aucune fusion', async () => {
+    absorb.calls.length = 0;
+    const supabase = fakeSupabase((calls) => {
+      const last = calls[calls.length - 1];
+      if (last?.method === 'insert') return { error: DUPLICATE };
+      if (calls.some((c) => c.method === 'insert')) return { data: { id: 'e', is_selected: true } };
+      return { data: { display_order: 1 } };
+    });
+    await insertCompetitor(supabase.client as never, 'p1', 'a1', {
+      title: 'x',
+      price: 1,
+      listing_url: 'https://www.seloger.com/annonces/1.htm',
+    });
+    expect(absorb.calls).toEqual([]);
   });
 });

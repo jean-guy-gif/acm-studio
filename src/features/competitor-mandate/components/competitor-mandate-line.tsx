@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 
+import { setBuyerProspectMandate } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { setCompetitorMandate } from '@/features/competitor-mandate/actions/set-competitor-mandate';
 import { VERIFY_LABEL } from '@/features/imported-fields/services/fields-to-verify';
 import type { MandateField } from '@/features/competitor-mandate/services/mandate-columns';
@@ -47,11 +48,14 @@ const chipOff =
 export function CompetitorMandateLine({
   competitor,
   toVerify = [],
+  buyerProspectId = null,
 }: {
   competitor: CompetitorMandateFields;
   // Mission 101 — les champs encore « À vérifier » (un concurrent créé depuis la recherche ne
   // sait pas qui vend) : la pastille part dès que le conseiller répond.
   toVerify?: readonly string[];
+  // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent : même geste.
+  buyerProspectId?: string | null;
 }) {
   const [stored, setStored] = useState({
     sold_by: competitor.sold_by,
@@ -71,7 +75,9 @@ export function CompetitorMandateLine({
     setError(null);
     setStored({ ...stored, [field]: value, [sourceField]: 'advisor' });
     startTransition(async () => {
-      const result = await setCompetitorMandate(competitor.project_id, competitor.id, field, value);
+      const result = buyerProspectId
+        ? await setBuyerProspectMandate(buyerProspectId, field, value)
+        : await setCompetitorMandate(competitor.project_id, competitor.id, field, value);
       if (!result.ok) {
         setStored(previous);
         setError(result.error);
