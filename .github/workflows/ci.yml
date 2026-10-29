@@ -57,8 +57,8 @@ jobs:
       # 29/10 (décision de Jean-Guy) — plus de téléchargement de l'image à chaque course : le registre
       # ghcr.io jette « toomanyrequests » aux machines partagées de GitHub, identifiées ou non. L'image
       # est gardée dans le cache des Actions (un seul fichier, ~1 Go, clé = sa version) ; elle n'est
-      # téléchargée qu'au premier passage ou à un changement de version, avec cinq essais, et aussitôt
-      # gardée — même si un test SQL échoue ensuite.
+      # téléchargée qu'au premier passage ou à un changement de version, depuis le premier registre
+      # qui répond, et aussitôt gardée — même si un test SQL échoue ensuite.
       - name: Image de la base, depuis le cache
         id: cache-image
         uses: actions/cache/restore@v4
@@ -70,21 +70,32 @@ jobs:
         if: steps.cache-image.outputs.cache-hit == 'true'
         run: zstd -d -c "$HOME/.cache/acm/postgres-$POSTGRES_VERSION.tar.zst" | docker load
 
-      - name: Connexion au registre des images
+      - name: Connexion au registre de GitHub (dernier recours)
         if: steps.cache-image.outputs.cache-hit != 'true'
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
         run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
 
-      - name: Image de la base, téléchargée une fois (cinq essais)
+      # La même image est publiée sur trois registres (vérifié le 29/10) : le registre public d'AWS
+      # (celui de la CLI), Docker Hub, puis ghcr.io en dernier recours ; deux essais chacun, et
+      # l'image reçue prend le nom que la CLI attend.
+      - name: Image de la base, téléchargée une fois (trois registres, deux essais chacun)
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: |
-          for essai in 1 2 3 4 5; do
-            docker pull "$POSTGRES_IMAGE" && break
-            echo "Essai $essai refusé par le registre : nouvel essai dans 60 s"
-            sleep 60
+          recue=""
+          for source in "public.ecr.aws/supabase/postgres:$POSTGRES_VERSION" \
+                        "docker.io/supabase/postgres:$POSTGRES_VERSION" \
+                        "$POSTGRES_IMAGE"; do
+            for essai in 1 2; do
+              if docker pull "$source"; then recue="$source"; break 2; fi
+              echo "$source : essai $essai refusé, nouvel essai dans 30 s"
+              sleep 30
+            done
           done
+          test -n "$recue"
+          echo "Image reçue depuis $recue"
+          docker tag "$recue" "$POSTGRES_IMAGE"
           docker image inspect "$POSTGRES_IMAGE" > /dev/null
           mkdir -p "$HOME/.cache/acm"
           docker save "$POSTGRES_IMAGE" | zstd -T0 -3 > "$HOME/.cache/acm/postgres-$POSTGRES_VERSION.tar.zst"
