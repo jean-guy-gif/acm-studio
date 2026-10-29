@@ -1,6 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+// Mission 120 — la fusion d'un bien démarché passe par la clé service ; un échec entre au journal.
+const absorb = vi.hoisted(() => ({ calls: [] as unknown[], error: null as unknown }));
+vi.mock('@/lib/supabase/service-role', () => ({
+  createServiceRoleClient: () => ({
+    rpc: async (name: string, args: unknown) => {
+      absorb.calls.push([name, args]);
+      return { data: absorb.error ? null : 0, error: absorb.error };
+    },
+  }),
+}));
+const reported = vi.hoisted(() => [] as string[]);
+vi.mock('@/lib/app-errors/report-server-error', () => ({
+  reportServerError: async (scope: string) => {
+    reported.push(scope);
+  },
+}));
 
 import {
   insertCompetitor,
@@ -72,5 +88,62 @@ describe('importer deux fois la même annonce', () => {
       await insertCompetitor(retried.client as never, 'p1', 'a1', { title: 'x', price: 1 }),
     ).toEqual({ status: 'created' });
     expect(retried.writes()).toEqual(['insert comparables', 'insert comparables']);
+  });
+});
+
+// Mission 120 (décision du 28/10) — une carte par bien dans les deux sens : après l'insertion, le
+// serveur demande à la base de fondre le bien démarché de la même annonce dans le concurrent.
+describe('un concurrent reprend la carte d’une recherche acquéreur', () => {
+  it('demande la fusion avec l’agence, le concurrent créé et la clé de l’annonce', async () => {
+    absorb.calls.length = 0;
+    const supabase = fakeSupabase((calls) =>
+      calls.some((c) => c.method === 'insert')
+        ? { data: { id: 'created-1', is_selected: true } }
+        : { data: { display_order: 1 } },
+    );
+    const result = await insertCompetitor(supabase.client as never, 'p1', 'a1', {
+      title: 'x',
+      price: 300_000,
+      listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
+    });
+    expect(result).toEqual({ status: 'created' });
+    expect(absorb.calls).toEqual([
+      [
+        'absorb_buyer_prospect',
+        {
+          p_agency_id: 'a1',
+          p_comparable_id: 'created-1',
+          p_listing_key: 'seloger:26ZEJMLWB13Y.htm',
+        },
+      ],
+    ]);
+  });
+
+  it('sans annonce reconnue, aucune fusion ; un échec de la fusion ne défait pas l’insertion', async () => {
+    absorb.calls.length = 0;
+    const plain = fakeSupabase(() => ({ data: { display_order: 1 } }));
+    expect(
+      await insertCompetitor(plain.client as never, 'p1', 'a1', {
+        title: 'x',
+        price: 1,
+        listing_url: null,
+      }),
+    ).toEqual({ status: 'created' });
+    expect(absorb.calls).toEqual([]);
+    absorb.error = { message: 'refusé' };
+    const supabase = fakeSupabase((calls) =>
+      calls.some((c) => c.method === 'insert')
+        ? { data: { id: 'created-2', is_selected: true } }
+        : { data: { display_order: 1 } },
+    );
+    expect(
+      await insertCompetitor(supabase.client as never, 'p1', 'a1', {
+        title: 'x',
+        price: 1,
+        listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
+      }),
+    ).toEqual({ status: 'created' });
+    expect(reported).toEqual(['fusion d’un bien démarché dans un concurrent']);
+    absorb.error = null;
   });
 });

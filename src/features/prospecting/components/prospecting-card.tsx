@@ -149,11 +149,10 @@ export function ProspectingCard({
         </p>
       ) : (
         <>
-          {/* ACM ne sait pas à qui s'adresser : le conseiller le dit ici (M83). */}
-          {!buyerProspectId &&
-          step === 'check' &&
-          (status === 'to_confirm' || status === 'ready') ? (
-            <CompetitorMandateLine competitor={row.mandate} />
+          {/* ACM ne sait pas à qui s'adresser : le conseiller le dit ici (M83) — sur une carte
+              acquéreur aussi (décision du 28/10). */}
+          {step === 'check' && (status === 'to_confirm' || status === 'ready') ? (
+            <CompetitorMandateLine competitor={row.mandate} buyerProspectId={buyerProspectId} />
           ) : null}
 
           {/* Tant que l'adresse n'est pas confirmée : la confirmer, la localiser ou la saisir

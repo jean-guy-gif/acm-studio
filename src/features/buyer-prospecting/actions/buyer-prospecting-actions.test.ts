@@ -39,7 +39,7 @@ vi.mock('@/features/buyer-prospecting/queries/get-buyer-letter', () => ({
 const { prepareBuyerLetter } =
   await import('@/features/buyer-prospecting/actions/prepare-buyer-letter');
 const { saveBuyerLetter } = await import('@/features/buyer-prospecting/actions/save-buyer-letter');
-const { setBuyerProspectStatus } =
+const { setBuyerProspectStatus, setBuyerProspectMandate } =
   await import('@/features/buyer-prospecting/actions/buyer-prospect-actions');
 
 const VISIT = '11111111-1111-4111-8111-111111111111';
@@ -180,6 +180,33 @@ describe('préparer le courrier au propriétaire depuis une visite', () => {
     });
   });
 
+  it('deux préparations au même instant : la seconde rouvre le courrier de la première (28/10)', async () => {
+    let originReads = 0;
+    state.respond = (table, calls) => {
+      if (table === 'buyer_visit_requests')
+        return {
+          data: visit({ source: 'listing', reference: URL, imported: { exclusivity: 'no' } }),
+        };
+      if (table === 'buyer_prospects')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: PROSPECT } }
+          : { data: null };
+      if (table === 'buyer_prospect_origins') {
+        const last = calls[calls.length - 1]?.method;
+        // L'insertion est refusée : l'autre préparation a posé l'origine entre-temps (unicité du
+        // bien retenu) ; la relecture qui suit la trouve.
+        if (last === 'single') return { error: { code: '23505', message: 'doublon' } };
+        originReads += 1;
+        return originReads >= 2 ? { data: { id: 'origin-race' } } : { data: null };
+      }
+      return { data: null };
+    };
+    expect(await prepareBuyerLetter(VISIT)).toEqual({
+      ok: true,
+      href: '/acquereurs/courrier/origin-race',
+    });
+  });
+
   it('déjà préparé pour ce bien retenu : le même courrier, rien de plus', async () => {
     state.respond = (table) =>
       table === 'buyer_visit_requests'
@@ -299,6 +326,53 @@ describe('le statut d’une carte acquéreur', () => {
     state.respond = (table) => (table === 'buyer_prospects' ? { data: row() } : { data: null });
     expect((await setBuyerProspectStatus(PROSPECT, 'mandate')).ok).toBe(false);
     expect((await setBuyerProspectStatus(PROSPECT, 'tout')).ok).toBe(false);
+    expect(writes()).toEqual([]);
+  });
+});
+
+describe('« Vendu par » et « Exclusivité » d’une carte acquéreur (28/10)', () => {
+  const row = {
+    id: PROSPECT,
+    agency_id: 'agency-a',
+    listing_url: URL,
+    listing_key: KEY,
+    facts: {},
+    sold_by: null,
+    exclusivity: null,
+    locator_address: null,
+    locator_confirmed: null,
+    prospecting_handed_at: null,
+    prospecting_meeting_at: null,
+    prospecting_mandate_at: null,
+    prospecting_declined_at: null,
+    prospecting_collaboration_at: null,
+    prospecting_collaboration_declined_at: null,
+  };
+
+  it('se posent d’un clic, provenance « conseiller », dans l’agence', async () => {
+    state.respond = (table, calls) =>
+      table === 'buyer_prospects'
+        ? calls.some((call) => call.method === 'update')
+          ? { data: [{ id: PROSPECT }] }
+          : { data: row }
+        : { data: null };
+    expect(await setBuyerProspectMandate(PROSPECT, 'exclusivity', 'yes')).toEqual({ ok: true });
+    expect(writes()).toEqual(['update buyer_prospects']);
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toMatchObject({
+      exclusivity: 'yes',
+      exclusivity_source: 'advisor',
+    });
+    expect(service.calls.filter((call) => call.method === 'eq').map((call) => call.args)).toEqual([
+      ['id', PROSPECT],
+      ['agency_id', 'agency-a'],
+    ]);
+  });
+
+  it('un champ ou une valeur hors liste : refusé, rien n’est écrit', async () => {
+    state.respond = (table) => (table === 'buyer_prospects' ? { data: row } : { data: null });
+    expect((await setBuyerProspectMandate(PROSPECT, 'price', 'yes')).ok).toBe(false);
+    expect((await setBuyerProspectMandate(PROSPECT, 'exclusivity', 'peut-être')).ok).toBe(false);
+    expect((await setBuyerProspectMandate(PROSPECT, 'sold_by', 42)).ok).toBe(false);
     expect(writes()).toEqual([]);
   });
 });

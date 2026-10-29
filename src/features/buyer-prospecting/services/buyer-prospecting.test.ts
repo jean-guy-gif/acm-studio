@@ -172,6 +172,8 @@ const prospect = (patch: Partial<BuyerProspectRecord> = {}): BuyerProspectRecord
   facts: { propertyType: 'house', surfaceArea: 200, roomsCount: 7, city: 'Mougins' },
   sold_by: 'agency',
   exclusivity: 'no',
+  sold_by_source: null,
+  exclusivity_source: null,
   locator_state: null,
   locator_label: null,
   locator_label_key: null,

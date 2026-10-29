@@ -10,6 +10,7 @@ import {
   type AdvisorAddressInput,
 } from '@/features/competitor-locator/services/advisor-address';
 import { recognizedTypedAddress } from '@/features/competitor-locator/services/recognized-typed-address';
+import { advisorCorrection } from '@/features/competitor-mandate/services/mandate-columns';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { insertOppositions } from '@/features/prospecting/queries/insert-oppositions';
 import { addressKey } from '@/features/prospecting/services/address-key';
@@ -138,6 +139,42 @@ export async function confirmBuyerProspectAddress(
     .select('id');
   if (error || !data || data.length !== 1) {
     return { ok: false, error: 'L’adresse n’a pas été enregistrée. Réessayez.' };
+  }
+  revalidate();
+  return { ok: true };
+}
+
+// Mission 120 (décision du 28/10) — « Vendu par » et « Exclusivité » d'une carte acquéreur se
+// posent d'un clic, comme sur un concurrent (M83) : le champ et la valeur sont relus sur une
+// liste, la provenance « conseiller » est gardée, pour qu'un concurrent la reprenne (fusion).
+export async function setBuyerProspectMandate(
+  prospectId: unknown,
+  field: unknown,
+  value: unknown,
+): Promise<BuyerProspectResult> {
+  const failure = { ok: false as const, error: 'La correction n’a pas été enregistrée.' };
+  if (field !== 'sold_by' && field !== 'exclusivity') {
+    return failure;
+  }
+  if (value !== null && typeof value !== 'string') {
+    return failure;
+  }
+  const patch = advisorCorrection(field, value);
+  if (!patch) {
+    return failure;
+  }
+  const loaded = await load(prospectId);
+  if (!loaded) {
+    return { ok: false, error: NOT_FOUND };
+  }
+  const { data, error } = await createServiceRoleClient()
+    .from('buyer_prospects')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', loaded.prospect.id)
+    .eq('agency_id', loaded.profile.agency_id)
+    .select('id');
+  if (error || !data || data.length !== 1) {
+    return failure;
   }
   revalidate();
   return { ok: true };

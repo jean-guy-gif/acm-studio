@@ -64,15 +64,15 @@ export function buildBuyerProspectRow(
     collaborationAt: prospect.prospecting_collaboration_at,
     collaborationDeclinedAt: prospect.prospecting_collaboration_declined_at,
     step: collaborationDeclined(prospect) ? 'owner' : prospectingStep(prospect),
-    // Une carte acquéreur n'a pas de dossier vendeur : « à qui s'adresser » se lit, il ne se
-    // corrige pas sur la ligne d'un concurrent (`CompetitorMandateLine` n'y est pas rendu).
+    // Une carte acquéreur n'a pas de dossier vendeur ; « Vendu par » et « Exclusivité » se
+    // corrigent d'un clic comme sur un concurrent (décision du 28/10), provenance comprise.
     mandate: {
       id: prospect.id,
       project_id: '',
       sold_by: prospect.sold_by,
-      sold_by_source: null,
+      sold_by_source: prospect.sold_by_source,
       exclusivity: prospect.exclusivity,
-      exclusivity_source: null,
+      exclusivity_source: prospect.exclusivity_source,
     },
   };
 }
