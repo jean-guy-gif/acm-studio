@@ -1,0 +1,47 @@
+import { describe, expect, it } from 'vitest';
+
+import { MASQUE, contientSecret, masquerSecrets, premierePhrase } from './secrets.mjs';
+
+// Mission 126 — aucun secret sur la page ni dans le journal (fiche, point 7).
+describe('le masque des secrets', () => {
+  it('masque les jetons connus, les variables sensibles et les longues chaînes opaques', () => {
+    const cas = [
+      'curl -H "x-vercel-protection-bypass: Ab3dEfGh1jKlMnOpQrStUvWxYz012345" https://essai',
+      'E2E_VERCEL_BYPASS=Ab3dEfGh1jKlMnOpQrStUvWxYz012345 npm run e2e',
+      'token ghp_abcdefghijklmnopqrstuvwxyz0123456789',
+      'clé sbp_0123456789abcdef0123456789abcdef',
+      'jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      'https://acm.test/dossier/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
+      'SUPABASE_SERVICE_KEY: "shhh" et ?token=secret123',
+      'condensat 0123456789abcdef0123456789abcdef0123456789abcdef',
+    ];
+    for (const texte of cas) {
+      const masque = masquerSecrets(texte);
+      expect(masque, texte).toContain(MASQUE);
+      expect(masque).not.toMatch(
+        /Ab3dEfGh1jKlMnOpQrStUvWxYz012345|ghp_abc|sbp_0123|eyJhbGci|abcdefghijklmnopqrstuvwxyzABC|shhh|secret123|0123456789abcdef0123456789abcdef/,
+      );
+    }
+    expect(masquerSecrets('E2E_VERCEL_BYPASS=Ab3dEfGh1jKlMnOpQrStUvWxYz012345')).toBe(
+      `E2E_VERCEL_BYPASS=${MASQUE}`,
+    );
+  });
+
+  it('laisse une phrase ordinaire telle quelle', () => {
+    const phrase = 'Poussé : git push -u origin mission-126-atelier · essai 5e06dba · CI verte';
+    expect(masquerSecrets(phrase)).toBe(phrase);
+    expect(contientSecret(phrase)).toBe(false);
+    expect(contientSecret('jeton ghp_abcdefghijklmnopqrstuvwxyz0123456789')).toBe(true);
+  });
+
+  it('la première phrase d’un rapport, masquée et bornée à 140 caractères', () => {
+    expect(premierePhrase('\n**Relecture** — aucun bloquant.\nDétail…')).toBe(
+      'Relecture — aucun bloquant.',
+    );
+    expect(premierePhrase('x'.repeat(300))).toHaveLength(140);
+    expect(premierePhrase('rapport avec ghp_abcdefghijklmnopqrstuvwxyz0123456789')).toContain(
+      MASQUE,
+    );
+    expect(premierePhrase(null)).toBe('');
+  });
+});

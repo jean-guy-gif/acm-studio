@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>L’atelier — ACM Studio</title>
+    <style>
+      /* Mission 126 — la page de l'atelier, d'après les maquettes du designer (missions/maquettes/M126-*). */
+      :root {
+        --fond: #fafafa;
+        --carte: #ffffff;
+        --ligne: #e4e4e7;
+        --texte: #18181b;
+        --gris: #71717a;
+        --gris-clair: #d4d4d8;
+        --profond: #00527a;
+        --actif: #3ea9ff;
+        --actif-fond: #eaf5ff;
+        --actif-ligne: #bfe0ff;
+        --fait: #059669;
+        --fait-fond: #ecfdf5;
+        --fait-ligne: #a7f3d0;
+        --attend: #d97706;
+        --attend-fond: #fffbeb;
+        --attend-ligne: #fcd34d;
+        --bloque: #dc2626;
+        --bloque-fond: #fef2f2;
+        --bloque-ligne: #fecaca;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--fond);
+        color: var(--texte);
+        font:
+          12px/1.4 Montserrat,
+          Inter,
+          system-ui,
+          sans-serif;
+        padding: 20px 24px 32px;
+      }
+      h1,
+      h2,
+      .titre {
+        font-family: Rajdhani, Montserrat, Inter, system-ui, sans-serif;
+      }
+      .carte {
+        background: var(--carte);
+        border: 1px solid var(--ligne);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      .kicker {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: var(--profond);
+        text-transform: uppercase;
+      }
+      .horloge {
+        font-size: 10.5px;
+        color: var(--gris);
+      }
+      .gris {
+        color: var(--gris);
+      }
+      .libelle {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: var(--gris);
+        text-transform: uppercase;
+        margin-top: 10px;
+      }
+      .valeur {
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 3px;
+      }
+      .pied {
+        font-size: 10px;
+        color: var(--gris);
+        margin-top: 12px;
+      }
+      .pastille {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 9px;
+        border-radius: 9px;
+        border: 1px solid;
+        white-space: nowrap;
+      }
+      .pastille.en-cours {
+        color: var(--profond);
+        background: var(--actif-fond);
+        border-color: var(--actif-ligne);
+      }
+      .pastille.termine {
+        color: var(--fait);
+        background: var(--fait-fond);
+        border-color: var(--fait-ligne);
+      }
+      .pastille.attend {
+        color: var(--attend);
+        background: var(--attend-fond);
+        border-color: var(--attend-ligne);
+      }
+      .pastille.bloque {
+        color: var(--bloque);
+        background: var(--bloque-fond);
+        border-color: var(--bloque-ligne);
+      }
+      .pastille.a-venir,
+      .pastille.sans-objet,
+      .pastille.illisible {
+        color: var(--gris);
+        background: var(--carte);
+        border-color: var(--gris-clair);
+      }
+      .bandeau {
+        display: none;
+        margin-top: 12px;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-weight: 600;
+      }
+      .bandeau.attend {
+        display: block;
+        background: var(--attend-fond);
+        border: 1px solid var(--attend-ligne);
+        color: #92400e;
+      }
+      .bandeau.gris {
+        display: block;
+        background: #f4f4f5;
+        border: 1px solid var(--ligne);
+        color: var(--gris);
+      }
+      .entetes {
+        display: grid;
+        grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr));
+        gap: 24px;
+      }
+      .entete h1 {
+        margin: 10px 0 4px;
+        font-size: 26px;
+        color: var(--profond);
+        font-weight: 700;
+      }
+      .entete.compact h1 {
+        font-size: 20px;
+      }
+      .sous-titre {
+        color: var(--gris);
+        font-size: 12px;
+      }
+      .rail {
+        display: flex;
+        align-items: flex-start;
+        margin-top: 16px;
+      }
+      .etape {
+        flex: 1;
+        position: relative;
+        text-align: center;
+        font-size: 10.5px;
+        color: var(--gris);
+      }
+      .etape .point {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        margin: 0 auto 6px;
+        border: 1.5px dashed var(--gris-clair);
+        background: var(--carte);
+        position: relative;
+        z-index: 1;
+      }
+      .etape.faite .point {
+        background: var(--fait);
+        border: 0;
+      }
+      .etape.faite .point::after {
+        content: '✓';
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 14px;
+        display: block;
+      }
+      .etape.active .point {
+        background: var(--actif);
+        border: 0;
+        box-shadow: 0 0 0 5px var(--actif-fond);
+      }
+      .etape.active {
+        color: var(--profond);
+        font-weight: 700;
+      }
+      .etape.attend .point {
+        background: var(--attend);
+        border: 0;
+        box-shadow: 0 0 0 5px var(--attend-fond);
+      }
+      .etape.attend {
+        color: var(--attend);
+        font-weight: 700;
+      }
+      .etape.sans-objet {
+        color: var(--gris-clair);
+      }
+      .etape::before {
+        content: '';
+        position: absolute;
+        top: 7px;
+        left: 50%;
+        width: 100%;
+        height: 1.5px;
+        background: var(--ligne);
+      }
+      .etape.faite::before {
+        background: var(--fait);
+      }
+      .etape:last-child::before {
+        display: none;
+      }
+      .rail.compact .etape .nom {
+        display: none;
+      }
+      .rail.compact .etape .point {
+        width: 12px;
+        height: 12px;
+      }
+      .rail-resume {
+        font-size: 10.5px;
+        color: var(--gris);
+        margin-top: 8px;
+      }
+      .milieu {
+        display: grid;
+        grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)) 400px;
+        gap: 16px;
+        margin-top: 16px;
+        align-items: start;
+      }
+      .cartes {
+        display: grid;
+        gap: 14px;
+      }
+      .equipe h2 {
+        margin: 0;
+        font-size: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .equipe h2 .aide {
+        font:
+          10.5px Montserrat,
+          Inter,
+          system-ui,
+          sans-serif;
+        color: var(--gris);
+        font-weight: 400;
+      }
+      .constellation {
+        position: relative;
+        height: 340px;
+        margin-top: 8px;
+      }
+      .constellation svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .noeud {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 170px;
+      }
+      .noeud.gauche {
+        text-align: right;
+        transform: translate(-100%, -50%);
+        padding-right: 24px;
+      }
+      .noeud.droite {
+        text-align: left;
+        transform: translate(0, -50%);
+        padding-left: 24px;
+      }
+      .noeud .nom {
+        font-size: 12.5px;
+        font-weight: 700;
+      }
+      .noeud .etat {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--gris);
+      }
+      .noeud .etat.en-cours {
+        color: var(--profond);
+      }
+      .noeud .etat.termine {
+        color: var(--fait);
+      }
+      .noeud .etat.attend {
+        color: var(--attend);
+      }
+      .noeud .etat.bloque {
+        color: var(--bloque);
+      }
+      .noeud .phrase {
+        font-size: 10.5px;
+        color: var(--gris);
+        font-style: italic;
+      }
+      .compact .noeud {
+        width: 110px;
+        transform: translate(-50%, 0);
+        text-align: center;
+        padding: 0;
+      }
+      .compact .noeud .phrase {
+        display: none;
+      }
+      .equipe.compact h2 {
+        display: block;
+      }
+      .equipe.compact h2 .aide {
+        display: block;
+        margin-top: 2px;
+      }
+      .equipe.compact .constellation {
+        height: 330px;
+      }
+      .equipe.compact .chef-etat {
+        top: calc(50% + 36px);
+        width: 160px;
+      }
+      .equipe.compact .chef-etat .phrase {
+        display: none;
+      }
+      .noeud .phrase {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .rond {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1.5px dashed var(--gris-clair);
+        background: var(--carte);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rond.en-cours {
+        background: var(--actif);
+        border: 0;
+        box-shadow: 0 0 0 5px var(--actif-fond);
+      }
+      .rond.en-cours::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .rond.termine {
+        background: var(--fait);
+        border: 0;
+        color: #fff;
+        font-weight: 800;
+        font-size: 18px;
+      }
+      .rond.attend {
+        background: var(--attend);
+        border: 0;
+        box-shadow: 0 0 0 5px var(--attend-fond);
+        color: #fff;
+        font-weight: 800;
+      }
+      .rond.bloque {
+        background: var(--bloque);
+        border: 0;
+        color: #fff;
+        font-weight: 800;
+      }
+      .chef {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--profond);
+        border: 3px solid var(--actif);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font:
+          700 14px Rajdhani,
+          Montserrat,
+          sans-serif;
+      }
+      .chef.attend {
+        border-color: var(--attend);
+        box-shadow: 0 0 0 6px var(--attend-fond);
+      }
+      .chef-etat {
+        position: absolute;
+        left: 50%;
+        top: calc(50% + 40px);
+        transform: translateX(-50%);
+        text-align: center;
+        width: 320px;
+      }
+      .chef-etat .phrase {
+        font-size: 10.5px;
+        color: var(--gris);
+        font-style: italic;
+        margin-top: 4px;
+      }
+      .barre {
+        display: inline-block;
+        width: 120px;
+        height: 8px;
+        border-radius: 4px;
+        background: #f4f4f5;
+        vertical-align: middle;
+        margin-left: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+      .barre i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: var(--actif);
+        border-radius: 4px;
+      }
+      .barre.depasse i {
+        background: var(--bloque);
+      }
+      .fil {
+        margin-top: 16px;
+      }
+      .fil h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .fil h2 .aide {
+        font:
+          10.5px Montserrat,
+          Inter,
+          system-ui,
+          sans-serif;
+        color: var(--gris);
+        font-weight: 400;
+      }
+      .fil table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .fil th {
+        text-align: left;
+        font-size: 9px;
+        letter-spacing: 1px;
+        color: var(--gris);
+        padding: 4px 8px;
+        border-bottom: 1px solid var(--ligne);
+      }
+      .fil td {
+        padding: 4px 8px;
+        font-size: 11px;
+        vertical-align: top;
+      }
+      .fil tr:nth-child(even) td {
+        background: var(--fond);
+      }
+      .fil .heure {
+        color: var(--gris);
+        white-space: nowrap;
+      }
+      .fil .mission {
+        color: var(--profond);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .fil .agent {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .fil .defile {
+        max-height: 196px;
+        overflow-y: auto;
+      }
+      .vide {
+        text-align: center;
+        color: var(--gris);
+        padding: 40px 0;
+      }
+      .vide h1 {
+        color: var(--profond);
+        font-size: 22px;
+        margin: 0 0 6px;
+      }
+      @media (max-width: 1100px) {
+        .milieu {
+          grid-template-columns: 1fr;
+        }
+        .cartes {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // Tout vient de /etat, relu toutes les 2 s. La page ne fait rien : elle montre.
+      const ETAPES_NOMS = {
+        architecte: 'Architecte',
+        designer: 'Designer',
+        questions: 'Questions',
+        code: 'Code',
+        'gardien-sql': 'Gardien-sql',
+        accord: 'Accord',
+        relecteur: 'Relecteur',
+        push: 'Essai',
+        testeur: 'Testeur',
+        parcoureur: 'Parcoureur',
+        rendus: 'Rendus',
+        rapport: 'Rapport',
+      };
+      const ETAT_CLASSE = {
+        'en cours': 'en-cours',
+        terminé: 'termine',
+        bloqué: 'bloque',
+        'attend Jean-Guy': 'attend',
+        'à venir': 'a-venir',
+        'sans objet': 'sans-objet',
+        'rien en attente': 'a-venir',
+        illisible: 'illisible',
+      };
+      const NOEUDS = [
+        {
+          nom: 'architecte',
+          titre: 'Architecte',
+          x: 24,
+          y: 40,
+          cote: 'gauche',
+          apres: 'lit la fiche et le code',
+        },
+        {
+          nom: 'designer',
+          titre: 'Designer',
+          x: 50,
+          y: 10,
+          cote: 'haut',
+          apres: 'si un écran change',
+        },
+        {
+          nom: 'gardien-sql',
+          titre: 'Gardien-sql',
+          x: 76,
+          y: 40,
+          cote: 'droite',
+          apres: 'après le code, si migration',
+        },
+        {
+          nom: 'relecteur',
+          titre: 'Relecteur',
+          x: 84,
+          y: 66,
+          cote: 'droite',
+          apres: 'avant le push',
+        },
+        {
+          nom: 'testeur',
+          titre: 'Testeur',
+          x: 65,
+          y: 90,
+          cote: 'droite',
+          apres: 'sur l’essai déployé',
+        },
+        {
+          nom: 'parcoureur',
+          titre: 'Parcoureur',
+          x: 35,
+          y: 90,
+          cote: 'gauche',
+          apres: 'après le testeur',
+        },
+        {
+          nom: 'Jean-Guy',
+          titre: 'Jean-Guy',
+          x: 16,
+          y: 66,
+          cote: 'gauche',
+          apres: 'quand quelque chose l’attend',
+        },
+      ];
+      const html = (s) =>
+        String(s ?? '').replace(
+          /[&<>"']/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+        );
+      const heure = (iso) =>
+        iso
+          ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+          : '';
+      const jour = (iso) =>
+        iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
+      const minutes = (s) =>
+        s >= 60 ? `${(s / 60).toFixed(1).replace('.', ',')} min` : `${Math.round(s)} s`;
+      const ilYA = (iso) => {
+        if (!iso) return '';
+        const s = Math.round((Date.now() - new Date(iso)) / 1000);
+        return s < 60 ? 'à l’instant' : `il y a ${Math.round(s / 60)} min`;
+      };
+      const pastille = (etat) =>
+        `<span class="pastille ${ETAT_CLASSE[etat] ?? 'a-venir'}">${html(etat)}</span>`;
+      const missionLisible = (m) => String(m).replace(/^(\d+)([A-Z])$/, '$1 $2');
+
+      function attendJeanGuy(etat) {
+        const base = etat.cartes.base;
+        if (base && base.enAttente && base.enAttente.length > 0) {
+          const m = base.enAttente[0];
+          return `Attend Jean-Guy : appliquer la migration ${m.version}_${m.nom} — npm run sauvegarde, puis npx supabase db push --linked, dans un terminal.`;
+        }
+        // L'état COURANT du chef, jamais une ligne passée du fil.
+        for (const mission of etat.missions) {
+          if (mission.chef.etat === 'attend Jean-Guy')
+            return `Attend Jean-Guy : ${mission.chef.phrase || 'le chef attend une réponse'} (mission ${missionLisible(mission.mission)})`;
+        }
+        return null;
+      }
+
+      function entete(m, n, maintenant) {
+        const active = m.etapes.find((e) => e.etat === 'active');
+        const index = active
+          ? m.etapes.indexOf(active) + 1
+          : m.etapes.filter((e) => e.etat === 'faite').length;
+        const titre = `Mission ${missionLisible(m.mission)}${m.titreFiche ? ` — ${m.titreFiche}` : ''}`;
+        const toutesFaites = m.etapes.every((e) => e.etat === 'faite' || e.etat === 'sans objet');
+        const sous = toutesFaites
+          ? `Terminée à ${heure(m.derniereHeure)} · /valide ${m.mission} quand vous avez essayé`
+          : `Branche ${m.branche || '—'} · ouverte à ${heure(m.ouverteA)} · étape ${index} sur ${m.etapes.length} : ${active ? ETAPES_NOMS[active.cle] : '—'}`;
+        const attend = m.chef.etat === 'attend Jean-Guy';
+        const rail = m.etapes
+          .map(
+            (e) =>
+              `<div class="etape ${e.etat === 'active' && attend ? 'attend' : e.etat.replace(' ', '-').replace('à-venir', 'a-venir')}"><div class="point"></div><div class="nom">${html(ETAPES_NOMS[e.cle])}${e.etat === 'sans objet' ? ' —' : ''}</div></div>`,
+          )
+          .join('');
+        const resume =
+          n > 1
+            ? `<div class="rail-resume">${m.etapes.filter((e) => e.etat === 'faite').length} faites · ${active ? `${ETAPES_NOMS[active.cle]} en cours` : 'rien en cours'} · puis ${
+                m.etapes
+                  .filter((e) => e.etat === 'à venir')
+                  .map((e) => ETAPES_NOMS[e.cle])
+                  .slice(0, 3)
+                  .join(', ') || '—'
+              }</div>`
+            : '';
+        return `<section class="carte entete ${n > 1 ? 'compact' : ''}">
+      <div style="display:flex;justify-content:space-between"><span class="kicker">${n > 1 ? 'Mission en parallèle' : 'L’atelier · mission en cours'}</span><span class="horloge">${html(maintenant)} · rafraîchie toutes les 2 s</span></div>
+      <h1>${html(titre)}</h1><div class="sous-titre">${html(sous)}</div>
+      <div class="rail ${n > 1 ? 'compact' : ''}">${rail}</div>${resume}</section>`;
+      }
+
+      // En parallèle (carte étroite), les ronds se resserrent et le libellé passe sous le rond.
+      const ordonnee = (d, compact) => (compact ? 12 + ((d.y - 10) * 70) / 80 : d.y);
+      function equipe(m, n) {
+        const classe = (etat) => ETAT_CLASSE[etat] ?? 'a-venir';
+        const compact = n > 1;
+        const lignes = NOEUDS.map(
+          (d) =>
+            `<line x1="50%" y1="50%" x2="${d.x}%" y2="${ordonnee(d, compact)}%" stroke="${['en cours', 'attend Jean-Guy'].includes((m.agents.find((a) => a.nom === d.nom) || {}).etat) ? (m.agents.find((a) => a.nom === d.nom).etat === 'attend Jean-Guy' ? '#d97706' : '#3ea9ff') : '#e4e4e7'}" stroke-width="1.5" stroke-dasharray="4 3" />`,
+        ).join('');
+        const noeuds = NOEUDS.map((d) => {
+          const a = m.agents.find((x) => x.nom === d.nom) || { etat: 'à venir', phrase: '' };
+          let etatMot = a.etat;
+          if (d.nom === 'Jean-Guy' && a.etat === 'à venir') etatMot = 'rien en attente';
+          const etapeSansObjet = m.etapes.find((e) => e.cle === d.nom)?.etat === 'sans objet';
+          if (a.etat === 'à venir' && etapeSansObjet) etatMot = 'sans objet';
+          const symbole =
+            a.etat === 'terminé'
+              ? '✓'
+              : a.etat === 'attend Jean-Guy'
+                ? '!'
+                : a.etat === 'bloqué'
+                  ? '×'
+                  : '';
+          const phrase = a.phrase ? `« ${a.phrase} »` : a.etat === 'à venir' ? d.apres : '';
+          const y = ordonnee(d, compact);
+          const cote = compact
+            ? ''
+            : d.cote === 'gauche'
+              ? 'gauche'
+              : d.cote === 'droite'
+                ? 'droite'
+                : '';
+          const decal = compact
+            ? `left:${d.x}%;top:calc(${y}% + 20px)`
+            : d.cote === 'haut'
+              ? `left:${d.x}%;top:calc(${y}% - 46px)`
+              : `left:${d.x}%;top:${y}%`;
+          return `<div class="rond ${classe(a.etat)}" style="left:${d.x}%;top:${y}%">${symbole}</div>
+        <div class="noeud ${cote}" style="${decal}"><div class="nom">${html(d.titre)}</div><div class="etat ${classe(a.etat)}">${html(etatMot)}</div><div class="phrase">${html(phrase)}</div></div>`;
+        }).join('');
+        const chef = m.chef;
+        return `<section class="carte equipe ${n > 1 ? 'compact' : ''}"><h2><span class="titre">${n > 1 ? `${missionLisible(m.mission)} · l’équipe` : 'L’équipe'}</span><span class="aide">${n > 1 ? 'nom et état ; la phrase se lit dans le fil' : 'Le chef au centre. En orange, ce qui attend Jean-Guy.'}</span></h2>
+      <div class="constellation"><svg>${lignes}</svg>${noeuds}
+        <div class="chef ${classe(chef.etat)}">Chef</div>
+        <div class="chef-etat">${pastille(chef.etat)}<div class="phrase">${html(chef.phrase ? `« ${chef.phrase} »` : '')}</div></div></div></section>`;
+      }
+
+      function carteBase(b, missions) {
+        if (!b)
+          return carteVide(
+            'Base',
+            'Lecture en attente (npx supabase migration list --linked, toutes les 5 min)',
+          );
+        const attente = b.enAttente && b.enAttente.length > 0;
+        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Base ${b.erreur ? pastille('illisible') : attente ? pastille('attend Jean-Guy') : pastille('terminé')}</h2>
+      <div class="libelle">Dernière migration appliquée</div><div class="valeur">${b.derniereAppliquee ? html(`${b.derniereAppliquee.version}_${b.derniereAppliquee.nom}`) : b.erreur ? html(`Lecture impossible depuis ${heure(b.lueA)} (migration list)`) : '—'}</div>
+      <div class="libelle">Migration en attente</div><div class="valeur" style="${attente ? 'color:var(--attend);font-weight:700' : ''}">${attente ? b.enAttente.map((m) => html(`${m.version}_${m.nom}`)).join(', ') + ' · à appliquer par Jean-Guy' : 'Aucune'}</div>
+      <div class="pied">Lue ${ilYA(b.lueA)} · relue toutes les 5 min</div></section>`;
+      }
+      function carteEssai(e, missions) {
+        if (!e) return carteVide('Essai', 'Lecture en attente (/api/version, toutes les 60 s)');
+        const m = missions[0];
+        const durees = m ? m.dureesE2e : [];
+        const budget = e.budgetE2e || 480;
+        const max = Math.max(...durees.map((d) => d.secondes), 0);
+        const ci = e.ci || {};
+        const etatCarte = e.erreur
+          ? 'illisible'
+          : ci.etat === 'en cours'
+            ? 'en cours'
+            : ci.etat === 'rouge'
+              ? 'bloqué'
+              : 'terminé';
+        const marges = durees
+          .filter((d) => ['demo', 'parcours'].includes(d.suite))
+          .map(
+            (d) =>
+              `${d.suite === 'demo' ? 'Démo' : 'parcours'} à ${minutes(Math.max(budget - d.secondes, 0))} du budget`,
+          )
+          .join(' · ');
+        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Essai ${pastille(etatCarte)}</h2>
+      <div class="libelle">Commit servi · CI du dernier commit</div><div class="valeur">${e.commit ? html(e.commit) : html(`Lecture impossible depuis ${heure(e.lueA)} (${e.erreur || 'essai'})`)}${m && m.branche ? ` · ${html(m.branche)}` : ''}${ci.etat ? ` · CI ${html(ci.etat)}${ci.commit ? ` (${html(ci.commit)})` : ''}` : ''}</div>
+      <div class="libelle">E2E, dernier passage · budget ${Math.round(budget / 60)} min <span class="barre ${max > budget ? 'depasse' : ''}"><i style="width:${Math.min(100, (max / budget) * 100)}%"></i></span></div>
+      <div class="valeur">${durees.length ? durees.map((d) => html(`${d.suite === 'demo' ? 'démo' : d.suite} ${minutes(d.secondes)}`)).join(' · ') : 'Aucun passage noté'}</div>
+      <div class="pied">${marges ? html(marges) : 'Les durées arrivent avec le testeur'}${
+        missions.length > 1
+          ? ` · ${missions
+              .slice(1)
+              .map((x) => missionLisible(x.mission))
+              .join(', ')} : barrières seules, l’essai à une mission à la fois`
+          : ''
+      }</div></section>`;
+      }
+      function carteProduction(p) {
+        if (!p)
+          return carteVide('Production', 'Lecture en attente (/api/version, toutes les 60 s)');
+        return `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">Production ${pastille(p.erreur ? 'illisible' : 'terminé')}</h2>
+      <div class="libelle">Commit servi</div><div class="valeur">${p.commit ? html(`${p.commit} · main`) : html(`Lecture impossible depuis ${heure(p.lueA)} (production)`)}${p.fusion && p.fusion.date ? html(` · fusionné le ${jour(p.fusion.date)} à ${heure(p.fusion.date)}`) : ''}</div>
+      <div class="libelle">Dernière fusion</div><div class="valeur">${p.fusion && p.fusion.sujet ? html(p.fusion.sujet) : '—'}</div>
+      <div class="pied">Lue ${ilYA(p.lueA)}</div></section>`;
+      }
+      const carteVide = (titre, texte) =>
+        `<section class="carte"><h2 class="titre" style="margin:0;font-size:16px;display:flex;justify-content:space-between">${titre} ${pastille('à venir')}</h2><div class="valeur gris" style="margin-top:10px">${html(texte)}</div></section>`;
+
+      function fil(lignes, multi) {
+        const rangs = lignes
+          .map(
+            (l) =>
+              `<tr><td class="heure">${heure(l.heure)}</td>${multi ? `<td class="mission">${html(missionLisible(l.mission ?? '—'))}</td>` : ''}<td class="agent">${html(l.agent)}</td><td>${pastille(l.etat)}</td><td>${html(l.phrase)}</td></tr>`,
+          )
+          .join('');
+        return `<section class="carte fil"><h2><span class="titre">Fil d’activité</span><span class="aide">${lignes.length} dernière${lignes.length > 1 ? 's' : ''} ligne${lignes.length > 1 ? 's' : ''}, la plus récente en haut${lignes.length > 6 ? ` · ${lignes.length - 6} plus anciennes en défilant` : ''}</span></h2>
+      <div class="defile"><table><thead><tr><th>Heure</th>${multi ? '<th>Mission</th>' : ''}<th>Agent</th><th>État</th><th>Phrase</th></tr></thead><tbody>${rangs || '<tr><td colspan="5" class="gris">Rien encore : la première ligne arrive au premier hook.</td></tr>'}</tbody></table></div></section>`;
+      }
+
+      function rendre(etat, maintenant) {
+        const n = etat.missions.length;
+        const attend = attendJeanGuy(etat);
+        const bandeau = attend
+          ? `<div class="bandeau attend">${html(attend)}</div>`
+          : '<div class="bandeau"></div>';
+        if (n === 0) {
+          return `<section class="carte vide"><div class="kicker">L’atelier</div><h1>Aucune mission en cours</h1><div>Lancez <code>/mission NN</code> dans VS Code : l’équipe apparaît ici. <span class="gris">${html(maintenant)}</span></div></section>${bandeau}
+        <div class="milieu" style="--n:1"><section class="carte equipe"><h2><span class="titre">L’équipe</span><span class="aide">l’équipe attend</span></h2><div class="constellation" style="height:120px;display:flex;align-items:center;justify-content:center" ><span class="gris">Le chef, six agents et vous : rien ne tourne.</span></div></section>
+        <div class="cartes">${carteBase(etat.cartes.base, [])}${carteEssai(etat.cartes.essai, [])}${carteProduction(etat.cartes.production)}</div></div>${fil(etat.fil, true)}`;
+        }
+        const entetes = `<div class="entetes" style="--n:${n}">${etat.missions.map((m) => entete(m, n, maintenant)).join('')}</div>`;
+        const milieu = `<div class="milieu" style="--n:${n}">${etat.missions.map((m) => equipe(m, n)).join('')}<div class="cartes">${carteBase(etat.cartes.base, etat.missions)}${carteEssai(etat.cartes.essai, etat.missions)}${carteProduction(etat.cartes.production)}</div></div>`;
+        return `${entetes}${bandeau}${milieu}${fil(etat.fil, n > 1)}`;
+      }
+
+      let dernier = null;
+      async function tick() {
+        const app = document.getElementById('app');
+        const maintenant = new Date()
+          .toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })
+          .replace(' ', ' · ');
+        try {
+          const r = await fetch('/etat', { cache: 'no-store' });
+          const etat = await r.json();
+          if (etat.erreur) {
+            app.innerHTML = `<div class="bandeau gris" style="display:block">${html(etat.erreur)}</div>`;
+            return;
+          }
+          dernier = etat;
+          app.innerHTML = rendre(etat, maintenant);
+        } catch {
+          app.innerHTML = `<div class="bandeau gris" style="display:block">L’atelier ne répond plus : relancez npm run atelier.</div>${dernier ? rendre(dernier, maintenant) : ''}`;
+        }
+      }
+      tick();
+      setInterval(tick, 2000);
+    </script>
+  </body>
+</html>

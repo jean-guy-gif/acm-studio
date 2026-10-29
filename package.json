@@ -24,6 +24,7 @@
     "sauvegarde:verifier": "node scripts/sauvegarde-verifier.mjs",
     "nettoyer:test": "node scripts/nettoyer-test.mjs",
     "verifier:production": "node scripts/verifier-production.mjs",
+    "atelier": "node atelier/serveur.mjs --ouvrir",
     "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs",
     "demo:fiches": "node --experimental-strip-types --no-warnings scripts/demo-fiches.mjs"
   },

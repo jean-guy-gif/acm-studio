@@ -9,7 +9,9 @@ export default defineConfig({
     // the piece that shipped two production defects (the never-built background tab,
     // and the stable shell taken for a finished page). Its chrome-free pure helpers
     // (extension/page-readiness.js) are now in the graph.
-    include: ['src/**/*.test.ts', 'extension/**/*.test.js'],
+    // Mission 126 — l'atelier (serveur, hooks, page) vit hors de src/ : ses tests entrent ici
+    // (accord de Jean-Guy, 29/10).
+    include: ['src/**/*.test.ts', 'extension/**/*.test.js', 'atelier/**/*.test.mjs'],
     // Run tests in UTC, whatever the developer's machine. Guard-rail against the
     // next latent timezone-dependent case: a green suite must not depend on the
     // host's zone. The code is already zone-independent (see extract-listing-

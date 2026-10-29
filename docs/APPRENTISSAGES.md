@@ -28,6 +28,9 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   acquéreur, surveiller.
 - 25/10 · Un passage e2e interrompu (réseau) laisse un dossier « TEST AUTOMATIQUE … » dans l'agence de
   démo et fait rougir la démo suivante (cartes de Prospection partagées, M98) : nettoyer avant de rejouer.
+- 29/10 · La remise à zéro de la démo écrit les photos en URL absolue de l'hôte où elle est faite. Faite
+  depuis l'essai (protégé), la démo montre « Photo indisponible » en production, qui partage la base.
+  Toujours des chemins relatifs dans ce que la démo écrit (M120 B, R3).
 
 ## La base
 
@@ -43,3 +46,28 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   le parcoureur joue le scénario, Jean-Guy et son relecteur produit regardent AVANT l'essai humain.
 - 26/10 · Une réponse touchée sur un téléphone peut tomber sur une barre fixée en bas : jamais de bouton
   sous une barre fixe, et le bouton choisi devient plein, les autres en contour.
+- 29/10 · Une capture pleine page cache ce qui est sous le pli : les boutons « Enregistrer » et
+  « Télécharger le PDF » du courrier étaient invisibles en 1280 × 800 dans un panneau collant, et les
+  18 captures étaient « sans défaut ». Le testeur vérifie désormais chaque action principale dans la
+  fenêtre sans défiler, et chaque image chargée (M120 B, R1 et R3).
+
+## L'atelier et les hooks
+
+- 29/10 · Les hooks de `.claude/settings.json` et les fiches de `.claude/agents/` ne prennent effet
+  qu'au démarrage d'une session Claude Code : après la mission 126 (ou un nouvel agent), relancer
+  la session, sinon l'atelier reste muet et « Agent type 'architecte' not found ».
+- 29/10 · Contrat documenté des hooks (code.claude.com/docs/en/hooks, lu le 29/10, à confirmer sur
+  une vraie session) : stdin JSON avec `session_id`, `cwd`, `hook_event_name` ; `UserPromptSubmit`
+  reçoit `prompt` tel que tapé (`/mission 120`) ; `SubagentStart`/`SubagentStop` reçoivent
+  `agent_type` (le `name` de la fiche) et `agent_id`, le Stop aussi `last_assistant_message` ;
+  `PostToolUse` reçoit `tool_name`, `tool_input`, `tool_response` ; le filtre `if` d'un hook
+  (`Bash(git push *)`) est « au mieux », jamais une garde ; `$CLAUDE_PROJECT_DIR` est fourni. Un hook
+  de journal sort toujours en 0 : un code 2 bloque.
+- 29/10 · La mission n'est pas dans les hooks : elle se lit dans la branche (`mission-NN-…`), et
+  pour un `/mission NN` tapé depuis `main`, dans le prompt, retenu par session. Le chef crée donc la
+  branche AVANT de lancer un agent.
+- 29/10 · Playwright vide `test-results/` à chaque passage : les rendus vont hors du dépôt,
+  `~/acm-studio-rendus/<mission>/`, et le journal de l'atelier hors du dépôt,
+  `~/acm-studio-atelier/journal.jsonl`.
+- 29/10 · `git pull` sur `essai` depuis une chaîne de commandes échoue sur un auto-stash
+  (« fatal: stash failed ») : `git fetch` puis `git merge --ff-only origin/essai`.
