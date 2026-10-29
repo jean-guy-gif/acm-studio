@@ -103,6 +103,19 @@ export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
   if (dropped && !chosen.includes(dropped)) {
     chosen[chosen.length - 1] = dropped;
   }
+  // Mission 127 — les annonces qui disparaîtront après le rendez-vous (une vente probable, un
+  // retrait sans vente) prennent la place des derniers choisis qui ne baissent pas.
+  const gone = byCloseness.filter(
+    (listing) => listing.goneAfterMeeting && !chosen.includes(listing),
+  );
+  for (const listing of gone) {
+    const slot = chosen
+      .map((item, index) => ({ item, index }))
+      .reverse()
+      .find(({ item }) => item !== dropped && !item.goneAfterMeeting);
+    if (!slot) break;
+    chosen[slot.index] = listing;
+  }
   return chosen;
 }
 

@@ -70,7 +70,9 @@ export async function getSellerInsights(
     comparableIds.length > 0
       ? await supabase
           .from('comparables')
-          .select('id, price, property_type, rooms_count, surface_area, city, district')
+          .select(
+            'id, price, property_type, rooms_count, surface_area, city, district, meeting_price, meeting_price_source',
+          )
           .in('id', comparableIds)
           .eq('agency_id', agencyId)
       : { data: [] };
@@ -101,6 +103,13 @@ export async function getSellerInsights(
       guess: row.seller_estimated_listing_price,
       revealedPrice: row.revealed_listing_price,
       currentPrice: comparableById.get(row.comparable_id)?.price ?? null,
+      // Mission 127 — le prix du rendez-vous figé à la conclusion ; « non relu » ne compte pas.
+      meetingPrice: (() => {
+        const comparable = comparableById.get(row.comparable_id);
+        return comparable && comparable.meeting_price_source !== 'current'
+          ? comparable.meeting_price
+          : null;
+      })(),
     });
   }
 

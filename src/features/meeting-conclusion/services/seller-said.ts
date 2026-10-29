@@ -13,6 +13,8 @@ export type GuessedCompetitor = {
   guess: number | null;
   revealedPrice: number | null;
   currentPrice: number | null;
+  // Mission 127 — le prix du rendez-vous figé à la conclusion (null : non relu, source 'current').
+  meetingPrice?: number | null;
 };
 
 export type GuessSummary = {
@@ -103,15 +105,16 @@ export function guessLines(summary: GuessSummary, subject: 'il' | 'vous' = 'il')
   return lines;
 }
 
-// « Depuis le rendez-vous : N concurrents ont baissé leur prix » — le prix révélé pendant le
-// Live face au prix affiché aujourd'hui. Sans prix révélé figé, on ne sait pas : rien ne compte.
+// « Depuis le rendez-vous : N concurrents ont baissé leur prix » — le prix du rendez-vous (M127,
+// figé à la conclusion), sinon le prix révélé pendant le Live, face au prix affiché aujourd'hui.
+// Sans prix de référence figé, on ne sait pas : rien ne compte.
 export function priceDropsSinceMeeting(list: GuessedCompetitor[]): number {
-  return list.filter(
-    (competitor) =>
-      competitor.revealedPrice != null &&
-      competitor.currentPrice != null &&
-      competitor.currentPrice < competitor.revealedPrice,
-  ).length;
+  return list.filter((competitor) => {
+    const reference = competitor.meetingPrice ?? competitor.revealedPrice;
+    return (
+      reference != null && competitor.currentPrice != null && competitor.currentPrice < reference
+    );
+  }).length;
 }
 
 export function priceDropsLabel(count: number): string | null {

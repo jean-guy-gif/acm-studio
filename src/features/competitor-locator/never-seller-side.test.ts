@@ -100,6 +100,10 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
       join('features', 'seller-synthesis'),
       join('app', 'synthese'),
       join('app', '(print)', 'builder', '[projectId]', 'synthese'),
+      // Mission 127 — le Point marché remis au vendeur, et sa page publique.
+      join('features', 'market-update'),
+      join('app', 'point-marche'),
+      join('app', '(print)', 'builder', '[projectId]', 'point-marche'),
     ];
     const files = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

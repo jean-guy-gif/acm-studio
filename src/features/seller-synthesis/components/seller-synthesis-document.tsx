@@ -41,13 +41,13 @@ const STATUS = {
   },
 } as const;
 
-const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
-const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
+export const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
+export const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
 // Les cartes d'une même ligne se partagent toute la largeur, qu'il y en ait une, deux ou trois.
-const row = 'flex flex-col gap-2 sm:flex-row [&>*]:min-w-0 [&>*]:flex-1';
-const bigNumber = 'font-title text-xl leading-tight font-bold text-brand-darker';
+export const row = 'flex flex-col gap-2 sm:flex-row [&>*]:min-w-0 [&>*]:flex-1';
+export const bigNumber = 'font-title text-xl leading-tight font-bold text-brand-darker';
 
-function meetingDay(value: string | null): string | null {
+export function meetingDay(value: string | null): string | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -61,14 +61,22 @@ function meetingDay(value: string | null): string | null {
 }
 
 // Une chaîne pour une feuille de style : ni guillemet, ni antislash, ni balise ne s'en échappe.
-function cssString(value: string): string {
+export function cssString(value: string): string {
   return `"${value
     .replace(/[\\"]/g, '\\$&')
     .replace(/[\n\r]/g, ' ')
     .replace(/</g, '\\3C ')}"`;
 }
 
-function SectionTitle({ number, title, hint }: { number: number; title: string; hint?: string }) {
+export function SectionTitle({
+  number,
+  title,
+  hint,
+}: {
+  number: number;
+  title: string;
+  hint?: string;
+}) {
   return (
     <div className="flex flex-col gap-1 break-after-avoid">
       <div className="flex items-center gap-3">
@@ -82,7 +90,15 @@ function SectionTitle({ number, title, hint }: { number: number; title: string; 
   );
 }
 
-function Photo({ url, alt, className }: { url: string | null; alt: string; className: string }) {
+export function Photo({
+  url,
+  alt,
+  className,
+}: {
+  url: string | null;
+  alt: string;
+  className: string;
+}) {
   // Une photo absente ou qui ne se charge pas laisse un cadre gris, jamais une image cassée (M87).
   return url ? (
     <RemoteImage
@@ -98,7 +114,7 @@ function Photo({ url, alt, className }: { url: string | null; alt: string; class
   );
 }
 
-function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
+export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
   if (competitor.features.length === 0) return null;
   return (
     <table className="w-full border-collapse text-[0.78rem]">

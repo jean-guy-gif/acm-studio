@@ -342,7 +342,9 @@ describe('la synthèse au vendeur', () => {
 
   it('les photos du bien vendeur et du conseiller passent par des liens signés', async () => {
     const { db, synthesis } = await load();
-    expect(db.signed).toEqual(['a1/p1/property/1.jpg', 'a1/u1/profile.jpg']);
+    // Mission 127 — la photo du conseiller est signée par le bloc agence partagé : l'ordre des
+    // signatures n'importe pas.
+    expect([...db.signed].sort()).toEqual(['a1/p1/property/1.jpg', 'a1/u1/profile.jpg']);
     expect(synthesis.property?.photos).toEqual(['https://signed.test/a1/p1/property/1.jpg?t=1']);
     expect(synthesis.agency.advisorPhotoUrl).toBe('https://signed.test/a1/u1/profile.jpg?t=1');
   });

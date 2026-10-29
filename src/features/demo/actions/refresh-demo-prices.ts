@@ -48,6 +48,23 @@ export async function refreshDemoPrices(projectId: string): Promise<PriceCheckOu
       outcomes.push({ status: 'unreadable' });
       continue;
     }
+    // Mission 127 — une annonce disparue après le rendez-vous : retirée, sur preuve simulée (M103),
+    // une seule fois ; la règle des annonces disparues conclut au point marché.
+    if (listing.goneAfterMeeting) {
+      if (competitor.listing_gone_at == null) {
+        const { error } = await supabase
+          .from('comparables')
+          .update({ listing_gone_at: now.toISOString() })
+          .eq('id', competitor.id)
+          .eq('agency_id', profile.agency_id);
+        if (error) {
+          outcomes.push({ status: 'unreadable' });
+          continue;
+        }
+      }
+      outcomes.push({ status: 'gone' });
+      continue;
+    }
     const readPrice = listing.priceAfterMeeting ?? listing.price;
     const data = { ...demoImportedData(listing, now), price: readPrice };
     const input = importedToComparableInput(data);

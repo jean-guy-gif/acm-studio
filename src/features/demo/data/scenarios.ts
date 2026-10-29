@@ -1154,7 +1154,7 @@ const mouginsListings = seed(
     priceChanges: [],
     seller: sold('Cabinet Riviera Conseil', 'yes'),
     description: 'Villa de 2010 de 205 m² avec piscine sur 1 600 m², quatre chambres.',
-    priceAfterMeeting: 1590000,
+    priceAfterMeeting: 1554000,
   },
   {
     id: 'mou-02',
@@ -1410,11 +1410,12 @@ const mouginsListings = seed(
     district: 'Tournamy',
     address: addr('6', 'sentier de l’Exercice'),
     location: at(43.5951, 6.9898),
-    publishedDaysAgo: 140,
+    publishedDaysAgo: 150,
     priceChanges: [drop(60, 1540000, 1480000)],
     seller: UNKNOWN_SELLER,
     description: 'Villa de 1985 de 180 m² sans piscine, trois chambres, terrain de 1 000 m².',
     priceAfterMeeting: null,
+    goneAfterMeeting: true,
   },
   {
     id: 'mou-10',
@@ -1534,12 +1535,15 @@ const mouginsListings = seed(
     district: 'Tournamy',
     address: addr('29', 'allée des Trois Cadrans'),
     location: at(43.6093, 7.0071),
-    publishedDaysAgo: 310,
+    publishedDaysAgo: 320,
     priceChanges: [drop(130, 1550000, 1475000)],
     seller: UNKNOWN_SELLER,
     description:
       'Villa de plain-pied de 1980 de 160 m² à rénover, terrain de 900 m², sans piscine.',
     priceAfterMeeting: null,
+    goneAfterMeeting: true,
+    // Mission 127 — forcé parmi les cinq concurrents de Mougins : sa photo principale reste distincte.
+    photos: ['villa-06.jpg', 'villa-05.jpg'],
   },
 ]);
 
