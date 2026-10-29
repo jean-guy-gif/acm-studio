@@ -31,6 +31,18 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 29/10 · La remise à zéro de la démo écrit les photos en URL absolue de l'hôte où elle est faite. Faite
   depuis l'essai (protégé), la démo montre « Photo indisponible » en production, qui partage la base.
   Toujours des chemins relatifs dans ce que la démo écrit (M120 B, R3).
+- 29/10 · M127 : une démo préparée AVANT une mission ne porte pas ses nouvelles données (les
+  annonces qui disparaissent, mou-09 et mou-13) ; l'e2e démo ne prépare que si les dossiers
+  manquent, donc rouge au premier passage, vert après « Remettre ma démo à zéro ». Quand une
+  mission change le jeu de données, remettre la démo à zéro avant la suite e2e.
+- 29/10 · `npx vitest run` seul laisse quatre fichiers rouges (« Missing required environment
+  variable: NEXT_PUBLIC_SUPABASE_URL ») : lancer `npm test` avec les mêmes variables factices que
+  le build (`NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=x`).
+- 29/10 · Durées de la mission 127 (une migration, 3 parties) : architecte 6 min, designer
+  maquettes 13 min, gardien-sql 9 min, barrières ~3 min, relecteur 3 à 6 min par passage (quatre
+  passages), testeur 31 min rendus compris (suite e2e 12,4 min : démo 5,2 à 6,9, parcours 5,5,
+  bienvenue 0,9, Live tablette 0,6), parcoureur 9 min, designer sur les rendus 6,6 min ; de
+  `/mission` (17:47) à l'essai (19:00) puis au Point marché prêt sur le compte de démo (19:50).
 
 ## La base
 
@@ -39,6 +51,12 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   l'accord donné ici.
 - 01/10 · Une migration verte en local sur base vide n'est pas vérifiée : compter sur la vraie base avant,
   prédire après, et la transaction doit pouvoir annuler.
+- 29/10 · Réécrire une fonction dans une migration : le gardien-sql diffe contre la version posée
+  par la migration précédente (`chiffres_justes.sql` pour `conclude_meeting`) et y a trouvé un
+  changement non annoncé du prédicat de statut ; le faire soi-même avant de soumettre.
+- 29/10 · Pendant que Jean-Guy applique la migration, le chef continue : code, barrières, commit,
+  push de la branche (la CI tourne) et trois passages du relecteur ; seule la fusion dans `essai`
+  attend « appliquée ».
 
 ## Les rendus
 
@@ -50,6 +68,14 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   « Télécharger le PDF » du courrier étaient invisibles en 1280 × 800 dans un panneau collant, et les
   18 captures étaient « sans défaut ». Le testeur vérifie désormais chaque action principale dans la
   fenêtre sans défiler, et chaque image chargée (M120 B, R1 et R3).
+- 29/10 · Une règle de placement qui compare des prix ne garantit rien sur des étiquettes : après
+  un correctif « un côté chacun » Jean-Guy a encore vu deux étiquettes chevauchées sur l'essai. La
+  règle qui tient compare des largeurs estimées (6,5 px par caractère, ligne de 700 px) sur trois
+  niveaux de chaque côté, dans un service pur testé sur le cas exact de l'essai.
+- 29/10 · Deux bloquants que la suite verte n'a pas vus, trouvés par le designer sur les rendus et
+  par le relecteur : sur téléphone les repères colorés avaient quitté la ligne (`hidden sm:flex`
+  emportait le trait avec le texte) ; une annonce disparue sans durée connue se lisait « toujours
+  en vente ». Un rendu lu et une relecture à regard neuf restent indispensables.
 
 ## L'atelier et les hooks
 
@@ -98,3 +124,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 29/10 · Durées de la mission 126 (outillage) : barrières ~3 min, suite e2e 12,8 min (jouée une
   fois, avant la règle « e2e seulement si src/, extension/ ou supabase/ changent »), relecteur 4 à
   6 min par passage (six passages), designer sur les rendus 2 min, parcoureur 6,5 min.
+- 29/10 · Première mission en « mode autonome » (M127) : les neuf questions de l'architecte et les
+  six du designer tranchées par le chef, un seul arrêt (la migration), tous les « à corriger »
+  appliqués sans demander ; les deux remontées produit (concurrents hors Live, 3 photos par fiche)
+  tranchées dans la ligne de DECISIONS et dites au rapport. Jean-Guy a ensuite demandé deux
+  corrections à vue sur l'essai (étiquettes, couverture), barrières seules, 10 min chacune.
