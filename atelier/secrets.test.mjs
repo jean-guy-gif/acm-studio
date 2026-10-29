@@ -27,6 +27,21 @@ describe('le masque des secrets', () => {
     );
   });
 
+  it('ne prend ni une branche de mission ni une migration pour un secret (relecteur, 29/10)', () => {
+    const noms = [
+      'Branche mission-120-j-ai-un-acquereur-pour-votre-bien ouverte',
+      'Branche mission-120B-j-ai-un-acquereur-pour-votre-bien ouverte',
+      'Migration 20261027090000_live_closed_after_conclusion appliquée',
+      'Migration 20261118090000_une_carte_par_bien_et_une_origine_acquereur soumise',
+    ];
+    for (const texte of noms) {
+      expect(masquerSecrets(texte), texte).toBe(texte);
+      expect(contientSecret(JSON.stringify({ branche: texte })), texte).toBe(false);
+    }
+    // Un vrai jeton de 43 caractères, lui, reste masqué.
+    expect(masquerSecrets('jeton abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ')).toContain(MASQUE);
+  });
+
   it('laisse une phrase ordinaire telle quelle', () => {
     const phrase = 'Poussé : git push -u origin mission-126-atelier · essai 5e06dba · CI verte';
     expect(masquerSecrets(phrase)).toBe(phrase);

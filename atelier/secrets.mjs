@@ -3,7 +3,11 @@
 // commande ou un rapport bruts (risque principal de l'architecte) ; ce masque est la seconde parade.
 // Pur, sans dépendance.
 
-// Chaque règle masque toute sa prise, ou garde un préfixe (le nom d'une variable) et masque la valeur.
+// La forme d'une branche de mission : `mission-120B-confrere`, `mission-120-j-ai-un-acquereur-…`.
+const BRANCHE_DE_MISSION = /^mission-\d+[A-Z]?(?:-[a-z0-9]+)+$/;
+
+// Chaque règle masque toute sa prise, ou garde un préfixe (le nom d'une variable) et masque la
+// valeur ; `sauf` laisse passer une prise dont la forme est connue pour n'être pas un secret.
 const RULES = [
   // Jetons connus : GitHub, Supabase, JWT.
   { motif: /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g },
@@ -27,9 +31,19 @@ const RULES = [
   // plus), ou alphanumérique mêlant lettres et chiffres (32 et plus, le jeton de l'essai) : un
   // condensat, un jeton, une clé.
   { motif: /\b[A-Fa-f0-9]{32,}\b/g },
-  // Une chaîne de lettres seules (un mot, une barre de « x ») n'est pas un secret : il faut un chiffre.
-  { motif: /\b(?=[A-Za-z0-9_-]*[0-9])[A-Za-z0-9_-]{43,}\b/g },
-  { motif: /\b(?=[A-Za-z0-9+/]*[0-9+/])[A-Za-z0-9+/]{40,}={0,2}(?![A-Za-z0-9+/=])/g },
+  // Un jeton long mêle majuscules et minuscules (un jeton de 43 caractères sans majuscule : une
+  // chance sur dix milliards) ; un nom de branche (« mission-120-j-ai-un-acquereur-pour-votre-bien »)
+  // ou de migration (« 20261027090000_live_closed_after_conclusion ») n'en a pas, et une branche de
+  // partie B (« mission-120B-… ») est reconnue à sa forme (bloquant du relecteur, 29/10).
+  {
+    motif: /\b(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*[a-z])[A-Za-z0-9_-]{43,}\b/g,
+    sauf: BRANCHE_DE_MISSION,
+  },
+  {
+    motif:
+      /\b(?=[A-Za-z0-9+/]*[0-9+/])(?=[A-Za-z0-9+/]*[A-Z])(?=[A-Za-z0-9+/]*[a-z])[A-Za-z0-9+/]{40,}={0,2}(?![A-Za-z0-9+/=])/g,
+  },
+  // Alphanumérique mêlant lettres et chiffres (32 et plus) : le jeton de l'essai.
   { motif: /\b(?=[A-Za-z0-9]*[0-9])(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{32,}\b/g },
 ];
 
@@ -38,10 +52,10 @@ export const MASQUE = '[masqué]';
 export function masquerSecrets(texte) {
   if (typeof texte !== 'string' || texte === '') return '';
   let sortie = texte;
-  for (const { motif, garde } of RULES) {
+  for (const { motif, garde, sauf } of RULES) {
     sortie = garde
       ? sortie.replace(motif, (_tout, prefixe) => `${prefixe}${MASQUE}`)
-      : sortie.replace(motif, MASQUE);
+      : sortie.replace(motif, (prise) => (sauf && sauf.test(prise) ? prise : MASQUE));
   }
   return sortie;
 }
