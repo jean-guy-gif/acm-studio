@@ -425,14 +425,14 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             `Au rendez-vous${meeting ? ` du ${meeting}` : ''}`,
             `${summary.competitors.length} concurrent${summary.competitors.length > 1 ? 's' : ''} · prix du rendez-vous`,
             lines.meeting,
-            'Prix retenu ensemble',
+            'Votre prix',
           )}
           {lineBlock(
             2,
             `Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`,
             `${lines.today?.prices.length ?? 0} concurrent${(lines.today?.prices.length ?? 0) > 1 ? 's' : ''} encore en vente`,
             lines.today,
-            'Votre prix, inchangé',
+            'Votre prix',
             lines.todayGone.probableSale + lines.todayGone.withdrawn + lines.todayGone.unknown >
               0 ? (
               <p className="self-start rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">

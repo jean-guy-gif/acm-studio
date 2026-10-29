@@ -7,6 +7,7 @@ vi.mock('server-only', () => ({}));
 
 import { MarketUpdateDocument } from '@/features/market-update/components/market-update-document';
 import { PriceLineBand } from '@/features/market-update/components/price-line';
+import { placeLabels } from '@/features/market-update/services/label-levels';
 import { competitorFactLine } from '@/features/market-update/components/market-update-panel';
 import { loadMarketUpdate } from '@/features/market-update/queries/load-market-update';
 import {
@@ -523,7 +524,7 @@ describe('le document Point marché', () => {
       createElement(PriceLineBand, {
         line: lines.meeting!,
         scale: lines.scale!,
-        subjectLabel: 'Prix retenu ensemble',
+        subjectLabel: 'Votre prix',
         alignment: null,
       }),
     );
@@ -533,6 +534,27 @@ describe('le document Point marché', () => {
     expect(html).toContain(
       'Le plus dangereux, selon vous · Le plus bas · Prix médian · Le plus haut',
     );
+  });
+
+  it('deux étiquettes proches ne se touchent jamais : niveaux distincts', () => {
+    // Le cas de l'essai : « Votre prix » à 1 639 500 et « Le plus dangereux » à 1 690 000 sur une
+    // ligne de 1 475 000 à 1 699 000.
+    const slots = placeLabels(
+      [
+        { label: 'Le plus bas', value: 1475000 },
+        { label: 'Votre prix', value: 1639500 },
+        { label: 'Prix médian', value: 1650000 },
+        { label: 'Le plus dangereux, selon vous', value: 1690000 },
+        { label: 'Le plus haut', value: 1699000 },
+      ],
+      { min: 1475000, max: 1699000 },
+    );
+    const keys = slots.map((slot) => `${slot.side}-${slot.level}`);
+    // Les trois étiquettes serrées (1 639 500, 1 650 000, 1 690 000) prennent trois niveaux ; les
+    // deux bornes, loin d'elles, restent au niveau le plus près de la ligne.
+    expect(keys).toEqual(['above-0', 'above-0', 'below-0', 'above-1', 'above-0']);
+    expect(slots[4].anchor).toBe('end');
+    expect(slots[0].anchor).toBe('start');
   });
 
   it('le code du document ne lit ni titre, ni lien, ni adresse, ni vendeur', () => {

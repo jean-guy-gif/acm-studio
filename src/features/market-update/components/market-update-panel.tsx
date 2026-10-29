@@ -147,14 +147,14 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
       number: 1,
       heading: `Au rendez-vous${summary.meetingDate ? ` du ${shortDay(summary.meetingDate)}` : ''}`,
       line: summary.lines.meeting,
-      subjectLabel: 'Prix retenu',
+      subjectLabel: 'Votre prix',
     },
-    { number: 2, heading: 'Aujourd’hui', line: summary.lines.today, subjectLabel: 'Prix retenu' },
+    { number: 2, heading: 'Aujourd’hui', line: summary.lines.today, subjectLabel: 'Votre prix' },
     {
       number: 3,
       heading: 'Face aux nouveaux venus',
       line: summary.lines.newcomers,
-      subjectLabel: 'Prix retenu',
+      subjectLabel: 'Votre prix',
     },
   ];
   return (
