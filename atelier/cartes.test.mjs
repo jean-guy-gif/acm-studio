@@ -87,29 +87,50 @@ describe('une lecture de carte, bornée', () => {
     }
   });
 
-  it('la dernière fusion se lit par ls-remote : aucune ref locale touchée, aucun .lock', async () => {
+  it('la dernière fusion se lit par ls-remote seul, une fois par 5 min : aucune ref touchée, aucun .lock', async () => {
     const depot = process.cwd();
+    const gitDir = execFileSync('git', ['rev-parse', '--git-common-dir'], {
+      cwd: depot,
+      encoding: 'utf8',
+    }).trim();
     const refs = () =>
       execFileSync('git', ['for-each-ref', '--format=%(refname) %(objectname)'], {
         cwd: depot,
         encoding: 'utf8',
       });
-    const fetchHead = join(depot, '.git', 'FETCH_HEAD');
+    const fetchHead = join(gitDir, 'FETCH_HEAD');
     const avant = {
       refs: refs(),
       fetch: existsSync(fetchHead) ? statSync(fetchHead).mtimeMs : null,
     };
-    const fusion = await derniereFusion(depot, Date.now());
-    expect(fusion.commit).toMatch(/^[0-9a-f]{7}$/);
+    // Le dépôt distant est joué : la preuve tient hors ligne, et compte les appels.
+    const appels = [];
+    const sha = 'abcdef0123456789abcdef0123456789abcdef01';
+    const executer = async (programme, args, options) => {
+      appels.push(`${programme} ${args.join(' ')}`);
+      if (args[0] === 'ls-remote') return { stdout: `${sha}\trefs/heads/main\n`, stderr: '' };
+      return commande(programme, args, options);
+    };
+    const maintenant = Date.now();
+    const fusion = await derniereFusion(`${depot}#test`, maintenant, executer);
+    expect(fusion.commit).toBe('abcdef0');
+    expect(appels[0]).toBe('git ls-remote origin refs/heads/main');
+    expect(appels.some((a) => a.startsWith('git fetch'))).toBe(false);
     expect(refs()).toBe(avant.refs);
     expect(existsSync(fetchHead) ? statSync(fetchHead).mtimeMs : null).toBe(avant.fetch);
-    const verrous = readdirSync(join(depot, '.git'), { recursive: true }).filter((f) =>
+    const verrous = readdirSync(gitDir, { recursive: true }).filter((f) =>
       String(f).endsWith('.lock'),
     );
     expect(verrous).toEqual([]);
-    // Relue dans les 5 min : la même, sans nouvel appel (cache).
-    expect(await derniereFusion(depot, Date.now())).toEqual(fusion);
-  }, 30_000);
+    // Relue dans les 5 min : aucun nouvel appel ; après, un seul de plus.
+    const nombre = appels.length;
+    expect(await derniereFusion(`${depot}#test`, maintenant + 4 * 60_000, executer)).toEqual(
+      fusion,
+    );
+    expect(appels).toHaveLength(nombre);
+    await derniereFusion(`${depot}#test`, maintenant + 6 * 60_000, executer);
+    expect(appels.filter((a) => a.startsWith('git ls-remote'))).toHaveLength(2);
+  });
 
   it('la date d’une migration se lit dans sa version', () => {
     expect(dateDeVersion('20261118090000_x')).toBe('18/11/2026');

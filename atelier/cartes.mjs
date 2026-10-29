@@ -236,12 +236,13 @@ export async function lireEssai(dossier, branche) {
 // toutes les 5 min au plus ; le sujet et la date se lisent si le commit est déjà dans le dépôt.
 const FUSION_CACHE_MS = 5 * 60_000;
 const fusions = new Map();
-export async function derniereFusion(dossier, maintenant = Date.now()) {
+// `executer` remplace `commande` dans les tests : la preuve ne dépend pas du réseau.
+export async function derniereFusion(dossier, maintenant = Date.now(), executer = commande) {
   const gardee = fusions.get(dossier);
   if (gardee && maintenant - gardee.a < FUSION_CACHE_MS) return gardee.fusion;
   let fusion = { commit: null, sujet: '', date: null };
   try {
-    const { stdout } = await commande('git', ['ls-remote', 'origin', 'refs/heads/main'], {
+    const { stdout } = await executer('git', ['ls-remote', 'origin', 'refs/heads/main'], {
       cwd: dossier,
       delai: 20_000,
     });
@@ -249,7 +250,7 @@ export async function derniereFusion(dossier, maintenant = Date.now()) {
     if (sha) {
       fusion = { commit: sha.slice(0, 7), sujet: '', date: null };
       try {
-        const lu = await commande('git', ['log', '-1', '--format=%s%n%cI', sha], {
+        const lu = await executer('git', ['log', '-1', '--format=%s%n%cI', sha], {
           cwd: dossier,
           delai: 10_000,
         });
