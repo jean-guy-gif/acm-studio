@@ -1,0 +1,34 @@
+{
+  "base": {
+    "derniereAppliquee": {
+      "version": "20261117090000",
+      "nom": "une_carte_par_bien"
+    },
+    "enAttente": [],
+    "lueA": "2026-10-30T09:05:00.000Z",
+    "erreur": null
+  },
+  "essai": {
+    "commit": "5e06dba",
+    "erreur": null,
+    "ci": {
+      "commit": "7767501",
+      "etat": "verte",
+      "verte": true
+    },
+    "budgetE2e": 480,
+    "lueA": "2026-10-30T09:07:00.000Z"
+  },
+  "production": {
+    "commit": "ebcbc14",
+    "erreur": null,
+    "lueA": "2026-10-30T09:07:00.000Z",
+    "fusion": {
+      "sujet": "Décisions de la mission 120, partie A",
+      "date": "2026-10-29T14:37:00+01:00"
+    }
+  },
+  "titres": {
+    "120B": "« J’ai un acquéreur pour votre bien »"
+  }
+}

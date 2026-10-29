@@ -36,5 +36,79 @@
       "Bash(supabase db reset --linked*)",
       "Bash(rm -rf *)"
     ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git push *)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          },
+          {
+            "type": "command",
+            "if": "Bash(npm run e2e*)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          },
+          {
+            "type": "command",
+            "if": "Bash(gh run *)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/atelier/hook.mjs\""
+          }
+        ]
+      }
+    ]
   }
 }

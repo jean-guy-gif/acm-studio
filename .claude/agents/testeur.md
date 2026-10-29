@@ -21,7 +21,14 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
    `test-results/rendus-<mission>/` le PDF imprimé (A4) et des captures pleine page des écrans touchés,
    en 1280 × 800, 1024 × 768 et 390 × 844, sur le compte de démo. Liste les fichiers dans ton rapport.
    Jean-Guy et son relecteur produit les regardent AVANT l'essai : un test vert ne dit pas qu'un
-   document donne envie.
+   document donne envie. Les rendus vont hors du dépôt, dans `~/acm-studio-rendus/<mission>/`.
+   Une capture pleine page cache ce qui est sous le pli : pour chaque écran, aux trois tailles,
+   vérifie aussi **sans défiler** que chaque action principale (enregistrer, envoyer, télécharger,
+   créer, marquer) est entièrement dans la fenêtre (`getBoundingClientRect` dans le viewport), et
+   qu'aucun aperçu de document n'est coupé (pas de `scrollWidth` supérieur à la largeur, pas
+   d'`overflow` qui tronque la feuille). Un bouton sous le pli d'un panneau `sticky` est un défaut.
+   Vérifie enfin que chaque image attendue est chargée (`naturalWidth > 0`) : une « Photo
+   indisponible » sur un écran client est un défaut, à expliquer (URL, hôte, protection).
 5. Note les durées des quatre suites et dis si l'une approche son budget (6 min pour le parcours).
 6. Rapport, 15 lignes au plus : vert / aléas / défauts, puis les durées.
 
