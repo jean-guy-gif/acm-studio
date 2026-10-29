@@ -15,16 +15,14 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
    (`git diff --name-only main...`, règle de Jean-Guy du 29/10) ; sinon, les barrières et les tests
    propres à la mission, et tu le dis. Si l'essai sert la branche : `npm run e2e` (parcours,
    bienvenue, Live tablette, démo). Un échec se relance UNE fois. Un test vert au second passage est
-   un **aléa**, à nommer (quel test, quel pas,
-   quelle durée) ; rouge deux fois, c'est un **défaut**.
+   un **aléa**, à nommer (quel test, quel pas, quelle durée) ; rouge deux fois, c'est un **défaut**.
 3. Pour chaque défaut : le test, le pas qui échoue, la ligne d'erreur, et ta lecture en une phrase
    (le code, le test, ou la donnée de l'essai). Pas de correctif.
 4. **Si la mission touche un écran ou un document remis au client** (Live, présentation, lien, PDF,
    courrier, synthèse) : avec Playwright sur l'essai, enregistre dans
    `test-results/rendus-<mission>/` le PDF imprimé (A4) et des captures pleine page des écrans
-   touchés,
-   en 1280 × 800, 1024 × 768 et 390 × 844, sur le compte de démo. Liste les fichiers dans ton
-   rapport.
+   touchés, en 1280 × 800, 1024 × 768 et 390 × 844, sur le compte de démo. Liste les fichiers dans
+   ton rapport.
    Jean-Guy et son relecteur produit les regardent AVANT l'essai : un test vert ne dit pas qu'un
    document donne envie. Les rendus vont hors du dépôt, dans `~/acm-studio-rendus/<mission>/`.
    Une capture pleine page cache ce qui est sous le pli : pour chaque écran, aux trois tailles,

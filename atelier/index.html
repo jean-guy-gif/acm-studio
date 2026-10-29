@@ -723,7 +723,8 @@
       const consigneMigration = (m) =>
         `appliquer la migration ${m.version}_${m.nom} — npm run sauvegarde, puis npx supabase db push --linked, dans un terminal.`;
 
-      // Le bandeau : ce qui attend Jean-Guy, par mission, d'après l'état COURANT du chef (jamais une ligne passée).
+      // Le bandeau : ce qui attend Jean-Guy — un chef qui attend (état COURANT, jamais une ligne passée),
+      // et toute migration en attente, nommée par sa mission.
       function bandeaux(etat) {
         const lignes = [];
         const dites = new Set();
@@ -868,10 +869,12 @@
         const etatCarte = b.erreur ? 'illisible' : attente ? 'attend Jean-Guy' : 'à jour';
         // La prédiction du gardien de la mission qui porte la migration, lue dans le journal.
         const etatPage = { missions, cartes: { base: b } };
+        // Une migration sans dossier connu (ancienne carte) ne vaut que pour une mission seule.
         const gardienDe = (x) =>
-          (missionDeMigration(etatPage, x) ?? missions[0])?.agents.find(
-            (a) => a.nom === 'gardien-sql' && a.etat === 'terminé',
-          ) ?? null;
+          (
+            missionDeMigration(etatPage, x) ??
+            (!x.dossier && missions.length === 1 ? missions[0] : null)
+          )?.agents.find((a) => a.nom === 'gardien-sql' && a.etat === 'terminé') ?? null;
         const migration = (x) => {
           const m = missions.length > 1 ? missionDeMigration(etatPage, x) : null;
           return `${x.version}_${x.nom}${x.date || dateDeVersion(x.version) ? ` · ${x.date || dateDeVersion(x.version)}` : ''}${m ? ` · mission ${missionLisible(m.mission)}` : ''}`;
