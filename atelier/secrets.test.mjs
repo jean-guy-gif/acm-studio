@@ -65,6 +65,13 @@ describe('le masque des secrets', () => {
     }
   });
 
+  it('une valeur déjà masquée n’est plus un secret, même dans un JSON', () => {
+    const phrase =
+      'E2E joué avec E2E_VERCEL_BYPASS=[masqué] et x-vercel-protection-bypass: [masqué]';
+    expect(masquerSecrets(phrase)).toBe(phrase);
+    expect(contientSecret(JSON.stringify({ phrase }))).toBe(false);
+  });
+
   it('laisse une phrase ordinaire telle quelle', () => {
     const phrase = 'Poussé : git push -u origin mission-126-atelier · essai 5e06dba · CI verte';
     expect(masquerSecrets(phrase)).toBe(phrase);

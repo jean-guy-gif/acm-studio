@@ -83,3 +83,10 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   proprement un port pris, et chaque lecture de carte a son délai (entrée fermée, groupe tué).
 - 29/10 · Barrières toujours ; la suite e2e complète seulement si `src/`, `extension/` ou `supabase/`
   changent (décision de Jean-Guy) : la 126, pure outillage, n'avait pas à la jouer.
+- 29/10 · Conséquences acceptées de la règle du chef (bleu « attend ses agents » dès qu'un agent
+  tourne, orange seulement sans agent et avec une question posée) et de la fermeture à 24 h : une
+  permission demandée PENDANT qu'un agent tourne s'écrit « attend Jean-Guy » mais s'affiche en bleu
+  jusqu'à la fin de l'agent, et une permission accordée dans la boîte de Claude Code ne laisse
+  aucune ligne — l'orange reste jusqu'au prochain prompt ou à une note du chef ; après 24 h sans
+  ligne, une migration encore en attente dans un worktree quitte la page avec sa mission ; un agent
+  dont le `SubagentStop` n'arrive jamais laisse le chef « attend ses agents » jusqu'à la fermeture.

@@ -57,7 +57,10 @@ export function masquerSecrets(texte) {
   let sortie = texte;
   for (const { motif, garde, sauf } of RULES) {
     sortie = garde
-      ? sortie.replace(motif, (_tout, prefixe) => `${prefixe}${MASQUE}`)
+      ? sortie.replace(motif, (tout, prefixe) =>
+          // Une valeur déjà masquée reste telle quelle : « E2E_X=[masqué] » n'est pas un secret.
+          tout.slice(prefixe.length).startsWith(MASQUE) ? tout : `${prefixe}${MASQUE}`,
+        )
       : sortie.replace(motif, (prise) => (sauf && sauf.test(prise) ? prise : MASQUE));
   }
   return sortie;

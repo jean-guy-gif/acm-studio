@@ -47,9 +47,9 @@ Les étapes : `architecte`, `designer`, `questions`, `code`, `gardien-sql`, `acc
    pas dans `essai` avant : le code de la branche attend la migration.
 7. Barrières, toutes vertes : `npm run typecheck`, `npm run lint`, `npm test`,
    `npm run format:check`, `npm run build`.
-8. **Relecteur** : lance le sous-agent **relecteur** sur la branche. Corrige ses **bloquants** et relance
-   les barrières, puis le relecteur sur le delta ; les « à corriger avant le /valide » et les remarques
-   vont dans ton rapport final, tels quels.
+8. **Relecteur** : lance le sous-agent **relecteur** sur la branche. Corrige ses **bloquants** et ses
+   « à corriger » (règle « Ce que le chef tranche seul »), relance les barrières, puis le relecteur sur
+   le delta.
 9. Commit `Mission <numéro> — <titre>`, puis `git push -u origin <branche>`. Si la branche `essai`
    existe (mission 64), fusionne aussi ta branche dans `essai` et pousse `essai` (`git fetch` puis
    `git merge --ff-only origin/essai` d'abord : `git pull` échoue sur un auto-stash) : c'est là que
@@ -63,8 +63,9 @@ Les étapes : `architecte`, `designer`, `questions`, `code`, `gardien-sql`, `acc
      client, sans lire le code.
    - **Designer sur les rendus** : il compare les captures à ses maquettes et juge ce qu'un test ne
      voit pas.
-10. Rapport final, 15 lignes au plus, suivi des rapports de tous les agents tels quels (architecte,
-    designer, gardien-sql, relecteur, testeur, parcoureur, designer sur les rendus) :
+10. Rapport final, 15 lignes au plus, puis **une ligne par agent** (architecte, designer, gardien-sql,
+    relecteur, testeur, parcoureur, designer sur les rendus) qui dit ce qui a été corrigé et ce qui
+    remonte — jamais leurs listes :
     - ce qui a changé (comportement, fichiers principaux) ;
     - le scénario d'essai à l'écran, pas à pas, avec l'URL ;
     - les risques restants ;
@@ -77,5 +78,12 @@ main...`). L'essai reste à une mission à la fois, et l'e2e ne tourne que sur l
     l'agence de test sont partagées) : la seconde mission s'arrête aux barrières, relecteur compris,
     et attend l'essai libre pour le testeur ; sauf migration, une seule à la fois, appliquée après le
     `/valide` de l'autre.
+
+**Ce que le chef tranche seul** (décision de Jean-Guy, 29/10) : les « à corriger », « à corriger avant
+le /valide » et « ça gêne » du relecteur, du testeur, du parcoureur et du designer sont appliqués sans
+demander, sauf s'ils contredisent la fiche de mission ou une décision de `docs/DECISIONS.md`. Ne
+remontent à Jean-Guy que trois choses : un **choix de produit** (ce que voit le client ou le
+conseiller), un **coût** (appel payant, budget), une **donnée** (migration, suppression). Le rapport
+final dit ce qui a été corrigé, en une ligne par agent, pas les listes.
 
 Ne fusionne **jamais** dans `main` : c'est `/valide <numéro>` qui le fait, après l'essai de Jean-Guy.

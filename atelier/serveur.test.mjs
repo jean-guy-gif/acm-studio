@@ -38,7 +38,9 @@ describe('le serveur de l’atelier', () => {
   it('l’état dit la mission, l’orange de la migration en attente, en français sans jargon', async () => {
     const etat = await (await lire('/etat')).json();
     expect(etat.missions[0].mission).toBe('120B');
-    expect(etat.cartes.base.enAttente).toEqual([{ version: '20261118090000', nom: 'detachement' }]);
+    expect(etat.cartes.base.enAttente).toEqual([
+      { version: '20261118090000', nom: 'detachement', dossier: etat.missions[0].dossier },
+    ]);
     expect(etat.missions[0].chef.etat).toBe('attend Jean-Guy');
     // Un exemple vit à l'heure de sa dernière ligne (plus 90 s) : ses « depuis » sont stables.
     expect(etat.maintenant).toBe('2026-10-30T10:57:30.000Z');

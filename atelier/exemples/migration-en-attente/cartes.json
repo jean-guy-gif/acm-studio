@@ -7,7 +7,8 @@
     "enAttente": [
       {
         "version": "20261118090000",
-        "nom": "detachement"
+        "nom": "detachement",
+        "dossier": "/Users/jean-guy/Documents/acm-studio"
       }
     ],
     "lueA": "2026-10-30T10:55:00.000Z",
