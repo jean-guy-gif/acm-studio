@@ -46,12 +46,19 @@ export function PriceLineBand({
   const markers: Marker[] = [
     ...(single
       ? [
-          {
-            key: 'single',
-            label: singleLabel ?? 'Un seul concurrent',
-            value: line.lowest,
-            tone: 'muted' as const,
-          },
+          line.dangerousPrice != null
+            ? {
+                key: 'single',
+                label: 'Le plus dangereux, selon vous',
+                value: line.lowest,
+                tone: 'dangerous' as const,
+              }
+            : {
+                key: 'single',
+                label: singleLabel ?? 'Un seul concurrent',
+                value: line.lowest,
+                tone: 'muted' as const,
+              },
         ]
       : [
           { key: 'lowest', label: 'Le plus bas', value: line.lowest, tone: 'muted' as const },

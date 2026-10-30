@@ -252,13 +252,15 @@ export function PriceLinesFigure({
     const below: Label[] = [];
     if (line && line.prices.length === 1) {
       // Un seul bien sur la ligne : une seule étiquette, ni médiane ni plus bas / plus haut.
+      const single = dangerous != null && line.dangerousPrice != null;
       below.push({
         key: 'single',
-        text: key === 'newcomers' ? 'Nouveau venu' : 'Un seul concurrent',
+        text:
+          key === 'newcomers' ? 'Nouveau venu' : single ? 'Plus dangereux' : 'Un seul concurrent',
         value: formatEuro(line.lowest),
         x: X(line.lowest),
         anchor: 'middle',
-        color: COLORS.muted,
+        color: single ? COLORS.dangerous : COLORS.muted,
       });
     } else if (line) {
       above.push({
