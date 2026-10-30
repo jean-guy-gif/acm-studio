@@ -161,7 +161,10 @@ export function PriceLineBand({
               : anchor === 'end'
                 ? '-translate-x-full items-end text-right'
                 : '-translate-x-1/2 items-center text-center';
-          const tick = `w-0.5 h-4 ${TICK[level]} ${toneDot(marker.tone)}`;
+          const tick =
+            marker.tone === 'dangerous'
+              ? `h-3 w-3 rotate-45 ${toneDot(marker.tone)}`
+              : `w-0.5 h-4 ${TICK[level]} ${toneDot(marker.tone)}`;
           return (
             <div
               key={marker.key}

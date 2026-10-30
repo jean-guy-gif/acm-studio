@@ -523,6 +523,7 @@ export function PriceLinesFigure({
         const midY = corridorY - 10 - index * 14;
         return (
           <g key={arrow.item.id} data-testid="price-lines-arrow">
+            <circle cx={arrow.x1} cy={arrow.y1 - 3} r={3.5} fill={color} />
             <path
               d={`M${arrow.x1},${arrow.y1} V${midY} H${arrow.x2} V${arrow.y2}`}
               fill="none"
