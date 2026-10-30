@@ -19,7 +19,6 @@ import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggest
 import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
 import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
-import { letterCounts } from '@/features/buyer-prospecting/services/letter-counts';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
@@ -91,12 +90,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       ) : null}
 
       {/* Essai de Jean-Guy (26/10) : les trois étapes, dans l'ordre, en haut de la fiche. */}
-      <BuyerSteps
-        buyerId={buyer.id}
-        facts={facts}
-        answersShown={answers.lines.length > 0}
-        letters={letterCounts([...letters.values()])}
-      />
+      <BuyerSteps buyerId={buyer.id} facts={facts} answersShown={answers.lines.length > 0} />
 
       <section className={`${card} flex flex-wrap items-center justify-between gap-4 p-5`}>
         <BuyerStatusActions buyer={buyer} />

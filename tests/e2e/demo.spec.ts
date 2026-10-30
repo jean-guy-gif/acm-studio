@@ -1650,7 +1650,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(visitCAfter.getByTestId('visit-outcome')).toHaveText('En attente du propriétaire');
 
   // Mission 120 B — B, en exclusivité : le dossier de collaboration au confrère, sans nom, budget
-  // ni condition ; le lot de la fiche l'imprime ; dans Prospection, « Marquer contacté » puis
+  // ni condition ; dans Prospection, « Marquer contacté » puis
   // « Collaboration obtenue » ; la visite redevient « À planifier », sans autre geste.
   const visitB = () =>
     page
@@ -1676,14 +1676,6 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expectUnspoken(page, 'Dossier de collaboration au confrère');
   await page.getByTestId('buyer-letter-save').click();
   await expect(page.getByRole('status')).toHaveText('Enregistré.');
-  await page.goto('/acquereurs');
-  await page.getByRole('link', { name: 'Famille Keller' }).click();
-  await page.getByTestId('buyer-batch-letters').click();
-  await expect(page.getByTestId('buyer-letters-batch')).toContainText('Courriers de la recherche');
-  await expect(
-    page.locator('[data-testid="buyer-letter-document"][data-version="colleague"]'),
-  ).toHaveCount(1);
-  await expectUnspoken(page, 'Courriers de la recherche');
   await page.goto('/prospection?origine=acquereur');
   const colleagueCard = () =>
     page

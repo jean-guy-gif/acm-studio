@@ -39,7 +39,7 @@ vi.mock('@/features/buyer-prospecting/queries/get-buyer-letter', () => ({
 const { prepareBuyerLetter } =
   await import('@/features/buyer-prospecting/actions/prepare-buyer-letter');
 const { saveBuyerLetter } = await import('@/features/buyer-prospecting/actions/save-buyer-letter');
-const { setBuyerProspectStatus, setBuyerProspectMandate, markBuyerProspectsHanded } =
+const { setBuyerProspectStatus, setBuyerProspectMandate } =
   await import('@/features/buyer-prospecting/actions/buyer-prospect-actions');
 
 const VISIT = '11111111-1111-4111-8111-111111111111';
@@ -417,54 +417,6 @@ describe('le statut d’une carte acquéreur', () => {
     expect((await setBuyerProspectStatus(PROSPECT, 'mandate')).ok).toBe(false);
     expect((await setBuyerProspectStatus(PROSPECT, 'tout')).ok).toBe(false);
     expect(writes()).toEqual([]);
-  });
-
-  // Mission 120 B (relecteur) — « Marquer tous remis » d'une recherche : la liste vient du
-  // navigateur, chaque bien est relu.
-  it('« Marquer tous remis » : une liste invalide est refusée, rien n’est écrit', async () => {
-    expect((await markBuyerProspectsHanded('tout')).ok).toBe(false);
-    expect((await markBuyerProspectsHanded([])).ok).toBe(false);
-    expect((await markBuyerProspectsHanded(['pas-un-id'])).ok).toBe(false);
-    expect(writes()).toEqual([]);
-  });
-
-  it('« Marquer tous remis » : un bien prêt passe à « remis », et le compte le dit', async () => {
-    state.respond = (table, calls) =>
-      table === 'buyer_prospects'
-        ? calls.some((call) => call.method === 'update')
-          ? { data: [{ id: PROSPECT }] }
-          : { data: row() }
-        : { data: null };
-    expect(await markBuyerProspectsHanded([PROSPECT, PROSPECT])).toEqual({ ok: true, count: 1 });
-    expect(writes()).toEqual(['update buyer_prospects']);
-    expect(
-      service.calls.some(
-        (call) =>
-          call.method === 'eq' && call.args[0] === 'agency_id' && call.args[1] === 'agency-a',
-      ),
-    ).toBe(true);
-  });
-
-  it('« Marquer tous remis » : un bien déjà remis ou d’une autre agence reste tel quel', async () => {
-    state.respond = (table) =>
-      table === 'buyer_prospects'
-        ? { data: row({ prospecting_handed_at: '2026-10-29T10:00:00Z' }) }
-        : { data: null };
-    expect((await markBuyerProspectsHanded([PROSPECT])).ok).toBe(false);
-    // Introuvable pour l'agence de l'appelant.
-    state.respond = () => ({ data: null });
-    expect((await markBuyerProspectsHanded([PROSPECT])).ok).toBe(false);
-    expect(writes()).toEqual([]);
-  });
-
-  it('« Marquer tous remis » : un dossier au confrère sans adresse confirmée passe à « contacté »', async () => {
-    state.respond = (table, calls) =>
-      table === 'buyer_prospects'
-        ? calls.some((call) => call.method === 'update')
-          ? { data: [{ id: PROSPECT }] }
-          : { data: row({ exclusivity: 'yes', locator_address: null, locator_confirmed: null }) }
-        : { data: null };
-    expect(await markBuyerProspectsHanded([PROSPECT])).toEqual({ ok: true, count: 1 });
   });
 });
 

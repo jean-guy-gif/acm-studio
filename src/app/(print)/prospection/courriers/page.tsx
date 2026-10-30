@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { backLink, hintText, sectionTitle } from '@/components/ui/styles';
-import { BuyerLettersBatch } from '@/features/buyer-prospecting/components/buyer-letters-batch';
 import { PrintButton } from '@/features/competitor-locator/components/print-button';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { ProspectingFileDocument } from '@/features/prospecting-file/components/prospecting-file-document';
@@ -25,7 +24,7 @@ import { cardCopy } from '@/features/prospecting/services/group-prospecting';
 export const metadata: Metadata = { title: 'Courriers de prospection' };
 
 type LettersPageProps = {
-  searchParams: Promise<{ bien?: string; acquereur?: string }>;
+  searchParams: Promise<{ bien?: string }>;
 };
 
 // Les documents se suivent : chacun commence sur une feuille neuve.
@@ -39,11 +38,7 @@ const BATCH_CSS =
 // n'est pas imprimé. Écran conseiller : chaque courrier passe par getProspectingFile, cadré sur
 // l'agence de l'appelant.
 export default async function LettersPage({ searchParams }: LettersPageProps) {
-  const { bien, acquereur } = await searchParams;
-  // Mission 120 B — les courriers d'une recherche acquéreur, depuis sa fiche.
-  if (acquereur) {
-    return <BuyerLettersBatch buyerId={acquereur} />;
-  }
+  const { bien } = await searchParams;
   const { sellers, cards } = await getAgencyProspecting(await getSuiviDossiers());
   const sellerId = parseSellerFilter(bien, sellers);
   const seller = sellers.find((item) => item.projectId === sellerId);
