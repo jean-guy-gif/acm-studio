@@ -9,6 +9,7 @@ import {
   colleagueAddressee,
 } from '@/features/buyer-prospecting/services/buyer-letter';
 import { savedBuyerLetter } from '@/features/buyer-prospecting/services/saved-buyer-letter';
+import { ScaledSheet } from '@/components/document-editor/document-editor-layout';
 import { PrintButton } from '@/features/competitor-locator/components/print-button';
 import { MarkLettersHanded } from '@/features/prospecting/components/mark-letters-handed';
 
@@ -81,23 +82,28 @@ export async function BuyerLettersBatch({ buyerId }: { buyerId: string }) {
       </header>
 
       <style dangerouslySetInnerHTML={{ __html: BATCH_CSS }} />
-      <div className="pf-batch mx-auto">
-        {letters.map(({ item, context }) => (
-          <BuyerLetterDocument
-            key={item.originId}
-            version={context.version}
-            exclusivityCard={context.version === 'colleague' ? context.exclusivityCard : null}
-            addressee={
-              context.version === 'colleague' || context.address == null
-                ? colleagueAddressee(context.exclusivityCard.label)
-                : buyerLetterAddressee(context.facts, context.address)
-            }
-            addressSource={context.addressSource}
-            {...savedBuyerLetter(context)}
-            sender={context.sender}
-            qr={context.qr}
-          />
-        ))}
+      {/* Les feuilles réduites à la largeur de l'écran, jamais coupées ni défilées de côté (R2). */}
+      <div className="mx-auto w-full max-w-[210mm] print:max-w-none">
+        <ScaledSheet>
+          <div className="pf-batch">
+            {letters.map(({ item, context }) => (
+              <BuyerLetterDocument
+                key={item.originId}
+                version={context.version}
+                exclusivityCard={context.version === 'colleague' ? context.exclusivityCard : null}
+                addressee={
+                  context.version === 'colleague' || context.address == null
+                    ? colleagueAddressee(context.exclusivityCard.label)
+                    : buyerLetterAddressee(context.facts, context.address)
+                }
+                addressSource={context.addressSource}
+                {...savedBuyerLetter(context)}
+                sender={context.sender}
+                qr={context.qr}
+              />
+            ))}
+          </div>
+        </ScaledSheet>
       </div>
     </div>
   );
