@@ -50,6 +50,7 @@ export function NewcomersSearchPanel({
   meetingDate,
   searched,
   stored = null,
+  priceCeiling = null,
   onPointRewritten,
 }: {
   projectId: string;
@@ -59,6 +60,8 @@ export function NewcomersSearchPanel({
   // Mission 127 B — la recherche gardée sur le point du jour, avec ses propositions encore à
   // trancher : le panneau repart d'elles après un rechargement (Jean-Guy, 30/10).
   stored?: NewcomersSearch | null;
+  // Le prix de commercialisation, pour redire le plafond après un rechargement.
+  priceCeiling?: number | null;
   onPointRewritten?: (line: string) => void;
 }) {
   const router = useRouter();
@@ -80,7 +83,7 @@ export function NewcomersSearchPanel({
           excludedNoDate: stored.excludedNoDate,
           excludedKnown: 0,
           concludedAt: meetingDate ?? '',
-          priceCeiling: 0,
+          priceCeiling: priceCeiling != null ? Math.round(priceCeiling) : 0,
           updateId: null,
           line: null,
         }

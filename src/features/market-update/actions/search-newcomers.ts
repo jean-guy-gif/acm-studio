@@ -29,7 +29,10 @@ import {
   type NewcomerCandidate,
 } from '@/features/market-update/services/newcomers-filter';
 import { isPointOfDay } from '@/features/market-update/services/point-day';
-import { parseMarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
+import {
+  newcomerProposalSchema,
+  parseMarketUpdateSummary,
+} from '@/features/market-update/services/market-update-summary';
 import { writeMarketUpdate } from '@/features/market-update/services/write-market-update';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import {
@@ -303,10 +306,15 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       excludedNoDate: filtered.excludedNoDate,
       // Les propositions restent sur le point jusqu'à « Écarter » ou au point suivant (Jean-Guy,
       // 30/10) ; sans titre : il ne sert à rien ici.
-      proposed: filtered.newcomers.map((item) => ({
-        ...item,
-        snapshot: { ...item.snapshot, title: null },
-      })),
+      // Chaque proposition est revalidée par son schéma avant l'écriture : une proposition
+      // illisible est laissée de côté, jamais tout le point (M105 : on ne repaie pas).
+      proposed: filtered.newcomers.flatMap((item) => {
+        const parsed = newcomerProposalSchema.safeParse({
+          ...item,
+          snapshot: { ...item.snapshot, title: null },
+        });
+        return parsed.success ? [parsed.data] : [];
+      }),
     },
   });
   revalidatePath('/suivi');

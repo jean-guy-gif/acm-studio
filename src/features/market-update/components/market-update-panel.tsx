@@ -149,6 +149,7 @@ export function MarketUpdateList({
           meetingDate={latest.summary.meetingDate}
           searched={latest.summary.newcomersSearch != null}
           stored={latest.summary.newcomersSearch}
+          priceCeiling={latest.summary.agreedPrice}
         />
       ) : null}
     </div>
