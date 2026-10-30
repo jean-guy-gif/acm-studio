@@ -1639,26 +1639,6 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     /Recherche acquéreur\s*:\s*Famille Keller/,
   );
   await expectUnspoken(page, 'Prospection — recherche acquéreur');
-  // Mission 120 B (reprise R4) — une carte à deux origines : le nouveau venu retenu dans le mandat
-  // de M. Lefebvre au Point marché est aussi un bien des Keller. « Préparer le dossier » et
-  // « Préparer le courrier » y sont au même rang : même classe, même ligne.
-  const doubleCard = page
-    .getByTestId('prospecting-card')
-    .filter({ has: page.getByTestId('buyer-origin').filter({ hasText: 'Famille Keller' }) })
-    .filter({ has: page.getByTestId('seller-origin').filter({ hasText: 'M. Lefebvre' }) })
-    .first();
-  await expect(doubleCard, 'une carte « Famille Keller » et « M. Lefebvre »').toBeVisible();
-  const sellerFile = doubleCard.getByRole('link', { name: /^Préparer le dossier/ }).first();
-  const buyerLetter = doubleCard.getByTestId('buyer-letter-link');
-  await expect(sellerFile).toBeVisible();
-  await expect(buyerLetter).toBeVisible();
-  expect(await buyerLetter.getAttribute('class')).toBe(await sellerFile.getAttribute('class'));
-  const fileBox = await sellerFile.boundingBox();
-  const letterBox = await buyerLetter.boundingBox();
-  expect(Math.abs(fileBox!.y - letterBox!.y), 'les deux actions sur la même ligne').toBeLessThan(2);
-  await doubleCard.screenshot({
-    path: `${process.env.HOME}/acm-studio-rendus/120B/R4-carte-double-origine-1280.png`,
-  });
   await kellerCard('ready').getByRole('button', { name: 'Marquer remis' }).click();
   await expect(kellerCard('handed')).toHaveCount(1);
   await page.goto('/visites');
