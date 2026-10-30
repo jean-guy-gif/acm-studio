@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { btnSecondary, metaLabel } from '@/components/ui/styles';
 import { NewcomersSearchPanel } from '@/features/market-update/components/newcomers-search-panel';
+import { isPointOfDay } from '@/features/market-update/services/point-day';
 import { PriceLineBand } from '@/features/market-update/components/price-line';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import {
@@ -138,17 +139,15 @@ export function MarketUpdateList({
           {dropped}
         </span>
       ) : null}
-      {/* Mission 127 B — après « Pas maintenant », la recherche reste possible sur le point du jour
-          tant qu'aucune recherche n'a été faite pour lui. */}
-      {signed &&
-      latest &&
-      latest.summary.agreedPrice != null &&
-      latest.summary.newcomersSearch == null &&
-      shortDay(latest.madeAt) === shortDay(new Date().toISOString()) ? (
+      {/* Mission 127 B — la proposition (c) sur le point du jour d'un mandat signé ; le panneau
+          reste monté après la recherche (il tient ses résultats), et ne rend rien si une recherche
+          a déjà été faite pour ce point. */}
+      {signed && latest && latest.summary.agreedPrice != null && isPointOfDay(latest.madeAt) ? (
         <NewcomersSearchPanel
+          key={latest.id}
           projectId={projectId}
           meetingDate={latest.summary.meetingDate}
-          searched={false}
+          searched={latest.summary.newcomersSearch != null}
         />
       ) : null}
     </div>
