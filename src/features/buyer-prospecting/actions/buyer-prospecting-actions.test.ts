@@ -445,7 +445,7 @@ describe('le statut d’une carte acquéreur', () => {
     ).toBe(true);
   });
 
-  it('« Marquer tous remis » : un bien déjà remis, d’une autre agence ou opposé reste tel quel', async () => {
+  it('« Marquer tous remis » : un bien déjà remis ou d’une autre agence reste tel quel', async () => {
     state.respond = (table) =>
       table === 'buyer_prospects'
         ? { data: row({ prospecting_handed_at: '2026-10-29T10:00:00Z' }) }

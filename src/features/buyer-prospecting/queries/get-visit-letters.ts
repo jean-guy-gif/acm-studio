@@ -88,6 +88,18 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
     const prospect = prospecting.cards.find((card) => card.row.listingKey === key);
     return known(prospect?.row.mandate.exclusivity);
   };
+  // Un concurrent retenu : la première copie de sa carte qui sait l'exclusivité, comme à la
+  // préparation (relecteur).
+  const competitorCardExclusivity = (competitorId: string): string | null => {
+    const card = cards.find((candidate) =>
+      candidate.copies.some((copy) => copy.row.id === competitorId),
+    );
+    return (
+      card?.copies
+        .map((copy) => known(copy.row.mandate.exclusivity))
+        .find((value) => value != null) ?? null
+    );
+  };
 
   return new Map(
     lines.map((line) => {
@@ -97,7 +109,9 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
         outcome: outcomes.get(line.itemReference) ?? null,
         exclusivity:
           line.itemSource === 'competitor'
-            ? (exclusivities.get(line.itemReference) ?? null)
+            ? (competitorCardExclusivity(line.itemReference) ??
+              exclusivities.get(line.itemReference) ??
+              null)
             : (cardExclusivity(line.itemReference) ?? line.itemExclusivity),
       });
       const origin = prospecting.bySelectionItem.get(line.itemId);
