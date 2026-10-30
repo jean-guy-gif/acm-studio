@@ -225,7 +225,7 @@ describe('les trois lignes de prix', () => {
   it('les nouveaux venus : une phrase de fait, sinon rien', () => {
     const lines = buildPriceLines(competitors, 1639500, [1830000, 1580000]);
     expect(plain(lines.newcomers?.sentence)).toBe(
-      '2 nouveaux venus retenus depuis le rendez-vous : 1 est sous votre prix, 1 au-dessus. Leur prix médian est 65 500 € au-dessus du vôtre.',
+      '2 nouveaux venus à votre prix ou moins : le moins cher à 1 580 000 €, 59 500 € sous le vôtre.',
     );
     expect(NO_NEWCOMER_LABEL).toBe('Aucun nouveau venu retenu depuis le rendez-vous');
   });
@@ -461,6 +461,15 @@ describe('le document Point marché', () => {
     expect(document.competitors.map((item) => item.position)).toEqual([1, 2, 3, 4, 5]);
     expect(html.split('data-testid="market-update-competitor"').length - 1).toBe(5);
     expect(html.split('data-testid="market-update-line"').length - 1).toBe(3);
+    // La figure (M127 B) : une barre, trois lignes, un losange, deux flèches, deux points vides.
+    expect(html).toContain('data-testid="price-lines-figure"');
+    expect(html.split('data-testid="price-lines-bar"').length - 1).toBe(1);
+    expect(html.split('data-testid="price-lines-line"').length - 1).toBe(3);
+    // Le plus dangereux, en losange sur la ligne 1 et sur la ligne 2 (il est encore en vente).
+    expect(html.split('data-testid="price-lines-diamond"').length - 1).toBe(2);
+    expect(html.split('data-testid="price-lines-arrow"').length - 1).toBe(2);
+    expect(html.split('data-testid="price-lines-gone"').length - 1).toBe(2);
+    expect(html).not.toContain('NaN');
     expect(html).toContain(NO_NEWCOMER_LABEL);
     expect(html).toContain('Vente probable, négociation estimée de 5 à 10 %');
     expect(html).toContain('Retiré du marché sans vente');

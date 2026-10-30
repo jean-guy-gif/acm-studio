@@ -3,6 +3,7 @@ import { PriceLineBand, ALIGNMENT_CLASSES } from '@/features/market-update/compo
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
+import { PriceLinesFigure } from '@/features/market-update/components/price-lines-figure';
 import { NO_NEWCOMER_LABEL } from '@/features/market-update/services/price-lines';
 
 // Mission 127 B — le même libellé que sur le Suivi, sans importer le composant client.
@@ -493,71 +494,48 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             title="Où en est votre prix"
             hint="Trois lignes, à la même échelle, pour comparer d’un coup d’œil."
           />
-          {lineBlock(
-            1,
-            `Au rendez-vous${meeting ? ` du ${meeting}` : ''}`,
-            `${summary.competitors.length} concurrent${summary.competitors.length > 1 ? 's' : ''} · prix du rendez-vous`,
-            lines.meeting,
-            'Votre prix',
-          )}
-          {lineBlock(
-            2,
-            `Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`,
-            `${lines.today?.prices.length ?? 0} concurrent${(lines.today?.prices.length ?? 0) > 1 ? 's' : ''} encore en vente`,
-            lines.today,
-            'Votre prix',
-            lines.todayGone.probableSale + lines.todayGone.withdrawn + lines.todayGone.unknown >
-              0 ? (
-              <p className="self-start rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-                {[
-                  lines.todayGone.probableSale > 0
-                    ? `${lines.todayGone.probableSale} vente${lines.todayGone.probableSale > 1 ? 's' : ''} probable${lines.todayGone.probableSale > 1 ? 's' : ''}`
-                    : null,
-                  lines.todayGone.withdrawn > 0
-                    ? `${lines.todayGone.withdrawn} retiré${lines.todayGone.withdrawn > 1 ? 's' : ''} sans vente`
-                    : null,
-                  lines.todayGone.unknown > 0
-                    ? `${lines.todayGone.unknown} retirée${lines.todayGone.unknown > 1 ? 's' : ''}, durée inconnue`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}{' '}
-                · comptés à part
+          {/* La figure (maquette M127B-lignes) à l'écran large et à l'impression ; sur téléphone,
+              les trois lignes en liste, la barre et les repères sous chaque bande. */}
+          <div className="hidden sm:block" data-testid="price-lines-figure-wrap">
+            <PriceLinesFigure
+              summary={summary}
+              alignment={alignment}
+              meetingLabel={`Au rendez-vous${meeting ? ` du ${meeting}` : ''}`}
+              todayLabel={`Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`}
+            />
+          </div>
+          <div className="flex flex-col gap-3 sm:hidden">
+            {lineBlock(
+              1,
+              `Au rendez-vous${meeting ? ` du ${meeting}` : ''}`,
+              `${summary.competitors.filter((item) => !item.newcomer).length} concurrents · prix du rendez-vous`,
+              lines.meeting,
+              'Votre prix',
+            )}
+            {lineBlock(
+              2,
+              `Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`,
+              `${lines.today?.prices.length ?? 0} encore en vente`,
+              lines.today,
+              'Votre prix',
+            )}
+            {lineBlock(
+              3,
+              'Face aux nouveaux venus',
+              hasNewcomers
+                ? `${newcomers.length} nouveau${newcomers.length > 1 ? 'x' : ''} venu${newcomers.length > 1 ? 's' : ''} · à votre prix ou moins`
+                : summary.newcomersSearch
+                  ? NEWCOMERS_LIMITED_LABEL
+                  : 'vus sur le marché après le rendez-vous',
+              lines.newcomers,
+              'Votre prix',
+            )}
+            {alignment ? (
+              <p className={`text-xs font-semibold ${subjectClasses?.text ?? 'text-brand-deep'}`}>
+                Votre prix : {alignment.label}
               </p>
-            ) : undefined,
-          )}
-          {lineBlock(
-            3,
-            'Face aux nouveaux venus',
-            hasNewcomers
-              ? `${newcomers.length} nouveau${newcomers.length > 1 ? 'x' : ''} venu${newcomers.length > 1 ? 's' : ''} retenu${newcomers.length > 1 ? 's' : ''} · à votre prix ou moins`
-              : summary.newcomersSearch
-                ? NEWCOMERS_LIMITED_LABEL
-                : 'vus sur le marché après le rendez-vous',
-            lines.newcomers,
-            'Votre prix',
-          )}
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-            <li className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-zinc-400" /> prix d’un
-              concurrent
-            </li>
-            <li className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-deep" /> le plus
-              dangereux, selon vous
-            </li>
-            <li className={`flex items-center gap-1 ${subjectClasses?.text ?? 'text-brand-deep'}`}>
-              <span
-                className={`inline-block h-2.5 w-2.5 rounded-full ${subjectClasses?.dot ?? 'bg-brand-deep'}`}
-              />{' '}
-              votre prix retenu ensemble
-              {alignment ? (
-                <span data-testid="price-alignment" className="font-semibold">
-                  · {alignment.label}
-                </span>
-              ) : null}
-            </li>
-          </ul>
+            ) : null}
+          </div>
           {alignment ? (
             <p className="text-xs text-zinc-500">
               Couleur de votre prix, la même sur les trois lignes : vert sous +5 % de l’analyse de
