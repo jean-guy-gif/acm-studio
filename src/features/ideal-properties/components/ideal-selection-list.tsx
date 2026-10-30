@@ -7,6 +7,7 @@ import {
   type IdealSelection,
 } from '@/features/ideal-properties/types';
 import { formatEuro } from '@/lib/format';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 118 — la sélection retenue pour l'acquéreur : jusqu'à trois biens, dans l'ordre, avec leur
 // source, leur catégorie, leurs écarts nommés et le prix « affiché le » (jamais « disponible »).
@@ -35,7 +36,7 @@ export function IdealSelectionList({ selection }: { selection: IdealSelection })
               {item.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={item.photoUrl}
+                  src={displayPhotoUrl(item.photoUrl)}
                   alt=""
                   className="h-16 w-24 shrink-0 rounded-lg bg-zinc-100 object-cover"
                 />

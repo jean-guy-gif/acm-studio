@@ -35,6 +35,8 @@ const text = (max: number) =>
 const inputSchema = z.object({
   title: text(200),
   letter: text(3000),
+  // Mission 120 B — la question du dossier au confrère ; vide pour le propriétaire.
+  question: text(300).default(''),
   contactHook: text(200),
   theirPhoto: z.discriminatedUnion('mode', [
     z.object({ mode: z.literal('listing'), url: z.string().url().max(THEIR_PHOTO_URL_MAX_LENGTH) }),
@@ -47,6 +49,8 @@ const kept = (value: string, proposed: string): string | null =>
   value === '' || value === proposed ? null : value;
 
 // Mission 120 — le conseiller enregistre le courrier au propriétaire d'une recherche acquéreur.
+// Mission 120 B — ou le dossier de collaboration au confrère : la version est relue sur la carte,
+// jamais reçue du navigateur.
 // Tout vient du navigateur : revalidé ici ; le texte proposé est recalculé, jamais reçu ; un texte
 // qui nomme l'acquéreur, dit son budget ou promet est refusé (dossier du 22/10, §10.2). La photo
 // de l'annonce reste au choix du conseiller, « Sans photo » par défaut, copiée dans le stockage de
@@ -70,9 +74,15 @@ export async function saveBuyerLetter(
   const texts = {
     title: input.title || context.defaults.title,
     letter: input.letter || context.defaults.letter,
+    question: input.question || context.defaults.question,
     contactHook: input.contactHook || context.defaults.contactHook,
   };
-  if (buyerLetterForbidden([texts.title, texts.letter, texts.contactHook], context.buyer)) {
+  if (
+    buyerLetterForbidden(
+      [texts.title, texts.letter, texts.question, texts.contactHook],
+      context.buyer,
+    )
+  ) {
     return { ok: false, error: BUYER_LETTER_FORBIDDEN_MESSAGE };
   }
 
@@ -106,9 +116,11 @@ export async function saveBuyerLetter(
   const { data, error } = await createServiceRoleClient()
     .from('buyer_prospect_origins')
     .update({
-      letter_version: 'owner',
+      letter_version: context.version,
       letter_title: kept(input.title, context.defaults.title),
       letter_body: kept(input.letter, context.defaults.letter),
+      letter_question:
+        context.version === 'colleague' ? kept(input.question, context.defaults.question) : null,
       letter_contact_hook: kept(input.contactHook, context.defaults.contactHook),
       their_photo_mode: theirPhoto.mode,
       their_photo_source_url: theirPhoto.sourceUrl,

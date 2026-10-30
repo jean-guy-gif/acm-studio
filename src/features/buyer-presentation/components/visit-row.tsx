@@ -1,4 +1,4 @@
-import { badgeBrand, badgeNeutral, badgeRejected } from '@/components/ui/styles';
+import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
@@ -11,9 +11,6 @@ import type { VisitLetter } from '@/features/buyer-prospecting/queries/get-visit
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { SELECTION_SOURCE_LABELS } from '@/features/ideal-properties/types';
 import { formatEuro } from '@/lib/format';
-
-// Mission 119 — un bien en exclusivité : un confrère à contacter (le dossier de collaboration).
-export const COLLEAGUE_REMINDER = 'Confrère à contacter';
 
 // Mission 119 — une visite demandée ou faite. Mission 120 — une visite demandée porte l'action qui
 // convient à l'origine du bien et l'état de son courrier ; tant que le courrier n'a pas abouti,
@@ -46,9 +43,6 @@ export function VisitRow({
         <span className={done ? badgeBrand : badgeNeutral} data-testid="visit-outcome">
           {!done && letter?.waiting ? letter.waiting : VISIT_OUTCOME_LABELS[line.outcome]}
         </span>
-        {!done && letter?.action.kind === 'colleague_letter' && letter.letterHref == null ? (
-          <span className={badgeRejected}>{COLLEAGUE_REMINDER}</span>
-        ) : null}
       </div>
       <p className="text-xs text-zinc-500 stage:text-white/60">
         Demandée le {buyerDateLabel(line.requestedAt)}{' '}
@@ -75,6 +69,7 @@ export function VisitRow({
               action={letter.action}
               letterHref={letter.letterHref}
               state={letter.state}
+              colleague={letter.colleague}
             />
           ) : null}
           <VisitDoneForm requestId={line.id} />

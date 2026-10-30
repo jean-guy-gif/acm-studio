@@ -20,6 +20,9 @@ export type VisitLetter = {
   state: VisitLetterState;
   // « En attente du propriétaire » tant que le courrier n'a pas abouti ; null : « À planifier ».
   waiting: string | null;
+  // Mission 120 B — à qui s'adresse le courrier préparé : le confrère (« Ouvrir le dossier ») ou
+  // le propriétaire.
+  colleague: boolean;
 };
 
 const NONE: VisitLetter = {
@@ -27,6 +30,7 @@ const NONE: VisitLetter = {
   letterHref: null,
   state: { kind: 'none' },
   waiting: null,
+  colleague: false,
 };
 
 // Mission 120 — pour chaque visite demandée, l'action qui convient à l'origine du bien, le courrier
@@ -94,6 +98,7 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
           letterHref: buyerLetterHref(origin.originId),
           state,
           waiting: visitWaitingLabel(state, row?.step ?? null),
+          colleague: row?.step === 'colleague',
         },
       ];
     }),

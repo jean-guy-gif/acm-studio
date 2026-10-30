@@ -9,6 +9,9 @@ export const DOCUMENT_CSS = `
 .pf-doc *, .pf-doc *::before { box-sizing: border-box; }
 .pf-page { width: 210mm; height: 297mm; padding: 16mm 17mm 14mm; position: relative; overflow: hidden; background: #fff; break-after: page; }
 .pf-page:last-child { break-after: auto; }
+.pf-q { margin: 5mm 0 4mm; background: var(--soft); border-left: 4px solid var(--flat); border-radius: 0 3mm 3mm 0; padding: 5mm 6mm; font-family: var(--font-title); font-size: 15pt; font-weight: 700; line-height: 1.3; color: var(--p); }
+.pf-ref { font-size: 9pt; color: var(--mute); margin: -1mm 0 3mm; }
+.pf-split { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; align-items: start; }
 .pf-head { display: flex; justify-content: space-between; align-items: center; gap: 6mm; border-bottom: 2px solid var(--p); padding-bottom: 5mm; }
 .pf-logo { display: flex; align-items: center; gap: 3mm; min-width: 0; flex: 1 1 auto; }
 .pf-logo img { max-height: 13mm; max-width: 60mm; width: auto; height: auto; object-fit: contain; }

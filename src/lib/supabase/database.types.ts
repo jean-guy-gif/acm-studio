@@ -379,6 +379,7 @@ export type Database = {
           id: string
           letter_body: string | null
           letter_contact_hook: string | null
+          letter_question: string | null
           letter_saved_at: string | null
           letter_saved_by: string | null
           letter_title: string | null
@@ -399,6 +400,7 @@ export type Database = {
           id?: string
           letter_body?: string | null
           letter_contact_hook?: string | null
+          letter_question?: string | null
           letter_saved_at?: string | null
           letter_saved_by?: string | null
           letter_title?: string | null
@@ -419,6 +421,7 @@ export type Database = {
           id?: string
           letter_body?: string | null
           letter_contact_hook?: string | null
+          letter_question?: string | null
           letter_saved_at?: string | null
           letter_saved_by?: string | null
           letter_title?: string | null
@@ -936,6 +939,7 @@ export type Database = {
           exclusivity_source: string | null
           exposure: string | null
           fields_to_verify: string[]
+          first_seen_on: string | null
           general_condition: string | null
           ges_rating: string | null
           heating_type: string | null
@@ -1009,6 +1013,7 @@ export type Database = {
           exclusivity_source?: string | null
           exposure?: string | null
           fields_to_verify?: string[]
+          first_seen_on?: string | null
           general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
@@ -1082,6 +1087,7 @@ export type Database = {
           exclusivity_source?: string | null
           exposure?: string | null
           fields_to_verify?: string[]
+          first_seen_on?: string | null
           general_condition?: string | null
           ges_rating?: string | null
           heating_type?: string | null
@@ -2851,6 +2857,16 @@ export type Database = {
         Returns: boolean
       }
       current_agency_id_text: { Args: never; Returns: string }
+      detach_buyer_origins: {
+        Args: {
+          p_agency_id: string
+          p_comparable_id: string
+          p_facts: Json
+          p_listing_key: string
+          p_target_comparable_id?: string
+        }
+        Returns: number
+      }
       finish_buyer_presentation: {
         Args: {
           p_agency_id: string

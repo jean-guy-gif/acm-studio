@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { loadBuyerDossier } from '@/features/buyer-dossier/queries/load-buyer-dossier';
+import { BUYER_GONE_MESSAGE, buyerIsGone } from '@/features/buyer-dossier/services/buyer-gone';
 import {
   dossierPath,
   hashDossierToken,
@@ -15,8 +16,11 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type CreateDossierLinkResult =
-  { ok: true; url: string; linkId: string; expiresAt: string } | { ok: false; error: string };
-export type PlainResult = { ok: true } | { ok: false; error: string };
+  | { ok: true; url: string; linkId: string; expiresAt: string }
+  | { ok: false; error: string; gone?: true };
+export type PlainResult = { ok: true } | { ok: false; error: string; gone?: true };
+
+const GONE = { ok: false, error: BUYER_GONE_MESSAGE, gone: true } as const;
 
 const FAILURE = 'Le lien n’a pas pu être créé. Réessayez.';
 
@@ -33,14 +37,12 @@ export async function createDossierLink(
   if (!profile || profile.removed_at || !z.uuid().safeParse(buyerId).success) {
     return { ok: false, error: FAILURE };
   }
-  const dossier = await loadBuyerDossier(
-    await createClient(),
-    buyerId,
-    profile.agency_id,
-    null,
-    profile.id,
-  );
-  if (!dossier) return { ok: false, error: 'Pas de dossier sans sélection retenue.' };
+  const supabase = await createClient();
+  const dossier = await loadBuyerDossier(supabase, buyerId, profile.agency_id, null, profile.id);
+  if (!dossier) {
+    if (await buyerIsGone(supabase, buyerId, profile.agency_id)) return GONE;
+    return { ok: false, error: 'Pas de dossier sans sélection retenue.' };
+  }
   const token = newDossierToken();
   const client = createServiceRoleClient();
   const { data, error } = await client
@@ -88,15 +90,18 @@ export async function removeDossierLink(buyerId: string, linkId: string): Promis
   ) {
     return { ok: false, error: 'Le lien n’a pas pu être retiré.' };
   }
-  const { data, error } = await createServiceRoleClient()
+  const client = createServiceRoleClient();
+  const { data, error } = await client
     .from('buyer_dossier_links')
     .delete()
     .eq('id', linkId)
     .eq('buyer_id', buyerId)
     .eq('agency_id', profile.agency_id)
     .select('id');
-  if (error || !data || data.length === 0)
+  if (error || !data || data.length === 0) {
+    if (await buyerIsGone(client, buyerId, profile.agency_id)) return GONE;
     return { ok: false, error: 'Le lien n’a pas pu être retiré.' };
+  }
   revalidatePath(`/acquereurs/${buyerId}/dossier`);
   return { ok: true };
 }
@@ -125,8 +130,10 @@ export async function setDossierPhoto(
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   const owner = (item?.buyer_selections as unknown as { buyer_id: string } | null)?.buyer_id;
-  if (!item || owner !== buyerId)
+  if (!item || owner !== buyerId) {
+    if (await buyerIsGone(client, buyerId, profile.agency_id)) return GONE;
     return { ok: false, error: 'Le choix n’a pas pu être enregistré.' };
+  }
   const { error } = await client
     .from('buyer_selection_items')
     .update({ dossier_hide_photo: hidden })

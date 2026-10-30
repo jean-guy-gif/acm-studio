@@ -8,6 +8,7 @@ import {
   createDossierLink,
   removeDossierLink,
 } from '@/features/buyer-dossier/actions/dossier-links';
+import { BuyerGoneNotice } from '@/features/buyer-dossier/components/buyer-gone-notice';
 import {
   dossierShareHrefs,
   dossierShareMessage,
@@ -34,8 +35,10 @@ export function DossierLinkButton({
   const [pending, startTransition] = useTransition();
   const [created, setCreated] = useState<{ url: string; linkId: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [gone, setGone] = useState(false);
   const replacing = links.length > 0;
 
+  if (gone) return <BuyerGoneNotice />;
   return (
     <div className="flex flex-col gap-2 print:hidden" data-testid="dossier-links">
       {created ? null : (
@@ -51,6 +54,8 @@ export function DossierLinkButton({
               if (result.ok) {
                 setCreated({ url: result.url, linkId: result.linkId });
                 router.refresh();
+              } else if (result.gone) {
+                setGone(true);
               } else {
                 setMessage(result.error);
               }
@@ -91,6 +96,8 @@ export function DossierLinkButton({
                       if (created?.linkId === item.id) setCreated(null);
                       setMessage('Lien retiré : il ne s’ouvre plus.');
                       router.refresh();
+                    } else if (result.gone) {
+                      setGone(true);
                     } else {
                       setMessage(result.error);
                     }

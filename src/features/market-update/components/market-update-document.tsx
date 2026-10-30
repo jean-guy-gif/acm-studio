@@ -22,6 +22,7 @@ import {
   SectionTitle,
 } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 127 — le « Point marché » : ce qui a bougé depuis le rendez-vous, à la forme de la
 // synthèse (M113) — couverture en pleine photo, titres numérotés, une fiche par concurrent qui ne
@@ -391,7 +392,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         {document.coverPhotoUrl ? (
           <>
             <img
-              src={document.coverPhotoUrl}
+              src={displayPhotoUrl(document.coverPhotoUrl)}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />

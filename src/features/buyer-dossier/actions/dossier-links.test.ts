@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   profile: null as null | { id: string; agency_id: string; removed_at: string | null },
   dossier: null as null | { selectionId: string },
   respond: (() => ({ data: null })) as (table: string) => { data?: unknown; error?: unknown },
+  userClient: {} as unknown,
 }));
 const service = fakeSupabase((calls) => {
   const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
@@ -16,7 +17,7 @@ const service = fakeSupabase((calls) => {
 });
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
-vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => state.userClient }));
 vi.mock('@/features/buyer-dossier/queries/load-buyer-dossier', () => ({
   loadBuyerDossier: async () => state.dossier,
 }));
@@ -34,6 +35,7 @@ describe('le lien du dossier acquéreur', () => {
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
     state.dossier = { selectionId: 'sel-1' };
     state.respond = () => ({ data: null });
+    state.userClient = {};
   });
 
   it('sans profil, retiré, ou sans sélection : rien n’est écrit', async () => {
@@ -141,6 +143,41 @@ describe('le lien du dossier acquéreur', () => {
     expect(service.writes()).toEqual(['update buyer_selection_items']);
     expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
       dossier_hide_photo: true,
+    });
+  });
+
+  // Mission 120 B (reprise R5) — la page restée ouverte sur une fiche supprimée (remise à zéro de la
+  // démo) ou archivée : « Cette fiche n'existe plus », jamais « Pas de dossier sans sélection ».
+  it('fiche supprimée ou archivée : « Cette fiche n’existe plus », pour les trois gestes, rien n’est écrit', async () => {
+    const gone = { ok: false, error: 'Cette fiche n’existe plus.', gone: true };
+    state.userClient = service.client;
+    state.dossier = null;
+    state.respond = () => ({ data: null });
+    expect(await createDossierLink(BUYER, true)).toEqual(gone);
+    const lookup = service.calls
+      .filter((call) => call.method === 'from')
+      .map((call) => call.args[0]);
+    expect(lookup).toEqual(['buyers']);
+    expect(service.calls.find((call) => call.method === 'is')?.args).toEqual(['archived_at', null]);
+    state.respond = (table) => (table === 'buyers' ? { data: null } : { data: [] });
+    expect(await removeDossierLink(BUYER, LINK)).toEqual(gone);
+    state.respond = () => ({ data: null });
+    expect(await setDossierPhoto(BUYER, ITEM, true)).toEqual(gone);
+    expect(service.writes()).toEqual(['delete buyer_dossier_links']);
+  });
+
+  it('fiche présente sans sélection : le message d’avant ; une lecture en échec ne dit jamais « n’existe plus »', async () => {
+    state.userClient = service.client;
+    state.dossier = null;
+    state.respond = () => ({ data: { id: BUYER } });
+    expect(await createDossierLink(BUYER)).toEqual({
+      ok: false,
+      error: 'Pas de dossier sans sélection retenue.',
+    });
+    state.respond = () => ({ error: { message: 'panne' } });
+    expect(await createDossierLink(BUYER)).toEqual({
+      ok: false,
+      error: 'Pas de dossier sans sélection retenue.',
     });
   });
 });

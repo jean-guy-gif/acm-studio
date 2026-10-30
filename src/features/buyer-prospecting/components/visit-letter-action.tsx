@@ -4,46 +4,54 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import {
-  badgeBrand,
-  badgeNeutral,
-  btnPrimary,
-  btnSecondary,
-  hintText,
-} from '@/components/ui/styles';
+import { badgeBrand, badgeNeutral, btnSecondary, hintText } from '@/components/ui/styles';
 import { prepareBuyerLetter } from '@/features/buyer-prospecting/actions/prepare-buyer-letter';
+import type { BuyerLetterVersion } from '@/features/buyer-prospecting/services/buyer-letter';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
 
 const small = 'px-3 py-1.5 text-xs';
 
+const PREPARE_LABELS: Record<BuyerLetterVersion, string> = {
+  owner: 'Préparer le courrier au propriétaire',
+  colleague: 'Préparer le dossier de collaboration au confrère',
+};
+
 // Mission 120 — sur une visite demandée (Visites, fiche), l'action qui convient à l'origine du
 // bien, et l'état du courrier relu sur sa carte de Prospection. Un mandat signé se fait visiter,
 // un vendeur à relancer se rappelle (M86) ; un concurrent ou une annonce du marché sans
-// exclusivité reçoit le courrier au propriétaire ; l'exclusivité inconnue laisse le choix.
+// exclusivité reçoit le courrier au propriétaire. Mission 120 B — en exclusivité, le dossier de
+// collaboration au confrère ; l'exclusivité inconnue propose les deux au même rang, et le choix
+// l'écrit sur le bien. Une liste : aucune action en bouton plein (maquette M120B-2). « Contacté »
+// et « Collaboration obtenue / refusée » se posent sur la carte de Prospection (M115).
 export function VisitLetterAction({
   visitId,
   action,
   letterHref,
   state,
+  colleague = false,
 }: {
   visitId: string;
   action: VisitAction;
   letterHref: string | null;
   state: VisitLetterState;
+  colleague?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [preparing, setPreparing] = useState<BuyerLetterVersion | null>(null);
 
-  const prepare = () => {
+  const prepare = (version: BuyerLetterVersion) => {
     setError(null);
+    setPreparing(version);
     startTransition(async () => {
-      const result = await prepareBuyerLetter(visitId).catch(() => ({
+      const result = await prepareBuyerLetter(visitId, version).catch(() => ({
         ok: false as const,
         error: 'Connexion perdue — réessayez.',
       }));
       if (!result.ok) {
         setError(result.error);
+        setPreparing(null);
         return;
       }
       router.push(result.href);
@@ -75,35 +83,61 @@ export function VisitLetterAction({
           </span>
         ) : null}
         <Link href={letterHref} className={`${btnSecondary} ${small}`}>
-          Ouvrir le courrier
+          {colleague ? 'Ouvrir le dossier' : 'Ouvrir le courrier'}
         </Link>
-      </div>
-    );
-  }
-  if (action.kind === 'owner_letter' || action.kind === 'choose') {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <button
-          type="button"
-          className={`${btnPrimary} ${small} self-start`}
-          disabled={pending}
-          onClick={prepare}
-          data-testid="visit-prepare-owner-letter"
-        >
-          {pending ? 'Préparation…' : 'Préparer le courrier au propriétaire'}
-        </button>
-        {action.kind === 'choose' ? (
-          <span className={hintText}>
-            ACM ne sait pas si ce bien est en exclusivité : c’est à vous de choisir.
-          </span>
-        ) : null}
-        {error ? (
-          <p role="alert" className="text-xs text-red-600">
-            {error}
-          </p>
+        {state.kind !== 'closed' ? (
+          <Link
+            href="/prospection?origine=acquereur"
+            className="text-xs font-semibold text-brand-deep hover:underline"
+            data-testid="visit-follow-prospection"
+          >
+            Suivre dans Prospection →
+          </Link>
         ) : null}
       </div>
     );
   }
-  return null;
+  const versions: BuyerLetterVersion[] =
+    action.kind === 'owner_letter'
+      ? ['owner']
+      : action.kind === 'colleague_letter'
+        ? ['colleague']
+        : action.kind === 'choose'
+          ? ['owner', 'colleague']
+          : [];
+  if (versions.length === 0) {
+    return null;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        {action.kind === 'choose' ? <span className={badgeNeutral}>À qui écrire ?</span> : null}
+        {versions.map((version) => (
+          <button
+            key={version}
+            type="button"
+            className={`${btnSecondary} ${small}`}
+            disabled={pending}
+            onClick={() => prepare(version)}
+            data-testid={
+              version === 'owner' ? 'visit-prepare-owner-letter' : 'visit-prepare-colleague-letter'
+            }
+          >
+            {preparing === version ? 'Préparation…' : PREPARE_LABELS[version]}
+          </button>
+        ))}
+      </div>
+      {action.kind === 'choose' ? (
+        <span className={hintText}>
+          Votre choix enregistre la réponse sur le bien : « Exclusivité : non » ou « oui », indiqué
+          par vous.
+        </span>
+      ) : null}
+      {error ? (
+        <p role="alert" className="text-xs text-red-600">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
 }

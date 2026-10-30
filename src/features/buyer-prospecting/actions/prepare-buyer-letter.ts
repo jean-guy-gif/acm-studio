@@ -23,7 +23,10 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 export type PrepareBuyerLetterResult = { ok: true; href: string } | { ok: false; error: string };
 
 const FAILURE = 'Le courrier n’a pas pu être préparé. Réessayez.';
-const NOT_A_LETTER = 'Ce bien ne demande pas de courrier au propriétaire.';
+const NOT_A_LETTER = 'Ce bien ne demande pas ce courrier.';
+const CHOICE_FAILURE = 'Votre choix n’a pas été enregistré : réessayez.';
+
+const versionSchema = z.enum(['owner', 'colleague']);
 
 type Imported = {
   listingUrl?: unknown;
@@ -48,11 +51,20 @@ const COMPARABLE_COLUMNS =
 // mandat signé — même concurrent, ou même annonce publiée —, la carte existante reçoit l'origine
 // « Recherche acquéreur » ; sinon un bien démarché naît, une fois par annonce et par agence. Pas de
 // concurrent sans dossier vendeur (M118). Écrit par le serveur seul, après ce garde.
-export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyerLetterResult> {
+// Mission 120 B — ou « Préparer le dossier de collaboration au confrère » (bien en exclusivité). La
+// version demandée est relue contre l'exclusivité connue : jamais le confrère pour une exclusivité
+// « non », jamais le propriétaire pour une exclusivité « oui ». Exclusivité inconnue, le choix du
+// conseiller l'écrit sur la carte (« non » ou « oui », indiqué par vous, M83).
+export async function prepareBuyerLetter(
+  visitId: unknown,
+  requested: unknown = 'owner',
+): Promise<PrepareBuyerLetterResult> {
   const profile = await getProfile();
-  if (!profile || profile.removed_at || !z.uuid().safeParse(visitId).success) {
+  const version = versionSchema.safeParse(requested);
+  if (!profile || profile.removed_at || !z.uuid().safeParse(visitId).success || !version.success) {
     return { ok: false, error: FAILURE };
   }
+  const letterVersion = version.data;
   const agencyId = profile.agency_id;
   const client = createServiceRoleClient();
   const { data: visit } = await client
@@ -104,9 +116,15 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
     source: item.source,
     exclusivity: typeof exclusivity === 'string' ? exclusivity : null,
   });
-  if (action.kind !== 'owner_letter' && action.kind !== 'choose') {
+  const allowed =
+    action.kind === 'choose' ||
+    (action.kind === 'owner_letter' && letterVersion === 'owner') ||
+    (action.kind === 'colleague_letter' && letterVersion === 'colleague');
+  if (!allowed) {
     return { ok: false, error: NOT_A_LETTER };
   }
+  // Le choix du conseiller, quand l'exclusivité n'était pas connue : il l'écrit.
+  const chosen = action.kind === 'choose' ? (letterVersion === 'colleague' ? 'yes' : 'no') : null;
 
   const listingUrl = competitor
     ? typeof competitor.listing_url === 'string'
@@ -132,6 +150,21 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
       card.copies.find((entry) => competitor != null && entry.row.id === competitor.id) ??
       card.copies[0];
     target = { comparable_id: copy.row.id };
+    if (chosen) {
+      // Toutes les copies du bien (M98) ; jamais une exclusivité déjà connue n'est réécrite.
+      const { error } = await client
+        .from('comparables')
+        .update({ exclusivity: chosen, exclusivity_source: 'advisor' })
+        .eq('agency_id', agencyId)
+        .in(
+          'id',
+          card.copies.map((entry) => entry.row.id),
+        )
+        .is('exclusivity', null);
+      if (error) {
+        return { ok: false, error: CHOICE_FAILURE };
+      }
+    }
   } else {
     if (!listingUrl || !listingKey) {
       return {
@@ -162,6 +195,21 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
           .maybeSingle()
       ).data;
     let prospect = await known();
+    if (prospect && chosen) {
+      const { error } = await client
+        .from('buyer_prospects')
+        .update({
+          exclusivity: chosen,
+          exclusivity_source: 'advisor',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', prospect.id)
+        .eq('agency_id', agencyId)
+        .is('exclusivity', null);
+      if (error) {
+        return { ok: false, error: CHOICE_FAILURE };
+      }
+    }
     if (!prospect) {
       const { data, error } = await client
         .from('buyer_prospects')
@@ -172,14 +220,17 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
           listing_key: listingKey,
           facts: facts as unknown as Json,
           sold_by: soldBy === 'agency' || soldBy === 'private' ? soldBy : null,
-          exclusivity: exclusivity === 'yes' || exclusivity === 'no' ? exclusivity : null,
+          exclusivity:
+            chosen ?? (exclusivity === 'yes' || exclusivity === 'no' ? exclusivity : null),
           // La provenance de chaque valeur (M83), gardée pour qu'un concurrent la reprenne.
           sold_by_source: mandateSource(
             competitor ? competitor.sold_by_source : imported?.soldBySource,
           ),
-          exclusivity_source: mandateSource(
-            competitor ? competitor.exclusivity_source : imported?.exclusivitySource,
-          ),
+          exclusivity_source: chosen
+            ? 'advisor'
+            : mandateSource(
+                competitor ? competitor.exclusivity_source : imported?.exclusivitySource,
+              ),
         })
         .select('id')
         .single();
@@ -199,7 +250,7 @@ export async function prepareBuyerLetter(visitId: unknown): Promise<PrepareBuyer
       created_by: profile.id,
       buyer_id: visit.buyer_id,
       selection_item_id: item.id,
-      letter_version: 'owner',
+      letter_version: letterVersion,
       ...target,
     })
     .select('id')

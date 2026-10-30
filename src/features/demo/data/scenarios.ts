@@ -1188,7 +1188,9 @@ const mouginsListings = seed(
     location: at(43.5998, 6.9961),
     publishedDaysAgo: 120,
     priceChanges: [drop(40, 1790000, 1720000)],
-    seller: sold('Agence Littoral & Pins', 'no'),
+    // Mission 120 B — en exclusivité : la visite des Keller s'y joue par le dossier de
+    // collaboration au confrère.
+    seller: sold('Agence Littoral & Pins', 'yes'),
     description: 'Villa de 220 m² sur 2 200 m² avec piscine, cinq chambres, garage double.',
     priceAfterMeeting: null,
   },

@@ -17,6 +17,8 @@ export function visitLetterState(
     handedAt: string | null;
     meetingAt: string | null;
     opposedOn: string | null;
+    // Mission 120 B — le confrère a refusé : le bien est repassé en courrier au propriétaire.
+    collaborationDeclinedAt?: string | null;
   } | null,
 ): VisitLetterState {
   if (card == null) {
@@ -26,6 +28,13 @@ export function visitLetterState(
     return { kind: 'closed', label: 'Ne plus solliciter' };
   }
   const colleague = card.step === 'colleague';
+  const declined = card.collaborationDeclinedAt != null && !colleague;
+  if (declined && (card.status === 'to_confirm' || card.status === 'ready')) {
+    return {
+      kind: card.status === 'ready' ? 'ready' : 'address',
+      label: 'Collaboration refusée : courrier au propriétaire',
+    };
+  }
   switch (card.status) {
     case 'to_confirm':
       return colleague
