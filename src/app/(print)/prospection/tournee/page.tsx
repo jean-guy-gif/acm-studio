@@ -63,11 +63,15 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
     const prospecting = await getBuyerProspecting(supabase, profile.agency_id);
     let mine: Set<string> | null = null;
     if (scope === 'mine') {
-      const { data: myBuyers } = await supabase
+      const { data: myBuyers, error } = await supabase
         .from('buyers')
         .select('id')
         .eq('agency_id', profile.agency_id)
         .eq('advisor_id', profile.id);
+      // Une lecture en échec n'est jamais « aucune fiche » : la page s'arrête plutôt (M98).
+      if (error) {
+        throw new Error('Lecture des fiches acquéreur impossible pour la tournée.');
+      }
       mine = new Set((myBuyers ?? []).map((buyer) => buyer.id));
     }
     const kept = prospecting.cards.filter(

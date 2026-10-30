@@ -111,21 +111,6 @@ export async function prepareBuyerLetter(
   } else if (item.source !== 'listing') {
     return { ok: false, error: NOT_A_LETTER };
   }
-  const exclusivity = competitor ? competitor.exclusivity : imported?.exclusivity;
-  const action = visitAction({
-    source: item.source,
-    exclusivity: typeof exclusivity === 'string' ? exclusivity : null,
-  });
-  const allowed =
-    action.kind === 'choose' ||
-    (action.kind === 'owner_letter' && letterVersion === 'owner') ||
-    (action.kind === 'colleague_letter' && letterVersion === 'colleague');
-  if (!allowed) {
-    return { ok: false, error: NOT_A_LETTER };
-  }
-  // Le choix du conseiller, quand l'exclusivité n'était pas connue : il l'écrit.
-  const chosen = action.kind === 'choose' ? (letterVersion === 'colleague' ? 'yes' : 'no') : null;
-
   const listingUrl = competitor
     ? typeof competitor.listing_url === 'string'
       ? competitor.listing_url
@@ -143,6 +128,44 @@ export async function prepareBuyerLetter(
           (listingKey != null && copy.row.listingKey === listingKey),
       ),
     ) ?? null;
+
+  const { data: knownProspect } =
+    !card && listingKey
+      ? await client
+          .from('buyer_prospects')
+          .select('id, exclusivity')
+          .eq('agency_id', agencyId)
+          .eq('listing_key', listingKey)
+          .maybeSingle()
+      : { data: null };
+
+  // Mission 120 B (relecteur) — l'exclusivité se juge sur la carte du bien quand elle la sait (un
+  // concurrent ou un bien démarché de la même annonce), sinon sur ce que la sélection en disait.
+  const cardExclusivity =
+    card?.copies
+      .map((entry) => entry.row.mandate.exclusivity)
+      .find((value) => value === 'yes' || value === 'no') ?? null;
+  const knownExclusivity =
+    knownProspect?.exclusivity === 'yes' || knownProspect?.exclusivity === 'no'
+      ? knownProspect.exclusivity
+      : null;
+  const exclusivity =
+    cardExclusivity ??
+    knownExclusivity ??
+    (competitor ? competitor.exclusivity : imported?.exclusivity);
+  const action = visitAction({
+    source: item.source,
+    exclusivity: typeof exclusivity === 'string' ? exclusivity : null,
+  });
+  const allowed =
+    action.kind === 'choose' ||
+    (action.kind === 'owner_letter' && letterVersion === 'owner') ||
+    (action.kind === 'colleague_letter' && letterVersion === 'colleague');
+  if (!allowed) {
+    return { ok: false, error: NOT_A_LETTER };
+  }
+  // Le choix du conseiller, quand l'exclusivité n'était pas connue : il l'écrit.
+  const chosen = action.kind === 'choose' ? (letterVersion === 'colleague' ? 'yes' : 'no') : null;
 
   let target: { prospect_id: string } | { comparable_id: string };
   if (card) {

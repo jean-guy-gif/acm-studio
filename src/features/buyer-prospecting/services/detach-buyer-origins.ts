@@ -65,14 +65,20 @@ export async function detachBuyerOrigins(
       continue;
     }
     const listingKey = listingIdentityKey(competitor.listing_url);
-    const target =
-      listingKey && competitor.listing_url
-        ? await openCopy(service, agencyId, competitor.listing_url, comparableIds)
-        : null;
+    // Sans annonce reconnue, ni copie ni bien démarché possible : l'origine reste sur le
+    // concurrent, et le journal le dit (relecteur).
+    if (!listingKey || !competitor.listing_url) {
+      await reportServerError(
+        'détachement des origines acquéreur : concurrent sans annonce reconnue',
+        new Error('annonce sans identité'),
+      );
+      continue;
+    }
+    const target = await openCopy(service, agencyId, competitor.listing_url, comparableIds);
     const { data, error: rpcError } = await service.rpc('detach_buyer_origins', {
       p_agency_id: agencyId,
       p_comparable_id: competitor.id,
-      p_listing_key: listingKey ?? '',
+      p_listing_key: listingKey,
       p_facts: comparableFacts(competitor) as unknown as Json,
       ...(target ? { p_target_comparable_id: target } : {}),
     });

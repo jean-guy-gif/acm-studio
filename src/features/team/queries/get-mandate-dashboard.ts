@@ -9,6 +9,7 @@ import {
   type BuyerSearchCard,
   type BuyerSearchFigures,
 } from '@/features/team/services/build-buyer-search-figures';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -79,7 +80,7 @@ export async function getMandateDashboard(): Promise<
 }
 
 const FACT_COLUMNS =
-  'id, prospecting_handed_at, prospecting_meeting_at, prospecting_mandate_at, prospecting_collaboration_at';
+  'id, listing_url, prospecting_handed_at, prospecting_meeting_at, prospecting_mandate_at, prospecting_collaboration_at';
 
 // Mission 120 B — les biens démarchés depuis une recherche acquéreur, chacun une fois (un bien
 // démarché ou le concurrent qui porte sa carte), au conseiller qui a préparé son premier courrier.
@@ -125,6 +126,7 @@ async function buyerSearches(
     (prefix: string) =>
     (row: {
       id: string;
+      listing_url: string | null;
       prospecting_handed_at: string | null;
       prospecting_meeting_at: string | null;
       prospecting_mandate_at: string | null;
@@ -136,8 +138,28 @@ async function buyerSearches(
       mandateAt: row.prospecting_mandate_at,
       collaborationAt: row.prospecting_collaboration_at,
     });
+  // Deux copies d'un même bien (deux mandats, M98) ne comptent qu'une fois : la première vue,
+  // dans l'ordre des origines.
+  const seen = new Set<string>();
+  const once = <T extends { id: string; listing_url: string | null }>(prefix: string, rows: T[]) =>
+    rows
+      .slice()
+      .sort(
+        (a, b) =>
+          [...firstBy.keys()].indexOf(`${prefix}${a.id}`) -
+          [...firstBy.keys()].indexOf(`${prefix}${b.id}`),
+      )
+      .filter((row) => {
+        const key = listingIdentityKey(row.listing_url) ?? `${prefix}${row.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   return buildBuyerSearchFigures(
-    [...(prospects.data ?? []).map(card('p:')), ...(comparables.data ?? []).map(card('c:'))],
+    [
+      ...once('p:', prospects.data ?? []).map(card('p:')),
+      ...once('c:', comparables.data ?? []).map(card('c:')),
+    ],
     advisors,
   );
 }

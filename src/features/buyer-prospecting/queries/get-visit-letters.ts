@@ -9,6 +9,7 @@ import {
 } from '@/features/buyer-prospecting/services/visit-letter-state';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getProspectingCards } from '@/features/prospecting/queries/prospecting-card-store';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -70,6 +71,23 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
   ]);
   const outcomes = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
   const exclusivities = new Map((competitors ?? []).map((row) => [row.id, row.exclusivity]));
+  // Mission 120 B (relecteur) — pour une annonce du marché, l'exclusivité que sait déjà la carte du
+  // bien (un concurrent ou un bien démarché de la même annonce) l'emporte sur la sélection.
+  const known = (value: string | null | undefined): string | null =>
+    value === 'yes' || value === 'no' ? value : null;
+  const cardExclusivity = (listingUrl: string): string | null => {
+    const key = listingIdentityKey(listingUrl);
+    if (!key) return null;
+    for (const card of cards) {
+      for (const copy of card.copies) {
+        if (copy.row.listingKey === key && known(copy.row.mandate.exclusivity)) {
+          return copy.row.mandate.exclusivity;
+        }
+      }
+    }
+    const prospect = prospecting.cards.find((card) => card.row.listingKey === key);
+    return known(prospect?.row.mandate.exclusivity);
+  };
 
   return new Map(
     lines.map((line) => {
@@ -80,7 +98,7 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
         exclusivity:
           line.itemSource === 'competitor'
             ? (exclusivities.get(line.itemReference) ?? null)
-            : line.itemExclusivity,
+            : (cardExclusivity(line.itemReference) ?? line.itemExclusivity),
       });
       const origin = prospecting.bySelectionItem.get(line.itemId);
       if (!origin) {

@@ -133,8 +133,9 @@ export default function ConfidentialitePage() {
               l’agence qui le détient : il désigne le bien par ses caractéristiques et le numéro de
               son annonce, jamais par son adresse, ne dit ni le nom ni le budget de l’acquéreur, ne
               pose aucune condition, et porte les mentions professionnelles de l’agence. Quand le
-              mandat de l’agence sur un bien voisin n’est plus signé, la démarche née d’une
-              recherche acquéreur continue sur sa propre carte, avec les mêmes données.
+              dossier vendeur pour lequel ce bien était un concurrent n’est plus un mandat signé, la
+              démarche née d’une recherche acquéreur continue sur sa propre carte, avec les mêmes
+              données.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être

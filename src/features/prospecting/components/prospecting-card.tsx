@@ -7,6 +7,7 @@ import {
   badgeRejected,
   badgeSelected,
   btnPrimary,
+  btnSecondary,
 } from '@/components/ui/styles';
 import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
 import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
@@ -191,7 +192,7 @@ export function ProspectingCard({
               <Link
                 href={buyerLetterHref(buyerOrigins[0].originId)}
                 target="_blank"
-                className={`${btnPrimary} px-3 py-1.5 text-xs`}
+                className={status === 'ready' ? `${btnPrimary} px-3 py-1.5 text-xs` : btnSecondary}
                 data-testid="buyer-letter-link"
               >
                 {step === 'colleague'
