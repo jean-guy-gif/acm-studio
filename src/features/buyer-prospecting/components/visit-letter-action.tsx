@@ -83,7 +83,7 @@ export function VisitLetterAction({
           </span>
         ) : null}
         <Link href={letterHref} className={`${btnSecondary} ${small}`}>
-          {colleague ? 'Ouvrir le dossier' : 'Ouvrir le courrier'}
+          {colleague ? 'Ouvrir le dossier de collaboration' : 'Ouvrir le courrier'}
         </Link>
         {state.kind !== 'closed' ? (
           <Link
