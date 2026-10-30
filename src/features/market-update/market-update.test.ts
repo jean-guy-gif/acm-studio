@@ -541,7 +541,9 @@ describe('le document Point marché', () => {
     // Un seul prix sur la ligne : une seule étiquette (ni médiane ni plus bas / plus haut d'un
     // seul bien), sur la ligne et dans la liste.
     expect(html.split('data-testid="price-line"').length - 1).toBe(1);
-    expect((html.match(/Un seul concurrent/g) ?? []).length).toBe(2);
+    // Ce seul concurrent est le plus dangereux : il garde son repère.
+    expect((html.match(/Le plus dangereux, selon vous/g) ?? []).length).toBe(2);
+    expect(html).not.toContain('Un seul concurrent');
     expect(html).not.toContain('Prix médian');
   });
 
