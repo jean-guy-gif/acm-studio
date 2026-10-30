@@ -259,7 +259,12 @@ function CompetitorPage({
           {photos.length > 1 ? (
             <div className="grid gap-1.5">
               {photos.slice(1, 4).map((url) => (
-                <Photo key={url} url={url} alt={item.label} className="h-full min-h-16 w-full" />
+                <Photo
+                  key={url}
+                  url={url}
+                  alt={item.label}
+                  className={photos.length === 2 ? 'h-36 w-full sm:h-44' : 'h-full min-h-16 w-full'}
+                />
               ))}
             </div>
           ) : null}
