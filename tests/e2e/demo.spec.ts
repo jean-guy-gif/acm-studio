@@ -1375,7 +1375,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
-  await expect(page.getByTestId('buyer-answers')).toContainText('Peut-être');
+  // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
+  await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
   // Sa réponse sur le lien : l'étape 3 de la fiche la dit, et « Je veux le visiter » est sur
   // Visites, « depuis le dossier ».
   await expect(page.getByTestId('buyer-step').nth(2)).toContainText('Réponse reçue ✓');
