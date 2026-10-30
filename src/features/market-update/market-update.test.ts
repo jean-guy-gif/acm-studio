@@ -57,6 +57,7 @@ const row = (
   created_at: '2026-09-01T00:00:00.000Z',
   excluded_from_live: false,
   read_today: true,
+  meeting_frozen_at: '2026-10-12T15:00:00.000Z',
   listing_published_at: '2026-06-26',
   days_on_market: null,
   listing_gone_at: null,

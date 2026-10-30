@@ -4,6 +4,9 @@ import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
 import { NO_NEWCOMER_LABEL } from '@/features/market-update/services/price-lines';
+
+// Mission 127 B — le même libellé que sur le Suivi, sans importer le composant client.
+const NEWCOMERS_LIMITED_LABEL = 'Recherche limitée aux biens à votre prix ou moins';
 import type { MarketUpdateDocument as MarketUpdateDocumentData } from '@/features/market-update/types';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import {
@@ -42,12 +45,53 @@ const STATE_CARD: Record<MarketUpdateCompetitor['state'], string> = {
   probable_sale: 'border-orange-300 bg-orange-50',
   withdrawn: 'border-zinc-300 bg-zinc-100',
   gone: 'border-zinc-300 bg-zinc-100',
+  newcomer: 'border-brand-deep bg-brand-soft',
 };
 
 function days(item: MarketUpdateCompetitor): string | null {
   return item.daysOnMarket != null
     ? daysLabel({ days: item.daysOnMarket, approximate: item.daysApproximate })
     : null;
+}
+
+// Mission 127 B — le bloc d'un nouveau venu : « Vu sur le marché depuis le … » à la place du prix
+// du rendez-vous (il n'était pas là), son prix affiché, son prix au m².
+function NewcomerPriceBlock({ item }: { item: MarketUpdateCompetitor }) {
+  const perSquareMeter =
+    item.currentPrice != null && item.surfaceArea
+      ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea)
+      : null;
+  return (
+    <div
+      className="flex flex-col gap-1.5"
+      data-testid="market-update-prices"
+      data-state={item.state}
+    >
+      <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
+        Le prix, depuis son arrivée sur le marché
+      </div>
+      <div className={`${row} text-[0.78rem]`}>
+        <div className={card}>
+          <div className={kicker}>Vu sur le marché depuis le</div>
+          <div className="font-title text-base font-bold text-zinc-900">
+            {item.seenSince ? shortDay(item.seenSince) : '—'}
+          </div>
+          <div className="text-zinc-500">pas encore en vente au rendez-vous</div>
+        </div>
+        <div className={`border px-3.5 py-3 break-inside-avoid ${STATE_CARD.newcomer}`}>
+          <div className={kicker}>Prix affiché</div>
+          <div className={bigNumber}>
+            {item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}
+          </div>
+          {perSquareMeter ? <div className="text-zinc-600">{perSquareMeter}</div> : null}
+        </div>
+      </div>
+      <p className="text-[0.78rem] text-zinc-600">
+        Retenu par votre conseiller pour la comparaison : il entre dans la ligne « Face aux nouveaux
+        venus », pas dans « Au rendez-vous » ni « Aujourd’hui ».
+      </p>
+    </div>
+  );
 }
 
 // Le bloc des prix d'un concurrent : au rendez-vous, aujourd'hui, l'écart — ou ce qu'il est devenu.
@@ -198,9 +242,9 @@ function CompetitorPage({
     >
       <div>
         <div className={kicker}>
-          Concurrent {item.position}
+          {item.newcomer ? 'Nouveau venu' : `Concurrent ${item.position}`}
           {item.dangerous ? ' · Le plus dangereux, selon vous' : ''}
-          {!item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
+          {!item.newcomer && !item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
         </div>
         <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
           {item.label}
@@ -241,7 +285,11 @@ function CompetitorPage({
           />
         </div>
       ) : null}
-      <PriceBlock item={item} madeAt={madeAt} />
+      {item.newcomer ? (
+        <NewcomerPriceBlock item={item} />
+      ) : (
+        <PriceBlock item={item} madeAt={madeAt} />
+      )}
     </article>
   );
 }
@@ -254,7 +302,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
   const alignment = priceAlignment(summary.agreedPrice, summary.advisorAnalysis);
   const subjectClasses = alignment ? ALIGNMENT_CLASSES[alignment.tone] : null;
   const viewById = new Map(document.competitors.map((item) => [item.id, item]));
-  const hasNewcomers = summary.lines.newcomersCount > 0;
+  const newcomers = summary.competitors.filter((item) => item.newcomer);
+  const hasNewcomers = newcomers.length > 0;
   const sections = ['competitors', hasNewcomers ? 'newcomers' : null, 'lines'].filter(
     (key): key is string => key != null,
   );
@@ -267,10 +316,10 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
       ? { label: 'Prix retenu ensemble', value: formatEuro(summary.agreedPrice) }
       : null,
     { label: 'Concurrents suivis', value: String(summary.competitors.length) },
-    // Sans recherche des nouveaux venus (127 B), ce chiffre n'existe pas : « 0 » dirait « rien de
-    // nouveau sur le marché ».
-    summary.lines.newcomersCount > 0
-      ? { label: 'Nouveaux venus retenus', value: String(summary.lines.newcomersCount) }
+    // Mission 127 B — ce chiffre n'existe qu'après une recherche : sans elle, « 0 » dirait « rien
+    // de nouveau sur le marché ».
+    summary.newcomersSearch || newcomers.length > 0
+      ? { label: 'Nouveaux venus retenus', value: String(newcomers.length) }
       : null,
   ].filter((item): item is { label: string; value: string } => item != null);
 
@@ -300,7 +349,11 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         />
       ) : (
         <p className="border border-dashed border-zinc-300 px-3 py-4 text-center text-sm text-zinc-500">
-          {number === 3 ? NO_NEWCOMER_LABEL : 'Aucun prix à placer sur cette ligne.'}
+          {number === 3
+            ? summary.newcomersSearch
+              ? `Aucun nouveau venu sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, avec les critères de votre bien, à votre prix ou moins.`
+              : NO_NEWCOMER_LABEL
+            : 'Aucun prix à placer sur cette ligne.'}
         </p>
       )}
       {line?.sentence ? (
@@ -402,7 +455,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           {/* M110, M113 : une page par concurrent MONTRÉ au rendez-vous ; les concurrents retenus
               hors Live comptent dans les lignes de prix, pas dans les pages. */}
           {summary.competitors
-            .filter((item) => item.shownAtMeeting)
+            .filter((item) => item.shownAtMeeting && !item.newcomer)
             .map((item) => (
               <CompetitorPage
                 key={item.id}
@@ -412,6 +465,26 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
               />
             ))}
         </section>
+
+        {/* 02 · Les nouveaux venus — après les concurrents du rendez-vous, avant les trois lignes
+            (décision de Jean-Guy, 29/10) : une fiche par nouveau venu retenu, même forme. */}
+        {hasNewcomers ? (
+          <section className="flex flex-col gap-3" data-testid="market-update-newcomers">
+            <SectionTitle
+              number={sectionNumber('newcomers')}
+              title="Nouveaux sur le marché depuis le rendez-vous"
+              hint={`Les biens vus sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, à votre prix ou moins, et retenus par votre conseiller pour la comparaison.`}
+            />
+            {newcomers.map((item) => (
+              <CompetitorPage
+                key={item.id}
+                item={item}
+                view={viewById.get(item.id)}
+                madeAt={document.madeAt}
+              />
+            ))}
+          </section>
+        ) : null}
 
         {/* 03 · Où en est votre prix — trois lignes à la même échelle. */}
         <section className="flex flex-col gap-3">
@@ -457,8 +530,10 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             3,
             'Face aux nouveaux venus',
             hasNewcomers
-              ? `${lines.newcomersCount} nouveau${lines.newcomersCount > 1 ? 'x' : ''} venu${lines.newcomersCount > 1 ? 's' : ''} retenu${lines.newcomersCount > 1 ? 's' : ''}`
-              : 'vus sur le marché après le rendez-vous',
+              ? `${newcomers.length} nouveau${newcomers.length > 1 ? 'x' : ''} venu${newcomers.length > 1 ? 's' : ''} retenu${newcomers.length > 1 ? 's' : ''} · à votre prix ou moins`
+              : summary.newcomersSearch
+                ? NEWCOMERS_LIMITED_LABEL
+                : 'vus sur le marché après le rendez-vous',
             lines.newcomers,
             'Votre prix',
           )}
@@ -501,6 +576,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             de la durée de commercialisation au retrait, selon la règle de l’agence ; « retiré sans
             vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien
             est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier.
+            « Vu sur le marché depuis le … » est la date à laquelle l’annonce a été vue pour la
+            première fois, pas sa date de publication.
           </p>
           {agency.advisorName ? (
             <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">

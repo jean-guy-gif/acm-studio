@@ -24,6 +24,8 @@ export type PriceLine = {
 };
 
 export type PriceLineCompetitor = {
+  // Mission 127 B — un nouveau venu (retenu après le rendez-vous) ne porte que la ligne 3.
+  newcomer?: boolean;
   meetingPrice: number | null;
   currentPrice: number | null;
   // 'unknown' : disparue sans durée connue — hors de la ligne 2, comptée à part, aucune conclusion.
@@ -175,10 +177,11 @@ export function newcomersSentence(subjectPrice: number | null, prices: number[])
 export const NO_NEWCOMER_LABEL = 'Aucun nouveau venu retenu depuis le rendez-vous';
 
 export function buildPriceLines(
-  competitors: PriceLineCompetitor[],
+  all_: PriceLineCompetitor[],
   subjectPrice: number | null,
   newcomerPrices: number[] = [],
 ): PriceLines {
+  const competitors = all_.filter((item) => !item.newcomer);
   const dangerous = competitors.find((item) => item.dangerous) ?? null;
   const meetingPrices = competitors.map((item) => item.meetingPrice).filter(positive);
   const meeting = line(
