@@ -172,6 +172,7 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
       heading: 'Face aux nouveaux venus',
       line: summary.lines.newcomers,
       subjectLabel: 'Votre prix',
+      singleLabel: 'Nouveau venu',
     },
   ];
   return (
@@ -189,6 +190,7 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
               line={block.line}
               scale={scale}
               subjectLabel={block.subjectLabel}
+              singleLabel={'singleLabel' in block ? block.singleLabel : undefined}
               alignment={alignment}
               compact
             />

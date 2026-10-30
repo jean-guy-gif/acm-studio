@@ -636,7 +636,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         /Ont baissé depuis le rendez-vous : 1 sur 5/,
       );
       // Mission 127 B — (c) « Chercher les nouveaux venus » : simulé en démo, aucun appel ; deux
-      // biens vus sur le marché après le rendez-vous, à votre prix ou moins ; un retenu.
+      // biens vus sur le marché après le rendez-vous, au prix de commercialisation ou moins ; un
+      // retenu.
       await row.getByTestId('newcomers-search').click();
       const results = row.getByTestId('newcomers-results');
       await expect(results).toBeVisible({ timeout: 60_000 });
@@ -647,7 +648,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       );
       await expect(results.getByTestId('newcomer-card')).toHaveCount(2);
       await expect(
-        results.getByText(/Vu sur le marché depuis le \d{2}\/\d{2}\/\d{4}/).first(),
+        results
+          .getByText(/Vu par la recherche le \d{2}\/\d{2}\/\d{4}, après le rendez-vous/)
+          .first(),
       ).toBeVisible();
       const newcomerText = await results.innerText();
       expect(newcomerText).not.toMatch(/Publié le|[Ee]stimation|demonstration\.invalid/);
