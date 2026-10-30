@@ -45,7 +45,16 @@ export async function writeMarketUpdate(input: {
   settledProposalUrl?: string | null;
 }): Promise<WrittenMarketUpdate | null> {
   const { supabase, service, agencyId, projectId } = input;
-  const [competitors, conclusion, summary, latest] = await Promise.all([
+  // Le dernier point d'abord : c'est lui qui dit si le point du jour se réécrit.
+  const latest = await supabase
+    .from('project_market_updates')
+    .select('id, made_at, summary')
+    .eq('project_id', projectId)
+    .eq('agency_id', agencyId)
+    .order('made_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const [competitors, conclusion, summary] = await Promise.all([
     supabase
       .from('comparables')
       .select(
@@ -66,14 +75,6 @@ export async function writeMarketUpdate(input: {
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
       .maybeSingle(),
-    supabase
-      .from('project_market_updates')
-      .select('id, made_at, summary')
-      .eq('project_id', projectId)
-      .eq('agency_id', agencyId)
-      .order('made_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ]);
   const now = new Date();
   const rows = competitors.data ?? [];
@@ -85,8 +86,37 @@ export async function writeMarketUpdate(input: {
     input.newcomersSearch !== undefined
       ? input.newcomersSearch
       : (previous?.newcomersSearch ?? null);
+  // Les annonces que le dossier connaît déjà — tous ses concurrents (retenus ou non), les écartés,
+  // les imports en attente, les mêmes sources que la recherche — sortent des propositions.
+  const listingUrls = async (
+    table: 'comparables' | 'competitor_decisions' | 'pending_competitor_imports',
+  ): Promise<(string | null)[]> => {
+    if (!carried) return [];
+    const { data } = await supabase
+      .from(table)
+      .select('listing_url')
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId);
+    return ((data ?? []) as { listing_url: string | null }[]).map((row) => row.listing_url);
+  };
+  const allListings = {
+    data: (await listingUrls('comparables')).map((listing_url) => ({ listing_url })),
+  };
+  const decisions = {
+    data: (await listingUrls('competitor_decisions')).map((listing_url) => ({ listing_url })),
+  };
+  const pending = {
+    data: (await listingUrls('pending_competitor_imports')).map((listing_url) => ({ listing_url })),
+  };
   const known = new Set(
-    rows.map((row) => normalizedListingHref(row.listing_url)).filter((href) => href != null),
+    [
+      ...rows.map((row) => row.listing_url),
+      ...(allListings.data ?? []).map((row) => row.listing_url),
+      ...(decisions.data ?? []).map((row) => row.listing_url),
+      ...(pending.data ?? []).map((row) => row.listing_url),
+    ]
+      .map((url) => normalizedListingHref(url))
+      .filter((href) => href != null),
   );
   const settled = normalizedListingHref(input.settledProposalUrl ?? null);
   const newcomersSearch = carried

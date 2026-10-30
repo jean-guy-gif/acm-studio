@@ -11,7 +11,9 @@ import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-com
 // Mission 127 — le point daté : ce qu'une mise à jour conclut, par concurrent, puis les trois
 // lignes de prix. Écrit en base (`project_market_updates.summary`) par le serveur, relu tel quel
 // par le Suivi et le document (« chacun rouvre son document tel qu'il était »). LISTE
-// D'AUTORISATION : ni titre, ni adresse, ni lien d'annonce, ni « Vendu par » n'y entrent. Pur.
+// D'AUTORISATION : ni titre, ni adresse, ni « Vendu par » n'y entrent ; le seul lien d'annonce
+// qu'il porte est celui d'une proposition payée encore à trancher (127 B), côté conseiller, que
+// le document et le lien du vendeur ne reçoivent jamais. Pur.
 
 export const MARKET_UPDATE_STATES = [
   'unchanged',
