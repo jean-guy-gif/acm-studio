@@ -194,10 +194,11 @@ export function PriceLinesFigure({
     { kind: 'diamond', text: 'le plus dangereux, selon vous' },
     { kind: 'hollow', text: 'disparu depuis le rendez-vous' },
     { kind: 'bar', text: 'votre prix, le même sur les trois lignes' },
+    { kind: 'arrow', text: 'a bougé depuis le rendez-vous, avec son écart' },
   ];
-  const legendRows = [legend.slice(0, 3), legend.slice(3)];
+  const legendRows = [legend.slice(0, 3), legend.slice(3, 5), legend.slice(5)];
   const legendY = 14;
-  const headerY = legendY + 2 * 18 + 26;
+  const headerY = legendY + 3 * 18 + 22;
   const barTop = headerY + 30;
 
   // Les trois lignes, posées l'une après l'autre.
@@ -249,7 +250,17 @@ export function PriceLinesFigure({
         : (points.find((point) => point.item?.dangerous && !point.hollow)?.x ?? null);
     const above: Label[] = [];
     const below: Label[] = [];
-    if (line) {
+    if (line && line.prices.length === 1) {
+      // Un seul bien sur la ligne : une seule étiquette, ni médiane ni plus bas / plus haut.
+      below.push({
+        key: 'single',
+        text: key === 'newcomers' ? 'Nouveau venu' : 'Un seul concurrent',
+        value: formatEuro(line.lowest),
+        x: X(line.lowest),
+        anchor: 'middle',
+        color: COLORS.muted,
+      });
+    } else if (line) {
       above.push({
         key: 'median',
         text: 'Médiane',
@@ -435,6 +446,14 @@ export function PriceLinesFigure({
                   fill="#fff"
                   stroke={COLORS.point}
                   strokeWidth={1.6}
+                />
+              ) : entry.kind === 'arrow' ? (
+                <path
+                  d="M2,-7 V2 H16"
+                  fill="none"
+                  stroke={COLORS.drop}
+                  strokeWidth={1.6}
+                  markerEnd="url(#pl-arrow)"
                 />
               ) : (
                 <rect x={7} y={-9} width={5} height={16} fill={barColor} />

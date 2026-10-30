@@ -334,6 +334,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
     line: typeof lines.meeting,
     subjectLabel: string,
     extra?: React.ReactNode,
+    singleLabel?: string,
   ) => (
     <div className={`${card} flex flex-col gap-2`} data-testid="market-update-line">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -349,6 +350,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           line={line}
           scale={scale}
           subjectLabel={subjectLabel}
+          singleLabel={singleLabel}
           alignment={alignment}
         />
       ) : (
@@ -551,6 +553,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                   : 'vus sur le marché après le rendez-vous',
               lines.newcomers,
               'Votre prix',
+              undefined,
+              'Nouveau venu',
             )}
             {alignment ? (
               <p className={`text-xs font-semibold ${subjectClasses?.text ?? 'text-brand-deep'}`}>

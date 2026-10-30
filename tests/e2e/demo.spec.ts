@@ -642,7 +642,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(results).toBeVisible({ timeout: 60_000 });
       await expect(results).toContainText(/2 trouvés/);
       await expect(results).toContainText('0 annonce facturée');
-      await expect(results).toContainText('Recherche limitée aux biens à votre prix ou moins');
+      await expect(results).toContainText(
+        'Recherche limitée aux biens au prix de commercialisation ou moins',
+      );
       await expect(results.getByTestId('newcomer-card')).toHaveCount(2);
       await expect(
         results.getByText(/Vu sur le marché depuis le \d{2}\/\d{2}\/\d{4}/).first(),
