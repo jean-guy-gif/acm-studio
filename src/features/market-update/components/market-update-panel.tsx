@@ -44,6 +44,9 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     if (item.conclusion.kind === 'withdrawn') return `${when} : retiré du marché sans vente`;
     return `${when} : vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
   }
+  if (item.newcomer) {
+    return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
+  }
   if (item.state === 'gone') {
     return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
   }

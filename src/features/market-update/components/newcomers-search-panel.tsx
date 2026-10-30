@@ -57,7 +57,8 @@ export function NewcomersSearchPanel({
 }) {
   const router = useRouter();
   const demo = useDemoMode();
-  const [shown, setShown] = useState(!searched);
+  // Ouvert en carte ; « Pas maintenant » le replie en lien texte (décision de Jean-Guy, 29/10).
+  const [shown, setShown] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [found, setFound] = useState<Found | null>(null);
@@ -65,6 +66,8 @@ export function NewcomersSearchPanel({
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const since = meetingDate ? shortDay(meetingDate) : null;
+  // Une recherche par point, pas de « Chercher encore » : recherche faite, plus rien à proposer.
+  if (searched && !found) return null;
 
   const search = async () => {
     setBusy(true);
@@ -170,25 +173,33 @@ export function NewcomersSearchPanel({
     }
   };
 
-  const reject = async (candidate: NewcomerCandidate, reason: DecisionReason) => {
+  const reject = async (candidate: NewcomerCandidate, reason: DecisionReason, comment: string) => {
     const decision = new FormData();
     decision.set('listing_url', candidate.url);
     decision.set('decision', 'rejected');
     decision.set('reason', reason);
+    if (comment.trim()) decision.set('comment', comment.trim().slice(0, 500));
     decision.set('price', String(candidate.price));
     if (candidate.surfaceArea != null) decision.set('surface_area', String(candidate.surfaceArea));
     if (candidate.roomsCount != null) decision.set('rooms_count', String(candidate.roomsCount));
     if (candidate.city) decision.set('city', candidate.city);
     if (candidate.propertyType) decision.set('property_type', candidate.propertyType);
-    const result = await recordCompetitorDecision(projectId, decision);
-    if (result.ok) {
-      setStates((current) => ({ ...current, [candidate.url]: 'rejected' }));
+    try {
+      const result = await recordCompetitorDecision(projectId, decision);
+      if (result.ok) {
+        setStates((current) => ({ ...current, [candidate.url]: 'rejected' }));
+        setNotes((current) => ({
+          ...current,
+          [candidate.url]: `Écarté · ${DECISION_REASON_LABELS[reason]}`,
+        }));
+      } else {
+        setNotes((current) => ({ ...current, [candidate.url]: result.error }));
+      }
+    } catch {
       setNotes((current) => ({
         ...current,
-        [candidate.url]: `Écarté · ${DECISION_REASON_LABELS[reason]}`,
+        [candidate.url]: 'L’écart n’a pas pu être enregistré.',
       }));
-    } else {
-      setNotes((current) => ({ ...current, [candidate.url]: result.error }));
     }
   };
 
@@ -233,7 +244,7 @@ export function NewcomersSearchPanel({
                   state={state}
                   note={notes[candidate.url] ?? null}
                   onRetain={() => void retain(candidate)}
-                  onReject={(reason) => void reject(candidate, reason)}
+                  onReject={(reason, comment) => void reject(candidate, reason, comment)}
                 />
               );
             })}
@@ -317,10 +328,11 @@ function NewcomerCard({
   state: CardState;
   note: string | null;
   onRetain: () => void;
-  onReject: (reason: DecisionReason) => void;
+  onReject: (reason: DecisionReason, comment: string) => void;
 }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<DecisionReason>('price_too_high');
+  const [comment, setComment] = useState('');
   const facts = [
     candidate.surfaceArea != null ? `${formatNumber(candidate.surfaceArea)} m²` : null,
     candidate.roomsCount != null
@@ -360,7 +372,7 @@ function NewcomerCard({
           ) : null}
         </span>
         <span className="text-xs text-zinc-500 stage:text-white/60">
-          Vu sur le marché depuis le {shortDay(candidate.seenSince)}
+          Vu sur le marché depuis le {shortDay(candidate.seenSince)} (première vue par la recherche)
         </span>
       </div>
       {state === 'open' ? (
@@ -387,13 +399,29 @@ function NewcomerCard({
                   </option>
                 ))}
               </select>
+              <input
+                type="text"
+                className="rounded-lg border border-zinc-200 px-2 py-1 text-xs"
+                placeholder="Précision (facultatif)"
+                aria-label="Précision (facultatif)"
+                maxLength={500}
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+              />
               <button
                 type="button"
                 className={`${linkStyle} text-xs`}
-                onClick={() => onReject(reason)}
+                onClick={() => onReject(reason, comment)}
                 data-testid="newcomer-reject-confirm"
               >
                 Écarter avec ce motif
+              </button>
+              <button
+                type="button"
+                className={`${linkStyle} text-xs`}
+                onClick={() => setRejecting(false)}
+              >
+                Annuler
               </button>
             </>
           ) : (

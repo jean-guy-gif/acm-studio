@@ -22,8 +22,11 @@ export type WrittenMarketUpdate = {
   summary: MarketUpdateSummary;
 };
 
+// Le « jour » du point est celui de Paris, comme le Suivi le lit (jamais le jour UTC).
 const dayOf = (value: string | Date): string =>
-  (typeof value === 'string' ? new Date(value) : value).toISOString().slice(0, 10);
+  (typeof value === 'string' ? new Date(value) : value).toLocaleDateString('fr-FR', {
+    timeZone: 'Europe/Paris',
+  });
 
 // Mission 127, partagé par la 127 B — écrire le point daté d'un dossier conclu : tout est relu en
 // base par le client de la session (colonnes autorisées seulement), le point est écrit par la clé

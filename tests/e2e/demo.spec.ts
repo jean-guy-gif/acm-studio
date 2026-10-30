@@ -675,9 +675,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(
         document.getByText('Aucun nouveau venu retenu depuis le rendez-vous'),
       ).toHaveCount(0);
+      // La ligne 3 porte le nouveau venu retenu : un point sur la figure (le sous-titre est dans
+      // le SVG, coupé en deux lignes).
       await expect(
-        document.getByText(/1 nouveau venu retenu · à votre prix ou moins/),
-      ).toBeVisible();
+        document.locator('[data-line="newcomers"] [data-testid="price-lines-point"]'),
+      ).toHaveCount(1);
+      await expect(document.getByTestId('price-lines-bar')).toBeVisible();
       await expect(document.getByTestId('price-alignment')).toContainText(
         'Prix aligné sur le marché',
       );

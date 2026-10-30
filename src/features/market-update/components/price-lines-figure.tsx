@@ -306,7 +306,9 @@ export function PriceLinesFigure({
     // La phrase de fait, du côté de la barre où il y a la place (compromis du designer, gardé).
     const leftRoom = barX != null ? barX - X0 - 12 : X1 - X0;
     const rightRoom = barX != null ? X1 - barX - 12 : 0;
-    const phraseLeft = barX == null || leftRoom >= rightRoom;
+    // La ligne 3 est toujours à gauche de la barre (ses biens sont à votre prix ou moins) : sa
+    // phrase aussi (Jean-Guy, 30/10).
+    const phraseLeft = barX == null || key === 'newcomers' || leftRoom >= rightRoom;
     const room = Math.max(220, phraseLeft ? leftRoom : rightRoom);
     const phrase = line?.sentence ? wrap(line.sentence, Math.floor(room / 7.4)) : [];
     const empty =
@@ -493,6 +495,33 @@ export function PriceLinesFigure({
         </g>
       ) : null}
 
+      {/* Les flèches, une par concurrent qui a bougé. */}
+      {arrows.map((arrow, index) => {
+        const color = (arrow.item.gapAmount ?? 0) < 0 ? COLORS.drop : COLORS.rise;
+        const gap = formatPercent(arrow.item.gapPercent ?? 0, { signed: true, maxDecimals: 1 });
+        const midY = corridorY - 10 - index * 14;
+        return (
+          <g key={arrow.item.id} data-testid="price-lines-arrow">
+            <path
+              d={`M${arrow.x1},${arrow.y1} V${midY} H${arrow.x2} V${arrow.y2}`}
+              fill="none"
+              stroke={color}
+              strokeWidth={1.6}
+              markerEnd="url(#pl-arrow)"
+            />
+            <text
+              x={(arrow.x1 + arrow.x2) / 2}
+              y={midY - 5}
+              fontSize={12}
+              fontWeight={700}
+              textAnchor="middle"
+              fill={color}
+            >
+              {gap}
+            </text>
+          </g>
+        );
+      })}
       {/* Les trois lignes. */}
       {placed.map((row) => (
         <g key={row.key} data-testid="price-lines-line" data-line={row.key}>
@@ -543,15 +572,18 @@ export function PriceLinesFigure({
                 stroke={COLORS.axis}
                 strokeDasharray="5 4"
               />
-              <text
-                x={(X0 + X1) / 2}
-                y={row.bandY + 4}
-                fontSize={12}
-                textAnchor="middle"
-                fill={COLORS.muted}
-              >
-                {row.empty.length > 70 ? `${row.empty.slice(0, 68)}…` : row.empty}
-              </text>
+              {wrap(row.empty ?? '', 78).map((part, index) => (
+                <text
+                  key={part}
+                  x={(X0 + X1) / 2}
+                  y={row.bandY - 2 + index * 15 + (wrap(row.empty ?? '', 78).length > 1 ? 0 : 6)}
+                  fontSize={12}
+                  textAnchor="middle"
+                  fill={COLORS.muted}
+                >
+                  {part}
+                </text>
+              ))}
             </>
           ) : null}
           {row.points.map((point, index) =>
@@ -639,34 +671,6 @@ export function PriceLinesFigure({
           ))}
         </g>
       ))}
-
-      {/* Les flèches, une par concurrent qui a bougé. */}
-      {arrows.map((arrow, index) => {
-        const color = (arrow.item.gapAmount ?? 0) < 0 ? COLORS.drop : COLORS.rise;
-        const gap = formatPercent(arrow.item.gapPercent ?? 0, { signed: true, maxDecimals: 1 });
-        const midY = corridorY - 10 - index * 14;
-        return (
-          <g key={arrow.item.id} data-testid="price-lines-arrow">
-            <path
-              d={`M${arrow.x1},${arrow.y1} V${midY} H${arrow.x2} V${arrow.y2}`}
-              fill="none"
-              stroke={color}
-              strokeWidth={1.6}
-              markerEnd="url(#pl-arrow)"
-            />
-            <text
-              x={(arrow.x1 + arrow.x2) / 2}
-              y={midY - 5}
-              fontSize={12}
-              fontWeight={700}
-              textAnchor="middle"
-              fill={color}
-            >
-              {gap}
-            </text>
-          </g>
-        );
-      })}
     </svg>
   );
 }

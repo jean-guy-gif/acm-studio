@@ -316,7 +316,10 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
     summary.agreedPrice != null
       ? { label: 'Prix retenu ensemble', value: formatEuro(summary.agreedPrice) }
       : null,
-    { label: 'Concurrents suivis', value: String(summary.competitors.length) },
+    {
+      label: 'Concurrents suivis',
+      value: String(summary.competitors.filter((item) => !item.newcomer).length),
+    },
     // Mission 127 B — ce chiffre n'existe qu'après une recherche : sans elle, « 0 » dirait « rien
     // de nouveau sur le marché ».
     summary.newcomersSearch || newcomers.length > 0
@@ -508,7 +511,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             {lineBlock(
               1,
               `Au rendez-vous${meeting ? ` du ${meeting}` : ''}`,
-              `${summary.competitors.filter((item) => !item.newcomer).length} concurrents · prix du rendez-vous`,
+              `${summary.competitors.filter((item) => !item.newcomer).length} concurrent${summary.competitors.filter((item) => !item.newcomer).length > 1 ? 's' : ''} · prix du rendez-vous`,
               lines.meeting,
               'Votre prix',
             )}
@@ -518,6 +521,25 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
               `${lines.today?.prices.length ?? 0} encore en vente`,
               lines.today,
               'Votre prix',
+              lines.todayGone.probableSale + lines.todayGone.withdrawn + lines.todayGone.unknown >
+                0 ? (
+                <p className="self-start rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+                  {[
+                    lines.todayGone.probableSale > 0
+                      ? `${lines.todayGone.probableSale} vente${lines.todayGone.probableSale > 1 ? 's' : ''} probable${lines.todayGone.probableSale > 1 ? 's' : ''}`
+                      : null,
+                    lines.todayGone.withdrawn > 0
+                      ? `${lines.todayGone.withdrawn} retiré${lines.todayGone.withdrawn > 1 ? 's' : ''} sans vente`
+                      : null,
+                    lines.todayGone.unknown > 0
+                      ? `${lines.todayGone.unknown} retirée${lines.todayGone.unknown > 1 ? 's' : ''}, durée inconnue`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}{' '}
+                  · comptés à part
+                </p>
+              ) : undefined,
             )}
             {lineBlock(
               3,
@@ -554,8 +576,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             de la durée de commercialisation au retrait, selon la règle de l’agence ; « retiré sans
             vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien
             est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier.
-            « Vu sur le marché depuis le … » est la date à laquelle l’annonce a été vue pour la
-            première fois, pas sa date de publication.
+            « Vu sur le marché depuis le … » est la date de publication dite par l’annonce, sinon le
+            jour où votre conseiller l’a retenue : jamais une date inventée.
           </p>
           {agency.advisorName ? (
             <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">

@@ -32,7 +32,6 @@ import {
   MarketUpdateCompetitorLines,
   shortDay,
 } from '@/features/market-update/components/market-update-panel';
-import { NewcomersSearchPanel } from '@/features/market-update/components/newcomers-search-panel';
 
 export const NO_EXTENSION_FOR_REFRESH = 'Installez ou activez l’extension ACM, puis réessayez.';
 export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
@@ -43,14 +42,7 @@ export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
 // Mission 127 — « Mettre à jour les concurrents » enchaîne, en le disant : (a) la relecture, puis
 // (b) le point daté qui conclut (baisses, ventes probables, retraits) ; la recherche des nouveaux
 // venus (c) viendra en 127 B. Une relecture acquise sans point écrit se dit, et se réessaie.
-export function RefreshPricesButton({
-  projectId,
-  signed = false,
-}: {
-  projectId: string;
-  // Mission 127 B — sur un mandat signé, la proposition (c) suit le point.
-  signed?: boolean;
-}) {
+export function RefreshPricesButton({ projectId }: { projectId: string }) {
   const router = useRouter();
   const demo = useDemoMode();
   const [busy, setBusy] = useState(false);
@@ -177,14 +169,8 @@ export function RefreshPricesButton({
           </div>
           <span className="text-xs text-zinc-600 stage:text-white/70">{point.line}</span>
           <MarketUpdateCompetitorLines summary={point.summary} madeAt={point.madeAt} />
-          {signed && point.summary.agreedPrice != null ? (
-            <NewcomersSearchPanel
-              projectId={projectId}
-              meetingDate={point.summary.meetingDate}
-              searched={point.summary.newcomersSearch != null}
-              onPointRewritten={(line) => setPoint({ ...point, line })}
-            />
-          ) : null}
+          {/* Mission 127 B — la proposition (c) suit, portée par la liste « Points marché » (un seul
+              bouton payant sur la ligne, relu en base après le point). */}
         </div>
       ) : null}
       {missingExtension ? (
