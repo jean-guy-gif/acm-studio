@@ -148,6 +148,7 @@ export function MarketUpdateList({
           projectId={projectId}
           meetingDate={latest.summary.meetingDate}
           searched={latest.summary.newcomersSearch != null}
+          stored={latest.summary.newcomersSearch}
         />
       ) : null}
     </div>

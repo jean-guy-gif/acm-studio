@@ -92,6 +92,26 @@ export type MarketUpdateCompetitor = z.infer<typeof marketUpdateCompetitorSchema
 
 // Mission 127 B — la recherche des nouveaux venus faite pour ce point (sinon null : « pas de
 // recherche », distinct de « recherche faite, 0 retenu »).
+// Mission 127 B (décision de Jean-Guy, 30/10) — une proposition payée, non encore retenue ni écartée,
+// reste sur le point jusqu'à « Écarter » ou au point suivant : ce que la recherche a dit du bien,
+// SANS titre ni adresse (le `url` ne sert qu'au conseiller pour retenir ou écarter ; la page du
+// vendeur ne reçoit jamais ces propositions, `load-market-update.ts` les retire).
+export const newcomerProposalSchema = z.object({
+  url: z.string().max(2000),
+  label: z.string().max(200),
+  price: z.number().positive(),
+  pricePerSqm: z.number().nullable().default(null),
+  surfaceArea: z.number().nullable().default(null),
+  roomsCount: z.number().nullable().default(null),
+  propertyType: z.string().nullable().default(null),
+  city: z.string().nullable().default(null),
+  photoUrls: z.array(z.string().url().startsWith('https://').max(2000)).max(4).default([]),
+  seenSince: z.string(),
+  energyClass: z.string().nullable().default(null),
+  snapshot: z.record(z.string(), z.unknown()).nullable().default(null),
+});
+export type NewcomerProposal = z.infer<typeof newcomerProposalSchema>;
+
 export const newcomersSearchSchema = z.object({
   madeAt: z.string(),
   found: z.number().int(),
@@ -99,6 +119,7 @@ export const newcomersSearchSchema = z.object({
   // Le plafond de prix est parti dans la requête : « Recherche limitée aux biens à votre prix ou moins ».
   limitedToPrice: z.boolean(),
   excludedNoDate: z.number().int().default(0),
+  proposed: z.array(newcomerProposalSchema).default([]),
 });
 export type NewcomersSearch = z.infer<typeof newcomersSearchSchema>;
 

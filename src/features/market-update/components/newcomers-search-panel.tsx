@@ -27,6 +27,7 @@ import {
   searchNewcomers,
   type SearchNewcomersResult,
 } from '@/features/market-update/actions/search-newcomers';
+import type { NewcomersSearch } from '@/features/market-update/services/market-update-summary';
 import { shortDay } from '@/features/market-update/components/market-update-panel';
 import type { NewcomerCandidate } from '@/features/market-update/services/newcomers-filter';
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
@@ -48,12 +49,16 @@ export function NewcomersSearchPanel({
   projectId,
   meetingDate,
   searched,
+  stored = null,
   onPointRewritten,
 }: {
   projectId: string;
   meetingDate: string | null;
   // Une recherche a déjà été faite pour le point du jour : seul le lien texte reste.
   searched: boolean;
+  // Mission 127 B — la recherche gardée sur le point du jour, avec ses propositions encore à
+  // trancher : le panneau repart d'elles après un rechargement (Jean-Guy, 30/10).
+  stored?: NewcomersSearch | null;
   onPointRewritten?: (line: string) => void;
 }) {
   const router = useRouter();
@@ -62,7 +67,25 @@ export function NewcomersSearchPanel({
   const [shown, setShown] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [found, setFound] = useState<Found | null>(null);
+  const [found, setFound] = useState<Found | null>(() =>
+    stored && stored.proposed.length > 0
+      ? {
+          ok: true,
+          newcomers: stored.proposed.map((item) => ({
+            ...item,
+            snapshot: (item.snapshot ?? {}) as NewcomerCandidate['snapshot'],
+          })),
+          found: stored.found,
+          billed: stored.billed,
+          excludedNoDate: stored.excludedNoDate,
+          excludedKnown: 0,
+          concludedAt: meetingDate ?? '',
+          priceCeiling: 0,
+          updateId: null,
+          line: null,
+        }
+      : null,
+  );
   const [states, setStates] = useState<Record<string, CardState>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
 
@@ -193,6 +216,10 @@ export function NewcomersSearchPanel({
           ...current,
           [candidate.url]: `Écarté · ${DECISION_REASON_LABELS[reason]}`,
         }));
+        const rewritten = await recordMarketUpdate(projectId, {
+          settledProposalUrl: candidate.url,
+        });
+        if (rewritten.ok) onPointRewritten?.(rewritten.line);
       } else {
         setNotes((current) => ({ ...current, [candidate.url]: result.error }));
       }
@@ -212,7 +239,9 @@ export function NewcomersSearchPanel({
         : `${formatNumber(found.billed)} annonce${found.billed > 1 ? 's' : ''} facturée${found.billed > 1 ? 's' : ''} (${formatEuro(found.billed * 0.01)})`,
       'critères du dossier',
       since ? `vus sur le marché après le ${since}` : null,
-      `${NEWCOMERS_LIMITED_LABEL} (${formatEuro(found.priceCeiling)})`,
+      found.priceCeiling > 0
+        ? `${NEWCOMERS_LIMITED_LABEL} (${formatEuro(found.priceCeiling)})`
+        : NEWCOMERS_LIMITED_LABEL,
     ].filter(Boolean);
     return (
       <div

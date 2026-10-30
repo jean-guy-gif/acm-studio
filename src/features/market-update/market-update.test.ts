@@ -381,7 +381,34 @@ const PROJECT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const UPDATE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 async function loadFixture() {
-  const summary = buildMarketUpdateSummary(input());
+  const summary = {
+    ...buildMarketUpdateSummary(input()),
+    // Une proposition payée gardée sur le point (127 B) : adresse d'annonce et titre piège, qui ne
+    // doivent jamais atteindre le document ni la page du vendeur.
+    newcomersSearch: {
+      madeAt: MADE_AT.toISOString(),
+      found: 1,
+      billed: 20,
+      limitedToPrice: true,
+      excludedNoDate: 0,
+      proposed: [
+        {
+          url: TRAP_URL,
+          label: 'Maison · 6 pièces · 190 m² · Mougins',
+          price: 1495000,
+          pricePerSqm: null,
+          surfaceArea: 190,
+          roomsCount: 6,
+          propertyType: 'house',
+          city: 'Mougins',
+          photoUrls: [],
+          seenSince: '2026-10-15T00:00:00.000Z',
+          energyClass: null,
+          snapshot: { title: TRAP_TITLE },
+        },
+      ],
+    },
+  };
   const client = fakeClient({
     project_market_updates: [
       { id: UPDATE, made_at: MADE_AT.toISOString(), summary, project_id: PROJECT },
@@ -441,6 +468,7 @@ describe('le document Point marché', () => {
   it('ne contient ni adresse, ni titre, ni lien d’annonce, ni « Vendu par », ni « estimation »', async () => {
     const { document, html } = await loadFixture();
     const serialized = JSON.stringify(document);
+    expect(document.summary.newcomersSearch?.proposed).toEqual([]);
     for (const forbidden of [
       'Dupont',
       'rue des Lilas',
@@ -470,7 +498,9 @@ describe('le document Point marché', () => {
     expect(html.split('data-testid="price-lines-arrow"').length - 1).toBe(2);
     expect(html.split('data-testid="price-lines-gone"').length - 1).toBe(2);
     expect(html).not.toContain('NaN');
-    expect(html).toContain(NO_NEWCOMER_LABEL);
+    // Une recherche a été faite (fixture) : la ligne 3 le dit, plutôt que « Aucun nouveau venu retenu ».
+    expect(html).toContain('Aucun nouveau venu sur le marché');
+    expect(html).not.toContain(NO_NEWCOMER_LABEL);
     expect(html).toContain('Vente probable, négociation estimée de 5 à 10 %');
     expect(html).toContain('Retiré du marché sans vente');
     expect(html).toContain('Non relu');

@@ -133,7 +133,14 @@ export async function loadMarketUpdate(
       : null,
     commune: property.data?.city?.trim() || null,
     coverPhotoUrl: cover[0]?.url ?? null,
-    summary,
+    // Les propositions payées (adresses d'annonces, côté conseiller) ne vont pas au document ni au
+    // lien du vendeur.
+    summary: {
+      ...summary,
+      newcomersSearch: summary.newcomersSearch
+        ? { ...summary.newcomersSearch, proposed: [] }
+        : null,
+    },
     competitors: summary.competitors.map((item) => {
       const row = rowById.get(item.id);
       const photos = row
