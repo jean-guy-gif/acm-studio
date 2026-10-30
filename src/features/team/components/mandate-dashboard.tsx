@@ -168,7 +168,8 @@ export function BuyerSearchDashboardView({ figures }: { figures: BuyerSearchFigu
             Des faits déclarés par les conseillers, cumulés : un mandat rentré compte aussi comme
             rendez-vous et comme remise. Chaque bien est compté une fois, au conseiller qui a
             préparé son premier courrier. Un bien démarché aussi pour un mandat signé compte ici et
-            dans la prise de mandat.
+            dans la prise de mandat ; les collaborations de la prise de mandat ne comptent que les
+            concurrents retenus d’un dossier vendeur.
           </p>
         </>
       )}
