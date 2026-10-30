@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { letterCounts } from '@/features/buyer-prospecting/services/letter-counts';
-import { savedBuyerLetter } from '@/features/buyer-prospecting/services/saved-buyer-letter';
 import {
   visitLetterState,
   visitWaitingLabel,
@@ -49,39 +47,6 @@ describe('la visite relit la collaboration au confrère', () => {
       label: 'Collaboration refusée : courrier au propriétaire',
     });
     expect(visitWaitingLabel(refused, 'owner')).toBe('En attente du propriétaire');
-  });
-});
-
-describe('les courriers de la fiche', () => {
-  it('prêts à imprimer et en attente, parmi les seuls courriers préparés', () => {
-    expect(
-      letterCounts([
-        { letterHref: '/a', state: { kind: 'ready', label: 'Dossier prêt' } },
-        { letterHref: '/b', state: { kind: 'address', label: 'Adresse à confirmer' } },
-        { letterHref: '/c', state: { kind: 'handed', label: 'Remis le 30/10' } },
-        { letterHref: null, state: { kind: 'none' } },
-      ]),
-    ).toEqual({ total: 3, ready: 1, waiting: 1 });
-  });
-
-  it('le lot imprime le texte gardé, sinon le proposé ; sans photo choisie, aucune', () => {
-    const resolved = savedBuyerLetter({
-      defaults: { title: 'T', letter: 'L', question: 'Q ?', contactHook: 'H' },
-      overrides: { title: null, letter: 'Ma lettre', question: null, contactHook: null },
-      theirPhoto: {
-        listing: ['https://img.test/a.jpg'],
-        saved: { mode: null, sourceUrl: null, path: null },
-        signed: {},
-        prefix: 'agency/buyer-prospecting/o1/',
-      },
-    });
-    expect(resolved.texts).toEqual({
-      title: 'T',
-      letter: 'Ma lettre',
-      question: 'Q ?',
-      contactHook: 'H',
-    });
-    expect(resolved.theirPhotoUrl).toBeNull();
   });
 });
 

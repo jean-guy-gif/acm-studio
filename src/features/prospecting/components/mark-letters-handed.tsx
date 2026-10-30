@@ -3,36 +3,28 @@
 import { useState, useTransition } from 'react';
 
 import { btnPrimary, btnSecondary, errorText, okText } from '@/components/ui/styles';
-import { markBuyerProspectsHanded } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { markLettersHanded } from '@/features/prospecting/actions/set-prospecting-status';
 
 // Mission 98 — « Marquer tous remis », une fois les courriers imprimés et déposés : les
 // concurrents imprimés passent en « Dossier remis ». Confirmation dans l'écran ; rien ne
 // s'imprime de ce bloc.
-// Mission 120 B — ou, après les courriers d'une recherche acquéreur, ses seuls biens démarchés.
 export function MarkLettersHanded({
-  projectId = null,
-  competitorIds = [],
-  buyerProspectIds = null,
-  note = null,
+  projectId,
+  competitorIds,
 }: {
-  projectId?: string | null;
-  competitorIds?: string[];
-  buyerProspectIds?: string[] | null;
-  note?: string | null;
+  projectId: string;
+  competitorIds: string[];
 }) {
   const [asking, setAsking] = useState(false);
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
-  const count = buyerProspectIds ? buyerProspectIds.length : competitorIds.length;
+  const count = competitorIds.length;
   const letters = `${count} courrier${count > 1 ? 's' : ''}`;
 
   const confirm = () => {
     setState(null);
     startTransition(async () => {
-      const result = buyerProspectIds
-        ? await markBuyerProspectsHanded(buyerProspectIds)
-        : await markLettersHanded(projectId ?? '', competitorIds);
+      const result = await markLettersHanded(projectId, competitorIds);
       setAsking(false);
       setState(
         result.ok
@@ -78,7 +70,6 @@ export function MarkLettersHanded({
           Marquer tous remis
         </button>
       )}
-      {note ? <p className="text-xs text-zinc-500">{note}</p> : null}
       {state ? (
         <p role="status" className={state.ok ? okText : errorText}>
           {state.message}
