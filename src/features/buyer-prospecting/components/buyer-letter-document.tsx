@@ -94,7 +94,8 @@ function OwnerLetter({
         </div>
         <Contact sender={sender} hook={texts.contactHook} qr={qr} />
         <footer className="pf-foot pf-legal" data-testid="legal-mention">
-          <Mentions sender={sender} withAddress withCard={false} />{' '}
+          <Mentions sender={sender} withAddress withCard={false} />
+          {' · '}
           {professionalMentions(sender).join(' · ')}.{' '}
           {ownerLegalMention(sender, addressSource, BUYER_SEARCH_PURPOSE)}
         </footer>
@@ -189,7 +190,8 @@ function ColleagueLetter({
         <Contact sender={sender} hook={texts.contactHook} qr={qr} />
         <footer className="pf-foot" data-testid="professional-mention">
           <span>
-            <Mentions sender={sender} withAddress withCard={false} />{' '}
+            <Mentions sender={sender} withAddress withCard={false} />
+            {' · '}
             {professionalMentions(sender).join(' · ')}
           </span>
           <span>

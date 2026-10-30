@@ -5,8 +5,8 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 // Mission 120 B (reprises R1 et R2 de la partie A) — l'écran d'édition d'un courrier : le panneau
 // de saisie à gauche, la feuille A4 à droite.
 // R1 : les actions (« Télécharger le PDF », « Enregistrer ») sont toujours dans la fenêtre — au
-// bureau, le panneau défile lui-même et sa barre d'actions reste en bas ; sous 1024 px, la barre
-// colle au bas de l'écran tant que le panneau est visible.
+// bureau (1024 px et plus), le panneau défile lui-même et sa barre d'actions reste en bas ; sous
+// 1024 px, la barre suit le panneau, sans jamais passer sur la saisie (designer, rendus 120 B).
 // R2 : la feuille est réduite à la largeur de sa colonne (`transform: scale`), jamais coupée,
 // jamais de défilement de côté ; à l'impression, elle reprend sa taille réelle.
 export function DocumentEditorLayout({
@@ -26,7 +26,7 @@ export function DocumentEditorLayout({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 p-5 lg:overflow-y-auto">{panel}</div>
         <div
-          className="sticky bottom-0 flex shrink-0 flex-col gap-2 rounded-b-2xl border-t border-zinc-200 bg-white p-5 pt-4 lg:static"
+          className="flex shrink-0 flex-col gap-2 rounded-b-2xl border-t border-zinc-200 bg-white p-5 pt-4"
           data-testid="document-editor-actions"
         >
           {actions}

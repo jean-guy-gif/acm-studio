@@ -244,7 +244,7 @@ export function ProspectingCard({
                 target="_blank"
                 className="hover:underline"
               >
-                courrier
+                {step === 'colleague' ? 'dossier au confrère' : 'courrier'}
               </Link>
             </span>
           ))}

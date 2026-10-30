@@ -204,7 +204,8 @@ export function colleagueExclusivityCard(
       roomsCount: facts.roomsCount,
       surfaceArea: facts.surfaceArea,
       city: facts.city,
-      district: facts.district,
+      // Le libellé neutre dit la commune (type · pièces · surface · commune).
+      district: null,
     }),
     reference: listingReference(listingUrl),
     rows,
