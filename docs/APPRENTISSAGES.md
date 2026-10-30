@@ -43,6 +43,19 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   passages), testeur 31 min rendus compris (suite e2e 12,4 min : démo 5,2 à 6,9, parcours 5,5,
   bienvenue 0,9, Live tablette 0,6), parcoureur 9 min, designer sur les rendus 6,6 min ; de
   `/mission` (17:47) à l'essai (19:00) puis au Point marché prêt sur le compte de démo (19:50).
+- 30/10 · M127 B · La démo e2e est passée à 7,9 min et a débordé une fois le budget de 8 min
+  (« Test timeout of 480000ms exceeded » dans « Remettre ma démo à zéro ») : budget à 10 min
+  (décision de Jean-Guy, 30/10). Chaque mission acquéreur ou Point marché l'allonge de 0,3 à
+  0,5 min ; un jour, la couper en deux passages.
+- 30/10 · M127 B · Le client factice (`fake-supabase.ts`) répond d'après la DERNIÈRE table
+  appelée : trois lectures dans un `Promise.all` reçoivent toutes la réponse de la dernière. Pour
+  qu'une écriture se prouve, lire ce qui a sa propre réponse AVANT le `Promise.all` (le dernier
+  point dans `write-market-update.ts`), et faire les lectures à réponses distinctes une par une.
+- 30/10 · M127 B · Un texte dans un SVG se coupe en plusieurs `<text>` : l'e2e ne le cherche pas
+  par son texte, il compte des éléments (`[data-line="newcomers"] [data-testid="price-lines-point"]`).
+- 30/10 · M127 B · Après un correctif, l'agent déjà lancé rejoue sur la vieille version si on ne
+  le lui dit pas : chaque fusion dans `essai` s'accompagne d'un message au testeur en cours
+  (« quand `/api/version` répond X, rejoue sur X »), et un seul rapport est demandé.
 
 ## La base
 
@@ -76,6 +89,14 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   par le relecteur : sur téléphone les repères colorés avaient quitté la ligne (`hidden sm:flex`
   emportait le trait avec le texte) ; une annonce disparue sans durée connue se lisait « toujours
   en vente ». Un rendu lu et une relecture à regard neuf restent indispensables.
+- 30/10 · M127 B · La figure des trois lignes s'est validée sur une maquette SVG du designer
+  (générateur `node`, règle de placement incluse) AVANT le code, puis sur un rendu Chromium de la
+  figure réelle (un test écrit le HTML, Playwright le capture, Read le lit) : trois défauts vus
+  avant l'essai (étiquettes hors page, flèche partant du trait de la médiane, légende sans la
+  flèche). Un rendu lu vaut dix descriptions.
+- 30/10 · M127 B · « Ça gêne » du parcoureur sur un détail de données de démo (photos mélangées,
+  prix de vente estimé juste avant le prix du vendeur) : à noter, pas à corriger ; la règle de
+  l'agence et l'ordre des phrases sont des décisions, pas des défauts.
 
 ## L'atelier et les hooks
 
@@ -129,3 +150,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   appliqués sans demander ; les deux remontées produit (concurrents hors Live, 3 photos par fiche)
   tranchées dans la ligne de DECISIONS et dites au rapport. Jean-Guy a ensuite demandé deux
   corrections à vue sur l'essai (étiquettes, couverture), barrières seules, 10 min chacune.
+- 30/10 · M127 B · Une relecture par delta après chaque correction (sept passages, 4 bloquants
+  trouvés dont deux sur des régressions de corrections précédentes : un panneau démonté par le
+  refresh, un e2e qui cherchait un texte changé). Le relecteur sur le delta coûte 3 à 6 min et a
+  rattrapé ce que les barrières ne voient pas. Durées : architecte 4 min, designer 7 + 12 min,
+  testeur 20 à 30 min par passage (quatre), parcoureur 9 min, designer sur les rendus 7 min.
