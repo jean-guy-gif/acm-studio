@@ -57,6 +57,7 @@ const row = (
   created_at: '2026-09-01T00:00:00.000Z',
   excluded_from_live: false,
   read_today: true,
+  meeting_frozen_at: '2026-10-12T15:00:00.000Z',
   listing_published_at: '2026-06-26',
   days_on_market: null,
   listing_gone_at: null,
@@ -224,7 +225,7 @@ describe('les trois lignes de prix', () => {
   it('les nouveaux venus : une phrase de fait, sinon rien', () => {
     const lines = buildPriceLines(competitors, 1639500, [1830000, 1580000]);
     expect(plain(lines.newcomers?.sentence)).toBe(
-      '2 nouveaux venus retenus depuis le rendez-vous : 1 est sous votre prix, 1 au-dessus. Leur prix médian est 65 500 € au-dessus du vôtre.',
+      '2 nouveaux venus à votre prix ou moins : le moins cher à 1 580 000 €, 59 500 € sous le vôtre.',
     );
     expect(NO_NEWCOMER_LABEL).toBe('Aucun nouveau venu retenu depuis le rendez-vous');
   });
@@ -380,7 +381,34 @@ const PROJECT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const UPDATE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 async function loadFixture() {
-  const summary = buildMarketUpdateSummary(input());
+  const summary = {
+    ...buildMarketUpdateSummary(input()),
+    // Une proposition payée gardée sur le point (127 B) : adresse d'annonce et titre piège, qui ne
+    // doivent jamais atteindre le document ni la page du vendeur.
+    newcomersSearch: {
+      madeAt: MADE_AT.toISOString(),
+      found: 1,
+      billed: 20,
+      limitedToPrice: true,
+      excludedNoDate: 0,
+      proposed: [
+        {
+          url: TRAP_URL,
+          label: 'Maison · 6 pièces · 190 m² · Mougins',
+          price: 1495000,
+          pricePerSqm: null,
+          surfaceArea: 190,
+          roomsCount: 6,
+          propertyType: 'house',
+          city: 'Mougins',
+          photoUrls: [],
+          seenSince: '2026-10-15T00:00:00.000Z',
+          energyClass: null,
+          snapshot: { title: TRAP_TITLE },
+        },
+      ],
+    },
+  };
   const client = fakeClient({
     project_market_updates: [
       { id: UPDATE, made_at: MADE_AT.toISOString(), summary, project_id: PROJECT },
@@ -440,6 +468,7 @@ describe('le document Point marché', () => {
   it('ne contient ni adresse, ni titre, ni lien d’annonce, ni « Vendu par », ni « estimation »', async () => {
     const { document, html } = await loadFixture();
     const serialized = JSON.stringify(document);
+    expect(document.summary.newcomersSearch?.proposed).toEqual([]);
     for (const forbidden of [
       'Dupont',
       'rue des Lilas',
@@ -460,7 +489,18 @@ describe('le document Point marché', () => {
     expect(document.competitors.map((item) => item.position)).toEqual([1, 2, 3, 4, 5]);
     expect(html.split('data-testid="market-update-competitor"').length - 1).toBe(5);
     expect(html.split('data-testid="market-update-line"').length - 1).toBe(3);
-    expect(html).toContain(NO_NEWCOMER_LABEL);
+    // La figure (M127 B) : une barre, trois lignes, un losange, deux flèches, deux points vides.
+    expect(html).toContain('data-testid="price-lines-figure"');
+    expect(html.split('data-testid="price-lines-bar"').length - 1).toBe(1);
+    expect(html.split('data-testid="price-lines-line"').length - 1).toBe(3);
+    // Le plus dangereux, en losange sur la ligne 1 et sur la ligne 2 (il est encore en vente).
+    expect(html.split('data-testid="price-lines-diamond"').length - 1).toBe(2);
+    expect(html.split('data-testid="price-lines-arrow"').length - 1).toBe(2);
+    expect(html.split('data-testid="price-lines-gone"').length - 1).toBe(2);
+    expect(html).not.toContain('NaN');
+    // Une recherche a été faite (fixture) : la ligne 3 le dit, plutôt que « Aucun nouveau venu retenu ».
+    expect(html).toContain('Aucun nouveau venu sur le marché');
+    expect(html).not.toContain(NO_NEWCOMER_LABEL);
     expect(html).toContain('Vente probable, négociation estimée de 5 à 10 %');
     expect(html).toContain('Retiré du marché sans vente');
     expect(html).toContain('Non relu');
@@ -528,12 +568,13 @@ describe('le document Point marché', () => {
         alignment: null,
       }),
     );
-    // Plus bas = médiane = plus haut = le plus dangereux : un seul libellé fusionné.
+    // Un seul prix sur la ligne : une seule étiquette (ni médiane ni plus bas / plus haut d'un
+    // seul bien), sur la ligne et dans la liste.
     expect(html.split('data-testid="price-line"').length - 1).toBe(1);
-    expect((html.match(/Le plus bas/g) ?? []).length).toBe(2); // sur la ligne et dans la liste
-    expect(html).toContain(
-      'Le plus dangereux, selon vous · Le plus bas · Prix médian · Le plus haut',
-    );
+    // Ce seul concurrent est le plus dangereux : il garde son repère.
+    expect((html.match(/Le plus dangereux, selon vous/g) ?? []).length).toBe(2);
+    expect(html).not.toContain('Un seul concurrent');
+    expect(html).not.toContain('Prix médian');
   });
 
   it('deux étiquettes proches ne se touchent jamais : niveaux distincts', () => {

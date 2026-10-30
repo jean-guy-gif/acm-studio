@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 import { btnSecondary, metaLabel } from '@/components/ui/styles';
+import { NewcomersSearchPanel } from '@/features/market-update/components/newcomers-search-panel';
+import { isPointOfDay } from '@/features/market-update/services/point-day';
 import { PriceLineBand } from '@/features/market-update/components/price-line';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import {
@@ -29,6 +31,7 @@ const STATE_BADGE: Record<MarketUpdateCompetitor['state'], string> = {
   probable_sale: 'bg-orange-50 text-orange-800 stage:bg-orange-400/20 stage:text-orange-200',
   withdrawn: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
   gone: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
+  newcomer: 'bg-brand-soft text-brand-deep stage:bg-white/10 stage:text-white/80',
 };
 
 // La phrase de fait d'un concurrent, pour la ligne du Suivi.
@@ -41,6 +44,9 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     const when = `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}${d ? ` après ${d}` : ''}`;
     if (item.conclusion.kind === 'withdrawn') return `${when} : retiré du marché sans vente`;
     return `${when} : vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
+  }
+  if (item.newcomer) {
+    return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
   }
   if (item.state === 'gone') {
     return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
@@ -133,6 +139,19 @@ export function MarketUpdateList({
           {dropped}
         </span>
       ) : null}
+      {/* Mission 127 B — la proposition (c) sur le point du jour d'un mandat signé ; le panneau
+          reste monté après la recherche (il tient ses résultats), et ne rend rien si une recherche
+          a déjà été faite pour ce point. */}
+      {signed && latest && latest.summary.agreedPrice != null && isPointOfDay(latest.madeAt) ? (
+        <NewcomersSearchPanel
+          key={latest.id}
+          projectId={projectId}
+          meetingDate={latest.summary.meetingDate}
+          searched={latest.summary.newcomersSearch != null}
+          stored={latest.summary.newcomersSearch}
+          priceCeiling={latest.summary.agreedPrice}
+        />
+      ) : null}
     </div>
   );
 }
@@ -155,6 +174,7 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
       heading: 'Face aux nouveaux venus',
       line: summary.lines.newcomers,
       subjectLabel: 'Votre prix',
+      singleLabel: 'Nouveau venu',
     },
   ];
   return (
@@ -172,6 +192,7 @@ export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry
               line={block.line}
               scale={scale}
               subjectLabel={block.subjectLabel}
+              singleLabel={'singleLabel' in block ? block.singleLabel : undefined}
               alignment={alignment}
               compact
             />

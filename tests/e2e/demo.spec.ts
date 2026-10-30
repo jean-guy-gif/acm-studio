@@ -635,6 +635,30 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(row.getByTestId('dropped-since-meeting')).toContainText(
         /Ont baissé depuis le rendez-vous : 1 sur 5/,
       );
+      // Mission 127 B — (c) « Chercher les nouveaux venus » : simulé en démo, aucun appel ; deux
+      // biens vus sur le marché après le rendez-vous, au prix de commercialisation ou moins ; un
+      // retenu.
+      await row.getByTestId('newcomers-search').click();
+      const results = row.getByTestId('newcomers-results');
+      await expect(results).toBeVisible({ timeout: 60_000 });
+      await expect(results).toContainText(/2 trouvés/);
+      await expect(results).toContainText('0 annonce facturée');
+      await expect(results).toContainText(
+        'Recherche limitée aux biens au prix de commercialisation ou moins',
+      );
+      await expect(results.getByTestId('newcomer-card')).toHaveCount(2);
+      await expect(
+        results
+          .getByText(/Vu par la recherche le \d{2}\/\d{2}\/\d{4}, après le rendez-vous/)
+          .first(),
+      ).toBeVisible();
+      const newcomerText = await results.innerText();
+      expect(newcomerText).not.toMatch(/Publié le|[Ee]stimation|demonstration\.invalid/);
+      await results.getByTestId('newcomer-retain').first().click();
+      await expect(results.getByTestId('newcomer-note').first()).toContainText('Retenu ✓', {
+        timeout: 60_000,
+      });
+      await expect(row.getByTestId('market-update-recorded')).toContainText('1 nouveau venu');
       await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
       await expect(row.getByTestId('market-update-lines-compact')).toBeVisible();
       await row.getByTestId('open-market-update').click();
@@ -642,7 +666,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const document = page.getByTestId('market-update');
       await expect(document).toBeVisible();
       await expectUnspoken(page, 'Point marché');
-      await expect(document.getByTestId('market-update-competitor')).toHaveCount(5);
+      // 5 concurrents du rendez-vous, plus le nouveau venu retenu (127 B), avant les trois lignes.
+      await expect(document.getByTestId('market-update-competitor')).toHaveCount(6);
+      await expect(document.getByTestId('market-update-newcomers')).toBeVisible();
+      await expect(
+        document.getByTestId('market-update-newcomers').getByText(/Vu sur le marché depuis le/),
+      ).toBeVisible();
       await expect(
         document.getByText('Vente probable, négociation estimée de 5 à 10 %'),
       ).toBeVisible();
@@ -650,7 +679,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(document.getByTestId('market-update-line')).toHaveCount(3);
       await expect(
         document.getByText('Aucun nouveau venu retenu depuis le rendez-vous'),
-      ).toBeVisible();
+      ).toHaveCount(0);
+      // La ligne 3 porte le nouveau venu retenu : un point sur la figure (le sous-titre est dans
+      // le SVG, coupé en deux lignes).
+      await expect(
+        document.locator('[data-line="newcomers"] [data-testid="price-lines-point"]'),
+      ).toHaveCount(1);
+      await expect(document.getByTestId('price-lines-bar')).toBeVisible();
       await expect(document.getByTestId('price-alignment')).toContainText(
         'Prix aligné sur le marché',
       );
@@ -684,6 +719,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
         const after = await visitor.goto(link);
         expect(after?.status(), 'Un lien retiré s’ouvre encore').toBe(404);
+        // Mission 127 B — la page parle au vendeur : ni « agence », ni « mes dossiers ».
+        await expect(
+          visitor.getByRole('heading', { name: 'Ce lien n’est plus valable' }),
+        ).toBeVisible();
+        const expiredText = await visitor.locator('main').innerText();
+        expect(expiredText).not.toMatch(/agence|mes dossiers/i);
       } finally {
         await stranger.close();
       }

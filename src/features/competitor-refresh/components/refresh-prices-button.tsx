@@ -32,6 +32,7 @@ import {
   MarketUpdateCompetitorLines,
   shortDay,
 } from '@/features/market-update/components/market-update-panel';
+import type { MarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
 
 export const NO_EXTENSION_FOR_REFRESH = 'Installez ou activez l’extension ACM, puis réessayez.';
 export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
@@ -42,13 +43,27 @@ export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
 // Mission 127 — « Mettre à jour les concurrents » enchaîne, en le disant : (a) la relecture, puis
 // (b) le point daté qui conclut (baisses, ventes probables, retraits) ; la recherche des nouveaux
 // venus (c) viendra en 127 B. Une relecture acquise sans point écrit se dit, et se réessaie.
-export function RefreshPricesButton({ projectId }: { projectId: string }) {
+export function RefreshPricesButton({
+  projectId,
+  latest = null,
+}: {
+  projectId: string;
+  // Mission 127 B — le dernier point relu en base : après « Retenir » un nouveau venu, le point du
+  // jour est réécrit et le bloc « Point du … enregistré » suit, sans rechargement.
+  latest?: { id: string; madeAt: string; line: string; summary: MarketUpdateSummary } | null;
+}) {
   const router = useRouter();
   const demo = useDemoMode();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [point, setPoint] = useState<Extract<RecordMarketUpdateResult, { ok: true }> | null>(null);
+  // Le point affiché : celui de la session, mis à jour par sa relecture en base si elle est plus
+  // récente (même point, réécrit).
+  const shownPoint =
+    point && latest && latest.id === point.updateId
+      ? { ...point, madeAt: latest.madeAt, line: latest.line, summary: latest.summary }
+      : point;
   const [pointError, setPointError] = useState<string | null>(null);
   // Mission 108 — sans extension, le message vient tout de suite ; « Réessayer » redétecte.
   const [missingExtension, setMissingExtension] = useState(false);
@@ -151,24 +166,26 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
           {pointError}
         </p>
       ) : null}
-      {point ? (
+      {shownPoint ? (
         <div
           className="mt-1 flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 stage:border-emerald-400/30 stage:bg-emerald-500/10"
           data-testid="market-update-recorded"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-title text-sm font-bold text-zinc-900 stage:text-white">
-              Point du {shortDay(point.madeAt)} enregistré
+              Point du {shortDay(shownPoint.madeAt)} enregistré
             </span>
             <Link
-              href={`/builder/${projectId}/point-marche?point=${point.updateId}`}
+              href={`/builder/${projectId}/point-marche?point=${shownPoint.updateId}`}
               className={`${btnSecondary} text-xs whitespace-nowrap`}
             >
               Ouvrir le Point marché →
             </Link>
           </div>
-          <span className="text-xs text-zinc-600 stage:text-white/70">{point.line}</span>
-          <MarketUpdateCompetitorLines summary={point.summary} madeAt={point.madeAt} />
+          <span className="text-xs text-zinc-600 stage:text-white/70">{shownPoint.line}</span>
+          <MarketUpdateCompetitorLines summary={shownPoint.summary} madeAt={shownPoint.madeAt} />
+          {/* Mission 127 B — la proposition (c) suit, portée par la liste « Points marché » (un seul
+              bouton payant sur la ligne, relu en base après le point). */}
         </div>
       ) : null}
       {missingExtension ? (

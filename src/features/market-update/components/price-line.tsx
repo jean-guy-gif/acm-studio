@@ -16,34 +16,62 @@ export const ALIGNMENT_CLASSES = {
   red: { text: 'text-red-700', dot: 'bg-red-600', border: 'border-red-600' },
 } as const;
 
-type Marker = { key: string; label: string; value: number; tone: 'muted' | 'deep' | 'subject' };
+type Marker = {
+  key: string;
+  label: string;
+  value: number;
+  tone: 'muted' | 'median' | 'dangerous' | 'subject';
+};
 
 export function PriceLineBand({
   line,
   scale,
   subjectLabel,
+  singleLabel,
   alignment,
   compact = false,
 }: {
   line: PriceLine;
   scale: { min: number; max: number };
   subjectLabel: string;
+  // Mission 127 B — un seul prix sur la ligne : une seule étiquette (« Nouveau venu »), ni médiane
+  // ni plus bas / plus haut d'un seul bien.
+  singleLabel?: string;
   alignment: PriceAlignment | null;
   compact?: boolean;
 }) {
   const all = [scale.min, scale.max];
   const at = (value: number) => `${Math.round(bandPosition(value, all) * 1000) / 10}%`;
+  const single = line.prices.length === 1;
   const markers: Marker[] = [
-    { key: 'lowest', label: 'Le plus bas', value: line.lowest, tone: 'muted' },
-    { key: 'median', label: 'Prix médian', value: line.median, tone: 'muted' },
-    { key: 'highest', label: 'Le plus haut', value: line.highest, tone: 'muted' },
-    ...(line.dangerousPrice != null
+    ...(single
+      ? [
+          line.dangerousPrice != null
+            ? {
+                key: 'single',
+                label: 'Le plus dangereux, selon vous',
+                value: line.lowest,
+                tone: 'dangerous' as const,
+              }
+            : {
+                key: 'single',
+                label: singleLabel ?? 'Un seul concurrent',
+                value: line.lowest,
+                tone: 'muted' as const,
+              },
+        ]
+      : [
+          { key: 'lowest', label: 'Le plus bas', value: line.lowest, tone: 'muted' as const },
+          { key: 'median', label: 'Prix médian', value: line.median, tone: 'median' as const },
+          { key: 'highest', label: 'Le plus haut', value: line.highest, tone: 'muted' as const },
+        ]),
+    ...(line.dangerousPrice != null && !single
       ? [
           {
             key: 'dangerous',
             label: 'Le plus dangereux, selon vous',
             value: line.dangerousPrice,
-            tone: 'deep' as const,
+            tone: 'dangerous' as const,
           },
         ]
       : []),
@@ -59,7 +87,7 @@ export function PriceLineBand({
       : []),
   ];
   const subjectClasses = alignment ? ALIGNMENT_CLASSES[alignment.tone] : null;
-  const RANK: Record<Marker['tone'], number> = { muted: 0, deep: 1, subject: 2 };
+  const RANK: Record<Marker['tone'], number> = { muted: 0, median: 1, dangerous: 2, subject: 3 };
   // Un seul repère par prix, du plus bas au plus haut.
   const placed: Marker[] = [...markers]
     .sort((a, b) => a.value - b.value || RANK[b.tone] - RANK[a.tone])
@@ -82,15 +110,30 @@ export function PriceLineBand({
   const toneText = (tone: Marker['tone']) =>
     tone === 'subject'
       ? (subjectClasses?.text ?? 'text-brand-deep')
-      : tone === 'deep'
+      : tone === 'median'
         ? 'text-brand-deep'
-        : 'text-zinc-500';
+        : tone === 'dangerous'
+          ? 'text-red-700'
+          : 'text-zinc-500';
   const toneDot = (tone: Marker['tone']) =>
     tone === 'subject'
       ? (subjectClasses?.dot ?? 'bg-brand-deep')
-      : tone === 'deep'
+      : tone === 'median'
         ? 'bg-brand-deep'
-        : 'bg-zinc-400';
+        : tone === 'dangerous'
+          ? 'bg-red-600'
+          : 'bg-zinc-400';
+  // La même icône que la figure : trait fin pour la médiane, losange rouge pour le plus dangereux,
+  // point pour un concurrent, barre pour votre prix.
+  const icon = (tone: Marker['tone'], size: 'sm' | 'md') => {
+    const px = size === 'sm' ? 'h-2.5 w-2.5' : 'h-4 w-4';
+    if (tone === 'median')
+      return `inline-block ${size === 'sm' ? 'h-3 w-0.5' : 'h-4 w-0.5'} ${toneDot(tone)}`;
+    if (tone === 'dangerous') return `inline-block ${px} rotate-45 ${toneDot(tone)}`;
+    if (tone === 'subject')
+      return `inline-block ${size === 'sm' ? 'h-3 w-1' : 'h-4 w-1'} ${toneDot(tone)}`;
+    return `inline-block ${px} rounded-full ${toneDot(tone)}`;
+  };
   return (
     <div className="flex flex-col gap-1" data-testid="price-line">
       <div className={`relative mx-[6%] ${compact ? 'h-10' : 'h-16 sm:h-[11.5rem]'}`}>
@@ -118,7 +161,10 @@ export function PriceLineBand({
               : anchor === 'end'
                 ? '-translate-x-full items-end text-right'
                 : '-translate-x-1/2 items-center text-center';
-          const tick = `w-0.5 h-4 ${TICK[level]} ${toneDot(marker.tone)}`;
+          const tick =
+            marker.tone === 'dangerous'
+              ? `h-3 w-3 rotate-45 ${toneDot(marker.tone)}`
+              : `w-0.5 h-4 ${TICK[level]} ${toneDot(marker.tone)}`;
           return (
             <div
               key={marker.key}
@@ -133,7 +179,7 @@ export function PriceLineBand({
             >
               {compact ? (
                 <span
-                  className={`h-4 w-4 rounded-full border-2 border-white ${toneDot(marker.tone)} ${strong ? '' : 'opacity-70'}`}
+                  className={`${icon(marker.tone, 'md')} ${strong ? '' : 'opacity-70'}`}
                   title={`${marker.label} : ${formatEuro(marker.value)}`}
                 />
               ) : (
@@ -156,7 +202,7 @@ export function PriceLineBand({
       >
         {placed.map((marker) => (
           <li key={marker.key} className={`flex items-center gap-1 ${toneText(marker.tone)}`}>
-            <span className={`inline-block h-2 w-2 rounded-full ${toneDot(marker.tone)}`} />
+            <span className={icon(marker.tone, 'sm')} />
             {marker.label} <b>{formatEuro(marker.value)}</b>
           </li>
         ))}

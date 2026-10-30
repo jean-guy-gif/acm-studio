@@ -1675,12 +1675,14 @@ describe('marquer une agence de démonstration', () => {
 describe('Mission 127 — le point marché', () => {
   const UPDATE = '77777777-7777-4777-8777-777777777777';
   const LINK = '88888888-8888-4888-8888-888888888888';
-  const inSuivi = (table: string): FakeResponse =>
+  // Les lectures (concurrents, conclusion, résumé, dernier point) rendent « rien » ; seule
+  // l'écriture du point rend sa ligne.
+  const inSuivi = (table: string, write: string): FakeResponse =>
     table === 'projects'
       ? { data: { id: PROJECT, status: 'meeting_completed' } }
-      : table === 'project_market_updates'
+      : table === 'project_market_updates' && (write === 'insert' || write === 'update')
         ? { data: { id: UPDATE, made_at: '2026-11-15T10:00:00.000Z' } }
-        : { data: [] };
+        : { data: null };
 
   it('le point : refusé sans session, membre retiré ou dossier hors Suivi, sans rien écrire', async () => {
     const { recordMarketUpdate } =
@@ -1797,5 +1799,114 @@ describe('Mission 127 — le point marché', () => {
       ['project_id', PROJECT],
       ['agency_id', AGENCY],
     ]);
+  });
+});
+
+// Mission 127 B — la recherche des nouveaux venus : payante, jamais sans mandat signé ni prix.
+describe('Mission 127 B — chercher les nouveaux venus', () => {
+  it('refusée sans session, sur un dossier hors Suivi, non signé ou sans prix : rien d’écrit, rien de réservé', async () => {
+    const { searchNewcomers } = await import('@/features/market-update/actions/search-newcomers');
+    state.profile = null;
+    expect((await searchNewcomers(PROJECT)).ok).toBe(false);
+    noWrite();
+    state.profile = advisor;
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'ready_for_meeting', is_example: false } }
+        : { data: null };
+    expect((await searchNewcomers(PROJECT)).ok).toBe(false);
+    noWrite();
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+        : table === 'project_meeting_conclusions'
+          ? {
+              data: {
+                outcome: 'follow_up',
+                commercialization_price: 300000,
+                concluded_at: '2026-10-08T10:00:00Z',
+              },
+            }
+          : { data: null };
+    expect(await searchNewcomers(PROJECT)).toEqual({
+      ok: false,
+      error:
+        'La recherche des nouveaux venus se fait sur un mandat signé, avec un prix de commercialisation.',
+    });
+    noWrite();
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+        : table === 'project_meeting_conclusions'
+          ? {
+              data: {
+                outcome: 'signed',
+                commercialization_price: null,
+                concluded_at: '2026-10-08T10:00:00Z',
+              },
+            }
+          : { data: null };
+    expect((await searchNewcomers(PROJECT)).ok).toBe(false);
+    noWrite();
+  });
+
+  it('une recherche par point : refusée si le point du jour en porte déjà une, sans rien écrire', async () => {
+    const { searchNewcomers } = await import('@/features/market-update/actions/search-newcomers');
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+        : table === 'project_meeting_conclusions'
+          ? {
+              data: {
+                outcome: 'signed',
+                commercialization_price: 300000,
+                concluded_at: '2026-10-08T10:00:00Z',
+              },
+            }
+          : table === 'project_market_updates'
+            ? {
+                data: {
+                  id: '77777777-7777-4777-8777-777777777777',
+                  made_at: new Date().toISOString(),
+                  summary: {
+                    version: 1,
+                    newcomersSearch: {
+                      madeAt: new Date().toISOString(),
+                      found: 0,
+                      billed: 20,
+                      limitedToPrice: true,
+                    },
+                    meetingDate: null,
+                    agreedPrice: 300000,
+                    advisorAnalysis: null,
+                    competitors: [],
+                    counts: {
+                      read: 0,
+                      dropped: 0,
+                      raised: 0,
+                      probableSale: 0,
+                      withdrawn: 0,
+                      unread: 0,
+                      unreadable: 0,
+                      goneUnknown: 0,
+                      newcomers: 0,
+                    },
+                    lines: {
+                      meeting: null,
+                      today: null,
+                      todayGone: { probableSale: 0, withdrawn: 0, unknown: 0 },
+                      newcomers: null,
+                      newcomersCount: 0,
+                      scale: null,
+                    },
+                  },
+                },
+              }
+            : { data: null };
+    expect(await searchNewcomers(PROJECT)).toEqual({
+      ok: false,
+      error: 'Une recherche des nouveaux venus a déjà été faite pour le point du jour.',
+    });
+    noWrite();
   });
 });

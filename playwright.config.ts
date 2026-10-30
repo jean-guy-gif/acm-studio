@@ -41,7 +41,9 @@ export default defineConfig({
   retries: 0,
   // Mission 125 (décision de Jean-Guy, 25/10) : 8 minutes par parcours, comme la démo — le
   // parcours complet tourne à 6 min, le plafond de 6 le faisait échouer sans défaut (M120).
-  timeout: 8 * 60_000,
+  // Mission 127 B (décision de Jean-Guy, 30/10) : 10 minutes — la démo tourne à 7,9 min et a
+  // débordé une fois ; chaque mission acquéreur ou Point marché l'allonge.
+  timeout: 10 * 60_000,
   expect: { timeout: 20_000 },
   reporter: [['list']],
   use: {

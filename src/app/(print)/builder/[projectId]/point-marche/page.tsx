@@ -101,18 +101,30 @@ export default async function MarketUpdatePage({
         <SynthesisPhotoChoices
           projectId={projectId}
           hint="Cochez « Sans photo » pour retirer la photo du document imprimé et du lien ; c’est le même choix que sur la synthèse du rendez-vous. Rien ici n’est imprimé."
-          competitors={document.competitors
-            .filter((competitor) => competitor.hasPhoto)
-            .map((competitor) => ({
-              id: competitor.id,
-              position: competitor.position,
-              label: competitor.label,
-              hidden: competitor.photoHidden,
-            }))}
+          competitors={(() => {
+            const newcomers = document.summary.competitors
+              .filter((item) => item.newcomer)
+              .map((item) => item.id);
+            return document.competitors
+              .filter((competitor) => competitor.hasPhoto)
+              .map((competitor) => {
+                const rank = newcomers.indexOf(competitor.id);
+                return {
+                  id: competitor.id,
+                  position: rank >= 0 ? rank + 1 : competitor.position,
+                  label: competitor.label,
+                  hidden: competitor.photoHidden,
+                  kind: rank >= 0 ? 'Nouveau venu' : 'Concurrent',
+                };
+              });
+          })()}
         />
         <MarketUpdateLinkButton
           projectId={projectId}
           updateId={chosen.id}
+          advisorFirstName={profile.first_name ?? null}
+          meetingDate={meeting}
+          pointDate={day(chosen.madeAt)}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,
