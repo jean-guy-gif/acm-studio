@@ -10,6 +10,7 @@ import {
   type MarketUpdateSummary,
   type NewcomersSearch,
 } from '@/features/market-update/services/market-update-summary';
+import { isPointOfDay } from '@/features/market-update/services/point-day';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -21,12 +22,6 @@ export type WrittenMarketUpdate = {
   line: string;
   summary: MarketUpdateSummary;
 };
-
-// Le « jour » du point est celui de Paris, comme le Suivi le lit (jamais le jour UTC).
-const dayOf = (value: string | Date): string =>
-  (typeof value === 'string' ? new Date(value) : value).toLocaleDateString('fr-FR', {
-    timeZone: 'Europe/Paris',
-  });
 
 // Mission 127, partagé par la 127 B — écrire le point daté d'un dossier conclu : tout est relu en
 // base par le client de la session (colonnes autorisées seulement), le point est écrit par la clé
@@ -76,7 +71,7 @@ export async function writeMarketUpdate(input: {
   const rows = competitors.data ?? [];
   const readToday = await listingsReadToday(supabase, agencyId, rows, now);
   // Le point du jour, s'il existe : réécrit, sa date gardée.
-  const today = latest.data && dayOf(latest.data.made_at) === dayOf(now) ? latest.data : null;
+  const today = latest.data && isPointOfDay(latest.data.made_at, now) ? latest.data : null;
   const previous = today ? parseMarketUpdateSummary(today.summary) : null;
   const newcomersSearch =
     input.newcomersSearch !== undefined

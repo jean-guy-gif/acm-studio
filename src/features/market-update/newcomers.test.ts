@@ -270,3 +270,16 @@ describe('le message de partage du Point marché', () => {
     expect(decodeURIComponent(hrefs.email)).toContain('subject=Point marché du 29/10/2026');
   });
 });
+
+describe('le jour du point (Paris)', () => {
+  it('un point de la nuit reste celui de son jour de Paris', async () => {
+    const { isPointOfDay, parisDay } = await import('@/features/market-update/services/point-day');
+    expect(parisDay('2026-10-29T23:30:00.000Z')).toBe('30/10/2026');
+    expect(isPointOfDay('2026-10-29T23:30:00.000Z', new Date('2026-10-30T07:00:00.000Z'))).toBe(
+      true,
+    );
+    expect(isPointOfDay('2026-10-29T10:00:00.000Z', new Date('2026-10-30T07:00:00.000Z'))).toBe(
+      false,
+    );
+  });
+});

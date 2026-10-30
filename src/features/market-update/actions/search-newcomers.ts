@@ -28,6 +28,8 @@ import {
   filterNewcomers,
   type NewcomerCandidate,
 } from '@/features/market-update/services/newcomers-filter';
+import { isPointOfDay } from '@/features/market-update/services/point-day';
+import { parseMarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
 import { writeMarketUpdate } from '@/features/market-update/services/write-market-update';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import {
@@ -106,6 +108,26 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     return { ok: false, error: NOT_SIGNED };
   }
   const priceCeiling = Math.round(conclusion.commercialization_price);
+  // Une recherche par point, pas de « Chercher encore » (Jean-Guy, 29/10) : revalidé ici, un
+  // second clic ou un second onglet ne repaie pas.
+  const { data: latest } = await supabase
+    .from('project_market_updates')
+    .select('id, made_at, summary')
+    .eq('project_id', projectId)
+    .eq('agency_id', agencyId)
+    .order('made_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (
+    latest &&
+    isPointOfDay(latest.made_at) &&
+    parseMarketUpdateSummary(latest.summary)?.newcomersSearch != null
+  ) {
+    return {
+      ok: false,
+      error: 'Une recherche des nouveaux venus a déjà été faite pour le point du jour.',
+    };
+  }
 
   const demo = await isDemoAgency(agencyId);
   const apiKey = demo ? null : streamEstateApiKey();

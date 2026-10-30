@@ -1849,4 +1849,64 @@ describe('Mission 127 B — chercher les nouveaux venus', () => {
     expect((await searchNewcomers(PROJECT)).ok).toBe(false);
     noWrite();
   });
+
+  it('une recherche par point : refusée si le point du jour en porte déjà une, sans rien écrire', async () => {
+    const { searchNewcomers } = await import('@/features/market-update/actions/search-newcomers');
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+        : table === 'project_meeting_conclusions'
+          ? {
+              data: {
+                outcome: 'signed',
+                commercialization_price: 300000,
+                concluded_at: '2026-10-08T10:00:00Z',
+              },
+            }
+          : table === 'project_market_updates'
+            ? {
+                data: {
+                  id: '77777777-7777-4777-8777-777777777777',
+                  made_at: new Date().toISOString(),
+                  summary: {
+                    version: 1,
+                    newcomersSearch: {
+                      madeAt: new Date().toISOString(),
+                      found: 0,
+                      billed: 20,
+                      limitedToPrice: true,
+                    },
+                    meetingDate: null,
+                    agreedPrice: 300000,
+                    advisorAnalysis: null,
+                    competitors: [],
+                    counts: {
+                      read: 0,
+                      dropped: 0,
+                      raised: 0,
+                      probableSale: 0,
+                      withdrawn: 0,
+                      unread: 0,
+                      unreadable: 0,
+                      goneUnknown: 0,
+                      newcomers: 0,
+                    },
+                    lines: {
+                      meeting: null,
+                      today: null,
+                      todayGone: { probableSale: 0, withdrawn: 0, unknown: 0 },
+                      newcomers: null,
+                      newcomersCount: 0,
+                      scale: null,
+                    },
+                  },
+                },
+              }
+            : { data: null };
+    expect(await searchNewcomers(PROJECT)).toEqual({
+      ok: false,
+      error: 'Une recherche des nouveaux venus a déjà été faite pour le point du jour.',
+    });
+    noWrite();
+  });
 });
