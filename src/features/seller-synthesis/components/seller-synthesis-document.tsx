@@ -12,6 +12,7 @@ import {
   formatPercent,
   formatSquareMeters,
 } from '@/lib/format';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 110, refondue par la mission 113 — la synthèse laissée au vendeur : le rendez-vous,
 // raconté dans l'ordre du Live, à la forme du dossier « Villa Biot » (couverture en pleine photo,
@@ -460,7 +461,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
       <section className="relative flex min-h-[150mm] flex-col overflow-hidden bg-brand-deep text-white break-after-page print:h-[297mm] print:min-h-0">
         {cover ? (
           <>
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img
+              src={displayPhotoUrl(cover)}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
             <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-b from-transparent via-brand-darker/75 to-brand-darker/95" />
           </>
         ) : null}

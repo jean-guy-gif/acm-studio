@@ -2,6 +2,7 @@ import { demoCommuneByCode } from '@/features/demo/data/communes';
 import { DEMO_LISTINGS, DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 import type { DemoListing, DemoScenario, DemoScenarioId } from '@/features/demo/data/types';
 import { DEMO_LISTING_HOST, DEMO_PHOTOS_PATH } from '@/features/demo/constants';
+import { servedDemoPhotoFile } from '@/lib/photo-url';
 import { siteUrl } from '@/lib/site-url';
 
 // Mission 114 — les adresses de la démonstration : annonces sur l'hôte réservé, photos servies
@@ -64,20 +65,21 @@ export function findDemoSubjectScenario(rawUrl: string): DemoScenario | null {
 
 // `https://acm-studio-essai.vercel.app/demo/photos/appartement-01.jpg` : une adresse absolue,
 // parce que les photos des concurrents sont enregistrées comme les adresses publiées par un
-// portail (`comparables.photo_urls`), et relues telles quelles par le Live et la synthèse.
+// portail (`comparables.photo_urls`, https exigé) ; à l'affichage, `displayPhotoUrl` la ramène à
+// l'hôte qui sert la page (M120 B, reprise R3).
 export function demoPhotoUrl(file: string): string {
   return `${siteUrl().replace(/\/$/, '')}${DEMO_PHOTOS_PATH}/${file}`;
 }
 
-// Le nom de fichier d'une photo de démonstration servie par l'application, sinon null.
+// Le nom de fichier d'une photo de démonstration servie par l'application, sinon null — quel que
+// soit l'hôte de l'application qui l'a enregistrée (M120 B, reprise R3 : une remise à zéro faite
+// depuis l'essai écrit l'hôte de l'essai).
 export function demoPhotoFile(rawUrl: string): string | null {
+  let ownHost: string | null = null;
   try {
-    const url = new URL(rawUrl);
-    const base = new URL(siteUrl());
-    if (url.host !== base.host) return null;
-    const match = url.pathname.match(new RegExp(`^${DEMO_PHOTOS_PATH}/([a-z0-9-]+\\.jpg)$`));
-    return match ? match[1] : null;
+    ownHost = new URL(siteUrl()).host;
   } catch {
-    return null;
+    ownHost = null;
   }
+  return servedDemoPhotoFile(rawUrl, ownHost);
 }

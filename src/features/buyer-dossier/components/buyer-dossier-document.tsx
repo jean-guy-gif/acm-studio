@@ -13,6 +13,7 @@ import {
   type BuyerDossier,
 } from '@/features/buyer-dossier/types';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 122 (partie B) — le PDF du dossier qui fait agir : la même logique sur papier. Couverture
 // (sa phrase, la photo du bien A, « Votre sélection du [date] »), la grille en page 2, un bien par
@@ -61,7 +62,7 @@ function ItemPage({ entry }: { entry: DeckItem }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={photo}
-              src={photo}
+              src={displayPhotoUrl(photo)}
               alt=""
               className={`h-40 w-full bg-zinc-100 object-cover ${index === 0 ? 'col-span-3 h-64' : ''}`}
             />
@@ -132,7 +133,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                 bas, sous le texte ; jamais de voile sur la photo. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={cover}
+              src={displayPhotoUrl(cover)}
               alt=""
               className="absolute inset-x-0 bottom-0 h-[135%] w-full object-cover object-bottom"
               data-testid="dossier-cover-photo"
@@ -201,7 +202,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                       {entry.photos[0] ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={entry.photos[0]}
+                          src={displayPhotoUrl(entry.photos[0])}
                           alt=""
                           className="h-24 w-36 bg-zinc-100 object-cover"
                           data-testid="dossier-grid-thumb"

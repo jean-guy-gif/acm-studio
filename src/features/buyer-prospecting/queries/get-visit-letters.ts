@@ -9,6 +9,7 @@ import {
 } from '@/features/buyer-prospecting/services/visit-letter-state';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getProspectingCards } from '@/features/prospecting/queries/prospecting-card-store';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -20,6 +21,9 @@ export type VisitLetter = {
   state: VisitLetterState;
   // « En attente du propriétaire » tant que le courrier n'a pas abouti ; null : « À planifier ».
   waiting: string | null;
+  // Mission 120 B — à qui s'adresse le courrier préparé : le confrère (« Ouvrir le dossier ») ou
+  // le propriétaire.
+  colleague: boolean;
 };
 
 const NONE: VisitLetter = {
@@ -27,6 +31,7 @@ const NONE: VisitLetter = {
   letterHref: null,
   state: { kind: 'none' },
   waiting: null,
+  colleague: false,
 };
 
 // Mission 120 — pour chaque visite demandée, l'action qui convient à l'origine du bien, le courrier
@@ -66,6 +71,35 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
   ]);
   const outcomes = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
   const exclusivities = new Map((competitors ?? []).map((row) => [row.id, row.exclusivity]));
+  // Mission 120 B (relecteur) — pour une annonce du marché, l'exclusivité que sait déjà la carte du
+  // bien (un concurrent ou un bien démarché de la même annonce) l'emporte sur la sélection.
+  const known = (value: string | null | undefined): string | null =>
+    value === 'yes' || value === 'no' ? value : null;
+  const cardExclusivity = (listingUrl: string): string | null => {
+    const key = listingIdentityKey(listingUrl);
+    if (!key) return null;
+    for (const card of cards) {
+      for (const copy of card.copies) {
+        if (copy.row.listingKey === key && known(copy.row.mandate.exclusivity)) {
+          return copy.row.mandate.exclusivity;
+        }
+      }
+    }
+    const prospect = prospecting.cards.find((card) => card.row.listingKey === key);
+    return known(prospect?.row.mandate.exclusivity);
+  };
+  // Un concurrent retenu : la première copie de sa carte qui sait l'exclusivité, comme à la
+  // préparation (relecteur).
+  const competitorCardExclusivity = (competitorId: string): string | null => {
+    const card = cards.find((candidate) =>
+      candidate.copies.some((copy) => copy.row.id === competitorId),
+    );
+    return (
+      card?.copies
+        .map((copy) => known(copy.row.mandate.exclusivity))
+        .find((value) => value != null) ?? null
+    );
+  };
 
   return new Map(
     lines.map((line) => {
@@ -75,8 +109,10 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
         outcome: outcomes.get(line.itemReference) ?? null,
         exclusivity:
           line.itemSource === 'competitor'
-            ? (exclusivities.get(line.itemReference) ?? null)
-            : line.itemExclusivity,
+            ? (competitorCardExclusivity(line.itemReference) ??
+              exclusivities.get(line.itemReference) ??
+              null)
+            : (cardExclusivity(line.itemReference) ?? line.itemExclusivity),
       });
       const origin = prospecting.bySelectionItem.get(line.itemId);
       if (!origin) {
@@ -94,6 +130,7 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
           letterHref: buyerLetterHref(origin.originId),
           state,
           waiting: visitWaitingLabel(state, row?.step ?? null),
+          colleague: row?.step === 'colleague',
         },
       ];
     }),

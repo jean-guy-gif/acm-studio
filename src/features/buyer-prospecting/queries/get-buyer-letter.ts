@@ -2,9 +2,14 @@ import 'server-only';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import {
+  buyerLetterVersion,
+  colleagueExclusivityCard,
+  defaultBuyerColleagueLetter,
   defaultBuyerLetter,
   type BuyerLetterTexts,
+  type BuyerLetterVersion,
 } from '@/features/buyer-prospecting/services/buyer-letter';
+import type { ExclusivityCard } from '@/features/buyer-prospecting/queries/get-buyer-letter-types';
 import { buildBuyerProspectRow } from '@/features/buyer-prospecting/services/buyer-prospect-row';
 import { comparableFacts, storedFacts } from '@/features/buyer-prospecting/services/prospect-facts';
 import type { BuyerProspectFacts, BuyerProspectRecord } from '@/features/buyer-prospecting/types';
@@ -37,12 +42,15 @@ const PHOTO_URL_TTL_SECONDS = 60 * 60 * 12;
 export type BuyerLetterOverrides = {
   title: string | null;
   letter: string | null;
+  question: string | null;
   contactHook: string | null;
 };
 
+export type { ExclusivityCard };
+
 export type BuyerLetterContext =
   | { status: 'not_found' }
-  | { status: 'blocked'; buyerId: string; blocker: FileBlocker }
+  | { status: 'blocked'; buyerId: string; blocker: FileBlocker; version: BuyerLetterVersion }
   | {
       status: 'ready';
       originId: string;
@@ -51,7 +59,11 @@ export type BuyerLetterContext =
       profileId: string;
       buyer: Buyer;
       facts: BuyerProspectFacts;
-      address: string;
+      // Mission 120 B — le courrier au propriétaire, ou le dossier au confrère (exclusivité).
+      version: BuyerLetterVersion;
+      // Le confrère n'a pas besoin de l'adresse du bien (M98, M108) : null pour lui.
+      address: string | null;
+      exclusivityCard: ExclusivityCard;
       addressSource: AddressSource;
       defaults: BuyerLetterTexts;
       overrides: BuyerLetterOverrides;
@@ -71,7 +83,7 @@ export const buyerLetterPhotoPrefix = (agencyId: string, originId: string): stri
   `${agencyId}/buyer-prospecting/${originId}/`;
 
 const COMPARABLE_COLUMNS =
-  'id, project_id, listing_url, locator_address, locator_confirmed, locator_source, locator_latitude, locator_longitude, property_type, surface_area, rooms_count, land_area, outdoor_spaces, parking_types, listing_features, energy_rating, district, city, price, photo_urls';
+  'id, project_id, listing_url, exclusivity, prospecting_collaboration_declined_at, locator_address, locator_confirmed, locator_source, locator_latitude, locator_longitude, property_type, surface_area, rooms_count, land_area, outdoor_spaces, parking_types, listing_features, energy_rating, district, city, price, photo_urls';
 
 // Mission 120 — tout ce qu'il faut pour afficher ou enregistrer le courrier au propriétaire d'une
 // recherche acquéreur. Cadré sur l'agence de l'appelant. Les blocages sont ceux de tout courrier
@@ -89,7 +101,7 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
   const { data: origin } = await supabase
     .from('buyer_prospect_origins')
     .select(
-      'id, buyer_id, prospect_id, comparable_id, letter_title, letter_body, letter_contact_hook, their_photo_mode, their_photo_source_url, their_photo_path, buyers!inner(*)',
+      'id, buyer_id, prospect_id, comparable_id, letter_version, letter_title, letter_body, letter_question, letter_contact_hook, their_photo_mode, their_photo_source_url, their_photo_path, buyers!inner(*)',
     )
     .eq('id', originId)
     .eq('agency_id', agencyId)
@@ -107,6 +119,9 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
   let address: string | null;
   let source: AddressSource;
   let opposed: boolean;
+  let exclusivity: string | null;
+  let collaborationDeclined: boolean;
+  let listingUrl: string | null;
   if (origin.prospect_id) {
     const { data } = await supabase
       .from('buyer_prospects')
@@ -126,6 +141,9 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
       prospect.locator_latitude != null && prospect.locator_longitude != null,
     );
     opposed = row.opposedOn != null;
+    exclusivity = prospect.exclusivity;
+    collaborationDeclined = prospect.prospecting_collaboration_declined_at != null;
+    listingUrl = prospect.listing_url;
   } else {
     const { data } = await supabase
       .from('comparables')
@@ -148,11 +166,17 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
         { address: data.locator_address, listingKey: listingIdentityKey(data.listing_url) },
         oppositions,
       ) != null || (await cardOpposedOn(data.project_id, data.id)) != null;
+    exclusivity = data.exclusivity;
+    collaborationDeclined = data.prospecting_collaboration_declined_at != null;
+    listingUrl = data.listing_url;
   }
+  // Mission 120 B — en exclusivité, le dossier au confrère ; un refus de collaboration le remet
+  // en courrier au propriétaire (M115) ; sinon le propriétaire.
+  const version: BuyerLetterVersion = buyerLetterVersion(exclusivity, collaborationDeclined);
 
   const branding = await getAgencyBranding();
   const blocker = fileBlocker({
-    version: 'owner',
+    version,
     opposed,
     addressConfirmed: address != null,
     advisorPhone: profile.phone,
@@ -160,8 +184,13 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
     professionalCard: branding?.professionalCard ?? null,
     professionalCardIssuer: branding?.professionalCardIssuer ?? null,
   });
-  if (blocker || address == null) {
-    return { status: 'blocked', buyerId: buyer.id, blocker: blocker ?? 'address_unconfirmed' };
+  if (blocker || (version === 'owner' && address == null)) {
+    return {
+      status: 'blocked',
+      buyerId: buyer.id,
+      blocker: blocker ?? 'address_unconfirmed',
+      version,
+    };
   }
 
   const prefix = buyerLetterPhotoPrefix(agencyId, origin.id);
@@ -184,6 +213,10 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
       : Promise.resolve([]),
   ]);
   const agencyName = documentAgencyName(branding?.documentName, agency?.name);
+  const advisorName = `${profile.first_name} ${profile.last_name}`.trim();
+  // Les textes enregistrés valent pour leur version : quand la version change (exclusivité
+  // corrigée, collaboration refusée), ils sont ignorés, jamais effacés.
+  const sameVersion = (origin.letter_version ?? 'owner') === version;
   return {
     status: 'ready',
     originId: origin.id,
@@ -192,16 +225,24 @@ export async function getBuyerLetter(originId: string): Promise<BuyerLetterConte
     profileId: profile.id,
     buyer,
     facts,
-    address,
+    version,
+    address: version === 'owner' ? address : null,
+    exclusivityCard: colleagueExclusivityCard(facts, buyer, listingUrl),
     addressSource: source,
-    defaults: defaultBuyerLetter(facts, buyer),
-    overrides: {
-      title: origin.letter_title,
-      letter: origin.letter_body,
-      contactHook: origin.letter_contact_hook,
-    },
+    defaults:
+      version === 'colleague'
+        ? defaultBuyerColleagueLetter(facts, buyer, { advisorName, agencyName })
+        : defaultBuyerLetter(facts, buyer, { collaborationDeclined }),
+    overrides: sameVersion
+      ? {
+          title: origin.letter_title,
+          letter: origin.letter_body,
+          question: origin.letter_question,
+          contactHook: origin.letter_contact_hook,
+        }
+      : { title: null, letter: null, question: null, contactHook: null },
     sender: {
-      advisorName: `${profile.first_name} ${profile.last_name}`.trim(),
+      advisorName,
       email: profile.email,
       phone: profile.phone?.trim() || null,
       photoUrl: advisorPhoto[0]?.url ?? null,

@@ -21,6 +21,7 @@ function makeComparable(overrides: Partial<Comparable> = {}): Comparable {
     meeting_price: null,
     meeting_days_on_market: null,
     meeting_frozen_at: null,
+    first_seen_on: null,
     meeting_price_source: null,
     fields_to_verify: [],
     title: 'Bien',

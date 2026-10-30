@@ -7,6 +7,7 @@ import {
   badgeRejected,
   badgeSelected,
   btnPrimary,
+  btnSecondary,
 } from '@/components/ui/styles';
 import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
 import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
@@ -173,16 +174,6 @@ export function ProspectingCard({
           {/* Prêt à envoyer — et, dès avant, la version confrère, qui n'attend pas l'adresse
               (M84). */}
           <div className="flex flex-wrap items-center gap-2">
-            {buyerProspectId && status === 'ready' && buyerOrigins[0] ? (
-              <Link
-                href={buyerLetterHref(buyerOrigins[0].originId)}
-                target="_blank"
-                className={`${btnPrimary} px-3 py-1.5 text-xs`}
-                data-testid="buyer-letter-link"
-              >
-                Préparer le courrier
-              </Link>
-            ) : null}
             {!buyerProspectId &&
             (status === 'ready' || (status === 'to_confirm' && step === 'colleague')) ? (
               <PrepareFileLinks
@@ -192,6 +183,22 @@ export function ProspectingCard({
                 addressConfirmed={addressConfirmed}
                 primary={status === 'ready'}
               />
+            ) : null}
+            {/* Mission 120 B (reprise R4) — le courrier d'une recherche acquéreur est une action
+                au même rang que « Préparer le dossier », aussi sur une carte à deux origines ;
+                en exclusivité, le dossier au confrère, qui n'attend pas l'adresse (M98). */}
+            {buyerOrigins[0] &&
+            (status === 'ready' || (status === 'to_confirm' && step === 'colleague')) ? (
+              <Link
+                href={buyerLetterHref(buyerOrigins[0].originId)}
+                target="_blank"
+                className={status === 'ready' ? `${btnPrimary} px-3 py-1.5 text-xs` : btnSecondary}
+                data-testid="buyer-letter-link"
+              >
+                {step === 'colleague'
+                  ? 'Préparer le dossier de collaboration'
+                  : 'Préparer le courrier'}
+              </Link>
             ) : null}
             <ProspectingStatusActions
               projectId={seller.projectId}

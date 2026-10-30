@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 
 import { hintText } from '@/components/ui/styles';
 import { setDossierPhoto } from '@/features/buyer-dossier/actions/dossier-links';
+import { BuyerGoneNotice } from '@/features/buyer-dossier/components/buyer-gone-notice';
 
 export type DossierPhotoChoice = { id: string; position: string; label: string; hidden: boolean };
 
@@ -18,8 +19,10 @@ export function DossierPhotoChoices({
 }) {
   const [hidden, setHidden] = useState(() => new Map(items.map((item) => [item.id, item.hidden])));
   const [error, setError] = useState<string | null>(null);
+  const [gone, setGone] = useState(false);
   const [pending, startTransition] = useTransition();
   if (items.length === 0) return null;
+  if (gone) return <BuyerGoneNotice />;
   return (
     <fieldset className="flex flex-col gap-2 print:hidden" data-testid="dossier-photo-choices">
       <legend className="text-sm font-semibold text-zinc-800">Photos des biens</legend>
@@ -44,7 +47,8 @@ export function DossierPhotoChoices({
                     const result = await setDossierPhoto(buyerId, item.id, value);
                     if (!result.ok) {
                       setHidden((current) => new Map(current).set(item.id, !value));
-                      setError(result.error);
+                      if (result.gone) setGone(true);
+                      else setError(result.error);
                     }
                   });
                 }}

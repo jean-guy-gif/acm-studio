@@ -1,4 +1,10 @@
+import {
+  LISTING_PORTAL_LABELS,
+  extractListingKey,
+} from '@/features/comparable-import/utils/extract-listing-key';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
+import { COLLABORATION_DECLINED_SENTENCE } from '@/features/prospecting-file/services/build-prospecting-file';
 import type { BuyerProspectFacts } from '@/features/buyer-prospecting/types';
 import type { Buyer } from '@/features/buyers/types';
 import { addressLines } from '@/features/prospecting-file/services/addressee-lines';
@@ -11,7 +17,16 @@ import { formatSquareMeters } from '@/lib/format';
 // du 22/10, §10.2, garde-fou). Le conseiller réécrit tout ; un texte qui contient un mot interdit
 // est refusé, à l'écran comme au serveur.
 
-export type BuyerLetterTexts = { title: string; letter: string; contactHook: string };
+// Mission 120 B — la question du dossier au confrère ; vide pour le courrier au propriétaire.
+export type BuyerLetterTexts = {
+  title: string;
+  letter: string;
+  question: string;
+  contactHook: string;
+};
+
+// Le courrier au propriétaire, ou le dossier de collaboration au confrère (bien en exclusivité).
+export type BuyerLetterVersion = 'owner' | 'colleague';
 
 const OUTDOOR_WORDS: Record<string, string> = {
   balcony: 'un balcon',
@@ -79,6 +94,8 @@ export function matchingFeatures(facts: BuyerProspectFacts, criteria: Criteria):
 export function defaultBuyerLetter(
   facts: BuyerProspectFacts,
   criteria: Criteria,
+  // Mission 120 B — le confrère a refusé la collaboration : la phrase de M115, proposée.
+  { collaborationDeclined = false }: { collaborationDeclined?: boolean } = {},
 ): BuyerLetterTexts {
   const features = matchingFeatures(facts, criteria);
   const subject = features
@@ -89,10 +106,124 @@ export function defaultBuyerLetter(
     letter: [
       'Madame, Monsieur,',
       `${subject} Je souhaiterais vérifier avec vous si une visite est envisageable.`,
+      ...(collaborationDeclined ? [COLLABORATION_DECLINED_SENTENCE] : []),
       'Si vous le souhaitez, je vous présente cette recherche de vive voix, sans engagement de votre part.',
     ].join('\n\n'),
+    question: '',
     contactHook: 'Parlons-en simplement',
   };
+}
+
+// Mission 120 B — la version du courrier, lue sur la carte : en exclusivité, le dossier au
+// confrère ; un refus de collaboration le remet en courrier au propriétaire (M115). Pur.
+export function buyerLetterVersion(
+  exclusivity: string | null,
+  collaborationDeclined: boolean,
+): BuyerLetterVersion {
+  return exclusivity === 'yes' && !collaborationDeclined ? 'colleague' : 'owner';
+}
+
+export const COLLEAGUE_QUESTION =
+  'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur ?';
+
+// Mission 120 B — le dossier de collaboration au confrère : qui écrit, le projet sans l'acquéreur
+// (le secteur et ce que la fiche demande ET que l'annonce dit), et une seule question. Aucune
+// condition présumée : ni honoraires, ni droit de visite. Pur.
+export function defaultBuyerColleagueLetter(
+  facts: BuyerProspectFacts,
+  criteria: Criteria,
+  sender: { advisorName: string; agencyName: string },
+): BuyerLetterTexts {
+  const features = matchingFeatures(facts, criteria);
+  const where = facts.city ? ` à ${facts.city}` : '';
+  const who = sender.advisorName.trim()
+    ? `Je suis ${sender.advisorName.trim()}, conseiller chez ${sender.agencyName}. `
+    : '';
+  return {
+    title: 'Une recherche qui correspond\nà *votre exclusivité.*',
+    letter: [
+      'Cher confrère,',
+      `${who}J’accompagne une recherche${where} qui correspond aux caractéristiques de votre exclusivité${features ? ` : ${features}` : ''}.`,
+    ].join('\n\n'),
+    question: COLLEAGUE_QUESTION,
+    contactHook: 'Votre réponse, en un appel',
+  };
+}
+
+// La carte « Votre exclusivité » : le libellé neutre, l'annonce par son portail et son numéro
+// (jamais le titre ni le lien, M87, M107), puis les seuls critères que la fiche demande ET que
+// l'annonce dit. Pur.
+export function colleagueExclusivityCard(
+  facts: BuyerProspectFacts,
+  criteria: Criteria,
+  listingUrl: string | null,
+): { label: string; reference: string | null; rows: { label: string; value: string }[] } {
+  const type = normalizePropertyType(facts.propertyType);
+  const rows: { label: string; value: string }[] = [];
+  if (
+    (type === 'house' && criteria.propertyTypes.includes('house')) ||
+    (type === 'apartment' && criteria.propertyTypes.includes('apartment'))
+  ) {
+    rows.push({ label: 'Type', value: type === 'house' ? 'Maison' : 'Appartement' });
+  }
+  if (
+    criteria.roomsMin != null &&
+    facts.roomsCount != null &&
+    facts.roomsCount >= criteria.roomsMin
+  ) {
+    rows.push({ label: 'Pièces', value: String(facts.roomsCount) });
+  }
+  if (
+    criteria.surfaceMin != null &&
+    facts.surfaceArea != null &&
+    facts.surfaceArea >= criteria.surfaceMin
+  ) {
+    rows.push({ label: 'Surface', value: formatSquareMeters(Math.round(facts.surfaceArea)) });
+  }
+  const capital = (text: string) =>
+    text.replace(/^(un|une) /, '').replace(/^./, (c) => c.toUpperCase());
+  const outdoor = facts.outdoorSpaces.flatMap((space) => OUTDOOR_WORDS[space] ?? []);
+  if (criteria.outdoor === true && outdoor.length > 0) {
+    rows.push({
+      label: 'Extérieurs',
+      value: outdoor
+        .map((word, index) => (index === 0 ? capital(word) : word.replace(/^(un|une) /, '')))
+        .join(', '),
+    });
+  }
+  const parking = facts.parkingTypes.flatMap((kind) => PARKING_WORDS[kind] ?? []);
+  if (criteria.parking === true && parking.length > 0) {
+    rows.push({ label: 'Stationnement', value: capital(parking[0]) });
+  }
+  if (criteria.pool === true && facts.hasPool === true) {
+    rows.push({ label: 'Piscine', value: 'Oui' });
+  }
+  return {
+    label: neutralComparableLabel({
+      propertyType: normalizePropertyType(facts.propertyType),
+      roomsCount: facts.roomsCount,
+      surfaceArea: facts.surfaceArea,
+      city: facts.city,
+      district: facts.district,
+    }),
+    reference: listingReference(listingUrl),
+    rows,
+  };
+}
+
+// « Annonce SeLoger n° 26ZEJMLWB13Y » : le portail et l'identifiant publié (M47), sans le lien.
+export function listingReference(listingUrl: string | null): string | null {
+  const identity = listingUrl ? extractListingKey(listingUrl) : null;
+  if (!identity) return null;
+  const portal = LISTING_PORTAL_LABELS[identity.portal] ?? null;
+  const number = identity.listingKey.replace(/\.html?$/i, '');
+  return portal ? `Annonce ${portal} n° ${number}` : `Annonce n° ${number}`;
+}
+
+// Le destinataire du dossier au confrère : l'agence titulaire, jamais nommée (son nom n'est pas
+// gardé, M83), et le bien par son libellé neutre.
+export function colleagueAddressee(label: string): { lead: string; nameLines: string[] } {
+  return { lead: 'À l’attention de', nameLines: ['Agence titulaire de l’exclusivité', label] };
 }
 
 // Les mots qui promettraient ce que le conseiller ne sait pas (dossier du 22/10, §10.2).

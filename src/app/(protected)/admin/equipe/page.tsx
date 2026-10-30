@@ -10,7 +10,10 @@ import {
 } from '@/components/ui/styles';
 import { ManagerOverviewView } from '@/features/team/components/manager-overview';
 import { TeamManagement } from '@/features/team/components/team-management';
-import { MandateDashboardView } from '@/features/team/components/mandate-dashboard';
+import {
+  BuyerSearchDashboardView,
+  MandateDashboardView,
+} from '@/features/team/components/mandate-dashboard';
 import { getMandateDashboard } from '@/features/team/queries/get-mandate-dashboard';
 import { getManagerOverview } from '@/features/team/queries/get-manager-overview';
 import { getTeam } from '@/features/team/queries/get-team';
@@ -59,6 +62,10 @@ export default async function ManagerViewPage() {
         <div className="flex flex-col gap-5">
           <h2 className={sectionTitle}>Prise de mandat</h2>
           <MandateDashboardView dashboard={dashboard} />
+          {/* Mission 120 B — les recherches acquéreur, à part de la prise de mandat. */}
+          {dashboard.buyerSearches ? (
+            <BuyerSearchDashboardView figures={dashboard.buyerSearches} />
+          ) : null}
         </div>
       ) : null}
 

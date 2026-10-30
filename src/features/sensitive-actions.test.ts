@@ -946,6 +946,19 @@ describe('Mission 108', () => {
     expect(args).toMatchObject({
       p_next_follow_up_on: defaultNextFollowUpOn('thinking_price', new Date()),
     });
+    // Mission 120 B (relecteur) — une issue qui n'est pas « signé » détache les recherches
+    // acquéreur de ses concurrents : après la conclusion, ses concurrents sont relus par la clé
+    // service, dans le dossier.
+    const concluded = service.calls.findIndex((call) => call.method === 'rpc');
+    const after = service.calls.slice(concluded);
+    expect(after.some((call) => call.method === 'from' && call.args[0] === 'comparables')).toBe(
+      true,
+    );
+    expect(
+      after.some(
+        (call) => call.method === 'eq' && call.args[0] === 'project_id' && call.args[1] === PROJECT,
+      ),
+    ).toBe(true);
 
     // Une date impossible est refusée, rien n'est écrit.
     service.reset();

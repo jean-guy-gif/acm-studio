@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from 'react';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Photo d'annonce servie EN DIRECT par le portail (jamais copiée chez nous —
 // choix juridique du projet). Deux conséquences traitées ici, une fois pour
@@ -67,7 +68,7 @@ export function RemoteImage({
   return (
     <img
       ref={imageRef}
-      src={src}
+      src={displayPhotoUrl(src)}
       alt={alt}
       className={className}
       loading={eager ? 'eager' : 'lazy'}

@@ -23,6 +23,7 @@ import {
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { readObjections } from '@/features/meeting-conclusion/services/objections';
 import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
+import { detachBuyerOriginsForProject } from '@/features/buyer-prospecting/services/detach-buyer-origins';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -140,6 +141,12 @@ export async function concludeMeeting(
   // reprend la carte d'une recherche acquéreur sur la même annonce, s'il y en a une.
   if (decision.value.outcome === 'signed') {
     await absorbBuyerProspectsForProject(serviceClient, profile.agency_id, projectId);
+    revalidatePath('/prospection');
+  } else {
+    // Mission 120 B (relecteur) — l'écran de conclusion corrige aussi l'issue d'un dossier conclu :
+    // un mandat signé corrigé en « vendu ailleurs » ou « retiré » ne porte plus de carte, et les
+    // recherches acquéreur gardent la leur (décision du 29/10). Sans origine, rien n'est écrit.
+    await detachBuyerOriginsForProject(serviceClient, profile.agency_id, projectId);
     revalidatePath('/prospection');
   }
   revalidatePath('/live');

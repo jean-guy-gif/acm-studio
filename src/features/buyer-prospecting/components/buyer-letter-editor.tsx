@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
+import { DocumentEditorLayout } from '@/components/document-editor/document-editor-layout';
 import {
   backLink,
   btnPrimary,
@@ -17,7 +18,11 @@ import {
 } from '@/components/ui/styles';
 import { saveBuyerLetter } from '@/features/buyer-prospecting/actions/save-buyer-letter';
 import { BuyerLetterDocument } from '@/features/buyer-prospecting/components/buyer-letter-document';
-import type { BuyerLetterTexts } from '@/features/buyer-prospecting/services/buyer-letter';
+import type {
+  BuyerLetterTexts,
+  BuyerLetterVersion,
+} from '@/features/buyer-prospecting/services/buyer-letter';
+import type { ExclusivityCard } from '@/features/buyer-prospecting/queries/get-buyer-letter-types';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
 import {
   initialTheirPhotoChoice,
@@ -27,6 +32,7 @@ import {
 } from '@/features/prospecting-file/services/their-photo';
 import type { AddressSource, ProspectingSender } from '@/features/prospecting-file/types';
 import { useUnsavedChangesGuard } from '@/lib/navigation/use-unsaved-changes-guard';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 const tile = (selected: boolean): string =>
   `cursor-pointer overflow-hidden rounded-lg border-2 ${selected ? 'border-brand' : 'border-transparent'}`;
@@ -39,7 +45,7 @@ function ListingThumb({ url, index }: { url: string; index: number }) {
     </span>
   ) : (
     <img
-      src={url}
+      src={displayPhotoUrl(url)}
       alt={`Photo ${index + 1} de son annonce`}
       className="h-16 w-full object-cover"
       onError={() => setFailed(true)}
@@ -54,6 +60,8 @@ function ListingThumb({ url, index }: { url: string; index: number }) {
 export function BuyerLetterEditor({
   originId,
   buyerId,
+  version = 'owner',
+  exclusivityCard = null,
   addressee,
   addressSource,
   defaults,
@@ -64,6 +72,9 @@ export function BuyerLetterEditor({
 }: {
   originId: string;
   buyerId: string;
+  // Mission 120 B — le courrier au propriétaire, ou le dossier de collaboration au confrère.
+  version?: BuyerLetterVersion;
+  exclusivityCard?: ExclusivityCard | null;
   addressee: { lead: string; nameLines: string[] };
   addressSource: AddressSource;
   defaults: BuyerLetterTexts;
@@ -124,99 +135,120 @@ export function BuyerLetterEditor({
   const shown: BuyerLetterTexts = {
     title: texts.title.trim() || defaults.title,
     letter: texts.letter.trim() || defaults.letter,
+    question: texts.question.trim() || defaults.question,
     contactHook: texts.contactHook.trim() || defaults.contactHook,
   };
+  const colleague = version === 'colleague';
   const theirPhotoUrl = theirPhotoDisplayUrl(choice, theirPhoto.saved, theirPhoto.signed);
   const area = `${inputBase} w-full resize-y`;
 
   return (
-    <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:flex-row lg:items-start lg:p-6 print:block print:bg-white print:p-0">
-      <aside className="flex w-full shrink-0 flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[24rem] lg:overflow-y-auto print:hidden">
-        <Link href={`/acquereurs/${buyerId}`} className={backLink}>
-          ← Retour à la fiche
-        </Link>
-        <div className="flex flex-col gap-1">
-          <h1 className={sectionTitle}>Courrier au propriétaire</h1>
-          <p className={hintText}>
-            Né de la recherche de votre acquéreur. Il ne dit ni son nom, ni son budget, et ne promet
-            rien. Chaque texte est modifiable ; un champ vidé reprend le texte proposé.
-          </p>
-        </div>
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Titre</span>
-          <textarea
-            rows={2}
-            maxLength={200}
-            value={texts.title}
-            onChange={(event) => set({ title: event.target.value })}
-            className={area}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Lettre</span>
-          <textarea
-            rows={10}
-            maxLength={3000}
-            value={texts.letter}
-            onChange={(event) => set({ letter: event.target.value })}
-            className={area}
-            data-testid="buyer-letter-text"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Accroche du contact</span>
-          <input
-            type="text"
-            maxLength={200}
-            value={texts.contactHook}
-            onChange={(event) => set({ contactHook: event.target.value })}
-            className={inputBase}
-          />
-        </label>
-
-        <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
-          <span className={fieldLabel}>Photo de son bien</span>
-          <div className="grid grid-cols-4 gap-2">
-            {theirPhoto.listing.map((url, index) => {
-              const selected = choice.mode === 'listing' && choice.url === url;
-              return (
-                <label key={url} className={tile(selected)}>
-                  <input
-                    type="radio"
-                    name="their-photo"
-                    className="sr-only"
-                    checked={selected}
-                    onChange={() => {
-                      setChoice({ mode: 'listing', url });
-                      setState(null);
-                    }}
-                  />
-                  <ListingThumb url={url} index={index} />
-                </label>
-              );
-            })}
-            <label className={tile(choice.mode === 'none')}>
-              <input
-                type="radio"
-                name="their-photo"
-                className="sr-only"
-                checked={choice.mode === 'none'}
-                onChange={() => {
-                  setChoice({ mode: 'none' });
-                  setState(null);
-                }}
-              />
-              <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
-                Sans photo
-              </span>
-            </label>
+    <DocumentEditorLayout
+      panel={
+        <>
+          <Link href={`/acquereurs/${buyerId}`} className={backLink}>
+            ← Retour à la fiche
+          </Link>
+          <div className="flex flex-col gap-1">
+            <h1 className={sectionTitle}>
+              {colleague ? 'Dossier de collaboration au confrère' : 'Courrier au propriétaire'}
+            </h1>
+            <p className={hintText}>
+              {colleague
+                ? 'Né de la recherche de votre acquéreur, pour l’agence qui a ce bien en exclusivité. Il ne dit ni son nom, ni son budget, ne promet rien et ne pose aucune condition. Chaque texte est modifiable ; un champ vidé reprend le texte proposé.'
+                : 'Né de la recherche de votre acquéreur. Il ne dit ni son nom, ni son budget, et ne promet rien. Chaque texte est modifiable ; un champ vidé reprend le texte proposé.'}
+            </p>
           </div>
-          <span className="text-xs text-zinc-500">
-            Une photo de son annonce, à votre choix, ou aucune.
-          </span>
-        </fieldset>
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Titre</span>
+            <textarea
+              rows={2}
+              maxLength={200}
+              value={texts.title}
+              onChange={(event) => set({ title: event.target.value })}
+              className={area}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Lettre</span>
+            <textarea
+              rows={10}
+              maxLength={3000}
+              value={texts.letter}
+              onChange={(event) => set({ letter: event.target.value })}
+              className={area}
+              data-testid="buyer-letter-text"
+            />
+          </label>
+          {colleague ? (
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Question</span>
+              <textarea
+                rows={2}
+                maxLength={300}
+                value={texts.question}
+                onChange={(event) => set({ question: event.target.value })}
+                className={area}
+                data-testid="buyer-letter-question"
+              />
+            </label>
+          ) : null}
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Accroche du contact</span>
+            <input
+              type="text"
+              maxLength={200}
+              value={texts.contactHook}
+              onChange={(event) => set({ contactHook: event.target.value })}
+              className={inputBase}
+            />
+          </label>
 
-        <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4">
+          <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
+            <span className={fieldLabel}>Photo de son bien</span>
+            <div className="grid grid-cols-4 gap-2">
+              {theirPhoto.listing.map((url, index) => {
+                const selected = choice.mode === 'listing' && choice.url === url;
+                return (
+                  <label key={url} className={tile(selected)}>
+                    <input
+                      type="radio"
+                      name="their-photo"
+                      className="sr-only"
+                      checked={selected}
+                      onChange={() => {
+                        setChoice({ mode: 'listing', url });
+                        setState(null);
+                      }}
+                    />
+                    <ListingThumb url={url} index={index} />
+                  </label>
+                );
+              })}
+              <label className={tile(choice.mode === 'none')}>
+                <input
+                  type="radio"
+                  name="their-photo"
+                  className="sr-only"
+                  checked={choice.mode === 'none'}
+                  onChange={() => {
+                    setChoice({ mode: 'none' });
+                    setState(null);
+                  }}
+                />
+                <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
+                  Sans photo
+                </span>
+              </label>
+            </div>
+            <span className="text-xs text-zinc-500">
+              Une photo de son annonce, à votre choix, ou aucune.
+            </span>
+          </fieldset>
+        </>
+      }
+      actions={
+        <>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -244,21 +276,22 @@ export function BuyerLetterEditor({
           ) : null}
           <span className="text-xs text-zinc-500">
             Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF », format A4, sans
-            marges. Le courrier se retrouve dans Prospection, « Recherche acquéreur ».
+            marges. {colleague ? 'Le dossier' : 'Le courrier'} se retrouve dans Prospection, «
+            Recherche acquéreur ».
           </span>
-        </div>
-      </aside>
-
-      <div className="min-w-0 overflow-x-auto print:overflow-visible">
-        <BuyerLetterDocument
-          addressee={addressee}
-          addressSource={addressSource}
-          texts={shown}
-          sender={sender}
-          theirPhotoUrl={theirPhotoUrl}
-          qr={qr}
-        />
-      </div>
-    </div>
+        </>
+      }
+    >
+      <BuyerLetterDocument
+        version={version}
+        exclusivityCard={exclusivityCard}
+        addressee={addressee}
+        addressSource={addressSource}
+        texts={shown}
+        sender={sender}
+        theirPhotoUrl={theirPhotoUrl}
+        qr={qr}
+      />
+    </DocumentEditorLayout>
   );
 }

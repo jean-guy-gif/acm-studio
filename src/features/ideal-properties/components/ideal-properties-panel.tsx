@@ -62,6 +62,7 @@ import {
   type BuyerReconciliation,
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
 import { formatEuro } from '@/lib/format';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 118 (partie B) — « Trouver les biens idéaux », sur un seul écran, réservé au conseiller :
 //   1. ce que l'agence a déjà — le rapprochement de M86, gratuit, rendu d'abord ;
@@ -516,7 +517,7 @@ export function IdealPropertiesPanel({
                             {photo ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={photo}
+                                src={displayPhotoUrl(photo)}
                                 alt=""
                                 className="h-16 w-24 shrink-0 rounded-lg bg-zinc-100 object-cover"
                               />

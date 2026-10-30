@@ -5,7 +5,10 @@ vi.mock('@/lib/app-errors/report-server-error', () => ({
   reportServerError: async () => undefined,
 }));
 
-import { writeMarketUpdate } from '@/features/market-update/services/write-market-update';
+import {
+  newcomerSeenDays,
+  writeMarketUpdate,
+} from '@/features/market-update/services/write-market-update';
 import { fakeSupabase, type FakeCall, type FakeResponse } from '@/test-fixtures/fake-supabase';
 
 // Mission 127 B — le point du jour réécrit garde les propositions payées encore à trancher, et
@@ -141,5 +144,43 @@ describe('writeMarketUpdate — les propositions gardées sur le point', () => {
         (call) => call.method === 'from' && call.args[0] === 'competitor_decisions',
       ),
     ).toBe(false);
+  });
+});
+
+// Mission 120 B — le jour de première vue d'un nouveau venu retenu, tiré de sa proposition payée.
+describe('newcomerSeenDays', () => {
+  const row = (id: string, url: string, extra: Record<string, string | null> = {}) => ({
+    id,
+    listing_url: url,
+    meeting_frozen_at: null,
+    first_seen_on: null,
+    ...extra,
+  });
+
+  it('un nouveau venu retenu prend le jour de Paris où la recherche l’a vu', () => {
+    expect(
+      newcomerSeenDays(
+        [row('c1', `${A}?utm=x`)],
+        [{ url: A, seenSince: '2026-10-14T23:30:00.000Z' }],
+      ),
+    ).toEqual([{ id: 'c1', day: '2026-10-15' }]);
+  });
+
+  it('jamais un concurrent du rendez-vous, jamais deux fois, jamais une date illisible', () => {
+    expect(
+      newcomerSeenDays(
+        [
+          row('c1', A, { meeting_frozen_at: '2026-10-09T10:00:00.000Z' }),
+          row('c2', B, { first_seen_on: '2026-10-12' }),
+          row('c3', C),
+        ],
+        [
+          { url: A, seenSince: '2026-10-15T00:00:00.000Z' },
+          { url: B, seenSince: '2026-10-15T00:00:00.000Z' },
+          { url: C, seenSince: 'pas une date' },
+          { url: D, seenSince: '2026-10-15T00:00:00.000Z' },
+        ],
+      ),
+    ).toEqual([]);
   });
 });

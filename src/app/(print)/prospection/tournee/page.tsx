@@ -23,7 +23,11 @@ import {
   parseTourScope,
   type TourScope,
 } from '@/features/prospecting/services/tour';
+import { getBuyerProspecting } from '@/features/buyer-prospecting/queries/get-buyer-prospecting';
+import { buyerProspectingCard } from '@/features/buyer-prospecting/services/buyer-prospect-card';
+import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Ma tournée — ACM Studio' };
 
@@ -50,7 +54,40 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
   const target = parseProspectingTarget(cible);
   const scope = parseTourScope(qui);
   const filtered = filterProspecting(cards, sellerId, target);
-  const tour = buildTour(sellerId != null ? filtered : filterByScope(filtered, scope, profile.id));
+  // Mission 120 B — les biens démarchés depuis une recherche acquéreur entrent dans la tournée
+  // (hors filtre par bien vendeur) ; « Mes dossiers » : les fiches dont je suis le conseiller.
+  const buyerOrigins = new Map<string, BuyerOriginLabel[]>();
+  let buyerCards: typeof cards = [];
+  if (sellerId == null) {
+    const supabase = await createClient();
+    const prospecting = await getBuyerProspecting(supabase, profile.agency_id);
+    let mine: Set<string> | null = null;
+    if (scope === 'mine') {
+      const { data: myBuyers, error } = await supabase
+        .from('buyers')
+        .select('id')
+        .eq('agency_id', profile.agency_id)
+        .eq('advisor_id', profile.id);
+      // Une lecture en échec n'est jamais « aucune fiche » : la page s'arrête plutôt (M98).
+      if (error) {
+        throw new Error('Lecture des fiches acquéreur impossible pour la tournée.');
+      }
+      mine = new Set((myBuyers ?? []).map((buyer) => buyer.id));
+    }
+    const kept = prospecting.cards.filter(
+      (card) => mine == null || card.origins.some((origin) => mine.has(origin.buyerId)),
+    );
+    for (const card of kept) buyerOrigins.set(card.row.id, card.origins);
+    buyerCards = filterProspecting(kept.map(buyerProspectingCard), null, target);
+  }
+  const tour = buildTour([
+    ...(sellerId != null ? filtered : filterByScope(filtered, scope, profile.id)),
+    ...buyerCards,
+  ]);
+  const pourLabel = (card: (typeof cards)[number]): string =>
+    card.sellers.length > 0
+      ? `Pour : ${sellersLabel(card.sellers)}`
+      : `Recherche acquéreur : ${(buyerOrigins.get(card.row.id) ?? []).map((origin) => origin.buyerName).join(' ; ')}`;
 
   const communes: { name: string; start: number; stops: typeof tour.owners }[] = [];
   tour.owners.forEach((stop, index) => {
@@ -129,10 +166,7 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
             rows={commune.stops.map((stop) => stop.card.row)}
             start={commune.start}
             notes={Object.fromEntries(
-              commune.stops.map(({ card }) => [
-                card.row.id,
-                `Pour : ${sellersLabel(card.sellers)}`,
-              ]),
+              commune.stops.map(({ card }) => [card.row.id, pourLabel(card)]),
             )}
           />
         </section>
@@ -162,7 +196,7 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
                 {card.row.address ? (
                   <span className="text-zinc-700">{card.row.address}</span>
                 ) : null}
-                <span className="text-zinc-700">Pour : {sellersLabel(card.sellers)}</span>
+                <span className="text-zinc-700">{pourLabel(card)}</span>
               </li>
             ))}
           </ul>
