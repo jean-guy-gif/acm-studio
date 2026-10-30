@@ -113,6 +113,9 @@ export default async function MarketUpdatePage({
         <MarketUpdateLinkButton
           projectId={projectId}
           updateId={chosen.id}
+          advisorFirstName={profile.first_name ?? null}
+          meetingDate={meeting}
+          pointDate={day(chosen.madeAt)}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,

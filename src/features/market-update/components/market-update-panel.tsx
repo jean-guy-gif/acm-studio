@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { btnSecondary, metaLabel } from '@/components/ui/styles';
+import { NewcomersSearchPanel } from '@/features/market-update/components/newcomers-search-panel';
 import { PriceLineBand } from '@/features/market-update/components/price-line';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import {
@@ -29,6 +30,7 @@ const STATE_BADGE: Record<MarketUpdateCompetitor['state'], string> = {
   probable_sale: 'bg-orange-50 text-orange-800 stage:bg-orange-400/20 stage:text-orange-200',
   withdrawn: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
   gone: 'bg-zinc-200 text-zinc-700 stage:bg-white/15 stage:text-white/80',
+  newcomer: 'bg-brand-soft text-brand-deep stage:bg-white/10 stage:text-white/80',
 };
 
 // La phrase de fait d'un concurrent, pour la ligne du Suivi.
@@ -41,6 +43,9 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     const when = `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}${d ? ` après ${d}` : ''}`;
     if (item.conclusion.kind === 'withdrawn') return `${when} : retiré du marché sans vente`;
     return `${when} : vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
+  }
+  if (item.newcomer) {
+    return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
   }
   if (item.state === 'gone') {
     return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
@@ -132,6 +137,19 @@ export function MarketUpdateList({
         >
           {dropped}
         </span>
+      ) : null}
+      {/* Mission 127 B — après « Pas maintenant », la recherche reste possible sur le point du jour
+          tant qu'aucune recherche n'a été faite pour lui. */}
+      {signed &&
+      latest &&
+      latest.summary.agreedPrice != null &&
+      latest.summary.newcomersSearch == null &&
+      shortDay(latest.madeAt) === shortDay(new Date().toISOString()) ? (
+        <NewcomersSearchPanel
+          projectId={projectId}
+          meetingDate={latest.summary.meetingDate}
+          searched={false}
+        />
       ) : null}
     </div>
   );

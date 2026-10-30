@@ -169,6 +169,8 @@ export function RefreshPricesButton({ projectId }: { projectId: string }) {
           </div>
           <span className="text-xs text-zinc-600 stage:text-white/70">{point.line}</span>
           <MarketUpdateCompetitorLines summary={point.summary} madeAt={point.madeAt} />
+          {/* Mission 127 B — la proposition (c) suit, portée par la liste « Points marché » (un seul
+              bouton payant sur la ligne, relu en base après le point). */}
         </div>
       ) : null}
       {missingExtension ? (

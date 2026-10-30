@@ -24,6 +24,8 @@ export type PriceLine = {
 };
 
 export type PriceLineCompetitor = {
+  // Mission 127 B — un nouveau venu (retenu après le rendez-vous) ne porte que la ligne 3.
+  newcomer?: boolean;
   meetingPrice: number | null;
   currentPrice: number | null;
   // 'unknown' : disparue sans durée connue — hors de la ligne 2, comptée à part, aucune conclusion.
@@ -157,28 +159,33 @@ export function todaySentence(
   return parts.length > 0 ? parts.join(' ') : null;
 }
 
+// Les nouveaux venus retenus sont à votre prix ou moins (règle de Jean-Guy, 29/10) : la phrase dit
+// le moins cher et son écart au vôtre (Jean-Guy, 30/10).
 export function newcomersSentence(subjectPrice: number | null, prices: number[]): string | null {
-  if (prices.length === 0) return null;
-  const count = plural(prices.length, 'nouveau venu retenu', 'nouveaux venus retenus');
-  if (!positive(subjectPrice)) return `${count} depuis le rendez-vous.`;
-  const under = prices.filter((price) => price < subjectPrice).length;
-  const over = prices.filter((price) => price > subjectPrice).length;
-  const med = median(prices) as number;
-  const gap = med - subjectPrice;
-  const medianPart =
-    gap === 0
-      ? 'Leur prix médian est le vôtre'
-      : `Leur prix médian est ${formatEuro(Math.abs(gap))} ${gap > 0 ? 'au-dessus' : 'en dessous'} du vôtre`;
-  return `${count} depuis le rendez-vous : ${under} ${under > 1 ? 'sont' : 'est'} sous votre prix, ${over} au-dessus. ${medianPart}.`;
+  const valid = prices.filter(positive);
+  if (valid.length === 0) return null;
+  const count = plural(valid.length, 'nouveau venu', 'nouveaux venus');
+  const lowest = Math.min(...valid);
+  if (!positive(subjectPrice))
+    return `${count} depuis le rendez-vous : le moins cher à ${formatEuro(lowest)}.`;
+  const gap = subjectPrice - lowest;
+  const where =
+    gap > 0
+      ? `${formatEuro(gap)} sous le vôtre`
+      : gap === 0
+        ? 'au même prix que le vôtre'
+        : `${formatEuro(-gap)} au-dessus du vôtre`;
+  return `${count} à votre prix ou moins : ${valid.length > 1 ? 'le moins cher ' : ''}à ${formatEuro(lowest)}, ${where}.`;
 }
 
 export const NO_NEWCOMER_LABEL = 'Aucun nouveau venu retenu depuis le rendez-vous';
 
 export function buildPriceLines(
-  competitors: PriceLineCompetitor[],
+  all_: PriceLineCompetitor[],
   subjectPrice: number | null,
   newcomerPrices: number[] = [],
 ): PriceLines {
+  const competitors = all_.filter((item) => !item.newcomer);
   const dangerous = competitors.find((item) => item.dangerous) ?? null;
   const meetingPrices = competitors.map((item) => item.meetingPrice).filter(positive);
   const meeting = line(
