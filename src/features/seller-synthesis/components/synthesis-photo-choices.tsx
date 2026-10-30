@@ -10,6 +10,8 @@ export type SynthesisPhotoChoice = {
   position: number;
   label: string;
   hidden: boolean;
+  // Mission 127 B — « Nouveau venu 1 » plutôt que « Concurrent 6 » pour un nouveau venu.
+  kind?: string;
 };
 
 // Mission 113 — sur l'écran du conseiller, jamais imprimé : chaque concurrent qui a une photo porte
@@ -63,7 +65,7 @@ export function SynthesisPhotoChoices({
                 data-testid="synthesis-hide-photo"
               />
               <span>
-                Sans photo — Concurrent {item.position} · {item.label}
+                Sans photo — {item.kind ?? 'Concurrent'} {item.position} · {item.label}
               </span>
             </label>
           </li>

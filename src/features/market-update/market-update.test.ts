@@ -538,12 +538,11 @@ describe('le document Point marché', () => {
         alignment: null,
       }),
     );
-    // Plus bas = médiane = plus haut = le plus dangereux : un seul libellé fusionné.
+    // Un seul prix sur la ligne : une seule étiquette (ni médiane ni plus bas / plus haut d'un
+    // seul bien), sur la ligne et dans la liste.
     expect(html.split('data-testid="price-line"').length - 1).toBe(1);
-    expect((html.match(/Le plus bas/g) ?? []).length).toBe(2); // sur la ligne et dans la liste
-    expect(html).toContain(
-      'Le plus dangereux, selon vous · Le plus bas · Prix médian · Le plus haut',
-    );
+    expect((html.match(/Un seul concurrent/g) ?? []).length).toBe(2);
+    expect(html).not.toContain('Prix médian');
   });
 
   it('deux étiquettes proches ne se touchent jamais : niveaux distincts', () => {

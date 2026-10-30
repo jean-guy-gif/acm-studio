@@ -32,7 +32,8 @@ import type { NewcomerCandidate } from '@/features/market-update/services/newcom
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
 export const NEWCOMERS_SEARCH_LABEL = 'Chercher les nouveaux venus · jusqu’à 0,60 €';
-export const NEWCOMERS_LIMITED_LABEL = 'Recherche limitée aux biens à votre prix ou moins';
+export const NEWCOMERS_LIMITED_LABEL =
+  'Recherche limitée aux biens au prix de commercialisation ou moins';
 
 type Found = Extract<SearchNewcomersResult, { ok: true }>;
 type CardState = 'open' | 'importing' | 'retained' | 'pending' | 'rejected';
@@ -211,7 +212,7 @@ export function NewcomersSearchPanel({
         : `${formatNumber(found.billed)} annonce${found.billed > 1 ? 's' : ''} facturée${found.billed > 1 ? 's' : ''} (${formatEuro(found.billed * 0.01)})`,
       'critères du dossier',
       since ? `vus sur le marché après le ${since}` : null,
-      NEWCOMERS_LIMITED_LABEL,
+      `${NEWCOMERS_LIMITED_LABEL} (${formatEuro(found.priceCeiling)})`,
     ].filter(Boolean);
     return (
       <div
@@ -230,8 +231,8 @@ export function NewcomersSearchPanel({
         ) : null}
         {found.newcomers.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70" data-testid="newcomers-none">
-            Aucun nouveau venu{since ? ` depuis le ${since}` : ''} avec les critères du dossier, à
-            votre prix ou moins.
+            Aucun nouveau venu{since ? ` depuis le ${since}` : ''} avec les critères du dossier, au
+            prix de commercialisation ou moins.
           </p>
         ) : (
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2" data-testid="newcomers-list">
@@ -279,7 +280,7 @@ export function NewcomersSearchPanel({
       <p className={hintText}>
         Recherche payante sur le marché : jusqu’à 0,60 €. Les critères du dossier, les annonces vues
         sur le marché{since ? ` depuis le ${since}` : ' depuis le rendez-vous'} seulement, sans
-        celles déjà retenues ou écartées, à votre prix ou moins.
+        celles déjà retenues ou écartées, au prix de commercialisation ou moins.
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -372,7 +373,7 @@ function NewcomerCard({
           ) : null}
         </span>
         <span className="text-xs text-zinc-500 stage:text-white/60">
-          Vu sur le marché depuis le {shortDay(candidate.seenSince)} (première vue par la recherche)
+          Vu par la recherche le {shortDay(candidate.seenSince)}, après le rendez-vous
         </span>
       </div>
       {state === 'open' ? (
