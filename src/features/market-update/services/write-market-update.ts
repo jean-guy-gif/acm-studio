@@ -10,11 +10,16 @@ import {
   type MarketUpdateSummary,
   type NewcomersSearch,
 } from '@/features/market-update/services/market-update-summary';
+import { normalizedListingHref } from '@/features/market-update/services/newcomers-filter';
 import { isPointOfDay } from '@/features/market-update/services/point-day';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
 
 type Client = SupabaseClient<Database>;
+type SummaryJson = Database['public']['Tables']['project_market_updates']['Insert']['summary'];
+// Le point est un objet JSON (le schéma zod le relit) : le type généré de la colonne l'exige.
+const asJson = (summary: MarketUpdateSummary): SummaryJson =>
+  JSON.parse(JSON.stringify(summary)) as SummaryJson;
 
 export type WrittenMarketUpdate = {
   updateId: string;
@@ -35,6 +40,9 @@ export async function writeMarketUpdate(input: {
   projectId: string;
   profileId: string;
   newcomersSearch?: NewcomersSearch | null;
+  // Mission 127 B — une proposition écartée par le conseiller : retirée du point (une retenue en
+  // sort d'elle-même, l'annonce étant alors dans le dossier).
+  settledProposalUrl?: string | null;
 }): Promise<WrittenMarketUpdate | null> {
   const { supabase, service, agencyId, projectId } = input;
   const [competitors, conclusion, summary, latest] = await Promise.all([
@@ -73,10 +81,23 @@ export async function writeMarketUpdate(input: {
   // Le point du jour, s'il existe : réécrit, sa date gardée.
   const today = latest.data && isPointOfDay(latest.data.made_at, now) ? latest.data : null;
   const previous = today ? parseMarketUpdateSummary(today.summary) : null;
-  const newcomersSearch =
+  const carried =
     input.newcomersSearch !== undefined
       ? input.newcomersSearch
       : (previous?.newcomersSearch ?? null);
+  const known = new Set(
+    rows.map((row) => normalizedListingHref(row.listing_url)).filter((href) => href != null),
+  );
+  const settled = normalizedListingHref(input.settledProposalUrl ?? null);
+  const newcomersSearch = carried
+    ? {
+        ...carried,
+        proposed: carried.proposed.filter((item) => {
+          const href = normalizedListingHref(item.url) ?? item.url;
+          return !known.has(href) && href !== settled;
+        }),
+      }
+    : null;
   const built = buildMarketUpdateSummary({
     // L'adresse de l'annonce ne va pas plus loin : seul « relue aujourd'hui » entre dans le point.
     competitors: rows.map((row) => {
@@ -94,7 +115,7 @@ export async function writeMarketUpdate(input: {
   if (today) {
     const { data, error } = await service
       .from('project_market_updates')
-      .update({ summary: built })
+      .update({ summary: asJson(built) })
       .eq('id', today.id)
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
@@ -118,7 +139,7 @@ export async function writeMarketUpdate(input: {
       project_id: projectId,
       made_by: input.profileId,
       made_at: now.toISOString(),
-      summary: built,
+      summary: asJson(built),
     })
     .select('id, made_at')
     .single();

@@ -301,6 +301,12 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       billed: billedCount,
       limitedToPrice: true,
       excludedNoDate: filtered.excludedNoDate,
+      // Les propositions restent sur le point jusqu'à « Écarter » ou au point suivant (Jean-Guy,
+      // 30/10) ; sans titre : il ne sert à rien ici.
+      proposed: filtered.newcomers.map((item) => ({
+        ...item,
+        snapshot: { ...item.snapshot, title: null },
+      })),
     },
   });
   revalidatePath('/suivi');

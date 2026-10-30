@@ -184,6 +184,7 @@ describe('le point avec des nouveaux venus', () => {
         billed: 20,
         limitedToPrice: true,
         excludedNoDate: 0,
+        proposed: [],
       },
     });
     expect(summary.competitors.map((item) => item.state)).toEqual([
@@ -223,6 +224,7 @@ describe('le point avec des nouveaux venus', () => {
             billed: 60,
             limitedToPrice: true,
             excludedNoDate: 0,
+            proposed: [],
           },
         }),
       ),

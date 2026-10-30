@@ -21,11 +21,16 @@ const MARKET_UPDATE_FAILURE = 'Le point n’a pas pu être enregistré. Réessay
 // base (colonnes autorisées seulement) et écrit par la clé de service : le navigateur n'écrit
 // jamais un point ; ce qui a été relu se relit en base (une observation du jour), jamais reçu.
 // Mission 127 B — le point du jour se réécrit (une retenue de nouveau venu le met à jour).
-export async function recordMarketUpdate(projectId: string): Promise<RecordMarketUpdateResult> {
+export async function recordMarketUpdate(
+  projectId: string,
+  options: { settledProposalUrl?: string } = {},
+): Promise<RecordMarketUpdateResult> {
   const profile = await getProfile();
   if (!profile || profile.removed_at || !z.uuid().safeParse(projectId).success) {
     return { ok: false, error: MARKET_UPDATE_FAILURE };
   }
+  const settled = z.string().max(2000).optional().safeParse(options.settledProposalUrl);
+  if (!settled.success) return { ok: false, error: MARKET_UPDATE_FAILURE };
   const supabase = await createClient();
   const agencyId = profile.agency_id;
   const { data: project } = await supabase
@@ -43,6 +48,7 @@ export async function recordMarketUpdate(projectId: string): Promise<RecordMarke
     agencyId,
     projectId,
     profileId: profile.id,
+    settledProposalUrl: settled.data ?? null,
   });
   if (!written) return { ok: false, error: MARKET_UPDATE_FAILURE };
   revalidatePath('/suivi');
