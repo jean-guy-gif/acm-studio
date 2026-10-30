@@ -348,7 +348,7 @@ export function SuiviRow({
           ) : null}
           {/* Mission 105, 127 — relire les annonces des concurrents, par l'extension, sans payer,
               puis écrire le point daté. */}
-          <RefreshPricesButton projectId={project.id} />
+          <RefreshPricesButton projectId={project.id} latest={latestPoint} />
         </div>
         {/* Mission 127 — les points marché de ce mandat. */}
         <MarketUpdateList projectId={project.id} updates={points} signed={outcome === 'signed'} />
