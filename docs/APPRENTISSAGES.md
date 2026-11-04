@@ -92,8 +92,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   attend « appliquée ».
 - 04/11 · La CLI Supabase 3.0 refuse toute requête sur la base en ligne en mode agent sans
   confirmation (« Confirmation required »). En lecture : `npx supabase db query --remote --read-only
-  "…"`, sans confirmation. `--linked` est déprécié au profit de `--remote`, et `migration list
-  --linked` échoue sur la configuration locale : lire `supabase_migrations.schema_migrations`.
+"…"`, sans confirmation. `--linked` est déprécié au profit de `--remote`, et `migration list
+--linked` échoue sur la configuration locale : lire `supabase_migrations.schema_migrations`.
 - 30/10 · M120 B · Le gardien-sql a fait trois passages sur la migration (six « à corriger ») :
   une copie cible doit être une copie RETENUE de la même annonce, un bien démarché déjà présent se
   complète sans écraser, et le complément ne pose jamais un mandat à côté d'une collaboration
