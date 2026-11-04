@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { btnPrimary, errorText, inputBase, link } from '@/components/ui/styles';
+import { btnPrimary, btnSecondary, errorText, inputBase, link } from '@/components/ui/styles';
 import { recordVisitDone } from '@/features/buyer-presentation/actions/visit-requests';
 import { FEEDBACK_MAX } from '@/features/buyer-presentation/services/visit-request-row';
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
@@ -19,7 +19,7 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
     return (
       <button
         type="button"
-        className={`${btnPrimary} px-3 py-1.5 text-xs`}
+        className={`${btnSecondary} px-3 py-1.5 text-xs`}
         onClick={() => setOpen(true)}
       >
         Visite faite

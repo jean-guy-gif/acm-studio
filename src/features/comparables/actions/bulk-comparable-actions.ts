@@ -9,6 +9,8 @@ import {
 import { removeCompetitorPhotos } from '@/features/prospecting-file/services/remove-their-photos';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type BulkComparableResult = { ok: true; count: number } | { ok: false; error: string };
 
@@ -48,6 +50,8 @@ export async function bulkRejectComparables(
   if (error) {
     return { ok: false, error: 'L’écartement des biens a échoué.' };
   }
+  // Mission 120 B — écartés, ils ne portent plus de carte : les recherches acquéreur gardent la leur.
+  await detachBuyerOrigins(createServiceRoleClient(), profile.agency_id, targets);
 
   revalidatePath(`/builder/${projectId}/comparables`);
   return { ok: true, count: targets.length };
@@ -67,8 +71,13 @@ export async function bulkDeleteComparables(
   }
 
   const supabase = await createClient();
-  // Mission 120 — les courriers d'une recherche acquéreur rattachés à ces concurrents partent en
-  // cascade : leurs origines se lisent avant, leurs photos se retirent après.
+  // Mission 120 B — avant la suppression, les recherches acquéreur passent sur une autre copie ou
+  // sur un bien démarché, avec leurs courriers : elles ne partent plus en cascade.
+  await detachBuyerOrigins(createServiceRoleClient(), profile.agency_id, targets, {
+    beforeDelete: true,
+  });
+  // Mission 120 — ce qui n'a pas pu se détacher part en cascade : les origines se lisent avant,
+  // leurs photos se retirent après.
   const buyerOrigins = await buyerLetterOriginsOf(supabase, profile.agency_id, {
     comparableIds: targets,
   });

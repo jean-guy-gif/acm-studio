@@ -19,6 +19,7 @@ import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/ser
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { detachBuyerOriginsForProject } from '@/features/buyer-prospecting/services/detach-buyer-origins';
 
 type ChangeArgs = Database['public']['Functions']['change_meeting_outcome']['Args'];
 
@@ -105,6 +106,11 @@ export async function changeMeetingOutcome(
   // Mission 120 — passé « mandat signé », ses concurrents retenus arrivent en Prospection.
   if (decision.value.outcome === 'signed') {
     await absorbBuyerProspectsForProject(serviceClient, profile.agency_id, projectId);
+    revalidatePath('/prospection');
+  } else {
+    // Mission 120 B — passé « vendu ailleurs », « à relancer » ou « retiré », ses concurrents ne
+    // portent plus de carte : les recherches acquéreur gardent la leur (décision du 29/10).
+    await detachBuyerOriginsForProject(serviceClient, profile.agency_id, projectId);
     revalidatePath('/prospection');
   }
   revalidatePath('/suivi');

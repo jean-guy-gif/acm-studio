@@ -105,14 +105,73 @@ describe('préparer le courrier au propriétaire depuis une visite', () => {
         : { data: null };
     expect(await prepareBuyerLetter(VISIT)).toEqual({
       ok: false,
-      error: 'Ce bien ne demande pas de courrier au propriétaire.',
+      error: 'Ce bien ne demande pas ce courrier.',
     });
+    expect((await prepareBuyerLetter(VISIT, 'colleague')).ok).toBe(false);
     state.respond = (table) =>
       table === 'buyer_visit_requests'
         ? { data: visit({ source: 'listing', reference: URL, imported: { exclusivity: 'yes' } }) }
         : { data: null };
     expect((await prepareBuyerLetter(VISIT)).ok).toBe(false);
     expect(writes()).toEqual([]);
+  });
+
+  // Mission 120 B — la version demandée est relue contre l'exclusivité connue.
+  it('une version inconnue, ou le confrère pour une exclusivité « non » : refusé, rien n’est écrit', async () => {
+    state.respond = (table) =>
+      table === 'buyer_visit_requests'
+        ? { data: visit({ source: 'listing', reference: URL, imported: { exclusivity: 'no' } }) }
+        : { data: null };
+    expect((await prepareBuyerLetter(VISIT, 'confrere')).ok).toBe(false);
+    expect((await prepareBuyerLetter(VISIT, 'colleague')).ok).toBe(false);
+    expect(writes()).toEqual([]);
+  });
+
+  it('en exclusivité : le dossier au confrère, version « colleague », sans réécrire l’exclusivité', async () => {
+    state.respond = (table, calls) => {
+      if (table === 'buyer_visit_requests')
+        return {
+          data: visit({ source: 'listing', reference: URL, imported: { exclusivity: 'yes' } }),
+        };
+      if (table === 'buyer_prospects')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: PROSPECT } }
+          : { data: null };
+      if (table === 'buyer_prospect_origins')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: 'origin-c' } }
+          : { data: null };
+      return { data: null };
+    };
+    expect(await prepareBuyerLetter(VISIT, 'colleague')).toEqual({
+      ok: true,
+      href: '/acquereurs/courrier/origin-c',
+    });
+    expect(writes()).toEqual(['insert buyer_prospects', 'insert buyer_prospect_origins']);
+    const inserts = service.calls.filter((call) => call.method === 'insert');
+    expect(inserts[0].args[0]).toMatchObject({ exclusivity: 'yes' });
+    expect(inserts[1].args[0]).toMatchObject({ letter_version: 'colleague' });
+  });
+
+  it('exclusivité inconnue : le choix du conseiller l’écrit sur le bien démarché (« indiqué par vous »)', async () => {
+    state.respond = (table, calls) => {
+      if (table === 'buyer_visit_requests')
+        return { data: visit({ source: 'listing', reference: URL, imported: null }) };
+      if (table === 'buyer_prospects')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: PROSPECT } }
+          : { data: null };
+      if (table === 'buyer_prospect_origins')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: 'origin-d' } }
+          : { data: null };
+      return { data: null };
+    };
+    expect((await prepareBuyerLetter(VISIT, 'colleague')).ok).toBe(true);
+    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toMatchObject({
+      exclusivity: 'yes',
+      exclusivity_source: 'advisor',
+    });
   });
 
   it('une annonce du marché inconnue de l’agence : un bien démarché naît, puis son origine', async () => {
@@ -157,11 +216,34 @@ describe('préparer le courrier au propriétaire depuis une visite', () => {
     });
   });
 
+  // Mission 120 B (relecteur) — l'exclusivité que sait la carte l'emporte sur la sélection.
+  it('la carte sait « oui », la sélection rien : le propriétaire est refusé, le confrère accepté, rien n’est réécrit', async () => {
+    state.cards = [
+      {
+        row: { id: 'comp-1', listingKey: KEY, mandate: { exclusivity: 'yes' } },
+        copies: [{ row: { id: 'comp-1', listingKey: KEY, mandate: { exclusivity: 'yes' } } }],
+      } as unknown as ProspectingCard,
+    ];
+    state.respond = (table, calls) => {
+      if (table === 'buyer_visit_requests')
+        return { data: visit({ source: 'listing', reference: URL, imported: null }) };
+      if (table === 'buyer_prospect_origins')
+        return calls.some((call) => call.method === 'insert')
+          ? { data: { id: 'origin-y' } }
+          : { data: null };
+      return { data: null };
+    };
+    expect((await prepareBuyerLetter(VISIT, 'owner')).ok).toBe(false);
+    expect(writes()).toEqual([]);
+    expect((await prepareBuyerLetter(VISIT, 'colleague')).ok).toBe(true);
+    expect(writes()).toEqual(['insert buyer_prospect_origins']);
+  });
+
   it('un bien déjà sur une carte de concurrent (même annonce) : la carte reçoit l’origine, aucun bien démarché', async () => {
     state.cards = [
       {
-        row: { id: 'comp-1', listingKey: KEY },
-        copies: [{ row: { id: 'comp-1', listingKey: KEY } }],
+        row: { id: 'comp-1', listingKey: KEY, mandate: { exclusivity: null } },
+        copies: [{ row: { id: 'comp-1', listingKey: KEY, mandate: { exclusivity: null } } }],
       } as unknown as ProspectingCard,
     ];
     state.respond = (table, calls) => {
@@ -174,9 +256,17 @@ describe('préparer le courrier au propriétaire depuis une visite', () => {
       return { data: null };
     };
     expect((await prepareBuyerLetter(VISIT)).ok).toBe(true);
-    expect(writes()).toEqual(['insert buyer_prospect_origins']);
+    // Mission 120 B — l'exclusivité inconnue : le choix « propriétaire » l'écrit sur toutes les
+    // copies du bien, sans jamais réécrire une exclusivité déjà connue.
+    expect(writes()).toEqual(['update comparables', 'insert buyer_prospect_origins']);
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
+      exclusivity: 'no',
+      exclusivity_source: 'advisor',
+    });
+    expect(service.calls.find((call) => call.method === 'is')?.args).toEqual(['exclusivity', null]);
     expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toMatchObject({
       comparable_id: 'comp-1',
+      letter_version: 'owner',
     });
   });
 

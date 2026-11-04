@@ -12,6 +12,7 @@ import {
 } from '@/features/market-update/services/market-update-summary';
 import { normalizedListingHref } from '@/features/market-update/services/newcomers-filter';
 import { isPointOfDay } from '@/features/market-update/services/point-day';
+import { parisDay as parisIsoDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -58,7 +59,7 @@ export async function writeMarketUpdate(input: {
     supabase
       .from('comparables')
       .select(
-        'id, price, property_type, rooms_count, surface_area, city, district, display_order, created_at, excluded_from_live, listing_url, listing_published_at, days_on_market, listing_gone_at, meeting_price, meeting_price_source, meeting_frozen_at',
+        'id, price, property_type, rooms_count, surface_area, city, district, display_order, created_at, excluded_from_live, listing_url, listing_published_at, first_seen_on, days_on_market, listing_gone_at, meeting_price, meeting_price_source, meeting_frozen_at',
       )
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
@@ -118,6 +119,22 @@ export async function writeMarketUpdate(input: {
       .map((url) => normalizedListingHref(url))
       .filter((href) => href != null),
   );
+  // Mission 120 B — un nouveau venu qui vient d'être retenu garde le jour où la recherche l'a vu
+  // sur le marché (`first_seen_on`, posé une fois) : sa proposition le savait encore.
+  for (const { id, day } of newcomerSeenDays(rows, carried?.proposed ?? [])) {
+    const { error } = await service
+      .from('comparables')
+      .update({ first_seen_on: day })
+      .eq('id', id)
+      .eq('agency_id', agencyId)
+      .is('first_seen_on', null);
+    if (error) {
+      await reportServerError('date de première vue d’un nouveau venu', error);
+    } else {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (row) row.first_seen_on = day;
+    }
+  }
   const settled = normalizedListingHref(input.settledProposalUrl ?? null);
   const newcomersSearch = carried
     ? {
@@ -178,4 +195,32 @@ export async function writeMarketUpdate(input: {
     return null;
   }
   return { updateId: data.id, madeAt: data.made_at, line: marketUpdateLine(built), summary: built };
+}
+
+// Mission 120 B — les nouveaux venus retenus (`meeting_frozen_at` nul) dont la proposition payée
+// est encore sur le point et qui n'ont pas encore leur jour de première vue : le jour de Paris où
+// la recherche les a vus sur le marché. Pur.
+export function newcomerSeenDays(
+  rows: {
+    id: string;
+    listing_url: string | null;
+    meeting_frozen_at: string | null;
+    first_seen_on?: string | null;
+  }[],
+  proposed: { url: string; seenSince: string }[],
+): { id: string; day: string }[] {
+  const out: { id: string; day: string }[] = [];
+  for (const item of proposed) {
+    const href = normalizedListingHref(item.url);
+    if (!href || Number.isNaN(Date.parse(item.seenSince))) continue;
+    const row = rows.find(
+      (candidate) =>
+        candidate.meeting_frozen_at == null &&
+        candidate.first_seen_on == null &&
+        normalizedListingHref(candidate.listing_url) === href &&
+        !out.some((done) => done.id === candidate.id),
+    );
+    if (row) out.push({ id: row.id, day: parisIsoDay(new Date(item.seenSince)) });
+  }
+  return out;
 }

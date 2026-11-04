@@ -180,6 +180,8 @@ export type MarketUpdateCompetitorRow = {
   // Mission 127 B — null : retenu après la conclusion, un nouveau venu.
   meeting_frozen_at: string | null;
   listing_published_at: string | null;
+  // Mission 120 B — le jour où la recherche des nouveaux venus l'a vu sur le marché.
+  first_seen_on?: string | null;
   days_on_market: number | null;
   listing_gone_at: string | null;
   meeting_price: number | null;
@@ -250,7 +252,9 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
       shownAtMeeting: row.excluded_from_live !== true,
       readToday: row.read_today,
       newcomer,
-      seenSince: newcomer ? (row.listing_published_at ?? row.created_at) : null,
+      seenSince: newcomer
+        ? (row.listing_published_at ?? row.first_seen_on ?? row.created_at)
+        : null,
       meetingPrice,
       meetingPriceSource,
       currentPrice: row.price,

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useUnsavedChangesGuard } from '@/lib/navigation/use-unsaved-changes-guard';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
+import { DocumentEditorLayout } from '@/components/document-editor/document-editor-layout';
 import {
   backLink,
   btnPrimary,
@@ -43,6 +44,7 @@ import {
   type ProspectingFileVersion,
   type ProspectingSender,
 } from '@/features/prospecting-file/types';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 type Photo = { path: string; url: string | null };
 
@@ -66,7 +68,7 @@ function ListingThumb({ url, index }: { url: string; index: number }) {
     </span>
   ) : (
     <img
-      src={url}
+      src={displayPhotoUrl(url)}
       alt={`Photo ${index + 1} de son annonce`}
       className="h-16 w-full object-cover"
       onError={() => setFailed(true)}
@@ -221,230 +223,233 @@ export function ProspectingFileEditor({
   const area = `${inputBase} w-full resize-y`;
 
   return (
-    <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:flex-row lg:items-start lg:p-6 print:block print:bg-white print:p-0">
-      <aside className="flex w-full shrink-0 flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[24rem] lg:overflow-y-auto print:hidden">
-        <Link href={`/builder/${projectId}`} className={backLink}>
-          ← Retour au dossier
-        </Link>
-        <div className="flex flex-col gap-1">
-          <h1 className={sectionTitle}>Dossier de prospection</h1>
-          <p className={hintText}>
-            Version {PROSPECTING_FILE_VERSION_LABELS[version].toLowerCase()}. Chaque texte est
-            modifiable ; entre astérisques, un passage est *mis en valeur*. Un champ vidé reprend le
-            texte proposé.
-          </p>
-        </div>
+    <DocumentEditorLayout
+      panel={
+        <>
+          <Link href={`/builder/${projectId}`} className={backLink}>
+            ← Retour au dossier
+          </Link>
+          <div className="flex flex-col gap-1">
+            <h1 className={sectionTitle}>Dossier de prospection</h1>
+            <p className={hintText}>
+              Version {PROSPECTING_FILE_VERSION_LABELS[version].toLowerCase()}. Chaque texte est
+              modifiable ; entre astérisques, un passage est *mis en valeur*. Un champ vidé reprend
+              le texte proposé.
+            </p>
+          </div>
 
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Titre</span>
-          <textarea
-            rows={2}
-            maxLength={300}
-            value={texts.title}
-            onChange={(event) => set({ title: event.target.value })}
-            className={area}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Lettre</span>
-          <textarea
-            rows={9}
-            maxLength={2000}
-            value={texts.letter}
-            onChange={(event) => set({ letter: event.target.value })}
-            className={area}
-          />
-        </label>
-        {version === 'owner' ? (
           <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>Message clé</span>
+            <span className={fieldLabel}>Titre</span>
             <textarea
-              rows={3}
-              maxLength={400}
-              value={texts.keyMessage}
-              onChange={(event) => set({ keyMessage: event.target.value })}
-              className={area}
-            />
-          </label>
-        ) : null}
-        {PROPOSAL_LABELS.map((label, index) => (
-          <label key={label} className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>{label}</span>
-            <textarea
-              rows={3}
+              rows={2}
               maxLength={300}
-              value={texts.proposals[index]}
-              onChange={(event) => setProposal(index, event.target.value)}
+              value={texts.title}
+              onChange={(event) => set({ title: event.target.value })}
               className={area}
             />
           </label>
-        ))}
-        <label className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>Accroche du contact</span>
-          <input
-            type="text"
-            maxLength={120}
-            value={texts.contactHook}
-            onChange={(event) => set({ contactHook: event.target.value })}
-            className={inputBase}
-          />
-        </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Lettre</span>
+            <textarea
+              rows={9}
+              maxLength={2000}
+              value={texts.letter}
+              onChange={(event) => set({ letter: event.target.value })}
+              className={area}
+            />
+          </label>
+          {version === 'owner' ? (
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Message clé</span>
+              <textarea
+                rows={3}
+                maxLength={400}
+                value={texts.keyMessage}
+                onChange={(event) => set({ keyMessage: event.target.value })}
+                className={area}
+              />
+            </label>
+          ) : null}
+          {PROPOSAL_LABELS.map((label, index) => (
+            <label key={label} className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>{label}</span>
+              <textarea
+                rows={3}
+                maxLength={300}
+                value={texts.proposals[index]}
+                onChange={(event) => setProposal(index, event.target.value)}
+                className={area}
+              />
+            </label>
+          ))}
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Accroche du contact</span>
+            <input
+              type="text"
+              maxLength={120}
+              value={texts.contactHook}
+              onChange={(event) => set({ contactHook: event.target.value })}
+              className={inputBase}
+            />
+          </label>
 
-        <label className="flex items-start gap-2.5 text-sm text-zinc-700">
-          <input
-            type="checkbox"
-            className="mt-0.5"
-            checked={showPrices}
-            disabled={!canShowPrices}
-            onChange={(event) => {
-              setShowPrices(event.target.checked);
-              setState(null);
-            }}
-          />
-          <span className="flex flex-col gap-0.5">
-            <span className="font-medium">Afficher les prix</span>
-            <span className="text-xs text-zinc-500">
-              {canShowPrices
-                ? 'Éteint, la ligne devient « Même gamme de prix », sans chiffre.'
-                : 'Le prix de commercialisation n’est pas renseigné à la conclusion : aucun chiffre.'}
+          <label className="flex items-start gap-2.5 text-sm text-zinc-700">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={showPrices}
+              disabled={!canShowPrices}
+              onChange={(event) => {
+                setShowPrices(event.target.checked);
+                setState(null);
+              }}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="font-medium">Afficher les prix</span>
+              <span className="text-xs text-zinc-500">
+                {canShowPrices
+                  ? 'Éteint, la ligne devient « Même gamme de prix », sans chiffre.'
+                  : 'Le prix de commercialisation n’est pas renseigné à la conclusion : aucun chiffre.'}
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
 
-        <fieldset className="flex flex-col gap-2">
-          <span className={fieldLabel}>Photo de notre bien</span>
-          {photos.length > 0 ? (
-            <div className="grid grid-cols-4 gap-2">
-              {photos.map((photo, index) => (
-                <label
-                  key={photo.path}
-                  className={`cursor-pointer overflow-hidden rounded-lg border-2 ${
-                    photo.path === photoPath ? 'border-brand' : 'border-transparent'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="photo"
-                    className="sr-only"
-                    checked={photo.path === photoPath}
-                    onChange={() => {
-                      setPhotoPath(photo.path);
-                      setState(null);
-                    }}
-                  />
-                  {photo.url ? (
-                    <img
-                      src={photo.url}
-                      alt={`Photo ${index + 1}`}
-                      className="h-16 w-full object-cover"
+          <fieldset className="flex flex-col gap-2">
+            <span className={fieldLabel}>Photo de notre bien</span>
+            {photos.length > 0 ? (
+              <div className="grid grid-cols-4 gap-2">
+                {photos.map((photo, index) => (
+                  <label
+                    key={photo.path}
+                    className={`cursor-pointer overflow-hidden rounded-lg border-2 ${
+                      photo.path === photoPath ? 'border-brand' : 'border-transparent'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="photo"
+                      className="sr-only"
+                      checked={photo.path === photoPath}
+                      onChange={() => {
+                        setPhotoPath(photo.path);
+                        setState(null);
+                      }}
                     />
-                  ) : (
-                    <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
-                      Indisponible
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
-          ) : (
-            <span className="flex flex-col items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
-              Ajoutez une photo du bien vendeur
-              <Link
-                href={`/builder/${projectId}/property`}
-                className="text-xs font-medium underline underline-offset-2"
-              >
-                Ouvrir la fiche du bien vendeur
-              </Link>
-            </span>
-          )}
-        </fieldset>
+                    {photo.url ? (
+                      <img
+                        src={photo.url}
+                        alt={`Photo ${index + 1}`}
+                        className="h-16 w-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+                        Indisponible
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <span className="flex flex-col items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                Ajoutez une photo du bien vendeur
+                <Link
+                  href={`/builder/${projectId}/property`}
+                  className="text-xs font-medium underline underline-offset-2"
+                >
+                  Ouvrir la fiche du bien vendeur
+                </Link>
+              </span>
+            )}
+          </fieldset>
 
-        {/* Mission 115 — « Photo de son bien » : les photos de son annonce (celles du Live), « Ma
+          {/* Mission 115 — « Photo de son bien » : les photos de son annonce (celles du Live), « Ma
             photo », ou « Sans photo » — le défaut (remplace M105). */}
-        <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
-          <span className={fieldLabel}>Photo de son bien</span>
-          <div className="grid grid-cols-4 gap-2">
-            {theirPhoto.listing.map((url, index) => {
-              const selected = theirChoice.mode === 'listing' && theirChoice.url === url;
-              return (
-                <label key={url} className={tile(selected)}>
+          <fieldset className="flex flex-col gap-2" data-testid="their-photo-choice">
+            <span className={fieldLabel}>Photo de son bien</span>
+            <div className="grid grid-cols-4 gap-2">
+              {theirPhoto.listing.map((url, index) => {
+                const selected = theirChoice.mode === 'listing' && theirChoice.url === url;
+                return (
+                  <label key={url} className={tile(selected)}>
+                    <input
+                      type="radio"
+                      name="their-photo"
+                      className="sr-only"
+                      checked={selected}
+                      onChange={() => chooseTheirPhoto({ mode: 'listing', url })}
+                    />
+                    <ListingThumb url={url} index={index} />
+                  </label>
+                );
+              })}
+              {uploaded ? (
+                <label className={tile(theirChoice.mode === 'upload')}>
                   <input
                     type="radio"
                     name="their-photo"
                     className="sr-only"
-                    checked={selected}
-                    onChange={() => chooseTheirPhoto({ mode: 'listing', url })}
+                    checked={theirChoice.mode === 'upload'}
+                    onChange={() => chooseTheirPhoto({ mode: 'upload', path: uploaded.path })}
                   />
-                  <ListingThumb url={url} index={index} />
+                  {uploaded.url ? (
+                    <img src={uploaded.url} alt="Ma photo" className="h-16 w-full object-cover" />
+                  ) : (
+                    <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
+                      Ma photo
+                    </span>
+                  )}
                 </label>
-              );
-            })}
-            {uploaded ? (
-              <label className={tile(theirChoice.mode === 'upload')}>
+              ) : null}
+              <label className={tile(theirChoice.mode === 'none')}>
                 <input
                   type="radio"
                   name="their-photo"
                   className="sr-only"
-                  checked={theirChoice.mode === 'upload'}
-                  onChange={() => chooseTheirPhoto({ mode: 'upload', path: uploaded.path })}
+                  checked={theirChoice.mode === 'none'}
+                  onChange={() => chooseTheirPhoto({ mode: 'none' })}
                 />
-                {uploaded.url ? (
-                  <img src={uploaded.url} alt="Ma photo" className="h-16 w-full object-cover" />
-                ) : (
-                  <span className="flex h-16 items-center justify-center bg-zinc-100 text-xs text-zinc-500">
-                    Ma photo
-                  </span>
-                )}
+                <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
+                  Sans photo
+                </span>
               </label>
-            ) : null}
-            <label className={tile(theirChoice.mode === 'none')}>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`${btnSecondary} px-3 py-1.5 text-xs`}
+                disabled={uploading}
+                onClick={() => fileInput.current?.click()}
+              >
+                {uploading
+                  ? 'Import en cours…'
+                  : uploaded
+                    ? 'Ma photo : en importer une autre'
+                    : 'Ma photo : importer'}
+              </button>
               <input
-                type="radio"
-                name="their-photo"
+                ref={fileInput}
+                type="file"
+                name="their-photo-file"
+                accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
-                checked={theirChoice.mode === 'none'}
-                onChange={() => chooseTheirPhoto({ mode: 'none' })}
+                aria-label="Importer ma photo de son bien"
+                onChange={(event) => {
+                  importTheirPhoto(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
               />
-              <span className="flex h-16 items-center justify-center bg-zinc-100 px-1 text-center text-xs font-medium text-zinc-600">
-                Sans photo
-              </span>
-            </label>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-              disabled={uploading}
-              onClick={() => fileInput.current?.click()}
-            >
-              {uploading
-                ? 'Import en cours…'
-                : uploaded
-                  ? 'Ma photo : en importer une autre'
-                  : 'Ma photo : importer'}
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              name="their-photo-file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              aria-label="Importer ma photo de son bien"
-              onChange={(event) => {
-                importTheirPhoto(event.target.files?.[0]);
-                event.target.value = '';
-              }}
-            />
-          </div>
-          <span className="text-xs text-zinc-500">
-            {theirPhoto.listing.length > 0
-              ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
-              : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
-          </span>
-          {uploadError ? <span className={errorText}>{uploadError}</span> : null}
-        </fieldset>
-
-        <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4">
+            </div>
+            <span className="text-xs text-zinc-500">
+              {theirPhoto.listing.length > 0
+                ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
+                : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
+            </span>
+            {uploadError ? <span className={errorText}>{uploadError}</span> : null}
+          </fieldset>
+        </>
+      }
+      actions={
+        <>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -468,19 +473,17 @@ export function ProspectingFileEditor({
             Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF », format A4, sans
             marges.
           </span>
-        </div>
-      </aside>
-
-      <div className="min-w-0 overflow-x-auto print:overflow-visible">
-        <ProspectingFileDocument
-          file={file}
-          texts={shown}
-          sender={sender}
-          photoUrl={photoUrl}
-          theirPhotoUrl={theirPhotoUrl}
-          qr={qr}
-        />
-      </div>
-    </div>
+        </>
+      }
+    >
+      <ProspectingFileDocument
+        file={file}
+        texts={shown}
+        sender={sender}
+        photoUrl={photoUrl}
+        theirPhotoUrl={theirPhotoUrl}
+        qr={qr}
+      />
+    </DocumentEditorLayout>
   );
 }

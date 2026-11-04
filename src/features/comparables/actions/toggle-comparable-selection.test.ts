@@ -8,6 +8,7 @@ import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 const state = vi.hoisted(() => ({
   selected: false,
   absorbed: [] as unknown[],
+  detached: [] as unknown[],
 }));
 const supabase = fakeSupabase((calls) =>
   calls.some((call) => call.method === 'update')
@@ -31,6 +32,15 @@ vi.mock('@/features/buyer-prospecting/services/absorb-buyer-prospects', () => ({
   },
 }));
 
+// Mission 120 B — écarté, il ne porte plus de carte : le détachement est demandé (décision du 29/10).
+vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => ({}) }));
+vi.mock('@/features/buyer-prospecting/services/detach-buyer-origins', () => ({
+  detachBuyerOrigins: async (...args: unknown[]) => {
+    state.detached.push(args.slice(1));
+    return 0;
+  },
+}));
+
 const { toggleComparableSelection } =
   await import('@/features/comparables/actions/toggle-comparable-selection');
 
@@ -43,6 +53,7 @@ const form = () => {
 beforeEach(() => {
   supabase.reset();
   state.absorbed.length = 0;
+  state.detached.length = 0;
 });
 
 describe('« Retenir » depuis la page Concurrents', () => {
@@ -53,14 +64,16 @@ describe('« Retenir » depuis la page Concurrents', () => {
       is_selected: true,
     });
     expect(state.absorbed).toEqual([['agency-a', 'p1', 'c1']]);
+    expect(state.detached).toEqual([]);
   });
 
-  it('écarté : aucune fusion', async () => {
+  it('écarté : aucune fusion, le détachement de ses recherches acquéreur est demandé', async () => {
     state.selected = true;
     await expect(toggleComparableSelection('p1', form())).rejects.toThrow('redirect');
     expect(supabase.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
       is_selected: false,
     });
     expect(state.absorbed).toEqual([]);
+    expect(state.detached).toEqual([['agency-a', ['c1']]]);
   });
 });

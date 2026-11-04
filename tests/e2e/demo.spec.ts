@@ -1284,11 +1284,13 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(phone).toHaveAttribute('data-screen', 'grid');
     const linkAnswer = (value: string) =>
       visitor.locator(`[data-testid="deck-answer"][data-answer="${value}"]`);
-    // Essai de Jean-Guy (25/10) : A « Je veux le visiter », B « Peut-être », au doigt.
+    // Essai de Jean-Guy (25/10) : A et B « Je veux le visiter », au doigt. Mission 120 B — B, en
+    // exclusivité (mou-02), porte la visite qui se joue par le dossier au confrère : sa demande
+    // « depuis le dossier » survit au « Peut-être » de la présentation (M122).
     const sendBar = visitor.getByTestId('dossier-send-bar');
     for (const [letter, value] of [
       ['A', 'visit'],
-      ['B', 'maybe'],
+      ['B', 'visit'],
     ] as const) {
       await visitor.getByTestId('dossier-next').tap();
       await expect(phone).toHaveAttribute('data-screen', 'item');
@@ -1318,8 +1320,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     }
     await visitor.getByTestId('dossier-to-answer').tap();
     const answerScreen = visitor.getByTestId('dossier-answer');
-    await expect(answerScreen).toContainText('Vous voulez visiter le bien A.');
-    await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
+    await expect(answerScreen).toContainText('Vous voulez visiter les biens A et B.');
+    await expect(answerScreen).not.toContainText('Vous hésitez');
     await expect(answerScreen).not.toContainText('pas pour vous');
     await visitor.getByTestId('dossier-availability').filter({ hasText: 'Samedi matin' }).tap();
     await expect(visitor.getByTestId('dossier-download')).toHaveText('Télécharger en PDF');
@@ -1347,7 +1349,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(visitor.getByTestId('dossier-next')).toHaveCount(0);
     await visitor.getByTestId('dossier-last-send').tap();
     await expect(answerScreen).toContainText('Le bien C : pas pour vous. Pourquoi ?');
-    await expect(answerScreen).toContainText('Vous hésitez pour le bien B.');
+    await expect(answerScreen).toContainText('Vous voulez visiter les biens A et B.');
     await expect(
       visitor.getByTestId('dossier-reason').filter({ hasText: 'Le prix' }),
     ).toHaveAttribute('aria-pressed', 'true');
@@ -1359,7 +1361,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     // La base dit ce qui a été touché, et rien d'autre.
     expect(readDemoLinkAnswers('Famille Keller')).toEqual([
       { position: 1, answer: 'visit', reasons: [] },
-      { position: 2, answer: 'maybe', reasons: [] },
+      { position: 2, answer: 'visit', reasons: [] },
       { position: 3, answer: 'no', reasons: ['price'] },
     ]);
     await visitor.goto(dossierLink);
@@ -1373,7 +1375,8 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
-  await expect(page.getByTestId('buyer-answers')).toContainText('Peut-être');
+  // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
+  await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
   // Sa réponse sur le lien : l'étape 3 de la fiche la dit, et « Je veux le visiter » est sur
   // Visites, « depuis le dossier ».
   await expect(page.getByTestId('buyer-step').nth(2)).toContainText('Réponse reçue ✓');
@@ -1645,6 +1648,54 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     .filter({ hasText: 'Mouans-Sartoux' });
   await expect(visitCAfter.getByTestId('visit-letter-state')).toHaveText(/^Remis le \d{2}\/\d{2}$/);
   await expect(visitCAfter.getByTestId('visit-outcome')).toHaveText('En attente du propriétaire');
+
+  // Mission 120 B — B, en exclusivité : le dossier de collaboration au confrère, sans nom, budget
+  // ni condition ; dans Prospection, « Marquer contacté » puis
+  // « Collaboration obtenue » ; la visite redevient « À planifier », sans autre geste.
+  const visitB = () =>
+    page
+      .getByTestId('visits-pending')
+      .getByTestId('visit-line')
+      .filter({ hasText: /7 pièces · 220\sm²/ });
+  await expect(visitB()).toHaveCount(1);
+  await expect(visitB().getByTestId('visit-prepare-owner-letter')).toHaveCount(0);
+  await visitB().getByTestId('visit-prepare-colleague-letter').click();
+  await expect(page).toHaveURL(/\/acquereurs\/courrier\/[0-9a-f-]{36}$/);
+  const colleagueDocument = page.getByTestId('buyer-letter-document');
+  await expect(colleagueDocument).toHaveAttribute('data-version', 'colleague');
+  await expect(page.getByTestId('buyer-letter-addressee')).toContainText(
+    'Agence titulaire de l’exclusivité',
+  );
+  await expect(page.getByTestId('colleague-question')).toHaveText(
+    'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur ?',
+  );
+  await expect(page.getByTestId('exclusivity-card')).toContainText(/Annonce .+ n° mou-02/);
+  expect(await colleagueDocument.innerText()).not.toMatch(
+    /Keller|1\s?500\s?000|1\s?650\s?000|1\s?720\s?000|certain|offre|prête|honoraires|CNIL/i,
+  );
+  await expectUnspoken(page, 'Dossier de collaboration au confrère');
+  await page.getByTestId('buyer-letter-save').click();
+  await expect(page.getByRole('status')).toHaveText('Enregistré.');
+  await page.goto('/prospection?origine=acquereur');
+  const colleagueCard = () =>
+    page
+      .getByTestId('prospecting-card')
+      .filter({ has: page.getByTestId('buyer-origin').filter({ hasText: 'Famille Keller' }) })
+      .filter({ hasText: /220\sm²/ });
+  await expect(colleagueCard()).toHaveCount(1);
+  await expect(colleagueCard()).toContainText('Exclusivité · appeler le confrère');
+  await colleagueCard().getByRole('button', { name: 'Marquer contacté' }).click();
+  await expect(colleagueCard()).toContainText(/Contacté le \d{2}\/\d{2}/);
+  await colleagueCard().getByRole('button', { name: 'Collaboration obtenue' }).click();
+  await expect(
+    page
+      .getByTestId('prospecting-column-meeting')
+      .getByTestId('prospecting-card')
+      .filter({ hasText: /220\sm²/ }),
+  ).toHaveCount(1);
+  await page.goto('/visites');
+  await expect(visitB().getByTestId('visit-letter-state')).toHaveText('Collaboration obtenue');
+  await expect(visitB().getByTestId('visit-outcome')).toHaveText('À planifier');
 
   await page
     .getByTestId('visits-pending')

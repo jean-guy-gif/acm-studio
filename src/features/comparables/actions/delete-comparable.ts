@@ -10,6 +10,8 @@ import {
 import { removeCompetitorPhotos } from '@/features/prospecting-file/services/remove-their-photos';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export async function deleteComparable(projectId: string, formData: FormData): Promise<void> {
   const profile = await getProfile();
@@ -21,8 +23,13 @@ export async function deleteComparable(projectId: string, formData: FormData): P
 
   if (comparableId) {
     const supabase = await createClient();
-    // Mission 120 — les courriers d'une recherche acquéreur rattachés à ce concurrent partent en
-    // cascade : leurs origines se lisent avant, leurs photos se retirent après.
+    // Mission 120 B — avant la suppression, ses recherches acquéreur passent sur une autre copie ou
+    // sur un bien démarché, avec leurs courriers : elles ne partent plus en cascade.
+    await detachBuyerOrigins(createServiceRoleClient(), profile.agency_id, [comparableId], {
+      beforeDelete: true,
+    });
+    // Mission 120 — ce qui n'a pas pu se détacher part en cascade : les origines se lisent avant,
+    // leurs photos se retirent après.
     const buyerOrigins = await buyerLetterOriginsOf(supabase, profile.agency_id, {
       comparableIds: [comparableId],
     });

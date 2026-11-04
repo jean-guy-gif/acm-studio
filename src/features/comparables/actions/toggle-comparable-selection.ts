@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation';
 import { absorbBuyerProspectsForProject } from '@/features/buyer-prospecting/services/absorb-buyer-prospects';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export async function toggleComparableSelection(
   projectId: string,
@@ -40,6 +42,10 @@ export async function toggleComparableSelection(
       // recherche acquéreur sur la même annonce (même règle que « La retenir », M108).
       if (!current.is_selected) {
         await absorbBuyerProspectsForProject(supabase, profile.agency_id, projectId, current.id);
+        revalidatePath('/prospection');
+      } else {
+        // Mission 120 B — écarté, il ne porte plus de carte : la recherche acquéreur garde la sienne.
+        await detachBuyerOrigins(createServiceRoleClient(), profile.agency_id, [current.id]);
         revalidatePath('/prospection');
       }
     }

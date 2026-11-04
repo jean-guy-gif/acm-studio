@@ -24,6 +24,7 @@ import type {
   ProspectingFileTexts,
   ProspectingSender,
 } from '@/features/prospecting-file/types';
+import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 84 — le dossier de prospection tel qu'il s'imprime (A4). Composant d'affichage : tous
 // ses textes viennent de `buildProspectingFile` et des textes du conseiller. Il sort de
@@ -110,7 +111,7 @@ export function TheirPhoto({ url, placeholder }: { url: string | null; placehold
   return (
     <div className="pf-ph" data-testid="their-photo">
       {url && failedUrl !== url ? (
-        <img src={url} alt="" onError={() => setFailedUrl(url)} />
+        <img src={displayPhotoUrl(url)} alt="" onError={() => setFailedUrl(url)} />
       ) : (
         placeholder.map((line) => <span key={line}>{line}</span>)
       )}
@@ -261,7 +262,7 @@ function OwnerPages({
           <Card card={file.ours} side="ours">
             {photoUrl ? (
               <div className="pf-ph">
-                <img src={photoUrl} alt="" />
+                <img src={displayPhotoUrl(photoUrl)} alt="" />
               </div>
             ) : null}
           </Card>
@@ -376,7 +377,7 @@ function ColleaguePage({
         <Card card={file.ours} side="ours">
           {photoUrl ? (
             <div className="pf-ph">
-              <img src={photoUrl} alt="" />
+              <img src={displayPhotoUrl(photoUrl)} alt="" />
             </div>
           ) : null}
         </Card>

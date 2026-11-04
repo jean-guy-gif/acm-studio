@@ -3,6 +3,7 @@ import type {
   MandateDashboard,
   MandateFigures,
 } from '@/features/team/services/build-mandate-dashboard';
+import type { BuyerSearchFigures } from '@/features/team/services/build-buyer-search-figures';
 import { formatNumber, formatPercent } from '@/lib/format';
 
 // Mission 110 — le tableau de la prise de mandat : pour l'agence, puis par conseiller. Des faits
@@ -102,5 +103,76 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
         jamais compté.
       </p>
     </div>
+  );
+}
+
+// Mission 120 B — le bloc « Recherches acquéreur », à part de la prise de mandat (maquette M120B-4).
+export function BuyerSearchDashboardView({ figures }: { figures: BuyerSearchFigures }) {
+  const { agency } = figures;
+  return (
+    <section className="flex flex-col gap-3" data-testid="buyer-search-dashboard">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
+          Recherches acquéreur
+        </h2>
+        <p className={hintText}>
+          Les courriers au propriétaire et les dossiers au confrère nés d’une recherche acquéreur,
+          et leurs suites.
+        </p>
+      </div>
+      {agency.prepared === 0 ? (
+        <p className={hintText}>Aucun courrier né d’une recherche acquéreur pour l’instant.</p>
+      ) : (
+        <>
+          <div className={`${card} grid grid-cols-2 gap-5 p-5 md:grid-cols-5`}>
+            <Figure label="Courriers et dossiers préparés" value={formatNumber(agency.prepared)} />
+            <Figure label="Remis ou contactés" value={formatNumber(agency.handed)} />
+            <Figure label="Rendez-vous obtenus" value={formatNumber(agency.meetings)} />
+            <Figure label="Mandats rentrés" value={formatNumber(agency.mandates)} />
+            <Figure label="Collaborations obtenues" value={formatNumber(agency.collaborations)} />
+          </div>
+          {figures.advisors.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[36rem] text-left text-sm">
+                <thead className="text-zinc-500 stage:text-white/60">
+                  <tr>
+                    <th className="py-2 pr-4 font-medium">Conseiller</th>
+                    <th className="py-2 pr-4 font-medium">Préparés</th>
+                    <th className="py-2 pr-4 font-medium">Remis ou contactés</th>
+                    <th className="py-2 pr-4 font-medium">Rendez-vous</th>
+                    <th className="py-2 pr-4 font-medium">Mandats</th>
+                    <th className="py-2 font-medium">Collaborations</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {figures.advisors.map((advisor) => (
+                    <tr
+                      key={advisor.advisorId}
+                      className="border-t border-zinc-100 stage:border-white/10"
+                    >
+                      <td className="py-2 pr-4 font-medium text-zinc-900 stage:text-white">
+                        {advisor.name}
+                      </td>
+                      <td className="py-2 pr-4">{formatNumber(advisor.prepared)}</td>
+                      <td className="py-2 pr-4">{formatNumber(advisor.handed)}</td>
+                      <td className="py-2 pr-4">{formatNumber(advisor.meetings)}</td>
+                      <td className="py-2 pr-4">{formatNumber(advisor.mandates)}</td>
+                      <td className="py-2">{formatNumber(advisor.collaborations)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <p className={hintText}>
+            Des faits déclarés par les conseillers, cumulés : un mandat rentré compte aussi comme
+            rendez-vous et comme remise. Chaque bien est compté une fois, au conseiller qui a
+            préparé son premier courrier. Un bien démarché aussi pour un mandat signé compte ici et
+            dans la prise de mandat ; les collaborations de la prise de mandat ne comptent que les
+            concurrents retenus d’un dossier vendeur.
+          </p>
+        </>
+      )}
+    </section>
   );
 }

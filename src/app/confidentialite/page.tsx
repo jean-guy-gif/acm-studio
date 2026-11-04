@@ -128,7 +128,14 @@ export default function ConfidentialitePage() {
               un propriétaire, avec sa propre finalité (présenter une recherche qui correspond au
               bien) ; il ne dit ni le nom ni le budget de l’acquéreur. L’adresse d’un bien sans
               contact depuis {OWNER_ADDRESS_RETENTION_YEARS} ans est effacée, comme celle d’un bien
-              concurrent, et la liste « Ne plus solliciter » s’applique de la même façon.
+              concurrent, et la liste « Ne plus solliciter » s’applique de la même façon. Quand le
+              bien est en exclusivité, le conseiller prépare plutôt un dossier de collaboration à
+              l’agence qui le détient : il désigne le bien par ses caractéristiques et le numéro de
+              son annonce, jamais par son adresse, ne dit ni le nom ni le budget de l’acquéreur, ne
+              pose aucune condition, et porte les mentions professionnelles de l’agence. Quand le
+              dossier vendeur pour lequel ce bien était un concurrent n’est plus un mandat signé, la
+              démarche née d’une recherche acquéreur continue sur sa propre carte, avec les mêmes
+              données.
             </li>
             <li>
               La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
