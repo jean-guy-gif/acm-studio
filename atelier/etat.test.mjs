@@ -8,10 +8,13 @@ import { lireJournal } from './journal.mjs';
 // Mission 126 — ce que la page montre, lu sur les trois journaux d'exemple.
 const exemple = (nom) =>
   lireJournal(resolve(import.meta.dirname, 'exemples', nom, 'journal.jsonl'));
+// Les journaux d'exemple datent du 30/10 : la page se lit juste après leur dernière ligne, jamais à
+// l'heure réelle (au-delà de 24 h sans ligne, une mission se ferme et les tests tombaient seuls).
+const LU_LE = '2026-10-30T12:30:00.000Z';
 
 describe('l’état de la page', () => {
   it('mission en cours : architecte terminé, designer en cours, l’étape active en couleur', () => {
-    const { missions } = etatDeLaPage(exemple('mission-en-cours'));
+    const { missions } = etatDeLaPage(exemple('mission-en-cours'), null, LU_LE);
     expect(missions).toHaveLength(1);
     const m = missions[0];
     expect(m.mission).toBe('120B');
@@ -41,7 +44,7 @@ describe('l’état de la page', () => {
   });
 
   it('migration en attente : le chef et Jean-Guy en « attend Jean-Guy », l’étape Accord active', () => {
-    const { missions } = etatDeLaPage(exemple('migration-en-attente'));
+    const { missions } = etatDeLaPage(exemple('migration-en-attente'), null, LU_LE);
     const m = missions[0];
     expect(m.chef).toMatchObject({ etat: 'attend Jean-Guy', mot: 'attend Jean-Guy' });
     expect(m.agents.find((a) => a.nom === 'Jean-Guy')).toMatchObject({
@@ -53,9 +56,11 @@ describe('l’état de la page', () => {
   });
 
   it('deux missions en parallèle : une colonne chacune, la plus récente en premier, les durées e2e', () => {
-    const { missions, fil, cartes } = etatDeLaPage(exemple('deux-missions'), {
-      base: { enAttente: [] },
-    });
+    const { missions, fil, cartes } = etatDeLaPage(
+      exemple('deux-missions'),
+      { base: { enAttente: [] } },
+      LU_LE,
+    );
     expect(missions.map((m) => m.mission)).toEqual(['120B', '126']);
     const [m120, m126] = missions;
     expect(m120.dossier).not.toBe(m126.dossier);
