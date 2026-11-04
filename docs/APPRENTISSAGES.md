@@ -14,6 +14,14 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   utiles pour regarder, jamais pour valider. L'essai, c'est `acm-studio-essai.vercel.app`.
 - 25/10 · `/api/version` dit le commit servi ; l'essai doit contenir le dernier commit de la branche
   avant tout parcours ou essai.
+- 30/10 · M120 B · Le testeur a joué des copies temporaires de la démo e2e (`zz-…-tmp.spec.ts`), puis
+  les a supprimées : impossible ensuite de savoir ce qu'il y avait changé. Règle de Jean-Guy : le
+  testeur ne joue que le code de la branche, jamais une copie, et rejoue seulement ce qui a échoué.
+- 30/10 · M120 B · « Préparation… » d'un courrier au-delà des 20 s du test, sans erreur au journal :
+  le geste aboutit après coup (l'origine est écrite en base). Les fonctions tournent en iad1, la
+  base à Paris : aléa de latence, la mission 128 les met en cdg1. Le rejeu suivant est vert.
+- 30/10 · M120 B · La variable de contournement de l'essai s'appelle `E2E_VERCEL_BYPASS` : une
+  attente de `/api/version` avec un autre nom tourne dix minutes sur une page 401 sans le dire.
 
 ## La démo et les tests
 
@@ -56,6 +64,18 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 30/10 · M127 B · Après un correctif, l'agent déjà lancé rejoue sur la vieille version si on ne
   le lui dit pas : chaque fusion dans `essai` s'accompagne d'un message au testeur en cours
   (« quand `/api/version` répond X, rejoue sur X »), et un seul rapport est demandé.
+- 30/10 · M120 B · L'e2e démo joue les Keller APRÈS « Remettre ma démo à zéro » : aucun nouveau
+  venu retenu chez M. Lefebvre, donc aucune carte de Prospection à deux origines dans ce parcours.
+  Une mesure qui en dépend se fait à la main, après l'e2e (Point marché, retenir mou-07 : la carte
+  de C, 8 allée du Décor, fusionne et porte les deux origines).
+- 30/10 · M120 B · Une carte « Remis » n'affiche plus aucun « Préparer » : pour mesurer ses actions,
+  « Annuler » la ramène d'un cran, puis « Marquer remis » la remet.
+- 30/10 · M120 B · Le faux client Supabase répond à toutes les lectures d'un `Promise.all` avec la
+  réponse de la dernière table : une lecture testée sort du `Promise.all`, ou sa règle passe dans
+  une fonction pure testée à part (`newcomerSeenDays`).
+- 04/11 · Les tests de l'atelier lisaient leurs journaux d'exemple (30/10) à l'heure réelle : au-delà
+  de 24 h, la mission se ferme et trois tests tombaient seuls, sur `main` aussi. Un test qui dépend
+  de « maintenant » reçoit une heure fixe.
 
 ## La base
 
@@ -70,6 +90,17 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 29/10 · Pendant que Jean-Guy applique la migration, le chef continue : code, barrières, commit,
   push de la branche (la CI tourne) et trois passages du relecteur ; seule la fusion dans `essai`
   attend « appliquée ».
+- 04/11 · La CLI Supabase 3.0 refuse toute requête sur la base en ligne en mode agent sans
+  confirmation (« Confirmation required »). En lecture : `npx supabase db query --remote --read-only
+  "…"`, sans confirmation. `--linked` est déprécié au profit de `--remote`, et `migration list
+  --linked` échoue sur la configuration locale : lire `supabase_migrations.schema_migrations`.
+- 30/10 · M120 B · Le gardien-sql a fait trois passages sur la migration (six « à corriger ») :
+  une copie cible doit être une copie RETENUE de la même annonce, un bien démarché déjà présent se
+  complète sans écraser, et le complément ne pose jamais un mandat à côté d'une collaboration
+  obtenue (CHECK de M115). Un miroir de fonction se relit cas par cas contre l'original.
+- 30/10 · M120 B · L'état d'hier en base ne se retrouve plus après une remise à zéro de la démo :
+  pour vérifier un défaut constaté la veille, demander l'heure du constat et lire le journal
+  d'erreurs, avant toute remise à zéro.
 
 ## Les rendus
 
