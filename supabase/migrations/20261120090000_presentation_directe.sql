@@ -77,6 +77,7 @@ set search_path = public
 as $$
 declare
   v_mode text;
+  v_project_id uuid;
 begin
   if tg_op = 'UPDATE' and old.shown_directly_at is not null then
     -- Montré en directe : le fait ne bouge plus, et aucune devinette ne s'y ajoute.
@@ -89,16 +90,26 @@ begin
     return new;
   end if;
   -- On le pose : le dossier doit être en directe, et le concurrent ni deviné ni écarté par « Non ».
-  select p.live_presentation_mode into v_mode from public.projects p where p.id = new.project_id;
+  -- Le rattachement d'une réponse est figé (M92) : en mise à jour, on lit l'ancien dossier, celui
+  -- que `keep_first_guesses` remettra.
+  if tg_op = 'UPDATE' then
+    v_project_id := old.project_id;
+  else
+    v_project_id := new.project_id;
+  end if;
+  select p.live_presentation_mode into v_mode from public.projects p where p.id = v_project_id;
   if v_mode is distinct from 'direct' then
     raise exception 'live: le dossier n''est pas en présentation directe' using errcode = '42501';
   end if;
   if tg_op = 'UPDATE'
      and (old.seller_estimated_listing_price is not null
+          or old.seller_estimated_days_on_market is not null
           or old.seller_serious_competitor = 'no') then
     raise exception 'live: ce concurrent a déjà sa réponse du vendeur' using errcode = '42501';
   end if;
-  if new.seller_estimated_listing_price is not null or new.seller_serious_competitor = 'no' then
+  if new.seller_estimated_listing_price is not null
+     or new.seller_estimated_days_on_market is not null
+     or new.seller_serious_competitor = 'no' then
     raise exception 'live: un concurrent montré en directe n''a pas de devinette' using errcode = '42501';
   end if;
   return new;
@@ -119,8 +130,10 @@ declare
   v_comparable_id uuid;
 begin
   if tg_op = 'UPDATE' then
-    -- Déjà figé, ou devinette déjà donnée (Live d'avant la mission) : rien ne bouge.
-    if old.revealed_listing_price is not null or old.seller_estimated_listing_price is not null then
+    -- Déjà figé, devinette déjà donnée (Live d'avant la mission), ou montré en directe — même sans
+    -- prix ce jour-là : rien ne bouge, le prix ne se fige pas un autre jour (M96).
+    if old.revealed_listing_price is not null or old.seller_estimated_listing_price is not null
+       or old.shown_directly_at is not null then
       new.revealed_listing_price := old.revealed_listing_price;
       return new;
     end if;
@@ -159,10 +172,22 @@ create function public.check_advisor_closest() returns trigger
 language plpgsql
 set search_path = public
 as $$
+declare
+  v_project_id uuid;
 begin
-  if new.advisor_closest_comparable_id is not null and not exists (
+  if new.advisor_closest_comparable_id is null then
+    return new;
+  end if;
+  -- Le rattachement du résumé est figé (`keep_first_perceived_price`, qui passe après) : en mise à
+  -- jour, on lit l'ancien dossier.
+  if tg_op = 'UPDATE' then
+    v_project_id := old.project_id;
+  else
+    v_project_id := new.project_id;
+  end if;
+  if not exists (
     select 1 from public.comparables c
-    where c.id = new.advisor_closest_comparable_id and c.project_id = new.project_id
+    where c.id = new.advisor_closest_comparable_id and c.project_id = v_project_id
   ) then
     raise exception 'live: ce concurrent n''est pas du dossier' using errcode = '42501';
   end if;
