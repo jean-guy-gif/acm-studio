@@ -101,10 +101,15 @@ export function MarketUpdateList({
   projectId,
   updates,
   signed,
+  nextOn = null,
+  due = false,
 }: {
   projectId: string;
   updates: MarketUpdateEntry[];
   signed: boolean;
+  // Mission 130 — le prochain point (AAAA-MM-JJ), et s'il est dû aujourd'hui.
+  nextOn?: string | null;
+  due?: boolean;
 }) {
   if (updates.length === 0 && !signed) return null;
   const latest = updates[0] ?? null;
@@ -114,8 +119,13 @@ export function MarketUpdateList({
       <span className={metaLabel}>Points marché</span>
       {updates.length === 0 ? (
         <p className="text-xs text-zinc-500 stage:text-white/60">
-          Aucun point marché pour ce mandat. La relecture des annonces est gratuite ; le premier
-          Point marché s’écrira à la fin de la mise à jour.
+          Pas encore de Point marché.{' '}
+          {due
+            ? 'Le premier est à faire aujourd’hui'
+            : nextOn
+              ? `Le premier est prévu le ${nextOn.slice(8, 10)}/${nextOn.slice(5, 7)}`
+              : 'Le premier se fait un mois après la signature'}{' '}
+          : ACM relit les annonces des concurrents (gratuit) et prépare le document pour le vendeur.
         </p>
       ) : (
         <ul className="flex flex-col gap-1">

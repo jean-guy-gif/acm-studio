@@ -46,11 +46,13 @@ export const DEMO_JUSTIFICATION =
   'Prix retenu à partir des biens comparables en vente dans le secteur, ajusté à l’exposition et à l’étage.';
 // Le rendez-vous de démonstration : commencé il y a 50 minutes, fini il y a 9 minutes.
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
-// « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine dans 22 jours.
-export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 22 } as const;
-// « Conclu, mandat signé » : rendez-vous d'il y a trois semaines, pour que le Point marché (M127)
-// dise « depuis notre rendez-vous du … » avec un vrai écart (designer, 29/10).
-export const DEMO_SIGNED_MEETING_DAYS_AGO = 21;
+// « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine aujourd'hui
+// (Mission 130 : la tâche « Relancer » est dans « À faire aujourd'hui »).
+export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
+// « Conclu, mandat signé » : rendez-vous et signature d'il y a 31 jours, pour que le Point marché
+// (M127) dise « depuis notre rendez-vous du … » avec un vrai écart (designer, 29/10) et que le
+// premier point, mensuel, soit dû (Mission 130).
+export const DEMO_SIGNED_MEETING_DAYS_AGO = 31;
 
 export type DemoSeedCompetitor = {
   listing: DemoListing;

@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import {
+  suiviTaskCountLabel,
+  useSuiviTaskCount,
+} from '@/features/meeting-conclusion/components/suivi-task-count';
 import { WorkspaceSwitch } from '@/features/workspace-mode/components/workspace-switch';
 import { effectiveMode, navForMode } from '@/features/workspace-mode/services/workspace-mode';
 import type { WorkspaceMode } from '@/features/workspace-mode/types';
@@ -19,6 +23,8 @@ import type { WorkspaceMode } from '@/features/workspace-mode/types';
 export function SidebarNav({ workspaceMode = 'seller' }: { workspaceMode?: WorkspaceMode }) {
   const pathname = usePathname();
   const mode = effectiveMode(workspaceMode, pathname);
+  // Mission 130 — la pastille du Suivi : les tâches dues aujourd'hui (muette à zéro).
+  const suiviCount = useSuiviTaskCount(mode === 'seller');
 
   return (
     <div className="flex flex-col gap-3 md:gap-4">
@@ -26,11 +32,13 @@ export function SidebarNav({ workspaceMode = 'seller' }: { workspaceMode?: Works
       <nav className="flex flex-wrap gap-1 md:flex-col md:gap-1.5" data-mode={mode}>
         {navForMode(mode).map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const badge = item.href === '/suivi' && suiviCount != null && suiviCount > 0;
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
+              aria-label={badge ? suiviTaskCountLabel(suiviCount) : undefined}
               className={
                 active
                   ? 'flex flex-col rounded-xl bg-brand-soft px-3.5 py-2 stage:bg-brand/15'
@@ -40,11 +48,19 @@ export function SidebarNav({ workspaceMode = 'seller' }: { workspaceMode?: Works
               <span
                 className={
                   active
-                    ? 'font-title text-base font-semibold text-brand-deep stage:text-brand'
-                    : 'font-title text-base font-medium text-zinc-600 stage:text-white/70'
+                    ? 'flex items-center justify-between gap-2 font-title text-base font-semibold text-brand-deep stage:text-brand'
+                    : 'flex items-center justify-between gap-2 font-title text-base font-medium text-zinc-600 stage:text-white/70'
                 }
               >
                 {item.label}
+                {badge ? (
+                  <span
+                    data-testid="suivi-task-count"
+                    className="rounded-full bg-orange-500 px-2 py-px font-sans text-xs font-bold text-white"
+                  >
+                    {suiviCount}
+                  </span>
+                ) : null}
               </span>
               <span
                 className={

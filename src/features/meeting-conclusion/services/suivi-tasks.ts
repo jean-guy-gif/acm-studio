@@ -1,0 +1,198 @@
+import {
+  FOLLOW_UP_DUE_AFTER_DAYS,
+  parisDay,
+  sortContacts,
+  type FollowUpContact,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
+import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+
+// Mission 130 — « Une seule prochaine étape » : ce que le Suivi demande au conseiller, daté. Une
+// tâche est DUE le jour de son échéance et après (en retard) ; la liste « À faire aujourd'hui »
+// ne montre que les tâches dues, la plus ancienne d'abord ; la carte d'un vendeur montre sa plus
+// ancienne étape, due ou à venir. Pur : tout se lit déjà en base, aucune donnée nouvelle.
+//   • relancer un vendeur à relancer, à sa date de prochaine relance (M105, M108), sinon 7 jours
+//     après le dernier contact (M96) ;
+//   • faire le Point marché d'un mandat signé : le premier un mois après la signature (la date du
+//     rendez-vous pour un mandat d'avant la M90), puis un mois après le dernier point (décision de
+//     Jean-Guy, 05/11 : mensuel) ; un mandat sans concurrent retenu n'a rien à relire ;
+//   • démarcher les concurrents prêts d'un mandat signé (cartes « Prêt à envoyer », M86) ;
+//   • organiser une visite qu'un acquéreur a demandée sur un mandat de l'agence (M119) : elle n'a
+//     pas de date prévue, elle est due dès qu'elle existe et ne se dit jamais « en retard ».
+
+export type SuiviTaskKind = 'visit' | 'market_update' | 'prospect' | 'follow_up';
+
+// À égalité de date, cet ordre départage (designer, 05/11).
+const KIND_ORDER: Record<SuiviTaskKind, number> = {
+  visit: 0,
+  market_update: 1,
+  prospect: 2,
+  follow_up: 3,
+};
+
+export type SuiviTask = {
+  kind: SuiviTaskKind;
+  projectId: string;
+  sellerName: string;
+  // Le jour d'échéance, à Paris (AAAA-MM-JJ).
+  dueOn: string;
+  // Relance : la date venait-elle d'une relance ou de la conclusion (sinon, la règle des 7 jours) ?
+  datePosed?: boolean;
+  // Point marché : le dernier point (AAAA-MM-JJ), null pour le premier.
+  lastPointOn?: string | null;
+  // Démarchage : le nombre de concurrents prêts ; visites : le nombre de demandes à organiser.
+  count?: number;
+  // Visite : l'acquéreur de la plus ancienne demande.
+  buyerName?: string | null;
+};
+
+export type SuiviTaskInput = {
+  projectId: string;
+  sellerName: string;
+  outcome: ConclusionOutcome | null;
+  isExample: boolean;
+  concludedAt: string | null;
+  signedAt: string | null;
+  // La date de première relance posée à la conclusion (M108).
+  firstFollowUpOn: string | null;
+  contacts: Pick<FollowUpContact, 'contactedAt' | 'nextFollowUpOn'>[];
+  // Le plus récent point marché (ISO), null s'il n'y en a pas.
+  lastPointAt: string | null;
+  // Les concurrents retenus du mandat (hors « Ne plus solliciter »), et ceux prêts à envoyer.
+  competitorCount: number;
+  readyCount: number;
+  // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
+  visits: { requestedAt: string; buyerName: string | null }[];
+};
+
+const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// AAAA-MM-JJ + n jours.
+export function addDays(day: string, days: number): string {
+  const [, y, m, d] = DAY.exec(day) ?? [];
+  return new Date(Date.UTC(Number(y), Number(m) - 1, Number(d) + days)).toISOString().slice(0, 10);
+}
+
+// AAAA-MM-JJ + 1 mois, le même jour du mois ; le 31 donne le dernier jour du mois suivant.
+export function addOneMonth(day: string): string {
+  const [, y, m, d] = DAY.exec(day) ?? [];
+  const year = Number(y);
+  const month = Number(m); // 1 à 12 ; le mois suivant est l'index `month` en base 0
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(Number(d), lastDay))).toISOString().slice(0, 10);
+}
+
+// Le nombre de jours de `from` à `to` (AAAA-MM-JJ), positif si `to` est après.
+export function daysBetween(from: string, to: string): number {
+  const time = (day: string) => {
+    const [, y, m, d] = DAY.exec(day) ?? [];
+    return Date.UTC(Number(y), Number(m) - 1, Number(d));
+  };
+  return Math.round((time(to) - time(from)) / 86_400_000);
+}
+
+const dayOf = (iso: string | null | undefined): string | null => {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : parisDay(date);
+};
+
+// Mission 130 — le jour où le vendeur est à relancer : la date posée avec la dernière relance
+// (M105) ; avant toute relance, celle posée à la conclusion (M108) ; sinon, le lendemain du
+// septième jour après le dernier contact (M96 : « au-delà de 7 jours »).
+export function followUpDueOn(
+  concludedAt: string | null,
+  contacts: Pick<FollowUpContact, 'contactedAt' | 'nextFollowUpOn'>[],
+  firstFollowUpOn: string | null,
+): { day: string; posed: boolean } | null {
+  const latest = sortContacts(contacts)[0];
+  if (latest?.nextFollowUpOn) return { day: latest.nextFollowUpOn, posed: true };
+  if (!latest && firstFollowUpOn) return { day: firstFollowUpOn, posed: true };
+  const last = dayOf(latest?.contactedAt ?? concludedAt);
+  return last ? { day: addDays(last, FOLLOW_UP_DUE_AFTER_DAYS + 1), posed: false } : null;
+}
+
+// Mission 130 — le prochain Point marché d'un mandat signé : un mois après la signature (la date
+// du rendez-vous avant la M90), puis un mois après le dernier point.
+export function nextMarketUpdateOn(
+  signedAt: string | null,
+  concludedAt: string | null,
+  lastPointAt: string | null,
+): string | null {
+  const base = dayOf(lastPointAt) ?? dayOf(signedAt) ?? dayOf(concludedAt);
+  return base ? addOneMonth(base) : null;
+}
+
+// Toutes les étapes d'un dossier, dues ou à venir, de la plus ancienne à la plus récente.
+export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
+  const base = { projectId: input.projectId, sellerName: input.sellerName };
+  const tasks: SuiviTask[] = [];
+  if (input.outcome === 'follow_up') {
+    const due = followUpDueOn(input.concludedAt, input.contacts, input.firstFollowUpOn);
+    if (due) tasks.push({ ...base, kind: 'follow_up', dueOn: due.day, datePosed: due.posed });
+  }
+  if (input.outcome === 'signed') {
+    const signedDay = dayOf(input.signedAt) ?? dayOf(input.concludedAt);
+    if (input.competitorCount > 0) {
+      const next = nextMarketUpdateOn(input.signedAt, input.concludedAt, input.lastPointAt);
+      if (next) {
+        tasks.push({
+          ...base,
+          kind: 'market_update',
+          dueOn: next,
+          lastPointOn: dayOf(input.lastPointAt),
+        });
+      }
+    }
+    if (input.readyCount > 0 && signedDay) {
+      tasks.push({ ...base, kind: 'prospect', dueOn: signedDay, count: input.readyCount });
+    }
+    const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
+    const first = visits[0];
+    const firstDay = dayOf(first?.requestedAt);
+    if (first && firstDay) {
+      tasks.push({
+        ...base,
+        kind: 'visit',
+        dueOn: firstDay,
+        count: visits.length,
+        buyerName: first.buyerName,
+      });
+    }
+  }
+  return sortTasks(tasks);
+}
+
+export function sortTasks(tasks: SuiviTask[]): SuiviTask[] {
+  return [...tasks].sort(
+    (a, b) => a.dueOn.localeCompare(b.dueOn) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind],
+  );
+}
+
+export function isTaskDue(task: SuiviTask, today: string): boolean {
+  return task.dueOn <= today;
+}
+
+// Le retard en jours (0 : aujourd'hui) ; une visite n'est jamais en retard.
+export function taskLateDays(task: SuiviTask, today: string): number {
+  return task.kind === 'visit' ? 0 : Math.max(0, daysBetween(task.dueOn, today));
+}
+
+// La prochaine étape d'une carte : la plus ancienne, due ou à venir ; null pour un dossier clos.
+export function nextStep(tasks: SuiviTask[]): SuiviTask | null {
+  return sortTasks(tasks)[0] ?? null;
+}
+
+export type SuiviTaskList = {
+  // Les tâches dues aujourd'hui ou en retard, la plus ancienne d'abord.
+  dues: SuiviTask[];
+  // Sans tâche due : la prochaine tâche à venir, s'il y en a une.
+  next: SuiviTask | null;
+};
+
+// « À faire aujourd'hui » : toute l'agence (M59), sans le dossier d'exemple (M97).
+export function buildSuiviTaskList(inputs: SuiviTaskInput[], now: Date): SuiviTaskList {
+  const today = parisDay(now);
+  const all = sortTasks(inputs.filter((input) => !input.isExample).flatMap(dossierTasks));
+  const dues = all.filter((task) => isTaskDue(task, today));
+  return { dues, next: dues.length > 0 ? null : (all[0] ?? null) };
+}

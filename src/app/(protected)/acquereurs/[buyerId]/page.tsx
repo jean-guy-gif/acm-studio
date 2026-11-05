@@ -95,7 +95,10 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       <section className={`${card} flex flex-wrap items-center justify-between gap-4 p-5`}>
         <BuyerStatusActions buyer={buyer} />
         <div className="flex flex-wrap items-center gap-3">
-          <Link href={`/suivi?acquereur=${buyer.id}#rapprochement`} className={btnSecondary}>
+          <Link
+            href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+            className={btnSecondary}
+          >
             Rapprocher
           </Link>
           <BuyerArchiveButton buyerId={buyer.id} name={buyer.name} />

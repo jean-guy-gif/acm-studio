@@ -26,6 +26,8 @@ export function SuiviIssueForm({
   currentObjectionNote = null,
   knownPrice = null,
   openLabel = 'Changer l’issue',
+  defaultOpen = false,
+  onClose,
 }: {
   projectId: string;
   currentOutcome: ConclusionOutcome | null;
@@ -40,8 +42,15 @@ export function SuiviIssueForm({
   currentObjectionNote?: string | null;
   knownPrice?: number | null;
   openLabel?: string;
+  // Mission 130 — ouvert par le lien « Changer l'issue » de la carte, qui le referme.
+  defaultOpen?: boolean;
+  onClose?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(defaultOpen);
+  const setOpen = (value: boolean) => {
+    setOpenState(value);
+    if (!value) onClose?.();
+  };
   const [outcome, setOutcome] = useState<ConclusionOutcome | null>(currentOutcome);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

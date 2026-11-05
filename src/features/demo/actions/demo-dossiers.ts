@@ -474,10 +474,14 @@ async function seedDemoDossier(
   if (concludeError) return failed();
 
   if (plan.conclusion.outcome === 'signed') {
-    // Mission 127 — un rendez-vous d'il y a trois semaines ; le point marché se fait aujourd'hui.
+    // Mission 127 — un rendez-vous d'il y a un mois ; Mission 130 — signé le jour même : le
+    // premier Point marché (mensuel) est dû, la tâche du jour le montre.
     await supabase
       .from('project_meeting_conclusions')
-      .update({ concluded_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO) })
+      .update({
+        concluded_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO),
+        signed_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO),
+      })
       .eq('project_id', projectId);
   }
   if (plan.conclusion.outcome === 'follow_up') {
