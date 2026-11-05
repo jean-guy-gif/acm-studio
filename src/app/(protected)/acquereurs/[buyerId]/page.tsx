@@ -161,20 +161,24 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           Fiche enregistrée.
           {/* Mission 132 — dès la saisie rapide, ce que la fiche rapporte : les biens de l'agence
               qui correspondent (le rapprochement de M86, gratuit). */}
-          {rapide && matches != null ? (
+          {rapide ? (
             <>
-              {' '}
-              <Link
-                href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
-                className="font-semibold underline underline-offset-2"
-                data-testid="buyer-quick-matches"
-              >
-                {matches === 0
-                  ? 'Aucun bien de l’agence ne correspond pour l’instant'
-                  : matches === 1
-                    ? '1 bien de l’agence correspond'
-                    : `${matches} biens de l’agence correspondent`}
-              </Link>
+              {matches != null ? (
+                <>
+                  {' '}
+                  <Link
+                    href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+                    className="font-semibold underline underline-offset-2"
+                    data-testid="buyer-quick-matches"
+                  >
+                    {matches === 0
+                      ? 'Aucun bien de l’agence ne correspond pour l’instant'
+                      : matches === 1
+                        ? '1 bien de l’agence correspond'
+                        : `${matches} biens de l’agence correspondent`}
+                  </Link>
+                </>
+              ) : null}
               {' · '}
               <Link
                 href={`/acquereurs/${buyer.id}?modifier=1#recherche`}

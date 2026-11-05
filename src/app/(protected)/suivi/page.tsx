@@ -288,7 +288,12 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
       </div>
       <SuiviTaskCountSync count={taskList.dues.length} />
 
-      {allDossiers.length === 0 && taskList.dues.length === 0 ? (
+      {/* Mission 132 — sans dossier conclu, « À faire aujourd'hui » reste là pour les acquéreurs : une
+          tâche due ou à venir, ou leur lecture en échec (jamais lue comme « rien à faire », M98). */}
+      {allDossiers.length === 0 &&
+      taskList.dues.length === 0 &&
+      taskList.next == null &&
+      !buyerRead.failed ? (
         <div className={emptyState}>
           <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
             Aucun dossier conclu pour le moment.

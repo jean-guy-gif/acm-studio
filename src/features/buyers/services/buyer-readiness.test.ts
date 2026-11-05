@@ -49,6 +49,21 @@ describe('prêt à visiter', () => {
     });
   });
 
+  it('les jours se comptent à Paris : un contact à 23 h 30 est du jour même', () => {
+    // 05/10 23 h 30 à Paris (21 h 30 UTC) ; le 04/11 à 0 h 30 à Paris (23 h 30 UTC le 03/11) : 30 jours.
+    const at = new Date('2026-11-03T23:30:00Z');
+    expect(
+      buyerReadiness(buyer({ contactedAt: '2026-10-05T21:30:00Z' }), facts(), at),
+    ).toMatchObject({ state: 'recontact', sinceDays: 30 });
+    expect(
+      buyerReadiness(
+        buyer({ contactedAt: '2026-10-05T21:30:00Z' }),
+        facts(),
+        new Date('2026-11-03T22:30:00Z'),
+      ),
+    ).toMatchObject({ state: 'ready', sinceDays: 29 });
+  });
+
   it('financement en cours ou inconnu : jamais prêt', () => {
     expect(buyerReadiness(buyer({ financing: 'in_progress' }), facts(), NOW).state).toBeNull();
     expect(buyerReadiness(buyer({ financing: 'unknown' }), facts(), NOW).state).toBeNull();
@@ -120,7 +135,12 @@ describe('la saisie rapide', () => {
     parseQuickBuyerInput({ name: 'Famille Test', cities: 'Vence', ...fields });
 
   it('deux ★ au plus, parmi le secteur, le budget et quatre équipements', () => {
-    expect(quick({ must_have: ['cities', 'budget'] }).ok).toBe(true);
+    expect(quick({ must_have: ['cities', 'budget'], budget_max: '750000' }).ok).toBe(true);
+    // Une ★ sur le budget sans montant ne dirait rien.
+    expect(quick({ must_have: ['budget'] })).toMatchObject({
+      ok: false,
+      errors: { budget_max: 'Indiquez le budget maximum pour le rendre indispensable.' },
+    });
     const tooMany = quick({ must_have: ['cities', 'budget', 'pool'] });
     expect(tooMany).toMatchObject({ ok: false, errors: { must_have: QUICK_STARS_ERROR } });
     expect(quick({ must_have: ['rooms'] }).ok).toBe(false);

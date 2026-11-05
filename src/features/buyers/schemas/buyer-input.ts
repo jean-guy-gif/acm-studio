@@ -276,6 +276,14 @@ export function parseQuickBuyerInput(raw: unknown): ParsedBuyerInput {
   ) {
     return { ok: false, errors: { must_have: QUICK_STARS_ERROR }, error: BUYER_FORM_ERROR };
   }
+  // Une ★ sur le budget sans montant ne dirait rien : le budget est demandé.
+  if (stars.includes('budget') && parsed.input.budgetMax == null) {
+    return {
+      ok: false,
+      errors: { budget_max: 'Indiquez le budget maximum pour le rendre indispensable.' },
+      error: BUYER_FORM_ERROR,
+    };
+  }
   const starred = (criterion: (typeof QUICK_STAR_CRITERIA)[number]) =>
     stars.includes(criterion) ? true : null;
   return {

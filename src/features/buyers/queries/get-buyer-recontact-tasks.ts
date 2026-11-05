@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getBuyers } from '@/features/buyers/queries/get-buyers';
+import { readBuyers } from '@/features/buyers/queries/get-buyers';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { buyerReadiness } from '@/features/buyers/services/buyer-readiness';
 import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
@@ -15,7 +15,8 @@ export async function getBuyerRecontactTasks(
   profile: { agency_id: string },
   now: Date,
 ): Promise<{ tasks: SuiviTask[]; failed: boolean }> {
-  const buyers = await getBuyers();
+  const { buyers, failed } = await readBuyers();
+  if (failed) return { tasks: [], failed: true };
   if (buyers.length === 0) return { tasks: [], failed: false };
   const progress = await getBuyersProgress(
     await createClient(),

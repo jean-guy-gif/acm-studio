@@ -91,9 +91,11 @@ export function BuyerQuickForm({ cities: proposed }: { cities: string[] }) {
           type="tel"
           inputMode="tel"
           autoComplete="off"
+          maxLength={40}
           placeholder="06 …"
           className={inputBase}
         />
+        {fieldError('phone')}
       </label>
 
       <fieldset className="flex flex-col gap-2">

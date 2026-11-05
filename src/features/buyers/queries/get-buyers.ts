@@ -7,13 +7,19 @@ import { createClient } from '@/lib/supabase/server';
 // Mission 117 — les acquéreurs de l'agence, lus par le navigateur du conseiller (la RLS cloisonne
 // et exclut un membre retiré, M105) ; les fiches archivées n'apparaissent nulle part (M93).
 export async function getBuyers(): Promise<Buyer[]> {
+  return (await readBuyers()).buyers;
+}
+
+// Mission 132 — la même lecture, qui dit son échec : une liste illisible n'est jamais « aucun
+// acquéreur » quand une tâche ou un compteur en dépend (M98).
+export async function readBuyers(): Promise<{ buyers: Buyer[]; failed: boolean }> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('buyers')
     .select('*')
     .is('archived_at', null)
     .order('updated_at', { ascending: false });
-  return (data ?? []).map(toBuyer);
+  return { buyers: (data ?? []).map(toBuyer), failed: error != null };
 }
 
 // Une fiche, par son adresse : introuvable si archivée ou d'une autre agence.
