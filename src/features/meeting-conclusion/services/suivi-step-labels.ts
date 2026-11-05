@@ -20,6 +20,15 @@ export function lateLabel(days: number): string {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
+// « Famille Keller » se dit « la famille Keller » au milieu d'une phrase ; « M. et Mme Rossi » tel
+// quel.
+export function buyerInSentence(name: string | null | undefined): string {
+  const value = name?.trim();
+  if (!value) return 'l’acquéreur';
+  const family = /^famille\s+(.+)$/i.exec(value);
+  return family ? `la famille ${family[1]}` : value;
+}
+
 // Ce que la ligne d'une tâche sait du dossier, au-delà de la tâche elle-même.
 export type TaskContext = {
   motiveLabel: string | null;
@@ -94,7 +103,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       const count = task.count ?? 0;
       return {
         title: `Démarcher ${plural(count, 'concurrent', 'concurrents')} de ${task.sellerName}`,
-        detail: `${plural(count, 'adresse prête', 'adresses prêtes')} · courriers à imprimer`,
+        detail: `${plural(count, 'adresse prête', 'adresses prêtes')} depuis le ${dayLabel(task.dueOn)} · courriers à imprimer`,
         late: null,
         button: 'Prospecter',
         href,
@@ -105,7 +114,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       const title =
         count > 1
           ? `Organiser ${count} visites chez ${task.sellerName}`
-          : `Organiser la visite de ${task.buyerName ?? 'l’acquéreur'} chez ${task.sellerName}`;
+          : `Organiser la visite de ${buyerInSentence(task.buyerName)} chez ${task.sellerName}`;
       return {
         title,
         detail: [context.propertyLabel, `demandée le ${dayLabel(task.dueOn)}`]

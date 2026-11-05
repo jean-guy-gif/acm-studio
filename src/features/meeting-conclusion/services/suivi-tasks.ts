@@ -64,6 +64,8 @@ export type SuiviTaskInput = {
   // Les concurrents retenus du mandat (hors « Ne plus solliciter »), et ceux prêts à envoyer.
   competitorCount: number;
   readyCount: number;
+  // La plus ancienne adresse prête (ISO) ; sinon le démarchage date de la signature.
+  readySince?: string | null;
   // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
   visits: { requestedAt: string; buyerName: string | null }[];
 };
@@ -148,7 +150,12 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
       }
     }
     if (input.readyCount > 0 && signedDay) {
-      tasks.push({ ...base, kind: 'prospect', dueOn: signedDay, count: input.readyCount });
+      tasks.push({
+        ...base,
+        kind: 'prospect',
+        dueOn: dayOf(input.readySince) ?? signedDay,
+        count: input.readyCount,
+      });
     }
     const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
     const first = visits[0];

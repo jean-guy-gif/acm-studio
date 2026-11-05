@@ -14,7 +14,10 @@ On te donne : la branche, et si l'essai la sert (`acm-studio-essai.vercel.app`, 
 2. **La suite e2e complète seulement si la mission change `src/`, `extension/` ou `supabase/`**
    (`git diff --name-only main...`, règle de Jean-Guy du 29/10) ; sinon, les barrières et les tests
    propres à la mission, et tu le dis. Si l'essai sert la branche : `npm run e2e` (parcours,
-   bienvenue, Live tablette, démo). Un échec se relance UNE fois. Un test vert au second passage est
+   bienvenue, Live tablette, démo), **au premier plan, jamais en tâche de fond** (règle de
+   Jean-Guy, 05/11) : tu attends la fin de chaque commande e2e dans le même appel (délai de 10 min
+   par spec), et tu rends ton rapport à la fin, jamais « en attente de mon travail ». Un échec se
+   relance UNE fois. Un test vert au second passage est
    un **aléa**, à nommer (quel test, quel pas, quelle durée) ; rouge deux fois, c'est un **défaut**.
 3. Pour chaque défaut : le test, le pas qui échoue, la ligne d'erreur, et ta lecture en une phrase
    (le code, le test, ou la donnée de l'essai). Pas de correctif.

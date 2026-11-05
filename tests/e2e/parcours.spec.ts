@@ -613,7 +613,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       const message = panel.getByTestId('follow-up-message');
       const proposed = await message.inputValue();
       expect(proposed, 'Le message ne dit pas la baisse').toContain(
-        'Depuis notre rendez-vous, 1 des biens que nous avions vus a baissé son prix.',
+        'Depuis notre rendez-vous, un des biens que nous avions vus a baissé son prix.',
       );
       for (const competitor of COMPETITORS) {
         for (const price of [competitor.price, competitor.price - TEST_PRICE_DROP]) {

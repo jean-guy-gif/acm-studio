@@ -23,7 +23,7 @@ export function SuiviTaskButton({
   return (
     <Link
       href={href}
-      className={`${btnPrimary} whitespace-nowrap`}
+      className={`${btnPrimary} self-start whitespace-nowrap sm:self-auto`}
       onClick={(event) => {
         // Cmd-, Ctrl- ou Maj-clic : un nouvel onglet, comme tout lien.
         if (!open || event.metaKey || event.ctrlKey || event.shiftKey) return;

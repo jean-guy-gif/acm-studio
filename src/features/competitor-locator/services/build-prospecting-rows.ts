@@ -77,6 +77,9 @@ export type ProspectingRow = {
   portal: string | null;
   status: ProspectingStatus;
   handedAt: string | null;
+  // Mission 130 — le jour où l'adresse est apparue (posé par la base, M102) : le démarchage d'une
+  // carte prête date de là.
+  addressAt?: string | null;
   meetingAt: string | null;
   mandateAt: string | null;
   declinedAt: string | null;
@@ -214,6 +217,7 @@ export function buildProspectingRows(
           competitor.locator_confirmed === true && clean(competitor.locator_address) != null,
         ),
         handedAt: competitor.prospecting_handed_at,
+        addressAt: competitor.locator_address_at ?? null,
         meetingAt: competitor.prospecting_meeting_at,
         mandateAt: competitor.prospecting_mandate_at,
         declinedAt: competitor.prospecting_declined_at,
