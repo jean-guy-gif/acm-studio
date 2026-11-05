@@ -90,6 +90,10 @@ validation de Google, et se décide avec Jean-Guy.
   change aucun comportement. L'agence de démonstration (`agencies.is_demo`, M114) se reconnaît au
   serveur seulement : rien ne dit « démo » à l'écran ni à l'impression (Jean-Guy, 23/10). Desktop
   d'abord, tablette ok.
+- **La démo est le miroir du vrai produit** (Jean-Guy, 05/11) : mêmes écrans, données simulées
+  crédibles (noms, adresses, prix plausibles, téléphones en 06 39 98, plage que l'ARCEP réserve à la
+  fiction, e-mails en example.com). Chaque mission met la démo à jour avec le produit ; aucune
+  mission pour la démo seule. Le vrai produit passe toujours en premier.
 
 ## Base de données
 
@@ -170,6 +174,10 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
   après comptage, avant l'essai.
 - Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
   `npm run build` (la CI les rejoue à chaque push). Une mission n'est finie que vue à l'écran.
+- **Équipe allégée** (Jean-Guy, 05/11) : l'architecte seulement avec une migration ou une nouvelle
+  table ; le gardien-sql seulement avec une migration ; le relecteur une passe, puis les seuls
+  bloquants ; l'e2e joué par le chef, au premier plan ; le designer et le parcoureur ne sont plus
+  lancés (`.claude/commands/mission.md`).
 - Repères : `docs/ETAT_DU_PRODUIT.md` (ce que fait le code), `docs/01_Method/Storyboard.md` et
   `ACM_Protocol.md` (la méthode), `missions/` (l'historique). `docs/archive/` n'est plus à jour.
 - Les décisions produit, qui font autorité comme ce fichier :

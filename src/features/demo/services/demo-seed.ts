@@ -48,10 +48,11 @@ export const DEMO_JUSTIFICATION =
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine aujourd'hui
 // (Mission 130 : la tâche « Relancer » est dans « À faire aujourd'hui »).
-// Mission 130 — le téléphone et l'e-mail fictifs du vendeur à relancer (Jean-Guy, 05/11).
+// Mission 130 — le téléphone et l'e-mail fictifs du vendeur à relancer (Jean-Guy, 05/11) : un
+// numéro de la plage 06 39 98 que l'ARCEP réserve à la fiction, une adresse en example.com.
 export const DEMO_FOLLOW_UP_CONTACT = {
-  phone: '06 00 00 00 02',
-  email: 'vendeur.demo@exemple.fr',
+  phone: '06 39 98 41 27',
+  email: 'famille.martin@example.com',
 } as const;
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
 // « Conclu, mandat signé » : rendez-vous et signature d'il y a un mois calendaire (même jour du mois

@@ -39,7 +39,8 @@ const LISTED_PRICE = 405_000; // le prix de l'annonce de démo : « pour informa
 const FOURCHETTE = { min: 380_500, max: 429_500 };
 const RETAINED = 5;
 // Le téléphone du compte de démo, s'il manque : sans lui, aucun courrier propriétaire (M90).
-const DEMO_PHONE = '06 00 00 00 01';
+// Mission 130 — un numéro de la plage 06 39 98, réservée à la fiction (ARCEP).
+const DEMO_PHONE = '06 39 98 00 01';
 const PERCEIVED_PRICE = 415_500;
 const REVISED_PRICE = 401_500;
 const COMMERCIALIZATION_PRICE = 392_500;
