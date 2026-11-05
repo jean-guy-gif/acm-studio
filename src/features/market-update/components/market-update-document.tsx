@@ -475,7 +475,10 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         {/* 02 · Les nouveaux venus — après les concurrents du rendez-vous, avant les trois lignes
             (décision de Jean-Guy, 29/10) : une fiche par nouveau venu retenu, même forme. */}
         {hasNewcomers ? (
-          <section className="flex flex-col gap-3" data-testid="market-update-newcomers">
+          <section
+            className="flex flex-col gap-3 print:break-before-page"
+            data-testid="market-update-newcomers"
+          >
             <SectionTitle
               number={sectionNumber('newcomers')}
               title="Nouveaux sur le marché depuis le rendez-vous"
@@ -499,7 +502,10 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         ) : null}
 
         {earlier.length > 0 ? (
-          <section className="flex flex-col gap-3" data-testid="market-update-earlier">
+          <section
+            className="flex flex-col gap-3 print:break-before-page"
+            data-testid="market-update-earlier"
+          >
             <SectionTitle
               number={sectionNumber('earlier')}
               title="Retenus depuis le rendez-vous"
@@ -529,8 +535,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           {ranking ? (
             <PriceRankingView
               ranking={ranking}
-              meetingDay={meeting}
-              pointDay={pointDay}
+              meetingDay={shortDay(summary.meetingDate)}
+              pointDay={shortDay(document.madeAt)}
               searchedRange={summary.newcomersSearch?.priceRange ?? null}
             />
           ) : (
