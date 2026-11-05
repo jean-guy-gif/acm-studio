@@ -103,7 +103,9 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       const count = task.count ?? 0;
       return {
         title: `Démarcher ${plural(count, 'concurrent', 'concurrents')} de ${task.sellerName}`,
-        detail: `${plural(count, 'adresse prête', 'adresses prêtes')} depuis le ${dayLabel(task.dueOn)} · courriers à imprimer`,
+        detail: `${plural(count, 'adresse prête', 'adresses prêtes')}${
+          task.readyOn ? ` depuis le ${dayLabel(task.readyOn)}` : ''
+        } · courriers à imprimer`,
         late: null,
         button: 'Prospecter',
         href,
