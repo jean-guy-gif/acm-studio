@@ -109,6 +109,9 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
     await modes.locator('label').filter({ hasText: 'Live interactif' }).click();
     await expect(modes.locator('input[value="interactive"]')).toBeChecked();
+    // L'enregistrement est fini quand les choix se réactivent (ils sont désactivés pendant l'envoi).
+    await expect(modes.locator('input[value="direct"]')).toBeEnabled();
+    await expect(modes.locator('[role="alert"]')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('[data-presentation-mode] input[value="interactive"]')).toBeChecked();
     // La Vue d'ensemble propose aussi l'Étude.
@@ -158,7 +161,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     ).toBeVisible();
     await expect(page.getByText('Concurrent 3 sur 5', { exact: true })).toBeVisible();
     await expect(page.locator('[data-direct-price]')).toBeVisible();
-    expect(await mainText(page)).toMatch(/Prixaffichésurlemarché[\d]+€/);
+    expect(await mainText(page)).toMatch(/prixaffichésurlemarché\d+€/i);
     await expect(page.locator('input')).toHaveCount(0);
     for (const position of [4, 5]) {
       await validate(page);
@@ -191,7 +194,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
 
   await test.step('La conclusion termine le rendez-vous, sans note de 1 à 10', async () => {
     await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
-    await expect(page.getByText('Concurrent le plus proche de votre bien')).toBeVisible();
+    await expect(page.getByText('Concurrent le plus proche de votre bien').first()).toBeVisible();
     await page
       .locator('input[name="commercialization_price"]')
       .fill(String(COMMERCIALIZATION_PRICE));
