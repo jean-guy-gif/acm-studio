@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { PriceRankingView } from '@/features/market-update/components/price-ranking';
+import { GOLD, PriceRankingView } from '@/features/market-update/components/price-ranking';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
@@ -89,8 +89,8 @@ function NewcomerPriceBlock({ item }: { item: MarketUpdateCompetitor }) {
         </div>
       </div>
       <p className="text-[0.78rem] text-zinc-600">
-        Retenu par votre conseiller pour la comparaison : il entre dans la ligne « Face aux nouveaux
-        venus », pas dans « Au rendez-vous » ni « Aujourd’hui ».
+        Retenu par votre conseiller pour la comparaison : il compte dans « Avec les nouveaux venus
+        », pas dans « Au rendez-vous » ni « Aujourd’hui ».
       </p>
     </div>
   );
@@ -247,7 +247,7 @@ function CompetitorPage({
     <article
       className={`flex flex-col gap-3 bg-white break-inside-avoid ${
         danger
-          ? 'border-[3px] border-amber-600'
+          ? `border-[3px] ${GOLD.frame}`
           : 'border border-t-[3px] border-zinc-200 border-t-brand-deep p-4'
       }`}
       data-testid="market-update-competitor"
@@ -255,7 +255,7 @@ function CompetitorPage({
     >
       {danger ? (
         <div
-          className="bg-amber-600 px-4 py-1.5 text-xs font-bold tracking-[0.18em] text-white uppercase"
+          className={`px-4 py-1.5 text-xs font-bold tracking-[0.18em] uppercase ${GOLD.badge}`}
           data-testid="market-update-dangerous-band"
         >
           {danger === 'today' ? 'Le plus dangereux aujourd’hui' : 'Le plus dangereux, selon vous'}
@@ -280,7 +280,13 @@ function CompetitorPage({
           <div
             className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-[2fr_1fr]'}`}
           >
-            <Photo url={photos[0]} alt={item.label} className="h-36 w-full sm:h-44" />
+            <Photo
+              url={photos[0]}
+              alt={item.label}
+              className={
+                photos.length > 2 ? 'h-full min-h-36 w-full sm:min-h-44' : 'h-36 w-full sm:h-44'
+              }
+            />
             {photos.length > 1 ? (
               <div className="grid gap-1.5">
                 {photos.slice(1, 4).map((url) => (
