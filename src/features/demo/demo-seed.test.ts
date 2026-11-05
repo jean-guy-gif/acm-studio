@@ -160,3 +160,18 @@ describe('la sélection des Keller', async () => {
     expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
   });
 });
+
+// Mission 131 — le dossier en présentation directe : prêt comme celui de Vence, sans Live, avec
+// son propre vendeur pour ne pas se confondre avec lui.
+describe('« Prêt, en présentation directe »', () => {
+  it('cinq concurrents, une fourchette, pas de Live ; un autre vendeur que le Live interactif', () => {
+    const plan = demoSeedPlan('direct', NOW);
+    const ready = demoSeedPlan('ready', NOW);
+    expect(plan.scenario.id).toBe('vence');
+    expect(plan.competitors).toHaveLength(5);
+    expect(plan.live).toBeNull();
+    expect(plan.conclusion).toBeNull();
+    expect(plan.sellerName).not.toBe(ready.sellerName);
+    expect(plan.sellerName).not.toMatch(UNSPOKEN);
+  });
+});
