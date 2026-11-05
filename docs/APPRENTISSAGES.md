@@ -123,6 +123,10 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 05/11 · M130 A · `npm test` sans les deux variables Supabase factices de la CI fait tomber six fichiers au chargement (« Missing required environment variable ») : ce n'est pas le code ; les exporter avant (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
 - 05/11 · M130 A · Durées : démo 4,3 à 4,5 min, parcours 2,8 à 3,0 min ; relecteur sept passages (2 bloquants), designer et parcoureur une fois chacun, en parallèle.
 
+- 05/11 · M130 B · Première mission en équipe allégée : une passe de relecteur (0 bloquant, 4 « à corriger »), la suite e2e jouée par le chef au premier plan, verte du premier coup (démo 4,5 min, parcours 2,8 à 3,1 min, bienvenue et Live tablette 40 s).
+- 05/11 · M130 B · Le test de vocabulaire refuse « disponible » partout sur les pages acquéreur (M118), même dans « indisponible » : un message d'échec s'écrit « illisible pour l'instant ».
+- 05/11 · M130 B · Une colonne posée « à la création » (`buyers.status_changed_at = now()`) n'est pas un fait : un « dernier échange » calculé dessus aurait dit « aujourd'hui » pour une fiche neuve ; lire la migration avant de dater un fait.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
