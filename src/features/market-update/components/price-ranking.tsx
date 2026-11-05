@@ -26,9 +26,9 @@ export const TIER_CLASSES: Record<
   orange: {
     text: 'text-amber-700',
     bar: 'bg-amber-600',
-    soft: 'bg-amber-50',
+    soft: 'bg-orange-50',
     border: 'border-amber-600',
-    cell: 'bg-amber-200',
+    cell: 'bg-orange-200',
     fill: 'bg-amber-600 text-white',
   },
   red: {
@@ -39,6 +39,16 @@ export const TIER_CLASSES: Record<
     cell: 'bg-red-200',
     fill: 'bg-red-600 text-white',
   },
+};
+
+// Le plus dangereux a son or à lui (maquette v2), jamais l'orange du tiers « attention » : un
+// cadre orange sur une ligne verte dirait « attention » à tort. Le fond des badges tient 4,9:1
+// avec le blanc.
+export const GOLD = {
+  frame: 'border-[#b8892b]',
+  outline: 'outline-[#b8892b]',
+  soft: 'bg-[#fbf4e3]',
+  badge: 'bg-[#8f6a1c] text-white',
 };
 
 const ordinal = (rank: number) => (rank === 1 ? 'er' : 'e');
@@ -95,7 +105,7 @@ function StepCard({
       data-testid="ranking-step"
       data-current={current}
     >
-      <span className="text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase">
+      <span className="text-[0.62rem] font-semibold tracking-[0.08em] whitespace-nowrap text-zinc-500 uppercase">
         {label}
       </span>
       {step ? (
@@ -165,32 +175,36 @@ export function RankingSteps({
     </span>
   );
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:gap-3" data-testid="ranking-steps">
-      <StepCard
-        label={`Au rendez-vous${meetingDay ? ` · ${meetingDay.slice(0, 5)}` : ''}`}
-        step={steps.meeting}
-        empty="Prix du rendez-vous non relus"
-        current={false}
-      />
-      {arrow}
-      <StepCard
-        label={`Aujourd’hui${pointDay ? ` · ${pointDay.slice(0, 5)}` : ''}`}
-        step={steps.today}
-        empty=""
-        current={steps.newcomers == null}
-      />
-      {arrow}
-      <StepCard
-        label="Avec les nouveaux venus"
-        step={steps.newcomers}
-        empty="Aucun nouveau venu retenu"
-        current={steps.newcomers != null}
-        note={
-          searchedRange
-            ? `cherchés de ${formatEuro(searchedRange.min)} à ${formatEuro(searchedRange.max)}`
-            : null
-        }
-      />
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-3" data-testid="ranking-steps">
+        <StepCard
+          label={`Au rendez-vous${meetingDay ? ` · ${meetingDay.slice(0, 5)}` : ''}`}
+          step={steps.meeting}
+          empty="Prix du rendez-vous non relus"
+          current={false}
+        />
+        {arrow}
+        <StepCard
+          label={`Aujourd’hui${pointDay ? ` · ${pointDay.slice(0, 5)}` : ''}`}
+          step={steps.today}
+          empty=""
+          current={steps.newcomers == null}
+        />
+        {arrow}
+        <StepCard
+          label="Avec les nouveaux venus"
+          step={steps.newcomers}
+          empty="Aucun nouveau venu retenu"
+          current={steps.newcomers != null}
+        />
+      </div>
+      {/* La fourchette cherchée, sous la rangée : les trois cartes gardent la même hauteur. */}
+      {searchedRange ? (
+        <p className="text-right text-xs text-zinc-500" data-testid="ranking-searched-range">
+          Nouveaux venus cherchés entre {formatEuro(searchedRange.min)} et{' '}
+          {formatEuro(searchedRange.max)}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -205,7 +219,7 @@ function Badge({ row }: { row: RankingRow }) {
       ) : null}
       {row.dangerous ? (
         <span
-          className="rounded bg-amber-700 px-1.5 py-0.5 text-[0.62rem] font-bold tracking-[0.12em] text-white uppercase"
+          className={`rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-[0.12em] uppercase ${GOLD.badge}`}
           data-testid="ranking-dangerous"
         >
           {row.dangerous === 'today' ? 'Le plus dangereux aujourd’hui' : 'Le plus dangereux'}
@@ -220,9 +234,9 @@ function Row({ row }: { row: RankingRow }) {
   if (row.subject) {
     return (
       <tr className="break-inside-avoid" data-testid="ranking-row" data-subject="true">
-        <td colSpan={4} className="py-1.5">
+        <td colSpan={4} className="py-1.5 print:py-1">
           <div
-            className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl px-4 py-3 ${tier.fill}`}
+            className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl px-4 py-3 max-sm:flex-col max-sm:items-start print:py-2 ${tier.fill}`}
           >
             <span className="w-6 text-center font-title text-2xl font-bold">{row.rank}</span>
             <div className="flex min-w-0 flex-1 flex-col">
@@ -231,11 +245,11 @@ function Row({ row }: { row: RankingRow }) {
               </span>
               <span className="text-sm opacity-90">{row.detail}</span>
             </div>
-            <div className="flex flex-col items-end sm:flex-row sm:items-baseline sm:gap-6">
+            <div className="flex flex-col items-end max-sm:items-start sm:flex-row sm:items-baseline sm:gap-6">
               <span className="text-sm opacity-90 max-sm:hidden">
                 {formatEuro(row.meetingPrice ?? row.currentPrice)}
               </span>
-              <span className="font-title text-2xl font-bold sm:text-3xl">
+              <span className="font-title text-2xl font-bold sm:text-3xl print:text-2xl">
                 {formatEuro(row.currentPrice)}
               </span>
             </div>
@@ -247,16 +261,18 @@ function Row({ row }: { row: RankingRow }) {
   const gold = row.dangerous != null;
   return (
     <tr
-      className={`break-inside-avoid border-b border-zinc-200 ${gold ? 'bg-amber-50 outline-2 -outline-offset-2 outline-amber-600' : ''}`}
+      className={`break-inside-avoid border-b border-zinc-200 ${gold ? `${GOLD.soft} outline-2 -outline-offset-2 ${GOLD.outline}` : ''}`}
       data-testid="ranking-row"
       data-dangerous={row.dangerous ?? undefined}
     >
-      <td className="w-1 py-2 pr-0">
-        <span className={`block h-10 w-1.5 rounded ${tier.bar}`} />
+      <td className="w-1 py-2 pr-0 align-top print:py-1">
+        <span className={`mt-1 block h-10 w-1.5 rounded print:h-8 ${tier.bar}`} />
       </td>
-      <td className="py-2 pr-3">
+      <td className="py-2 pr-3 print:py-1">
         <div className="flex items-start gap-3">
-          <span className={`w-6 shrink-0 text-center font-title text-2xl font-bold ${tier.text}`}>
+          <span
+            className={`w-6 shrink-0 text-center font-title text-2xl font-bold print:text-xl ${tier.text}`}
+          >
             {row.rank}
           </span>
           <div className="flex min-w-0 flex-col">
@@ -267,9 +283,11 @@ function Row({ row }: { row: RankingRow }) {
             {row.detail ? <span className="text-sm text-zinc-500">{row.detail}</span> : null}
             {/* Téléphone : les deux prix l'un sous l'autre. */}
             <span className="mt-1 flex flex-col sm:hidden">
-              <span className="text-sm text-zinc-500">
-                Au rendez-vous : {row.meetingPrice != null ? formatEuro(row.meetingPrice) : '—'}
-              </span>
+              {row.meetingPrice != null ? (
+                <span className="text-sm text-zinc-500">
+                  Au rendez-vous : {formatEuro(row.meetingPrice)}
+                </span>
+              ) : null}
               <span className="font-title text-lg font-bold">
                 Aujourd’hui : {formatEuro(row.currentPrice)}
               </span>
@@ -277,10 +295,10 @@ function Row({ row }: { row: RankingRow }) {
           </div>
         </div>
       </td>
-      <td className="py-2 pr-3 text-right text-sm whitespace-nowrap text-zinc-500 max-sm:hidden">
+      <td className="py-2 pr-3 text-right text-sm whitespace-nowrap text-zinc-500 max-sm:hidden print:py-1">
         {row.meetingPrice != null ? formatEuro(row.meetingPrice) : '—'}
       </td>
-      <td className="py-2 pr-3 text-right font-title text-xl font-bold whitespace-nowrap text-zinc-900 max-sm:hidden sm:text-2xl">
+      <td className="py-2 pr-3 text-right font-title text-xl font-bold whitespace-nowrap text-zinc-900 max-sm:hidden sm:text-2xl print:py-1 print:text-xl">
         {formatEuro(row.currentPrice)}
       </td>
     </tr>
@@ -314,8 +332,12 @@ export function PriceRankingView({
           <tr className="text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase">
             <th className="w-1" />
             <th className="py-2 pl-9 font-semibold">Classement, du moins cher au plus cher</th>
-            <th className="py-2 pr-3 text-right font-semibold max-sm:hidden">Au rendez-vous</th>
-            <th className="py-2 pr-3 text-right font-semibold max-sm:hidden">Aujourd’hui</th>
+            <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
+              Prix au rendez-vous
+            </th>
+            <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
+              Prix aujourd’hui
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -331,18 +353,20 @@ export function PriceRankingView({
         {(['green', 'orange', 'red'] as const).map((tier, index) => (
           <span key={tier} className="flex items-center gap-1.5">
             <span className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar}`} />
-            {index === 0 ? (
-              <>
-                1<sup>er</sup> tiers
-              </>
-            ) : index === 1 ? (
-              <>
-                2<sup>e</sup> tiers
-              </>
-            ) : (
-              'dernier tiers'
-            )}{' '}
-            : {TIER_LEGEND[tier]}
+            <span>
+              {index === 0 ? (
+                <>
+                  1<sup>er</sup> tiers
+                </>
+              ) : index === 1 ? (
+                <>
+                  2<sup>e</sup> tiers
+                </>
+              ) : (
+                'dernier tiers'
+              )}{' '}
+              : {TIER_LEGEND[tier]}
+            </span>
           </span>
         ))}
       </p>

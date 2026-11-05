@@ -192,19 +192,19 @@ export function MarketUpdateRankingCompact({
   const meetingItem = summary.competitors.find((item) => item.id === danger.meetingId) ?? null;
   const currentItem = summary.competitors.find((item) => item.id === danger.currentId) ?? null;
   return (
-    <div
-      className="mt-2 flex flex-col gap-3 rounded-xl border border-zinc-200 p-3 stage:border-white/10"
-      data-testid="market-update-ranking-compact"
-    >
-      <span className={metaLabel}>
-        Où en est son prix, tel que le vendeur le lira · Point du {shortDay(update.madeAt)}
-      </span>
-      <PriceRankingCompact
-        ranking={ranking}
-        meetingDay={summary.meetingDate ? shortDay(summary.meetingDate) : null}
-        pointDay={shortDay(update.madeAt)}
-        searchedRange={summary.newcomersSearch?.priceRange ?? null}
-      />
+    <div className="mt-2 flex flex-col gap-3" data-testid="market-update-ranking-compact">
+      {/* Ce que lira le vendeur, encadré ; le choix du plus dangereux, pour le conseiller, dessous. */}
+      <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-3 stage:border-white/10">
+        <span className={metaLabel}>
+          Où en est son prix, tel que le vendeur le lira · Point du {shortDay(update.madeAt)}
+        </span>
+        <PriceRankingCompact
+          ranking={ranking}
+          meetingDay={summary.meetingDate ? shortDay(summary.meetingDate) : null}
+          pointDay={shortDay(update.madeAt)}
+          searchedRange={summary.newcomersSearch?.priceRange ?? null}
+        />
+      </div>
       <DangerousTodayControl
         projectId={projectId}
         options={options}

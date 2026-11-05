@@ -70,7 +70,7 @@ export function DangerousTodayControl({
 
   const line = (tag: string, item: DangerousOption, note: string) => (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-zinc-800 stage:text-white">
-      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[0.65rem] font-bold tracking-[0.1em] text-amber-800 uppercase">
+      <span className="rounded bg-[#fbf4e3] px-1.5 py-0.5 text-[0.65rem] font-bold tracking-[0.1em] text-[#8f6a1c] uppercase">
         {tag}
       </span>
       <span className="font-semibold">{item.label}</span>

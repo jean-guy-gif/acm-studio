@@ -123,7 +123,7 @@ export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
         {competitor.features.map((feature) => (
           <tr key={feature.label} className="border-b border-zinc-100">
             <td className="w-[30%] py-1 pr-2 text-zinc-500">{feature.label}</td>
-            <td className="py-1 pr-2">
+            <td className="py-1 pr-2 break-words">
               {feature.value}
               {feature.sellerValue ? (
                 <span className="text-zinc-500"> (vous : {feature.sellerValue})</span>
@@ -131,7 +131,7 @@ export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
             </td>
             <td className="py-1 text-right">
               <span
-                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold whitespace-nowrap ${STATUS[feature.status].className}`}
+                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${STATUS[feature.status].className}`}
               >
                 {STATUS[feature.status].label}
               </span>
