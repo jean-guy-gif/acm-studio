@@ -252,6 +252,12 @@ export function SuiviRow({
   // dû (un rechargement après le point ne le relance pas).
   const pointDue = frieze?.pointDue === true;
   const [autoRun, setAutoRun] = useState(initialPanel === 'point' && pointDue);
+  // Chaque demande de point est une nouvelle relecture : le bloc est remonté (clé), il repart.
+  const [runKey, setRunKey] = useState(0);
+  const arm = () => {
+    setAutoRun(true);
+    setRunKey((key) => key + 1);
+  };
   // Le lien d'une tâche mène à la même page : la carte, déjà affichée, relit l'adresse quand elle
   // change (`?relancer=`, `?point=`) — jamais au premier rendu, que l'état initial couvre déjà.
   const [shownFor, setShownFor] = useState(initialPanel);
@@ -259,7 +265,7 @@ export function SuiviRow({
     setShownFor(initialPanel);
     if (initialPanel) {
       setPanel(initialPanel);
-      if (initialPanel === 'point' && pointDue) setAutoRun(true);
+      if (initialPanel === 'point' && pointDue) arm();
     }
   }
   // Le bouton d'une tâche d'« À faire » prévient la carte à chaque clic.
@@ -269,7 +275,7 @@ export function SuiviRow({
       const detail = (event as CustomEvent<SuiviOpenDetail>).detail;
       if (detail?.projectId !== projectId) return;
       setPanel(detail.panel);
-      if (detail.panel === 'point' && pointDue) setAutoRun(true);
+      if (detail.panel === 'point' && pointDue) arm();
     };
     window.addEventListener(SUIVI_OPEN_EVENT, onOpen);
     return () => window.removeEventListener(SUIVI_OPEN_EVENT, onOpen);
@@ -438,7 +444,8 @@ export function SuiviRow({
                   className={buttonClass}
                   onClick={() => {
                     // « Faire le point marché » le lance ; « Voir le Point du … » l'ouvre seulement.
-                    setAutoRun(button.action.kind === 'market_update');
+                    if (button.action.kind === 'market_update') arm();
+                    else setAutoRun(false);
                     setPanel('point');
                   }}
                 >
@@ -559,6 +566,7 @@ export function SuiviRow({
           <div className="flex flex-col gap-2 border-t border-zinc-100 py-3 stage:border-white/10">
             <div className="px-4">
               <RefreshPricesButton
+                key={runKey}
                 projectId={project.id}
                 latest={latestPoint}
                 autoRun={autoRun}
