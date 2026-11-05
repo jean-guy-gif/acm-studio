@@ -1,17 +1,11 @@
 import Link from 'next/link';
 
-import {
-  btnPrimary,
-  emptyState,
-  kickerLabel,
-  link,
-  pageSubtitle,
-  pageTitle,
-} from '@/components/ui/styles';
+import { emptyState, kickerLabel, link, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { redirect } from 'next/navigation';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
+import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
 import {
   readMarketUpdates,
@@ -252,9 +246,17 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
             {line.late ? <span className="font-semibold text-orange-700">{line.late}</span> : null}
           </span>
         </span>
-        <Link href={line.href} className={`${btnPrimary} whitespace-nowrap`}>
-          {line.button}
-        </Link>
+        <SuiviTaskButton
+          href={line.href}
+          label={line.button}
+          open={
+            task.kind === 'follow_up'
+              ? { projectId: task.projectId, panel: 'relance' }
+              : task.kind === 'market_update'
+                ? { projectId: task.projectId, panel: 'point' }
+                : null
+          }
+        />
       </li>
     );
   };

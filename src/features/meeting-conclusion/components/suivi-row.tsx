@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   badgeNeutral,
@@ -22,6 +22,10 @@ import {
   relancedLabel,
 } from '@/features/meeting-conclusion/components/follow-up-panel';
 import { SellerSaidBlock } from '@/features/meeting-conclusion/components/seller-said-block';
+import {
+  SUIVI_OPEN_EVENT,
+  type SuiviOpenDetail,
+} from '@/features/meeting-conclusion/components/suivi-task-button';
 import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
@@ -258,6 +262,18 @@ export function SuiviRow({
       if (initialPanel === 'point' && pointDue) setAutoRun(true);
     }
   }
+  // Le bouton d'une tâche d'« À faire » prévient la carte à chaque clic.
+  const projectId = dossier.project.id;
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<SuiviOpenDetail>).detail;
+      if (detail?.projectId !== projectId) return;
+      setPanel(detail.panel);
+      if (detail.panel === 'point' && pointDue) setAutoRun(true);
+    };
+    window.addEventListener(SUIVI_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(SUIVI_OPEN_EVENT, onOpen);
+  }, [projectId, pointDue]);
   const { project, property, conclusion } = dossier;
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
