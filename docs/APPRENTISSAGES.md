@@ -32,6 +32,16 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 
 ## La démo et les tests
 
+- 05/11 · M129 · Une recherche des nouveaux venus par point : des rendus faits À LA MAIN sur le
+  dossier de Mougins (mise à jour, recherche, retenue) font tomber l'e2e démo suivant à la l.641
+  (`newcomers-proposal` introuvable), qui réutilise les dossiers existants. Les rendus se font
+  APRÈS l'e2e, puis « Remettre ma démo à zéro » ; trois passages rouges d'affilée le 05/11 pour
+  cette seule raison, verts après remise à zéro (démo 4,5 min).
+- 05/11 · M129 · Un testeur qui rend la main avec une tâche de fond encore active continue d'agir :
+  il a refait ses rendus sur la démo pendant qu'un second testeur la rejouait. Le chef attend la
+  fin d'un agent avant d'en lancer un autre sur la même démo.
+- 05/11 · M129 · Le faux client Supabase répond d'après la dernière table appelée : une règle à
+  tester dans un `Promise.all` (le report du plus dangereux) passe dans une fonction pure.
 - 25/10 · L'e2e `demo` utilise le compte `demo@start-academy.fr`, le même que Jean-Guy et les closers :
   « Remettre ma démo à zéro » en début de passage efface les dossiers, sélections et liens de ce compte.
   Ne jamais essayer à la main pendant que le testeur tourne. À séparer (compte e2e dédié, à créer).
@@ -119,6 +129,16 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 
 ## Les rendus
 
+- 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq
+  caractères pour une étiquette, elle donnait « 9 OCT » et « 30 OC ». Une étiquette courte lit une
+  date `jj/mm`.
+- 05/11 · M129 · `break-after: avoid` sur un titre ne tient pas dans un conteneur flex sous Chromium :
+  le titre « 02 » restait seul en bas de page. Une section de fiches commence une page neuve
+  (`print:break-before-page`).
+- 05/11 · M129 · Le cadre du plus dangereux, en `amber-600`, avait la couleur du tiers « attention » :
+  le designer l'a vu sur la planche côte à côte, aucun test. Une couleur qui porte un sens n'en sert
+  qu'un. Mesurer qu'une page A4 tient (9 biens : 926 px pour 1 017) se fait sur un rendu imprimé de
+  la feuille de style construite, pas à l'œil.
 - 25/10 · Un test vert ne dit pas qu'un document donne envie : le testeur produit le PDF et les captures,
   le parcoureur joue le scénario, Jean-Guy et son relecteur produit regardent AVANT l'essai humain.
 - 26/10 · Une réponse touchée sur un téléphone peut tomber sur une barre fixée en bas : jamais de bouton
