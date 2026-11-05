@@ -193,11 +193,16 @@ function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionH
         ))}
       </ol>
       {/* Sur téléphone : le libellé de l'étape du jour seulement. */}
-      <p className="text-xs @md:hidden">
+      <p className="flex flex-wrap gap-x-3 text-xs @md:hidden">
         <span className={SEGMENT_TEXT[today?.tone ?? 'later']}>
           {today ? today.label : segments[2].label}
           {today?.late ? <span className="text-orange-700">{today.late}</span> : null}
         </span>
+        {frieze.prospecting.total > 0 ? (
+          <Link href={prospectionHref} className="font-semibold text-brand-deep underline">
+            {segments[1].label}
+          </Link>
+        ) : null}
       </p>
     </div>
   );
@@ -238,7 +243,10 @@ export function SuiviRow({
   // « Faire le point marché » ouvre le Point marché dans la carte et le lance : le panneau reste
   // ouvert quand la prochaine étape change, avec le point qui vient de s'écrire.
   // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance aussi.
-  const [autoRun, setAutoRun] = useState(initialPanel === 'point');
+  // Seulement si le point est dû : un rechargement après le point ne le relance pas.
+  const [autoRun, setAutoRun] = useState(
+    initialPanel === 'point' && step.button?.action.kind === 'market_update',
+  );
   const { project, property, conclusion } = dossier;
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
@@ -403,7 +411,7 @@ export function SuiviRow({
                   className={buttonClass}
                   onClick={() => {
                     // « Faire le point marché » le lance ; « Voir le Point du … » l'ouvre seulement.
-                    if (button.action.kind === 'market_update') setAutoRun(true);
+                    setAutoRun(button.action.kind === 'market_update');
                     setPanel('point');
                   }}
                 >
@@ -523,7 +531,12 @@ export function SuiviRow({
         {panel === 'point' ? (
           <div className="flex flex-col gap-2 border-t border-zinc-100 py-3 stage:border-white/10">
             <div className="px-4">
-              <RefreshPricesButton projectId={project.id} latest={latestPoint} autoRun={autoRun} />
+              <RefreshPricesButton
+                projectId={project.id}
+                latest={latestPoint}
+                autoRun={autoRun}
+                onStarted={() => setAutoRun(false)}
+              />
             </div>
             <MarketUpdateList
               projectId={project.id}

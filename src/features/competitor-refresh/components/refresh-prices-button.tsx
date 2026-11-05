@@ -50,6 +50,7 @@ export function RefreshPricesButton({
   label = REFRESH_BUTTON_LABEL,
   buttonClassName = `${btnSecondary} whitespace-nowrap`,
   autoRun = false,
+  onStarted,
 }: {
   projectId: string;
   label?: string;
@@ -57,6 +58,8 @@ export function RefreshPricesButton({
   // Mission 130 — « Faire le point marché », prochaine étape de la carte, ouvre ce bloc et le lance
   // aussitôt : le bouton fait ce qu'il dit.
   autoRun?: boolean;
+  // Prévenu dès que la relecture part : le parent désarme `autoRun` (un remontage ne relance rien).
+  onStarted?: () => void;
   // Mission 127 B — le dernier point relu en base : après « Retenir » un nouveau venu, le point du
   // jour est réécrit et le bloc « Point du … enregistré » suit, sans rechargement.
   latest?: { id: string; madeAt: string; line: string; summary: MarketUpdateSummary } | null;
@@ -146,6 +149,7 @@ export function RefreshPricesButton({
   useEffect(() => {
     if (autoRun && !started.current) {
       started.current = true;
+      onStarted?.();
       void run();
     }
     // `run` change à chaque rendu : seul `autoRun` décide, une fois.
