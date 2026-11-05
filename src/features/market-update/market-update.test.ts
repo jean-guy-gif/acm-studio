@@ -609,7 +609,7 @@ describe('le document Point marché', () => {
     expect(document.competitors[0].photoUrls.length).toBeLessThanOrEqual(3);
   });
 
-  it('« Avantage pour vous » est vert sur le Point marché ; la grille du Live garde ses couleurs (M40)', () => {
+  it('« Avantage pour vous » est vert, « Avantage pour lui » orange, partout où la grille s’affiche', () => {
     const competitor = {
       id: ids[0],
       position: 1,
@@ -637,12 +637,9 @@ describe('le document Point marché', () => {
     };
     const cell = (html: string, label: string) =>
       html.match(new RegExp(`class="([^"]*)">${label}<`))?.[1] ?? '';
-    const seller = renderToStaticMarkup(createElement(Grid, { competitor, palette: 'seller' }));
-    expect(cell(seller, 'Avantage pour vous')).toContain('emerald');
-    expect(cell(seller, 'Avantage pour lui')).toContain('amber');
-    const live = renderToStaticMarkup(createElement(Grid, { competitor }));
-    expect(cell(live, 'Avantage pour vous')).toContain('amber');
-    expect(cell(live, 'Avantage pour lui')).toContain('emerald');
+    const html = renderToStaticMarkup(createElement(Grid, { competitor }));
+    expect(cell(html, 'Avantage pour vous')).toContain('emerald');
+    expect(cell(html, 'Avantage pour lui')).toContain('amber');
   });
 
   it('le code du document ne lit ni titre, ni lien, ni adresse, ni vendeur', () => {

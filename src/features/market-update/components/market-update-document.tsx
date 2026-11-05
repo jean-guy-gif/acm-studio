@@ -308,7 +308,6 @@ function CompetitorPage({
               Ses caractéristiques face à votre bien
             </div>
             <Grid
-              palette="seller"
               competitor={{
                 id: item.id,
                 position: item.position,
