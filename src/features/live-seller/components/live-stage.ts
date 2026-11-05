@@ -88,24 +88,24 @@ export const chromeBtn =
 export const errorText = 'text-sm font-medium text-red-600 stage:text-red-300';
 export const okText = 'text-sm font-medium text-emerald-600 stage:text-emerald-300';
 
-// Convention de comparaison (toujours le concurrent vs le bien vendeur), alignée
-// sur la formation de Laurent : avantage = vert, équivalent = GRIS neutre,
-// faiblesse = orange. Jamais remplacés par le bleu de marque. Le gris
+// Convention de comparaison, lue du côté du vendeur (Jean-Guy, 05/11, comme le Point marché) :
+// avantage pour vous (faiblesse du concurrent) = vert, équivalent = GRIS neutre, avantage pour
+// le concurrent = orange (« attention »). Jamais remplacés par le bleu de marque. Le gris
 // « équivalent » reste lisible en scène sombre (blanc à 80 %), à ne pas
 // confondre avec le gris très effacé de `unknown` (que l'écran masque désormais).
 export const comparisonValueClass: Record<string, string> = {
   same: 'font-semibold text-zinc-600 stage:text-white/80',
-  competitor_advantage: 'font-semibold text-emerald-600 stage:text-emerald-300',
-  competitor_weakness: 'font-semibold text-amber-600 stage:text-amber-300',
+  competitor_advantage: 'font-semibold text-amber-600 stage:text-amber-300',
+  competitor_weakness: 'font-semibold text-emerald-600 stage:text-emerald-300',
   unknown: 'text-zinc-400 stage:text-white/40',
 };
 
 export const comparisonBadgeClass: Record<string, string> = {
   same: 'border-zinc-300 bg-zinc-100 text-zinc-700 stage:border-white/20 stage:bg-white/10 stage:text-white/80',
   competitor_advantage:
-    'border-emerald-200 bg-emerald-50 text-emerald-700 stage:border-emerald-300/30 stage:bg-emerald-400/10 stage:text-emerald-300',
-  competitor_weakness:
     'border-amber-200 bg-amber-50 text-amber-700 stage:border-amber-300/30 stage:bg-amber-400/10 stage:text-amber-300',
+  competitor_weakness:
+    'border-emerald-200 bg-emerald-50 text-emerald-700 stage:border-emerald-300/30 stage:bg-emerald-400/10 stage:text-emerald-300',
   unknown:
     'border-zinc-200 bg-zinc-50 text-zinc-400 stage:border-white/10 stage:bg-white/5 stage:text-white/40',
 };

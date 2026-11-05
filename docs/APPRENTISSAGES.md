@@ -112,6 +112,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   de développement lancé plus tôt : déplacer une page y laisse une erreur que la CI, partie d'un
   dépôt propre, ne voit pas. Le build régénère `.next/types`, pas `.next/dev`.
 
+- 05/11 · Correctif 129 · Après le retrait des `loading.tsx` (M128), `npm run typecheck` local tombe sur `.next/dev/types/validator.ts`, laissé par un ancien `next dev` (« Cannot find module …/builder/page.js ») : ce n'est pas le code, la CI part d'un dépôt propre ; on le vérifie avec un tsconfig temporaire qui exclut `.next/dev` (l'effacer demande l'accord de Jean-Guy).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

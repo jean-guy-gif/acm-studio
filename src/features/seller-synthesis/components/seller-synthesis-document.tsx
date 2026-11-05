@@ -29,29 +29,17 @@ const SERIOUS_SHORT: Record<'yes' | 'unsure' | 'no', string> = {
   no: SERIOUS_COMPETITOR_LABELS.no,
 };
 
-// Les couleurs de la grille du Live (M40), sémantiques : la charte n'y touche pas (M55).
+// Les couleurs de la grille, du côté du vendeur, comme au Live et sur le Point marché (Jean-Guy,
+// 05/11) : vert ce qui l'avantage, orange (« attention ») ce qui avantage le concurrent ; la charte
+// n'y touche pas (M55).
 const STATUS = {
   competitor_advantage: {
     label: 'Avantage pour lui',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+    className: 'border-amber-300 bg-orange-50 text-amber-800',
   },
   same: { label: 'Équivalent', className: 'border-zinc-300 bg-zinc-100 text-zinc-600' },
   competitor_weakness: {
     label: 'Avantage pour vous',
-    className: 'border-amber-300 bg-amber-50 text-amber-800',
-  },
-} as const;
-
-// Mission 129 — le Point marché lit la grille du côté du vendeur, aux couleurs de son classement
-// (Jean-Guy, 05/11) : vert ce qui l'avantage, orange (« attention ») ce qui avantage le concurrent.
-const SELLER_STATUS = {
-  ...STATUS,
-  competitor_advantage: {
-    ...STATUS.competitor_advantage,
-    className: 'border-amber-300 bg-orange-50 text-amber-800',
-  },
-  competitor_weakness: {
-    ...STATUS.competitor_weakness,
     className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
   },
 } as const;
@@ -129,16 +117,8 @@ export function Photo({
   );
 }
 
-export function Grid({
-  competitor,
-  palette = 'live',
-}: {
-  competitor: SynthesisCompetitor;
-  // 'live' : les couleurs de la grille du Live (M40) ; 'seller' : celles du Point marché.
-  palette?: 'live' | 'seller';
-}) {
+export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
   if (competitor.features.length === 0) return null;
-  const statuses = palette === 'seller' ? SELLER_STATUS : STATUS;
   return (
     <table className="w-full border-collapse text-[0.78rem]">
       <tbody>
@@ -153,9 +133,9 @@ export function Grid({
             </td>
             <td className="py-1 text-right">
               <span
-                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${statuses[feature.status].className}`}
+                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${STATUS[feature.status].className}`}
               >
-                {statuses[feature.status].label}
+                {STATUS[feature.status].label}
               </span>
             </td>
           </tr>

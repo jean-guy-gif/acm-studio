@@ -345,10 +345,10 @@ export function BrandingForm({
               {/* Preuve : les couleurs sémantiques de la grille ne bougent pas. */}
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="rounded-md bg-emerald-400/15 px-2 py-1 text-emerald-300">
-                  Avantage concurrent
+                  Avantage pour vous
                 </span>
                 <span className="rounded-md bg-amber-400/15 px-2 py-1 text-amber-300">
-                  Faiblesse
+                  Avantage pour lui
                 </span>
                 <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">Équivalent</span>
               </div>
