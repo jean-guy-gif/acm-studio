@@ -88,13 +88,11 @@ function StepCard({
   step,
   empty,
   current,
-  note = null,
 }: {
   label: string;
   step: RankingStep | null;
   empty: string;
   current: boolean;
-  note?: string | null;
 }) {
   const tier = step ? TIER_CLASSES[step.tier] : null;
   return (
@@ -105,7 +103,9 @@ function StepCard({
       data-testid="ranking-step"
       data-current={current}
     >
-      <span className="text-[0.62rem] font-semibold tracking-[0.08em] whitespace-nowrap text-zinc-500 uppercase">
+      {/* Une ligne sur grand écran ; deux lignes réservées aux trois cartes quand elles sont
+          étroites (tablette, A4), pour que les rangs restent alignés. */}
+      <span className="text-[0.62rem] font-semibold tracking-[0.08em] text-zinc-500 uppercase sm:max-lg:min-h-[2.6em] lg:whitespace-nowrap">
         {label}
       </span>
       {step ? (
@@ -118,7 +118,6 @@ function StepCard({
       ) : (
         <span className="text-sm text-zinc-500">{empty}</span>
       )}
-      {note ? <span className="text-xs text-zinc-500">{note}</span> : null}
     </div>
   );
 }
