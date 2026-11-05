@@ -22,6 +22,13 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   base à Paris : aléa de latence, la mission 128 les met en cdg1. Le rejeu suivant est vert.
 - 30/10 · M120 B · La variable de contournement de l'essai s'appelle `E2E_VERCEL_BYPASS` : une
   attente de `/api/version` avec un autre nom tourne dix minutes sur une page 401 sans le dire.
+- 05/11 · M128 · Mesurer une page qui part en flux : le premier octet arrive en 20 ms quelle que soit
+  la région, il ne dit rien. On compare le chargement complet (`loadEventEnd`), médiane de trois
+  chargements après un premier qui chauffe la fonction, connecté au compte de démo. La première
+  mesure après un déploiement est plus lente (0,8 s puis 0,4 s sur /suivi).
+- 05/11 · M128 · `x-vercel-id` dit l'entrée puis la fonction : `cdg1::iad1` avant, `cdg1::cdg1`
+  après `"regions": ["cdg1"]` dans `vercel.json` ; /suivi 2,9 s → 0,4 s, /acquereurs 1,7 s →
+  0,3 s, /builder 0,9 s → 0,2 s. La région se lit sur l'essai dès son déploiement.
 
 ## La démo et les tests
 
@@ -76,6 +83,14 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 04/11 · Les tests de l'atelier lisaient leurs journaux d'exemple (30/10) à l'heure réelle : au-delà
   de 24 h, la mission se ferme et trois tests tombaient seuls, sur `main` aussi. Un test qui dépend
   de « maintenant » reçoit une heure fixe.
+- 05/11 · M128 · Un `loading.tsx` met la page en flux : un `notFound()` ou un `redirect()` sous lui
+  répond 200 au lieu de 404 ou 307 (doc de Next 16 installée, « Status Codes »). Une attente se
+  pose donc sur les listes seulement : un groupe `(liste)/` garde l'adresse et laisse les fiches
+  hors de l'attente. Changer un filtre (`?origine=`, `?issue=`) ne montre pas le squelette,
+  vérifié sur l'essai.
+- 05/11 · M128 · `npm run typecheck` en local lit aussi `.next/dev/types`, les types d'un serveur
+  de développement lancé plus tôt : déplacer une page y laisse une erreur que la CI, partie d'un
+  dépôt propre, ne voit pas. Le build régénère `.next/types`, pas `.next/dev`.
 
 ## La base
 
