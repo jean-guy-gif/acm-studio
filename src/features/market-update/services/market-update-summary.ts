@@ -122,11 +122,25 @@ export const newcomersSearchSchema = z.object({
   limitedToPrice: z.boolean(),
   excludedNoDate: z.number().int().default(0),
   proposed: z.array(newcomerProposalSchema).default([]),
+  // Mission 129 — la fourchette cherchée (de −5 % du prix de commercialisation à ce prix, élargie à
+  // −10 % s'il y a moins de 3 biens), et les biens écartés sous ce plancher.
+  priceRange: z.object({ min: z.number(), max: z.number() }).nullable().default(null),
+  widened: z.boolean().default(false),
+  excludedUnderPrice: z.number().int().default(0),
 });
 export type NewcomersSearch = z.infer<typeof newcomersSearchSchema>;
 
+// Mission 129 — le plus dangereux désigné par le conseiller après une mise à jour (le choix du
+// vendeur au rendez-vous, `live_seller_summary`, ne s'efface jamais) ; null : celui du rendez-vous.
+export const dangerousTodaySchema = z.object({
+  competitorId: z.uuid(),
+  chosenAt: z.string(),
+});
+export type DangerousToday = z.infer<typeof dangerousTodaySchema>;
+
 export const marketUpdateSummarySchema = z.object({
   version: z.literal(1),
+  dangerousToday: dangerousTodaySchema.nullable().default(null),
   newcomersSearch: newcomersSearchSchema.nullable().default(null),
   meetingDate: z.string().nullable(),
   agreedPrice: z.number().nullable(),
@@ -197,6 +211,8 @@ export type MarketUpdateInput = {
   madeAt: Date;
   // Mission 127 B — la recherche des nouveaux venus faite pour ce point, s'il y en a eu une.
   newcomersSearch?: NewcomersSearch | null;
+  // Mission 129 — le plus dangereux désigné aujourd'hui, reporté d'un point à l'autre.
+  dangerousToday?: DangerousToday | null;
 };
 
 const round1 = (value: number): number => Math.round(value * 10) / 10;
@@ -295,8 +311,15 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
     input.agreedPrice,
     newcomerPrices,
   );
+  // Mission 129 — le choix du jour ne vaut que pour un bien encore en vente dans ce point.
+  const stillListed = (id: string) =>
+    competitors.some((item) => item.id === id && item.conclusion == null && item.state !== 'gone');
   return {
     version: 1,
+    dangerousToday:
+      input.dangerousToday && stillListed(input.dangerousToday.competitorId)
+        ? input.dangerousToday
+        : null,
     newcomersSearch: input.newcomersSearch ?? null,
     meetingDate: input.meetingDate,
     agreedPrice: input.agreedPrice,

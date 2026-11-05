@@ -4,7 +4,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
 import type { FeatureBundle } from '@/features/live-seller/types';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { parseMarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import type { MarketUpdateDocument } from '@/features/market-update/types';
 import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
 import {
@@ -131,6 +133,15 @@ export async function loadMarketUpdate(
           .filter(Boolean)
           .join(' · ') || null
       : null,
+    subjectLabel: property.data
+      ? neutralComparableLabel({
+          propertyType: normalizePropertyType(property.data.property_type),
+          roomsCount: property.data.rooms_count,
+          surfaceArea: property.data.surface_area,
+          city: property.data.city,
+          district: null,
+        }) || 'Votre bien'
+      : 'Votre bien',
     commune: property.data?.city?.trim() || null,
     coverPhotoUrl: cover[0]?.url ?? null,
     // Les propositions payées (adresses d'annonces, côté conseiller) ne vont pas au document ni au

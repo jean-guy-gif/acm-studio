@@ -24,6 +24,8 @@ export type MarketUpdateDocument = {
   madeAt: string;
   sellerName: string;
   propertyLabel: string | null;
+  // Mission 129 — le bien du vendeur dans le classement : type · pièces · surface · commune.
+  subjectLabel: string;
   commune: string | null;
   coverPhotoUrl: string | null;
   summary: MarketUpdateSummary;

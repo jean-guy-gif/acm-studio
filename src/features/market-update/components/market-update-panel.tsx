@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { btnSecondary, metaLabel } from '@/components/ui/styles';
 import { NewcomersSearchPanel } from '@/features/market-update/components/newcomers-search-panel';
 import { isPointOfDay } from '@/features/market-update/services/point-day';
-import { PriceLineBand } from '@/features/market-update/components/price-line';
+import { DangerousTodayControl } from '@/features/market-update/components/dangerous-today-control';
+import { PriceRankingCompact } from '@/features/market-update/components/price-ranking';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import {
   droppedSinceMeetingLabel,
@@ -12,8 +13,10 @@ import {
   type MarketUpdateSummary,
 } from '@/features/market-update/services/market-update-summary';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
-import { NO_NEWCOMER_LABEL } from '@/features/market-update/services/price-lines';
-import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
+import {
+  buildPriceRanking,
+  dangerousInForce,
+} from '@/features/market-update/services/price-ranking';
 import { formatEuro, formatPercent } from '@/lib/format';
 
 // Mission 127 — sur le Suivi, côté conseiller : la liste des points datés (« Point du 15/11 »),
@@ -139,6 +142,10 @@ export function MarketUpdateList({
           {dropped}
         </span>
       ) : null}
+      {/* Mission 129 — où en est son prix, tel que le vendeur le lira, et le plus dangereux. */}
+      {signed && latest ? (
+        <MarketUpdateRankingCompact projectId={projectId} update={latest} />
+      ) : null}
       {/* Mission 127 B — la proposition (c) sur le point du jour d'un mandat signé ; le panneau
           reste monté après la recherche (il tient ses résultats), et ne rend rien si une recherche
           a déjà été faite pour ce point. */}
@@ -156,56 +163,66 @@ export function MarketUpdateList({
   );
 }
 
-// Les trois lignes, en compact, dans le détail de la ligne du Suivi.
-export function MarketUpdateLinesCompact({ update }: { update: MarketUpdateEntry }) {
+// Mission 129 — le verdict et les trois étapes du dernier point (sans le classement), et le choix du
+// plus dangereux du jour (maquettes M129-1 et M129-2).
+export function MarketUpdateRankingCompact({
+  projectId,
+  update,
+}: {
+  projectId: string;
+  update: MarketUpdateEntry;
+}) {
   const { summary } = update;
-  const alignment = priceAlignment(summary.agreedPrice, summary.advisorAnalysis);
-  const scale = summary.lines.scale;
-  const blocks = [
-    {
-      number: 1,
-      heading: `Au rendez-vous${summary.meetingDate ? ` du ${shortDay(summary.meetingDate)}` : ''}`,
-      line: summary.lines.meeting,
-      subjectLabel: 'Votre prix',
-    },
-    { number: 2, heading: 'Aujourd’hui', line: summary.lines.today, subjectLabel: 'Votre prix' },
-    {
-      number: 3,
-      heading: 'Face aux nouveaux venus',
-      line: summary.lines.newcomers,
-      subjectLabel: 'Votre prix',
-      singleLabel: 'Nouveau venu',
-    },
-  ];
+  const ranking = buildPriceRanking(summary, 'Votre bien');
+  if (!ranking) return null;
+  const danger = dangerousInForce(summary);
+  const option = (item: MarketUpdateCompetitor) => ({
+    id: item.id,
+    label: item.label,
+    newcomer: item.newcomer,
+    price: item.currentPrice ?? 0,
+  });
+  // Les biens du classement, dans son ordre : un bien en vente avant le rendez-vous, absent du
+  // classement, ne se désigne pas (il ne porterait son cadre que sur sa fiche).
+  const options = ranking.rows
+    .filter((row) => !row.subject)
+    .map((row) => summary.competitors.find((item) => item.id === row.key))
+    .filter((item): item is MarketUpdateCompetitor => item != null)
+    .map(option);
+  const meetingItem = summary.competitors.find((item) => item.id === danger.meetingId) ?? null;
+  const currentItem = summary.competitors.find((item) => item.id === danger.currentId) ?? null;
   return (
-    <div className="flex flex-col gap-3" data-testid="market-update-lines-compact">
-      <span className={metaLabel}>
-        Où en est son prix, tel que le vendeur le lira · Point du {shortDay(update.madeAt)}
-      </span>
-      {blocks.map((block) => (
-        <div key={block.number} className="flex flex-col gap-1">
-          <span className="text-sm font-semibold text-zinc-800 stage:text-white">
-            {block.number} · {block.heading}
-          </span>
-          {block.line && scale ? (
-            <PriceLineBand
-              line={block.line}
-              scale={scale}
-              subjectLabel={block.subjectLabel}
-              singleLabel={'singleLabel' in block ? block.singleLabel : undefined}
-              alignment={alignment}
-              compact
-            />
-          ) : (
-            <span className="text-xs text-zinc-500 stage:text-white/60">
-              {block.number === 3 ? NO_NEWCOMER_LABEL : 'Aucun prix à placer.'}
-            </span>
-          )}
-          {block.line?.sentence ? (
-            <span className="text-xs text-zinc-600 stage:text-white/70">{block.line.sentence}</span>
-          ) : null}
-        </div>
-      ))}
+    <div className="mt-2 flex flex-col gap-3" data-testid="market-update-ranking-compact">
+      {/* Ce que lira le vendeur, encadré ; le choix du plus dangereux, pour le conseiller, dessous. */}
+      <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-3 stage:border-white/10">
+        <span className={metaLabel}>
+          Où en est son prix, tel que le vendeur le lira · Point du {shortDay(update.madeAt)}
+        </span>
+        <PriceRankingCompact
+          ranking={ranking}
+          meetingDay={summary.meetingDate ? shortDay(summary.meetingDate) : null}
+          pointDay={shortDay(update.madeAt)}
+          searchedRange={summary.newcomersSearch?.priceRange ?? null}
+        />
+      </div>
+      <DangerousTodayControl
+        projectId={projectId}
+        options={options}
+        current={currentItem ? option(currentItem) : null}
+        meeting={
+          meetingItem
+            ? {
+                ...option(meetingItem),
+                price: meetingItem.currentPrice ?? meetingItem.meetingPrice ?? 0,
+                gone: meetingItem.conclusion != null || meetingItem.state === 'gone',
+              }
+            : null
+        }
+        changed={danger.changed}
+        needsNew={danger.needsNew}
+        pointDay={shortDay(update.madeAt).slice(0, 5)}
+        editable={isPointOfDay(update.madeAt)}
+      />
     </div>
   );
 }
