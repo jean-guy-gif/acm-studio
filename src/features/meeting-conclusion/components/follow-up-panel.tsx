@@ -142,7 +142,7 @@ export function FollowUpPanel({
                 type="email"
                 name="seller_email"
                 autoComplete="off"
-                placeholder="prenom.nom@exemple.fr"
+                placeholder="prenom.nom@example.com"
                 className={`${inputBase} w-64 max-w-full`}
               />
             </label>

@@ -733,13 +733,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs$/);
     await expect(switcher).toHaveAttribute('data-mode', 'buyer');
     await expect(modeWord).toHaveText('Mode Acquéreur');
-    for (const label of ['Acquéreurs', 'Biens idéaux', 'Visites', 'Prospection']) {
+    // Mission 130 B — « Biens idéaux » a quitté le menu.
+    for (const label of ['Acquéreurs', 'Visites', 'Prospection']) {
       await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
     // Mission 125 — le menu de gauche n'a que les quatre espaces du mode ; le reste est derrière la
     // carte du conseiller, qui se ferme par Échap et par un clic dehors.
     const sideNav = page.locator('nav[data-mode]');
-    await expect(sideNav.locator('a')).toHaveCount(4);
+    await expect(sideNav.locator('a')).toHaveCount(3);
     await expect(
       sideNav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ }),
     ).toHaveCount(0);
@@ -774,11 +775,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/admin$/);
     await expect(switcher).toHaveAttribute('data-mode', 'buyer');
     await expect(sideNav.locator('[aria-current="page"]')).toHaveCount(0);
-    // « Biens idéaux » mène aux fiches et à « Rapprocher » (partie B à venir).
-    await page.getByRole('link', { name: /^Biens idéaux/ }).click();
-    await expect(page).toHaveURL(/\/biens-ideaux$/);
-    await expect(page.getByRole('heading', { name: 'Biens idéaux' })).toBeVisible();
-    await page.getByRole('link', { name: /^Acquéreurs/ }).click();
+    // Mission 130 B — l'ancienne adresse « Biens idéaux » ramène aux acquéreurs.
+    await page.goto('/biens-ideaux');
+    await expect(page).toHaveURL(/\/acquereurs$/);
     await expect(page).toHaveURL(/\/acquereurs$/);
     await page.getByRole('link', { name: 'Nouvel acquéreur' }).click();
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
@@ -839,7 +838,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // « Rapprocher » : le rapprochement, pré-rempli, trouve le mandat signé d'Antibes…
     // ici celui de ce passage, à Nice (3 pièces, 65 m², 315 000 € convenus : sous le plafond + 5 %).
     await page.goto(buyerUrl);
-    await page.getByRole('link', { name: 'Rapprocher' }).click();
+    // Mission 130 B — « Rapprocher » est un bloc de la fiche : « Voir les correspondances · n ».
+    await expect(page.getByTestId('buyer-matching')).toContainText(
+      /Voir les correspondances · [1-9]/,
+    );
+    await page.getByRole('link', { name: /^Voir les correspondances/ }).click();
     await expect(page).toHaveURL(
       new RegExp(`/acquereurs/rapprochement\\?acquereur=${buyerUrl.split('/').pop()}`),
     );
@@ -879,7 +882,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // PAS lancée (aucun appel payant dans les tests, M99 ; l'agence de test n'est pas de démo) ;
     // un bien retenu, retrouvé sur la fiche.
     await page.goto(buyerUrl);
-    await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
+    // Mission 130 B — la fiche : ses quatre étapes, UNE prochaine étape, ce qui s'est passé.
+    await expect(page.getByTestId('buyer-step')).toHaveCount(4);
+    await expect(page.getByTestId('buyer-next-step')).toContainText('Trouver ses biens idéaux');
+    await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
+    await page.getByTestId('buyer-next-button').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
     await expect(page.getByTestId('ideal-title')).toContainText(buyerName);
     const agencyHits = page.getByTestId('ideal-agency-hit');
@@ -919,9 +926,16 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'Appartement · 3 pièces · 65 m²',
     );
 
-    // Mission 122 — « Avant de présenter » : ses mots et la phrase « Pourquoi » se relisent et se
-    // modifient ; puis la présentation, tout part de sa recherche : ses mots, la grille, un bien par
-    // écran décrit par ses critères, sa réponse ; « Terminer » fige ; la fiche montre ses réponses.
+    // Mission 130 B — la prochaine étape devient « Lui présenter sa sélection ».
+    await expect(page.getByTestId('buyer-next-step')).toContainText('Lui présenter sa sélection');
+    await expect(page.getByTestId('buyer-next-secondary')).toHaveText('Envoyer le lien à la place');
+    // Mission 122 — « Avant de présenter » (Mission 130 B : en tête de la présentation, pour le
+    // conseiller seul) : ses mots et la phrase « Pourquoi » se relisent et se modifient ; puis la
+    // présentation, tout part de sa recherche : ses mots, la grille, un bien par écran décrit par ses
+    // critères, sa réponse ; « Terminer » fige ; la fiche montre ses réponses.
+    await page.getByTestId('buyer-next-button').click();
+    await expect(page).toHaveURL(new RegExp(`/presentation/${buyerUrl.split('/').pop()}$`));
+    await expect(page.getByTestId('deck-prelude')).toBeVisible();
     const prepare = page.getByTestId('deck-prepare');
     await expect(prepare).toBeVisible();
     const words = prepare.getByTestId('deck-words-editor');
@@ -935,8 +949,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await pitch.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(pitch.getByText('Enregistré.')).toBeVisible();
 
-    await page.getByTestId('present-selection').click();
-    await expect(page).toHaveURL(new RegExp(`/presentation/${buyerUrl.split('/').pop()}$`));
+    await page.getByTestId('deck-start').click();
     const scene = page.getByTestId('buyer-presentation');
     await expect(scene).toHaveAttribute('data-screen', 'words');
     await expect(page.getByTestId('deck-words')).toContainText(
@@ -993,6 +1006,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}$`));
     await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
     await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
+    await expect(page.locator('[data-testid="buyer-step"][data-step="present"]')).toHaveAttribute(
+      'data-status',
+      'done',
+    );
+    await expect(page.getByTestId('buyer-timeline')).toContainText('Sélection présentée');
+    await expect(page.getByTestId('buyer-timeline')).toContainText('Visite demandée');
     await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
     // Relue en lecture seule : « Terminé le », plus de réponse possible.
     await page.getByTestId('present-selection').click();
