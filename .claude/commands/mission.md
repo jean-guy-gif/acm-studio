@@ -59,6 +59,8 @@ Les étapes : `architecte`, `designer`, `questions`, `code`, `gardien-sql`, `acc
      mission ; décision de Jean-Guy, 29/10) ; il distingue aléa et défaut, produit le PDF et
      les captures hors du dépôt (`~/acm-studio-rendus/<numéro>/`). Un défaut se corrige avant le
      rapport (puis relecteur et testeur sur le delta) ; un aléa se nomme dans le rapport.
+     Le testeur joue l'e2e **au premier plan, jamais en tâche de fond** ; s'il ne rend rien
+     après 20 minutes, le chef joue l'e2e lui-même, sans attendre (règle de Jean-Guy, 05/11).
    - **Parcoureur** : après le testeur, il joue le scénario d'essai comme un conseiller puis comme un
      client, sans lire le code.
    - **Designer sur les rendus** : il compare les captures à ses maquettes et juge ce qu'un test ne

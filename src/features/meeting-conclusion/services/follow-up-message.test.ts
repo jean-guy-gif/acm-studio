@@ -98,7 +98,7 @@ describe('le message de relance (mission 96)', () => {
       'Depuis notre rendez-vous, 2 des biens que nous avions vus ont baissé leur prix.',
     );
     const one = buildFollowUpMessage({ ...BASE, priceDropsSinceMeeting: 1 });
-    expect(one).toContain('1 des biens que nous avions vus a baissé son prix.');
+    expect(one).toContain('un des biens que nous avions vus a baissé son prix.');
     expect(buildFollowUpMessage(BASE)).not.toContain('baissé');
   });
 
@@ -227,5 +227,16 @@ describe('le message part des objections', () => {
   });
   it('sans objection, le message d’avant', () => {
     expect(buildFollowUpMessage({ ...base, objections: [] })).toBe(buildFollowUpMessage(base));
+  });
+});
+
+describe('la réponse du vendeur dans le message (mission 130)', () => {
+  it('sans point doublé après les guillemets', () => {
+    const message = buildFollowUpMessage({
+      ...BASE,
+      launchReadinessMissing: 'Le délai : il voudrait vendre avant l’été.',
+    });
+    expect(message).toContain('« Le délai : il voudrait vendre avant l’été ».');
+    expect(message).not.toContain('. ».');
   });
 });

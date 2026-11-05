@@ -196,3 +196,34 @@ describe('les collaborations obtenues (mission 115)', () => {
     );
   });
 });
+
+describe('l’écart moyen des mandats signés (mission 130)', () => {
+  it('moyenne des écarts des mandats dont les deux prix sont connus, sans l’exemple', () => {
+    const dashboard = buildMandateDashboard({
+      projects,
+      conclusions: [
+        { ...conclusions[0], sellerPerceivedPrice: 400_000, commercializationPrice: 360_000 },
+        { ...conclusions[1], sellerPerceivedPrice: 300_000, commercializationPrice: 300_000 },
+        {
+          projectId: 'ex',
+          outcome: 'signed',
+          mandateType: 'exclusive',
+          concludedAt: T0,
+          signedAt: T0,
+          firstOutcome: 'signed',
+          objections: [],
+          sellerPerceivedPrice: 100_000,
+          commercializationPrice: 10_000,
+        },
+      ],
+      advisors,
+    });
+    expect(dashboard.agency.averagePriceGap).toBe(-5);
+  });
+
+  it('sans prix connus, rien à moyenner', () => {
+    expect(buildMandateDashboard({ projects, conclusions, advisors }).agency.averagePriceGap).toBe(
+      null,
+    );
+  });
+});

@@ -54,7 +54,7 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
   }
   if (item.state === 'gone') {
-    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
+    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}. Durée en vente inconnue : impossible de dire si elle est vendue.`;
   }
   if (item.state === 'unread') {
     return `Prix au rendez-vous non relu ; prix du jour : ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${d ? ` · en vente depuis ${d}` : ''}`;
@@ -101,10 +101,18 @@ export function MarketUpdateList({
   projectId,
   updates,
   signed,
+  nextOn = null,
+  due = false,
+  unreadable = false,
 }: {
   projectId: string;
   updates: MarketUpdateEntry[];
   signed: boolean;
+  // Mission 130 — le prochain point (AAAA-MM-JJ), et s'il est dû aujourd'hui.
+  nextOn?: string | null;
+  due?: boolean;
+  // Les points n'ont pas pu être lus : on le dit, sans rien en déduire (M98).
+  unreadable?: boolean;
 }) {
   if (updates.length === 0 && !signed) return null;
   const latest = updates[0] ?? null;
@@ -112,10 +120,19 @@ export function MarketUpdateList({
   return (
     <div className="flex flex-col gap-1.5 px-4 pb-3" data-testid="market-updates">
       <span className={metaLabel}>Points marché</span>
-      {updates.length === 0 ? (
+      {unreadable ? (
+        <p role="alert" className="text-xs font-semibold text-red-700">
+          Les Points marché n’ont pas pu être lus : rechargez la page.
+        </p>
+      ) : updates.length === 0 ? (
         <p className="text-xs text-zinc-500 stage:text-white/60">
-          Aucun point marché pour ce mandat. La relecture des annonces est gratuite ; le premier
-          Point marché s’écrira à la fin de la mise à jour.
+          Pas encore de Point marché.{' '}
+          {due
+            ? 'Le premier est à faire aujourd’hui'
+            : nextOn
+              ? `Le premier est prévu le ${nextOn.slice(8, 10)}/${nextOn.slice(5, 7)}`
+              : 'Le premier se fait un mois après la signature'}{' '}
+          : ACM relit les annonces des concurrents (gratuit) et prépare le document pour le vendeur.
         </p>
       ) : (
         <ul className="flex flex-col gap-1">

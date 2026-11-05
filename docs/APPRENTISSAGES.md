@@ -117,6 +117,12 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 05/11 · M128 B · Le poids de zod se mesure sur `next build` : le morceau qui contient `ZodError` (≈ 390 Ko non compressés) et les `page_client-reference-manifest.js` qui le citent (13 pages avant, 4 après). Un worktree avec `node_modules` en lien symbolique ne construit pas (Turbopack refuse un lien qui sort du dossier) : on construit `main` dans le dépôt, après un commit de la branche. Un composant client qui EXÉCUTE un schéma (Localisateur, réglages de la recherche) garde zod : le sortir demande de réécrire la validation.
 - 05/11 · M128 B · Sous Vitest, le `cache` de React ne mémorise rien et un crochet ne joue pas ses effets (`renderToStaticMarkup`, environnement node) : la veille coupée du Localisateur n'est prouvée que sur le texte du crochet, faute d'outil de rendu avec effets.
 
+- 05/11 · M130 A · Le testeur a lancé l'e2e en tâche de fond et n'a jamais rendu son second rapport : le chef a joué démo et parcours lui-même. Règle de Jean-Guy depuis : e2e au premier plan, et le chef le joue après 20 minutes sans rapport (`testeur.md`, `mission.md`).
+- 05/11 · M130 A · Un `<Link>` vers la même page avec d'autres paramètres (`/suivi?point=…`) ne remonte pas les composants clients : leur `useState` initial ne relit pas l'adresse. Deux défauts e2e en sont venus (« Faire le point », « Relancer » sans effet) ; le remède : un état dérivé du changement de prop pendant le rendu, et un événement pour un second clic sur le même lien.
+- 05/11 · M130 A · Le parcours e2e a trouvé un texte en double que rien d'autre ne voyait (« Ce qui lui manquait pour être à 10 » dans le détail ET dans « Ce que le vendeur a dit ») : `getByText` en mode strict est un bon détecteur de doublons d'écran.
+- 05/11 · M130 A · `npm test` sans les deux variables Supabase factices de la CI fait tomber six fichiers au chargement (« Missing required environment variable ») : ce n'est pas le code ; les exporter avant (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+- 05/11 · M130 A · Durées : démo 4,3 à 4,5 min, parcours 2,8 à 3,0 min ; relecteur sept passages (2 bloquants), designer et parcoureur une fois chacun, en parallèle.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

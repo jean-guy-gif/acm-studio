@@ -47,6 +47,15 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
         />
         <Figure label="Part d’exclusifs" value={exclusive(agency.exclusiveShare)} />
         <Figure label="Délai médian après relance" value={days(agency.medianDaysToSignature)} />
+        {/* Mission 130 — l'écart moyen a quitté le Suivi pour le tableau du manager. */}
+        <Figure
+          label="Écart moyen : prix du vendeur → prix signé"
+          value={
+            agency.averagePriceGap == null
+              ? '—'
+              : formatPercent(Math.round(agency.averagePriceGap), { signed: true })
+          }
+        />
         <Figure label="Freins les plus cités" value={objections(agency)} />
         {/* Mission 115 — les collaborations obtenues avec un confrère, à part des mandats. */}
         <Figure label="Collaborations obtenues" value={formatNumber(agency.collaborations)} />

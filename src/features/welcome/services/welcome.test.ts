@@ -193,16 +193,22 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
     expect(page).toContain('const counted = withoutExamples(allDossiers);');
     for (const counter of [
       'suiviCounts(counted)',
-      'exclusiveSignedCount(counted)',
-      'averageJourneyGap(counted)',
       'followUpMotiveCounts(counted)',
       'getAgencyProspecting(counted)',
-      'dossiers={counted}',
     ]) {
       expect(page).toContain(counter);
     }
-    expect(page).toMatch(
-      /counted\.filter\(\(dossier\) => followUps\.get\(dossier\.project\.id\)\?\.due\)/,
+    // Mission 130 — « À faire aujourd'hui » et le compteur du menu laissent l'exemple de côté
+    // (le service écarte `isExample`, le compteur part de `withoutExamples`) ; le rapprochement,
+    // parti au mode Acquéreur, aussi.
+    expect(read('features', 'meeting-conclusion', 'services', 'suivi-tasks.ts')).toContain(
+      'inputs.filter((input) => !input.isExample)',
+    );
+    expect(read('features', 'meeting-conclusion', 'queries', 'get-suivi-task-count.ts')).toContain(
+      'withoutExamples(await getSuiviDossiers())',
+    );
+    expect(read('app', '(protected)', 'acquereurs', 'rapprochement', 'page.tsx')).toContain(
+      'dossiers={counted}',
     );
     // La liste, elle, part de tous les dossiers : l'exemple s'y voit, avec son badge.
     expect(page).toContain('filterSuiviByGroup(allDossiers, group)');

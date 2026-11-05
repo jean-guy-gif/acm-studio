@@ -18,7 +18,9 @@ import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
   DEMO_DANGEROUS_REASON,
+  DEMO_FOLLOW_UP_CONTACT,
   DEMO_FOLLOW_UP_DAYS,
+  oneMonthAgo,
   DEMO_FOLLOW_UP_NOTE,
   DEMO_JUSTIFICATION,
   DEMO_LIVE_MINUTES,
@@ -27,7 +29,6 @@ import {
   demoKellerSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
-  DEMO_SIGNED_MEETING_DAYS_AGO,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -313,6 +314,11 @@ async function seedDemoDossier(
       agency_id: closer.agencyId,
       advisor_id: closer.id,
       seller_name: plan.sellerName,
+      // Mission 130 — le vendeur à relancer a de quoi être joint : SMS, WhatsApp et E-mail
+      // s'ouvrent devant le closer (coordonnées fictives, décision de Jean-Guy, 05/11).
+      ...(plan.stage === 'follow_up'
+        ? { seller_phone: DEMO_FOLLOW_UP_CONTACT.phone, seller_email: DEMO_FOLLOW_UP_CONTACT.email }
+        : {}),
       status: 'draft',
       demo_stage: plan.stage,
     })
@@ -474,10 +480,14 @@ async function seedDemoDossier(
   if (concludeError) return failed();
 
   if (plan.conclusion.outcome === 'signed') {
-    // Mission 127 — un rendez-vous d'il y a trois semaines ; le point marché se fait aujourd'hui.
+    // Mission 127 — un rendez-vous d'il y a un mois ; Mission 130 — signé le jour même : le
+    // premier Point marché (mensuel) est dû, la tâche du jour le montre.
     await supabase
       .from('project_meeting_conclusions')
-      .update({ concluded_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO) })
+      .update({
+        concluded_at: oneMonthAgo(now),
+        signed_at: oneMonthAgo(now),
+      })
       .eq('project_id', projectId);
   }
   if (plan.conclusion.outcome === 'follow_up') {

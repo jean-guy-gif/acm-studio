@@ -33,7 +33,7 @@ export async function getMandateDashboard(): Promise<
     supabase
       .from('project_meeting_conclusions')
       .select(
-        'project_id, outcome, mandate_type, concluded_at, signed_at, first_outcome, objections',
+        'project_id, outcome, mandate_type, concluded_at, signed_at, first_outcome, objections, frozen_seller_perceived_price, commercialization_price',
       )
       .eq('agency_id', profile.agency_id),
     supabase
@@ -69,6 +69,8 @@ export async function getMandateDashboard(): Promise<
       signedAt: row.signed_at,
       firstOutcome: row.first_outcome,
       objections: row.objections,
+      sellerPerceivedPrice: row.frozen_seller_perceived_price,
+      commercializationPrice: row.commercialization_price,
     })),
     advisors,
     collaborations: (collaborations.data ?? []).map((row) => ({ projectId: row.project_id })),
