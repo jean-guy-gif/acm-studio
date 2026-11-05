@@ -408,7 +408,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 const id = dossier.project.id;
                 const input = inputById.get(id)!;
                 const tasks = dossierTasks(input);
-                const task = nextStep(tasks);
+                const task = nextStep(tasks, today);
                 const followUp = followUps.get(id)!;
                 const latest = sortContacts(followUp.contacts)[0] ?? null;
                 const entries = marketUpdates.get(id) ?? [];

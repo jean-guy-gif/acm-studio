@@ -18,6 +18,7 @@ import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
   DEMO_DANGEROUS_REASON,
+  DEMO_FOLLOW_UP_CONTACT,
   DEMO_FOLLOW_UP_DAYS,
   oneMonthAgo,
   DEMO_FOLLOW_UP_NOTE,
@@ -313,6 +314,11 @@ async function seedDemoDossier(
       agency_id: closer.agencyId,
       advisor_id: closer.id,
       seller_name: plan.sellerName,
+      // Mission 130 — le vendeur à relancer a de quoi être joint : SMS, WhatsApp et E-mail
+      // s'ouvrent devant le closer (coordonnées fictives, décision de Jean-Guy, 05/11).
+      ...(plan.stage === 'follow_up'
+        ? { seller_phone: DEMO_FOLLOW_UP_CONTACT.phone, seller_email: DEMO_FOLLOW_UP_CONTACT.email }
+        : {}),
       status: 'draft',
       demo_stage: plan.stage,
     })

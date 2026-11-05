@@ -121,7 +121,7 @@ describe('le démarchage et les visites', () => {
       ['prospect', '2026-10-23'],
       ['market_update', '2026-11-23'],
     ]);
-    expect(nextStep(tasks)).toMatchObject({ kind: 'prospect', count: 3 });
+    expect(nextStep(tasks, '2026-11-05')).toMatchObject({ kind: 'prospect', count: 3 });
     // Dû dès qu'une carte est prête, jamais « en retard » depuis la signature.
     expect(taskLateDays(tasks[0], '2026-11-05')).toBe(0);
   });
@@ -180,12 +180,28 @@ describe('« À faire aujourd’hui »', () => {
       ],
       NOW,
     );
+    // Par valeur, puis par ancienneté (Jean-Guy, 05/11) : relancer, Point marché, démarcher.
     expect(list.dues.map((task) => [task.projectId, task.kind])).toEqual([
-      ['martin', 'prospect'],
-      ['mougins', 'market_update'],
       ['antibes', 'follow_up'],
+      ['mougins', 'market_update'],
+      ['martin', 'prospect'],
     ]);
     expect(list.next).toBeNull();
+  });
+
+  it('la carte montre sa tâche due de plus grande valeur, sinon la plus proche à venir', () => {
+    const tasks = dossierTasks(
+      input({
+        readyCount: 2,
+        visits: [{ requestedAt: '2026-11-03T09:00:00Z', buyerName: 'Famille Keller' }],
+      }),
+    );
+    expect(nextStep(tasks, '2026-11-05')?.kind).toBe('visit');
+    const later = dossierTasks(input({ signedAt: '2026-10-23T09:00:00Z' }));
+    expect(nextStep(later, '2026-11-05')).toMatchObject({
+      kind: 'market_update',
+      dueOn: '2026-11-23',
+    });
   });
 
   it('un dossier vendu ailleurs ou retiré n’a aucune étape', () => {

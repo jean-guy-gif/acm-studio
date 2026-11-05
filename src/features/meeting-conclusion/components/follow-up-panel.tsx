@@ -12,6 +12,7 @@ import {
   okText,
 } from '@/components/ui/styles';
 import { recordFollowUpContact } from '@/features/meeting-conclusion/actions/record-follow-up-contact';
+import { saveSellerContact } from '@/features/meeting-conclusion/actions/save-seller-contact';
 import {
   defaultNextFollowUpOn,
   NEXT_FOLLOW_UP_MAX_DAYS,
@@ -35,8 +36,8 @@ const stepTitle =
 export function FollowUpPanel({
   projectId,
   sellerName,
-  phone,
-  email,
+  phone: initialPhone,
+  email: initialEmail,
   motive,
   proposed,
   onClose,
@@ -62,6 +63,11 @@ export function FollowUpPanel({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  // Mission 130 — sans téléphone ou sans e-mail, on les ajoute ici, sans quitter le Suivi.
+  const [phone, setPhone] = useState(initialPhone);
+  const [email, setEmail] = useState(initialEmail);
+  const [contactPending, startContact] = useTransition();
+  const [contactError, setContactError] = useState<string | null>(null);
   const hrefs = followUpShareHrefs(text, phone, email);
 
   useEffect(() => {
@@ -96,6 +102,61 @@ export function FollowUpPanel({
           ) : null}
         </span>
       </div>
+
+      {!phone || !email ? (
+        <form
+          data-testid="seller-contact-form"
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            setContactError(null);
+            startContact(async () => {
+              const result = await saveSellerContact(projectId, formData);
+              if (result.ok) {
+                setPhone(result.phone);
+                setEmail(result.email);
+                router.refresh();
+              } else {
+                setContactError(result.error);
+              }
+            });
+          }}
+        >
+          {!phone ? (
+            <label className="flex flex-col gap-1 text-sm text-zinc-600 stage:text-white/70">
+              Ajouter son téléphone
+              <input
+                type="tel"
+                name="seller_phone"
+                autoComplete="off"
+                placeholder="06 12 34 56 78"
+                className={`${inputBase} w-48`}
+              />
+            </label>
+          ) : null}
+          {!email ? (
+            <label className="flex flex-col gap-1 text-sm text-zinc-600 stage:text-white/70">
+              Ajouter son e-mail
+              <input
+                type="email"
+                name="seller_email"
+                autoComplete="off"
+                placeholder="prenom.nom@exemple.fr"
+                className={`${inputBase} w-64 max-w-full`}
+              />
+            </label>
+          ) : null}
+          <button type="submit" className={btnSecondary} disabled={contactPending}>
+            {contactPending ? 'J’enregistre…' : 'Enregistrer'}
+          </button>
+          {contactError ? (
+            <span role="alert" className={`${errorText} w-full`}>
+              {contactError}
+            </span>
+          ) : null}
+        </form>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex min-w-0 flex-col gap-2">

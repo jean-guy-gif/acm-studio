@@ -22,12 +22,13 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 
 export type SuiviTaskKind = 'visit' | 'market_update' | 'prospect' | 'follow_up';
 
-// À égalité de date, cet ordre départage (designer, 05/11).
+// L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
+// relancer un vendeur, organiser une visite, faire le Point marché, démarcher.
 const KIND_ORDER: Record<SuiviTaskKind, number> = {
-  visit: 0,
-  market_update: 1,
-  prospect: 2,
-  follow_up: 3,
+  follow_up: 0,
+  visit: 1,
+  market_update: 2,
+  prospect: 3,
 };
 
 export type SuiviTask = {
@@ -179,9 +180,17 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
   return sortTasks(tasks);
 }
 
+// Par date d'échéance (la plus proche d'abord) : pour les tâches à venir.
 export function sortTasks(tasks: SuiviTask[]): SuiviTask[] {
   return [...tasks].sort(
     (a, b) => a.dueOn.localeCompare(b.dueOn) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind],
+  );
+}
+
+// Les tâches dues : par valeur, puis la plus ancienne d'abord.
+export function sortDueTasks(tasks: SuiviTask[]): SuiviTask[] {
+  return [...tasks].sort(
+    (a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.dueOn.localeCompare(b.dueOn),
   );
 }
 
@@ -198,12 +207,14 @@ export function taskLateDays(task: SuiviTask, today: string): number {
 }
 
 // La prochaine étape d'une carte : la plus ancienne, due ou à venir ; null pour un dossier clos.
-export function nextStep(tasks: SuiviTask[]): SuiviTask | null {
-  return sortTasks(tasks)[0] ?? null;
+// La prochaine étape d'une carte : sa tâche due de plus grande valeur, sinon la plus proche à venir.
+export function nextStep(tasks: SuiviTask[], today: string): SuiviTask | null {
+  const dues = sortDueTasks(tasks.filter((task) => isTaskDue(task, today)));
+  return dues[0] ?? sortTasks(tasks)[0] ?? null;
 }
 
 export type SuiviTaskList = {
-  // Les tâches dues aujourd'hui ou en retard, la plus ancienne d'abord.
+  // Les tâches dues aujourd'hui ou en retard, par valeur puis la plus ancienne d'abord.
   dues: SuiviTask[];
   // Sans tâche due : la prochaine tâche à venir, s'il y en a une.
   next: SuiviTask | null;
@@ -213,6 +224,6 @@ export type SuiviTaskList = {
 export function buildSuiviTaskList(inputs: SuiviTaskInput[], now: Date): SuiviTaskList {
   const today = parisDay(now);
   const all = sortTasks(inputs.filter((input) => !input.isExample).flatMap(dossierTasks));
-  const dues = all.filter((task) => isTaskDue(task, today));
+  const dues = sortDueTasks(all.filter((task) => isTaskDue(task, today)));
   return { dues, next: dues.length > 0 ? null : (all[0] ?? null) };
 }

@@ -48,6 +48,11 @@ export const DEMO_JUSTIFICATION =
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine aujourd'hui
 // (Mission 130 : la tâche « Relancer » est dans « À faire aujourd'hui »).
+// Mission 130 — le téléphone et l'e-mail fictifs du vendeur à relancer (Jean-Guy, 05/11).
+export const DEMO_FOLLOW_UP_CONTACT = {
+  phone: '06 00 00 00 02',
+  email: 'vendeur.demo@exemple.fr',
+} as const;
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
 // « Conclu, mandat signé » : rendez-vous et signature d'il y a un mois calendaire (même jour du mois
 // précédent, le dernier jour s'il n'existe pas), pour que le Point marché (M127) dise « depuis notre
