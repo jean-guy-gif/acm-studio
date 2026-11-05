@@ -21,15 +21,21 @@ export type VisitLine = VisitRequest & {
 // Mission 119 — toutes les demandes de visite de l'agence, par acquéreur, avec le bien retenu ;
 // les demandes annulées ne s'affichent pas.
 export async function getVisitLines(): Promise<VisitLine[]> {
+  return (await readVisitLines()).lines;
+}
+
+// Mission 130 — la même lecture, qui dit si elle a échoué : le Suivi ne lit jamais une panne comme
+// « aucune visite à organiser » (M98).
+export async function readVisitLines(): Promise<{ lines: VisitLine[]; failed: boolean }> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('buyer_visit_requests')
     .select(
       '*, buyers!inner(name, archived_at), buyer_selection_items!inner(id, label, source, reference, listed_price, imported)',
     )
     .is('cancelled_at', null)
     .order('requested_at', { ascending: false });
-  return (data ?? []).map((row) => {
+  const lines = (data ?? []).map((row): VisitLine => {
     const buyer = row.buyers as unknown as { name: string; archived_at: string | null };
     const item = row.buyer_selection_items as unknown as {
       id: string;
@@ -57,4 +63,5 @@ export async function getVisitLines(): Promise<VisitLine[]> {
         typeof item.imported?.exclusivity === 'string' ? item.imported.exclusivity : null,
     };
   });
+  return { lines, failed: error != null };
 }

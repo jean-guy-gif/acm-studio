@@ -155,7 +155,10 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         ).toContainText(/dernier contact il y a 8 jours · relance prévue aujourd’hui/);
         await expect(
           today.getByTestId('suivi-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
-        ).toContainText(/premier Point marché dû \(tous les mois\)/);
+        ).toContainText(
+          // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
+          /premier Point marché dû \(tous les mois\)|en retard/,
+        );
         await expect(page.getByTestId('suivi-task-count')).toHaveText(/^[1-9]\d*$/);
       }
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,

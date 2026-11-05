@@ -105,6 +105,10 @@ describe('le Point marché, mensuel', () => {
     expect(recent.next).toMatchObject({ kind: 'market_update', dueOn: '2026-11-23' });
   });
 
+  it('des points illisibles : aucun « premier point dû » n’est déduit (M98)', () => {
+    expect(dossierTasks(input({ pointsUnknown: true }))).toEqual([]);
+  });
+
   it('un mandat sans concurrent retenu n’a rien à relire', () => {
     expect(dossierTasks(input({ competitorCount: 0 }))).toEqual([]);
   });
@@ -118,6 +122,8 @@ describe('le démarchage et les visites', () => {
       ['market_update', '2026-11-23'],
     ]);
     expect(nextStep(tasks)).toMatchObject({ kind: 'prospect', count: 3 });
+    // Dû dès qu'une carte est prête, jamais « en retard » depuis la signature.
+    expect(taskLateDays(tasks[0], '2026-11-05')).toBe(0);
   });
 
   it('une visite demandée est due dès sa demande, jamais en retard', () => {

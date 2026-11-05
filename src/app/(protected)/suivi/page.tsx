@@ -10,10 +10,13 @@ import {
 } from '@/components/ui/styles';
 import { redirect } from 'next/navigation';
 
-import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
-import { listMarketUpdates } from '@/features/market-update/queries/list-market-updates';
+import {
+  readMarketUpdates,
+  type MarketUpdateEntry,
+} from '@/features/market-update/queries/list-market-updates';
 import {
   emptySellerInsights,
   getSellerInsights,
@@ -115,28 +118,30 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
 
   // Mission 128 B — ce qui ne dépend de rien part ensemble, puis ce qui dépend des dossiers et
   // du profil.
-  const [allDossiers, profile, branding, visits] = await Promise.all([
+  const [allDossiers, profile, branding, visitRead] = await Promise.all([
     getSuiviDossiers(),
     getProfile(),
     getAgencyBranding(),
     // Mission 130 — les visites demandées sur les mandats de l'agence (M119).
-    getVisitLines(),
+    readVisitLines(),
   ]);
+  const visits = visitRead.lines;
   // Mission 97 — un dossier d'exemple se voit dans la liste (badge « Exemple »), mais ne compte
   // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, marketUpdates] = await Promise.all([
+  const [{ cards }, insights, agency, pointRead] = await Promise.all([
     getAgencyProspecting(counted),
     getSellerInsights(projectIds),
     profile ? getAgency(profile.agency_id) : null,
     // Mission 127 — les points marché de chaque dossier.
     profile
       ? createClient().then((supabase) =>
-          listMarketUpdates(supabase, profile.agency_id, projectIds),
+          readMarketUpdates(supabase, profile.agency_id, projectIds),
         )
-      : new Map(),
+      : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
   ]);
+  const marketUpdates = pointRead.byProject;
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
     agencyName: documentAgencyName(branding?.documentName, agency?.name) || null,
@@ -181,6 +186,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     lastPoints,
     cards,
     visits,
+    pointsUnknown: pointRead.failed,
   });
   const taskList = buildSuiviTaskList(inputs, now);
   const prospecting = prospectingCounts(cards);
@@ -282,9 +288,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               {taskList.dues.length > 0 ? ` · ${taskList.dues.length}` : ''}
             </h2>
             {taskList.dues.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
-                {nothingTodayLabel(taskList.next)}
-              </p>
+              visitRead.failed || pointRead.failed ? null : (
+                <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
+                  {nothingTodayLabel(taskList.next)}
+                </p>
+              )
             ) : (
               <>
                 <ol className="mt-2 flex flex-col">{shownTasks.map(renderTask)}</ol>
@@ -304,6 +312,17 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 ) : null}
               </>
             )}
+            {/* Mission 130 — une lecture en échec n'est jamais lue comme « rien à faire » (M98). */}
+            {visitRead.failed ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                Les visites demandées n’ont pas pu être lues : rechargez la page.
+              </p>
+            ) : null}
+            {pointRead.failed ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                Les Points marché n’ont pas pu être lus : rechargez la page.
+              </p>
+            ) : null}
           </section>
 
           <div className="flex flex-wrap items-center gap-2" data-testid="suivi-filters">

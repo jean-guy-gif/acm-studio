@@ -19,6 +19,7 @@ import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
   DEMO_DANGEROUS_REASON,
   DEMO_FOLLOW_UP_DAYS,
+  oneMonthAgo,
   DEMO_FOLLOW_UP_NOTE,
   DEMO_JUSTIFICATION,
   DEMO_LIVE_MINUTES,
@@ -27,7 +28,6 @@ import {
   demoKellerSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
-  DEMO_SIGNED_MEETING_DAYS_AGO,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -479,8 +479,8 @@ async function seedDemoDossier(
     await supabase
       .from('project_meeting_conclusions')
       .update({
-        concluded_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO),
-        signed_at: daysAgo(now, DEMO_SIGNED_MEETING_DAYS_AGO),
+        concluded_at: oneMonthAgo(now),
+        signed_at: oneMonthAgo(now),
       })
       .eq('project_id', projectId);
   }

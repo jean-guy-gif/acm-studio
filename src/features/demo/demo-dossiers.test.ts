@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { oneMonthAgo } from '@/features/demo/services/demo-seed';
 import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 
 // Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro » : réservés à un
@@ -168,5 +169,13 @@ describe('les acquéreurs de la démo', () => {
       expect(row).not.toHaveProperty('status');
     }
     expect(rows.map((row) => row.name)).toEqual(['M. et Mme Rossi', 'Famille Keller']);
+  });
+});
+
+describe('le mandat signé de la démo, il y a un mois calendaire (mission 130)', () => {
+  it('le même jour du mois précédent ; le dernier jour quand il n’existe pas', () => {
+    expect(oneMonthAgo(new Date('2026-11-05T10:00:00Z'))).toBe('2026-10-05T10:00:00.000Z');
+    expect(oneMonthAgo(new Date('2026-03-31T10:00:00Z'))).toBe('2026-02-28T10:00:00.000Z');
+    expect(oneMonthAgo(new Date('2027-01-15T10:00:00Z'))).toBe('2026-12-15T10:00:00.000Z');
   });
 });

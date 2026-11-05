@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   badgeNeutral,
@@ -224,7 +224,16 @@ export function SuiviRow({
   const [relancedOn, setRelancedOn] = useState<string | null>(null);
   // « Faire le point marché » ouvre le Point marché dans la carte et le lance : le panneau reste
   // ouvert quand la prochaine étape change, avec le point qui vient de s'écrire.
-  const [autoRun, setAutoRun] = useState(false);
+  // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance aussi.
+  const [autoRun, setAutoRun] = useState(initialPanel === 'point');
+  // L'adresse ne garde pas `?relancer=` ni `?point=` : un rechargement ne rouvre ni ne relance rien.
+  useEffect(() => {
+    if (!initialPanel) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('relancer');
+    url.searchParams.delete('point');
+    window.history.replaceState(window.history.state, '', url.toString());
+  }, [initialPanel]);
   const { project, property, conclusion } = dossier;
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
@@ -276,16 +285,34 @@ export function SuiviRow({
     : missingMotive
       ? 'Compléter'
       : 'Changer l’issue';
-  const marketStep = step.button?.action.kind === 'market_update';
-  const links: { key: Exclude<Panel, null | 'relance'> | 'prospection'; label: string }[] = [
-    ...(outcome === 'signed' && marketStep
-      ? [{ key: 'prospection' as const, label: 'Prospection' }]
-      : outcome === 'signed' || outcome === 'follow_up'
-        ? [{ key: 'point' as const, label: 'Point marché' }]
-        : []),
-    { key: 'details', label: 'Détail des prix' },
-    { key: 'issue', label: issueLabel },
-  ];
+  // Mission 130 — trois liens au plus, selon l'étape (designer) : jamais un geste perdu — la
+  // prospection reste à un clic sur tout mandat signé qui a des concurrents.
+  const stepKind = step.button?.action.kind ?? null;
+  const pointInButton = stepKind === 'market_update' || stepKind === 'point_panel';
+  const prospectInButton =
+    step.button?.action.kind === 'link' && step.button.action.href.startsWith('/prospection');
+  type LinkKey = 'point' | 'prospection' | 'details' | 'issue';
+  const linkKeys: LinkKey[] =
+    outcome === 'signed'
+      ? frieze && frieze.prospecting.total === 0 && frieze.competitorCount === 0
+        ? ['details', 'issue']
+        : pointInButton
+          ? ['prospection', 'details', 'issue']
+          : prospectInButton
+            ? ['point', 'details', 'issue']
+            : step.button
+              ? ['point', 'prospection', 'issue']
+              : ['prospection', 'details', 'issue']
+      : outcome === 'follow_up'
+        ? ['point', 'details', 'issue']
+        : ['details', 'issue'];
+  const LINK_LABELS: Record<LinkKey, string> = {
+    point: 'Point marché',
+    prospection: 'Prospection',
+    details: 'Détail des prix',
+    issue: issueLabel,
+  };
+  const links = linkKeys.map((key) => ({ key, label: LINK_LABELS[key] }));
   const stepWhen = relancedOn ? `le ${dayLabel(relancedOn)}` : step.when;
   const button = step.button;
   const buttonClass = `${button?.primary && !relancedOn ? btnPrimary : btnSecondary} w-full`;
@@ -372,13 +399,14 @@ export function SuiviRow({
                 >
                   {button.label}
                 </Link>
-              ) : button.action.kind === 'market_update' ? (
+              ) : button.action.kind === 'market_update' || button.action.kind === 'point_panel' ? (
                 <button
                   type="button"
                   data-testid="suivi-step-button"
                   className={buttonClass}
                   onClick={() => {
-                    setAutoRun(true);
+                    // « Faire le point marché » le lance ; « Voir le Point du … » l'ouvre seulement.
+                    if (button.action.kind === 'market_update') setAutoRun(true);
                     setPanel('point');
                   }}
                 >

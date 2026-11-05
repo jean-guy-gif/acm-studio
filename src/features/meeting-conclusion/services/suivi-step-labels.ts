@@ -63,7 +63,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
             ? 'dernier contact aujourd’hui'
             : `dernier contact il y a ${plural(context.lastContactDays, 'jour', 'jours')}`;
       const planned = late
-        ? `relance prévue le ${dayLabel(task.dueOn)}${task.datePosed ? '' : ' (7 jours après le dernier contact)'}, `
+        ? `relance prévue le ${dayLabel(task.dueOn)}${task.datePosed ? '' : ' (8 jours après le dernier contact)'}, `
         : 'relance prévue aujourd’hui';
       return {
         title: `Relancer ${task.sellerName}`,
@@ -136,7 +136,11 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
 // --- La colonne « Prochaine étape » d'une carte ----------------------------------------------
 
 export type StepAction =
-  { kind: 'relance' } | { kind: 'market_update' } | { kind: 'link'; href: string };
+  | { kind: 'relance' }
+  | { kind: 'market_update' }
+  // Ouvre le Point marché de la carte, sans le relancer (le dernier point, ses nouveaux venus).
+  | { kind: 'point_panel' }
+  | { kind: 'link'; href: string };
 
 export type CardStep = {
   // « Aujourd'hui », « le 23/11 », « en retard de 3 jours » (en orange), « aucune ».
@@ -215,7 +219,7 @@ export function cardStep(
           : `Relance prévue le ${dayLabel(task.dueOn)}.`
         : context.datePosed
           ? 'Message prêt avec ses mots · vous notez la relance et la suivante'
-          : 'Aucune date n’avait été posée : relance 7 jours après le dernier contact.';
+          : 'Aucune date n’avait été posée : relance 8 jours après le dernier contact.';
       return {
         when,
         whenLate,
@@ -235,10 +239,7 @@ export function cardStep(
             `Dernier point le ${dayLabel(context.latestPoint.madeOn)} : ${context.latestPoint.line}.`,
           button: {
             label: `Voir le Point du ${dayLabel(context.latestPoint.madeOn)}`,
-            action: {
-              kind: 'link',
-              href: `/builder/${task.projectId}/point-marche?point=${context.latestPoint.id}`,
-            },
+            action: { kind: 'point_panel' },
             primary: false,
           },
         };

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { suiviTaskInputs } from '@/features/meeting-conclusion/services/suivi-task-inputs';
 import { buildSuiviTaskList } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -32,9 +32,9 @@ export async function getSuiviTaskCount(): Promise<number | null> {
       .in('project_id', projectIds)
       .eq('agency_id', profile.agency_id),
     getAgencyProspecting(dossiers),
-    getVisitLines(),
+    readVisitLines(),
   ]);
-  if (contactsRes.error || pointsRes.error) return null;
+  if (contactsRes.error || pointsRes.error || visits.failed) return null;
   const contacts = new Map<string, { contactedAt: string; nextFollowUpOn: string | null }[]>();
   for (const row of contactsRes.data ?? []) {
     contacts.set(row.project_id, [
@@ -52,7 +52,7 @@ export async function getSuiviTaskCount(): Promise<number | null> {
     contacts,
     lastPoints,
     cards: prospecting.cards,
-    visits,
+    visits: visits.lines,
   });
   return buildSuiviTaskList(inputs, new Date()).dues.length;
 }

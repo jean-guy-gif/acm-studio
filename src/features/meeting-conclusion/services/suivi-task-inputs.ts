@@ -99,6 +99,8 @@ export function suiviTaskInputs(input: {
   lastPoints: Map<string, string>;
   cards: TaskCard[];
   visits: TaskVisit[];
+  // Les points n'ont pas pu être lus : aucune tâche Point marché.
+  pointsUnknown?: boolean;
 }): SuiviTaskInput[] {
   const prospecting = prospectingCounts(input.cards);
   const competitors = competitorCounts(input.cards);
@@ -113,6 +115,7 @@ export function suiviTaskInputs(input: {
     firstFollowUpOn: conclusion?.nextFollowUpOn ?? null,
     contacts: input.contacts.get(project.id) ?? [],
     lastPointAt: input.lastPoints.get(project.id) ?? null,
+    pointsUnknown: input.pointsUnknown === true,
     competitorCount: competitors.get(project.id) ?? 0,
     readyCount: prospecting.get(project.id)?.ready ?? 0,
     visits: (visits.get(project.id) ?? []).map((visit) => ({

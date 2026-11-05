@@ -15,7 +15,8 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 //   • faire le Point marché d'un mandat signé : le premier un mois après la signature (la date du
 //     rendez-vous pour un mandat d'avant la M90), puis un mois après le dernier point (décision de
 //     Jean-Guy, 05/11 : mensuel) ; un mandat sans concurrent retenu n'a rien à relire ;
-//   • démarcher les concurrents prêts d'un mandat signé (cartes « Prêt à envoyer », M86) ;
+//   • démarcher les concurrents prêts d'un mandat signé (cartes « Prêt à envoyer », M86) : dû dès
+//     qu'une carte est prête, jamais « en retard » ;
 //   • organiser une visite qu'un acquéreur a demandée sur un mandat de l'agence (M119) : elle n'a
 //     pas de date prévue, elle est due dès qu'elle existe et ne se dit jamais « en retard ».
 
@@ -57,6 +58,9 @@ export type SuiviTaskInput = {
   contacts: Pick<FollowUpContact, 'contactedAt' | 'nextFollowUpOn'>[];
   // Le plus récent point marché (ISO), null s'il n'y en a pas.
   lastPointAt: string | null;
+  // Les points n'ont pas pu être lus : aucune tâche Point marché n'est déduite (une lecture en
+  // échec n'est jamais lue comme « aucun point », M98).
+  pointsUnknown?: boolean;
   // Les concurrents retenus du mandat (hors « Ne plus solliciter »), et ceux prêts à envoyer.
   competitorCount: number;
   readyCount: number;
@@ -132,7 +136,7 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
   }
   if (input.outcome === 'signed') {
     const signedDay = dayOf(input.signedAt) ?? dayOf(input.concludedAt);
-    if (input.competitorCount > 0) {
+    if (input.competitorCount > 0 && !input.pointsUnknown) {
       const next = nextMarketUpdateOn(input.signedAt, input.concludedAt, input.lastPointAt);
       if (next) {
         tasks.push({
@@ -172,9 +176,12 @@ export function isTaskDue(task: SuiviTask, today: string): boolean {
   return task.dueOn <= today;
 }
 
-// Le retard en jours (0 : aujourd'hui) ; une visite n'est jamais en retard.
+// Le retard en jours (0 : aujourd'hui) ; un démarchage ou une visite n'a pas de date prévue : dus
+// dès qu'ils existent, jamais en retard.
 export function taskLateDays(task: SuiviTask, today: string): number {
-  return task.kind === 'visit' ? 0 : Math.max(0, daysBetween(task.dueOn, today));
+  return task.kind === 'visit' || task.kind === 'prospect'
+    ? 0
+    : Math.max(0, daysBetween(task.dueOn, today));
 }
 
 // La prochaine étape d'une carte : la plus ancienne, due ou à venir ; null pour un dossier clos.

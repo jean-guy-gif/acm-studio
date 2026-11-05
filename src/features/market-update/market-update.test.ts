@@ -315,7 +315,7 @@ describe('le point daté', () => {
     expect(summary.lines.today).toBeNull();
     expect(marketUpdateLine(summary)).toBe('0 annonce relue · 1 retirée, durée inconnue');
     expect(competitorFactLine(summary.competitors[0], MADE_AT.toISOString())).toBe(
-      'Retirée le 03/11/2026 : durée en vente inconnue, aucune conclusion',
+      'Retirée le 03/11/2026. Durée en vente inconnue : impossible de dire si elle est vendue.',
     );
   });
 

@@ -54,7 +54,7 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
     return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
   }
   if (item.state === 'gone') {
-    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''} : durée en vente inconnue, aucune conclusion`;
+    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}. Durée en vente inconnue : impossible de dire si elle est vendue.`;
   }
   if (item.state === 'unread') {
     return `Prix au rendez-vous non relu ; prix du jour : ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${d ? ` · en vente depuis ${d}` : ''}`;
