@@ -548,6 +548,55 @@ describe('le document Point marché', () => {
     expect(html).not.toContain('Pour </p>');
   });
 
+  it('un bien retenu après le rendez-vous mais en vente avant : sa section, hors des nouveaux venus (cas de Biot)', () => {
+    const summary = buildMarketUpdateSummary({
+      ...input(),
+      competitors: [
+        ...input().competitors,
+        row('66666666-6666-4666-8666-666666666666', 5, 1500000, {
+          meeting_frozen_at: null,
+          meeting_price: null,
+          meeting_price_source: null,
+          listing_published_at: '2025-06-17',
+        }),
+      ],
+    });
+    const html = renderToStaticMarkup(
+      createElement(MarketUpdateDocument, {
+        document: {
+          updateId: UPDATE,
+          madeAt: MADE_AT.toISOString(),
+          sellerName: '',
+          propertyLabel: null,
+          subjectLabel: 'Votre bien',
+          commune: null,
+          coverPhotoUrl: null,
+          summary,
+          competitors: [],
+          agency: {
+            name: 'Agence Test',
+            logoUrl: null,
+            postalAddress: null,
+            professionalCard: null,
+            professionalCardIssuer: null,
+            financialGuarantee: null,
+            advisorName: null,
+            advisorPhone: null,
+            advisorEmail: null,
+            advisorPhotoUrl: null,
+            advisorQr: null,
+          },
+          brandDeclarations: '',
+        },
+      }),
+    );
+    expect(html).toContain('data-testid="market-update-earlier"');
+    expect(html).toContain('Retenus depuis le rendez-vous');
+    expect(html).toContain('En vente avant le rendez-vous, non montré alors');
+    expect(html).not.toContain('data-testid="market-update-newcomers"');
+    expect(html).not.toContain('Nouveaux venus retenus');
+  });
+
   it('« Sans photo » retire les photos du document et de ce que reçoit la page ; 3 photos au plus', async () => {
     const { document, html } = await loadFixture();
     expect(document.competitors[3].photoUrls).toEqual([]);

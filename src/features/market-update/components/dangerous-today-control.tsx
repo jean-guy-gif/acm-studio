@@ -84,7 +84,7 @@ export function DangerousTodayControl({
       <span className="text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase">
         Le plus dangereux
       </span>
-      {needsNew && meeting ? (
+      {needsNew && meeting && editable ? (
         <p className="text-sm text-amber-800 stage:text-amber-200" data-testid="dangerous-gone">
           Le plus dangereux du rendez-vous a quitté le marché ({meeting.label}). Désignez-en un
           autre pour ce point.

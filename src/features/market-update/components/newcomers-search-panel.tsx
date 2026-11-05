@@ -261,9 +261,11 @@ export function NewcomersSearchPanel({
       found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
       found.widenRefused === 'budget'
         ? 'élargissement refusé par le budget du mois'
-        : found.widenRefused === 'failed'
-          ? 'élargissement impossible pour l’instant'
-          : null,
+        : found.widenRefused === 'unreadable'
+          ? 'élargissement non lancé : le budget du mois n’a pas pu être lu'
+          : found.widenRefused === 'failed'
+            ? 'élargissement impossible pour l’instant'
+            : null,
     ].filter(Boolean);
     return (
       <div

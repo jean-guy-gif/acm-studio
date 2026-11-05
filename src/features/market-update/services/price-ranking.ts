@@ -112,7 +112,9 @@ function isoDayInParis(value: string): string | null {
 // du rendez-vous s'il l'est encore. `needsNew` : celui du rendez-vous a disparu, aucun autre n'est
 // désigné — le Suivi propose d'en désigner un autre.
 export function dangerousInForce(
-  summary: Pick<MarketUpdateSummary, 'competitors' | 'dangerousToday'>,
+  summary: Pick<MarketUpdateSummary, 'competitors' | 'dangerousToday'> & {
+    meetingDate?: string | null;
+  },
 ): {
   meetingId: string | null;
   currentId: string | null;
@@ -122,7 +124,10 @@ export function dangerousInForce(
   const meeting = summary.competitors.find((item) => item.dangerous) ?? null;
   const today = summary.dangerousToday
     ? (summary.competitors.find(
-        (item) => item.id === summary.dangerousToday?.competitorId && listed(item),
+        (item) =>
+          item.id === summary.dangerousToday?.competitorId &&
+          listed(item) &&
+          !seenBeforeMeeting(item, summary.meetingDate ?? null),
       ) ?? null)
     : null;
   const meetingListed = meeting != null && listed(meeting);

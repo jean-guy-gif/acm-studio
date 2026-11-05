@@ -165,6 +165,17 @@ describe('le classement « Où en est votre prix » (M129)', () => {
     expect(ranking.verdict.sentence).not.toContain('arrivé');
   });
 
+  it('« avant le rendez-vous » se lit en jours de Paris, minuit compris', () => {
+    const meeting = '2026-10-21T08:00:00Z';
+    // 23 h 30 UTC le 20/10 = 1 h 30 à Paris le 21/10 : le jour même, pas avant.
+    expect(seenBeforeMeeting({ newcomer: true, seenSince: '2026-10-20T23:30:00Z' }, meeting)).toBe(
+      false,
+    );
+    expect(seenBeforeMeeting({ newcomer: true, seenSince: '2026-10-20T21:30:00Z' }, meeting)).toBe(
+      true,
+    );
+  });
+
   it('le plus dangereux change : un nouveau venu le devient, l’ancien garde « votre choix au rendez-vous »', () => {
     const { competitors, dangerous } = biot();
     const chosen = competitors[0];

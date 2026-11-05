@@ -67,7 +67,7 @@ export type SearchNewcomersResult =
       widened: boolean;
       // La seconde passe refusée par le budget : la première est gardée, le point le dit.
       // L'élargissement n'a pas pu partir : le budget du mois, ou une panne (fournisseur, lecture).
-      widenRefused: 'budget' | 'failed' | null;
+      widenRefused: 'budget' | 'unreadable' | 'failed' | null;
       // Le point du jour, réécrit avec « recherche faite ».
       updateId: string | null;
       line: string | null;
@@ -314,7 +314,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     });
   let filtered = filterRange(first.candidates.candidates, ranges.first);
   let widened = false;
-  let widenRefused: 'budget' | 'failed' | null = null;
+  let widenRefused: 'budget' | 'unreadable' | 'failed' | null = null;
   // Moins de 3 biens : la recherche s'élargit à −10 %, sur la tranche du dessous.
   if (filtered.newcomers.length < NEWCOMERS_MIN_FOUND && ranges.widened.min <= ranges.widened.max) {
     const second = await runPass(ranges.widened);
@@ -334,7 +334,11 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       };
     } else {
       widenRefused =
-        second.reason === 'reached' || second.reason === 'unreadable' ? 'budget' : 'failed';
+        second.reason === 'reached'
+          ? 'budget'
+          : second.reason === 'unreadable'
+            ? 'unreadable'
+            : 'failed';
     }
   }
   const priceRange: PriceRange = {
