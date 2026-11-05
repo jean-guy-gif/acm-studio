@@ -26,6 +26,7 @@ export function DangerousTodayControl({
   changed,
   needsNew,
   pointDay,
+  editable,
 }: {
   projectId: string;
   options: DangerousOption[];
@@ -35,6 +36,8 @@ export function DangerousTodayControl({
   changed: boolean;
   needsNew: boolean;
   pointDay: string;
+  // Seul le point du jour se désigne : un point déjà daté se rouvre tel qu'il était (M127).
+  editable: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -95,7 +98,12 @@ export function DangerousTodayControl({
             changed ? 'choix du vendeur, gardé' : 'son choix au rendez-vous',
           )
         : null}
-      {open ? (
+      {!editable ? (
+        <p className={hintText} data-testid="dangerous-stale">
+          Pour désigner le plus dangereux aujourd’hui, mettez d’abord les concurrents à jour : le
+          point du {pointDay} reste tel qu’il a été remis.
+        </p>
+      ) : open ? (
         <fieldset className="flex flex-col gap-1.5" data-testid="dangerous-options">
           <legend className="sr-only">Désigner le plus dangereux aujourd’hui</legend>
           {options.length === 0 ? (

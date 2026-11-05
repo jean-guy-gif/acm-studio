@@ -94,7 +94,7 @@ export function NewcomersSearchPanel({
             max: priceCeiling != null ? Math.round(priceCeiling) : 0,
           },
           widened: stored.widened,
-          widenRefused: false,
+          widenRefused: null,
           updateId: null,
           line: null,
         }
@@ -259,7 +259,11 @@ export function NewcomersSearchPanel({
         ? `cherchés de ${formatEuro(found.priceRange.min)} à ${formatEuro(found.priceRange.max)}`
         : NEWCOMERS_LIMITED_LABEL,
       found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
-      found.widenRefused ? 'élargissement refusé par le budget du mois' : null,
+      found.widenRefused === 'budget'
+        ? 'élargissement refusé par le budget du mois'
+        : found.widenRefused === 'failed'
+          ? 'élargissement impossible pour l’instant'
+          : null,
     ].filter(Boolean);
     return (
       <div

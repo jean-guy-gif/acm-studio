@@ -7,6 +7,8 @@ import {
   marketUpdateSummarySchema,
   parseMarketUpdateSummary,
 } from '@/features/market-update/services/market-update-summary';
+import { isPointOfDay } from '@/features/market-update/services/point-day';
+import { seenBeforeMeeting } from '@/features/market-update/services/price-ranking';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
 import { createClient } from '@/lib/supabase/server';
@@ -16,9 +18,10 @@ export type DesignateDangerousResult = { ok: true } | { ok: false; error: string
 
 const FAILURE = 'Le choix n’a pas été enregistré. Réessayez.';
 const NOT_LISTED = 'Ce bien n’est plus en vente : choisissez-en un autre.';
+const STALE = 'Mettez d’abord les concurrents à jour : un point déjà remis ne change plus.';
 
 // Mission 129 — « Désigner le plus dangereux aujourd'hui », sur le Suivi d'un mandat signé, après
-// une mise à jour : un bien du dernier point, encore en vente, nouveaux venus compris ; `null`
+// une mise à jour : un bien du point du jour, encore en vente et dans le classement, nouveaux venus compris ; `null`
 // revient au choix du vendeur au rendez-vous, qui ne s'efface jamais (`live_seller_summary` n'est
 // pas touché). Le choix est gardé dans le `summary` du dernier point, écrit par la clé service
 // après le garde ; tout ce qui vient du navigateur est relu ici.
@@ -57,7 +60,7 @@ export async function designateDangerousToday(
   }
   const { data: latest } = await supabase
     .from('project_market_updates')
-    .select('id, summary')
+    .select('id, made_at, summary')
     .eq('project_id', projectId as string)
     .eq('agency_id', agencyId)
     .order('made_at', { ascending: false })
@@ -67,9 +70,19 @@ export async function designateDangerousToday(
   if (!latest || !summary) {
     return { ok: false, error: 'Mettez d’abord les concurrents à jour.' };
   }
+  // Un point déjà daté se rouvre tel qu'il était (M127) : seul le point du jour se désigne.
+  if (!isPointOfDay(latest.made_at)) {
+    return { ok: false, error: STALE };
+  }
   if (competitorId !== null) {
     const chosen = summary.competitors.find((item) => item.id === competitorId);
-    if (!chosen || chosen.conclusion != null || chosen.state === 'gone') {
+    if (
+      !chosen ||
+      chosen.conclusion != null ||
+      chosen.state === 'gone' ||
+      chosen.currentPrice == null ||
+      seenBeforeMeeting(chosen, summary.meetingDate)
+    ) {
       return { ok: false, error: NOT_LISTED };
     }
   }

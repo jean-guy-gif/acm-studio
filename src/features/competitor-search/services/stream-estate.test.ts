@@ -7,6 +7,7 @@ import fixture from '@/features/competitor-search/__fixtures__/stream-estate-nic
 import proximityFixture from '@/features/competitor-search/__fixtures__/stream-estate-nice-4p-proximite.json';
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
+import { filterNewcomers } from '@/features/market-update/services/newcomers-filter';
 import {
   baseStreamEstateQuery,
   IMPORTABLE_HOST_SUFFIXES,
@@ -291,6 +292,29 @@ describe('annonce d’origine utilisable : pas expirée, revue il y a 7 jours au
       { url: bienici, expired: false, lastCrawledAt: '2026-10-02T10:00:00+02:00' },
     ]);
     expect(result.candidates.map((c) => c.url)).toEqual([bienici]);
+  });
+
+  // Mission 129, cas de Biot : le bien est créé à nouveau chez Stream Estate après le rendez-vous,
+  // mais son annonce existe depuis le 17/06/2025 — la plus ancienne date connue décide.
+  it('la première date connue est la plus ancienne du bien, de ses annonces et de leurs événements', () => {
+    const base = fixture['hydra:member'][1];
+    const advert = { ...base.adverts[0], createdAt: '2025-06-17T09:00:00+02:00' };
+    const result = parseStreamEstateResponse(
+      {
+        'hydra:member': [
+          { ...base, uuid: 'biot', createdAt: '2026-10-03T10:00:00+02:00', adverts: [advert] },
+        ],
+      },
+      NOW,
+    )!;
+    expect(result.candidates[0]?.streamEstate?.firstKnownAt).toBe('2025-06-17T09:00:00+02:00');
+    const outcome = filterNewcomers(result.candidates, {
+      concludedAt: '2026-09-21T10:00:00+02:00',
+      knownUrls: [],
+      priceCeiling: 10_000_000,
+      priceFloor: 0,
+    });
+    expect(outcome.newcomers).toEqual([]);
   });
 
   it('une annonce Leboncoin fraîche ne sauve pas une origine morte', () => {

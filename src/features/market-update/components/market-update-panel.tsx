@@ -176,18 +176,18 @@ export function MarketUpdateRankingCompact({
   const ranking = buildPriceRanking(summary, 'Votre bien');
   if (!ranking) return null;
   const danger = dangerousInForce(summary);
-  const listed = summary.competitors.filter(
-    (item) => item.conclusion == null && item.state !== 'gone' && item.currentPrice != null,
-  );
   const option = (item: MarketUpdateCompetitor) => ({
     id: item.id,
     label: item.label,
     newcomer: item.newcomer,
     price: item.currentPrice ?? 0,
   });
-  const order = new Map(ranking.rows.map((row, index) => [row.key, index]));
-  const options = [...listed]
-    .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
+  // Les biens du classement, dans son ordre : un bien en vente avant le rendez-vous, absent du
+  // classement, ne se désigne pas (il ne porterait son cadre que sur sa fiche).
+  const options = ranking.rows
+    .filter((row) => !row.subject)
+    .map((row) => summary.competitors.find((item) => item.id === row.key))
+    .filter((item): item is MarketUpdateCompetitor => item != null)
     .map(option);
   const meetingItem = summary.competitors.find((item) => item.id === danger.meetingId) ?? null;
   const currentItem = summary.competitors.find((item) => item.id === danger.currentId) ?? null;
@@ -221,6 +221,7 @@ export function MarketUpdateRankingCompact({
         changed={danger.changed}
         needsNew={danger.needsNew}
         pointDay={shortDay(update.madeAt).slice(0, 5)}
+        editable={isPointOfDay(update.madeAt)}
       />
     </div>
   );

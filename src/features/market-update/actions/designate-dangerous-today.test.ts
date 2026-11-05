@@ -56,6 +56,7 @@ const summary = {
 const state = vi.hoisted(() => ({
   profile: null as null | Record<string, unknown>,
   outcome: 'signed' as string | null,
+  madeAt: new Date().toISOString(),
 }));
 const tableOf = (calls: FakeCall[]) =>
   String([...calls].reverse().find((call) => call.method === 'from')?.args[0] ?? '');
@@ -63,7 +64,8 @@ const user = fakeSupabase((calls) => {
   const table = tableOf(calls);
   if (table === 'projects') return { data: { id: PROJECT, status: 'meeting_completed' } };
   if (table === 'project_meeting_conclusions') return { data: { outcome: state.outcome } };
-  if (table === 'project_market_updates') return { data: { id: UPDATE, summary } };
+  if (table === 'project_market_updates')
+    return { data: { id: UPDATE, made_at: state.madeAt, summary } };
   return { data: null };
 });
 const service = fakeSupabase(() => ({ data: [{ id: UPDATE }] }));
@@ -85,6 +87,7 @@ beforeEach(() => {
   service.reset();
   state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
   state.outcome = 'signed';
+  state.madeAt = new Date().toISOString();
 });
 
 describe('désigner le plus dangereux aujourd’hui', () => {
@@ -122,6 +125,28 @@ describe('désigner le plus dangereux aujourd’hui', () => {
       ['agency_id', 'agency-a'],
     ]);
     expect(user.writes()).toEqual([]);
+  });
+
+  it('un point d’un autre jour ne change plus : il se rouvre tel qu’il a été remis (M127)', async () => {
+    state.madeAt = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    expect(await designateDangerousToday(PROJECT, LISTED)).toEqual({
+      ok: false,
+      error: 'Mettez d’abord les concurrents à jour : un point déjà remis ne change plus.',
+    });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('un bien en vente avant le rendez-vous, absent du classement : refusé', async () => {
+    const before = '66666666-6666-4666-8666-666666666666';
+    summary.competitors.push(
+      competitor(before, { newcomer: true, seenSince: '2025-06-17', meetingPrice: null }),
+    );
+    try {
+      expect((await designateDangerousToday(PROJECT, before)).ok).toBe(false);
+      expect(service.writes()).toEqual([]);
+    } finally {
+      summary.competitors.pop();
+    }
   });
 
   it('null revient au choix du rendez-vous', async () => {

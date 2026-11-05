@@ -89,7 +89,23 @@ export function seenBeforeMeeting(
   meetingDate: string | null,
 ): boolean {
   if (!item.newcomer || !item.seenSince || !meetingDate) return false;
-  return item.seenSince.slice(0, 10) < meetingDate.slice(0, 10);
+  const seen = isoDayInParis(item.seenSince);
+  const meeting = isoDayInParis(meetingDate);
+  return seen != null && meeting != null && seen < meeting;
+}
+
+// Le jour de Paris d'une date (« 2025-06-17 »), comme la recherche des nouveaux venus ; une date
+// sans heure est déjà un jour.
+const PARIS_ISO_DAY = new Intl.DateTimeFormat('en-CA', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: 'Europe/Paris',
+});
+function isoDayInParis(value: string): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : PARIS_ISO_DAY.format(date);
 }
 
 // Le plus dangereux en vigueur : celui désigné aujourd'hui s'il est encore en vente, sinon celui
@@ -265,7 +281,8 @@ export function buildPriceRanking(
       ? {
           label: newDangerousItem.label,
           price: newDangerousItem.currentPrice,
-          newcomer: newDangerousItem.newcomer,
+          newcomer:
+            newDangerousItem.newcomer && !seenBeforeMeeting(newDangerousItem, summary.meetingDate),
         }
       : null,
     agreed,

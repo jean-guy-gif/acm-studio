@@ -341,10 +341,16 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
   const dangerOf = (id: string): DangerousBadge | null =>
     id === danger.currentId ? (danger.changed ? 'today' : 'meeting') : null;
   const realNewcomers = newcomers.filter((item) => !seenBeforeMeeting(item, summary.meetingDate));
-  const hasNewcomers = newcomers.length > 0;
-  const sections = ['competitors', hasNewcomers ? 'newcomers' : null, 'lines'].filter(
-    (key): key is string => key != null,
-  );
+  // Mission 129 — retenus comme nouveaux venus mais en vente avant le rendez-vous (cas de Biot) :
+  // ni sous le titre des nouveaux venus, ni dans leur compte.
+  const earlier = newcomers.filter((item) => seenBeforeMeeting(item, summary.meetingDate));
+  const hasNewcomers = realNewcomers.length > 0;
+  const sections = [
+    'competitors',
+    hasNewcomers ? 'newcomers' : null,
+    earlier.length > 0 ? 'earlier' : null,
+    'lines',
+  ].filter((key): key is string => key != null);
   const sectionNumber = (key: string) => sections.indexOf(key) + 1;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const coverFigures = [
@@ -357,7 +363,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
     },
     // Mission 127 B — ce chiffre n'existe qu'après une recherche : sans elle, « 0 » dirait « rien
     // de nouveau sur le marché ».
-    summary.newcomersSearch || newcomers.length > 0
+    summary.newcomersSearch || realNewcomers.length > 0
       ? { label: 'Nouveaux venus retenus', value: String(realNewcomers.length) }
       : null,
   ].filter((item): item is { label: string; value: string } => item != null);
@@ -479,7 +485,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                   : 'à votre prix ou moins'
               }, et retenus par votre conseiller pour la comparaison.`}
             />
-            {newcomers.map((item) => (
+            {realNewcomers.map((item) => (
               <CompetitorPage
                 key={item.id}
                 item={item}
@@ -487,7 +493,27 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 madeAt={document.madeAt}
                 danger={dangerOf(item.id)}
                 meetingChoice={false}
-                beforeMeeting={seenBeforeMeeting(item, summary.meetingDate)}
+              />
+            ))}
+          </section>
+        ) : null}
+
+        {earlier.length > 0 ? (
+          <section className="flex flex-col gap-3" data-testid="market-update-earlier">
+            <SectionTitle
+              number={sectionNumber('earlier')}
+              title="Retenus depuis le rendez-vous"
+              hint="Des biens déjà en vente avant notre rendez-vous, que nous n’avions pas regardés ensemble : ils ne comptent pas parmi les nouveaux venus."
+            />
+            {earlier.map((item) => (
+              <CompetitorPage
+                key={item.id}
+                item={item}
+                view={viewById.get(item.id)}
+                madeAt={document.madeAt}
+                danger={dangerOf(item.id)}
+                meetingChoice={false}
+                beforeMeeting
               />
             ))}
           </section>

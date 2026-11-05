@@ -66,7 +66,8 @@ export type SearchNewcomersResult =
       priceRange: PriceRange;
       widened: boolean;
       // La seconde passe refusée par le budget : la première est gardée, le point le dit.
-      widenRefused: boolean;
+      // L'élargissement n'a pas pu partir : le budget du mois, ou une panne (fournisseur, lecture).
+      widenRefused: 'budget' | 'failed' | null;
       // Le point du jour, réécrit avec « recherche faite ».
       updateId: string | null;
       line: string | null;
@@ -313,14 +314,12 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     });
   let filtered = filterRange(first.candidates.candidates, ranges.first);
   let widened = false;
-  let widenRefused = false;
-  let outcomeBilled = first.billed;
+  let widenRefused: 'budget' | 'failed' | null = null;
   // Moins de 3 biens : la recherche s'élargit à −10 %, sur la tranche du dessous.
   if (filtered.newcomers.length < NEWCOMERS_MIN_FOUND && ranges.widened.min <= ranges.widened.max) {
     const second = await runPass(ranges.widened);
     if (second.ok) {
       widened = true;
-      outcomeBilled += second.billed;
       const more = filterRange(second.candidates.candidates, ranges.widened);
       const seen = new Set(filtered.newcomers.map((item) => item.url));
       filtered = {
@@ -334,14 +333,16 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
         excludedUnderPrice: more.excludedUnderPrice,
       };
     } else {
-      widenRefused = true;
+      widenRefused =
+        second.reason === 'reached' || second.reason === 'unreadable' ? 'budget' : 'failed';
     }
   }
   const priceRange: PriceRange = {
     min: widened ? ranges.widened.min : ranges.first.min,
     max: priceCeiling,
   };
-  const billedCount = demo ? 0 : outcomeBilled;
+  // Le compteur de toutes les pages payées, celles d'une passe en échec comprises (M100).
+  const billedCount = demo ? 0 : billed;
   // Le point du jour, réécrit avec « recherche faite » (décision de Jean-Guy, 29/10).
   const written = await writeMarketUpdate({
     supabase,
