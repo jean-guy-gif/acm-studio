@@ -25,7 +25,8 @@ export function SuiviTaskButton({
       href={href}
       className={`${btnPrimary} whitespace-nowrap`}
       onClick={(event) => {
-        if (!open) return;
+        // Cmd-, Ctrl- ou Maj-clic : un nouvel onglet, comme tout lien.
+        if (!open || event.metaKey || event.ctrlKey || event.shiftKey) return;
         const card = document.getElementById(`suivi-${open.projectId}`);
         if (!card) return;
         event.preventDefault();
