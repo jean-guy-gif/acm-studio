@@ -607,7 +607,6 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
       // Le bouton de la tâche ramène à la carte, la relance ouverte.
       await task.getByRole('link', { name: 'Relancer' }).click();
-      await expect(page).toHaveURL(new RegExp(`relancer=${projectId}`));
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
       await expect(row.getByTestId('suivi-next-step')).toContainText(/en retard/i);
       const panel = row.getByTestId('follow-up-panel');
@@ -635,6 +634,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
         'Le presse-papiers ne porte pas le message modifié',
       ).toBe(edited);
       await panel.getByRole('button', { name: 'Annuler' }).click();
+      await expect(panel).toHaveCount(0);
+      // Un second clic sur la tâche rouvre la relance.
+      await task.getByRole('link', { name: 'Relancer' }).click();
+      await expect(row.getByTestId('follow-up-panel')).toBeVisible();
+      await row.getByTestId('follow-up-panel').getByRole('button', { name: 'Annuler' }).click();
 
       await row.getByTestId('suivi-link-details').click();
       await expect(

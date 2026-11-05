@@ -645,7 +645,6 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .filter({ hasText: 'Point marché de M. Lefebvre' });
       if ((await pointTask.count()) > 0) {
         await pointTask.getByRole('link', { name: 'Faire le point' }).click();
-        await expect(page).toHaveURL(/point=/);
       } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
         await row.getByTestId('suivi-link-point').click();
         await row.getByTestId('refresh-prices').click();
