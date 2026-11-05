@@ -2,7 +2,8 @@
 --   §1 une fiche neuve a un financement « unknown », sans date, sans contact ;
 --   §2 une valeur hors liste est refusée ;
 --   §3 le navigateur ne les écrit pas (lecture seule, M117), ni à l'insertion ni à la modification ;
---   §4 il les lit pour son agence, une autre agence ne voit rien.
+--   §4 il les lit pour son agence, une autre agence ne voit rien ;
+--   §5 un membre retiré ne lit rien.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/fiche_rapide.sql
@@ -12,7 +13,8 @@ begin;
 
 insert into auth.users (id) values
   ('13211111-1111-1111-1111-111111111111'),
-  ('13222222-2222-2222-2222-222222222222');
+  ('13222222-2222-2222-2222-222222222222'),
+  ('13233333-3333-3333-3333-333333333333');
 insert into public.agencies (id, name) values
   ('132aaaaa-0000-0000-0000-000000000000', 'A132'),
   ('132bbbbb-0000-0000-0000-000000000000', 'B132');
@@ -21,6 +23,9 @@ insert into public.profiles (id, agency_id, first_name, last_name, email, role) 
    'Al', 'A', 'a132@t.l', 'advisor'),
   ('13222222-2222-2222-2222-222222222222', '132bbbbb-0000-0000-0000-000000000000',
    'Bo', 'B', 'b132@t.l', 'advisor');
+insert into public.profiles (id, agency_id, first_name, last_name, email, role, removed_at) values
+  ('13233333-3333-3333-3333-333333333333', '132aaaaa-0000-0000-0000-000000000000',
+   'Ré', 'R', 'r132@t.l', 'advisor', now());
 insert into public.buyers (id, agency_id, advisor_id, name, cities) values
   ('132ccccc-0000-0000-0000-000000000001', '132aaaaa-0000-0000-0000-000000000000',
    '13211111-1111-1111-1111-111111111111', 'Famille Test', array['Mougins']);
@@ -50,6 +55,16 @@ update public.buyers set financing = 'in_progress', financing_changed_at = now()
   where id = '132ccccc-0000-0000-0000-000000000001';
 update public.buyers set financing = 'validated', contacted_at = now()
   where id = '132ccccc-0000-0000-0000-000000000001';
+
+-- §3 — le navigateur n'a ni l'insertion ni la modification sur la table (preuve sans ambiguïté :
+-- c'est le droit qui manque, pas la RLS qui refuse une ligne).
+do $$
+begin
+  if has_table_privilege('authenticated', 'public.buyers', 'INSERT')
+     or has_table_privilege('authenticated', 'public.buyers', 'UPDATE') then
+    raise exception 'FAIL 3: le navigateur a le droit d''écrire une fiche acquéreur';
+  end if;
+end $$;
 
 -- §3 et §4 — le navigateur lit son agence, n'écrit rien ; une autre agence ne voit rien.
 select set_config('request.jwt.claims',
@@ -83,6 +98,18 @@ do $$
 begin
   if (select count(*) from public.buyers where id = '132ccccc-0000-0000-0000-000000000001') <> 0 then
     raise exception 'FAIL 4: une autre agence lit la fiche';
+  end if;
+end $$;
+reset role;
+
+-- §5 — un membre retiré de l'agence ne lit plus rien (M105).
+select set_config('request.jwt.claims',
+  '{"sub":"13233333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+begin
+  if (select count(*) from public.buyers) <> 0 then
+    raise exception 'FAIL 5: un membre retiré lit les fiches acquéreur';
   end if;
 end $$;
 reset role;
