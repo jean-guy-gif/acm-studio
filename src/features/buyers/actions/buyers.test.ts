@@ -15,8 +15,14 @@ vi.mock('@/lib/supabase/service-role', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 
-const { archiveBuyer, moveBuyerStatus, saveBuyer } =
-  await import('@/features/buyers/actions/buyers');
+const {
+  archiveBuyer,
+  markBuyerContacted,
+  moveBuyerStatus,
+  saveBuyer,
+  saveQuickBuyer,
+  setBuyerFinancing,
+} = await import('@/features/buyers/actions/buyers');
 
 const row = {
   id: 'b1',
@@ -50,6 +56,9 @@ const row = {
   status: 'searching',
   status_changed_at: '2026-10-24T08:00:00Z',
   demo: false,
+  financing: 'unknown',
+  financing_changed_at: null,
+  contacted_at: null,
 };
 
 const form = (fields: Record<string, string>) => {
@@ -164,5 +173,92 @@ describe('les actions de la fiche acquéreur', () => {
     expect(lastTable(fake.calls)).toBe('buyers');
     const update = fake.calls.find((call) => call.method === 'update');
     expect(Object.keys(update?.args[0] as object)).toEqual(['archived_at', 'updated_at']);
+  });
+});
+
+// Mission 132 — la saisie rapide, le financement et « J'ai eu l'acquéreur aujourd'hui » : même garde,
+// même agence, un appel refusé n'écrit rien ; le formulaire de la fiche n'écrit jamais le financement.
+describe('la fiche en 30 secondes, et « prêt à visiter »', () => {
+  beforeEach(() => {
+    profile.current = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
+  });
+
+  it('sans profil, ou retiré : aucune des trois n’écrit', async () => {
+    const fake = fakeSupabase(() => ({ data: row }));
+    service.client = fake.client;
+    profile.current = { id: 'advisor-1', agency_id: 'agency-a', removed_at: '2026-10-01' };
+    expect((await saveQuickBuyer(form({ name: 'X', cities: 'Vence' }))).ok).toBe(false);
+    expect((await setBuyerFinancing('b1', 'validated')).ok).toBe(false);
+    expect((await markBuyerContacted('b1')).ok).toBe(false);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it('la saisie rapide insère dans l’agence, à son nom ; trois ★ sont refusées sans écriture', async () => {
+    const fake = fakeSupabase(() => ({ data: { id: 'new-id' } }));
+    service.client = fake.client;
+    const data = form({ name: 'Famille Test', cities: 'Vence', budget_max: '750000' });
+    data.append('must_have', 'pool');
+    expect(await saveQuickBuyer(data)).toEqual({ ok: true, buyerId: 'new-id' });
+    const insert = fake.calls.find((call) => call.method === 'insert')?.args[0];
+    expect(insert).toMatchObject({ agency_id: 'agency-a', advisor_id: 'advisor-1', pool: true });
+    expect(insert).not.toHaveProperty('financing');
+
+    fake.reset();
+    const tooMany = form({ name: 'Famille Test', cities: 'Vence', budget_max: '750000' });
+    for (const star of ['pool', 'parking', 'outdoor']) tooMany.append('must_have', star);
+    expect((await saveQuickBuyer(tooMany)).ok).toBe(false);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it('le financement : hors liste refusé ; daté ; une fiche d’une autre agence est introuvable', async () => {
+    const fake = fakeSupabase((calls) =>
+      calls.some((call) => call.method === 'update')
+        ? { data: { ...row, financing: 'validated', financing_changed_at: '2026-11-05T10:00:00Z' } }
+        : { data: row },
+    );
+    service.client = fake.client;
+    expect(await setBuyerFinancing('b1', 'peut-être')).toEqual({
+      ok: false,
+      error: 'Ce financement n’existe pas.',
+    });
+    expect(fake.writes()).toEqual([]);
+    const done = await setBuyerFinancing('b1', 'validated');
+    expect(done.ok && done.buyer.financing).toBe('validated');
+    const update = fake.calls.find((call) => call.method === 'update')?.args[0];
+    expect(Object.keys(update as object).sort()).toEqual([
+      'financing',
+      'financing_changed_at',
+      'updated_at',
+    ]);
+
+    const elsewhere = fakeSupabase(() => ({ data: null }));
+    service.client = elsewhere.client;
+    expect(await setBuyerFinancing('b1', 'validated')).toEqual({
+      ok: false,
+      error: 'Cette fiche acquéreur n’existe plus.',
+    });
+    expect(await markBuyerContacted('b1')).toEqual({
+      ok: false,
+      error: 'Cette fiche acquéreur n’existe plus.',
+    });
+    expect(elsewhere.writes()).toEqual([]);
+  });
+
+  it('« J’ai eu l’acquéreur aujourd’hui » : le seul contact, à l’heure du serveur', async () => {
+    const fake = fakeSupabase(() => ({ data: { ...row, contacted_at: '2026-11-05T10:00:00Z' } }));
+    service.client = fake.client;
+    expect((await markBuyerContacted('b1')).ok).toBe(true);
+    const update = fake.calls.find((call) => call.method === 'update')?.args[0];
+    expect(Object.keys(update as object).sort()).toEqual(['contacted_at', 'updated_at']);
+  });
+
+  it('le formulaire de la fiche n’écrit jamais le financement ni le contact', async () => {
+    const fake = fakeSupabase(() => ({ data: row }));
+    service.client = fake.client;
+    const data = form({ name: 'M. Durand', cities: 'Antibes', financing: 'validated' });
+    await saveBuyer('b1', data);
+    const update = fake.calls.find((call) => call.method === 'update')?.args[0];
+    expect(update).not.toHaveProperty('financing');
+    expect(update).not.toHaveProperty('contacted_at');
   });
 });

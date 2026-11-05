@@ -174,7 +174,10 @@ export default function ConfidentialitePage() {
               servent à rapprocher sa recherche des biens que l’agence connaît ; elles sont visibles
               par les seuls membres de l’agence, jamais par une autre agence ni par un vendeur. Le
               conseiller peut archiver une fiche : elle disparaît alors de l’outil et est effacée
-              sur demande.
+              sur demande. Le conseiller peut aussi noter l’état de son financement (validé, en
+              cours ou inconnu, sans montant ni justificatif) et le jour de son dernier échange avec
+              lui ; l’outil en déduit, sans rien envoyer, s’il est prêt à visiter ou s’il est à
+              recontacter, pour la seule agence.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

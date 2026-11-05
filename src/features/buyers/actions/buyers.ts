@@ -2,10 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { parseBuyerInput, readBuyerFormData } from '@/features/buyers/schemas/buyer-input';
+import {
+  parseBuyerInput,
+  parseQuickBuyerInput,
+  readBuyerFormData,
+} from '@/features/buyers/schemas/buyer-input';
 import { buyerColumns, toBuyer } from '@/features/buyers/services/buyer-row';
 import { isBuyerStatusMove, nextBuyerStatus } from '@/features/buyers/services/buyer-status';
-import type { Buyer } from '@/features/buyers/types';
+import { BUYER_FINANCINGS, type Buyer, type BuyerFinancing } from '@/features/buyers/types';
 import type { BuyerFormErrors } from '@/features/buyers/schemas/buyer-input';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -125,4 +129,82 @@ export async function archiveBuyer(
   if (error) return { ok: false, error: 'La fiche n’a pas pu être archivée. Réessayez.' };
   revalidateBuyers(buyerId);
   return { ok: true };
+}
+
+// Mission 132 — la saisie rapide : une fiche neuve en un écran (nom, téléphone, type, secteur,
+// budget plafond, deux ★ au plus). Création seulement ; le reste se complète par la fiche.
+export async function saveQuickBuyer(formData: FormData): Promise<SaveBuyerResult> {
+  const profile = await activeProfile();
+  if (!profile) return { ok: false, error: NOT_CONNECTED };
+  const parsed = parseQuickBuyerInput(readBuyerFormData(formData));
+  if (!parsed.ok) return { ok: false, error: parsed.error, errors: parsed.errors };
+  const client = createServiceRoleClient();
+  const { data, error } = await client
+    .from('buyers')
+    .insert({
+      ...buyerColumns(parsed.input),
+      agency_id: profile.agency_id,
+      advisor_id: profile.id,
+    })
+    .select('id')
+    .single();
+  if (error || !data) return { ok: false, error: NOT_SAVED };
+  revalidateBuyers(data.id);
+  return { ok: true, buyerId: data.id };
+}
+
+// Mission 132 — le financement (validé, en cours, inconnu) : un geste à part, daté ; jamais écrit
+// par le formulaire de la fiche (`buyerColumns` ne le porte pas).
+export async function setBuyerFinancing(
+  buyerId: string,
+  financing: unknown,
+): Promise<BuyerActionResult> {
+  const profile = await activeProfile();
+  if (!profile) return { ok: false, error: NOT_CONNECTED };
+  if (
+    typeof financing !== 'string' ||
+    !(BUYER_FINANCINGS as readonly string[]).includes(financing)
+  ) {
+    return { ok: false, error: 'Ce financement n’existe pas.' };
+  }
+  const client = createServiceRoleClient();
+  const existing = await ownBuyer(client, buyerId, profile.agency_id);
+  if (!existing) return { ok: false, error: NOT_FOUND };
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from('buyers')
+    .update({
+      financing: financing as BuyerFinancing,
+      financing_changed_at: now,
+      updated_at: now,
+    })
+    .eq('id', buyerId)
+    .eq('agency_id', profile.agency_id)
+    .select('*')
+    .single();
+  if (error || !data) return { ok: false, error: 'Le financement n’a pas pu être enregistré.' };
+  revalidateBuyers(buyerId);
+  return { ok: true, buyer: toBuyer(data) };
+}
+
+// Mission 132 — « J'ai eu l'acquéreur aujourd'hui » : le dernier contact, à l'heure du serveur,
+// jamais choisi (modèle des relances, M96). Il remet la fiche en tête de la liste (`updated_at`).
+export async function markBuyerContacted(buyerId: string): Promise<BuyerActionResult> {
+  const profile = await activeProfile();
+  if (!profile) return { ok: false, error: NOT_CONNECTED };
+  const client = createServiceRoleClient();
+  const existing = await ownBuyer(client, buyerId, profile.agency_id);
+  if (!existing) return { ok: false, error: NOT_FOUND };
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from('buyers')
+    .update({ contacted_at: now, updated_at: now })
+    .eq('id', buyerId)
+    .eq('agency_id', profile.agency_id)
+    .select('*')
+    .single();
+  if (error || !data) return { ok: false, error: 'Le contact n’a pas pu être noté. Réessayez.' };
+  revalidateBuyers(buyerId);
+  revalidatePath('/suivi');
+  return { ok: true, buyer: toBuyer(data) };
 }

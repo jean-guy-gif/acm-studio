@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { suiviTaskInputs } from '@/features/meeting-conclusion/services/suivi-task-inputs';
 import { buildSuiviTaskList } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -16,8 +17,15 @@ import { createClient } from '@/lib/supabase/server';
 export async function getSuiviTaskCount(): Promise<number | null> {
   const profile = await getProfile();
   if (!profile || profile.removed_at) return null;
-  const dossiers = withoutExamples(await getSuiviDossiers());
-  if (dossiers.length === 0) return 0;
+  const now = new Date();
+  // Mission 132 — les acquéreurs à recontacter comptent aussi, avec ou sans dossier conclu.
+  const [allDossiers, buyerTasks] = await Promise.all([
+    getSuiviDossiers(),
+    getBuyerRecontactTasks(profile, now),
+  ]);
+  if (buyerTasks.failed) return null;
+  const dossiers = withoutExamples(allDossiers);
+  if (dossiers.length === 0) return buildSuiviTaskList([], now, buyerTasks.tasks).dues.length;
   const projectIds = dossiers.map((dossier) => dossier.project.id);
   const supabase = await createClient();
   const [contactsRes, pointsRes, prospecting, visits] = await Promise.all([
@@ -54,5 +62,5 @@ export async function getSuiviTaskCount(): Promise<number | null> {
     cards: prospecting.cards,
     visits: visits.lines,
   });
-  return buildSuiviTaskList(inputs, new Date()).dues.length;
+  return buildSuiviTaskList(inputs, now, buyerTasks.tasks).dues.length;
 }

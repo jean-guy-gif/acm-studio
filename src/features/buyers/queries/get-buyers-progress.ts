@@ -21,7 +21,7 @@ export async function getBuyersProgress(
   // Ses demandes de visite, toutes sélections confondues : à organiser, et faites (M130).
   const { data: visits, error: visitsError } = await supabase
     .from('buyer_visit_requests')
-    .select('buyer_id, visited_at')
+    .select('buyer_id, visited_at, requested_at')
     .eq('agency_id', agencyId)
     .in('buyer_id', buyerIds)
     .is('cancelled_at', null);
@@ -30,6 +30,10 @@ export async function getBuyersProgress(
     if (!facts) continue;
     if (row.visited_at) facts.visitsDone = (facts.visitsDone ?? 0) + 1;
     else facts.visitsToOrganize += 1;
+    // Mission 132 — la visite demandée ou faite est un échange daté.
+    const at =
+      row.visited_at && row.visited_at > row.requested_at ? row.visited_at : row.requested_at;
+    if (!facts.lastVisitAt || at > facts.lastVisitAt) facts.lastVisitAt = at;
   }
   const { data: selections, error: selectionsError } = await supabase
     .from('buyer_selections')
@@ -105,6 +109,7 @@ export async function getBuyersProgress(
       answeredOnLink: answered.has(selection.id),
       visitsToOrganize: progress.get(buyerId)?.visitsToOrganize ?? 0,
       visitsDone: progress.get(buyerId)?.visitsDone ?? 0,
+      lastVisitAt: progress.get(buyerId)?.lastVisitAt ?? null,
       selectionAt: selection.createdAt,
       linkAt: linked.get(selection.id) ?? null,
       answeredAt: answered.get(selection.id) ?? null,

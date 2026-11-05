@@ -20,15 +20,20 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 //   • organiser une visite qu'un acquéreur a demandée sur un mandat de l'agence (M119) : elle n'a
 //     pas de date prévue, elle est due dès qu'elle existe et ne se dit jamais « en retard ».
 
-export type SuiviTaskKind = 'visit' | 'market_update' | 'prospect' | 'follow_up';
+// Mission 132 — `buyer_recontact` : un acquéreur sans échange depuis 30 jours, « Reprendre contact
+// avec la famille Keller » ; il ne tient à aucun dossier vendeur (`buyerId`, `projectId` vide).
+export type SuiviTaskKind =
+  'visit' | 'market_update' | 'prospect' | 'follow_up' | 'buyer_recontact';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
-// relancer un vendeur, organiser une visite, faire le Point marché, démarcher.
+// relancer un vendeur, organiser une visite, faire le Point marché, reprendre contact avec un
+// acquéreur (M132), démarcher.
 const KIND_ORDER: Record<SuiviTaskKind, number> = {
   follow_up: 0,
   visit: 1,
   market_update: 2,
-  prospect: 3,
+  buyer_recontact: 3,
+  prospect: 4,
 };
 
 export type SuiviTask = {
@@ -46,8 +51,11 @@ export type SuiviTask = {
   // Démarchage : le jour où la plus ancienne adresse prête est apparue, s'il est connu (une
   // adresse d'avant la M102 n'en a pas : rien n'est déduit, M47).
   readyOn?: string | null;
-  // Visite : l'acquéreur de la plus ancienne demande.
+  // Visite : l'acquéreur de la plus ancienne demande. Reprendre contact : l'acquéreur.
   buyerName?: string | null;
+  // Mission 132 — reprendre contact : la fiche acquéreur, et les jours sans échange.
+  buyerId?: string;
+  sinceDays?: number;
 };
 
 export type SuiviTaskInput = {
@@ -220,10 +228,18 @@ export type SuiviTaskList = {
   next: SuiviTask | null;
 };
 
-// « À faire aujourd'hui » : toute l'agence (M59), sans le dossier d'exemple (M97).
-export function buildSuiviTaskList(inputs: SuiviTaskInput[], now: Date): SuiviTaskList {
+// « À faire aujourd'hui » : toute l'agence (M59), sans le dossier d'exemple (M97). Mission 132 —
+// plus les tâches des acquéreurs (`buyerTasks`), qui ne tiennent à aucun dossier.
+export function buildSuiviTaskList(
+  inputs: SuiviTaskInput[],
+  now: Date,
+  buyerTasks: SuiviTask[] = [],
+): SuiviTaskList {
   const today = parisDay(now);
-  const all = sortTasks(inputs.filter((input) => !input.isExample).flatMap(dossierTasks));
+  const all = sortTasks([
+    ...inputs.filter((input) => !input.isExample).flatMap(dossierTasks),
+    ...buyerTasks,
+  ]);
   const dues = sortDueTasks(all.filter((task) => isTaskDue(task, today)));
   return { dues, next: dues.length > 0 ? null : (all[0] ?? null) };
 }

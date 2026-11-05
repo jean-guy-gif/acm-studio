@@ -126,6 +126,11 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 05/11 · M130 B · Première mission en équipe allégée : une passe de relecteur (0 bloquant, 4 « à corriger »), la suite e2e jouée par le chef au premier plan, verte du premier coup (démo 4,5 min, parcours 2,8 à 3,1 min, bienvenue et Live tablette 40 s).
 - 05/11 · M130 B · Le test de vocabulaire refuse « disponible » partout sur les pages acquéreur (M118), même dans « indisponible » : un message d'échec s'écrit « illisible pour l'instant ».
 - 05/11 · M130 B · Une colonne posée « à la création » (`buyers.status_changed_at = now()`) n'est pas un fait : un « dernier échange » calculé dessus aurait dit « aujourd'hui » pour une fiche neuve ; lire la migration avant de dater un fait.
+- 05/11 · M131 · Un fork en parallèle (l'Étude de marché, ses fichiers à lui seul, sans commit ni e2e) pendant que le chef codait le Live : 9 min, rien à reprendre ; la frontière de fichiers écrite dans la consigne a suffi.
+- 05/11 · M131 · Le compilateur React (`preserve-manual-memoization`) refuse une fonction qui lit une valeur mémorisée déclarée PLUS BAS (`pages` lu par la sortie de l'écran du prix) : déplacer la fonction après la valeur, pas la sortir du composant.
+- 05/11 · M131 · Le test « rien en dehors de guardedSave » refuse tout `await` d'une fonction maison dans la scène du Live, même si elle passe elle-même par `guardedSave` : l'appeler avec `void`.
+- 05/11 · M131 · E2E d'un réglage enregistré « dès qu'il change » (transition) : attendre que les choix se réactivent avant de recharger, sinon le rechargement coupe l'action et l'ancien choix revient ; `innerText` rend les libellés en capitales (CSS) : comparer sans la casse.
+- 05/11 · M131 · `comparables.price` est NOT NULL : un cas de test « concurrent sans prix » ne s'insère pas ; le gardien proposait une défense pour ce cas, gardée, mais son test retiré.
 
 ## La base
 

@@ -15,6 +15,17 @@ export const BUYER_STATUS_LABELS: Record<BuyerStatus, string> = {
   abandoned: 'Abandonné',
 };
 
+// Mission 132 — le financement de l'acquéreur, posé par le conseiller (trois boutons sur la fiche) :
+// « validé » = accord de principe ou apport suffisant.
+export const BUYER_FINANCINGS = ['validated', 'in_progress', 'unknown'] as const;
+export type BuyerFinancing = (typeof BUYER_FINANCINGS)[number];
+export const BUYER_FINANCING_LABELS: Record<BuyerFinancing, string> = {
+  validated: 'Validé',
+  in_progress: 'En cours',
+  unknown: 'Inconnu',
+};
+export const BUYER_FINANCING_HINT = 'Validé : accord de principe ou apport suffisant.';
+
 export const BUYER_PURPOSES = ['primary', 'secondary', 'investment', 'other'] as const;
 export type BuyerPurpose = (typeof BUYER_PURPOSES)[number];
 export const BUYER_PURPOSE_LABELS: Record<BuyerPurpose, string> = {
@@ -115,4 +126,9 @@ export type Buyer = BuyerInput & {
   demo: boolean;
   // Mission 122 — les suggestions ignorées par le conseiller, par raison : elles ne reviennent plus.
   ignoredSuggestions: string[];
+  // Mission 132 — son financement, et le dernier contact déclaré (« J'ai eu l'acquéreur
+  // aujourd'hui »), à l'heure du serveur. Jamais écrits par le formulaire de la fiche.
+  financing: BuyerFinancing;
+  financingChangedAt: string | null;
+  contactedAt: string | null;
 };

@@ -34,8 +34,10 @@ const dossier = (
 });
 
 describe('les acquéreurs de la démo', () => {
-  it('sont deux, valides, joignables en 06 39 98 et example.com (fiction), et ne disent pas « démo »', () => {
-    expect(DEMO_BUYERS).toHaveLength(2);
+  it('sont huit, valides, joignables en 06 39 98 et example.com (fiction), et ne disent pas « démo »', () => {
+    // Mission 132 — Rossi, Keller, et six acquéreurs autour de Vence.
+    expect(DEMO_BUYERS).toHaveLength(8);
+    expect(new Set(DEMO_BUYERS.map((buyer) => buyer.phone)).size).toBe(8);
     for (const buyer of DEMO_BUYERS) {
       const parsed = parseBuyerInput({
         name: buyer.name,
@@ -63,5 +65,51 @@ describe('les acquéreurs de la démo', () => {
     expect(first.matches.mandate.map((hit) => hit.candidate.city)).toEqual(['Antibes']);
     const second = reconcileBuyer(buyerToCriteria(keller!), [antibes, mougins]);
     expect(second.matches.mandate.map((hit) => hit.candidate.city)).toEqual(['Mougins']);
+  });
+});
+
+// Mission 132 — cinq acquéreurs prêts à visiter autour de Vence, et un sixième sans financement
+// validé, qui ne compte pas (décision de Jean-Guy, 05/11).
+describe('les acquéreurs prêts à visiter de la démo', () => {
+  it('cinq prêts, maison de 4 ou 5 pièces, Vence et alentours, 700 000 à 800 000 €', async () => {
+    const { buyerReadiness } = await import('@/features/buyers/services/buyer-readiness');
+    const now = new Date('2026-11-05T10:00:00Z');
+    const vence = DEMO_BUYERS.filter((buyer) =>
+      buyer.cities.some((city) => /vence|colle/i.test(city)),
+    );
+    expect(vence).toHaveLength(6);
+    const ready = vence.filter(
+      (buyer) =>
+        buyerReadiness(
+          {
+            status: 'searching',
+            financing: buyer.financing ?? 'unknown',
+            budgetMax: buyer.budgetMax,
+            createdAt: '2026-10-01T10:00:00Z',
+            statusChangedAt: '2026-10-01T10:00:00Z',
+            contactedAt:
+              buyer.contactedDaysAgo != null
+                ? new Date(now.getTime() - buyer.contactedDaysAgo * 86_400_000).toISOString()
+                : null,
+          },
+          {
+            selectionCount: 0,
+            presentedAt: null,
+            linkCreated: false,
+            answeredOnLink: false,
+            visitsToOrganize: 0,
+          },
+          now,
+        ).state === 'ready',
+    );
+    expect(ready).toHaveLength(5);
+    for (const buyer of vence) {
+      expect(buyer.propertyTypes).toEqual(['house']);
+      expect(buyer.roomsMin).toBeGreaterThanOrEqual(4);
+      expect(buyer.roomsMin).toBeLessThanOrEqual(5);
+      expect(buyer.budgetMax).toBeGreaterThanOrEqual(700_000);
+      expect(buyer.budgetMax).toBeLessThanOrEqual(800_000);
+    }
+    expect(vence.find((buyer) => buyer.financing !== 'validated')?.name).toBe('M. Fontaine');
   });
 });

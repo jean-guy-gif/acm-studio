@@ -20,7 +20,7 @@ est le chantier en cours ; la lecture de notes manuscrites par IA (121) attend l
 - Ne jamais demander le prix du bien vendeur à la création du dossier.
 - Ne jamais produire d'estimation automatique.
 - Ne jamais montrer le prix d'un concurrent avant d'avoir demandé au vendeur de le deviner, sauf en
-  présentation directe, choisie par le conseiller (Jean-Guy, 05/11, M131).
+  présentation directe ou dans l'Étude de marché, choisies par le conseiller (Jean-Guy, 05/11, M131).
 - Ne jamais montrer plusieurs concurrents sur le même écran du Live.
 - Ne jamais garder la logique métier dans les seuls composants React.
 - Ne jamais créer de fausses données, fausses photos, faux concurrents ou fausses sources.
