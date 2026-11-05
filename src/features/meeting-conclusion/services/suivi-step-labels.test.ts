@@ -76,7 +76,13 @@ describe('« À faire aujourd’hui »', () => {
 
   it('démarcher et organiser une visite : jamais en retard', () => {
     const prospect = taskLine(
-      task({ kind: 'prospect', dueOn: '2026-10-15', count: 3, sellerName: 'Martin' }),
+      task({
+        kind: 'prospect',
+        dueOn: '2026-10-15',
+        readyOn: '2026-10-15',
+        count: 3,
+        sellerName: 'Martin',
+      }),
       lineContext,
       TODAY,
     );
@@ -95,6 +101,15 @@ describe('« À faire aujourd’hui »', () => {
     expect(visit.title).toBe('Organiser la visite de la famille Keller chez M. et Mme Martin');
     expect(visit.late).toBeNull();
     expect(visit.href).toBe('/visites');
+  });
+
+  it('une adresse sans date connue : aucun « depuis le » déduit (M47)', () => {
+    const line = taskLine(
+      task({ kind: 'prospect', dueOn: '2026-10-15', readyOn: null, count: 2 }),
+      lineContext,
+      TODAY,
+    );
+    expect(line.detail).toBe('2 adresses prêtes · courriers à imprimer');
   });
 
   it('rien à faire : la prochaine tâche, ou aucune', () => {

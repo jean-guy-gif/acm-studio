@@ -126,6 +126,29 @@ describe('le démarchage et les visites', () => {
     expect(taskLateDays(tasks[0], '2026-11-05')).toBe(0);
   });
 
+  it('le démarchage : daté de la plus ancienne adresse prête, au plus tôt de la signature', () => {
+    const later = dossierTasks(
+      input({
+        signedAt: '2026-10-23T09:00:00Z',
+        readyCount: 2,
+        readySince: '2026-10-28T09:00:00Z',
+      }),
+    ).find((task) => task.kind === 'prospect')!;
+    expect(later).toMatchObject({ dueOn: '2026-10-28', readyOn: '2026-10-28' });
+    const before = dossierTasks(
+      input({
+        signedAt: '2026-10-23T09:00:00Z',
+        readyCount: 2,
+        readySince: '2026-10-10T09:00:00Z',
+      }),
+    ).find((task) => task.kind === 'prospect')!;
+    expect(before).toMatchObject({ dueOn: '2026-10-23', readyOn: '2026-10-10' });
+    const unknown = dossierTasks(
+      input({ signedAt: '2026-10-23T09:00:00Z', readyCount: 2, readySince: null }),
+    ).find((task) => task.kind === 'prospect')!;
+    expect(unknown).toMatchObject({ dueOn: '2026-10-23', readyOn: null });
+  });
+
   it('une visite demandée est due dès sa demande, jamais en retard', () => {
     const tasks = dossierTasks(
       input({

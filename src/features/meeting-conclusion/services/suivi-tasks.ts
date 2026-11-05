@@ -42,6 +42,9 @@ export type SuiviTask = {
   lastPointOn?: string | null;
   // Démarchage : le nombre de concurrents prêts ; visites : le nombre de demandes à organiser.
   count?: number;
+  // Démarchage : le jour où la plus ancienne adresse prête est apparue, s'il est connu (une
+  // adresse d'avant la M102 n'en a pas : rien n'est déduit, M47).
+  readyOn?: string | null;
   // Visite : l'acquéreur de la plus ancienne demande.
   buyerName?: string | null;
 };
@@ -150,11 +153,14 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
       }
     }
     if (input.readyCount > 0 && signedDay) {
+      // Dû au plus tôt à la signature : une adresse trouvée avant ne range pas la tâche plus tôt.
+      const readyOn = dayOf(input.readySince);
       tasks.push({
         ...base,
         kind: 'prospect',
-        dueOn: dayOf(input.readySince) ?? signedDay,
+        dueOn: readyOn && readyOn > signedDay ? readyOn : signedDay,
         count: input.readyCount,
+        readyOn,
       });
     }
     const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
