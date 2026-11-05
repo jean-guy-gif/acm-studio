@@ -85,7 +85,7 @@ describe('Mission 108 — la carte d’un dossier', () => {
 
   it('la ligne de la fourchette dit « Votre fourchette », plus « Décision de prix »', async () => {
     const { readFileSync } = await import('node:fs');
-    const page = readFileSync('src/app/(protected)/builder/page.tsx', 'utf8');
+    const page = readFileSync('src/app/(protected)/builder/(liste)/page.tsx', 'utf8');
     expect(page).not.toContain('Décision de prix :');
     expect(page).toContain('{FOURCHETTE_LABEL} :');
     expect(FOURCHETTE_LABEL).toBe('Votre fourchette');
