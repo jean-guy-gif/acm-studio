@@ -18,17 +18,18 @@ export async function getBuyersProgress(
     buyerIds.map((id) => [id, { ...NO_PROGRESS }]),
   );
   if (buyerIds.length === 0) return progress;
-  // Ses demandes de visite à organiser, toutes sélections confondues.
+  // Ses demandes de visite, toutes sélections confondues : à organiser, et faites (M130).
   const { data: visits } = await supabase
     .from('buyer_visit_requests')
-    .select('buyer_id')
+    .select('buyer_id, visited_at')
     .eq('agency_id', agencyId)
     .in('buyer_id', buyerIds)
-    .is('cancelled_at', null)
-    .is('visited_at', null);
+    .is('cancelled_at', null);
   for (const row of visits ?? []) {
     const facts = progress.get(row.buyer_id);
-    if (facts) facts.visitsToOrganize += 1;
+    if (!facts) continue;
+    if (row.visited_at) facts.visitsDone = (facts.visitsDone ?? 0) + 1;
+    else facts.visitsToOrganize += 1;
   }
   const { data: selections } = await supabase
     .from('buyer_selections')
@@ -36,10 +37,14 @@ export async function getBuyersProgress(
     .eq('agency_id', agencyId)
     .in('buyer_id', buyerIds)
     .order('created_at', { ascending: false });
-  const latest = new Map<string, { id: string; presentedAt: string | null }>();
+  const latest = new Map<string, { id: string; presentedAt: string | null; createdAt: string }>();
   for (const row of selections ?? []) {
     if (!latest.has(row.buyer_id)) {
-      latest.set(row.buyer_id, { id: row.id, presentedAt: row.presented_at });
+      latest.set(row.buyer_id, {
+        id: row.id,
+        presentedAt: row.presented_at,
+        createdAt: row.created_at,
+      });
     }
   }
   const selectionIds = [...latest.values()].map((selection) => selection.id);
@@ -52,7 +57,7 @@ export async function getBuyersProgress(
       .in('selection_id', selectionIds),
     supabase
       .from('buyer_dossier_links')
-      .select('selection_id')
+      .select('selection_id, created_at')
       .eq('agency_id', agencyId)
       .in('selection_id', selectionIds)
       .gt('expires_at', new Date().toISOString()),
@@ -62,16 +67,25 @@ export async function getBuyersProgress(
     itemIds.length > 0
       ? await supabase
           .from('buyer_item_responses')
-          .select('selection_item_id')
+          .select('selection_item_id, answered_at')
           .eq('agency_id', agencyId)
           .eq('answered_during', 'dossier')
           .in('selection_item_id', itemIds)
       : { data: [] };
   const selectionOfItem = new Map((items ?? []).map((item) => [item.id, item.selection_id]));
-  const answered = new Set(
-    (responses ?? []).map((row) => selectionOfItem.get(row.selection_item_id)),
-  );
-  const linked = new Set((links ?? []).map((row) => row.selection_id));
+  // La plus récente réponse par le lien, et le plus récent lien, par sélection.
+  const answered = new Map<string, string>();
+  for (const row of responses ?? []) {
+    const selectionId = selectionOfItem.get(row.selection_item_id);
+    if (!selectionId) continue;
+    const known = answered.get(selectionId);
+    if (!known || row.answered_at > known) answered.set(selectionId, row.answered_at);
+  }
+  const linked = new Map<string, string>();
+  for (const row of links ?? []) {
+    const known = linked.get(row.selection_id);
+    if (!known || row.created_at > known) linked.set(row.selection_id, row.created_at);
+  }
   for (const [buyerId, selection] of latest) {
     progress.set(buyerId, {
       selectionCount: (items ?? []).filter(
@@ -81,6 +95,10 @@ export async function getBuyersProgress(
       linkCreated: linked.has(selection.id),
       answeredOnLink: answered.has(selection.id),
       visitsToOrganize: progress.get(buyerId)?.visitsToOrganize ?? 0,
+      visitsDone: progress.get(buyerId)?.visitsDone ?? 0,
+      selectionAt: selection.createdAt,
+      linkAt: linked.get(selection.id) ?? null,
+      answeredAt: answered.get(selection.id) ?? null,
     });
   }
   return progress;

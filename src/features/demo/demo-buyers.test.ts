@@ -34,7 +34,7 @@ const dossier = (
 });
 
 describe('les acquéreurs de la démo', () => {
-  it('sont deux, valides, sans téléphone ni e-mail, et ne disent pas « démo »', () => {
+  it('sont deux, valides, joignables en 06 39 98 et example.com (fiction), et ne disent pas « démo »', () => {
     expect(DEMO_BUYERS).toHaveLength(2);
     for (const buyer of DEMO_BUYERS) {
       const parsed = parseBuyerInput({
@@ -48,8 +48,9 @@ describe('les acquéreurs de la démo', () => {
         must_have: buyer.mustHave,
       });
       expect(parsed.ok).toBe(true);
-      expect(buyer.phone).toBeNull();
-      expect(buyer.email).toBeNull();
+      // Mission 130 B — la plage que l'ARCEP réserve à la fiction, un domaine réservé (RFC 2606).
+      expect(buyer.phone).toMatch(/^06 39 98 \d{2} \d{2}$/);
+      expect(buyer.email).toMatch(/@example\.com$/);
       expect(JSON.stringify(buyer)).not.toMatch(/d[ée]mo|fictif|test/i);
     }
   });

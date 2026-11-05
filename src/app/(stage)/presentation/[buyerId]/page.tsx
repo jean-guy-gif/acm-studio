@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { DeckPresentation } from '@/features/buyer-deck/components/deck-presentation';
+import { DeckWithPrelude } from '@/features/buyer-deck/components/deck-with-prelude';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 
 export const metadata: Metadata = { title: 'Présentation' };
@@ -18,16 +19,19 @@ export default async function PresentationPage({
   if (!/^[0-9a-f-]{36}$/i.test(buyerId)) notFound();
   const loaded = await loadDeck(buyerId);
   if (!loaded) redirect(`/acquereurs/${buyerId}`);
+  // Mission 130 B — « Avant de présenter » d'abord, pour le conseiller seul.
   return (
-    <DeckPresentation
-      deck={loaded.deck}
-      initialResponses={loaded.responses}
-      initialAvailability={loaded.initialAvailability}
-      logoLightUrl={loaded.logoLightUrl}
-      logoDarkUrl={loaded.logoDarkUrl}
-      agencyName={loaded.agencyName}
-      advisorName={loaded.advisorName}
-      advisorPhone={loaded.advisorPhone}
-    />
+    <DeckWithPrelude deck={loaded.deck}>
+      <DeckPresentation
+        deck={loaded.deck}
+        initialResponses={loaded.responses}
+        initialAvailability={loaded.initialAvailability}
+        logoLightUrl={loaded.logoLightUrl}
+        logoDarkUrl={loaded.logoDarkUrl}
+        agencyName={loaded.agencyName}
+        advisorName={loaded.advisorName}
+        advisorPhone={loaded.advisorPhone}
+      />
+    </DeckWithPrelude>
   );
 }

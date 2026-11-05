@@ -3,12 +3,13 @@ import type { BuyerInput } from '@/features/buyers/types';
 // Mission 117 — les deux acquéreurs de la démo, semés par « Préparer ma démo » (M114) et retirés
 // par la remise à zéro : cohérents avec les scénarios — l'appartement d'Antibes (3 pièces, 68 m²,
 // convenu autour de 393 000 €) et la villa de Mougins (7 pièces, 210 m², piscine, convenue autour
-// de 1 639 500 €). Des personnes fictives, aux noms neutres ; aucun téléphone ni e-mail réel.
+// de 1 639 500 €). Des personnes fictives, aux noms neutres ; Mission 130 B — un téléphone de la plage 06 39 98
+// (réservée à la fiction par l'ARCEP) et un e-mail en example.com, jamais réels.
 export const DEMO_BUYERS: BuyerInput[] = [
   {
     name: 'M. et Mme Rossi',
-    phone: null,
-    email: null,
+    phone: '06 39 98 63 04',
+    email: 'rossi.antibes@example.com',
     purpose: 'primary',
     timeline: 'three_months',
     notes: 'Vendent leur appartement à Nice ; veulent un balcon et une place de parking.',
@@ -31,8 +32,8 @@ export const DEMO_BUYERS: BuyerInput[] = [
   },
   {
     name: 'Famille Keller',
-    phone: null,
-    email: null,
+    phone: '06 39 98 52 10',
+    email: 'famille.keller@example.com',
     purpose: 'secondary',
     timeline: 'now',
     notes: 'Résidence secondaire pour les vacances en famille ; grand jardin souhaité.',

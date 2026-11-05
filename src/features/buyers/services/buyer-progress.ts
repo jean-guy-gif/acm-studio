@@ -16,6 +16,12 @@ export type BuyerProgressFacts = {
   answeredOnLink: boolean;
   // Ses demandes de visite à organiser (ni annulées, ni faites), toutes sélections confondues.
   visitsToOrganize: number;
+  // Mission 130 — les visites faites, et les dates des étapes (la fiche, la sélection, le lien,
+  // sa réponse par le lien), pour le parcours, la prochaine étape et « Ce qui s'est passé ».
+  visitsDone?: number;
+  selectionAt?: string | null;
+  linkAt?: string | null;
+  answeredAt?: string | null;
 };
 
 export const NO_PROGRESS: BuyerProgressFacts = {

@@ -9,11 +9,8 @@ import {
   buyerStatusLabel,
   buyerTypesLabel,
 } from '@/features/buyers/services/buyer-criteria';
-import {
-  NO_PROGRESS,
-  buyerNextStep,
-  type BuyerProgressFacts,
-} from '@/features/buyers/services/buyer-progress';
+import { buyerNextAction } from '@/features/buyers/services/buyer-journey';
+import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import type { Buyer } from '@/features/buyers/types';
 
 // Mission 117 — la liste des acquéreurs : une ligne par fiche, nom, type, communes, budget,
@@ -66,24 +63,26 @@ export function BuyerList({
                 </div>
                 <p className="text-sm text-zinc-600 stage:text-white/70">{facts.join(' · ')}</p>
               </div>
-              <div className="flex flex-col items-end gap-1 text-right">
-                <span className="text-xs text-zinc-500 stage:text-white/60">
-                  Modifiée le {buyerDateLabel(buyer.updatedAt)}
-                </span>
-                {/* Essai de Jean-Guy (26/10) : le bouton dit l'étape suivante, plus « Ouvrir ». */}
-                {(() => {
-                  const next = buyerNextStep(buyer.id, progress.get(buyer.id) ?? NO_PROGRESS);
-                  return (
+              {/* Mission 130 B — chaque ligne dit sa prochaine étape et depuis quand ; le lien la
+                  fait, comme le bloc de la fiche. */}
+              {(() => {
+                const next = buyerNextAction(buyer, progress.get(buyer.id) ?? NO_PROGRESS);
+                return (
+                  <div className="flex flex-col items-end gap-1 text-right">
+                    <span className="text-xs text-zinc-500 stage:text-white/60">
+                      Prochaine étape · {next.title}
+                      {next.since ? ` · depuis le ${buyerDateLabel(next.since)}` : ''}
+                    </span>
                     <Link
-                      href={next.href}
+                      href={next.primary.href}
                       className="text-sm font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
                       data-testid="buyer-next-step"
                     >
-                      {next.label} →
+                      {next.primary.label} →
                     </Link>
-                  );
-                })()}
-              </div>
+                  </div>
+                );
+              })()}
             </div>
           </li>
         );

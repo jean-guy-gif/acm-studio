@@ -1193,21 +1193,32 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(keller).toContainText('Maison · Mougins');
   // Essai de Jean-Guy (26/10) : le bouton de la carte dit l'étape suivante — sa sélection est
   // retenue (« Préparer ma démo »), elle est à présenter.
-  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Présenter →');
+  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Présenter maintenant →');
+  // Mission 130 B — la ligne dit sa prochaine étape et depuis quand.
+  await expect(keller).toContainText(/Prochaine étape · Lui présenter sa sélection · depuis le/);
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
   ).toHaveText('Trouver les biens idéaux →');
   await keller.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
-  // Les trois étapes, en haut de la fiche, dans l'ordre, avec leur état.
+  // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone ; ses
+  // quatre étapes ; UNE prochaine étape ; « Rapprocher » en bloc.
+  await expect(page.getByTestId('buyer-words')).toBeVisible();
+  await expect(page.getByTestId('buyer-criteria')).toContainText('★');
   const steps = page.getByTestId('buyer-step');
-  await expect(steps).toHaveCount(3);
+  await expect(steps).toHaveCount(4);
   await expect(steps.nth(0)).toContainText('1 · Biens idéaux');
-  await expect(steps.nth(0)).toContainText('Sélection : 3 biens ✓');
-  await expect(steps.nth(1)).toContainText('2 · Présenter la sélection');
-  await expect(steps.nth(2)).toContainText('3 · Dossier acquéreur');
-  await expect(steps.nth(2)).toContainText('Lien à créer');
-  await page.getByRole('link', { name: 'Rapprocher' }).click();
+  await expect(steps.nth(0)).toContainText('3 biens sélectionnés');
+  await expect(steps.nth(1)).toContainText('2 · Présenter');
+  await expect(steps.nth(1)).toHaveAttribute('data-status', 'current');
+  await expect(steps.nth(2)).toContainText('3 · Sa réponse');
+  await expect(steps.nth(3)).toContainText('4 · Visites');
+  await expect(page.getByTestId('buyer-next-step')).toContainText('Lui présenter sa sélection');
+  await expect(page.getByTestId('buyer-timeline')).toContainText('3 biens sélectionnés');
+  await expect(page.getByTestId('buyer-matching')).toContainText(
+    /Voir les correspondances · [1-9]/,
+  );
+  await page.getByRole('link', { name: /^Voir les correspondances/ }).click();
   const panel = page.getByTestId('buyer-search');
   await expect(panel.locator('input[name="city"]')).toHaveValue(
     'Mougins, Mouans-Sartoux, Valbonne',
@@ -1221,7 +1232,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Relecture des rendus (25/10) : « Préparer ma démo » (ou sa remise à zéro) a déjà retenu pour
   // les Keller le mandat de Mougins, un compromis au budget en orange et un bien à vérifier.
   await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
-  await page.getByRole('link', { name: 'Trouver les biens idéaux' }).click();
+  await page.getByRole('link', { name: 'Changer la sélection' }).click();
   await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
   await expectUnspoken(page, 'Biens idéaux');
   // Essai de Jean-Guy (26/10) : la sélection actuelle n'apparaît qu'une fois, dans le bandeau
@@ -1437,21 +1448,19 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
   // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
   await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
-  // Sa réponse sur le lien : l'étape 3 de la fiche la dit, et « Je veux le visiter » est sur
-  // Visites, « depuis le dossier ».
-  await expect(page.getByTestId('buyer-step').nth(2)).toContainText('Réponse reçue ✓');
-  // Essai de Jean-Guy (26/10) : une fois la réponse reçue, l'étape mise en avant est « 4 · Visites :
-  // N visite(s) à organiser », avec son bouton vers Visites ; « Présenter » n'est plus le bouton
-  // plein ; « Avant de présenter » est replié ; les réponses sont groupées par sélection.
+  // Mission 130 B — sa réponse sur le lien : l'étape 3 la dit ; l'étape du jour est « 4 · Visites »,
+  // la prochaine étape « Organiser la visite », vers Visites ; le fil la date.
+  await expect(page.getByTestId('buyer-step').nth(2)).toContainText('reçue par le lien');
   const visitsStep = page.locator('[data-testid="buyer-step"][data-step="visits"]');
-  await expect(visitsStep).toContainText(/4 · Visites : \d+ visites? à organiser/);
-  await expect(visitsStep).toHaveAttribute('data-next', 'true');
+  await expect(visitsStep).toContainText(/\d+ demandées?, à organiser/);
+  await expect(visitsStep).toHaveAttribute('data-status', 'current');
   await expect(page.locator('[data-testid="buyer-step"][data-step="present"]')).toHaveAttribute(
-    'data-next',
-    'false',
+    'data-status',
+    'done',
   );
-  await expect(page.getByTestId('buyer-visits')).toHaveAttribute('href', '/visites');
-  await expect(page.getByTestId('deck-prepare-folded')).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('buyer-next-step')).toContainText('Organiser la visite');
+  await expect(page.getByTestId('buyer-next-button')).toHaveAttribute('href', '/visites');
+  await expect(page.getByTestId('buyer-timeline')).toContainText('Sa réponse reçue par le lien');
   await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
   await expect(page.getByTestId('buyer-answer-group').first()).toContainText(
     /Sélection du \d{2}\/\d{2}\/\d{4}/,
@@ -1481,8 +1490,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
   // grille qui montre la réponse ; A : « Pas pour moi » (la surface) ; « Terminer » avec B sans
   // réponse demande confirmation ; B : « Peut-être » ; ses créneaux ; la fiche montre ses réponses.
+  // Mission 130 B — « Avant de présenter » ouvre la présentation, pour le conseiller seul.
+  await page.getByTestId('reread-before-presenting').click();
+  await expect(page.getByTestId('deck-prelude')).toBeVisible();
   await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
-  await page.getByTestId('present-selection').click();
+  await page.getByTestId('deck-start').click();
   const scene = page.getByTestId('buyer-presentation');
   await expect(scene).toHaveAttribute('data-screen', 'words');
   await expectUnspoken(page, 'Présentation — ses mots');
