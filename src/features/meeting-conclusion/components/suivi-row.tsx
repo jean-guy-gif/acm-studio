@@ -244,11 +244,20 @@ export function SuiviRow({
   const [relancedOn, setRelancedOn] = useState<string | null>(null);
   // « Faire le point marché » ouvre le Point marché dans la carte et le lance : le panneau reste
   // ouvert quand la prochaine étape change, avec le point qui vient de s'écrire.
-  // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance aussi.
-  // Seulement si le point est dû : un rechargement après le point ne le relance pas.
-  const [autoRun, setAutoRun] = useState(
-    initialPanel === 'point' && step.button?.action.kind === 'market_update',
-  );
+  // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance, si le point est
+  // dû (un rechargement après le point ne le relance pas).
+  const pointDue = frieze?.pointDue === true;
+  const [autoRun, setAutoRun] = useState(initialPanel === 'point' && pointDue);
+  // Le lien d'une tâche mène à la même page : la carte, déjà affichée, relit l'adresse quand elle
+  // change (`?relancer=`, `?point=`) — jamais au premier rendu, que l'état initial couvre déjà.
+  const [shownFor, setShownFor] = useState(initialPanel);
+  if (initialPanel !== shownFor) {
+    setShownFor(initialPanel);
+    if (initialPanel) {
+      setPanel(initialPanel);
+      if (initialPanel === 'point' && pointDue) setAutoRun(true);
+    }
+  }
   const { project, property, conclusion } = dossier;
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
@@ -334,7 +343,7 @@ export function SuiviRow({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="grid grid-cols-1 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @5xl:grid-cols-[minmax(0,1fr)_24rem]">
           {/* Le vendeur et son bien. */}
-          <div className="flex min-w-0 flex-col gap-1 p-4 pb-2 @3xl:p-5 @3xl:pb-2">
+          <div className="flex min-w-0 flex-col gap-1 p-4 pb-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-title text-xl font-bold text-zinc-900 @3xl:text-2xl stage:text-white">
                 {sellerName}
@@ -371,7 +380,7 @@ export function SuiviRow({
           {/* La prochaine étape : sur téléphone, avant le chemin du prix. */}
           <div
             data-testid="suivi-next-step"
-            className="flex min-w-0 flex-col gap-2 border-zinc-100 p-4 @3xl:row-span-2 @3xl:border-l @3xl:p-5 stage:border-white/10"
+            className="flex min-w-0 flex-col gap-1.5 border-zinc-100 p-4 @3xl:row-span-2 @3xl:border-l stage:border-white/10"
           >
             <span className={smallCaps}>
               Prochaine étape ·{' '}
@@ -466,7 +475,7 @@ export function SuiviRow({
           </div>
 
           {/* Le chemin du prix, la frise, ce qui le retient. */}
-          <div className="flex min-w-0 flex-col gap-3 px-4 pb-4 @3xl:px-5 @3xl:pb-5">
+          <div className="flex min-w-0 flex-col gap-3 px-4 pb-4">
             {pathSteps.length > 0 ? (
               <div
                 data-testid="suivi-price-path"
@@ -481,7 +490,7 @@ export function SuiviRow({
                     ) : null}
                     <span className="flex flex-col">
                       <span className="text-xs text-zinc-500 stage:text-white/60">
-                        {item.label}
+                        <span>{item.label}</span>
                         {item.last && alignment ? (
                           <span className={`font-semibold ${PRICE_ALIGNMENT_TEXT[alignment.tone]}`}>
                             {' '}
