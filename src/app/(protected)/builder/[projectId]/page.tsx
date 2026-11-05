@@ -64,8 +64,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     getLiveLaunchInfo(projectId),
     // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
     getLiveReopenings(projectId),
-    // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander.
-    hasSelectedCompetitorsToLocate(projectId),
+    // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander ;
+    // un dossier conclu attend sa conclusion (un mandat signé a sa propre veille, en prospection).
+    project.status === 'meeting_completed' ? null : hasSelectedCompetitorsToLocate(projectId),
   ]);
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
@@ -74,6 +75,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         await withCardOpposition(projectId, await getProspectingRows(projectId))
       : null;
 
+  const watchLocator =
+    prospectingRows == null &&
+    (hasCompetitorsToLocate ?? (await hasSelectedCompetitorsToLocate(projectId)));
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col gap-2">
@@ -166,7 +170,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {prospectingRows ? (
         <ProspectingSection projectId={projectId} rows={prospectingRows} />
       ) : (
-        <CompetitorLocatorWatcher projectId={projectId} enabled={hasCompetitorsToLocate} />
+        <CompetitorLocatorWatcher projectId={projectId} enabled={watchLocator} />
       )}
 
       {reopenings ? (
