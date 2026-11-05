@@ -22,6 +22,8 @@ export type BuyerProgressFacts = {
   selectionAt?: string | null;
   linkAt?: string | null;
   answeredAt?: string | null;
+  // Une lecture en échec : l'avancement n'est pas connu, la fiche le dit (M98).
+  unread?: boolean;
 };
 
 export const NO_PROGRESS: BuyerProgressFacts = {

@@ -66,7 +66,15 @@ export function BuyerList({
               {/* Mission 130 B — chaque ligne dit sa prochaine étape et depuis quand ; le lien la
                   fait, comme le bloc de la fiche. */}
               {(() => {
-                const next = buyerNextAction(buyer, progress.get(buyer.id) ?? NO_PROGRESS);
+                const facts = progress.get(buyer.id) ?? NO_PROGRESS;
+                const next = buyerNextAction(buyer, facts);
+                if (facts.unread) {
+                  return (
+                    <span className="text-xs font-semibold text-red-700">
+                      Avancement non lu : rechargez la page.
+                    </span>
+                  );
+                }
                 return (
                   <div className="flex flex-col items-end gap-1 text-right">
                     <span className="text-xs text-zinc-500 stage:text-white/60">
