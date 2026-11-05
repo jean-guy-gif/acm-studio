@@ -56,6 +56,8 @@ export function taskHref(task: SuiviTask): string {
       return `/prospection?bien=${task.projectId}`;
     case 'visit':
       return '/visites';
+    case 'buyer_recontact':
+      return `/acquereurs/${task.buyerId ?? ''}`;
   }
 }
 
@@ -127,6 +129,20 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Mission 132 — un acquéreur sans échange depuis 30 jours.
+    case 'buyer_recontact': {
+      const since =
+        task.sinceDays != null
+          ? `aucun échange depuis ${plural(task.sinceDays, 'jour', 'jours')}`
+          : 'aucun échange depuis 30 jours';
+      return {
+        title: `Reprendre contact avec ${buyerInSentence(task.buyerName)}`,
+        detail: late ? `${since} · ` : since,
+        late,
+        button: 'Voir sa fiche',
+        href,
+      };
+    }
   }
 }
 
@@ -140,7 +156,9 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
         ? `Point marché de ${next.sellerName}`
         : next.kind === 'prospect'
           ? `démarcher les concurrents de ${next.sellerName}`
-          : `organiser une visite chez ${next.sellerName}`;
+          : next.kind === 'buyer_recontact'
+            ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
+            : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -299,5 +317,8 @@ export function cardStep(
         },
       };
     }
+    // Une tâche d'acquéreur ne tient à aucune carte du Suivi.
+    case 'buyer_recontact':
+      return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };
   }
 }

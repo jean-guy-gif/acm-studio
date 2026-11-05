@@ -160,12 +160,22 @@ async function insertDemoBuyers(
   const { data, error } = await supabase
     .from('buyers')
     .insert(
-      DEMO_BUYERS.map((buyer) => ({
-        ...buyerColumns(buyer),
-        agency_id: closer.agencyId,
-        advisor_id: closer.id,
-        demo: true,
-      })),
+      DEMO_BUYERS.map((buyer) => {
+        // Mission 132 — le financement et le dernier contact, comme les gestes de la fiche.
+        const contactedAt =
+          buyer.contactedDaysAgo != null
+            ? new Date(Date.now() - buyer.contactedDaysAgo * 86_400_000).toISOString()
+            : null;
+        return {
+          ...buyerColumns(buyer),
+          agency_id: closer.agencyId,
+          advisor_id: closer.id,
+          demo: true,
+          financing: buyer.financing ?? 'unknown',
+          financing_changed_at: buyer.financing ? contactedAt : null,
+          contacted_at: contactedAt,
+        };
+      }),
     )
     .select('id, name');
   return error ? null : (data ?? []);

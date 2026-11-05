@@ -15,6 +15,14 @@ import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
+import { BuyerReadinessActions } from '@/features/buyers/components/buyer-readiness-actions';
+import {
+  buyerReadiness,
+  exchangeDates,
+  READY_LABEL,
+  RECONTACT_LABEL,
+} from '@/features/buyers/services/buyer-readiness';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { getBuyerHistory } from '@/features/buyers/queries/get-buyer-history';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
@@ -47,7 +55,7 @@ export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
 
 type BuyerPageProps = {
   params: Promise<{ buyerId: string }>;
-  searchParams: Promise<{ enregistre?: string; modifier?: string }>;
+  searchParams: Promise<{ enregistre?: string; modifier?: string; rapide?: string }>;
 };
 
 const STEP_BAR: Record<JourneyStatus, string> = {
@@ -71,7 +79,7 @@ const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
 // e-mail ; ses quatre étapes ; UNE prochaine étape, en bloc plein ; sa sélection ; ce qui s'est
 // passé ; « Rapprocher », gratuit. Une fiche archivée ou d'une autre agence est introuvable (M93).
 export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
-  const [{ buyerId }, { enregistre, modifier }] = await Promise.all([params, searchParams]);
+  const [{ buyerId }, { enregistre, modifier, rapide }] = await Promise.all([params, searchParams]);
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
   const [selection, profile, allVisits, dossiers] = await Promise.all([
@@ -135,18 +143,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       outcomeLabel: line.visitedAt ? VISIT_OUTCOME_LABELS[line.outcome] : null,
     })),
   });
-  const lastExchange = lastExchangeLabel(
-    [
-      buyer.statusChangedAt,
-      facts.presentedAt,
-      facts.linkAt,
-      facts.answeredAt,
-      ...ownVisits.flatMap((line) => [line.requestedAt, line.visitedAt]),
-      ...history.letters.map((letter) => letter.at),
-    ],
-    new Date(),
-    buyer.createdAt,
-  );
+  // Mission 132 — le dernier échange avec l'acquéreur : le même calcul que « Prêt à visiter », la
+  // liste et le Suivi (un lien envoyé ou un courrier préparé ne sont pas des échanges avec lui).
+  const now = new Date();
+  const lastExchange = lastExchangeLabel(exchangeDates(buyer, facts), now, buyer.createdAt);
+  const readiness = buyerReadiness(buyer, facts, now);
   const telHref = buyer.phone ? `tel:${buyer.phone.replace(/[^\d+]/g, '')}` : null;
 
   return (
@@ -156,8 +157,33 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       </Link>
 
       {enregistre ? (
-        <p role="status" className={alertOk}>
+        <p role="status" className={alertOk} data-testid="buyer-saved">
           Fiche enregistrée.
+          {/* Mission 132 — dès la saisie rapide, ce que la fiche rapporte : les biens de l'agence
+              qui correspondent (le rapprochement de M86, gratuit). */}
+          {rapide && matches != null ? (
+            <>
+              {' '}
+              <Link
+                href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+                className="font-semibold underline underline-offset-2"
+                data-testid="buyer-quick-matches"
+              >
+                {matches === 0
+                  ? 'Aucun bien de l’agence ne correspond pour l’instant'
+                  : matches === 1
+                    ? '1 bien de l’agence correspond'
+                    : `${matches} biens de l’agence correspondent`}
+              </Link>
+              {' · '}
+              <Link
+                href={`/acquereurs/${buyer.id}?modifier=1#recherche`}
+                className="underline underline-offset-2"
+              >
+                Compléter sa recherche
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
 
@@ -177,6 +203,21 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <a href="#statut" className={`${badgeBrand} whitespace-nowrap`}>
               {BUYER_STATUS_LABELS[buyer.status]} ▾
             </a>
+            {readiness.state === 'ready' ? (
+              <span
+                className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white"
+                data-testid="buyer-ready"
+              >
+                {READY_LABEL}
+              </span>
+            ) : readiness.state === 'recontact' ? (
+              <span
+                className="rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800"
+                data-testid="buyer-recontact"
+              >
+                {RECONTACT_LABEL}
+              </span>
+            ) : null}
           </div>
           {words ? (
             <p className="text-lg text-zinc-800 stage:text-white/85" data-testid="buyer-words">
@@ -437,6 +478,24 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 ) : null}
               </>
             )}
+          </section>
+
+          {/* Mission 132 — « Prêt à visiter » : son financement, et le dernier contact. */}
+          <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-readiness">
+            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+              Prêt à visiter ?
+            </h2>
+            <p className="text-sm text-zinc-600 stage:text-white/70">
+              Financement validé, un échange il y a moins de 30 jours et un budget renseigné.
+            </p>
+            <BuyerReadinessActions
+              buyerId={buyer.id}
+              financing={buyer.financing}
+              financingChangedAt={buyer.financingChangedAt}
+              contactedToday={
+                buyer.contactedAt != null && parisDay(new Date(buyer.contactedAt)) === parisDay(now)
+              }
+            />
           </section>
 
           {/* Rapprocher, gratuit. */}

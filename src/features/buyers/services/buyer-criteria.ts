@@ -45,7 +45,7 @@ export function criteriaToBuyerDraft(criteria: BuyerCriteria): Partial<BuyerInpu
 // La clé qui dédoublonne les communes tapées : la normalisation de M71 (accents, tirets, St) et
 // l'arrondissement de M99 (« Paris 15e » = « 75015 Paris ») — SANS les alias de M86 : Juan-les-Pins
 // vaut Antibes au rapprochement, mais le conseiller a bien tapé deux noms, la fiche les garde.
-function cityDedupKey(value: string): string | null {
+export function cityDedupKey(value: string): string | null {
   const named = readArrondissementName(value);
   if (named != null) {
     return named.arrondissement ? `${named.city} ${named.arrondissement.number}` : named.city;
@@ -143,4 +143,25 @@ export function buyerDateLabel(iso: string): string {
         year: 'numeric',
         timeZone: 'Europe/Paris',
       }).format(date);
+}
+
+// Mission 132 — les villes proposées au pouce dans la saisie rapide : celles qui reviennent le
+// plus dans l'agence (biens vendeurs, fiches acquéreur), dédoublonnées par leur clé, la plus
+// fréquente d'abord, à égalité par ordre alphabétique. Pur.
+export const QUICK_CITIES_MAX = 8;
+export function suggestedCities(names: (string | null | undefined)[]): string[] {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const raw of names) {
+    const name = raw?.trim().replace(/\s+/g, ' ');
+    if (!name) continue;
+    const key = cityDedupKey(name);
+    if (key == null) continue;
+    const known = counts.get(key);
+    if (known) known.count += 1;
+    else counts.set(key, { name, count: 1 });
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fr'))
+    .slice(0, QUICK_CITIES_MAX)
+    .map((item) => item.name);
 }

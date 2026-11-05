@@ -205,7 +205,8 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
       'inputs.filter((input) => !input.isExample)',
     );
     expect(read('features', 'meeting-conclusion', 'queries', 'get-suivi-task-count.ts')).toContain(
-      'withoutExamples(await getSuiviDossiers())',
+      // Mission 132 — lus avec les acquéreurs à recontacter, puis l'exemple écarté.
+      'withoutExamples(allDossiers)',
     );
     expect(read('app', '(protected)', 'acquereurs', 'rapprochement', 'page.tsx')).toContain(
       'dossiers={counted}',

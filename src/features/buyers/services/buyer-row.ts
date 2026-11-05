@@ -1,5 +1,6 @@
 import {
   BUYER_CRITERIA,
+  BUYER_FINANCINGS,
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
   BUYER_STATUSES,
@@ -37,6 +38,9 @@ export function toBuyer(row: BuyerRow): Buyer {
     statusChangedAt: row.status_changed_at,
     demo: row.demo,
     ignoredSuggestions: row.ignored_suggestions ?? [],
+    financing: oneOf(BUYER_FINANCINGS, row.financing) ?? 'unknown',
+    financingChangedAt: row.financing_changed_at,
+    contactedAt: row.contacted_at,
     name: row.name,
     phone: row.phone,
     email: row.email,
