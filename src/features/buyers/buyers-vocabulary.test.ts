@@ -50,7 +50,7 @@ describe('le vocabulaire du mode acquéreur (mission 117)', () => {
   it('le périmètre couvre la feature et ses écrans', () => {
     expect(SCREENS.length).toBeGreaterThan(10);
     expect(SCREENS).toContain(join('features', 'buyers', 'components', 'buyer-form.tsx'));
-    expect(SCREENS).toContain(join('app', '(protected)', 'acquereurs', 'page.tsx'));
+    expect(SCREENS).toContain(join('app', '(protected)', 'acquereurs', '(liste)', 'page.tsx'));
   });
 
   it('jamais « acheteur »', () => {
