@@ -16,10 +16,7 @@ import {
 } from '@/components/ui/styles';
 import { FollowUpContactForm } from '@/features/meeting-conclusion/components/follow-up-contact-form';
 import { RefreshPricesButton } from '@/features/competitor-refresh/components/refresh-prices-button';
-import {
-  MarketUpdateLinesCompact,
-  MarketUpdateList,
-} from '@/features/market-update/components/market-update-panel';
+import { MarketUpdateList } from '@/features/market-update/components/market-update-panel';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
 import { FollowUpHistory } from '@/features/meeting-conclusion/components/follow-up-history';
 import { FollowUpMessage } from '@/features/meeting-conclusion/components/follow-up-message';
@@ -358,13 +355,9 @@ export function SuiviRow({
             id={detailsId}
             className="flex flex-col gap-4 border-t border-zinc-100 p-4 stage:border-white/10"
           >
-            {/* Mission 127 — « Ce que le vendeur a dit » à côté des trois lignes du dernier point. */}
-            {followUp.sellerSaid || latestPoint ? (
-              <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
-                {followUp.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
-                {latestPoint ? <MarketUpdateLinesCompact update={latestPoint} /> : null}
-              </div>
-            ) : null}
+            {/* Mission 129 — le classement compact est sur la ligne : le détail garde « Ce que le
+                vendeur a dit » (maquette M129-1). */}
+            {followUp.sellerSaid ? <SellerSaidBlock said={followUp.sellerSaid} /> : null}
             <FollowUpHistory contacts={followUp.contacts} />
 
             {conclusion ? (

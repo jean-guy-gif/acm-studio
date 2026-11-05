@@ -7,6 +7,7 @@ import {
   buildMarketUpdateSummary,
   marketUpdateLine,
   parseMarketUpdateSummary,
+  type DangerousToday,
   type MarketUpdateSummary,
   type NewcomersSearch,
 } from '@/features/market-update/services/market-update-summary';
@@ -44,6 +45,9 @@ export async function writeMarketUpdate(input: {
   // Mission 127 B — une proposition écartée par le conseiller : retirée du point (une retenue en
   // sort d'elle-même, l'annonce étant alors dans le dossier).
   settledProposalUrl?: string | null;
+  // Mission 129 — le plus dangereux désigné aujourd'hui (null : revenir au choix du rendez-vous) ;
+  // absent, celui du dernier point est reporté.
+  dangerousToday?: DangerousToday | null;
 }): Promise<WrittenMarketUpdate | null> {
   const { supabase, service, agencyId, projectId } = input;
   // Le dernier point d'abord : c'est lui qui dit si le point du jour se réécrit.
@@ -87,10 +91,12 @@ export async function writeMarketUpdate(input: {
     input.newcomersSearch !== undefined
       ? input.newcomersSearch
       : (previous?.newcomersSearch ?? null);
-  // Les annonces que le dossier connaît déjà — tous ses concurrents (retenus ou non), les écartés,
-  // les imports en attente, les mêmes sources que la recherche — sortent des propositions.
+  // Les annonces que le dossier connaît déjà — tous ses concurrents (retenus ou non), les écartés —
+  // sortent des propositions. Mission 129 — une annonce en attente d'import n'en sort plus : deux
+  // « Retenir » rapprochés retiraient la seconde proposition avant que sa date de première vue
+  // soit posée (cas de Biot) ; elle sort quand le concurrent est créé.
   const listingUrls = async (
-    table: 'comparables' | 'competitor_decisions' | 'pending_competitor_imports',
+    table: 'comparables' | 'competitor_decisions',
   ): Promise<(string | null)[]> => {
     if (!carried) return [];
     const { data } = await supabase
@@ -106,15 +112,11 @@ export async function writeMarketUpdate(input: {
   const decisions = {
     data: (await listingUrls('competitor_decisions')).map((listing_url) => ({ listing_url })),
   };
-  const pending = {
-    data: (await listingUrls('pending_competitor_imports')).map((listing_url) => ({ listing_url })),
-  };
   const known = new Set(
     [
       ...rows.map((row) => row.listing_url),
       ...(allListings.data ?? []).map((row) => row.listing_url),
       ...(decisions.data ?? []).map((row) => row.listing_url),
-      ...(pending.data ?? []).map((row) => row.listing_url),
     ]
       .map((url) => normalizedListingHref(url))
       .filter((href) => href != null),
@@ -158,6 +160,14 @@ export async function writeMarketUpdate(input: {
     advisorAnalysis: conclusion.data?.frozen_advisor_analysis ?? null,
     madeAt: today ? new Date(today.made_at) : now,
     newcomersSearch,
+    // Mission 129 — le plus dangereux désigné aujourd'hui passe au point suivant tant qu'il est en
+    // vente (le constructeur le retire sinon).
+    dangerousToday:
+      input.dangerousToday !== undefined
+        ? input.dangerousToday
+        : latest.data
+          ? (parseMarketUpdateSummary(latest.data.summary)?.dangerousToday ?? null)
+          : null,
   });
   if (today) {
     const { data, error } = await service

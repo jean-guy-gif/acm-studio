@@ -152,6 +152,9 @@ export type StreamEstateFacts = {
   propertyId: string; // identifiant du bien chez Stream Estate (base de déduplication)
   originSite: string; // site de l'annonce d'origine (« SeLoger », « leboncoin.fr »…)
   onlineSince: string | null; // createdAt du bien (ISO)
+  // Mission 129 — la plus ancienne date connue du bien : sa création chez Stream Estate, celle de
+  // chacune de ses annonces et de leurs événements de prix (ISO). Un nouveau venu se juge sur elle.
+  firstKnownAt?: string | null;
   lastSeenAt: string | null; // dernier passage du robot Stream Estate (ISO)
   priceDrops: number[]; // percentVariation des baisses de prix, dans l'ordre (ex. -4.5)
   // Mission 101 — gardés pour créer le concurrent quand la page de l'annonce reste illisible :

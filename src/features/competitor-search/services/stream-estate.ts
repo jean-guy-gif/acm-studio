@@ -120,6 +120,9 @@ const nullableString = z.string().nullable().optional();
 
 const advertSchema = z.object({
   url: z.string(),
+  // Mission 129 — la création de l'annonce chez Stream Estate : un nouveau venu se juge sur la plus
+  // ancienne date connue du bien, pas sur la seule création du bien.
+  createdAt: nullableString,
   // Titre de l'annonce sur son site : celui que SeLoger génère dit « Appartement neuf à vendre ».
   title: nullableString,
   expired: z.boolean().nullable().optional(),
@@ -404,6 +407,7 @@ export function toCandidate(
       propertyId: property.uuid,
       originSite: detectSource(host),
       onlineSince: property.createdAt ?? null,
+      firstKnownAt: firstKnownAt(property),
       lastSeenAt: origin.lastCrawledAt ?? property.lastCrawledAt ?? null,
       priceDrops: priceDrops(property.adverts),
       bedrooms: positive(property.bedroom),
@@ -511,4 +515,23 @@ export function billedAdverts(json: unknown): number {
   if (typeof json !== 'object' || json === null) return 0;
   const members = (json as Record<string, unknown>)['hydra:member'];
   return Array.isArray(members) ? members.length : 0;
+}
+
+// Mission 129 — la plus ancienne date connue d'un bien : sa création, celle de ses annonces et de
+// leurs événements de prix (cas de Biot : un bien publié le 17/06/2025, créé à nouveau chez Stream
+// Estate après le rendez-vous, passait pour un nouveau venu). Les dates illisibles sont ignorées.
+function firstKnownAt(property: z.infer<typeof propertySchema>): string | null {
+  const dates = [
+    property.createdAt,
+    ...property.adverts.flatMap((advert) => [
+      advert.createdAt,
+      ...(advert.events ?? []).map((event) => event.createdAt),
+    ]),
+  ].filter(
+    (value): value is string => typeof value === 'string' && !Number.isNaN(Date.parse(value)),
+  );
+  if (dates.length === 0) return null;
+  return dates.reduce((earliest, value) =>
+    Date.parse(value) < Date.parse(earliest) ? value : earliest,
+  );
 }

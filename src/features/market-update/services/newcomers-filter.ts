@@ -37,15 +37,43 @@ export type NewcomersFilterOutcome = {
   excludedBefore: number;
   excludedNoDate: number;
   excludedOverPrice: number;
+  // Mission 129 — sous le plancher de la fourchette cherchée.
+  excludedUnderPrice: number;
   excludedNoPrice: number;
 };
+
+export type PriceRange = { min: number; max: number };
+
+// Mission 129 (décision de Jean-Guy, 30/10) — la fourchette des nouveaux venus : de −5 % du prix de
+// commercialisation à ce prix ; s'il reste moins de 3 biens, la recherche s'élargit à −10 %, sur
+// une tranche disjointe de la première (rien n'est facturé deux fois). Pur.
+export const NEWCOMERS_MIN_FOUND = 3;
+
+// Les planchers sont arrondis au millier inférieur : le même chiffre dans la requête et à l'écran
+// (maquette M129-5).
+const thousandBelow = (value: number) => Math.floor(value / 1000) * 1000;
+
+export function newcomerPriceRanges(price: number): { first: PriceRange; widened: PriceRange } {
+  const ceiling = Math.round(price);
+  const floor5 = thousandBelow(ceiling * 0.95);
+  const floor10 = thousandBelow(ceiling * 0.9);
+  return {
+    first: { min: floor5, max: ceiling },
+    widened: { min: floor10, max: floor5 - 1 },
+  };
+}
 
 export const normalizedListingHref = (url: string | null | undefined): string | null =>
   url ? (parseListingUrl(url)?.href ?? null) : null;
 
 export function filterNewcomers(
   candidates: CompetitorCandidate[],
-  options: { concludedAt: string; knownUrls: Iterable<string>; priceCeiling: number },
+  options: {
+    concludedAt: string;
+    knownUrls: Iterable<string>;
+    priceCeiling: number;
+    priceFloor?: number;
+  },
 ): NewcomersFilterOutcome {
   const known = new Set(
     [...options.knownUrls]
@@ -59,6 +87,7 @@ export function filterNewcomers(
     excludedBefore: 0,
     excludedNoDate: 0,
     excludedOverPrice: 0,
+    excludedUnderPrice: 0,
     excludedNoPrice: 0,
   };
   const seen = new Set<string>();
@@ -78,7 +107,13 @@ export function filterNewcomers(
       outcome.excludedOverPrice += 1;
       continue;
     }
-    const onlineSince = candidate.streamEstate?.onlineSince ?? null;
+    if (options.priceFloor != null && candidate.price < options.priceFloor) {
+      outcome.excludedUnderPrice += 1;
+      continue;
+    }
+    // Mission 129 — la plus ancienne date connue du bien, pas sa seule création chez Stream Estate.
+    const onlineSince =
+      candidate.streamEstate?.firstKnownAt ?? candidate.streamEstate?.onlineSince ?? null;
     const seenAt = onlineSince ? new Date(onlineSince).getTime() : Number.NaN;
     if (!Number.isFinite(seenAt)) {
       outcome.excludedNoDate += 1;
