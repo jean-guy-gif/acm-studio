@@ -8,12 +8,14 @@ import {
   DEFAULT_SEARCH_SETTINGS,
   describeSearchCriteria,
   isSettingCustom,
-  parseSearchSettings,
-  readSearchSettingsInput,
   settingsToInput,
   settingsToStore,
   type SearchSettings,
 } from '@/features/competitor-search/services/search-settings';
+import {
+  parseSearchSettings,
+  readSearchSettingsInput,
+} from '@/features/competitor-search/services/search-settings-schema';
 import { baseStreamEstateQuery } from '@/features/competitor-search/services/stream-estate';
 import {
   describeStreamEstateSearch,

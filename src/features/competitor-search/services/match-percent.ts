@@ -1,4 +1,4 @@
-import { UNKNOWN_LABELS } from '@/features/competitor-search/services/search-filters';
+import { UNKNOWN_LABELS } from '@/features/competitor-search/services/filter-labels';
 import { DPE_MATCH_POINTS, dpeClass, dpeMatchPoints } from '@/features/dpe/services/dpe';
 import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/surface-tolerance';
 import type {

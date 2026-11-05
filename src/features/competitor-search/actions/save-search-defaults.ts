@@ -2,11 +2,11 @@
 
 import {
   advisorDefaultSettings,
-  readSearchSettingsInput,
   settingsToStore,
   type SearchSettings,
   type SearchSettingsInput,
 } from '@/features/competitor-search/services/search-settings';
+import { readSearchSettingsInput } from '@/features/competitor-search/services/search-settings-schema';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 

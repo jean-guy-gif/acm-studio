@@ -15,30 +15,17 @@ import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-com
 // qu'il porte est celui d'une proposition payée encore à trancher (127 B), côté conseiller, que
 // le document et le lien du vendeur ne reçoivent jamais. Pur.
 
-export const MARKET_UPDATE_STATES = [
-  'unchanged',
-  'dropped',
-  'raised',
-  'unread',
-  'probable_sale',
-  'withdrawn',
-  // Disparue (sur preuve, M103) sans durée de commercialisation connue : la règle ne conclut rien.
-  'gone',
-  // Mission 127 B — retenu après le rendez-vous : pas de prix du rendez-vous, la ligne 3 seulement.
-  'newcomer',
-] as const;
-export type MarketUpdateState = (typeof MARKET_UPDATE_STATES)[number];
-
-export const MARKET_UPDATE_STATE_LABELS: Record<MarketUpdateState, string> = {
-  unchanged: 'Inchangé',
-  dropped: 'Baisse',
-  raised: 'Hausse',
-  unread: 'Non relu',
-  probable_sale: 'Vente probable',
-  withdrawn: 'Retiré sans vente',
-  gone: 'Retirée',
-  newcomer: 'Nouveau venu',
-};
+// Mission 128 B — les états et leurs libellés vivent sans zod, pour l'écran du Suivi.
+export {
+  MARKET_UPDATE_STATES,
+  MARKET_UPDATE_STATE_LABELS,
+  droppedSinceMeetingLabel,
+  type MarketUpdateState,
+} from '@/features/market-update/services/market-update-labels';
+import {
+  MARKET_UPDATE_STATES,
+  type MarketUpdateState,
+} from '@/features/market-update/services/market-update-labels';
 
 const sourceSchema = z.enum(['conclusion', 'revealed', 'observation', 'current']);
 
@@ -369,13 +356,4 @@ export function marketUpdateLine(summary: MarketUpdateSummary): string {
   ]
     .filter((part): part is string => part != null)
     .join(' · ');
-}
-
-// « Ont baissé depuis le rendez-vous : 2 sur 5 » — sur le prix du rendez-vous.
-export function droppedSinceMeetingLabel(summary: MarketUpdateSummary): string | null {
-  const compared = summary.competitors.filter(
-    (item) => !item.newcomer && item.meetingPrice != null && item.meetingPriceSource !== 'current',
-  ).length;
-  if (compared === 0) return null;
-  return `Ont baissé depuis le rendez-vous : ${summary.counts.dropped} sur ${compared}`;
 }

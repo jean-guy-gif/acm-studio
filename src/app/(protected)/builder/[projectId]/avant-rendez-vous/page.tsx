@@ -121,15 +121,31 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     notFound();
   }
 
-  const [property, comparables, saved, diagnostics, condominium, propertyPhotos] =
-    await Promise.all([
-      getSubjectProperty(projectId),
-      getComparables(projectId),
-      getSavedPricePositioning(projectId),
-      getSubjectPropertyDiagnostics(projectId),
-      getSubjectPropertyCondominium(projectId),
-      getPropertyPhotos(projectId),
-    ]);
+  // Mission 128 B — tout ce qui ne dépend que du dossier part ensemble.
+  const [
+    property,
+    comparables,
+    saved,
+    diagnostics,
+    condominium,
+    propertyPhotos,
+    pendingImports,
+    launch,
+    profile,
+  ] = await Promise.all([
+    getSubjectProperty(projectId),
+    getComparables(projectId),
+    getSavedPricePositioning(projectId),
+    getSubjectPropertyDiagnostics(projectId),
+    getSubjectPropertyCondominium(projectId),
+    getPropertyPhotos(projectId),
+    // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
+    getPendingImports(projectId),
+    // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
+    // sont nommés ; les concurrents écartés du calcul sont comptés.
+    getLiveLaunchInfo(projectId),
+    getProfile(),
+  ]);
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({
@@ -153,7 +169,6 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     retained.map((comparable) => toGlanceCompetitor(comparable, generatedAt)),
   );
 
-  const pendingImports = await getPendingImports(projectId);
   const readiness = {
     hasProperty: property != null,
     retainedCount: retained.length,
@@ -238,12 +253,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   const range = positioning?.status === 'ready' ? positioning.recommendedRange : null;
   const sellerSurface = property?.surface_area ?? null;
 
-  // Mission 101 — les biens retenus dont l'import n'a pas abouti : jamais perdus, toujours dits.
-  // Mission 104 — le bouton du Live vérifie avant d'ouvrir ; les prix et surfaces à vérifier
-  // sont nommés ; les concurrents écartés du calcul sont comptés.
-  const launch = await getLiveLaunchInfo(projectId);
   // Mission 110 — le mode expert masque les rappels d'entraînement, et choisit l'ordre du Live.
-  const expert = (await getProfile())?.expert_mode === true;
+  const expert = profile?.expert_mode === true;
   const shortlist =
     launch && !launch.resume.started && retained.length > LIVE_SHORTLIST_SIZE
       ? await getLiveShortlist(projectId)

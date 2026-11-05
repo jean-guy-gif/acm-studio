@@ -5,16 +5,18 @@ import {
   checkFilters,
   DEFAULT_SEARCH_FILTERS,
   describeFilters,
-  readSearchFiltersInput,
   type SearchFilters,
 } from '@/features/competitor-search/services/search-filters';
-import { savedSearchSettingsSchema } from '@/features/competitor-search/services/search-settings';
+import { readSearchFiltersInput } from '@/features/competitor-search/services/search-filters-schema';
+import {
+  parseSavedSearchSettings,
+  parseSearchSettings,
+  savedSearchSettingsSchema,
+} from '@/features/competitor-search/services/search-settings-schema';
 import {
   applySavedSearch,
   DEFAULT_SEARCH_SETTINGS,
   isDefaultSettings,
-  parseSavedSearchSettings,
-  parseSearchSettings,
   savedSearchSettings,
   type SearchSettings,
 } from '@/features/competitor-search/services/search-settings';

@@ -81,31 +81,34 @@ const motiveHref = (motive: FollowUpMotive): string => `/suivi?issue=follow_up&m
 export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const { issue, motif, acquereur } = await searchParams;
   const motive = parseFollowUpMotive(motif);
-  // Mission 117 — « Rapprocher » depuis une fiche acquéreur : ses critères pré-remplissent le
-  // rapprochement ; une fiche archivée ou d'une autre agence n'est pas lue (M93).
-  const buyer = acquereur ? await getBuyer(acquereur) : null;
   // Un motif choisi ne montre que des « à relancer ».
   const group = motive != null ? 'follow_up' : parseSuiviGroup(issue);
 
-  const allDossiers = await getSuiviDossiers();
-  // Mission 97 — un dossier d'exemple se voit dans la liste (badge « Exemple »), mais ne compte
-  // nulle part : tuiles, écart moyen, « à relancer aujourd'hui », motifs, rapprochement acheteur.
-  const counted = withoutExamples(allDossiers);
-  const [{ cards }, insights, profile, branding] = await Promise.all([
-    getAgencyProspecting(counted),
-    getSellerInsights(allDossiers.map((dossier) => dossier.project.id)),
+  // Mission 128 B — ce qui ne dépend de rien part ensemble, puis ce qui dépend des dossiers et
+  // du profil.
+  const [buyer, allDossiers, profile, branding] = await Promise.all([
+    // Mission 117 — « Rapprocher » depuis une fiche acquéreur : ses critères pré-remplissent le
+    // rapprochement ; une fiche archivée ou d'une autre agence n'est pas lue (M93).
+    acquereur ? getBuyer(acquereur) : null,
+    getSuiviDossiers(),
     getProfile(),
     getAgencyBranding(),
   ]);
-  const agency = profile ? await getAgency(profile.agency_id) : null;
-  // Mission 127 — les points marché de chaque dossier.
-  const marketUpdates = profile
-    ? await listMarketUpdates(
-        await createClient(),
-        profile.agency_id,
-        allDossiers.map((dossier) => dossier.project.id),
-      )
-    : new Map();
+  // Mission 97 — un dossier d'exemple se voit dans la liste (badge « Exemple »), mais ne compte
+  // nulle part : tuiles, écart moyen, « à relancer aujourd'hui », motifs, rapprochement acheteur.
+  const counted = withoutExamples(allDossiers);
+  const projectIds = allDossiers.map((dossier) => dossier.project.id);
+  const [{ cards }, insights, agency, marketUpdates] = await Promise.all([
+    getAgencyProspecting(counted),
+    getSellerInsights(projectIds),
+    profile ? getAgency(profile.agency_id) : null,
+    // Mission 127 — les points marché de chaque dossier.
+    profile
+      ? createClient().then((supabase) =>
+          listMarketUpdates(supabase, profile.agency_id, projectIds),
+        )
+      : new Map(),
+  ]);
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
     agencyName: documentAgencyName(branding?.documentName, agency?.name) || null,

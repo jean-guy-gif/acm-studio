@@ -9,8 +9,10 @@ import type { MarketUpdateEntry } from '@/features/market-update/queries/list-ma
 import {
   droppedSinceMeetingLabel,
   MARKET_UPDATE_STATE_LABELS,
-  type MarketUpdateCompetitor,
-  type MarketUpdateSummary,
+} from '@/features/market-update/services/market-update-labels';
+import type {
+  MarketUpdateCompetitor,
+  MarketUpdateSummary,
 } from '@/features/market-update/services/market-update-summary';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import {

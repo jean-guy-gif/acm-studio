@@ -26,10 +26,19 @@ const itemSchema = z.object({
 
 export type SelectionItemInput = z.infer<typeof itemSchema>;
 
-const selectionSchema = z.array(itemSchema).min(1).max(MAX_IDEAL_SELECTION);
+// Mission 128 B — les libellés et les fonctions pures que l'écran lit vivent sans zod.
+export {
+  SELECTION_EMPTY,
+  SELECTION_TOO_MANY,
+  seenOnLabel,
+  selectionChanged,
+} from '@/features/ideal-properties/services/ideal-selection-labels';
+import {
+  SELECTION_EMPTY,
+  SELECTION_TOO_MANY,
+} from '@/features/ideal-properties/services/ideal-selection-labels';
 
-export const SELECTION_EMPTY = 'Cochez au moins un bien avant de retenir la sélection.';
-export const SELECTION_TOO_MANY = `Retenez ${MAX_IDEAL_SELECTION} biens au plus.`;
+const selectionSchema = z.array(itemSchema).min(1).max(MAX_IDEAL_SELECTION);
 
 export function readSelectionInput(
   raw: unknown,
@@ -47,15 +56,6 @@ export function readSelectionInput(
     return true;
   });
   return { ok: true, items };
-}
-
-// Mission 118 — « affiché le [date] », jamais « disponible » : une recherche n'est pas une
-// disponibilité.
-export function seenOnLabel(priceSeenOn: string | null): string | null {
-  if (!priceSeenOn) return null;
-  const date = new Date(`${priceSeenOn}T12:00:00Z`);
-  if (Number.isNaN(date.getTime())) return null;
-  return `affiché le ${new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Paris' }).format(date)}`;
 }
 
 const photoOf = (snapshot: unknown): string | null => {
@@ -103,18 +103,6 @@ export function selectionAsInputs(selection: IdealSelection): SelectionItemInput
     gaps: [...item.gaps],
     snapshot: item.snapshot,
   }));
-}
-
-// « Retenir » ne s'active que si la sélection cochée change : les mêmes biens, dans n'importe quel
-// ordre, ne changent rien. Pur.
-export function selectionChanged(
-  checked: readonly Pick<SelectionItemInput, 'source' | 'reference'>[],
-  current: readonly Pick<SelectionItemInput, 'source' | 'reference'>[],
-): boolean {
-  const key = (item: Pick<SelectionItemInput, 'source' | 'reference'>) =>
-    `${item.source}:${item.reference}`;
-  const now = new Set(current.map(key));
-  return checked.length !== now.size || checked.some((item) => !now.has(key(item)));
 }
 
 export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {

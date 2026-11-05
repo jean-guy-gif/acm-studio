@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { DOCUMENT_NAME_MAX_LENGTH } from '@/features/branding/constants';
+
 import { EMBEDDED_FONTS } from '@/features/branding/fonts/font-registry';
 
 const fontKeys = EMBEDDED_FONTS.map((font) => font.key) as [string, ...string[]];
@@ -17,7 +19,8 @@ export const typographyInputSchema = z.object({
     .transform((value) => (value ? value : null)),
 });
 
-export const DOCUMENT_NAME_MAX_LENGTH = 40;
+// Mission 128 B — la constante vit dans `constants.ts`, que le formulaire lit sans zod.
+export { DOCUMENT_NAME_MAX_LENGTH };
 
 // Mission 84 — l'adresse postale et la carte professionnelle de l'agence : deux textes courts,
 // imprimés en pied des dossiers de prospection. Vides → null → mention omise.

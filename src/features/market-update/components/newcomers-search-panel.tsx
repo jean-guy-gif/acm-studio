@@ -29,10 +29,8 @@ import {
 } from '@/features/market-update/actions/search-newcomers';
 import type { NewcomersSearch } from '@/features/market-update/services/market-update-summary';
 import { shortDay } from '@/features/market-update/components/market-update-panel';
-import {
-  newcomerPriceRanges,
-  type NewcomerCandidate,
-} from '@/features/market-update/services/newcomers-filter';
+import { newcomerPriceRanges } from '@/features/market-update/services/newcomer-price-ranges';
+import type { NewcomerCandidate } from '@/features/market-update/services/newcomers-filter';
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
 export const NEWCOMERS_SEARCH_LABEL = 'Chercher les nouveaux venus';

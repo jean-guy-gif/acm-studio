@@ -7,9 +7,11 @@ import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 
 import { btnPrimary, card, errorText, fieldLabel, metaLabel, okText } from '@/components/ui/styles';
 import { saveBranding } from '@/features/branding/actions/save-branding';
-import { IDENTITY_MANAGER_ONLY_MESSAGE } from '@/features/branding/constants';
+import {
+  DOCUMENT_NAME_MAX_LENGTH,
+  IDENTITY_MANAGER_ONLY_MESSAGE,
+} from '@/features/branding/constants';
 import { EMBEDDED_FONTS, embeddedFontCssVar } from '@/features/branding/fonts/font-registry';
-import { DOCUMENT_NAME_MAX_LENGTH } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 
 type LogoState = { file: File | null; url: string | null; isJpeg: boolean };

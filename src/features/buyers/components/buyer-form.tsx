@@ -16,11 +16,8 @@ import {
   inputBase,
 } from '@/components/ui/styles';
 import { saveBuyer } from '@/features/buyers/actions/buyers';
-import {
-  BUYER_NAME_MAX,
-  BUYER_TEXT_MAX,
-  type BuyerFormErrors,
-} from '@/features/buyers/schemas/buyer-input';
+import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
+import type { BuyerFormErrors } from '@/features/buyers/schemas/buyer-input';
 import {
   BUYER_CRITERIA,
   BUYER_CRITERION_LABELS,

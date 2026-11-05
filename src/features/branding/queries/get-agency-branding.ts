@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+
 import type { AgencyBranding } from '@/features/branding/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -8,7 +10,9 @@ const BUCKET = 'agency-branding';
 
 // La charte de l'agence de l'appelant (RLS cadré sur l'agence), ou null si aucune. Les
 // chemins de logo (Storage) sont résolus en URL publiques prêtes à afficher.
-export async function getAgencyBranding(): Promise<AgencyBranding | null> {
+// Mission 128 B — mémorisé pour UNE requête (`cache` de React) : la mise en page et la page ne
+// le lisent qu'une fois ; rien n'est gardé d'une requête à l'autre ni d'un utilisateur à l'autre.
+export const getAgencyBranding = cache(async (): Promise<AgencyBranding | null> => {
   const profile = await getProfile();
   if (!profile) {
     return null;
@@ -47,4 +51,4 @@ export async function getAgencyBranding(): Promise<AgencyBranding | null> {
     documentName: data.document_name,
     validatedAt: data.validated_at,
   };
-}
+});

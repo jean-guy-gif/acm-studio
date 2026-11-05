@@ -2,9 +2,9 @@
 
 import {
   advisorDefaultSettings,
-  parseSearchSettings,
   settingsToStore,
 } from '@/features/competitor-search/services/search-settings';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings-schema';
 import { redirect } from 'next/navigation';
 
 import { getProfile } from '@/lib/auth/get-profile';

@@ -1,9 +1,9 @@
 import {
   describeSearchCriteria,
   DEFAULT_SEARCH_SETTINGS,
-  parseSavedSearchSettings,
   type SavedSearchSettings,
 } from '@/features/competitor-search/services/search-settings';
+import { parseSavedSearchSettings } from '@/features/competitor-search/services/search-settings-schema';
 
 // Mission 110 — une recherche nommée, telle que l'écran la propose : son nom et ce qu'elle règle
 // (« Rayon 2 km · DPE A, B, C · Piscine · sans élargissement »). Jamais un prix, des pièces ni une
