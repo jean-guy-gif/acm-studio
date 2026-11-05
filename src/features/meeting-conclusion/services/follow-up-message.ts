@@ -38,7 +38,11 @@ function sellerWords(input: FollowUpMessageInput): string[] {
       `Vous m’aviez dit en début de rendez-vous que vous imaginiez votre bien à ${formatEuro(input.sellerPerceivedPrice)}.`,
     );
   }
-  const missing = input.launchReadinessMissing?.replace(/\s+/g, ' ').trim();
+  // Mission 130 — sa réponse garde ses mots, sans le point final qui doublerait celui de la phrase.
+  const missing = input.launchReadinessMissing
+    ?.replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.\s]+$/, '');
   if (missing) {
     lines.push(
       `Vous m’aviez aussi indiqué ce qui vous manquait pour lancer la vente : « ${missing} ».`,
@@ -69,7 +73,7 @@ function priceDropsLine(count: number): string | null {
     return null;
   }
   return count === 1
-    ? 'Depuis notre rendez-vous, 1 des biens que nous avions vus a baissé son prix.'
+    ? 'Depuis notre rendez-vous, un des biens que nous avions vus a baissé son prix.'
     : `Depuis notre rendez-vous, ${count} des biens que nous avions vus ont baissé leur prix.`;
 }
 

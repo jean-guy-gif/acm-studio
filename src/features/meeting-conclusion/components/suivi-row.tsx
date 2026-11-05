@@ -51,6 +51,7 @@ import {
 import {
   priceAlignment,
   PRICE_ALIGNMENT_TEXT,
+  type PriceAlignmentTone,
 } from '@/features/price-positioning/services/price-alignment';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { ExampleBadge } from '@/features/welcome/components/example-badge';
@@ -69,6 +70,13 @@ const OUTCOME_BADGE: Record<ConclusionOutcome, string> = {
   follow_up: badgeRejected,
   sold_elsewhere: badgeNeutral,
   withdrawn: badgeNeutral,
+};
+
+// « Prix signé · aligné sur le marché » : le libellé de M116 sans répéter « prix ».
+const ALIGNMENT_SHORT: Record<PriceAlignmentTone, string> = {
+  green: 'aligné sur le marché',
+  orange: 'proche du marché',
+  red: 'éloigné du marché',
 };
 
 const smallCaps =
@@ -107,7 +115,7 @@ type Segment = {
   label: string;
   late?: string | null;
   sub?: string;
-  tone: 'done' | 'today' | 'later';
+  tone: 'done' | 'today' | 'due' | 'later';
 };
 
 function friezeSegments(frieze: SuiviFrieze): Segment[] {
@@ -154,18 +162,42 @@ function friezeSegments(frieze: SuiviFrieze): Segment[] {
   return [{ label: 'Mandat signé ✓', tone: 'done' }, competitors, point, visit];
 }
 
-const SEGMENT_BAR = { done: 'bg-emerald-600', today: 'bg-brand', later: 'bg-zinc-200' };
+// L'étape de la carte en bleu plein ; une autre étape due en bleu clair (designer, 05/11).
+const SEGMENT_BAR = {
+  done: 'bg-emerald-600',
+  today: 'bg-brand',
+  due: 'bg-brand/35',
+  later: 'bg-zinc-200',
+};
 const SEGMENT_TEXT = {
   done: 'text-emerald-700 font-semibold stage:text-emerald-300',
   today: 'text-brand-deep font-semibold stage:text-brand',
+  due: 'text-brand-deep stage:text-brand',
   later: 'text-zinc-500 stage:text-white/50',
 };
 
 // Le segment « Concurrents » mène à la Prospection du bien : elle reste à un clic, quelle que soit
 // l'étape.
-function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionHref: string }) {
-  const segments = friezeSegments(frieze);
-  const today = segments.find((segment) => segment.tone === 'today');
+function Frieze({
+  frieze,
+  prospectionHref,
+  stepSegment,
+}: {
+  frieze: SuiviFrieze;
+  prospectionHref: string;
+  // Le segment de l'étape montrée à droite (1 concurrents, 2 Point marché, 3 visites).
+  stepSegment: number | null;
+}) {
+  const segments = friezeSegments(frieze).map((segment, index) =>
+    segment.tone === 'today' && stepSegment != null && index !== stepSegment
+      ? { ...segment, tone: 'due' as const }
+      : segment,
+  );
+  const today =
+    segments.find((segment) => segment.tone === 'today') ??
+    segments.find((segment) => segment.tone === 'due');
+  const short = (segment: Segment) =>
+    segment.tone === 'done' ? `${segment.label.replace(/ ✓.*$/, '')} ✓` : null;
   return (
     <div data-testid="suivi-frieze" className="flex flex-col gap-1.5">
       <div className="grid grid-cols-4 gap-1">
@@ -196,7 +228,8 @@ function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionH
           </li>
         ))}
       </ol>
-      {/* Sur téléphone : le libellé de l'étape du jour seulement. */}
+      {/* Sur téléphone : le libellé de l'étape du jour, le lien des concurrents, et en petit ce qui
+          est fait. */}
       <p className="flex flex-wrap gap-x-3 text-xs @md:hidden">
         {today !== segments[1] ? (
           <span className={SEGMENT_TEXT[today?.tone ?? 'later']}>
@@ -209,6 +242,9 @@ function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionH
             {segments[1].label}
           </Link>
         ) : null}
+      </p>
+      <p className="text-[11px] text-zinc-500 @md:hidden stage:text-white/50">
+        {segments.map(short).filter(Boolean).join(' · ')}
       </p>
     </div>
   );
@@ -339,9 +375,19 @@ export function SuiviRow({
     issue: issueLabel,
   };
   const links = linkKeys.map((key) => ({ key, label: LINK_LABELS[key] }));
+  const stepSegment =
+    stepKind === 'market_update' || stepKind === 'point_panel'
+      ? 2
+      : step.button?.action.kind === 'link' && step.button.action.href.startsWith('/prospection')
+        ? 1
+        : step.button?.action.kind === 'link' && step.button.action.href === '/visites'
+          ? 3
+          : null;
   const stepWhen = relancedOn ? `le ${dayLabel(relancedOn)}` : step.when;
   const button = step.button;
-  const buttonClass = `${button?.primary && !relancedOn ? btnPrimary : btnSecondary} w-full`;
+  // Le Point marché ouvert et dû : son bouton est le plein de la carte, l'étape passe en contour.
+  const pointLeads = panel === 'point' && pointDue;
+  const buttonClass = `${button?.primary && !relancedOn && !pointLeads ? btnPrimary : btnSecondary} w-full`;
 
   return (
     <li
@@ -351,11 +397,11 @@ export function SuiviRow({
     >
       <span className={`w-1.5 shrink-0 ${group ? GROUP_BAR[group] : 'bg-zinc-200'}`} aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="grid grid-cols-1 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @5xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="grid grid-cols-1 @2xl:grid-cols-[minmax(0,1fr)_18rem] @4xl:grid-cols-[minmax(0,1fr)_24rem]">
           {/* Le vendeur et son bien. */}
           <div className="flex min-w-0 flex-col gap-1 p-4 pb-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-title text-xl font-bold text-zinc-900 @3xl:text-2xl stage:text-white">
+              <span className="font-title text-xl font-bold text-zinc-900 @2xl:text-2xl stage:text-white">
                 {sellerName}
               </span>
               {project.is_example ? <ExampleBadge /> : null}
@@ -390,7 +436,7 @@ export function SuiviRow({
           {/* La prochaine étape : sur téléphone, avant le chemin du prix. */}
           <div
             data-testid="suivi-next-step"
-            className="flex min-w-0 flex-col gap-1.5 border-zinc-100 p-4 @3xl:row-span-2 @3xl:border-l stage:border-white/10"
+            className="flex min-w-0 flex-col gap-1.5 border-zinc-100 p-4 @2xl:row-span-2 @2xl:border-l stage:border-white/10"
           >
             <span className={smallCaps}>
               Prochaine étape ·{' '}
@@ -459,7 +505,7 @@ export function SuiviRow({
                 </button>
               )
             ) : null}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 whitespace-nowrap">
               {links.map((item) =>
                 item.key === 'prospection' ? (
                   <Link
@@ -490,12 +536,15 @@ export function SuiviRow({
             {pathSteps.length > 0 ? (
               <div
                 data-testid="suivi-price-path"
-                className="flex flex-wrap items-end gap-x-3 gap-y-2"
+                className="grid grid-cols-3 items-end gap-x-2 gap-y-2 @md:flex @md:flex-wrap @md:gap-x-3"
               >
                 {pathSteps.map((item, index) => (
-                  <div key={item.label} className="flex items-end gap-3">
+                  <div key={item.label} className="flex min-w-0 items-end gap-3">
                     {index > 0 ? (
-                      <span className="pb-0.5 text-zinc-300 stage:text-white/30" aria-label="puis">
+                      <span
+                        className="hidden pb-0.5 text-zinc-300 @md:inline stage:text-white/30"
+                        aria-label="puis"
+                      >
                         →
                       </span>
                     ) : null}
@@ -505,12 +554,12 @@ export function SuiviRow({
                         {item.last && alignment ? (
                           <span className={`font-semibold ${PRICE_ALIGNMENT_TEXT[alignment.tone]}`}>
                             {' '}
-                            · {alignment.label.toLowerCase()}
+                            · {ALIGNMENT_SHORT[alignment.tone]}
                           </span>
                         ) : null}
                       </span>
                       <span
-                        className={`font-title text-lg font-bold whitespace-nowrap @3xl:text-xl ${
+                        className={`font-title text-[15px] font-bold whitespace-nowrap @md:text-lg @3xl:text-xl ${
                           item.last && alignment
                             ? PRICE_ALIGNMENT_TEXT[alignment.tone]
                             : 'text-zinc-900 stage:text-white'
@@ -524,7 +573,11 @@ export function SuiviRow({
               </div>
             ) : null}
             {frieze ? (
-              <Frieze frieze={frieze} prospectionHref={`/prospection?bien=${project.id}`} />
+              <Frieze
+                frieze={frieze}
+                prospectionHref={`/prospection?bien=${project.id}`}
+                stepSegment={stepSegment}
+              />
             ) : null}
             {outcome === 'follow_up' && holdsBack ? (
               <p className="rounded-lg bg-orange-50 px-3 py-2 text-sm text-zinc-800 stage:bg-orange-500/10 stage:text-white/85">
@@ -552,13 +605,21 @@ export function SuiviRow({
 
         {panel === 'point' ? (
           <div className="flex flex-col gap-2 border-t border-zinc-100 py-3 stage:border-white/10">
-            <div className="px-4">
+            <div className="flex flex-col gap-1.5 px-4">
+              <span className={metaLabel}>Point marché</span>
+              {outcome === 'signed' ? null : (
+                <span className="text-xs text-zinc-500 stage:text-white/60">
+                  ACM relit les annonces des concurrents (gratuit) : vous voyez ce qui a bougé
+                  depuis le rendez-vous, et le message de relance le dit.
+                </span>
+              )}
               <RefreshPricesButton
                 key={runKey}
                 projectId={project.id}
                 latest={latestPoint}
                 autoRun={autoRun}
                 onStarted={() => setAutoRun(false)}
+                buttonClassName={`${pointDue ? btnPrimary : btnSecondary} self-start whitespace-nowrap`}
               />
             </div>
             <MarketUpdateList

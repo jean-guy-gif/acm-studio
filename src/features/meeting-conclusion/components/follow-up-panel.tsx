@@ -168,7 +168,7 @@ export function FollowUpPanel({
                   Reprendre le texte proposé
                 </button>
               </div>
-              {!phone ? (
+              {!phone && email ? (
                 <span className="text-xs text-zinc-500 stage:text-white/60">
                   Pas de numéro dans le dossier vendeur.
                 </span>
@@ -208,14 +208,16 @@ export function FollowUpPanel({
           <p className={stepTitle}>
             <span>2</span> · Après votre appel ou votre message
           </p>
-          <input
-            type="text"
-            name="note"
-            maxLength={200}
-            aria-label="Note (facultative)"
-            placeholder="Note (facultative) : rappelle après les vacances"
-            className={inputBase}
-          />
+          <label className="flex flex-col gap-1 text-sm text-zinc-600 stage:text-white/70">
+            Note (facultative)
+            <input
+              type="text"
+              name="note"
+              maxLength={200}
+              placeholder="Rappelle après les vacances"
+              className={inputBase}
+            />
+          </label>
           <label className="flex flex-col gap-1 text-sm text-zinc-600 stage:text-white/70">
             Prochaine relance le
             <input
@@ -234,10 +236,10 @@ export function FollowUpPanel({
             </span>
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" className={btnPrimary} disabled={pending}>
+            <button type="submit" className={`${btnPrimary} w-full sm:w-auto`} disabled={pending}>
               {pending ? 'J’enregistre…' : 'J’ai relancé'}
             </button>
-            <button type="button" className={link} onClick={onClose}>
+            <button type="button" className={`${link} text-sm`} onClick={onClose}>
               Annuler
             </button>
           </div>

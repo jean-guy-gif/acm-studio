@@ -9,7 +9,7 @@ import type { ProspectingStatus } from '@/features/prospecting/services/prospect
 
 // Une carte de Prospection : son statut, son opposition, les dossiers dont elle est un concurrent.
 export type TaskCard = {
-  row: { status: ProspectingStatus; opposedOn: string | null };
+  row: { status: ProspectingStatus; opposedOn: string | null; addressAt?: string | null };
   sellers: { projectId: string }[];
 };
 
@@ -31,6 +31,8 @@ export type ProspectingCount = {
   toConfirm: number;
   done: number;
   declined: number;
+  // La plus ancienne adresse d'une carte prête : depuis quand le démarchage attend.
+  readySince: string | null;
 };
 
 const DONE: ProspectingStatus[] = ['handed', 'meeting', 'mandate', 'collaboration', 'declined'];
@@ -46,9 +48,14 @@ export function prospectingCounts(cards: TaskCard[]): Map<string, ProspectingCou
         toConfirm: 0,
         done: 0,
         declined: 0,
+        readySince: null,
       };
       count.total += 1;
-      if (card.row.status === 'ready') count.ready += 1;
+      if (card.row.status === 'ready') {
+        count.ready += 1;
+        const at = card.row.addressAt ?? null;
+        if (at && (count.readySince == null || at < count.readySince)) count.readySince = at;
+      }
       if (card.row.status === 'to_confirm') count.toConfirm += 1;
       if (DONE.includes(card.row.status)) count.done += 1;
       if (card.row.status === 'declined') count.declined += 1;
@@ -118,6 +125,7 @@ export function suiviTaskInputs(input: {
     pointsUnknown: input.pointsUnknown === true,
     competitorCount: competitors.get(project.id) ?? 0,
     readyCount: prospecting.get(project.id)?.ready ?? 0,
+    readySince: prospecting.get(project.id)?.readySince ?? null,
     visits: (visits.get(project.id) ?? []).map((visit) => ({
       requestedAt: visit.requestedAt,
       buyerName: visit.buyerName,

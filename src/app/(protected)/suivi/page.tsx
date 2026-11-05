@@ -88,7 +88,9 @@ const TASK_DOT = {
   signed: 'bg-emerald-600',
 };
 
+// Cinq tâches à l'écran, trois sur téléphone (designer, 05/11) ; les autres derrière « Voir ».
 const TASKS_SHOWN = 5;
+const TASKS_SHOWN_PHONE = 3;
 
 const groupHref = (group: SuiviGroup | null): string =>
   group == null ? '/suivi' : `/suivi?issue=${group}`;
@@ -205,7 +207,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const shownTasks = taskList.dues.slice(0, TASKS_SHOWN);
   const moreTasks = taskList.dues.slice(TASKS_SHOWN);
 
-  const renderTask = (task: (typeof taskList.dues)[number], index: number) => {
+  // `copy` : la copie d'une tâche dans la liste dépliable du téléphone (sans repère de test).
+  const renderTask = (task: (typeof taskList.dues)[number], index: number, copy = false) => {
     const dossier = dossierById.get(task.projectId);
     const line = taskLine(
       task,
@@ -226,8 +229,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     return (
       <li
         key={`${task.projectId}-${task.kind}`}
-        data-testid="suivi-task"
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-100 py-2 first:border-0 stage:border-white/10"
+        data-testid={copy ? undefined : 'suivi-task'}
+        className={`flex items-start gap-3 border-t border-zinc-100 py-2 first:border-0 sm:items-center stage:border-white/10 ${
+          !copy && index >= TASKS_SHOWN_PHONE ? 'max-sm:hidden' : ''
+        }`}
       >
         <span
           className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
@@ -237,26 +242,30 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         >
           {index + 1}
         </span>
-        <span className="flex min-w-0 flex-1 flex-col leading-snug">
-          <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
-            {line.title}
+        <span className="flex min-w-0 flex-1 flex-col gap-1.5 leading-snug sm:flex-row sm:items-center sm:gap-3">
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+              {line.title}
+            </span>
+            <span className="text-sm text-zinc-500 stage:text-white/60">
+              {line.detail}
+              {line.late ? (
+                <span className="font-semibold text-orange-700">{line.late}</span>
+              ) : null}
+            </span>
           </span>
-          <span className="text-sm text-zinc-500 stage:text-white/60">
-            {line.detail}
-            {line.late ? <span className="font-semibold text-orange-700">{line.late}</span> : null}
-          </span>
+          <SuiviTaskButton
+            href={line.href}
+            label={line.button}
+            open={
+              task.kind === 'follow_up'
+                ? { projectId: task.projectId, panel: 'relance' }
+                : task.kind === 'market_update'
+                  ? { projectId: task.projectId, panel: 'point' }
+                  : null
+            }
+          />
         </span>
-        <SuiviTaskButton
-          href={line.href}
-          label={line.button}
-          open={
-            task.kind === 'follow_up'
-              ? { projectId: task.projectId, panel: 'relance' }
-              : task.kind === 'market_update'
-                ? { projectId: task.projectId, panel: 'point' }
-                : null
-          }
-        />
       </li>
     );
   };
@@ -297,9 +306,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               )
             ) : (
               <>
-                <ol className="mt-2 flex flex-col">{shownTasks.map(renderTask)}</ol>
+                <ol className="mt-2 flex flex-col">
+                  {shownTasks.map((task, index) => renderTask(task, index))}
+                </ol>
                 {moreTasks.length > 0 ? (
-                  <details className="group">
+                  <details className="max-sm:hidden">
                     <summary className={`${link} cursor-pointer text-sm`}>
                       Voir{' '}
                       {moreTasks.length > 1
@@ -309,6 +320,22 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                     </summary>
                     <ol className="flex flex-col">
                       {moreTasks.map((task, index) => renderTask(task, TASKS_SHOWN + index))}
+                    </ol>
+                  </details>
+                ) : null}
+                {taskList.dues.length > TASKS_SHOWN_PHONE ? (
+                  <details className="sm:hidden">
+                    <summary className={`${link} cursor-pointer text-sm`}>
+                      Voir{' '}
+                      {taskList.dues.length - TASKS_SHOWN_PHONE > 1
+                        ? `les ${taskList.dues.length - TASKS_SHOWN_PHONE} autres tâches`
+                        : 'l’autre tâche'}{' '}
+                      ▾
+                    </summary>
+                    <ol className="flex flex-col">
+                      {taskList.dues
+                        .slice(TASKS_SHOWN_PHONE)
+                        .map((task, index) => renderTask(task, TASKS_SHOWN_PHONE + index, true))}
                     </ol>
                   </details>
                 ) : null}
@@ -392,6 +419,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                   toConfirm: 0,
                   done: 0,
                   declined: 0,
+                  readySince: null,
                 };
                 const competitorCount = competitors.get(id) ?? 0;
                 const outcome = dossier.conclusion?.outcome ?? null;

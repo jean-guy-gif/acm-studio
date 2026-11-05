@@ -82,7 +82,7 @@ describe('« À faire aujourd’hui »', () => {
     );
     expect(prospect).toMatchObject({
       title: 'Démarcher 3 concurrents de Martin',
-      detail: '3 adresses prêtes · courriers à imprimer',
+      detail: '3 adresses prêtes depuis le 15/10 · courriers à imprimer',
       late: null,
       button: 'Prospecter',
       href: '/prospection?bien=p1',
@@ -92,7 +92,7 @@ describe('« À faire aujourd’hui »', () => {
       lineContext,
       TODAY,
     );
-    expect(visit.title).toBe('Organiser la visite de Famille Keller chez M. et Mme Martin');
+    expect(visit.title).toBe('Organiser la visite de la famille Keller chez M. et Mme Martin');
     expect(visit.late).toBeNull();
     expect(visit.href).toBe('/visites');
   });
