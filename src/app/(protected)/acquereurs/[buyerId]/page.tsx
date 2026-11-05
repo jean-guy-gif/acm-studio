@@ -16,6 +16,7 @@ import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-b
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { getBuyerHistory } from '@/features/buyers/queries/get-buyer-history';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { buyerDateLabel, buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import {
@@ -81,7 +82,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
-  const [loadedDeck, answers, progress, prospecting] = await Promise.all([
+  const [loadedDeck, answers, progress, prospecting, history] = await Promise.all([
     selection ? loadDeck(buyer.id) : Promise.resolve(null),
     profile
       ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
@@ -90,6 +91,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
       : Promise.resolve(new Map()),
     getAgencyProspecting(counted),
+    profile
+      ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
+      : Promise.resolve({ selections: [], letters: [], failed: true }),
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
@@ -114,15 +118,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ).matchCount;
   const timeline = buyerTimeline({
     createdAt: buyer.createdAt,
-    selections: selection
-      ? [
-          {
-            createdAt: selection.createdAt,
-            agencyCount: selection.items.filter((item) => item.source === 'project').length,
-            marketCount: selection.items.filter((item) => item.source !== 'project').length,
-          },
-        ]
-      : [],
+    selections: history.selections,
+    letters: history.letters,
     presentedAt: facts.presentedAt,
     linkAt: facts.linkAt ?? null,
     answeredAt: facts.answeredAt ?? null,
@@ -141,8 +138,10 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       facts.linkAt,
       facts.answeredAt,
       ...ownVisits.flatMap((line) => [line.requestedAt, line.visitedAt]),
+      ...history.letters.map((letter) => letter.at),
     ],
     new Date(),
+    buyer.createdAt,
   );
   const telHref = buyer.phone ? `tel:${buyer.phone.replace(/[^\d+]/g, '')}` : null;
 
@@ -300,7 +299,13 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                           {item.item.price != null ? formatEuro(item.item.price) : '—'}
                         </span>
                         <span
-                          className={`text-sm ${gap?.tone === 'orange' ? 'text-amber-700' : 'text-emerald-700'}`}
+                          className={`text-sm ${
+                            item.item.price == null || gap == null
+                              ? 'text-zinc-500 stage:text-white/60'
+                              : gap.tone === 'orange'
+                                ? 'text-amber-700'
+                                : 'text-emerald-700'
+                          }`}
                         >
                           {item.item.price == null
                             ? 'Prix à confirmer'
@@ -308,7 +313,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                               ? null
                               : gap.tone === 'green'
                                 ? 'dans le budget'
-                                : `+${formatEuro(gap.over)}, à négocier`}
+                                : gap.negotiable
+                                  ? `+${formatEuro(gap.over)}, à négocier`
+                                  : `+${formatEuro(gap.over)}, au-dessus du budget`}
                         </span>
                       </span>
                     </li>
@@ -370,6 +377,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
               Ce qui s’est passé
             </h2>
+            {history.failed ? (
+              <p role="alert" className="text-sm font-semibold text-red-700">
+                Une partie de l’historique n’a pas pu être lue : rechargez la page.
+              </p>
+            ) : null}
             <ol className="flex flex-col">
               {timeline.map((entry, index) => (
                 <li
@@ -395,24 +407,32 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <span className="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase">
               Prochaine étape
             </span>
-            <h2 className="font-title text-xl font-bold">{next.title}</h2>
-            <p className="text-sm text-white/85">{next.phrase}</p>
-            <Link
-              href={next.primary.href}
-              data-testid="buyer-next-button"
-              className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
-            >
-              {next.primary.label}
-            </Link>
-            {next.secondary ? (
-              <Link
-                href={next.secondary.href}
-                data-testid="buyer-next-secondary"
-                className="self-center text-sm text-white underline"
-              >
-                {next.secondary.label}
-              </Link>
-            ) : null}
+            {facts.unread ? (
+              <p role="alert" className="text-sm font-semibold text-white">
+                L’avancement de cette fiche n’a pas pu être lu : rechargez la page.
+              </p>
+            ) : (
+              <>
+                <h2 className="font-title text-xl font-bold">{next.title}</h2>
+                <p className="text-sm text-white/85">{next.phrase}</p>
+                <Link
+                  href={next.primary.href}
+                  data-testid="buyer-next-button"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
+                >
+                  {next.primary.label}
+                </Link>
+                {next.secondary ? (
+                  <Link
+                    href={next.secondary.href}
+                    data-testid="buyer-next-secondary"
+                    className="self-center text-sm text-white underline"
+                  >
+                    {next.secondary.label}
+                  </Link>
+                ) : null}
+              </>
+            )}
           </section>
 
           {/* Rapprocher, gratuit. */}

@@ -158,14 +158,20 @@ export function buyerNextAction(
 }
 
 // « Prix et écart au budget » d'un bien de sa sélection (M116 acquéreur, M122 B : vert dans le
-// budget, orange au-dessus, jamais rouge) ; sans prix montré, rien.
+// budget, orange au-dessus, jamais rouge) : « à négocier » jusqu'à +5 % du plafond (M118), au-delà
+// « au-dessus du budget » ; sans prix montré ou sans budget, rien.
+export const BUDGET_NEGOTIABLE_PERCENT = 5;
 export function budgetGap(
   price: number | null,
   budgetMax: number | null,
-): { over: number; tone: 'green' | 'orange' } | null {
+): { over: number; tone: 'green' | 'orange'; negotiable: boolean } | null {
   if (price == null || budgetMax == null) return null;
-  if (price <= budgetMax) return { over: 0, tone: 'green' };
-  return { over: price - budgetMax, tone: 'orange' };
+  if (price <= budgetMax) return { over: 0, tone: 'green', negotiable: false };
+  return {
+    over: price - budgetMax,
+    tone: 'orange',
+    negotiable: price <= budgetMax * (1 + BUDGET_NEGOTIABLE_PERCENT / 100),
+  };
 }
 
 export type TimelineEntry = { at: string; text: string };
@@ -176,6 +182,8 @@ export type TimelineInput = {
   presentedAt: string | null;
   linkAt: string | null;
   answeredAt: string | null;
+  // Les courriers préparés depuis sa recherche (M120).
+  letters?: { at: string; label: string }[];
   visits: {
     requestedAt: string;
     visitedAt: string | null;
@@ -204,6 +212,9 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
   if (input.linkAt) entries.push({ at: input.linkAt, text: 'Lien de sa sélection envoyé' });
   if (input.answeredAt)
     entries.push({ at: input.answeredAt, text: 'Sa réponse reçue par le lien' });
+  for (const letter of input.letters ?? []) {
+    entries.push({ at: letter.at, text: `Courrier préparé : ${letter.label}` });
+  }
   for (const visit of input.visits) {
     entries.push({
       at: visit.requestedAt,
@@ -219,9 +230,18 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
   return entries.sort((a, b) => b.at.localeCompare(a.at));
 }
 
-// « dernier échange il y a 2 j » : le plus récent fait de la fiche après sa création.
-export function lastExchangeLabel(dates: (string | null | undefined)[], now: Date): string | null {
-  const known = dates.filter((value): value is string => Boolean(value)).sort();
+// « dernier échange il y a 2 j » : le plus récent fait de la fiche APRÈS sa création (le statut
+// est daté à la création : ce n'est pas un échange).
+export function lastExchangeLabel(
+  dates: (string | null | undefined)[],
+  now: Date,
+  createdAt?: string,
+): string | null {
+  const after = createdAt ? new Date(createdAt).getTime() + 60_000 : -Infinity;
+  const known = dates
+    .filter((value): value is string => Boolean(value))
+    .filter((value) => new Date(value).getTime() > after)
+    .sort();
   const last = known.at(-1);
   if (!last) return null;
   const days = Math.max(0, Math.floor((now.getTime() - new Date(last).getTime()) / 86_400_000));

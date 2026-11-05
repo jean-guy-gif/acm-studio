@@ -105,6 +105,7 @@ describe('ce qui s’est passé', () => {
       presentedAt: '2026-11-03T09:00:00Z',
       linkAt: null,
       answeredAt: null,
+      letters: [{ at: '2026-11-04T09:00:00Z', label: 'Maison · 7 p. · 210 m² · Mougins' }],
       visits: [
         {
           requestedAt: '2026-11-03T10:00:00Z',
@@ -117,6 +118,7 @@ describe('ce qui s’est passé', () => {
     });
     expect(entries.map((entry) => entry.text)).toEqual([
       'Visite faite : Maison · 7 p. · 210 m² · Mougins · Offre envisagée',
+      'Courrier préparé : Maison · 7 p. · 210 m² · Mougins',
       'Visite demandée : Maison · 7 p. · 210 m² · Mougins',
       'Sélection présentée',
       '3 biens sélectionnés : 1 de l’agence, 2 du marché',
@@ -130,13 +132,21 @@ describe('ce qui s’est passé', () => {
       'dernier échange il y a 2 j',
     );
     expect(lastExchangeLabel([null, undefined], now)).toBeNull();
+    // Le statut daté à la création n'est pas un échange.
+    expect(lastExchangeLabel(['2026-11-05T09:00:00Z'], now, '2026-11-05T09:00:00Z')).toBeNull();
   });
 });
 
 describe('le prix face au budget', () => {
   it('vert dans le budget, orange au-dessus, rien sans prix ou sans budget', () => {
-    expect(budgetGap(1_639_500, 1_650_000)).toEqual({ over: 0, tone: 'green' });
-    expect(budgetGap(1_720_000, 1_650_000)).toEqual({ over: 70_000, tone: 'orange' });
+    expect(budgetGap(1_639_500, 1_650_000)).toEqual({ over: 0, tone: 'green', negotiable: false });
+    // +4,2 % : à négocier (M118) ; +12 % : au-dessus du budget, toujours orange.
+    expect(budgetGap(1_720_000, 1_650_000)).toEqual({
+      over: 70_000,
+      tone: 'orange',
+      negotiable: true,
+    });
+    expect(budgetGap(1_850_000, 1_650_000)).toMatchObject({ tone: 'orange', negotiable: false });
     expect(budgetGap(null, 1_650_000)).toBeNull();
     expect(budgetGap(1_000, null)).toBeNull();
   });

@@ -778,7 +778,6 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Mission 130 B — l'ancienne adresse « Biens idéaux » ramène aux acquéreurs.
     await page.goto('/biens-ideaux');
     await expect(page).toHaveURL(/\/acquereurs$/);
-    await expect(page).toHaveURL(/\/acquereurs$/);
     await page.getByRole('link', { name: 'Nouvel acquéreur' }).click();
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
     const field = (label: string) =>

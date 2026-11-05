@@ -19,7 +19,7 @@ export async function getBuyersProgress(
   );
   if (buyerIds.length === 0) return progress;
   // Ses demandes de visite, toutes sélections confondues : à organiser, et faites (M130).
-  const { data: visits } = await supabase
+  const { data: visits, error: visitsError } = await supabase
     .from('buyer_visit_requests')
     .select('buyer_id, visited_at')
     .eq('agency_id', agencyId)
@@ -31,7 +31,7 @@ export async function getBuyersProgress(
     if (row.visited_at) facts.visitsDone = (facts.visitsDone ?? 0) + 1;
     else facts.visitsToOrganize += 1;
   }
-  const { data: selections } = await supabase
+  const { data: selections, error: selectionsError } = await supabase
     .from('buyer_selections')
     .select('id, buyer_id, presented_at, created_at')
     .eq('agency_id', agencyId)
@@ -47,23 +47,31 @@ export async function getBuyersProgress(
       });
     }
   }
+  // Une lecture en échec n'est jamais « rien de fait » (M98) : chaque fiche le porte.
+  const markUnread = () => {
+    for (const facts of progress.values()) facts.unread = true;
+    return progress;
+  };
+  if (visitsError || selectionsError) return markUnread();
   const selectionIds = [...latest.values()].map((selection) => selection.id);
   if (selectionIds.length === 0) return progress;
-  const [{ data: items }, { data: links }] = await Promise.all([
-    supabase
-      .from('buyer_selection_items')
-      .select('id, selection_id, removed_at')
-      .eq('agency_id', agencyId)
-      .in('selection_id', selectionIds),
-    supabase
-      .from('buyer_dossier_links')
-      .select('selection_id, created_at')
-      .eq('agency_id', agencyId)
-      .in('selection_id', selectionIds)
-      .gt('expires_at', new Date().toISOString()),
-  ]);
+  const [{ data: items, error: itemsError }, { data: links, error: linksError }] =
+    await Promise.all([
+      supabase
+        .from('buyer_selection_items')
+        .select('id, selection_id, removed_at')
+        .eq('agency_id', agencyId)
+        .in('selection_id', selectionIds),
+      supabase
+        .from('buyer_dossier_links')
+        .select('selection_id, created_at')
+        .eq('agency_id', agencyId)
+        .in('selection_id', selectionIds)
+        .gt('expires_at', new Date().toISOString()),
+    ]);
   const itemIds = (items ?? []).map((item) => item.id);
-  const { data: responses } =
+  if (itemsError || linksError) return markUnread();
+  const { data: responses, error: responsesError } =
     itemIds.length > 0
       ? await supabase
           .from('buyer_item_responses')
@@ -71,7 +79,8 @@ export async function getBuyersProgress(
           .eq('agency_id', agencyId)
           .eq('answered_during', 'dossier')
           .in('selection_item_id', itemIds)
-      : { data: [] };
+      : { data: [], error: null };
+  if (responsesError) return markUnread();
   const selectionOfItem = new Map((items ?? []).map((item) => [item.id, item.selection_id]));
   // La plus récente réponse par le lien, et le plus récent lien, par sélection.
   const answered = new Map<string, string>();
