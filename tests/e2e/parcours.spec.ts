@@ -560,6 +560,20 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await expect(panel.getByRole(name === 'Copier' ? 'button' : 'link', { name })).toBeVisible();
     }
 
+    // Mission 130 — sans téléphone ni e-mail dans le dossier, on les ajoute sur place : le
+    // numéro devient un lien, et SMS s'ouvre à ce numéro.
+    const contact = panel.getByTestId('seller-contact-form');
+    await contact.getByLabel('Ajouter son téléphone').fill('06 12 34 56 78');
+    await contact.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(panel.getByRole('link', { name: '06 12 34 56 78' })).toHaveAttribute(
+      'href',
+      'tel:0612345678',
+    );
+    await expect(panel.getByRole('link', { name: 'SMS' })).toHaveAttribute(
+      'href',
+      /^sms:0612345678/,
+    );
+
     // « J'ai relancé », avec une note : la carte le dit, l'historique la montre, datée et signée.
     await panel.getByLabel('Note (facultative)').fill(FOLLOW_UP_NOTE);
     // Mission 105 — la date de prochaine relance est proposée selon le motif, et modifiable.
