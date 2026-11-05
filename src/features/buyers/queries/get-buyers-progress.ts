@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import type { Database } from '@/lib/supabase/database.types';
 
-// Essai de Jean-Guy (26/10) — les faits des trois étapes de chaque fiche (`buyerSteps`), cadrés
+// Essai de Jean-Guy (26/10) ; Mission 130 B — les faits du parcours de chaque fiche (`buyerJourney`), cadrés
 // sur l'agence : la sélection la plus récente, son nombre de biens, un lien valable du dossier
 // acquéreur pour elle, et sa réponse depuis le lien. Quatre lectures, quelle que soit la longueur
 // de la liste. Une lecture en échec vaut « pas encore fait » : seul un bouton change de libellé.
