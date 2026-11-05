@@ -54,9 +54,12 @@ function joinLabels<T extends string>(map: Record<T, string>, values: string[]):
 export function LivePageProperty({
   property,
   summary,
+  asksSeller = true,
 }: {
   property: SellerPresentationProperty;
   summary: LiveSellerSummary | null;
+  // Mission 131 — en présentation directe, le bien se montre sans rien demander au vendeur.
+  asksSeller?: boolean;
 }) {
   const currentAnswer = summary?.seller_property_confirmed ?? '';
   const currentComment = summary?.seller_property_comment ?? '';
@@ -112,7 +115,11 @@ export function LivePageProperty({
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>Votre bien</h2>
-        <p className={questionHint}>Reconnaissez-vous votre bien dans cette présentation ?</p>
+        <p className={questionHint}>
+          {asksSeller
+            ? 'Reconnaissez-vous votre bien dans cette présentation ?'
+            : 'Votre bien, tel que nous allons le comparer aux biens en vente.'}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
@@ -144,37 +151,42 @@ export function LivePageProperty({
           ) : null}
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
-          <fieldset className="flex flex-col gap-3">
-            <legend className={fieldLabel}>
-              Est-ce que cette présentation correspond bien à votre bien ?
-            </legend>
-            <div className="flex flex-col gap-3">
-              {PROPERTY_CONFIRMED_VALUES.map((value) => (
-                <label key={value} className={choice}>
-                  <input
-                    type="radio"
-                    name="seller_property_confirmed"
-                    value={value}
-                    defaultChecked={currentAnswer === value}
-                    className="sr-only"
-                  />
-                  {PROPERTY_CONFIRMED_LABELS[value]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+        {asksSeller ? (
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className={`${panel} flex h-fit flex-col gap-4`}
+          >
+            <fieldset className="flex flex-col gap-3">
+              <legend className={fieldLabel}>
+                Est-ce que cette présentation correspond bien à votre bien ?
+              </legend>
+              <div className="flex flex-col gap-3">
+                {PROPERTY_CONFIRMED_VALUES.map((value) => (
+                  <label key={value} className={choice}>
+                    <input
+                      type="radio"
+                      name="seller_property_confirmed"
+                      value={value}
+                      defaultChecked={currentAnswer === value}
+                      className="sr-only"
+                    />
+                    {PROPERTY_CONFIRMED_LABELS[value]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>Commentaire (facultatif)</span>
-            <textarea
-              name="seller_property_comment"
-              rows={3}
-              defaultValue={currentComment}
-              className={fieldInput}
-            />
-          </label>
-        </form>
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Commentaire (facultatif)</span>
+              <textarea
+                name="seller_property_comment"
+                rows={3}
+                defaultValue={currentComment}
+                className={fieldInput}
+              />
+            </label>
+          </form>
+        ) : null}
       </div>
     </div>
   );

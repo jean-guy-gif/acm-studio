@@ -43,6 +43,7 @@ export default async function LaunchLivePage({
             decisionMissing={launch.decisionMissing}
             shortlistPending={launch.shortlistPending}
             pendingImportCount={launch.pendingImportCount}
+            presentationMode={launch.presentationMode}
             proceed
           />
         </div>

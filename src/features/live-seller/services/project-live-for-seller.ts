@@ -1,3 +1,4 @@
+import { priceShown, shownDirectly } from '@/features/live-seller/services/presentation-mode';
 import {
   buildMarketReading,
   type MarketReading,
@@ -78,8 +79,10 @@ export type SellerComparable = NeutralSellerComparable | AuthorizedSellerCompara
 
 // Un concurrent est autorisé quand son estimation est PERSISTÉE — jamais une valeur de
 // formulaire locale (même garde que canAdvanceLivePage : réponses persistées seules).
+// Mission 131 — ou quand il a été MONTRÉ EN DIRECTE, fait persisté lui aussi (la base le refuse
+// hors présentation directe, et après une devinette ou un « Non »).
 export function isComparableAuthorized(entry: LiveComparableEntry): boolean {
-  return entry.response?.seller_estimated_listing_price != null;
+  return priceShown(entry.response);
 }
 
 // L'étape « Durée » n'a de sens que s'il y a quelque chose à révéler après la devinette.
@@ -91,11 +94,20 @@ export function isDurationKnown(
 
 // La durée observée (et les baisses de prix, qui se montrent avec elle) n'est autorisée qu'une
 // fois la durée devinée PERSISTÉE — même principe que le prix : deviner, puis voir.
-export function isDurationAuthorized(entry: LiveComparableEntry): boolean {
-  return entry.response?.seller_estimated_days_on_market != null;
+// Mission 131 — en directe, rien ne se devine : la durée se montre avec le prix, y compris pour un
+// concurrent dont le prix a été deviné avant le passage en directe (`direct`, lu en base).
+export function isDurationAuthorized(entry: LiveComparableEntry, direct = false): boolean {
+  return (
+    entry.response?.seller_estimated_days_on_market != null ||
+    shownDirectly(entry.response) ||
+    (direct && entry.response?.seller_estimated_listing_price != null)
+  );
 }
 
-export function projectComparableForSeller(entry: LiveComparableEntry): SellerComparable {
+export function projectComparableForSeller(
+  entry: LiveComparableEntry,
+  direct = false,
+): SellerComparable {
   const neutral: NeutralSellerComparable = {
     authorized: false,
     id: entry.id,
@@ -119,7 +131,7 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
   if (!isComparableAuthorized(entry)) {
     return neutral;
   }
-  const durationRevealed = isDurationAuthorized(entry);
+  const durationRevealed = isDurationAuthorized(entry, direct);
 
   return {
     ...neutral,
@@ -171,7 +183,9 @@ export type SellerLiveData = {
 
 export function projectLiveForSeller(live: LiveComparativeData): SellerLiveData {
   return {
-    comparables: live.comparables.map(projectComparableForSeller),
+    comparables: live.comparables.map((entry) =>
+      projectComparableForSeller(entry, live.direct === true),
+    ),
     sellerSummary: live.sellerSummary,
   };
 }
@@ -203,7 +217,7 @@ export function authorizeComparableReveal(
   if (!entry || !isComparableAuthorized(entry)) {
     return null;
   }
-  const projected = projectComparableForSeller(entry);
+  const projected = projectComparableForSeller(entry, live.direct === true);
   return projected.authorized ? projected : null;
 }
 
@@ -213,8 +227,14 @@ export function authorizeComparableReveal(
 // plus. Le central marché est fait des prix des concurrents ; il ne se livre donc qu'une
 // fois CHAQUE concurrent estimé (ou écarté par « non », qui saute sa devinette). Sinon il
 // partirait dans le navigateur avant la première devinette.
+// MISSION 131 — en présentation directe, la valeur perçue n'est plus demandée dès qu'un prix a
+// été montré en directe : ce fait, en base, en tient lieu (on ne demande pas son prix au vendeur
+// après lui avoir montré le marché).
 export function isAdvisorRangeAuthorized(live: LiveComparativeData): boolean {
-  if (live.sellerSummary?.seller_perceived_property_price == null) {
+  if (
+    live.sellerSummary?.seller_perceived_property_price == null &&
+    !live.comparables.some((entry) => shownDirectly(entry.response))
+  ) {
     return false;
   }
   return live.comparables.every(

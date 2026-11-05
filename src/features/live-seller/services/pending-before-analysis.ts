@@ -1,3 +1,4 @@
+import { priceShown } from '@/features/live-seller/services/presentation-mode';
 import type { LivePage } from '@/features/live-seller/services/build-live-pages';
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 
@@ -17,10 +18,12 @@ export type PendingLiveStep = {
 type PendingSource = {
   id: string;
   neutralLabel: string;
-  response: Pick<
-    LiveComparableResponse,
-    'seller_serious_competitor' | 'seller_estimated_listing_price'
-  > | null;
+  response:
+    | (Pick<
+        LiveComparableResponse,
+        'seller_serious_competitor' | 'seller_estimated_listing_price'
+      > & { shown_directly_at?: string | null })
+    | null;
 };
 
 export function pendingBeforeAnalysis(
@@ -39,7 +42,7 @@ export function pendingBeforeAnalysis(
 
   comparables.forEach((comparable, index) => {
     const serious = comparable.response?.seller_serious_competitor ?? null;
-    if (serious === 'no' || comparable.response?.seller_estimated_listing_price != null) {
+    if (serious === 'no' || priceShown(comparable.response)) {
       return;
     }
     // On rouvre là où le concurrent s'est arrêté : la question, sinon la devinette.
@@ -48,7 +51,10 @@ export function pendingBeforeAnalysis(
     const pageIndex = pages.findIndex(
       (page) =>
         page.comparableId === comparable.id &&
-        (page.type === target || page.type === 'comparable_quick_guess'),
+        (page.type === target ||
+          page.type === 'comparable_quick_guess' ||
+          // Mission 131 — en directe, l'écran unique du concurrent.
+          page.type === 'comparable_direct'),
     );
     if (pageIndex >= 0) {
       steps.push({

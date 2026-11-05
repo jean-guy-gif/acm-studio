@@ -36,11 +36,16 @@ const PUBLIC_BUYER_DOSSIER = /^\/dossier\/[A-Za-z0-9_-]{43}$/;
 // forme exacte : « /point-marche/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
 const PUBLIC_MARKET_UPDATE = /^\/point-marche\/[A-Za-z0-9_-]{43}$/;
 
+// Mission 131 — l'Étude de marché remise au vendeur, ouverte par son lien sans compte, de la même
+// forme exacte : « /etude-de-marche/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
+const PUBLIC_MARKET_STUDY = /^\/etude-de-marche\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
   return (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_SYNTHESIS.test(pathname) ||
     PUBLIC_BUYER_DOSSIER.test(pathname) ||
-    PUBLIC_MARKET_UPDATE.test(pathname)
+    PUBLIC_MARKET_UPDATE.test(pathname) ||
+    PUBLIC_MARKET_STUDY.test(pathname)
   );
 }

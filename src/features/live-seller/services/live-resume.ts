@@ -33,7 +33,9 @@ const SUMMARY_ANSWERS = [
   'seller_launch_readiness_last',
 ] as const;
 
+// Mission 131 — un concurrent montré en directe : le Live a commencé, même sans réponse.
 const RESPONSE_ANSWERS = [
+  'shown_directly_at',
   'seller_serious_competitor',
   'seller_estimated_listing_price',
   'seller_price_coherence',

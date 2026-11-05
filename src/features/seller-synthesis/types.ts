@@ -33,14 +33,15 @@ export type SynthesisCompetitor = {
   features: SynthesisFeature[];
   serious: 'yes' | 'unsure' | 'no' | null;
   // Ce qui a été révélé pendant le Live : null pour un « Non » ou une devinette jamais donnée.
+  // Mission 131 — un concurrent montré en présentation directe : son prix, sans devinette (null).
   revealed: {
-    guess: number;
+    guess: number | null;
     price: number;
     // L'écart du Live (M96) : prix affiché moins devinette, en % de la devinette.
     gapPercent: number | null;
     pricePerSquareMeter: number | null;
     // Seulement si l'étape « Durée » a eu lieu : la durée devinée, puis la durée révélée.
-    duration: { guessDays: number; days: number | null } | null;
+    duration: { guessDays: number | null; days: number | null } | null;
     // La baisse de prix connue, montrée avec la durée.
     priceDrop: { amount: number; percent: number | null } | null;
   } | null;
@@ -74,7 +75,9 @@ export type SellerSynthesis = {
     classes: { letter: DpeClass; count: number }[];
   } | null;
   // Le concurrent le plus dangereux désigné par le vendeur, et son motif (jamais son commentaire).
-  dangerous: { competitorId: string; reason: string | null } | null;
+  // Mission 131 — en présentation directe, le bien proposé par le CONSEILLER, « le plus proche de
+  // votre bien » (`byAdvisor`), quand le vendeur n'en a pas désigné.
+  dangerous: { competitorId: string; reason: string | null; byAdvisor?: boolean } | null;
   // « Vous avez sous-estimé 4 concurrents sur 6, de 6 % en moyenne » (M96).
   guessLines: string[];
   // « Analyse des prix » : les seuls concurrents dont le prix a été révélé (M94).

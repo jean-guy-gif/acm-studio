@@ -20,7 +20,8 @@ automatiques. Elle n'est pas activée ; cette sauvegarde à la main en tient lie
   lignes, table par table, ainsi que les fichiers du stockage.
 
 Il faut Docker lancé, la base locale démarrée (`supabase start`) et la CLI Supabase reliée au
-projet. `ACM_SAUVEGARDES=/autre/dossier` range les sauvegardes ailleurs — jamais dans le dépôt, le
+projet. Les scripts appellent la CLI épinglée, `npx --yes supabase@3.0.0`, avec `--remote` (05/11 :
+la 3.0.0 a remplacé `--linked`) ; une montée de version se décide dans `scripts/sauvegarde-commun.mjs`. `ACM_SAUVEGARDES=/autre/dossier` range les sauvegardes ailleurs — jamais dans le dépôt, le
 script le refuse.
 
 ## Restaurer pour de bon

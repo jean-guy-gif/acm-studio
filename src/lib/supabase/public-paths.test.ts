@@ -33,6 +33,13 @@ describe('isPublicPath', () => {
     expect(isPublicPath(`/dossier/${'A'.repeat(43)}/autre`)).toBe(false);
   });
 
+  it('ouvre l’Étude de marché par son jeton de 43 caractères, et rien d’autre (mission 131)', () => {
+    expect(isPublicPath(`/etude-de-marche/${'A'.repeat(43)}`)).toBe(true);
+    expect(isPublicPath(`/etude-de-marche/${'A'.repeat(44)}`)).toBe(false);
+    expect(isPublicPath('/etude-de-marche')).toBe(false);
+    expect(isPublicPath('/builder/x/etude-de-marche')).toBe(false);
+  });
+
   it('ouvre /api/version, et rien d’autre sous /api (mission 100)', () => {
     expect(isPublicPath('/api/version')).toBe(true);
     expect(isPublicPath('/api')).toBe(false);

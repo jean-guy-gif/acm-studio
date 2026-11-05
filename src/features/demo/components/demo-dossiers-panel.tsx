@@ -7,11 +7,12 @@ import { DemoResetButton } from '@/features/demo/components/demo-reset-button';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
 import { DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
 
-// Mission 114 (partie B) — « Ma démo » : les quatre dossiers du closer, à leurs quatre étapes,
+// Mission 114 (partie B) — « Ma démo » : les dossiers du closer, un par étape (cinq depuis la M131),
 // « Préparer ma démo » tant qu'il n'en a pas, « Remettre ma démo à zéro » ensuite.
 const STAGE_HREF: Record<DemoDossier['stage'], (id: string) => string> = {
   to_prepare: (id) => `/builder/${id}`,
   ready: (id) => `/builder/${id}/avant-rendez-vous`,
+  direct: (id) => `/builder/${id}/avant-rendez-vous`,
   signed: (id) => `/builder/${id}`,
   follow_up: () => '/suivi',
 };

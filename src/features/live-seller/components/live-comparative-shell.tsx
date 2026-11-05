@@ -8,6 +8,8 @@ import { Logo } from '@/components/brand/logo';
 import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
 import { persistLiveSellerSummary } from '@/features/live-seller/actions/save-live-seller-summary';
 import { deliverLiveFragment } from '@/features/live-seller/actions/deliver-live-fragment';
+import { saveAdvisorClosest } from '@/features/live-seller/actions/save-advisor-closest';
+import { setLivePresentationMode } from '@/features/live-seller/actions/set-live-presentation-mode';
 import { markLiveEnded, markLiveStarted } from '@/features/live-seller/actions/live-timing-actions';
 import {
   dangerousChoiceFromForm,
@@ -16,9 +18,11 @@ import {
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
+import { LivePageClosest } from '@/features/live-seller/components/live-page-closest';
 import { LivePageCompetition } from '@/features/live-seller/components/live-page-competition';
 import { LivePageConclusion } from '@/features/live-seller/components/live-page-conclusion';
 import { LivePageDangerous } from '@/features/live-seller/components/live-page-dangerous';
+import { LivePageDirect } from '@/features/live-seller/components/live-page-direct';
 import { LivePageDpe } from '@/features/live-seller/components/live-page-dpe';
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
@@ -38,7 +42,11 @@ import {
   stageGlowLayer,
   stageRoot,
 } from '@/features/live-seller/components/live-stage';
-import { buildLivePages, type LiveRhythm } from '@/features/live-seller/services/build-live-pages';
+import {
+  buildLivePages,
+  indexAfterModeChange,
+  type LiveRhythm,
+} from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
 import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
@@ -78,6 +86,7 @@ export function LiveComparativeShell({
   logoDarkUrl = null,
   agencyName = null,
   hasAgreedPrice = false,
+  presentationMode = 'interactive',
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -103,11 +112,24 @@ export function LiveComparativeShell({
   // Mission 89 — un prix de commercialisation est-il déjà enregistré pour ce dossier ? Un
   // oui/non, jamais le montant : la question de 1 à 10 ne dit « à ce prix » que s'il y en a un.
   hasAgreedPrice?: boolean;
+  // Mission 131 — Live interactif ou présentation directe ; le conseiller en change en cours de
+  // route par le menu « Réglages » (ce qui a été répondu est gardé).
+  presentationMode?: 'interactive' | 'direct';
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stage, setStage] = useState<LiveStageTheme>(initialStage);
+  // Mission 131 — la façon de présenter, et le menu « Réglages » du conseiller.
+  const [mode, setMode] = useState<'interactive' | 'direct'>(presentationMode);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+  // Le concurrent le plus proche, proposé par le conseiller en directe (jamais le choix du vendeur).
+  const [closestId, setClosestId] = useState<string | null>(
+    live?.sellerSummary?.advisor_closest_comparable_id ?? null,
+  );
+  const directRequestedRef = useRef<Set<string>>(new Set());
 
   type SaveStatus = 'pending' | 'ok' | 'failed';
   type SaveRecord = { status: SaveStatus; retry: () => void; error?: string };
@@ -157,27 +179,6 @@ export function LiveComparativeShell({
     const price = Number(saved);
     setAgreedPrice(Number.isFinite(price) && price > 0 ? price : null);
   }, []);
-  const leavePriceScreen = async () => {
-    if (busy) return;
-    setAwaitError(null);
-    const typed = pendingPriceRef.current;
-    if (typed == null) {
-      go(1);
-      return;
-    }
-    const formData = new FormData();
-    formData.set('commercialization_price', typed);
-    const result = await guardedSave(() => saveCommercializationPrice(projectId, formData), {
-      setBusy,
-    });
-    if (!result.ok) {
-      setAwaitError(result.error);
-      return;
-    }
-    pendingPriceRef.current = null;
-    handlePriceSaved(typed);
-    go(1);
-  };
 
   // Mission 85 — la note de 1 à 10 donnée après le prix. Chaque chiffre touché part en fond,
   // l'un après l'autre (la première note doit arriver avant la suivante) ; « Terminer le
@@ -217,8 +218,11 @@ export function LiveComparativeShell({
   // final), ensuite l'heure de fin du Live (mission 95). Un seul enregistrement protégé : un
   // échec de la note rend le bouton, avec son message. L'heure de fin, elle, est une mesure —
   // qu'elle ne s'écrive pas n'empêche jamais de terminer.
-  const finishMeeting = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const finishMeeting = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    void finish();
+  };
+  const finish = async () => {
     if (finishing) {
       return;
     }
@@ -274,8 +278,8 @@ export function LiveComparativeShell({
   const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
 
   const pages = useMemo(
-    () => buildLivePages(navLive, hasSubjectProperty, rhythm),
-    [navLive, hasSubjectProperty, rhythm],
+    () => buildLivePages(navLive, hasSubjectProperty, rhythm, mode),
+    [navLive, hasSubjectProperty, rhythm, mode],
   );
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
@@ -296,6 +300,11 @@ export function LiveComparativeShell({
   const dangerousComparable =
     authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??
     null;
+  // Mission 131 — à défaut du choix du vendeur, le bien proposé par le conseiller en directe.
+  const closestComparable = authorizedComparables.find((c) => c.id === closestId) ?? null;
+  const closestCandidates = authorizedComparables.filter(
+    (c) => c.response?.seller_serious_competitor !== 'no',
+  );
 
   const isClosingAct = page.type === 'conclusion' || page.type === 'closing_question';
   const isInteractive = page.type !== 'intro' && !isClosingAct;
@@ -338,6 +347,37 @@ export function LiveComparativeShell({
     [pages],
   );
 
+  // Mission 131 — en présentation directe, il n'y a pas de note de 1 à 10 : la conclusion est le
+  // dernier écran, et c'est elle qui termine le rendez-vous.
+  const advanceFromPrice = () => {
+    if (currentIndex >= pages.length - 1) {
+      void finish();
+    } else {
+      go(1);
+    }
+  };
+  const leavePriceScreen = async () => {
+    if (busy) return;
+    setAwaitError(null);
+    const typed = pendingPriceRef.current;
+    if (typed == null) {
+      advanceFromPrice();
+      return;
+    }
+    const formData = new FormData();
+    formData.set('commercialization_price', typed);
+    const result = await guardedSave(() => saveCommercializationPrice(projectId, formData), {
+      setBusy,
+    });
+    if (!result.ok) {
+      setAwaitError(result.error);
+      return;
+    }
+    pendingPriceRef.current = null;
+    handlePriceSaved(typed);
+    advanceFromPrice();
+  };
+
   // Enregistrement EN ARRIÈRE-PLAN (avance optimiste), suivi, avec relance.
   const runBackground = useCallback(
     (key: string, save: () => Promise<{ ok: boolean; error?: string }>) => {
@@ -374,6 +414,70 @@ export function LiveComparativeShell({
     },
     [],
   );
+
+  // Mission 131 — un concurrent en présentation directe : le fait « montré » est enregistré, puis
+  // son prix livré par la voie gardée. Demandé une fois à l'arrivée sur son écran ; un échec se
+  // relance par « Valider et continuer ».
+  const showDirectly = useCallback(
+    async (comparableId: string) => {
+      directRequestedRef.current.add(comparableId);
+      const r = await guardedSave(
+        () => deliverLiveFragment(projectId, { kind: 'comparable-direct', comparableId }),
+        { setBusy },
+      );
+      if (!r.ok) {
+        directRequestedRef.current.delete(comparableId);
+        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        return;
+      }
+      if (r.fragment.kind === 'comparable') {
+        const revealed = r.fragment.comparable;
+        setDelivered((d) => ({ ...d, [comparableId]: revealed }));
+      }
+    },
+    [projectId],
+  );
+  // À livrer : le prix pas encore montré, ou — deviné avant le passage en directe — la durée.
+  const directPendingId =
+    page.type === 'comparable_direct' &&
+    entry != null &&
+    (!entry.authorized || (entry.durationKnown && entry.marketDuration == null))
+      ? entry.id
+      : null;
+  useEffect(() => {
+    if (directPendingId == null || directRequestedRef.current.has(directPendingId)) return;
+    void showDirectly(directPendingId);
+  }, [directPendingId, showDirectly]);
+
+  const pickClosest = async (comparableId: string | null) => {
+    const previous = closestId;
+    setClosestId(comparableId);
+    setAwaitError(null);
+    const r = await guardedSave(() => saveAdvisorClosest(projectId, comparableId), { setBusy });
+    if (!r.ok) {
+      setClosestId(previous);
+      setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+    }
+  };
+
+  // Mission 131 — « Passer en présentation directe » / « Reprendre le Live interactif » : enregistré
+  // sur le dossier d'abord ; on reste sur le même écran (ou le premier du même concurrent).
+  const switchMode = async (next: 'interactive' | 'direct') => {
+    if (switching) return;
+    setMenuError(null);
+    const r = await guardedSave(() => setLivePresentationMode(projectId, next), {
+      setBusy: setSwitching,
+    });
+    if (!r.ok) {
+      setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
+      return;
+    }
+    const nextPages = buildLivePages(navLive, hasSubjectProperty, rhythm, next);
+    setAwaitError(null);
+    setIndex(indexAfterModeChange(page, currentIndex, nextPages));
+    setMode(next);
+    setMenuOpen(false);
+  };
 
   const harvest = useCallback(() => {
     const form = mainRef.current?.querySelector('form');
@@ -416,6 +520,30 @@ export function LiveComparativeShell({
     const awaited = <T extends SaveResult>(save: () => Promise<T>) =>
       guardedSave(save, { setBusy });
 
+    if (page.type === 'comparable_direct' && entry) {
+      if (entry.authorized) {
+        go(1);
+      } else {
+        void showDirectly(entry.id);
+      }
+      return;
+    }
+    if (page.type === 'advisor_closest') {
+      if (entersAnalysis && range == null && pendingSteps.length === 0) {
+        const r = await awaited(deliverRange);
+        if (!r.ok) {
+          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          return;
+        }
+      }
+      go(1);
+      return;
+    }
+    // Mission 131 — en directe, « Votre bien » ne demande rien : rien à enregistrer.
+    if (page.type === 'subject_property' && mode === 'direct') {
+      go(1);
+      return;
+    }
     if (page.type === 'subject_property') {
       const r = await awaited(() => persistLiveSellerSummary(projectId, fd));
       if (r.ok) go(1);
@@ -689,6 +817,8 @@ export function LiveComparativeShell({
     go,
     runBackground,
     harvest,
+    showDirectly,
+    mode,
   ]);
 
   // Mission 94 — « Passer » : le vendeur ne reformule pas son prix. Rien n'est enregistré ; la
@@ -846,12 +976,14 @@ export function LiveComparativeShell({
 
   const isIntro = page.type === 'intro';
   const stepLabel =
-    page.comparableIndex != null && live
-      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur ${Math.max(
-          ...pages.filter((p) => p.comparableId === page.comparableId).map((p) => p.step ?? 0),
-          page.step ?? 0,
-        )}`
-      : page.title;
+    page.type === 'comparable_direct' && page.comparableIndex != null && live
+      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length}`
+      : page.comparableIndex != null && live
+        ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur ${Math.max(
+            ...pages.filter((p) => p.comparableId === page.comparableId).map((p) => p.step ?? 0),
+            page.step ?? 0,
+          )}`
+        : page.title;
 
   return (
     <div
@@ -944,7 +1076,53 @@ export function LiveComparativeShell({
             Rendez-vous vendeur
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="relative flex shrink-0 items-center gap-1.5">
+          {/* Mission 131 — le menu du conseiller : changer de rythme sans rien dire au vendeur, et
+              télécharger l'Étude de marché. Discret, comme les autres réglages. */}
+          <button
+            type="button"
+            onClick={() => {
+              setMenuError(null);
+              setMenuOpen((open) => !open);
+            }}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            data-testid="live-options"
+            className={chromeBtn}
+          >
+            Réglages
+          </button>
+          {menuOpen ? (
+            <div
+              role="menu"
+              className="absolute top-full right-0 z-50 mt-2 flex w-72 flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-2 text-left text-zinc-800 shadow-xl"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                disabled={switching}
+                onClick={() => void switchMode(mode === 'direct' ? 'interactive' : 'direct')}
+                className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-zinc-100 disabled:opacity-60"
+              >
+                {switching
+                  ? 'Enregistrement…'
+                  : mode === 'direct'
+                    ? 'Reprendre le Live interactif'
+                    : 'Passer en présentation directe'}
+              </button>
+              <a
+                role="menuitem"
+                href={`/builder/${projectId}/etude-de-marche?vue=live`}
+                target="_blank"
+                rel="noopener"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-zinc-100"
+              >
+                Télécharger l’Étude de marché
+              </a>
+              {menuError ? <p className="px-3 py-1 text-xs text-red-600">{menuError}</p> : null}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => setStage((s) => (s === 'dark' ? 'light' : 'dark'))}
@@ -1006,7 +1184,7 @@ export function LiveComparativeShell({
             agencyName={agencyName}
           />
         ) : page.type === 'subject_property' && property ? (
-          <LivePageProperty property={property} summary={summary} />
+          <LivePageProperty property={property} summary={summary} asksSeller={mode !== 'direct'} />
         ) : page.type === 'comparable_competition' && entry ? (
           <LivePageCompetition entry={entry} />
         ) : page.type === 'comparable_price' && entry ? (
@@ -1019,6 +1197,15 @@ export function LiveComparativeShell({
           <LivePageQuickGuess entry={entry} />
         ) : page.type === 'comparable_quick_reveal' && authorizedEntry ? (
           <LivePageQuickReveal entry={authorizedEntry} />
+        ) : page.type === 'comparable_direct' && entry ? (
+          <LivePageDirect entry={entry} />
+        ) : page.type === 'advisor_closest' ? (
+          <LivePageClosest
+            comparables={closestCandidates}
+            selectedId={closestId}
+            busy={busy}
+            onPick={(id) => void pickClosest(id)}
+          />
         ) : page.type === 'dpe_market' ? (
           <LivePageDpe
             subjectEnergyRating={property?.energyRating ?? null}
@@ -1052,7 +1239,8 @@ export function LiveComparativeShell({
             projectId={projectId}
             summary={summary}
             advisorRange={effectiveRange}
-            dangerous={dangerousComparable}
+            dangerous={dangerousComparable ?? closestComparable}
+            closest={dangerousComparable == null && closestComparable != null}
             onPendingPriceChange={handlePendingPriceChange}
             onPriceSaved={handlePriceSaved}
           />
@@ -1158,13 +1346,20 @@ export function LiveComparativeShell({
             </button>
             <div className="flex flex-wrap items-center justify-end gap-3">
               {awaitError ? <span className={errorText}>{awaitError}</span> : null}
+              {finishError ? <span className={errorText}>{finishError}</span> : null}
               <button
                 type="button"
                 onClick={() => void leavePriceScreen()}
-                disabled={busy}
+                disabled={busy || finishing}
                 className={ctaPrimary}
               >
-                {busy ? 'Enregistrement du prix…' : 'Valider et continuer →'}
+                {busy
+                  ? 'Enregistrement du prix…'
+                  : finishing
+                    ? 'Enregistrement…'
+                    : currentIndex >= pages.length - 1
+                      ? 'Terminer le rendez-vous →'
+                      : 'Valider et continuer →'}
               </button>
             </div>
           </div>

@@ -321,6 +321,8 @@ async function seedDemoDossier(
         : {}),
       status: 'draft',
       demo_stage: plan.stage,
+      // Mission 131 — le dossier de démo en présentation directe.
+      ...(plan.stage === 'direct' ? { live_presentation_mode: 'direct' } : {}),
     })
     .select('id')
     .single();
@@ -567,7 +569,7 @@ export async function seedDemoDossiers(
   return seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now);
 }
 
-// « Préparer ma démo » : quatre dossiers, s'il n'en a pas encore.
+// « Préparer ma démo » : cinq dossiers, s'il n'en a pas encore.
 export async function prepareDemoDossiers(): Promise<void> {
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();

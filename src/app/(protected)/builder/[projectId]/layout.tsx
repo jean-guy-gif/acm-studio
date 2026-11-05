@@ -33,6 +33,7 @@ export default async function ProjectLayout({
           hasDecision: readiness.hasPositioning,
           liveStarted: project.live_started_at != null,
           liveEnded: project.live_ended_at != null,
+          documentOnly: project.live_presentation_mode === 'document',
         })
       : null;
 

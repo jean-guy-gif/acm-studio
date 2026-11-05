@@ -1,3 +1,4 @@
+import { priceShown } from '@/features/live-seller/services/presentation-mode';
 import { median } from '@/features/comparables/services/calculate-comparable-summary';
 import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
 
@@ -40,14 +41,15 @@ type ReadingEntry = Pick<
   response: {
     seller_estimated_listing_price?: number | null;
     seller_serious_competitor?: string | null;
+    shown_directly_at?: string | null;
   } | null;
 };
 
 // Même garde que la révélation elle-même : l'estimation du vendeur est PERSISTÉE. Mission 108 —
 // un « Non » à « Un sérieux concurrent ? » écarte le concurrent, même dit après la révélation.
+// Mission 131 — ou montré en directe.
 const revealed = (entry: ReadingEntry): boolean =>
-  entry.response?.seller_estimated_listing_price != null &&
-  entry.response.seller_serious_competitor !== 'no';
+  priceShown(entry.response) && entry.response?.seller_serious_competitor !== 'no';
 
 export function buildMarketReading(
   comparables: readonly ReadingEntry[],

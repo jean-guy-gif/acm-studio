@@ -24,7 +24,7 @@ export function DemoResetButton({ action }: { action: () => Promise<void> }) {
       className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-200"
     >
       <span>
-        Supprimer vos quatre dossiers et vos deux acquéreurs de démo, et les recréer neufs ? Les
+        Supprimer vos cinq dossiers et vos deux acquéreurs de démo, et les recréer neufs ? Les
         dossiers de vos collègues ne bougent pas.
       </span>
       <SubmitButton pendingLabel="Remise à zéro…" className={btnSecondary}>

@@ -1,3 +1,7 @@
+import {
+  livePresentationMode,
+  priceShown,
+} from '@/features/live-seller/services/presentation-mode';
 import { liveRhythm } from '@/features/live-seller/services/build-live-pages';
 import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
 import { cleanDescription } from '@/features/comparable-import/utils/is-junk-description';
@@ -313,10 +317,9 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       .filter((comparable, position) => {
         if (position === index) return true;
         const response = responseByComparable.get(comparable.id);
+        // Mission 131 — un prix montré en directe compte comme révélé.
         return (
-          position < index &&
-          response?.seller_estimated_listing_price != null &&
-          response.seller_serious_competitor !== 'no'
+          position < index && priceShown(response) && response?.seller_serious_competitor !== 'no'
         );
       })
       .map((comparable) => pricePerSquareMeter(comparable.price, comparable.surface_area))
@@ -446,6 +449,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
               }
             : null,
           positioningOutdated: positioningStatus === 'outdated',
+          direct: livePresentationMode(project.live_presentation_mode) === 'direct',
           // Mission 89 — les écarts montrés au vendeur se mesurent au « Prix des concurrents »,
           // le seul qu'il voit : le prix validé au positionnement, sinon le calcul courant.
           // (`competitiveMarketCentral`, juste au-dessus, reste le calcul brut : c'est lui qui
@@ -473,6 +477,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       name: project.seller_name,
       status: project.status,
       liveRhythm: liveRhythm(project.live_rhythm),
+      presentationMode: livePresentationMode(project.live_presentation_mode),
       liveStartedAt: project.live_started_at,
       liveEndedAt: project.live_ended_at,
       createdAt: project.created_at,

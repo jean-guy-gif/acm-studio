@@ -18,12 +18,15 @@ import { mapListingToProperty } from '@/features/subject-property-import/service
 // du Live, la conclusion). L'action `demo-dossiers.ts` les écrit par les mêmes services que
 // l'outil. Pur.
 
-export const DEMO_STAGES = ['to_prepare', 'ready', 'signed', 'follow_up'] as const;
+// Mission 131 — « direct » : un dossier prêt, réglé en présentation directe, jouable (la démo est
+// le miroir du produit, CLAUDE.md).
+export const DEMO_STAGES = ['to_prepare', 'ready', 'direct', 'signed', 'follow_up'] as const;
 export type DemoStage = (typeof DEMO_STAGES)[number];
 
 export const DEMO_STAGE_LABELS: Record<DemoStage, string> = {
   to_prepare: 'À préparer',
   ready: 'Prêt pour le Live',
+  direct: 'Prêt, en présentation directe',
   signed: 'Conclu, mandat signé',
   follow_up: 'À relancer',
 };
@@ -32,11 +35,15 @@ export const DEMO_STAGE_LABELS: Record<DemoStage, string> = {
 export const DEMO_STAGE_SCENARIO: Record<DemoStage, DemoScenarioId> = {
   to_prepare: 'antibes',
   ready: 'vence',
+  direct: 'vence',
   signed: 'mougins',
   follow_up: 'antibes',
 };
 
 export const DEMO_SEED_COMPETITORS = 5;
+// Le vendeur du dossier en présentation directe : un autre foyer que celui du Live interactif de
+// Vence, pour que les deux dossiers ne se confondent pas dans la liste du Live.
+export const DEMO_DIRECT_SELLER = 'M. et Mme Bernard';
 export const DEMO_DANGEROUS_REASON = 'better_location';
 export const DEMO_READINESS_MISSING = 'Le délai : il voudrait vendre avant l’été.';
 export const DEMO_FOLLOW_UP_MOTIVE = 'thinking_price';
@@ -194,7 +201,7 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
   return {
     stage,
     scenario,
-    sellerName: scenario.sellerName,
+    sellerName: stage === 'direct' ? DEMO_DIRECT_SELLER : scenario.sellerName,
     property,
     photoFiles: subject.photos.slice(0, 3),
     competitors,

@@ -104,6 +104,10 @@ describe('l’adresse d’un concurrent ne passe jamais côté vendeur', () => {
       join('features', 'market-update'),
       join('app', 'point-marche'),
       join('app', '(print)', 'builder', '[projectId]', 'point-marche'),
+      // Mission 131 — l'Étude de marché remise au vendeur, et sa page publique.
+      join('features', 'market-study'),
+      join('app', 'etude-de-marche'),
+      join('app', '(print)', 'builder', '[projectId]', 'etude-de-marche'),
     ];
     const files = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

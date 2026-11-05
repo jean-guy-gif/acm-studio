@@ -116,7 +116,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     // Mission 114 (partie B) — « Préparer ma démo » : quatre dossiers à quatre étapes, à soi. Un
     // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
     // les remet à zéro.
-    await test.step('Ma démo : quatre dossiers, un par étape', async () => {
+    await test.step('Ma démo : cinq dossiers, un par étape', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
@@ -125,12 +125,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const prepared = (await page.getByTestId('demo-dossier').count()) === 0;
       if (prepared) {
         await page.getByRole('button', { name: 'Préparer ma démo' }).click();
-        await expect(page.getByTestId('demo-dossier')).toHaveCount(4, { timeout: 180_000 });
+        await expect(page.getByTestId('demo-dossier')).toHaveCount(5, { timeout: 180_000 });
       }
       const stages = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
-      expect(stages).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+      // Mission 131 — « Prêt, en présentation directe », jouable comme le vrai produit.
+      expect(stages).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
       // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
       // Des dossiers préparés avant la mission n'en ont pas : la remise à zéro, en fin de passage,
       // les prouve alors.
@@ -830,7 +831,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const before = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-      expect(before).toHaveLength(4);
+      expect(before).toHaveLength(5);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       const confirm = page.getByTestId('demo-reset-confirm');
       await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
@@ -853,9 +854,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         })
         .not.toBe(before[0]);
       await expect(page.locator('p[role="alert"]')).toHaveCount(0);
-      await expect(page.getByTestId('demo-dossier')).toHaveCount(4);
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(5);
       const after = await hrefs();
-      for (const href of after.slice(0, 3)) expect(before).not.toContain(href);
+      for (const href of after.slice(0, 4)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — deux acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       await expectDemoBuyers(page);
