@@ -50,6 +50,7 @@ const CLEANED = [
   'saved_searches',
   // Mission 110 — les liens de la synthèse au vendeur partent avec leurs dossiers.
   'project_market_update_links',
+  'market_study_links',
   'project_market_updates',
   'seller_synthesis_links',
   'subject_properties',
@@ -213,6 +214,7 @@ begin
   delete from public.buyer_item_responses where agency_id = v_agency;
   delete from public.buyer_dossier_links where agency_id = v_agency;
   delete from public.project_market_update_links where agency_id = v_agency;
+  delete from public.market_study_links where agency_id = v_agency;
   delete from public.project_market_updates where agency_id = v_agency;
   delete from public.buyer_visit_requests where agency_id = v_agency;
   delete from public.buyer_selection_items where agency_id = v_agency;
