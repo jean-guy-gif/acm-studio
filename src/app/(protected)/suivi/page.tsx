@@ -233,7 +233,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
       <li
         key={`${task.projectId}-${task.kind}`}
         data-testid="suivi-task"
-        className="flex flex-wrap items-center gap-3 border-t border-zinc-100 py-3 first:border-0 stage:border-white/10"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-100 py-2 first:border-0 stage:border-white/10"
       >
         <span
           className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
@@ -243,7 +243,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         >
           {index + 1}
         </span>
-        <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex min-w-0 flex-1 flex-col leading-snug">
           <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
             {line.title}
           </span>
@@ -281,7 +281,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         <>
           <section
             data-testid="suivi-today"
-            className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none"
+            className="rounded-2xl border border-zinc-200/80 bg-white px-5 py-4 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none"
           >
             <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
               À faire aujourd’hui
