@@ -94,12 +94,20 @@ export function isDurationKnown(
 
 // La durée observée (et les baisses de prix, qui se montrent avec elle) n'est autorisée qu'une
 // fois la durée devinée PERSISTÉE — même principe que le prix : deviner, puis voir.
-// Mission 131 — en directe, rien ne se devine : la durée se montre avec le prix.
-export function isDurationAuthorized(entry: LiveComparableEntry): boolean {
-  return entry.response?.seller_estimated_days_on_market != null || shownDirectly(entry.response);
+// Mission 131 — en directe, rien ne se devine : la durée se montre avec le prix, y compris pour un
+// concurrent dont le prix a été deviné avant le passage en directe (`direct`, lu en base).
+export function isDurationAuthorized(entry: LiveComparableEntry, direct = false): boolean {
+  return (
+    entry.response?.seller_estimated_days_on_market != null ||
+    shownDirectly(entry.response) ||
+    (direct && entry.response?.seller_estimated_listing_price != null)
+  );
 }
 
-export function projectComparableForSeller(entry: LiveComparableEntry): SellerComparable {
+export function projectComparableForSeller(
+  entry: LiveComparableEntry,
+  direct = false,
+): SellerComparable {
   const neutral: NeutralSellerComparable = {
     authorized: false,
     id: entry.id,
@@ -123,7 +131,7 @@ export function projectComparableForSeller(entry: LiveComparableEntry): SellerCo
   if (!isComparableAuthorized(entry)) {
     return neutral;
   }
-  const durationRevealed = isDurationAuthorized(entry);
+  const durationRevealed = isDurationAuthorized(entry, direct);
 
   return {
     ...neutral,
@@ -175,7 +183,9 @@ export type SellerLiveData = {
 
 export function projectLiveForSeller(live: LiveComparativeData): SellerLiveData {
   return {
-    comparables: live.comparables.map(projectComparableForSeller),
+    comparables: live.comparables.map((entry) =>
+      projectComparableForSeller(entry, live.direct === true),
+    ),
     sellerSummary: live.sellerSummary,
   };
 }
@@ -207,7 +217,7 @@ export function authorizeComparableReveal(
   if (!entry || !isComparableAuthorized(entry)) {
     return null;
   }
-  const projected = projectComparableForSeller(entry);
+  const projected = projectComparableForSeller(entry, live.direct === true);
   return projected.authorized ? projected : null;
 }
 

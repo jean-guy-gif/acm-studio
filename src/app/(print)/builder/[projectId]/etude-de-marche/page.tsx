@@ -22,17 +22,33 @@ const day = (value: string): string =>
 // Mission 131 — l'Étude de marché, côté conseiller : le document du jour, à imprimer (« Enregistrer
 // au format PDF ») ou à envoyer par un lien de 30 jours ; « Sans photo » par concurrent, le même
 // choix que la synthèse (M113). Pour tout dossier non archivé de l'agence, sans attendre le Live.
+// Ouverte depuis le Live (`?vue=live`), la tablette est tournée vers le vendeur : le document seul,
+// avec « Télécharger en PDF » — rien de ce qui est réservé au conseiller (liens, « Sans photo »,
+// retour au dossier), comme les écrans neutres du Live (M92).
 export default async function MarketStudyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ vue?: string }>;
 }) {
   const { projectId } = await params;
+  const { vue } = await searchParams;
   const profile = await getProfile();
   if (!profile) notFound();
   const supabase = await createClient();
   const document = await loadMarketStudy(supabase, projectId, profile.agency_id);
   if (!document) notFound();
+  if (vue === 'live') {
+    return (
+      <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:p-6 print:block print:bg-white print:p-0">
+        <div className="mx-auto flex w-full max-w-[210mm] justify-end print:hidden">
+          <SynthesisPrintButton />
+        </div>
+        <MarketStudyDocument document={document} />
+      </div>
+    );
+  }
   const { data: links } = await supabase
     .from('market_study_links')
     .select('id, created_at, expires_at')

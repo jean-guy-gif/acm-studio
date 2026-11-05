@@ -140,7 +140,17 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     ).toBeVisible();
     await page.getByTestId('live-options').click();
     const study = page.getByRole('menuitem', { name: 'Télécharger l’Étude de marché' });
-    await expect(study).toHaveAttribute('href', `/builder/${projectId}/etude-de-marche`);
+    await expect(study).toHaveAttribute('href', `/builder/${projectId}/etude-de-marche?vue=live`);
+    // Ouverte devant le vendeur, dans un nouvel onglet : le document seul, rien du conseiller.
+    const [popup] = await Promise.all([page.context().waitForEvent('page'), study.click()]);
+    await popup.waitForLoadState();
+    await expect(popup).toHaveURL(/\/etude-de-marche\?vue=live$/);
+    await expect(popup.getByText(/Étude de marché/).first()).toBeVisible();
+    await expect(popup.getByRole('link', { name: /Retour au dossier/ })).toHaveCount(0);
+    await expect(popup.getByText(/Créer un lien/)).toHaveCount(0);
+    expect(await pagePayload(popup)).not.toContain(DEMO_LISTING_HOST);
+    await popup.close();
+    await page.getByTestId('live-options').click();
     await page.getByRole('menuitem', { name: 'Passer en présentation directe' }).click();
     // Le même concurrent, son prix affiché d'emblée, sans question.
     await expect(

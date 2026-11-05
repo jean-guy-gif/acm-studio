@@ -66,14 +66,16 @@ export async function writeShownDirectly(
   if (existing?.shown_directly_at != null) {
     return { ok: true };
   }
-  if (
-    existing?.seller_estimated_listing_price != null ||
-    existing?.seller_serious_competitor === 'no'
-  ) {
+  if (existing?.seller_serious_competitor === 'no') {
     return { ok: false, error: ALREADY_ANSWERED_MESSAGE };
   }
   if (project.live_presentation_mode !== 'direct') {
     return { ok: false, error: NOT_DIRECT_MESSAGE };
+  }
+  // Deviné avant le passage en directe : son prix est déjà livré, et sa devinette reste telle
+  // quelle ; rien n'est écrit (la base refuserait le fait), la durée suit par la même livraison.
+  if (existing?.seller_estimated_listing_price != null) {
+    return { ok: true };
   }
 
   const shownAt = new Date().toISOString();

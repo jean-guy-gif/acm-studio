@@ -192,7 +192,13 @@ export function LivePageAnalysis({
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>Analyse des prix</h2>
-        <p className={questionHint}>Voici le marché, face au prix que vous aviez en tête.</p>
+        {/* Mission 131 — en présentation directe, aucun prix n'a été demandé au vendeur : rien ne
+            lui dit qu'il n'a pas répondu. */}
+        <p className={questionHint}>
+          {gaps.sellerPerceivedPrice != null
+            ? 'Voici le marché, face au prix que vous aviez en tête.'
+            : 'Voici le marché des biens que nous avons regardés ensemble.'}
+        </p>
         {gaps.sellerPerceivedPrice != null ? (
           <p
             className="font-title text-xl font-semibold text-zinc-900 sm:text-2xl stage:text-white"
@@ -207,10 +213,12 @@ export function LivePageAnalysis({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Votre valeur perçue</div>
-          <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
-        </div>
+        {gaps.sellerPerceivedPrice != null ? (
+          <div className={`${panel} flex flex-col gap-1.5`}>
+            <div className={statLabel}>Votre valeur perçue</div>
+            <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
+          </div>
+        ) : null}
         {/* Mission 109 — sans prix des concurrents (aucune décision, ou calcul impossible),
             ni le panneau ni « Calculé sur N ». */}
         {gaps.competitiveMarketCentral != null ? (

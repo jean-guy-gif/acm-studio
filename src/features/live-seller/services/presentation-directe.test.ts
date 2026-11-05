@@ -119,13 +119,13 @@ describe('les écrans de la présentation directe', () => {
       sellerSummary: { seller_perceived_property_price: 350_000 },
     };
     const pages = buildLivePages(live, false, 'complete', 'direct');
+    // Le 1er, deviné : sa révélation et sa durée deviennent son écran direct (rien à deviner).
     expect(types(pages)).toEqual([
       'intro',
       'seller_perceived_price',
       'comparable_competition',
       'comparable_price',
-      'comparable_price_reveal',
-      'comparable_duration',
+      'comparable_direct',
       'comparable_competition',
       'comparable_direct',
       'comparable_direct',
@@ -256,6 +256,17 @@ describe('montrer un concurrent en directe', () => {
       comparable: retained,
       response: { id: 'r-1', shown_directly_at: null, seller_estimated_listing_price: 300_000 },
     };
+    // Son prix est déjà livré ; la durée suit, sans rien écrire.
+    expect(await writeShownDirectly('p-1', 'c-1')).toEqual({ ok: true });
+    expect(server.writes()).toEqual([]);
+  });
+
+  it('un « Non » ne se montre pas en directe', async () => {
+    rows = {
+      project: { id: 'p-1', status: 'ready_for_meeting', live_presentation_mode: 'direct' },
+      comparable: retained,
+      response: { id: 'r-1', shown_directly_at: null, seller_serious_competitor: 'no' },
+    };
     expect(await writeShownDirectly('p-1', 'c-1')).toEqual({
       ok: false,
       error: ALREADY_ANSWERED_MESSAGE,
@@ -298,5 +309,31 @@ describe('montrer un concurrent en directe', () => {
     };
     expect((await writeShownDirectly('p-1', 'c-1')).ok).toBe(false);
     expect(server.writes()).toEqual([]);
+  });
+});
+
+describe('le plus proche, proposé par le conseiller', () => {
+  it('revérifié au serveur : mode direct, prix montré, pas de « Non »', async () => {
+    const { saveAdvisorClosest } =
+      await import('@/features/live-seller/actions/save-advisor-closest');
+    const retained = { id: 'c-1', is_selected: true, excluded_from_live: false };
+    rows = {
+      project: { id: 'p-1', status: 'ready_for_meeting', live_presentation_mode: 'interactive' },
+      comparable: retained,
+    };
+    expect((await saveAdvisorClosest('p-1', 'c-1')).ok).toBe(false);
+    rows = {
+      project: { id: 'p-1', status: 'ready_for_meeting', live_presentation_mode: 'direct' },
+      comparable: retained,
+      response: { seller_serious_competitor: 'no', shown_directly_at: null },
+    };
+    expect((await saveAdvisorClosest('p-1', 'c-1')).ok).toBe(false);
+    rows = {
+      project: { id: 'p-1', status: 'ready_for_meeting', live_presentation_mode: 'direct' },
+      comparable: retained,
+      response: { shown_directly_at: '2026-11-05T10:00:00Z' },
+    };
+    expect(server.writes()).toEqual([]);
+    expect(await saveAdvisorClosest('p-1', 'c-1')).toEqual({ ok: true });
   });
 });

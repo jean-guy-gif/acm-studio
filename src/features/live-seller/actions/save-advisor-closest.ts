@@ -1,6 +1,7 @@
 'use server';
 
 import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
+import { priceShown } from '@/features/live-seller/services/presentation-mode';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -22,7 +23,7 @@ export async function saveAdvisorClosest(
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id, status')
+    .select('id, status, live_presentation_mode')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
@@ -31,6 +32,10 @@ export async function saveAdvisorClosest(
   }
   if (isLiveClosed(project.status)) {
     return { ok: false, error: LIVE_CLOSED_MESSAGE };
+  }
+  // Une proposition du conseiller en présentation directe seulement ; la retirer reste possible.
+  if (comparableId != null && project.live_presentation_mode !== 'direct') {
+    return { ok: false, error: 'Le Live n’est pas en présentation directe.' };
   }
   if (comparableId != null) {
     const { data: comparable } = await supabase
@@ -42,6 +47,17 @@ export async function saveAdvisorClosest(
       .maybeSingle();
     if (!comparable || !comparable.is_selected || comparable.excluded_from_live) {
       return { ok: false, error: 'Ce concurrent n’est pas montré dans ce rendez-vous.' };
+    }
+    // Son prix a été montré au vendeur (deviné ou en directe), et il ne l'a pas écarté par « Non ».
+    const { data: response } = await supabase
+      .from('live_seller_responses')
+      .select('seller_estimated_listing_price, shown_directly_at, seller_serious_competitor')
+      .eq('project_id', projectId)
+      .eq('comparable_id', comparableId)
+      .eq('agency_id', profile.agency_id)
+      .maybeSingle();
+    if (!priceShown(response) || response?.seller_serious_competitor === 'no') {
+      return { ok: false, error: 'Ce concurrent n’a pas encore été montré.' };
     }
   }
 

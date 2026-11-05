@@ -99,8 +99,9 @@ export function LiveLaunchActions({
   });
   const href = `/live/${projectId}`;
   const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
+  // Mission 131 — « Document seul » n'ouvre jamais le Live, même depuis l'étape « Lancer le Live ».
   const direct =
-    check.status === 'blocked'
+    check.status === 'blocked' || presentationMode === 'document'
       ? null
       : resume.started
         ? resumeIndex > 0

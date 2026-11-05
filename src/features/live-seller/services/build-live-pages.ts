@@ -181,6 +181,29 @@ export function buildLivePages(
         : comparable.durationKnown === false
           ? COMPARABLE_STEPS.filter((step) => step.type !== 'comparable_duration')
           : COMPARABLE_STEPS;
+    // Mission 131 — deviné avant le passage en directe : ses écrans de réponse restent, les
+    // suivants (révélation, durée) deviennent son écran direct, sans rien lui demander.
+    if (direct && guessed && !rejected) {
+      for (const stepDef of steps.filter((s) => s.step <= (quick ? 1 : 2))) {
+        pages.push({
+          key: `${stepDef.type}:${comparable.id}`,
+          type: stepDef.type,
+          title: stepDef.title,
+          comparableId: comparable.id,
+          comparableIndex: index + 1,
+          step: stepDef.step,
+        });
+      }
+      pages.push({
+        key: `comparable_direct:${comparable.id}`,
+        type: 'comparable_direct',
+        title: 'Son prix et son temps de vente',
+        comparableId: comparable.id,
+        comparableIndex: index + 1,
+        step: quick ? 2 : 3,
+      });
+      return;
+    }
     for (const stepDef of steps) {
       pages.push({
         key: `${stepDef.type}:${comparable.id}`,
@@ -289,6 +312,13 @@ export function indexAfterModeChange(
     return sameKey;
   }
   if (current.comparableId != null) {
+    // Un écran du concurrent devenu direct : son écran direct, pas un retour à sa première question.
+    const direct = next.findIndex(
+      (page) => page.comparableId === current.comparableId && page.type === 'comparable_direct',
+    );
+    if (direct >= 0) {
+      return direct;
+    }
     const sameComparable = next.findIndex((page) => page.comparableId === current.comparableId);
     if (sameComparable >= 0) {
       return sameComparable;

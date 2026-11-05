@@ -74,6 +74,9 @@ export type LiveComparativeData = {
   // montré au vendeur, « Prix retenu par votre conseiller », sans « à partir de N concurrents ».
   positioningOutdated: boolean;
   priceGaps: LivePriceGaps;
+  // Mission 131 — le dossier est-il en présentation directe ? Lu en base : il autorise la durée
+  // d'un concurrent déjà deviné sans la faire deviner (les écrans suivants deviennent directs).
+  direct?: boolean;
 };
 
 export type SellerPresentationStatus = 'ready' | 'incomplete';

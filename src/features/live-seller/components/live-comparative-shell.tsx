@@ -437,8 +437,13 @@ export function LiveComparativeShell({
     },
     [projectId],
   );
+  // À livrer : le prix pas encore montré, ou — deviné avant le passage en directe — la durée.
   const directPendingId =
-    page.type === 'comparable_direct' && entry != null && !entry.authorized ? entry.id : null;
+    page.type === 'comparable_direct' &&
+    entry != null &&
+    (!entry.authorized || (entry.durationKnown && entry.marketDuration == null))
+      ? entry.id
+      : null;
   useEffect(() => {
     if (directPendingId == null || directRequestedRef.current.has(directPendingId)) return;
     void showDirectly(directPendingId);
@@ -531,6 +536,11 @@ export function LiveComparativeShell({
           return;
         }
       }
+      go(1);
+      return;
+    }
+    // Mission 131 — en directe, « Votre bien » ne demande rien : rien à enregistrer.
+    if (page.type === 'subject_property' && mode === 'direct') {
       go(1);
       return;
     }
@@ -808,6 +818,7 @@ export function LiveComparativeShell({
     runBackground,
     harvest,
     showDirectly,
+    mode,
   ]);
 
   // Mission 94 — « Passer » : le vendeur ne reformule pas son prix. Rien n'est enregistré ; la
@@ -1101,7 +1112,7 @@ export function LiveComparativeShell({
               </button>
               <a
                 role="menuitem"
-                href={`/builder/${projectId}/etude-de-marche`}
+                href={`/builder/${projectId}/etude-de-marche?vue=live`}
                 target="_blank"
                 rel="noopener"
                 onClick={() => setMenuOpen(false)}
@@ -1173,7 +1184,7 @@ export function LiveComparativeShell({
             agencyName={agencyName}
           />
         ) : page.type === 'subject_property' && property ? (
-          <LivePageProperty property={property} summary={summary} />
+          <LivePageProperty property={property} summary={summary} asksSeller={mode !== 'direct'} />
         ) : page.type === 'comparable_competition' && entry ? (
           <LivePageCompetition entry={entry} />
         ) : page.type === 'comparable_price' && entry ? (

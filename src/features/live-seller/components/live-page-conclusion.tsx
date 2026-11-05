@@ -67,10 +67,13 @@ export function LivePageConclusion({
       {/* Mission 89 — devant le vendeur, un seul prix calculé : « Prix des concurrents ». Le
           « Marché calculé » brut ne s'affiche plus ici. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Votre valeur perçue</div>
-          <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
-        </div>
+        {/* Mission 131 — sans valeur perçue (présentation directe), pas de case vide. */}
+        {summary?.seller_perceived_property_price != null ? (
+          <div className={`${panel} flex flex-col gap-1.5`}>
+            <div className={statLabel}>Votre valeur perçue</div>
+            <div className={bigValue}>{euro(summary.seller_perceived_property_price)}</div>
+          </div>
+        ) : null}
         {/* Mission 109 — sans décision de prix enregistrée, aucun prix final devant le vendeur. */}
         {decision ? (
           <div className={`${panel} flex flex-col gap-1.5`}>

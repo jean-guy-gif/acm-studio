@@ -49,8 +49,12 @@ export function canAdvanceLivePage(
   }
   // MISSION 131 — présentation directe : on ne quitte l'écran d'un concurrent qu'une fois le fait
   // « montré en directe » enregistré (c'est lui qui a livré le prix, et qui le fige).
+  // Un concurrent deviné avant le passage en directe a son prix en base : il avance aussi.
   if (pageType === 'comparable_direct') {
-    return entry?.response?.shown_directly_at != null;
+    return (
+      entry?.response?.shown_directly_at != null ||
+      entry?.response?.seller_estimated_listing_price != null
+    );
   }
   // MISSION 82 — le vendeur dit son prix avant de voir un concurrent : on ne quitte la
   // page qu'une fois ce prix PERSISTÉ (aucun concurrent atteignable avant, même par l'URL).

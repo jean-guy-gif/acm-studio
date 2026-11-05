@@ -449,6 +449,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
               }
             : null,
           positioningOutdated: positioningStatus === 'outdated',
+          direct: livePresentationMode(project.live_presentation_mode) === 'direct',
           // Mission 89 — les écarts montrés au vendeur se mesurent au « Prix des concurrents »,
           // le seul qu'il voit : le prix validé au positionnement, sinon le calcul courant.
           // (`competitiveMarketCentral`, juste au-dessus, reste le calcul brut : c'est lui qui
