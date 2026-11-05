@@ -2,3 +2,6 @@
 // vendeurs : seul un manager la modifie. La même phrase à l'écran et au refus de l'action.
 export const IDENTITY_MANAGER_ONLY_MESSAGE =
   'Seul un manager de l’agence peut modifier son identité.';
+
+// Mission 87 — « Nom sur les documents », 40 caractères au plus.
+export const DOCUMENT_NAME_MAX_LENGTH = 40;

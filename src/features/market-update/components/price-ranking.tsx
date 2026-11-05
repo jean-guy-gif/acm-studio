@@ -122,7 +122,15 @@ function StepCard({
   );
 }
 
-function Verdict({ ranking }: { ranking: Ranking }) {
+// Mission 129 — le verdict, dans le classement et sur la couverture du document (décision de
+// Jean-Guy, 05/11 : le message clé se lit dès la première page, téléphone compris).
+export function Verdict({
+  ranking,
+  testId = 'ranking-verdict',
+}: {
+  ranking: Ranking;
+  testId?: string;
+}) {
   const { verdict } = ranking;
   const tier = TIER_CLASSES[verdict.tier];
   const [before, after] = verdict.emphasis
@@ -131,7 +139,7 @@ function Verdict({ ranking }: { ranking: Ranking }) {
   return (
     <div
       className={`flex items-start gap-4 rounded-xl border p-4 sm:p-5 ${tier.border} ${tier.soft}`}
-      data-testid="ranking-verdict"
+      data-testid={testId}
       data-tier={verdict.tier}
     >
       <span

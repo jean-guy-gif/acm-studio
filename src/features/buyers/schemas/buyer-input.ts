@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
 import { splitCities } from '@/features/buyers/services/buyer-criteria';
 import {
   BUYER_CRITERIA,
@@ -15,8 +16,7 @@ import {
 // il n'y a pas plus de chambres que de pièces. Tout le reste est facultatif : une case vide reste
 // vide, jamais devinée.
 
-export const BUYER_NAME_MAX = 80;
-export const BUYER_TEXT_MAX = 2000;
+export { BUYER_NAME_MAX, BUYER_TEXT_MAX };
 export const BUYER_FORM_FIELDS = [
   'name',
   'phone',

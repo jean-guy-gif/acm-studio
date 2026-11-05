@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { GOLD, PriceRankingView } from '@/features/market-update/components/price-ranking';
+import { GOLD, PriceRankingView, Verdict } from '@/features/market-update/components/price-ranking';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
@@ -440,6 +440,12 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
               .filter(Boolean)
               .join(' · ')}
           </p>
+          {/* Le verdict dès la couverture, de la couleur de la place (Jean-Guy, 05/11). */}
+          {ranking ? (
+            <div className="mt-6 text-zinc-800">
+              <Verdict ranking={ranking} testId="market-update-cover-verdict" />
+            </div>
+          ) : null}
           <div className="mt-8 flex flex-col gap-4 border-t border-white/35 pt-4 sm:flex-row [&>*]:flex-1">
             {coverFigures.map((figure) => (
               <div key={figure.label}>

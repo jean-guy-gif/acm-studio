@@ -75,12 +75,17 @@ import { identicalSurfaceTolerance } from '@/features/competitor-search/utils/su
 // avant de passer au suivant. Plafond de 60 annonces facturées par recherche ; au plafond avant
 // 10, « Chercher encore » reprend exactement où l'on s'était arrêté, 20 annonces à la fois.
 
-export const STREAM_ESTATE_TARGET = 10;
-export const STREAM_ESTATE_BILLING_CAP = 60;
-// « Chercher encore » : une page de plus, au choix du conseiller, une fois le plafond atteint.
-export const STREAM_ESTATE_MORE_CAP = 20;
-// Prix d'une annonce renvoyée (essai Stream Estate) : 37 annonces = 0,37 €.
-export const STREAM_ESTATE_PRICE_PER_ADVERT_EUR = 0.01;
+// Mission 128 B — les constantes vivent sans zod, pour l'écran.
+export {
+  STREAM_ESTATE_BILLING_CAP,
+  STREAM_ESTATE_MORE_CAP,
+  STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
+  STREAM_ESTATE_TARGET,
+} from '@/features/competitor-search/services/stream-estate-limits';
+import {
+  STREAM_ESTATE_BILLING_CAP,
+  STREAM_ESTATE_TARGET,
+} from '@/features/competitor-search/services/stream-estate-limits';
 // Marge autour du cercle pour lister les communes voisines : une commune dont le CENTRE est à
 // moins de (rayon + 8 km) du bien peut avoir une partie de son territoire dans le cercle.
 export const NEIGHBOUR_MARGIN_KM = 8;

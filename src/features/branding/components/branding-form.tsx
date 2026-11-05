@@ -7,9 +7,11 @@ import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 
 import { btnPrimary, card, errorText, fieldLabel, metaLabel, okText } from '@/components/ui/styles';
 import { saveBranding } from '@/features/branding/actions/save-branding';
-import { IDENTITY_MANAGER_ONLY_MESSAGE } from '@/features/branding/constants';
+import {
+  DOCUMENT_NAME_MAX_LENGTH,
+  IDENTITY_MANAGER_ONLY_MESSAGE,
+} from '@/features/branding/constants';
 import { EMBEDDED_FONTS, embeddedFontCssVar } from '@/features/branding/fonts/font-registry';
-import { DOCUMENT_NAME_MAX_LENGTH } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
 
 type LogoState = { file: File | null; url: string | null; isJpeg: boolean };
@@ -345,10 +347,10 @@ export function BrandingForm({
               {/* Preuve : les couleurs sémantiques de la grille ne bougent pas. */}
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="rounded-md bg-emerald-400/15 px-2 py-1 text-emerald-300">
-                  Avantage concurrent
+                  Avantage pour vous
                 </span>
                 <span className="rounded-md bg-amber-400/15 px-2 py-1 text-amber-300">
-                  Faiblesse
+                  Avantage pour lui
                 </span>
                 <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">Équivalent</span>
               </div>

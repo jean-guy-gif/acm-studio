@@ -8,17 +8,16 @@ import {
 import type { ComparisonStatus } from '@/features/live-seller/constants';
 import type { FeatureComparison } from '@/features/live-seller/types';
 
-// Colour convention (always the COMPETITOR relative to the seller's property),
-// matching Laurent's training — vert = mieux, gris = pareil, orange = moins bien:
-//   competitor_advantage -> green         (avantage du concurrent)
+// Colour convention, read from the SELLER's side (Jean-Guy, 05/11, as on the Point marché):
+//   competitor_advantage -> orange        (avantage pour lui : attention)
 //   same                 -> neutral grey  (équivalent)
-//   competitor_weakness  -> orange        (faiblesse du concurrent)
+//   competitor_weakness  -> green         (avantage pour vous)
 //   unknown              -> NOT SHOWN     (filtered out below; the engine still
 //                                          produces it for the advisor report)
 const STATUS_HINT: Record<ComparisonStatus, string> = {
   same: 'Équivalent',
-  competitor_advantage: 'Avantage concurrent',
-  competitor_weakness: 'Faiblesse concurrent',
+  competitor_advantage: 'Avantage pour lui',
+  competitor_weakness: 'Avantage pour vous',
   unknown: 'Non renseigné',
 };
 
@@ -45,10 +44,10 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
         <span className={statLabel}>Face à votre bien, critère par critère</span>
         <span className="text-xs text-zinc-400 stage:text-white/40">
           <span className="font-semibold text-emerald-600 stage:text-emerald-300">vert</span> =
-          avantage du concurrent ·{' '}
+          avantage pour vous ·{' '}
           <span className="font-semibold text-zinc-500 stage:text-white/70">gris</span> = équivalent
           · <span className="font-semibold text-amber-600 stage:text-amber-300">orange</span> =
-          faiblesse
+          avantage pour lui
         </span>
       </div>
       <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">

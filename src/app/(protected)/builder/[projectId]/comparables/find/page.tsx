@@ -5,7 +5,7 @@ import {
 } from '@/features/competitor-search/actions/saved-searches';
 import { getSavedSearches } from '@/features/competitor-search/queries/get-saved-searches';
 import { saveSearchDefaults } from '@/features/competitor-search/actions/save-search-defaults';
-import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings-schema';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 

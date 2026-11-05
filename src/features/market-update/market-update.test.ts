@@ -7,6 +7,7 @@ vi.mock('server-only', () => ({}));
 
 import { MarketUpdateDocument } from '@/features/market-update/components/market-update-document';
 import { competitorFactLine } from '@/features/market-update/components/market-update-panel';
+import { Grid } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { loadMarketUpdate } from '@/features/market-update/queries/load-market-update';
 import {
   goneConclusionLabel,
@@ -489,6 +490,8 @@ describe('le document Point marché', () => {
     // Mission 129 — le classement remplace les trois lignes.
     expect(html).not.toContain('data-testid="price-lines-figure"');
     expect(html).toContain('data-testid="ranking-verdict"');
+    // Jean-Guy, 05/11 — le verdict dès la couverture (document, PDF et lien).
+    expect(html).toContain('data-testid="market-update-cover-verdict"');
     expect(html.split('data-testid="ranking-step"').length - 1).toBe(3);
     const listed = document.summary.competitors.filter(
       (item) => item.conclusion == null && item.state !== 'gone' && item.currentPrice != null,
@@ -604,6 +607,39 @@ describe('le document Point marché', () => {
     expect(html).not.toContain(`${ids[3]}-1.jpg`);
     expect(html).toContain(`${ids[0]}-1.jpg`);
     expect(document.competitors[0].photoUrls.length).toBeLessThanOrEqual(3);
+  });
+
+  it('« Avantage pour vous » est vert, « Avantage pour lui » orange, partout où la grille s’affiche', () => {
+    const competitor = {
+      id: ids[0],
+      position: 1,
+      label: 'Maison · 7 pièces · 210 m² · Mougins',
+      surfaceArea: 210,
+      photoUrl: null,
+      hasPhoto: false,
+      photoHidden: false,
+      features: [
+        {
+          label: 'Surface',
+          value: '200 m²',
+          sellerValue: '210 m²',
+          status: 'competitor_weakness' as const,
+        },
+        {
+          label: 'Piscine',
+          value: 'Oui',
+          sellerValue: 'Non',
+          status: 'competitor_advantage' as const,
+        },
+      ],
+      serious: null,
+      revealed: null,
+    };
+    const cell = (html: string, label: string) =>
+      html.match(new RegExp(`class="([^"]*)">${label}<`))?.[1] ?? '';
+    const html = renderToStaticMarkup(createElement(Grid, { competitor }));
+    expect(cell(html, 'Avantage pour vous')).toContain('emerald');
+    expect(cell(html, 'Avantage pour lui')).toContain('amber');
   });
 
   it('le code du document ne lit ni titre, ni lien, ni adresse, ni vendeur', () => {

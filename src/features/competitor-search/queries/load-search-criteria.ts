@@ -1,9 +1,7 @@
 import 'server-only';
 
-import {
-  parseSearchSettings,
-  type SearchSettings,
-} from '@/features/competitor-search/services/search-settings';
+import { type SearchSettings } from '@/features/competitor-search/services/search-settings';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings-schema';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
 import { completeAdvisorRange } from '@/features/subject-property/services/advisor-range';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';

@@ -8,7 +8,7 @@ import {
 } from '@/features/competitor-search/services/learn-from-decisions';
 import { geoProviderFor } from '@/features/competitor-search/services/geo-provider';
 import { rankCandidates } from '@/features/competitor-search/services/rank-candidates';
-import { parseSearchSettings } from '@/features/competitor-search/services/search-settings';
+import { parseSearchSettings } from '@/features/competitor-search/services/search-settings-schema';
 import {
   arrondissementInsee,
   neighbourArrondissements,

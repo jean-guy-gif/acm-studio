@@ -29,16 +29,18 @@ const SERIOUS_SHORT: Record<'yes' | 'unsure' | 'no', string> = {
   no: SERIOUS_COMPETITOR_LABELS.no,
 };
 
-// Les couleurs de la grille du Live (M40), sémantiques : la charte n'y touche pas (M55).
+// Les couleurs de la grille, du côté du vendeur, comme au Live et sur le Point marché (Jean-Guy,
+// 05/11) : vert ce qui l'avantage, orange (« attention ») ce qui avantage le concurrent ; la charte
+// n'y touche pas (M55).
 const STATUS = {
   competitor_advantage: {
     label: 'Avantage pour lui',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+    className: 'border-amber-300 bg-orange-50 text-amber-800',
   },
   same: { label: 'Équivalent', className: 'border-zinc-300 bg-zinc-100 text-zinc-600' },
   competitor_weakness: {
     label: 'Avantage pour vous',
-    className: 'border-amber-300 bg-amber-50 text-amber-800',
+    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
   },
 } as const;
 

@@ -1,6 +1,4 @@
-import { z } from 'zod';
-
-import { DPE_CLASSES, type DpeClass } from '@/features/dpe/services/dpe';
+import type { DpeClass } from '@/features/dpe/services/dpe';
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import { formatSquareMeters } from '@/lib/format';
 
@@ -52,20 +50,6 @@ export const DEFAULT_SEARCH_FILTERS: SearchFilters = {
   pool: false,
 };
 
-const nonEmptyUnique = <T extends string>(values: readonly [T, ...T[]]) =>
-  z
-    .array(z.enum(values))
-    .min(1)
-    .refine((list) => new Set(list).size === list.length);
-
-export const searchFiltersSchema = z.object({
-  dpe: nonEmptyUnique(DPE_CLASSES).nullable(),
-  minFloor: z.number().int().min(0).max(60).nullable(),
-  outdoor: nonEmptyUnique(OUTDOOR_CHOICES).nullable(),
-  minLand: z.number().int().min(1).max(1_000_000).nullable(),
-  pool: z.boolean(),
-});
-
 export function isDefaultFilters(filters: SearchFilters | null | undefined): boolean {
   return (
     filters == null ||
@@ -77,7 +61,8 @@ export function isDefaultFilters(filters: SearchFilters | null | undefined): boo
   );
 }
 
-export type FilterName = 'dpe' | 'minFloor' | 'outdoor' | 'minLand' | 'pool';
+export type { FilterName } from '@/features/competitor-search/services/filter-labels';
+import type { FilterName } from '@/features/competitor-search/services/filter-labels';
 
 // --- Ce que l'écran et le bilan en disent ---------------------------------------------------
 
@@ -103,14 +88,8 @@ export function describeFilters(filters: SearchFilters): string[] {
   ].filter((part): part is string => part != null);
 }
 
-// Ce que dit la carte d'un bien gardé dont la donnée manque.
-export const UNKNOWN_LABELS: Record<FilterName, string> = {
-  dpe: 'DPE non indiqué',
-  minFloor: 'Étage non indiqué',
-  outdoor: 'Extérieur non indiqué',
-  minLand: 'Terrain non indiqué',
-  pool: 'Piscine non indiquée',
-};
+// Mission 128 B — ce que dit la carte d'un bien gardé dont la donnée manque vit sans zod.
+export { UNKNOWN_LABELS } from '@/features/competitor-search/services/filter-labels';
 
 // --- Le tri des biens reçus -----------------------------------------------------------------
 
@@ -182,37 +161,6 @@ export type SearchFiltersInput = {
 };
 
 export type ReadFiltersResult = { ok: true; filters: SearchFilters } | { ok: false; error: string };
-
-const digits = (text: string): string => text.replace(/[\s  m²]/g, '');
-
-function readWhole(text: string, label: string, min: number): number | null | { error: string } {
-  const value = digits(text);
-  if (value === '') return null;
-  if (!/^\d+$/.test(value) || Number(value) < min) {
-    return { error: `${label} : un nombre entier${min > 0 ? ` d'au moins ${min}` : ''}.` };
-  }
-  return Number(value);
-}
-
-export function readSearchFiltersInput(input: SearchFiltersInput): ReadFiltersResult {
-  const minFloor = readWhole(input.minFloor, 'Étage minimum', 0);
-  if (typeof minFloor === 'object' && minFloor != null) return { ok: false, error: minFloor.error };
-  const minLand = readWhole(input.minLand, 'Terrain minimum', 1);
-  if (typeof minLand === 'object' && minLand != null) return { ok: false, error: minLand.error };
-  const parsed = searchFiltersSchema.safeParse({
-    dpe: input.dpe.length > 0 ? DPE_CLASSES.filter((value) => input.dpe.includes(value)) : null,
-    minFloor,
-    outdoor:
-      input.outdoor.length > 0
-        ? OUTDOOR_CHOICES.filter((value) => input.outdoor.includes(value))
-        : null,
-    minLand,
-    pool: input.pool,
-  });
-  return parsed.success
-    ? { ok: true, filters: parsed.data }
-    : { ok: false, error: 'Critères non reconnus : vérifiez les valeurs saisies.' };
-}
 
 export function filtersToInput(filters: SearchFilters): SearchFiltersInput {
   return {

@@ -5,7 +5,7 @@ import {
 import {
   STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
-} from '@/features/competitor-search/services/stream-estate-tiers';
+} from '@/features/competitor-search/services/stream-estate-limits';
 import {
   isDefaultSettings,
   type SearchSettings,

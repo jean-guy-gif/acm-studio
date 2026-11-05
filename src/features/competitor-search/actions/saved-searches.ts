@@ -8,14 +8,16 @@ import {
 } from '@/features/competitor-search/services/saved-searches';
 import {
   applySavedSearch,
-  parseSavedSearchSettings,
-  parseSearchSettings,
-  readSearchSettingsInput,
   savedSearchSettings,
   settingsToStore,
   type SearchSettings,
   type SearchSettingsInput,
 } from '@/features/competitor-search/services/search-settings';
+import {
+  parseSavedSearchSettings,
+  parseSearchSettings,
+  readSearchSettingsInput,
+} from '@/features/competitor-search/services/search-settings-schema';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
