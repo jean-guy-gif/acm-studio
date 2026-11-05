@@ -102,6 +102,7 @@ describe('parseStreamEstateResponse', () => {
         propertyId: '828d2950-aa3c-4c9b-89df-dcd8e0bc8cde',
         originSite: "Bien'ici",
         onlineSince: '2026-09-21T16:53:52+02:00',
+        firstKnownAt: '2026-09-21T16:53:52+02:00',
         lastSeenAt: '2026-09-28T17:24:40+02:00',
         priceDrops: [-4.45],
         // Mission 101 — les chambres et la baisse datée, gardées de la même réponse.

@@ -11,7 +11,10 @@ import {
   parseMarketUpdateSummary,
   type MarketUpdateCompetitorRow,
 } from '@/features/market-update/services/market-update-summary';
-import { filterNewcomers } from '@/features/market-update/services/newcomers-filter';
+import {
+  filterNewcomers,
+  newcomerPriceRanges,
+} from '@/features/market-update/services/newcomers-filter';
 import { buildPriceLines } from '@/features/market-update/services/price-lines';
 
 // Mission 127 B — les nouveaux venus : le filtre « vu sur le marché après le rendez-vous, absent du
@@ -183,6 +186,9 @@ describe('le point avec des nouveaux venus', () => {
         found: 2,
         billed: 20,
         limitedToPrice: true,
+        priceRange: null,
+        widened: false,
+        excludedUnderPrice: 0,
         excludedNoDate: 0,
         proposed: [],
       },
@@ -223,6 +229,9 @@ describe('le point avec des nouveaux venus', () => {
             found: 0,
             billed: 60,
             limitedToPrice: true,
+            priceRange: null,
+            widened: false,
+            excludedUnderPrice: 0,
             excludedNoDate: 0,
             proposed: [],
           },
@@ -283,5 +292,52 @@ describe('le jour du point (Paris)', () => {
     expect(isPointOfDay('2026-10-29T10:00:00.000Z', new Date('2026-10-30T07:00:00.000Z'))).toBe(
       false,
     );
+  });
+});
+
+// Mission 129 — le plancher, les deux tranches, et la plus ancienne date connue (cas de Biot).
+describe('les nouveaux venus, M129', () => {
+  it('la fourchette : −5 % puis −10 %, deux tranches disjointes', () => {
+    expect(newcomerPriceRanges(849_000)).toEqual({
+      first: { min: 806_000, max: 849_000 },
+      widened: { min: 764_000, max: 805_999 },
+    });
+  });
+
+  it('sous le plancher : écarté et compté (un bien à 400 000 € pour un mandat à 849 000 €)', () => {
+    const outcome = filterNewcomers(
+      [
+        candidate('https://www.seloger.com/annonces/a.htm', 400_000, '2026-10-20T10:00:00.000Z'),
+        candidate('https://www.seloger.com/annonces/b.htm', 820_000, '2026-10-20T10:00:00.000Z'),
+      ],
+      { concludedAt: CONCLUDED, knownUrls: [], priceCeiling: 849_000, priceFloor: 806_000 },
+    );
+    expect(outcome.newcomers.map((item) => item.price)).toEqual([820_000]);
+    expect(outcome.excludedUnderPrice).toBe(1);
+  });
+
+  it('Biot : un bien recréé chez Stream Estate après le rendez-vous du 21/10/2026, publié le 17/06/2025, n’est jamais proposé', () => {
+    const outcome = filterNewcomers(
+      [
+        candidate(
+          'https://www.seloger.com/annonces/25CYTZ1KAGBS.htm',
+          798_000,
+          '2026-10-25T09:00:00.000Z',
+          {
+            streamEstate: {
+              propertyId: 'biot',
+              originSite: 'SeLoger',
+              onlineSince: '2026-10-25T09:00:00.000Z',
+              firstKnownAt: '2025-06-17T08:00:00.000Z',
+              lastSeenAt: null,
+              priceDrops: [],
+            },
+          },
+        ),
+      ],
+      { concludedAt: '2026-10-21T13:31:00.000Z', knownUrls: [], priceCeiling: 849_000 },
+    );
+    expect(outcome.newcomers).toEqual([]);
+    expect(outcome.excludedBefore).toBe(1);
   });
 });

@@ -29,12 +29,17 @@ import {
 } from '@/features/market-update/actions/search-newcomers';
 import type { NewcomersSearch } from '@/features/market-update/services/market-update-summary';
 import { shortDay } from '@/features/market-update/components/market-update-panel';
-import type { NewcomerCandidate } from '@/features/market-update/services/newcomers-filter';
+import {
+  newcomerPriceRanges,
+  type NewcomerCandidate,
+} from '@/features/market-update/services/newcomers-filter';
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
-export const NEWCOMERS_SEARCH_LABEL = 'Chercher les nouveaux venus · jusqu’à 0,60 €';
-export const NEWCOMERS_LIMITED_LABEL =
-  'Recherche limitée aux biens au prix de commercialisation ou moins';
+export const NEWCOMERS_SEARCH_LABEL = 'Chercher les nouveaux venus';
+// Mission 129 — le coût annoncé avant (une passe à −5 %, une seconde à −10 % s'il le faut).
+export const NEWCOMERS_COST_LABEL =
+  'Recherche payante : jusqu’à 0,60 €, 1,20 € si la recherche s’élargit.';
+export const NEWCOMERS_LIMITED_LABEL = 'Recherche limitée à la fourchette cherchée';
 
 type Found = Extract<SearchNewcomersResult, { ok: true }>;
 type CardState = 'open' | 'importing' | 'retained' | 'pending' | 'rejected';
@@ -84,6 +89,12 @@ export function NewcomersSearchPanel({
           excludedKnown: 0,
           concludedAt: meetingDate ?? '',
           priceCeiling: priceCeiling != null ? Math.round(priceCeiling) : 0,
+          priceRange: stored.priceRange ?? {
+            min: 0,
+            max: priceCeiling != null ? Math.round(priceCeiling) : 0,
+          },
+          widened: stored.widened,
+          widenRefused: false,
           updateId: null,
           line: null,
         }
@@ -93,6 +104,8 @@ export function NewcomersSearchPanel({
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const since = meetingDate ? shortDay(meetingDate) : null;
+  // Mission 129 — la fourchette dite avant la recherche, du prix de commercialisation.
+  const ranges = newcomerPriceRanges(priceCeiling ?? 0);
   // Une recherche par point, pas de « Chercher encore » : recherche faite, plus rien à proposer.
   if (searched && !found) return null;
 
@@ -242,9 +255,11 @@ export function NewcomersSearchPanel({
         : `${formatNumber(found.billed)} annonce${found.billed > 1 ? 's' : ''} facturée${found.billed > 1 ? 's' : ''} (${formatEuro(found.billed * 0.01)})`,
       'critères du dossier',
       since ? `vus sur le marché après le ${since}` : null,
-      found.priceCeiling > 0
-        ? `${NEWCOMERS_LIMITED_LABEL} (${formatEuro(found.priceCeiling)})`
+      found.priceRange.max > 0
+        ? `cherchés de ${formatEuro(found.priceRange.min)} à ${formatEuro(found.priceRange.max)}`
         : NEWCOMERS_LIMITED_LABEL,
+      found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
+      found.widenRefused ? 'élargissement refusé par le budget du mois' : null,
     ].filter(Boolean);
     return (
       <div
@@ -263,8 +278,8 @@ export function NewcomersSearchPanel({
         ) : null}
         {found.newcomers.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70" data-testid="newcomers-none">
-            Aucun nouveau venu{since ? ` depuis le ${since}` : ''} avec les critères du dossier, au
-            prix de commercialisation ou moins.
+            Aucun nouveau venu{since ? ` depuis le ${since}` : ''} avec les critères du dossier, de{' '}
+            {formatEuro(found.priceRange.min)} à {formatEuro(found.priceRange.max)}.
           </p>
         ) : (
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2" data-testid="newcomers-list">
@@ -310,10 +325,13 @@ export function NewcomersSearchPanel({
         Chercher les nouveaux venus sur le marché ?
       </span>
       <p className={hintText}>
-        Recherche payante sur le marché : jusqu’à 0,60 €. Les critères du dossier, les annonces vues
-        sur le marché{since ? ` depuis le ${since}` : ' depuis le rendez-vous'} seulement, sans
-        celles déjà retenues ou écartées, au prix de commercialisation ou moins.
+        Les biens vus sur le marché{since ? ` depuis le ${since}` : ' depuis le rendez-vous'}, avec
+        les critères du dossier, de {formatEuro(ranges.first.min)} à {formatEuro(ranges.first.max)}{' '}
+        (jusqu’à 5 % sous le prix de commercialisation). S’il y en a moins de 3, la recherche
+        s’élargit à partir de {formatEuro(ranges.widened.min)} (jusqu’à 10 % sous). Sans ceux déjà
+        retenus ou écartés.
       </p>
+      <p className={hintText}>{NEWCOMERS_COST_LABEL}</p>
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -326,9 +344,9 @@ export function NewcomersSearchPanel({
         </button>
         {busy ? (
           <span className={hintText}>
-            {demo
-              ? 'Aucun appel payant en démonstration.'
-              : 'Jusqu’à 0,60 € réservés sur le budget du mois ; la part non utilisée est rendue.'}
+            {/* Rien ne dit « démonstration » à l'écran (décision du 23/10). */}
+            Jusqu’à 0,60 € réservés par recherche sur le budget du mois (1,20 € si elle s’élargit) ;
+            la part non utilisée est rendue.
           </span>
         ) : (
           <button

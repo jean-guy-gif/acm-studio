@@ -26,7 +26,10 @@ import { demoStreamEstatePage } from '@/features/demo/services/demo-stream-estat
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import {
   filterNewcomers,
+  newcomerPriceRanges,
+  NEWCOMERS_MIN_FOUND,
   type NewcomerCandidate,
+  type PriceRange,
 } from '@/features/market-update/services/newcomers-filter';
 import { isPointOfDay } from '@/features/market-update/services/point-day';
 import {
@@ -59,6 +62,11 @@ export type SearchNewcomersResult =
       excludedKnown: number;
       concludedAt: string;
       priceCeiling: number;
+      // Mission 129 — la fourchette cherchée, et si la recherche s'est élargie à −10 %.
+      priceRange: PriceRange;
+      widened: boolean;
+      // La seconde passe refusée par le budget : la première est gardée, le point le dit.
+      widenRefused: boolean;
       // Le point du jour, réécrit avec « recherche faite ».
       updateId: string | null;
       line: string | null;
@@ -111,6 +119,8 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     return { ok: false, error: NOT_SIGNED };
   }
   const priceCeiling = Math.round(conclusion.commercialization_price);
+  // Mission 129 — de −5 % du prix à ce prix, puis −10 % s'il y a moins de 3 biens.
+  const ranges = newcomerPriceRanges(priceCeiling);
   // Une recherche par point, pas de « Chercher encore » (Jean-Guy, 29/10) : revalidé ici, un
   // second clic ou un second onglet ne repaie pas.
   const { data: latest } = await supabase
@@ -161,8 +171,10 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     };
   }
   const { criteria } = loaded;
-  // Le plafond de prix : un critère réglé, fixe (M99), que les crans ne desserrent pas.
-  const settings = { ...loaded.settings, price: { min: 1, max: priceCeiling } };
+  // Mission 129 — le plancher et le plafond partent dans la requête (`budgetMin`, `budgetMax`) : un
+  // critère réglé, fixe (M99), que les crans ne desserrent pas ; chaque passe a sa tranche.
+  const settingsFor = (range: PriceRange) => ({ ...loaded.settings, price: range });
+  const settings = settingsFor(ranges.first);
   const commune = await geo.resolveCommune(criteria.city, criteria.postalCode);
   if (!commune.ok) {
     return {
@@ -210,58 +222,65 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     : liveStreamEstatePage(apiKey ?? '', (count) => {
         billed += count;
       });
-  const plans = planTiers(
-    criteria,
-    {
-      located: subjectPoint != null,
-      hasCentre: origin != null,
-      arrondissement: arrondissement
-        ? {
-            code: commune.code,
-            neighbours: neighbourArrondissements(arrondissement).map(arrondissementInsee),
-          }
-        : null,
-    },
-    settings,
-  );
-  // Mission 105 — le coût maximal est réservé AVANT l'appel payant, compté sur le dossier.
-  const reservation = budgetRead?.ok
-    ? await reserveSearchBudget({
-        agencyId,
-        projectId,
-        userId: profile.id,
-        wanted: advertsAllowed(STREAM_ESTATE_BILLING_CAP, budgetRead.budget),
-      })
-    : null;
-  if (reservation != null && !reservation.ok) {
-    return {
-      ok: false,
-      error:
-        reservation.reason === 'reached'
-          ? `${BUDGET_REACHED_LABEL}. Aucune recherche lancée. ${BUDGET_REACHED_HINT}`
-          : BUDGET_UNREADABLE_MESSAGE,
-    };
-  }
-  const outcome = await runTieredSearch({
-    criteria,
-    plans,
-    context: { inseeCode: commune.code, origin },
-    neighbours,
-    fetchPage,
-    now,
-    cap: reservation?.ok ? reservation.adverts : STREAM_ESTATE_BILLING_CAP,
-    filters: settings.filters,
-  });
-  if (reservation?.ok) await settleSearchBudget(reservation.reservationId, billed);
-  if (!outcome.ok) {
-    return {
-      ok: false,
-      error:
-        outcome.reason === 'refused'
+  const context = {
+    located: subjectPoint != null,
+    hasCentre: origin != null,
+    arrondissement: arrondissement
+      ? {
+          code: commune.code,
+          neighbours: neighbourArrondissements(arrondissement).map(arrondissementInsee),
+        }
+      : null,
+  };
+  // Une passe : son coût maximal réservé AVANT l'appel payant, compté sur le dossier, réglé après
+  // (M100, M105) ; une seule facturation au plus par passe.
+  type Pass =
+    | {
+        ok: true;
+        candidates: Awaited<ReturnType<typeof runTieredSearch>> & { ok: true };
+        billed: number;
+      }
+    | { ok: false; reason: 'reached' | 'unreadable' | 'refused' | 'failed' };
+  const runPass = async (range: PriceRange): Promise<Pass> => {
+    const passSettings = settingsFor(range);
+    const reservation = budgetRead?.ok
+      ? await reserveSearchBudget({
+          agencyId,
+          projectId,
+          userId: profile.id,
+          wanted: advertsAllowed(STREAM_ESTATE_BILLING_CAP, budgetRead.budget),
+        })
+      : null;
+    if (reservation != null && !reservation.ok) {
+      return { ok: false, reason: reservation.reason === 'reached' ? 'reached' : 'unreadable' };
+    }
+    const billedBefore = billed;
+    const result = await runTieredSearch({
+      criteria,
+      plans: planTiers(criteria, context, passSettings),
+      context: { inseeCode: commune.code, origin },
+      neighbours,
+      fetchPage,
+      now,
+      cap: reservation?.ok ? reservation.adverts : STREAM_ESTATE_BILLING_CAP,
+      filters: passSettings.filters,
+    });
+    if (reservation?.ok) await settleSearchBudget(reservation.reservationId, billed - billedBefore);
+    if (!result.ok)
+      return { ok: false, reason: result.reason === 'refused' ? 'refused' : 'failed' };
+    return { ok: true, candidates: result, billed: result.billed };
+  };
+  const passError = (reason: 'reached' | 'unreadable' | 'refused' | 'failed'): string =>
+    reason === 'reached'
+      ? `${BUDGET_REACHED_LABEL}. Aucune recherche lancée. ${BUDGET_REACHED_HINT}`
+      : reason === 'unreadable'
+        ? BUDGET_UNREADABLE_MESSAGE
+        : reason === 'refused'
           ? 'La recherche a été refusée par le fournisseur des annonces : prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
-          : GENERIC_ERROR,
-    };
-  }
+          : GENERIC_ERROR;
+
+  const first = await runPass(ranges.first);
+  if (!first.ok) return { ok: false, error: passError(first.reason) };
 
   // Les annonces déjà dans le dossier : concurrents, écartés, imports en attente.
   const [known1, known2, known3] = await Promise.all([
@@ -285,12 +304,44 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
   const knownUrls = [...(known1.data ?? []), ...(known2.data ?? []), ...(known3.data ?? [])]
     .map((row) => row.listing_url)
     .filter((url): url is string => typeof url === 'string' && url !== '');
-  const filtered = filterNewcomers(outcome.candidates, {
-    concludedAt: conclusion.concluded_at,
-    knownUrls,
-    priceCeiling,
-  });
-  const billedCount = demo ? 0 : outcome.billed;
+  const filterRange = (candidates: Parameters<typeof filterNewcomers>[0], range: PriceRange) =>
+    filterNewcomers(candidates, {
+      concludedAt: conclusion.concluded_at as string,
+      knownUrls,
+      priceCeiling: range.max,
+      priceFloor: range.min,
+    });
+  let filtered = filterRange(first.candidates.candidates, ranges.first);
+  let widened = false;
+  let widenRefused = false;
+  let outcomeBilled = first.billed;
+  // Moins de 3 biens : la recherche s'élargit à −10 %, sur la tranche du dessous.
+  if (filtered.newcomers.length < NEWCOMERS_MIN_FOUND && ranges.widened.min <= ranges.widened.max) {
+    const second = await runPass(ranges.widened);
+    if (second.ok) {
+      widened = true;
+      outcomeBilled += second.billed;
+      const more = filterRange(second.candidates.candidates, ranges.widened);
+      const seen = new Set(filtered.newcomers.map((item) => item.url));
+      filtered = {
+        ...filtered,
+        newcomers: [
+          ...filtered.newcomers,
+          ...more.newcomers.filter((item) => !seen.has(item.url)),
+        ].sort((x, y) => x.price - y.price),
+        excludedNoDate: filtered.excludedNoDate + more.excludedNoDate,
+        excludedKnown: filtered.excludedKnown + more.excludedKnown,
+        excludedUnderPrice: more.excludedUnderPrice,
+      };
+    } else {
+      widenRefused = true;
+    }
+  }
+  const priceRange: PriceRange = {
+    min: widened ? ranges.widened.min : ranges.first.min,
+    max: priceCeiling,
+  };
+  const billedCount = demo ? 0 : outcomeBilled;
   // Le point du jour, réécrit avec « recherche faite » (décision de Jean-Guy, 29/10).
   const written = await writeMarketUpdate({
     supabase,
@@ -304,6 +355,9 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       billed: billedCount,
       limitedToPrice: true,
       excludedNoDate: filtered.excludedNoDate,
+      priceRange,
+      widened,
+      excludedUnderPrice: filtered.excludedUnderPrice,
       // Les propositions restent sur le point jusqu'à « Écarter » ou au point suivant (Jean-Guy,
       // 30/10) ; sans titre : il ne sert à rien ici.
       // Chaque proposition est revalidée par son schéma avant l'écriture : une proposition
@@ -328,6 +382,9 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     excludedKnown: filtered.excludedKnown,
     concludedAt: conclusion.concluded_at,
     priceCeiling,
+    priceRange,
+    widened,
+    widenRefused,
     updateId: written?.updateId ?? null,
     line: written?.line ?? null,
   };

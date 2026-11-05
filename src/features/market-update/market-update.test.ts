@@ -6,8 +6,6 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { MarketUpdateDocument } from '@/features/market-update/components/market-update-document';
-import { PriceLineBand } from '@/features/market-update/components/price-line';
-import { placeLabels } from '@/features/market-update/services/label-levels';
 import { competitorFactLine } from '@/features/market-update/components/market-update-panel';
 import { loadMarketUpdate } from '@/features/market-update/queries/load-market-update';
 import {
@@ -484,28 +482,31 @@ describe('le document Point marché', () => {
     expect(html).toContain('Déduit de la durée de commercialisation au retrait');
   });
 
-  it('une fiche par concurrent dans l’ordre, le bloc des prix, les trois lignes, la ligne 3 vide', async () => {
+  it('une fiche par concurrent dans l’ordre, le bloc des prix, le classement (M129), le cadre doré', async () => {
     const { document, html } = await loadFixture();
     expect(document.competitors.map((item) => item.position)).toEqual([1, 2, 3, 4, 5]);
     expect(html.split('data-testid="market-update-competitor"').length - 1).toBe(5);
-    expect(html.split('data-testid="market-update-line"').length - 1).toBe(3);
-    // La figure (M127 B) : une barre, trois lignes, un losange, deux flèches, deux points vides.
-    expect(html).toContain('data-testid="price-lines-figure"');
-    expect(html.split('data-testid="price-lines-bar"').length - 1).toBe(1);
-    expect(html.split('data-testid="price-lines-line"').length - 1).toBe(3);
-    // Le plus dangereux, en losange sur la ligne 1 et sur la ligne 2 (il est encore en vente).
-    expect(html.split('data-testid="price-lines-diamond"').length - 1).toBe(2);
-    expect(html.split('data-testid="price-lines-arrow"').length - 1).toBe(2);
-    expect(html.split('data-testid="price-lines-gone"').length - 1).toBe(2);
+    // Mission 129 — le classement remplace les trois lignes.
+    expect(html).not.toContain('data-testid="price-lines-figure"');
+    expect(html).toContain('data-testid="ranking-verdict"');
+    expect(html.split('data-testid="ranking-step"').length - 1).toBe(3);
+    const listed = document.summary.competitors.filter(
+      (item) => item.conclusion == null && item.state !== 'gone' && item.currentPrice != null,
+    ).length;
+    expect(html.split('data-testid="ranking-row"').length - 1).toBe(listed + 1);
+    expect(html).toContain('VOTRE BIEN');
+    // Sans nouveau venu retenu, la troisième étape ne compte rien.
+    expect(html).toContain('Aucun nouveau venu retenu');
     expect(html).not.toContain('NaN');
-    // Une recherche a été faite (fixture) : la ligne 3 le dit, plutôt que « Aucun nouveau venu retenu ».
-    expect(html).toContain('Aucun nouveau venu sur le marché');
-    expect(html).not.toContain(NO_NEWCOMER_LABEL);
     expect(html).toContain('Vente probable, négociation estimée de 5 à 10 %');
     expect(html).toContain('Retiré du marché sans vente');
     expect(html).toContain('Non relu');
-    expect(html).toContain('Prix aligné sur le marché');
+    // Une seule couleur à lire, celle de la place : la couleur M116 du prix disparaît de la page.
+    expect(html).not.toContain('Prix aligné sur le marché');
+    // Le plus dangereux : cadre doré et bandeau sur sa fiche, et sur sa ligne du classement.
+    expect(html).toContain('data-testid="market-update-dangerous-band"');
     expect(html).toContain('Le plus dangereux, selon vous');
+    expect(html).toContain('data-testid="ranking-dangerous"');
   });
 
   it('un concurrent hors Live compte dans les lignes, pas dans les pages (M110, M113)', async () => {
@@ -521,6 +522,7 @@ describe('le document Point marché', () => {
           madeAt: MADE_AT.toISOString(),
           sellerName: '',
           propertyLabel: null,
+          subjectLabel: 'Votre bien',
           commune: null,
           coverPhotoUrl: null,
           summary,
@@ -555,53 +557,11 @@ describe('le document Point marché', () => {
     expect(document.competitors[0].photoUrls.length).toBeLessThanOrEqual(3);
   });
 
-  it('deux repères au même prix n’en font qu’un sur la ligne (un seul concurrent)', () => {
-    const lines = buildPriceLines(
-      [{ meetingPrice: 1690000, currentPrice: 1690000, gone: null, dangerous: true }],
-      1639500,
-    );
-    const html = renderToStaticMarkup(
-      createElement(PriceLineBand, {
-        line: lines.meeting!,
-        scale: lines.scale!,
-        subjectLabel: 'Votre prix',
-        alignment: null,
-      }),
-    );
-    // Un seul prix sur la ligne : une seule étiquette (ni médiane ni plus bas / plus haut d'un
-    // seul bien), sur la ligne et dans la liste.
-    expect(html.split('data-testid="price-line"').length - 1).toBe(1);
-    // Ce seul concurrent est le plus dangereux : il garde son repère.
-    expect((html.match(/Le plus dangereux, selon vous/g) ?? []).length).toBe(2);
-    expect(html).not.toContain('Un seul concurrent');
-    expect(html).not.toContain('Prix médian');
-  });
-
-  it('deux étiquettes proches ne se touchent jamais : niveaux distincts', () => {
-    // Le cas de l'essai : « Votre prix » à 1 639 500 et « Le plus dangereux » à 1 690 000 sur une
-    // ligne de 1 475 000 à 1 699 000.
-    const slots = placeLabels(
-      [
-        { label: 'Le plus bas', value: 1475000 },
-        { label: 'Votre prix', value: 1639500 },
-        { label: 'Prix médian', value: 1650000 },
-        { label: 'Le plus dangereux, selon vous', value: 1690000 },
-        { label: 'Le plus haut', value: 1699000 },
-      ],
-      { min: 1475000, max: 1699000 },
-    );
-    const keys = slots.map((slot) => `${slot.side}-${slot.level}`);
-    // Les trois étiquettes serrées (1 639 500, 1 650 000, 1 690 000) prennent trois niveaux ; les
-    // deux bornes, loin d'elles, restent au niveau le plus près de la ligne.
-    expect(keys).toEqual(['above-0', 'above-0', 'below-0', 'above-1', 'above-0']);
-    expect(slots[4].anchor).toBe('end');
-    expect(slots[0].anchor).toBe('start');
-  });
-
   it('le code du document ne lit ni titre, ni lien, ni adresse, ni vendeur', () => {
     const sources = [
       'src/features/market-update/components/market-update-document.tsx',
-      'src/features/market-update/components/price-line.tsx',
+      'src/features/market-update/components/price-ranking.tsx',
+      'src/features/market-update/services/price-ranking.ts',
       'src/features/market-update/components/market-update-panel.tsx',
       'src/features/market-update/services/market-update-summary.ts',
       'src/features/market-update/queries/load-market-update.ts',

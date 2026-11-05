@@ -636,15 +636,19 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         /Ont baissé depuis le rendez-vous : 1 sur 5/,
       );
       // Mission 127 B — (c) « Chercher les nouveaux venus » : simulé en démo, aucun appel ; deux
-      // biens vus sur le marché après le rendez-vous, au prix de commercialisation ou moins ; un
-      // retenu.
+      // biens vus sur le marché après le rendez-vous ; un retenu. Mission 129 — de −5 % du prix
+      // (1 557 000 €), mou-07 seul : la recherche s'élargit à −10 % et trouve mou-03.
+      await expect(row.getByTestId('newcomers-proposal')).toContainText(
+        'jusqu’à 0,60 €, 1,20 € si la recherche s’élargit',
+      );
       await row.getByTestId('newcomers-search').click();
       const results = row.getByTestId('newcomers-results');
       await expect(results).toBeVisible({ timeout: 60_000 });
       await expect(results).toContainText(/2 trouvés/);
       await expect(results).toContainText('0 annonce facturée');
+      await expect(results).toContainText(/cherchés de 1\s?475\s?000\s?€ à 1\s?639\s?500\s?€/);
       await expect(results).toContainText(
-        'Recherche limitée aux biens au prix de commercialisation ou moins',
+        'recherche élargie à 10 % sous le prix de commercialisation',
       );
       await expect(results.getByTestId('newcomer-card')).toHaveCount(2);
       await expect(
@@ -659,8 +663,21 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         timeout: 60_000,
       });
       await expect(row.getByTestId('market-update-recorded')).toContainText('1 nouveau venu');
-      await row.getByRole('button', { name: /Voir le détail des prix/ }).click();
-      await expect(row.getByTestId('market-update-lines-compact')).toBeVisible();
+      // Mission 129 — sur la ligne : le verdict et les trois étapes ; puis le nouveau venu est
+      // désigné le plus dangereux aujourd'hui.
+      const compact = row.getByTestId('market-update-ranking-compact');
+      await expect(compact.getByTestId('ranking-verdict')).toBeVisible();
+      await expect(compact.getByTestId('ranking-step')).toHaveCount(3);
+      await compact.getByTestId('dangerous-designate').click();
+      await compact
+        .getByTestId('dangerous-options')
+        .locator('label')
+        .filter({ hasText: 'Nouveau' })
+        .first()
+        .locator('input')
+        .check();
+      await compact.getByTestId('dangerous-save').click();
+      await expect(compact.getByText(/le plus dangereux aujourd’hui est/)).toBeVisible();
       await row.getByTestId('open-market-update').click();
       await expect(page).toHaveURL(/\/builder\/[0-9a-f-]+\/point-marche/);
       const document = page.getByTestId('market-update');
@@ -676,19 +693,27 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         document.getByText('Vente probable, négociation estimée de 5 à 10 %'),
       ).toBeVisible();
       await expect(document.getByText('Retiré du marché sans vente').first()).toBeVisible();
-      await expect(document.getByTestId('market-update-line')).toHaveCount(3);
-      await expect(
-        document.getByText('Aucun nouveau venu retenu depuis le rendez-vous'),
-      ).toHaveCount(0);
-      // La ligne 3 porte le nouveau venu retenu : un point sur la figure (le sous-titre est dans
-      // le SVG, coupé en deux lignes).
-      await expect(
-        document.locator('[data-line="newcomers"] [data-testid="price-lines-point"]'),
-      ).toHaveCount(1);
-      await expect(document.getByTestId('price-lines-bar')).toBeVisible();
-      await expect(document.getByTestId('price-alignment')).toContainText(
-        'Prix aligné sur le marché',
+      // Mission 129 — le classement : verdict, trois étapes, une ligne par bien encore en vente
+      // (3 concurrents, le nouveau venu, votre bien), la légende ; plus de couleur M116.
+      const ranking = document.getByTestId('price-ranking');
+      await expect(ranking.getByTestId('ranking-verdict')).toBeVisible();
+      await expect(ranking.getByTestId('ranking-step')).toHaveCount(3);
+      await expect(ranking.getByTestId('ranking-row')).toHaveCount(5);
+      await expect(ranking.getByTestId('ranking-legend')).toContainText('dernier tiers : danger');
+      await expect(document.getByText('Prix aligné sur le marché')).toHaveCount(0);
+      // Le nouveau venu désigné aujourd'hui : cadre doré et bandeau sur sa fiche, sur sa ligne, et
+      // la phrase du verdict le dit ; l'ancien garde « votre choix au rendez-vous ».
+      await expect(document.getByTestId('market-update-dangerous-band')).toHaveCount(1);
+      await expect(document.getByTestId('market-update-dangerous-band')).toHaveText(
+        'Le plus dangereux aujourd’hui',
       );
+      await expect(ranking.getByTestId('ranking-dangerous')).toHaveText(
+        'Le plus dangereux aujourd’hui',
+      );
+      await expect(ranking.getByTestId('ranking-verdict')).toContainText(
+        'Un nouveau venu devient le plus dangereux',
+      );
+      await expect(document.getByText(/votre choix au rendez-vous/).first()).toBeVisible();
       const text = await document.innerText();
       expect(text).not.toMatch(
         /Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid|Publié le/,
@@ -713,7 +738,10 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         const response = await visitor.goto(link);
         expect(response?.headers()['x-robots-tag']).toContain('noindex');
         await expect(visitor.getByTestId('market-update')).toBeVisible();
-        await expect(visitor.getByTestId('market-update-line')).toHaveCount(3);
+        await expect(visitor.getByTestId('ranking-verdict')).toBeVisible();
+        await expect(visitor.getByTestId('market-update-dangerous-band')).toHaveText(
+          'Le plus dangereux aujourd’hui',
+        );
         await expectUnspoken(visitor, 'Point marché, lien public');
         await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
         await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();

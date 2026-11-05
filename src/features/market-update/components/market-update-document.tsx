@@ -1,15 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
-import { PriceLineBand, ALIGNMENT_CLASSES } from '@/features/market-update/components/price-line';
+import { PriceRankingView } from '@/features/market-update/components/price-ranking';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
-import { PriceLinesFigure } from '@/features/market-update/components/price-lines-figure';
-import { NO_NEWCOMER_LABEL } from '@/features/market-update/services/price-lines';
-
-// Mission 127 B — le même libellé que sur le Suivi, sans importer le composant client.
-const NEWCOMERS_LIMITED_LABEL = 'Recherche limitée aux biens à votre prix ou moins';
+import {
+  buildPriceRanking,
+  dangerousInForce,
+  seenBeforeMeeting,
+  type DangerousBadge,
+} from '@/features/market-update/services/price-ranking';
 import type { MarketUpdateDocument as MarketUpdateDocumentData } from '@/features/market-update/types';
-import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import {
   bigNumber,
   card,
@@ -227,76 +227,103 @@ function CompetitorPage({
   item,
   view,
   madeAt,
+  danger,
+  meetingChoice,
+  beforeMeeting = false,
 }: {
   item: MarketUpdateCompetitor;
   view: MarketUpdateDocumentData['competitors'][number] | undefined;
   madeAt: string;
+  // Mission 129 — le plus dangereux en vigueur porte le cadre doré et son bandeau ; quand il a
+  // changé, l'ancien garde « votre choix au rendez-vous », discret.
+  danger: DangerousBadge | null;
+  meetingChoice: boolean;
+  // Un « nouveau venu » déjà en vente avant le rendez-vous (cas de Biot) : il reste retenu, mais
+  // ne compte pas parmi les nouveaux venus.
+  beforeMeeting?: boolean;
 }) {
   const photos = view?.photoUrls ?? [];
   return (
     <article
-      className={`flex flex-col gap-3 border border-t-[3px] bg-white p-4 break-inside-avoid ${
-        item.dangerous
-          ? 'border-zinc-200 border-t-amber-600'
-          : 'border-zinc-200 border-t-brand-deep'
+      className={`flex flex-col gap-3 bg-white break-inside-avoid ${
+        danger
+          ? 'border-[3px] border-amber-600'
+          : 'border border-t-[3px] border-zinc-200 border-t-brand-deep p-4'
       }`}
       data-testid="market-update-competitor"
+      data-dangerous={danger ?? undefined}
     >
-      <div>
-        <div className={kicker}>
-          {item.newcomer ? 'Nouveau venu' : `Concurrent ${item.position}`}
-          {item.dangerous ? ' · Le plus dangereux, selon vous' : ''}
-          {!item.newcomer && !item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
-        </div>
-        <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
-          {item.label}
-        </h3>
-      </div>
-      {photos.length > 0 ? (
+      {danger ? (
         <div
-          className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-[2fr_1fr]'}`}
+          className="bg-amber-600 px-4 py-1.5 text-xs font-bold tracking-[0.18em] text-white uppercase"
+          data-testid="market-update-dangerous-band"
         >
-          <Photo url={photos[0]} alt={item.label} className="h-36 w-full sm:h-44" />
-          {photos.length > 1 ? (
-            <div className="grid gap-1.5">
-              {photos.slice(1, 4).map((url) => (
-                <Photo
-                  key={url}
-                  url={url}
-                  alt={item.label}
-                  className={photos.length === 2 ? 'h-36 w-full sm:h-44' : 'h-full min-h-16 w-full'}
-                />
-              ))}
-            </div>
-          ) : null}
+          {danger === 'today' ? 'Le plus dangereux aujourd’hui' : 'Le plus dangereux, selon vous'}
         </div>
       ) : null}
-      {view && view.features.length > 0 ? (
-        <div className="flex flex-col gap-1">
-          <div className={`${kicker} border-t-2 border-zinc-200 pt-2`}>
-            Ses caractéristiques face à votre bien
+      <div className={danger ? 'flex flex-col gap-3 px-4 pb-4' : 'contents'}>
+        <div>
+          <div className={kicker}>
+            {item.newcomer
+              ? beforeMeeting
+                ? 'En vente avant le rendez-vous, non montré alors'
+                : 'Nouveau venu'
+              : `Concurrent ${item.position}`}
+            {meetingChoice && danger !== 'meeting' ? ' · votre choix au rendez-vous' : ''}
+            {!item.newcomer && !item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
           </div>
-          <Grid
-            competitor={{
-              id: item.id,
-              position: item.position,
-              label: item.label,
-              surfaceArea: item.surfaceArea,
-              photoUrl: null,
-              hasPhoto: false,
-              photoHidden: false,
-              features: view.features,
-              serious: null,
-              revealed: null,
-            }}
-          />
+          <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
+            {item.label}
+          </h3>
         </div>
-      ) : null}
-      {item.newcomer ? (
-        <NewcomerPriceBlock item={item} />
-      ) : (
-        <PriceBlock item={item} madeAt={madeAt} />
-      )}
+        {photos.length > 0 ? (
+          <div
+            className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-[2fr_1fr]'}`}
+          >
+            <Photo url={photos[0]} alt={item.label} className="h-36 w-full sm:h-44" />
+            {photos.length > 1 ? (
+              <div className="grid gap-1.5">
+                {photos.slice(1, 4).map((url) => (
+                  <Photo
+                    key={url}
+                    url={url}
+                    alt={item.label}
+                    className={
+                      photos.length === 2 ? 'h-36 w-full sm:h-44' : 'h-full min-h-16 w-full'
+                    }
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {view && view.features.length > 0 ? (
+          <div className="flex flex-col gap-1">
+            <div className={`${kicker} border-t-2 border-zinc-200 pt-2`}>
+              Ses caractéristiques face à votre bien
+            </div>
+            <Grid
+              competitor={{
+                id: item.id,
+                position: item.position,
+                label: item.label,
+                surfaceArea: item.surfaceArea,
+                photoUrl: null,
+                hasPhoto: false,
+                photoHidden: false,
+                features: view.features,
+                serious: null,
+                revealed: null,
+              }}
+            />
+          </div>
+        ) : null}
+        {item.newcomer ? (
+          <NewcomerPriceBlock item={item} />
+        ) : (
+          <PriceBlock item={item} madeAt={madeAt} />
+        )}
+      </div>
     </article>
   );
 }
@@ -306,17 +333,19 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
   const pointDay = meetingDay(document.madeAt);
   const meeting = meetingDay(summary.meetingDate);
   const footer = ['Étude confidentielle', document.commune, pointDay].filter(Boolean).join(' · ');
-  const alignment = priceAlignment(summary.agreedPrice, summary.advisorAnalysis);
-  const subjectClasses = alignment ? ALIGNMENT_CLASSES[alignment.tone] : null;
   const viewById = new Map(document.competitors.map((item) => [item.id, item]));
   const newcomers = summary.competitors.filter((item) => item.newcomer);
+  // Mission 129 — le classement remplace les trois lignes ; le plus dangereux en vigueur.
+  const ranking = buildPriceRanking(summary, document.subjectLabel);
+  const danger = dangerousInForce(summary);
+  const dangerOf = (id: string): DangerousBadge | null =>
+    id === danger.currentId ? (danger.changed ? 'today' : 'meeting') : null;
+  const realNewcomers = newcomers.filter((item) => !seenBeforeMeeting(item, summary.meetingDate));
   const hasNewcomers = newcomers.length > 0;
   const sections = ['competitors', hasNewcomers ? 'newcomers' : null, 'lines'].filter(
     (key): key is string => key != null,
   );
   const sectionNumber = (key: string) => sections.indexOf(key) + 1;
-  const { lines } = summary;
-  const scale = lines.scale;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const coverFigures = [
     summary.agreedPrice != null
@@ -329,52 +358,9 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
     // Mission 127 B — ce chiffre n'existe qu'après une recherche : sans elle, « 0 » dirait « rien
     // de nouveau sur le marché ».
     summary.newcomersSearch || newcomers.length > 0
-      ? { label: 'Nouveaux venus retenus', value: String(newcomers.length) }
+      ? { label: 'Nouveaux venus retenus', value: String(realNewcomers.length) }
       : null,
   ].filter((item): item is { label: string; value: string } => item != null);
-
-  const lineBlock = (
-    number: number,
-    title: string,
-    hint: string,
-    line: typeof lines.meeting,
-    subjectLabel: string,
-    extra?: React.ReactNode,
-    singleLabel?: string,
-  ) => (
-    <div className={`${card} flex flex-col gap-2`} data-testid="market-update-line">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="border border-brand-deep px-1.5 py-px font-title text-xs text-brand-deep">
-          {number}
-        </span>
-        <span className="font-title text-base font-bold text-brand-darker">{title}</span>
-        <span className="text-xs text-zinc-500">{hint}</span>
-      </div>
-      {extra}
-      {line && scale ? (
-        <PriceLineBand
-          line={line}
-          scale={scale}
-          subjectLabel={subjectLabel}
-          singleLabel={singleLabel}
-          alignment={alignment}
-        />
-      ) : (
-        <p className="border border-dashed border-zinc-300 px-3 py-4 text-center text-sm text-zinc-500">
-          {number === 3
-            ? summary.newcomersSearch
-              ? `Aucun nouveau venu sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, avec les critères de votre bien, à votre prix ou moins.`
-              : NO_NEWCOMER_LABEL
-            : 'Aucun prix à placer sur cette ligne.'}
-        </p>
-      )}
-      {line?.sentence ? (
-        <p className="border-l-4 border-brand-deep bg-brand-soft px-4 py-2 text-[0.9rem]">
-          {line.sentence}
-        </p>
-      ) : null}
-    </div>
-  );
 
   return (
     <article
@@ -474,6 +460,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 item={item}
                 view={viewById.get(item.id)}
                 madeAt={document.madeAt}
+                danger={dangerOf(item.id)}
+                meetingChoice={item.id === danger.meetingId}
               />
             ))}
         </section>
@@ -485,7 +473,11 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             <SectionTitle
               number={sectionNumber('newcomers')}
               title="Nouveaux sur le marché depuis le rendez-vous"
-              hint={`Les biens vus sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, à votre prix ou moins, et retenus par votre conseiller pour la comparaison.`}
+              hint={`Les biens vus sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, ${
+                summary.newcomersSearch?.priceRange
+                  ? `de ${formatEuro(summary.newcomersSearch.priceRange.min)} à votre prix`
+                  : 'à votre prix ou moins'
+              }, et retenus par votre conseiller pour la comparaison.`}
             />
             {newcomers.map((item) => (
               <CompetitorPage
@@ -493,87 +485,33 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 item={item}
                 view={viewById.get(item.id)}
                 madeAt={document.madeAt}
+                danger={dangerOf(item.id)}
+                meetingChoice={false}
+                beforeMeeting={seenBeforeMeeting(item, summary.meetingDate)}
               />
             ))}
           </section>
         ) : null}
 
-        {/* 03 · Où en est votre prix — trois lignes à la même échelle. */}
-        <section className="flex flex-col gap-3">
-          <SectionTitle
-            number={sectionNumber('lines')}
-            title="Où en est votre prix"
-            hint="Trois lignes, à la même échelle, pour comparer d’un coup d’œil."
-          />
-          {/* La figure (maquette M127B-lignes) à l'écran large et à l'impression ; sur téléphone,
-              les trois lignes en liste, la barre et les repères sous chaque bande. */}
-          <div className="hidden sm:block" data-testid="price-lines-figure-wrap">
-            <PriceLinesFigure
-              summary={summary}
-              alignment={alignment}
-              meetingLabel={`Au rendez-vous${meeting ? ` du ${meeting}` : ''}`}
-              todayLabel={`Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`}
+        {/* 03 · Où en est votre prix — le classement (Mission 129, maquette v2) : le titre et le
+            contenu commencent une page neuve à l'impression, pour ne jamais se couper. */}
+        <section
+          className="flex flex-col gap-3 print:break-before-page"
+          data-testid="market-update-ranking"
+        >
+          <SectionTitle number={sectionNumber('lines')} title="Où en est votre prix" />
+          {ranking ? (
+            <PriceRankingView
+              ranking={ranking}
+              meetingDay={meeting}
+              pointDay={pointDay}
+              searchedRange={summary.newcomersSearch?.priceRange ?? null}
             />
-          </div>
-          <div className="flex flex-col gap-3 sm:hidden">
-            {lineBlock(
-              1,
-              `Au rendez-vous${meeting ? ` du ${meeting}` : ''}`,
-              `${summary.competitors.filter((item) => !item.newcomer).length} concurrent${summary.competitors.filter((item) => !item.newcomer).length > 1 ? 's' : ''} · prix du rendez-vous`,
-              lines.meeting,
-              'Votre prix',
-            )}
-            {lineBlock(
-              2,
-              `Aujourd’hui${pointDay ? `, ${pointDay}` : ''}`,
-              `${lines.today?.prices.length ?? 0} encore en vente`,
-              lines.today,
-              'Votre prix',
-              lines.todayGone.probableSale + lines.todayGone.withdrawn + lines.todayGone.unknown >
-                0 ? (
-                <p className="self-start rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-                  {[
-                    lines.todayGone.probableSale > 0
-                      ? `${lines.todayGone.probableSale} vente${lines.todayGone.probableSale > 1 ? 's' : ''} probable${lines.todayGone.probableSale > 1 ? 's' : ''}`
-                      : null,
-                    lines.todayGone.withdrawn > 0
-                      ? `${lines.todayGone.withdrawn} retiré${lines.todayGone.withdrawn > 1 ? 's' : ''} sans vente`
-                      : null,
-                    lines.todayGone.unknown > 0
-                      ? `${lines.todayGone.unknown} retirée${lines.todayGone.unknown > 1 ? 's' : ''}, durée inconnue`
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}{' '}
-                  · comptés à part
-                </p>
-              ) : undefined,
-            )}
-            {lineBlock(
-              3,
-              'Face aux nouveaux venus',
-              hasNewcomers
-                ? `${newcomers.length} nouveau${newcomers.length > 1 ? 'x' : ''} venu${newcomers.length > 1 ? 's' : ''} · à votre prix ou moins`
-                : summary.newcomersSearch
-                  ? NEWCOMERS_LIMITED_LABEL
-                  : 'vus sur le marché après le rendez-vous',
-              lines.newcomers,
-              'Votre prix',
-              undefined,
-              'Nouveau venu',
-            )}
-            {alignment ? (
-              <p className={`text-xs font-semibold ${subjectClasses?.text ?? 'text-brand-deep'}`}>
-                Votre prix : {alignment.label}
-              </p>
-            ) : null}
-          </div>
-          {alignment ? (
-            <p className="text-xs text-zinc-500">
-              Couleur de votre prix, la même sur les trois lignes : vert sous +5 % de l’analyse de
-              votre conseiller, orange de +5 à +10&nbsp;%, rouge au-delà.
+          ) : (
+            <p className="border border-dashed border-zinc-300 px-3 py-4 text-center text-sm text-zinc-500">
+              Sans prix retenu ensemble, le classement ne se calcule pas.
             </p>
-          ) : null}
+          )}
         </section>
 
         <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
