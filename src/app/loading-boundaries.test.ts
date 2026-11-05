@@ -3,18 +3,12 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-// Mission 128 — la vitesse : chaque espace montre son attente tout de suite après le clic, sans
-// rien lire ; les fiches n'en ont pas, pour garder leur 404 et leurs redirections ; les fonctions
-// tournent à Paris, près de la base.
+// Mission 128 — les fonctions tournent à Paris, près de la base. Correctif de la 128 (05/11) : les
+// attentes des espaces (`loading.tsx`) sont retirées. Sous elles, un geste qui enregistre ne
+// rafraîchissait plus la page (la relance du Suivi restait invisible), et un lien vers un espace
+// déjà visité pouvait ouvrir une page vide (Prospection depuis le Suivi) : prouvé par l'e2e du
+// parcours sur l'essai, rouge avec elles, vert sans elles.
 const PROTECTED = 'src/app/(protected)';
-const BOUNDARIES = [
-  `${PROTECTED}/suivi/loading.tsx`,
-  `${PROTECTED}/prospection/loading.tsx`,
-  `${PROTECTED}/visites/loading.tsx`,
-  `${PROTECTED}/live/loading.tsx`,
-  `${PROTECTED}/builder/(liste)/loading.tsx`,
-  `${PROTECTED}/acquereurs/(liste)/loading.tsx`,
-];
 
 const all = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
@@ -22,38 +16,16 @@ const all = (dir: string): string[] =>
     return statSync(path).isDirectory() ? all(path) : [path];
   });
 
-describe('les attentes des espaces', () => {
-  it('chaque espace a la sienne, et seulement celles-là', () => {
-    for (const path of BOUNDARIES) expect(existsSync(path), path).toBe(true);
-    const found = all('src/app').filter((path) => path.endsWith('loading.tsx'));
-    expect(found.sort()).toEqual([...BOUNDARIES].sort());
+describe('aucune attente d’espace', () => {
+  it('aucun loading.tsx sous src/app', () => {
+    expect(all('src/app').filter((path) => path.endsWith('loading.tsx'))).toEqual([]);
   });
 
-  it('une attente ne lit rien : ni session, ni base, ni paramètre', () => {
-    for (const path of [...BOUNDARIES, 'src/components/ui/page-skeleton.tsx']) {
-      const source = readFileSync(path, 'utf8');
-      expect(source, path).not.toMatch(
-        /\basync\b|\bawait\b|params|searchParams|next\/headers|@\/lib\/supabase|\/queries\/|@\/lib\/auth|'use client'/,
-      );
-      const imports = [...source.matchAll(/from '([^']+)'/g)].map((match) => match[1]);
-      for (const source of imports) expect(source, path).toMatch(/^@\/components\/ui\//);
-    }
-  });
-
-  it('elle se dit aux lecteurs d’écran', () => {
-    const skeleton = readFileSync('src/components/ui/page-skeleton.tsx', 'utf8');
-    expect(skeleton).toContain('role="status"');
-    expect(skeleton).toContain('aria-busy="true"');
-    expect(skeleton).toContain('Chargement…');
-  });
-
-  it('les listes de Préparation et des acquéreurs gardent leur adresse, leurs fiches leur 404', () => {
+  it('les listes de Préparation et des acquéreurs gardent leur adresse', () => {
     expect(existsSync(`${PROTECTED}/builder/(liste)/page.tsx`)).toBe(true);
     expect(existsSync(`${PROTECTED}/acquereurs/(liste)/page.tsx`)).toBe(true);
     expect(existsSync(`${PROTECTED}/builder/page.tsx`)).toBe(false);
     expect(existsSync(`${PROTECTED}/acquereurs/page.tsx`)).toBe(false);
-    expect(existsSync(`${PROTECTED}/builder/[projectId]/loading.tsx`)).toBe(false);
-    expect(existsSync(`${PROTECTED}/acquereurs/[buyerId]/loading.tsx`)).toBe(false);
   });
 
   it('les fonctions tournent à Paris (cdg1), le cron de la nuit est inchangé', () => {

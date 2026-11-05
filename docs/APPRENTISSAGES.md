@@ -88,6 +88,16 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   pose donc sur les listes seulement : un groupe `(liste)/` garde l'adresse et laisse les fiches
   hors de l'attente. Changer un filtre (`?origine=`, `?issue=`) ne montre pas le squelette,
   vérifié sur l'essai.
+- 05/11 · Correctif 128 · Les `loading.tsx` de la M128, partis sans e2e (« barrières seulement »),
+  cassaient deux gestes en production : après une action serveur qui revalide, le Suivi gardait
+  l'ancien écran (la relance écrite en base n'apparaissait qu'au rechargement) ; un lien vers un
+  espace déjà visité ouvrait une page au `main` vide (Prospection depuis le Suivi). Ni la
+  documentation de Next 16 ni les barrières ne le disaient : l'e2e du parcours sur l'essai, rouge
+  avec les attentes, vert sans elles (2,9 min), l'a prouvé. Une mission qui touche le rendu ou la
+  navigation de l'App Router joue l'e2e, même « sans comportement nouveau ».
+- 05/11 · Correctif 128 · Les journaux d'exécution Vercel répondent 403 par le connecteur ; la
+  connexion du compte de test échoue sur un `next start` local en http : un défaut de l'essai se
+  prouve sur l'essai, par une branche d'expérience fusionnée dans `essai`, puis retirée.
 - 05/11 · M128 · `npm run typecheck` en local lit aussi `.next/dev/types`, les types d'un serveur
   de développement lancé plus tôt : déplacer une page y laisse une erreur que la CI, partie d'un
   dépôt propre, ne voit pas. Le build régénère `.next/types`, pas `.next/dev`.
