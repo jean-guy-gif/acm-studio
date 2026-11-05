@@ -42,12 +42,12 @@ import {
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import { idealPageLayout, selectionKey } from '@/features/ideal-properties/services/ideal-page';
+import type { SelectionItemInput } from '@/features/ideal-properties/services/ideal-selection';
 import {
   seenOnLabel,
   selectionChanged,
   SELECTION_TOO_MANY,
-  type SelectionItemInput,
-} from '@/features/ideal-properties/services/ideal-selection';
+} from '@/features/ideal-properties/services/ideal-selection-labels';
 import {
   IDEAL_CATEGORIES,
   IDEAL_CATEGORY_HINTS,

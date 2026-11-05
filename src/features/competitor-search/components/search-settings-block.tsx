@@ -22,7 +22,7 @@ import {
   type SearchSettings,
   type SearchSettingsInput,
 } from '@/features/competitor-search/services/search-settings';
-import { STREAM_ESTATE_TARGET } from '@/features/competitor-search/services/stream-estate-tiers';
+import { STREAM_ESTATE_TARGET } from '@/features/competitor-search/services/stream-estate-limits';
 import {
   DPE_FILTER_HINT,
   DPE_NO_FILTER_HINT,

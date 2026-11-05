@@ -13,6 +13,7 @@ import { CompetitorLocatorWatcher } from '@/features/competitor-locator/componen
 import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
 import { withCardOpposition } from '@/features/prospecting/queries/prospecting-card-store';
 import { getProspectingRows } from '@/features/competitor-locator/queries/get-prospecting-rows';
+import { hasSelectedCompetitorsToLocate } from '@/features/competitor-locator/queries/has-competitors-to-locate';
 import { isProspectingOpen } from '@/features/competitor-locator/services/build-prospecting-rows';
 import { ReopenLivePanel } from '@/features/live-reopening/components/reopen-live-panel';
 import { getLiveReopenings } from '@/features/live-reopening/queries/get-live-reopenings';
@@ -56,11 +57,16 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
-  const conclusion = project.status === 'meeting_completed' ? await getConclusion(projectId) : null;
-  const launch = await getLiveLaunchInfo(projectId);
-  // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
-  const reopenings = await getLiveReopenings(projectId);
+  // Mission 128 B — ce qui ne dépend que du dossier part ensemble.
+  const [conclusion, launch, reopenings, hasCompetitorsToLocate] = await Promise.all([
+    // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
+    project.status === 'meeting_completed' ? getConclusion(projectId) : null,
+    getLiveLaunchInfo(projectId),
+    // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
+    getLiveReopenings(projectId),
+    // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander.
+    hasSelectedCompetitorsToLocate(projectId),
+  ]);
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
@@ -160,7 +166,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {prospectingRows ? (
         <ProspectingSection projectId={projectId} rows={prospectingRows} />
       ) : (
-        <CompetitorLocatorWatcher projectId={projectId} />
+        <CompetitorLocatorWatcher projectId={projectId} enabled={hasCompetitorsToLocate} />
       )}
 
       {reopenings ? (

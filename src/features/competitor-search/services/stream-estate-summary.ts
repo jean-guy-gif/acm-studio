@@ -11,10 +11,12 @@ import {
   STREAM_ESTATE_MORE_CAP,
   STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
   STREAM_ESTATE_TARGET,
-  type TierCursor,
-  type TieredSearchCounts,
-  type TieredSearchMemory,
-  type TierReport,
+} from '@/features/competitor-search/services/stream-estate-limits';
+import type {
+  TierCursor,
+  TieredSearchCounts,
+  TieredSearchMemory,
+  TierReport,
 } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
   STREAM_ESTATE_SOURCE,

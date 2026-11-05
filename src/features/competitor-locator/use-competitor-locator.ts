@@ -30,6 +30,8 @@ export function useCompetitorLocator(
   projectId: string,
   // Faux là où l'écran ne montre pas les adresses (recherche) : rien à rafraîchir.
   refreshOnChange = true,
+  // Mission 128 B — faux quand aucune adresse ne reste à demander : aucune passe ne part.
+  enabled = true,
 ): {
   availability: LocatorAvailability | null;
   refresh: () => void;
@@ -40,6 +42,9 @@ export function useCompetitorLocator(
   const watchRef = useRef<LocationWatch | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     const watch = createLocationWatch({
       sync: () =>
         demo
@@ -72,7 +77,7 @@ export function useCompetitorLocator(
       watch.stop();
       watchRef.current = null;
     };
-  }, [projectId, router, refreshOnChange, demo]);
+  }, [projectId, router, refreshOnChange, demo, enabled]);
 
   const refresh = useCallback(() => watchRef.current?.start(), []);
 

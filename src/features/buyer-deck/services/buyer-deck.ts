@@ -19,7 +19,7 @@ import {
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { DPE_CLASSES, dpeClass } from '@/features/dpe/services/dpe';
 import { BUDGET_MARGIN_PERCENT } from '@/features/ideal-properties/services/ideal-criteria';
-import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
+import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection-labels';
 import { buyerBudgetTone } from '@/features/buyer-deck/services/buyer-budget-tone';
 import {
   buyerCommuneKey,

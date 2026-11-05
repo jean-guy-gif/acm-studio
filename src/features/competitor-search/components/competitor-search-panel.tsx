@@ -88,7 +88,6 @@ import type { SaveSearchDefaultsResult } from '@/features/competitor-search/acti
 import { batchDecisions, decisionOf } from '@/features/competitor-search/services/batch-decisions';
 import {
   applySavedSearch,
-  readSearchSettingsInput,
   settingsChangeKind,
   settingsToInput,
   type SearchDefaults,
@@ -96,6 +95,7 @@ import {
   type SearchSettingsInput,
   type SettingRange,
 } from '@/features/competitor-search/services/search-settings';
+import { readSearchSettingsInput } from '@/features/competitor-search/services/search-settings-schema';
 import { sortReceived } from '@/features/competitor-search/services/search-filters';
 import { showBatchImport } from '@/features/competitor-search/services/batch-import-visibility';
 import {
