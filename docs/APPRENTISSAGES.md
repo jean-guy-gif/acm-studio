@@ -144,6 +144,15 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   confirmation (« Confirmation required »). En lecture : `npx supabase db query --remote --read-only
 "…"`, sans confirmation. `--linked` est déprécié au profit de `--remote`, et `migration list
 --linked` échoue sur la configuration locale : lire `supabase_migrations.schema_migrations`.
+- 05/11 · M131 · La CLI Supabase s'est mise à jour seule sur le poste (2.101.0 → 3.0.0, par `npx
+supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`, que la 2.101.0
+  refuse à son tour) et `npm run sauvegarde` cassait au comptage (« Unexpected end of JSON input ») :
+  hors mode agent, la 3.0.0 rend un tableau dessiné, pas du JSON. Une seule CLI désormais, épinglée
+  partout : `npx --yes supabase@3.0.0` (sauvegarde, nettoyage de l'agence de test, e2e, `gen:types`,
+  procédure d'effacement) et `version: 3.0.0` dans la CI, avec `--remote`, `--output-format json
+--agent no` pour lire, `--read-only` pour compter, `--yes` pour écrire. Le stockage exige encore
+  `--experimental`, `db dump` encore Docker lancé, `gen types` n'a plus `--local` (local par
+  défaut). Une montée de version se décide, puis se prouve par `npm run sauvegarde` et la CI.
 - 30/10 · M120 B · Le gardien-sql a fait trois passages sur la migration (six « à corriger ») :
   une copie cible doit être une copie RETENUE de la même annonce, un bien démarché déjà présent se
   complète sans écraser, et le complément ne pose jamais un mandat à côté d'une collaboration

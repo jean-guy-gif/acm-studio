@@ -66,11 +66,38 @@ export function run(command, args, options = {}) {
   });
 }
 
-// `supabase db query --linked` rend un objet JSON (suivi d'éventuels avis de la CLI).
-export function queryLinked(sql) {
-  const out = run('supabase', ['db', 'query', '--linked', sql]);
-  const json = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1));
-  return Object.fromEntries(json.rows.map((row) => [row.t, Number(row.n)]));
+// La CLI Supabase de la sauvegarde est épinglée (05/11 : la CLI 3.0.0 a remplacé `--linked` par
+// `--remote` et rend un tableau dessiné hors du mode agent ; le comptage ne lisait plus rien).
+// Une montée de version se décide ici, et se vérifie par « npm run sauvegarde ».
+export const SUPABASE_CLI = ['--yes', 'supabase@3.0.0'];
+
+export function supabase(args, options = {}) {
+  return run('npx', [...SUPABASE_CLI, ...args], options);
+}
+
+// Une requête en lecture seule sur le projet lié. `--agent no` fixe la forme de la sortie : un
+// tableau JSON ; en mode agent, la CLI l'enveloppe dans un objet `{ rows }` — on lit les deux.
+export function queryRemote(sql) {
+  const out = supabase([
+    'db',
+    'query',
+    '--remote',
+    '--read-only',
+    '--output-format',
+    'json',
+    '--agent',
+    'no',
+    sql,
+  ]);
+  const start = out.search(/[[{]/);
+  if (start < 0) {
+    throw new Error('La CLI Supabase n’a rendu aucun résultat JSON au comptage.');
+  }
+  const json = JSON.parse(
+    out.slice(start, Math.max(out.lastIndexOf(']'), out.lastIndexOf('}')) + 1),
+  );
+  const rows = Array.isArray(json) ? json : json.rows;
+  return Object.fromEntries(rows.map((row) => [row.t, Number(row.n)]));
 }
 
 export function table(rows, headers) {
