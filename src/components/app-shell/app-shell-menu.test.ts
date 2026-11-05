@@ -52,10 +52,10 @@ describe('le menu de gauche', () => {
     expect(html).not.toMatch(/Administration|Aide|Ma démo|Erreurs|Mon profil/);
   });
 
-  it('mode Acquéreur : les quatre espaces, rien d’autre', () => {
+  it('mode Acquéreur : ses trois espaces, rien d’autre (M130 B)', () => {
     nav.pathname = '/acquereurs';
     const html = renderToStaticMarkup(createElement(SidebarNav, { workspaceMode: 'buyer' }));
-    expect(links(html)).toEqual(['/acquereurs', '/biens-ideaux', '/visites', '/prospection']);
+    expect(links(html)).toEqual(['/acquereurs', '/visites', '/prospection']);
   });
 
   it('une page du menu de la carte ne surligne aucun des quatre espaces', () => {

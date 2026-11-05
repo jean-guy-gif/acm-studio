@@ -10,13 +10,12 @@ const SELLER_NAV: NavItem[] = [
   { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
 ];
 
-// Mode Acquéreur : les fiches (M117), les biens idéaux (M118), les visites (M119), la même
-// Prospection.
+// Mode Acquéreur : les fiches (M117), les visites (M119), la même Prospection. Mission 130 B —
+// « Biens idéaux » quitte le menu : c'était la même liste que « Acquéreurs ».
 const BUYER_NAV: NavItem[] = [
   { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
-  { href: '/biens-ideaux', label: 'Biens idéaux', hint: 'Ce qui leur correspond' },
-  { href: '/visites', label: 'Visites', hint: 'Demandes et retours' },
-  { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
+  { href: '/visites', label: 'Visites', hint: 'À planifier, faites, retours' },
+  { href: '/prospection', label: 'Prospection', hint: 'Propriétaires et confrères' },
 ];
 
 // Mission 125 — le menu de gauche ne montre que le travail : les quatre espaces du mode. Tout le

@@ -21,16 +21,15 @@ describe('le mode du menu, Vendeur ou Acquéreur', () => {
     ]);
   });
 
-  it('Acquéreur : Acquéreurs, Biens idéaux, Visites (M119), Prospection', () => {
+  // Mission 130 B — « Biens idéaux » quitte le menu (la même liste que « Acquéreurs »).
+  it('Acquéreur : Acquéreurs, Visites (M119), Prospection', () => {
     expect(navForMode('buyer').map((item) => item.label)).toEqual([
       'Acquéreurs',
-      'Biens idéaux',
       'Visites',
       'Prospection',
     ]);
     expect(navForMode('buyer').map((item) => item.href)).toEqual([
       '/acquereurs',
-      '/biens-ideaux',
       '/visites',
       '/prospection',
     ]);
@@ -62,7 +61,7 @@ describe('le mode du menu, Vendeur ou Acquéreur', () => {
   it('une page d’un mode désigne son mode ; une page commune ne désigne rien', () => {
     expect(modeForPath('/acquereurs')).toBe('buyer');
     expect(modeForPath('/acquereurs/abc/')).toBe('buyer');
-    expect(modeForPath('/biens-ideaux')).toBe('buyer');
+    expect(modeForPath('/acquereurs/abc/biens-ideaux')).toBe('buyer');
     expect(modeForPath('/visites')).toBe('buyer');
     expect(modeForPath('/builder/123/avant-rendez-vous')).toBe('seller');
     expect(modeForPath('/live')).toBe('seller');
