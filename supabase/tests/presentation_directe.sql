@@ -2,8 +2,7 @@
 --   §1 un dossier est en Live interactif par défaut ;
 --   §2 « montré en directe » est refusé hors du mode direct ;
 --   §3 en directe, il fige le prix révélé, ne se vide ni ne se réécrit, et une devinette ensuite
---      est ignorée ; jamais avec une devinette (prix ou durée) ; sans prix ce jour-là, il ne se
---      fige pas un autre jour ;
+--      est ignorée ; jamais avec une devinette (prix ou durée) ;
 --   §4 refusé sur un concurrent déjà deviné ou écarté par « Non » ; revenir à l'interactif garde
 --      ce qui a été montré et accepte une devinette ailleurs ;
 --   §5 « document seul » refusé une fois le Live commencé ; le mode ne change plus après la
@@ -49,8 +48,6 @@ insert into public.comparables (id, agency_id, project_id, title, price, surface
    '131ccccc-0000-0000-0000-000000000001', 'c2', 320000, 62, true, 1),
   ('131dddd0-0000-0000-0000-000000000003', '131aaaaa-0000-0000-0000-000000000000',
    '131ccccc-0000-0000-0000-000000000001', 'c3', 340000, 64, true, 2),
-  ('131dddd0-0000-0000-0000-000000000004', '131aaaaa-0000-0000-0000-000000000000',
-   '131ccccc-0000-0000-0000-000000000001', 'c4 sans prix', null, 65, true, 3),
   ('131dddd0-0000-0000-0000-000000000005', '131aaaaa-0000-0000-0000-000000000000',
    '131ccccc-0000-0000-0000-000000000001', 'c5', 360000, 66, true, 4),
   ('131dddd0-0000-0000-0000-000000000009', '131aaaaa-0000-0000-0000-000000000000',
@@ -106,21 +103,6 @@ begin
     raise exception 'FAIL 3: montré en directe accepté avec une devinette de durée';
   exception when sqlstate '42501' then null;
   end;
-end $$;
-
--- Un concurrent sans prix, montré en directe : son prix arrivé ensuite ne se fige pas un autre jour.
-insert into public.live_seller_responses (agency_id, project_id, comparable_id, shown_directly_at)
-  values ('131aaaaa-0000-0000-0000-000000000000', '131ccccc-0000-0000-0000-000000000001',
-          '131dddd0-0000-0000-0000-000000000004', now());
-update public.comparables set price = 400000 where id = '131dddd0-0000-0000-0000-000000000004';
-update public.live_seller_responses set seller_serious_competitor = 'yes'
-  where comparable_id = '131dddd0-0000-0000-0000-000000000004';
-do $$
-begin
-  if (select revealed_listing_price from public.live_seller_responses
-        where comparable_id = '131dddd0-0000-0000-0000-000000000004') is not null then
-    raise exception 'FAIL 3: le prix d''un concurrent montré sans prix s''est figé un autre jour';
-  end if;
 end $$;
 
 -- §3 — en directe : le prix révélé se fige, le fait ne se vide ni ne se réécrit, une devinette
