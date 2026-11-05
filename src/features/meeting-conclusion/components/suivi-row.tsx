@@ -194,10 +194,12 @@ function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionH
       </ol>
       {/* Sur téléphone : le libellé de l'étape du jour seulement. */}
       <p className="flex flex-wrap gap-x-3 text-xs @md:hidden">
-        <span className={SEGMENT_TEXT[today?.tone ?? 'later']}>
-          {today ? today.label : segments[2].label}
-          {today?.late ? <span className="text-orange-700">{today.late}</span> : null}
-        </span>
+        {today !== segments[1] ? (
+          <span className={SEGMENT_TEXT[today?.tone ?? 'later']}>
+            {today ? today.label : segments[2].label}
+            {today?.late ? <span className="text-orange-700">{today.late}</span> : null}
+          </span>
+        ) : null}
         {frieze.prospecting.total > 0 ? (
           <Link href={prospectionHref} className="font-semibold text-brand-deep underline">
             {segments[1].label}
