@@ -489,15 +489,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       String(PERCEIVED_PRICE - COMMERCIALIZATION_PRICE),
     );
 
-    // Mission 85 — la note donnée après le prix : la première, la dernière, et ce qui manquait.
-    await expect(
-      row.getByText('Sa note pour lancer la vente : 7 sur 10 au début, 10 sur 10 à la fin'),
-      'La note du vendeur manque au Suivi',
-    ).toBeVisible();
+    // Mission 85 — la note donnée après le prix : la première, la dernière, et ce qui manquait,
+    // dans « Ce que le vendeur a dit » (M96), une seule fois.
+    const said = row.getByTestId('seller-said');
+    await expect(said.getByText('Prêt à lancer : 7/10 → 10/10'), 'La note manque').toBeVisible();
     await expect(
       row.getByText(`Ce qui lui manquait pour être à 10 : « ${MISSING_FOR_TEN} »`),
-      'Ce qui manquait pour être à 10 manque au Suivi',
-    ).toBeVisible();
+      'Ce qui manquait pour être à 10 manque au Suivi, ou s’y dit deux fois',
+    ).toHaveCount(1);
   });
 
   // Mission 96 — la relance : ce que le vendeur a dit, le motif, une relance consignée, et le

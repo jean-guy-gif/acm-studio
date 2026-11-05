@@ -214,14 +214,6 @@ function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionH
   );
 }
 
-function launchReadinessSentence(first: number | null, last: number | null): string | null {
-  if (first == null && last == null) return null;
-  if (first != null && last != null && first !== last) {
-    return `Sa note pour lancer la vente : ${first} sur 10 au début, ${last} sur 10 à la fin`;
-  }
-  return `Sa note pour lancer la vente : ${last ?? first} sur 10`;
-}
-
 type Panel = 'relance' | 'point' | 'details' | 'issue' | null;
 
 // Mission 130 — « Une seule prochaine étape » : à gauche le vendeur, son bien, le chemin du prix
@@ -302,10 +294,6 @@ export function SuiviRow({
         )
       : null;
   const missingMotive = outcome === 'follow_up' && conclusion?.followUpMotive == null;
-  const readiness = launchReadinessSentence(
-    conclusion?.launchReadinessFirst ?? null,
-    conclusion?.launchReadinessLast ?? null,
-  );
   const objections = (conclusion?.objections ?? []).map((value) =>
     OBJECTION_LABELS[value].toLowerCase(),
   );
@@ -648,17 +636,7 @@ export function SuiviRow({
 
             {conclusion ? <ConclusionAmountsPanel amounts={conclusion} /> : null}
 
-            {readiness ? (
-              <div className="flex flex-col gap-1">
-                <span className={metaLabel}>{readiness}</span>
-                {conclusion?.launchReadinessMissing ? (
-                  <p className="text-sm whitespace-pre-wrap text-zinc-700 stage:text-white/80">
-                    Ce qui lui manquait pour être à 10&nbsp;: «&nbsp;
-                    {conclusion.launchReadinessMissing}&nbsp;»
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
+            {/* La note de 1 à 10 et ce qui lui manquait : dans « Ce que le vendeur a dit » (M96). */}
 
             {objections.length > 0 ? (
               <p
