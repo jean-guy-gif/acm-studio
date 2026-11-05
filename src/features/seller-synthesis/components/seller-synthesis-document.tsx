@@ -42,6 +42,20 @@ const STATUS = {
   },
 } as const;
 
+// Mission 129 — le Point marché lit la grille du côté du vendeur, aux couleurs de son classement
+// (Jean-Guy, 05/11) : vert ce qui l'avantage, orange (« attention ») ce qui avantage le concurrent.
+const SELLER_STATUS = {
+  ...STATUS,
+  competitor_advantage: {
+    ...STATUS.competitor_advantage,
+    className: 'border-amber-300 bg-orange-50 text-amber-800',
+  },
+  competitor_weakness: {
+    ...STATUS.competitor_weakness,
+    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+  },
+} as const;
+
 export const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
 export const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-avoid';
 // Les cartes d'une même ligne se partagent toute la largeur, qu'il y en ait une, deux ou trois.
@@ -115,8 +129,16 @@ export function Photo({
   );
 }
 
-export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
+export function Grid({
+  competitor,
+  palette = 'live',
+}: {
+  competitor: SynthesisCompetitor;
+  // 'live' : les couleurs de la grille du Live (M40) ; 'seller' : celles du Point marché.
+  palette?: 'live' | 'seller';
+}) {
   if (competitor.features.length === 0) return null;
+  const statuses = palette === 'seller' ? SELLER_STATUS : STATUS;
   return (
     <table className="w-full border-collapse text-[0.78rem]">
       <tbody>
@@ -131,9 +153,9 @@ export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
             </td>
             <td className="py-1 text-right">
               <span
-                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${STATUS[feature.status].className}`}
+                className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${statuses[feature.status].className}`}
               >
-                {STATUS[feature.status].label}
+                {statuses[feature.status].label}
               </span>
             </td>
           </tr>
