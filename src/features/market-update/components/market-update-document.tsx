@@ -89,8 +89,7 @@ function NewcomerPriceBlock({ item }: { item: MarketUpdateCompetitor }) {
         </div>
       </div>
       <p className="text-[0.78rem] text-zinc-600">
-        Retenu par votre conseiller pour la comparaison : il compte dans « Avec les nouveaux venus
-        », pas dans « Au rendez-vous » ni « Aujourd’hui ».
+        {`Retenu par votre conseiller pour la comparaison : il compte dans « Avec les nouveaux venus », pas dans « Au rendez-vous » ni « Aujourd’hui ».`}
       </p>
     </div>
   );
