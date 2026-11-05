@@ -90,7 +90,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     profile
       ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
       : Promise.resolve(new Map()),
-    getAgencyProspecting(counted),
+    // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
+    // fiche s'affiche quand même : seules les correspondances le disent.
+    getAgencyProspecting(counted).catch(() => null),
     profile
       ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
       : Promise.resolve({ selections: [], letters: [], failed: true }),
@@ -107,15 +109,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const words = deck?.words ?? proposedBuyerWords(buyer);
   const criteria = deckCriteria(buyer);
   // Mission 86, 117 — « Rapprocher » : ce que l'agence a déjà qui correspond à sa recherche.
-  const matches = reconcileBuyer(
-    buyerToCriteria(buyer),
-    buyerCandidates(
-      counted,
-      prospecting.cards
-        .filter((cardItem) => cardItem.row.opposedOn == null)
-        .map(({ row, seller }) => ({ row, seller })),
-    ),
-  ).matchCount;
+  const matches = prospecting
+    ? reconcileBuyer(
+        buyerToCriteria(buyer),
+        buyerCandidates(
+          counted,
+          prospecting.cards
+            .filter((cardItem) => cardItem.row.opposedOn == null)
+            .map(({ row, seller }) => ({ row, seller })),
+        ),
+      ).matchCount
+    : null;
   const timeline = buyerTimeline({
     createdAt: buyer.createdAt,
     selections: history.selections,
@@ -444,12 +448,18 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               Vos mandats, vendeurs à relancer et concurrents qui correspondent à sa recherche.
               Gratuit.
             </p>
-            <Link
-              href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
-              className={`${btnSecondary} w-full`}
-            >
-              Voir les correspondances · {matches}
-            </Link>
+            {matches == null ? (
+              <p role="alert" className="text-sm font-semibold text-zinc-600 stage:text-white/70">
+                Correspondances illisibles pour l’instant : rechargez la page.
+              </p>
+            ) : (
+              <Link
+                href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+                className={`${btnSecondary} w-full`}
+              >
+                Voir les correspondances · {matches}
+              </Link>
+            )}
           </section>
 
           <section id="statut" className="flex scroll-mt-6 flex-col gap-3 text-sm">
