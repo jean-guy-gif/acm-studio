@@ -47,6 +47,11 @@ export function canAdvanceLivePage(
       entry?.durationKnown === false || entry?.response?.seller_estimated_days_on_market != null
     );
   }
+  // MISSION 131 — présentation directe : on ne quitte l'écran d'un concurrent qu'une fois le fait
+  // « montré en directe » enregistré (c'est lui qui a livré le prix, et qui le fige).
+  if (pageType === 'comparable_direct') {
+    return entry?.response?.shown_directly_at != null;
+  }
   // MISSION 82 — le vendeur dit son prix avant de voir un concurrent : on ne quitte la
   // page qu'une fois ce prix PERSISTÉ (aucun concurrent atteignable avant, même par l'URL).
   if (pageType === 'seller_perceived_price') {
@@ -84,6 +89,9 @@ export function livePageHasAnswer(
       );
     case 'comparable_quick_reveal':
       return response?.seller_estimated_days_on_market != null;
+    // Mission 131 — pas une réponse du vendeur, mais l'écran a eu lieu : on reprend après lui.
+    case 'comparable_direct':
+      return response?.shown_directly_at != null;
     case 'dangerous_competitor':
       return summary?.seller_most_dangerous_comparable_id != null;
     case 'seller_revised_price':

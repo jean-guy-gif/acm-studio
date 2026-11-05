@@ -190,6 +190,20 @@ export default function ConfidentialitePage() {
               d’expiration.
             </li>
             <li>
+              L’Étude de marché remise au vendeur : elle présente, au jour où elle est ouverte,
+              chaque bien concurrent retenu par le conseiller — ses caractéristiques face au bien du
+              vendeur, son prix affiché, depuis quand il est en vente, une baisse de prix connue —
+              puis où se situe le prix du vendeur parmi eux. Chaque bien concurrent y figure par ses
+              caractéristiques et une photo tirée de son annonce, montrée telle quelle — jamais son
+              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend ; le conseiller
+              peut retirer cette photo (« Sans photo »), du document comme du lien. Le conseiller
+              peut l’imprimer ou créer un lien pour l’envoyer au vendeur : ce lien s’ouvre sans
+              compte, n’est jamais indexé par les moteurs de recherche et expire après 30 jours ; un
+              nouveau lien remplace le précédent, et le conseiller peut le retirer. ACM Studio ne
+              garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
+              d’expiration.
+            </li>
+            <li>
               Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et
               lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
               caractéristiques, son prix affiché, pourquoi il correspond et ce qu’il faut savoir,

@@ -10,6 +10,7 @@ import {
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { writeLiveComparableResponse } from '@/features/live-seller/services/write-live-comparable-response';
 import { writeLiveSellerSummary } from '@/features/live-seller/services/write-live-seller-summary';
+import { writeShownDirectly } from '@/features/live-seller/services/write-shown-directly';
 
 // MISSION 51 §2.2 — LA VOIE DE LIVRAISON, unique. Le montant n'entre jamais dans la
 // charge initiale ; il est LIVRÉ ici, après persistance ET ré-vérification côté serveur
@@ -20,8 +21,11 @@ import { writeLiveSellerSummary } from '@/features/live-seller/services/write-li
 // Persister (rapide) puis livrer, en UN aller-retour : l'écran avance, le prix arrive
 // avec la navigation autorisée, jamais avant. Le client ne peut pas forcer la livraison
 // d'un montant que le vendeur n'a pas encore mérité de voir.
+// Mission 131 — troisième voie : un concurrent MONTRÉ EN DIRECTE. Le fait est persisté d'abord
+// (refusé hors présentation directe), puis le prix livré par la même autorisation.
 export type DeliverLiveRequest =
   | { kind: 'comparable-reveal'; comparableId: string; formData: FormData }
+  | { kind: 'comparable-direct'; comparableId: string }
   | { kind: 'advisor-range'; formData: FormData };
 
 export type DeliverLiveResult =
@@ -32,14 +36,20 @@ export async function deliverLiveFragment(
   projectId: string,
   request: DeliverLiveRequest,
 ): Promise<DeliverLiveResult> {
-  if (request.kind === 'comparable-reveal') {
-    const written = await writeLiveComparableResponse(
-      projectId,
-      request.comparableId,
-      request.formData,
-    );
+  if (request.kind === 'comparable-reveal' || request.kind === 'comparable-direct') {
+    const written =
+      request.kind === 'comparable-direct'
+        ? await writeShownDirectly(projectId, request.comparableId)
+        : await writeLiveComparableResponse(projectId, request.comparableId, request.formData);
     if (!written.ok) {
-      return { ok: false, error: written.error, fieldErrors: written.fieldErrors };
+      return {
+        ok: false,
+        error: written.error,
+        fieldErrors:
+          'fieldErrors' in written
+            ? (written.fieldErrors as Record<string, string> | undefined)
+            : undefined,
+      };
     }
     const presentation = await loadLivePresentation(projectId);
     if (!presentation?.live) {

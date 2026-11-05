@@ -6,6 +6,7 @@ import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-field
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { liveResume, type LiveResume } from '@/features/live-seller/services/live-resume';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -28,6 +29,8 @@ export type LiveLaunchInfo = {
   shortlistPending: boolean;
   // Mission 112 — concurrents retenus qui attendent encore leur import : rappelé, sans bloquer.
   pendingImportCount: number;
+  // Mission 131 — « Document seul » : pas de Live à lancer.
+  presentationMode: LivePresentationMode;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -41,6 +44,7 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     projected,
     presentation.property != null,
     presentation.project.liveRhythm,
+    presentation.project.presentationMode,
   );
   const [project, comparables, pending] = await Promise.all([
     getProject(projectId),
@@ -59,5 +63,6 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
       project?.live_shortlist_at ?? null,
     ),
     pendingImportCount: pending.length,
+    presentationMode: presentation.project.presentationMode,
   };
 }

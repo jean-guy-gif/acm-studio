@@ -1,3 +1,4 @@
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import { dpeClass } from '@/features/dpe/services/dpe';
 import {
   buildLivePages,
@@ -53,6 +54,7 @@ const COMPETITOR_TYPES: readonly LivePageType[] = [
   'comparable_duration',
   'comparable_quick_guess',
   'comparable_quick_reveal',
+  'comparable_direct',
 ];
 
 // Les parties, dans l'ordre du Live. Un libellé ne nomme que les écrans présents.
@@ -70,6 +72,7 @@ const PARTS: { key: string; members: { type: LivePageType; label: string }[] }[]
     key: 'market',
     members: [
       { type: 'dangerous_competitor', label: 'Le concurrent le plus dangereux' },
+      { type: 'advisor_closest', label: 'Le concurrent le plus proche' },
       { type: 'seller_revised_price', label: 'Votre prix après le marché' },
       { type: 'price_analysis', label: 'Analyse des prix' },
     ],
@@ -97,6 +100,8 @@ export function buildLiveSequence(
   competitors: readonly SequenceCompetitor[],
   hasSubjectProperty: boolean,
   rhythm: LiveRhythm = 'complete',
+  // Mission 131 — en présentation directe, le déroulé n'a aucun écran qui demande au vendeur.
+  mode: LivePresentationMode = 'interactive',
 ): LiveSequence {
   // Aucune réponse du vendeur : le parcours entier, dans le rythme choisi.
   const pages = buildLivePages(
@@ -110,6 +115,7 @@ export function buildLiveSequence(
     },
     hasSubjectProperty,
     rhythm,
+    mode,
   );
   const count = (types: readonly LivePageType[]) =>
     pages.filter((page) => types.includes(page.type)).length;

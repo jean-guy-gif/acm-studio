@@ -80,6 +80,7 @@ export default async function LivePage() {
                   decisionMissing={launchInfos[index]?.decisionMissing ?? false}
                   shortlistPending={launchInfos[index]?.shortlistPending ?? false}
                   pendingImportCount={launchInfos[index]?.pendingImportCount ?? 0}
+                  presentationMode={launchInfos[index]?.presentationMode}
                 />
               </div>
             </li>

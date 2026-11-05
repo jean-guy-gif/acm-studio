@@ -58,6 +58,12 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   if (!presentation.live) {
     redirect(`/live/${projectId}/pause`);
   }
+  // Mission 131 — « Document seul » : pas de Live. Un ancien lien ouvre l'écran neutre de pause ;
+  // le conseiller change la façon de présenter sur « Avant le rendez-vous ».
+  const presentationMode = presentation.project.presentationMode;
+  if (presentationMode === 'document') {
+    redirect(`/live/${projectId}/pause`);
+  }
   // Mission 112 — jamais sans ses contrôles : un vrai dossier jamais lancé passe d'abord par la
   // confirmation « devant le vendeur » enregistrée ; au-delà de 6 concurrents, par leur choix.
   const project = await getProject(projectId);
@@ -86,7 +92,12 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   const advisorRange = presentation.live ? authorizeAdvisorRange(presentation.live) : null;
 
   const rhythm = presentation.project.liveRhythm;
-  const pages = buildLivePages(projectedLive, presentation.property != null, rhythm);
+  const pages = buildLivePages(
+    projectedLive,
+    presentation.property != null,
+    rhythm,
+    presentationMode,
+  );
   const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
   // Mission 89 — un prix de commercialisation est-il déjà enregistré ? Seul le oui/non part
   // vers la scène, jamais le montant.
@@ -110,6 +121,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       logoDarkUrl={branding?.logoDarkUrl ?? null}
       agencyName={agency?.name ?? null}
       hasAgreedPrice={conclusion?.commercializationPrice != null}
+      presentationMode={presentationMode}
     />
   );
 }

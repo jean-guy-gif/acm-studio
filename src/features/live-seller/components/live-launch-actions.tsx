@@ -19,6 +19,7 @@ import {
   resumeLabel,
   type LiveResume,
 } from '@/features/live-seller/services/live-resume';
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import { confirmLiveLaunch } from '@/features/live-seller/actions/confirm-live-launch';
 import { openExampleDossier } from '@/features/welcome/actions/open-example-dossier';
 
@@ -61,6 +62,7 @@ export function LiveLaunchActions({
   pendingImportCount = 0,
   proceed = false,
   secondary = false,
+  presentationMode = 'interactive',
 }: {
   projectId: string;
   competitorCount: number;
@@ -79,6 +81,9 @@ export function LiveLaunchActions({
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
   // rien à demander s'ouvre tout de suite ; ce qui demande s'affiche déjà ouvert.
   proceed?: boolean;
+  // Mission 131 — « Document seul » : pas de Live ; le bouton est désactivé et mène à l'Étude de
+  // marché et à la conclusion depuis le dossier.
+  presentationMode?: LivePresentationMode;
 }) {
   const router = useRouter();
   const primary = secondary ? btnSecondary : btnPrimary;
@@ -107,6 +112,35 @@ export function LiveLaunchActions({
   useEffect(() => {
     if (proceed && direct && !shortlistPending) router.replace(direct);
   }, [proceed, direct, shortlistPending, router]);
+
+  if (presentationMode === 'document') {
+    return (
+      <div className="flex flex-col items-start gap-1 sm:items-end" data-document-only>
+        <button
+          type="button"
+          disabled
+          aria-describedby={`live-document-${projectId}`}
+          className={primary}
+        >
+          Lancer le Live →
+        </button>
+        <span
+          id={`live-document-${projectId}`}
+          className="max-w-xs text-xs font-medium text-zinc-600 sm:text-right stage:text-white/70"
+        >
+          Document seul : pas de Live.{' '}
+          <Link href={`/builder/${projectId}/etude-de-marche`} className={link}>
+            Ouvrir l’Étude de marché
+          </Link>
+          , puis{' '}
+          <Link href={`/builder/${projectId}/conclusion`} className={link}>
+            conclure le rendez-vous
+          </Link>
+          .
+        </span>
+      </div>
+    );
+  }
 
   if (check.status === 'blocked') {
     return (

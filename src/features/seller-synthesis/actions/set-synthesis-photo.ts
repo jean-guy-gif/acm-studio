@@ -42,5 +42,7 @@ export async function setSynthesisPhoto(
   revalidatePath(`/builder/${parsed.data.projectId}/synthese`);
   // Mission 127 — le Point marché lit le même choix.
   revalidatePath(`/builder/${parsed.data.projectId}/point-marche`);
+  // Mission 131 — l'Étude de marché aussi.
+  revalidatePath(`/builder/${parsed.data.projectId}/etude-de-marche`);
   return { ok: true };
 }

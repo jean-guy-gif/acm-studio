@@ -1,3 +1,4 @@
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import type { LiveRhythm } from '@/features/live-seller/services/build-live-pages';
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
@@ -111,6 +112,8 @@ export type SellerPresentationProject = {
   // Mission 95 — le rythme du Live choisi pour ce dossier, et les heures de début et de fin du
   // Live (null tant qu'elles n'ont pas été relevées). Côté conseiller.
   liveRhythm: LiveRhythm;
+  // Mission 131 — la façon de présenter : Live interactif, présentation directe, document seul.
+  presentationMode: LivePresentationMode;
   liveStartedAt: string | null;
   liveEndedAt: string | null;
   createdAt: string;

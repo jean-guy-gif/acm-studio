@@ -19,7 +19,7 @@ const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
 
 describe('le plan des dossiers de démo', () => {
   it('quatre étapes, nommées, chacune avec son scénario', () => {
-    expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+    expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
     for (const stage of DEMO_STAGES) {
       expect(DEMO_STAGE_LABELS[stage]).not.toMatch(UNSPOKEN);
       expect(DEMO_SCENARIOS.some((s) => s.id === DEMO_STAGE_SCENARIO[stage])).toBe(true);
