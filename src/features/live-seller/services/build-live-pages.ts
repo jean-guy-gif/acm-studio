@@ -1,5 +1,6 @@
 import { dpeMedian } from '@/features/dpe/services/dpe';
-import type { LiveComparableResponse } from '@/features/live-seller/types';
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
+import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 
 // MISSION 51 — la navigation ne lit d'un concurrent que son id et sa réponse persistée.
 // On la type sur ce MINIMUM structurel, si bien que la donnée complète (côté serveur) ET
@@ -16,7 +17,21 @@ export type LiveNavComparable = {
   // vendeur ce qu'on ne saura pas lui dire. Absent = inconnu de l'appelant : l'étape reste.
   durationKnown?: boolean;
 };
-export type LiveNavData = { comparables: LiveNavComparable[] };
+// Mission 131 — en présentation directe, les écrans qui demandent au vendeur n'existent que s'il y
+// a déjà répondu (avant le passage en directe) : c'est le résumé qui le dit.
+export type LiveNavSummary = Partial<
+  Pick<
+    LiveSellerSummary,
+    | 'seller_perceived_property_price'
+    | 'seller_most_dangerous_comparable_id'
+    | 'seller_revised_property_price'
+    | 'seller_launch_readiness_last'
+  >
+>;
+export type LiveNavData = {
+  comparables: LiveNavComparable[];
+  sellerSummary?: LiveNavSummary | null;
+};
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
 // intro → [Votre bien] → seller perceived price → [competition, price, price reveal,
@@ -34,7 +49,11 @@ export type LivePageType =
   // Mission 95 — rythme accéléré, à partir du 4e concurrent : deux écrans au lieu de quatre.
   | 'comparable_quick_guess'
   | 'comparable_quick_reveal'
+  // Mission 131 — présentation directe : un écran par concurrent, son prix affiché d'emblée.
+  | 'comparable_direct'
   | 'dpe_market'
+  // Mission 131 — présentation directe : le concurrent le plus proche, proposé par le conseiller.
+  | 'advisor_closest'
   | 'dangerous_competitor'
   | 'seller_perceived_price'
   | 'seller_revised_price'
@@ -85,11 +104,23 @@ const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3 | 4; title: string
 //
 // `rhythm` (mission 95) : « complete » par défaut pour qui ne le précise pas — c'est le déroulé
 // d'avant la mission. Les écrans du Live passent toujours le rythme du dossier.
+// Mission 131 — `mode` : « direct » retire tout écran qui demande quelque chose au vendeur — sa
+// valeur perçue, les devinettes, la reformulation de son prix, la note de 1 à 10 — sauf ceux où il
+// a DÉJÀ répondu (passage en directe en cours de route : ce qui a été répondu est gardé). Chaque
+// concurrent pas encore joué a un seul écran, son prix affiché d'emblée ; un concurrent déjà
+// montré en directe le garde, même revenu au Live interactif (on ne fait pas deviner un prix vu).
+// « Le plus dangereux » devient « le plus proche de votre bien », proposé par le conseiller.
 export function buildLivePages(
   live: LiveNavData | null,
   hasSubjectProperty: boolean,
   rhythm: LiveRhythm = 'complete',
+  mode: LivePresentationMode = 'interactive',
 ): LivePage[] {
+  const direct = mode === 'direct';
+  const summary = live?.sellerSummary ?? null;
+  const shownAny = (live?.comparables ?? []).some(
+    (comparable) => comparable.response?.shown_directly_at != null,
+  );
   const pages: LivePage[] = [
     {
       key: 'intro',
@@ -113,19 +144,34 @@ export function buildLivePages(
   }
 
   // Mission 82 — le vendeur dit son prix AVANT de voir le moindre concurrent : la page ne
-  // révèle rien, le marché n'arrive que sur « Analyse des prix ».
-  pages.push({
-    key: 'seller_perceived_price',
-    type: 'seller_perceived_price',
-    title: 'Votre valeur perçue',
-    comparableId: null,
-    comparableIndex: null,
-    step: null,
-  });
+  // révèle rien, le marché n'arrive que sur « Analyse des prix ». Mission 131 — en directe, ou
+  // dès qu'un prix a été montré en directe, on ne la lui demande plus (elle reste s'il l'a donnée).
+  if (summary?.seller_perceived_property_price != null || (!direct && !shownAny)) {
+    pages.push({
+      key: 'seller_perceived_price',
+      type: 'seller_perceived_price',
+      title: 'Votre valeur perçue',
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+    });
+  }
 
   const comparables = live?.comparables ?? [];
   comparables.forEach((comparable, index) => {
     const rejected = comparable.response?.seller_serious_competitor === 'no';
+    const guessed = comparable.response?.seller_estimated_listing_price != null;
+    if (comparable.response?.shown_directly_at != null || (direct && !rejected && !guessed)) {
+      pages.push({
+        key: `comparable_direct:${comparable.id}`,
+        type: 'comparable_direct',
+        title: 'Son prix et son temps de vente',
+        comparableId: comparable.id,
+        comparableIndex: index + 1,
+        step: 1,
+      });
+      return;
+    }
     const quick = rhythm === 'accelerated' && index >= FULL_FLOW_COMPETITORS;
     const steps = quick
       ? // « Non, pas un concurrent » : sa devinette n'est pas demandée, il n'y a rien à révéler.
@@ -135,6 +181,29 @@ export function buildLivePages(
         : comparable.durationKnown === false
           ? COMPARABLE_STEPS.filter((step) => step.type !== 'comparable_duration')
           : COMPARABLE_STEPS;
+    // Mission 131 — deviné avant le passage en directe : ses écrans de réponse restent, les
+    // suivants (révélation, durée) deviennent son écran direct, sans rien lui demander.
+    if (direct && guessed && !rejected) {
+      for (const stepDef of steps.filter((s) => s.step <= (quick ? 1 : 2))) {
+        pages.push({
+          key: `${stepDef.type}:${comparable.id}`,
+          type: stepDef.type,
+          title: stepDef.title,
+          comparableId: comparable.id,
+          comparableIndex: index + 1,
+          step: stepDef.step,
+        });
+      }
+      pages.push({
+        key: `comparable_direct:${comparable.id}`,
+        type: 'comparable_direct',
+        title: 'Son prix et son temps de vente',
+        comparableId: comparable.id,
+        comparableIndex: index + 1,
+        step: quick ? 2 : 3,
+      });
+      return;
+    }
     for (const stepDef of steps) {
       pages.push({
         key: `${stepDef.type}:${comparable.id}`,
@@ -161,25 +230,38 @@ export function buildLivePages(
   }
 
   if (comparables.length > 0) {
-    pages.push({
-      key: 'dangerous_competitor',
-      type: 'dangerous_competitor',
-      title: 'Le concurrent le plus dangereux',
-      comparableId: null,
-      comparableIndex: null,
-      step: null,
-    });
+    if (direct && summary?.seller_most_dangerous_comparable_id == null) {
+      pages.push({
+        key: 'advisor_closest',
+        type: 'advisor_closest',
+        title: 'Le concurrent le plus proche',
+        comparableId: null,
+        comparableIndex: null,
+        step: null,
+      });
+    } else {
+      pages.push({
+        key: 'dangerous_competitor',
+        type: 'dangerous_competitor',
+        title: 'Le concurrent le plus dangereux',
+        comparableId: null,
+        comparableIndex: null,
+        step: null,
+      });
+    }
     // Mission 94 — Acte 5 : après avoir vu les biens, le vendeur reformule lui-même son prix,
     // avant que l'analyse ne s'affiche. Facultatif (« Passer »). Sans concurrent, il n'y a rien
     // « vu » : l'écran n'existe pas.
-    pages.push({
-      key: 'seller_revised_price',
-      type: 'seller_revised_price',
-      title: 'Votre prix après le marché',
-      comparableId: null,
-      comparableIndex: null,
-      step: null,
-    });
+    if (!direct || summary?.seller_revised_property_price != null) {
+      pages.push({
+        key: 'seller_revised_price',
+        type: 'seller_revised_price',
+        title: 'Votre prix après le marché',
+        comparableId: null,
+        comparableIndex: null,
+        step: null,
+      });
+    }
   }
 
   pages.push(
@@ -199,17 +281,48 @@ export function buildLivePages(
       comparableIndex: null,
       step: null,
     },
-    // Mission 85 — après le prix de commercialisation, le vendeur se situe de 1 à 10.
-    // Dernier écran : c'est lui qui porte « Terminer le rendez-vous ».
-    {
+  );
+  // Mission 85 — après le prix de commercialisation, le vendeur se situe de 1 à 10.
+  // Dernier écran : c'est lui qui porte « Terminer le rendez-vous ». Mission 131 — pas en
+  // directe (sauf note déjà donnée) : la conclusion devient le dernier écran et le porte.
+  if (!direct || summary?.seller_launch_readiness_last != null) {
+    pages.push({
       key: 'closing_question',
       type: 'closing_question',
       title: 'Prêt à lancer ?',
       comparableId: null,
       comparableIndex: null,
       step: null,
-    },
-  );
+    });
+  }
 
   return pages;
+}
+
+// Mission 131 — passer en présentation directe (ou en revenir) au milieu du Live ne fait perdre
+// sa place à personne : le même écran s'il existe encore, sinon le premier écran du même
+// concurrent, sinon la même position (bornée). Pur.
+export function indexAfterModeChange(
+  current: Pick<LivePage, 'key' | 'comparableId'>,
+  currentIndex: number,
+  next: LivePage[],
+): number {
+  const sameKey = next.findIndex((page) => page.key === current.key);
+  if (sameKey >= 0) {
+    return sameKey;
+  }
+  if (current.comparableId != null) {
+    // Un écran du concurrent devenu direct : son écran direct, pas un retour à sa première question.
+    const direct = next.findIndex(
+      (page) => page.comparableId === current.comparableId && page.type === 'comparable_direct',
+    );
+    if (direct >= 0) {
+      return direct;
+    }
+    const sameComparable = next.findIndex((page) => page.comparableId === current.comparableId);
+    if (sameComparable >= 0) {
+      return sameComparable;
+    }
+  }
+  return Math.max(0, Math.min(currentIndex, next.length - 1));
 }

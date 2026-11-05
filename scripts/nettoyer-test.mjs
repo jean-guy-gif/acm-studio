@@ -50,6 +50,7 @@ const CLEANED = [
   'saved_searches',
   // Mission 110 — les liens de la synthèse au vendeur partent avec leurs dossiers.
   'project_market_update_links',
+  'market_study_links',
   'project_market_updates',
   'seller_synthesis_links',
   'subject_properties',
@@ -81,23 +82,38 @@ function testEmail() {
   return null;
 }
 
-// `supabase db query --linked` rend un objet JSON (suivi d'éventuels avis de la CLI). La sortie
-// n'est jamais affichée telle quelle.
-function query(sql) {
+// La CLI Supabase épinglée, comme pour la sauvegarde (`scripts/sauvegarde-commun.mjs`, 05/11) :
+// `--remote` sur le projet lié, une sortie JSON — un tableau (`--agent no`), ou un objet `{ rows }`
+// en mode agent. La sortie n'est jamais affichée telle quelle. Lecture seule, sauf `write`.
+const SUPABASE_CLI = ['--yes', 'supabase@3.0.0'];
+function query(sql, { write = false } = {}) {
   let out;
   try {
-    out = execFileSync('supabase', ['db', 'query', '--linked', sql], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    out = execFileSync(
+      'npx',
+      [
+        ...SUPABASE_CLI,
+        'db',
+        'query',
+        '--remote',
+        ...(write ? ['--yes'] : ['--read-only']),
+        '--output-format',
+        'json',
+        '--agent',
+        'no',
+        sql,
+      ],
+      { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    );
   } catch {
-    fail('`supabase db query --linked` a échoué (CLI absente, non connectée, ou dépôt non lié).');
+    fail('`supabase db query --remote` a échoué (CLI absente, non connectée, ou dépôt non lié).');
   }
-  const start = out.indexOf('{');
-  const end = out.lastIndexOf('}');
-  if (start < 0 || end < 0) return [];
-  return JSON.parse(out.slice(start, end + 1)).rows ?? [];
+  const start = out.search(/[[{]/);
+  if (start < 0) return [];
+  const json = JSON.parse(
+    out.slice(start, Math.max(out.lastIndexOf(']'), out.lastIndexOf('}')) + 1),
+  );
+  return (Array.isArray(json) ? json : json.rows) ?? [];
 }
 
 function isTestAgency(name) {
@@ -184,7 +200,8 @@ if (!remove) {
 // pas l'agence de test, le bloc lève et rien n'est supprimé. L'ordre suit les clés étrangères :
 // concurrents et biens d'abord (les dossiers ne les emportent pas), puis les dossiers (qui
 // emportent réponses, conclusions, relances, décisions, courriers), puis ce qui tient à l'agence.
-query(`do $$
+query(
+  `do $$
 declare
   v_agency constant uuid := '${agency.id}';
 begin
@@ -213,12 +230,15 @@ begin
   delete from public.buyer_item_responses where agency_id = v_agency;
   delete from public.buyer_dossier_links where agency_id = v_agency;
   delete from public.project_market_update_links where agency_id = v_agency;
+  delete from public.market_study_links where agency_id = v_agency;
   delete from public.project_market_updates where agency_id = v_agency;
   delete from public.buyer_visit_requests where agency_id = v_agency;
   delete from public.buyer_selection_items where agency_id = v_agency;
   delete from public.buyer_selections where agency_id = v_agency;
   delete from public.buyers where agency_id = v_agency;
-end $$`);
+end $$`,
+  { write: true },
+);
 
 const after = countByTable(agency.id);
 console.log('\nAvant et après le nettoyage :');

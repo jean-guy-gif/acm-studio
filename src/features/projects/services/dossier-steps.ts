@@ -88,6 +88,8 @@ export function nextDossierAction(
     hasDecision: boolean;
     liveStarted: boolean;
     liveEnded: boolean;
+    // Mission 131 — « Document seul » : pas de Live ; l'étape est l'Étude de marché.
+    documentOnly?: boolean;
   },
 ): NextDossierAction {
   const base = `/builder/${projectId}`;
@@ -112,6 +114,13 @@ export function nextDossierAction(
   }
   if (!input.hasDecision) {
     return { key: 'decision', label: 'Décider votre prix', href: `${base}/avant-rendez-vous` };
+  }
+  if (input.documentOnly) {
+    return {
+      key: 'market_study',
+      label: 'Ouvrir l’Étude de marché',
+      href: `${base}/etude-de-marche`,
+    };
   }
   return { key: 'launch', label: 'Lancer le Live', href: launchLiveHref(projectId) };
 }

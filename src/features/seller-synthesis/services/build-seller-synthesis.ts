@@ -64,6 +64,8 @@ export type SynthesisResponseRow = {
   seller_serious_competitor: string | null;
   revealed_listing_price: number | null;
   seller_estimated_days_on_market: number | null;
+  // Mission 131 — montré en présentation directe (prix livré sans devinette).
+  shown_directly_at?: string | null;
 };
 
 export type SynthesisPropertyRow = {
@@ -100,6 +102,7 @@ export type SynthesisInput = {
     seller_revised_property_price: number | null;
     seller_most_dangerous_comparable_id: string | null;
     seller_most_dangerous_reason: string | null;
+    advisor_closest_comparable_id?: string | null;
   } | null;
   decision: {
     advisor_price: number | null;
@@ -271,15 +274,22 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     const price = response?.revealed_listing_price ?? row.price;
     const guess = response?.seller_estimated_listing_price ?? null;
     let revealed: SynthesisCompetitor['revealed'] = null;
-    if (serious !== 'no' && guess != null && price != null && price > 0) {
+    // Mission 131 — montré en directe : son prix et sa durée, sans « Vous imaginiez ».
+    const shown = response?.shown_directly_at != null;
+    if (serious !== 'no' && (guess != null || shown) && price != null && price > 0) {
       reading.push({
         id: row.id,
         price,
         priceHistory,
         marketDuration,
-        response: { seller_estimated_listing_price: guess, seller_serious_competitor: serious },
+        response: {
+          seller_estimated_listing_price: guess,
+          seller_serious_competitor: serious,
+          shown_directly_at: response?.shown_directly_at ?? null,
+        },
       });
       const guessDays = response?.seller_estimated_days_on_market ?? null;
+      const durationShown = guessDays != null || shown;
       revealed = {
         guess,
         price,
@@ -291,12 +301,11 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
           thisPricePerSquareMeter: null,
         }).gapPercentage,
         pricePerSquareMeter: pricePerSquareMeter(price, row.surface_area),
-        duration:
-          guessDays != null
-            ? { guessDays, days: marketDuration.available ? marketDuration.days : null }
-            : null,
+        duration: durationShown
+          ? { guessDays, days: marketDuration.available ? marketDuration.days : null }
+          : null,
         priceDrop:
-          guessDays != null && priceHistory.available && priceHistory.totalDropAmount != null
+          durationShown && priceHistory.available && priceHistory.totalDropAmount != null
             ? { amount: priceHistory.totalDropAmount, percent: priceHistory.totalDropPercentage }
             : null,
       };
@@ -322,12 +331,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   });
 
   const revealedList = competitors.filter((item) => item.revealed != null);
+  // Le bilan des devinettes ne lit que les prix devinés (M96) : un prix montré en directe n'y entre pas.
   const guessSummary = summarizeGuesses(
-    revealedList.map((item) => ({
-      guess: item.revealed!.guess,
-      revealedPrice: item.revealed!.price,
-      currentPrice: null,
-    })),
+    revealedList
+      .filter((item) => item.revealed!.guess != null)
+      .map((item) => ({
+        guess: item.revealed!.guess as number,
+        revealedPrice: item.revealed!.price,
+        currentPrice: null,
+      })),
   );
 
   // Mission 111 — après la conclusion, les montants figés ; avant, la décision en cours. Mission
@@ -394,7 +406,10 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     input.property?.energy_rating,
     shown.map((row) => row.energy_rating),
   );
-  const dangerousId = input.summary?.seller_most_dangerous_comparable_id ?? null;
+  const sellerDangerousId = input.summary?.seller_most_dangerous_comparable_id ?? null;
+  // Mission 131 — à défaut du choix du vendeur, le bien proposé par le conseiller en directe.
+  const dangerousId = sellerDangerousId ?? input.summary?.advisor_closest_comparable_id ?? null;
+  const byAdvisor = sellerDangerousId == null && dangerousId != null;
   const reasonKey = input.summary?.seller_most_dangerous_reason ?? null;
   const surface = input.property?.surface_area ?? null;
   const agreed = input.commercializationPrice;
@@ -431,8 +446,9 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       dangerousId && competitors.some((item) => item.id === dangerousId)
         ? {
             competitorId: dangerousId,
+            ...(byAdvisor ? { byAdvisor: true } : {}),
             reason:
-              reasonKey && reasonKey in DANGEROUS_REASON_LABELS
+              !byAdvisor && reasonKey && reasonKey in DANGEROUS_REASON_LABELS
                 ? DANGEROUS_REASON_LABELS[reasonKey as DangerousReason]
                 : null,
           }

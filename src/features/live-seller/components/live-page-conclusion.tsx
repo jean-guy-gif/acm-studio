@@ -38,6 +38,7 @@ export function LivePageConclusion({
   summary,
   advisorRange,
   dangerous,
+  closest = false,
   onPendingPriceChange,
   onPriceSaved,
 }: {
@@ -47,6 +48,9 @@ export function LivePageConclusion({
   summary: LiveSellerSummary | null;
   advisorRange: AuthorizedAdvisorRange | null;
   dangerous: AuthorizedSellerComparable | null;
+  // Mission 131 — en présentation directe, le bien mis en avant est celui que le CONSEILLER a
+  // proposé, « le plus proche de votre bien », jamais présenté comme le choix du vendeur.
+  closest?: boolean;
 }) {
   const competitiveMarketCentral = advisorRange?.competitiveMarketCentral ?? null;
   const decision = advisorRange?.advisorDecision ?? null;
@@ -63,10 +67,13 @@ export function LivePageConclusion({
       {/* Mission 89 — devant le vendeur, un seul prix calculé : « Prix des concurrents ». Le
           « Marché calculé » brut ne s'affiche plus ici. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Votre valeur perçue</div>
-          <div className={bigValue}>{euro(summary?.seller_perceived_property_price ?? null)}</div>
-        </div>
+        {/* Mission 131 — sans valeur perçue (présentation directe), pas de case vide. */}
+        {summary?.seller_perceived_property_price != null ? (
+          <div className={`${panel} flex flex-col gap-1.5`}>
+            <div className={statLabel}>Votre valeur perçue</div>
+            <div className={bigValue}>{euro(summary.seller_perceived_property_price)}</div>
+          </div>
+        ) : null}
         {/* Mission 109 — sans décision de prix enregistrée, aucun prix final devant le vendeur. */}
         {decision ? (
           <div className={`${panel} flex flex-col gap-1.5`}>
@@ -85,11 +92,13 @@ export function LivePageConclusion({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         <div className={`${panelSoft} h-fit`}>
           <Line
-            label="Concurrent le plus dangereux"
+            label={
+              closest ? 'Concurrent le plus proche de votre bien' : 'Concurrent le plus dangereux'
+            }
             value={
               dangerous
                 ? `${dangerous.neutralLabel}${
-                    summary?.seller_most_dangerous_reason
+                    !closest && summary?.seller_most_dangerous_reason
                       ? ` — ${DANGEROUS_REASON_LABELS[summary.seller_most_dangerous_reason as DangerousReason]}`
                       : ''
                   }`
@@ -108,7 +117,11 @@ export function LivePageConclusion({
 
         {dangerous ? (
           <div className="flex h-fit flex-col gap-3">
-            <div className={statLabel}>Le concurrent qui vous fait le plus réfléchir</div>
+            <div className={statLabel}>
+              {closest
+                ? 'Le concurrent le plus proche de votre bien'
+                : 'Le concurrent qui vous fait le plus réfléchir'}
+            </div>
             <div className="overflow-hidden rounded-2xl border-2 border-brand/60 shadow-card stage:border-brand/50">
               <LivePhoto
                 photoUrl={dangerous.photoUrl}

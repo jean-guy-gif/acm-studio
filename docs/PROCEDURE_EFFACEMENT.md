@@ -12,8 +12,10 @@ dossier est archivé (mission 93). L'effacement réel, c'est ici.
 3. Chaque étape suit la règle « Migrations » de CLAUDE.md : **compter avant, énoncer la prédiction,
    effacer, compter après**. Montrer les comptes à Laurent et attendre son « ok effacement » avant
    la première requête qui écrit.
-4. Les requêtes se lancent sur la base partagée par `supabase db query --linked "<sql>"`. Ne jamais
-   afficher de clé ni de jeton dans le compte rendu.
+4. Les requêtes se lancent sur la base partagée par la CLI épinglée (05/11) :
+   `npx --yes supabase@3.0.0 db query --remote --read-only "<sql>"` pour compter,
+   `npx --yes supabase@3.0.0 db query --remote --yes "<sql>"` pour écrire. Ne jamais afficher de clé
+   ni de jeton dans le compte rendu.
 
 Dans tout ce qui suit, `:agence`, `:dossier` et `:concurrent` sont des identifiants (uuid) à
 remplacer. Le stockage des photos est le bucket privé `project-photos`.
@@ -58,6 +60,7 @@ select
   -- Mission 127 : les points marché et leurs liens ; ils partent avec le dossier (cascade).
   (select count(*) from project_market_updates where project_id = ':dossier') as points_marche,
   (select count(*) from project_market_update_links where project_id = ':dossier') as liens_points_marche,
+  (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;
@@ -66,7 +69,7 @@ select
 Et les fichiers du stockage (bien vendeur et photos de prospection) :
 
 ```sh
-supabase storage ls -r --experimental --linked "ss:///project-photos/:agence/:dossier/"
+npx --yes supabase@3.0.0 storage ls -r --experimental --remote "ss:///project-photos/:agence/:dossier/"
 ```
 
 Prédiction : toutes les colonnes tombent à 0, `dossiers_total` baisse de 1, le dossier du stockage
@@ -83,6 +86,7 @@ begin;
 delete from seller_synthesis_links where project_id = ':dossier' and agency_id = ':agence';
 -- Mission 127 : les liens des points marché, puis les points — plus aucun lien envoyé ne s'ouvre.
 delete from project_market_update_links where project_id = ':dossier' and agency_id = ':agence';
+delete from market_study_links where project_id = ':dossier' and agency_id = ':agence';
 delete from project_market_updates where project_id = ':dossier' and agency_id = ':agence';
 delete from comparables where project_id = ':dossier' and agency_id = ':agence';
 delete from subject_properties where project_id = ':dossier' and agency_id = ':agence';
@@ -93,7 +97,7 @@ commit;
 Puis le stockage :
 
 ```sh
-supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/:dossier/"
+npx --yes supabase@3.0.0 storage rm -r --experimental --remote --yes "ss:///project-photos/:agence/:dossier/"
 ```
 
 ### 4. Compter après
@@ -177,7 +181,7 @@ where locator_address ilike '%RUE%' or listing_url ilike '%IDENTIFIANT_ANNONCE%'
 Et, pour chaque concurrent, ses photos copiées :
 
 ```sh
-supabase storage ls -r --experimental --linked "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
+npx --yes supabase@3.0.0 storage ls -r --experimental --remote "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
 ```
 
 Prédiction : `concurrents` inchangé ; `avec_adresse`, `dossiers_prospection` et `retenus` à 0 ;
@@ -248,7 +252,7 @@ commit;
 Puis, pour chaque concurrent :
 
 ```sh
-supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
+npx --yes supabase@3.0.0 storage rm -r --experimental --remote --yes "ss:///project-photos/:agence/:dossier/prospecting/:concurrent/"
 ```
 
 Mission 120 — les courriers d'une recherche acquéreur (leurs textes et la photo copiée) et
@@ -276,7 +280,7 @@ commit;
 Puis, pour chaque origine listée :
 
 ```sh
-supabase storage rm -r --experimental --linked "ss:///project-photos/:agence/buyer-prospecting/:origine/"
+npx --yes supabase@3.0.0 storage rm -r --experimental --remote --yes "ss:///project-photos/:agence/buyer-prospecting/:origine/"
 ```
 
 La carte « Recherche acquéreur » reste, sans adresse ni courrier : elle porte « Ne plus

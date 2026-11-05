@@ -13,8 +13,8 @@ import {
   BUCKET_SQL,
   COUNT_SQL,
   FILES,
-  queryLinked,
-  run,
+  queryRemote,
+  supabase,
   table,
 } from './sauvegarde-commun.mjs';
 
@@ -52,23 +52,23 @@ try {
   chmodSync(BACKUP_ROOT, 0o700);
 
   console.log('1/4 Comptage des lignes…');
-  const before = queryLinked(COUNT_SQL);
+  const before = queryRemote(COUNT_SQL);
 
   console.log('2/4 Structure et données (base, comptes, index du stockage)…');
-  run('supabase', ['db', 'dump', '--linked', '-f', join(dir, FILES.schema)]);
-  run('supabase', [
+  supabase(['db', 'dump', '--remote', '-f', join(dir, FILES.schema)]);
+  supabase([
     'db',
     'dump',
-    '--linked',
+    '--remote',
     '--data-only',
     '--use-copy',
     '-f',
     join(dir, FILES.publicData),
   ]);
-  run('supabase', [
+  supabase([
     'db',
     'dump',
-    '--linked',
+    '--remote',
     '--data-only',
     '--use-copy',
     '--schema',
@@ -79,7 +79,7 @@ try {
 
   // Une écriture pendant la sauvegarde la rendrait invérifiable : on le dit plutôt que de garder
   // des comptes faux.
-  const after = queryLinked(COUNT_SQL);
+  const after = queryRemote(COUNT_SQL);
   const moved = Object.keys(after).filter((name) => after[name] !== before[name]);
   if (moved.length > 0) {
     throw new Error(
@@ -88,7 +88,7 @@ try {
   }
 
   console.log('3/4 Fichiers du stockage…');
-  const buckets = queryLinked(BUCKET_SQL);
+  const buckets = queryRemote(BUCKET_SQL);
   const storageDir = join(dir, FILES.storage);
   mkdirSync(storageDir, { mode: 0o700 });
   for (const [bucket, objects] of Object.entries(buckets)) {
@@ -96,15 +96,7 @@ try {
       mkdirSync(join(storageDir, bucket), { mode: 0o700 });
       continue;
     }
-    run('supabase', [
-      'storage',
-      'cp',
-      '-r',
-      '--experimental',
-      '--linked',
-      `ss:///${bucket}`,
-      storageDir,
-    ]);
+    supabase(['storage', 'cp', '-r', '--experimental', '--remote', `ss:///${bucket}`, storageDir]);
   }
 
   console.log('4/4 Comptes enregistrés, accès restreint…');

@@ -137,9 +137,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 decisionMissing={launch.decisionMissing}
                 shortlistPending={launch.shortlistPending}
                 pendingImportCount={launch.pendingImportCount}
+                presentationMode={launch.presentationMode}
                 secondary
               />
             ) : null}
+            {/* Mission 131 — l'Étude de marché, pour remettre ou envoyer, avec ou sans Live. */}
+            <Link
+              href={`/builder/${projectId}/etude-de-marche`}
+              className="w-fit text-sm font-medium text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+              data-testid="market-study-link"
+            >
+              Télécharger l’Étude de marché
+            </Link>
           </span>
         </div>
 

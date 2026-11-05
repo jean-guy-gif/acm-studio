@@ -20,7 +20,7 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
    Si toutes les étapes de chaque tâche (`checks`, `sql`) sont vertes, la CI est verte, même si
    GitHub n'a pas encore clos la course (décision de Jean-Guy, 04/11) : lis les étapes par
    `gh api repos/:owner/:repo/actions/runs/<id>/jobs`.
-3. Si la mission contient une migration : lance `npx supabase migration list --linked` et dis-moi si
+3. Si la mission contient une migration : lance `npx --yes supabase@3.0.0 migration list --remote` et dis-moi si
    elle est appliquée. Si elle ne l'est pas, **arrête-toi** : on l'applique ensemble (règle
    « Migrations » de CLAUDE.md).
 4. **Apprentissages** (mission 126) : relis `docs/APPRENTISSAGES.md` et écris ce que la mission a

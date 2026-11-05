@@ -65,14 +65,14 @@ export async function loadSellerSynthesis(
       supabase
         .from('live_seller_responses')
         .select(
-          'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market',
+          'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market, shown_directly_at',
         )
         .eq('project_id', projectId)
         .eq('agency_id', agencyId),
       supabase
         .from('live_seller_summary')
         .select(
-          'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason',
+          'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason, advisor_closest_comparable_id',
         )
         .eq('project_id', projectId)
         .eq('agency_id', agencyId)

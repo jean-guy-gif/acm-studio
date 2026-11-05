@@ -19,7 +19,7 @@ const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
 
 describe('le plan des dossiers de démo', () => {
   it('quatre étapes, nommées, chacune avec son scénario', () => {
-    expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'signed', 'follow_up']);
+    expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
     for (const stage of DEMO_STAGES) {
       expect(DEMO_STAGE_LABELS[stage]).not.toMatch(UNSPOKEN);
       expect(DEMO_SCENARIOS.some((s) => s.id === DEMO_STAGE_SCENARIO[stage])).toBe(true);
@@ -158,5 +158,20 @@ describe('la sélection des Keller', async () => {
     expect(plan[2]!.gaps).toEqual(['À vérifier : Piscine']);
     // Le compromis, lui, a sa piscine.
     expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
+  });
+});
+
+// Mission 131 — le dossier en présentation directe : prêt comme celui de Vence, sans Live, avec
+// son propre vendeur pour ne pas se confondre avec lui.
+describe('« Prêt, en présentation directe »', () => {
+  it('cinq concurrents, une fourchette, pas de Live ; un autre vendeur que le Live interactif', () => {
+    const plan = demoSeedPlan('direct', NOW);
+    const ready = demoSeedPlan('ready', NOW);
+    expect(plan.scenario.id).toBe('vence');
+    expect(plan.competitors).toHaveLength(5);
+    expect(plan.live).toBeNull();
+    expect(plan.conclusion).toBeNull();
+    expect(plan.sellerName).not.toBe(ready.sellerName);
+    expect(plan.sellerName).not.toMatch(UNSPOKEN);
   });
 });

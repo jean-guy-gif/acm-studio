@@ -11,6 +11,7 @@ import {
   backLink,
   badgeRejected,
   badgeSelected,
+  btnPrimary,
   btnSecondary,
   hintText,
   kickerLabel,
@@ -26,6 +27,7 @@ import {
   type SequenceNote,
 } from '@/features/before-meeting/components/seller-sequence-card';
 import { LiveRhythmSetting } from '@/features/before-meeting/components/live-rhythm-setting';
+import { PresentationModeSetting } from '@/features/before-meeting/components/presentation-mode-setting';
 import {
   bothRhythmsLabel,
   buildLiveSequence,
@@ -191,11 +193,16 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   // Mission 95 — le déroulé et la durée suivent le rythme choisi ; les deux estimations
   // s'affichent côte à côte. Le rythme ne se modifie plus une fois le Live commencé.
   const rhythm = presentation.project.liveRhythm;
-  const sequence = buildLiveSequence(liveCompetitors, property != null, rhythm);
+  // Mission 131 — la façon de présenter : le déroulé suit le Live interactif ou la présentation
+  // directe ; « Document seul » n'a pas de Live (le déroulé reste, à titre indicatif).
+  const presentationMode = presentation.project.presentationMode;
+  const sequenceMode = presentationMode === 'direct' ? 'direct' : 'interactive';
+  const sequence = buildLiveSequence(liveCompetitors, property != null, rhythm, sequenceMode);
   const other = buildLiveSequence(
     liveCompetitors,
     property != null,
     rhythm === 'accelerated' ? 'complete' : 'accelerated',
+    sequenceMode,
   );
   const bothEstimates = bothRhythmsLabel(
     rhythm === 'accelerated' ? sequence : other,
@@ -487,7 +494,18 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         sequence={sequence}
         notes={notes}
         launch={
-          launch ? (
+          presentationMode === 'document' ? (
+            // Mission 131 — « Document seul » : pas de Live à lancer ; l'Étude de marché, puis la
+            // conclusion du rendez-vous depuis le dossier.
+            <div className="flex flex-wrap items-center justify-end gap-2" data-document-only>
+              <Link href={`/builder/${projectId}/etude-de-marche`} className={btnPrimary}>
+                Ouvrir l’Étude de marché
+              </Link>
+              <Link href={`/builder/${projectId}/conclusion`} className={btnSecondary}>
+                Conclure le rendez-vous
+              </Link>
+            </div>
+          ) : launch ? (
             <div className="flex flex-col items-end gap-1.5">
               <LiveLaunchActions
                 projectId={projectId}
@@ -514,12 +532,32 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
           ) : null
         }
         rhythmSetting={
-          <LiveRhythmSetting
-            rhythm={rhythm}
-            locked={rhythmLocked}
-            bothEstimates={bothEstimates}
-            action={setLiveRhythm.bind(null, projectId)}
-          />
+          <div className="flex flex-col gap-5">
+            <PresentationModeSetting
+              projectId={projectId}
+              mode={presentationMode}
+              liveStarted={rhythmLocked}
+              concluded={
+                presentation.project.status === 'meeting_completed' ||
+                presentation.project.status === 'archived'
+              }
+            />
+            {presentationMode === 'document' ? null : (
+              <LiveRhythmSetting
+                rhythm={rhythm}
+                locked={rhythmLocked}
+                bothEstimates={bothEstimates}
+                action={setLiveRhythm.bind(null, projectId)}
+              />
+            )}
+            <Link
+              href={`/builder/${projectId}/etude-de-marche`}
+              className={`${link} w-fit text-sm`}
+              data-testid="market-study-link"
+            >
+              Télécharger l’Étude de marché
+            </Link>
+          </div>
         }
       />
     </div>

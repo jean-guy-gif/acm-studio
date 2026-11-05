@@ -1,3 +1,4 @@
+import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import type { LiveRhythm } from '@/features/live-seller/services/build-live-pages';
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
 import type { ComparableSelectionSummary } from '@/features/comparables/types/comparable-selection-summary';
@@ -73,6 +74,9 @@ export type LiveComparativeData = {
   // montré au vendeur, « Prix retenu par votre conseiller », sans « à partir de N concurrents ».
   positioningOutdated: boolean;
   priceGaps: LivePriceGaps;
+  // Mission 131 — le dossier est-il en présentation directe ? Lu en base : il autorise la durée
+  // d'un concurrent déjà deviné sans la faire deviner (les écrans suivants deviennent directs).
+  direct?: boolean;
 };
 
 export type SellerPresentationStatus = 'ready' | 'incomplete';
@@ -111,6 +115,8 @@ export type SellerPresentationProject = {
   // Mission 95 — le rythme du Live choisi pour ce dossier, et les heures de début et de fin du
   // Live (null tant qu'elles n'ont pas été relevées). Côté conseiller.
   liveRhythm: LiveRhythm;
+  // Mission 131 — la façon de présenter : Live interactif, présentation directe, document seul.
+  presentationMode: LivePresentationMode;
   liveStartedAt: string | null;
   liveEndedAt: string | null;
   createdAt: string;

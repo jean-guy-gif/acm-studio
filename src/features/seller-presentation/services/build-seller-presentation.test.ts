@@ -28,6 +28,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     advisor_id: 'adv',
     seller_name: 'Dupont',
     live_rhythm: 'complete',
+    live_presentation_mode: 'interactive',
     is_example: false,
     demo_stage: null,
     live_started_at: null,

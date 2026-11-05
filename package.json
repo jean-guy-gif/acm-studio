@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "gen:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "gen:types": "npx --yes supabase@3.0.0 gen types typescript --schema public > src/lib/supabase/database.types.ts",
     "e2e": "playwright test",
     "e2e:demo": "playwright test tests/e2e/demo.spec.ts",
     "extension:icons": "node scripts/extension-icons.mjs",

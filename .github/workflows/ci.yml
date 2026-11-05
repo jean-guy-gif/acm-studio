@@ -46,9 +46,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 05/11 — la CLI 3.0.0, comme sur le poste (`[local_smtp]` remplace `[inbucket]` dans
+      # config.toml, que la 2.101.0 refuse) ; une seule version, épinglée aussi dans les scripts.
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.101.0
+          version: 3.0.0
 
       # La CLI lit la version de la base liée dans supabase/.temp.
       - name: Image de la base en ligne
@@ -65,7 +67,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.cache/acm/images.tar.zst
-          key: images-cli2.101.0-pg${{ env.POSTGRES_VERSION }}-v2
+          key: images-cli3.0.0-pg${{ env.POSTGRES_VERSION }}-v2
 
       - name: Images de la base, chargées depuis le cache
         if: steps.cache-images.outputs.cache-hit == 'true'
@@ -84,7 +86,7 @@ jobs:
       - name: Images de la base, téléchargées une fois (trois registres, deux essais chacun)
         if: steps.cache-images.outputs.cache-hit != 'true'
         run: |
-          images="supabase/postgres:$POSTGRES_VERSION supabase/gotrue:v2.188.1 supabase/realtime:v2.86.3 supabase/storage-api:v1.54.1"
+          images="supabase/postgres:$POSTGRES_VERSION supabase/gotrue:v2.197.0 supabase/realtime:v2.151.3 supabase/storage-api:v1.88.0"
           for image in $images; do
             recue=""
             for registre in public.ecr.aws docker.io ghcr.io; do
@@ -107,7 +109,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.cache/acm/images.tar.zst
-          key: images-cli2.101.0-pg${{ env.POSTGRES_VERSION }}-v2
+          key: images-cli3.0.0-pg${{ env.POSTGRES_VERSION }}-v2
 
       - run: supabase db start
 
@@ -308,6 +310,11 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/collaboration_acquereur.sql
+
+      - name: La présentation directe et l'Étude de marché (mission 131)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/presentation_directe.sql
 
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.

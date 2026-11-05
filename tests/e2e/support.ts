@@ -206,10 +206,29 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
 // Mission 102 — la clé ne porte plus le code postal : le motif accepte les deux écritures.
 export const TEST_OPPOSITION_STREET = 'rue du refus automatique';
 
+// La CLI Supabase des e2e, épinglée comme celle de la sauvegarde (`scripts/sauvegarde-commun.mjs`,
+// 05/11 : la CLI 3.0.0 remplace `--linked` par `--remote`) : sortie JSON, lecture seule sauf
+// `write`, qui confirme d'avance l'écriture sur le projet lié (`--yes`).
+const SUPABASE_CLI = ['--yes', 'supabase@3.0.0'];
+function supabaseQueryArgs(sql: string, { write }: { write: boolean }): string[] {
+  return [
+    ...SUPABASE_CLI,
+    'db',
+    'query',
+    '--remote',
+    ...(write ? ['--yes'] : ['--read-only']),
+    '--output-format',
+    'json',
+    '--agent',
+    'no',
+    sql,
+  ];
+}
+
 // Mission 98 — EXCEPTION à « tout passe par l'écran » : une opposition ne se retire pas depuis
 // l'écran (c'est voulu, et prouvé par supabase/tests/prospecting_oppositions.sql). Pour que la
 // liste de l'agence de test ne grossisse pas d'une ligne par passage, le parcours retire les
-// siennes par la CLI Supabase du poste (`supabase db query --linked`, dépôt lié au projet) :
+// siennes par la CLI Supabase du poste (`supabase db query --remote`, dépôt lié au projet) :
 // seulement les lignes de l'agence du compte de test, seulement celles de la rue du test.
 // Rend le nombre de lignes retirées ; échoue en le disant si la CLI ne répond pas.
 export function removeTestOppositions(): number {
@@ -222,13 +241,13 @@ export function removeTestOppositions(): number {
   ) select count(*)::int as retirees from retirees`;
   let output: string;
   try {
-    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: true }), {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch {
     throw new Error(
-      'Les oppositions du test n’ont pas pu être retirées : `supabase db query --linked` a échoué (CLI absente, non connectée, ou dépôt non lié).',
+      'Les oppositions du test n’ont pas pu être retirées : `supabase db query --remote` a échoué (CLI absente, non connectée, ou dépôt non lié).',
     );
   }
   const count = /"retirees":\s*(\d+)/.exec(output)?.[1];
@@ -251,13 +270,13 @@ export function readTestOppositions(): string[] {
       and address_key like '% ${TEST_OPPOSITION_STREET} %'`;
   let output: string;
   try {
-    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: false }), {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch {
     throw new Error(
-      'La liste d’opposition du test n’a pas pu être lue : `supabase db query --linked` a échoué.',
+      'La liste d’opposition du test n’a pas pu être lue : `supabase db query --remote` a échoué.',
     );
   }
   const keys = /"cles":\s*"((?:[^"\\]|\\.)*)"/.exec(output)?.[1];
@@ -318,13 +337,13 @@ export function ageTestFollowUp(projectId: string, direction: 'age' | 'back'): A
            (select count(*)::int from concurrents) as concurrents`;
   let output: string;
   try {
-    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: true }), {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch {
     throw new Error(
-      'Le dossier du test n’a pas pu être vieilli ou remis en état : `supabase db query --linked` a échoué (CLI absente, non connectée, ou dépôt non lié).',
+      'Le dossier du test n’a pas pu être vieilli ou remis en état : `supabase db query --remote` a échoué (CLI absente, non connectée, ou dépôt non lié).',
     );
   }
   const read = (name: string): number => {
@@ -389,14 +408,14 @@ export function removeDemoRunDossiers(since: Date): { dossiers: number; oppositi
   select (select count(*)::int from d16) as dossiers, (select count(*)::int from d17) as oppositions`;
   let output: string;
   try {
-    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: true }), {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
     const detail = error instanceof Error && 'stderr' in error ? String(error.stderr) : '';
     throw new Error(
-      `Les dossiers de démonstration du test n’ont pas pu être retirés : \`supabase db query --linked\` a échoué. ${detail.slice(0, 300)}`,
+      `Les dossiers de démonstration du test n’ont pas pu être retirés : \`supabase db query --remote\` a échoué. ${detail.slice(0, 300)}`,
     );
   }
   const read = (name: string): number => {
@@ -433,13 +452,13 @@ export function readDemoLinkAnswers(buyerName: string): LinkAnswerRow[] {
   where i.selection_id in (select id from latest) and r.answered_during = 'dossier'`;
   let output: string;
   try {
-    output = execFileSync('supabase', ['db', 'query', '--linked', sql], {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: false }), {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch {
     throw new Error(
-      'Les réponses du lien n’ont pas pu être lues : `supabase db query --linked` a échoué.',
+      'Les réponses du lien n’ont pas pu être lues : `supabase db query --remote` a échoué.',
     );
   }
   const rows = /"reponses":\s*"((?:[^"\\]|\\.)*)"/.exec(output)?.[1];

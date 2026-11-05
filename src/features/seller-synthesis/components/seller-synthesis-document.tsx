@@ -201,7 +201,9 @@ function CompetitorCard({
           <div className={`${row} text-[0.78rem]`}>
             <div className={`${card} flex flex-col gap-0.5`}>
               <div className={kicker}>Le prix</div>
-              <Pair label="Vous imaginiez" value={formatEuro(revealed.guess)} />
+              {revealed.guess != null ? (
+                <Pair label="Vous imaginiez" value={formatEuro(revealed.guess)} />
+              ) : null}
               <Pair label="Affiché" value={formatEuro(revealed.price)} strong />
               <div className="font-semibold text-brand-deep">
                 {[
@@ -219,10 +221,12 @@ function CompetitorCard({
             {revealed.duration ? (
               <div className={`${card} flex flex-col gap-0.5`}>
                 <div className={kicker}>La durée en vente</div>
-                <Pair
-                  label="Vous imaginiez"
-                  value={`${formatNumber(revealed.duration.guessDays)} jours`}
-                />
+                {revealed.duration.guessDays != null ? (
+                  <Pair
+                    label="Vous imaginiez"
+                    value={`${formatNumber(revealed.duration.guessDays)} jours`}
+                  />
+                ) : null}
                 {revealed.duration.days != null ? (
                   <Pair
                     label="En vente depuis"
@@ -395,7 +399,13 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
       ? { label: 'Après le marché', value: synthesis.revisedPrice, tone: 'brand' as const }
       : null,
     dangerousPrice != null
-      ? { label: 'Le plus dangereux selon vous', value: dangerousPrice, tone: 'deep' as const }
+      ? {
+          label: synthesis.dangerous?.byAdvisor
+            ? 'Le plus proche de votre bien'
+            : 'Le plus dangereux selon vous',
+          value: dangerousPrice,
+          tone: 'deep' as const,
+        }
       : null,
     decision?.competitorPrice != null
       ? { label: 'Prix des concurrents', value: decision.competitorPrice, tone: 'dark' as const }
@@ -639,7 +649,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           <section className="flex flex-col gap-3 break-inside-avoid">
             <SectionTitle
               number={sectionNumber('dangerous')}
-              title="Le concurrent le plus dangereux, selon vous"
+              title={
+                synthesis.dangerous?.byAdvisor
+                  ? 'Le concurrent le plus proche de votre bien'
+                  : 'Le concurrent le plus dangereux, selon vous'
+              }
             />
             <CompetitorCard
               competitor={dangerous}
