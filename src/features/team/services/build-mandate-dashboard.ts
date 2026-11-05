@@ -1,4 +1,5 @@
 import { median } from '@/features/comparables/services/calculate-comparable-summary';
+import { averageSignedPriceGap } from '@/features/meeting-conclusion/services/filter-suivi';
 import { parseObjections } from '@/features/meeting-conclusion/services/objections';
 import { OBJECTION_LABELS, type Objection } from '@/features/meeting-conclusion/types';
 
@@ -22,6 +23,9 @@ export type DashboardConclusion = {
   // La première issue enregistrée ; null = parcours inconnu.
   firstOutcome: string | null;
   objections: unknown;
+  // Mission 130 — les deux prix du chemin, pour l'écart moyen venu du Suivi.
+  sellerPerceivedPrice?: number | null;
+  commercializationPrice?: number | null;
 };
 export type DashboardAdvisor = { id: string; name: string };
 // Mission 115 — une collaboration obtenue avec un confrère (un concurrent retenu d'un mandat).
@@ -42,6 +46,9 @@ export type MandateFigures = {
   objections: { objection: Objection; label: string; count: number }[];
   // Mission 115 — collaborations obtenues avec un confrère, comptées à part des mandats.
   collaborations: number;
+  // Mission 130 — l'écart moyen entre le prix du vendeur et le prix de commercialisation des
+  // mandats signés, en % (il a quitté le Suivi) ; null sans mandat dont les deux prix sont connus.
+  averagePriceGap: number | null;
 };
 
 export type MandateDashboard = {
@@ -88,6 +95,13 @@ function figures(rows: DashboardConclusion[], collaborations = 0): MandateFigure
       .sort((a, b) => b[1] - a[1])
       .map(([objection, count]) => ({ objection, label: OBJECTION_LABELS[objection], count })),
     collaborations,
+    averagePriceGap: averageSignedPriceGap(
+      conclusions.map((c) => ({
+        outcome: c.outcome,
+        sellerPerceivedPrice: c.sellerPerceivedPrice ?? null,
+        commercializationPrice: c.commercializationPrice ?? null,
+      })),
+    ),
   };
 }
 

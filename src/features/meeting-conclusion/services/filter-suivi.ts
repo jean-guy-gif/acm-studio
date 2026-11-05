@@ -63,9 +63,19 @@ export function suiviCounts(dossiers: SuiviDossier[]): Record<SuiviGroup, number
 // dont les deux prix sont connus. Moyenne des écarts de chaque dossier (un gros bien ne pèse
 // pas plus qu'un petit). Null s'il n'y a rien à moyenner : le compteur ne s'affiche pas.
 export function averageJourneyGap(dossiers: SuiviDossier[]): number | null {
+  return averageSignedPriceGap(dossiers.map((dossier) => dossier.conclusion));
+}
+
+// Mission 130 — le même calcul sur des conclusions seules : le tableau du manager le porte.
+export function averageSignedPriceGap(
+  conclusions: ({
+    outcome: string | null;
+    sellerPerceivedPrice: number | null;
+    commercializationPrice: number | null;
+  } | null)[],
+): number | null {
   const gaps: number[] = [];
-  for (const dossier of dossiers) {
-    const conclusion = dossier.conclusion;
+  for (const conclusion of conclusions) {
     if (conclusion?.outcome !== 'signed') {
       continue;
     }

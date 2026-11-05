@@ -1,11 +1,22 @@
 import Link from 'next/link';
 
-import { emptyState, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
-import { getBuyer } from '@/features/buyers/queries/get-buyers';
-import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
-import { BuyerSearchPanel } from '@/features/meeting-conclusion/components/buyer-search-panel';
-import { SuiviRow } from '@/features/meeting-conclusion/components/suivi-row';
-import { listMarketUpdates } from '@/features/market-update/queries/list-market-updates';
+import {
+  btnPrimary,
+  emptyState,
+  kickerLabel,
+  link,
+  pageSubtitle,
+  pageTitle,
+} from '@/components/ui/styles';
+import { redirect } from 'next/navigation';
+
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
+import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
+import {
+  readMarketUpdates,
+  type MarketUpdateEntry,
+} from '@/features/market-update/queries/list-market-updates';
 import {
   emptySellerInsights,
   getSellerInsights,
@@ -15,13 +26,10 @@ import {
   buildDossierFollowUp,
   type DossierFollowUp,
 } from '@/features/meeting-conclusion/services/dossier-follow-up';
-import { dueTodayLabel } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { parisDay, sortContacts } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import {
   SUIVI_GROUPS,
   SUIVI_GROUP_LABELS,
-  averageJourneyGap,
-  exclusiveLabel,
-  exclusiveSignedCount,
   filterSuiviByGroup,
   filterSuiviByMotive,
   followUpMotiveCounts,
@@ -32,25 +40,47 @@ import {
   type SuiviGroup,
 } from '@/features/meeting-conclusion/services/filter-suivi';
 import {
+  cardStep,
+  nothingTodayLabel,
+  taskLine,
+} from '@/features/meeting-conclusion/services/suivi-step-labels';
+import {
+  competitorCounts,
+  prospectingCounts,
+  suiviTaskInputs,
+  visitCounts,
+} from '@/features/meeting-conclusion/services/suivi-task-inputs';
+import {
+  buildSuiviTaskList,
+  dossierTasks,
+  isTaskDue,
+  nextMarketUpdateOn,
+  nextStep,
+  taskLateDays,
+} from '@/features/meeting-conclusion/services/suivi-tasks';
+import {
   FOLLOW_UP_MOTIVES,
   FOLLOW_UP_MOTIVE_LABELS,
+  followUpMotiveLabel,
   type FollowUpMotive,
 } from '@/features/meeting-conclusion/types';
+import { propertyLabel } from '@/features/projects/services/property-label';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
-import {
-  prospectingProgress,
-  type ProspectingStatus,
-} from '@/features/prospecting/services/prospecting-status';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
-import { formatPercent } from '@/lib/format';
 
 type SuiviPageProps = {
-  searchParams: Promise<{ issue?: string; motif?: string; acquereur?: string }>;
+  searchParams: Promise<{
+    issue?: string;
+    motif?: string;
+    acquereur?: string;
+    relancer?: string;
+    point?: string;
+  }>;
 };
 
 const chip =
@@ -58,16 +88,13 @@ const chip =
 const chipActive = `${chip} border-brand-deep bg-brand-deep text-white`;
 const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand-deep stage:border-white/15 stage:bg-white/5 stage:text-white/70`;
 
-const tile =
-  'flex min-w-36 flex-col rounded-xl border bg-white px-4 py-3 transition-colors stage:bg-white/5';
-const tileIdle = `${tile} border-zinc-200 hover:border-brand stage:border-white/10`;
-const tileActive = `${tile} border-brand-deep ring-1 ring-brand-deep stage:border-brand stage:ring-brand`;
-
-const COUNT_COLOR: Record<SuiviGroup, string> = {
-  signed: 'text-zinc-900 stage:text-white',
-  follow_up: 'text-brand-deep stage:text-brand',
-  lost: 'text-zinc-400 stage:text-white/50',
+// Mission 130 — la pastille numérotée d'une tâche : la couleur du groupe du vendeur.
+const TASK_DOT = {
+  follow_up: 'bg-orange-500',
+  signed: 'bg-emerald-600',
 };
+
+const TASKS_SHOWN = 5;
 
 const groupHref = (group: SuiviGroup | null): string =>
   group == null ? '/suivi' : `/suivi?issue=${group}`;
@@ -79,41 +106,48 @@ const motiveHref = (motive: FollowUpMotive): string => `/suivi?issue=follow_up&m
 // Mission 86 — il se lit d'un coup d'œil : des compteurs qui filtrent, une ligne courte par
 // dossier, une seule action selon l'issue. « Tous » ne masque rien (règle M52).
 export default async function SuiviPage({ searchParams }: SuiviPageProps) {
-  const { issue, motif, acquereur } = await searchParams;
+  const { issue, motif, acquereur, relancer, point } = await searchParams;
+  // Mission 130 — le rapprochement acquéreur a quitté le Suivi pour le mode Acquéreur : un ancien
+  // lien (« Rapprocher » d'une fiche, M117) y mène, ses critères avec lui.
+  if (acquereur) {
+    redirect(`/acquereurs/rapprochement?acquereur=${encodeURIComponent(acquereur)}`);
+  }
   const motive = parseFollowUpMotive(motif);
   // Un motif choisi ne montre que des « à relancer ».
   const group = motive != null ? 'follow_up' : parseSuiviGroup(issue);
 
   // Mission 128 B — ce qui ne dépend de rien part ensemble, puis ce qui dépend des dossiers et
   // du profil.
-  const [buyer, allDossiers, profile, branding] = await Promise.all([
-    // Mission 117 — « Rapprocher » depuis une fiche acquéreur : ses critères pré-remplissent le
-    // rapprochement ; une fiche archivée ou d'une autre agence n'est pas lue (M93).
-    acquereur ? getBuyer(acquereur) : null,
+  const [allDossiers, profile, branding, visitRead] = await Promise.all([
     getSuiviDossiers(),
     getProfile(),
     getAgencyBranding(),
+    // Mission 130 — les visites demandées sur les mandats de l'agence (M119).
+    readVisitLines(),
   ]);
+  const visits = visitRead.lines;
   // Mission 97 — un dossier d'exemple se voit dans la liste (badge « Exemple »), mais ne compte
-  // nulle part : tuiles, écart moyen, « à relancer aujourd'hui », motifs, rapprochement acheteur.
+  // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, marketUpdates] = await Promise.all([
+  const [{ cards }, insights, agency, pointRead] = await Promise.all([
     getAgencyProspecting(counted),
     getSellerInsights(projectIds),
     profile ? getAgency(profile.agency_id) : null,
     // Mission 127 — les points marché de chaque dossier.
     profile
       ? createClient().then((supabase) =>
-          listMarketUpdates(supabase, profile.agency_id, projectIds),
+          readMarketUpdates(supabase, profile.agency_id, projectIds),
         )
-      : new Map(),
+      : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
   ]);
+  const marketUpdates = pointRead.byProject;
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
     agencyName: documentAgencyName(branding?.documentName, agency?.name) || null,
   };
   const now = new Date();
+  const today = parisDay(now);
 
   // Mission 96 — pour chaque dossier : ce que le vendeur a dit, ses relances, le délai depuis
   // le dernier contact et le message proposé. Calculé ici, côté serveur.
@@ -137,44 +171,102 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const lastContacts = new Map(
     [...followUps].map(([projectId, followUp]) => [projectId, followUp.lastContactAt]),
   );
-  const dueLabel = dueTodayLabel(
-    counted.filter((dossier) => followUps.get(dossier.project.id)?.due).length,
-  );
-  const motiveCounts = followUpMotiveCounts(counted);
 
+  // Mission 130 — les tâches : « À faire aujourd'hui » pour toute l'agence, et la prochaine étape
+  // de chaque carte.
+  const lastPoints = new Map<string, string>();
+  for (const [projectId, entries] of marketUpdates) {
+    if (entries[0]) lastPoints.set(projectId, entries[0].madeAt);
+  }
+  const inputs = suiviTaskInputs({
+    dossiers: allDossiers,
+    contacts: new Map(
+      [...followUps].map(([projectId, followUp]) => [projectId, followUp.contacts]),
+    ),
+    lastPoints,
+    cards,
+    visits,
+    pointsUnknown: pointRead.failed,
+  });
+  const taskList = buildSuiviTaskList(inputs, now);
+  const prospecting = prospectingCounts(cards);
+  const competitors = competitorCounts(cards);
+  const visitsByProject = visitCounts(visits);
+  const dossierById = new Map(allDossiers.map((dossier) => [dossier.project.id, dossier]));
+  const inputById = new Map(inputs.map((input) => [input.projectId, input]));
+  const signedDay = (dossier: {
+    conclusion: { signedAt: string | null; concludedAt: string | null } | null;
+  }) => {
+    const iso = dossier.conclusion?.signedAt ?? dossier.conclusion?.concludedAt ?? null;
+    return iso ? parisDay(new Date(iso)) : null;
+  };
+
+  const motiveCounts = followUpMotiveCounts(counted);
   // Les « à relancer » du plus ancien contact au plus récent.
   const dossiers = sortSuivi(
     filterSuiviByMotive(filterSuiviByGroup(allDossiers, group), motive),
     lastContacts,
   );
-  const exclusives = exclusiveSignedCount(counted);
   const counts = suiviCounts(counted);
-  const averageGap = averageJourneyGap(counted);
+  const shownTasks = taskList.dues.slice(0, TASKS_SHOWN);
+  const moreTasks = taskList.dues.slice(TASKS_SHOWN);
 
-  // Mission 98 — le statut est celui de la carte (commun à toutes les copies d'un même bien) ;
-  // une adresse « Ne plus solliciter » n'est plus à prospecter.
-  const statusesByProject = new Map<string, ProspectingStatus[]>();
-  for (const card of cards) {
-    if (card.row.opposedOn != null) {
-      continue;
-    }
-    for (const seller of card.sellers) {
-      statusesByProject.set(seller.projectId, [
-        ...(statusesByProject.get(seller.projectId) ?? []),
-        card.row.status,
-      ]);
-    }
-  }
+  const renderTask = (task: (typeof taskList.dues)[number], index: number) => {
+    const dossier = dossierById.get(task.projectId);
+    const line = taskLine(
+      task,
+      {
+        motiveLabel:
+          dossier?.conclusion?.outcome === 'follow_up'
+            ? followUpMotiveLabel(
+                dossier.conclusion.followUpMotive ?? null,
+                dossier.conclusion.followUpMotiveDetail ?? null,
+              )
+            : null,
+        lastContactDays: followUps.get(task.projectId)?.lastContactDays ?? null,
+        signedOn: dossier ? signedDay(dossier) : null,
+        propertyLabel: dossier ? propertyLabel(dossier.property) : null,
+      },
+      today,
+    );
+    return (
+      <li
+        key={`${task.projectId}-${task.kind}`}
+        data-testid="suivi-task"
+        className="flex flex-wrap items-center gap-3 border-t border-zinc-100 py-3 first:border-0 stage:border-white/10"
+      >
+        <span
+          className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
+            task.kind === 'follow_up' ? TASK_DOT.follow_up : TASK_DOT.signed
+          }`}
+          aria-hidden
+        >
+          {index + 1}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+            {line.title}
+          </span>
+          <span className="text-sm text-zinc-500 stage:text-white/60">
+            {line.detail}
+            {line.late ? <span className="font-semibold text-orange-700">{line.late}</span> : null}
+          </span>
+        </span>
+        <Link href={line.href} className={`${btnPrimary} whitespace-nowrap`}>
+          {line.button}
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col gap-1.5">
         <span className={kickerLabel}>Après le rendez-vous</span>
         <h1 className={pageTitle}>Suivi</h1>
-        <p className={pageSubtitle}>
-          Vos rendez-vous conclus, et ce qu’il reste à faire pour chacun.
-        </p>
+        <p className={pageSubtitle}>Ce que vous avez à faire, puis chaque vendeur.</p>
       </div>
+      <SuiviTaskCountSync count={taskList.dues.length} />
 
       {allDossiers.length === 0 ? (
         <div className={emptyState}>
@@ -187,81 +279,80 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-3">
-            {SUIVI_GROUPS.map((value) => (
-              <Link
-                key={value}
-                href={groupHref(group === value ? null : value)}
-                aria-current={group === value ? 'true' : undefined}
-                className={group === value ? tileActive : tileIdle}
-              >
-                <span className={`font-title text-2xl font-bold ${COUNT_COLOR[value]}`}>
-                  {counts[value]}
-                </span>
-                <span className="text-xs whitespace-nowrap text-zinc-500 stage:text-white/60">
-                  {SUIVI_GROUP_LABELS[value]}
-                </span>
-                {/* Mission 96 — combien attendent depuis plus de 7 jours. */}
-                {value === 'follow_up' && dueLabel ? (
-                  <span
-                    data-testid="follow-up-due-count"
-                    className="text-xs font-semibold whitespace-nowrap text-amber-700 stage:text-amber-300"
-                  >
-                    {dueLabel}
-                  </span>
+          <section
+            data-testid="suivi-today"
+            className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none"
+          >
+            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+              À faire aujourd’hui
+              {taskList.dues.length > 0 ? ` · ${taskList.dues.length}` : ''}
+            </h2>
+            {taskList.dues.length === 0 ? (
+              visitRead.failed || pointRead.failed ? null : (
+                <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
+                  {nothingTodayLabel(taskList.next)}
+                </p>
+              )
+            ) : (
+              <>
+                <ol className="mt-2 flex flex-col">{shownTasks.map(renderTask)}</ol>
+                {moreTasks.length > 0 ? (
+                  <details className="group">
+                    <summary className={`${link} cursor-pointer text-sm`}>
+                      Voir{' '}
+                      {moreTasks.length > 1
+                        ? `les ${moreTasks.length} autres tâches`
+                        : 'l’autre tâche'}{' '}
+                      ▾
+                    </summary>
+                    <ol className="flex flex-col">
+                      {moreTasks.map((task, index) => renderTask(task, TASKS_SHOWN + index))}
+                    </ol>
+                  </details>
                 ) : null}
-                {/* Mission 90 — la mesure de la bêta : dont combien d'exclusifs. */}
-                {value === 'signed' && counts.signed > 0 ? (
-                  <span className="text-xs font-semibold whitespace-nowrap text-brand-deep stage:text-brand">
-                    {exclusiveLabel(exclusives)}
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-            {averageGap != null ? (
-              <div className="flex min-w-56 flex-col rounded-xl bg-brand-deep px-4 py-3 text-white">
-                <span className="font-title text-2xl font-bold whitespace-nowrap">
-                  {formatPercent(Math.round(averageGap), { signed: true })}
-                </span>
-                <span className="text-xs text-white/70">
-                  Écart moyen&nbsp;: prix du vendeur → prix de commercialisation
-                </span>
-              </div>
+              </>
+            )}
+            {/* Mission 130 — une lecture en échec n'est jamais lue comme « rien à faire » (M98). */}
+            {visitRead.failed ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                Les visites demandées n’ont pas pu être lues : rechargez la page.
+              </p>
             ) : null}
-          </div>
+            {pointRead.failed ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                Les Points marché n’ont pas pu être lus : rechargez la page.
+              </p>
+            ) : null}
+          </section>
 
-          <BuyerSearchPanel
-            dossiers={counted}
-            entries={cards
-              .filter((card) => card.row.opposedOn == null)
-              .map(({ row, seller }) => ({ row, seller }))}
-            initialCriteria={buyer ? buyerToCriteria(buyer) : null}
-            buyerName={buyer?.name ?? null}
-          />
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href="/suivi" className={group === null ? chipActive : chipIdle}>
-              Tous
+          <div className="flex flex-wrap items-center gap-2" data-testid="suivi-filters">
+            <Link
+              href="/suivi"
+              aria-current={group === null ? 'true' : undefined}
+              className={group === null ? chipActive : chipIdle}
+            >
+              Tous · {counted.length}
             </Link>
             {SUIVI_GROUPS.map((value) => (
               <Link
                 key={value}
-                href={groupHref(value)}
+                href={groupHref(group === value && motive == null ? null : value)}
+                aria-current={group === value ? 'true' : undefined}
                 className={group === value && motive == null ? chipActive : chipIdle}
               >
-                {SUIVI_GROUP_LABELS[value]}
+                {SUIVI_GROUP_LABELS[value]} · {counts[value]}
               </Link>
             ))}
           </div>
 
-          {/* Mission 96 — le filtre par motif de relance : seuls les motifs portés par un dossier. */}
-          {motiveCounts.size > 0 ? (
+          {/* Mission 96 — le filtre par motif, sous « À relancer » actif seulement (M130). */}
+          {group === 'follow_up' && motiveCounts.size > 0 ? (
             <div
               className="flex flex-wrap items-center gap-2"
               data-testid="follow-up-motive-filter"
             >
               <span className="text-xs font-semibold text-zinc-500 stage:text-white/60">
-                À relancer, par motif&nbsp;:
+                Pourquoi&nbsp;:
               </span>
               {FOLLOW_UP_MOTIVES.filter((value) => motiveCounts.has(value)).map((value) => (
                 <Link
@@ -279,24 +370,87 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
           {dossiers.length === 0 ? (
             <div className={emptyState}>
               <p className="text-sm text-zinc-500 stage:text-white/60">
-                Aucun dossier pour ce filtre.
+                Aucun vendeur dans ce filtre.
               </p>
             </div>
           ) : (
             <ul className="flex flex-col gap-3">
               {dossiers.map((dossier) => {
-                const statuses = statusesByProject.get(dossier.project.id) ?? [];
+                const id = dossier.project.id;
+                const input = inputById.get(id)!;
+                const tasks = dossierTasks(input);
+                const task = nextStep(tasks);
+                const followUp = followUps.get(id)!;
+                const latest = sortContacts(followUp.contacts)[0] ?? null;
+                const entries = marketUpdates.get(id) ?? [];
+                const latestEntry = entries[0] ?? null;
+                const own = prospecting.get(id) ?? {
+                  total: 0,
+                  ready: 0,
+                  toConfirm: 0,
+                  done: 0,
+                  declined: 0,
+                };
+                const competitorCount = competitors.get(id) ?? 0;
+                const outcome = dossier.conclusion?.outcome ?? null;
+                const pointTask = tasks.find((item) => item.kind === 'market_update') ?? null;
+                const nextPointOn =
+                  competitorCount > 0 && !pointRead.failed
+                    ? nextMarketUpdateOn(
+                        dossier.conclusion?.signedAt ?? null,
+                        dossier.conclusion?.concludedAt ?? null,
+                        latestEntry?.madeAt ?? null,
+                      )
+                    : null;
+                const frieze: SuiviFrieze | null =
+                  outcome === 'signed' && !dossier.project.is_example
+                    ? {
+                        prospecting: own,
+                        competitorCount,
+                        nextPointOn,
+                        pointDue: pointTask != null && isTaskDue(pointTask, today),
+                        pointLateDays: pointTask ? taskLateDays(pointTask, today) : 0,
+                        latestPointOn: latestEntry ? parisDay(new Date(latestEntry.madeAt)) : null,
+                        visits: visitsByProject.get(id) ?? { done: 0, pending: 0 },
+                        pointsUnknown: pointRead.failed,
+                        visitsUnknown: visitRead.failed,
+                      }
+                    : null;
+                const step = cardStep(
+                  task,
+                  {
+                    outcome,
+                    sellerName: dossier.project.seller_name ?? 'Dossier vendeur',
+                    isExample: dossier.project.is_example === true,
+                    competitorCount,
+                    toConfirmCount: own.toConfirm,
+                    declinedCount: own.declined,
+                    latestPoint: latestEntry
+                      ? {
+                          id: latestEntry.id,
+                          madeOn: parisDay(new Date(latestEntry.madeAt)),
+                          line: latestEntry.line,
+                        }
+                      : null,
+                    outcomeChangedOn: dossier.conclusion?.outcomeChangedAt
+                      ? parisDay(new Date(dossier.conclusion.outcomeChangedAt))
+                      : null,
+                    datePosed: task?.datePosed ?? true,
+                    lastContactNote: latest
+                      ? { on: parisDay(new Date(latest.contactedAt)), note: latest.note }
+                      : null,
+                  },
+                  today,
+                );
                 return (
                   <SuiviRow
-                    key={dossier.project.id}
+                    key={id}
                     dossier={dossier}
-                    followUp={followUps.get(dossier.project.id)!}
-                    marketUpdates={marketUpdates.get(dossier.project.id) ?? []}
-                    prospecting={
-                      dossier.conclusion?.outcome === 'signed' && !dossier.project.is_example
-                        ? { count: statuses.length, progress: prospectingProgress(statuses) }
-                        : null
-                    }
+                    followUp={followUp}
+                    marketUpdates={entries}
+                    step={step}
+                    frieze={frieze}
+                    initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
                   />
                 );
               })}

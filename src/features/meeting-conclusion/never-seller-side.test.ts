@@ -48,11 +48,7 @@ describe('la relance ne passe jamais côté vendeur', () => {
   });
 
   it('les composants du bloc et du message ne reçoivent aucun concurrent', () => {
-    for (const name of [
-      'seller-said-block.tsx',
-      'follow-up-message.tsx',
-      'follow-up-history.tsx',
-    ]) {
+    for (const name of ['seller-said-block.tsx', 'follow-up-panel.tsx', 'follow-up-history.tsx']) {
       const source = readFileSync(
         join(SRC, 'features', 'meeting-conclusion', 'components', name),
         'utf8',

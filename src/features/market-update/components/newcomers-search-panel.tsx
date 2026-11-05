@@ -200,8 +200,8 @@ export function NewcomersSearchPanel({
         ...current,
         [candidate.url]:
           outcome.status === 'imported_from_search'
-            ? 'Retenu ✓ · créé depuis la recherche (page illisible) · dans le dossier et dans Prospection'
-            : 'Retenu ✓ · dans le dossier et dans Prospection',
+            ? 'Retenu ✓ : ajouté au dossier et à Prospection (annonce illisible : chiffres de la recherche, à vérifier)'
+            : 'Retenu ✓ : ajouté au dossier et à Prospection',
       }));
       if (rewritten.ok) onPointRewritten?.(rewritten.line);
       router.refresh();
@@ -258,11 +258,11 @@ export function NewcomersSearchPanel({
         : NEWCOMERS_LIMITED_LABEL,
       found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
       found.widenRefused === 'budget'
-        ? 'élargissement refusé par le budget du mois'
+        ? 'recherche non élargie : budget du mois atteint'
         : found.widenRefused === 'unreadable'
-          ? 'élargissement non lancé : le budget du mois n’a pas pu être lu'
+          ? 'recherche non élargie : budget du mois illisible, réessayez plus tard'
           : found.widenRefused === 'failed'
-            ? 'élargissement impossible pour l’instant'
+            ? 'recherche non élargie pour l’instant, réessayez plus tard'
             : null,
     ].filter(Boolean);
     return (
@@ -276,8 +276,9 @@ export function NewcomersSearchPanel({
         <span className="text-xs text-zinc-600 stage:text-white/70">{parts.join(' · ')}</span>
         {found.excludedNoDate > 0 ? (
           <span className="text-xs text-zinc-500 stage:text-white/60">
-            {found.excludedNoDate} annonce{found.excludedNoDate > 1 ? 's' : ''} sans date de
-            première vue : non proposée{found.excludedNoDate > 1 ? 's' : ''}.
+            {found.excludedNoDate} annonce{found.excludedNoDate > 1 ? 's' : ''} écartée
+            {found.excludedNoDate > 1 ? 's' : ''} : on ne sait pas depuis quand{' '}
+            {found.excludedNoDate > 1 ? 'elles sont' : 'elle est'} en ligne.
           </span>
         ) : null}
         {found.newcomers.length === 0 ? (

@@ -92,11 +92,7 @@ export function DangerousTodayControl({
       ) : null}
       {current && changed ? line('Aujourd’hui', current, 'désigné par vous') : null}
       {meeting && !meeting.gone
-        ? line(
-            changed ? 'Au rendez-vous' : 'Selon le vendeur',
-            meeting,
-            changed ? 'choix du vendeur, gardé' : 'son choix au rendez-vous',
-          )
+        ? line(changed ? 'Au rendez-vous' : 'Selon le vendeur', meeting, 'son choix au rendez-vous')
         : null}
       {!editable ? (
         <p className={hintText} data-testid="dangerous-stale">

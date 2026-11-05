@@ -46,11 +46,22 @@ export const DEMO_JUSTIFICATION =
   'Prix retenu à partir des biens comparables en vente dans le secteur, ajusté à l’exposition et à l’étage.';
 // Le rendez-vous de démonstration : commencé il y a 50 minutes, fini il y a 9 minutes.
 export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
-// « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine dans 22 jours.
-export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 22 } as const;
-// « Conclu, mandat signé » : rendez-vous d'il y a trois semaines, pour que le Point marché (M127)
-// dise « depuis notre rendez-vous du … » avec un vrai écart (designer, 29/10).
-export const DEMO_SIGNED_MEETING_DAYS_AGO = 21;
+// « À relancer » : rendez-vous d'il y a 9 jours, relance d'il y a 8 jours, prochaine aujourd'hui
+// (Mission 130 : la tâche « Relancer » est dans « À faire aujourd'hui »).
+export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
+// « Conclu, mandat signé » : rendez-vous et signature d'il y a un mois calendaire (même jour du mois
+// précédent, le dernier jour s'il n'existe pas), pour que le Point marché (M127) dise « depuis notre
+// rendez-vous du … » avec un vrai écart (designer, 29/10) et que le premier point, mensuel, soit
+// dû aujourd'hui (Mission 130 ; un 29, 30 ou 31, il peut l'être depuis un à trois jours).
+export function oneMonthAgo(now: Date): string {
+  const date = new Date(now);
+  const day = date.getUTCDate();
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() - 1);
+  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+  date.setUTCDate(Math.min(day, lastDay));
+  return date.toISOString();
+}
 
 export type DemoSeedCompetitor = {
   listing: DemoListing;

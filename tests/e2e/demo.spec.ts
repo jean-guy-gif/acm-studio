@@ -139,13 +139,28 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
       await page.goto('/suivi');
       const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
-      await expect(signed.getByTestId('mandate-type-badge')).toHaveText('Exclusif');
+      await expect(signed.getByTestId('outcome-badge')).toHaveText('Mandat signé · exclusif');
       const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Martin' });
-      await expect(followUp.getByText('À relancer', { exact: true })).toBeVisible();
+      await expect(followUp.getByTestId('outcome-badge')).toHaveText('À relancer');
+      await followUp.getByTestId('suivi-link-details').click();
       await expect(followUp.getByTestId('objections-line')).toHaveText(
-        'Freins : Le prix · Le délai',
+        'Ce qui le freine : le prix, le délai',
       );
-      await expect(followUp.getByText(/Dernier contact il y a 8 jours/)).toBeVisible();
+      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Martin, due aujourd'hui, et
+      // le premier Point marché de M. Lefebvre, signé il y a un mois ; le compteur du menu.
+      if (prepared) {
+        const today = page.getByTestId('suivi-today');
+        await expect(
+          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Martin' }),
+        ).toContainText(/dernier contact il y a 8 jours · relance prévue aujourd’hui/);
+        await expect(
+          today.getByTestId('suivi-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
+        ).toContainText(
+          // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
+          /premier Point marché dû \(tous les mois\)|en retard/,
+        );
+        await expect(page.getByTestId('suivi-task-count')).toHaveText(/^[1-9]\d*$/);
+      }
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
       // réservé aux opérateurs ; le menu de gauche n'a que ses quatre espaces.
       await expect(page.locator('nav[data-mode] a')).toHaveCount(4);
@@ -365,7 +380,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
       await expect(row).toBeVisible();
       await expect(row.getByText('À relancer', { exact: true })).toBeVisible();
-      await row.getByRole('button', { name: 'Mettre à jour les concurrents' }).click();
+      // Mission 130 — le Point marché s'ouvre dans la carte, par son lien.
+      await row.getByTestId('suivi-link-point').click();
+      await row.getByTestId('refresh-prices').click();
       const summary = row.getByTestId('price-refresh-summary');
       await expect(summary).toBeVisible({ timeout: 60_000 });
       const summaryText = await summary.innerText();
@@ -377,7 +394,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // Mission 127 — le point daté s'écrit à la fin de la mise à jour.
       await expect(row.getByTestId('market-update-recorded')).toBeVisible({ timeout: 30_000 });
       await expect(row.getByTestId('market-update-recorded')).toContainText(
-        /Point du \d{2}\/\d{2}\/\d{4} enregistré/,
+        /Point marché du \d{2}\/\d{2}\/\d{4} prêt/,
       );
       await expect(page.getByText(/Installer l’extension|extension ACM/)).toHaveCount(0);
       await expectUnspoken(page, 'Suivi');
@@ -386,7 +403,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Mandat signé, exclusif, depuis la ligne du Suivi', async () => {
       await page.goto('/suivi');
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
-      await row.getByRole('button', { name: 'Changer l’issue' }).click();
+      await row.getByTestId('suivi-link-issue').click();
       await row
         .locator('label')
         .filter({ hasText: /^Mandat signé$/ })
@@ -399,10 +416,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         String(COMMERCIALIZATION_PRICE),
       );
       await row.getByRole('button', { name: 'Enregistrer l’issue' }).click();
-      await expect(row.getByTestId('mandate-type-badge')).toHaveText('Exclusif');
-      await expect(
-        row.getByRole('link', { name: `Prospecter · ${RETAINED} concurrents →` }),
-      ).toBeVisible();
+      await expect(row.getByTestId('outcome-badge')).toHaveText('Mandat signé · exclusif');
+      // Mission 130 — adresses confirmées : la prochaine étape est de démarcher, bouton plein.
+      await expect(row.getByTestId('suivi-step-button')).toHaveText('Prospecter');
+      await expect(row.getByTestId('suivi-frieze')).toContainText(
+        `Concurrents · ${RETAINED} à démarcher`,
+      );
     });
 
     await test.step('Prospection : adresses déjà confirmées, courriers, lot, tournée, sans mention', async () => {
@@ -619,7 +638,20 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(row).toBeVisible();
-      await row.getByRole('button', { name: 'Mettre à jour les concurrents' }).click();
+      // Mission 130 — « Faire le point » d'« À faire aujourd'hui » ramène à la carte et lance le
+      // point (le premier est dû : signé il y a un mois) ; à défaut, par la carte elle-même.
+      const pointTask = page
+        .getByTestId('suivi-task')
+        .filter({ hasText: 'Point marché de M. Lefebvre' });
+      if ((await pointTask.count()) > 0) {
+        await pointTask.getByRole('link', { name: 'Faire le point' }).click();
+        await expect(page).toHaveURL(/point=/);
+      } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
+        await row.getByTestId('suivi-link-point').click();
+        await row.getByTestId('refresh-prices').click();
+      } else {
+        await row.getByTestId('suivi-step-button').click();
+      }
       const recorded = row.getByTestId('market-update-recorded');
       await expect(recorded).toBeVisible({ timeout: 60_000 });
       const recordedText = await recorded.innerText();

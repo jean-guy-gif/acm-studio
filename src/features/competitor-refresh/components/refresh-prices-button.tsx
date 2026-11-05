@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
 import { pingExtension } from '@/features/browser-extension/client';
@@ -35,7 +35,8 @@ import {
 import type { MarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
 
 export const NO_EXTENSION_FOR_REFRESH = 'Installez ou activez l’extension ACM, puis réessayez.';
-export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
+// Mission 130 — le bouton dit ce qu'il fait : relire, puis écrire le point.
+export const REFRESH_BUTTON_LABEL = 'Faire le point marché';
 
 // Mission 105 — sur le Suivi d'un dossier : relire, par l'extension, les annonces des concurrents
 // retenus. Aucun appel payant ; le serveur relit chaque page et décide.
@@ -46,8 +47,19 @@ export const REFRESH_BUTTON_LABEL = 'Mettre à jour les concurrents';
 export function RefreshPricesButton({
   projectId,
   latest = null,
+  label = REFRESH_BUTTON_LABEL,
+  buttonClassName = `${btnSecondary} whitespace-nowrap`,
+  autoRun = false,
+  onStarted,
 }: {
   projectId: string;
+  label?: string;
+  buttonClassName?: string;
+  // Mission 130 — « Faire le point marché », prochaine étape de la carte, ouvre ce bloc et le lance
+  // aussitôt : le bouton fait ce qu'il dit.
+  autoRun?: boolean;
+  // Prévenu dès que la relecture part : le parent désarme `autoRun` (un remontage ne relance rien).
+  onStarted?: () => void;
   // Mission 127 B — le dernier point relu en base : après « Retenir » un nouveau venu, le point du
   // jour est réécrit et le bloc « Point du … enregistré » suit, sans rechargement.
   latest?: { id: string; madeAt: string; line: string; summary: MarketUpdateSummary } | null;
@@ -69,7 +81,7 @@ export function RefreshPricesButton({
   const [missingExtension, setMissingExtension] = useState(false);
 
   const conclude = async () => {
-    setProgress('Le point marché s’écrit…');
+    setProgress('Préparation du Point marché…');
     const result = await recordMarketUpdate(projectId);
     if (result.ok) {
       setPoint(result);
@@ -133,22 +145,32 @@ export function RefreshPricesButton({
     }
   };
 
+  const started = useRef(false);
+  useEffect(() => {
+    if (autoRun && !started.current) {
+      started.current = true;
+      onStarted?.();
+      void run();
+    }
+    // `run` change à chaque rendu : seul `autoRun` décide, une fois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun]);
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className={`${btnSecondary} whitespace-nowrap`}
+          data-testid="refresh-prices"
+          className={buttonClassName}
           disabled={busy}
           onClick={() => void run()}
         >
-          {busy ? (progress ?? 'Mise à jour…') : REFRESH_BUTTON_LABEL}
+          {busy ? (progress ?? 'Préparation du Point marché…') : label}
         </button>
         {busy ? (
           <span className="text-xs text-zinc-500 stage:text-white/60">
-            {demo
-              ? 'Sans appel payant.'
-              : 'Par l’extension ACM, sans appel payant. Ne fermez pas l’onglet.'}
+            {demo ? 'Gratuit.' : 'Gratuit. Gardez cet onglet ouvert pendant la relecture.'}
           </span>
         ) : null}
       </div>
@@ -173,7 +195,7 @@ export function RefreshPricesButton({
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-title text-sm font-bold text-zinc-900 stage:text-white">
-              Point du {shortDay(shownPoint.madeAt)} enregistré
+              Point marché du {shortDay(shownPoint.madeAt)} prêt
             </span>
             <Link
               href={`/builder/${projectId}/point-marche?point=${shownPoint.updateId}`}

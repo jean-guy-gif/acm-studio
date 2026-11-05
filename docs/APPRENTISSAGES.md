@@ -29,6 +29,7 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 05/11 · M128 · `x-vercel-id` dit l'entrée puis la fonction : `cdg1::iad1` avant, `cdg1::cdg1`
   après `"regions": ["cdg1"]` dans `vercel.json` ; /suivi 2,9 s → 0,4 s, /acquereurs 1,7 s →
   0,3 s, /builder 0,9 s → 0,2 s. La région se lit sur l'essai dès son déploiement.
+- 05/11 · M128 B · Compter les requêtes d'une page dans les journaux de Supabase (`edge_logs`, une page à la fois, 4 s de silence entre deux) : les journaux perdent parfois une ligne (un `auth/v1/user` absent), et l'essai partage la base avec d'autres sessions (des lectures `buyer_*` d'un autre onglet sont tombées dans une fenêtre) ; lire le détail avant de conclure, faire deux passes, et donner les comptes à ±1.
 
 ## La démo et les tests
 
@@ -113,6 +114,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   dépôt propre, ne voit pas. Le build régénère `.next/types`, pas `.next/dev`.
 
 - 05/11 · Correctif 129 · Après le retrait des `loading.tsx` (M128), `npm run typecheck` local tombe sur `.next/dev/types/validator.ts`, laissé par un ancien `next dev` (« Cannot find module …/builder/page.js ») : ce n'est pas le code, la CI part d'un dépôt propre ; on le vérifie avec un tsconfig temporaire qui exclut `.next/dev` (l'effacer demande l'accord de Jean-Guy).
+- 05/11 · M128 B · Le poids de zod se mesure sur `next build` : le morceau qui contient `ZodError` (≈ 390 Ko non compressés) et les `page_client-reference-manifest.js` qui le citent (13 pages avant, 4 après). Un worktree avec `node_modules` en lien symbolique ne construit pas (Turbopack refuse un lien qui sort du dossier) : on construit `main` dans le dépôt, après un commit de la branche. Un composant client qui EXÉCUTE un schéma (Localisateur, réglages de la recherche) garde zod : le sortir demande de réécrire la validation.
+- 05/11 · M128 B · Sous Vitest, le `cache` de React ne mémorise rien et un crochet ne joue pas ses effets (`renderToStaticMarkup`, environnement node) : la veille coupée du Localisateur n'est prouvée que sur le texte du crochet, faute d'outil de rendu avec effets.
 
 ## La base
 
