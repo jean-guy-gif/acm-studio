@@ -103,6 +103,7 @@ export function MarketUpdateList({
   signed,
   nextOn = null,
   due = false,
+  unreadable = false,
 }: {
   projectId: string;
   updates: MarketUpdateEntry[];
@@ -110,6 +111,8 @@ export function MarketUpdateList({
   // Mission 130 — le prochain point (AAAA-MM-JJ), et s'il est dû aujourd'hui.
   nextOn?: string | null;
   due?: boolean;
+  // Les points n'ont pas pu être lus : on le dit, sans rien en déduire (M98).
+  unreadable?: boolean;
 }) {
   if (updates.length === 0 && !signed) return null;
   const latest = updates[0] ?? null;
@@ -117,7 +120,11 @@ export function MarketUpdateList({
   return (
     <div className="flex flex-col gap-1.5 px-4 pb-3" data-testid="market-updates">
       <span className={metaLabel}>Points marché</span>
-      {updates.length === 0 ? (
+      {unreadable ? (
+        <p role="alert" className="text-xs font-semibold text-red-700">
+          Les Points marché n’ont pas pu être lus : rechargez la page.
+        </p>
+      ) : updates.length === 0 ? (
         <p className="text-xs text-zinc-500 stage:text-white/60">
           Pas encore de Point marché.{' '}
           {due

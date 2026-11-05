@@ -638,9 +638,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(row).toBeVisible();
-      // Mission 130 — « Faire le point marché » : la prochaine étape de la carte si elle est le
-      // Point marché, sinon par le lien « Point marché ».
-      if ((await row.getByTestId('suivi-link-point').count()) > 0) {
+      // Mission 130 — « Faire le point » d'« À faire aujourd'hui » ramène à la carte et lance le
+      // point (le premier est dû : signé il y a un mois) ; à défaut, par la carte elle-même.
+      const pointTask = page
+        .getByTestId('suivi-task')
+        .filter({ hasText: 'Point marché de M. Lefebvre' });
+      if ((await pointTask.count()) > 0) {
+        await pointTask.getByRole('link', { name: 'Faire le point' }).click();
+        await expect(page).toHaveURL(/point=/);
+      } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
         await row.getByTestId('suivi-link-point').click();
         await row.getByTestId('refresh-prices').click();
       } else {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
   badgeNeutral,
@@ -94,6 +94,9 @@ export type SuiviFrieze = {
   pointLateDays: number;
   latestPointOn: string | null;
   visits: { done: number; pending: number };
+  // Mission 130 — une lecture en échec ne se lit jamais comme « rien » (M98).
+  pointsUnknown?: boolean;
+  visitsUnknown?: boolean;
 };
 
 type Segment = {
@@ -119,8 +122,9 @@ function friezeSegments(frieze: SuiviFrieze): Segment[] {
               label: `Concurrents · ${prospecting.toConfirm} adresse${prospecting.toConfirm > 1 ? 's' : ''} à confirmer`,
               tone: 'later',
             };
-  const point: Segment =
-    frieze.competitorCount === 0 || frieze.nextPointOn == null
+  const point: Segment = frieze.pointsUnknown
+    ? { label: 'Point marché · non lu, rechargez la page', tone: 'later' }
+    : frieze.competitorCount === 0 || frieze.nextPointOn == null
       ? { label: 'Point marché · sans objet', tone: 'later' }
       : frieze.pointDue
         ? frieze.pointLateDays > 0
@@ -133,8 +137,9 @@ function friezeSegments(frieze: SuiviFrieze): Segment[] {
               tone: 'done',
             }
           : { label: `Point marché · le ${dayLabel(frieze.nextPointOn)}`, tone: 'later' };
-  const visit: Segment =
-    visits.pending > 0
+  const visit: Segment = frieze.visitsUnknown
+    ? { label: 'Visites acquéreurs · non lues', tone: 'later' }
+    : visits.pending > 0
       ? { label: `Visites acquéreurs · ${visits.pending} à organiser`, tone: 'today' }
       : visits.done > 0
         ? {
@@ -152,7 +157,9 @@ const SEGMENT_TEXT = {
   later: 'text-zinc-500 stage:text-white/50',
 };
 
-function Frieze({ frieze }: { frieze: SuiviFrieze }) {
+// Le segment « Concurrents » mène à la Prospection du bien : elle reste à un clic, quelle que soit
+// l'étape.
+function Frieze({ frieze, prospectionHref }: { frieze: SuiviFrieze; prospectionHref: string }) {
   const segments = friezeSegments(frieze);
   const today = segments.find((segment) => segment.tone === 'today');
   return (
@@ -167,9 +174,15 @@ function Frieze({ frieze }: { frieze: SuiviFrieze }) {
         ))}
       </div>
       <ol className="hidden grid-cols-4 gap-1 text-center text-xs @md:grid">
-        {segments.map((segment) => (
+        {segments.map((segment, index) => (
           <li key={segment.label} className={SEGMENT_TEXT[segment.tone]}>
-            {segment.label}
+            {index === 1 && frieze.prospecting.total > 0 ? (
+              <Link href={prospectionHref} className="underline-offset-2 hover:underline">
+                {segment.label}
+              </Link>
+            ) : (
+              segment.label
+            )}
             {segment.late ? <span className="text-orange-700">{segment.late}</span> : null}
             {segment.sub ? (
               <span className="block font-normal text-zinc-500 stage:text-white/50">
@@ -226,14 +239,6 @@ export function SuiviRow({
   // ouvert quand la prochaine étape change, avec le point qui vient de s'écrire.
   // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance aussi.
   const [autoRun, setAutoRun] = useState(initialPanel === 'point');
-  // L'adresse ne garde pas `?relancer=` ni `?point=` : un rechargement ne rouvre ni ne relance rien.
-  useEffect(() => {
-    if (!initialPanel) return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete('relancer');
-    url.searchParams.delete('point');
-    window.history.replaceState(window.history.state, '', url.toString());
-  }, [initialPanel]);
   const { project, property, conclusion } = dossier;
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
@@ -289,20 +294,12 @@ export function SuiviRow({
   // prospection reste à un clic sur tout mandat signé qui a des concurrents.
   const stepKind = step.button?.action.kind ?? null;
   const pointInButton = stepKind === 'market_update' || stepKind === 'point_panel';
-  const prospectInButton =
-    step.button?.action.kind === 'link' && step.button.action.href.startsWith('/prospection');
   type LinkKey = 'point' | 'prospection' | 'details' | 'issue';
   const linkKeys: LinkKey[] =
     outcome === 'signed'
-      ? frieze && frieze.prospecting.total === 0 && frieze.competitorCount === 0
+      ? frieze && frieze.competitorCount === 0
         ? ['details', 'issue']
-        : pointInButton
-          ? ['prospection', 'details', 'issue']
-          : prospectInButton
-            ? ['point', 'details', 'issue']
-            : step.button
-              ? ['point', 'prospection', 'issue']
-              : ['prospection', 'details', 'issue']
+        : [pointInButton ? 'prospection' : 'point', 'details', 'issue']
       : outcome === 'follow_up'
         ? ['point', 'details', 'issue']
         : ['details', 'issue'];
@@ -496,7 +493,9 @@ export function SuiviRow({
                 ))}
               </div>
             ) : null}
-            {frieze ? <Frieze frieze={frieze} /> : null}
+            {frieze ? (
+              <Frieze frieze={frieze} prospectionHref={`/prospection?bien=${project.id}`} />
+            ) : null}
             {outcome === 'follow_up' && holdsBack ? (
               <p className="rounded-lg bg-orange-50 px-3 py-2 text-sm text-zinc-800 stage:bg-orange-500/10 stage:text-white/85">
                 Ce qui le retient&nbsp;: «&nbsp;{holdsBack}&nbsp;»
@@ -531,6 +530,7 @@ export function SuiviRow({
               updates={points}
               signed={outcome === 'signed'}
               nextOn={frieze?.nextPointOn ?? null}
+              unreadable={frieze?.pointsUnknown === true}
               due={frieze?.pointDue ?? false}
             />
           </div>

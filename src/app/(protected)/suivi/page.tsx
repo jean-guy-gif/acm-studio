@@ -395,7 +395,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 const outcome = dossier.conclusion?.outcome ?? null;
                 const pointTask = tasks.find((item) => item.kind === 'market_update') ?? null;
                 const nextPointOn =
-                  competitorCount > 0
+                  competitorCount > 0 && !pointRead.failed
                     ? nextMarketUpdateOn(
                         dossier.conclusion?.signedAt ?? null,
                         dossier.conclusion?.concludedAt ?? null,
@@ -412,6 +412,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                         pointLateDays: pointTask ? taskLateDays(pointTask, today) : 0,
                         latestPointOn: latestEntry ? parisDay(new Date(latestEntry.madeAt)) : null,
                         visits: visitsByProject.get(id) ?? { done: 0, pending: 0 },
+                        pointsUnknown: pointRead.failed,
+                        visitsUnknown: visitRead.failed,
                       }
                     : null;
                 const step = cardStep(
