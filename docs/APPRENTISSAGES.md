@@ -194,6 +194,10 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   un e2e qui clique une tâche ouvre d'abord la liste repliée si elle y est. La démo d'avant la mission
   (préparée par l'ancien code) a fait rougir l'e2e démo une fois ; vert au second passage, après sa
   remise à zéro. Suite : 12 sur 13 au premier passage (11,0 min), démo 4,6 min au second.
+- 06/11 · Finitions · Un nom qui en contient un autre (« M. et Mme Lambert-Duval », « M. et Mme
+  Lambert ») fait correspondre deux lignes à un filtre `hasText` de Playwright : le filtre de
+  l'acquéreur devient une expression qui refuse la suite (`/Lambert(?!-)/`) ; un test vérifie que
+  les cinq vendeurs de la démo sont cinq foyers, aucun au nom d'un acquéreur.
 
 ## La base
 
