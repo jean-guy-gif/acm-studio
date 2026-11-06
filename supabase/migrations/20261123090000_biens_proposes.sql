@@ -13,7 +13,8 @@
 --   (jamais une adresse ni un titre d'annonce), la ligne de sélection qui le porte (pour lire la
 --   réponse donnée par le lien, M122 B), le moment de l'envoi — posé par la base — et son auteur.
 --   Lue par les membres non retirés de l'agence ; écrite par le serveur seul ; l'agence de la fiche,
---   du dossier et de la ligne de sélection vérifiée par la base, quel que soit le chemin.
+--   du dossier et de l'auteur, et la ligne de sélection de cette fiche, vérifiées par la base, quel
+--   que soit le chemin.
 --
 -- Compatible avec le code de `main` : une table neuve qu'il ne connaît pas ; aucune ligne écrite,
 -- aucun envoi passé n'est reconstitué (M56).
@@ -35,7 +36,6 @@ create table public.buyer_proposals (
   unique (buyer_id, property_key)
 );
 
-create index buyer_proposals_agency on public.buyer_proposals (agency_id);
 create index buyer_proposals_property on public.buyer_proposals (agency_id, property_key);
 create index buyer_proposals_project on public.buyer_proposals (project_id);
 create index buyer_proposals_selection_item on public.buyer_proposals (selection_item_id);
@@ -44,8 +44,8 @@ create index buyer_proposals_sent_by on public.buyer_proposals (sent_by);
 comment on table public.buyer_proposals is
   'Mission 134 — un bien proposé à un acquéreur (« Envoyé, suivant »), une fois, daté par la base ; écrit par le serveur seul.';
 
--- L'agence de la fiche, du dossier et de la ligne de sélection ; l'heure de l'envoi est celle de la
--- base, à l'insertion.
+-- L'agence de la fiche, du dossier et de l'auteur ; la ligne de sélection de cette fiche ; l'heure de
+-- l'envoi est celle de la base, à l'insertion.
 create function public.check_buyer_proposal()
 returns trigger
 language plpgsql
@@ -60,11 +60,19 @@ begin
   ) then
     raise exception 'buyer_proposals : le dossier n''est pas de cette agence' using errcode = 'check_violation';
   end if;
+  -- La ligne de sélection est de cette fiche (sa réponse est celle de cet acquéreur, M122 B).
   if new.selection_item_id is not null and not exists (
     select 1 from public.buyer_selection_items i
+    join public.buyer_selections s on s.id = i.selection_id
     where i.id = new.selection_item_id and i.agency_id = new.agency_id
+      and s.buyer_id = new.buyer_id
   ) then
-    raise exception 'buyer_proposals : la ligne de sélection n''est pas de cette agence' using errcode = 'check_violation';
+    raise exception 'buyer_proposals : la ligne de sélection n''est pas de cette fiche' using errcode = 'check_violation';
+  end if;
+  if new.sent_by is not null and not exists (
+    select 1 from public.profiles p where p.id = new.sent_by and p.agency_id = new.agency_id
+  ) then
+    raise exception 'buyer_proposals : l''auteur n''est pas de cette agence' using errcode = 'check_violation';
   end if;
   if tg_op = 'INSERT' then
     new.sent_at := now();

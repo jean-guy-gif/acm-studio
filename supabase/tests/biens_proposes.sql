@@ -2,10 +2,12 @@
 --   §1 un envoi s'écrit par le serveur ; l'heure est celle de la base, quelle que soit celle envoyée ;
 --   §2 une fois par acquéreur et par bien (unicité), la première date gardée même en mise à jour ;
 --   §3 les listes (source, origine) ;
---   §4 l'agence de la fiche, du dossier et de la ligne de sélection est vérifiée ;
+--   §4 l'agence de la fiche, du dossier et de l'auteur, la ligne de sélection de cette fiche, sont
+--      vérifiées, à l'insertion comme à la mise à jour ;
 --   §5 le navigateur lit son agence et n'écrit rien ; une autre agence et un membre retiré ne
 --      lisent rien ;
---   §6 la fiche supprimée emporte ses envois ; la ligne de sélection supprimée laisse l'envoi.
+--   §6 la ligne de sélection supprimée laisse l'envoi ; le dossier supprimé emporte ses envois ; la
+--      fiche supprimée les emporte, sa ligne de sélection encore là (« Remettre ma démo à zéro »).
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/biens_proposes.sql
@@ -32,7 +34,9 @@ insert into public.buyers (id, agency_id, advisor_id, name, cities) values
   ('134ccccc-0000-0000-0000-000000000001', '134aaaaa-0000-0000-0000-000000000000',
    '13411111-1111-1111-1111-111111111111', 'Famille Test', array['Vence']),
   ('134ccccc-0000-0000-0000-000000000002', '134bbbbb-0000-0000-0000-000000000000',
-   '13422222-2222-2222-2222-222222222222', 'Autre agence', array['Vence']);
+   '13422222-2222-2222-2222-222222222222', 'Autre agence', array['Vence']),
+  ('134ccccc-0000-0000-0000-000000000003', '134aaaaa-0000-0000-0000-000000000000',
+   '13411111-1111-1111-1111-111111111111', 'Autre fiche', array['Vence']);
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
   ('134ddddd-0000-0000-0000-000000000001', '134aaaaa-0000-0000-0000-000000000000',
    '13411111-1111-1111-1111-111111111111', 'Bernard', 'ready_for_meeting'),
@@ -40,10 +44,14 @@ insert into public.projects (id, agency_id, advisor_id, seller_name, status) val
    '13422222-2222-2222-2222-222222222222', 'Ailleurs', 'ready_for_meeting');
 insert into public.buyer_selections (id, agency_id, buyer_id) values
   ('134eeeee-0000-0000-0000-000000000001', '134aaaaa-0000-0000-0000-000000000000',
-   '134ccccc-0000-0000-0000-000000000001');
+   '134ccccc-0000-0000-0000-000000000001'),
+  ('134eeeee-0000-0000-0000-000000000003', '134aaaaa-0000-0000-0000-000000000000',
+   '134ccccc-0000-0000-0000-000000000003');
 insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
   ('134fffff-0000-0000-0000-000000000001', '134aaaaa-0000-0000-0000-000000000000',
-   '134eeeee-0000-0000-0000-000000000001', 1, 'listing', 'https://exemple.invalid/a', 'Maison · Vence');
+   '134eeeee-0000-0000-0000-000000000001', 1, 'listing', 'https://exemple.invalid/a', 'Maison · Vence'),
+  ('134fffff-0000-0000-0000-000000000003', '134aaaaa-0000-0000-0000-000000000000',
+   '134eeeee-0000-0000-0000-000000000003', 1, 'listing', 'https://exemple.invalid/a', 'Maison · Vence');
 
 -- §1 — l'heure de la base.
 insert into public.buyer_proposals
@@ -118,6 +126,35 @@ begin
     raise exception 'FAIL 4: le dossier d''une autre agence accepté';
   exception when check_violation then null;
   end;
+  begin
+    insert into public.buyer_proposals (agency_id, buyer_id, property_key, source, reference, origin, label, selection_item_id)
+      values ('134aaaaa-0000-0000-0000-000000000000', '134ccccc-0000-0000-0000-000000000001',
+              'listing:exemple:5', 'listing', 'x', 'competitor', 'Maison',
+              '134fffff-0000-0000-0000-000000000003');
+    raise exception 'FAIL 4: la ligne de sélection d''une autre fiche acceptée';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_proposals (agency_id, buyer_id, property_key, source, reference, origin, label, sent_by)
+      values ('134aaaaa-0000-0000-0000-000000000000', '134ccccc-0000-0000-0000-000000000001',
+              'listing:exemple:6', 'listing', 'x', 'competitor', 'Maison',
+              '13422222-2222-2222-2222-222222222222');
+    raise exception 'FAIL 4: un auteur d''une autre agence accepté';
+  exception when check_violation then null;
+  end;
+  -- Déplacer l'envoi vers une fiche d'une autre agence, ou changer son agence : refusé.
+  begin
+    update public.buyer_proposals set buyer_id = '134ccccc-0000-0000-0000-000000000002'
+      where property_key = 'listing:exemple:1';
+    raise exception 'FAIL 4: l''envoi déplacé vers la fiche d''une autre agence';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.buyer_proposals set agency_id = '134bbbbb-0000-0000-0000-000000000000'
+      where property_key = 'listing:exemple:1';
+    raise exception 'FAIL 4: l''agence de l''envoi changée';
+  exception when check_violation then null;
+  end;
 end $$;
 
 -- §5 — le navigateur.
@@ -169,7 +206,25 @@ begin
     raise exception 'FAIL 6: la ligne de sélection supprimée n''est pas vidée';
   end if;
 end $$;
-delete from public.buyers where id = '134ccccc-0000-0000-0000-000000000001';
+-- Le dossier supprimé emporte ses envois.
+insert into public.buyer_proposals (agency_id, buyer_id, property_key, source, reference, project_id, origin, label)
+  values ('134aaaaa-0000-0000-0000-000000000000', '134ccccc-0000-0000-0000-000000000001',
+          'project:134ddddd-0000-0000-0000-000000000001', 'project',
+          '134ddddd-0000-0000-0000-000000000001', '134ddddd-0000-0000-0000-000000000001',
+          'mandate', 'Maison · Vence');
+delete from public.projects where id = '134ddddd-0000-0000-0000-000000000001';
+do $$
+begin
+  if exists (select 1 from public.buyer_proposals where property_key like 'project:%') then
+    raise exception 'FAIL 6: le dossier supprimé n''emporte pas ses envois';
+  end if;
+end $$;
+-- La fiche supprimée, sa ligne de sélection encore là, emporte ses envois.
+insert into public.buyer_proposals (agency_id, buyer_id, property_key, source, reference, origin, label, selection_item_id)
+  values ('134aaaaa-0000-0000-0000-000000000000', '134ccccc-0000-0000-0000-000000000003',
+          'listing:exemple:7', 'listing', 'x', 'competitor', 'Maison',
+          '134fffff-0000-0000-0000-000000000003');
+delete from public.buyers where id in ('134ccccc-0000-0000-0000-000000000001', '134ccccc-0000-0000-0000-000000000003');
 do $$
 begin
   if exists (select 1 from public.buyer_proposals) then
