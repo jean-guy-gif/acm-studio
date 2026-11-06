@@ -173,6 +173,20 @@ describe('les acquéreurs de la démo', () => {
     const validated = rows.filter((row) => row.financing === 'validated');
     expect(validated).toHaveLength(5);
     for (const row of validated) expect(row.contacted_at).toEqual(expect.any(String));
+    // Mission 133 — chaque ligne porte ses deux dates (une colonne absente d'une seule ligne
+    // vaudrait NULL dans l'insertion groupée) ; les fiches de Vence datent de 1 à 7 semaines.
+    for (const row of rows) {
+      expect(row.created_at).toEqual(expect.any(String));
+      expect(row.status_changed_at).toBe(row.created_at);
+    }
+    const weeks = new Set(
+      rows
+        .slice(2)
+        .map((row) =>
+          Math.floor((Date.now() - Date.parse(row.created_at as string)) / 604_800_000),
+        ),
+    );
+    expect(weeks.size).toBeGreaterThan(3);
   });
 });
 
