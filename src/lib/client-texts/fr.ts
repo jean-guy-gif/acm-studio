@@ -13,6 +13,7 @@ import {
   PARKING_TYPE_LABELS,
   PROPERTY_TYPE_LABELS,
 } from '@/features/subject-property/constants/property-options';
+import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/price-alignment';
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import type { ClientTexts } from '@/lib/client-texts/types';
 
@@ -33,6 +34,25 @@ export const FRENCH_TEXTS: ClientTexts = {
     yourAnswer: 'Votre réponse',
     commentOptional: 'Commentaire (facultatif)',
     questionMark: '\u00a0?',
+    priceBasis: {
+      advisorOnly: 'Prix retenu par votre conseiller',
+      advisorFrom: (competitors) => `Prix retenu par votre conseiller à partir de ${competitors}`,
+      calculatedOn: (competitors) => `Calculé sur ${competitors}`,
+      competitors: (count, seen) =>
+        `${count} concurrent${count > 1 ? 's' : ''}${
+          seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : ''
+        }`,
+    },
+    alignment: PRICE_ALIGNMENT_LABELS,
+    pricePosition: {
+      sentence: (price, where) => `À ${price}, votre bien serait ${where}.`,
+      mostExpensive: (total) => `le plus cher des ${total} biens comparés`,
+      cheapest: (total) => `le moins cher des ${total} biens comparés`,
+      amongMostExpensive: (total) => `parmi les plus chers des ${total} biens comparés`,
+      amongCheapest: (total) => `parmi les moins chers des ${total} biens comparés`,
+      middle: (total) => `dans la moyenne des ${total} biens comparés`,
+      rank: (rank, total) => `le ${rank === 1 ? '1er' : `${rank}e`} moins cher sur ${total}`,
+    },
   },
   live: {
     perceived: {
@@ -236,6 +256,74 @@ export const FRENCH_TEXTS: ClientTexts = {
       serious: (answer) => `Sérieux concurrent : ${answer}`,
       notGiven: 'Non renseigné',
       why: 'Pourquoi celui-là ?',
+    },
+    analysis: {
+      title: 'Analyse des prix',
+      pendingHint: 'Il reste à passer :',
+      readyHint: 'Tout est passé, l’analyse est prête.',
+      goTo: 'Y aller',
+      showAnalysis: 'Afficher l’analyse',
+      pendingPerceived: 'Votre valeur perçue',
+      pendingCompetitor: (index, label) => `Concurrent ${index} (${label})`,
+      hintWithPrice: 'Voici le marché, face au prix que vous aviez en tête.',
+      hintDirect: 'Voici le marché des biens que nous avons regardés ensemble.',
+      pathStart: (price) => `Au début\u00a0: ${price}`,
+      pathAfter: (price) => ` → Après avoir vu le marché\u00a0: ${price}`,
+      perceived: 'Votre valeur perçue',
+      competitorPrice: 'Prix des concurrents',
+      advisor: 'Analyse du conseiller',
+      listed: 'Prix affichés',
+      range: (low, high) => `${low} à ${high}`,
+      median: 'Prix médian',
+      dropped: 'Baisse de prix connue',
+      droppedValue: (count, total) => `${count} sur ${total}`,
+      medianDays: 'En vente depuis (médiane)',
+      medianDaysValue: (days, count) => `${days}\u00a0jour${count > 1 ? 's' : ''}`,
+      gaps: 'Écarts observés',
+      gapSellerMarket: 'Votre valeur perçue vs prix des concurrents',
+      gapSellerAdvisor: 'Votre valeur perçue vs analyse du conseiller',
+      gapMarketAdvisor: 'Prix des concurrents vs analyse du conseiller',
+      band: {
+        title: 'Les prix affichés des biens que vous avez vus',
+        start: 'Au début',
+        revised: 'Après le marché',
+        dangerous: 'Le plus dangereux selon vous',
+        competitors: 'Prix des concurrents',
+        dot: 'Un bien concurrent',
+        marker: (label, price) => `${label} : ${price}`,
+      },
+    },
+    conclusion: {
+      title: 'Conclusion',
+      hint: 'Ce que le rendez-vous a construit, noir sur blanc — la décision vous appartient.',
+      perceived: 'Votre valeur perçue',
+      competitorPrice: 'Prix des concurrents',
+      advisor: 'Analyse du conseiller',
+      closestLine: 'Concurrent le plus proche de votre bien',
+      dangerousLine: 'Concurrent le plus dangereux',
+      notSelected: 'Non sélectionné',
+      justification: 'Justification du conseiller',
+      closestCard: 'Le concurrent le plus proche de votre bien',
+      dangerousCard: 'Le concurrent qui vous fait le plus réfléchir',
+      sentence:
+        'Le prix des concurrents montre à quels biens votre logement sera comparé. L’analyse du conseiller détermine le positionnement professionnel proposé.',
+      priceQuestion: 'Sur quel prix partons-nous\u00a0?',
+      priceHint: 'Le prix que nous retenons ensemble. Rien n’est pré-rempli.',
+      saving: 'Enregistrement…',
+      save: 'Enregistrer le prix',
+      saved: 'Prix de commercialisation enregistré.',
+    },
+    closing: {
+      question: (hasAgreedPrice) =>
+        hasAgreedPrice
+          ? 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix\u00a0?'
+          : 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente\u00a0?',
+      scale: '1\u00a0: pas encore prêt · 10\u00a0: on y va.',
+      scoreGroup: 'Votre note, de 1 à 10',
+      launch: 'Alors, on lance la vente\u00a0?',
+      missing: 'Qu’est-ce qui vous manquerait pour être à 10\u00a0?',
+      answerOptional: 'Votre réponse (facultative)',
+      agreedPrice: 'Prix de commercialisation',
     },
     answers: {
       coherence: PRICE_COHERENCE_LABELS,

@@ -39,6 +39,25 @@ export type ClientTexts = {
     yourAnswer: string;
     commentOptional: string;
     questionMark: string;
+    // « Calculé sur 8 concurrents, dont 6 vus ensemble » : ce sur quoi porte le prix des concurrents.
+    priceBasis: {
+      advisorOnly: string;
+      advisorFrom: (competitors: string) => string;
+      calculatedOn: (competitors: string) => string;
+      competitors: (count: number, seen: number | null) => string;
+    };
+    // Le prix de commercialisation face à l'analyse du conseiller (M116) : le libellé de sa couleur.
+    alignment: Record<'green' | 'orange' | 'red', string>;
+    // « À 380 000 €, votre bien serait le plus cher des 7 biens comparés. » (M94)
+    pricePosition: {
+      sentence: (price: string, where: string) => string;
+      mostExpensive: (total: number) => string;
+      cheapest: (total: number) => string;
+      amongMostExpensive: (total: number) => string;
+      amongCheapest: (total: number) => string;
+      middle: (total: number) => string;
+      rank: (rank: number, total: number) => string;
+    };
   };
   live: LiveTexts;
 };
@@ -223,6 +242,70 @@ export type LiveTexts = {
     serious: (answer: string) => string;
     notGiven: string;
     why: string;
+  };
+  analysis: {
+    title: string;
+    pendingHint: string;
+    readyHint: string;
+    goTo: string;
+    showAnalysis: string;
+    pendingPerceived: string;
+    pendingCompetitor: (index: number, label: string) => string;
+    hintWithPrice: string;
+    hintDirect: string;
+    pathStart: (price: string) => string;
+    pathAfter: (price: string) => string;
+    perceived: string;
+    competitorPrice: string;
+    advisor: string;
+    listed: string;
+    range: (low: string, high: string) => string;
+    median: string;
+    dropped: string;
+    droppedValue: (count: number, total: number) => string;
+    medianDays: string;
+    medianDaysValue: (days: string, count: number) => string;
+    gaps: string;
+    gapSellerMarket: string;
+    gapSellerAdvisor: string;
+    gapMarketAdvisor: string;
+    band: {
+      title: string;
+      start: string;
+      revised: string;
+      dangerous: string;
+      competitors: string;
+      dot: string;
+      marker: (label: string, price: string) => string;
+    };
+  };
+  conclusion: {
+    title: string;
+    hint: string;
+    perceived: string;
+    competitorPrice: string;
+    advisor: string;
+    closestLine: string;
+    dangerousLine: string;
+    notSelected: string;
+    justification: string;
+    closestCard: string;
+    dangerousCard: string;
+    sentence: string;
+    priceQuestion: string;
+    priceHint: string;
+    saving: string;
+    save: string;
+    saved: string;
+  };
+  closing: {
+    question: (hasAgreedPrice: boolean) => string;
+    scale: string;
+    scoreGroup: string;
+    launch: string;
+    missing: string;
+    answerOptional: string;
+    agreedPrice: string;
   };
   answers: {
     coherence: Record<PriceCoherence, string>;

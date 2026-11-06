@@ -1,4 +1,5 @@
 import { priceShown } from '@/features/live-seller/services/presentation-mode';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { LivePage } from '@/features/live-seller/services/build-live-pages';
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 
@@ -30,13 +31,16 @@ export function pendingBeforeAnalysis(
   pages: LivePage[],
   comparables: PendingSource[],
   summary: Pick<LiveSellerSummary, 'seller_perceived_property_price'> | null,
+  // Mission 140 — dans la langue du vendeur ; `neutralLabel` est alors déjà dans sa langue.
+  language: TextLanguage = 'fr',
 ): PendingLiveStep[] {
+  const t = clientTexts(language).live.analysis;
   const steps: PendingLiveStep[] = [];
 
   if (summary?.seller_perceived_property_price == null) {
     const pageIndex = pages.findIndex((page) => page.type === 'seller_perceived_price');
     if (pageIndex >= 0) {
-      steps.push({ key: 'seller_perceived_price', pageIndex, label: 'Votre valeur perçue' });
+      steps.push({ key: 'seller_perceived_price', pageIndex, label: t.pendingPerceived });
     }
   }
 
@@ -60,7 +64,7 @@ export function pendingBeforeAnalysis(
       steps.push({
         key: comparable.id,
         pageIndex,
-        label: `Concurrent ${index + 1} (${comparable.neutralLabel})`,
+        label: t.pendingCompetitor(index + 1, comparable.neutralLabel),
       });
     }
   });

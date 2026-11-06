@@ -64,6 +64,7 @@ import {
 import { showBuyersToSeller } from '@/features/live-seller/actions/show-buyers-to-seller';
 import type { LiveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { overlaySellerComparable } from '@/features/live-seller/services/project-live-for-seller';
@@ -331,8 +332,17 @@ export function LiveComparativeShell({
   const effectiveRange = range;
   // Mission 82 — ce qui reste à passer avant « Analyse des prix » (étape sautée au clavier).
   const pendingSteps = useMemo(
-    () => pendingBeforeAnalysis(pages, comparables, summary),
-    [pages, comparables, summary],
+    () =>
+      pendingBeforeAnalysis(
+        pages,
+        comparables.map((entry) => ({
+          ...entry,
+          neutralLabel: neutralComparableLabel(entry, language),
+        })),
+        summary,
+        language,
+      ),
+    [pages, comparables, summary, language],
   );
   const dangerousComparable =
     authorizedComparables.find((c) => c.id === summary?.seller_most_dangerous_comparable_id) ??

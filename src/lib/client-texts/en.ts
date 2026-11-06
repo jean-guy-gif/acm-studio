@@ -2,6 +2,14 @@ import type { ClientTexts } from '@/lib/client-texts/types';
 
 // Mission 140 — l'anglais (britannique : « 6 November », « €1,639,500 »). À FAIRE RELIRE par un
 // locuteur natif (`docs/MODELES_A_RELIRE.md`) ; écrit, jamais généré par une IA (23/10).
+// 1st, 2nd, 3rd, 4th… 11th, 12th, 13th, 21st.
+function englishOrdinal(rank: number): string {
+  const lastTwo = rank % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) return `${rank}th`;
+  const suffix = { 1: 'st', 2: 'nd', 3: 'rd' }[rank % 10] ?? 'th';
+  return `${rank}${suffix}`;
+}
+
 export const ENGLISH_TEXTS: ClientTexts = {
   labels: {
     propertyType: {
@@ -69,6 +77,29 @@ export const ENGLISH_TEXTS: ClientTexts = {
     competitorFallback: 'Competing property',
     yourAnswer: 'Your answer',
     commentOptional: 'Comment (optional)',
+    priceBasis: {
+      advisorOnly: 'Price set by your adviser',
+      advisorFrom: (competitors) => `Price set by your adviser based on ${competitors}`,
+      calculatedOn: (competitors) => `Calculated on ${competitors}`,
+      competitors: (count, seen) =>
+        `${count} competitor${count > 1 ? 's' : ''}${
+          seen != null && seen < count ? `, ${seen} of which we viewed together` : ''
+        }`,
+    },
+    alignment: {
+      green: 'Price in line with the market',
+      orange: 'Close to the market',
+      red: 'Far from the market',
+    },
+    pricePosition: {
+      sentence: (price, where) => `At ${price}, your property would be ${where}.`,
+      mostExpensive: (total) => `the most expensive of the ${total} properties compared`,
+      cheapest: (total) => `the least expensive of the ${total} properties compared`,
+      amongMostExpensive: (total) => `among the most expensive of the ${total} properties compared`,
+      amongCheapest: (total) => `among the least expensive of the ${total} properties compared`,
+      middle: (total) => `in the middle of the ${total} properties compared`,
+      rank: (rank, total) => `the ${englishOrdinal(rank)} least expensive out of ${total}`,
+    },
     questionMark: '?',
   },
   live: {
@@ -275,6 +306,74 @@ export const ENGLISH_TEXTS: ClientTexts = {
       serious: (answer) => `Serious competitor: ${answer}`,
       notGiven: 'Not given',
       why: 'Why that one?',
+    },
+    analysis: {
+      title: 'Price analysis',
+      pendingHint: 'Still to go through:',
+      readyHint: 'Everything has been covered: the analysis is ready.',
+      goTo: 'Go there',
+      showAnalysis: 'Show the analysis',
+      pendingPerceived: 'Your perceived value',
+      pendingCompetitor: (index, label) => `Competitor ${index} (${label})`,
+      hintWithPrice: 'Here is the market, against the price you had in mind.',
+      hintDirect: 'Here is the market for the properties we looked at together.',
+      pathStart: (price) => `At the start: ${price}`,
+      pathAfter: (price) => ` → After seeing the market: ${price}`,
+      perceived: 'Your perceived value',
+      competitorPrice: 'Competitors’ price',
+      advisor: 'Adviser’s analysis',
+      listed: 'Asking prices',
+      range: (low, high) => `${low} to ${high}`,
+      median: 'Median price',
+      dropped: 'Known price reductions',
+      droppedValue: (count, total) => `${count} of ${total}`,
+      medianDays: 'On the market for (median)',
+      medianDaysValue: (days, count) => `${days} day${count > 1 ? 's' : ''}`,
+      gaps: 'Differences',
+      gapSellerMarket: 'Your perceived value vs competitors’ price',
+      gapSellerAdvisor: 'Your perceived value vs adviser’s analysis',
+      gapMarketAdvisor: 'Competitors’ price vs adviser’s analysis',
+      band: {
+        title: 'The asking prices of the properties you have seen',
+        start: 'At the start',
+        revised: 'After the market',
+        dangerous: 'Most dangerous in your view',
+        competitors: 'Competitors’ price',
+        dot: 'A competing property',
+        marker: (label, price) => `${label}: ${price}`,
+      },
+    },
+    conclusion: {
+      title: 'Conclusion',
+      hint: 'What this meeting has built, in black and white — the decision is yours.',
+      perceived: 'Your perceived value',
+      competitorPrice: 'Competitors’ price',
+      advisor: 'Adviser’s analysis',
+      closestLine: 'Competitor closest to your property',
+      dangerousLine: 'Most dangerous competitor',
+      notSelected: 'Not chosen',
+      justification: 'Adviser’s reasoning',
+      closestCard: 'The competitor closest to your property',
+      dangerousCard: 'The competitor that gives you most to think about',
+      sentence:
+        'The competitors’ price shows which properties yours will be compared with. The adviser’s analysis sets the professional positioning we propose.',
+      priceQuestion: 'What price shall we go with?',
+      priceHint: 'The price we agree on together. Nothing is filled in in advance.',
+      saving: 'Saving…',
+      save: 'Save the price',
+      saved: 'Asking price saved.',
+    },
+    closing: {
+      question: (hasAgreedPrice) =>
+        hasAgreedPrice
+          ? 'On a scale of 1 to 10, how ready are you to put your property on the market at this price?'
+          : 'On a scale of 1 to 10, how ready are you to put your property on the market?',
+      scale: '1: not ready yet · 10: let’s go.',
+      scoreGroup: 'Your score, from 1 to 10',
+      launch: 'So, shall we put it on the market?',
+      missing: 'What would you need to be at 10?',
+      answerOptional: 'Your answer (optional)',
+      agreedPrice: 'Asking price',
     },
     answers: {
       coherence: {

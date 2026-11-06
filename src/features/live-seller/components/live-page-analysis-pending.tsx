@@ -1,5 +1,6 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   navBtn,
   panel,
@@ -24,13 +25,12 @@ export function LivePageAnalysisPending({
   onShowAnalysis: () => void;
   busy: boolean;
 }) {
+  const t = useLiveTexts().texts.live.analysis;
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Analyse des prix</h2>
-        <p className={questionHint}>
-          {steps.length > 0 ? 'Il reste à passer :' : 'Tout est passé, l’analyse est prête.'}
-        </p>
+        <h2 className={question}>{t.title}</h2>
+        <p className={questionHint}>{steps.length > 0 ? t.pendingHint : t.readyHint}</p>
       </div>
 
       {steps.length > 0 ? (
@@ -42,7 +42,7 @@ export function LivePageAnalysisPending({
             >
               <span className={statValue}>{step.label}</span>
               <button type="button" onClick={() => onOpen(step.pageIndex)} className={navBtn}>
-                Y aller
+                {t.goTo}
               </button>
             </li>
           ))}
@@ -50,7 +50,7 @@ export function LivePageAnalysisPending({
       ) : (
         <div>
           <button type="button" onClick={onShowAnalysis} disabled={busy} className={navBtn}>
-            Afficher l’analyse
+            {t.showAnalysis}
           </button>
         </div>
       )}
