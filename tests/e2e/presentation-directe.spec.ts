@@ -348,8 +348,9 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
     await expect(page).toHaveURL(/\/acquereurs\/proposer\?bien=/);
   };
   const sendOne = async () => {
-    await page.getByTestId('propose-copy').click();
+    await page.getByTestId('propose-prepare').click();
     await expect(page.getByTestId('propose-message')).toContainText('/dossier/');
+    await expect(page.getByTestId('propose-copy')).toBeVisible();
     const payload = await page.getByTestId('propose-message').innerText();
     expect(payload).toMatch(/^Bonjour /);
     await page.getByTestId('propose-sent').click();

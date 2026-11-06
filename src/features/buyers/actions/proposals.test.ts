@@ -12,7 +12,7 @@ const profile = vi.hoisted(() => ({
 const service = vi.hoisted(() => ({ client: null as unknown }));
 const catalog = vi.hoisted(() => ({
   items: [] as LoopProperty[],
-  contacts: { proposals: new Map(), selected: new Map() } as LoopContacts,
+  contacts: { proposals: new Map() } as LoopContacts,
   failed: false,
 }));
 const agency = vi.hoisted(() => ({ buyers: [] as Buyer[], failed: false }));

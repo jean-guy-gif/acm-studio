@@ -96,7 +96,7 @@ function buyer(over: Partial<Buyer> = {}): Buyer {
   };
 }
 
-const NONE: LoopContacts = { proposals: new Map(), selected: new Map() };
+const NONE: LoopContacts = { proposals: new Map() };
 
 describe('un nouveau bien', () => {
   it('un bien du marché, dans ses 14 premiers jours ; un bien de l’agence, tant qu’il a un prix', () => {
@@ -124,25 +124,25 @@ describe('un nouveau bien', () => {
 });
 
 describe('les acquéreurs d’un bien', () => {
-  it('un acquéreur déjà contacté n’y figure plus : envoyé, dans une sélection, ou à l’origine', () => {
+  it('un acquéreur déjà contacté n’y figure plus : envoyé, ou à l’origine ; une sélection seule ne compte pas', () => {
     const first = buyer();
     const second = buyer();
     const third = buyer();
     const fourth = buyer();
     const contacts: LoopContacts = {
       proposals: new Map([[item().key, new Map([[first.id, daysAgo(0)]])]]),
-      selected: new Map([['competitor:c1', new Set([second.id])]]),
     };
     const bien = item({ originBuyerIds: [third.id] });
     expect(alreadyContacted(bien, first.id, contacts)).toBe(true);
-    expect(alreadyContacted(bien, second.id, contacts)).toBe(true);
+    // Préparer un lien (« Copier » puis « Passer ») ne note rien : il reste à proposer.
+    expect(alreadyContacted(bien, second.id, contacts)).toBe(false);
     expect(alreadyContacted(bien, third.id, contacts)).toBe(true);
     const loop = loopBuyers(bien, [first, second, third, fourth], new Map(), contacts, NOW);
-    expect(loop.toPropose.map((entry) => entry.buyer.id)).toEqual([fourth.id]);
+    expect(loop.toPropose.map((entry) => entry.buyer.id)).toEqual([second.id, fourth.id]);
     expect(loop.proposed.find((entry) => entry.entry.buyer.id === first.id)?.sentAt).toBe(
       daysAgo(0),
     );
-    expect(readyToPropose(loop)).toBe(1);
+    expect(readyToPropose(loop)).toBe(2);
   });
 
   it('la tâche compte les PRÊTS à qui le bien n’a pas été proposé', () => {
@@ -215,6 +215,17 @@ describe('ce que la tâche et le message disent', () => {
     expect(text).toMatch(/11\s000\s€ sous votre budget/);
     expect(text).toContain('https://acm/dossier/abc');
     expect(text.trim().endsWith('Carl')).toBe(true);
+  });
+
+  it('un bien de type inconnu ne se dit pas « bien à Vence »', () => {
+    const text = proposalMessage({
+      buyer: buyer({ pool: null }),
+      item: item({ property: { ...item().property, propertyType: null } }),
+      url: 'u',
+      advisorFirstName: null,
+    });
+    expect(text).toMatch(/J’ai un bien pour vous : à Vence/);
+    expect(text).not.toMatch(/bien à Vence/);
   });
 
   it('un vendeur à relancer : ni prix, ni marge dans le message (M119)', () => {
