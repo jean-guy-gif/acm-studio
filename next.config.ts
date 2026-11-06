@@ -54,6 +54,15 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'private, no-store' },
         ],
       },
+      // Mission 137 — le bon de visite signé, par son lien : mêmes règles.
+      {
+        source: '/bon-de-visite/:token',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+        ],
+      },
     ];
   },
   // Mission 43 : pdfjs tourne désormais dans le navigateur du conseiller. Plus rien

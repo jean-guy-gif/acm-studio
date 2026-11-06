@@ -316,6 +316,55 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
   fiche de l'acquéreur (cascade). À compter, s'il faut les citer :
   `select count(*) from buyer_watch_runs where finds::text ilike '%IDENTIFIANT_ANNONCE%';`
 
+## C. Les documents signés (bon de visite ; offre d'achat, mission 137 B)
+
+Décision de Jean-Guy du 06/11 : un document signé (`buyer_documents`) prouve le droit de l'agence à
+sa rémunération. Il est **gardé cinq ans à compter de la visite** (`signed_at` : le bon se signe le
+jour de la visite), même quand le visiteur demande l'effacement de ses données — article 17.3.e du
+RGPD (constatation, exercice ou défense de droits en justice) et prescription de cinq ans —, puis
+il est effacé. Il ne disparaît ni avec la fiche de l'acquéreur (`buyer_id` devient vide, le
+document garde ses propres champs), ni avec le compte du conseiller (`created_by` devient vide) ;
+les images de signature restent dans le bucket privé `signed-documents`.
+
+Supprimer le compte d'un conseiller : ses fiches acquéreur passent à un manager de l'agence (sinon à
+un autre membre non retiré), ses bons signés restent sans auteur ; ses dossiers vendeur, eux,
+bloquent toujours la suppression (`projects.advisor_id` sans action) — les réattribuer d'abord, sur
+demande de Laurent.
+
+### Quand un visiteur demande l'effacement
+
+1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites).
+2. Ses documents signés de moins de cinq ans **restent** : le dire au demandeur (« conservés jusqu'au
+   JJ/MM/AAAA au titre de la preuve du droit à commission, art. 17.3.e RGPD »), avec la date.
+3. Compter avant et après (`:nom` = le nom tel qu'il est sur le bon) :
+
+```sql
+select id, agency_id, kind, signed_at, signed_at + interval '5 years' as efface_le
+from buyer_documents
+where fields::text ilike '%' || :nom || '%';
+```
+
+### Chaque année : les documents de plus de cinq ans
+
+Compter, faire confirmer par Laurent, puis effacer les lignes ET leurs images (après « ok
+effacement ») :
+
+```sql
+-- Compter, et relever les chemins des images à retirer du stockage.
+select id, agency_id, signed_at, signature_paths
+from buyer_documents
+where signed_at < now() - interval '5 years';
+-- Effacer (leurs liens partent avec eux, en cascade).
+delete from buyer_documents where signed_at < now() - interval '5 years';
+```
+
+```sh
+# Pour chaque chemin relevé (`agence/document/signature-1.png`) :
+npx --yes supabase@3.0.0 storage rm --experimental --remote "ss:///signed-documents/:chemin"
+```
+
+Prédiction : aucune ligne de plus de cinq ans restante ; chaque image relevée absente du bucket.
+
 ## Après chaque effacement
 
 1. Rendre à Laurent le tableau « avant / prédit / après ».

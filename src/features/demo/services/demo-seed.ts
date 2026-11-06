@@ -392,3 +392,13 @@ export function demoKellerWatchFinds(now: Date): WatchFind[] {
     .map(toWatchFind)
     .filter((find): find is WatchFind => find != null);
 }
+
+// Mission 137 — le bon de visite de la démo : la visite des Keller au mandat de Mougins, demandée
+// il y a 2 jours, faite et signée aujourd'hui, « Offre envisagée » ; un visiteur et une adresse inventés, un n° de mandat au format
+// d'un registre des mandats.
+export const DEMO_VOUCHER_DAYS_AGO = 2;
+export const DEMO_VOUCHER_VISITOR = 'Paul Keller';
+export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin des Figurants, 69006 Lyon';
+export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
+export const DEMO_VOUCHER_FEEDBACK =
+  'Coup de cœur pour le jardin et la piscine ; une offre se prépare.';

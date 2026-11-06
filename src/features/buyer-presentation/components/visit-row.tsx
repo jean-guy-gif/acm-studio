@@ -1,4 +1,7 @@
+import Link from 'next/link';
+
 import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
+import type { VisitVoucher } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
@@ -19,9 +22,12 @@ import { formatEuro } from '@/lib/format';
 export function VisitRow({
   line,
   letter = null,
+  voucher = null,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
+  // Mission 137 — le bon de visite signé pour cette visite, gardé sur elle.
+  voucher?: VisitVoucher | null;
 }) {
   const done = line.visitedAt != null;
   return (
@@ -49,6 +55,15 @@ export function VisitRow({
         {VISIT_REQUEST_DURING_LABELS[line.requestedDuring]}
         {done ? ` · visitée le ${buyerDateLabel(line.visitedAt!)}` : ''}
       </p>
+      {voucher ? (
+        <Link
+          href={`/acquereurs/${line.buyerId}/bon-de-visite/${voucher.documentId}`}
+          className="self-start text-sm font-semibold text-brand-darker underline"
+          data-testid="visit-voucher-signed"
+        >
+          Bon de visite signé le {buyerDateLabel(voucher.signedAt)}
+        </Link>
+      ) : null}
       {/* Mission 122 — ses créneaux, donnés à la fin de la présentation. */}
       {line.availability.length > 0 ? (
         <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-availability">

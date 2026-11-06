@@ -95,6 +95,13 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_events.reason' then $v$'price'$v$
     when 'buyer_events.summary' then $v$'Budget plafond ajusté'$v$
     when 'buyer_events.selection_id' then $v$null$v$
+    -- Mission 137 — un document signé : son genre, ses champs, son empreinte, une signature ; le
+    -- lien d'un document : le condensat de son jeton.
+    when 'buyer_documents.kind' then $v$'visit_voucher'$v$
+    when 'buyer_documents.fields' then $v$'{}'::jsonb$v$
+    when 'buyer_documents.content_sha256' then $v$md5(random()::text) || md5(random()::text)$v$
+    when 'buyer_documents.signature_paths' then $v$array['essai/signature.png']$v$
+    when 'buyer_document_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
     else null
   end
 $$;

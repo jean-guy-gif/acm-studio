@@ -50,6 +50,10 @@ import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
+import {
+  getBuyerVouchers,
+  getVisitVouchers,
+} from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -125,7 +129,15 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
   const visits = ownVisits.filter((line) => line.visitedAt == null);
-  const letters = await getVisitLetters(visits);
+  // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
+  const [letters, vouchers, signedVouchers] = await Promise.all([
+    getVisitLetters(visits),
+    getVisitVouchers(
+      supabase,
+      ownVisits.map((line) => line.id),
+    ),
+    profile ? getBuyerVouchers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
+  ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
   const deck = loadedDeck?.deck ?? null;
   const journey = buyerJourney(facts);
@@ -446,14 +458,65 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               className={`${card} flex flex-col gap-3 p-5`}
               data-testid="buyer-visits-section"
             >
-              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-                Ses visites à organiser
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                  Ses visites à organiser
+                </h2>
+              </div>
               <ul className="flex flex-col gap-2">
                 {visits.map((line) => (
-                  <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
+                  <VisitRow
+                    key={line.id}
+                    line={line}
+                    letter={letters.get(line.id) ?? null}
+                    voucher={vouchers.get(line.id) ?? null}
+                  />
                 ))}
               </ul>
+            </section>
+          ) : null}
+
+          {/* Mission 137 — ses bons de visite : gardés sur la fiche, même ses visites toutes faites. */}
+          {ownVisits.length > 0 || signedVouchers == null || signedVouchers.length > 0 ? (
+            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-vouchers">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                  Ses bons de visite
+                </h2>
+                {ownVisits.length > 0 ? (
+                  <Link
+                    href={`/acquereurs/${buyer.id}/bon-de-visite`}
+                    className={btnSecondary}
+                    data-testid="buyer-voucher-new"
+                  >
+                    Bon de visite
+                  </Link>
+                ) : null}
+              </div>
+              {signedVouchers == null ? (
+                <p role="alert" className="text-sm font-semibold text-red-700">
+                  Les bons de visite n’ont pas pu être lus : rechargez la page.
+                </p>
+              ) : signedVouchers.length === 0 ? (
+                <p className="text-sm text-zinc-600 stage:text-white/70">
+                  Aucun bon signé pour l’instant.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {signedVouchers.map((voucher) => (
+                    <li key={voucher.documentId}>
+                      <Link
+                        href={`/acquereurs/${buyer.id}/bon-de-visite/${voucher.documentId}`}
+                        className="text-sm font-semibold text-brand-darker underline"
+                        data-testid="buyer-voucher-signed"
+                      >
+                        Signé le {buyerDateLabel(voucher.signedAt)}
+                        {voucher.labels.length > 0 ? ` · ${voucher.labels.join(' ; ')}` : ''}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           ) : null}
 

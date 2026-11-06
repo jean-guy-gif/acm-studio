@@ -22,6 +22,8 @@ const PUBLIC_PATHS = [
   // Mission 105 — la tâche planifiée de la nuit : elle n'a pas de session, son jeton (CRON_SECRET)
   // est vérifié par la route elle-même.
   '/api/cron/verifier-oppositions',
+  // Mission 136 — la veille des acquéreurs, la nuit : pas de session non plus, le même jeton.
+  '/api/cron/veille-acquereurs',
 ];
 
 // Mission 110 — la synthèse laissée au vendeur, ouverte par son lien sans compte : un chemin de la
@@ -40,12 +42,17 @@ const PUBLIC_MARKET_UPDATE = /^\/point-marche\/[A-Za-z0-9_-]{43}$/;
 // forme exacte : « /etude-de-marche/ » suivi d'un jeton de 43 caractères ; la page vérifie le jeton.
 const PUBLIC_MARKET_STUDY = /^\/etude-de-marche\/[A-Za-z0-9_-]{43}$/;
 
+// Mission 137 — le bon de visite signé envoyé au visiteur, ouvert par son lien sans compte, de la
+// même forme exacte : « /bon-de-visite/ » suivi d'un jeton de 43 caractères ; la page le vérifie.
+const PUBLIC_VISIT_VOUCHER = /^\/bon-de-visite\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
   return (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_SYNTHESIS.test(pathname) ||
     PUBLIC_BUYER_DOSSIER.test(pathname) ||
     PUBLIC_MARKET_UPDATE.test(pathname) ||
-    PUBLIC_MARKET_STUDY.test(pathname)
+    PUBLIC_MARKET_STUDY.test(pathname) ||
+    PUBLIC_VISIT_VOUCHER.test(pathname)
   );
 }
