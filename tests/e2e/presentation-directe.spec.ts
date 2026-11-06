@@ -523,3 +523,74 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     }
   });
 });
+
+// Mission 137 (partie A) — le bon de visite : la démo arrive avec le bon signé de la visite des
+// Keller au mandat de Mougins ; il s'ouvre, texte validé et signature ; un second se signe à la
+// souris sur le canevas (n° de mandat repris du premier), son lien s'ouvre sans compte, jamais
+// indexé.
+test('le bon de visite : celui de la démo, puis un bon signé au doigt et son lien', async ({
+  page,
+  browser,
+}) => {
+  await login(page, demoCredentials());
+  await freshDemo(page);
+
+  await test.step('La visite des Keller porte son bon signé', async () => {
+    await page.goto('/visites');
+    const signed = page.getByTestId('visit-voucher-signed').first();
+    await expect(signed).toContainText(/^Bon de visite signé le \d{2}\/\d{2}\/\d{4}$/);
+    await signed.click();
+    const document = page.getByTestId('voucher-document');
+    await expect(document).toContainText('BON DE VISITE - BIEN(S) A VENDRE');
+    await expect(document).toContainText('Je soussigné(e) M. Paul Keller');
+    await expect(document).toContainText('la gestion et le suivi de de relations commerciales');
+    await expect(document).not.toContainText(/réseau|\{|\}/);
+    await expect(document.getByTestId('voucher-signatures').locator('img')).toHaveCount(1);
+    await expect(document).toContainText(/empreinte du texte signé : [0-9a-f]{64}/);
+  });
+
+  let linkPath = '';
+  await test.step('Un nouveau bon, signé à la souris', async () => {
+    await page.goto('/acquereurs');
+    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    // Le bon signé se lit sur la fiche, ses visites toutes faites ; un nouveau bon part d'ici.
+    await expect(page.getByTestId('buyer-voucher-signed').first()).toContainText(/^Signé le /);
+    await page.getByTestId('buyer-voucher-new').click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/bon-de-visite$/);
+    const form = page.getByTestId('voucher-form');
+    await expect(form).toBeVisible();
+    // Le n° de mandat du bon précédent est repris ; le visiteur aussi.
+    await expect(form.getByTestId('voucher-mandate').first()).toHaveValue('M-2026-0142');
+    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('Paul Keller');
+    await expect(form.getByTestId('voucher-sign')).toBeDisabled();
+    await form.getByTestId('voucher-approved').check();
+    const canvas = form.getByTestId('voucher-signature-1');
+    const box = (await canvas.boundingBox())!;
+    await page.mouse.move(box.x + 30, box.y + box.height / 2);
+    await page.mouse.down();
+    for (let step = 1; step <= 20; step += 1) {
+      await page.mouse.move(box.x + 30 + step * 15, box.y + box.height / 2 + (step % 2 ? 18 : -18));
+    }
+    await page.mouse.up();
+    await form.getByTestId('voucher-sign').click();
+    await expect(page.getByTestId('voucher-signed')).toBeVisible({ timeout: 20_000 });
+    linkPath = (await page.getByTestId('voucher-link').innerText()).trim();
+    expect(linkPath).toMatch(/\/bon-de-visite\/[A-Za-z0-9_-]{43}$/);
+    await expect(page.getByText(/\bM\d{2,3}\b/)).toHaveCount(0);
+  });
+
+  await test.step('Le lien s’ouvre sans compte, jamais indexé', async () => {
+    const bypass = process.env.E2E_VERCEL_BYPASS;
+    const context = await browser.newContext(
+      bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {},
+    );
+    const visitor = await context.newPage();
+    const response = await visitor.goto(linkPath);
+    expect(response?.headers()['x-robots-tag']).toContain('noindex');
+    await expect(visitor.getByTestId('voucher-document')).toContainText(
+      'BON DE VISITE - BIEN(S) A VENDRE',
+    );
+    await expect(visitor.getByTestId('voucher-signatures').locator('img')).toHaveCount(1);
+    await context.close();
+  });
+});

@@ -8,6 +8,8 @@ import {
   typographyInputSchema,
 } from '@/features/branding/schemas/typography-input';
 import { derivePalette, isValidHex } from '@/features/branding/services/palette';
+import { toLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
+import { guaranteeLine } from '@/features/legal-identity/services/legal-identity';
 import { requireManagerProfile } from '@/features/team/services/require-manager';
 import type { Database } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -122,6 +124,15 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     return dark;
   }
 
+  // Mission 137 — une garantie financière structurée (Identité légale) remplace le texte libre :
+  // c'est elle qui s'écrit ici, jamais un texte qui la contredirait.
+  const { data: legal } = await serviceClient
+    .from('agency_legal_identities')
+    .select('*')
+    .eq('agency_id', agencyId)
+    .maybeSingle();
+  const structuredGuarantee = legal ? guaranteeLine(toLegalIdentity(legal)) : null;
+
   const now = new Date().toISOString();
   const row: BrandingInsert = {
     agency_id: agencyId,
@@ -137,7 +148,7 @@ export async function saveBranding(formData: FormData): Promise<SaveBrandingResu
     postal_address: mentions.data.postalAddress,
     professional_card: mentions.data.professionalCard,
     professional_card_issuer: mentions.data.professionalCardIssuer,
-    financial_guarantee: mentions.data.financialGuarantee,
+    financial_guarantee: structuredGuarantee ?? mentions.data.financialGuarantee,
     document_name: mentions.data.documentName,
     validated_at: now,
     updated_at: now,

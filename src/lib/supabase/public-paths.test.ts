@@ -1,8 +1,26 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import { isPublicPath } from './public-paths';
 
 describe('isPublicPath', () => {
+  // Mission 137 — trouvé en relisant : la route de la veille (M136) n'était pas publique, le
+  // middleware renvoyait la tâche de la nuit (sans session) vers /login. Chaque tâche planifiée de
+  // vercel.json est publique ; c'est son jeton (CRON_SECRET) que la route vérifie.
+  it('chaque tâche planifiée de vercel.json s’ouvre sans session', () => {
+    const config = JSON.parse(readFileSync('vercel.json', 'utf8')) as { crons: { path: string }[] };
+    expect(config.crons.length).toBeGreaterThan(0);
+    for (const cron of config.crons) expect(isPublicPath(cron.path), cron.path).toBe(true);
+  });
+
+  it('ouvre le bon de visite par son jeton de 43 caractères, et rien d’autre (mission 137)', () => {
+    expect(isPublicPath(`/bon-de-visite/${'A'.repeat(43)}`)).toBe(true);
+    expect(isPublicPath(`/bon-de-visite/${'A'.repeat(42)}`)).toBe(false);
+    expect(isPublicPath('/bon-de-visite')).toBe(false);
+    expect(isPublicPath(`/acquereurs/x/bon-de-visite`)).toBe(false);
+  });
+
   it('ouvre la page de confidentialité sans connexion (mission 73)', () => {
     expect(isPublicPath('/confidentialite')).toBe(true);
   });

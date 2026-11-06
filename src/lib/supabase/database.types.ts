@@ -176,6 +176,99 @@ export type Database = {
           },
         ]
       }
+      agency_legal_identities: {
+        Row: {
+          agency_email: string | null
+          agency_id: string
+          agency_phone: string | null
+          company_form: string | null
+          company_name: string | null
+          company_seat: string | null
+          created_at: string
+          guarantee_address: string | null
+          guarantee_amount: number | null
+          guarantee_body: string | null
+          guarantee_number: string | null
+          id: string
+          rcp_address: string | null
+          rcp_insurer: string | null
+          rcp_number: string | null
+          rcs_city: string | null
+          rcs_number: string | null
+          representative_name: string | null
+          representative_title: string | null
+          share_capital: string | null
+          updated_at: string
+          updated_by: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          agency_email?: string | null
+          agency_id: string
+          agency_phone?: string | null
+          company_form?: string | null
+          company_name?: string | null
+          company_seat?: string | null
+          created_at?: string
+          guarantee_address?: string | null
+          guarantee_amount?: number | null
+          guarantee_body?: string | null
+          guarantee_number?: string | null
+          id?: string
+          rcp_address?: string | null
+          rcp_insurer?: string | null
+          rcp_number?: string | null
+          rcs_city?: string | null
+          rcs_number?: string | null
+          representative_name?: string | null
+          representative_title?: string | null
+          share_capital?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          agency_email?: string | null
+          agency_id?: string
+          agency_phone?: string | null
+          company_form?: string | null
+          company_name?: string | null
+          company_seat?: string | null
+          created_at?: string
+          guarantee_address?: string | null
+          guarantee_amount?: number | null
+          guarantee_body?: string | null
+          guarantee_number?: string | null
+          id?: string
+          rcp_address?: string | null
+          rcp_insurer?: string | null
+          rcp_number?: string | null
+          rcs_city?: string | null
+          rcs_number?: string | null
+          representative_name?: string | null
+          representative_title?: string | null
+          share_capital?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_legal_identities_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_legal_identities_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_search_budgets: {
         Row: {
           agency_id: string
@@ -248,6 +341,168 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_document_links: {
+        Row: {
+          agency_id: string
+          created_at: string
+          created_by: string | null
+          document_id: string
+          expires_at: string
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          expires_at?: string
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_document_links_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_document_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_document_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_document_visits: {
+        Row: {
+          agency_id: string
+          created_at: string
+          document_id: string
+          visit_request_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          document_id: string
+          visit_request_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          document_id?: string
+          visit_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_document_visits_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_document_visits_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_document_visits_visit_request_id_fkey"
+            columns: ["visit_request_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_visit_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_documents: {
+        Row: {
+          agency_id: string
+          buyer_id: string | null
+          content_sha256: string
+          created_at: string
+          created_by: string | null
+          fields: Json
+          id: string
+          kind: string
+          rendered_text: string
+          signature_paths: string[]
+          signed_at: string
+          template_version: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id?: string | null
+          content_sha256: string
+          created_at?: string
+          created_by?: string | null
+          fields: Json
+          id?: string
+          kind: string
+          rendered_text: string
+          signature_paths: string[]
+          signed_at?: string
+          template_version: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string | null
+          content_sha256?: string
+          created_at?: string
+          created_by?: string | null
+          fields?: Json
+          id?: string
+          kind?: string
+          rendered_text?: string
+          signature_paths?: string[]
+          signed_at?: string
+          template_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_documents_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_documents_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

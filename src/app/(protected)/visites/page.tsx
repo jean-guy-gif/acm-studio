@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import {
   badgeBrand,
+  btnSecondary,
   card,
   emptyState,
   kickerLabel,
@@ -18,6 +19,8 @@ import {
 } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { getVisitVouchers } from '@/features/visit-voucher/queries/get-visit-vouchers';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Visites — ACM Studio' };
 
@@ -45,6 +48,11 @@ export default async function VisitsPage() {
   const lines = allLines.filter((line) => !line.buyerArchived);
   // Mission 120 — l'action de chaque visite et l'état de son courrier.
   const letters = await getVisitLetters(lines.filter((line) => line.visitedAt == null));
+  // Mission 137 — le bon de visite signé de chaque visite.
+  const vouchers = await getVisitVouchers(
+    await createClient(),
+    lines.map((line) => line.id),
+  );
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
   return (
@@ -77,15 +85,30 @@ export default async function VisitsPage() {
             </h2>
             {groupByBuyer(section.items).map((group) => (
               <div key={group.buyerId} className="flex flex-col gap-2">
-                <Link
-                  href={`/acquereurs/${group.buyerId}`}
-                  className="font-semibold text-zinc-800 hover:underline stage:text-white"
-                >
-                  {group.buyerName}
-                </Link>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Link
+                    href={`/acquereurs/${group.buyerId}`}
+                    className="font-semibold text-zinc-800 hover:underline stage:text-white"
+                  >
+                    {group.buyerName}
+                  </Link>
+                  {/* Mission 137 — un bon pour les biens visités le même jour par cet acquéreur. */}
+                  <Link
+                    href={`/acquereurs/${group.buyerId}/bon-de-visite`}
+                    className={btnSecondary}
+                    data-testid="visit-voucher-open"
+                  >
+                    Bon de visite
+                  </Link>
+                </div>
                 <ul className="flex flex-col gap-2">
                   {group.lines.map((line) => (
-                    <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
+                    <VisitRow
+                      key={line.id}
+                      line={line}
+                      letter={letters.get(line.id) ?? null}
+                      voucher={vouchers.get(line.id) ?? null}
+                    />
                   ))}
                 </ul>
               </div>
