@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveCompetitorReview } from '@/features/live-seller/components/live-competitor-review';
 import { LivePhoto } from '@/features/live-seller/components/live-photo';
 import {
@@ -13,20 +14,14 @@ import {
   questionHint,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
-import {
-  DANGEROUS_REASONS,
-  DANGEROUS_REASON_LABELS,
-  SERIOUS_COMPETITOR_LABELS,
-  type SeriousCompetitor,
-} from '@/features/live-seller/constants';
+import { DANGEROUS_REASONS, type SeriousCompetitor } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import type {
   AuthorizedSellerComparable,
   SellerComparable,
 } from '@/features/live-seller/services/project-live-for-seller';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
-
-const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // Synthèse — the seller picks the most dangerous competitor among the ones he
 // judged serious (yes / unsure). The software records the choice but NEVER
@@ -44,6 +39,10 @@ export function LivePageDangerous({
   const reason = summary?.seller_most_dangerous_reason ?? '';
   const comment = summary?.seller_most_dangerous_comment ?? '';
   const [reviewedId, setReviewedId] = useState<string | null>(null);
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.dangerous;
+  const euro = (value: number | null): string =>
+    value != null ? formatEuro(value, { language }) : '—';
   const closeReview = useCallback(() => setReviewedId(null), []);
   const reviewed = comparables.find((entry) => entry.id === reviewedId) ?? null;
   const eligibleComparables = comparables.filter((entry): entry is AuthorizedSellerComparable => {
@@ -60,24 +59,20 @@ export function LivePageDangerous({
       data-testid="review-competitor"
       className="min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-base font-medium text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep stage:border-white/25 stage:text-white/85 stage:hover:border-brand stage:hover:text-white"
     >
-      Revoir
+      {t.review}
     </button>
   );
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Quel concurrent vous paraît le plus dangereux ?</h2>
-        <p className={questionHint}>
-          Les biens que vous avez jugés sérieux (ou incertains), avec leur prix révélé.
-        </p>
+        <h2 className={question}>{t.question}</h2>
+        <p className={questionHint}>{t.hint}</p>
       </div>
 
       <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
         {eligibleComparables.length === 0 ? (
-          <p className="text-base text-zinc-500 stage:text-white/60">
-            Aucun bien n’a été retenu comme concurrent sérieux ou incertain.
-          </p>
+          <p className="text-base text-zinc-500 stage:text-white/60">{t.none}</p>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {eligibleComparables.map((entry) => (
@@ -93,46 +88,48 @@ export function LivePageDangerous({
                   <LivePhoto
                     photoUrl={entry.photoUrl}
                     photoUrls={[]}
-                    alt={entry.neutralLabel}
+                    alt={neutralComparableLabel(entry, language)}
                     compact
                   />
                   <div className="flex flex-col gap-2 p-4">
                     <div className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
-                      {entry.neutralLabel}
+                      {neutralComparableLabel(entry, language)}
                     </div>
                     <div className="text-sm text-zinc-500 stage:text-white/60">
-                      {[entry.district, entry.city].filter(Boolean).join(', ') ||
-                        'Localisation inconnue'}
+                      {[entry.district, entry.city].filter(Boolean).join(', ') || t.unknownLocation}
                       {entry.surfaceArea != null
-                        ? ` · ${formatSquareMeters(entry.surfaceArea)}`
+                        ? ` · ${formatSquareMeters(entry.surfaceArea, { language })}`
                         : ''}
-                      {entry.roomsCount != null ? ` · ${entry.roomsCount} pièces` : ''}
+                      {entry.roomsCount != null ? ` · ${texts.common.rooms(entry.roomsCount)}` : ''}
                     </div>
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="font-title text-2xl font-bold text-brand-deep stage:text-white">
                         {euro(entry.price)}
                       </span>
-                      {entry.marketDuration?.available ? (
+                      {entry.marketDuration?.available && entry.marketDuration.days != null ? (
                         <span className="text-xs text-zinc-400 stage:text-white/50">
-                          {entry.marketDuration?.label}
+                          {texts.live.duration.observedSince(entry.marketDuration.days)}
                         </span>
                       ) : null}
                     </div>
                     {entry.response?.seller_estimated_listing_price != null ? (
                       <div className="text-sm text-zinc-500 stage:text-white/60">
-                        Imaginé : {euro(entry.response.seller_estimated_listing_price)}
+                        {t.imagined(euro(entry.response.seller_estimated_listing_price))}
                         {entry.priceReveal.gapAmount != null
-                          ? ` · écart ${formatEuro(entry.priceReveal.gapAmount, { signed: true })}`
+                          ? t.gap(
+                              formatEuro(entry.priceReveal.gapAmount, { signed: true, language }),
+                            )
                           : ''}
                       </div>
                     ) : null}
                     <div className={statLabel}>
-                      Sérieux concurrent :{' '}
-                      {entry.response?.seller_serious_competitor
-                        ? SERIOUS_COMPETITOR_LABELS[
-                            entry.response.seller_serious_competitor as SeriousCompetitor
-                          ]
-                        : 'Non renseigné'}
+                      {t.serious(
+                        entry.response?.seller_serious_competitor
+                          ? texts.live.competition.serious[
+                              entry.response.seller_serious_competitor as SeriousCompetitor
+                            ]
+                          : t.notGiven,
+                      )}
                     </div>
                   </div>
                 </label>
@@ -144,7 +141,7 @@ export function LivePageDangerous({
 
         {otherComparables.length > 0 ? (
           <div className="flex flex-col gap-3">
-            <span className={statLabel}>Les autres biens regardés</span>
+            <span className={statLabel}>{t.others}</span>
             <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {otherComparables.map((entry) => (
                 <li
@@ -152,7 +149,7 @@ export function LivePageDangerous({
                   className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-2 stage:border-white/15"
                 >
                   <span className="min-w-0 text-base text-zinc-700 stage:text-white/80">
-                    {entry.neutralLabel}
+                    {neutralComparableLabel(entry, language)}
                   </span>
                   {reviewButton(entry)}
                 </li>
@@ -163,7 +160,7 @@ export function LivePageDangerous({
 
         <div className={`${panel} flex flex-col gap-4`}>
           <fieldset className="flex flex-col gap-3">
-            <legend className={fieldLabel}>Pourquoi celui-là ?</legend>
+            <legend className={fieldLabel}>{t.why}</legend>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {DANGEROUS_REASONS.map((value) => (
                 <label key={value} className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}>
@@ -174,13 +171,13 @@ export function LivePageDangerous({
                     defaultChecked={reason === value}
                     className="sr-only"
                   />
-                  {DANGEROUS_REASON_LABELS[value]}
+                  {texts.live.answers.dangerousReason[value]}
                 </label>
               ))}
             </div>
           </fieldset>
           <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>Commentaire (facultatif)</span>
+            <span className={fieldLabel}>{texts.common.commentOptional}</span>
             <textarea
               name="seller_most_dangerous_comment"
               rows={2}

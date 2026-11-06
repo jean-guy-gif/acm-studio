@@ -6,6 +6,7 @@ import type {
   PropertyConfirmed,
   SeriousCompetitor,
 } from '@/features/live-seller/constants';
+import type { DpeClass } from '@/features/dpe/services/dpe';
 import type {
   Exposure,
   GeneralCondition,
@@ -184,6 +185,44 @@ export type LiveTexts = {
     question: string;
     confirmed: Record<PropertyConfirmed, string>;
     comment: string;
+  };
+  dpe: {
+    title: string;
+    hint: string;
+    yours: string;
+    noDpe: string;
+    competitors: string;
+    competitorCount: (count: number) => string;
+    // Le repère : la lettre médiane des concurrents ; « devra être en A », « en C ou mieux ».
+    unknown: (reference: DpeClass) => string;
+    better: string;
+    equal: string;
+    worse: string;
+  };
+  revised: {
+    question: string;
+    savedHint: string;
+    hint: string;
+    label: string;
+    confirmHint: string;
+  };
+  closest: {
+    title: string;
+    hint: string;
+    badge: string;
+  };
+  dangerous: {
+    question: string;
+    hint: string;
+    none: string;
+    review: string;
+    others: string;
+    unknownLocation: string;
+    imagined: (price: string) => string;
+    gap: (amount: string) => string;
+    serious: (answer: string) => string;
+    notGiven: string;
+    why: string;
   };
   answers: {
     coherence: Record<PriceCoherence, string>;

@@ -236,6 +236,46 @@ export const ENGLISH_TEXTS: ClientTexts = {
       },
       comment: 'Comment (optional)',
     },
+    dpe: {
+      title: 'Your EPC against the market',
+      hint: 'Buyers compare the energy rating of each property before viewing.',
+      yours: 'Your property',
+      noDpe: 'No EPC yet: the energy assessor will carry it out.',
+      competitors: 'Your competitors',
+      competitorCount: (count) => `${count} competitor${count > 1 ? 's' : ''}`,
+      unknown: (reference) =>
+        `Your competitors are mostly rated ${reference}. Once the energy assessor has been, your property will need to be rated ${reference === 'A' ? 'A' : `${reference} or better`} to stay in the running; below that, the pricing strategy may need adjusting.`,
+      better: 'Your EPC is an advantage over your competitors.',
+      equal: 'Your EPC is in line with your competitors.',
+      worse:
+        'Your EPC is weaker than most of your competitors’: buyers will compare. Something to factor into the pricing strategy.',
+    },
+    revised: {
+      question:
+        'Now that you have seen these properties, what price would you put yours on the market at?',
+      savedHint: 'Your price has been noted: it can no longer be changed.',
+      hint: 'Your price, now that you have seen the market. You can also skip this.',
+      label: 'Your price after seeing the market',
+      confirmHint: 'Is this your price? Once confirmed, it can no longer be changed.',
+    },
+    closest: {
+      title: 'The competitor closest to your property',
+      hint: 'The one buyers will most often weigh against your property.',
+      badge: 'Closest to your property',
+    },
+    dangerous: {
+      question: 'Which competitor seems the most dangerous to you?',
+      hint: 'The properties you judged serious (or were unsure about), with their price revealed.',
+      none: 'No property was judged a serious or possible competitor.',
+      review: 'View again',
+      others: 'The other properties we looked at',
+      unknownLocation: 'Location unknown',
+      imagined: (price) => `Your guess: ${price}`,
+      gap: (amount) => ` · difference ${amount}`,
+      serious: (answer) => `Serious competitor: ${answer}`,
+      notGiven: 'Not given',
+      why: 'Why that one?',
+    },
     answers: {
       coherence: {
         coherent: 'Yes, this price seems right',
