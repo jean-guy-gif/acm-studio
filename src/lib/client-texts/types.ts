@@ -129,6 +129,21 @@ export type LiveTexts = {
     drop: string;
     noHistory: string;
   };
+  quick: {
+    guessQuestion: string;
+    guessHint: string;
+    seriousLegend: string;
+    nextScreen: string;
+    revealQuestion: string;
+    priceOnly: string;
+    durationShown: string;
+    durationAsk: string;
+    durationNote: string;
+  };
+  direct: {
+    question: string;
+    hint: string;
+  };
   price: {
     question: string;
     savedHint: string;

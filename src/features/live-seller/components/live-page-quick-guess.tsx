@@ -14,10 +14,8 @@ import {
   questionHint,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
-import {
-  SERIOUS_COMPETITOR_LABELS,
-  SERIOUS_COMPETITOR_VALUES,
-} from '@/features/live-seller/constants';
+import { SERIOUS_COMPETITOR_VALUES } from '@/features/live-seller/constants';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro } from '@/lib/format';
@@ -34,16 +32,16 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
   const response = entry.response;
   const currentAnswer = response?.seller_serious_competitor ?? '';
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
-  const label = neutralComparableLabel(entry);
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.quick;
+  const label = neutralComparableLabel(entry, language);
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6">
       <div className="flex flex-col gap-2">
-        <h2 className={question}>Un sérieux concurrent ? Et à quel prix, selon vous ?</h2>
+        <h2 className={question}>{t.guessQuestion}</h2>
         <p className={questionHint}>
-          {savedEstimate != null
-            ? 'Votre réponse est notée : elle ne se modifie plus.'
-            : 'Regardez ce bien comme le ferait un acheteur, puis donnez le prix que vous imaginez.'}
+          {savedEstimate != null ? texts.live.price.savedHint : t.guessHint}
         </p>
       </div>
 
@@ -60,7 +58,7 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
           data-quick-guess
         >
           <fieldset className="flex flex-col gap-2.5">
-            <legend className={fieldLabel}>Est-il un sérieux concurrent pour votre bien ?</legend>
+            <legend className={fieldLabel}>{t.seriousLegend}</legend>
             <div className="flex flex-col gap-2">
               {SERIOUS_COMPETITOR_VALUES.map((value) => (
                 <label key={value} className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}>
@@ -79,17 +77,17 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
                       if (price instanceof HTMLInputElement) price.value = '';
                     }}
                   />
-                  {SERIOUS_COMPETITOR_LABELS[value]}
+                  {texts.live.competition.serious[value]}
                 </label>
               ))}
             </div>
           </fieldset>
 
           {savedEstimate != null ? (
-            <LiveLockedAnswer value={formatEuro(savedEstimate)} />
+            <LiveLockedAnswer value={formatEuro(savedEstimate, { language })} />
           ) : (
             <label className="flex flex-col gap-2">
-              <span className={statLabel}>Le prix que vous imaginez</span>
+              <span className={statLabel}>{texts.live.price.label}</span>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
@@ -102,9 +100,7 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
                 />
                 <span className={bigInputUnit}>€</span>
               </div>
-              <span className="text-sm text-zinc-400 stage:text-white/50">
-                Le prix réel s’affichera à l’écran suivant.
-              </span>
+              <span className="text-sm text-zinc-400 stage:text-white/50">{t.nextScreen}</span>
             </label>
           )}
         </form>

@@ -82,6 +82,22 @@ export const FRENCH_TEXTS: ClientTexts = {
       drop: 'Baisse constatée',
       noHistory: 'Historique de prix non disponible.',
     },
+    quick: {
+      guessQuestion: 'Un sérieux concurrent ? Et à quel prix, selon vous ?',
+      guessHint:
+        'Regardez ce bien comme le ferait un acheteur, puis donnez le prix que vous imaginez.',
+      seriousLegend: 'Est-il un sérieux concurrent pour votre bien ?',
+      nextScreen: 'Le prix réel s’affichera à l’écran suivant.',
+      revealQuestion: 'Voici son prix.',
+      priceOnly: 'Le prix réellement affiché, face au prix que vous imaginiez.',
+      durationShown: 'Et voici depuis combien de temps il est en vente.',
+      durationAsk: 'Et selon vous, depuis combien de temps est-il en vente ?',
+      durationNote: 'La durée réellement observée s’affichera à la place de ce champ.',
+    },
+    direct: {
+      question: 'Un bien en vente près du vôtre',
+      hint: 'Ce qui le rapproche du vôtre, ce qui l’en distingue, et son prix.',
+    },
     price: {
       question: 'À quel prix pensez-vous que ce bien est proposé ?',
       savedHint: 'Votre réponse est notée : elle ne se modifie plus.',

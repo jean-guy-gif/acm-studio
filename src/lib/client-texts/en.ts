@@ -119,6 +119,21 @@ export const ENGLISH_TEXTS: ClientTexts = {
       drop: 'Price reduction',
       noHistory: 'No price history available.',
     },
+    quick: {
+      guessQuestion: 'A serious competitor? And at what price, in your view?',
+      guessHint: 'Look at this property as a buyer would, then give the price you imagine.',
+      seriousLegend: 'Is this a serious competitor for your property?',
+      nextScreen: 'The real price appears on the next screen.',
+      revealQuestion: 'Here is its price.',
+      priceOnly: 'The price actually listed, compared with the price you imagined.',
+      durationShown: 'And here is how long it has been for sale.',
+      durationAsk: 'And how long do you think it has been for sale?',
+      durationNote: 'The actual time on the market will appear in place of this field.',
+    },
+    direct: {
+      question: 'A property for sale near yours',
+      hint: 'What it shares with yours, what sets it apart, and its price.',
+    },
     price: {
       question: 'At what price do you think this property is listed?',
       savedHint: 'Your answer is noted: it can no longer be changed.',
