@@ -1187,9 +1187,10 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
   // Mission 132 — huit acquéreurs : Rossi, Keller, et six autour de Vence, dont cinq prêts à
-  // visiter ; M. Fontaine, financement en cours, ne l'est pas.
+  // visiter ; M. Fontaine, financement en cours, ne l'est pas. Mission 136 — les Keller aussi sont
+  // prêts : la veille cherche pour eux.
   await expect(rows).toHaveCount(8);
-  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(5);
+  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(6);
   await expect(rows.filter({ hasText: 'M. Fontaine' }).getByTestId('buyer-row-ready')).toHaveCount(
     0,
   );
