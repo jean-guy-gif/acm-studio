@@ -1,3 +1,4 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 // Mission 127 — les jours de commercialisation d'un concurrent à une date donnée : depuis la date
 // de publication quand elle est connue, sinon les jours lus à l'import plus les jours écoulés
 // depuis l'import — alors « environ » (la date de publication n'est qu'une borne, M47). Pur.
@@ -38,7 +39,7 @@ export function daysOnMarketAt(
   return null;
 }
 
-// « depuis 142 jours », « depuis environ 160 jours ».
-export function daysLabel(value: DaysOnMarket): string {
-  return `${value.approximate ? 'environ ' : ''}${value.days} jour${value.days > 1 ? 's' : ''}`;
+// « depuis 142 jours », « depuis environ 160 jours ». Mission 140 — dans la langue du vendeur.
+export function daysLabel(value: DaysOnMarket, language: TextLanguage = 'fr'): string {
+  return clientTexts(language).documents.marketUpdate.days(value.days, value.approximate);
 }

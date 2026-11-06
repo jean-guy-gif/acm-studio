@@ -21,8 +21,11 @@ function shape(tree: Tree, path = ''): string[] {
   });
 }
 
+// La légende du classement a des parties vides par construction (« dernier tiers » n'a ni chiffre
+// ni exposant) : elles ne sont pas des textes.
 function strings(tree: Tree): string[] {
-  return Object.values(tree).flatMap((value) => {
+  return Object.entries(tree).flatMap(([key, value]) => {
+    if (key === 'legendTiers') return [];
     if (typeof value === 'string') return [value];
     if (value != null && typeof value === 'object') return strings(value as Tree);
     return [];
@@ -35,9 +38,14 @@ function rendered(tree: Tree): string[] {
     if (typeof value === 'string') return [value];
     if (typeof value === 'function') {
       const fn = value as (...args: unknown[]) => unknown;
-      return [1, 3]
-        .map((n) => fn(...Array.from({ length: fn.length }, () => n)))
-        .filter((out): out is string => typeof out === 'string');
+      const call = (sample: unknown) => {
+        try {
+          return fn(...Array.from({ length: fn.length }, () => sample));
+        } catch {
+          return fn(...Array.from({ length: fn.length }, () => `${String(sample)} pièces`));
+        }
+      };
+      return [1, 3].map(call).filter((out): out is string => typeof out === 'string');
     }
     if (value != null && typeof value === 'object') return rendered(value as Tree);
     return [];
@@ -64,11 +72,13 @@ describe('les textes du client', () => {
     expect(clientTexts('en')).toBe(ENGLISH_TEXTS);
   });
 
-  // L'outil n'estime pas le bien (CLAUDE.md, M105) ; le Live parle au vendeur à la 2e personne
-  // (M89). « Disponible » n'est refusé que pour un bien proposé à un acquéreur (M118, partie B).
+  // L'outil n'estime pas le bien (CLAUDE.md, M105) : jamais le nom, « an estimate » ni
+  // « valuation » ; « estimated » dit, comme « estimée » en français, la négociation déduite d'une
+  // annonce disparue (M127). Le Live parle au vendeur à la 2e personne (M89). « Disponible » n'est
+  // refusé que pour un bien proposé à un acquéreur (M118, partie B).
   it('l’anglais ne dit jamais « estimate » ni « valuation », ni « the seller »', () => {
     const offenders = rendered(ENGLISH_TEXTS).filter((text) =>
-      /estimat|valuation|valued|the seller|\bvendor/i.test(text),
+      /\bestimates?\b|estimation|valuation|valued|the seller|\bvendor/i.test(text),
     );
     expect(offenders).toEqual([]);
   });

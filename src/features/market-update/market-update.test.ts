@@ -521,6 +521,7 @@ describe('le document Point marché', () => {
     const html = renderToStaticMarkup(
       createElement(MarketUpdateDocument, {
         document: {
+          language: 'fr',
           updateId: UPDATE,
           madeAt: MADE_AT.toISOString(),
           sellerName: '',
@@ -567,6 +568,7 @@ describe('le document Point marché', () => {
     const html = renderToStaticMarkup(
       createElement(MarketUpdateDocument, {
         document: {
+          language: 'fr',
           updateId: UPDATE,
           madeAt: MADE_AT.toISOString(),
           sellerName: '',

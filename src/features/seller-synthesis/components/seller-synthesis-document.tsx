@@ -519,7 +519,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             </span>
           ) : null}
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            {t.title}
+            {t.coverTitle}
             {day ? (
               <>
                 <br />

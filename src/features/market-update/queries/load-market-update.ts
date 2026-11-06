@@ -8,7 +8,10 @@ import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-com
 import { parseMarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import type { MarketUpdateDocument } from '@/features/market-update/types';
-import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
+import { goneConclusionLabel } from '@/features/market-update/services/gone-listing-rule';
+import { isPropertyType } from '@/features/subject-property/services/property-type-choice';
+import { clientLanguage } from '@/lib/client-language';
+import { clientTexts, textLanguage, type TextLanguage } from '@/lib/client-texts';
 import {
   DOCUMENT_PHOTO_URL_TTL_SECONDS,
   loadDocumentAgency,
@@ -50,8 +53,12 @@ const bundle = (row: {
 });
 
 // Les lignes de la grille du Live (M40, M80) : un critère sans donnée ne s'affiche pas.
-const features = (subject: FeatureBundle, competitor: FeatureBundle): SynthesisFeature[] =>
-  buildComparableFeatureComparison(subject, competitor).flatMap((item) =>
+const features = (
+  subject: FeatureBundle,
+  competitor: FeatureBundle,
+  language: TextLanguage,
+): SynthesisFeature[] =>
+  buildComparableFeatureComparison(subject, competitor, language).flatMap((item) =>
     item.comparisonStatus === 'unknown' || item.comparableValue == null
       ? []
       : [
@@ -89,7 +96,7 @@ export async function loadMarketUpdate(
   if (!update || !summary) return null;
   const { data: project } = await supabase
     .from('projects')
-    .select('id, seller_name, advisor_id, status')
+    .select('id, seller_name, advisor_id, status, language')
     .eq('id', projectId)
     .eq('agency_id', agencyId)
     .neq('status', 'archived')
@@ -107,7 +114,7 @@ export async function loadMarketUpdate(
     supabase
       .from('comparables')
       .select(
-        'id, surface_area, rooms_count, bedrooms_count, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, synthesis_hide_photo',
+        'id, property_type, city, district, surface_area, rooms_count, bedrooms_count, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, synthesis_hide_photo',
       )
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
@@ -124,30 +131,65 @@ export async function loadMarketUpdate(
     : [];
   const subject = property.data ? bundle(property.data) : null;
   const rowById = new Map((competitors.data ?? []).map((row) => [row.id, row]));
+  // Mission 140 — le point est relu tel qu'il a été écrit (en français) ; dans une autre langue, le
+  // libellé neutre d'un concurrent et la conclusion d'une annonce disparue se redisent dans la
+  // langue du vendeur, depuis les mêmes champs. En français, rien ne change.
+  const language = textLanguage(clientLanguage(project.language));
+  const texts = clientTexts(language);
+  const relabel = (item: (typeof summary.competitors)[number]) => {
+    if (language === 'fr') return item;
+    const row = rowById.get(item.id);
+    return {
+      ...item,
+      label: row
+        ? neutralComparableLabel(
+            {
+              propertyType: row.property_type,
+              roomsCount: row.rooms_count,
+              surfaceArea: row.surface_area,
+              city: row.city,
+              district: row.district,
+            },
+            language,
+          )
+        : item.label,
+      conclusion: item.conclusion
+        ? { ...item.conclusion, label: goneConclusionLabel(item.conclusion, language) }
+        : null,
+    };
+  };
+  const canonicalType = property.data ? normalizePropertyType(property.data.property_type) : null;
+  const typeLabel =
+    canonicalType != null && isPropertyType(canonicalType)
+      ? texts.labels.propertyType[canonicalType]
+      : null;
   return {
+    language,
     updateId: update.id,
     madeAt: update.made_at,
     sellerName: project.seller_name ?? '',
     propertyLabel: property.data
-      ? [propertyTypeLabel(property.data.property_type), property.data.city?.trim() || null]
-          .filter(Boolean)
-          .join(' · ') || null
+      ? [typeLabel, property.data.city?.trim() || null].filter(Boolean).join(' · ') || null
       : null,
     subjectLabel: property.data
-      ? neutralComparableLabel({
-          propertyType: normalizePropertyType(property.data.property_type),
-          roomsCount: property.data.rooms_count,
-          surfaceArea: property.data.surface_area,
-          city: property.data.city,
-          district: null,
-        }) || 'Votre bien'
-      : 'Votre bien',
+      ? neutralComparableLabel(
+          {
+            propertyType: normalizePropertyType(property.data.property_type),
+            roomsCount: property.data.rooms_count,
+            surfaceArea: property.data.surface_area,
+            city: property.data.city,
+            district: null,
+          },
+          language,
+        ) || texts.documents.synthesis.propertyTitle
+      : texts.documents.synthesis.propertyTitle,
     commune: property.data?.city?.trim() || null,
     coverPhotoUrl: cover[0]?.url ?? null,
     // Les propositions payées (adresses d'annonces, côté conseiller) ne vont pas au document ni au
     // lien du vendeur.
     summary: {
       ...summary,
+      competitors: summary.competitors.map(relabel),
       newcomersSearch: summary.newcomersSearch
         ? { ...summary.newcomersSearch, proposed: [] }
         : null,
@@ -161,11 +203,11 @@ export async function loadMarketUpdate(
       return {
         id: item.id,
         position: item.position,
-        label: item.label,
+        label: relabel(item).label,
         photoUrls: hidden ? [] : photos.slice(0, MAX_COMPETITOR_PHOTOS),
         hasPhoto: photos.length > 0,
         photoHidden: hidden,
-        features: row && subject ? features(subject, bundle(row)) : [],
+        features: row && subject ? features(subject, bundle(row), language) : [],
       };
     }),
     agency: document.agency,

@@ -125,6 +125,7 @@ export default async function MarketUpdatePage({
           advisorFirstName={profile.first_name ?? null}
           meetingDate={meeting}
           pointDate={day(chosen.madeAt)}
+          language={document.language}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,
