@@ -18,13 +18,15 @@ export function followUpShareHrefs(
   message: string,
   phone: string | null,
   email: string | null,
+  // Mission 134 — l'objet de l'e-mail, pour un message qui n'est pas une relance.
+  subject = 'Notre rendez-vous',
 ): FollowUpShareHrefs {
   const body = encodeURIComponent(message);
   const number = phone?.trim() ? digits(phone) : null;
   return {
     sms: number ? `sms:${number}?&body=${body}` : null,
     whatsapp: number ? `https://wa.me/${international(number)}?text=${body}` : null,
-    email: `mailto:${email?.trim() ? encodeURIComponent(email.trim()) : ''}?subject=${encodeURIComponent('Notre rendez-vous')}&body=${body}`,
+    email: `mailto:${email?.trim() ? encodeURIComponent(email.trim()) : ''}?subject=${encodeURIComponent(subject)}&body=${body}`,
   };
 }
 

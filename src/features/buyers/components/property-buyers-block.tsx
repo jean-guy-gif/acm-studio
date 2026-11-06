@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
-import { card, hintText, link, sectionTitle } from '@/components/ui/styles';
-import { ProposeLinkButton } from '@/features/buyers/components/propose-link-button';
+import { btnSecondary, card, hintText, link, sectionTitle } from '@/components/ui/styles';
 import { buyerBudgetLabel, buyerCitiesLabel } from '@/features/buyers/services/buyer-criteria';
 import { READY_LABEL } from '@/features/buyers/services/buyer-readiness';
+import { proposeHref } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import {
   BUYERS_UNREAD,
   NO_MATCHING_BUYER,
@@ -17,19 +17,17 @@ import {
 export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
 
 // Mission 133 — « Acquéreurs de l'agence pour ce bien », sur la Vue d'ensemble et « Avant le
-// rendez-vous » : la porte vendeur → acquéreurs de la boucle, pour le conseiller seul. Sur un
-// mandat signé, chacun reçoit « Envoyer le lien » (le dossier acquéreur avec ce bien en tête).
+// rendez-vous » : la porte vendeur → acquéreurs de la boucle, pour le conseiller seul. Mission 134 —
+// sur un mandat signé ou un vendeur à relancer, « Proposer ce bien aux acquéreurs » ouvre l'envoi en
+// série (un seul chemin, un seul fait noté).
 export function PropertyBuyersBlock({
   result,
-  projectId,
-  canPropose,
-  advisorFirstName,
+  proposeKey,
 }: {
   // null : une lecture a échoué (jamais lu comme « aucun acquéreur », M98).
   result: PropertyBuyers | null;
-  projectId: string;
-  canPropose: boolean;
-  advisorFirstName: string | null;
+  // La clé du bien dans la boucle, quand il se propose (mandat signé, vendeur à relancer).
+  proposeKey: string | null;
 }) {
   const headline = result
     ? propertyBuyersHeadline(result.ready.length, result.others.length)
@@ -56,15 +54,18 @@ export function PropertyBuyersBlock({
       {result && result.price != null && headline ? (
         <ul className="flex flex-col">
           {[...result.ready, ...result.others].map((entry) => (
-            <BuyerLine
-              key={entry.buyer.id}
-              entry={entry}
-              projectId={projectId}
-              canPropose={canPropose}
-              advisorFirstName={advisorFirstName}
-            />
+            <BuyerLine key={entry.buyer.id} entry={entry} />
           ))}
         </ul>
+      ) : null}
+      {result && result.price != null && headline && proposeKey ? (
+        <Link
+          href={proposeHref(proposeKey)}
+          className={`${btnSecondary} self-start`}
+          data-testid="propose-property"
+        >
+          Proposer ce bien aux acquéreurs
+        </Link>
       ) : null}
       {result && result.price != null && headline ? (
         <p className={hintText}>
@@ -75,17 +76,7 @@ export function PropertyBuyersBlock({
   );
 }
 
-function BuyerLine({
-  entry,
-  projectId,
-  canPropose,
-  advisorFirstName,
-}: {
-  entry: PropertyBuyer;
-  projectId: string;
-  canPropose: boolean;
-  advisorFirstName: string | null;
-}) {
+function BuyerLine({ entry }: { entry: PropertyBuyer }) {
   const { buyer } = entry;
   const budget = buyerBudgetLabel(buyer);
   return (
@@ -112,14 +103,6 @@ function BuyerLine({
         <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600 stage:bg-white/10 stage:text-white/70">
           {PROPERTY_BUYER_MISSING_LABELS[entry.missing]}
         </span>
-      ) : null}
-      {canPropose ? (
-        <ProposeLinkButton
-          buyerId={buyer.id}
-          buyerName={buyer.name}
-          projectId={projectId}
-          advisorFirstName={advisorFirstName}
-        />
       ) : null}
     </li>
   );

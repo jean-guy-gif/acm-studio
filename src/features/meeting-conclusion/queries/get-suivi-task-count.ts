@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
-import { getMandateBuyers } from '@/features/buyers/queries/get-mandate-buyers';
+import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { suiviTaskInputs } from '@/features/meeting-conclusion/services/suivi-task-inputs';
@@ -20,23 +20,19 @@ export async function getSuiviTaskCount(): Promise<number | null> {
   if (!profile || profile.removed_at) return null;
   const now = new Date();
   // Mission 132 — les acquéreurs à recontacter comptent aussi, avec ou sans dossier conclu.
-  const [allDossiers, buyerTasks] = await Promise.all([
+  // Mission 134 — et les nouveaux biens à proposer, avec ou sans dossier conclu.
+  const [allDossiers, buyerTasks, loopTasks] = await Promise.all([
     getSuiviDossiers(),
     getBuyerRecontactTasks(profile, now),
+    getLoopTasks(profile.agency_id, now),
   ]);
-  if (buyerTasks.failed) return null;
+  if (buyerTasks.failed || loopTasks.failed) return null;
+  const extra = [...buyerTasks.tasks, ...loopTasks.tasks];
   const dossiers = withoutExamples(allDossiers);
-  if (dossiers.length === 0) return buildSuiviTaskList([], now, buyerTasks.tasks).dues.length;
+  if (dossiers.length === 0) return buildSuiviTaskList([], now, extra).dues.length;
   const projectIds = dossiers.map((dossier) => dossier.project.id);
   const supabase = await createClient();
-  // Mission 133 — les mandats signés appellent leurs acquéreurs prêts.
-  const mandates = dossiers
-    .filter((dossier) => dossier.conclusion?.outcome === 'signed')
-    .map((dossier) => ({
-      projectId: dossier.project.id,
-      signedAt: dossier.conclusion?.signedAt ?? dossier.conclusion?.concludedAt ?? null,
-    }));
-  const [contactsRes, pointsRes, prospecting, visits, mandateRead] = await Promise.all([
+  const [contactsRes, pointsRes, prospecting, visits] = await Promise.all([
     supabase
       .from('follow_up_contacts')
       .select('project_id, contacted_at, next_follow_up_on')
@@ -49,9 +45,8 @@ export async function getSuiviTaskCount(): Promise<number | null> {
       .eq('agency_id', profile.agency_id),
     getAgencyProspecting(dossiers),
     readVisitLines(),
-    getMandateBuyers(profile.agency_id, mandates, now),
   ]);
-  if (contactsRes.error || pointsRes.error || visits.failed || mandateRead.failed) return null;
+  if (contactsRes.error || pointsRes.error || visits.failed) return null;
   const contacts = new Map<string, { contactedAt: string; nextFollowUpOn: string | null }[]>();
   for (const row of contactsRes.data ?? []) {
     contacts.set(row.project_id, [
@@ -70,9 +65,6 @@ export async function getSuiviTaskCount(): Promise<number | null> {
     lastPoints,
     cards: prospecting.cards,
     visits: visits.lines,
-    buyersToPropose: new Map(
-      [...mandateRead.byProject].map(([projectId, entry]) => [projectId, entry.toPropose]),
-    ),
   });
-  return buildSuiviTaskList(inputs, now, buyerTasks.tasks).dues.length;
+  return buildSuiviTaskList(inputs, now, extra).dues.length;
 }

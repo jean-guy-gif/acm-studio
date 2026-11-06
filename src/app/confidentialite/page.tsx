@@ -182,7 +182,12 @@ export default function ConfidentialitePage() {
               de l’agence cherchent un bien comme le sien, sous une forme anonyme : les communes
               cherchées, le budget en fourchette arrondie, « financement validé » et depuis combien
               de semaines il cherche — jamais un nom, un téléphone, un e-mail ni une note ; l’agence
-              garde le jour où ils ont été montrés et leur nombre.
+              garde le jour où ils ont été montrés et leur nombre. Quand un bien arrive (un mandat,
+              un vendeur à relancer, un bien en vente retenu par l’agence), le conseiller peut le
+              proposer aux acquéreurs qui lui correspondent : l’outil prépare un message et le lien
+              de leur sélection, sans rien envoyer lui-même ; l’agence garde, pour chaque acquéreur,
+              le bien proposé (décrit par ses caractéristiques, jamais par une adresse), le jour où
+              le conseiller a noté l’envoi et qui l’a noté.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

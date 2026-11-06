@@ -294,3 +294,108 @@ test('la boucle : un dossier à 4 acquéreurs prêts n’a pas de pastille', asy
   await expect(page.getByTestId('live-buyers-dot')).toHaveCount(0);
   expect(await pagePayload(page)).not.toContain('familles cherchent un bien');
 });
+
+// Mission 134 — « Personne n'est oublié » : un concurrent retenu chez les Bernard (ven-02, Vence,
+// 140 m², piscine) fait naître « 4 acquéreurs pour la maison de Vence » ; l'envoi en série en note
+// trois, en passe un, la tâche dit « 1 acquéreur » ; le dernier envoyé, elle se vide ; les fiches
+// disent « proposé le … ». ACM n'envoie rien : il prépare le lien et note l'envoi.
+test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en série', async ({
+  page,
+}) => {
+  await login(page, demoCredentials());
+  const { direct: projectId } = await freshDemo(page);
+  const vence = /pour la maison de Vence/;
+
+  await test.step('Retenir ven-02 sur le dossier des Bernard', async () => {
+    await page.goto(`/builder/${projectId}/comparables/find`);
+    await page.getByRole('button', { name: 'Chercher les concurrents' }).click();
+    const target = page
+      .getByTestId('ranked-candidate')
+      .filter({ has: page.locator('a[href*="ven-02"]') })
+      .first();
+    await expect(target, 'ven-02 n’est pas proposé par la recherche simulée').toBeVisible({
+      timeout: 90_000,
+    });
+    const boxes = page
+      .locator('label')
+      .filter({ hasText: /^À retenir$/ })
+      .locator('input');
+    for (const box of await boxes.all()) {
+      if (await box.isChecked()) await box.uncheck();
+    }
+    await target
+      .locator('label')
+      .filter({ hasText: /^À retenir$/ })
+      .locator('input')
+      .check();
+    await page
+      .getByRole('button', { name: /^Retenir et importer les? 1 concurrents? cochés?$/ })
+      .click();
+    await expect(page.getByRole('button', { name: /Import en cours…/ })).toHaveCount(0, {
+      timeout: 120_000,
+    });
+    await expect(page.getByText(/en échec/)).toHaveCount(0);
+  });
+
+  const openTask = async (count: number) => {
+    const task = page.getByTestId('suivi-task').filter({ hasText: vence });
+    // La retenue peut s'achever juste après l'import : le Suivi se relit jusqu'à la tâche.
+    await expect
+      .poll(
+        async () => {
+          await page.goto('/suivi');
+          return task.count();
+        },
+        { timeout: 45_000, intervals: [2_000, 3_000, 5_000] },
+      )
+      .toBe(1);
+    await expect(task).toContainText(
+      `${count} ${count > 1 ? 'acquéreurs' : 'acquéreur'} pour la maison de Vence`,
+    );
+    await expect(task).toContainText('bien du marché : à vérifier avant d’envoyer');
+    await task.getByRole('link', { name: 'Proposer ce bien' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\/proposer\?bien=/);
+  };
+  const sendOne = async () => {
+    await page.getByTestId('propose-prepare').click();
+    await expect(page.getByTestId('propose-message')).toContainText('/dossier/');
+    await expect(page.getByTestId('propose-copy')).toBeVisible();
+    const payload = await page.getByTestId('propose-message').innerText();
+    expect(payload).toMatch(/^Bonjour /);
+    await page.getByTestId('propose-sent').click();
+  };
+
+  await test.step('La tâche, puis la série : trois envoyés, un passé', async () => {
+    await openTask(4);
+    await expect(page.getByTestId('propose-candidate')).toHaveCount(5);
+    // M. Fontaine correspond sans être prêt : coché, le conseiller le décoche.
+    await page.getByRole('checkbox', { name: 'M. Fontaine' }).uncheck();
+    await page.getByTestId('propose-start').click();
+    for (let index = 0; index < 3; index += 1) {
+      await expect(page.getByText(`${index + 1} sur 4`)).toBeVisible();
+      await sendOne();
+    }
+    await expect(page.getByText('4 sur 4')).toBeVisible();
+    await page.getByTestId('propose-skip').click();
+    await expect(page.getByTestId('propose-done')).toContainText('3 envois notés');
+  });
+
+  await test.step('La tâche dit 1 acquéreur ; le dernier envoyé, elle se vide', async () => {
+    await openTask(1);
+    await expect(page.getByTestId('propose-already')).toHaveCount(3);
+    await expect(page.getByTestId('propose-already').first()).toContainText('déjà proposé le');
+    await page.getByRole('checkbox', { name: 'M. Fontaine' }).uncheck();
+    await page.getByTestId('propose-start').click();
+    await sendOne();
+    await expect(page.getByTestId('propose-done')).toContainText('1 envoi noté');
+    await page.goto('/suivi');
+    await expect(page.getByTestId('suivi-today')).not.toContainText(vence);
+  });
+
+  await test.step('Les fiches disent « proposé le … »', async () => {
+    await page.goto('/acquereurs');
+    await page.getByRole('link', { name: 'M. et Mme Lambert' }).first().click();
+    await expect(page.getByTestId('buyer-proposals')).toContainText('proposé le');
+    await expect(page.getByTestId('buyer-timeline')).toContainText('Bien proposé');
+  });
+});

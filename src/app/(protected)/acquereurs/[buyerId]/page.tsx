@@ -24,7 +24,9 @@ import {
 } from '@/features/buyers/services/buyer-readiness';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { ITEM_ANSWER_REPORT } from '@/features/buyer-deck/types';
 import { getBuyerHistory } from '@/features/buyers/queries/get-buyer-history';
+import { sentDayLabel } from '@/features/buyers/services/loop-properties';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { buyerDateLabel, buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import {
@@ -103,7 +105,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     getAgencyProspecting(counted).catch(() => null),
     profile
       ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-      : Promise.resolve({ selections: [], letters: [], failed: true }),
+      : Promise.resolve({ selections: [], letters: [], proposals: [], failed: true }),
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
@@ -132,6 +134,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     createdAt: buyer.createdAt,
     selections: history.selections,
     letters: history.letters,
+    proposals: history.proposals,
     presentedAt: facts.presentedAt,
     linkAt: facts.linkAt ?? null,
     answeredAt: facts.answeredAt ?? null,
@@ -416,6 +419,34 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <ul className="flex flex-col gap-2">
                 {visits.map((line) => (
                   <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {/* Mission 134 — les biens proposés, et sa réponse par le lien. */}
+          {history.proposals.length > 0 ? (
+            <section className={`${card} flex flex-col gap-2 p-5`} data-testid="buyer-proposals">
+              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+                Biens proposés
+              </h2>
+              <ul className="flex flex-col">
+                {history.proposals.map((proposal) => (
+                  <li
+                    key={`${proposal.at}-${proposal.label}`}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 py-2 text-sm first:border-0 stage:border-white/10"
+                    data-testid="buyer-proposal"
+                  >
+                    <span className="text-zinc-800 stage:text-white/85">{proposal.label}</span>
+                    <span className="text-zinc-500 stage:text-white/60">
+                      proposé le {sentDayLabel(proposal.at)}
+                    </span>
+                    {proposal.answer ? (
+                      <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+                        {ITEM_ANSWER_REPORT[proposal.answer]}
+                      </span>
+                    ) : null}
+                  </li>
                 ))}
               </ul>
             </section>

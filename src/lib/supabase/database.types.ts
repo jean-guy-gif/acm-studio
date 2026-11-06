@@ -369,6 +369,90 @@ export type Database = {
           },
         ]
       }
+      buyer_proposals: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          id: string
+          label: string
+          origin: string
+          project_id: string | null
+          property_key: string
+          reference: string
+          selection_item_id: string | null
+          sent_at: string
+          sent_by: string | null
+          source: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          label: string
+          origin: string
+          project_id?: string | null
+          property_key: string
+          reference: string
+          selection_item_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          source: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          origin?: string
+          project_id?: string | null
+          property_key?: string
+          reference?: string
+          selection_item_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_proposals_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_proposals_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_proposals_selection_item_id_fkey"
+            columns: ["selection_item_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_proposals_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_prospect_origins: {
         Row: {
           agency_id: string

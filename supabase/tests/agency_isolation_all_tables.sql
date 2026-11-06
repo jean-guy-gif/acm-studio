@@ -85,6 +85,10 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_prospects.listing_key' then $v$'exemple:' || substr(md5(random()::text), 1, 8)$v$
     -- Mission 120 — une origine désigne un bien démarché OU un concurrent, jamais les deux.
     when 'buyer_prospect_origins.comparable_id' then $v$null$v$
+    -- Mission 134 — un bien proposé : sa clé, sa source et son origine, en liste.
+    when 'buyer_proposals.property_key' then $v$'listing:exemple:' || substr(md5(random()::text), 1, 8)$v$
+    when 'buyer_proposals.source' then $v$'listing'$v$
+    when 'buyer_proposals.origin' then $v$'competitor'$v$
     else null
   end
 $$;

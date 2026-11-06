@@ -45,6 +45,8 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 type Client = SupabaseClient<Database>;
 
 const DEMO_PAGE = '/ma-demo';
+// Mission 134 — l'ancienneté des concurrents semés, au-delà de la fenêtre des nouveaux biens.
+const DEMO_COMPETITORS_AGE_DAYS = 30;
 const FAILED = `${DEMO_PAGE}?error=${encodeURIComponent('La démo n’a pas pu être préparée. Réessayez.')}`;
 
 // Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro ». Réservé à un
@@ -375,6 +377,16 @@ async function seedDemoDossier(
     });
     if (inserted.status === 'failed') return failed();
   }
+  // Mission 134 — les concurrents de la démo sont retenus depuis plus de 14 jours : ils n'appellent
+  // plus leurs acquéreurs (seul un bien retenu pendant la démo fait naître sa tâche).
+  const { error: agedError } = await supabase
+    .from('comparables')
+    .update({
+      created_at: new Date(now.getTime() - DEMO_COMPETITORS_AGE_DAYS * 86_400_000).toISOString(),
+    })
+    .eq('project_id', projectId)
+    .eq('agency_id', closer.agencyId);
+  if (agedError) return failed();
   const { data: comparables } = await supabase
     .from('comparables')
     .select('*')
