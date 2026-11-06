@@ -2,7 +2,7 @@ import { parisDay } from '@/features/meeting-conclusion/services/follow-up-conta
 import { addDays } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
 import {
-  starContradicted,
+  anyStarContradicted,
   starsFilled,
   type BuyerLoopProperty,
 } from '@/features/buyers/services/property-buyers';
@@ -65,7 +65,8 @@ export function relaunchDue(facts: RelaunchFacts, now: Date): RelaunchDue | null
 }
 
 // Le bien de la sélection qui coche le plus de ses ★ (à égalité, l'ordre de la sélection), et s'il
-// « coche ce qu'il cherche » : au moins une ★ remplie, aucune contredite. Un prix inconnu (vendeur
+// « coche ce qu'il cherche » : au moins une ★ remplie, aucune contredite — toutes ses ★, commune,
+// type, pièces, surface et budget compris. Un prix inconnu (vendeur
 // à relancer, M119) ne remplit jamais la ★ du budget.
 export function bestBien<T extends { property: BuyerLoopProperty; price: number | null }>(
   buyer: Buyer,
@@ -77,7 +78,7 @@ export function bestBien<T extends { property: BuyerLoopProperty; price: number 
     const price = bien.price ?? Number.NaN;
     const count = starsFilled(buyer, bien.property, price).length;
     if (count > bestCount) {
-      best = { bien, fits: count > 0 && !starContradicted(buyer, bien.property, price) };
+      best = { bien, fits: count > 0 && !anyStarContradicted(buyer, bien.property, price) };
       bestCount = count;
     }
   }
