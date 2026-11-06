@@ -15,7 +15,9 @@ import {
 } from '@/features/buyers/services/loop-properties';
 import { MAX_IDEAL_SELECTION } from '@/features/ideal-properties/types';
 import { negotiationNote } from '@/features/meeting-conclusion/services/buyer-rules';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
+import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type PrepareProposalResult =
@@ -142,11 +144,13 @@ export async function prepareProposalLink(
     reference: item.reference,
     label: item.label,
     listed_price: showsPrice ? item.price : null,
-    price_seen_on: null,
+    // Une annonce : « affiché le » du jour (M118) et ses faits publiés, relus par la liste
+    // d'autorisation (M120), pour que son dossier montre ses photos et ses caractéristiques.
+    price_seen_on: item.source === 'listing' ? parisDay(new Date()) : null,
     category: 'agency',
     gaps: note ? [note] : [],
     snapshot: null,
-    imported: null,
+    imported: (item.source === 'listing' ? (item.facts ?? null) : null) as Json | null,
     pitch: null,
     dossier_hide_photo: false,
   };

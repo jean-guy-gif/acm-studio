@@ -18,8 +18,9 @@ import { formatEuro, formatSquareMeters } from '@/lib/format';
 //     depuis une recherche acquéreur (M120) : dans les 14 jours qui suivent son arrivée — sinon
 //     chaque concurrent retenu depuis des mois ferait une tâche (décision du 06/11).
 // Un bien est UN bien, quel que soit le nombre de dossiers où il est retenu (clé d'annonce, M47,
-// M98) ; un acquéreur à qui il a été proposé (« Envoyé »), ou qui l'a déjà dans une sélection, n'y
-// figure plus : la tâche se vide au fil des envois, sans rien recréer.
+// M98) ; un acquéreur à qui il a été proposé (« Envoyé », noté) n'y figure plus — une sélection seule
+// ne compte pas : « Passer » n'écrit rien (décision du 06/11) — ; la tâche se vide au fil des envois,
+// sans rien recréer.
 
 export const NEW_PROPERTY_WINDOW_DAYS = 14;
 
@@ -43,6 +44,8 @@ export type LoopProperty = {
   bornAt: string;
   // Comment le reconnaître dans une sélection (`source:reference`), toutes copies comprises.
   selectionRefs: string[];
+  // Un bien démarché : ses faits publiés (liste d'autorisation, M120), pour son dossier acquéreur.
+  facts?: Record<string, unknown> | null;
   // Les acquéreurs à l'origine d'un bien démarché : ils l'ont déjà.
   originBuyerIds: string[];
 };
@@ -84,13 +87,10 @@ export function isNewProperty(item: LoopProperty, now: Date): boolean {
   return parisDaysSince(item.bornAt, now) < NEW_PROPERTY_WINDOW_DAYS;
 }
 
-// Ce que la boucle sait déjà des acquéreurs d'un bien : à qui il a été proposé (et quand), qui l'a
-// dans une sélection.
+// Ce que la boucle sait déjà des acquéreurs d'un bien : à qui il a été proposé, et quand.
 export type LoopContacts = {
   // property_key → acquéreur → date d'envoi.
   proposals: Map<string, Map<string, string>>;
-  // `source:reference` → acquéreurs qui l'ont dans une sélection.
-  selected: Map<string, Set<string>>;
 };
 
 export function alreadyContacted(
@@ -99,9 +99,7 @@ export function alreadyContacted(
   contacts: LoopContacts,
 ): boolean {
   return (
-    item.originBuyerIds.includes(buyerId) ||
-    contacts.proposals.get(item.key)?.has(buyerId) === true ||
-    item.selectionRefs.some((ref) => contacts.selected.get(ref)?.has(buyerId) === true)
+    item.originBuyerIds.includes(buyerId) || contacts.proposals.get(item.key)?.has(buyerId) === true
   );
 }
 
@@ -204,10 +202,10 @@ export function proposalMessage(input: {
     item.price < buyer.budgetMax
       ? `${formatEuro(buyer.budgetMax - item.price)} sous votre budget`
       : null;
+  // « maison », « appartement » ; un type inconnu ne se dit pas (jamais « bien à Vence »).
+  const noun = propertyPhrase({ propertyType: p.propertyType, city: null });
   const what = [
-    propertyPhrase(p)
-      .replace(/ d[e’].*$/, '')
-      .replace(/^(la|le|l’)\s?/, ''),
+    noun === 'le bien' ? null : noun.replace(/^(la|le|l’)\s?/, ''),
     where,
     has.length > 0 ? `avec ${has.join(', ')}` : null,
   ]

@@ -57,14 +57,20 @@ export type LoopPropertyRow = {
   advisor_price_max: number | null;
 };
 
+// Une colonne `numeric` revient en texte de l'API (« 140.00 ») : convertie avant toute règle.
+export const toNumber = (value: unknown): number | null => {
+  const parsed = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
+};
+
 export function loopProperty(row: LoopPropertyRow): BuyerLoopProperty {
   return {
     propertyType: row.property_type,
-    roomsCount: row.rooms_count,
-    surfaceArea: row.surface_area,
+    roomsCount: toNumber(row.rooms_count),
+    surfaceArea: toNumber(row.surface_area),
     city: row.city,
-    bedroomsCount: row.bedrooms_count,
-    floor: row.floor,
+    bedroomsCount: toNumber(row.bedrooms_count),
+    floor: toNumber(row.floor),
     hasElevator: row.has_elevator,
     hasPool: row.has_pool,
     outdoorSpaces: row.outdoor_spaces ?? [],
@@ -112,11 +118,12 @@ export async function loadLoopProperties(
     properties.set(row.project_id, {
       property: loopProperty(row),
       price: buyerReferencePrice({
-        commercializationPrice: conclusion?.commercialization_price ?? null,
-        frozenAdvisorAnalysis: conclusion?.frozen_advisor_analysis ?? null,
-        advisorAnalysis:
-          positioningOf.get(row.project_id)?.advisor_comparative_market_price ?? null,
-        advisorPriceMax: row.advisor_price_max,
+        commercializationPrice: toNumber(conclusion?.commercialization_price),
+        frozenAdvisorAnalysis: toNumber(conclusion?.frozen_advisor_analysis),
+        advisorAnalysis: toNumber(
+          positioningOf.get(row.project_id)?.advisor_comparative_market_price,
+        ),
+        advisorPriceMax: toNumber(row.advisor_price_max),
       }),
     });
   }

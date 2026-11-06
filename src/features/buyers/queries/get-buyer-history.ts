@@ -35,15 +35,27 @@ export async function getBuyerHistory(
       .eq('buyer_id', buyerId),
     supabase
       .from('buyer_proposals')
-      .select('sent_at, label, selection_item_id')
+      .select('sent_at, label, source, reference')
       .eq('agency_id', agencyId)
       .eq('buyer_id', buyerId)
       .order('sent_at', { ascending: false }),
   ]);
   const proposalRows = proposalsRes.data ?? [];
-  const proposalItemIds = proposalRows
-    .map((row) => row.selection_item_id)
-    .filter((id): id is string => id != null);
+  // Sa réponse par le lien, sur ce bien : dans n'importe laquelle de ses sélections (un bien proposé
+  // ensuite reprend les précédents sous une autre ligne de sélection).
+  const ownSelectionIds = (selectionsRes.data ?? []).map((row) => row.id);
+  const ownItemsRes =
+    proposalRows.length > 0 && ownSelectionIds.length > 0
+      ? await supabase
+          .from('buyer_selection_items')
+          .select('id, source, reference')
+          .eq('agency_id', agencyId)
+          .in('selection_id', ownSelectionIds)
+      : { data: [], error: null };
+  const refOfItem = new Map(
+    (ownItemsRes.data ?? []).map((row) => [row.id, `${row.source}:${row.reference}`]),
+  );
+  const proposalItemIds = [...refOfItem.keys()];
   const answersRes =
     proposalItemIds.length > 0
       ? await supabase
@@ -53,11 +65,14 @@ export async function getBuyerHistory(
           .eq('answered_during', 'dossier')
           .in('selection_item_id', proposalItemIds)
       : { data: [], error: null };
+  // Par bien (`source:reference`), sa plus récente réponse par le lien.
   const answerOf = new Map<string, { answer: string; at: string }>();
   for (const row of answersRes.data ?? []) {
-    const known = answerOf.get(row.selection_item_id);
+    const ref = refOfItem.get(row.selection_item_id);
+    if (!ref) continue;
+    const known = answerOf.get(ref);
     if (!known || row.answered_at > known.at) {
-      answerOf.set(row.selection_item_id, { answer: row.answer, at: row.answered_at });
+      answerOf.set(ref, { answer: row.answer, at: row.answered_at });
     }
   }
   const selections = selectionsRes.data ?? [];
@@ -99,7 +114,7 @@ export async function getBuyerHistory(
       label: (row.selection_item_id && labels.get(row.selection_item_id)) || 'un bien',
     })),
     proposals: proposalRows.map((row) => {
-      const answer = row.selection_item_id ? answerOf.get(row.selection_item_id)?.answer : null;
+      const answer = answerOf.get(`${row.source}:${row.reference}`)?.answer ?? null;
       return {
         at: row.sent_at,
         label: row.label,
@@ -110,6 +125,7 @@ export async function getBuyerHistory(
       selectionsRes.error != null ||
       originsRes.error != null ||
       proposalsRes.error != null ||
+      ownItemsRes.error != null ||
       answersRes.error != null ||
       itemsRes.error != null ||
       labelsRes.error != null,

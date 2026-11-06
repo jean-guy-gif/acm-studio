@@ -18,7 +18,7 @@ export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
 
 // Mission 133 — « Acquéreurs de l'agence pour ce bien », sur la Vue d'ensemble et « Avant le
 // rendez-vous » : la porte vendeur → acquéreurs de la boucle, pour le conseiller seul. Mission 134 —
-// sur un mandat signé ou un vendeur à relancer, « Proposer ce bien à N acquéreurs » ouvre l'envoi en
+// sur un mandat signé ou un vendeur à relancer, « Proposer ce bien aux acquéreurs » ouvre l'envoi en
 // série (un seul chemin, un seul fait noté).
 export function PropertyBuyersBlock({
   result,
@@ -64,8 +64,7 @@ export function PropertyBuyersBlock({
           className={`${btnSecondary} self-start`}
           data-testid="propose-property"
         >
-          Proposer ce bien à {result.ready.length + result.others.length}{' '}
-          {result.ready.length + result.others.length > 1 ? 'acquéreurs' : 'acquéreur'}
+          Proposer ce bien aux acquéreurs
         </Link>
       ) : null}
       {result && result.price != null && headline ? (

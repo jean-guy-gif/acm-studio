@@ -181,27 +181,25 @@ export function ProposeSeries({
   const message = proposalMessage({
     buyer: current.wants,
     item,
-    url: prepared?.url ?? '[le lien de sa sélection, créé au premier envoi]',
+    url: prepared?.url ?? '[le lien de sa sélection]',
     advisorFirstName,
   });
   const hrefs = followUpShareHrefs(message, current.phone, current.email, EMAIL_SUBJECT);
 
-  // Le lien se crée au premier geste de partage, puis le geste part avec le message complet.
-  const withLink = async (open: (text: string) => void) => {
+  // Le lien se prépare par son propre geste (une nouvelle sélection, ce bien en tête) ; les partages
+  // partent ensuite tout de suite, dans le geste (Safari et iPad refusent une copie ou une fenêtre
+  // ouverte après une attente). « Passer » avant de préparer ne laisse rien.
+  const prepare = () => {
     setError(null);
-    let ready = prepared;
-    if (!ready) {
-      setPending(true);
-      const result = await prepareProposalLink(current.id, propertyKey);
+    setPending(true);
+    void prepareProposalLink(current.id, propertyKey).then((result) => {
       setPending(false);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      ready = { url: result.url, selectionItemId: result.selectionItemId };
-      setPrepared(ready);
-    }
-    open(proposalMessage({ buyer: current.wants, item, url: ready.url, advisorFirstName }));
+      setPrepared({ url: result.url, selectionItemId: result.selectionItemId });
+    });
   };
   const next = () => {
     setPrepared(null);
@@ -230,83 +228,63 @@ export function ProposeSeries({
       >
         {message}
       </p>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={btnSecondary}
-          disabled={pending}
-          data-testid="propose-copy"
-          onClick={() =>
-            void withLink((text) => {
+      {prepared ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={btnSecondary}
+            data-testid="propose-copy"
+            onClick={() => {
               navigator.clipboard
-                ?.writeText(text)
+                ?.writeText(message)
                 .then(() => setCopied(true))
-                .catch(() => setCopied(false));
-            })
-          }
-        >
-          Copier
-        </button>
-        {hrefs.sms ? (
+                .catch(() => setError('La copie a échoué : sélectionnez le message ci-dessus.'));
+            }}
+          >
+            Copier
+          </button>
+          {hrefs.sms ? (
+            <a className={btnSecondary} href={hrefs.sms}>
+              SMS
+            </a>
+          ) : null}
+          {hrefs.whatsapp ? (
+            <a
+              className={btnSecondary}
+              href={hrefs.whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+          ) : null}
+          <a className={btnSecondary} href={hrefs.email}>
+            E-mail
+          </a>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
           <button
             type="button"
-            className={btnSecondary}
+            className={`${btnSecondary} self-start`}
             disabled={pending}
-            onClick={() =>
-              void withLink((text) => {
-                window.location.href =
-                  followUpShareHrefs(text, current.phone, current.email, EMAIL_SUBJECT).sms ?? '';
-              })
-            }
+            data-testid="propose-prepare"
+            onClick={prepare}
           >
-            SMS
+            {pending ? 'Préparation…' : 'Préparer son lien'}
           </button>
-        ) : null}
-        {hrefs.whatsapp ? (
-          <button
-            type="button"
-            className={btnSecondary}
-            disabled={pending}
-            onClick={() =>
-              void withLink((text) => {
-                window.open(
-                  followUpShareHrefs(text, current.phone, current.email, EMAIL_SUBJECT).whatsapp ??
-                    '',
-                  '_blank',
-                  'noopener',
-                );
-              })
-            }
-          >
-            WhatsApp
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className={btnSecondary}
-          disabled={pending}
-          onClick={() =>
-            void withLink((text) => {
-              window.location.href = followUpShareHrefs(
-                text,
-                current.phone,
-                current.email,
-                EMAIL_SUBJECT,
-              ).email;
-            })
-          }
-        >
-          E-mail
-        </button>
-      </div>
+          <p className={hintText}>
+            Une nouvelle sélection avec ce bien en tête. Son lien actuel, s’il en a un, cesse de
+            marcher ; ses réponses restent.
+          </p>
+        </div>
+      )}
       <p className={hintText} role="status">
-        {pending
-          ? 'Préparation du lien…'
-          : copied
-            ? 'Message copié, lien compris.'
-            : prepared
-              ? 'Le lien de sa sélection est prêt ; ACM n’envoie rien lui-même.'
-              : 'Le lien de sa sélection, avec ce bien en tête, se crée au premier envoi.'}
+        {copied
+          ? 'Message copié, lien compris.'
+          : prepared
+            ? 'Le lien de sa sélection est prêt : envoyez-le, puis « Envoyé, suivant ». ACM n’envoie rien lui-même.'
+            : 'Préparez son lien, envoyez-le, puis notez l’envoi.'}
       </p>
       {error ? (
         <p role="alert" className="text-sm font-semibold text-red-700">

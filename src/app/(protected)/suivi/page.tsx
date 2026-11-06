@@ -238,7 +238,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     );
     return (
       <li
-        key={`${task.buyerId ?? task.projectId}-${task.kind}`}
+        key={`${task.propertyKey ?? task.buyerId ?? task.projectId}-${task.kind}`}
         data-testid={copy ? undefined : 'suivi-task'}
         className={`flex items-start gap-3 border-t border-zinc-100 py-2 first:border-0 sm:items-center stage:border-white/10 ${
           !copy && index >= TASKS_SHOWN_PHONE ? 'max-sm:hidden' : ''
