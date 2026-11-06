@@ -330,6 +330,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/boucle_acquereurs.sql
 
+      # Mission 134 — les biens proposés aux acquéreurs : une fois, l'heure de la base, l'agence
+      # vérifiée, écrits par le serveur seul, cloisonnés.
+      - name: Personne n'est oublié (mission 134)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/biens_proposes.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes
