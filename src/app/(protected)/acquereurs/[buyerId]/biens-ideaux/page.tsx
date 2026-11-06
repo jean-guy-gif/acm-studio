@@ -25,6 +25,11 @@ import { budgetWarningLabel } from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
+import { getBuyerWatchFinds } from '@/features/buyer-watch/queries/get-watch';
+import { findAsCandidate } from '@/features/buyer-watch/services/watch-finds';
+import { categorizeIdeal } from '@/features/ideal-properties/services/categorize-ideal';
+import { IDEAL_CATEGORIES } from '@/features/ideal-properties/types';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 
 export const metadata: Metadata = { title: 'Biens idéaux — ACM Studio' };
 
@@ -40,10 +45,12 @@ export default async function IdealPropertiesPage({ params }: Props) {
   if (!buyer || !profile) notFound();
 
   const dossiers = withoutExamples(await getSuiviDossiers());
-  const [{ cards }, selection, demo] = await Promise.all([
+  const [{ cards }, selection, demo, watchRun] = await Promise.all([
     getAgencyProspecting(dossiers),
     getIdealSelection(buyer.id),
     isDemoAgency(profile.agency_id),
+    // Mission 136 — ce que la veille a trouvé cette semaine, en tête.
+    getBuyerWatchFinds(profile.agency_id, buyer.id),
   ]);
   const agency = reconcileBuyer(
     buyerToCriteria(buyer),
@@ -55,6 +62,21 @@ export default async function IdealPropertiesPage({ params }: Props) {
     ),
   );
   const deduced = idealSearchCriteria(buyer);
+  const watchCategorized =
+    watchRun != null
+      ? categorizeIdeal(
+          buyer,
+          watchRun.finds.map(findAsCandidate),
+          deduced.ok ? deduced.criteria : null,
+        )
+      : null;
+  const watch =
+    watchRun != null && watchCategorized != null
+      ? {
+          seenOn: parisDay(new Date(watchRun.ranAt)),
+          entries: IDEAL_CATEGORIES.flatMap((category) => watchCategorized.byCategory[category]),
+        }
+      : null;
   const marketAvailable = demo || streamEstateApiKey() != null;
   const marketBlocked = !deduced.ok
     ? IDEAL_CRITERIA_MESSAGES[deduced.reason]
@@ -89,6 +111,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
         marketReady={marketBlocked == null}
         marketBlocked={marketBlocked}
         budgetWarning={budgetWarning}
+        watch={watch}
       />
     </div>
   );

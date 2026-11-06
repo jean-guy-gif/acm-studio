@@ -28,11 +28,13 @@ describe('aucune attente d’espace', () => {
     expect(existsSync(`${PROTECTED}/acquereurs/page.tsx`)).toBe(false);
   });
 
-  it('les fonctions tournent à Paris (cdg1), le cron de la nuit est inchangé', () => {
+  it('les fonctions tournent à Paris (cdg1), les crons de la nuit sont ceux attendus', () => {
     const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
     expect(config.regions).toEqual(['cdg1']);
     expect(config.crons).toEqual([
       { path: '/api/cron/verifier-oppositions', schedule: '37 3 * * *' },
+      // Mission 136 — la veille des acquéreurs, à une heure creuse.
+      { path: '/api/cron/veille-acquereurs', schedule: '17 2 * * *' },
     ]);
   });
 });

@@ -773,3 +773,27 @@ describe('les critères de la mission 110', () => {
     ).toEqual(['outdoor', 'pool']);
   });
 });
+
+// Mission 136 — la veille des acquéreurs : l'API ignore `fromCreatedAt` (mesuré le 06/11), mais
+// honore `order[createdAt]` : les biens arrivés le plus récemment d'abord, à la place du tri par
+// mise à jour ; sans le drapeau, la requête est celle d'avant.
+describe('les plus récents d’abord', () => {
+  it('`newestFirst` trie par création, jamais aussi par mise à jour', async () => {
+    const { api, run } = search([], { newestFirst: true });
+    await run;
+    expect(api.calls.length).toBeGreaterThan(0);
+    for (const call of api.calls) {
+      expect(call.params.getAll('order[createdAt]')).toEqual(['desc']);
+      expect(call.params.has('order[updatedAt]')).toBe(false);
+    }
+  });
+
+  it('sans le drapeau, le tri par mise à jour reste', async () => {
+    const { api, run } = search([]);
+    await run;
+    for (const call of api.calls) {
+      expect(call.params.getAll('order[updatedAt]')).toEqual(['desc']);
+      expect(call.params.has('order[createdAt]')).toBe(false);
+    }
+  });
+});

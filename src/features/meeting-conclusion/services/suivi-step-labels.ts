@@ -67,6 +67,10 @@ export function taskHref(task: SuiviTask): string {
       return '/visites';
     case 'propose_buyers':
       return proposeHref(task.propertyKey ?? '');
+    case 'buyer_watch':
+      return task.buyerId
+        ? `/acquereurs/${task.buyerId}/biens-ideaux#nouveau`
+        : `/acquereurs/${task.watchBuyers?.[0]?.id ?? ''}/biens-ideaux#nouveau`;
     case 'buyer_recontact':
     case 'buyer_relaunch':
       return `/acquereurs/${task.buyerId ?? ''}`;
@@ -156,6 +160,28 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Mission 136 — ce que la veille a trouvé : pour un acquéreur, ou un bien pour plusieurs.
+    case 'buyer_watch': {
+      const count = task.count ?? 0;
+      if (task.buyerId) {
+        return {
+          title: `${count} ${count > 1 ? 'nouveaux biens' : 'nouveau bien'} pour ${buyerInSentence(task.buyerName)}`,
+          detail: `${count > 1 ? 'trouvés' : 'trouvé'} par la veille · bien du marché : à vérifier avant d’envoyer`,
+          late: null,
+          button: 'Voir les biens',
+          href,
+        };
+      }
+      const what = task.property ? propertyPhrase(task.property) : 'un bien';
+      const figures = task.figures ? propertyFigures(task.figures) : null;
+      return {
+        title: `${plural(count, 'acquéreur', 'acquéreurs')} pour ${what}${figures ? ` (${figures})` : ''}`,
+        detail: `trouvé par la veille : ${(task.watchBuyers ?? []).map((buyer) => buyerInSentence(buyer.name)).join(', ')}`,
+        late: null,
+        button: 'Voir les biens',
+        href,
+      };
+    }
     // Mission 135 — un lien de sélection resté sans réponse.
     case 'buyer_relaunch': {
       const sent = task.sentOn
@@ -205,9 +231,11 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
             ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
             : next.kind === 'buyer_relaunch'
               ? `relancer ${buyerInSentence(next.buyerName)}`
-              : next.kind === 'propose_buyers'
-                ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
-                : `organiser une visite chez ${next.sellerName}`;
+              : next.kind === 'buyer_watch'
+                ? `voir les biens trouvés par la veille`
+                : next.kind === 'propose_buyers'
+                  ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
+                  : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -368,6 +396,7 @@ export function cardStep(
     }
     // Une tâche d'acquéreur ou d'un bien à proposer ne tient à aucune carte du Suivi.
     case 'propose_buyers':
+    case 'buyer_watch':
     case 'buyer_relaunch':
     case 'buyer_recontact':
       return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };

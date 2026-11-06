@@ -1,4 +1,7 @@
 {
   "regions": ["cdg1"],
-  "crons": [{ "path": "/api/cron/verifier-oppositions", "schedule": "37 3 * * *" }]
+  "crons": [
+    { "path": "/api/cron/verifier-oppositions", "schedule": "37 3 * * *" },
+    { "path": "/api/cron/veille-acquereurs", "schedule": "17 2 * * *" }
+  ]
 }

@@ -5,9 +5,13 @@ import type { DemoListing, DemoScenario, DemoScenarioId } from '@/features/demo/
 import {
   demoAddressLine,
   demoImportedData,
+  demoStreamEstateProperty,
   demoSubjectImportedData,
 } from '@/features/demo/services/demo-listing-data';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
+import { toWatchFind, type WatchFind } from '@/features/buyer-watch/services/watch-finds';
+import { parseStreamEstateResponse } from '@/features/competitor-search/services/stream-estate';
+import { budgetCeiling } from '@/features/ideal-properties/services/ideal-criteria';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import { formatEuro } from '@/lib/format';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
@@ -349,4 +353,42 @@ export function demoLambertSelectionPlan(now: Date): DemoSelectionItemPlan[] {
 export const DEMO_KELLER_REFUSALS_DAYS_AGO = 21;
 export function demoKellerRefusalsPlan(now: Date): DemoSelectionItemPlan[] {
   return [demoListingItem('mougins', 'mou-06', now), demoListingItem('mougins', 'mou-01', now)];
+}
+
+// Mission 136 — la veille des Keller : un passage d'il y a 2 jours, deux maisons à piscine arrivées
+// sur le marché depuis, dans leurs communes et sous leur plafond + 5 %, que l'agence ne connaît pas
+// (ni concurrent d'un dossier, ni dans leurs sélections, refus compris, ni nouveau venu du Point
+// marché de Mougins). Les autres acquéreurs prêts ont leur passage, sans rien trouvé : la démo est le
+// miroir du produit (aucun appel, M114).
+export const DEMO_WATCH_DAYS_AGO = 2;
+const KELLER_KNOWN = ['mou-01', 'mou-02', 'mou-03', 'mou-06', 'mou-07'];
+
+export function demoKellerWatchListings(): DemoListing[] {
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === 'mougins')!;
+  const keller = DEMO_BUYERS.find((buyer) => buyer.name === 'Famille Keller')!;
+  const ceiling = budgetCeiling(keller.budgetMax ?? null) ?? Infinity;
+  const competitors = new Set(demoSeedCompetitors(scenario).map((listing) => listing.id));
+  return scenario.listings
+    .filter(
+      (listing) =>
+        listing.propertyType === 'house' &&
+        listing.hasPool === true &&
+        listing.price <= ceiling &&
+        !competitors.has(listing.id) &&
+        !KELLER_KNOWN.includes(listing.id),
+    )
+    .slice(0, 2);
+}
+
+export function demoKellerWatchFinds(now: Date): WatchFind[] {
+  const arrived = demoKellerWatchListings().map((listing) =>
+    demoStreamEstateProperty(listing, now, new Date(now.getTime() - 3_600_000).toISOString()),
+  );
+  const parsed = parseStreamEstateResponse(
+    { 'hydra:totalItems': arrived.length, 'hydra:member': arrived },
+    now,
+  );
+  return (parsed?.candidates ?? [])
+    .map(toWatchFind)
+    .filter((find): find is WatchFind => find != null);
 }

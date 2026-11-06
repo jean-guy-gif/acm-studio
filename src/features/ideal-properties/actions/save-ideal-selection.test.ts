@@ -124,6 +124,64 @@ describe('saveIdealSelection', () => {
     expect(result.selection.items).toHaveLength(2);
   });
 
+  it('le jour de la veille n’est gardé que s’il est celui d’un passage qui a trouvé l’annonce', async () => {
+    const found = 'https://www.seloger.com/annonces/100000001.htm';
+    const fake = fakeSupabase((calls) => {
+      const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
+      if (table === 'buyers') return { data: { id: BUYER } };
+      if (table === 'buyer_watch_runs') {
+        return {
+          data: [
+            {
+              ran_at: '2026-11-04T01:20:00Z',
+              finds: [
+                {
+                  key: null,
+                  url: found,
+                  price: 1_420_000,
+                  surfaceArea: 185,
+                  roomsCount: 6,
+                  propertyType: 'house',
+                  pricePerSqm: null,
+                  landArea: null,
+                  city: 'Mouans-Sartoux',
+                  photoUrls: [],
+                },
+              ],
+            },
+          ],
+        };
+      }
+      if (table === 'buyer_selections') {
+        return {
+          data: {
+            id: 'sel-1',
+            agency_id: 'agency-a',
+            buyer_id: BUYER,
+            created_by: 'advisor-1',
+            created_at: '2026-11-06T10:00:00Z',
+          },
+        };
+      }
+      const insert = lastTable(calls, 'insert').at(-1)?.args[0] as
+        Record<string, unknown>[] | undefined;
+      if (!insert || table !== 'buyer_selection_items') return { data: [] };
+      return { data: insert.map((row, index) => ({ ...row, id: `item-${index + 1}` })) };
+    });
+    state.client = fake.client;
+    await saveIdealSelection(
+      BUYER,
+      [
+        { ...item(found), seenOn: '2026-11-04' },
+        // Un jour que le navigateur invente : la date de la recherche du jour s'applique.
+        { ...item('https://www.seloger.com/annonces/2.htm'), seenOn: '2026-10-01' },
+      ],
+      '2026-11-06',
+    );
+    const rows = lastTable(fake.calls, 'insert')[1]?.args[0] as Record<string, unknown>[];
+    expect(rows.map((row) => row.price_seen_on)).toEqual(['2026-11-04', '2026-11-06']);
+  });
+
   it('en démonstration : les annonces retenues reçoivent leurs données du jeu de données, rien à importer', async () => {
     state.demo = true;
     const listing = DEMO_LISTINGS[0]!;

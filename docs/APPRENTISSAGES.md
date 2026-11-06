@@ -145,6 +145,22 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 06/11 · M135 · Une nouvelle donnée de démo change les comptes des e2e qui la traversent : les deux refus semés des Keller ont fait passer « 6 réponses » à 8 dans `demo.spec.ts`, rouge deux fois sans défaut de l'outil ; avant de semer, chercher dans les e2e les comptes des fiches touchées.
 - 06/11 · M135 · Le relecteur a fait tomber deux fois le même bloquant : un message dit à un client (« coche ce que vous cherchez ») doit se juger sur TOUTES les ★, pas sur la liste utile au rapprochement (une sélection déjà retenue n'a pas forcément passé ses règles) ; et `price ?? 0` fait remplir une ★ budget à un prix inconnu.
 - 06/11 · M135 · Une contrainte qui « plafonne » un nombre de lignes (deux relances) se vérifie sous verrou (`perform … for update` sur la ligne parente), et les colonnes d'un fait daté se figent à la mise à jour : le gardien-sql l'a vu, pas les tests. Durées : architecte 7 min, gardien-sql 2 min, relecteur 4,5 min puis 1 min deux fois sur les deltas ; e2e de la boucle 2,8 min, suite complète 10,8 min.
+- 06/11 · M136 · Une mesure payante avant de coder a changé la conception : `fromCreatedAt` est
+  ignoré par Stream Estate (même total de 2 802 biens, même avec une date de 2030), `order[createdAt]`
+  est honoré ; 4 appels, 0,04 €, hors compteur de l'agence. La veille trie donc par création, 20
+  annonces au plus. Mesurer avec un paramètre absurde (2030) dit tout de suite s'il est lu.
+- 06/11 · M136 · Un résultat payé gardé pour plus tard (les biens de la veille) se juge comme l'écran
+  le jugera : le relecteur a trouvé qu'une tâche « 2 nouveaux biens » pouvait ouvrir une page qui en
+  montrait 1 (un indispensable que la requête ne filtre pas). Le même classement à l'écriture ET à
+  la lecture, sur la fiche du jour.
+- 06/11 · M136 · La démo n'avait aucune annonce libre pour un nouveau bien des Keller : toutes celles
+  de Mougins sous leur plafond étaient déjà concurrentes du mandat (donc connues de l'agence). Deux
+  annonces ajoutées au jeu (mou-14, mou-15), loin du prix de la villa et sous la fourchette des
+  nouveaux venus, pour ne bouger ni les concurrents ni le Point marché ; les Keller devenus prêts
+  ont changé le compte « Prêt à visiter » de l'e2e démo (5 → 6), vu à la suite complète.
+- 06/11 · M136 · `cat > fichier` sans `<<EOF` attend l'entrée standard et fige la commande jusqu'au
+  délai : toujours un heredoc. Le nettoyage de fin d'e2e (CLI Supabase) a échoué une fois, vert au
+  passage suivant : aléa connu. Suite e2e complète 10,7 min (démo 3,8 à 4,9 min).
 
 ## La base
 

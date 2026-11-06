@@ -29,9 +29,12 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 // disparaît à zéro (M134 : les envois notés, `buyer_proposals`).
 // Mission 135 — `buyer_relaunch` : un lien de sélection resté 48 h sans réponse, « Relancer M. et Mme
 // Lambert : sélection envoyée le 04/11, pas de réponse » ; une 2e relance 5 jours après, pas au-delà.
+// Mission 136 — `buyer_watch` : ce que la veille de la nuit a trouvé, « 2 nouveaux biens pour la
+// famille Keller », ou un bien trouvé pour plusieurs acquéreurs, « 2 acquéreurs pour … » (M134).
 export type SuiviTaskKind =
   | 'visit'
   | 'propose_buyers'
+  | 'buyer_watch'
   | 'buyer_relaunch'
   | 'market_update'
   | 'prospect'
@@ -45,10 +48,11 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   follow_up: 0,
   visit: 1,
   propose_buyers: 2,
-  buyer_relaunch: 3,
-  market_update: 4,
-  buyer_recontact: 5,
-  prospect: 6,
+  buyer_watch: 3,
+  buyer_relaunch: 4,
+  market_update: 5,
+  buyer_recontact: 6,
+  prospect: 7,
 };
 
 export type SuiviTask = {
@@ -80,6 +84,8 @@ export type SuiviTask = {
   // Mission 135 — la relance : le jour d'envoi de la sélection, et son lien expiré.
   sentOn?: string;
   linkExpired?: boolean;
+  // Mission 136 — un bien trouvé par la veille pour plusieurs acquéreurs : lesquels.
+  watchBuyers?: { id: string; name: string }[];
 };
 
 export type SuiviTaskInput = {
@@ -233,7 +239,10 @@ export function isTaskDue(task: SuiviTask, today: string): boolean {
 // Le retard en jours (0 : aujourd'hui) ; un démarchage ou une visite n'a pas de date prévue : dus
 // dès qu'ils existent, jamais en retard.
 export function taskLateDays(task: SuiviTask, today: string): number {
-  return task.kind === 'visit' || task.kind === 'prospect' || task.kind === 'propose_buyers'
+  return task.kind === 'visit' ||
+    task.kind === 'prospect' ||
+    task.kind === 'propose_buyers' ||
+    task.kind === 'buyer_watch'
     ? 0
     : Math.max(0, daysBetween(task.dueOn, today));
 }

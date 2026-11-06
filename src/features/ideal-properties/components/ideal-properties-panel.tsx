@@ -79,6 +79,11 @@ type Market = IdealSearchResult & { ok: true };
 
 const keyOf = selectionKey;
 
+const dayLabel = (day: string): string => {
+  const [, month, date] = day.split('-');
+  return `${date}/${month}`;
+};
+
 const CATEGORY_TONE: Record<IdealCategory, string> = {
   strong:
     'border-emerald-200 bg-emerald-50 text-emerald-800 stage:border-emerald-400/30 stage:bg-emerald-500/10 stage:text-emerald-200',
@@ -102,9 +107,10 @@ function agencyItem(hit: BuyerHit): SelectionItemInput {
   };
 }
 
-function marketItem(entry: CategorizedCandidate): SelectionItemInput {
+function marketItem(entry: CategorizedCandidate, seenOn: string | null = null): SelectionItemInput {
   const { candidate } = entry;
   return {
+    seenOn,
     source: 'listing',
     reference: candidate.url,
     label: idealLabel(candidate),
@@ -123,6 +129,7 @@ export function IdealPropertiesPanel({
   budgetWarning,
   current = [],
   presented = false,
+  watch = null,
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
@@ -134,6 +141,8 @@ export function IdealPropertiesPanel({
   marketReady: boolean;
   marketBlocked: string | null;
   budgetWarning: string | null;
+  // Mission 136 — ce que la veille a trouvé cette semaine : le jour du passage, ses biens rangés.
+  watch?: { seenOn: string; entries: CategorizedCandidate[] } | null;
 }) {
   const demo = useDemoMode();
   const router = useRouter();
@@ -305,6 +314,54 @@ export function IdealPropertiesPanel({
   const showMarket = (entry: CategorizedCandidate): boolean =>
     layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url });
 
+  const watchEntries = (watch?.entries ?? []).filter(showMarket);
+  // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
+  const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
+
+  // Une annonce du marché : sa photo, son libellé neutre, son prix « affiché le », ses critères.
+  const hitRow = (entry: CategorizedCandidate, seenOn: string, testId = 'ideal-market-hit') => {
+    const item = marketItem(entry, seenOn);
+    const photo = entry.candidate.photoUrls[0];
+    return (
+      <li
+        key={entry.candidate.url}
+        data-testid={testId}
+        data-category={entry.category}
+        className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 ${CATEGORY_TONE[entry.category]}`}
+      >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={displayPhotoUrl(photo)}
+            alt=""
+            className="h-16 w-24 shrink-0 rounded-lg bg-zinc-100 object-cover"
+          />
+        ) : null}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+            {item.label}
+          </span>
+          <span className="text-sm">
+            {[
+              entry.candidate.price != null ? formatEuro(entry.candidate.price) : null,
+              seenOnLabel(seenOn),
+              entry.criteriaTotal > 0
+                ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
+                : null,
+            ]
+              .filter((part): part is string => part != null)
+              .join(' · ')}
+          </span>
+          {entry.gaps.length > 0 ? <span className="text-xs">{entry.gaps.join(' · ')}</span> : null}
+          {entry.toCheck.length > 0 ? (
+            <span className="text-xs">À vérifier : {entry.toCheck.join(', ')}</span>
+          ) : null}
+        </div>
+        {checkbox(item)}
+      </li>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
       {/* Essai de Jean-Guy (26/10) : la sélection n'apparaît qu'une fois, ici, chaque bien avec sa
@@ -355,6 +412,25 @@ export function IdealPropertiesPanel({
                 {checkbox(item)}
               </li>
             ))}
+          </ul>
+        </section>
+      ) : null}
+      {/* Mission 136 — « Nouveau cette semaine » : la veille de la nuit, en tête, prêt à retenir. */}
+      {watchEntries.length > 0 && watch ? (
+        <section
+          id="nouveau"
+          className={`${card} flex flex-col gap-3 p-5`}
+          data-testid="ideal-watch"
+        >
+          <div className="flex flex-col gap-0.5">
+            <h2 className={sectionTitle}>Nouveau cette semaine</h2>
+            <p className={hintText}>
+              Trouvés par la veille le {dayLabel(watch.seenOn)} : arrivés sur le marché depuis sa
+              recherche précédente. À vérifier avant de les proposer.
+            </p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {watchEntries.map((entry) => hitRow(entry, watch.seenOn, 'ideal-watch-hit'))}
           </ul>
         </section>
       ) : null}
@@ -484,7 +560,9 @@ export function IdealPropertiesPanel({
                 : ''}
             </p>
             {IDEAL_CATEGORIES.map((category) => {
-              const entries = market.categorized.byCategory[category].filter(showMarket);
+              const entries = market.categorized.byCategory[category].filter(
+                (entry) => showMarket(entry) && !watchUrls.has(entry.candidate.url),
+              );
               return (
                 <div
                   key={category}
@@ -504,54 +582,7 @@ export function IdealPropertiesPanel({
                     </p>
                   ) : (
                     <ul className="flex flex-col gap-2">
-                      {entries.map((entry) => {
-                        const item = marketItem(entry);
-                        const photo = entry.candidate.photoUrls[0];
-                        return (
-                          <li
-                            key={entry.candidate.url}
-                            data-testid="ideal-market-hit"
-                            data-category={category}
-                            className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 ${CATEGORY_TONE[category]}`}
-                          >
-                            {photo ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={displayPhotoUrl(photo)}
-                                alt=""
-                                className="h-16 w-24 shrink-0 rounded-lg bg-zinc-100 object-cover"
-                              />
-                            ) : null}
-                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                              <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
-                                {item.label}
-                              </span>
-                              <span className="text-sm">
-                                {[
-                                  entry.candidate.price != null
-                                    ? formatEuro(entry.candidate.price)
-                                    : null,
-                                  seenOnLabel(market.seenOn),
-                                  entry.criteriaTotal > 0
-                                    ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
-                                    : null,
-                                ]
-                                  .filter((part): part is string => part != null)
-                                  .join(' · ')}
-                              </span>
-                              {entry.gaps.length > 0 ? (
-                                <span className="text-xs">{entry.gaps.join(' · ')}</span>
-                              ) : null}
-                              {entry.toCheck.length > 0 ? (
-                                <span className="text-xs">
-                                  À vérifier : {entry.toCheck.join(', ')}
-                                </span>
-                              ) : null}
-                            </div>
-                            {checkbox(item)}
-                          </li>
-                        );
-                      })}
+                      {entries.map((entry) => hitRow(entry, market.seenOn))}
                     </ul>
                   )}
                 </div>
