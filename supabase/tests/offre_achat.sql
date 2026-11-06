@@ -57,6 +57,18 @@ begin
     raise exception 'FAIL 1: un bon avec une date de validité est accepté';
   exception when check_violation then null;
   end;
+  -- Une offre ne naît pas périmée.
+  begin
+    insert into public.buyer_documents
+      (agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256,
+       signature_paths, valid_until)
+    values ('138aaaaa-0000-0000-0000-000000000000', '138ccccc-0000-0000-0000-000000000001',
+            'purchase_offer', 'v1', '{}', 'OFFRE', repeat('a', 64),
+            array['138aaaaa-0000-0000-0000-000000000000/o/signature-1.png'],
+            (now() at time zone 'Europe/Paris')::date - 1);
+    raise exception 'FAIL 1: une offre déjà périmée est acceptée';
+  exception when check_violation then null;
+  end;
   insert into public.buyer_documents
     (id, agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256,
      signature_paths, valid_until)
@@ -65,11 +77,26 @@ begin
           repeat('a', 64), array['138aaaaa-0000-0000-0000-000000000000/o/signature-1.png',
                                  '138aaaaa-0000-0000-0000-000000000000/o/signature-2.png'],
           current_date + 7),
-         ('138eeeee-0000-0000-0000-000000000002', '138aaaaa-0000-0000-0000-000000000000',
-          '138ccccc-0000-0000-0000-000000000001', 'purchase_offer', 'v1', '{}', 'OFFRE PASSÉE',
-          repeat('a', 64), array['138aaaaa-0000-0000-0000-000000000000/p/signature-1.png'],
-          current_date - 1);
+         -- Valable jusqu'à aujourd'hui (jour de Paris) : elle se signe et reçoit une réponse.
+         ('138eeeee-0000-0000-0000-000000000003', '138aaaaa-0000-0000-0000-000000000000',
+          '138ccccc-0000-0000-0000-000000000001', 'purchase_offer', 'v1', '{}', 'OFFRE DU JOUR',
+          repeat('a', 64), array['138aaaaa-0000-0000-0000-000000000000/j/signature-1.png'],
+          (now() at time zone 'Europe/Paris')::date),
+         ('138eeeee-0000-0000-0000-000000000004', '138aaaaa-0000-0000-0000-000000000000',
+          '138ccccc-0000-0000-0000-000000000001', 'visit_voucher', 'v1', '{}', 'BON',
+          repeat('a', 64), array['138aaaaa-0000-0000-0000-000000000000/b/signature-1.png'],
+          null);
 end $$;
+-- Une offre devenue périmée depuis : posée hors des déclencheurs, pour éprouver la réponse.
+set local session_replication_role = replica;
+insert into public.buyer_documents
+  (id, agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256,
+   signature_paths, valid_until)
+values ('138eeeee-0000-0000-0000-000000000002', '138aaaaa-0000-0000-0000-000000000000',
+        '138ccccc-0000-0000-0000-000000000001', 'purchase_offer', 'v1', '{}', 'OFFRE PASSÉE',
+        repeat('a', 64), array['138aaaaa-0000-0000-0000-000000000000/p/signature-1.png'],
+        current_date - 1);
+set local session_replication_role = origin;
 
 -- §2 — la réponse du vendeur.
 do $$
@@ -93,17 +120,45 @@ begin
   exception when check_violation then null;
   end;
   begin
-    insert into public.buyer_document_acceptances (agency_id, document_id, decision, signer_name, signature_path)
+    insert into public.buyer_document_acceptances (agency_id, document_id, decision, signer_names, signature_paths)
     values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001', 'accepted',
-            'M. Lefebvre', '138bbbbb-0000-0000-0000-000000000000/x.png');
+            array['M. Lefebvre'], array['138bbbbb-0000-0000-0000-000000000000/x.png']);
     raise exception 'FAIL 2: une signature hors du dossier de l''agence est acceptée';
   exception when check_violation then null;
   end;
+  begin
+    insert into public.buyer_document_acceptances (agency_id, document_id, decision, signer_names, signature_paths)
+    values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001', 'accepted',
+            array['M. Lefebvre', 'Mme Lefebvre'], array['138aaaaa-0000-0000-0000-000000000000/o/v1.png']);
+    raise exception 'FAIL 2: deux signataires pour une seule signature sont acceptés';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_document_acceptances (agency_id, document_id, decision, signer_names, signature_paths)
+    values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001', 'refused',
+            array['M. Lefebvre'], array['138aaaaa-0000-0000-0000-000000000000/o/v1.png']);
+    raise exception 'FAIL 2: un refus signé est accepté';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_document_acceptances (agency_id, document_id, decision)
+    values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000004', 'refused');
+    raise exception 'FAIL 2: une réponse sur un bon de visite est acceptée';
+  exception when check_violation then null;
+  end;
+  -- Un couple accepte, chacun signe.
   insert into public.buyer_document_acceptances
-    (agency_id, document_id, decision, signer_name, signature_path, decided_at)
+    (agency_id, document_id, decision, signer_names, signature_paths, decided_at)
   values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001', 'accepted',
-          'M. Lefebvre', '138aaaaa-0000-0000-0000-000000000000/o/vendeur.png', now() - interval '9 days');
-  if (select decided_at from public.buyer_document_acceptances) < now() - interval '1 minute' then
+          array['M. Lefebvre', 'Mme Lefebvre'],
+          array['138aaaaa-0000-0000-0000-000000000000/o/vendeur-1.png',
+                '138aaaaa-0000-0000-0000-000000000000/o/vendeur-2.png'],
+          now() - interval '9 days');
+  -- Le dernier jour de validité, un « Je refuse » sans signature.
+  insert into public.buyer_document_acceptances (agency_id, document_id, decision)
+  values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000003', 'refused');
+  if (select decided_at from public.buyer_document_acceptances
+      where document_id = '138eeeee-0000-0000-0000-000000000001') < now() - interval '1 minute' then
     raise exception 'FAIL 2: l''heure de la réponse n''est pas celle de la base';
   end if;
   begin
@@ -113,7 +168,8 @@ begin
   exception when unique_violation then null;
   end;
   begin
-    update public.buyer_document_acceptances set decision = 'refused';
+    update public.buyer_document_acceptances set decision = 'refused'
+    where document_id = '138eeeee-0000-0000-0000-000000000001';
     raise exception 'FAIL 2: une réponse se modifie';
   exception when check_violation then null;
   end;
@@ -125,6 +181,20 @@ begin
   insert into public.buyer_document_links (agency_id, document_id, token_hash, audience)
   values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001',
           repeat('c', 64), 'seller');
+  -- Sans destinataire dit, le lien va aux acquéreurs (le code de la partie A).
+  insert into public.buyer_document_links (agency_id, document_id, token_hash)
+  values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000004',
+          repeat('e', 64));
+  if (select audience from public.buyer_document_links where token_hash = repeat('e', 64)) <> 'visitor' then
+    raise exception 'FAIL 3: un lien sans destinataire ne va pas aux acquéreurs';
+  end if;
+  begin
+    insert into public.buyer_document_links (agency_id, document_id, token_hash, audience)
+    values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000004',
+            repeat('f', 64), 'seller');
+    raise exception 'FAIL 3: un lien vendeur sur un bon de visite est accepté';
+  exception when check_violation then null;
+  end;
   begin
     insert into public.buyer_document_links (agency_id, document_id, token_hash, audience)
     values ('138aaaaa-0000-0000-0000-000000000000', '138eeeee-0000-0000-0000-000000000001',
@@ -168,7 +238,7 @@ select set_config('request.jwt.claims',
 set local role authenticated;
 do $$
 begin
-  if (select count(*) from public.buyer_document_acceptances) <> 1 then
+  if (select count(*) from public.buyer_document_acceptances) <> 2 then
     raise exception 'FAIL 4: l''agence ne lit pas la réponse du vendeur';
   end if;
 end $$;
@@ -198,8 +268,8 @@ reset role;
 do $$
 begin
   delete from public.buyers where id = '138ccccc-0000-0000-0000-000000000001';
-  if (select count(*) from public.buyer_documents where kind = 'purchase_offer' and buyer_id is null) <> 2
-     or (select count(*) from public.buyer_document_acceptances) <> 1 then
+  if (select count(*) from public.buyer_documents where kind = 'purchase_offer' and buyer_id is null) <> 3
+     or (select count(*) from public.buyer_document_acceptances) <> 2 then
     raise exception 'FAIL 5: la fiche supprimée emporte l''offre ou sa réponse';
   end if;
 end $$;

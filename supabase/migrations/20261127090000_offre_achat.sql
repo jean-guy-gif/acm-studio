@@ -7,10 +7,13 @@
 --   1. `buyer_documents` reçoit le genre `purchase_offer` et sa date de validité (`valid_until`,
 --      obligatoire pour une offre, absente d'un bon) ; le document reste figé à la signature, et ne
 --      disparaît ni avec la fiche ni avec le compte (partie A).
+--      Une offre ne naît jamais déjà périmée (jour de Paris).
 --   2. `buyer_document_acceptances` : la réponse du vendeur, une fois — « Bon pour acceptation »
---      signé au doigt, ou « Je refuse » —, datée par la base, au plus tard le dernier jour de
---      validité ; jamais modifiée ; écrite par le serveur seul (lien public du vendeur).
---   3. `buyer_document_links.audience` : le lien du visiteur (bon) ou celui du vendeur (offre).
+--      signé au doigt par chaque propriétaire (deux au plus : un couple, une indivision), ou « Je
+--      refuse », sans signature —, datée par la base, au plus tard le dernier jour de validité ;
+--      jamais modifiée ; écrite par le serveur seul (lien public du vendeur).
+--   3. `buyer_document_links.audience` : le lien des acquéreurs (bon ou offre) ou celui du vendeur
+--      (offre seulement).
 --   4. `project_meeting_conclusions` : le n° de mandat, les honoraires et leur charge, saisis une
 --      fois à la première offre d'un mandat signé, repris ensuite (décision du 06/11).
 --
@@ -29,6 +32,26 @@ alter table public.buyer_documents
     (kind = 'purchase_offer') = (valid_until is not null)
   );
 
+-- Une offre se signe valable au moins jusqu'au jour même (jour de Paris).
+create function public.check_buyer_offer_validity()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.kind = 'purchase_offer'
+     and new.valid_until < (now() at time zone 'Europe/Paris')::date then
+    raise exception 'buyer_documents : une offre ne naît pas périmée' using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+revoke all on function public.check_buyer_offer_validity() from public, anon, authenticated;
+
+create trigger buyer_documents_offer_validity
+  before insert on public.buyer_documents
+  for each row execute function public.check_buyer_offer_validity();
+
 -- 2. La réponse du vendeur.
 create table public.buyer_document_acceptances (
   id uuid primary key default gen_random_uuid(),
@@ -36,12 +59,18 @@ create table public.buyer_document_acceptances (
   agency_id uuid not null references public.agencies (id) on delete cascade,
   document_id uuid not null unique references public.buyer_documents (id) on delete cascade,
   decision text not null check (decision in ('accepted', 'refused')),
-  signer_name text check (signer_name is null or char_length(signer_name) between 2 and 160),
-  -- L'image de la signature « Bon pour acceptation », sous le dossier de l'agence.
-  signature_path text,
+  -- Chaque propriétaire qui signe « Bon pour acceptation », et l'image de sa signature, sous le
+  -- dossier de l'agence ; un refus ne porte ni nom ni signature.
+  signer_names text[],
+  signature_paths text[],
   decided_at timestamptz not null default now(),
   constraint buyer_document_acceptances_signed check (
-    decision = 'refused' or (signature_path is not null and signer_name is not null)
+    case decision
+      when 'accepted' then
+        coalesce(cardinality(signer_names), 0) between 1 and 2
+        and coalesce(cardinality(signature_paths), 0) = coalesce(cardinality(signer_names), 0)
+      else signer_names is null and signature_paths is null
+    end
   )
 );
 
@@ -59,6 +88,7 @@ set search_path = public
 as $$
 declare
   v_valid_until date;
+  v_value text;
 begin
   if tg_op = 'UPDATE' then
     raise exception 'buyer_document_acceptances : une réponse ne se modifie pas' using errcode = 'check_violation';
@@ -72,10 +102,17 @@ begin
   if (now() at time zone 'Europe/Paris')::date > v_valid_until then
     raise exception 'buyer_document_acceptances : l''offre n''est plus valable' using errcode = 'check_violation';
   end if;
-  if new.signature_path is not null
-     and new.signature_path !~ ('^' || new.agency_id::text || '/[^./][^/]*(/[^./][^/]*)*\.png$') then
-    raise exception 'buyer_document_acceptances : une signature hors du dossier de l''agence' using errcode = 'check_violation';
-  end if;
+  foreach v_value in array coalesce(new.signature_paths, '{}'::text[]) loop
+    if v_value is null
+       or v_value !~ ('^' || new.agency_id::text || '/[^./][^/]*(/[^./][^/]*)*\.png$') then
+      raise exception 'buyer_document_acceptances : une signature hors du dossier de l''agence' using errcode = 'check_violation';
+    end if;
+  end loop;
+  foreach v_value in array coalesce(new.signer_names, '{}'::text[]) loop
+    if v_value is null or char_length(btrim(v_value)) not between 2 and 160 then
+      raise exception 'buyer_document_acceptances : un nom de signataire invalide' using errcode = 'check_violation';
+    end if;
+  end loop;
   new.decided_at := now();
   return new;
 end $$;
@@ -93,9 +130,26 @@ create policy buyer_document_acceptances_agency_read on public.buyer_document_ac
 revoke all on public.buyer_document_acceptances from anon, authenticated;
 grant select on public.buyer_document_acceptances to authenticated;
 
--- 3. À qui va le lien.
+-- 3. À qui va le lien : aux acquéreurs (le bon, leur copie de l'offre), ou au vendeur (une offre
+--    seulement). Le déclencheur de la partie A vérifie en plus le genre du document.
 alter table public.buyer_document_links
   add column audience text not null default 'visitor' check (audience in ('visitor', 'seller'));
+
+create or replace function public.check_buyer_document_link()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.buyer_documents d
+    where d.id = new.document_id and d.agency_id = new.agency_id
+      and (new.audience = 'visitor' or d.kind = 'purchase_offer')
+  ) then
+    raise exception 'buyer_document_links : le document n''est pas de cette agence, ou pas une offre pour le vendeur' using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
 
 -- 4. Le mandat signé : son numéro, ses honoraires et leur charge.
 alter table public.project_meeting_conclusions
