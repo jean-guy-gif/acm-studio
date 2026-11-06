@@ -57,7 +57,12 @@ export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
 
 type BuyerPageProps = {
   params: Promise<{ buyerId: string }>;
-  searchParams: Promise<{ enregistre?: string; modifier?: string; rapide?: string }>;
+  searchParams: Promise<{
+    enregistre?: string;
+    modifier?: string;
+    rapide?: string;
+    ajuste?: string;
+  }>;
 };
 
 const STEP_BAR: Record<JourneyStatus, string> = {
@@ -81,7 +86,10 @@ const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
 // e-mail ; ses quatre étapes ; UNE prochaine étape, en bloc plein ; sa sélection ; ce qui s'est
 // passé ; « Rapprocher », gratuit. Une fiche archivée ou d'une autre agence est introuvable (M93).
 export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
-  const [{ buyerId }, { enregistre, modifier, rapide }] = await Promise.all([params, searchParams]);
+  const [{ buyerId }, { enregistre, modifier, rapide, ajuste }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
   const [selection, profile, allVisits, dossiers] = await Promise.all([
@@ -105,7 +113,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     getAgencyProspecting(counted).catch(() => null),
     profile
       ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-      : Promise.resolve({ selections: [], letters: [], proposals: [], failed: true }),
+      : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
@@ -135,6 +143,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     selections: history.selections,
     letters: history.letters,
     proposals: history.proposals,
+    events: history.events,
     presentedAt: facts.presentedAt,
     linkAt: facts.linkAt ?? null,
     answeredAt: facts.answeredAt ?? null,
@@ -158,6 +167,24 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       <Link href="/acquereurs" className={backLink}>
         ← Acquéreurs
       </Link>
+
+      {/* Mission 135 — un ajustement appliqué depuis ses refus relance le rapprochement (gratuit). */}
+      {ajuste && matches != null ? (
+        <p role="status" className={alertOk} data-testid="buyer-adjusted">
+          Recherche ajustée ·{' '}
+          <Link
+            href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+            className="font-semibold underline underline-offset-2"
+            data-testid="buyer-adjusted-matches"
+          >
+            {matches === 0
+              ? 'aucun bien de l’agence ne correspond pour l’instant'
+              : matches === 1
+                ? '1 bien de l’agence correspond'
+                : `${matches} biens de l’agence correspondent`}
+          </Link>
+        </p>
+      ) : null}
 
       {enregistre ? (
         <p role="status" className={alertOk} data-testid="buyer-saved">

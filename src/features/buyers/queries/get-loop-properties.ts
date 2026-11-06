@@ -21,6 +21,7 @@ import { comparableFacts } from '@/features/buyer-prospecting/services/prospect-
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
+import { readPages } from '@/lib/supabase/read-pages';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 134 — les biens qui appellent les acquéreurs de l'agence, lus en une vague : les dossiers
@@ -32,20 +33,6 @@ const DAY = 86_400_000;
 
 // Une colonne `numeric` revient en texte de l'API : convertie avant la liste d'autorisation.
 const num = toNumber;
-
-// Lu par pages de 1 000, jusqu'à la dernière (M108) : une liste coupée ferait reproposer un bien.
-const PAGE = 1000;
-async function readPages<T>(
-  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
-): Promise<{ data: T[]; error: boolean }> {
-  const all: T[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await page(from, from + PAGE - 1);
-    if (error) return { data: [], error: true };
-    all.push(...(data ?? []));
-    if (!data || data.length < PAGE) return { data: all, error: false };
-  }
-}
 
 const competitorKey = (row: { id: string; listing_url: string | null }): string => {
   const listing = listingIdentityKey(row.listing_url);

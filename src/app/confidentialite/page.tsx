@@ -187,7 +187,11 @@ export default function ConfidentialitePage() {
               proposer aux acquéreurs qui lui correspondent : l’outil prépare un message et le lien
               de leur sélection, sans rien envoyer lui-même ; l’agence garde, pour chaque acquéreur,
               le bien proposé (décrit par ses caractéristiques, jamais par une adresse), le jour où
-              le conseiller a noté l’envoi et qui l’a noté.
+              le conseiller a noté l’envoi et qui l’a noté. L’agence garde aussi le jour où le lien
+              de sa sélection a été partagé et ses relances (deux au plus, quand il n’a pas
+              répondu), pour rappeler au conseiller de le relancer ; et, quand ses refus le
+              suggèrent, l’ajustement de sa recherche que le conseiller a choisi d’appliquer, daté.
+              Aucun message n’est envoyé par l’outil.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

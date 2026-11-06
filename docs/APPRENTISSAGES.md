@@ -142,6 +142,7 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 06/11 · M134 · Une retenue de concurrent s'achève juste après « Import en cours… » : un e2e qui ouvre le Suivi aussitôt ne voit pas encore la tâche ; relire la page (`expect.poll` avec `page.goto`) jusqu'à elle. Avant d'accuser le code, sonder la page en question sur l'essai (un script Playwright de 20 lignes avec l'en-tête de contournement) : la tâche y était.
 - 06/11 · M134 · Safari et iPad refusent une copie ou une fenêtre ouverte APRÈS l'attente d'une action serveur : préparer d'abord par un geste à part (« Préparer son lien »), puis copier ou ouvrir dans le geste suivant. Le relecteur l'a vu, pas les tests.
 - 06/11 · M134 · Une liste lue sans `.range` est coupée à 1 000 lignes sans erreur : un chargeur de toute l'agence lit par pages (`readPages`, `.order('id')`). Durées : architecte 6 min, gardien-sql 3 min, relecteur 6 min puis 1,5 min sur le delta ; suite e2e 10,2 min (9 tests).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

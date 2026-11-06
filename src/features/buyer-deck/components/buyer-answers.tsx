@@ -89,7 +89,9 @@ function SuggestionRow({ buyerId, suggestion }: { buyerId: string; suggestion: A
         setError(result.error);
         return;
       }
-      router.refresh();
+      // Mission 135 — appliquée, la fiche dit ce que le rapprochement donne désormais.
+      if (action === applySuggestion) router.push(`/acquereurs/${buyerId}?ajuste=1`);
+      else router.refresh();
     });
   return (
     <li

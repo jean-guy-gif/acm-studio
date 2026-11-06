@@ -9,6 +9,7 @@ import {
   removeDossierLink,
 } from '@/features/buyer-dossier/actions/dossier-links';
 import { BuyerGoneNotice } from '@/features/buyer-dossier/components/buyer-gone-notice';
+import { recordLinkShared } from '@/features/buyers/actions/relaunch';
 import {
   dossierShareHrefs,
   dossierShareMessage,
@@ -75,7 +76,9 @@ export function DossierLinkButton({
           marcher ; la réponse déjà reçue reste.
         </p>
       ) : null}
-      {created ? <DossierLinkShare url={created.url} advisorFirstName={advisorFirstName} /> : null}
+      {created ? (
+        <DossierLinkShare url={created.url} advisorFirstName={advisorFirstName} buyerId={buyerId} />
+      ) : null}
       {links.length > 0 ? (
         <ul className="flex flex-col gap-1 text-sm">
           {links.map((item) => (
@@ -118,11 +121,18 @@ export function DossierLinkButton({
 export function DossierLinkShare({
   url,
   advisorFirstName,
+  buyerId = null,
 }: {
   url: string;
   advisorFirstName: string | null;
+  // Mission 135 — le premier partage est noté : c'est lui qui « envoie » la sélection (relance à
+  // 48 h sans réponse). En fond, sans retenir le geste.
+  buyerId?: string | null;
 }) {
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
+  const shared = () => {
+    if (buyerId) void recordLinkShared(buyerId).catch(() => undefined);
+  };
   const text = dossierShareMessage(url, advisorFirstName);
   const hrefs = dossierShareHrefs(text);
   return (
@@ -142,6 +152,7 @@ export function DossierLinkShare({
           className={btnPrimary}
           data-testid="dossier-share-copy"
           onClick={() => {
+            shared();
             navigator.clipboard
               ?.writeText(text)
               .then(() => setCopied('ok'))
@@ -150,7 +161,12 @@ export function DossierLinkShare({
         >
           Copier
         </button>
-        <a className={btnSecondary} href={hrefs.sms} data-testid="dossier-share-sms">
+        <a
+          className={btnSecondary}
+          href={hrefs.sms}
+          data-testid="dossier-share-sms"
+          onClick={shared}
+        >
           SMS
         </a>
         <a
@@ -159,10 +175,16 @@ export function DossierLinkShare({
           target="_blank"
           rel="noopener noreferrer"
           data-testid="dossier-share-whatsapp"
+          onClick={shared}
         >
           WhatsApp
         </a>
-        <a className={btnSecondary} href={hrefs.email} data-testid="dossier-share-email">
+        <a
+          className={btnSecondary}
+          href={hrefs.email}
+          data-testid="dossier-share-email"
+          onClick={shared}
+        >
           E-mail
         </a>
       </div>

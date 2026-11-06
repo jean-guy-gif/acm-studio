@@ -399,3 +399,51 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
     await expect(page.getByTestId('buyer-timeline')).toContainText('Bien proposé');
   });
 });
+
+// Mission 135 — « Des fiches qui font visiter » : la sélection des Lambert, partagée il y a 3 jours
+// sans réponse, fait naître sa relance ; elle se fait sur place depuis « À faire aujourd'hui ».
+// Les deux refus « Le prix » des Keller proposent un ajustement, qui s'applique, se date et change
+// leurs correspondances. « Ce mois-ci » est en tête de la liste.
+test('des fiches qui font visiter : la relance sur place, l’ajustement appliqué', async ({
+  page,
+}) => {
+  await login(page, demoCredentials());
+  await freshDemo(page);
+
+  await test.step('Relancer M. et Mme Lambert, sur place', async () => {
+    await page.goto('/suivi');
+    const task = page.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert' });
+    await expect(task).toContainText(/sélection envoyée le \d{2}\/\d{2}, pas de réponse/);
+    await task.getByTestId('buyer-relaunch-open').click();
+    await task.getByTestId('buyer-relaunch-prepare').click();
+    const message = task.getByTestId('buyer-relaunch-message');
+    await expect(message).toContainText('Avez-vous pu regarder la sélection envoyée le');
+    await expect(message).toContainText('/dossier/');
+    expect(await message.innerText()).not.toMatch(/disponible|€/);
+    await task.getByTestId('buyer-relaunch-record').click();
+    await expect(task.getByTestId('buyer-relaunch-done')).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert' }),
+    ).toHaveCount(0);
+  });
+
+  await test.step('Les refus des Keller : l’ajustement s’applique', async () => {
+    await page.goto('/acquereurs');
+    await expect(page.getByTestId('buyers-month')).toContainText(/^Ce mois-ci : /);
+    const kellerRow = page.getByTestId('buyer-row').filter({ hasText: 'Famille Keller' });
+    await expect(kellerRow.getByTestId('buyer-row-last-answer')).toContainText(
+      'Pas pour moi · Le prix',
+    );
+    await kellerRow.getByRole('link', { name: 'Famille Keller' }).click();
+    const suggestion = page.locator('[data-testid="answer-suggestion"][data-kind="price"]');
+    await expect(suggestion).toContainText(/budget plafond à 1\s579\s000\s€/);
+    await suggestion.getByRole('button', { name: /Appliquer|Accepter/ }).click();
+    await expect(page).toHaveURL(/\?ajuste=1$/);
+    await expect(page.getByTestId('buyer-adjusted-matches')).toBeVisible();
+    await expect(page.getByTestId('buyer-timeline')).toContainText(
+      'Recherche ajustée : Budget plafond',
+    );
+    await expect(suggestion).toHaveCount(0);
+  });
+});
