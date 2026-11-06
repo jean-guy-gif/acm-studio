@@ -107,7 +107,11 @@ function asCandidate(property: BuyerLoopProperty, price: number): CompetitorCand
 }
 
 // Un indispensable ★ que le bien contredit.
-function starContradicted(buyer: Buyer, property: BuyerLoopProperty, price: number): boolean {
+export function starContradicted(
+  buyer: Buyer,
+  property: BuyerLoopProperty,
+  price: number,
+): boolean {
   if (
     buyer.mustHave.includes('bedrooms') &&
     buyer.bedroomsMin != null &&

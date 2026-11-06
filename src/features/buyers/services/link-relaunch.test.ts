@@ -7,6 +7,7 @@ import {
   parisMonthStart,
 } from '@/features/buyers/services/buyers-month';
 import {
+  bestBien,
   relaunchDue,
   relaunchMessage,
   type RelaunchFacts,
@@ -127,6 +128,7 @@ describe('un lien sans réponse devient une relance', () => {
           generalCondition: null,
         },
       },
+      fits: true,
       sentOn: '2026-11-03',
       url: 'https://acm/dossier/abc',
       advisorFirstName: 'Carl',
@@ -139,6 +141,62 @@ describe('un lien sans réponse devient une relance', () => {
     expect(text).toMatch(/voulez-vous la visiter samedi \?/);
     expect(text).toContain('https://acm/dossier/abc');
     expect(text).not.toMatch(/disponible|€/);
+  });
+});
+
+describe('le bien du message ne ment pas', () => {
+  const property = (over: Record<string, unknown> = {}) => ({
+    propertyType: 'house',
+    roomsCount: 5,
+    surfaceArea: 140,
+    city: 'Vence',
+    bedroomsCount: 4,
+    floor: null,
+    hasElevator: null,
+    hasPool: true,
+    outdoorSpaces: [],
+    parkingTypes: [],
+    energyRating: null,
+    generalCondition: null,
+    ...over,
+  });
+  const lambert = {
+    name: 'M. et Mme Lambert',
+    cities: ['Vence'],
+    propertyTypes: ['house'],
+    budgetMax: 790_000,
+    pool: true,
+    mustHave: ['cities', 'pool'],
+  } as never;
+
+  it('une ★ remplie et aucune contredite : il coche ce qu’il cherche', () => {
+    const best = bestBien(lambert, [{ property: property(), price: 779_000 }]);
+    expect(best?.fits).toBe(true);
+  });
+
+  it('une ★ contredite (pas de piscine), ou aucune remplie : il ne le dit pas', () => {
+    expect(
+      bestBien(lambert, [{ property: property({ hasPool: false }), price: 779_000 }])?.fits,
+    ).toBe(false);
+    const noStar = { ...(lambert as object), mustHave: ['budget'] } as never;
+    // Un prix inconnu ne remplit jamais la ★ du budget.
+    expect(bestBien(noStar, [{ property: property(), price: null }])?.fits).toBe(false);
+    const text = relaunchMessage({
+      buyer: {
+        name: 'M. et Mme Lambert',
+        pool: true,
+        outdoor: null,
+        parking: null,
+        elevator: null,
+      },
+      bien: { property: property({ hasPool: false }) as never },
+      fits: false,
+      sentOn: '2026-11-03',
+      url: 'u',
+      advisorFirstName: null,
+    });
+    expect(text).not.toMatch(/coche/);
+    expect(text).toMatch(/Dites-moi quels biens vous voulez visiter\./);
   });
 });
 
@@ -205,6 +263,19 @@ describe('les refus affinent la recherche', () => {
       [no('a', ['price'], { price: 1_580_000 }), no('b', ['price'], { price: 1_650_000 })],
     );
     expect(suggestion?.patch).toMatchObject({ budgetMax: 1_579_000 });
+  });
+
+  it('la commune déjà retirée : la suggestion disparaît d’elle-même (M122)', () => {
+    expect(
+      answerSuggestions(
+        buyer({ cities: ['Vence', 'Saint-Paul-de-Vence'] }),
+        [],
+        [
+          no('a', ['district'], { city: 'La Colle-sur-Loup' }),
+          no('b', ['district'], { city: 'La Colle-sur-Loup' }),
+        ],
+      ),
+    ).toEqual([]);
   });
 
   it('un seul refus, ou « Autre » : rien à proposer', () => {

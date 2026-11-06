@@ -436,6 +436,9 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
       'Pas pour moi · Le prix',
     );
     await kellerRow.getByRole('link', { name: 'Famille Keller' }).click();
+    const before = Number(
+      /· (\d+)/.exec(await page.getByTestId('buyer-matches-link').innerText())?.[1] ?? -1,
+    );
     const suggestion = page.locator('[data-testid="answer-suggestion"][data-kind="price"]');
     await expect(suggestion).toContainText(/budget plafond à 1\s579\s000\s€/);
     await suggestion.getByRole('button', { name: /Appliquer|Accepter/ }).click();
@@ -445,5 +448,11 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
       'Recherche ajustée : Budget plafond',
     );
     await expect(suggestion).toHaveCount(0);
+    // Le budget baissé change ses correspondances : moins de biens qu'avant.
+    const after = Number(
+      /· (\d+)/.exec(await page.getByTestId('buyer-matches-link').innerText())?.[1] ?? -1,
+    );
+    expect(before).toBeGreaterThan(0);
+    expect(after).toBeLessThan(before);
   });
 });

@@ -577,6 +577,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <Link
                 href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
                 className={`${btnSecondary} w-full`}
+                data-testid="buyer-matches-link"
               >
                 Voir les correspondances · {matches}
               </Link>

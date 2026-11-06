@@ -1,7 +1,11 @@
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { addDays } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
-import { starsFilled, type BuyerLoopProperty } from '@/features/buyers/services/property-buyers';
+import {
+  starContradicted,
+  starsFilled,
+  type BuyerLoopProperty,
+} from '@/features/buyers/services/property-buyers';
 import type { Buyer } from '@/features/buyers/types';
 
 // Mission 135 — « Un lien sans réponse devient une relance ». Pur.
@@ -60,17 +64,20 @@ export function relaunchDue(facts: RelaunchFacts, now: Date): RelaunchDue | null
   return { dueOn, rank: 2, sentOn, expired: !facts.linkActive };
 }
 
-// Le bien de la sélection qui coche le plus de ses ★ (à égalité, l'ordre de la sélection).
+// Le bien de la sélection qui coche le plus de ses ★ (à égalité, l'ordre de la sélection), et s'il
+// « coche ce qu'il cherche » : au moins une ★ remplie, aucune contredite. Un prix inconnu (vendeur
+// à relancer, M119) ne remplit jamais la ★ du budget.
 export function bestBien<T extends { property: BuyerLoopProperty; price: number | null }>(
   buyer: Buyer,
   biens: T[],
-): T | null {
-  let best: T | null = null;
+): { bien: T; fits: boolean } | null {
+  let best: { bien: T; fits: boolean } | null = null;
   let bestCount = -1;
   for (const bien of biens) {
-    const count = starsFilled(buyer, bien.property, bien.price ?? 0).length;
+    const price = bien.price ?? Number.NaN;
+    const count = starsFilled(buyer, bien.property, price).length;
     if (count > bestCount) {
-      best = bien;
+      best = { bien, fits: count > 0 && !starContradicted(buyer, bien.property, price) };
       bestCount = count;
     }
   }
@@ -87,13 +94,15 @@ const dayLabel = (day: string): string => {
 export function relaunchMessage(input: {
   buyer: Pick<Buyer, 'name' | 'pool' | 'outdoor' | 'parking' | 'elevator'>;
   bien: { property: BuyerLoopProperty } | null;
+  // Le bien coche-t-il vraiment ce qu'il cherche (une ★ remplie, aucune contredite) ?
+  fits?: boolean;
   sentOn: string;
   url: string;
   advisorFirstName: string | null;
 }): string {
   const lines = [`Bonjour ${input.buyer.name},`];
   const ask = `Avez-vous pu regarder la sélection envoyée le ${dayLabel(input.sentOn)} ?`;
-  if (input.bien) {
+  if (input.bien && input.fits) {
     const p = input.bien.property;
     const noun = propertyPhrase({ propertyType: p.propertyType, city: null });
     const has: string[] = [];
@@ -124,3 +133,5 @@ export function relaunchMessage(input: {
 
 export const RELAUNCH_FAILED = 'La relance n’a pas pu être préparée. Réessayez.';
 export const RELAUNCH_NOT_DUE = 'Pas de relance due pour cet acquéreur.';
+export const RELAUNCH_CONTACT_FAILED =
+  'La relance est notée, mais l’échange n’a pas pu être écrit sur sa fiche : notez-le sur sa fiche.';
