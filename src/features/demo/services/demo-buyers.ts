@@ -108,7 +108,8 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     // Mme Garcia (décision de Jean-Guy, 06/11).
     pool: true,
     mustHave: ['cities', 'pool'],
-    contactedDaysAgo: 2,
+    // Mission 135 — le contact précède la sélection partagée il y a 3 jours.
+    contactedDaysAgo: 4,
   }),
   venceHouse({
     name: 'Famille Moreau',

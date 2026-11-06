@@ -8,6 +8,7 @@ import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
+import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
 import {
   readMarketUpdates,
@@ -268,17 +269,22 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               ) : null}
             </span>
           </span>
-          <SuiviTaskButton
-            href={line.href}
-            label={line.button}
-            open={
-              task.kind === 'follow_up'
-                ? { projectId: task.projectId, panel: 'relance' }
-                : task.kind === 'market_update'
-                  ? { projectId: task.projectId, panel: 'point' }
-                  : null
-            }
-          />
+          {task.kind === 'buyer_relaunch' && task.buyerId ? (
+            // Mission 135 — la relance d'un lien sans réponse se fait sur place.
+            <BuyerRelaunchTask buyerId={task.buyerId} label={line.button} />
+          ) : (
+            <SuiviTaskButton
+              href={line.href}
+              label={line.button}
+              open={
+                task.kind === 'follow_up'
+                  ? { projectId: task.projectId, panel: 'relance' }
+                  : task.kind === 'market_update'
+                    ? { projectId: task.projectId, panel: 'point' }
+                    : null
+              }
+            />
+          )}
         </span>
       </li>
     );

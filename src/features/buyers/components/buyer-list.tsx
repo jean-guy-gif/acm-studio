@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { lastAnswerLabel } from '@/features/buyers/services/buyers-month';
 import { badgeBrand, badgeNeutral, card, emptyState } from '@/components/ui/styles';
 import {
   buyerBudgetLabel,
@@ -26,6 +27,7 @@ export function BuyerList({
   query,
   progress = new Map(),
   now = new Date(),
+  lastAnswers = new Map(),
 }: {
   buyers: Buyer[];
   advisorId: string | null;
@@ -33,6 +35,8 @@ export function BuyerList({
   // Essai de Jean-Guy (26/10) : les faits des étapes, pour le bouton de chaque carte.
   progress?: ReadonlyMap<string, BuyerProgressFacts>;
   now?: Date;
+  // Mission 135 — sa dernière réponse, toutes sélections confondues.
+  lastAnswers?: ReadonlyMap<string, { at: string; answer: string; reasons: string[] }>;
 }) {
   if (buyers.length === 0) {
     return (
@@ -92,6 +96,14 @@ export function BuyerList({
                   ) : null}
                 </div>
                 <p className="text-sm text-zinc-600 stage:text-white/70">{facts.join(' · ')}</p>
+                {lastAnswers.get(buyer.id) ? (
+                  <p
+                    className="text-xs text-zinc-500 stage:text-white/60"
+                    data-testid="buyer-row-last-answer"
+                  >
+                    {lastAnswerLabel(lastAnswers.get(buyer.id)!)}
+                  </p>
+                ) : null}
               </div>
               {/* Mission 130 B — chaque ligne dit sa prochaine étape et depuis quand ; le lien la
                   fait, comme le bloc de la fiche. */}

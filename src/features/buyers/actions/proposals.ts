@@ -179,7 +179,8 @@ export async function prepareProposalLink(
 }
 
 // Mission 134 (§ 6, 7) — « Envoyé, suivant » : le bien est noté proposé à cet acquéreur, une fois,
-// à l'heure de la base (`buyer_proposals`) ; c'est un échange sur sa fiche (132) et la tâche du bien
+// à l'heure de la base (`buyer_proposals`) ; ce n'est pas un échange (seul ce qui vient de
+// l'acquéreur en est un, décision du 06/11) ; il se lit sur sa fiche et la tâche du bien
 // s'en vide. ACM n'envoie rien : il note. « Passer » n'appelle pas cette action.
 export async function recordProposal(
   buyerId: unknown,

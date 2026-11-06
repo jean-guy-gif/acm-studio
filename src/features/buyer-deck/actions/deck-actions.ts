@@ -5,7 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
-import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
+import {
+  adjustmentSummary,
+  answerSuggestions,
+} from '@/features/buyer-deck/services/answer-suggestions';
 import { clampPitch } from '@/features/buyer-deck/services/buyer-deck';
 import {
   isItemAnswer,
@@ -25,6 +28,7 @@ import { computeDeck } from '@/features/buyer-deck/queries/load-deck';
 import { toBuyer } from '@/features/buyers/services/buyer-row';
 import { toSelection } from '@/features/ideal-properties/services/ideal-selection';
 import type { Json } from '@/lib/supabase/database.types';
+import { recordAppError } from '@/lib/app-errors/record';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -347,11 +351,32 @@ export async function applySuggestion(buyerId: unknown, kind: unknown): Promise<
       ...(patch.budgetMax !== undefined ? { budget_max: patch.budgetMax } : {}),
       ...(patch.budgetIdeal !== undefined ? { budget_ideal: patch.budgetIdeal } : {}),
       ...(patch.mustHave !== undefined ? { must_have: patch.mustHave } : {}),
+      ...(patch.cities !== undefined ? { cities: patch.cities } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq('id', buyer.id)
     .eq('agency_id', profile.agency_id);
   if (error) return { ok: false, error: FAILED };
+  // Mission 135 — l'ajustement est daté pour « Ce qui s'est passé » ; un échec n'annule pas la
+  // fiche modifiée, il entre au journal (M100).
+  const { error: eventError } = await client.from('buyer_events').insert({
+    agency_id: profile.agency_id,
+    buyer_id: buyer.id,
+    kind: 'search_adjusted',
+    reason: kind,
+    summary: adjustmentSummary(buyer, patch),
+    created_by: profile.id,
+  });
+  if (eventError) {
+    await recordAppError({
+      source: 'server',
+      page: '/acquereurs/[buyerId]',
+      error: `Ajustement de recherche non daté (${kind}) : ${eventError.message}`,
+      scope: '[applySuggestion]',
+      agencyId: profile.agency_id,
+      userId: profile.id,
+    });
+  }
   revalidate(buyer.id);
   return { ok: true };
 }

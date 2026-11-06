@@ -26,7 +26,11 @@ import {
   DEMO_LIVE_MINUTES,
   DEMO_READINESS_MISSING,
   DEMO_STAGES,
+  DEMO_KELLER_REFUSALS_DAYS_AGO,
+  DEMO_LAMBERT_SHARED_DAYS_AGO,
+  demoKellerRefusalsPlan,
   demoKellerSelectionPlan,
+  demoLambertSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
@@ -37,6 +41,7 @@ import { addressKey } from '@/features/prospecting/services/address-key';
 import { PROPERTY_PHOTO_BUCKET } from '@/features/subject-property-photos/constants';
 import { depositPropertyPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
 import { validatePhotoBytes } from '@/features/subject-property-photos/services/validate-photo-upload';
+import { hashDossierToken, newDossierToken } from '@/features/buyer-dossier/services/dossier-token';
 import { exampleDecisionRow } from '@/features/welcome/services/example-decision';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database, Json } from '@/lib/supabase/database.types';
@@ -228,6 +233,131 @@ async function seedKellerSelection(
   });
   const { error: itemsError } = await supabase.from('buyer_selection_items').insert(rows);
   return !itemsError;
+}
+
+const daysBefore = (now: Date, days: number) =>
+  new Date(now.getTime() - days * 86_400_000).toISOString();
+
+// Une sélection de démo, datée, avec ses biens (annonces de la démo).
+async function insertDatedSelection(
+  supabase: Client,
+  closer: Closer,
+  buyerId: string,
+  createdAt: string,
+  plan: ReturnType<typeof demoLambertSelectionPlan>,
+): Promise<{ selectionId: string; itemIds: string[] } | null> {
+  const { data: selection, error } = await supabase
+    .from('buyer_selections')
+    .insert({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      created_by: closer.id,
+      created_at: createdAt,
+    })
+    .select('id')
+    .single();
+  if (error || !selection) return null;
+  const rows = plan.map((item, index) => {
+    const listing = DEMO_LISTINGS.find((entry) => entry.id === item.listingId)!;
+    return {
+      agency_id: closer.agencyId,
+      selection_id: selection.id,
+      position: index + 1,
+      source: item.source,
+      reference: demoListingUrl(listing),
+      label: item.label,
+      listed_price: item.listedPrice,
+      price_seen_on: item.priceSeenOn,
+      category: item.category,
+      gaps: item.gaps,
+      snapshot: (item.snapshot ?? null) as Json | null,
+      imported: (item.imported ?? null) as unknown as Json | null,
+    };
+  });
+  const { data: items, error: itemsError } = await supabase
+    .from('buyer_selection_items')
+    .insert(rows)
+    .select('id, position');
+  if (itemsError || !items) return null;
+  return {
+    selectionId: selection.id,
+    itemIds: [...items].sort((a, b) => a.position - b.position).map((item) => item.id),
+  };
+}
+
+// Mission 135 — les Lambert : leur sélection partagée il y a 3 jours (un lien valable, un partage
+// noté), sans réponse : « Relancer M. et Mme Lambert » est dû. Le jeton du lien n'est jamais montré.
+async function seedLambertSharedSelection(
+  supabase: Client,
+  closer: Closer,
+  buyerId: string,
+  now: Date,
+): Promise<boolean> {
+  const at = daysBefore(now, DEMO_LAMBERT_SHARED_DAYS_AGO);
+  const seeded = await insertDatedSelection(
+    supabase,
+    closer,
+    buyerId,
+    at,
+    demoLambertSelectionPlan(now),
+  );
+  if (!seeded) return false;
+  const { error: linkError } = await supabase.from('buyer_dossier_links').insert({
+    agency_id: closer.agencyId,
+    buyer_id: buyerId,
+    selection_id: seeded.selectionId,
+    created_by: closer.id,
+    token_hash: hashDossierToken(newDossierToken()),
+    created_at: at,
+    expires_at: new Date(now.getTime() + 27 * 86_400_000).toISOString(),
+  });
+  if (linkError) return false;
+  const { error: eventError } = await supabase.from('buyer_events').insert({
+    agency_id: closer.agencyId,
+    buyer_id: buyerId,
+    kind: 'link_shared',
+    selection_id: seeded.selectionId,
+    occurred_at: at,
+    created_by: closer.id,
+  });
+  return !eventError;
+}
+
+// Mission 135 — les Keller : une sélection présentée il y a 21 jours, deux biens refusés pour « Le
+// prix » (la base refuse une réponse sur une sélection présentée : les réponses d'abord).
+async function seedKellerRefusals(
+  supabase: Client,
+  closer: Closer,
+  buyerId: string,
+  now: Date,
+): Promise<boolean> {
+  const at = daysBefore(now, DEMO_KELLER_REFUSALS_DAYS_AGO);
+  const seeded = await insertDatedSelection(
+    supabase,
+    closer,
+    buyerId,
+    at,
+    demoKellerRefusalsPlan(now),
+  );
+  if (!seeded) return false;
+  const { error: answersError } = await supabase.from('buyer_item_responses').insert(
+    seeded.itemIds.map((itemId) => ({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      selection_item_id: itemId,
+      answer: 'no',
+      reasons: ['price'],
+      answered_during: 'presentation',
+      answered_at: at,
+    })),
+  );
+  if (answersError) return false;
+  const { error: presentedError } = await supabase
+    .from('buyer_selections')
+    .update({ presented_at: at })
+    .eq('id', seeded.selectionId)
+    .eq('agency_id', closer.agencyId);
+  return !presentedError;
 }
 
 export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
@@ -596,7 +726,16 @@ export async function seedDemoDossiers(
   if (!buyers) return false;
   const keller = buyers.find((buyer) => buyer.name === 'Famille Keller');
   if (!keller || !mouginsProjectId) return true;
-  return seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now);
+  if (!(await seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now))) {
+    return false;
+  }
+  // Mission 135 — la relance des Lambert et les refus des Keller.
+  const lambert = buyers.find((buyer) => buyer.name === 'M. et Mme Lambert');
+  if (!lambert) return false;
+  return (
+    (await seedLambertSharedSelection(supabase, closer, lambert.id, now)) &&
+    (await seedKellerRefusals(supabase, closer, keller.id, now))
+  );
 }
 
 // « Préparer ma démo » : cinq dossiers, s'il n'en a pas encore.

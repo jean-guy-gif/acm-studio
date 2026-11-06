@@ -1,5 +1,6 @@
 import { NO_REASONS, type ItemAnswer, type NoReason } from '@/features/buyer-deck/types';
 import type { BuyerCriterion, BuyerInput } from '@/features/buyers/types';
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 122 — les réponses nourrissent la fiche, sans la changer : quand une même raison de
@@ -17,6 +18,8 @@ export type AnswerForSuggestion = {
   answeredAt: string;
   surfaceArea: number | null;
   price: number | null;
+  // Mission 135 — la commune du bien refusé, pour « Le quartier ».
+  city?: string | null;
 };
 
 // Le changement de fiche qu'une suggestion propose : uniquement des champs de la fiche.
@@ -28,6 +31,8 @@ export type BuyerPatch = {
   budgetMax?: number;
   budgetIdeal?: number | null;
   mustHave?: BuyerCriterion[];
+  // Mission 135 — les communes de la fiche, sans celle que ses refus écartent.
+  cities?: string[];
 };
 
 export type AnswerSuggestion = {
@@ -119,9 +124,55 @@ function proposal(
         text: `passer le budget plafond à ${formatEuro(value)} ?`,
       };
     }
+    // Mission 135 (décision de Jean-Guy, 06/11) — « Le quartier » : la commune de la fiche qui porte
+    // au moins deux de ces refus se propose au retrait, écrite comme sur la fiche ; jamais la
+    // dernière commune ; des communes différentes ne donnent que le constat.
+    case 'district': {
+      const counts = new Map<string, number>();
+      for (const answer of refused) {
+        const key = answer.city ? communeKey(answer.city) : null;
+        if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      const [key, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
+      if (!key || count < 2) return undefined;
+      const city = buyer.cities.find((entry) => communeKey(entry) === key);
+      // Déjà retirée (« Accepter ») : la suggestion disparaît d'elle-même (M122).
+      if (!city) return null;
+      // Jamais la dernière commune : le constat seul.
+      if (buyer.cities.length < 2) return undefined;
+      return {
+        patch: { cities: buyer.cities.filter((entry) => communeKey(entry) !== key) },
+        text: `retirer ${city} de sa recherche ?`,
+      };
+    }
     default:
       return undefined;
   }
+}
+
+// Mission 135 — ce que l'ajustement a changé, écrit par le serveur pour « Ce qui s'est passé » :
+// « Budget plafond : 1 650 000 € → 1 579 000 € ». 200 caractères au plus.
+export function adjustmentSummary(buyer: BuyerInput, patch: BuyerPatch): string {
+  const parts: string[] = [];
+  if (patch.budgetMax !== undefined) {
+    parts.push(
+      `Budget plafond : ${buyer.budgetMax != null ? `${formatEuro(buyer.budgetMax)} → ` : ''}${formatEuro(patch.budgetMax)}`,
+    );
+  }
+  if (patch.surfaceMin !== undefined) {
+    parts.push(
+      `Surface minimum : ${buyer.surfaceMin != null ? `${formatSquareMeters(buyer.surfaceMin)} → ` : ''}${formatSquareMeters(patch.surfaceMin)}`,
+    );
+  }
+  if (patch.cities !== undefined) {
+    const removed = buyer.cities.filter((city) => !patch.cities!.includes(city));
+    parts.push(`Communes : ${removed.join(', ')} retirée${removed.length > 1 ? 's' : ''}`);
+  }
+  if (patch.outdoor !== undefined) parts.push('Extérieur indispensable');
+  if (patch.parking !== undefined) parts.push('Parking indispensable');
+  if (patch.worksAccepted !== undefined) parts.push('Travaux acceptés : non');
+  const text = parts.join(' · ') || 'Recherche ajustée';
+  return text.length > 200 ? `${text.slice(0, 199)}…` : text;
 }
 
 export function answerSuggestions(

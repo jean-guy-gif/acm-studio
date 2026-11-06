@@ -11,6 +11,8 @@ export type BuyerHistoryFacts = {
   letters: { at: string; label: string }[];
   // Mission 134 — les biens proposés (« Envoyé »), et sa réponse s'il a répondu par le lien.
   proposals: { at: string; label: string; answer: 'visit' | 'maybe' | 'no' | null }[];
+  // Mission 135 — ses relances et les ajustements de sa recherche.
+  events: { at: string; kind: 'relaunch' | 'search_adjusted'; summary: string | null }[];
   failed: boolean;
 };
 
@@ -21,7 +23,7 @@ export async function getBuyerHistory(
   agencyId: string,
   buyerId: string,
 ): Promise<BuyerHistoryFacts> {
-  const [selectionsRes, originsRes, proposalsRes] = await Promise.all([
+  const [selectionsRes, originsRes, proposalsRes, eventsRes] = await Promise.all([
     supabase
       .from('buyer_selections')
       .select('id, created_at')
@@ -39,6 +41,12 @@ export async function getBuyerHistory(
       .eq('agency_id', agencyId)
       .eq('buyer_id', buyerId)
       .order('sent_at', { ascending: false }),
+    supabase
+      .from('buyer_events')
+      .select('kind, occurred_at, summary')
+      .eq('agency_id', agencyId)
+      .eq('buyer_id', buyerId)
+      .in('kind', ['relaunch', 'search_adjusted']),
   ]);
   const proposalRows = proposalsRes.data ?? [];
   // Sa réponse par le lien, sur ce bien : dans n'importe laquelle de ses sélections (un bien proposé
@@ -121,7 +129,13 @@ export async function getBuyerHistory(
         answer: answer === 'visit' || answer === 'maybe' || answer === 'no' ? answer : null,
       };
     }),
+    events: (eventsRes.data ?? []).map((row) => ({
+      at: row.occurred_at,
+      kind: row.kind === 'relaunch' ? ('relaunch' as const) : ('search_adjusted' as const),
+      summary: row.summary,
+    })),
     failed:
+      eventsRes.error != null ||
       selectionsRes.error != null ||
       originsRes.error != null ||
       proposalsRes.error != null ||

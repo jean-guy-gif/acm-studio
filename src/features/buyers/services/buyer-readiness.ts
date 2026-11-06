@@ -18,13 +18,14 @@ export type BuyerReadinessInput = Pick<
   'status' | 'financing' | 'budgetMax' | 'createdAt' | 'statusChangedAt' | 'contactedAt'
 >;
 
-// Les échanges datés avec l'acquéreur : le contact déclaré, un changement de statut, la
-// présentation, sa réponse par le lien, une visite demandée ou faite, un bien proposé noté
-// « Envoyé » (M134, décision du 06/11 : l'envoi noté compte, la simple création d'un lien non). Un
-// courrier préparé n'est pas un échange avec lui.
+// Les échanges datés avec l'acquéreur : ce qui vient DE lui — le contact déclaré (« J'ai eu
+// l'acquéreur »), un changement de statut, la présentation, sa réponse par le lien, une visite
+// demandée ou faite. Ni un lien envoyé, ni un bien proposé (M134), ni une relance (M135) : un
+// acquéreur qui ne répond jamais sort de « Prêt à visiter » à 30 jours, sinon le compteur du Live
+// mentirait au vendeur (décision de Jean-Guy, 06/11).
 export function exchangeDates(
   buyer: Pick<Buyer, 'contactedAt' | 'statusChangedAt'>,
-  facts: Pick<BuyerProgressFacts, 'presentedAt' | 'answeredAt' | 'lastVisitAt' | 'lastProposalAt'>,
+  facts: Pick<BuyerProgressFacts, 'presentedAt' | 'answeredAt' | 'lastVisitAt'>,
 ): (string | null | undefined)[] {
   return [
     buyer.contactedAt,
@@ -32,7 +33,6 @@ export function exchangeDates(
     facts.presentedAt,
     facts.answeredAt,
     facts.lastVisitAt,
-    facts.lastProposalAt,
   ];
 }
 

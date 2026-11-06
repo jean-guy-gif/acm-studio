@@ -2,11 +2,14 @@ import 'server-only';
 
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
+import { getRelaunchFacts } from '@/features/buyers/queries/get-relaunch-facts';
 import { buyerReadiness } from '@/features/buyers/services/buyer-readiness';
+import { relaunchDue } from '@/features/buyers/services/link-relaunch';
 import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { createClient } from '@/lib/supabase/server';
 
+// Mission 135 — et « Relancer M. et Mme Lambert » : un lien resté 48 h sans réponse.
 // Mission 132 — « Reprendre contact avec la famille Keller » : une tâche par acquéreur actif de
 // l'agence (M59), due 30 jours après son dernier échange, à venir sinon. Les mêmes faits que la
 // fiche et la liste (`buyerReadiness`). Une lecture en échec ne fabrique aucune tâche et le dit
@@ -18,14 +21,38 @@ export async function getBuyerRecontactTasks(
   const { buyers, failed } = await readBuyers();
   if (failed) return { tasks: [], failed: true };
   if (buyers.length === 0) return { tasks: [], failed: false };
-  const progress = await getBuyersProgress(
-    await createClient(),
-    profile.agency_id,
-    buyers.map((buyer) => buyer.id),
-  );
-  if ([...progress.values()].some((facts) => facts.unread)) return { tasks: [], failed: true };
+  const supabase = await createClient();
+  const [progress, relaunch] = await Promise.all([
+    getBuyersProgress(
+      supabase,
+      profile.agency_id,
+      buyers.map((buyer) => buyer.id),
+    ),
+    // Mission 135 — la relance d'un lien sans réponse.
+    getRelaunchFacts(supabase, profile.agency_id, buyers),
+  ]);
+  if (relaunch.failed || [...progress.values()].some((facts) => facts.unread)) {
+    return { tasks: [], failed: true };
+  }
   const tasks: SuiviTask[] = [];
   for (const buyer of buyers) {
+    // Mission 135 — une relance due l'emporte sur « Reprendre contact » pour le même acquéreur.
+    const facts = relaunch.facts.get(buyer.id);
+    const due = facts ? relaunchDue(facts, now) : null;
+    if (due) {
+      tasks.push({
+        kind: 'buyer_relaunch',
+        projectId: '',
+        sellerName: '',
+        dueOn: due.dueOn,
+        buyerId: buyer.id,
+        buyerName: buyer.name,
+        count: due.rank,
+        sentOn: due.sentOn,
+        linkExpired: due.expired,
+      });
+      continue;
+    }
     const readiness = buyerReadiness(buyer, progress.get(buyer.id) ?? NO_PROGRESS, now);
     if (readiness.recontactOn == null) continue;
     tasks.push({

@@ -309,3 +309,44 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
     fromListing('mou-07', 'explore', [`À vérifier : ${BUYER_CRITERION_LABELS.pool}`]),
   ];
 }
+
+// Mission 135 — une annonce de la démo, telle qu'une sélection la porte.
+function demoListingItem(
+  scenarioId: 'vence' | 'mougins',
+  id: string,
+  now: Date,
+): DemoSelectionItemPlan {
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === scenarioId)!;
+  const listing = scenario.listings.find((entry) => entry.id === id)!;
+  const data = demoImportedData(listing, now);
+  return {
+    source: 'listing',
+    listingId: id,
+    label: labelOf(listing.propertyType, data),
+    listedPrice: data.price,
+    priceSeenOn: now.toISOString().slice(0, 10),
+    category: 'compromise',
+    gaps: [],
+    imported: data,
+    snapshot: {
+      propertyType: listing.propertyType,
+      city: data.city ?? null,
+      surfaceArea: data.surfaceArea ?? null,
+      roomsCount: data.roomsCount ?? null,
+    },
+  };
+}
+
+// Mission 135 — les Lambert : une sélection partagée il y a 3 jours, sans réponse (la relance de
+// leur lien est due). Deux maisons de Vence, dont celle à la piscine qu'ils veulent.
+export const DEMO_LAMBERT_SHARED_DAYS_AGO = 3;
+export function demoLambertSelectionPlan(now: Date): DemoSelectionItemPlan[] {
+  return [demoListingItem('vence', 'ven-02', now), demoListingItem('vence', 'ven-04', now)];
+}
+
+// Mission 135 — les Keller : une sélection présentée il y a 21 jours, deux biens refusés pour « Le
+// prix » (l'ajustement de leur recherche apparaît sur leur fiche, la règle de la 122).
+export const DEMO_KELLER_REFUSALS_DAYS_AGO = 21;
+export function demoKellerRefusalsPlan(now: Date): DemoSelectionItemPlan[] {
+  return [demoListingItem('mougins', 'mou-06', now), demoListingItem('mougins', 'mou-01', now)];
+}

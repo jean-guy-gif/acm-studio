@@ -11,7 +11,9 @@ import {
 } from '@/components/ui/styles';
 import { BuyerList } from '@/features/buyers/components/buyer-list';
 import { getBuyers } from '@/features/buyers/queries/get-buyers';
+import { getBuyersMonth } from '@/features/buyers/queries/get-buyers-month';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
+import { buyersMonthLine } from '@/features/buyers/services/buyers-month';
 import { filterBuyersByName, sortBuyers } from '@/features/buyers/services/buyer-criteria';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -27,13 +29,24 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   const query = q?.trim() || null;
   const [profile, all] = await Promise.all([getProfile(), getBuyers()]);
   const buyers = filterBuyersByName(sortBuyers(all, profile?.id ?? null), query);
-  const progress = profile
-    ? await getBuyersProgress(
-        await createClient(),
-        profile.agency_id,
-        buyers.map((buyer) => buyer.id),
-      )
-    : new Map();
+  const supabase = await createClient();
+  // Mission 135 — « Ce mois-ci » se compte sur toutes les fiches de l'agence, la recherche par nom
+  // n'y change rien.
+  const [progress, month] = profile
+    ? await Promise.all([
+        getBuyersProgress(
+          supabase,
+          profile.agency_id,
+          buyers.map((buyer) => buyer.id),
+        ),
+        getBuyersMonth(
+          supabase,
+          profile.agency_id,
+          all.map((buyer) => buyer.id),
+          new Date(),
+        ),
+      ])
+    : [new Map(), null];
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -54,6 +67,20 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
       {archive ? (
         <p role="status" className={alertOk} data-testid="buyer-archived-notice">
           La fiche de {archive} est archivée : elle n’apparaît plus dans vos listes.
+        </p>
+      ) : null}
+
+      {/* Mission 135 — ce que le conseiller voit de son efficacité : rien d'autre, aucun classement. */}
+      {month && !month.failed && all.length > 0 ? (
+        <p
+          className="text-sm font-semibold text-zinc-700 stage:text-white/80"
+          data-testid="buyers-month"
+        >
+          {buyersMonthLine(month.month)}
+        </p>
+      ) : month?.failed ? (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          « Ce mois-ci » n’a pas pu être lu : rechargez la page.
         </p>
       ) : null}
 
@@ -87,6 +114,7 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         advisorId={profile?.id ?? null}
         query={query}
         progress={progress}
+        lastAnswers={month?.lastAnswers ?? new Map()}
       />
     </div>
   );

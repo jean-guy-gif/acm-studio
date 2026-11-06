@@ -75,6 +75,7 @@ export async function getBuyerAnswers(
       answeredAt: response.answeredAt,
       surfaceArea: shown.get(item.id)?.surfaceArea ?? null,
       price: shown.get(item.id)?.price ?? null,
+      city: shown.get(item.id)?.city ?? null,
     });
   }
   return { lines, forSuggestions };
