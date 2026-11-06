@@ -105,6 +105,12 @@ export function sharesBaseInWords(base: number): string {
   return `${head}${ordinal}s`;
 }
 
+// « 10 000 » : les chiffres des tantièmes, groupés par milliers d'une espace, comme le modèle
+// (« ( 136 / 10 000 èmes) », décision de Jean-Guy, 06/11).
+export function groupedThousands(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 function offrantLine(offrant: Offrant): string {
   return `${offrant.civility} ${offrant.lastName} ${offrant.firstNames} né(e) le ${offrant.birthDate} à ${offrant.birthPlace} , de nationalité ${offrant.nationality} , ${offrant.profession}`;
 }
@@ -171,7 +177,7 @@ export function renderOffer(fields: OfferFields): RenderedDocument {
           `Adresse postale des biens : ${fields.propertyAddress}`,
           ...fields.lots.map(
             (lot) =>
-              `LOT NUMERO ${numberInWords(lot.number).toUpperCase()} ( ${lot.number} ) Description : ${lot.description} Et les ${numberInWords(lot.shares)} / ${sharesBaseInWords(lot.base)} ( ${lot.shares} / ${lot.base} èmes) des parties communes générales .`,
+              `LOT NUMERO ${numberInWords(lot.number).toUpperCase()} ( ${lot.number} ) Description : ${lot.description} Et les ${numberInWords(lot.shares)} / ${sharesBaseInWords(lot.base)} ( ${groupedThousands(lot.shares)} / ${groupedThousands(lot.base)} èmes) des parties communes générales .`,
           ),
         ],
       },
