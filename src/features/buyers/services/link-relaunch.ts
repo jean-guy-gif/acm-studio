@@ -134,5 +134,3 @@ export function relaunchMessage(input: {
 
 export const RELAUNCH_FAILED = 'La relance n’a pas pu être préparée. Réessayez.';
 export const RELAUNCH_NOT_DUE = 'Pas de relance due pour cet acquéreur.';
-export const RELAUNCH_CONTACT_FAILED =
-  'La relance est notée, mais l’échange n’a pas pu être écrit sur sa fiche : notez-le sur sa fiche.';

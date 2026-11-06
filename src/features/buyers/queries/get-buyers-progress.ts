@@ -35,19 +35,6 @@ export async function getBuyersProgress(
       row.visited_at && row.visited_at > row.requested_at ? row.visited_at : row.requested_at;
     if (!facts.lastVisitAt || at > facts.lastVisitAt) facts.lastVisitAt = at;
   }
-  // Mission 134 — le plus récent bien proposé à chaque fiche.
-  const { data: proposals, error: proposalsError } = await supabase
-    .from('buyer_proposals')
-    .select('buyer_id, sent_at')
-    .eq('agency_id', agencyId)
-    .in('buyer_id', buyerIds);
-  for (const row of proposals ?? []) {
-    const facts = progress.get(row.buyer_id);
-    if (!facts) continue;
-    if (!facts.lastProposalAt || row.sent_at > facts.lastProposalAt) {
-      facts.lastProposalAt = row.sent_at;
-    }
-  }
   const { data: selections, error: selectionsError } = await supabase
     .from('buyer_selections')
     .select('id, buyer_id, presented_at, created_at')
@@ -69,7 +56,7 @@ export async function getBuyersProgress(
     for (const facts of progress.values()) facts.unread = true;
     return progress;
   };
-  if (visitsError || selectionsError || proposalsError) return markUnread();
+  if (visitsError || selectionsError) return markUnread();
   const selectionIds = [...latest.values()].map((selection) => selection.id);
   if (selectionIds.length === 0) return progress;
   const [{ data: items, error: itemsError }, { data: links, error: linksError }] =
@@ -123,7 +110,6 @@ export async function getBuyersProgress(
       visitsToOrganize: progress.get(buyerId)?.visitsToOrganize ?? 0,
       visitsDone: progress.get(buyerId)?.visitsDone ?? 0,
       lastVisitAt: progress.get(buyerId)?.lastVisitAt ?? null,
-      lastProposalAt: progress.get(buyerId)?.lastProposalAt ?? null,
       selectionAt: selection.createdAt,
       linkAt: linked.get(selection.id) ?? null,
       answeredAt: answered.get(selection.id) ?? null,

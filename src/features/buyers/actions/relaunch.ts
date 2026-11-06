@@ -11,13 +11,11 @@ import {
   bestBien,
   relaunchDue,
   relaunchMessage,
-  RELAUNCH_CONTACT_FAILED,
   RELAUNCH_FAILED,
   RELAUNCH_NOT_DUE,
 } from '@/features/buyers/services/link-relaunch';
 import type { Buyer } from '@/features/buyers/types';
 import { toSelection } from '@/features/ideal-properties/services/ideal-selection';
-import { recordAppError } from '@/lib/app-errors/record';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -128,8 +126,8 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
   };
 }
 
-// « J'ai relancé » : la relance notée sur sa sélection (deux au plus, la base le garantit) et un
-// échange avec lui (132, `contacted_at`, l'heure du serveur).
+// « J'ai relancé » : la relance notée sur sa sélection (deux au plus, la base le garantit). Ce n'est
+// pas un échange avec lui : seul ce qui vient de l'acquéreur en est un (décision du 06/11).
 export async function recordBuyerRelaunch(buyerId: unknown): Promise<PlainRelaunchResult> {
   const active = await activeBuyer(buyerId);
   if (!active.ok) return active;
@@ -138,7 +136,6 @@ export async function recordBuyerRelaunch(buyerId: unknown): Promise<PlainRelaun
   if (failed) return { ok: false, error: RELAUNCH_FAILED };
   if (!own || !due) return { ok: false, error: RELAUNCH_NOT_DUE };
   const client = createServiceRoleClient();
-  const at = new Date().toISOString();
   const { error } = await client.from('buyer_events').insert({
     agency_id: agencyId,
     buyer_id: buyer.id,
@@ -147,24 +144,6 @@ export async function recordBuyerRelaunch(buyerId: unknown): Promise<PlainRelaun
     created_by: profileId,
   });
   if (error) return { ok: false, error: RELAUNCH_FAILED };
-  const { error: contactError } = await client
-    .from('buyers')
-    .update({ contacted_at: at, updated_at: at })
-    .eq('id', buyer.id)
-    .eq('agency_id', agencyId);
-  if (contactError) {
-    // La relance est notée ; l'échange (132) a échoué : dit au journal, et à l'écran.
-    await recordAppError({
-      source: 'server',
-      page: '/suivi',
-      error: `Relance notée, échange non écrit : ${contactError.message}`,
-      scope: '[recordBuyerRelaunch]',
-      agencyId,
-      userId: profileId,
-    });
-    revalidatePath('/suivi');
-    return { ok: false, error: RELAUNCH_CONTACT_FAILED };
-  }
   revalidatePath('/suivi');
   revalidatePath(`/acquereurs/${buyer.id}`);
   return { ok: true };

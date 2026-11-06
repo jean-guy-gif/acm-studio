@@ -18,8 +18,6 @@ export type BuyerProgressFacts = {
   answeredAt?: string | null;
   // Mission 132 — la plus récente visite demandée ou faite (un échange avec l'acquéreur).
   lastVisitAt?: string | null;
-  // Mission 134 — le plus récent bien proposé (« Envoyé ») : un échange avec l'acquéreur.
-  lastProposalAt?: string | null;
   // Une lecture en échec : l'avancement n'est pas connu, la fiche le dit (M98).
   unread?: boolean;
 };

@@ -11,8 +11,8 @@ const SUBJECT = 'Votre sélection';
 
 // Mission 135 (§ 2, 3) — la relance d'un lien sans réponse, sur place dans « À faire aujourd'hui » :
 // « Préparer le message » (un lien neuf vers la même sélection, le message court), puis Copier /
-// SMS / WhatsApp / E-mail à ses coordonnées, dans le geste (Safari, iPad) ; « J'ai relancé » note la
-// relance et un échange. ACM n'envoie rien.
+// SMS / WhatsApp / E-mail à ses coordonnées, dans le geste (Safari, iPad) ; « J’ai relancé » note la
+// relance (pas un échange : seul ce qui vient de l’acquéreur en est un). ACM n’envoie rien.
 export function BuyerRelaunchTask({
   buyerId,
   label,
