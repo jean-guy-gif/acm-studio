@@ -18,7 +18,7 @@ export function LiveTextsProvider({
   children,
 }: {
   language: TextLanguage;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <LiveTextsContext.Provider

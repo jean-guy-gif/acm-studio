@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { GOLD, PriceRankingView, Verdict } from '@/features/market-update/components/price-ranking';
+import { goneConclusionLabel } from '@/features/market-update/services/gone-listing-rule';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
@@ -184,7 +185,9 @@ function PriceBlock({
           <div className={kicker}>{gone ? t.conclusion : t.gap}</div>
           {gone && item.conclusion ? (
             <div className="font-title text-base leading-snug font-bold text-zinc-900">
-              {item.conclusion.label}
+              {language === 'fr'
+                ? item.conclusion.label
+                : goneConclusionLabel(item.conclusion, language)}
             </div>
           ) : gone ? (
             <>

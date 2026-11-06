@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
+
+import { frenchLeaks } from '@/test-fixtures/french-leaks';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -101,7 +103,7 @@ function tableClient(respond: (table: string) => { data: unknown }) {
   return { client, selects, signed };
 }
 
-function databaseWithTraps() {
+function databaseWithTraps(language = 'fr') {
   return tableClient((table) => {
     switch (table) {
       case 'projects':
@@ -112,6 +114,7 @@ function databaseWithTraps() {
             advisor_id: 'u1',
             status: 'meeting_completed',
             live_started_at: '2026-10-19T09:00:00.000Z',
+            language,
           },
         };
       case 'subject_properties':
@@ -253,12 +256,34 @@ function databaseWithTraps() {
   });
 }
 
-const load = async () => {
-  const db = databaseWithTraps();
+const load = async (language = 'fr') => {
+  const db = databaseWithTraps(language);
   const synthesis = (await loadSellerSynthesis(db.client as never, 'p1', 'a1'))!;
   const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
   return { db, synthesis, html };
 };
+
+// Mission 140 — la synthèse d'un vendeur anglophone : tout en anglais, les montants à l'anglaise,
+// les mentions légales de l'agence en français (décision de Jean-Guy, 06/11).
+describe('la synthèse dans la langue du vendeur', () => {
+  it('en anglais, rien ne reste du français hors des mentions légales et des noms propres', async () => {
+    const { synthesis, html } = await load('en');
+    expect(synthesis.language).toBe('en');
+    expect(html).toContain('Our meeting');
+    expect(html).toContain('The properties we looked at together');
+    expect(html).toMatch(/€\d{1,3}(,\d{3})+/);
+    // La justification est le texte du conseiller, écrit par lui : elle n'est pas traduite.
+    expect(
+      frenchLeaks(html, ['M. Vendeur', 'Antibes', 'Trois biens proches, le vôtre a un balcon.']),
+    ).toEqual([]);
+  });
+
+  it('en français, le document ne change pas', async () => {
+    const { synthesis, html } = await load();
+    expect(synthesis.language).toBe('fr');
+    expect(html).toContain('Notre rendez-vous');
+  });
+});
 
 describe('la synthèse au vendeur', () => {
   it('ne contient ni adresse, ni titre, ni lien d’annonce, ni « Vendu par », sur aucune page', async () => {

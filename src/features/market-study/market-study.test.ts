@@ -1,4 +1,6 @@
 import { createElement } from 'react';
+
+import { frenchLeaks } from '@/test-fixtures/french-leaks';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -245,6 +247,34 @@ function fakeClient(tables: Record<string, unknown[]>) {
 
 const AGENCY = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROJECT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+// Mission 140 — l'Étude d'un vendeur anglophone : tout en anglais, sauf les mentions légales.
+describe('l’Étude de marché dans la langue du vendeur', () => {
+  it('en anglais, rien ne reste du français hors des mentions légales et des noms propres', () => {
+    const study = buildMarketStudy({ ...input(), language: 'en' });
+    const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
+    expect(html).toContain('Market study');
+    expect(html).toContain('Where your price stands');
+    expect(
+      frenchLeaks(html, [
+        'M. et Mme Garcia',
+        'Biot',
+        'Agence Test',
+        '1 place du Marché, 06600 Antibes',
+        'Camille Martin',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('en français, le message d’envoi ne change pas ; en anglais, il est en anglais', () => {
+    expect(marketStudyShareMessage('https://x.test/e', 'Camille')).toContain(
+      'Bonjour, voici l’Étude de marché de votre bien',
+    );
+    expect(marketStudyShareMessage('https://x.test/e', 'Camille', 'en')).toContain(
+      'Hello, here is the market study for your property',
+    );
+  });
+});
 
 describe('le document de l’Étude de marché', () => {
   async function loadFixture(extra: Record<string, unknown[]> = {}) {

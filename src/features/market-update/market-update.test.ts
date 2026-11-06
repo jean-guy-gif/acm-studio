@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
+
+import { frenchLeaks } from '@/test-fixtures/french-leaks';
+import { marketUpdateShareMessage } from '@/features/market-update/services/market-update-share';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -510,6 +513,59 @@ describe('le document Point marché', () => {
     expect(html).toContain('data-testid="market-update-dangerous-band"');
     expect(html).toContain('Le plus dangereux, selon vous');
     expect(html).toContain('data-testid="ranking-dangerous"');
+  });
+
+  // Mission 140 — le Point marché d'un vendeur anglophone : tout en anglais, sauf les mentions légales.
+  it('en anglais, rien ne reste du français hors des mentions légales et des noms propres', () => {
+    const summary = buildMarketUpdateSummary(input());
+    const html = renderToStaticMarkup(
+      createElement(MarketUpdateDocument, {
+        document: {
+          language: 'en',
+          updateId: UPDATE,
+          madeAt: MADE_AT.toISOString(),
+          sellerName: 'Mr and Mrs Bernard',
+          propertyLabel: 'House · Vence',
+          subjectLabel: 'House · 5 rooms · 140 m² · Vence',
+          commune: 'Vence',
+          coverPhotoUrl: null,
+          summary: {
+            ...summary,
+            competitors: summary.competitors.map((item) => ({ ...item, label: 'House · Vence' })),
+          },
+          competitors: [],
+          agency: {
+            name: 'Agence Test',
+            logoUrl: null,
+            postalAddress: null,
+            professionalCard: 'CPI 0605',
+            professionalCardIssuer: 'CCI Nice',
+            financialGuarantee: null,
+            advisorName: 'Camille Martin',
+            advisorPhone: null,
+            advisorEmail: null,
+            advisorPhotoUrl: null,
+            advisorQr: null,
+          },
+          brandDeclarations: '',
+        },
+      }),
+    );
+    expect(html).toContain('Market update');
+    expect(html).toContain('Where your price stands');
+    expect(html).toMatch(/€\d{1,3}(,\d{3})+/);
+    expect(
+      frenchLeaks(html, ['Mr and Mrs Bernard', 'Vence', 'Agence Test', 'Camille Martin']),
+    ).toEqual([]);
+  });
+
+  it('le message d’envoi suit la langue ; en français il ne change pas', () => {
+    expect(marketUpdateShareMessage('https://x.test/p', '12/10/2026', 'Camille')).toContain(
+      'Bonjour, voici le Point marché depuis notre rendez-vous du 12/10/2026',
+    );
+    expect(marketUpdateShareMessage('https://x.test/p', '12/10/2026', 'Camille', 'en')).toContain(
+      'Hello, here is the market update since our meeting of 12/10/2026',
+    );
   });
 
   it('un concurrent hors Live compte dans les lignes, pas dans les pages (M110, M113)', async () => {
