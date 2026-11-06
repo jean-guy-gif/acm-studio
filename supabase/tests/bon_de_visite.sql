@@ -47,11 +47,15 @@ insert into public.buyer_selections (id, agency_id, buyer_id) values
 insert into public.buyer_selection_items (id, agency_id, selection_id, position, source, reference, label) values
   ('137fffff-0000-0000-0000-000000000001', '137aaaaa-0000-0000-0000-000000000000',
    '137eeeee-0000-0000-0000-000000000001', 1, 'listing', 'https://exemple.invalid/a', 'Maison · Mougins'),
+  ('137fffff-0000-0000-0000-000000000002', '137aaaaa-0000-0000-0000-000000000000',
+   '137eeeee-0000-0000-0000-000000000001', 2, 'listing', 'https://exemple.invalid/c', 'Maison · Valbonne'),
   ('137fffff-0000-0000-0000-000000000003', '137aaaaa-0000-0000-0000-000000000000',
    '137eeeee-0000-0000-0000-000000000003', 1, 'listing', 'https://exemple.invalid/b', 'Maison · Mougins');
 insert into public.buyer_visit_requests (id, agency_id, buyer_id, buyer_selection_item_id, requested_during) values
   ('13799999-0000-0000-0000-000000000001', '137aaaaa-0000-0000-0000-000000000000',
    '137ccccc-0000-0000-0000-000000000001', '137fffff-0000-0000-0000-000000000001', 'conseiller'),
+  ('13799999-0000-0000-0000-000000000002', '137aaaaa-0000-0000-0000-000000000000',
+   '137ccccc-0000-0000-0000-000000000001', '137fffff-0000-0000-0000-000000000002', 'conseiller'),
   ('13799999-0000-0000-0000-000000000003', '137aaaaa-0000-0000-0000-000000000000',
    '137ccccc-0000-0000-0000-000000000003', '137fffff-0000-0000-0000-000000000003', 'conseiller');
 
@@ -70,6 +74,12 @@ begin
     update public.agency_legal_identities set guarantee_amount = 0
     where agency_id = '137aaaaa-0000-0000-0000-000000000000';
     raise exception 'FAIL 1: une garantie à 0 € est acceptée';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.agency_legal_identities set updated_by = '13722222-2222-2222-2222-222222222222'
+    where agency_id = '137aaaaa-0000-0000-0000-000000000000';
+    raise exception 'FAIL 1: un auteur d''une autre agence est accepté';
   exception when check_violation then null;
   end;
   begin
@@ -96,6 +106,34 @@ begin
   if (select signed_at from public.buyer_documents where id = v_doc) < now() - interval '1 minute' then
     raise exception 'FAIL 2: l''heure de signature n''est pas celle de la base';
   end if;
+  -- L'empreinte est celle du texte, calculée par la base (celle envoyée est ignorée).
+  if (select content_sha256 from public.buyer_documents where id = v_doc)
+     <> encode(sha256(convert_to('BON DE VISITE…', 'UTF8')), 'hex') then
+    raise exception 'FAIL 2: l''empreinte n''est pas celle du texte';
+  end if;
+  begin
+    update public.buyer_documents set created_by = null where id = v_doc;
+    raise exception 'FAIL 2: l''auteur d''un document signé se vide à la main';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_documents
+      (agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256, signature_paths)
+    values ('137aaaaa-0000-0000-0000-000000000000', '137ccccc-0000-0000-0000-000000000001',
+            'visit_voucher', 'v1', '{}', 'x', repeat('a', 64),
+            array['137aaaaa-0000-0000-0000-000000000000/../137bbbbb-0000-0000-0000-000000000000/x.png']);
+    raise exception 'FAIL 2: un chemin qui remonte hors du dossier est accepté';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_documents
+      (agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256, signature_paths)
+    values ('137aaaaa-0000-0000-0000-000000000000', '137ccccc-0000-0000-0000-000000000001',
+            'visit_voucher', 'v1', '{}', 'x', repeat('a', 64),
+            array['137aaaaa-0000-0000-0000-000000000000/doc/signature.jpg']);
+    raise exception 'FAIL 2: une signature qui n''est pas un PNG est acceptée';
+  exception when check_violation then null;
+  end;
   begin
     update public.buyer_documents set rendered_text = 'autre texte' where id = v_doc;
     raise exception 'FAIL 2: un document signé se modifie';
@@ -141,15 +179,6 @@ begin
     raise exception 'FAIL 2: un genre hors liste est accepté';
   exception when check_violation then null;
   end;
-  begin
-    insert into public.buyer_documents
-      (agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256, signature_paths)
-    values ('137aaaaa-0000-0000-0000-000000000000', '137ccccc-0000-0000-0000-000000000001',
-            'visit_voucher', 'v1', '{}', 'x', 'pas-une-empreinte',
-            array['137aaaaa-0000-0000-0000-000000000000/x.png']);
-    raise exception 'FAIL 2: une empreinte mal formée est acceptée';
-  exception when check_violation then null;
-  end;
 end $$;
 
 -- §3 — les visites d'un bon, son lien.
@@ -159,10 +188,21 @@ declare
 begin
   insert into public.buyer_document_visits (document_id, visit_request_id, agency_id)
   values (v_doc, '13799999-0000-0000-0000-000000000001', '137aaaaa-0000-0000-0000-000000000000');
+  -- Plusieurs biens le même jour : une seconde visite de la même fiche, sur le même bon.
+  insert into public.buyer_document_visits (document_id, visit_request_id, agency_id)
+  values (v_doc, '13799999-0000-0000-0000-000000000002', '137aaaaa-0000-0000-0000-000000000000');
   begin
     insert into public.buyer_document_visits (document_id, visit_request_id, agency_id)
     values (v_doc, '13799999-0000-0000-0000-000000000003', '137aaaaa-0000-0000-0000-000000000000');
     raise exception 'FAIL 3: la visite d''une autre fiche est acceptée';
+  exception when check_violation then null;
+  end;
+  -- Le cas mixte : document et visite de A, l'agence de B.
+  delete from public.buyer_document_visits where visit_request_id = '13799999-0000-0000-0000-000000000002';
+  begin
+    insert into public.buyer_document_visits (document_id, visit_request_id, agency_id)
+    values (v_doc, '13799999-0000-0000-0000-000000000002', '137bbbbb-0000-0000-0000-000000000000');
+    raise exception 'FAIL 3: une visite rattachée à une autre agence est acceptée';
   exception when check_violation then null;
   end;
   insert into public.buyer_document_links (agency_id, document_id, token_hash)
@@ -188,16 +228,26 @@ begin
     if has_table_privilege('authenticated', 'public.' || v_table, 'insert')
        or has_table_privilege('authenticated', 'public.' || v_table, 'update')
        or has_table_privilege('authenticated', 'public.' || v_table, 'delete')
-       or has_table_privilege('anon', 'public.' || v_table, 'select') then
+       or has_table_privilege('anon', 'public.' || v_table, 'select')
+       or has_any_column_privilege('authenticated', 'public.' || v_table, 'insert')
+       or has_any_column_privilege('authenticated', 'public.' || v_table, 'update') then
       raise exception 'FAIL 4: le navigateur écrit dans %, ou un anonyme la lit', v_table;
     end if;
   end loop;
-  if not exists (select 1 from storage.buckets where id = 'signed-documents' and public = false) then
-    raise exception 'FAIL 4: le bucket des signatures n''est pas privé';
+  if not exists (
+    select 1 from storage.buckets
+    where id = 'signed-documents' and public = false and allowed_mime_types = array['image/png']
+  ) then
+    raise exception 'FAIL 4: le bucket des signatures n''est pas privé, ou accepte autre chose qu''un PNG';
   end if;
+  -- Aucune règle n'ouvre le bucket : ni en lecture (qual) ni en écriture (with_check), et chaque
+  -- règle de storage.objects nomme son bucket.
   if exists (
     select 1 from pg_policies
-    where schemaname = 'storage' and tablename = 'objects' and qual ilike '%signed-documents%'
+    where schemaname = 'storage' and tablename = 'objects'
+      and (coalesce(qual, '') ilike '%signed-documents%'
+           or coalesce(with_check, '') ilike '%signed-documents%'
+           or (coalesce(qual, '') || coalesce(with_check, '')) not ilike '%bucket_id%')
   ) then
     raise exception 'FAIL 4: une règle ouvre le bucket des signatures au navigateur';
   end if;
@@ -222,6 +272,7 @@ do $$
 begin
   if (select count(*) from public.agency_legal_identities) <> 0
      or (select count(*) from public.buyer_documents) <> 0
+     or (select count(*) from public.buyer_document_visits) <> 0
      or (select count(*) from public.buyer_document_links) <> 0 then
     raise exception 'FAIL 4: une autre agence lit les documents';
   end if;
@@ -233,7 +284,9 @@ set local role authenticated;
 do $$
 begin
   if (select count(*) from public.buyer_documents) <> 0
-     or (select count(*) from public.agency_legal_identities) <> 0 then
+     or (select count(*) from public.agency_legal_identities) <> 0
+     or (select count(*) from public.buyer_document_visits) <> 0
+     or (select count(*) from public.buyer_document_links) <> 0 then
     raise exception 'FAIL 4: un membre retiré lit les documents';
   end if;
 end $$;

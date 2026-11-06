@@ -53,6 +53,28 @@ create table public.agency_legal_identities (
 comment on table public.agency_legal_identities is
   'Mission 137 — l''identité légale de l''agence pour le bon de visite et l''offre d''achat ; écrite par le serveur seul, après le garde manager.';
 
+-- L'auteur de la dernière modification est de l'agence ; la date de modification est celle de la base.
+create function public.check_agency_legal_identity()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.updated_by is not null and not exists (
+    select 1 from public.profiles p where p.id = new.updated_by and p.agency_id = new.agency_id
+  ) then
+    raise exception 'agency_legal_identities : l''auteur n''est pas de cette agence' using errcode = 'check_violation';
+  end if;
+  new.updated_at := now();
+  return new;
+end $$;
+
+revoke all on function public.check_agency_legal_identity() from public, anon, authenticated;
+
+create trigger agency_legal_identities_check
+  before insert or update on public.agency_legal_identities
+  for each row execute function public.check_agency_legal_identity();
+
 alter table public.agency_legal_identities enable row level security;
 create policy agency_legal_identities_agency_read on public.agency_legal_identities
   for select to authenticated
@@ -69,7 +91,7 @@ create table public.buyer_documents (
   kind text not null check (kind in ('visit_voucher')),
   template_version text not null check (char_length(template_version) between 1 and 40),
   -- Les champs remplis, tels que le texte les a reçus (relus par liste d'autorisation au serveur).
-  fields jsonb not null check (jsonb_typeof(fields) = 'object'),
+  fields jsonb not null check (jsonb_typeof(fields) = 'object' and pg_column_size(fields) <= 65536),
   -- Le texte rendu, figé à la signature, et son empreinte.
   rendered_text text not null check (char_length(rendered_text) between 1 and 60000),
   content_sha256 text not null check (content_sha256 ~ '^[0-9a-f]{64}$'),
@@ -99,7 +121,8 @@ begin
     -- Seule exception : un compte supprimé laisse le document, sans auteur (`on delete set null`,
     -- leçon de la M109 : un verrou ne bloque aucune suppression légitime).
     if new.created_by is null and old.created_by is not null
-       and (to_jsonb(new) - 'created_by') = (to_jsonb(old) - 'created_by') then
+       and (to_jsonb(new) - 'created_by') = (to_jsonb(old) - 'created_by')
+       and not exists (select 1 from public.profiles p where p.id = old.created_by) then
       return new;
     end if;
     raise exception 'buyer_documents : un document signé ne se modifie pas' using errcode = 'check_violation';
@@ -112,11 +135,15 @@ begin
   ) then
     raise exception 'buyer_documents : l''auteur n''est pas de cette agence' using errcode = 'check_violation';
   end if;
+  -- Sous le dossier de l'agence, sans « .. » ni segment caché, une image PNG.
   foreach v_path in array new.signature_paths loop
-    if v_path is null or split_part(v_path, '/', 1) <> new.agency_id::text then
+    if v_path is null
+       or v_path !~ ('^' || new.agency_id::text || '/[^./][^/]*(/[^./][^/]*)*\.png$') then
       raise exception 'buyer_documents : une signature hors du dossier de l''agence' using errcode = 'check_violation';
     end if;
   end loop;
+  -- L'empreinte est celle du texte figé, calculée par la base.
+  new.content_sha256 := encode(sha256(convert_to(new.rendered_text, 'UTF8')), 'hex');
   new.signed_at := now();
   return new;
 end $$;
@@ -223,6 +250,6 @@ grant select on public.buyer_document_links to authenticated;
 
 -- 5. Le bucket des signatures : privé, sans règle pour le navigateur (le serveur seul, par la clé
 --    de service, y écrit et en tire des liens signés courts).
-insert into storage.buckets (id, name, public)
-values ('signed-documents', 'signed-documents', false)
+insert into storage.buckets (id, name, public, allowed_mime_types, file_size_limit)
+values ('signed-documents', 'signed-documents', false, array['image/png'], 262144)
 on conflict (id) do nothing;
