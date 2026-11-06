@@ -67,6 +67,8 @@ export function liveBuyersReveal(
   };
 }
 
-export const liveBuyersTitle = (count: number): string =>
-  `${count} familles cherchent un bien comme le vôtre et sont prêtes à visiter`;
+// L'écran montré au vendeur : le chiffre en très grand, puis la phrase (décision de Jean-Guy, 06/11).
+export const LIVE_BUYERS_PHRASE =
+  'familles cherchent un bien comme le vôtre et sont prêtes à visiter';
+export const LIVE_BUYERS_PROMISE = 'Avec votre accord, je les contacte dès cette semaine.';
 export const LIVE_BUYERS_FINANCING = 'Financement validé';

@@ -151,17 +151,36 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
     // Mission 133 — le compteur caché : une pastille sans chiffre ni texte ; la bulle du conseiller,
     // puis « Montrer au vendeur » : 5 cartes anonymes ; le retour rend le même écran.
+    // Dans la barre du bas, à côté de « Précédent ».
     const dot = page.getByTestId('live-buyers-dot');
     await expect(dot).toBeVisible();
+    const previous = await page.getByRole('button', { name: '← Précédent' }).boundingBox();
+    const dotBox = await dot.boundingBox();
+    expect(
+      Math.abs(
+        (dotBox?.y ?? 0) +
+          (dotBox?.height ?? 0) / 2 -
+          ((previous?.y ?? 0) + (previous?.height ?? 0) / 2),
+      ),
+    ).toBeLessThan(12);
     expect((await dot.innerText()).trim()).toBe('');
     const before = page.url();
     await dot.click();
     await expect(page.getByTestId('live-buyers-bubble')).toContainText('5 acquéreurs prêts');
     await page.getByRole('button', { name: 'Montrer au vendeur' }).click();
     const screen = page.getByTestId('live-buyers-screen');
+    await expect(screen.getByTestId('live-buyers-count')).toHaveText('5');
     await expect(screen).toContainText(
-      '5 familles cherchent un bien comme le vôtre et sont prêtes à visiter',
+      'familles cherchent un bien comme le vôtre et sont prêtes à visiter',
     );
+    await expect(screen.getByTestId('live-buyers-promise')).toHaveText(
+      'Avec votre accord, je les contacte dès cette semaine.',
+    );
+    // « cherche depuis » : étalé sur plusieurs semaines dans la démo.
+    expect(
+      new Set(await screen.getByTestId('live-buyer-card').allInnerTexts()).size,
+    ).toBeGreaterThan(1);
+    await expect(screen.getByText(/cherche depuis \d+ semaines?/)).toHaveCount(5);
     await expect(screen.getByTestId('live-buyer-card')).toHaveCount(5);
     await expect(screen.getByText('Financement validé')).toHaveCount(5);
     const payload = await pagePayload(page);

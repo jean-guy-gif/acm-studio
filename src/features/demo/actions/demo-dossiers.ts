@@ -166,8 +166,14 @@ async function insertDemoBuyers(
           buyer.contactedDaysAgo != null
             ? new Date(Date.now() - buyer.contactedDaysAgo * 86_400_000).toISOString()
             : null;
+        // Mission 133 — la fiche existe depuis quelques semaines, son statut posé à sa création.
+        const createdAt =
+          buyer.createdDaysAgo != null
+            ? new Date(Date.now() - buyer.createdDaysAgo * 86_400_000).toISOString()
+            : undefined;
         return {
           ...buyerColumns(buyer),
+          ...(createdAt ? { created_at: createdAt, status_changed_at: createdAt } : {}),
           agency_id: closer.agencyId,
           advisor_id: closer.id,
           demo: true,

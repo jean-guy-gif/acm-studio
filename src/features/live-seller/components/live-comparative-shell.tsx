@@ -49,7 +49,10 @@ import {
 } from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
 import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
-import { LiveBuyersBadge } from '@/features/live-seller/components/live-buyers-badge';
+import {
+  LiveBuyersDot,
+  LiveBuyersScreen,
+} from '@/features/live-seller/components/live-buyers-badge';
 import { showBuyersToSeller } from '@/features/live-seller/actions/show-buyers-to-seller';
 import type { LiveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
@@ -129,6 +132,9 @@ export function LiveComparativeShell({
   // Mission 131 — la façon de présenter, et le menu « Réglages » du conseiller.
   const [mode, setMode] = useState<'interactive' | 'direct'>(presentationMode);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Mission 133 — l'écran des acquéreurs prêts, ouvert par « Montrer au vendeur ».
+  const [buyersScreen, setBuyersScreen] = useState(false);
+  const closeBuyersScreen = useCallback(() => setBuyersScreen(false), []);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [switching, setSwitching] = useState(false);
   // Le concurrent le plus proche, proposé par le conseiller en directe (jamais le choix du vendeur).
@@ -981,6 +987,20 @@ export function LiveComparativeShell({
   const retryFailedSaves = () => failedSaves.forEach(([, record]) => record.retry());
 
   const isIntro = page.type === 'intro';
+  // Mission 133 — le compteur caché : une pastille neutre dans la barre du bas, à côté de
+  // « Précédent », après l'introduction, en Live interactif comme en présentation directe ; le
+  // moment montré est noté en fond, suivi comme les autres enregistrements de fond (journal,
+  // « Relancer », M92, M100).
+  const buyersDot =
+    !isIntro && buyersReveal ? (
+      <LiveBuyersDot
+        count={buyersReveal.count}
+        onShow={() => {
+          setBuyersScreen(true);
+          runBackground('buyers-shown', () => showBuyersToSeller(projectId));
+        }}
+      />
+    ) : null;
   const stepLabel =
     page.type === 'comparable_direct' && page.comparableIndex != null && live
       ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length}`
@@ -1146,14 +1166,9 @@ export function LiveComparativeShell({
         </div>
       </header>
 
-      {/* Mission 133 — le compteur caché : une pastille neutre, après l'introduction, en Live
-          interactif comme en présentation directe ; le moment montré est noté en fond, suivi comme
-          les autres enregistrements de fond (journal, « Relancer », M92, M100). */}
-      {!isIntro && buyersReveal ? (
-        <LiveBuyersBadge
-          reveal={buyersReveal}
-          onShow={() => runBackground('buyers-shown', () => showBuyersToSeller(projectId))}
-        />
+      {/* Mission 133 — « Montrer au vendeur » : l'écran plein des acquéreurs prêts, anonymes. */}
+      {buyersScreen && buyersReveal ? (
+        <LiveBuyersScreen reveal={buyersReveal} onClose={closeBuyersScreen} />
       ) : null}
 
       {/* Progression : fine, élégante, jamais envahissante. */}
@@ -1291,9 +1306,17 @@ export function LiveComparativeShell({
           }}
         >
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
-              ← Précédent
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                disabled={index === 0}
+                className={navBtn}
+              >
+                ← Précédent
+              </button>
+              {buyersDot}
+            </span>
             <span
               className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
               aria-live="polite"
@@ -1357,9 +1380,17 @@ export function LiveComparativeShell({
           }}
         >
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
-              ← Précédent
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                disabled={index === 0}
+                className={navBtn}
+              >
+                ← Précédent
+              </button>
+              {buyersDot}
+            </span>
             <div className="flex flex-wrap items-center justify-end gap-3">
               {awaitError ? <span className={errorText}>{awaitError}</span> : null}
               {finishError ? <span className={errorText}>{finishError}</span> : null}
@@ -1395,9 +1426,17 @@ export function LiveComparativeShell({
           }}
         >
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <button type="button" onClick={() => go(-1)} disabled={index === 0} className={navBtn}>
-              ← Précédent
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                disabled={index === 0}
+                className={navBtn}
+              >
+                ← Précédent
+              </button>
+              {buyersDot}
+            </span>
             <div className="flex flex-wrap items-center justify-end gap-3">
               {finishError ? (
                 <span className={errorText}>{finishError}</span>
