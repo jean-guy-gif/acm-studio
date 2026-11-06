@@ -18,6 +18,7 @@ import { getOfferTasks } from '@/features/purchase-offer/queries/get-offer-tasks
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
+import { OfferAnswerTask } from '@/features/purchase-offer/components/offer-answer-task';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
 import {
   readMarketUpdates,
@@ -301,6 +302,14 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 </Link>
               ))}
             </span>
+          ) : task.kind === 'offer_answer' && task.buyerId && task.offerId ? (
+            // Mission 138 — la réponse du vendeur à une offre : ses suites, sur place.
+            <OfferAnswerTask
+              offerId={task.offerId}
+              buyerId={task.buyerId}
+              visitId={task.visitId ?? null}
+              decision={task.decision ?? 'accepted'}
+            />
           ) : task.kind === 'buyer_relaunch' && task.buyerId ? (
             // Mission 135 — la relance d'un lien sans réponse se fait sur place.
             <BuyerRelaunchTask buyerId={task.buyerId} label={line.button} />

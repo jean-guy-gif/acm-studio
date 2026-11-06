@@ -115,6 +115,7 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
       visitedAt: new Date().toISOString(),
       sellerEmail: null,
       sellerPhone: null,
+      acceptedOfferOn: null,
     },
   ],
   agency: agency as OfferContext['agency'],

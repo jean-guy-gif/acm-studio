@@ -749,6 +749,55 @@ export type Database = {
           },
         ]
       }
+      buyer_offer_follow_ups: {
+        Row: {
+          agency_id: string
+          created_at: string
+          document_id: string
+          done_at: string
+          done_by: string | null
+          id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          document_id: string
+          done_at?: string
+          done_by?: string | null
+          id?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          document_id?: string
+          done_at?: string
+          done_by?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_offer_follow_ups_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_offer_follow_ups_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "buyer_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_offer_follow_ups_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_proposals: {
         Row: {
           agency_id: string

@@ -300,6 +300,16 @@ export function OfferForm({
             {condominium ? ' · en copropriété' : ''}
           </p>
         ) : null}
+        {/* Mission 138 — une offre déjà acceptée sur ce bien : l'écran prévient, rien n'est bloqué. */}
+        {visit?.acceptedOfferOn ? (
+          <p
+            className="text-sm font-semibold text-amber-800"
+            role="status"
+            data-testid="offer-already-accepted"
+          >
+            Une offre acceptée existe déjà sur ce bien (le {visit.acceptedOfferOn}).
+          </p>
+        ) : null}
         {visit?.mandateNumber ? (
           <p className="text-sm text-zinc-700" data-testid="offer-mandate-known">
             N° de mandat : {visit.mandateNumber}

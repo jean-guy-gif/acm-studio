@@ -10,6 +10,9 @@ import {
   pageTitle,
 } from '@/components/ui/styles';
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
+import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
+import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { createClient } from '@/lib/supabase/server';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
 import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
@@ -62,20 +65,27 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   // Mission 128 B — ce qui ne dépend que du dossier part ensemble.
   const profile = await getProfile();
-  const [conclusion, launch, reopenings, hasCompetitorsToLocate, buyers] = await Promise.all([
-    // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
-    project.status === 'meeting_completed' ? getConclusion(projectId) : null,
-    getLiveLaunchInfo(projectId),
-    // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
-    getLiveReopenings(projectId),
-    // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander ;
-    // un dossier conclu attend sa conclusion (un mandat signé a sa propre veille, en prospection).
-    project.status === 'meeting_completed' ? null : hasSelectedCompetitorsToLocate(projectId),
-    // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple.
-    profile && !project.is_example
-      ? getPropertyBuyers(profile.agency_id, projectId, new Date())
-      : undefined,
-  ]);
+  const [conclusion, launch, reopenings, hasCompetitorsToLocate, buyers, offerAnswers] =
+    await Promise.all([
+      // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
+      project.status === 'meeting_completed' ? getConclusion(projectId) : null,
+      getLiveLaunchInfo(projectId),
+      // Mission 104 — pour les seuls opérateurs : rouvrir un Live figé par erreur (null sinon).
+      getLiveReopenings(projectId),
+      // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander ;
+      // un dossier conclu attend sa conclusion (un mandat signé a sa propre veille, en prospection).
+      project.status === 'meeting_completed' ? null : hasSelectedCompetitorsToLocate(projectId),
+      // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple.
+      profile && !project.is_example
+        ? getPropertyBuyers(profile.agency_id, projectId, new Date())
+        : undefined,
+      // Mission 138 — les réponses du vendeur aux offres faites sur son bien.
+      profile && project.status === 'meeting_completed'
+        ? createClient().then((supabase) =>
+            getProjectOfferAnswers(supabase, profile.agency_id, [projectId]),
+          )
+        : [],
+    ]);
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
@@ -96,6 +106,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <h1 className={pageTitle}>{project.seller_name}</h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <span className={badgeNeutral}>{statusLabel(project.status)}</span>
+          {(offerAnswers ?? []).map((answer) => (
+            <OfferAnswerBadge
+              key={answer.documentId}
+              decision={answer.decision}
+              decidedAt={answer.decidedAt}
+              suffix={answer.buyerName}
+            />
+          ))}
           <span className={pageSubtitle}>
             {project.seller_email || 'E-mail non renseigné'} ·{' '}
             {project.seller_phone || 'Téléphone non renseigné'} · Créé le{' '}
