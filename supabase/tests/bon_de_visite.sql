@@ -5,8 +5,9 @@
 --   §3 les visites d'un bon : de la même fiche seulement ; le lien : du document de l'agence ;
 --   §4 le navigateur lit son agence et n'écrit rien ; une autre agence et un membre retiré ne
 --      lisent rien ; le bucket des signatures est privé ;
---   §5 la fiche supprimée emporte ses documents, leurs visites et leurs liens ; un compte supprimé
---      laisse le document, sans auteur.
+--   §5 un document signé ne disparaît jamais avec la fiche (il reste, sans fiche, ses liens avec
+--      lui) ni avec le compte de son auteur (sans auteur) ; vider l'un ou l'autre à la main est
+--      refusé ; les fiches d'un compte supprimé passent à un manager de l'agence.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/bon_de_visite.sql
@@ -38,7 +39,9 @@ insert into public.buyers (id, agency_id, advisor_id, name, cities) values
   ('137ccccc-0000-0000-0000-000000000002', '137bbbbb-0000-0000-0000-000000000000',
    '13722222-2222-2222-2222-222222222222', 'Autre agence', array['Mougins']),
   ('137ccccc-0000-0000-0000-000000000003', '137aaaaa-0000-0000-0000-000000000000',
-   '13711111-1111-1111-1111-111111111111', 'Autre fiche', array['Mougins']);
+   '13711111-1111-1111-1111-111111111111', 'Autre fiche', array['Mougins']),
+  ('137ccccc-0000-0000-0000-000000000004', '137aaaaa-0000-0000-0000-000000000000',
+   '13744444-4444-4444-4444-444444444444', 'Fiche du conseiller', array['Mougins']);
 insert into public.buyer_selections (id, agency_id, buyer_id) values
   ('137eeeee-0000-0000-0000-000000000001', '137aaaaa-0000-0000-0000-000000000000',
    '137ccccc-0000-0000-0000-000000000001'),
@@ -114,6 +117,11 @@ begin
   begin
     update public.buyer_documents set created_by = null where id = v_doc;
     raise exception 'FAIL 2: l''auteur d''un document signé se vide à la main';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.buyer_documents set buyer_id = null where id = v_doc;
+    raise exception 'FAIL 2: la fiche d''un document signé se vide à la main';
   exception when check_violation then null;
   end;
   begin
@@ -295,7 +303,8 @@ reset role;
 -- §5 — les suppressions.
 do $$
 begin
-  -- Le compte de l'auteur supprimé : le document reste, sans auteur.
+  -- Le compte du conseiller (auteur du bon, titulaire d'une fiche) supprimé : le document reste,
+  -- sans auteur ; sa fiche passe au manager de l'agence au lieu d'être supprimée.
   delete from public.profiles where id = '13744444-4444-4444-4444-444444444444';
   if (select created_by from public.buyer_documents limit 1) is not null then
     raise exception 'FAIL 5: l''auteur supprimé reste sur le document';
@@ -303,12 +312,26 @@ begin
   if (select count(*) from public.buyer_documents) <> 1 then
     raise exception 'FAIL 5: la suppression d''un compte emporte le document';
   end if;
-  -- La fiche supprimée emporte ses documents, leurs visites et leurs liens.
+  if (select advisor_id from public.buyers where id = '137ccccc-0000-0000-0000-000000000004')
+     is distinct from '13711111-1111-1111-1111-111111111111' then
+    raise exception 'FAIL 5: la fiche du compte supprimé n''est pas passée au manager';
+  end if;
+  -- La fiche supprimée : le document reste, sans fiche, avec ses champs et son lien ; ses visites
+  -- (supprimées avec la fiche) n'y sont plus rattachées.
   delete from public.buyers where id = '137ccccc-0000-0000-0000-000000000001';
-  if exists (select 1 from public.buyer_documents)
-     or exists (select 1 from public.buyer_document_visits)
-     or exists (select 1 from public.buyer_document_links) then
-    raise exception 'FAIL 5: la fiche supprimée laisse ses documents';
+  if (select count(*) from public.buyer_documents where buyer_id is null and fields ? 'visitor') <> 1 then
+    raise exception 'FAIL 5: la fiche supprimée emporte le document signé';
+  end if;
+  if (select count(*) from public.buyer_document_links) <> 1 then
+    raise exception 'FAIL 5: la fiche supprimée emporte le lien du document';
+  end if;
+  if exists (select 1 from public.buyer_document_visits) then
+    raise exception 'FAIL 5: une visite supprimée reste rattachée au bon';
+  end if;
+  -- Sans personne d'autre dans son agence, la cascade d'avant joue.
+  delete from public.profiles where id = '13722222-2222-2222-2222-222222222222';
+  if exists (select 1 from public.buyers where id = '137ccccc-0000-0000-0000-000000000002') then
+    raise exception 'FAIL 5: sans héritier, la fiche ne suit pas la cascade d''avant';
   end if;
 end $$;
 

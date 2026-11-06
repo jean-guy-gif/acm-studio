@@ -200,6 +200,19 @@ export default function ConfidentialitePage() {
               les publient, jamais une adresse. Rien n’est envoyé à l’acquéreur sans le conseiller.
             </li>
             <li>
+              Le bon de visite : quand un acquéreur visite un bien de l’agence, il signe au doigt,
+              sur la tablette ou le téléphone du conseiller, un bon de visite. L’agence garde le
+              texte signé, la date et l’heure de la signature, l’image de la signature, le nom et
+              l’adresse du visiteur, le type de la pièce d’identité qu’il a présentée (jamais son
+              numéro ni son image), les biens visités et le conseiller qui les a présentés ; le
+              visiteur reçoit un lien vers son bon. Ce bon prouve le droit de l’agence à sa
+              rémunération : il est conservé cinq ans à compter de la visite, durée de la
+              prescription, y compris si le visiteur demande l’effacement de ses données (article
+              17.3.e du RGPD : constatation, exercice ou défense de droits en justice), puis il est
+              effacé. Il ne disparaît pas avec la fiche de l’acquéreur ni avec le compte du
+              conseiller. Texte à faire relire par un juriste.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

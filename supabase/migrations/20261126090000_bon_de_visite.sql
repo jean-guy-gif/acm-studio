@@ -12,7 +12,10 @@
 --   2. `buyer_documents` : un document signé pour un acquéreur (ici le bon de visite). Il n'existe
 --      que signé : le texte rendu, les champs, la version du modèle, l'empreinte sha256 du texte et
 --      les signatures (chemins du stockage privé) sont écrits d'un coup, l'heure de signature posée
---      par la base, et rien ne se modifie ensuite — un document signé ne se recalcule jamais.
+--      par la base, et rien ne se modifie ensuite — un document signé ne se recalcule jamais. Il
+--      ne disparaît ni avec la fiche ni avec le compte du conseiller ; gardé 5 ans après la visite
+--      (preuve du droit à commission), puis effacé (décision de Jean-Guy, 06/11).
+--   2 bis. Les fiches d'un compte supprimé passent à un manager au lieu d'être supprimées.
 --   3. `buyer_document_visits` : les visites (M119) que couvre un bon, plusieurs biens le même jour ;
 --      la fiche et l'agence vérifiées par la base.
 --   4. `buyer_document_links` : le lien envoyé au visiteur (Copier / E-mail), condensat seul,
@@ -20,8 +23,9 @@
 --   5. Le bucket privé `signed-documents` : les images des signatures, sous le dossier de l'agence ;
 --      aucune règle pour le navigateur, le serveur seul y écrit et y lit (liens signés courts).
 --
--- Compatible avec le code de `main` : des tables et un bucket neufs qu'il ne connaît pas ; aucune
--- ligne écrite, rien d'existant modifié.
+-- Compatible avec le code de `main` : des tables et un bucket neufs qu'il ne connaît pas, et un
+-- déclencheur avant la suppression d'un profil (aucun profil supprimé aujourd'hui par le code de
+-- `main` sans que ses fiches partent : elles restent désormais à l'agence) ; aucune ligne écrite.
 
 -- 1. L'identité légale.
 create table public.agency_legal_identities (
@@ -87,7 +91,10 @@ create table public.buyer_documents (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   agency_id uuid not null references public.agencies (id) on delete cascade,
-  buyer_id uuid not null references public.buyers (id) on delete cascade,
+  -- Un document signé ne disparaît jamais avec la fiche (décision de Jean-Guy, 06/11) : la fiche
+  -- supprimée, il reste, sans fiche, avec ses propres champs ; il s'efface 5 ans après la visite
+  -- (PROCEDURE_EFFACEMENT.md).
+  buyer_id uuid references public.buyers (id) on delete set null,
   kind text not null check (kind in ('visit_voucher')),
   template_version text not null check (char_length(template_version) between 1 and 40),
   -- Les champs remplis, tels que le texte les a reçus (relus par liste d'autorisation au serveur).
@@ -118,14 +125,22 @@ declare
   v_path text;
 begin
   if tg_op = 'UPDATE' then
-    -- Seule exception : un compte supprimé laisse le document, sans auteur (`on delete set null`,
-    -- leçon de la M109 : un verrou ne bloque aucune suppression légitime).
-    if new.created_by is null and old.created_by is not null
-       and (to_jsonb(new) - 'created_by') = (to_jsonb(old) - 'created_by')
-       and not exists (select 1 from public.profiles p where p.id = old.created_by) then
+    -- Seules exceptions : la fiche ou le compte de l'auteur supprimés laissent le document, sans
+    -- fiche ou sans auteur (`on delete set null`, leçon de la M109 : un verrou ne bloque aucune
+    -- suppression légitime) ; jamais un vidage à la main.
+    if (to_jsonb(new) - 'created_by' - 'buyer_id') = (to_jsonb(old) - 'created_by' - 'buyer_id')
+       and (new.created_by is not distinct from old.created_by
+            or (new.created_by is null
+                and not exists (select 1 from public.profiles p where p.id = old.created_by)))
+       and (new.buyer_id is not distinct from old.buyer_id
+            or (new.buyer_id is null
+                and not exists (select 1 from public.buyers b where b.id = old.buyer_id))) then
       return new;
     end if;
     raise exception 'buyer_documents : un document signé ne se modifie pas' using errcode = 'check_violation';
+  end if;
+  if new.buyer_id is null then
+    raise exception 'buyer_documents : un document se signe pour une fiche' using errcode = 'check_violation';
   end if;
   if not exists (select 1 from public.buyers b where b.id = new.buyer_id and b.agency_id = new.agency_id) then
     raise exception 'buyer_documents : la fiche n''est pas de cette agence' using errcode = 'check_violation';
@@ -160,6 +175,37 @@ create policy buyer_documents_agency_read on public.buyer_documents
   using (agency_id = public.get_current_agency_id());
 revoke all on public.buyer_documents from anon, authenticated;
 grant select on public.buyer_documents to authenticated;
+
+-- 2 bis. Les fiches d'un conseiller dont le compte est supprimé passent à un manager de l'agence
+--    (décision de Jean-Guy, 06/11) au lieu d'être supprimées avec lui (`buyers.advisor_id`,
+--    `on delete cascade`) : un manager non retiré, sinon un autre membre non retiré ; sans personne
+--    (l'agence entière s'en va), la cascade d'avant joue. Le retrait d'un membre (M60) ne change
+--    pas : ses fiches restent à son nom.
+create function public.reassign_buyers_before_profile_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_heir uuid;
+begin
+  select p.id into v_heir
+  from public.profiles p
+  where p.agency_id = old.agency_id and p.id <> old.id and p.removed_at is null
+  order by (p.role = 'manager') desc, p.created_at
+  limit 1;
+  if v_heir is not null then
+    update public.buyers set advisor_id = v_heir where advisor_id = old.id;
+  end if;
+  return old;
+end $$;
+
+revoke all on function public.reassign_buyers_before_profile_delete() from public, anon, authenticated;
+
+create trigger profiles_reassign_buyers
+  before delete on public.profiles
+  for each row execute function public.reassign_buyers_before_profile_delete();
 
 -- 3. Les visites d'un bon.
 create table public.buyer_document_visits (
