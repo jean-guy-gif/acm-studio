@@ -166,13 +166,18 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
     }
     // Mission 138 — la réponse du vendeur à une offre, jusqu'au « Fait » du conseiller.
     case 'offer_answer': {
-      const decision = task.decision ?? 'accepted';
+      // Une décision absente n'est jamais devinée (M47) : la ligne dit seulement la réponse.
+      const decision = task.decision;
       return {
-        title: offerAnswerTitle(decision, task.buyerName ?? null),
+        title: decision
+          ? offerAnswerTitle(decision, task.buyerName ?? null)
+          : `Le vendeur a répondu à l’offre de ${buyerInSentence(task.buyerName)}`,
         detail:
           decision === 'accepted'
             ? `acceptée le ${dayLabel(task.dueOn)} · prévenir l’acquéreur, transmettre au notaire`
-            : `refusée le ${dayLabel(task.dueOn)} · prévenir l’acquéreur`,
+            : decision === 'refused'
+              ? `refusée le ${dayLabel(task.dueOn)} · prévenir l’acquéreur`
+              : `réponse du ${dayLabel(task.dueOn)}`,
         late: null,
         button: 'Voir l’offre',
         href,
