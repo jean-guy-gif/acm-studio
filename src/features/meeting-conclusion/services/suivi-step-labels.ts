@@ -4,6 +4,15 @@ import {
   type SuiviTask,
 } from '@/features/meeting-conclusion/services/suivi-tasks';
 import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import {
+  LOOP_ORIGIN_NOTES,
+  propertyFigures,
+  propertyPhrase,
+} from '@/features/buyers/services/loop-properties';
+
+// Mission 134 — la page « Proposer ce bien ».
+export const proposeHref = (propertyKey: string): string =>
+  `/acquereurs/proposer?bien=${encodeURIComponent(propertyKey)}`;
 
 // Mission 130 — ce que disent « À faire aujourd'hui » et la colonne « Prochaine étape » d'une
 // carte, avec les mots d'un conseiller (textes du designer, `M130-suivi-etats.md`). Pur.
@@ -57,7 +66,7 @@ export function taskHref(task: SuiviTask): string {
     case 'visit':
       return '/visites';
     case 'propose_buyers':
-      return `/builder/${task.projectId}#acquereurs`;
+      return proposeHref(task.propertyKey ?? '');
     case 'buyer_recontact':
       return `/acquereurs/${task.buyerId ?? ''}`;
   }
@@ -131,16 +140,18 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
-    // Mission 133 — un mandat signé appelle ses acquéreurs prêts.
+    // Mission 134 — un nouveau bien appelle ses acquéreurs prêts : une tâche par bien.
     case 'propose_buyers': {
       const count = task.count ?? 0;
+      const what = task.property ? propertyPhrase(task.property) : 'ce bien';
+      const figures = task.figures ? propertyFigures(task.figures) : null;
       return {
-        title: `Proposer le bien de ${task.sellerName} à ${plural(count, 'acquéreur prêt', 'acquéreurs prêts')}`,
-        detail: [context.propertyLabel, 'leur envoyer le lien de leur dossier']
+        title: `${plural(count, 'acquéreur', 'acquéreurs')} pour ${what}${figures ? ` (${figures})` : ''}`,
+        detail: [task.origin ? LOOP_ORIGIN_NOTES[task.origin] : null, 'prêts à visiter']
           .filter(Boolean)
           .join(' · '),
         late: null,
-        button: 'Voir les acquéreurs',
+        button: 'Proposer ce bien',
         href,
       };
     }
@@ -174,7 +185,7 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
           : next.kind === 'buyer_recontact'
             ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
             : next.kind === 'propose_buyers'
-              ? `proposer le bien de ${next.sellerName} à ses acquéreurs`
+              ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
               : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
@@ -334,22 +345,8 @@ export function cardStep(
         },
       };
     }
-    case 'propose_buyers': {
-      const count = task.count ?? 0;
-      return {
-        when,
-        whenLate,
-        title: `Proposer le bien à ${plural(count, 'acquéreur prêt', 'acquéreurs prêts')}`,
-        phrase:
-          examplePhrase ?? 'Ils correspondent à son bien : envoyez-leur le lien de leur dossier.',
-        button: {
-          label: 'Voir les acquéreurs',
-          action: { kind: 'link', href: `/builder/${task.projectId}#acquereurs` },
-          primary,
-        },
-      };
-    }
-    // Une tâche d'acquéreur ne tient à aucune carte du Suivi.
+    // Une tâche d'acquéreur ou d'un bien à proposer ne tient à aucune carte du Suivi.
+    case 'propose_buyers':
     case 'buyer_recontact':
       return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };
   }
