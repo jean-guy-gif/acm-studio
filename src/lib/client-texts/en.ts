@@ -186,7 +186,9 @@ export const ENGLISH_TEXTS: ClientTexts = {
       perSqm: 'Price per m²',
       serious: 'Serious competitor?',
       notGiven: 'Not given',
-      days: (count) => `${count}\u00a0day${count > 1 ? 's' : ''}`,
+      days: (count) => `${formatNumber(count, { language: 'en' })}\u00a0day${count > 1 ? 's' : ''}`,
+      observedDays: (count) =>
+        `${formatNumber(count, { language: 'en' })} day${count > 1 ? 's' : ''}`,
       label: 'The time you imagine',
       unit: 'days',
       why: 'Why, in your view?',
@@ -410,7 +412,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       priceHint: 'The price we agree on together. Nothing is filled in in advance.',
       saving: 'Saving…',
       save: 'Save the price',
-      saved: 'Asking price saved.',
+      saved: 'Marketing price saved.',
     },
     closing: {
       question: (hasAgreedPrice) =>
@@ -422,7 +424,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       launch: 'So, shall we put it on the market?',
       missing: 'What would you need to be at 10?',
       answerOptional: 'Your answer (optional)',
-      agreedPrice: 'Asking price',
+      agreedPrice: 'Marketing price',
     },
     competitorReview: {
       competitor: (position) => `Competitor ${position}`,
@@ -521,10 +523,10 @@ export const ENGLISH_TEXTS: ClientTexts = {
       knownDrop: (amount) => `Known price reduction: ${amount}`,
       listed: 'Asking price',
       whyYou: 'Why, in your view',
-      agreedPrice: 'Asking price agreed',
+      agreedPrice: 'Marketing price agreed',
       agreedTogether: 'Agreed together',
       afterSeeing: 'After seeing the properties',
-      agreedTogetherHint: 'Asking price agreed together',
+      agreedTogetherHint: 'Marketing price agreed together',
       badge: 'Meeting file',
       coverTitle: 'Our meeting',
       titleDay: (day) => `of ${day}`,
@@ -684,6 +686,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       },
     },
     marketStudy: {
+      print: 'Print',
       badge: 'Market study',
       coverTitle: 'Market study',
       byAdvisor: (name) => `By ${name}`,

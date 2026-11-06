@@ -277,6 +277,7 @@ export type DocumentTexts = {
   };
   // L'Étude de marché (M131).
   marketStudy: {
+    print: string;
     badge: string;
     coverTitle: string;
     byAdvisor: (name: string) => string;
@@ -378,6 +379,8 @@ export type LiveTexts = {
     serious: string;
     notGiven: string;
     days: (count: number) => string;
+    // La durée observée, révélée : « 1 200 jours » (toujours au pluriel, comme avant la mission).
+    observedDays: (count: number) => string;
     label: string;
     unit: string;
     why: string;

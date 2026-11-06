@@ -32,7 +32,9 @@ export function LiveDurationReveal({
     <>
       <div>
         <div className={statLabel}>{t.observed}</div>
-        <div className={revealValue}>{observed != null ? t.days(observed) : t.unavailable}</div>
+        <div className={revealValue}>
+          {observed != null ? t.observedDays(observed) : t.unavailable}
+        </div>
         {marketDuration.available && marketDuration.days != null ? (
           <div className="mt-1 text-sm text-zinc-500 stage:text-white/60">
             {t.observedSince(marketDuration.days)}

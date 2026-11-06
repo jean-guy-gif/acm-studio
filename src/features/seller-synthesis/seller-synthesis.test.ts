@@ -274,7 +274,12 @@ describe('la synthèse dans la langue du vendeur', () => {
     expect(html).toMatch(/€\d{1,3}(,\d{3})+/);
     // La justification est le texte du conseiller, écrit par lui : elle n'est pas traduite.
     expect(
-      frenchLeaks(html, ['M. Vendeur', 'Antibes', 'Trois biens proches, le vôtre a un balcon.']),
+      frenchLeaks(html, [
+        'M. Vendeur',
+        '1 place du Marché, 06600 Antibes',
+        'Antibes',
+        'Trois biens proches, le vôtre a un balcon.',
+      ]),
     ).toEqual([]);
   });
 

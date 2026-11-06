@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 
 import { demoCredentials, goViaAccountMenu, login } from './support';
 
@@ -39,6 +39,22 @@ async function freshDirectDemo(page: Page): Promise<string> {
   const id = /\/builder\/([^/]+)\//.exec(href ?? '')?.[1];
   expect(id, 'Le dossier de démo « direct » est introuvable dans « Ma démo »').toBeTruthy();
   return id as string;
+}
+
+// Le lien public, sans compte, dans un navigateur neuf.
+async function openAsVisitor(browser: Browser, link: string, testId: string): Promise<string> {
+  const bypass = process.env.E2E_VERCEL_BYPASS;
+  const stranger = await browser.newContext(
+    bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {},
+  );
+  try {
+    const visitor = await stranger.newPage();
+    await visitor.goto(link);
+    await expect(visitor.getByTestId(testId)).toBeVisible();
+    return await visitor.locator('body').innerText();
+  } finally {
+    await stranger.close();
+  }
 }
 
 async function switchLanguage(page: Page, to: 'fr' | 'en'): Promise<void> {
@@ -134,7 +150,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
       /^At €952,500, your property would be/,
     );
     await page.getByRole('button', { name: 'Save the price' }).click();
-    await expect(page.getByText('Asking price saved.')).toBeVisible();
+    await expect(page.getByText('Marketing price saved.')).toBeVisible();
     await page.getByRole('button', { name: /End the meeting/ }).click();
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}/merci$`));
     await expect(page.getByRole('heading', { name: 'Thank you for your time' })).toBeVisible();
@@ -178,6 +194,15 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
       await expect(synthesis.getByText(french)).toHaveCount(0);
     }
     await expect(synthesis).toContainText('Ne peut recevoir aucun fonds');
+    // Le lien public : la même synthèse, en anglais.
+    await page.getByRole('button', { name: /Créer un lien pour le vendeur/ }).click();
+    const link = (await page.getByTestId('synthesis-link').innerText()).trim();
+    expect(link).toMatch(/\/synthese\/[A-Za-z0-9_-]{43}$/);
+    const text = await openAsVisitor(page.context().browser()!, link, 'seller-synthesis');
+    expect(text).toContain('How your price evolved');
+    expect(text).not.toContain('Le chemin de votre prix');
+    await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+    await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
   });
 
   await test.step('Le Point marché en anglais', async () => {
@@ -197,5 +222,18 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     ).toBeVisible();
     await expect(document.getByTestId('ranking-verdict')).toContainText(/: you are \d+/);
     await expect(document.getByText('Où en est votre prix')).toHaveCount(0);
+    // Le lien public et son message, en anglais ; le bouton du conseiller reste en français.
+    await page.getByRole('button', { name: /Créer un lien pour le vendeur/ }).click();
+    await expect(page.getByTestId('market-update-link-message')).toContainText(
+      'Hello, here is the market update',
+    );
+    const link = (await page.getByTestId('market-update-link').innerText()).trim();
+    expect(link).toMatch(/\/point-marche\/[A-Za-z0-9_-]{43}$/);
+    const text = await openAsVisitor(page.context().browser()!, link, 'market-update');
+    expect(text).toContain('Where your price stands');
+    expect(text).toContain('Download as PDF');
+    expect(text).not.toContain('Où en est votre prix');
+    await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+    await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
   });
 });

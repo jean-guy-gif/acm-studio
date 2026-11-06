@@ -122,7 +122,8 @@ export const FRENCH_TEXTS: ClientTexts = {
       perSqm: 'Prix au m²',
       serious: 'Sérieux concurrent ?',
       notGiven: 'Non renseigné',
-      days: (count) => `${count}\u00a0jour${count > 1 ? 's' : ''}`,
+      days: (count) => `${formatNumber(count)}\u00a0jour${count > 1 ? 's' : ''}`,
+      observedDays: (count) => `${formatNumber(count)} jours`,
       label: 'La durée que vous imaginez',
       unit: 'jours',
       why: 'Selon vous, pourquoi ?',
@@ -604,6 +605,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
     },
     marketStudy: {
+      print: 'Imprimer',
       badge: 'Étude de marché',
       coverTitle: 'Étude de marché',
       byAdvisor: (name) => `Par ${name}`,
