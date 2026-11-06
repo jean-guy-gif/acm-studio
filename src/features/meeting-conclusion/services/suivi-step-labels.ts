@@ -1,4 +1,5 @@
 import {
+  addDays,
   isTaskDue,
   taskLateDays,
   type SuiviTask,
@@ -77,6 +78,8 @@ export function taskHref(task: SuiviTask): string {
         : `/acquereurs/${task.watchBuyers?.[0]?.id ?? ''}/biens-ideaux#nouveau`;
     case 'buyer_recontact':
     case 'buyer_relaunch':
+    case 'buyer_meeting':
+    case 'buyer_weekly_report':
       return `/acquereurs/${task.buyerId ?? ''}`;
   }
 }
@@ -249,6 +252,26 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Mission 139 — le point proposé à un acquéreur prêt à visiter, tous les 14 jours.
+    case 'buyer_meeting':
+      return {
+        title: `Proposer un point avec ${buyerInSentence(task.buyerName)}`,
+        detail: 'prêt à visiter · à l’agence ou en visio',
+        late: null,
+        button: 'Proposer un point',
+        href,
+      };
+    // Mission 139 — le point de la semaine écoulée, chaque lundi.
+    case 'buyer_weekly_report': {
+      const start = task.weekStart ?? addDays(task.dueOn, -7);
+      return {
+        title: `Envoyer le point de la semaine à ${buyerInSentence(task.buyerName)}`,
+        detail: `semaine du ${dayLabel(start)} au ${dayLabel(addDays(start, 6))}`,
+        late: null,
+        button: 'Préparer le point',
+        href,
+      };
+    }
   }
 }
 
@@ -264,17 +287,21 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
           ? `démarcher les concurrents de ${next.sellerName}`
           : next.kind === 'buyer_recontact'
             ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
-            : next.kind === 'buyer_relaunch'
-              ? `relancer ${buyerInSentence(next.buyerName)}`
-              : next.kind === 'offer_answer'
-                ? `donner suite à la réponse du vendeur à ${buyerInSentence(next.buyerName)}`
-                : next.kind === 'offer_expiry'
-                  ? `rappeler l’échéance de l’offre de ${buyerInSentence(next.buyerName)}`
-                  : next.kind === 'buyer_watch'
-                    ? `voir les biens trouvés par la veille`
-                    : next.kind === 'propose_buyers'
-                      ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
-                      : `organiser une visite chez ${next.sellerName}`;
+            : next.kind === 'buyer_meeting'
+              ? `proposer un point avec ${buyerInSentence(next.buyerName)}`
+              : next.kind === 'buyer_weekly_report'
+                ? `envoyer le point de la semaine à ${buyerInSentence(next.buyerName)}`
+                : next.kind === 'buyer_relaunch'
+                  ? `relancer ${buyerInSentence(next.buyerName)}`
+                  : next.kind === 'offer_answer'
+                    ? `donner suite à la réponse du vendeur à ${buyerInSentence(next.buyerName)}`
+                    : next.kind === 'offer_expiry'
+                      ? `rappeler l’échéance de l’offre de ${buyerInSentence(next.buyerName)}`
+                      : next.kind === 'buyer_watch'
+                        ? `voir les biens trouvés par la veille`
+                        : next.kind === 'propose_buyers'
+                          ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
+                          : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -440,6 +467,8 @@ export function cardStep(
     case 'buyer_watch':
     case 'buyer_relaunch':
     case 'buyer_recontact':
+    case 'buyer_meeting':
+    case 'buyer_weekly_report':
       return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };
   }
 }

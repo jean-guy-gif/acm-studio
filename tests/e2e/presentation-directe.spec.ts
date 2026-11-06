@@ -830,3 +830,94 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     );
   });
 });
+
+// Mission 139 — après la visite : la visite des Keller a son compte rendu (« Intéressé · aimé :
+// piscine, extérieur · gêné : prix ») et ses deux messages prêts (à l'acquéreur, au vendeur) ; le
+// lundi, le point de la semaine des Lambert dit les six biens écartés pour eux, celui des Wilson est
+// en anglais ; « Écarter pour lui » sort un bien de ses biens idéaux, « Annuler » le rend.
+test('après la visite : le compte rendu, le point de la semaine, écarter pour lui', async ({
+  page,
+}) => {
+  await login(page, demoCredentials());
+  await freshDemo(page);
+
+  await test.step('La visite des Keller : son compte rendu, ses deux messages', async () => {
+    await page.goto('/visites');
+    const done = page.getByTestId('visits-done');
+    await expect(done.getByTestId('visit-report').first()).toHaveText(
+      'Intéressé · a aimé : l’extérieur, la piscine · gêné : le prix · Offre envisagée',
+    );
+    await done.getByTestId('visit-messages-open').first().click();
+    const buyer = done.getByTestId('visit-message-buyer-text').first();
+    await expect(buyer).toHaveValue(
+      /^Bonjour Famille Keller,\nMerci pour la visite de la maison de Mougins le /,
+    );
+    await expect(buyer).toHaveValue(/Ce qui vous a plu : l’extérieur et la piscine\./);
+    await expect(buyer).toHaveValue(/Ce qui vous a gêné : le prix\./);
+    const seller = done.getByTestId('visit-message-seller-text').first();
+    await expect(seller).toHaveValue(/^Bonjour M\. Lefebvre,\nLa visite de votre bien du /);
+    await expect(seller).not.toHaveValue(/Keller|budget|offre/i);
+    // Modifiable : le texte envoyé est celui de l'écran.
+    await buyer.fill('Bonjour, merci pour la visite.');
+    await expect(
+      done.getByTestId('visit-message-buyer').first().getByRole('link', { name: 'E-mail' }),
+    ).toHaveAttribute('href', /merci%20pour%20la%20visite/);
+  });
+
+  await test.step('Le point de la semaine des Lambert : six biens écartés, « Envoyé »', async () => {
+    await page.goto('/suivi');
+    const task = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: /Envoyer le point de la semaine à M\. et Mme Lambert(?!-)/ });
+    await expect(task).toContainText(/semaine du \d{2}\/\d{2} au \d{2}\/\d{2}/);
+    await task.getByTestId('buyer-report-open-weekly_report').click();
+    const message = task.getByTestId('buyer-report-message');
+    await expect(message).toHaveValue(/^Bonjour M\. et Mme Lambert,/);
+    await expect(message).toHaveValue(
+      /6 écartés \(3 pour le prix, 2 pour le secteur, 1 pour le stationnement\)/,
+    );
+    await task.getByTestId('buyer-report-sent').click();
+    await expect(page.getByTestId('buyer-report-done')).toBeVisible();
+    await page.reload();
+    await expect(
+      page
+        .getByTestId('suivi-task')
+        .filter({ hasText: /Envoyer le point de la semaine à M\. et Mme Lambert(?!-)/ }),
+    ).toHaveCount(0);
+  });
+
+  await test.step('Le point des Wilson, en anglais', async () => {
+    const more = page.getByTestId('suivi-today').locator('summary').filter({ hasText: /^Voir/ });
+    const task = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: 'Envoyer le point de la semaine à Mr and Mrs Wilson' });
+    if (!(await task.first().isVisible()) && (await more.first().isVisible())) {
+      await more.first().click();
+    }
+    await task.getByTestId('buyer-report-open-weekly_report').click();
+    await expect(task.getByTestId('buyer-report-message')).toHaveValue(
+      /^Dear Mr and Mrs Wilson,\nHere is this week’s update on your search\./,
+    );
+  });
+
+  await test.step('« Écarter pour lui » : le bien sort, « Annuler » le rend', async () => {
+    await page.goto('/acquereurs');
+    await page.getByRole('link', { name: 'M. et Mme Rossi' }).click();
+    await page
+      .getByRole('link', { name: /biens idéaux/i })
+      .first()
+      .click();
+    const hits = page.getByTestId('ideal-agency-hit');
+    await expect(hits.first()).toBeVisible();
+    const before = await hits.count();
+    const first = hits.filter({ has: page.getByTestId('dismiss-open') }).first();
+    const label = (await first.locator('.font-title').first().innerText()).trim();
+    await first.getByTestId('dismiss-open').click();
+    await first.getByTestId('dismiss-reason-over_budget').click();
+    await expect(page.getByTestId('dismissed-now')).toContainText(`Écarté pour lui : ${label}`);
+    await expect(hits).toHaveCount(before - 1);
+    await page.getByTestId('dismiss-undo').click();
+    await expect(hits).toHaveCount(before);
+    await expect(page.getByText(/disponible|estimation/i)).toHaveCount(0);
+  });
+});

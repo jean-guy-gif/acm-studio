@@ -19,6 +19,7 @@ import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/compon
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
 import { OfferAnswerTask } from '@/features/purchase-offer/components/offer-answer-task';
+import { BuyerReportTask } from '@/features/buyer-messages/components/buyer-report-task';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
 import {
   readMarketUpdates,
@@ -310,6 +311,14 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               visitId={task.visitId ?? null}
               decision={task.decision}
               offerHref={line.href}
+            />
+          ) : (task.kind === 'buyer_weekly_report' || task.kind === 'buyer_meeting') &&
+            task.buyerId ? (
+            // Mission 139 — le point de la semaine et le point proposé, sur place.
+            <BuyerReportTask
+              buyerId={task.buyerId}
+              kind={task.kind === 'buyer_weekly_report' ? 'weekly_report' : 'meeting_proposed'}
+              label={line.button}
             />
           ) : task.kind === 'buyer_relaunch' && task.buyerId ? (
             // Mission 135 — la relance d'un lien sans réponse se fait sur place.

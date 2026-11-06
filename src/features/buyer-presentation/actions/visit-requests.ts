@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { visitOutcomeOf } from '@/features/buyer-messages/report';
+import { visitReportSchema } from '@/features/buyer-messages/report-schema';
 import {
   FEEDBACK_MAX,
-  isVisitOutcome,
   toVisitRequest,
 } from '@/features/buyer-presentation/services/visit-request-row';
 import { type VisitRequest, type VisitRequestDuring } from '@/features/buyer-presentation/types';
@@ -104,24 +105,29 @@ export async function cancelVisitRequest(requestId: string): Promise<VisitAction
 }
 
 // « Visite faite » : datée, avec le retour libre de l'acquéreur et une issue.
-export async function recordVisitDone(
-  requestId: string,
-  rawFeedback: unknown,
-  rawOutcome: unknown,
-): Promise<VisitActionResult> {
+// Mission 139 — « Visite faite » : le compte rendu (l'avis, ce qui a plu et déplu, une note libre,
+// la suite), daté par le serveur, une seule fois ; l'issue s'en déduit (« Offre envisagée » ⇔ 'offer',
+// lue par l'offre d'achat, M137 B) ; « Deuxième visite » crée une nouvelle demande à planifier, par le
+// conseiller. Les messages prêts se préparent ensuite (`prepareVisitMessages`).
+export async function recordVisitDone(requestId: string, raw: unknown): Promise<VisitActionResult> {
   const profile = await activeProfile();
   if (!profile) return { ok: false, error: NOT_CONNECTED };
-  if (!isVisitOutcome(rawOutcome) || rawOutcome === 'to_plan') {
-    return { ok: false, error: 'Choisissez l’issue de la visite.' };
+  const parsed = visitReportSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: 'Choisissez son avis et la suite de la visite.' };
   }
-  const feedback = typeof rawFeedback === 'string' ? rawFeedback.trim().slice(0, FEEDBACK_MAX) : '';
+  const report = parsed.data;
   const client = createServiceRoleClient();
   const { data, error } = await client
     .from('buyer_visit_requests')
     .update({
       visited_at: new Date().toISOString(),
-      feedback: feedback || null,
-      outcome: rawOutcome,
+      feedback: report.note.slice(0, FEEDBACK_MAX) || null,
+      outcome: visitOutcomeOf(report),
+      opinion: report.opinion,
+      liked: report.liked,
+      disliked: report.disliked,
+      next_step: report.nextStep,
     })
     .eq('id', requestId)
     .eq('agency_id', profile.agency_id)
@@ -132,6 +138,22 @@ export async function recordVisitDone(
     .maybeSingle();
   if (error || !data)
     return { ok: false, error: 'Le retour de visite n’a pas pu être enregistré.' };
+  if (report.nextStep === 'second_visit') {
+    const { error: secondError } = await client.from('buyer_visit_requests').insert({
+      agency_id: profile.agency_id,
+      buyer_id: data.buyer_id,
+      buyer_selection_item_id: data.buyer_selection_item_id,
+      requested_during: 'conseiller',
+    });
+    if (secondError) {
+      revalidate(data.buyer_id);
+      return {
+        ok: false,
+        error:
+          'La visite est notée, mais la deuxième visite n’a pas pu être demandée : demandez-la depuis sa fiche.',
+      };
+    }
+  }
   revalidate(data.buyer_id);
   return { ok: true, request: toVisitRequest(data) };
 }

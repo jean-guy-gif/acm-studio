@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+
 import { storedFacts } from '@/features/buyer-prospecting/services/prospect-facts';
 import {
   loadAgencyBuyers,
@@ -51,63 +53,67 @@ export async function loadLoopCatalog(
     windowDays == null ? null : new Date(now.getTime() - windowDays * DAY).toISOString();
   const COMPARABLE_COLUMNS =
     'id, project_id, created_at, listing_url, listing_gone_at, meeting_frozen_at, property_type, rooms_count, surface_area, land_area, city, district, bedrooms_count, outdoor_spaces, parking_types, listing_features, energy_rating, price, photo_urls';
-  const [conclusions, projects, comparables, prospects, origins, proposals] = await Promise.all([
-    supabase
-      .from('project_meeting_conclusions')
-      .select('project_id, outcome, signed_at, concluded_at, outcome_changed_at')
-      .eq('agency_id', agencyId)
-      .in('outcome', ['signed', 'follow_up']),
-    supabase
-      .from('projects')
-      .select('id, seller_name, status, is_example')
-      .eq('agency_id', agencyId)
-      .neq('status', 'archived')
-      .eq('is_example', false),
-    readPages((from, to) => {
-      const query = supabase
-        .from('comparables')
-        .select(COMPARABLE_COLUMNS)
-        .eq('agency_id', agencyId)
-        .eq('is_selected', true)
-        .is('listing_gone_at', null);
-      return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
-    }),
-    readPages((from, to) => {
-      const query = supabase
-        .from('buyer_prospects')
-        .select('id, created_at, listing_url, listing_key, facts')
-        .eq('agency_id', agencyId);
-      return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
-    }),
-    readPages((from, to) =>
+  const [conclusions, projects, comparables, prospects, origins, proposals, dismissals] =
+    await Promise.all([
       supabase
-        .from('buyer_prospect_origins')
-        .select('prospect_id, buyer_id')
+        .from('project_meeting_conclusions')
+        .select('project_id, outcome, signed_at, concluded_at, outcome_changed_at')
         .eq('agency_id', agencyId)
-        .order('id')
-        .range(from, to),
-    ),
-    readPages((from, to) =>
+        .in('outcome', ['signed', 'follow_up']),
       supabase
-        .from('buyer_proposals')
-        .select('buyer_id, property_key, sent_at')
+        .from('projects')
+        .select('id, seller_name, status, is_example')
         .eq('agency_id', agencyId)
-        .order('id')
-        .range(from, to),
-    ),
-  ]);
+        .neq('status', 'archived')
+        .eq('is_example', false),
+      readPages((from, to) => {
+        const query = supabase
+          .from('comparables')
+          .select(COMPARABLE_COLUMNS)
+          .eq('agency_id', agencyId)
+          .eq('is_selected', true)
+          .is('listing_gone_at', null);
+        return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
+      }),
+      readPages((from, to) => {
+        const query = supabase
+          .from('buyer_prospects')
+          .select('id, created_at, listing_url, listing_key, facts')
+          .eq('agency_id', agencyId);
+        return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
+      }),
+      readPages((from, to) =>
+        supabase
+          .from('buyer_prospect_origins')
+          .select('prospect_id, buyer_id')
+          .eq('agency_id', agencyId)
+          .order('id')
+          .range(from, to),
+      ),
+      readPages((from, to) =>
+        supabase
+          .from('buyer_proposals')
+          .select('buyer_id, property_key, sent_at')
+          .eq('agency_id', agencyId)
+          .order('id')
+          .range(from, to),
+      ),
+      // Mission 139 — les biens écartés pour un acquéreur ne lui sont plus proposés.
+      readDismissals(supabase, agencyId),
+    ]);
   if (
     conclusions.error ||
     projects.error ||
     comparables.error ||
     prospects.error ||
     origins.error ||
-    proposals.error
+    proposals.error ||
+    dismissals == null
   ) {
     return { items: [], contacts: empty, failed: true };
   }
   const projectOf = new Map((projects.data ?? []).map((row) => [row.id, row]));
-  const contacts: LoopContacts = { proposals: new Map() };
+  const contacts: LoopContacts = { proposals: new Map(), dismissals };
   for (const row of proposals.data) {
     const byBuyer = contacts.proposals.get(row.property_key) ?? new Map<string, string>();
     byBuyer.set(row.buyer_id, row.sent_at);

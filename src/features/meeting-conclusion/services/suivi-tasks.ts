@@ -45,7 +45,11 @@ export type SuiviTaskKind =
   | 'market_update'
   | 'prospect'
   | 'follow_up'
-  | 'buyer_recontact';
+  | 'buyer_recontact'
+  // Mission 139 — le point proposé à un acquéreur prêt à visiter (tous les 14 jours), et le point
+  // de la semaine, chaque lundi, à chaque acquéreur actif.
+  | 'buyer_meeting'
+  | 'buyer_weekly_report';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
 // relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
@@ -62,7 +66,10 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   buyer_relaunch: 4,
   market_update: 5,
   buyer_recontact: 6,
-  prospect: 7,
+  // Mission 139 — après « Reprendre contact », avant le démarchage, désormais le dernier.
+  buyer_meeting: 7,
+  buyer_weekly_report: 8,
+  prospect: 9,
 };
 
 export type SuiviTask = {
@@ -102,6 +109,8 @@ export type SuiviTask = {
   // Mission 138 — la réponse du vendeur, et la visite d'où l'offre est née.
   decision?: 'accepted' | 'refused';
   visitId?: string;
+  // Mission 139 — le point de la semaine : le lundi de la semaine qu'il raconte (AAAA-MM-JJ).
+  weekStart?: string;
 };
 
 export type SuiviTaskInput = {
@@ -260,7 +269,9 @@ export function taskLateDays(task: SuiviTask, today: string): number {
     task.kind === 'propose_buyers' ||
     task.kind === 'buyer_watch' ||
     task.kind === 'offer_expiry' ||
-    task.kind === 'offer_answer'
+    task.kind === 'offer_answer' ||
+    task.kind === 'buyer_meeting' ||
+    task.kind === 'buyer_weekly_report'
     ? 0
     : Math.max(0, daysBetween(task.dueOn, today));
 }

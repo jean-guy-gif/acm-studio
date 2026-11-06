@@ -30,6 +30,9 @@ import {
 import { readPageViaExtension } from '@/features/competitor-search/services/read-page-via-extension';
 import { resumeMemory } from '@/features/competitor-search/services/stream-estate-summary';
 import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
+import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
+import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
+import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -130,6 +133,7 @@ export function IdealPropertiesPanel({
   current = [],
   presented = false,
   watch = null,
+  dismissed = [],
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
@@ -143,6 +147,9 @@ export function IdealPropertiesPanel({
   budgetWarning: string | null;
   // Mission 136 — ce que la veille a trouvé cette semaine : le jour du passage, ses biens rangés.
   watch?: { seenOn: string; entries: CategorizedCandidate[] } | null;
+  // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
+  // lecture a échoué (M98).
+  dismissed?: string[] | null;
 }) {
   const demo = useDemoMode();
   const router = useRouter();
@@ -158,6 +165,10 @@ export function IdealPropertiesPanel({
   const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
   const changed = selectionChanged([...selected.values()], baseline);
   const [saving, startSaving] = useTransition();
+  // Mission 139 — écartés : cachés aussitôt ; ceux de cette visite de la page s'annulent encore.
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(dismissed ?? []));
+  const [justDismissed, setJustDismissed] = useState<{ key: string; label: string }[]>([]);
+  const [undoError, setUndoError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
 
@@ -277,6 +288,35 @@ export function IdealPropertiesPanel({
     });
   };
 
+  // La clé du bien, celle de la boucle (M134) : une annonce par son identité publiée.
+  const targetKey = (item: SelectionItemInput, listingUrl: string | null): string =>
+    dismissalKey(
+      item.source === 'project'
+        ? { source: 'project', projectId: item.reference }
+        : item.source === 'competitor'
+          ? { source: 'competitor', competitorId: item.reference, listingUrl }
+          : { source: 'listing', url: item.reference },
+    );
+  const isHidden = (item: SelectionItemInput, listingUrl: string | null) =>
+    hidden.has(targetKey(item, listingUrl));
+
+  const actions = (item: SelectionItemInput) => (
+    <div className="flex shrink-0 flex-col items-end gap-1">
+      {checkbox(item)}
+      {selected.has(keyOf(item)) ? null : (
+        <DismissControl
+          buyerId={buyerId}
+          target={{ source: item.source, reference: item.reference }}
+          label={item.label}
+          onDismissed={(key) => {
+            setHidden((current) => new Set([...current, key]));
+            setJustDismissed((current) => [...current, { key, label: item.label }]);
+          }}
+        />
+      )}
+    </div>
+  );
+
   const checkbox = (item: SelectionItemInput) => {
     const key = keyOf(item);
     const checked = selected.has(key);
@@ -310,9 +350,13 @@ export function IdealPropertiesPanel({
     agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
   });
   const bannerItems = layout.banner;
-  const agencyHits = allAgencyHits.filter(({ hit }) => layout.showAgency(asEntry(hit)));
+  const agencyHits = allAgencyHits.filter(
+    ({ hit }) =>
+      layout.showAgency(asEntry(hit)) && !isHidden(agencyItem(hit), hit.candidate.listingUrl),
+  );
   const showMarket = (entry: CategorizedCandidate): boolean =>
-    layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url });
+    layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url }) &&
+    !isHidden(marketItem(entry), entry.candidate.url);
 
   const watchEntries = (watch?.entries ?? []).filter(showMarket);
   // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
@@ -357,13 +401,58 @@ export function IdealPropertiesPanel({
             <span className="text-xs">À vérifier : {entry.toCheck.join(', ')}</span>
           ) : null}
         </div>
-        {checkbox(item)}
+        {actions(item)}
       </li>
     );
   };
 
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
+      {dismissed == null ? (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          Ce que vous avez écarté pour lui n’a pas pu être lu : rechargez la page.
+        </p>
+      ) : null}
+      {justDismissed.length > 0 ? (
+        <div className="flex flex-col gap-1" data-testid="dismissed-now" role="status">
+          {justDismissed.map((entry) => (
+            <p key={entry.key} className="text-sm text-zinc-700 stage:text-white/80">
+              Écarté pour lui : {entry.label} ·{' '}
+              <button
+                type="button"
+                className="font-semibold text-brand-darker underline"
+                data-testid="dismiss-undo"
+                onClick={() => {
+                  setUndoError(null);
+                  void undoDismissal(buyerId, entry.key)
+                    .then((result) => {
+                      if (!result.ok) {
+                        setUndoError(result.error);
+                        return;
+                      }
+                      setHidden((current) => {
+                        const next = new Set(current);
+                        next.delete(entry.key);
+                        return next;
+                      });
+                      setJustDismissed((current) =>
+                        current.filter((other) => other.key !== entry.key),
+                      );
+                    })
+                    .catch(() => setUndoError('Connexion perdue : réessayez.'));
+                }}
+              >
+                Annuler
+              </button>
+            </p>
+          ))}
+          {undoError ? (
+            <p role="alert" className="text-sm font-semibold text-red-700">
+              {undoError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {/* Essai de Jean-Guy (26/10) : la sélection n'apparaît qu'une fois, ici, chaque bien avec sa
           case — une annonce du marché se décoche sans relancer une recherche payante. */}
       {bannerItems.length > 0 ? (
@@ -481,7 +570,7 @@ export function IdealPropertiesPanel({
                         .join(' · ')}
                     </span>
                   </div>
-                  {checkbox(item)}
+                  {actions(item)}
                 </li>
               );
             })}

@@ -448,6 +448,50 @@ export type Database = {
           },
         ]
       }
+      buyer_dismissals: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          dismissed_at: string
+          dismissed_by: string | null
+          id: string
+          label: string
+          property_key: string
+          reason: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          label: string
+          property_key: string
+          reason: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          label?: string
+          property_key?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_dismissals_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_document_visits: {
         Row: {
           agency_id: string
@@ -635,6 +679,7 @@ export type Database = {
           reason: string | null
           selection_id: string | null
           summary: string | null
+          week_start: string | null
         }
         Insert: {
           agency_id: string
@@ -647,6 +692,7 @@ export type Database = {
           reason?: string | null
           selection_id?: string | null
           summary?: string | null
+          week_start?: string | null
         }
         Update: {
           agency_id?: string
@@ -659,6 +705,7 @@ export type Database = {
           reason?: string | null
           selection_id?: string | null
           summary?: string | null
+          week_start?: string | null
         }
         Relationships: [
           {
@@ -1259,6 +1306,10 @@ export type Database = {
           requested_at: string
           requested_during: string
           visited_at: string | null
+          disliked: string[]
+          liked: string[]
+          next_step: string | null
+          opinion: string | null
         }
         Insert: {
           agency_id: string
@@ -1273,6 +1324,10 @@ export type Database = {
           requested_at?: string
           requested_during: string
           visited_at?: string | null
+          disliked?: string[]
+          liked?: string[]
+          next_step?: string | null
+          opinion?: string | null
         }
         Update: {
           agency_id?: string
@@ -1287,6 +1342,10 @@ export type Database = {
           requested_at?: string
           requested_during?: string
           visited_at?: string | null
+          disliked?: string[]
+          liked?: string[]
+          next_step?: string | null
+          opinion?: string | null
         }
         Relationships: [
           {
@@ -1403,6 +1462,7 @@ export type Database = {
           timeline: string | null
           updated_at: string
           works_accepted: boolean | null
+          language: string
         }
         Insert: {
           advisor_id: string
@@ -1440,6 +1500,7 @@ export type Database = {
           timeline?: string | null
           updated_at?: string
           works_accepted?: boolean | null
+          language?: string
         }
         Update: {
           advisor_id?: string
@@ -1477,6 +1538,7 @@ export type Database = {
           timeline?: string | null
           updated_at?: string
           works_accepted?: boolean | null
+          language?: string
         }
         Relationships: [
           {

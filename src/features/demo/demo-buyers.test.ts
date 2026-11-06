@@ -34,10 +34,11 @@ const dossier = (
 });
 
 describe('les acquéreurs de la démo', () => {
-  it('sont huit, valides, joignables en 06 39 98 et example.com (fiction), et ne disent pas « démo »', () => {
+  it('sont neuf (les Wilson, anglophones, depuis la M139), valides, joignables en 06 39 98 et example.com (fiction), et ne disent pas « démo »', () => {
     // Mission 132 — Rossi, Keller, et six acquéreurs autour de Vence.
-    expect(DEMO_BUYERS).toHaveLength(8);
-    expect(new Set(DEMO_BUYERS.map((buyer) => buyer.phone)).size).toBe(8);
+    expect(DEMO_BUYERS).toHaveLength(9);
+    expect(new Set(DEMO_BUYERS.map((buyer) => buyer.phone)).size).toBe(9);
+    expect(DEMO_BUYERS.find((buyer) => buyer.name === 'Mr and Mrs Wilson')?.language).toBe('en');
     for (const buyer of DEMO_BUYERS) {
       const parsed = parseBuyerInput({
         name: buyer.name,

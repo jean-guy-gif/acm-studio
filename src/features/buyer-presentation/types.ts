@@ -1,4 +1,9 @@
 import type { AvailabilitySlot } from '@/features/buyer-deck/types';
+import type {
+  VisitNextStep,
+  VisitOpinion,
+  VisitTag,
+} from '@/features/buyer-messages/templates/types';
 import type { Database } from '@/lib/supabase/database.types';
 import type { SelectionCategory, SelectionSource } from '@/features/ideal-properties/types';
 
@@ -37,6 +42,13 @@ export type VisitRequest = {
   outcome: VisitOutcome;
   // Mission 122 — ses disponibilités, données à la fin de la présentation.
   availability: AvailabilitySlot[];
+  // Mission 139 — le compte rendu de la visite (null avant la mission, ou visite pas faite).
+  report: {
+    opinion: VisitOpinion;
+    liked: VisitTag[];
+    disliked: VisitTag[];
+    nextStep: VisitNextStep | null;
+  } | null;
 };
 
 // Ce qu'un bien a le droit de porter devant l'acquéreur : LISTE D'AUTORISATION. Ni titre, ni
