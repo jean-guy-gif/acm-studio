@@ -18,7 +18,11 @@ import { OfferShare } from '@/features/purchase-offer/components/offer-share';
 import type { OfferContext } from '@/features/purchase-offer/queries/get-offer-context';
 import { numberInWords } from '@/features/purchase-offer/services/amount-in-words';
 import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
-import { OFFRE_AVEC_PRET_VALIDEE } from '@/features/purchase-offer/services/offer-text';
+import {
+  OFFRE_AVEC_PRET_VALIDEE,
+  renderOffer,
+} from '@/features/purchase-offer/services/offer-text';
+import { documentToText } from '@/features/visit-voucher/services/voucher-text';
 import { SignaturePad } from '@/features/visit-voucher/components/signature-pad';
 import { parisDateLabel } from '@/features/visit-voucher/services/voucher-fields';
 
@@ -102,6 +106,7 @@ export function OfferForm({
   const [validUntil, setValidUntil] = useState(parisDay(7));
   const [contractDeadline, setContractDeadline] = useState(parisDay(45));
   const [signatures, setSignatures] = useState<(string | null)[]>([null, null]);
+  const [approved, setApproved] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{
@@ -140,13 +145,57 @@ export function OfferForm({
     );
   }
 
+  const condominium = visit?.condominium === true;
+  // Le texte tel qu'il sera signé : le même rendu que le serveur, relu avant de signer.
+  const preview =
+    context.agency &&
+    visit?.propertyAddress &&
+    euros(price) > 0 &&
+    euros(fees) > 0 &&
+    euros(deposit) > 0
+      ? documentToText(
+          renderOffer({
+            agency: context.agency,
+            offrants: offrants.map((offrant) => ({
+              ...offrant,
+              birthDate: offrant.birthDate ? frenchDay(offrant.birthDate) : '',
+            })),
+            address,
+            matrimonial: matrimonial.trim() ? matrimonial : null,
+            fiscalResidenceFrance: fiscalFrance,
+            mandateNumber: visit.mandateNumber?.trim() || mandateNumber,
+            agent: withAgent ? agent : null,
+            condominium,
+            propertyAddress: visit.propertyAddress,
+            parcels,
+            totalArea,
+            lots: condominium
+              ? lots.map((lot) => ({
+                  number: Math.max(1, integer(lot.number)),
+                  description: lot.description,
+                  shares: Math.max(1, integer(lot.shares)),
+                  base: Math.max(1, integer(lot.base)),
+                }))
+              : [],
+            price: Math.min(euros(price), 9_999_999),
+            feesPaidBy,
+            fees: Math.min(euros(fees), 9_999_999),
+            financing: 'cash',
+            loan: null,
+            validUntil: frenchDay(validUntil),
+            contractDeadline: frenchDay(contractDeadline),
+            deposit: Math.min(euros(deposit), 9_999_999),
+          }),
+        )
+      : null;
+
   const setOffrant = (index: number, patch: Partial<Offrant>) =>
     setOffrants((current) =>
       current.map((entry, at) => (at === index ? { ...entry, ...patch } : entry)),
     );
-  const condominium = visit?.condominium === true;
   const ready =
     visit != null &&
+    approved &&
     signatures.slice(0, offrants.length).every((value) => value != null) &&
     euros(price) > 0 &&
     euros(fees) > 0 &&
@@ -208,6 +257,7 @@ export function OfferForm({
             validUntil,
             contractDeadline,
             signatures: signatures.slice(0, offrants.length),
+            approved,
           }).catch(() => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }));
           if (!result.ok) {
             setError(result.error);
@@ -224,7 +274,15 @@ export function OfferForm({
             className={inputBase}
             value={visitId}
             aria-label="Le bien de l’offre"
-            onChange={(event) => setVisitId(event.target.value)}
+            onChange={(event) => {
+              // Un autre bien : son n° de mandat, son prix et ses honoraires (rien du précédent).
+              const next = context.visits.find((entry) => entry.visitId === event.target.value);
+              setVisitId(event.target.value);
+              setMandateNumber(next?.mandateNumber ?? '');
+              setPrice(next?.price != null ? String(Math.round(next.price)) : '');
+              setFees(next?.fees != null ? String(Math.round(next.fees)) : '');
+              setFeesPaidBy(next?.feesPaidBy ?? 'seller');
+            }}
           >
             {eligible.map((entry) => (
               <option key={entry.visitId} value={entry.visitId}>
@@ -239,7 +297,13 @@ export function OfferForm({
             {condominium ? ' · en copropriété' : ''}
           </p>
         ) : null}
-        {input('N° de mandat', mandateNumber, setMandateNumber, { testId: 'offer-mandate' })}
+        {visit?.mandateNumber ? (
+          <p className="text-sm text-zinc-700" data-testid="offer-mandate-known">
+            N° de mandat : {visit.mandateNumber}
+          </p>
+        ) : (
+          input('N° de mandat', mandateNumber, setMandateNumber, { testId: 'offer-mandate' })
+        )}
       </section>
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
@@ -495,6 +559,35 @@ export function OfferForm({
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
         <h2 className={sectionTitle}>Signature des offrants</h2>
+        {preview ? (
+          <details className="rounded-xl border border-zinc-200 p-3" data-testid="offer-preview">
+            <summary className="cursor-pointer text-sm font-semibold text-brand-darker">
+              Lire l’offre avant de signer
+            </summary>
+            <div className="mt-2 flex max-h-96 flex-col gap-1.5 overflow-y-auto text-[13px] leading-relaxed">
+              {preview.split('\n').map((line, index) => (
+                <p
+                  key={index}
+                  className={
+                    line.startsWith('#') ? 'font-title font-bold text-zinc-900' : 'text-zinc-700'
+                  }
+                >
+                  {line.replace(/^#+ /, '').replace(/^\| /, '')}
+                </p>
+              ))}
+            </div>
+          </details>
+        ) : null}
+        <label className="flex items-center gap-2 text-sm font-medium text-zinc-800">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-brand"
+            checked={approved}
+            data-testid="offer-approved"
+            onChange={(event) => setApproved(event.target.checked)}
+          />
+          Lu et approuvé
+        </label>
         {offrants.map((offrant, index) => (
           <SignaturePad
             key={index}

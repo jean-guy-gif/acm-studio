@@ -84,13 +84,24 @@ export type OfferFields = {
 
 const euros = (value: number): string => formatNumber(Math.round(value), { maxDecimals: 0 });
 
-// « dix millièmes » : la base des tantièmes en lettres.
+// « dix millièmes » : la base des tantièmes en lettres (l'ordinal du dernier mot : « millièmes »,
+// « centièmes », « cinquièmes », « neuvièmes », « quatrièmes »).
 export function sharesBaseInWords(base: number): string {
   const words = numberInWords(base);
-  if (words.endsWith('mille')) return `${words.slice(0, -'mille'.length)}millièmes`;
-  if (words.endsWith('cent')) return `${words.slice(0, -'cent'.length)}centièmes`;
-  if (words.endsWith('cents')) return `${words.slice(0, -'cents'.length)}centièmes`;
-  return `${words}ièmes`;
+  const cut = Math.max(words.lastIndexOf(' '), words.lastIndexOf('-')) + 1;
+  const head = words.slice(0, cut);
+  const last = words.slice(cut).replace(/s$/, '');
+  const ordinal =
+    last === 'mille'
+      ? 'millième'
+      : last === 'cinq'
+        ? 'cinquième'
+        : last === 'neuf'
+          ? 'neuvième'
+          : last.endsWith('e')
+            ? `${last.slice(0, -1)}ième`
+            : `${last}ième`;
+  return `${head}${ordinal}s`;
 }
 
 function offrantLine(offrant: Offrant): string {

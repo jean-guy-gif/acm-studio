@@ -42,6 +42,9 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   const profile = await getProfile();
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
   const parsed = offerInputSchema.safeParse(raw);
+  if (typeof raw !== 'object' || raw == null || (raw as { approved?: unknown }).approved !== true) {
+    return { ok: false, error: 'Les offrants relisent l’offre et cochent « Lu et approuvé ».' };
+  }
   if (!parsed.success) {
     return {
       ok: false,
@@ -77,6 +80,8 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   if (signatures.some((bytes) => bytes == null)) {
     return { ok: false, error: 'Une signature n’a pas pu être lue : signez de nouveau.' };
   }
+  // Le n° de mandat déjà gardé sur la conclusion l'emporte (il se remplit seul, § 12).
+  const mandateNumber = visit.mandateNumber?.trim() || input.mandateNumber;
 
   const text = documentToText(
     renderOffer({
@@ -88,7 +93,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       address: input.address,
       matrimonial: input.matrimonial,
       fiscalResidenceFrance: input.fiscalResidenceFrance,
-      mandateNumber: input.mandateNumber,
+      mandateNumber,
       agent: input.agent,
       condominium: visit.condominium,
       propertyAddress: visit.propertyAddress,
@@ -111,7 +116,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     address: input.address,
     matrimonial: input.matrimonial,
     fiscalResidenceFrance: input.fiscalResidenceFrance,
-    mandateNumber: input.mandateNumber,
+    mandateNumber,
     propertyAddress: visit.propertyAddress,
     price: input.price,
     validUntil: input.validUntil,
@@ -178,7 +183,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   // Le n° de mandat et les honoraires, saisis une fois, repris ensuite : gardés sur la conclusion
   // du mandat s'ils n'y étaient pas (jamais une valeur déjà posée réécrite).
   const patch = {
-    ...(visit.mandateNumber == null ? { mandate_number: input.mandateNumber } : {}),
+    ...(visit.mandateNumber == null ? { mandate_number: mandateNumber } : {}),
     ...(visit.fees == null ? { fees_amount: input.fees } : {}),
     ...(visit.feesPaidBy == null ? { fees_paid_by: input.feesPaidBy } : {}),
   };

@@ -65,6 +65,10 @@ describe('les montants en lettres', () => {
     expect(sharesBaseInWords(1000)).toBe('millièmes');
     expect(sharesBaseInWords(10_000)).toBe('dix millièmes');
     expect(sharesBaseInWords(100)).toBe('centièmes');
+    expect(sharesBaseInWords(5)).toBe('cinquièmes');
+    expect(sharesBaseInWords(9)).toBe('neuvièmes');
+    expect(sharesBaseInWords(1004)).toBe('mille quatrièmes');
+    expect(sharesBaseInWords(200)).toBe('deux centièmes');
   });
 });
 

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { offerExpiryTasks } from '@/features/purchase-offer/services/offer-tasks';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { createClient } from '@/lib/supabase/server';
@@ -14,10 +15,13 @@ export async function getOfferTasks(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('buyer_documents')
-    .select('id, buyer_id, valid_until, buyers(name), buyer_document_acceptances(id)')
+    .select(
+      'id, buyer_id, valid_until, buyers!inner(name, archived_at), buyer_document_acceptances(id)',
+    )
     .eq('agency_id', agencyId)
     .eq('kind', 'purchase_offer')
-    .not('buyer_id', 'is', null);
+    .is('buyers.archived_at', null)
+    .gte('valid_until', parisDay(now));
   if (error) return { tasks: [], failed: true };
   return {
     tasks: offerExpiryTasks(
@@ -26,7 +30,7 @@ export async function getOfferTasks(
         return {
           offerId: row.id,
           buyerId: row.buyer_id!,
-          buyerName: (row.buyers as { name: string } | null)?.name ?? null,
+          buyerName: (row.buyers as unknown as { name: string } | null)?.name ?? null,
           validUntil: row.valid_until ?? '',
           answered: Array.isArray(answers) ? answers.length > 0 : answers != null,
         };

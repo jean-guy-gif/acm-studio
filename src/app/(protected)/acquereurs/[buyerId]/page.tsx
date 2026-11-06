@@ -487,13 +487,23 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   Ses bons de visite
                 </h2>
                 {ownVisits.length > 0 ? (
-                  <Link
-                    href={`/acquereurs/${buyer.id}/bon-de-visite`}
-                    className={btnSecondary}
-                    data-testid="buyer-voucher-new"
-                  >
-                    Bon de visite
-                  </Link>
+                  <span className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/acquereurs/${buyer.id}/bon-de-visite`}
+                      className={btnSecondary}
+                      data-testid="buyer-voucher-new"
+                    >
+                      Bon de visite
+                    </Link>
+                    {/* Mission 137 B — l'offre d'achat se prépare aussi depuis la fiche (§ 11). */}
+                    <Link
+                      href={`/acquereurs/${buyer.id}/offre`}
+                      className={btnSecondary}
+                      data-testid="buyer-offer-new"
+                    >
+                      Offre d’achat
+                    </Link>
+                  </span>
                 ) : null}
               </div>
               {signedVouchers == null ? (

@@ -138,7 +138,7 @@ export async function getOfferContext(
     projectIds.length > 0
       ? supabase
           .from('projects')
-          .select('id, seller_email, seller_phone')
+          .select('id, seller_email, seller_phone, status')
           .eq('agency_id', agencyId)
           .in('id', projectIds)
       : Promise.resolve({ data: [], error: null }),
@@ -166,7 +166,9 @@ export async function getOfferContext(
     const projectId = line.itemSource === 'project' ? line.itemReference : null;
     const conclusion = projectId ? conclusionOf.get(projectId) : undefined;
     const subject = projectId ? subjectOf.get(projectId) : undefined;
-    const signed = conclusion?.outcome === 'signed';
+    const signed =
+      conclusion?.outcome === 'signed' &&
+      (projectId ? projectOf.get(projectId)?.status !== 'archived' : false);
     const eligible = signed && line.outcome === 'offer';
     const photos = Array.isArray(subject?.photo_urls) ? (subject.photo_urls as unknown[]) : [];
     const photoPath =

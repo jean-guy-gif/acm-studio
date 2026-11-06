@@ -15,7 +15,8 @@ export async function getVisitVouchers(
   if (visitIds.length === 0) return new Map();
   const { data } = await supabase
     .from('buyer_document_visits')
-    .select('visit_request_id, buyer_documents!inner(id, buyer_id, signed_at)')
+    .select('visit_request_id, buyer_documents!inner(id, buyer_id, signed_at, kind)')
+    .eq('buyer_documents.kind', 'visit_voucher')
     .in('visit_request_id', visitIds);
   const vouchers = new Map<string, VisitVoucher>();
   for (const row of data ?? []) {

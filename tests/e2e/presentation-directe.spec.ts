@@ -681,7 +681,7 @@ test('l’offre d’achat : l’échéance, le lien du vendeur, une offre signé
     const form = page.getByTestId('offer-form');
     await expect(form).toBeVisible();
     // Repris : le n° de mandat (conclusion), les offrants de la dernière offre.
-    await expect(form.getByTestId('offer-mandate')).toHaveValue('M-2026-0142');
+    await expect(form.getByTestId('offer-mandate-known')).toHaveText('N° de mandat : M-2026-0142');
     await expect(form.getByTestId('offer-lastname-1')).toHaveValue('Keller');
     await expect(form.getByTestId('offer-lastname-2')).toHaveValue('Keller');
     await form.getByTestId('offer-parcel-section-1').fill('AB');
@@ -691,6 +691,9 @@ test('l’offre d’achat : l’échéance, le lien du vendeur, une offre signé
     await form.getByTestId('offer-deposit').fill('80000');
     await expect(form).toContainText('quatre-vingt mille euros');
     await expect(form.getByTestId('offer-sign')).toBeDisabled();
+    await form.getByTestId('offer-preview').locator('summary').click();
+    await expect(form.getByTestId('offer-preview')).toContainText("OFFRE D'ACHAT");
+    await form.getByTestId('offer-approved').check();
     await draw('offer-signature-1');
     await draw('offer-signature-2');
     await form.getByTestId('offer-sign').click();

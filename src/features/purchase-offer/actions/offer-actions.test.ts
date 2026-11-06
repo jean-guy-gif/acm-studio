@@ -155,6 +155,7 @@ const input = (over: Record<string, unknown> = {}) => ({
   validUntil: day(3),
   contractDeadline: day(40),
   signatures: [PNG],
+  approved: true,
   ...over,
 });
 
