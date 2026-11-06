@@ -185,6 +185,15 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   groupés, lettres « dix millièmes ») ne se devine pas depuis la fiche, il se vérifie sur le modèle
   (Jean-Guy) ; « troisièmes » : ne retirer le « s » que de « cents » et « vingts ». Suite e2e
   13/13 au premier passage, 13,1 min.
+- 06/11 · M138 · Une clé React faite de la fiche et du genre de tâche confond deux tâches d'une même
+  fiche (deux offres répondues) : l'état d'un panneau passait de l'une à l'autre. Une tâche qui porte
+  un objet (une offre) a son identifiant dans la clé ; l'e2e met les deux tâches côte à côte.
+- 06/11 · M138 · Un « appliquée » recollé n'est pas une migration appliquée : la liste en ligne
+  (`migration list --remote`) se relit avant d'enchaîner, à chaque fois.
+- 06/11 · M138 · Une tâche ajoutée en tête pousse les autres derrière « Voir les N autres tâches » :
+  un e2e qui clique une tâche ouvre d'abord la liste repliée si elle y est. La démo d'avant la mission
+  (préparée par l'ancien code) a fait rougir l'e2e démo une fois ; vert au second passage, après sa
+  remise à zéro. Suite : 12 sur 13 au premier passage (11,0 min), démo 4,6 min au second.
 
 ## La base
 
