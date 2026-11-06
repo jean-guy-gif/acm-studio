@@ -96,6 +96,39 @@ export type LiveTexts = {
     hint: string;
     serious: Record<SeriousCompetitor, string>;
   };
+  priceReveal: {
+    question: string;
+    guessFirst: string;
+    hint: string;
+    listed: string;
+    imagined: string;
+    gap: string;
+    perSqm: string;
+    position: string;
+    legend: string;
+  };
+  duration: {
+    question: string;
+    revealedHint: string;
+    hint: string;
+    listed: string;
+    perSqm: string;
+    serious: string;
+    notGiven: string;
+    days: (count: number) => string;
+    label: string;
+    unit: string;
+    why: string;
+    answerFirst: string;
+    observed: string;
+    unavailable: string;
+    observedSince: (days: number) => string;
+    more: (gap: string, guess: string) => string;
+    less: (gap: string, guess: string) => string;
+    initialPrice: string;
+    drop: string;
+    noHistory: string;
+  };
   price: {
     question: string;
     savedHint: string;

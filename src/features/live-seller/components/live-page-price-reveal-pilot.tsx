@@ -15,11 +15,10 @@ import {
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import { PRICE_COHERENCE_VALUES, PRICE_COHERENCE_LABELS } from '@/features/live-seller/constants';
+import { PRICE_COHERENCE_VALUES } from '@/features/live-seller/constants';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
-
-const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // MISSION 51 — écran-pilote (étape 3) du contrat « Valider et continuer ».
 //
@@ -36,21 +35,23 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
   const response = entry.response;
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const reveal = entry.priceReveal;
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.priceReveal;
+  const euro = (value: number | null): string =>
+    value != null ? formatEuro(value, { language }) : '—';
+  const label = neutralComparableLabel(entry, language);
 
   // Garde lien direct / hors séquence : jamais révéler un prix que le vendeur n'a pas
   // encore imaginé. Miroir de la garde de navigation (défense en profondeur). ICI le prix
   // n'est PAS encore mérité : on n'affiche donc PAS le titre réel du portail (il contient
   // le prix — défaut 2.2), mais le LIBELLÉ NEUTRE composé, comme les écrans pré-révélation.
   if (savedEstimate == null) {
-    const neutralLabel = neutralComparableLabel(entry);
+    const neutralLabel = label;
     return (
       <div className="flex flex-col gap-6 sm:gap-8">
         <div className="flex flex-col gap-3">
-          <h2 className={question}>Ce prix vous paraît-il cohérent ?</h2>
-          <p className={questionHint}>
-            Donnez d’abord le prix que vous imaginez, à l’écran précédent : le prix réel s’affichera
-            ensuite.
-          </p>
+          <h2 className={question}>{t.question}</h2>
+          <p className={questionHint}>{t.guessFirst}</p>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
           <div className="flex flex-col gap-4">
@@ -69,54 +70,50 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Ce prix vous paraît-il cohérent ?</h2>
-        <p className={questionHint}>
-          Voici le prix réellement affiché. Qu’en pensez-vous, face au prix que vous imaginiez ?
-        </p>
+        <h2 className={question}>{t.question}</h2>
+        <p className={questionHint}>{t.hint}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={entry.neutralLabel} />
-          <LiveComparableHeader
-            heading={entry.neutralLabel}
-            city={entry.city}
-            district={entry.district}
-          />
+          <LiveGallery photos={entry.photoUrls} alt={label} />
+          <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
         </div>
 
         <div className="flex h-fit flex-col gap-4">
           <div className={`${panel} live-reveal-pop flex flex-col gap-5`}>
             <div>
-              <div className={statLabel}>Prix affiché sur le marché</div>
+              <div className={statLabel}>{t.listed}</div>
               <div className={revealValue}>{euro(reveal.currentPrice)}</div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className={statLabel}>Prix imaginé</div>
+                <div className={statLabel}>{t.imagined}</div>
                 <div className={bigValue}>{euro(savedEstimate)}</div>
               </div>
               <div>
-                <div className={statLabel}>Écart</div>
+                <div className={statLabel}>{t.gap}</div>
                 <div className={bigValue}>
-                  {reveal.gapAmount != null ? formatEuro(reveal.gapAmount, { signed: true }) : '—'}
+                  {reveal.gapAmount != null
+                    ? formatEuro(reveal.gapAmount, { signed: true, language })
+                    : '—'}
                 </div>
                 {reveal.gapPercentage != null ? (
                   <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {formatPercent(reveal.gapPercentage, { signed: true })}
+                    {formatPercent(reveal.gapPercentage, { signed: true, language })}
                   </div>
                 ) : null}
               </div>
               <div>
-                <div className={statLabel}>Prix au m²</div>
+                <div className={statLabel}>{t.perSqm}</div>
                 <div className={statValue}>
                   {reveal.pricePerSquareMeter != null
-                    ? formatEuroPerSquareMeter(reveal.pricePerSquareMeter)
+                    ? formatEuroPerSquareMeter(reveal.pricePerSquareMeter, { language })
                     : '—'}
                 </div>
               </div>
               <div>
-                <div className={statLabel}>Position (prix/m²)</div>
+                <div className={statLabel}>{t.position}</div>
                 <div className={statValue}>
                   {reveal.relativePosition
                     ? `${reveal.relativePosition.rank} / ${reveal.relativePosition.total}`
@@ -128,7 +125,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
 
           <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
             <fieldset className="flex flex-col gap-3">
-              <legend className={fieldLabel}>Selon vous, ce prix est…</legend>
+              <legend className={fieldLabel}>{t.legend}</legend>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {PRICE_COHERENCE_VALUES.map((value) => (
                   <label
@@ -142,14 +139,14 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
                       defaultChecked={response?.seller_price_coherence === value}
                       className="sr-only"
                     />
-                    {PRICE_COHERENCE_LABELS[value]}
+                    {texts.live.answers.coherence[value]}
                   </label>
                 ))}
               </div>
             </fieldset>
 
             <label className="flex flex-col gap-1.5">
-              <span className={fieldLabel}>Commentaire (facultatif)</span>
+              <span className={fieldLabel}>{texts.common.commentOptional}</span>
               <textarea
                 name="seller_price_coherence_comment"
                 rows={2}
