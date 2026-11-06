@@ -123,9 +123,9 @@ beforeEach(() => {
 });
 
 describe('« J’ai relancé »', () => {
-  it('note la relance et un échange', async () => {
+  it('note la relance, sans compter un échange (seul ce qui vient de l’acquéreur en est un)', async () => {
     expect(await recordBuyerRelaunch(BUYER)).toEqual({ ok: true });
-    expect(writes.list).toEqual(['insert buyer_events', 'update buyers']);
+    expect(writes.list).toEqual(['insert buyer_events']);
   });
 
   it('rien de dû, déjà répondu, lecture en échec, membre retiré : rien n’est écrit', async () => {
