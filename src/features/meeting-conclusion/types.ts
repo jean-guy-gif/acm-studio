@@ -105,6 +105,9 @@ export type MeetingConclusion = ConclusionAmounts & {
   // Mission 94 — le prix que le vendeur a reformulé après avoir vu le marché. Lu dans le résumé
   // du Live, où il est figé dès sa première valeur (M92) ; null s'il a passé l'écran.
   sellerRevisedPrice: number | null;
+  // Mission 133 — le nombre d'acquéreurs prêts montrés au vendeur pendant le Live (la première
+  // fois), lu dans le résumé du Live ; null s'ils n'ont pas été montrés. Réservé au conseiller.
+  buyersShownCount?: number | null;
   // Mission 85 — la note du vendeur après le prix (1 à 10) : la première, la dernière, et
   // ce qui lui manquerait pour être à 10. Figées à la conclusion, réservées au conseiller.
   launchReadinessFirst: number | null;

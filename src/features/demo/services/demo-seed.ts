@@ -44,6 +44,10 @@ export const DEMO_SEED_COMPETITORS = 5;
 // Le vendeur du dossier en présentation directe : un autre foyer que celui du Live interactif de
 // Vence, pour que les deux dossiers ne se confondent pas dans la liste du Live.
 export const DEMO_DIRECT_SELLER = 'M. et Mme Bernard';
+// Mission 133 — la maison des Bernard a une piscine, celle de Mme Garcia non (décision de Jean-Guy,
+// 06/11) : M. et Mme Lambert veulent une piscine (★), le moteur les écarte du bien de Mme Garcia —
+// 4 acquéreurs prêts, pas de pastille au Live — et les garde pour les Bernard — 5, la pastille.
+export const DEMO_DIRECT_HAS_POOL = true;
 export const DEMO_DANGEROUS_REASON = 'better_location';
 export const DEMO_READINESS_MISSING = 'Le délai : il voudrait vendre avant l’été.';
 export const DEMO_FOLLOW_UP_MOTIVE = 'thinking_price';
@@ -175,7 +179,7 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     // La piscine et l'ascenseur du bien (oui / non / non renseigné) : l'import d'une annonce ne
     // les écrit pas (le conseiller les renseigne, Stream Estate, 05/10) ; la démo pose ceux de son
     // scénario, sans quoi la villa de Mougins montrait « ? Piscine » aux Keller (essai, 25/10).
-    has_pool: subject.hasPool,
+    has_pool: stage === 'direct' ? DEMO_DIRECT_HAS_POOL : subject.hasPool,
     has_elevator: subject.hasElevator,
   };
   const competitors = demoSeedCompetitors(scenario).map((listing) => ({

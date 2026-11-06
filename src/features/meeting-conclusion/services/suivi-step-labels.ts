@@ -56,6 +56,8 @@ export function taskHref(task: SuiviTask): string {
       return `/prospection?bien=${task.projectId}`;
     case 'visit':
       return '/visites';
+    case 'propose_buyers':
+      return `/builder/${task.projectId}#acquereurs`;
     case 'buyer_recontact':
       return `/acquereurs/${task.buyerId ?? ''}`;
   }
@@ -129,6 +131,19 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Mission 133 — un mandat signé appelle ses acquéreurs prêts.
+    case 'propose_buyers': {
+      const count = task.count ?? 0;
+      return {
+        title: `Proposer le bien de ${task.sellerName} à ${plural(count, 'acquéreur prêt', 'acquéreurs prêts')}`,
+        detail: [context.propertyLabel, 'leur envoyer le lien de leur dossier']
+          .filter(Boolean)
+          .join(' · '),
+        late: null,
+        button: 'Voir les acquéreurs',
+        href,
+      };
+    }
     // Mission 132 — un acquéreur sans échange depuis 30 jours.
     case 'buyer_recontact': {
       const since =
@@ -158,7 +173,9 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
           ? `démarcher les concurrents de ${next.sellerName}`
           : next.kind === 'buyer_recontact'
             ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
-            : `organiser une visite chez ${next.sellerName}`;
+            : next.kind === 'propose_buyers'
+              ? `proposer le bien de ${next.sellerName} à ses acquéreurs`
+              : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -313,6 +330,21 @@ export function cardStep(
         button: {
           label: 'Organiser la visite',
           action: { kind: 'link', href: '/visites' },
+          primary,
+        },
+      };
+    }
+    case 'propose_buyers': {
+      const count = task.count ?? 0;
+      return {
+        when,
+        whenLate,
+        title: `Proposer le bien à ${plural(count, 'acquéreur prêt', 'acquéreurs prêts')}`,
+        phrase:
+          examplePhrase ?? 'Ils correspondent à son bien : envoyez-leur le lien de leur dossier.',
+        button: {
+          label: 'Voir les acquéreurs',
+          action: { kind: 'link', href: `/builder/${task.projectId}#acquereurs` },
           primary,
         },
       };

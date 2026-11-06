@@ -73,5 +73,10 @@ export function buyerReadiness(
   return { state: ready ? 'ready' : null, recontactOn, sinceDays };
 }
 
+// Mission 133 — les jours (Paris) depuis une date : « cherche depuis 3 semaines » au Live.
+export function parisDaysSince(iso: string, now: Date): number {
+  return Math.max(0, daysBetween(parisDay(new Date(iso)), parisDay(now)));
+}
+
 export const READY_LABEL = 'Prêt à visiter';
 export const RECONTACT_LABEL = 'À recontacter';

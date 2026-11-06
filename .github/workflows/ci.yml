@@ -323,6 +323,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/fiche_rapide.sql
 
+      # Mission 133 — les acquéreurs montrés au vendeur : ensemble, 5 au moins, la première fois
+      # gardée, refusé sur un dossier conclu, cloisonné par agence.
+      - name: La boucle vendeur → acquéreurs (mission 133)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/boucle_acquereurs.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

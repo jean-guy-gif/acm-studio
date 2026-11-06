@@ -22,18 +22,23 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 
 // Mission 132 — `buyer_recontact` : un acquéreur sans échange depuis 30 jours, « Reprendre contact
 // avec la famille Keller » ; il ne tient à aucun dossier vendeur (`buyerId`, `projectId` vide).
+// Mission 133 — `propose_buyers` : un mandat signé appelle ses acquéreurs prêts, « Proposer le bien
+// de M. Bernard à 7 acquéreurs prêts », due à la signature, jamais en retard ; elle compte les
+// acquéreurs prêts qui correspondent et n'ont pas encore reçu ce bien dans une sélection depuis la
+// signature, et disparaît à zéro (aucun état en base).
 export type SuiviTaskKind =
-  'visit' | 'market_update' | 'prospect' | 'follow_up' | 'buyer_recontact';
+  'visit' | 'propose_buyers' | 'market_update' | 'prospect' | 'follow_up' | 'buyer_recontact';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
-// relancer un vendeur, organiser une visite, faire le Point marché, reprendre contact avec un
-// acquéreur (M132), démarcher.
+// relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
+// Point marché, reprendre contact avec un acquéreur (M132), démarcher.
 const KIND_ORDER: Record<SuiviTaskKind, number> = {
   follow_up: 0,
   visit: 1,
-  market_update: 2,
-  buyer_recontact: 3,
-  prospect: 4,
+  propose_buyers: 2,
+  market_update: 3,
+  buyer_recontact: 4,
+  prospect: 5,
 };
 
 export type SuiviTask = {
@@ -80,6 +85,8 @@ export type SuiviTaskInput = {
   readySince?: string | null;
   // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
   visits: { requestedAt: string; buyerName: string | null }[];
+  // Mission 133 — les acquéreurs prêts qui correspondent et n'ont pas encore reçu ce bien.
+  buyersToPropose?: number;
 };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -172,6 +179,14 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
         readyOn,
       });
     }
+    if ((input.buyersToPropose ?? 0) > 0 && signedDay) {
+      tasks.push({
+        ...base,
+        kind: 'propose_buyers',
+        dueOn: signedDay,
+        count: input.buyersToPropose,
+      });
+    }
     const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
     const first = visits[0];
     const firstDay = dayOf(first?.requestedAt);
@@ -209,7 +224,7 @@ export function isTaskDue(task: SuiviTask, today: string): boolean {
 // Le retard en jours (0 : aujourd'hui) ; un démarchage ou une visite n'a pas de date prévue : dus
 // dès qu'ils existent, jamais en retard.
 export function taskLateDays(task: SuiviTask, today: string): number {
-  return task.kind === 'visit' || task.kind === 'prospect'
+  return task.kind === 'visit' || task.kind === 'prospect' || task.kind === 'propose_buyers'
     ? 0
     : Math.max(0, daysBetween(task.dueOn, today));
 }

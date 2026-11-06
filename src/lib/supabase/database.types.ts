@@ -1589,6 +1589,8 @@ export type Database = {
         Row: {
           advisor_closest_comparable_id: string | null
           agency_id: string
+          buyers_shown_at: string | null
+          buyers_shown_count: number | null
           created_at: string
           id: string
           project_id: string
@@ -1607,6 +1609,8 @@ export type Database = {
         Insert: {
           advisor_closest_comparable_id?: string | null
           agency_id: string
+          buyers_shown_at?: string | null
+          buyers_shown_count?: number | null
           created_at?: string
           id?: string
           project_id: string
@@ -1625,6 +1629,8 @@ export type Database = {
         Update: {
           advisor_closest_comparable_id?: string | null
           agency_id?: string
+          buyers_shown_at?: string | null
+          buyers_shown_count?: number | null
           created_at?: string
           id?: string
           project_id?: string

@@ -115,7 +115,7 @@ export function DossierLinkButton({
   );
 }
 
-function DossierLinkShare({
+export function DossierLinkShare({
   url,
   advisorFirstName,
 }: {

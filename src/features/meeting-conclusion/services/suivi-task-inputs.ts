@@ -108,6 +108,8 @@ export function suiviTaskInputs(input: {
   visits: TaskVisit[];
   // Les points n'ont pas pu être lus : aucune tâche Point marché.
   pointsUnknown?: boolean;
+  // Mission 133 — par mandat signé, les acquéreurs prêts à qui proposer le bien.
+  buyersToPropose?: Map<string, number>;
 }): SuiviTaskInput[] {
   const prospecting = prospectingCounts(input.cards);
   const competitors = competitorCounts(input.cards);
@@ -130,5 +132,6 @@ export function suiviTaskInputs(input: {
       requestedAt: visit.requestedAt,
       buyerName: visit.buyerName,
     })),
+    buyersToPropose: input.buyersToPropose?.get(project.id) ?? 0,
   }));
 }

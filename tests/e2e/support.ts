@@ -510,3 +510,34 @@ export function ageTestBuyer(buyerId: string): number {
   }
   return Number(count);
 }
+
+// Mission 133 — un message à l'écran ne prouve pas une ligne écrite (M103) : le moment où les
+// acquéreurs ont été montrés au vendeur se relit EN BASE, en lecture seule, sur un dossier de
+// l'agence de démonstration du compte de démo. Rend le nombre noté, ou null.
+export function readDemoBuyersShown(projectId: string): number | null {
+  if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(projectId)) {
+    throw new Error('Identifiant de dossier inattendu : la base n’est pas lue.');
+  }
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  const sql = `select coalesce((select s.buyers_shown_count from public.live_seller_summary s
+    join public.agencies a on a.id = s.agency_id
+    where s.project_id = '${projectId}' and a.is_demo
+      and s.agency_id = (select agency_id from public.profiles where lower(email) = lower('${email}'))
+      and s.buyers_shown_at is not null), -1)::int as montres`;
+  let output: string;
+  try {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: false }), {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error('Les acquéreurs montrés n’ont pas pu être lus : `supabase db query` a échoué.');
+  }
+  const count = /"montres":\s*(-?\d+)/.exec(output)?.[1];
+  if (count === undefined) {
+    throw new Error(
+      'Réponse inattendue de `supabase db query` à la lecture des acquéreurs montrés.',
+    );
+  }
+  return Number(count) < 0 ? null : Number(count);
+}
