@@ -31,7 +31,8 @@ create table public.buyer_events (
   occurred_at timestamptz not null default now(),
   created_by uuid references public.profiles (id) on delete set null,
   check (
-    (kind in ('link_shared', 'relaunch') and selection_id is not null and reason is null)
+    (kind in ('link_shared', 'relaunch') and selection_id is not null and reason is null
+     and summary is null)
     or (kind = 'search_adjusted' and selection_id is null and reason is not null
         and summary is not null)
   )
@@ -49,13 +50,23 @@ comment on table public.buyer_events is
   'Mission 135 — les faits datés d''un acquéreur : lien partagé, relance, ajustement de sa recherche ; écrits par le serveur seul.';
 
 -- L'agence de la fiche, de la sélection et de l'auteur ; la sélection de cette fiche ; deux relances
--- au plus par sélection.
+-- au plus par sélection, la sélection verrouillée pour les compter ; un fait ne se déplace pas.
 create function public.check_buyer_event()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
+  -- Un fait daté ne se déplace pas : ni d'agence, ni de fiche, ni de sélection, ni de genre (seul
+  -- l'auteur peut devenir nul, quand son profil est supprimé).
+  if tg_op = 'UPDATE' and (
+    new.agency_id is distinct from old.agency_id
+    or new.buyer_id is distinct from old.buyer_id
+    or new.selection_id is distinct from old.selection_id
+    or new.kind is distinct from old.kind
+  ) then
+    raise exception 'buyer_events : un événement ne se déplace pas' using errcode = 'check_violation';
+  end if;
   if not exists (select 1 from public.buyers b where b.id = new.buyer_id and b.agency_id = new.agency_id) then
     raise exception 'buyer_events : la fiche n''est pas de cette agence' using errcode = 'check_violation';
   end if;
@@ -70,11 +81,15 @@ begin
   ) then
     raise exception 'buyer_events : l''auteur n''est pas de cette agence' using errcode = 'check_violation';
   end if;
-  if tg_op = 'INSERT' and new.kind = 'relaunch' and (
-    select count(*) from public.buyer_events e
-    where e.selection_id = new.selection_id and e.kind = 'relaunch'
-  ) >= 2 then
-    raise exception 'buyer_events : deux relances au plus par sélection' using errcode = 'check_violation';
+  if tg_op = 'INSERT' and new.kind = 'relaunch' then
+    -- Deux « J'ai relancé » au même instant : la sélection verrouillée, l'un attend l'autre.
+    perform 1 from public.buyer_selections where id = new.selection_id for update;
+    if (
+      select count(*) from public.buyer_events e
+      where e.selection_id = new.selection_id and e.kind = 'relaunch'
+    ) >= 2 then
+      raise exception 'buyer_events : deux relances au plus par sélection' using errcode = 'check_violation';
+    end if;
   end if;
   return new;
 end $$;

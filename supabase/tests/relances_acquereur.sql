@@ -5,7 +5,9 @@
 --   §4 l'agence de la fiche et de l'auteur, la sélection de cette fiche sont vérifiées ;
 --   §5 le navigateur lit son agence et n'écrit rien ; une autre agence et un membre retiré ne
 --      lisent rien ;
---   §6 la sélection supprimée emporte ses partages et relances ; la fiche supprimée, tout.
+--   §6 la sélection supprimée emporte ses partages et relances ; la fiche supprimée, tout ; un profil
+--      auteur supprimé laisse l'événement, sans auteur ; une agence supprimée passe ;
+--   §7 un fait ne se déplace pas (genre, sélection), et un partage ne porte pas de résumé.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/relances_acquereur.sql
@@ -16,7 +18,8 @@ begin;
 insert into auth.users (id) values
   ('13511111-1111-1111-1111-111111111111'),
   ('13522222-2222-2222-2222-222222222222'),
-  ('13533333-3333-3333-3333-333333333333');
+  ('13533333-3333-3333-3333-333333333333'),
+  ('13544444-4444-4444-4444-444444444444');
 insert into public.agencies (id, name) values
   ('135aaaaa-0000-0000-0000-000000000000', 'A135'),
   ('135bbbbb-0000-0000-0000-000000000000', 'B135');
@@ -25,6 +28,9 @@ insert into public.profiles (id, agency_id, first_name, last_name, email, role) 
    'Al', 'A', 'a135@t.l', 'advisor'),
   ('13522222-2222-2222-2222-222222222222', '135bbbbb-0000-0000-0000-000000000000',
    'Bo', 'B', 'b135@t.l', 'advisor');
+insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
+  ('13544444-4444-4444-4444-444444444444', '135aaaaa-0000-0000-0000-000000000000',
+   'Co', 'C', 'c135@t.l', 'advisor');
 insert into public.profiles (id, agency_id, first_name, last_name, email, role, removed_at) values
   ('13533333-3333-3333-3333-333333333333', '135aaaaa-0000-0000-0000-000000000000',
    'Ré', 'R', 'r135@t.l', 'advisor', now());
@@ -185,7 +191,42 @@ begin
 end $$;
 reset role;
 
--- §6 — les suppressions.
+-- §7 — un fait ne se déplace pas ; un partage sans résumé.
+do $$
+begin
+  begin
+    update public.buyer_events set kind = 'relaunch' where kind = 'link_shared';
+    raise exception 'FAIL 7: le genre d''un événement changé';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.buyer_events set selection_id = '135eeeee-0000-0000-0000-000000000002'
+      where kind = 'relaunch';
+    raise exception 'FAIL 7: un événement déplacé vers une autre sélection';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.buyer_events (agency_id, buyer_id, kind, selection_id, summary)
+      values ('135aaaaa-0000-0000-0000-000000000000', '135ccccc-0000-0000-0000-000000000002',
+              'link_shared', '135eeeee-0000-0000-0000-000000000002', 'x');
+    raise exception 'FAIL 7: un partage avec un résumé accepté';
+  exception when check_violation then null;
+  end;
+end $$;
+
+-- §6 — les suppressions. Un profil auteur (qui n'est pas le titulaire de la fiche) supprimé :
+-- l'événement reste, sans auteur.
+insert into public.buyer_events (agency_id, buyer_id, kind, reason, summary, created_by)
+  values ('135aaaaa-0000-0000-0000-000000000000', '135ccccc-0000-0000-0000-000000000002',
+          'search_adjusted', 'surface', 'Surface minimum : 110 m² → 120 m²',
+          '13544444-4444-4444-4444-444444444444');
+delete from public.profiles where id = '13544444-4444-4444-4444-444444444444';
+do $$
+begin
+  if (select created_by from public.buyer_events where summary like 'Surface%') is not null then
+    raise exception 'FAIL 6: l''auteur supprimé n''est pas vidé';
+  end if;
+end $$;
 delete from public.buyer_selections where id = '135eeeee-0000-0000-0000-000000000001';
 do $$
 begin
@@ -199,8 +240,17 @@ end $$;
 delete from public.buyers where id = '135ccccc-0000-0000-0000-000000000001';
 do $$
 begin
-  if exists (select 1 from public.buyer_events) then
+  if exists (select 1 from public.buyer_events where buyer_id = '135ccccc-0000-0000-0000-000000000001') then
     raise exception 'FAIL 6: la fiche supprimée n''emporte pas ses événements';
+  end if;
+end $$;
+-- Une agence supprimée, avec ses événements (ses profils d'abord, que la base exige) : passe.
+delete from public.profiles where agency_id = '135aaaaa-0000-0000-0000-000000000000';
+delete from public.agencies where id = '135aaaaa-0000-0000-0000-000000000000';
+do $$
+begin
+  if exists (select 1 from public.buyer_events) then
+    raise exception 'FAIL 6: l''agence supprimée laisse des événements';
   end if;
 end $$;
 
