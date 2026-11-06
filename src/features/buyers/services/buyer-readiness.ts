@@ -19,11 +19,12 @@ export type BuyerReadinessInput = Pick<
 >;
 
 // Les échanges datés avec l'acquéreur : le contact déclaré, un changement de statut, la
-// présentation, sa réponse par le lien, une visite demandée ou faite. Un lien envoyé ou un courrier
-// préparé ne sont pas des échanges avec lui (rien ne dit qu'il les a lus).
+// présentation, sa réponse par le lien, une visite demandée ou faite, un bien proposé noté
+// « Envoyé » (M134, décision du 06/11 : l'envoi noté compte, la simple création d'un lien non). Un
+// courrier préparé n'est pas un échange avec lui.
 export function exchangeDates(
   buyer: Pick<Buyer, 'contactedAt' | 'statusChangedAt'>,
-  facts: Pick<BuyerProgressFacts, 'presentedAt' | 'answeredAt' | 'lastVisitAt'>,
+  facts: Pick<BuyerProgressFacts, 'presentedAt' | 'answeredAt' | 'lastVisitAt' | 'lastProposalAt'>,
 ): (string | null | undefined)[] {
   return [
     buyer.contactedAt,
@@ -31,6 +32,7 @@ export function exchangeDates(
     facts.presentedAt,
     facts.answeredAt,
     facts.lastVisitAt,
+    facts.lastProposalAt,
   ];
 }
 

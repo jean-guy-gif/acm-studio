@@ -170,7 +170,11 @@ export function RankedCandidateCard({
     setPhotoIndex((index) => (index + delta + photos.length) % photos.length);
 
   return (
-    <div className={`${card} group flex flex-col gap-2.5 overflow-hidden`}>
+    <div
+      className={`${card} group flex flex-col gap-2.5 overflow-hidden`}
+      data-testid="ranked-candidate"
+      data-listing={candidate.url}
+    >
       {photos.length > 0 ? (
         <div className="relative h-36 w-full">
           <RemoteImage

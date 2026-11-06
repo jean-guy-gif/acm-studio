@@ -22,10 +22,11 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 
 // Mission 132 — `buyer_recontact` : un acquéreur sans échange depuis 30 jours, « Reprendre contact
 // avec la famille Keller » ; il ne tient à aucun dossier vendeur (`buyerId`, `projectId` vide).
-// Mission 133 — `propose_buyers` : un mandat signé appelle ses acquéreurs prêts, « Proposer le bien
-// de M. Bernard à 7 acquéreurs prêts », due à la signature, jamais en retard ; elle compte les
-// acquéreurs prêts qui correspondent et n'ont pas encore reçu ce bien dans une sélection depuis la
-// signature, et disparaît à zéro (aucun état en base).
+// Mission 133, 134 — `propose_buyers` : un nouveau bien appelle les acquéreurs prêts de l'agence,
+// « 4 acquéreurs pour la maison de Vence (140 m², 779 000 €) » — une tâche par bien (mandat signé,
+// vendeur à relancer avec un prix, concurrent retenu, nouveau venu, bien démarché), due à l'arrivée
+// du bien, jamais en retard ; elle compte les acquéreurs prêts à qui il n'a pas encore été proposé et
+// disparaît à zéro (M134 : les envois notés, `buyer_proposals`).
 export type SuiviTaskKind =
   'visit' | 'propose_buyers' | 'market_update' | 'prospect' | 'follow_up' | 'buyer_recontact';
 
@@ -61,6 +62,12 @@ export type SuiviTask = {
   // Mission 132 — reprendre contact : la fiche acquéreur, et les jours sans échange.
   buyerId?: string;
   sinceDays?: number;
+  // Mission 134 — proposer un bien : sa clé, son libellé neutre, son origine, ses chiffres.
+  propertyKey?: string;
+  propertyLabel?: string;
+  origin?: 'mandate' | 'follow_up' | 'competitor' | 'newcomer' | 'prospect';
+  property?: { propertyType: string | null; city: string | null };
+  figures?: { surfaceArea: number | null; price: number | null };
 };
 
 export type SuiviTaskInput = {
@@ -85,8 +92,6 @@ export type SuiviTaskInput = {
   readySince?: string | null;
   // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
   visits: { requestedAt: string; buyerName: string | null }[];
-  // Mission 133 — les acquéreurs prêts qui correspondent et n'ont pas encore reçu ce bien.
-  buyersToPropose?: number;
 };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -179,14 +184,6 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
         readyOn,
       });
     }
-    if ((input.buyersToPropose ?? 0) > 0 && signedDay) {
-      tasks.push({
-        ...base,
-        kind: 'propose_buyers',
-        dueOn: signedDay,
-        count: input.buyersToPropose,
-      });
-    }
     const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
     const first = visits[0];
     const firstDay = dayOf(first?.requestedAt);
@@ -244,7 +241,8 @@ export type SuiviTaskList = {
 };
 
 // « À faire aujourd'hui » : toute l'agence (M59), sans le dossier d'exemple (M97). Mission 132 —
-// plus les tâches des acquéreurs (`buyerTasks`), qui ne tiennent à aucun dossier.
+// plus les tâches des acquéreurs (`buyerTasks`), qui ne tiennent à aucun dossier ; mission 134 —
+// et celles des nouveaux biens à proposer.
 export function buildSuiviTaskList(
   inputs: SuiviTaskInput[],
   now: Date,

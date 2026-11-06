@@ -453,14 +453,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         }
       />
 
-      {buyers !== undefined ? (
-        <PropertyBuyersBlock
-          result={buyers}
-          projectId={projectId}
-          canPropose={false}
-          advisorFirstName={profile?.first_name ?? null}
-        />
-      ) : null}
+      {buyers !== undefined ? <PropertyBuyersBlock result={buyers} proposeKey={null} /> : null}
 
       {/* Mission 110 — au-delà de 6 retenus : les concurrents montrés au Live, modifiables tant
           que le Live n'a pas commencé. */}

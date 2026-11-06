@@ -1,7 +1,7 @@
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import { buyerReadiness } from '@/features/buyers/services/buyer-readiness';
-import type { Buyer, BuyerCriterion } from '@/features/buyers/types';
+import { BUYER_CRITERION_LABELS, type Buyer, type BuyerCriterion } from '@/features/buyers/types';
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import { dpeClass } from '@/features/dpe/services/dpe';
 import { judgeCriterion } from '@/features/ideal-properties/services/categorize-ideal';
@@ -240,3 +240,17 @@ export const BUYERS_UNREAD =
 export const NOT_SIGNED_MESSAGE =
   'Ce bien n’est pas un mandat signé : il ne se propose pas encore.';
 export const NOT_MATCHING_MESSAGE = 'Cet acquéreur ne correspond plus à ce bien.';
+
+// Mission 134 — les indispensables ★ que le bien remplit, dits au conseiller (« ★ Piscine »).
+export function starsFilled(buyer: Buyer, property: BuyerLoopProperty, price: number): string[] {
+  const candidate = asCandidate(property, price);
+  return buyer.mustHave
+    .filter((criterion) =>
+      criterion === 'bedrooms'
+        ? buyer.bedroomsMin != null &&
+          property.bedroomsCount != null &&
+          property.bedroomsCount >= buyer.bedroomsMin
+        : judgeCriterion(criterion, buyer, candidate)?.kind === 'ok',
+    )
+    .map((criterion) => BUYER_CRITERION_LABELS[criterion]);
+}

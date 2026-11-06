@@ -187,9 +187,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {buyers !== undefined ? (
         <PropertyBuyersBlock
           result={buyers}
-          projectId={projectId}
-          canPropose={conclusion?.outcome === 'signed'}
-          advisorFirstName={profile?.first_name ?? null}
+          proposeKey={
+            conclusion?.outcome === 'signed' || conclusion?.outcome === 'follow_up'
+              ? `project:${projectId}`
+              : null
+          }
         />
       ) : null}
 
