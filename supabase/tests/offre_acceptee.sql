@@ -7,7 +7,9 @@
 --      rien ;
 --   §4 aucune suppression légitime bloquée (leçon de la M109) : l'auteur du « Fait » et celui du
 --      lien du notaire, la fiche acquéreur (le « Fait » reste), le retrait d'un lien ; le « Fait »
---      part avec son offre.
+--      part avec son offre ;
+--   §5 (joué en tête) « Sous offre » : l'acceptation y fait passer la fiche, en recherche ou en
+--      visite, datée par la base ; ni un refus, ni « a acheté », ni « abandonné ».
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/offre_acceptee.sql
@@ -61,6 +63,96 @@ values ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-0000000
         array['M. Lefebvre'], array['139aaaaa-0000-0000-0000-000000000000/a/vendeur-1.png']);
 insert into public.buyer_document_acceptances (agency_id, document_id, decision)
 values ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-000000000002', 'refused');
+
+-- §5 — « Sous offre » : l'acceptation y fait passer la fiche, datée par la base ; ni un refus, ni
+-- une fiche qui a déjà acheté ne changent.
+do $$
+begin
+  if (select status from public.buyers where id = '139ccccc-0000-0000-0000-000000000001')
+     <> 'under_offer' then
+    raise exception 'FAIL 5: l''acceptation ne fait pas passer la fiche « Sous offre »';
+  end if;
+  insert into public.buyers
+    (id, agency_id, advisor_id, name, cities, status, status_changed_at, updated_at) values
+    ('139ccccc-0000-0000-0000-000000000002', '139aaaaa-0000-0000-0000-000000000000',
+     '13911111-1111-1111-1111-111111111111', 'A déjà acheté', array['Vence'], 'bought',
+     now() - interval '9 days', now() - interval '9 days'),
+    ('139ccccc-0000-0000-0000-000000000003', '139aaaaa-0000-0000-0000-000000000000',
+     '13911111-1111-1111-1111-111111111111', 'Refusé', array['Vence'], 'visiting',
+     now() - interval '9 days', now() - interval '9 days'),
+    ('139ccccc-0000-0000-0000-000000000004', '139aaaaa-0000-0000-0000-000000000000',
+     '13911111-1111-1111-1111-111111111111', 'En visite', array['Vence'], 'visiting',
+     now() - interval '9 days', now() - interval '9 days'),
+    ('139ccccc-0000-0000-0000-000000000005', '139aaaaa-0000-0000-0000-000000000000',
+     '13911111-1111-1111-1111-111111111111', 'Abandonné', array['Vence'], 'abandoned',
+     now() - interval '9 days', now() - interval '9 days');
+  insert into public.buyer_documents
+    (id, agency_id, buyer_id, kind, template_version, fields, rendered_text, content_sha256,
+     signature_paths, valid_until)
+  values ('139eeeee-0000-0000-0000-000000000005', '139aaaaa-0000-0000-0000-000000000000',
+          '139ccccc-0000-0000-0000-000000000002', 'purchase_offer', 'v1', '{}', 'OFFRE B',
+          repeat('a', 64), array['139aaaaa-0000-0000-0000-000000000000/o5/signature-1.png'],
+          current_date + 7),
+         ('139eeeee-0000-0000-0000-000000000006', '139aaaaa-0000-0000-0000-000000000000',
+          '139ccccc-0000-0000-0000-000000000003', 'purchase_offer', 'v1', '{}', 'OFFRE V',
+          repeat('a', 64), array['139aaaaa-0000-0000-0000-000000000000/o6/signature-1.png'],
+          current_date + 7),
+         ('139eeeee-0000-0000-0000-000000000007', '139aaaaa-0000-0000-0000-000000000000',
+          '139ccccc-0000-0000-0000-000000000004', 'purchase_offer', 'v1', '{}', 'OFFRE E',
+          repeat('a', 64), array['139aaaaa-0000-0000-0000-000000000000/o7/signature-1.png'],
+          current_date + 7),
+         ('139eeeee-0000-0000-0000-000000000008', '139aaaaa-0000-0000-0000-000000000000',
+          '139ccccc-0000-0000-0000-000000000005', 'purchase_offer', 'v1', '{}', 'OFFRE A',
+          repeat('a', 64), array['139aaaaa-0000-0000-0000-000000000000/o8/signature-1.png'],
+          current_date + 7);
+  insert into public.buyer_document_acceptances
+    (agency_id, document_id, decision, signer_names, signature_paths)
+  values ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-000000000005',
+          'accepted', array['M. Martin'], array['139aaaaa-0000-0000-0000-000000000000/o5/v.png']),
+         ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-000000000007',
+          'accepted', array['M. Martin'], array['139aaaaa-0000-0000-0000-000000000000/o7/v.png']),
+         ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-000000000008',
+          'accepted', array['M. Martin'], array['139aaaaa-0000-0000-0000-000000000000/o8/v.png']);
+  insert into public.buyer_document_acceptances (agency_id, document_id, decision)
+  values ('139aaaaa-0000-0000-0000-000000000000', '139eeeee-0000-0000-0000-000000000006', 'refused');
+  if (select status from public.buyers where id = '139ccccc-0000-0000-0000-000000000002') <> 'bought'
+     or (select status from public.buyers where id = '139ccccc-0000-0000-0000-000000000003')
+        <> 'visiting' then
+    raise exception 'FAIL 5: un refus, ou une fiche qui a acheté, change de statut';
+  end if;
+  if (select status from public.buyers where id = '139ccccc-0000-0000-0000-000000000005')
+     <> 'abandoned' then
+    raise exception 'FAIL 5: une fiche abandonnée change de statut';
+  end if;
+  -- « En visite » → « Sous offre », datée par la base (statut et dernière modification).
+  if not exists (
+    select 1 from public.buyers
+    where id = '139ccccc-0000-0000-0000-000000000004' and status = 'under_offer'
+      and status_changed_at > now() - interval '1 minute'
+      and updated_at > now() - interval '1 minute'
+  ) then
+    raise exception 'FAIL 5: « en visite » ne passe pas « Sous offre », daté par la base';
+  end if;
+  if (select status_changed_at from public.buyers
+      where id = '139ccccc-0000-0000-0000-000000000002') > now() - interval '1 day' then
+    raise exception 'FAIL 5: une fiche qui ne change pas de statut est redatée';
+  end if;
+  -- Le conseiller remet le statut à la main (par le serveur) : permis.
+  update public.buyers set status = 'visiting', status_changed_at = now()
+  where id = '139ccccc-0000-0000-0000-000000000001';
+  update public.buyers set status = 'under_offer'
+  where id = '139ccccc-0000-0000-0000-000000000001';
+  begin
+    update public.buyers set status = 'sous offre'
+    where id = '139ccccc-0000-0000-0000-000000000001';
+    raise exception 'FAIL 5: un statut hors liste est accepté';
+  exception when check_violation then null;
+  end;
+  if has_function_privilege('authenticated', 'public.buyer_under_offer_on_acceptance()', 'execute')
+     or has_function_privilege('anon', 'public.buyer_under_offer_on_acceptance()', 'execute') then
+    raise exception 'FAIL 5: la fonction du déclencheur est ouverte au navigateur';
+  end if;
+end $$;
 
 -- §1 — le « Fait ».
 do $$
