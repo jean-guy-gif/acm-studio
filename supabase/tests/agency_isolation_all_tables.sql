@@ -89,6 +89,12 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_proposals.property_key' then $v$'listing:exemple:' || substr(md5(random()::text), 1, 8)$v$
     when 'buyer_proposals.source' then $v$'listing'$v$
     when 'buyer_proposals.origin' then $v$'competitor'$v$
+    -- Mission 135 — un événement d'acquéreur : un ajustement de sa recherche (raison, résumé, sans
+    -- sélection).
+    when 'buyer_events.kind' then $v$'search_adjusted'$v$
+    when 'buyer_events.reason' then $v$'price'$v$
+    when 'buyer_events.summary' then $v$'Budget plafond ajusté'$v$
+    when 'buyer_events.selection_id' then $v$null$v$
     else null
   end
 $$;
