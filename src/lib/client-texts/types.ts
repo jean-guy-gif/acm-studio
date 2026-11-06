@@ -1,3 +1,4 @@
+import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type {
   DangerousReason,
   MarketDurationReason,
@@ -33,6 +34,47 @@ export type ClientTexts = {
 };
 
 export type LiveTexts = {
+  // Le titre de chaque écran, dans la barre de progression.
+  titles: Record<LivePageType, string>;
+  // La scène : ses boutons, sa barre du bas, la confirmation de sortie, ses messages.
+  shell: {
+    kicker: string;
+    competitorOf: (index: number, total: number) => string;
+    stepOf: (step: number, total: number) => string;
+    previous: string;
+    skip: string;
+    validate: string;
+    confirm: string;
+    revealDuration: string;
+    finish: string;
+    retry: string;
+    saving: string;
+    savingPrice: string;
+    answerSaved: string;
+    noteSaved: string;
+    failedSave: string;
+    connectionLost: string;
+    saveFailed: string;
+    analysisFailed: string;
+    noteFailed: string;
+    durationMissing: string;
+    priceGuessMissing: string;
+    perceivedMissing: string;
+    revisedMissing: string;
+    unavailable: string;
+    quitTitle: string;
+    quitUnsaved: string;
+    quitSaved: string;
+    stay: string;
+    quit: string;
+    quitAnyway: string;
+    light: string;
+    dark: string;
+    toLight: string;
+    toDark: string;
+    fullscreen: string;
+    exitFullscreen: string;
+  };
   intro: {
     kicker: string;
     title: string;

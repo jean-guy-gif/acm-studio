@@ -26,6 +26,10 @@ import { LivePageDirect } from '@/features/live-seller/components/live-page-dire
 import { LivePageDpe } from '@/features/live-seller/components/live-page-dpe';
 import { LivePageDuration } from '@/features/live-seller/components/live-page-duration';
 import { LivePageIntro } from '@/features/live-seller/components/live-page-intro';
+import { LiveTextsProvider } from '@/features/live-seller/components/live-texts';
+import { setProjectLanguage } from '@/features/projects/actions/set-project-language';
+import { offeredLanguages, type ClientLanguage } from '@/lib/client-language';
+import { clientTexts, textLanguage, type TextLanguage } from '@/lib/client-texts';
 import { LivePageRevised } from '@/features/live-seller/components/live-page-revised';
 import { LivePageQuickGuess } from '@/features/live-seller/components/live-page-quick-guess';
 import { LivePageQuickReveal } from '@/features/live-seller/components/live-page-quick-reveal';
@@ -48,7 +52,11 @@ import {
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
-import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
+import {
+  CONNECTION_LOST_MESSAGE,
+  guardedSave,
+  type SaveResult,
+} from '@/features/live-seller/services/guarded-save';
 import {
   LiveBuyersDot,
   LiveBuyersScreen,
@@ -73,7 +81,6 @@ export type LiveStageTheme = 'dark' | 'light';
 
 // Mission 92 — dit au conseiller, dans la barre, quand une réponse partie en fond n'est pas
 // arrivée : le passage à « Conclusion » attend, et le bouton relance.
-export const FAILED_SAVE_MESSAGE = 'Une réponse n’a pas pu être enregistrée — touchez Réessayer';
 
 // Live comparative reader — mode présentation. Client-only navigation state
 // (page courante, plein écran, thème scène sombre/clair au choix du conseiller).
@@ -94,6 +101,7 @@ export function LiveComparativeShell({
   hasAgreedPrice = false,
   presentationMode = 'interactive',
   buyersReveal = null,
+  language: initialLanguage = 'fr',
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -124,6 +132,9 @@ export function LiveComparativeShell({
   presentationMode?: 'interactive' | 'direct';
   // Mission 133 — les acquéreurs prêts de l'agence, anonymes ; null sous 5 (rien ne part alors).
   buyersReveal?: LiveBuyersReveal | null;
+  // Mission 140 — la langue du dossier : celle de tout ce que voit le vendeur ; le conseiller la
+  // change en direct dans « Réglages » (ce qui a été répondu est gardé).
+  language?: ClientLanguage;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -132,6 +143,20 @@ export function LiveComparativeShell({
   // Mission 131 — la façon de présenter, et le menu « Réglages » du conseiller.
   const [mode, setMode] = useState<'interactive' | 'direct'>(presentationMode);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [language, setLanguage] = useState<TextLanguage>(textLanguage(initialLanguage));
+  const texts = clientTexts(language);
+  const t = texts.live.shell;
+  // Un message d'erreur du serveur est écrit en français : devant un vendeur d'une autre langue,
+  // la scène dit le sien ; la perte de connexion garde son sens.
+  const errorFor = useCallback(
+    (error: string | undefined, fallback: string): string =>
+      error === CONNECTION_LOST_MESSAGE
+        ? t.connectionLost
+        : language === 'fr'
+          ? (error ?? fallback)
+          : fallback,
+    [language, t],
+  );
   // Mission 133 — l'écran des acquéreurs prêts, ouvert par « Montrer au vendeur ».
   const [buyersScreen, setBuyersScreen] = useState(false);
   const closeBuyersScreen = useCallback(() => setBuyersScreen(false), []);
@@ -262,7 +287,7 @@ export function LiveComparativeShell({
       { setBusy: setFinishing },
     );
     if (!result.ok) {
-      setFinishError(result.error ?? 'L’enregistrement de la note a échoué. Réessayez.');
+      setFinishError(errorFor(result.error, t.noteFailed));
       return;
     }
     void document.exitFullscreen?.().catch(() => {});
@@ -439,7 +464,7 @@ export function LiveComparativeShell({
       );
       if (!r.ok) {
         directRequestedRef.current.delete(comparableId);
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.saveFailed));
         return;
       }
       if (r.fragment.kind === 'comparable') {
@@ -447,7 +472,7 @@ export function LiveComparativeShell({
         setDelivered((d) => ({ ...d, [comparableId]: revealed }));
       }
     },
-    [projectId],
+    [projectId, errorFor, t],
   );
   // À livrer : le prix pas encore montré, ou — deviné avant le passage en directe — la durée.
   const directPendingId =
@@ -468,7 +493,7 @@ export function LiveComparativeShell({
     const r = await guardedSave(() => saveAdvisorClosest(projectId, comparableId), { setBusy });
     if (!r.ok) {
       setClosestId(previous);
-      setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      setAwaitError(errorFor(r.error, t.saveFailed));
     }
   };
 
@@ -488,6 +513,24 @@ export function LiveComparativeShell({
     setAwaitError(null);
     setIndex(indexAfterModeChange(page, currentIndex, nextPages));
     setMode(next);
+    setMenuOpen(false);
+  };
+
+  // Mission 140 — la langue du vendeur, changée en direct : enregistrée sur le dossier, les écrans
+  // se relisent aussitôt ; ce qui a été répondu est gardé.
+  const [languageSwitching, setLanguageSwitching] = useState(false);
+  const switchLanguage = async (next: TextLanguage) => {
+    if (languageSwitching) return;
+    setMenuError(null);
+    const r = await guardedSave(() => setProjectLanguage(projectId, next), {
+      setBusy: setLanguageSwitching,
+    });
+    if (!r.ok) {
+      setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
+      return;
+    }
+    setLanguage(next);
+    setAwaitError(null);
     setMenuOpen(false);
   };
 
@@ -544,7 +587,7 @@ export function LiveComparativeShell({
       if (entersAnalysis && range == null && pendingSteps.length === 0) {
         const r = await awaited(deliverRange);
         if (!r.ok) {
-          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          setAwaitError(errorFor(r.error, t.saveFailed));
           return;
         }
       }
@@ -559,13 +602,13 @@ export function LiveComparativeShell({
     if (page.type === 'subject_property') {
       const r = await awaited(() => persistLiveSellerSummary(projectId, fd));
       if (r.ok) go(1);
-      else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      else setAwaitError(errorFor(r.error, t.saveFailed));
       return;
     }
     if (page.type === 'comparable_competition' && entry) {
       const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
       if (!r.ok) {
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.saveFailed));
         return;
       }
       // BASE PUIS GRAPHE : réponse en base d'abord, graphe client ensuite.
@@ -597,7 +640,7 @@ export function LiveComparativeShell({
         }),
       );
       if (!r.ok) {
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.saveFailed));
         return;
       }
       if (r.fragment.kind === 'comparable') {
@@ -620,13 +663,13 @@ export function LiveComparativeShell({
           }),
         );
         if (!r.ok) {
-          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          setAwaitError(errorFor(r.error, t.saveFailed));
           return;
         }
         if (r.fragment.kind === 'comparable') {
           const revealed = r.fragment.comparable;
           if (revealed.response?.seller_estimated_days_on_market == null) {
-            setAwaitError('Indiquez la durée que vous imaginez.');
+            setAwaitError(t.durationMissing);
             return;
           }
           setDelivered((d) => ({ ...d, [entry.id]: revealed }));
@@ -651,7 +694,7 @@ export function LiveComparativeShell({
         }
         const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
         if (!r.ok) {
-          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          setAwaitError(errorFor(r.error, t.saveFailed));
           return;
         }
         if (serious !== '') {
@@ -670,7 +713,7 @@ export function LiveComparativeShell({
       }
       const guess = Number(String(fd.get('seller_estimated_listing_price') ?? '').trim());
       if (!Number.isFinite(guess) || guess <= 0) {
-        setAwaitError('Indiquez le prix que vous imaginez.');
+        setAwaitError(t.priceGuessMissing);
         return;
       }
       const r = await awaited(() =>
@@ -681,7 +724,7 @@ export function LiveComparativeShell({
         }),
       );
       if (!r.ok) {
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.saveFailed));
         return;
       }
       if (r.fragment.kind === 'comparable') {
@@ -700,7 +743,7 @@ export function LiveComparativeShell({
       }
       const days = String(fd.get('seller_estimated_days_on_market') ?? '').trim();
       if (days === '' || !Number.isFinite(Number(days)) || Number(days) < 0) {
-        setAwaitError('Indiquez la durée que vous imaginez.');
+        setAwaitError(t.durationMissing);
         return;
       }
       const r = await awaited(() =>
@@ -711,7 +754,7 @@ export function LiveComparativeShell({
         }),
       );
       if (!r.ok) {
-        setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.saveFailed));
         return;
       }
       if (r.fragment.kind === 'comparable') {
@@ -732,7 +775,7 @@ export function LiveComparativeShell({
         const raw = String(fd.get('seller_perceived_property_price') ?? '').trim();
         const typed = raw === '' ? Number.NaN : Number(raw);
         if (!Number.isFinite(typed) || typed <= 0) {
-          setAwaitError('Indiquez le prix que vous avez en tête.');
+          setAwaitError(t.perceivedMissing);
           return;
         }
         // Premier « Valider » : l'écran redit le montant en grand. Le second l'enregistre.
@@ -745,7 +788,7 @@ export function LiveComparativeShell({
           entersAnalysis ? deliverRange() : persistLiveSellerSummary(projectId, fd),
         );
         if (!r.ok) {
-          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          setAwaitError(errorFor(r.error, t.saveFailed));
           return;
         }
         setPerceivedOverride(typed);
@@ -763,7 +806,7 @@ export function LiveComparativeShell({
         const raw = String(fd.get('seller_revised_property_price') ?? '').trim();
         const typed = raw === '' ? Number.NaN : Number(raw);
         if (!Number.isFinite(typed) || typed <= 0) {
-          setAwaitError('Indiquez votre prix, ou touchez « Passer ».');
+          setAwaitError(t.revisedMissing);
           return;
         }
         if (revisedToConfirm !== typed) {
@@ -774,7 +817,7 @@ export function LiveComparativeShell({
           canDeliver ? deliverRange() : persistLiveSellerSummary(projectId, fd),
         );
         if (!r.ok) {
-          setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+          setAwaitError(errorFor(r.error, t.saveFailed));
           return;
         }
         setRevisedOverride(typed);
@@ -794,7 +837,7 @@ export function LiveComparativeShell({
         // que son formulaire s'enregistre le plus souvent.
         keepDangerousChoice();
         go(1);
-      } else setAwaitError(r.error ?? 'Enregistrement impossible. Réessayez.');
+      } else setAwaitError(errorFor(r.error, t.saveFailed));
       return;
     }
     // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
@@ -831,6 +874,8 @@ export function LiveComparativeShell({
     harvest,
     showDirectly,
     mode,
+    errorFor,
+    t,
   ]);
 
   // Mission 94 — « Passer » : le vendeur ne reformule pas son prix. Rien n'est enregistré ; la
@@ -844,7 +889,7 @@ export function LiveComparativeShell({
         { setBusy },
       );
       if (!r.ok) {
-        setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+        setAwaitError(errorFor(r.error, t.analysisFailed));
         return;
       }
       if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
@@ -862,7 +907,7 @@ export function LiveComparativeShell({
       { setBusy },
     );
     if (r.ok && r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
-    else if (!r.ok) setAwaitError(r.error ?? 'Analyse indisponible. Réessayez.');
+    else if (!r.ok) setAwaitError(errorFor(r.error, t.analysisFailed));
   };
 
   // Mission 89 — l'appareil du conseiller garde le numéro de l'écran courant (rien du dossier) :
@@ -1003,460 +1048,484 @@ export function LiveComparativeShell({
     ) : null;
   const stepLabel =
     page.type === 'comparable_direct' && page.comparableIndex != null && live
-      ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length}`
+      ? t.competitorOf(page.comparableIndex, live.comparables.length)
       : page.comparableIndex != null && live
-        ? `Concurrent ${page.comparableIndex} sur ${live.comparables.length} · Étape ${page.step} sur ${Math.max(
-            ...pages.filter((p) => p.comparableId === page.comparableId).map((p) => p.step ?? 0),
+        ? `${t.competitorOf(page.comparableIndex, live.comparables.length)} · ${t.stepOf(
             page.step ?? 0,
+            Math.max(
+              ...pages.filter((p) => p.comparableId === page.comparableId).map((p) => p.step ?? 0),
+              page.step ?? 0,
+            ),
           )}`
-        : page.title;
+        : texts.live.titles[page.type];
 
   return (
-    <div
-      ref={rootRef}
-      data-stage={stage}
-      className={`${stageRoot} ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
-    >
-      {/* MISSION 51 §3.2 — un enregistrement en échec ne doit pas passer inaperçu,
+    <LiveTextsProvider language={language}>
+      <div
+        ref={rootRef}
+        data-stage={stage}
+        className={`${stageRoot} ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
+      >
+        {/* MISSION 51 §3.2 — un enregistrement en échec ne doit pas passer inaperçu,
           MAIS il s'adresse au CONSEILLER, pas au vendeur : pastille discrète dans le
           coin des réglages (chrome conseiller), jamais une bande pleine largeur devant
           le client. Le détail technique est au journal ; l'écran dit l'essentiel. */}
-      {failedSaves.length > 0 ? (
-        <div
-          className="fixed top-3 right-3 z-50 flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-amber-900 shadow-sm"
-          style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
-          role="status"
-        >
-          <span className="text-xs font-medium">
-            Réponse non enregistrée. Relancez avant de continuer.
-          </span>
-          {failedSaves.map(([key, record]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => record.retry()}
-              className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:bg-amber-300"
-            >
-              Relancer
-            </button>
-          ))}
-        </div>
-      ) : null}
+        {failedSaves.length > 0 ? (
+          <div
+            className="fixed top-3 right-3 z-50 flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-amber-900 shadow-sm"
+            style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
+            role="status"
+          >
+            <span className="text-xs font-medium">
+              Réponse non enregistrée. Relancez avant de continuer.
+            </span>
+            {failedSaves.map(([key, record]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => record.retry()}
+                className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:bg-amber-300"
+              >
+                Relancer
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-      {/* MISSION 89 — la confirmation de sortie, dans la scène elle-même (elle reste visible en
+        {/* MISSION 89 — la confirmation de sortie, dans la scène elle-même (elle reste visible en
           plein écran) : sobre, sans rien du dossier. */}
-      {quitOpen ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="live-quit-title"
-        >
-          <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-6 text-zinc-900 shadow-2xl">
-            <h2 id="live-quit-title" className="font-title text-2xl font-bold text-brand-deep">
-              Quitter le rendez-vous&nbsp;?
-            </h2>
-            <p className="text-base text-zinc-600">
-              {hasUnsavedAnswers
-                ? 'Certaines réponses ne sont pas encore enregistrées. Restez un instant, ou relancez l’enregistrement avant de quitter.'
-                : 'Vos réponses sont enregistrées.'}
-            </p>
-            <div className="flex flex-wrap justify-end gap-3">
-              <button
-                type="button"
-                autoFocus
-                onClick={() => setQuitOpen(false)}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-deep"
-              >
-                Rester
-              </button>
-              <button
-                type="button"
-                onClick={quitMeeting}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-2.5 font-title text-base font-semibold text-zinc-700 hover:border-brand hover:text-brand-deep"
-              >
-                {hasUnsavedAnswers ? 'Quitter quand même' : 'Quitter'}
-              </button>
+        {quitOpen ? (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="live-quit-title"
+          >
+            <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-6 text-zinc-900 shadow-2xl">
+              <h2 id="live-quit-title" className="font-title text-2xl font-bold text-brand-deep">
+                {t.quitTitle}
+              </h2>
+              <p className="text-base text-zinc-600">
+                {hasUnsavedAnswers ? t.quitUnsaved : t.quitSaved}
+              </p>
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setQuitOpen(false)}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-deep"
+                >
+                  {t.stay}
+                </button>
+                <button
+                  type="button"
+                  onClick={quitMeeting}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-2.5 font-title text-base font-semibold text-zinc-700 hover:border-brand hover:text-brand-deep"
+                >
+                  {hasUnsavedAnswers ? t.quitAnyway : t.quit}
+                </button>
+              </div>
             </div>
           </div>
+        ) : null}
+
+        <div className={stageGlowLayer} aria-hidden>
+          <div className={stageGlow} />
         </div>
-      ) : null}
 
-      <div className={stageGlowLayer} aria-hidden>
-        <div className={stageGlow} />
-      </div>
-
-      {/* Chrome supérieur : identité + réglages, volontairement discret. */}
-      <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">
-        {/* MISSION 72 — c'est le nom d'agence qui cède la place (tronqué dans <Logo>),
+        {/* Chrome supérieur : identité + réglages, volontairement discret. */}
+        <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">
+          {/* MISSION 72 — c'est le nom d'agence qui cède la place (tronqué dans <Logo>),
             jamais les boutons : `min-w-0` ici, `shrink-0` sur les réglages. */}
-        <div className="flex min-w-0 items-center gap-3">
-          <Logo
-            onDark={stage === 'dark'}
-            className="h-8 sm:h-9"
-            lightSrc={logoLightUrl}
-            darkSrc={logoDarkUrl}
-            fallbackName={agencyName}
-          />
-          <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
-            Rendez-vous vendeur
-          </span>
-        </div>
-        <div className="relative flex shrink-0 items-center gap-1.5">
-          {/* Mission 131 — le menu du conseiller : changer de rythme sans rien dire au vendeur, et
-              télécharger l'Étude de marché. Discret, comme les autres réglages. */}
-          <button
-            type="button"
-            onClick={() => {
-              setMenuError(null);
-              setMenuOpen((open) => !open);
-            }}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            data-testid="live-options"
-            className={chromeBtn}
-          >
-            Réglages
-          </button>
-          {menuOpen ? (
-            <div
-              role="menu"
-              className="absolute top-full right-0 z-50 mt-2 flex w-72 flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-2 text-left text-zinc-800 shadow-xl"
-            >
-              <button
-                type="button"
-                role="menuitem"
-                disabled={switching}
-                onClick={() => void switchMode(mode === 'direct' ? 'interactive' : 'direct')}
-                className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-zinc-100 disabled:opacity-60"
-              >
-                {switching
-                  ? 'Enregistrement…'
-                  : mode === 'direct'
-                    ? 'Reprendre le Live interactif'
-                    : 'Passer en présentation directe'}
-              </button>
-              <a
-                role="menuitem"
-                href={`/builder/${projectId}/etude-de-marche?vue=live`}
-                target="_blank"
-                rel="noopener"
-                onClick={() => setMenuOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-zinc-100"
-              >
-                Télécharger l’Étude de marché
-              </a>
-              {menuError ? <p className="px-3 py-1 text-xs text-red-600">{menuError}</p> : null}
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setStage((s) => (s === 'dark' ? 'light' : 'dark'))}
-            className={chromeBtn}
-            aria-label={stage === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'}
-          >
-            {stage === 'dark' ? 'Clair' : 'Sombre'}
-          </button>
-          <button type="button" onClick={toggleFullscreen} className={chromeBtn}>
-            {isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
-          </button>
-          <button type="button" onClick={() => setQuitOpen(true)} className={chromeBtn}>
-            Quitter
-          </button>
-        </div>
-      </header>
-
-      {/* Mission 133 — « Montrer au vendeur » : l'écran plein des acquéreurs prêts, anonymes. */}
-      {buyersScreen && buyersReveal ? (
-        <LiveBuyersScreen reveal={buyersReveal} onClose={closeBuyersScreen} />
-      ) : null}
-
-      {/* Progression : fine, élégante, jamais envahissante. */}
-      {!isIntro ? (
-        <div className="relative mx-auto mt-4 flex w-full max-w-5xl flex-col gap-1.5 px-4 sm:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-semibold tracking-[0.25em] uppercase text-brand-deep/70 stage:text-brand">
-              {stepLabel}
-            </span>
-            <span className="text-xs text-zinc-400 stage:text-white/40">
-              {index + 1} / {pages.length}
-            </span>
-          </div>
-          <div className="h-1 overflow-hidden rounded-full bg-zinc-200 stage:bg-white/10">
-            <div
-              className="h-full rounded-full bg-brand transition-all duration-500"
-              style={{ width: `${((index + 1) / pages.length) * 100}%` }}
+          <div className="flex min-w-0 items-center gap-3">
+            <Logo
+              onDark={stage === 'dark'}
+              className="h-8 sm:h-9"
+              lightSrc={logoLightUrl}
+              darkSrc={logoDarkUrl}
+              fallbackName={agencyName}
             />
+            <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
+              {t.kicker}
+            </span>
           </div>
-        </div>
-      ) : null}
+          <div className="relative flex shrink-0 items-center gap-1.5">
+            {/* Mission 131 — le menu du conseiller : changer de rythme sans rien dire au vendeur, et
+              télécharger l'Étude de marché. Discret, comme les autres réglages. */}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuError(null);
+                setMenuOpen((open) => !open);
+              }}
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              data-testid="live-options"
+              className={chromeBtn}
+            >
+              Réglages
+            </button>
+            {menuOpen ? (
+              <div
+                role="menu"
+                className="absolute top-full right-0 z-50 mt-2 flex w-72 flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-2 text-left text-zinc-800 shadow-xl"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={switching}
+                  onClick={() => void switchMode(mode === 'direct' ? 'interactive' : 'direct')}
+                  className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-zinc-100 disabled:opacity-60"
+                >
+                  {switching
+                    ? 'Enregistrement…'
+                    : mode === 'direct'
+                      ? 'Reprendre le Live interactif'
+                      : 'Passer en présentation directe'}
+                </button>
+                <a
+                  role="menuitem"
+                  href={`/builder/${projectId}/etude-de-marche?vue=live`}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-zinc-100"
+                >
+                  Télécharger l’Étude de marché
+                </a>
+                {offeredLanguages(language).includes('en') ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={languageSwitching}
+                    data-testid="live-language"
+                    onClick={() => void switchLanguage(language === 'en' ? 'fr' : 'en')}
+                    className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-zinc-100 disabled:opacity-60"
+                  >
+                    {languageSwitching
+                      ? 'Enregistrement…'
+                      : language === 'en'
+                        ? 'Passer les écrans en français'
+                        : 'Passer les écrans en anglais'}
+                  </button>
+                ) : null}
+                {menuError ? <p className="px-3 py-1 text-xs text-red-600">{menuError}</p> : null}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setStage((s) => (s === 'dark' ? 'light' : 'dark'))}
+              className={chromeBtn}
+              aria-label={stage === 'dark' ? t.toLight : t.toDark}
+            >
+              {stage === 'dark' ? t.light : t.dark}
+            </button>
+            <button type="button" onClick={toggleFullscreen} className={chromeBtn}>
+              {isFullscreen ? t.exitFullscreen : t.fullscreen}
+            </button>
+            <button type="button" onClick={() => setQuitOpen(true)} className={chromeBtn}>
+              {t.quit}
+            </button>
+          </div>
+        </header>
 
-      {/* La fiche courante. `mainRef` permet à la barre unique de MOISSONNER le
+        {/* Mission 133 — « Montrer au vendeur » : l'écran plein des acquéreurs prêts, anonymes. */}
+        {buyersScreen && buyersReveal ? (
+          <LiveBuyersScreen reveal={buyersReveal} onClose={closeBuyersScreen} />
+        ) : null}
+
+        {/* Progression : fine, élégante, jamais envahissante. */}
+        {!isIntro ? (
+          <div className="relative mx-auto mt-4 flex w-full max-w-5xl flex-col gap-1.5 px-4 sm:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold tracking-[0.25em] uppercase text-brand-deep/70 stage:text-brand">
+                {stepLabel}
+              </span>
+              <span className="text-xs text-zinc-400 stage:text-white/40">
+                {index + 1} / {pages.length}
+              </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-zinc-200 stage:bg-white/10">
+              <div
+                className="h-full rounded-full bg-brand transition-all duration-500"
+                style={{ width: `${((index + 1) / pages.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* La fiche courante. `mainRef` permet à la barre unique de MOISSONNER le
           formulaire de l'écran courant au clic « Valider et continuer ». */}
-      <main
-        ref={mainRef}
-        key={page.key}
-        // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
-        // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
-        // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
-        // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
-        className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
-          isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
-        }`}
-      >
-        {page.type === 'intro' ? (
-          <LivePageIntro
-            comparablesCount={live?.comparables.length ?? 0}
-            sellerName={projectName}
-            address={[property?.address, property?.city].filter(Boolean).join(', ') || null}
-            onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
-            logoLightUrl={logoLightUrl}
-            logoDarkUrl={logoDarkUrl}
-            agencyName={agencyName}
-          />
-        ) : page.type === 'subject_property' && property ? (
-          <LivePageProperty property={property} summary={summary} asksSeller={mode !== 'direct'} />
-        ) : page.type === 'comparable_competition' && entry ? (
-          <LivePageCompetition entry={entry} />
-        ) : page.type === 'comparable_price' && entry ? (
-          <LivePagePrice entry={entry} />
-        ) : page.type === 'comparable_price_reveal' && authorizedEntry ? (
-          <LivePagePriceRevealPilot entry={authorizedEntry} />
-        ) : page.type === 'comparable_duration' && authorizedEntry ? (
-          <LivePageDuration entry={authorizedEntry} durationRevealed={durationRevealed} />
-        ) : page.type === 'comparable_quick_guess' && entry ? (
-          <LivePageQuickGuess entry={entry} />
-        ) : page.type === 'comparable_quick_reveal' && authorizedEntry ? (
-          <LivePageQuickReveal entry={authorizedEntry} />
-        ) : page.type === 'comparable_direct' && entry ? (
-          <LivePageDirect entry={entry} />
-        ) : page.type === 'advisor_closest' ? (
-          <LivePageClosest
-            comparables={closestCandidates}
-            selectedId={closestId}
-            busy={busy}
-            onPick={(id) => void pickClosest(id)}
-          />
-        ) : page.type === 'dpe_market' ? (
-          <LivePageDpe
-            subjectEnergyRating={property?.energyRating ?? null}
-            competitorEnergyRatings={comparables.map((c) => c.energyRating)}
-          />
-        ) : page.type === 'dangerous_competitor' && live ? (
-          <LivePageDangerous comparables={comparables} summary={summary} />
-        ) : page.type === 'seller_perceived_price' ? (
-          <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
-        ) : page.type === 'seller_revised_price' ? (
-          <LivePageRevised summary={summary} confirming={revisedToConfirm} />
-        ) : page.type === 'price_analysis' && effectiveRange ? (
-          <LivePageAnalysis
-            priceGaps={effectiveRange.priceGaps}
-            reading={effectiveRange.marketReading}
-            revisedPrice={summary?.seller_revised_property_price ?? null}
-            dangerousId={summary?.seller_most_dangerous_comparable_id ?? null}
-          />
-        ) : page.type === 'price_analysis' ? (
-          <LivePageAnalysisPending
-            steps={pendingSteps}
-            busy={busy}
-            onOpen={(pageIndex) => {
-              setAwaitError(null);
-              setIndex(pageIndex);
-            }}
-            onShowAnalysis={() => void showAnalysis()}
-          />
-        ) : page.type === 'conclusion' ? (
-          <LivePageConclusion
-            projectId={projectId}
-            summary={summary}
-            advisorRange={effectiveRange}
-            dangerous={dangerousComparable ?? closestComparable}
-            closest={dangerousComparable == null && closestComparable != null}
-            onPendingPriceChange={handlePendingPriceChange}
-            onPriceSaved={handlePriceSaved}
-          />
-        ) : page.type === 'closing_question' ? (
-          <LivePageClosing
-            agreedPrice={agreedPrice}
-            hasAgreedPrice={hasAgreedPrice || agreedPrice != null}
-            advisorAnalysis={effectiveRange?.priceGaps.advisorComparativePrice ?? null}
-            score={closing.last}
-            missing={closing.missing}
-            onScore={handleClosingScore}
-            onMissingChange={(missing) => setClosing((c) => ({ ...c, missing }))}
-          />
-        ) : (
-          <p className="text-zinc-500 stage:text-white/60">
-            {/* Mission 89 — neutre : aucune consigne au conseiller devant le vendeur. */}
-            Cet écran n’est pas disponible pour le moment.
-          </p>
-        )}
-      </main>
+        <main
+          ref={mainRef}
+          key={page.key}
+          // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
+          // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
+          // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
+          // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
+          className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
+            isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
+          }`}
+        >
+          {page.type === 'intro' ? (
+            <LivePageIntro
+              comparablesCount={live?.comparables.length ?? 0}
+              sellerName={projectName}
+              address={[property?.address, property?.city].filter(Boolean).join(', ') || null}
+              onStart={() => setIndex((i) => Math.min(pages.length - 1, i + 1))}
+              logoLightUrl={logoLightUrl}
+              logoDarkUrl={logoDarkUrl}
+              agencyName={agencyName}
+            />
+          ) : page.type === 'subject_property' && property ? (
+            <LivePageProperty
+              property={property}
+              summary={summary}
+              asksSeller={mode !== 'direct'}
+            />
+          ) : page.type === 'comparable_competition' && entry ? (
+            <LivePageCompetition entry={entry} />
+          ) : page.type === 'comparable_price' && entry ? (
+            <LivePagePrice entry={entry} />
+          ) : page.type === 'comparable_price_reveal' && authorizedEntry ? (
+            <LivePagePriceRevealPilot entry={authorizedEntry} />
+          ) : page.type === 'comparable_duration' && authorizedEntry ? (
+            <LivePageDuration entry={authorizedEntry} durationRevealed={durationRevealed} />
+          ) : page.type === 'comparable_quick_guess' && entry ? (
+            <LivePageQuickGuess entry={entry} />
+          ) : page.type === 'comparable_quick_reveal' && authorizedEntry ? (
+            <LivePageQuickReveal entry={authorizedEntry} />
+          ) : page.type === 'comparable_direct' && entry ? (
+            <LivePageDirect entry={entry} />
+          ) : page.type === 'advisor_closest' ? (
+            <LivePageClosest
+              comparables={closestCandidates}
+              selectedId={closestId}
+              busy={busy}
+              onPick={(id) => void pickClosest(id)}
+            />
+          ) : page.type === 'dpe_market' ? (
+            <LivePageDpe
+              subjectEnergyRating={property?.energyRating ?? null}
+              competitorEnergyRatings={comparables.map((c) => c.energyRating)}
+            />
+          ) : page.type === 'dangerous_competitor' && live ? (
+            <LivePageDangerous comparables={comparables} summary={summary} />
+          ) : page.type === 'seller_perceived_price' ? (
+            <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
+          ) : page.type === 'seller_revised_price' ? (
+            <LivePageRevised summary={summary} confirming={revisedToConfirm} />
+          ) : page.type === 'price_analysis' && effectiveRange ? (
+            <LivePageAnalysis
+              priceGaps={effectiveRange.priceGaps}
+              reading={effectiveRange.marketReading}
+              revisedPrice={summary?.seller_revised_property_price ?? null}
+              dangerousId={summary?.seller_most_dangerous_comparable_id ?? null}
+            />
+          ) : page.type === 'price_analysis' ? (
+            <LivePageAnalysisPending
+              steps={pendingSteps}
+              busy={busy}
+              onOpen={(pageIndex) => {
+                setAwaitError(null);
+                setIndex(pageIndex);
+              }}
+              onShowAnalysis={() => void showAnalysis()}
+            />
+          ) : page.type === 'conclusion' ? (
+            <LivePageConclusion
+              projectId={projectId}
+              summary={summary}
+              advisorRange={effectiveRange}
+              dangerous={dangerousComparable ?? closestComparable}
+              closest={dangerousComparable == null && closestComparable != null}
+              onPendingPriceChange={handlePendingPriceChange}
+              onPriceSaved={handlePriceSaved}
+            />
+          ) : page.type === 'closing_question' ? (
+            <LivePageClosing
+              agreedPrice={agreedPrice}
+              hasAgreedPrice={hasAgreedPrice || agreedPrice != null}
+              advisorAnalysis={effectiveRange?.priceGaps.advisorComparativePrice ?? null}
+              score={closing.last}
+              missing={closing.missing}
+              onScore={handleClosingScore}
+              onMissingChange={(missing) => setClosing((c) => ({ ...c, missing }))}
+            />
+          ) : (
+            <p className="text-zinc-500 stage:text-white/60">
+              {/* Mission 89 — neutre : aucune consigne au conseiller devant le vendeur. */}
+              {t.unavailable}
+            </p>
+          )}
+        </main>
 
-      {/* MISSION 51 §3.1/§3.3 — UNE barre ancrée à la fenêtre, UN bouton « Valider et
+        {/* MISSION 51 §3.1/§3.3 — UNE barre ancrée à la fenêtre, UN bouton « Valider et
           continuer » qui enregistre ET avance : plus de « Suivant » distinct du
           « Enregistrer » (§2.1). Attentes sur quitter 1/2/3/5 (bouton occupé) ; avance
           optimiste ailleurs ; libellé « Révéler … » sur la 1re phase de l'écran de durée. */}
-      {isInteractive ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
-          style={{
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-            paddingTop: '1rem',
-          }}
-        >
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <span className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                disabled={index === 0}
-                className={navBtn}
-              >
-                ← Précédent
-              </button>
-              {buyersDot}
-            </span>
-            <span
-              className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
-              aria-live="polite"
-            >
-              {busy
-                ? 'Enregistrement…'
-                : blockedByFailedSave
-                  ? FAILED_SAVE_MESSAGE
-                  : awaitError
-                    ? awaitError
-                    : currentSave?.status === 'pending'
-                      ? 'Enregistrement…'
-                      : currentSave?.status === 'ok'
-                        ? 'Réponse enregistrée'
-                        : ''}
-            </span>
-            {/* Mission 94 — le prix reformulé est facultatif : « Passer » n'enregistre rien. */}
-            {page.type === 'seller_revised_price' &&
-            summary?.seller_revised_property_price == null ? (
-              <button
-                type="button"
-                onClick={() => void skipRevisedPrice()}
-                disabled={busy}
-                className={navBtn}
-              >
-                Passer
-              </button>
-            ) : null}
-            {blockedByFailedSave ? (
-              <button type="button" onClick={retryFailedSaves} className={ctaPrimary}>
-                Réessayer
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void onValidate()}
-                disabled={busy || index >= pages.length - 1}
-                className={ctaPrimary}
-              >
-                {(page.type === 'comparable_duration' && !durationRevealed) || quickDurationPending
-                  ? 'Révéler la durée →'
-                  : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
-                      (revisedToConfirm != null && page.type === 'seller_revised_price')
-                    ? 'Confirmer et continuer →'
-                    : 'Valider et continuer →'}
-              </button>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      {/* MISSION 85 — l'écran du prix n'est plus le dernier : « Valider et continuer »
-          enregistre d'abord un prix saisi et non enregistré (M81), puis ouvre la question
-          de 1 à 10. Un champ vide n'enregistre rien et n'empêche pas d'avancer. */}
-      {page.type === 'conclusion' ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
-          style={{
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-            paddingTop: '1rem',
-          }}
-        >
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <span className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                disabled={index === 0}
-                className={navBtn}
-              >
-                ← Précédent
-              </button>
-              {buyersDot}
-            </span>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              {awaitError ? <span className={errorText}>{awaitError}</span> : null}
-              {finishError ? <span className={errorText}>{finishError}</span> : null}
-              <button
-                type="button"
-                onClick={() => void leavePriceScreen()}
-                disabled={busy || finishing}
-                className={ctaPrimary}
+        {isInteractive ? (
+          <div
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+            style={{
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '1rem',
+            }}
+          >
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(-1)}
+                  disabled={index === 0}
+                  className={navBtn}
+                >
+                  {t.previous}
+                </button>
+                {buyersDot}
+              </span>
+              <span
+                className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
+                aria-live="polite"
               >
                 {busy
-                  ? 'Enregistrement du prix…'
-                  : finishing
-                    ? 'Enregistrement…'
-                    : currentIndex >= pages.length - 1
-                      ? 'Terminer le rendez-vous →'
-                      : 'Valider et continuer →'}
-              </button>
+                  ? t.saving
+                  : blockedByFailedSave
+                    ? t.failedSave
+                    : awaitError
+                      ? awaitError
+                      : currentSave?.status === 'pending'
+                        ? t.saving
+                        : currentSave?.status === 'ok'
+                          ? t.answerSaved
+                          : ''}
+              </span>
+              {/* Mission 94 — le prix reformulé est facultatif : « Passer » n'enregistre rien. */}
+              {page.type === 'seller_revised_price' &&
+              summary?.seller_revised_property_price == null ? (
+                <button
+                  type="button"
+                  onClick={() => void skipRevisedPrice()}
+                  disabled={busy}
+                  className={navBtn}
+                >
+                  {t.skip}
+                </button>
+              ) : null}
+              {blockedByFailedSave ? (
+                <button type="button" onClick={retryFailedSaves} className={ctaPrimary}>
+                  {t.retry}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void onValidate()}
+                  disabled={busy || index >= pages.length - 1}
+                  className={ctaPrimary}
+                >
+                  {(page.type === 'comparable_duration' && !durationRevealed) ||
+                  quickDurationPending
+                    ? t.revealDuration
+                    : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
+                        (revisedToConfirm != null && page.type === 'seller_revised_price')
+                      ? t.confirm
+                      : t.validate}
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {/* MISSION 53 — la FIN NORMALE du parcours. Le dernier écran mène à la conclusion
+        {/* MISSION 85 — l'écran du prix n'est plus le dernier : « Valider et continuer »
+          enregistre d'abord un prix saisi et non enregistré (M81), puis ouvre la question
+          de 1 à 10. Un champ vide n'enregistre rien et n'empêche pas d'avancer. */}
+        {page.type === 'conclusion' ? (
+          <div
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+            style={{
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '1rem',
+            }}
+          >
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(-1)}
+                  disabled={index === 0}
+                  className={navBtn}
+                >
+                  {t.previous}
+                </button>
+                {buyersDot}
+              </span>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {awaitError ? <span className={errorText}>{awaitError}</span> : null}
+                {finishError ? <span className={errorText}>{finishError}</span> : null}
+                <button
+                  type="button"
+                  onClick={() => void leavePriceScreen()}
+                  disabled={busy || finishing}
+                  className={ctaPrimary}
+                >
+                  {busy
+                    ? t.savingPrice
+                    : finishing
+                      ? t.saving
+                      : currentIndex >= pages.length - 1
+                        ? t.finish
+                        : t.validate}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* MISSION 53 — la FIN NORMALE du parcours. Le dernier écran mène à la conclusion
           (écran conseiller), distincte de « Quitter » (chrome, en haut) qui sort SANS
           conclure et laisse le dossier dans le Live. On sort du plein écran avant de passer
           à un écran advisor-only que le vendeur ne doit pas voir. */}
-      {page.type === 'closing_question' ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
-          style={{
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-            paddingTop: '1rem',
-          }}
-        >
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
-            <span className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                disabled={index === 0}
-                className={navBtn}
-              >
-                ← Précédent
-              </button>
-              {buyersDot}
-            </span>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              {finishError ? (
-                <span className={errorText}>{finishError}</span>
-              ) : closingSave === 'pending' || closingSave === 'ok' ? (
-                <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
-                  {closingSave === 'pending' ? 'Enregistrement…' : 'Note enregistrée'}
-                </span>
-              ) : null}
-              <Link
-                href={thanksHref}
-                onClick={finishMeeting}
-                aria-disabled={finishing}
-                className={ctaPrimary}
-              >
-                {finishing ? 'Enregistrement…' : 'Terminer le rendez-vous →'}
-              </Link>
+        {page.type === 'closing_question' ? (
+          <div
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
+            style={{
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '1rem',
+            }}
+          >
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(-1)}
+                  disabled={index === 0}
+                  className={navBtn}
+                >
+                  {t.previous}
+                </button>
+                {buyersDot}
+              </span>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {finishError ? (
+                  <span className={errorText}>{finishError}</span>
+                ) : closingSave === 'pending' || closingSave === 'ok' ? (
+                  <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
+                    {closingSave === 'pending' ? t.saving : t.noteSaved}
+                  </span>
+                ) : null}
+                <Link
+                  href={thanksHref}
+                  onClick={finishMeeting}
+                  aria-disabled={finishing}
+                  className={ctaPrimary}
+                >
+                  {finishing ? t.saving : t.finish}
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </LiveTextsProvider>
   );
 }
