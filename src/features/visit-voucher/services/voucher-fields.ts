@@ -50,7 +50,8 @@ export function voucherPrice(price: number): string {
 
 // « Fait à … » : la commune de l'adresse de l'agence (après le code postal), sinon rien.
 export function cityOfAddress(address: string | null | undefined): string {
-  const match = /\b\d{5}\s+([^,]+?)\s*$/.exec(address?.trim() ?? '');
+  const clean = (address ?? '').trim().replace(/,?\s*France$/i, '');
+  const match = /\b\d{5}\s+([^,]+?)\s*$/.exec(clean);
   return match?.[1]?.trim() ?? '';
 }
 

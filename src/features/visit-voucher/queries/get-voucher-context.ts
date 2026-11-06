@@ -209,7 +209,9 @@ export async function getVoucherContext(
       agency: identityAgency,
       gaps,
       advisorName: [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim(),
-      city: cityOfAddress(mentions.postalAddress),
+      // La commune de l'adresse de l'agence ; sans code postal lisible, celle du dernier bon de la
+      // fiche ; sinon le conseiller la saisit.
+      city: cityOfAddress(mentions.postalAddress) || last?.city || '',
       lastVisitor: last
         ? { visitors: last.visitors, address: last.visitorAddress, piece: last.piece }
         : null,
