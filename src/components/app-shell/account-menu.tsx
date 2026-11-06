@@ -130,7 +130,7 @@ export function AccountMenu({
           aria-label={ACCOUNT_MENU_LABEL}
           onKeyDown={onMenuKey}
           data-testid="account-menu"
-          className="absolute right-0 bottom-full left-0 z-50 mb-2 flex flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
+          className="absolute top-full right-0 left-0 z-50 mt-2 flex md:top-auto md:bottom-full md:mt-0 md:mb-2 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
         >
           <AccountMenuEntries
             links={links}

@@ -87,8 +87,13 @@ export async function ensureSellerMode(page: Page): Promise<void> {
 
 // Mission 125 — Mon profil, Administration, Aide, Ma démo et Erreurs sont derrière la carte du
 // conseiller, en bas du menu de gauche : on l'ouvre, puis on choisit l'entrée.
+// Sous 768 px, la carte est derrière ☰ (barre compacte du haut) : on le déplie d'abord.
 export async function openAccountMenu(page: Page): Promise<Locator> {
-  await page.getByTestId('account-card').click();
+  const card = page.getByTestId('account-card');
+  if (!(await card.isVisible())) {
+    await page.getByTestId('mobile-menu-toggle').click();
+  }
+  await card.click();
   const menu = page.getByTestId('account-menu');
   await expect(menu).toBeVisible();
   return menu;

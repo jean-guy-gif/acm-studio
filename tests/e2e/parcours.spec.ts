@@ -787,6 +787,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
     const quick = page.getByTestId('buyer-quick-form');
     await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
+    // Sous 768 px, le menu est une barre compacte : le champ Nom se voit sans défiler.
+    await expect(page.getByTestId('mobile-menu-toggle')).toBeVisible();
+    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
     await quick.locator('input[name="name"]').fill(buyerName);
     await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
     await quick.getByRole('button', { name: 'Appartement', exact: true }).click();
@@ -826,6 +830,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('suivi-today')).toContainText(
       `Reprendre contact avec ${buyerName}`,
     );
+    // Sur téléphone, la première tâche du jour se voit sans défiler ; ☰ déplie le menu et la
+    // carte du conseiller, un lien choisi le replie.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByTestId('suivi-task').first()).toBeInViewport({ ratio: 1 });
+    await expectNoHorizontalScroll(page, 'Suivi (390 × 844)');
+    await page.getByTestId('mobile-menu-toggle').click();
+    await expect(page.getByTestId('account-card')).toBeVisible();
+    await page.locator('nav[data-mode]').getByRole('link', { name: /^Live/ }).click();
+    await expect(page).toHaveURL(/\/live$/);
+    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await page.setViewportSize({ width: 1280, height: 720 });
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-contacted').click();
