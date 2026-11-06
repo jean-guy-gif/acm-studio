@@ -10,6 +10,7 @@ import {
   toSelection,
 } from '@/features/ideal-properties/services/ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
+import { readWatchFinds } from '@/features/buyer-watch/services/watch-finds';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
@@ -81,7 +82,25 @@ export async function saveIdealSelection(
   if (error || !selection) return { ok: false, error: FAILED };
 
   const now = new Date();
-  const today = parisDay(now);
+  // Mission 136 — le jour « affiché le » d'une annonce trouvée par la veille : relu en base, jamais
+  // cru du navigateur — le jour d'un passage de cet acquéreur qui a trouvé cette annonce.
+  const watchDays = new Map<string, string>();
+  if (read.items.some((item) => item.seenOn != null)) {
+    const { data: runs } = await client
+      .from('buyer_watch_runs')
+      .select('ran_at, finds')
+      .eq('buyer_id', buyerId)
+      .eq('agency_id', profile.agency_id)
+      .eq('status', 'done')
+      .gt('found_count', 0)
+      .order('ran_at', { ascending: false })
+      .limit(10);
+    for (const run of runs ?? []) {
+      for (const find of readWatchFinds(run.finds)) {
+        if (!watchDays.has(find.url)) watchDays.set(find.url, parisDay(new Date(run.ran_at)));
+      }
+    }
+  }
   const rows = read.items.map((item, index) => {
     const demoListing = demo && item.source === 'listing' ? findDemoListing(item.reference) : null;
     const before =
@@ -99,8 +118,9 @@ export async function saveIdealSelection(
         item.source === 'listing'
           ? reuse
             ? before.price_seen_on
-            : // Mission 136 — le jour de la veille, jamais un jour à venir.
-              ((item.seenOn != null && item.seenOn <= today ? item.seenOn : null) ?? priceSeenOn)
+            : ((item.seenOn != null && watchDays.get(item.reference) === item.seenOn
+                ? item.seenOn
+                : null) ?? priceSeenOn)
           : null,
       category: item.category,
       gaps: item.gaps,

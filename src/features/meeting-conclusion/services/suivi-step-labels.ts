@@ -166,7 +166,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       if (task.buyerId) {
         return {
           title: `${count} ${count > 1 ? 'nouveaux biens' : 'nouveau bien'} pour ${buyerInSentence(task.buyerName)}`,
-          detail: 'trouvés par la veille · bien du marché : à vérifier avant d’envoyer',
+          detail: `${count > 1 ? 'trouvés' : 'trouvé'} par la veille · bien du marché : à vérifier avant d’envoyer`,
           late: null,
           button: 'Voir les biens',
           href,

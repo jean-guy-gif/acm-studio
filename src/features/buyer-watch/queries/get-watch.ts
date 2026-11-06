@@ -2,7 +2,9 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { toBuyer } from '@/features/buyers/services/buyer-row';
 import { readBuyerKnownKeys } from '@/features/buyer-watch/queries/known-keys';
+import { findsForBuyer } from '@/features/buyer-watch/services/watch-criteria';
 import { watchTasks, type WatchRunFinds } from '@/features/buyer-watch/services/watch-tasks';
 import {
   readWatchFinds,
@@ -35,18 +37,26 @@ const recentSince = (now: Date): string =>
 export async function getBuyerLastWatch(
   agencyId: string,
   buyerId: string,
-): Promise<{ ok: true; lastRunAt: string | null } | { ok: false }> {
-  const { data, error } = await createServiceRoleClient()
-    .from('buyer_watch_runs')
-    .select('ran_at')
-    .eq('agency_id', agencyId)
-    .eq('buyer_id', buyerId)
-    .in('status', ['running', 'done'])
-    .order('ran_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) return { ok: false };
-  return { ok: true, lastRunAt: data?.ran_at ?? null };
+): Promise<{ ok: true; lastRunAt: string | null; off: boolean } | { ok: false }> {
+  const admin = createServiceRoleClient();
+  const [run, agency] = await Promise.all([
+    admin
+      .from('buyer_watch_runs')
+      .select('ran_at')
+      .eq('agency_id', agencyId)
+      .eq('buyer_id', buyerId)
+      .in('status', ['running', 'done'])
+      .order('ran_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin.from('agencies').select('buyer_watch_cap_cents').eq('id', agencyId).maybeSingle(),
+  ]);
+  if (run.error || agency.error || !agency.data) return { ok: false };
+  return {
+    ok: true,
+    lastRunAt: run.data?.ran_at ?? null,
+    off: agency.data.buyer_watch_cap_cents <= 0,
+  };
 }
 
 // Les passages terminés de la semaine, le plus récent par acquéreur, ses biens encore nouveaux pour
@@ -77,12 +87,28 @@ async function recentFinds(
     }
   }
   if (latest.size === 0) return { ok: true, runs: [] };
-  const known = await readBuyerKnownKeys(admin, agencyId, [...latest.keys()]);
-  if (!known.ok) return { ok: false };
+  const [known, buyerRows] = await Promise.all([
+    readBuyerKnownKeys(admin, agencyId, [...latest.keys()]),
+    admin
+      .from('buyers')
+      .select('*')
+      .eq('agency_id', agencyId)
+      .in('id', [...latest.keys()])
+      .is('archived_at', null)
+      .in('status', ['searching', 'visiting']),
+  ]);
+  if (!known.ok || buyerRows.error) return { ok: false };
+  const buyers = new Map((buyerRows.data ?? []).map((row) => [row.id, toBuyer(row)]));
   const runs: WatchRunFinds[] = [];
   for (const [buyerId, run] of latest) {
+    const buyer = buyers.get(buyerId);
+    if (!buyer) continue;
     const keys = known.keys(buyerId);
-    const finds = run.finds.filter((find) => !keys.has(watchKey(find.url)));
+    // Ni connu depuis, ni contraire à un indispensable de la fiche telle qu'elle est aujourd'hui.
+    const finds = findsForBuyer(
+      buyer,
+      run.finds.filter((find) => !keys.has(watchKey(find.url))),
+    );
     if (finds.length > 0) runs.push({ buyerId, ranAt: run.ranAt, finds });
   }
   return { ok: true, runs };

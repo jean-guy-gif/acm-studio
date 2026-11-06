@@ -57,7 +57,14 @@ const dayLabel = (day: string): string => {
 };
 
 // Sur la fiche : « Veille : dernière recherche le 04/11, prochaine le 11/11 », ou arrêtée.
-export function watchLine(input: { ready: boolean; lastRunAt: string | null; now: Date }): string {
+export function watchLine(input: {
+  ready: boolean;
+  lastRunAt: string | null;
+  now: Date;
+  // Le plafond de la veille de l'agence est à 0 € : elle ne cherche pour personne.
+  off?: boolean;
+}): string {
+  if (input.off) return 'Veille arrêtée : coupée par l’agence';
   if (!input.ready) return 'Veille arrêtée : pas prêt à visiter';
   const next = nextWatchOn(input.lastRunAt, input.now);
   const nextLabel = next <= parisDay(input.now) ? 'la nuit prochaine' : `le ${dayLabel(next)}`;

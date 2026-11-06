@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
+import { findsForBuyer } from '@/features/buyer-watch/services/watch-criteria';
 import {
   filterWatchFinds,
   findAsCandidate,
@@ -261,5 +262,46 @@ describe('ce qu’elle fait naître dans « À faire aujourd’hui »', () => {
       },
     ]);
     expect(list.dues.map((task) => task.kind)).toEqual(['buyer_watch', 'buyer_relaunch']);
+  });
+});
+
+describe('un bien qui contredit un indispensable ne compte pas', () => {
+  const buyer = (over: Record<string, unknown> = {}) =>
+    ({
+      id: 'keller',
+      name: 'Famille Keller',
+      propertyTypes: ['house'],
+      cities: ['Mougins'],
+      budgetIdeal: null,
+      budgetMax: 1_500_000,
+      roomsMin: null,
+      bedroomsMin: null,
+      surfaceMin: null,
+      outdoor: null,
+      parking: null,
+      pool: null,
+      floorMin: null,
+      elevator: null,
+      energyRatingMax: null,
+      worksAccepted: null,
+      mustHave: ['budget'],
+      dealBreakers: null,
+      ...over,
+    }) as never;
+
+  it('le budget ★ dépassé (la requête cherche jusqu’à +5 %) : écarté, comme sur la page', () => {
+    const within = toWatchFind(candidate('100000020', { price: 1_480_000 }))!;
+    const over = toWatchFind(candidate('100000021', { price: 1_560_000 }))!;
+    expect(findsForBuyer(buyer(), [within, over]).map((find) => find.key)).toEqual(['100000020']);
+    // En préférence, le même bien reste (« à négocier »).
+    expect(findsForBuyer(buyer({ mustHave: [] }), [within, over])).toHaveLength(2);
+  });
+});
+
+describe('la veille coupée par l’agence', () => {
+  it('la fiche le dit, prête ou non', () => {
+    expect(watchLine({ ready: true, lastRunAt: null, now: NOW, off: true })).toBe(
+      'Veille arrêtée : coupée par l’agence',
+    );
   });
 });

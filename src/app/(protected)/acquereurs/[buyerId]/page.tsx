@@ -573,6 +573,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 {watchLine({
                   ready: readiness.state === 'ready',
                   lastRunAt: lastWatch.lastRunAt,
+                  off: lastWatch.off,
                   now,
                 })}
               </p>

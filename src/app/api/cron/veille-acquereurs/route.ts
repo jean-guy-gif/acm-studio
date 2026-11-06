@@ -8,9 +8,10 @@ import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export const dynamic = 'force-dynamic';
-// Une recherche de veille tient en quelques secondes ; passé 45 s, plus aucun acquéreur n'est lancé.
+// Une recherche de veille tient en quelques secondes, 20 s au pire (deux lectures de 10 s) ; passé
+// 30 s, plus rien n'est réservé : la recherche lancée a toujours le temps d'être réglée.
 export const maxDuration = 60;
-const BUDGET_MS = 45_000;
+const BUDGET_MS = 30_000;
 
 // Mission 136 — la veille des acquéreurs, chaque nuit (vercel.json, 2 h 17 UTC, une heure creuse) :
 // pour chaque agence réelle, les acquéreurs « Prêts à visiter » dont le dernier passage date de

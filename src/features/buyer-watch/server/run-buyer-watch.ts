@@ -8,6 +8,7 @@ import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
 import { toBuyer } from '@/features/buyers/services/buyer-row';
 import type { Buyer } from '@/features/buyers/types';
 import { readBuyerKnownKeys } from '@/features/buyer-watch/queries/known-keys';
+import { findsForBuyer } from '@/features/buyer-watch/services/watch-criteria';
 import { filterWatchFinds } from '@/features/buyer-watch/services/watch-finds';
 import {
   dueWatchBuyers,
@@ -151,10 +152,11 @@ export async function runAgencyWatch(
       watchSeenSince(lastDone.get(buyer.id) ?? null, now),
       known.keys(buyer.id),
       now,
+      deadline,
       fetchPageFor,
     );
-    if (outcome === 'budget') {
-      report.stopped = 'budget';
+    if (outcome === 'budget' || outcome === 'deadline') {
+      report.stopped = outcome;
       break;
     }
     if (outcome === 'skipped') continue;
@@ -166,7 +168,8 @@ export async function runAgencyWatch(
   return report;
 }
 
-type OneOutcome = 'budget' | 'skipped' | { ok: boolean; billed: number; found: number };
+type OneOutcome =
+  'budget' | 'skipped' | 'deadline' | { ok: boolean; billed: number; found: number };
 
 async function watchOneBuyer(
   admin: Admin,
@@ -175,6 +178,7 @@ async function watchOneBuyer(
   seenSince: string,
   knownKeys: Set<string>,
   now: Date,
+  deadline: number,
   fetchPageFor: (onBilled: (count: number) => void) => ReturnType<typeof liveStreamEstatePage>,
 ): Promise<OneOutcome> {
   // Une fiche qui ne se cherche pas (deux types, sans commune, commune introuvable) : rien de
@@ -183,6 +187,9 @@ async function watchOneBuyer(
   if (!deduced.ok) return 'skipped';
   const resolved = await resolveIdealPlans(deduced, false, now);
   if (!resolved.ok) return 'skipped';
+  // Les communes résolues peuvent avoir pris du temps : rien ne se réserve si la recherche risque
+  // d'être coupée par la durée de la fonction (une réservation jamais réglée resterait comptée).
+  if (Date.now() > deadline) return 'deadline';
 
   const { data, error } = await admin.rpc('start_buyer_watch', {
     p_agency_id: agencyId,
@@ -229,13 +236,18 @@ async function watchOneBuyer(
   }
 
   if (!search?.ok) {
-    await admin
+    const { error: failedError } = await admin
       .from('buyer_watch_runs')
       .update({ status: 'failed', adverts: billed })
       .eq('id', row.run_id);
+    if (failedError) await reportServerError('buyerWatch', failedError);
     return { ok: false, billed, found: 0 };
   }
-  const { finds } = filterWatchFinds(search.candidates, { seenSince, knownKeys });
+  // Les nouveaux biens qui ne contredisent aucun indispensable de la fiche (M118).
+  const finds = findsForBuyer(
+    buyer,
+    filterWatchFinds(search.candidates, { seenSince, knownKeys }).finds,
+  );
   const { error: updateError } = await admin
     .from('buyer_watch_runs')
     .update({
