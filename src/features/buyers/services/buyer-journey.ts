@@ -1,4 +1,6 @@
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { daysBetween } from '@/features/meeting-conclusion/services/suivi-tasks';
 import type { BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 
 // Mission 130 B — « Une seule prochaine étape » côté acquéreur (maquette M130-fiche-acquereur.png,
@@ -244,6 +246,8 @@ export function lastExchangeLabel(
     .sort();
   const last = known.at(-1);
   if (!last) return null;
-  const days = Math.max(0, Math.floor((now.getTime() - new Date(last).getTime()) / 86_400_000));
+  // Mission 132 — en jours de Paris, comme « À recontacter » (`buyerReadiness`) : les deux se lisent
+  // côte à côte sur la fiche et ne doivent jamais se contredire.
+  const days = Math.max(0, daysBetween(parisDay(new Date(last)), parisDay(now)));
   return days === 0 ? 'dernier échange aujourd’hui' : `dernier échange il y a ${days} j`;
 }

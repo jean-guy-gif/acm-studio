@@ -10,6 +10,11 @@ import {
   buyerTypesLabel,
 } from '@/features/buyers/services/buyer-criteria';
 import { buyerNextAction } from '@/features/buyers/services/buyer-journey';
+import {
+  buyerReadiness,
+  READY_LABEL,
+  RECONTACT_LABEL,
+} from '@/features/buyers/services/buyer-readiness';
 import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import type { Buyer } from '@/features/buyers/types';
 
@@ -20,12 +25,14 @@ export function BuyerList({
   advisorId,
   query,
   progress = new Map(),
+  now = new Date(),
 }: {
   buyers: Buyer[];
   advisorId: string | null;
   query: string | null;
   // Essai de Jean-Guy (26/10) : les faits des étapes, pour le bouton de chaque carte.
   progress?: ReadonlyMap<string, BuyerProgressFacts>;
+  now?: Date;
 }) {
   if (buyers.length === 0) {
     return (
@@ -57,6 +64,29 @@ export function BuyerList({
                     {buyer.name}
                   </Link>
                   <span className={badgeBrand}>{buyerStatusLabel(buyer)}</span>
+                  {/* Mission 132 — prêt à visiter, ou à recontacter : le même calcul que la fiche. */}
+                  {(() => {
+                    const readiness = buyerReadiness(
+                      buyer,
+                      progress.get(buyer.id) ?? NO_PROGRESS,
+                      now,
+                    );
+                    return readiness.state === 'ready' ? (
+                      <span
+                        className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white"
+                        data-testid="buyer-row-ready"
+                      >
+                        {READY_LABEL}
+                      </span>
+                    ) : readiness.state === 'recontact' ? (
+                      <span
+                        className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800"
+                        data-testid="buyer-row-recontact"
+                      >
+                        {RECONTACT_LABEL}
+                      </span>
+                    ) : null;
+                  })()}
                   {buyer.advisorId === advisorId ? (
                     <span className={badgeNeutral}>Ma fiche</span>
                   ) : null}

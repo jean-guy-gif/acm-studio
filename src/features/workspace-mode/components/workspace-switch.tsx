@@ -73,7 +73,7 @@ export function WorkspaceSwitch({ mode }: { mode: WorkspaceMode }) {
           );
         })}
       </div>
-      <p className="flex items-center gap-1.5 px-1 text-xs text-zinc-500 stage:text-white/50">
+      <p className="hidden items-center gap-1.5 px-1 text-xs md:flex text-zinc-500 stage:text-white/50">
         <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${MODE_COLOR[mode].dot}`} />
         <span data-testid="workspace-mode-word">Mode {WORKSPACE_MODE_LABELS[mode]}</span>
       </p>

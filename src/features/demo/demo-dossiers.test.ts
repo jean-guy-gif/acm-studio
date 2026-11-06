@@ -153,7 +153,7 @@ describe('les acquéreurs de la démo', () => {
     expect(deletion.find((call) => call.method === 'eq')?.args).toEqual(['agency_id', AGENCY]);
   });
 
-  it('« Préparer ma démo » sème deux acquéreurs marqués, au closer, dans son agence', async () => {
+  it('« Préparer ma démo » sème huit acquéreurs marqués, au closer, dans son agence', async () => {
     const { seedDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
     expect(
       await seedDemoBuyers(service.client as never, { id: 'u-closer', agencyId: AGENCY }),
@@ -163,12 +163,16 @@ describe('les acquéreurs de la démo', () => {
       string,
       unknown
     >[];
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(8);
     for (const row of rows) {
       expect(row).toMatchObject({ agency_id: AGENCY, advisor_id: 'u-closer', demo: true });
       expect(row).not.toHaveProperty('status');
     }
-    expect(rows.map((row) => row.name)).toEqual(['M. et Mme Rossi', 'Famille Keller']);
+    expect(rows.slice(0, 2).map((row) => row.name)).toEqual(['M. et Mme Rossi', 'Famille Keller']);
+    // Mission 132 — cinq financements validés, chacun avec son dernier contact.
+    const validated = rows.filter((row) => row.financing === 'validated');
+    expect(validated).toHaveLength(5);
+    for (const row of validated) expect(row.contacted_at).toEqual(expect.any(String));
   });
 });
 

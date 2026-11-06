@@ -3,6 +3,8 @@ import Link from 'next/link';
 
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
+import { BuyerQuickForm } from '@/features/buyers/components/buyer-quick-form';
+import { getAgencyCities } from '@/features/buyers/queries/get-agency-cities';
 import { criteriaToBuyerDraft } from '@/features/buyers/services/buyer-criteria';
 
 export const metadata: Metadata = { title: 'Nouvel acquéreur — ACM Studio' };
@@ -25,6 +27,8 @@ const num = (value: string | undefined): number | null => {
 
 // Mission 117 — une fiche neuve ; depuis le rapprochement du Suivi (« Enregistrer cette
 // recherche »), elle arrive pré-remplie de ses critères, à nommer avant d'enregistrer.
+// Mission 132 — sinon, la saisie rapide : un écran, en sortant d'un appel ; le reste se complète
+// sur la fiche. Le rapprochement garde le formulaire complet (ses pièces et sa surface).
 export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) {
   const params = await searchParams;
   const fromSearch = Object.values(params).some((value) => value != null && value !== '');
@@ -50,10 +54,14 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
         <p className={pageSubtitle}>
           {fromSearch
             ? 'Les critères du rapprochement sont posés : nommez l’acquéreur, puis enregistrez.'
-            : 'Le nom et au moins une commune suffisent ; le reste se complète au fil des échanges.'}
+            : 'Qui il est, ce qu’il cherche, en quelques gestes ; le reste se complète plus tard.'}
         </p>
       </div>
-      <BuyerForm buyer={null} draft={draft} />
+      {fromSearch ? (
+        <BuyerForm buyer={null} draft={draft} />
+      ) : (
+        <BuyerQuickForm cities={await getAgencyCities()} />
+      )}
     </div>
   );
 }

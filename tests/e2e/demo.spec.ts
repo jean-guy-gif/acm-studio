@@ -858,7 +858,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const after = await hrefs();
       for (const href of after.slice(0, 4)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
-      // Mission 117 — deux acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
+      // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       await expectDemoBuyers(page);
     });
 
@@ -1186,7 +1186,13 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.goto('/acquereurs');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
-  await expect(rows).toHaveCount(2);
+  // Mission 132 — huit acquéreurs : Rossi, Keller, et six autour de Vence, dont cinq prêts à
+  // visiter ; M. Fontaine, financement en cours, ne l'est pas.
+  await expect(rows).toHaveCount(8);
+  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(5);
+  await expect(rows.filter({ hasText: 'M. Fontaine' }).getByTestId('buyer-row-ready')).toHaveCount(
+    0,
+  );
   await expect(rows.filter({ hasText: 'M. et Mme Rossi' })).toContainText(
     'Appartement · Antibes · Juan-les-Pins',
   );

@@ -87,8 +87,13 @@ export async function ensureSellerMode(page: Page): Promise<void> {
 
 // Mission 125 — Mon profil, Administration, Aide, Ma démo et Erreurs sont derrière la carte du
 // conseiller, en bas du menu de gauche : on l'ouvre, puis on choisit l'entrée.
+// Sous 768 px, la carte est derrière ☰ (barre compacte du haut) : on le déplie d'abord.
 export async function openAccountMenu(page: Page): Promise<Locator> {
-  await page.getByTestId('account-card').click();
+  const card = page.getByTestId('account-card');
+  if (!(await card.isVisible())) {
+    await page.getByTestId('mobile-menu-toggle').click();
+  }
+  await card.click();
   const menu = page.getByTestId('account-menu');
   await expect(menu).toBeVisible();
   return menu;
@@ -466,4 +471,42 @@ export function readDemoLinkAnswers(buyerName: string): LinkAnswerRow[] {
     throw new Error('Réponse inattendue de `supabase db query` à la lecture des réponses du lien.');
   }
   return JSON.parse(JSON.parse(`"${rows}"`)) as LinkAnswerRow[];
+}
+
+// Mission 132 — EXCEPTION à « tout passe par l'écran », comme les relances (M96) : « À recontacter »
+// n'arrive qu'après 30 jours sans échange. Le parcours vieillit SA fiche acquéreur par la CLI
+// Supabase du poste — création et statut reculés de 40 jours, dernier contact effacé — seulement
+// la fiche nommée « Acquéreur TEST AUTOMATIQUE … » de l'agence du compte de test. Rend le nombre
+// de fiches touchées (0 ou 1).
+export function ageTestBuyer(buyerId: string): number {
+  if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(buyerId)) {
+    throw new Error('Identifiant de fiche inattendu : la base n’est pas touchée.');
+  }
+  const email = requireEnv('E2E_EMAIL').replace(/'/g, "''");
+  const sql = `with aged as (
+    update public.buyers
+    set created_at = now() - interval '40 days',
+        status_changed_at = now() - interval '40 days',
+        contacted_at = null
+    where id = '${buyerId}'
+      and agency_id = (select agency_id from public.profiles where email = '${email}')
+      and name like 'Acquéreur TEST AUTOMATIQUE %'
+    returning 1
+  ) select count(*)::int as fiches from aged`;
+  let output: string;
+  try {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: true }), {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'La fiche acquéreur du test n’a pas pu être vieillie : `supabase db query --remote` a échoué.',
+    );
+  }
+  const count = /"fiches":\s*(\d+)/.exec(output)?.[1];
+  if (count === undefined) {
+    throw new Error('Réponse inattendue de `supabase db query` au vieillissement de la fiche.');
+  }
+  return Number(count);
 }

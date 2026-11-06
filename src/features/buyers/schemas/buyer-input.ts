@@ -250,3 +250,50 @@ export function readBuyerFormData(formData: FormData): Record<string, unknown> {
     deal_breakers: text('deal_breakers'),
   };
 }
+
+// Mission 132 — la saisie rapide (« La fiche en 30 secondes ») : nom, téléphone, type, secteur,
+// budget plafond, et deux ★ au plus parmi le secteur, le budget et quatre équipements ; une ★ sur
+// un équipement le met à « oui ». Le reste se complète plus tard (« Compléter sa recherche »),
+// par le formulaire complet. Relue par le même schéma que la fiche, plus ces deux règles.
+export const QUICK_STAR_CRITERIA = [
+  'cities',
+  'budget',
+  'outdoor',
+  'parking',
+  'pool',
+  'elevator',
+] as const satisfies readonly (typeof BUYER_CRITERIA)[number][];
+export const QUICK_STARS_MAX = 2;
+export const QUICK_STARS_ERROR = `Deux indispensables au plus : le reste se complète ensuite.`;
+
+export function parseQuickBuyerInput(raw: unknown): ParsedBuyerInput {
+  const parsed = parseBuyerInput(raw);
+  if (!parsed.ok) return parsed;
+  const stars = parsed.input.mustHave;
+  if (
+    stars.length > QUICK_STARS_MAX ||
+    stars.some((star) => !(QUICK_STAR_CRITERIA as readonly string[]).includes(star))
+  ) {
+    return { ok: false, errors: { must_have: QUICK_STARS_ERROR }, error: BUYER_FORM_ERROR };
+  }
+  // Une ★ sur le budget sans montant ne dirait rien : le budget est demandé.
+  if (stars.includes('budget') && parsed.input.budgetMax == null) {
+    return {
+      ok: false,
+      errors: { budget_max: 'Indiquez le budget maximum pour le rendre indispensable.' },
+      error: BUYER_FORM_ERROR,
+    };
+  }
+  const starred = (criterion: (typeof QUICK_STAR_CRITERIA)[number]) =>
+    stars.includes(criterion) ? true : null;
+  return {
+    ok: true,
+    input: {
+      ...parsed.input,
+      outdoor: starred('outdoor'),
+      parking: starred('parking'),
+      pool: starred('pool'),
+      elevator: starred('elevator'),
+    },
+  };
+}

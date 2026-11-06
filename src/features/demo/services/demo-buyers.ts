@@ -1,11 +1,47 @@
-import type { BuyerInput } from '@/features/buyers/types';
+import type { BuyerFinancing, BuyerInput } from '@/features/buyers/types';
+
+// Mission 132 — un acquéreur de démo porte aussi son financement et son dernier contact (en jours
+// avant « Préparer ma démo »), posés par la clé service comme les gestes de la fiche.
+export type DemoBuyer = BuyerInput & {
+  financing?: BuyerFinancing;
+  contactedDaysAgo?: number | null;
+};
+
+// Une maison de 4 ou 5 pièces autour de Vence, entre 700 000 et 800 000 € : ce que cherchent les
+// acquéreurs prêts de la démo, pour que le Live de Vence en trouve (décision de Jean-Guy, 05/11).
+const venceHouse = (
+  fields: Partial<DemoBuyer> & Pick<DemoBuyer, 'name' | 'phone' | 'email'>,
+): DemoBuyer => ({
+  purpose: 'primary',
+  timeline: 'three_months',
+  notes: null,
+  propertyTypes: ['house'],
+  cities: ['Vence', 'Saint-Paul-de-Vence', 'La Colle-sur-Loup'],
+  budgetIdeal: null,
+  budgetMax: 780_000,
+  roomsMin: 4,
+  bedroomsMin: 3,
+  surfaceMin: 110,
+  outdoor: true,
+  parking: null,
+  pool: null,
+  floorMin: null,
+  elevator: null,
+  energyRatingMax: null,
+  worksAccepted: null,
+  mustHave: ['cities', 'budget'],
+  dealBreakers: null,
+  financing: 'validated',
+  contactedDaysAgo: 3,
+  ...fields,
+});
 
 // Mission 117 — les deux acquéreurs de la démo, semés par « Préparer ma démo » (M114) et retirés
 // par la remise à zéro : cohérents avec les scénarios — l'appartement d'Antibes (3 pièces, 68 m²,
 // convenu autour de 393 000 €) et la villa de Mougins (7 pièces, 210 m², piscine, convenue autour
 // de 1 639 500 €). Des personnes fictives, aux noms neutres ; Mission 130 B — un téléphone de la plage 06 39 98
 // (réservée à la fiction par l'ARCEP) et un e-mail en example.com, jamais réels.
-export const DEMO_BUYERS: BuyerInput[] = [
+export const DEMO_BUYERS: DemoBuyer[] = [
   {
     name: 'M. et Mme Rossi',
     phone: '06 39 98 63 04',
@@ -54,4 +90,66 @@ export const DEMO_BUYERS: BuyerInput[] = [
     mustHave: ['pool', 'cities'],
     dealBreakers: 'Pas de route passante, pas de travaux lourds.',
   },
+  // Mission 132 — cinq acquéreurs PRÊTS À VISITER autour de Vence (financement validé, contact il
+  // y a moins de 30 jours, un budget plafond), et un sixième sans financement validé : il ne compte
+  // pas (décision de Jean-Guy, 05/11).
+  venceHouse({
+    name: 'M. et Mme Lambert',
+    phone: '06 39 98 21 46',
+    email: 'lambert.vence@example.com',
+    notes: 'Quittent Paris ; accord de principe de leur banque.',
+    budgetIdeal: 740_000,
+    budgetMax: 790_000,
+    contactedDaysAgo: 2,
+  }),
+  venceHouse({
+    name: 'Famille Moreau',
+    phone: '06 39 98 34 81',
+    email: 'famille.moreau@example.com',
+    notes: 'Trois enfants ; une chambre de plus serait un vrai plus.',
+    roomsMin: 5,
+    bedroomsMin: 4,
+    surfaceMin: 130,
+    budgetMax: 800_000,
+    contactedDaysAgo: 6,
+  }),
+  venceHouse({
+    name: 'Mme Faure',
+    phone: '06 39 98 47 09',
+    email: 'c.faure@example.com',
+    notes: 'Apport de la vente de sa maison à Cagnes, signée.',
+    cities: ['Vence', 'La Colle-sur-Loup'],
+    budgetMax: 760_000,
+    contactedDaysAgo: 9,
+  }),
+  venceHouse({
+    name: 'M. Girard et Mme Chevalier',
+    phone: '06 39 98 58 62',
+    email: 'girard.chevalier@example.com',
+    notes: 'Télétravail : un bureau au calme.',
+    cities: ['Saint-Paul-de-Vence', 'Vence'],
+    budgetMax: 750_000,
+    mustHave: ['cities', 'outdoor'],
+    contactedDaysAgo: 12,
+  }),
+  venceHouse({
+    name: 'M. et Mme Roux',
+    phone: '06 39 98 69 35',
+    email: 'roux.famille@example.com',
+    notes: 'Retraités, cherchent de plain-pied si possible.',
+    roomsMin: 4,
+    bedroomsMin: 2,
+    budgetMax: 720_000,
+    contactedDaysAgo: 18,
+  }),
+  venceHouse({
+    name: 'M. Fontaine',
+    phone: '06 39 98 72 18',
+    email: 'f.fontaine@example.com',
+    notes: 'Rendez-vous à la banque dans quinze jours.',
+    cities: ['Vence'],
+    budgetMax: 770_000,
+    financing: 'in_progress',
+    contactedDaysAgo: 4,
+  }),
 ];

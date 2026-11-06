@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import {
+  ageTestBuyer,
   expectNoHorizontalScroll,
   goViaAccountMenu,
   login,
@@ -778,50 +779,113 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Mission 130 B — l'ancienne adresse « Biens idéaux » ramène aux acquéreurs.
     await page.goto('/biens-ideaux');
     await expect(page).toHaveURL(/\/acquereurs$/);
+    // Mission 132 — « La fiche en 30 secondes » : la saisie rapide, au pouce, sur téléphone
+    // (390 × 844), chronométrée du clic sur « Nouvel acquéreur » à la fiche affichée.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const startedAt = Date.now();
     await page.getByRole('link', { name: 'Nouvel acquéreur' }).click();
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
+    const quick = page.getByTestId('buyer-quick-form');
+    await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
+    // Sous 768 px, le menu est une barre compacte : le champ Nom se voit sans défiler.
+    await expect(page.getByTestId('mobile-menu-toggle')).toBeVisible();
+    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
+    await quick.locator('input[name="name"]').fill(buyerName);
+    await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
+    await quick.getByRole('button', { name: 'Appartement', exact: true }).click();
+    // Nice, la commune du bien de ce passage ; une deuxième commune, dédoublonnée par sa clé.
+    await quick.getByLabel('Autre commune').fill('Nice, nice, Cagnes-sur-Mer');
+    await quick.getByRole('button', { name: 'Autre', exact: true }).click();
+    await quick
+      .getByLabel('Budget maximum, en euros')
+      .fill(String(COMMERCIALIZATION_PRICE - 5_000));
+    await quick.getByRole('button', { name: '★ Extérieur' }).click();
+    await quick.getByRole('button', { name: '★ Budget' }).click();
+    // Deux ★ au plus : la troisième ne se touche plus.
+    await expect(quick.getByRole('button', { name: '★ Piscine' })).toBeDisabled();
+    await quick.getByRole('button', { name: 'Enregistrer la fiche' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?enregistre=1&rapide=1$/);
+    await expect(page.getByTestId('buyer-name')).toHaveText(buyerName);
+    const elapsed = (Date.now() - startedAt) / 1000;
+    console.log(`Saisie rapide : ${Math.round(elapsed * 10) / 10} s`);
+    expect(elapsed, 'La fiche rapide a pris plus de 30 secondes').toBeLessThan(30);
+    // Ce que la saisie rapporte, tout de suite : les biens de l'agence qui correspondent.
+    await expect(page.getByTestId('buyer-quick-matches')).toHaveText(
+      /^[1-9]\d* biens? de l’agence correspond(ent)?$/,
+    );
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const buyerUrl = page.url().replace(/\?.*$/, '');
+    const buyerId = buyerUrl.split('/').pop() as string;
+    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
+    // Pas encore prêt : son financement n'est pas posé. Validé : « Prêt à visiter ».
+    await expect(page.getByTestId('buyer-ready')).toHaveCount(0);
+    await page.getByTestId('buyer-financing').getByRole('button', { name: 'Validé' }).click();
+    await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
+    // 40 jours sans échange (vieilli en base, M96) : « À recontacter », et la tâche du Suivi.
+    expect(ageTestBuyer(buyerId), 'La fiche du test n’a pas été vieillie').toBe(1);
+    await page.reload();
+    await expect(page.getByTestId('buyer-recontact')).toHaveText('À recontacter');
+    await page.goto('/suivi');
+    await expect(page.getByTestId('suivi-today')).toContainText(
+      `Reprendre contact avec ${buyerName}`,
+    );
+    // Sur téléphone, la première tâche du jour se voit sans défiler ; ☰ déplie le menu et la
+    // carte du conseiller, un lien choisi le replie.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByTestId('suivi-task').first()).toBeInViewport({ ratio: 1 });
+    await expectNoHorizontalScroll(page, 'Suivi (390 × 844)');
+    await page.getByTestId('mobile-menu-toggle').click();
+    await expect(page.getByTestId('account-card')).toBeVisible();
+    await page.locator('nav[data-mode]').getByRole('link', { name: /^Live/ }).click();
+    await expect(page).toHaveURL(/\/live$/);
+    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await page.setViewportSize({ width: 1280, height: 720 });
+    // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
+    await page.goto(buyerUrl);
+    await page.getByTestId('buyer-contacted').click();
+    await expect(page.getByTestId('buyer-contacted')).toHaveText('Contact noté aujourd’hui ✓');
+    await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
+    await page.goto('/suivi');
+    await expect(page.getByTestId('suivi-today')).not.toContainText(
+      `Reprendre contact avec ${buyerName}`,
+    );
+    await page.goto(buyerUrl);
+
+    // « Compléter sa recherche » : le formulaire complet, où se règle le reste.
     const field = (label: string) =>
       page
         .locator('label')
         .filter({ has: page.locator('span', { hasText: new RegExp(`^${label}$`) }) })
         .locator('input, select, textarea');
-    await field('Nom').fill(buyerName);
-    const typeBox = page.locator('input[name="property_types"][value="apartment"]');
-    await typeBox.check();
-    // Nice, la commune du bien de ce passage ; une deuxième commune, dédoublonnée par sa clé.
-    await field('Communes').fill('Nice, nice, Cagnes-sur-Mer');
-    await field('Pièces \\(minimum\\)').fill('3');
-    await field('Chambres \\(minimum\\)').fill('4');
-    await field('Surface \\(m², minimum\\)').fill('60');
-    await field('Budget idéal \\(€\\)').fill('300 000');
-    await field('Budget plafond \\(€\\)').fill(String(COMMERCIALIZATION_PRICE - 5_000));
-    await field('Extérieur').selectOption('yes');
-    await page.locator('input[name="must_have"][value="outdoor"]').check();
-    // Plus de chambres que de pièces : refusé, sur le champ, rien n'est enregistré.
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(page.getByTestId('buyer-error-bedrooms_min')).toHaveText(
-      'Pas plus de chambres que de pièces.',
-    );
-    await expect(page).toHaveURL(/\/acquereurs\/nouveau/);
-    // Mission 119 — les pièces restent libres : les concurrents de ce passage, sans nombre de
-    // pièces connu, correspondent alors au rapprochement (M86) et à la sélection.
-    await field('Pièces \\(minimum\\)').fill('');
-    await field('Chambres \\(minimum\\)').fill('2');
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?enregistre=1$/);
-    const buyerUrl = page.url().replace(/\?.*$/, '');
-    await expect(page.getByTestId('buyer-name')).toHaveText(buyerName);
-    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
-    // Essai de Jean-Guy (26/10) : sur la fiche, la recherche est repliée sous « Modifier sa
-    // recherche ».
     const searchDetails = page.getByTestId('buyer-form-details');
     await expect(searchDetails).not.toHaveAttribute('open', '');
     await searchDetails.getByText('Modifier sa recherche').click();
     await expect(searchDetails).toHaveAttribute('open', '');
-    // Les communes dédoublonnées, la fiche relue.
+    // Les communes dédoublonnées, la fiche relue ; la ★ a mis l'extérieur à « oui ».
     await expect(field('Communes')).toHaveValue('Nice, Cagnes-sur-Mer');
+    const typeBox = page.locator('input[name="property_types"][value="apartment"]');
     await expect(typeBox).toBeChecked();
     await expect(page.locator('input[name="must_have"][value="outdoor"]')).toBeChecked();
+    await expect(field('Extérieur')).toHaveValue('yes');
+    await field('Pièces \\(minimum\\)').fill('3');
+    await field('Chambres \\(minimum\\)').fill('4');
+    await field('Surface \\(m², minimum\\)').fill('60');
+    await field('Budget idéal \\(€\\)').fill('300 000');
+    // Plus de chambres que de pièces : refusé, sur le champ, rien n'est enregistré.
+    await searchDetails.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByTestId('buyer-error-bedrooms_min')).toHaveText(
+      'Pas plus de chambres que de pièces.',
+    );
+    // Mission 119 — les pièces restent libres : les concurrents de ce passage, sans nombre de
+    // pièces connu, correspondent alors au rapprochement (M86) et à la sélection.
+    await field('Pièces \\(minimum\\)').fill('');
+    await field('Chambres \\(minimum\\)').fill('2');
+    await searchDetails.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(searchDetails.getByText('Fiche enregistrée.')).toBeVisible();
+    // Le financement n'est pas touché par le formulaire.
+    await page.reload();
+    await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
 
     // La liste : la fiche, « Ma fiche », type, communes, budget, pièces ; la recherche par nom.
     await page.goto('/acquereurs');

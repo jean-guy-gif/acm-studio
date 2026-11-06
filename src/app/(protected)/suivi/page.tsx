@@ -4,6 +4,7 @@ import { emptyState, kickerLabel, link, pageSubtitle, pageTitle } from '@/compon
 import { redirect } from 'next/navigation';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
@@ -86,6 +87,8 @@ const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-br
 const TASK_DOT = {
   follow_up: 'bg-orange-500',
   signed: 'bg-emerald-600',
+  // Mission 132 — la couleur du mode Acquéreur (M118).
+  buyer: 'bg-emerald-500',
 };
 
 // Cinq tâches à l'écran, trois sur téléphone (designer, 05/11) ; les autres derrière « Voir ».
@@ -126,7 +129,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, pointRead] = await Promise.all([
+  const [{ cards }, insights, agency, pointRead, buyerRead] = await Promise.all([
     getAgencyProspecting(counted),
     getSellerInsights(projectIds),
     profile ? getAgency(profile.agency_id) : null,
@@ -136,6 +139,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
           readMarketUpdates(supabase, profile.agency_id, projectIds),
         )
       : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
+    // Mission 132 — les acquéreurs sans échange depuis 30 jours.
+    profile ? getBuyerRecontactTasks(profile, new Date()) : { tasks: [], failed: false },
   ]);
   const marketUpdates = pointRead.byProject;
   const signature = {
@@ -184,7 +189,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     visits,
     pointsUnknown: pointRead.failed,
   });
-  const taskList = buildSuiviTaskList(inputs, now);
+  const taskList = buildSuiviTaskList(inputs, now, buyerRead.tasks);
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);
   const visitsByProject = visitCounts(visits);
@@ -228,7 +233,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     );
     return (
       <li
-        key={`${task.projectId}-${task.kind}`}
+        key={`${task.buyerId ?? task.projectId}-${task.kind}`}
         data-testid={copy ? undefined : 'suivi-task'}
         className={`flex items-start gap-3 border-t border-zinc-100 py-2 first:border-0 sm:items-center stage:border-white/10 ${
           !copy && index >= TASKS_SHOWN_PHONE ? 'max-sm:hidden' : ''
@@ -236,7 +241,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
       >
         <span
           className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
-            task.kind === 'follow_up' ? TASK_DOT.follow_up : TASK_DOT.signed
+            task.kind === 'follow_up'
+              ? TASK_DOT.follow_up
+              : task.kind === 'buyer_recontact'
+                ? TASK_DOT.buyer
+                : TASK_DOT.signed
           }`}
           aria-hidden
         >
@@ -279,7 +288,12 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
       </div>
       <SuiviTaskCountSync count={taskList.dues.length} />
 
-      {allDossiers.length === 0 ? (
+      {/* Mission 132 — sans dossier conclu, « À faire aujourd'hui » reste là pour les acquéreurs : une
+          tâche due ou à venir, ou leur lecture en échec (jamais lue comme « rien à faire », M98). */}
+      {allDossiers.length === 0 &&
+      taskList.dues.length === 0 &&
+      taskList.next == null &&
+      !buyerRead.failed ? (
         <div className={emptyState}>
           <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
             Aucun dossier conclu pour le moment.
@@ -299,7 +313,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               {taskList.dues.length > 0 ? ` · ${taskList.dues.length}` : ''}
             </h2>
             {taskList.dues.length === 0 ? (
-              visitRead.failed || pointRead.failed ? null : (
+              visitRead.failed || pointRead.failed || buyerRead.failed ? null : (
                 <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
                   {nothingTodayLabel(taskList.next)}
                 </p>
@@ -350,6 +364,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
             {pointRead.failed ? (
               <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
                 Les Points marché n’ont pas pu être lus : rechargez la page.
+              </p>
+            ) : null}
+            {buyerRead.failed ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                Les acquéreurs à recontacter n’ont pas pu être lus : rechargez la page.
               </p>
             ) : null}
           </section>

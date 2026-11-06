@@ -808,12 +808,15 @@ export type Database = {
           budget_ideal: number | null
           budget_max: number | null
           cities: string[]
+          contacted_at: string | null
           created_at: string
           deal_breakers: string | null
           demo: boolean
           elevator: boolean | null
           email: string | null
           energy_rating_max: string | null
+          financing: string
+          financing_changed_at: string | null
           floor_min: number | null
           id: string
           ignored_suggestions: string[]
@@ -842,12 +845,15 @@ export type Database = {
           budget_ideal?: number | null
           budget_max?: number | null
           cities: string[]
+          contacted_at?: string | null
           created_at?: string
           deal_breakers?: string | null
           demo?: boolean
           elevator?: boolean | null
           email?: string | null
           energy_rating_max?: string | null
+          financing?: string
+          financing_changed_at?: string | null
           floor_min?: number | null
           id?: string
           ignored_suggestions?: string[]
@@ -876,12 +882,15 @@ export type Database = {
           budget_ideal?: number | null
           budget_max?: number | null
           cities?: string[]
+          contacted_at?: string | null
           created_at?: string
           deal_breakers?: string | null
           demo?: boolean
           elevator?: boolean | null
           email?: string | null
           energy_rating_max?: string | null
+          financing?: string
+          financing_changed_at?: string | null
           floor_min?: number | null
           id?: string
           ignored_suggestions?: string[]
