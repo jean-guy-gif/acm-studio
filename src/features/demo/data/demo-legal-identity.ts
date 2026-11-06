@@ -23,3 +23,8 @@ export const DEMO_LEGAL_IDENTITY = {
   representative_name: 'Claire Vasseur',
   representative_title: 'Présidente',
 } as const;
+
+// Décision de Jean-Guy (06/11) : le nom et l'adresse de l'agence de démonstration, posés par
+// « Préparer ma démo » et « Remettre ma démo à zéro » ; plus aucun « Démo » imprimé sur un document.
+export const DEMO_AGENCY_NAME = 'Agence Horizon Côte d’Azur';
+export const DEMO_AGENCY_ADDRESS = '70 rue du Bonheur, 06140 Vence';

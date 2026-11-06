@@ -17,7 +17,11 @@ import { importedMandateColumns } from '@/features/competitor-mandate/services/m
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
-import { DEMO_LEGAL_IDENTITY } from '@/features/demo/data/demo-legal-identity';
+import {
+  DEMO_AGENCY_ADDRESS,
+  DEMO_AGENCY_NAME,
+  DEMO_LEGAL_IDENTITY,
+} from '@/features/demo/data/demo-legal-identity';
 import { DEMO_SIGNATURE_PNG_BASE64 } from '@/features/demo/data/demo-signature';
 import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
 import {
@@ -160,6 +164,14 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
   await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
   await deleteOrphanDemoProspects(supabase, closer);
   return data?.length ?? 0;
+}
+
+async function nameDemoAgency(supabase: Client, closer: Closer): Promise<void> {
+  await supabase.from('agencies').update({ name: DEMO_AGENCY_NAME }).eq('id', closer.agencyId);
+  await supabase
+    .from('agency_branding')
+    .update({ postal_address: DEMO_AGENCY_ADDRESS })
+    .eq('agency_id', closer.agencyId);
 }
 
 async function deleteDemoVouchers(
@@ -931,6 +943,9 @@ export async function seedDemoDossiers(
   closer: Closer,
   now: Date,
 ): Promise<boolean> {
+  // Décision de Jean-Guy (06/11) : le nom et l'adresse de l'agence de démonstration, que les
+  // documents impriment (« Agence Horizon Côte d'Azur », jamais « Démo »).
+  await nameDemoAgency(supabase, closer);
   let mouginsProjectId: string | null = null;
   for (const stage of DEMO_STAGES) {
     const id = await seedDemoDossier(supabase, closer, demoSeedPlan(stage, now), now);
