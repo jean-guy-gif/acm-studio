@@ -869,6 +869,11 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
     const task = page
       .getByTestId('suivi-task')
       .filter({ hasText: /Envoyer le point de la semaine à M\. et Mme Lambert(?!-)/ });
+    // Le point de la semaine vient après les autres tâches : il peut être derrière « Voir ».
+    const more = page.getByTestId('suivi-today').locator('summary').filter({ hasText: /^Voir/ });
+    if (!(await task.first().isVisible()) && (await more.first().isVisible())) {
+      await more.first().click();
+    }
     await expect(task).toContainText(/semaine du \d{2}\/\d{2} au \d{2}\/\d{2}/);
     await task.getByTestId('buyer-report-open-weekly_report').click();
     const message = task.getByTestId('buyer-report-message');
@@ -901,17 +906,33 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
   });
 
   await test.step('« Écarter pour lui » : le bien sort, « Annuler » le rend', async () => {
+    // Les biens idéaux des Keller, le marché simulé de la démo (aucun appel, « 0 annonce facturée »).
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'M. et Mme Rossi' }).click();
+    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+    await page.getByRole('link', { name: 'Changer la sélection' }).click();
+    await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
+    await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page
-      .getByRole('link', { name: /biens idéaux/i })
-      .first()
+      .getByTestId('ideal-paid-confirm')
+      .getByRole('button', { name: 'Lancer et payer' })
       .click();
-    const hits = page.getByTestId('ideal-agency-hit');
+    await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce facturée', {
+      timeout: 60_000,
+    });
+    const hits = page.getByTestId('ideal-market-hit');
     await expect(hits.first()).toBeVisible();
     const before = await hits.count();
-    const first = hits.filter({ has: page.getByTestId('dismiss-open') }).first();
-    const label = (await first.locator('.font-title').first().innerText()).trim();
+    const label = (
+      await hits
+        .filter({ has: page.getByTestId('dismiss-open') })
+        .first()
+        .locator('.font-title')
+        .first()
+        .innerText()
+    ).trim();
+    // Le bien, tenu par son libellé : ouvert, il ne porte plus « Écarter pour lui ».
+    const first = hits.filter({ hasText: label }).first();
     await first.getByTestId('dismiss-open').click();
     await first.getByTestId('dismiss-reason-over_budget').click();
     await expect(page.getByTestId('dismissed-now')).toContainText(`Écarté pour lui : ${label}`);
