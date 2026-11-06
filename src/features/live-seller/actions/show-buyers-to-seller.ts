@@ -1,5 +1,7 @@
 'use server';
 
+import { z } from 'zod';
+
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { LIVE_BUYERS_THRESHOLD } from '@/features/buyers/services/property-buyers';
 import { isLiveClosed, LIVE_CLOSED_MESSAGE } from '@/features/live-seller/services/live-closed';
@@ -17,6 +19,9 @@ const FAILED = 'L’enregistrement a échoué.';
 export async function showBuyersToSeller(projectId: string): Promise<ShowBuyersResult> {
   const profile = await getProfile();
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
+  if (!z.uuid().safeParse(projectId).success) {
+    return { ok: false, error: 'Projet introuvable pour votre agence.' };
+  }
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')

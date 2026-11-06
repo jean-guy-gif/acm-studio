@@ -136,6 +136,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     pendingImports,
     launch,
     profile,
+    buyers,
   ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
@@ -149,13 +150,14 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     // sont nommés ; les concurrents écartés du calcul sont comptés.
     getLiveLaunchInfo(projectId),
     getProfile(),
+    // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple
+    // (le profil est déjà lu pour cette requête, `cache` de React, M128 B).
+    project.is_example
+      ? undefined
+      : getProfile().then((viewer) =>
+          viewer ? getPropertyBuyers(viewer.agency_id, projectId, new Date()) : undefined,
+        ),
   ]);
-
-  // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple.
-  const buyers =
-    profile && !project.is_example
-      ? await getPropertyBuyers(profile.agency_id, projectId, new Date())
-      : undefined;
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({

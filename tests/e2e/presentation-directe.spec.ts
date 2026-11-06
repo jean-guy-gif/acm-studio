@@ -1,6 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { demoCredentials, goViaAccountMenu, login, mainText, pagePayload } from './support';
+import { DEMO_BUYERS } from '../../src/features/demo/services/demo-buyers';
+import {
+  demoCredentials,
+  goViaAccountMenu,
+  login,
+  mainText,
+  pagePayload,
+  readDemoBuyersShown,
+} from './support';
 
 // Mission 131 — la présentation directe, sur l'URL d'essai, avec le compte de l'agence de
 // démonstration (rien d'extérieur, rien de payant) et son dossier « Prêt, en présentation
@@ -22,7 +30,7 @@ const choose = (page: Page, label: string) =>
     .filter({ hasText: new RegExp(`^${label}$`) })
     .click();
 
-async function freshDemo(page: Page): Promise<string> {
+async function freshDemo(page: Page): Promise<{ direct: string; ready: string }> {
   await goViaAccountMenu(page, 'Ma démo');
   await expect(page).toHaveURL(/\/ma-demo$/);
   const hrefs = () =>
@@ -41,14 +49,23 @@ async function freshDemo(page: Page): Promise<string> {
     await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
   }
   await expect(page.getByTestId('demo-dossier')).toHaveCount(5, { timeout: 180_000 });
-  const href = await page
-    .locator('[data-testid="demo-dossier"][data-stage="direct"] a')
-    .first()
-    .getAttribute('href');
-  const id = /\/builder\/([^/]+)\//.exec(href ?? '')?.[1];
-  expect(id, 'Le dossier en présentation directe est introuvable dans « Ma démo »').toBeTruthy();
-  return id as string;
+  const idOf = async (stage: string) => {
+    const href = await page
+      .locator(`[data-testid="demo-dossier"][data-stage="${stage}"] a`)
+      .first()
+      .getAttribute('href');
+    const id = /\/builder\/([^/]+)\//.exec(href ?? '')?.[1];
+    expect(id, `Le dossier de démo « ${stage} » est introuvable dans « Ma démo »`).toBeTruthy();
+    return id as string;
+  };
+  return { direct: await idOf('direct'), ready: await idOf('ready') };
 }
+
+// Mission 133 — ce qui ne doit jamais apparaître devant le vendeur : le nom, le téléphone et
+// l'e-mail d'un acquéreur de la démo.
+const BUYER_SECRETS = DEMO_BUYERS.flatMap((buyer) =>
+  [buyer.name, buyer.phone, buyer.email].filter((value): value is string => value != null),
+);
 
 async function expectMarketStudy(page: Page, from: string): Promise<void> {
   await expect(page, `L’Étude de marché ne s’ouvre pas depuis ${from}`).toHaveURL(
@@ -95,7 +112,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
   page,
 }) => {
   await login(page, demoCredentials());
-  const projectId = await freshDemo(page);
+  const { direct: projectId } = await freshDemo(page);
 
   await test.step('Avant le rendez-vous : la façon de présenter, et l’Étude de marché', async () => {
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
@@ -114,8 +131,13 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect(modes.locator('[role="alert"]')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('[data-presentation-mode] input[value="interactive"]')).toBeChecked();
-    // La Vue d'ensemble propose aussi l'Étude.
+    // La Vue d'ensemble propose aussi l'Étude. Mission 133 — et les acquéreurs de l'agence pour ce
+    // bien : 5 prêts (la maison a une piscine), M. Fontaine correspond sans être prêt.
     await page.goto(`/builder/${projectId}`);
+    await expect(page.getByTestId('property-buyers-headline')).toHaveText(
+      '5 prêts à visiter · 1 autre correspond',
+    );
+    await expect(page.getByTestId('property-buyer-ready')).toHaveCount(5);
     await page.getByTestId('market-study-link').click();
     await expectMarketStudy(page, 'la Vue d’ensemble');
   });
@@ -127,6 +149,31 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
     await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
     await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
+    // Mission 133 — le compteur caché : une pastille sans chiffre ni texte ; la bulle du conseiller,
+    // puis « Montrer au vendeur » : 5 cartes anonymes ; le retour rend le même écran.
+    const dot = page.getByTestId('live-buyers-dot');
+    await expect(dot).toBeVisible();
+    expect((await dot.innerText()).trim()).toBe('');
+    const before = page.url();
+    await dot.click();
+    await expect(page.getByTestId('live-buyers-bubble')).toContainText('5 acquéreurs prêts');
+    await page.getByRole('button', { name: 'Montrer au vendeur' }).click();
+    const screen = page.getByTestId('live-buyers-screen');
+    await expect(screen).toContainText(
+      '5 familles cherchent un bien comme le vôtre et sont prêtes à visiter',
+    );
+    await expect(screen.getByTestId('live-buyer-card')).toHaveCount(5);
+    await expect(screen.getByText('Financement validé')).toHaveCount(5);
+    const payload = await pagePayload(page);
+    for (const secret of BUYER_SECRETS) {
+      expect(payload, `« ${secret} » devant le vendeur`).not.toContain(secret);
+    }
+    await page.getByTestId('live-buyers-back').click();
+    await expect(screen).toHaveCount(0);
+    expect(page.url()).toBe(before);
+    await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
+    // Le moment est noté sur le Live, avec le nombre montré (lu en base).
+    await expect.poll(() => readDemoBuyersShown(projectId), { timeout: 20_000 }).toBe(5);
     await validate(page);
     await page
       .locator('input[name="seller_perceived_property_price"]')
@@ -208,4 +255,23 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await page.goto(`/builder/${projectId}/etude-de-marche`);
     await expectMarketStudy(page, 'le menu du Live');
   });
+});
+
+// Mission 133 — sous 5 acquéreurs prêts, rien : ni pastille, ni bulle, ni écran. La maison de
+// Mme Garcia n'a pas de piscine, les Lambert la veulent (★) : il en reste 4.
+test('la boucle : un dossier à 4 acquéreurs prêts n’a pas de pastille', async ({ page }) => {
+  await login(page, demoCredentials());
+  const { ready: garciaId } = await freshDemo(page);
+  await page.goto(`/builder/${garciaId}`);
+  await expect(page.getByTestId('property-buyers-headline')).toHaveText(
+    '4 prêts à visiter · 1 autre correspond',
+  );
+  await page.goto(`/live/${garciaId}`);
+  await expect(page).toHaveURL(new RegExp(`/builder/${garciaId}/lancer-le-live$`));
+  await page.getByTestId('launch-for-real').click();
+  await expect(page).toHaveURL(new RegExp(`/live/${garciaId}$`));
+  await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
+  await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
+  await expect(page.getByTestId('live-buyers-dot')).toHaveCount(0);
+  expect(await pagePayload(page)).not.toContain('familles cherchent un bien');
 });

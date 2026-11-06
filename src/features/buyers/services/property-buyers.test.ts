@@ -177,6 +177,14 @@ describe('prêts à visiter, et les autres', () => {
     });
   });
 
+  it('une fiche archivée ne compte pas', () => {
+    expect(run([buyer({ archivedAt: daysAgo(1) })])).toEqual({
+      price: 740_000,
+      ready: [],
+      others: [],
+    });
+  });
+
   it('un acquéreur qui a acheté ou abandonné ne compte pas ; une lecture en échec non plus', () => {
     const result = run([buyer({ status: 'bought' }), buyer({ status: 'abandoned' })]);
     expect(result.ready).toEqual([]);

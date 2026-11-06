@@ -185,7 +185,9 @@ export function propertyBuyers(
   const result: PropertyBuyers = { price, ready: [], others: [] };
   if (property == null || price == null) return result;
   for (const buyer of buyers) {
-    // Un acquéreur qui a acheté ou abandonné ne cherche plus (M117).
+    // Une fiche archivée n'existe plus (M117, lue sans elles) ; un acquéreur qui a acheté ou
+    // abandonné ne cherche plus.
+    if (buyer.archivedAt != null) continue;
     if (buyer.status !== 'searching' && buyer.status !== 'visiting') continue;
     if (!buyerMatchesProperty(buyer, property, price)) continue;
     const readiness = buyerReadiness(buyer, progress.get(buyer.id) ?? NO_PROGRESS, now);

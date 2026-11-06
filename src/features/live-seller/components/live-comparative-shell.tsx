@@ -1147,13 +1147,12 @@ export function LiveComparativeShell({
       </header>
 
       {/* Mission 133 — le compteur caché : une pastille neutre, après l'introduction, en Live
-          interactif comme en présentation directe ; le moment montré est noté en fond. */}
+          interactif comme en présentation directe ; le moment montré est noté en fond, suivi comme
+          les autres enregistrements de fond (journal, « Relancer », M92, M100). */}
       {!isIntro && buyersReveal ? (
         <LiveBuyersBadge
           reveal={buyersReveal}
-          onShow={() =>
-            void guardedSave(() => showBuyersToSeller(projectId), { setBusy: () => {} })
-          }
+          onShow={() => runBackground('buyers-shown', () => showBuyersToSeller(projectId))}
         />
       ) : null}
 

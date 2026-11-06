@@ -122,6 +122,18 @@ describe('« Envoyer le lien »', () => {
   });
 });
 
+describe('les acquéreurs de l’agence', () => {
+  it('se lisent sans les fiches archivées, et une lecture en échec le dit', async () => {
+    const { readBuyers } = await vi.importActual<
+      typeof import('@/features/buyers/queries/get-buyers')
+    >('@/features/buyers/queries/get-buyers');
+    expect(await readBuyers()).toEqual({ buyers: [], failed: false });
+    expect(fake.calls).toContainEqual({ method: 'is', args: ['archived_at', null] });
+    user.client = fakeSupabase(() => ({ error: { message: 'panne' } })).client;
+    expect((await readBuyers()).failed).toBe(true);
+  });
+});
+
 describe('« Proposer le bien de M. Bernard à 7 acquéreurs prêts »', () => {
   const input = (over: Partial<SuiviTaskInput> = {}): SuiviTaskInput => ({
     projectId: 'p1',

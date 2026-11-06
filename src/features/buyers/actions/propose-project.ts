@@ -80,14 +80,16 @@ export async function proposeProjectToBuyer(
 
   const client = createServiceRoleClient();
   // La sélection actuelle : ses biens encore retenus, dans leur ordre, sans ce bien.
-  const { data: previous } = await client
+  const { data: previous, error: previousSelectionError } = await client
     .from('buyer_selections')
-    .select('id')
+    .select('id, buyer_words')
     .eq('buyer_id', buyerKey)
     .eq('agency_id', profile.agency_id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+  // Une lecture en échec n'est jamais « pas de sélection » : les biens retenus seraient perdus (M98).
+  if (previousSelectionError) return { ok: false, error: FAILED };
   const { data: previousItems, error: previousError } = previous?.id
     ? await client
         .from('buyer_selection_items')
@@ -106,7 +108,13 @@ export async function proposeProjectToBuyer(
 
   const { data: selection, error } = await client
     .from('buyer_selections')
-    .insert({ agency_id: profile.agency_id, buyer_id: buyerKey, created_by: profile.id })
+    .insert({
+      agency_id: profile.agency_id,
+      buyer_id: buyerKey,
+      created_by: profile.id,
+      // « Vous m'avez dit » (M122) : la phrase relue par le conseiller suit la sélection.
+      buyer_words: previous?.buyer_words ?? null,
+    })
     .select('id')
     .single();
   if (error || !selection) return { ok: false, error: FAILED };
@@ -149,9 +157,14 @@ export async function proposeProjectToBuyer(
   }
 
   const link = await createDossierLink(buyerKey, true);
+  if (!link.ok) {
+    // Sans lien, la sélection précédente reste celle de la fiche (son lien marche encore) : la
+    // nouvelle est retirée, et la tâche ne compte pas ce bien comme reçu.
+    await client.from('buyer_selections').delete().eq('id', selection.id);
+    return { ok: false, error: link.error };
+  }
   revalidatePath(`/acquereurs/${buyerKey}`);
   revalidatePath(`/builder/${projectKey}`);
   revalidatePath('/suivi');
-  if (!link.ok) return { ok: false, error: link.error };
   return { ok: true, url: link.url };
 }
