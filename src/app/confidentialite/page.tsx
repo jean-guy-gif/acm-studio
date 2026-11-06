@@ -229,6 +229,18 @@ export default function ConfidentialitePage() {
               effacée. Texte à faire relire par un juriste.
             </li>
             <li>
+              Après une visite, l’agence garde le compte rendu de l’acquéreur : son avis (coup de
+              cœur, intéressé, mitigé, pas pour lui), ce qui lui a plu et ce qui l’a gêné parmi une
+              liste, la suite convenue et une note du conseiller. L’outil prépare deux messages que
+              le conseiller envoie lui-même : à l’acquéreur, dans la langue choisie sur sa fiche ;
+              au vendeur d’un bien de l’agence, sans le nom de l’acquéreur ni sa note. L’agence
+              garde aussi les biens que le conseiller a écartés pour un acquéreur (par leurs
+              caractéristiques, jamais une adresse), avec la raison, et le jour où le point de la
+              semaine ou un point de rendez-vous lui a été envoyé ; aucun message n’est envoyé par
+              l’outil, et ces messages sont écrits depuis des modèles, jamais par une intelligence
+              artificielle. Texte à faire relire par un juriste.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

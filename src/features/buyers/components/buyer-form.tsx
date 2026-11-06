@@ -1,5 +1,6 @@
 'use client';
 
+import { BUYER_LANGUAGE_LABELS, offeredLanguages } from '@/features/buyer-messages/languages';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -152,6 +153,16 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
             'purpose',
             BUYER_PURPOSES.map((value) => ({ value, label: BUYER_PURPOSE_LABELS[value] })),
             initial.purpose ?? '',
+          )}
+          {/* Mission 139 — la langue de ses messages (les langues relues seulement). */}
+          {select(
+            'Langue de ses messages',
+            'language',
+            offeredLanguages(initial.language ?? null).map((value) => ({
+              value,
+              label: BUYER_LANGUAGE_LABELS[value],
+            })),
+            initial.language ?? 'fr',
           )}
           {select(
             'Calendrier',

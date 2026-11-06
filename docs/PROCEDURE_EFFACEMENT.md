@@ -63,6 +63,9 @@ select
   (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
   -- Mission 134 : les envois de ce bien aux acquéreurs ; ils partent avec le dossier (cascade).
   (select count(*) from buyer_proposals where project_id = ':dossier') as biens_proposes,
+  -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
+  -- avec le dossier : delete from buyer_dismissals where property_key = 'project::dossier';
+  (select count(*) from buyer_dismissals where property_key = 'project:' || ':dossier') as biens_ecartes,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;
@@ -333,7 +336,8 @@ demande de Laurent.
 
 ### Quand un visiteur demande l'effacement
 
-1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites).
+1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites et leurs
+   comptes rendus, biens écartés pour lui et envois notés, missions 135 et 139).
 2. Ses documents signés de moins de cinq ans **restent** : le dire au demandeur (« conservés jusqu'au
    JJ/MM/AAAA au titre de la preuve du droit à commission, art. 17.3.e RGPD »), avec la date.
 3. Compter avant et après (`:nom` = le nom tel qu'il est sur le bon) :

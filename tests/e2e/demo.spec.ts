@@ -142,18 +142,18 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(signed.getByTestId('outcome-badge')).toHaveText('Mandat signé · exclusif');
-      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Martin' });
+      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
       await expect(followUp.getByTestId('outcome-badge')).toHaveText('À relancer');
       await followUp.getByTestId('suivi-link-details').click();
       await expect(followUp.getByTestId('objections-line')).toHaveText(
         'Ce qui le freine : le prix, le délai',
       );
-      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Martin, due aujourd'hui, et
+      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Lambert-Duval, due aujourd'hui, et
       // le premier Point marché de M. Lefebvre, signé il y a un mois ; le compteur du menu.
       if (prepared) {
         const today = page.getByTestId('suivi-today');
         await expect(
-          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Martin' }),
+          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert-Duval' }),
         ).toContainText(/dernier contact il y a 8 jours · relance prévue aujourd’hui/);
         await expect(
           today.getByTestId('suivi-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
@@ -1195,10 +1195,10 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.goto('/acquereurs');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
-  // Mission 132 — huit acquéreurs : Rossi, Keller, et six autour de Vence, dont cinq prêts à
+  // Mission 132 — neuf acquéreurs (les Wilson, M139) : Rossi, Keller, Wilson, six autour de Vence, cinq prêts à
   // visiter ; M. Fontaine, financement en cours, ne l'est pas. Mission 138 — les Keller, dont
   // l'offre est acceptée, sont « Sous offre » : plus prêts à visiter.
-  await expect(rows).toHaveCount(8);
+  await expect(rows).toHaveCount(9);
   await expect(page.getByTestId('buyer-row-ready')).toHaveCount(5);
   await expect(rows.filter({ hasText: 'Famille Keller' })).toContainText('Sous offre');
   await expect(rows.filter({ hasText: 'M. Fontaine' }).getByTestId('buyer-row-ready')).toHaveCount(
@@ -1793,10 +1793,17 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     .getByRole('button', { name: 'Visite faite' })
     .first()
     .click();
+  // Mission 139 — le compte rendu en boutons, puis les messages prêts.
   const doneForm = page.getByTestId('visit-done-form');
-  await doneForm.getByLabel('Retour de visite').fill('Belle lumière, jardin un peu petit');
-  await doneForm.getByLabel('Issue de la visite').selectOption('offer');
-  await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
+  await doneForm.getByTestId('visit-opinion-love').click();
+  await doneForm.getByTestId('visit-liked-light').click();
+  await doneForm.getByTestId('visit-disliked-outdoor').click();
+  await doneForm.getByTestId('visit-note').fill('Belle lumière, jardin un peu petit');
+  await doneForm.getByTestId('visit-next-offer').click();
+  await doneForm.getByTestId('visit-done-save').click();
+  // Les deux messages s'ouvrent aussitôt, sur Visites, la visite faite.
+  await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
+  await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(/Bonjour Famille Keller,/);
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
 
   // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu

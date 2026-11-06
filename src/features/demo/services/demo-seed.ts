@@ -1,3 +1,9 @@
+import type {
+  DismissReason,
+  VisitNextStep,
+  VisitOpinion,
+  VisitTag,
+} from '@/features/buyer-messages/templates/types';
 import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
@@ -67,8 +73,11 @@ export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // numéro de la plage 06 39 98 que l'ARCEP réserve à la fiction, une adresse en example.com.
 export const DEMO_FOLLOW_UP_CONTACT = {
   phone: '06 39 98 41 27',
-  email: 'famille.martin@example.com',
+  email: 'famille.lambert-duval@example.com',
 } as const;
+// Le vendeur à relancer : un autre foyer que celui du dossier à préparer (M. et Mme Martin, même
+// scénario d'Antibes) ; « M. et Mme Rossi » est déjà un acquéreur de la démo (Jean-Guy, 06/11).
+export const DEMO_FOLLOW_UP_SELLER = 'M. et Mme Lambert-Duval';
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
 // « Conclu, mandat signé » : rendez-vous et signature d'il y a un mois calendaire (même jour du mois
 // précédent, le dernier jour s'il n'existe pas), pour que le Point marché (M127) dise « depuis notre
@@ -209,7 +218,12 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
   return {
     stage,
     scenario,
-    sellerName: stage === 'direct' ? DEMO_DIRECT_SELLER : scenario.sellerName,
+    sellerName:
+      stage === 'direct'
+        ? DEMO_DIRECT_SELLER
+        : stage === 'follow_up'
+          ? DEMO_FOLLOW_UP_SELLER
+          : scenario.sellerName,
     property,
     photoFiles: subject.photos.slice(0, 3),
     competitors,
@@ -400,8 +414,35 @@ export const DEMO_VOUCHER_DAYS_AGO = 2;
 export const DEMO_VOUCHER_VISITOR = 'Paul Keller';
 export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin des Figurants, 69006 Lyon';
 export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
-export const DEMO_VOUCHER_FEEDBACK =
-  'Coup de cœur pour le jardin et la piscine ; une offre se prépare.';
+export const DEMO_VOUCHER_FEEDBACK = 'Une offre se prépare ; le prix reste leur question.';
+
+// Mission 139 — le compte rendu de la visite des Keller (la fiche de la mission) : « Intéressé ·
+// aimé : piscine, extérieur · gêné : prix », la suite « Offre envisagée ».
+export const DEMO_KELLER_VISIT_REPORT = {
+  opinion: 'interested',
+  liked: ['outdoor', 'pool'],
+  disliked: ['price'],
+  next_step: 'offer',
+} as const satisfies {
+  opinion: VisitOpinion;
+  liked: VisitTag[];
+  disliked: VisitTag[];
+  next_step: VisitNextStep;
+};
+
+// Mission 139 — les six biens écartés pour les Lambert la semaine écoulée : des villas de Mougins,
+// hors de leur secteur et de leur budget (« 3 pour le prix, 2 pour le secteur, 1 pour le
+// stationnement »).
+export function demoLambertDismissalPlan(): { listingId: string; reason: DismissReason }[] {
+  return [
+    { listingId: 'mou-04', reason: 'over_budget' },
+    { listingId: 'mou-05', reason: 'over_budget' },
+    { listingId: 'mou-06', reason: 'over_budget' },
+    { listingId: 'mou-08', reason: 'sector' },
+    { listingId: 'mou-10', reason: 'sector' },
+    { listingId: 'mou-11', reason: 'parking' },
+  ];
+}
 
 // Mission 137 B — l'offre d'achat des Keller : deux offrants inventés (aucune donnée d'un modèle
 // d'origine), sans prêt, au prix de commercialisation moins 3 %, au millier ; honoraires de 4 % à la

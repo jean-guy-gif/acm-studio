@@ -22,6 +22,8 @@ export type TaskVisit = {
   visitedAt: string | null;
   buyerArchived: boolean;
   buyerName: string;
+  // Mission 139 — le compte rendu de la visite faite : ce qui a déplu (« prix » compte un retour).
+  report?: { disliked: readonly string[] } | null;
 };
 
 // Ce que la frise d'un mandat dit de ses concurrents (hors « Ne plus solliciter », M98).
@@ -88,13 +90,18 @@ export function pendingVisitsByProject(visits: TaskVisit[]): Map<string, TaskVis
 }
 
 // Les visites demandées sur un mandat, faites ou non (annulées exclues) : la frise les compte.
-export function visitCounts(visits: TaskVisit[]): Map<string, { done: number; pending: number }> {
-  const counts = new Map<string, { done: number; pending: number }>();
+// Mission 139 — et les retours sur le prix : « 3 visites · 2 retours sur le prix ».
+export function visitCounts(
+  visits: TaskVisit[],
+): Map<string, { done: number; pending: number; priceReturns: number }> {
+  const counts = new Map<string, { done: number; pending: number; priceReturns: number }>();
   for (const visit of visits) {
     if (visit.itemSource !== 'project' || visit.cancelledAt) continue;
-    const count = counts.get(visit.itemReference) ?? { done: 0, pending: 0 };
-    if (visit.visitedAt) count.done += 1;
-    else if (!visit.buyerArchived) count.pending += 1;
+    const count = counts.get(visit.itemReference) ?? { done: 0, pending: 0, priceReturns: 0 };
+    if (visit.visitedAt) {
+      count.done += 1;
+      if (visit.report?.disliked.includes('price')) count.priceReturns += 1;
+    } else if (!visit.buyerArchived) count.pending += 1;
     counts.set(visit.itemReference, count);
   }
   return counts;

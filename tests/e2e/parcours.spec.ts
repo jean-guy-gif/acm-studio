@@ -1109,10 +1109,18 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     ).toHaveText('Proposer une visite');
     await expect(page.getByTestId('visit-prepare-owner-letter')).toHaveCount(0);
     await visitLine.first().getByRole('button', { name: 'Visite faite' }).click();
+    // Mission 139 — le compte rendu en boutons ; « Pas pour moi » n'offre pas « Offre envisagée ».
     const doneForm = page.getByTestId('visit-done-form');
-    await doneForm.getByLabel('Retour de visite').fill('Trop sombre, d’après le test automatique');
-    await doneForm.getByLabel('Issue de la visite').selectOption('declined');
-    await doneForm.getByRole('button', { name: 'Enregistrer la visite' }).click();
+    await doneForm.getByTestId('visit-opinion-not_for_me').click();
+    await expect(doneForm.getByTestId('visit-next-offer')).toHaveCount(0);
+    await doneForm.getByTestId('visit-disliked-light').click();
+    await doneForm.getByTestId('visit-note').fill('Trop sombre, d’après le test automatique');
+    await doneForm.getByTestId('visit-next-keep_searching').click();
+    await doneForm.getByTestId('visit-done-save').click();
+    await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
+    await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(
+      /Ce qui vous a gêné : la luminosité\./,
+    );
     await expect(page.getByTestId('visits-done')).toContainText(
       'Trop sombre, d’après le test automatique',
     );

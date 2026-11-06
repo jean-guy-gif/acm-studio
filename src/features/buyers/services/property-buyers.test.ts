@@ -45,6 +45,7 @@ let seq = 0;
 function buyer(over: Partial<Buyer> = {}): Buyer {
   seq += 1;
   return {
+    language: 'fr',
     id: `b-${seq}`,
     agencyId: 'a',
     advisorId: 'adv',

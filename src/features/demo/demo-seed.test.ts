@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
+import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import {
   DEMO_SEED_COMPETITORS,
   DEMO_STAGE_LABELS,
@@ -173,5 +174,16 @@ describe('« Prêt, en présentation directe »', () => {
     expect(plan.conclusion).toBeNull();
     expect(plan.sellerName).not.toBe(ready.sellerName);
     expect(plan.sellerName).not.toMatch(UNSPOKEN);
+  });
+});
+
+// Finitions du 06/11 — cinq vendeurs, cinq foyers : le vendeur à relancer n'est plus un second
+// « M. et Mme Martin » (le dossier à préparer, même scénario d'Antibes), ni le nom d'un acquéreur.
+describe('les vendeurs de la démo', () => {
+  it('cinq noms différents, aucun pris à un acquéreur de la démo', () => {
+    const names = DEMO_STAGES.map((stage) => demoSeedPlan(stage, NOW).sellerName);
+    expect(new Set(names).size).toBe(DEMO_STAGES.length);
+    expect(demoSeedPlan('follow_up', NOW).sellerName).toBe('M. et Mme Lambert-Duval');
+    for (const buyer of DEMO_BUYERS) expect(names).not.toContain(buyer.name);
   });
 });

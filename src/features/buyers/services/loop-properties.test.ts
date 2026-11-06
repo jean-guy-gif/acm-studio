@@ -57,6 +57,7 @@ let seq = 0;
 function buyer(over: Partial<Buyer> = {}): Buyer {
   seq += 1;
   return {
+    language: 'fr',
     id: `b-${seq}`,
     agencyId: 'a',
     advisorId: 'adv',
@@ -143,6 +144,30 @@ describe('les acquéreurs d’un bien', () => {
       daysAgo(0),
     );
     expect(readyToPropose(loop)).toBe(2);
+  });
+
+  // Mission 139 — un bien écarté pour un acquéreur ne lui correspond plus : ni à proposer, ni
+  // compté, ni « déjà proposé ».
+  it('un bien écarté pour un acquéreur ne lui est plus proposé, ni compté', () => {
+    const kept = buyer();
+    const dismissed = buyer();
+    const contacts: LoopContacts = {
+      proposals: new Map(),
+      dismissals: new Map([[item().key, new Set([dismissed.id])]]),
+    };
+    const loop = loopBuyers(item(), [kept, dismissed], new Map(), contacts, NOW);
+    expect(loop.toPropose.map((entry) => entry.buyer.id)).toEqual([kept.id]);
+    expect(loop.proposed).toEqual([]);
+    expect(readyToPropose(loop)).toBe(1);
+    // Écarté pour un autre bien : il reste.
+    const other = loopBuyers(
+      item({ key: 'listing:seloger:999' }),
+      [kept, dismissed],
+      new Map(),
+      contacts,
+      NOW,
+    );
+    expect(other.toPropose).toHaveLength(2);
   });
 
   it('la tâche compte les PRÊTS à qui le bien n’a pas été proposé', () => {

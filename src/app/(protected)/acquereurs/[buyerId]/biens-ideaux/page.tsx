@@ -25,6 +25,7 @@ import { budgetWarningLabel } from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 import { getBuyerWatchFinds } from '@/features/buyer-watch/queries/get-watch';
 import { findAsCandidate } from '@/features/buyer-watch/services/watch-finds';
 import { categorizeIdeal } from '@/features/ideal-properties/services/categorize-ideal';
@@ -45,12 +46,20 @@ export default async function IdealPropertiesPage({ params }: Props) {
   if (!buyer || !profile) notFound();
 
   const dossiers = withoutExamples(await getSuiviDossiers());
-  const [{ cards }, selection, demo, watchRun] = await Promise.all([
+  const [{ cards }, selection, demo, watchRun, dismissals] = await Promise.all([
     getAgencyProspecting(dossiers),
     getIdealSelection(buyer.id),
     isDemoAgency(profile.agency_id),
     // Mission 136 — ce que la veille a trouvé cette semaine, en tête.
     getBuyerWatchFinds(profile.agency_id, buyer.id),
+    // Mission 139 — les biens écartés pour lui : ils ne s'affichent plus.
+    createClient().then((supabase) =>
+      supabase
+        .from('buyer_dismissals')
+        .select('property_key')
+        .eq('agency_id', profile.agency_id)
+        .eq('buyer_id', buyer.id),
+    ),
   ]);
   const agency = reconcileBuyer(
     buyerToCriteria(buyer),
@@ -112,6 +121,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
         marketBlocked={marketBlocked}
         budgetWarning={budgetWarning}
         watch={watch}
+        dismissed={dismissals.error ? null : (dismissals.data ?? []).map((row) => row.property_key)}
       />
     </div>
   );

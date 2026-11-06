@@ -345,6 +345,64 @@ export type Database = {
           },
         ]
       }
+      buyer_dismissals: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          dismissed_at: string
+          dismissed_by: string | null
+          id: string
+          label: string
+          property_key: string
+          reason: string
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          label: string
+          property_key: string
+          reason: string
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          label?: string
+          property_key?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_dismissals_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_dismissals_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_dismissals_dismissed_by_fkey"
+            columns: ["dismissed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_document_acceptances: {
         Row: {
           agency_id: string
@@ -635,6 +693,7 @@ export type Database = {
           reason: string | null
           selection_id: string | null
           summary: string | null
+          week_start: string | null
         }
         Insert: {
           agency_id: string
@@ -647,6 +706,7 @@ export type Database = {
           reason?: string | null
           selection_id?: string | null
           summary?: string | null
+          week_start?: string | null
         }
         Update: {
           agency_id?: string
@@ -659,6 +719,7 @@ export type Database = {
           reason?: string | null
           selection_id?: string | null
           summary?: string | null
+          week_start?: string | null
         }
         Relationships: [
           {
@@ -1253,8 +1314,12 @@ export type Database = {
           buyer_selection_item_id: string
           cancelled_at: string | null
           created_at: string
+          disliked: string[]
           feedback: string | null
           id: string
+          liked: string[]
+          next_step: string | null
+          opinion: string | null
           outcome: string
           requested_at: string
           requested_during: string
@@ -1267,8 +1332,12 @@ export type Database = {
           buyer_selection_item_id: string
           cancelled_at?: string | null
           created_at?: string
+          disliked?: string[]
           feedback?: string | null
           id?: string
+          liked?: string[]
+          next_step?: string | null
+          opinion?: string | null
           outcome?: string
           requested_at?: string
           requested_during: string
@@ -1281,8 +1350,12 @@ export type Database = {
           buyer_selection_item_id?: string
           cancelled_at?: string | null
           created_at?: string
+          disliked?: string[]
           feedback?: string | null
           id?: string
+          liked?: string[]
+          next_step?: string | null
+          opinion?: string | null
           outcome?: string
           requested_at?: string
           requested_during?: string
@@ -1387,6 +1460,7 @@ export type Database = {
           floor_min: number | null
           id: string
           ignored_suggestions: string[]
+          language: string
           must_have: string[]
           name: string
           notes: string | null
@@ -1424,6 +1498,7 @@ export type Database = {
           floor_min?: number | null
           id?: string
           ignored_suggestions?: string[]
+          language?: string
           must_have?: string[]
           name: string
           notes?: string | null
@@ -1461,6 +1536,7 @@ export type Database = {
           floor_min?: number | null
           id?: string
           ignored_suggestions?: string[]
+          language?: string
           must_have?: string[]
           name?: string
           notes?: string | null

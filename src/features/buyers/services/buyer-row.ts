@@ -1,3 +1,4 @@
+import { buyerLanguage } from '@/features/buyer-messages/languages';
 import {
   BUYER_CRITERIA,
   BUYER_FINANCINGS,
@@ -41,6 +42,7 @@ export function toBuyer(row: BuyerRow): Buyer {
     financing: oneOf(BUYER_FINANCINGS, row.financing) ?? 'unknown',
     financingChangedAt: row.financing_changed_at,
     contactedAt: row.contacted_at,
+    language: buyerLanguage(row.language),
     name: row.name,
     phone: row.phone,
     email: row.email,
@@ -69,6 +71,8 @@ export function toBuyer(row: BuyerRow): Buyer {
 // Les colonnes qu'une fiche écrit — jamais l'agence, le conseiller, le statut ni la marque de démo.
 export function buyerColumns(input: BuyerInput) {
   return {
+    // Mission 139 — la langue, seulement quand le formulaire la donne.
+    ...(input.language ? { language: input.language } : {}),
     name: input.name,
     phone: input.phone,
     email: input.email,

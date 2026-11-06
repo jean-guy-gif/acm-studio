@@ -57,6 +57,7 @@ import {
 } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
+import { visitReportLine } from '@/features/buyer-messages/report';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -182,7 +183,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       visitedAt: line.visitedAt,
       label: line.itemLabel,
       during: line.requestedDuring,
-      outcomeLabel: line.visitedAt ? VISIT_OUTCOME_LABELS[line.outcome] : null,
+      // Mission 139 — le compte rendu s'inscrit dans « Ce qui s'est passé » : « Intéressé · a aimé : … ».
+      outcomeLabel: line.visitedAt
+        ? line.report
+          ? visitReportLine(line.report)
+          : VISIT_OUTCOME_LABELS[line.outcome]
+        : null,
     })),
   });
   // Mission 132 — le dernier échange avec l'acquéreur : le même calcul que « Prêt à visiter », la

@@ -29,6 +29,8 @@ const CLEANED = [
   // visite), leurs visites et leurs liens ; mission 138 — le « Fait » des réponses aux offres.
   'buyer_watch_runs',
   'buyer_offer_follow_ups',
+  // Mission 139 — les biens écartés pour un acquéreur.
+  'buyer_dismissals',
   'buyer_document_acceptances',
   'buyer_document_links',
   'buyer_document_visits',
@@ -242,6 +244,7 @@ begin
   -- Mission 136 — les passages de la veille des acquéreurs ; mission 137 — les documents signés.
   delete from public.buyer_watch_runs where agency_id = v_agency;
   delete from public.buyer_offer_follow_ups where agency_id = v_agency;
+  delete from public.buyer_dismissals where agency_id = v_agency;
   delete from public.buyer_document_acceptances where agency_id = v_agency;
   delete from public.buyer_document_links where agency_id = v_agency;
   delete from public.buyer_document_visits where agency_id = v_agency;

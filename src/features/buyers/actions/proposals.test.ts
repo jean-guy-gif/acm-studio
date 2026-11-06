@@ -73,6 +73,7 @@ const bien = (over: Partial<LoopProperty> = {}): LoopProperty => ({
 });
 
 const theBuyer = {
+  language: 'fr' as const,
   id: BUYER,
   agencyId: 'agency-a',
   advisorId: 'u1',

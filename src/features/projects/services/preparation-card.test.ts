@@ -69,6 +69,8 @@ describe('preparation-card — aucune valeur inventée (§1 / §5)', () => {
       ready: true,
     });
     expect(ready.every((s) => s.done)).toBe(true);
+    // Atteint : le seul nombre, « 6 concurrents ✓ », jamais « 6/3 ».
+    expect(ready[1]!.label).toBe('6 concurrents');
   });
 });
 

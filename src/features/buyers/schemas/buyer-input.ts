@@ -1,3 +1,4 @@
+import { BUYER_LANGUAGES } from '@/features/buyer-messages/languages';
 import { z } from 'zod';
 
 import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
@@ -22,6 +23,7 @@ export const BUYER_FORM_FIELDS = [
   'phone',
   'email',
   'purpose',
+  'language',
   'timeline',
   'notes',
   'property_types',
@@ -115,6 +117,8 @@ const schema = z
       'Indiquez une adresse e-mail valable.',
     ),
     purpose: oneOf(BUYER_PURPOSES),
+    // Mission 139 — une langue de la liste ; vide : celle de la fiche ne change pas.
+    language: oneOf(BUYER_LANGUAGES),
     timeline: oneOf(BUYER_TIMELINES),
     notes: trimmed(BUYER_TEXT_MAX),
     property_types: listOf(BUYER_PROPERTY_TYPES),
@@ -194,6 +198,7 @@ export function parseBuyerInput(raw: unknown): ParsedBuyerInput {
       phone: v.phone,
       email: v.email,
       purpose: v.purpose,
+      ...(v.language ? { language: v.language } : {}),
       timeline: v.timeline,
       notes: v.notes,
       propertyTypes: v.property_types,
@@ -230,6 +235,7 @@ export function readBuyerFormData(formData: FormData): Record<string, unknown> {
     phone: text('phone'),
     email: text('email'),
     purpose: text('purpose'),
+    language: text('language'),
     timeline: text('timeline'),
     notes: text('notes'),
     property_types: list('property_types'),

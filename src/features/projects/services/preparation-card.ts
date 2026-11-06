@@ -20,9 +20,11 @@ export function advancementSteps(readiness: PreparationReadiness): AdvancementSt
   return [
     { label: 'Bien vendeur', done: readiness.hasProperty },
     {
-      label: readiness.hasProperty
-        ? `${readiness.exploitableCount}/${MIN_READY_COMPARABLES} concurrents`
-        : `${readiness.exploitableCount} concurrents`,
+      // « 2/3 concurrents » tant qu'il en manque ; atteint, le seul nombre : « 5 concurrents ✓ ».
+      label:
+        readiness.hasProperty && readiness.exploitableCount < MIN_READY_COMPARABLES
+          ? `${readiness.exploitableCount}/${MIN_READY_COMPARABLES} concurrents`
+          : `${readiness.exploitableCount} concurrents`,
       done: readiness.exploitableCount >= MIN_READY_COMPARABLES,
     },
     { label: 'Décision de prix', done: readiness.hasPositioning },
