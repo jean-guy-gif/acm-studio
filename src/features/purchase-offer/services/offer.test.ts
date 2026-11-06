@@ -180,7 +180,7 @@ describe('le texte validé de l’offre', () => {
       'soumis au régime de la copropriété tel que défini par la loi du 10 juillet 1965',
     );
     expect(full).toContain(
-      'LOT NUMERO DEUX CENT DOUZE ( 212 ) Description : un appartement Et les deux cent douze / dix millièmes ( 212 / 10000 èmes) des parties communes générales .',
+      'LOT NUMERO DEUX CENT DOUZE ( 212 ) Description : un appartement Et les deux cent douze / dix millièmes ( 212 / 10 000 èmes) des parties communes générales .',
     );
     expect(full).toContain(
       'le PACK ALUR et le PRE ETAT DATE délivrés par le syndic de copropriété.',
@@ -189,6 +189,20 @@ describe('le texte validé de l’offre', () => {
       "Se déclarant mariés sous le régime de la communauté, ledit régime n'ayant subi aucune modification",
     );
     expect(full).toContain("N'ayant pas leur résidence fiscale en France");
+  });
+
+  it('les tantièmes, exactement comme le modèle : lettres, puis chiffres groupés entre parenthèses', () => {
+    const text = documentToText(
+      renderOffer(
+        fields({
+          condominium: true,
+          lots: [{ number: 12, description: 'un appartement', shares: 136, base: 10_000 }],
+        }),
+      ),
+    );
+    expect(text).toContain(
+      'Et les cent trente-six / dix millièmes ( 136 / 10 000 èmes) des parties communes générales .',
+    );
   });
 
   it('la clause « avec prêt » reste désactivée tant que le juriste ne l’a pas validée', () => {
