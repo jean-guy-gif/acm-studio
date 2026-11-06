@@ -64,7 +64,33 @@ export const ENGLISH_TEXTS: ClientTexts = {
       none: 'None',
     },
   },
+  common: {
+    rooms: (count) => `${count} room${count > 1 ? 's' : ''}`,
+    competitorFallback: 'Competing property',
+    yourAnswer: 'Your answer',
+    commentOptional: 'Comment (optional)',
+    questionMark: '?',
+  },
   live: {
+    perceived: {
+      question: 'At what price would you position your property today?',
+      savedHint: 'Your starting price is noted: it can no longer be changed.',
+      hint: 'Your instinct first, before looking at the market: that is what we note here.',
+      label: 'Your sense of value',
+      confirmHint: 'Is this your price? Once confirmed, it can no longer be changed.',
+    },
+    competition: {
+      question: 'Is this a serious competitor for your property?',
+      hint: 'Look at the property as a buyer would — its price comes next.',
+      serious: { yes: 'Yes, a serious competitor', no: 'No', unsure: 'Not sure' },
+    },
+    price: {
+      question: 'At what price do you think this property is listed?',
+      savedHint: 'Your answer is noted: it can no longer be changed.',
+      hint: 'Give the price you imagine: the real price appears on the next screen.',
+      label: 'The price you imagine',
+      note: 'The real price is not shown here. Go to the next screen to find out.',
+    },
     titles: {
       intro: 'Introduction',
       subject_property: 'Your property',

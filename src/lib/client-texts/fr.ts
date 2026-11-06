@@ -3,6 +3,7 @@ import {
   MARKET_DURATION_REASON_LABELS,
   PRICE_COHERENCE_LABELS,
   PROPERTY_CONFIRMED_LABELS,
+  SERIOUS_COMPETITOR_LABELS,
 } from '@/features/live-seller/constants';
 import {
   EXPOSURE_LABELS,
@@ -26,7 +27,33 @@ export const FRENCH_TEXTS: ClientTexts = {
     outdoor: OUTDOOR_SPACE_LABELS,
     parking: PARKING_TYPE_LABELS,
   },
+  common: {
+    rooms: (count) => `${count} pièce${count > 1 ? 's' : ''}`,
+    competitorFallback: 'Bien concurrent',
+    yourAnswer: 'Votre réponse',
+    commentOptional: 'Commentaire (facultatif)',
+    questionMark: '\u00a0?',
+  },
   live: {
+    perceived: {
+      question: 'À quel prix positionneriez-vous aujourd’hui votre bien ?',
+      savedHint: 'Votre prix de départ est noté : il ne se modifie plus.',
+      hint: 'D’abord votre intuition, avant de regarder le marché : c’est elle que nous notons ici.',
+      label: 'Votre valeur perçue',
+      confirmHint: 'Est-ce bien votre prix\u00a0? Une fois confirmé, il ne se modifie plus.',
+    },
+    competition: {
+      question: 'Est-il un sérieux concurrent pour votre bien ?',
+      hint: 'Observez le bien comme le ferait un acheteur — son prix viendra ensuite.',
+      serious: SERIOUS_COMPETITOR_LABELS,
+    },
+    price: {
+      question: 'À quel prix pensez-vous que ce bien est proposé ?',
+      savedHint: 'Votre réponse est notée : elle ne se modifie plus.',
+      hint: 'Donnez le prix que vous imaginez : le prix réel s’affichera à l’écran suivant.',
+      label: 'Le prix que vous imaginez',
+      note: 'Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.',
+    },
     titles: {
       intro: 'Introduction',
       subject_property: 'Votre bien',

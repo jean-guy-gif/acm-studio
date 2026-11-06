@@ -4,6 +4,7 @@ import type {
   MarketDurationReason,
   PriceCoherence,
   PropertyConfirmed,
+  SeriousCompetitor,
 } from '@/features/live-seller/constants';
 import type {
   Exposure,
@@ -29,6 +30,14 @@ export type ClientTexts = {
     heating: Record<HeatingType, string>;
     outdoor: Record<OutdoorSpace, string>;
     parking: Record<ParkingType, string>;
+  };
+  // Ce qui se répète partout : le nombre de pièces d'un bien, un bien sans libellé, « Votre réponse ».
+  common: {
+    rooms: (count: number) => string;
+    competitorFallback: string;
+    yourAnswer: string;
+    commentOptional: string;
+    questionMark: string;
   };
   live: LiveTexts;
 };
@@ -74,6 +83,25 @@ export type LiveTexts = {
     toDark: string;
     fullscreen: string;
     exitFullscreen: string;
+  };
+  perceived: {
+    question: string;
+    savedHint: string;
+    hint: string;
+    label: string;
+    confirmHint: string;
+  };
+  competition: {
+    question: string;
+    hint: string;
+    serious: Record<SeriousCompetitor, string>;
+  };
+  price: {
+    question: string;
+    savedHint: string;
+    hint: string;
+    label: string;
+    note: string;
   };
   intro: {
     kicker: string;

@@ -21,7 +21,9 @@ export function LiveTextsProvider({
   children: ReactNode;
 }) {
   return (
-    <LiveTextsContext.Provider value={{ language: textLanguage(language), texts: clientTexts(language) }}>
+    <LiveTextsContext.Provider
+      value={{ language: textLanguage(language), texts: clientTexts(language) }}
+    >
       {children}
     </LiveTextsContext.Provider>
   );

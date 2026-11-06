@@ -38,12 +38,8 @@ export function LivePageIntro({
           fallbackName={agencyName}
         />
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium tracking-[0.2em] text-brand uppercase">
-            {t.kicker}
-          </p>
-          <h2 className="max-w-2xl text-3xl leading-tight font-semibold sm:text-4xl">
-            {t.title}
-          </h2>
+          <p className="text-xs font-medium tracking-[0.2em] text-brand uppercase">{t.kicker}</p>
+          <h2 className="max-w-2xl text-3xl leading-tight font-semibold sm:text-4xl">{t.title}</h2>
           <div className="text-white/80">
             <p className="text-lg font-medium">{sellerName}</p>
             {address ? <p className="text-sm">{address}</p> : null}
@@ -60,9 +56,7 @@ export function LivePageIntro({
           >
             {t.start}
           </button>
-          {count > 0 ? (
-            <span className="text-sm text-white/70">{t.count(count)}</span>
-          ) : null}
+          {count > 0 ? <span className="text-sm text-white/70">{t.count(count)}</span> : null}
         </div>
       </div>
     </section>
