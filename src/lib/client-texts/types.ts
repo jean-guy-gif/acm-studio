@@ -90,6 +90,86 @@ export type ClientTexts = {
     };
   };
   live: LiveTexts;
+  documents: DocumentTexts;
+};
+
+// Mission 140 — les documents remis au vendeur : la synthèse (M113), le Point marché (M127, M129),
+// l'Étude de marché (M131), leurs liens et leurs messages. Les mentions légales de l'agence (carte
+// professionnelle, garantie, « Ne peut recevoir aucun fonds ») restent en français jusqu'à la
+// décision du juriste (Jean-Guy, 06/11) : elles ne sont pas ici.
+export type DocumentTexts = {
+  common: {
+    confidential: string;
+    advisor: string;
+    contactCard: string;
+    disclaimer: string;
+    yours: (value: string) => string;
+    days: (days: string) => string;
+    since: string;
+    onMarketFor: (days: string) => string;
+    livingArea: string;
+    land: string;
+    roomsBedrooms: string;
+    bedrooms: (count: number) => string;
+    bedroomsShort: (count: number) => string;
+    outdoor: string;
+    parking: string;
+    energy: string;
+    energyLetter: (kind: 'dpe' | 'ges', letter: string) => string;
+    floor: string;
+    floorOrdinal: (floor: number) => string;
+    floorOf: (total: number) => string;
+    // Le bilan des devinettes, à la 2e personne (M96, M113).
+    guesses: {
+      under: (count: number, total: number, percent: string) => string;
+      over: (count: number, total: number, percent: string) => string;
+      exact: (count: number) => string;
+    };
+  };
+  synthesis: {
+    seriousShort: Record<'yes' | 'unsure' | 'no', string>;
+    seriousQuestion: string;
+    notConsidered: string;
+    thePrice: string;
+    youImagined: string;
+    listedShort: string;
+    gapVsAnswer: (percent: string) => string;
+    durationTitle: string;
+    knownDrop: (amount: string) => string;
+    listed: string;
+    whyYou: string;
+    agreedPrice: string;
+    agreedTogether: string;
+    afterSeeing: string;
+    agreedTogetherHint: string;
+    badge: string;
+    title: string;
+    titleDay: (day: string) => string;
+    forSeller: (name: string) => string;
+    propertyTitle: string;
+    propertyHint: string;
+    strengths: string;
+    perceivedAtStart: string;
+    competitorsTitle: string;
+    competitorsHint: string;
+    dpeHint: string;
+    dpeProperties: (count: number) => string;
+    dpeReference: (letter: string) => string;
+    dangerousTitle: string;
+    analysisTitle: string;
+    analysisHint: string;
+    bandTitle: string;
+    keyPoint: string;
+    medianAge: string;
+    perSqmTitle: string;
+    median: string;
+    pathTitle: string;
+    pathHint: string;
+    answersTitle: string;
+    agreedPerSqm: string;
+    amongCompared: string;
+    stepsBand: string;
+  };
 };
 
 export type LiveTexts = {
