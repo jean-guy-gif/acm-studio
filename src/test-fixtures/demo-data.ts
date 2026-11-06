@@ -17,6 +17,7 @@ export const demoProject: Project = {
   seller_name: 'M. et Mme Démo',
   live_rhythm: 'complete',
   live_presentation_mode: 'interactive',
+  language: 'fr',
   is_example: false,
   demo_stage: null,
   live_started_at: null,
