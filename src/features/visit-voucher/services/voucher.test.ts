@@ -188,6 +188,7 @@ describe('les petites règles', () => {
   it('la ville de l’adresse, la date de Paris', () => {
     expect(cityOfAddress('10 avenue du Prototype, 06250 Mougins')).toBe('Mougins');
     expect(cityOfAddress('sans code postal')).toBe('');
+    expect(cityOfAddress('10 avenue du Prototype, 06250 Mougins, France')).toBe('Mougins');
     expect(parisDateLabel(new Date('2026-11-06T23:30:00Z'))).toBe('07/11/2026');
   });
 
