@@ -126,3 +126,18 @@ export function parseWatchCapEuros(
   }
   return { ok: true, cents };
 }
+
+// Un passage resté « en cours » plus d'une heure est tenu pour échoué (décision du 06/11).
+export const STALE_RUN_MS = 60 * 60 * 1000;
+
+// L'ordre de la nuit : les agences jamais servies d'abord, puis la moins récemment servie ; à
+// égalité, l'ordre reçu.
+export function orderAgenciesForWatch(
+  agencyIds: string[],
+  lastRunAt: ReadonlyMap<string, string>,
+): string[] {
+  return agencyIds
+    .map((id, index) => ({ id, index, last: lastRunAt.get(id) ?? '' }))
+    .sort((a, b) => a.last.localeCompare(b.last) || a.index - b.index)
+    .map((entry) => entry.id);
+}
