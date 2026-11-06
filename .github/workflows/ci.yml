@@ -365,6 +365,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/offre_achat.sql
 
+      # Mission 138 — l'offre acceptée : le « Fait » de la réponse, une fois, daté par la base, et
+      # le lien du notaire, sur une offre acceptée seulement.
+      - name: L'offre acceptée (mission 138)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/offre_acceptee.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

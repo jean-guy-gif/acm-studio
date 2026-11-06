@@ -164,13 +164,16 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 
 ## Flux de travail
 
-- **Jean-Guy Ourmières crée et décide le produit** : il écrit les missions, essaie, valide et tranche.
+- **Jean-Guy Ourmières crée et décide le produit** : il écrit les missions, valide et tranche.
   Une décision datée et signée Jean-Guy, ici, dans `docs/DECISIONS.md` ou dans une mission, fait
   autorité sur toute décision antérieure, y compris celles qui citent Laurent.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
-  push. Puis Jean-Guy essaie. Puis `/valide NN` fusionne dans `main` et complète
-  `docs/DECISIONS.md`. **Jamais de fusion dans `main` sans « valide ».**
-- On essaie sur l'URL d'essai (branche `essai`). La base Supabase est partagée avec l'environnement
+  push, e2e sur l'essai. Puis `/valide NN` fusionne dans `main` et complète `docs/DECISIONS.md`.
+  **Jamais de fusion dans `main` sans « valide ».**
+- **Jean-Guy ne teste plus jamais sur l'essai** (Jean-Guy, 06/11) : aucun rapport ne lui donne de
+  scénario sur l'essai ; après le `/valide`, un seul test court, sur la production
+  (acm-studio-henna.vercel.app). L'essai reste l'étape interne : l'e2e et le parcours du relecteur.
+- L'URL d'essai (branche `essai`) est l'étape interne. La base Supabase est partagée avec l'environnement
   de travail : une migration doit rester compatible avec le code de `main`, et elle s'applique,
   après comptage, avant l'essai.
 - Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,

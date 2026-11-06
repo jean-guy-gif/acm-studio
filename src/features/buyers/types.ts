@@ -6,11 +6,20 @@ import type { Database } from '@/lib/supabase/database.types';
 
 export type BuyerRow = Database['public']['Tables']['buyers']['Row'];
 
-export const BUYER_STATUSES = ['searching', 'visiting', 'bought', 'abandoned'] as const;
+// Mission 138 — « Sous offre » : posé par la base quand le vendeur accepte une offre de l'acquéreur ;
+// il ne compte plus comme prêt à visiter, et y revient quand le conseiller remet son statut.
+export const BUYER_STATUSES = [
+  'searching',
+  'visiting',
+  'under_offer',
+  'bought',
+  'abandoned',
+] as const;
 export type BuyerStatus = (typeof BUYER_STATUSES)[number];
 export const BUYER_STATUS_LABELS: Record<BuyerStatus, string> = {
   searching: 'En recherche',
   visiting: 'En visite',
+  under_offer: 'Sous offre',
   bought: 'A acheté',
   abandoned: 'Abandonné',
 };

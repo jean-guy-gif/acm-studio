@@ -36,4 +36,5 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
 8. Lance `npm run verifier:production` : la commande attend que la production serve le commit de
    `main` (10 minutes au plus). Rapporte ce qu'elle répond — « production à jour », ou son échec
    tel quel. Ne dis plus « je n'ai pas vérifié le déploiement ».
-9. Dis-moi en 3 lignes ce qui vient de partir en ligne.
+9. Dis-moi en 3 lignes ce qui vient de partir en ligne, puis UN test court à faire sur la production
+   (acm-studio-henna.vercel.app), pas à pas : Jean-Guy ne teste plus sur l'essai (règle du 06/11).

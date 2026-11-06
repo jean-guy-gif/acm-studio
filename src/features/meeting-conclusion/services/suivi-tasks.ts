@@ -33,7 +33,10 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 // famille Keller », ou un bien trouvé pour plusieurs acquéreurs, « 2 acquéreurs pour … » (M134).
 // Mission 137 B — `offer_expiry` : une offre d'achat sans réponse du vendeur, rappelée la veille de
 // son dernier jour de validité, en tête.
+// Mission 138 — `offer_answer` : la réponse du vendeur à une offre (acceptée ou refusée), en tête
+// avant tout, jusqu'au « Fait » du conseiller.
 export type SuiviTaskKind =
+  | 'offer_answer'
   | 'offer_expiry'
   | 'visit'
   | 'propose_buyers'
@@ -48,7 +51,9 @@ export type SuiviTaskKind =
 // relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
 // Point marché, reprendre contact avec un acquéreur (M132), démarcher.
 const KIND_ORDER: Record<SuiviTaskKind, number> = {
-  // Mission 137 B — une offre qui expire passe avant tout (décision du 06/11).
+  // Mission 138 — la réponse du vendeur à une offre, en tête de tout (décision du 06/11).
+  offer_answer: -2,
+  // Mission 137 B — une offre qui expire passe ensuite avant tout (décision du 06/11).
   offer_expiry: -1,
   follow_up: 0,
   visit: 1,
@@ -94,6 +99,9 @@ export type SuiviTask = {
   // Mission 137 B — l'offre d'achat et son dernier jour de validité (AAAA-MM-JJ).
   offerId?: string;
   validUntil?: string;
+  // Mission 138 — la réponse du vendeur, et la visite d'où l'offre est née.
+  decision?: 'accepted' | 'refused';
+  visitId?: string;
 };
 
 export type SuiviTaskInput = {
@@ -251,7 +259,8 @@ export function taskLateDays(task: SuiviTask, today: string): number {
     task.kind === 'prospect' ||
     task.kind === 'propose_buyers' ||
     task.kind === 'buyer_watch' ||
-    task.kind === 'offer_expiry'
+    task.kind === 'offer_expiry' ||
+    task.kind === 'offer_answer'
     ? 0
     : Math.max(0, daysBetween(task.dueOn, today));
 }
