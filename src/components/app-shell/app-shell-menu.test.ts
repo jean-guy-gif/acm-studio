@@ -15,6 +15,7 @@ const { AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
   await import('@/components/app-shell/account-menu');
 const { accountMenuFor } = await import('@/features/workspace-mode/services/workspace-mode');
 const { SidebarNav } = await import('@/components/app-shell/sidebar-nav');
+const { ShellSidebar, MOBILE_MENU_LABEL } = await import('@/components/app-shell/shell-sidebar');
 const { AppStage } = await import('@/components/theme/app-stage');
 // La carte lit le thème (Sombre / Clair) : rendue sous la scène, l'enfant passé en argument.
 const Stage = AppStage as (props: {
@@ -133,5 +134,52 @@ describe('le menu ouvert de la carte', () => {
     expect(html).not.toContain('Erreurs');
     expect(html).not.toContain('account-errors-label');
     for (const label of ['Sombre', 'Déconnexion']) expect(html).toContain(label);
+  });
+});
+
+// Sous 768 px (décision de Jean-Guy, 06/11) : une barre compacte en haut — le nom de l'agence,
+// Vendeur | Acquéreur, ☰ — et le menu replié ; à partir de 768 px, la colonne toujours dépliée.
+describe('la barre compacte du téléphone', () => {
+  const shell = () =>
+    renderToStaticMarkup(
+      createElement(
+        Stage,
+        { initialTheme: 'light' },
+        createElement(ShellSidebar, {
+          profileName: 'Carl Conseiller',
+          profileEmail: 'carl@example.org',
+          agencyName: 'Agence Test',
+          signOutAction: async () => {},
+          logoLightUrl: null,
+          logoDarkUrl: null,
+          errorsBadge: null,
+          demoEntry: false,
+          workspaceMode: 'seller',
+        }),
+      ),
+    );
+
+  it('le nom de l’agence, l’interrupteur, puis ☰ fermé', () => {
+    const html = shell();
+    const order = [
+      'Agence Test',
+      'data-testid="workspace-switch"',
+      'data-testid="mobile-menu-toggle"',
+    ];
+    const positions = order.map((needle) => html.indexOf(needle));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    expect(html).toMatch(
+      new RegExp(`aria-label="${MOBILE_MENU_LABEL}" aria-expanded="false"[^>]*md:hidden`),
+    );
+  });
+
+  it('les entrées et la carte, repliées sous 768 px, toujours visibles au-delà', () => {
+    const html = shell();
+    const panel = html.match(/<div id="[^"]+" data-testid="shell-menu-panel" class="([^"]+)"/);
+    expect(panel?.[1]).toMatch(/^hidden .*md:flex/);
+    const inside = html.slice(html.indexOf('data-testid="shell-menu-panel"'));
+    expect(links(inside)).toEqual(['/builder', '/live', '/suivi', '/prospection']);
+    expect(inside).toContain('data-testid="account-card"');
   });
 });

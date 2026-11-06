@@ -1,6 +1,5 @@
-import { AccountMenu, type ErrorsBadge } from '@/components/app-shell/account-menu';
-import { SidebarNav } from '@/components/app-shell/sidebar-nav';
-import { AppLogo } from '@/components/theme/app-logo';
+import type { ErrorsBadge } from '@/components/app-shell/account-menu';
+import { ShellSidebar } from '@/components/app-shell/shell-sidebar';
 import { AppStage } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
 import type { WorkspaceMode } from '@/features/workspace-mode/types';
@@ -45,31 +44,20 @@ export function AppShell({
           className="pointer-events-none fixed -top-48 right-[-12%] -z-10 hidden h-[28rem] w-[28rem] rounded-full bg-brand/10 blur-3xl stage:block"
         />
 
-        <aside className="flex shrink-0 flex-col gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:sticky md:top-0 md:h-screen md:w-64 md:justify-between md:gap-6 md:border-r md:border-b-0 md:px-5 md:py-6 stage:border-white/10 stage:bg-white/[0.03]">
-          <div className="flex flex-col gap-4 md:gap-8">
-            <AppLogo
-              className="h-9"
-              lightUrl={logoLightUrl}
-              darkUrl={logoDarkUrl}
-              fallbackName={agencyName}
-            />
-            <SidebarNav workspaceMode={workspaceMode} />
-          </div>
-
-          {/* Mission 125 — tout ce qui n'est pas le travail passe derrière la carte du conseiller,
-              visible à toutes les largeurs (Administration et Aide n'ont plus d'autre entrée). */}
-          <AccountMenu
-            profileName={profileName}
-            profileEmail={profileEmail}
-            agencyName={agencyName}
-            signOutAction={signOutAction}
-            errorsBadge={errorsBadge}
-            demoEntry={demoEntry}
-          />
-        </aside>
+        <ShellSidebar
+          profileName={profileName}
+          profileEmail={profileEmail}
+          agencyName={agencyName}
+          signOutAction={signOutAction}
+          logoLightUrl={logoLightUrl}
+          logoDarkUrl={logoDarkUrl}
+          errorsBadge={errorsBadge}
+          demoEntry={demoEntry}
+          workspaceMode={workspaceMode}
+        />
 
         <main className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:px-10 md:py-10">
+          <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-6 sm:px-6 md:px-10 md:py-10">
             {children}
           </div>
         </main>
