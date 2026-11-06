@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
 
+const MIN_STROKES = 12;
+
 // Mission 137 — signer au doigt, sur la tablette ou le téléphone du conseiller (signature
 // électronique simple, décision de Jean-Guy, 06/11) ; à la souris sur un ordinateur. Le tracé
 // devient une image PNG (`toDataURL`), relue au serveur par ses octets.
@@ -18,6 +20,8 @@ export function SignaturePad({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
+  // Une signature est un tracé : une simple touche ne signe pas.
+  const strokes = useRef(0);
   const [signed, setSigned] = useState(false);
 
   useEffect(() => {
@@ -66,10 +70,12 @@ export function SignaturePad({
           const { x, y } = point(event);
           context.lineTo(x, y);
           context.stroke();
+          strokes.current += 1;
         }}
         onPointerUp={() => {
           if (!drawing.current) return;
           drawing.current = false;
+          if (strokes.current < MIN_STROKES) return;
           setSigned(true);
           onChange(canvasRef.current?.toDataURL('image/png') ?? null);
         }}
@@ -81,6 +87,7 @@ export function SignaturePad({
           onClick={() => {
             const canvas = canvasRef.current;
             canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+            strokes.current = 0;
             setSigned(false);
             onChange(null);
           }}

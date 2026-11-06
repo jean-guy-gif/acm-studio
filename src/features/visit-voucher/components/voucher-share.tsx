@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { btnSecondary, hintText } from '@/components/ui/styles';
 import { createVoucherLink } from '@/features/visit-voucher/actions/create-voucher-link';
+import { voucherMessage } from '@/features/visit-voucher/services/voucher-link';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 
 const SUBJECT = 'Votre bon de visite';
@@ -14,10 +15,12 @@ export function VoucherShare({
   documentId,
   initialLinkPath,
   email,
+  advisorFirstName = null,
 }: {
   documentId: string;
   initialLinkPath: string | null;
   email: string | null;
+  advisorFirstName?: string | null;
 }) {
   const [linkPath, setLinkPath] = useState(initialLinkPath);
   const [pending, setPending] = useState(false);
@@ -57,7 +60,7 @@ export function VoucherShare({
     );
   }
   const url = typeof window === 'undefined' ? linkPath : `${window.location.origin}${linkPath}`;
-  const message = `Bonjour,\nVoici votre bon de visite : ${url}`;
+  const message = voucherMessage({ url, advisorFirstName });
   const hrefs = followUpShareHrefs(message, null, email, SUBJECT);
   return (
     <div className="flex flex-col gap-2" data-testid="voucher-share">

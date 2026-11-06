@@ -35,6 +35,8 @@ export type VoucherVisit = {
   // Le n° de mandat du dernier bon de ce bien, s'il y en a un.
   mandate: string | null;
   visited: boolean;
+  // Le jour de la visite si elle est faite, sinon celui de la demande (ISO).
+  day: string;
 };
 
 export type VoucherContext = {
@@ -163,7 +165,9 @@ export async function getVoucherContext(
       const conclusion = conclusionOf.get(line.itemReference);
       eligible = conclusion?.outcome === 'signed';
       note = eligible ? 'Mandat signé' : VOUCHER_NOT_AGENCY;
-      price = conclusion?.commercialization_price ?? price;
+      // `numeric` arrive en texte de l'API (M134).
+      const agreed = Number(conclusion?.commercialization_price ?? Number.NaN);
+      price = Number.isFinite(agreed) && agreed > 0 ? agreed : price;
       const subject = subjectOf.get(line.itemReference);
       address =
         [subject?.address, [subject?.postal_code, subject?.city].filter(Boolean).join(' ')]
@@ -187,6 +191,7 @@ export async function getVoucherContext(
       address,
       mandate: knownMandate.get(`${line.itemSource}:${line.itemReference}`) ?? null,
       visited: line.visitedAt != null,
+      day: line.visitedAt ?? line.requestedAt,
     };
   });
 

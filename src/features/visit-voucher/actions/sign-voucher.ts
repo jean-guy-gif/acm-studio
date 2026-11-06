@@ -75,12 +75,14 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   }
 
   const admin = createServiceRoleClient();
-  const { data: references } = await admin
+  const { data: references, error: referencesError } = await admin
     .from('buyer_visit_requests')
     .select('id, buyer_selection_items!inner(source, reference)')
     .eq('agency_id', profile.agency_id)
     .eq('buyer_id', input.buyerId)
     .in('id', [...ids]);
+  if (referencesError || (references ?? []).length !== ids.size)
+    return { ok: false, error: FAILED };
   const referenceOf = new Map(
     (references ?? []).map((row) => {
       const item = row.buyer_selection_items as unknown as { source: string; reference: string };
@@ -93,16 +95,21 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     visitors: input.visitors,
     visitorAddress: input.visitorAddress,
     piece: input.piece,
-    biens: input.biens.map((bien) => ({
-      visitId: bien.visitId,
-      reference: referenceOf.get(bien.visitId) ?? '',
-      label: visits.get(bien.visitId)!.label,
-      mandate: bien.mandate,
-      price: bien.price,
-      address: bien.address,
-    })),
+    // Ce qu'ACM sait se remplit seul (§ 7) : le prix et l'adresse connus du serveur l'emportent sur
+    // ce que dit le navigateur ; seul ce qu'il ne sait pas vient de la saisie.
+    biens: input.biens.map((bien) => {
+      const visit = visits.get(bien.visitId)!;
+      return {
+        visitId: bien.visitId,
+        reference: referenceOf.get(bien.visitId) ?? '',
+        label: visit.label,
+        mandate: bien.mandate,
+        price: visit.price != null && visit.price > 0 ? Math.round(visit.price) : bien.price,
+        address: visit.address?.trim() ? visit.address.trim() : bien.address,
+      };
+    }),
     advisorName: context.advisorName,
-    city: input.city,
+    city: context.city.trim() ? context.city.trim() : input.city,
     date: parisDateLabel(now),
   };
   const text = documentToText(
@@ -161,7 +168,17 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
       agency_id: profile.agency_id,
     })),
   );
-  if (visitsError) await reportServerError('signVisitVoucher', visitsError);
+  if (visitsError) {
+    // Un bon gardé sur la visite (§ 10) : sans son rattachement, il n'est pas enregistré.
+    await reportServerError('signVisitVoucher', visitsError);
+    await admin
+      .from('buyer_documents')
+      .delete()
+      .eq('id', documentId)
+      .eq('agency_id', profile.agency_id);
+    await admin.storage.from(SIGNATURE_BUCKET).remove(paths);
+    return { ok: false, error: FAILED };
+  }
   const token = newDossierToken();
   const { error: linkError } = await admin.from('buyer_document_links').insert({
     agency_id: profile.agency_id,

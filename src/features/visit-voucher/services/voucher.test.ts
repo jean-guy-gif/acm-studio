@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { professionalMentions } from '@/features/prospecting-file/services/build-prospecting-file';
 import {
   guaranteeLine,
   legalIdentityGaps,
@@ -147,8 +148,8 @@ describe('l’identité légale', () => {
     );
     expect(gaps).toEqual([
       'Carte professionnelle',
-      'N° de contrat',
-      'Montant de la garantie (en euros)',
+      'Responsabilité civile professionnelle : N° de contrat',
+      'Garantie financière : Montant de la garantie (en euros)',
     ]);
     expect(
       voucherAgency({
@@ -160,11 +161,16 @@ describe('l’identité légale', () => {
     expect(legalIdentityGaps(IDENTITY, BRANDING)).toEqual([]);
   });
 
-  it('la garantie structurée, recomposée pour les documents qui lisent le texte de la charte', () => {
-    expect(guaranteeLine(IDENTITY)?.replace(/\s/g, ' ')).toBe(
-      'Garantie financière : Garant Exemple, n° GF-1, 120 000 €',
-    );
+  it('la garantie structurée, recomposée sans préfixe (les courriers ajoutent « Garantie financière : »)', () => {
+    expect(guaranteeLine(IDENTITY)?.replace(/\s/g, ' ')).toBe('Garant Exemple, n° GF-1, 120 000 €');
     expect(guaranteeLine({ ...IDENTITY, guaranteeBody: null })).toBeNull();
+    // Le courrier ajoute le préfixe une seule fois (relecteur : il se doublait).
+    const mentions = professionalMentions({
+      professionalCard: 'CPI 1',
+      professionalCardIssuer: 'CCI',
+      financialGuarantee: guaranteeLine(IDENTITY),
+    });
+    expect(mentions.join(' ').match(/Garantie financière/g)).toHaveLength(1);
   });
 
   it('le nom sur les documents l’emporte sur le nom de l’agence', () => {

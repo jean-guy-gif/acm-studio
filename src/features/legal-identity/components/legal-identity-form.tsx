@@ -46,7 +46,6 @@ export function LegalIdentityForm({
     const start = Object.fromEntries(
       LEGAL_TEXT_FIELDS.map((field) => [field.key, initial[field.key] ?? '']),
     ) as Record<FieldKey, string>;
-    if (!start.guaranteeBody && initialGuaranteeText) start.guaranteeBody = initialGuaranteeText;
     return start;
   });
   const [amount, setAmount] = useState(
@@ -72,6 +71,12 @@ export function LegalIdentityForm({
           </p>
         )}
         {readOnly ? <p className={hintText}>{IDENTITY_MANAGER_ONLY_MESSAGE}</p> : null}
+        {initialGuaranteeText ? (
+          <p className={hintText} data-testid="legal-identity-old-guarantee">
+            Votre garantie financière en texte libre : « {initialGuaranteeText} ». Saisie ci-dessous
+            champ par champ, elle le remplace sur tous vos documents.
+          </p>
+        ) : null}
       </div>
       <form
         className="flex flex-col gap-5"

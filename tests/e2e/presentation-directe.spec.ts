@@ -546,7 +546,7 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     await expect(document).toContainText('la gestion et le suivi de de relations commerciales');
     await expect(document).not.toContainText(/réseau|\{|\}/);
     await expect(document.getByTestId('voucher-signatures').locator('img')).toHaveCount(1);
-    await expect(document).toContainText(/empreinte du texte \(SHA-256\) : [0-9a-f]{64}/);
+    await expect(document).toContainText(/empreinte du texte signé : [0-9a-f]{64}/);
   });
 
   let linkPath = '';
@@ -566,8 +566,8 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     const box = (await canvas.boundingBox())!;
     await page.mouse.move(box.x + 30, box.y + box.height / 2);
     await page.mouse.down();
-    for (let step = 1; step <= 12; step += 1) {
-      await page.mouse.move(box.x + 30 + step * 25, box.y + box.height / 2 + (step % 2 ? 18 : -18));
+    for (let step = 1; step <= 20; step += 1) {
+      await page.mouse.move(box.x + 30 + step * 15, box.y + box.height / 2 + (step % 2 ? 18 : -18));
     }
     await page.mouse.up();
     await form.getByTestId('voucher-sign').click();

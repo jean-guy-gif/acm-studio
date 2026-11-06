@@ -121,10 +121,10 @@ export function legalIdentityGaps(
   if (!filled(branding?.professionalCard)) gaps.push('Carte professionnelle');
   if (!filled(branding?.professionalCardIssuer)) gaps.push('Carte délivrée par');
   for (const field of LEGAL_TEXT_FIELDS) {
-    if (!filled(value[field.key])) gaps.push(field.label);
+    if (!filled(value[field.key])) gaps.push(`${field.group} : ${field.label}`);
   }
   if (value.guaranteeAmount == null || !(value.guaranteeAmount > 0)) {
-    gaps.push(GUARANTEE_AMOUNT_LABEL);
+    gaps.push(`Garantie financière : ${GUARANTEE_AMOUNT_LABEL}`);
   }
   return gaps;
 }
@@ -134,11 +134,13 @@ export function legalIdentityGapsLabel(gaps: string[]): string {
 }
 
 // La garantie structurée, recomposée en une ligne pour les documents qui lisent le texte de la
-// charte (M102) : rien ne change pour eux. 160 caractères au plus, comme le texte libre.
+// charte (M102), sans préfixe : les courriers ajoutent eux-mêmes « Garantie financière : »
+// (`professionalMentions`), les autres documents l'impriment tel quel, comme le texte libre
+// d'avant. 160 caractères au plus.
 export function guaranteeLine(identity: LegalIdentity): string | null {
   if (!filled(identity.guaranteeBody)) return null;
   const parts = [
-    `Garantie financière : ${identity.guaranteeBody!.trim()}`,
+    identity.guaranteeBody!.trim(),
     filled(identity.guaranteeNumber) ? `n° ${identity.guaranteeNumber!.trim()}` : null,
     identity.guaranteeAmount != null && identity.guaranteeAmount > 0
       ? formatEuro(identity.guaranteeAmount)

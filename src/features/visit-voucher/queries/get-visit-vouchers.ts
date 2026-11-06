@@ -35,3 +35,30 @@ export async function getVisitVouchers(
   }
   return vouchers;
 }
+
+export type BuyerVoucher = { documentId: string; signedAt: string; labels: string[] };
+
+// Les bons signés d'une fiche, du plus récent au plus ancien, avec les biens qu'ils portent.
+export async function getBuyerVouchers(
+  supabase: SupabaseClient<Database>,
+  agencyId: string,
+  buyerId: string,
+): Promise<BuyerVoucher[]> {
+  const { data } = await supabase
+    .from('buyer_documents')
+    .select('id, signed_at, fields')
+    .eq('agency_id', agencyId)
+    .eq('buyer_id', buyerId)
+    .eq('kind', 'visit_voucher')
+    .order('signed_at', { ascending: false });
+  return (data ?? []).map((row) => {
+    const biens = (row.fields as { biens?: { label?: unknown }[] } | null)?.biens ?? [];
+    return {
+      documentId: row.id,
+      signedAt: row.signed_at,
+      labels: biens
+        .map((bien) => (typeof bien.label === 'string' ? bien.label : null))
+        .filter((label): label is string => label != null),
+    };
+  });
+}

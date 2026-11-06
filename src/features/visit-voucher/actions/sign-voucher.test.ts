@@ -102,6 +102,7 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
       address: '12 allée du Décor, 06250 Mougins',
       mandate: null,
       visited: true,
+      day: '2026-11-06T10:00:00Z',
     },
     {
       visitId: OTHER,
@@ -112,6 +113,7 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
       address: null,
       mandate: null,
       visited: false,
+      day: '2026-11-05T10:00:00Z',
     },
   ],
   agency: agency as VoucherContext['agency'],
@@ -162,6 +164,20 @@ describe('signer le bon de visite', () => {
     // Le type de la pièce seul, jamais un numéro.
     expect(document.fields.piece).toBe('cni');
     expect(JSON.stringify(document.fields)).not.toMatch(/numéro de pièce|\bn° CNI/i);
+  });
+
+  it('le prix et l’adresse connus du serveur l’emportent sur ceux du navigateur', async () => {
+    await signVisitVoucher(
+      input({
+        biens: [{ visitId: VISIT, mandate: 'M-1', price: 1, address: 'une autre adresse' }],
+        city: 'Ailleurs',
+      }),
+    );
+    const document = state.writes[0]![1] as { rendered_text: string };
+    expect(document.rendered_text).toMatch(/Prix de commercialisation : 1\s639\s500 €/);
+    expect(document.rendered_text).toContain('Adresse du bien : 12 allée du Décor, 06250 Mougins');
+    expect(document.rendered_text).toContain('Fait à Mougins ,');
+    expect(document.rendered_text).not.toContain('une autre adresse');
   });
 
   it('identité légale incomplète : rien n’est écrit, l’écran dit ce qui manque', async () => {

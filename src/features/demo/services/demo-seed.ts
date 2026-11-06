@@ -393,8 +393,8 @@ export function demoKellerWatchFinds(now: Date): WatchFind[] {
     .filter((find): find is WatchFind => find != null);
 }
 
-// Mission 137 — le bon de visite de la démo : la visite des Keller au mandat de Mougins, il y a
-// 2 jours, « Offre envisagée » ; un visiteur et une adresse inventés, un n° de mandat au format
+// Mission 137 — le bon de visite de la démo : la visite des Keller au mandat de Mougins, demandée
+// il y a 2 jours, faite et signée aujourd'hui, « Offre envisagée » ; un visiteur et une adresse inventés, un n° de mandat au format
 // d'un registre des mandats.
 export const DEMO_VOUCHER_DAYS_AGO = 2;
 export const DEMO_VOUCHER_VISITOR = 'Paul Keller';

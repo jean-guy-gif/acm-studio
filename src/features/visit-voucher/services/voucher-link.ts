@@ -7,15 +7,12 @@ export function voucherPath(token: string): string {
   return `/bon-de-visite/${token}`;
 }
 
-// Le message prérempli : « Bonjour, voici votre bon de visite du … : [lien] », signé du prénom.
-export function voucherMessage(input: {
-  date: string;
-  url: string;
-  advisorFirstName: string | null;
-}): string {
+// Le message prérempli : « Bonjour, voici votre bon de visite signé : [lien] », signé du prénom du
+// conseiller ; ACM n'envoie rien.
+export function voucherMessage(input: { url: string; advisorFirstName: string | null }): string {
   return [
     'Bonjour,',
-    `Voici votre bon de visite du ${input.date} : ${input.url}`,
+    `Voici votre bon de visite signé : ${input.url}`,
     input.advisorFirstName?.trim() ?? '',
   ]
     .filter(Boolean)

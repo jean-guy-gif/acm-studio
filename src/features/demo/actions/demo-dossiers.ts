@@ -247,7 +247,8 @@ async function seedKellerVoucher(
     },
     agencyName: agency.data?.name ?? '',
   });
-  const visitedAt = daysBefore(now, DEMO_VOUCHER_DAYS_AGO);
+  // Visitée aujourd'hui, demandée il y a 2 jours : le bon se signe le jour de la visite.
+  const visitedAt = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
   const { data: visit, error: visitError } = await supabase
     .from('buyer_visit_requests')
     .insert({
@@ -255,7 +256,7 @@ async function seedKellerVoucher(
       buyer_id: kellerId,
       buyer_selection_item_id: item.id,
       requested_during: 'presentation',
-      requested_at: daysBefore(now, DEMO_VOUCHER_DAYS_AGO + 1),
+      requested_at: daysBefore(now, DEMO_VOUCHER_DAYS_AGO),
       visited_at: visitedAt,
       outcome: 'offer',
       feedback: DEMO_VOUCHER_FEEDBACK,
@@ -293,7 +294,7 @@ async function seedKellerVoucher(
       [profile.data?.first_name, profile.data?.last_name].filter(Boolean).join(' ').trim() ||
       'Le conseiller',
     city: cityOfAddress(voucherAgencyFields.address) || 'Mougins',
-    date: parisDateLabel(new Date(visitedAt)),
+    date: parisDateLabel(now),
   };
   const text = documentToText(
     renderVoucher({

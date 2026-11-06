@@ -27,11 +27,18 @@ import {
 } from '@/features/visit-voucher/services/voucher-text';
 
 type Visitor = { civility: VisitorCivility; name: string };
+
+const dayLabel = (iso: string): string => {
+  const [year, month, day] = iso.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+};
 type BienDraft = { checked: boolean; mandate: string; price: string; address: string };
 
-const digits = (value: string): number | null => {
-  const clean = value.replace(/[^\d]/g, '');
-  return clean ? Number(clean) : null;
+// « 1 639 500 », « 1 639 500,50 » : l'euro entier, la virgule décimale lue comme telle.
+const euros = (value: string): number | null => {
+  const clean = value.replace(/[\s\u00a0\u202f€]/g, '').replace(',', '.');
+  const amount = Number(clean);
+  return clean && Number.isFinite(amount) ? Math.round(amount) : null;
 };
 
 // Mission 137 — le bon de visite, sur un seul écran, au pouce : les biens visités (plusieurs le
@@ -56,7 +63,13 @@ export function VoucherForm({
       context.visits.map((visit) => [
         visit.visitId,
         {
-          checked: visit.eligible && (preselected == null || preselected === visit.visitId),
+          // Les biens visités le même jour (§ 6) : rien n'est coché d'office, sauf la visite d'où
+          // l'on vient, ou la seule qui a droit au bon.
+          checked:
+            visit.eligible &&
+            (preselected != null
+              ? preselected === visit.visitId
+              : context.visits.filter((entry) => entry.eligible).length === 1),
           mandate: visit.mandate ?? '',
           price: visit.price != null ? String(visit.price) : '',
           address: visit.address ?? '',
@@ -79,6 +92,7 @@ export function VoucherForm({
           documentId={done.documentId}
           initialLinkPath={done.linkPath || null}
           email={context.buyer.email}
+          advisorFirstName={context.advisorName.split(' ')[0] ?? null}
         />
         <Link
           href={`/acquereurs/${context.buyer.id}/bon-de-visite/${done.documentId}`}
@@ -113,7 +127,7 @@ export function VoucherForm({
               return {
                 visitId: visit.visitId,
                 mandate: draft.mandate,
-                price: digits(draft.price) ?? 0,
+                price: euros(draft.price) ?? 0,
                 address: draft.address,
               };
             }),
@@ -149,6 +163,10 @@ export function VoucherForm({
                   />
                   {visit.label}
                 </label>
+                <span className={hintText}>
+                  {visit.visited ? 'Visité le ' : 'Visite demandée le '}
+                  {dayLabel(visit.day)}
+                </span>
                 {visit.note ? (
                   <span className={visit.eligible ? hintText : 'text-sm text-amber-700'}>
                     {visit.note}
@@ -174,6 +192,7 @@ export function VoucherForm({
                         inputMode="numeric"
                         value={draft.price}
                         required
+                        readOnly={visit.price != null}
                         onChange={(event) => update(visit.visitId, { price: event.target.value })}
                       />
                     </label>
@@ -184,6 +203,7 @@ export function VoucherForm({
                         value={draft.address}
                         maxLength={300}
                         required
+                        readOnly={Boolean(visit.address)}
                         data-testid="voucher-bien-address"
                         onChange={(event) => update(visit.visitId, { address: event.target.value })}
                       />
@@ -287,6 +307,7 @@ export function VoucherForm({
             value={city}
             maxLength={80}
             required
+            readOnly={Boolean(context.city)}
             onChange={(event) => setCity(event.target.value)}
           />
         </label>

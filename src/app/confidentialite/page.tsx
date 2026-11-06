@@ -210,7 +210,9 @@ export default function ConfidentialitePage() {
               prescription, y compris si le visiteur demande l’effacement de ses données (article
               17.3.e du RGPD : constatation, exercice ou défense de droits en justice), puis il est
               effacé. Il ne disparaît pas avec la fiche de l’acquéreur ni avec le compte du
-              conseiller. Texte à faire relire par un juriste.
+              conseiller. L’agence y est identifiée par son identité légale (société, RCS, TVA,
+              assurance, garantie financière, nom et qualité de son représentant légal), saisie par
+              son manager. Texte à faire relire par un juriste.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

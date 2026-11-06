@@ -61,7 +61,7 @@ export function VoucherDocument({ voucher }: { voucher: SignedVoucher }) {
         </section>
       ))}
       <footer className="mt-4 border-t border-zinc-200 pt-2 text-[11px] text-zinc-500">
-        Signé le {parisDateTimeLabel(voucher.signedAt)} · empreinte du texte (SHA-256) :{' '}
+        Signé le {parisDateTimeLabel(voucher.signedAt)} · empreinte du texte signé :{' '}
         <span className="break-all font-mono">{voucher.contentSha256}</span>
       </footer>
     </article>

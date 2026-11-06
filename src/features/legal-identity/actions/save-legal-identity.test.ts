@@ -60,7 +60,7 @@ describe('enregistrer l’identité légale', () => {
     const [brandingTable, method, branding] = state.writes[1]!;
     expect([brandingTable, method]).toEqual(['agency_branding', 'update']);
     expect((branding as { financial_guarantee: string }).financial_guarantee).toMatch(
-      /^Garantie financière : Garant Exemple, n° GF-1, 120/,
+      /^Garant Exemple, n° GF-1, 120/,
     );
   });
 
