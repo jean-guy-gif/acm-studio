@@ -161,6 +161,19 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 06/11 · M136 · `cat > fichier` sans `<<EOF` attend l'entrée standard et fige la commande jusqu'au
   délai : toujours un heredoc. Le nettoyage de fin d'e2e (CLI Supabase) a échoué une fois, vert au
   passage suivant : aléa connu. Suite e2e complète 10,7 min (démo 3,8 à 4,9 min).
+- 06/11 · M137 A · Une route ajoutée sans être relue dans le middleware ne s'ouvre pas : la tâche de
+  nuit de la veille (M136) partait vers /login, trouvée en écrivant le chemin public du bon. Un test
+  exige désormais que chaque cron de `vercel.json` soit un chemin public ; les barrières et l'e2e ne
+  voient pas une tâche planifiée, seul un test de configuration la voit.
+- 06/11 · M137 A · Un verrou « jamais modifié » doit laisser passer les `on delete set null` (auteur,
+  fiche) : la leçon de la M109 rejouée par le gardien-sql, qui a aussi fait calculer l'empreinte par
+  la base plutôt que la croire du serveur. Le relecteur a trouvé le « Garantie financière : »
+  doublé dans les courriers : un texte « recomposé » se relit dans tous les documents qui le lisent.
+- 06/11 · M137 A · E2E : lire `page.url()` juste après un clic de lien donne l'ancienne adresse ; on
+  clique le bouton de la page suivante, ou on attend `toHaveURL`. L'adresse de l'agence de démo
+  n'avait ni code postal ni commune (« Fait à » vide) : une donnée de démo réglée à la main se
+  vérifie en base avant d'écrire un e2e qui la lit. Suite e2e 10,5 min ; un ECONNRESET sur le
+  parcours, vert au second passage.
 
 ## La base
 

@@ -46,6 +46,10 @@ const PUBLIC_MARKET_STUDY = /^\/etude-de-marche\/[A-Za-z0-9_-]{43}$/;
 // même forme exacte : « /bon-de-visite/ » suivi d'un jeton de 43 caractères ; la page le vérifie.
 const PUBLIC_VISIT_VOUCHER = /^\/bon-de-visite\/[A-Za-z0-9_-]{43}$/;
 
+// Mission 137 B — l'offre d'achat signée, par ses liens (la copie des offrants, celui du vendeur qui
+// l'accepte ou la refuse), de la même forme exacte ; la page vérifie le jeton.
+const PUBLIC_PURCHASE_OFFER = /^\/offre\/[A-Za-z0-9_-]{43}$/;
+
 export function isPublicPath(pathname: string): boolean {
   return (
     PUBLIC_PATHS.includes(pathname) ||
@@ -53,6 +57,7 @@ export function isPublicPath(pathname: string): boolean {
     PUBLIC_BUYER_DOSSIER.test(pathname) ||
     PUBLIC_MARKET_UPDATE.test(pathname) ||
     PUBLIC_MARKET_STUDY.test(pathname) ||
-    PUBLIC_VISIT_VOUCHER.test(pathname)
+    PUBLIC_VISIT_VOUCHER.test(pathname) ||
+    PUBLIC_PURCHASE_OFFER.test(pathname)
   );
 }

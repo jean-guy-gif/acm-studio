@@ -215,6 +215,17 @@ export default function ConfidentialitePage() {
               son manager. Texte à faire relire par un juriste.
             </li>
             <li>
+              L’offre d’achat : quand un acquéreur fait une offre sur un bien de l’agence, il la
+              signe au doigt ; l’agence garde le texte signé, la date et l’heure de la signature,
+              l’image des signatures, et l’état civil de chaque offrant qu’il exige (civilité, nom,
+              prénoms, date et lieu de naissance, nationalité, profession, adresse, situation
+              matrimoniale et régime s’il est indiqué, résidence fiscale en France ou non), le prix,
+              les honoraires, l’acompte et les dates. Le vendeur la reçoit par un lien et l’accepte
+              en la signant (son nom et sa signature, datés) ou la refuse. Comme le bon de visite,
+              l’offre est conservée cinq ans à compter de la visite, puis effacée. Texte à faire
+              relire par un juriste.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

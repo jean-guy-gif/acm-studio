@@ -594,3 +594,111 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     await context.close();
   });
 });
+
+// Mission 137 (partie B) — l'offre d'achat : la démo arrive avec l'offre des Keller, valable jusqu'à
+// demain ; son échéance est en tête de « À faire aujourd'hui » ; l'offre s'ouvre (couverture, texte
+// validé) ; le vendeur l'accepte sur son lien, sans compte, en signant ; une nouvelle offre se
+// prépare depuis la visite, pré-remplie, et se signe.
+test('l’offre d’achat : l’échéance, le lien du vendeur, une offre signée au doigt', async ({
+  page,
+  browser,
+}) => {
+  await login(page, demoCredentials());
+  await freshDemo(page);
+
+  const draw = async (testId: string) => {
+    const canvas = page.getByTestId(testId);
+    await canvas.scrollIntoViewIfNeeded();
+    const box = (await canvas.boundingBox())!;
+    await page.mouse.move(box.x + 30, box.y + box.height / 2);
+    await page.mouse.down();
+    for (let step = 1; step <= 20; step += 1) {
+      await page.mouse.move(box.x + 30 + step * 15, box.y + box.height / 2 + (step % 2 ? 18 : -18));
+    }
+    await page.mouse.up();
+  };
+
+  await test.step('L’échéance en tête de « À faire aujourd’hui »', async () => {
+    await page.goto('/suivi');
+    const task = page.getByTestId('suivi-task').first();
+    await expect(task).toContainText('L’offre de la famille Keller expire demain');
+    await task.getByRole('link', { name: 'Voir l’offre' }).click();
+    await expect(page.getByTestId('offer-cover')).toContainText("OFFRE D'ACHAT FERME");
+    await expect(page.getByTestId('offer-cover-mandate')).toHaveText('Mandat n° M-2026-0142');
+    const offer = page.getByTestId('offer-document');
+    await expect(offer).toContainText(
+      "L'OFFRANT déclare ne pas avoir l'intention de recourir à un prêt",
+    );
+    await expect(offer).toContainText('Agence Horizon Côte d’Azur');
+    await expect(offer).not.toContainText(/réseau|Démo|\{|\}/);
+    await expect(offer.getByTestId('offer-signatures').locator('img')).toHaveCount(2);
+  });
+
+  let sellerLink = '';
+  await test.step('Les liens : la copie des offrants, celui du vendeur', async () => {
+    await page.getByTestId('offer-create-links').click();
+    sellerLink = (await page.getByTestId('offer-link-seller').innerText()).trim();
+    expect(sellerLink).toMatch(/\/offre\/[A-Za-z0-9_-]{43}$/);
+    await expect(page.getByTestId('offer-link-buyer')).toContainText('/offre/');
+  });
+
+  await test.step('Le vendeur accepte sur son lien, sans compte, en signant', async () => {
+    const bypass = process.env.E2E_VERCEL_BYPASS;
+    const context = await browser.newContext(
+      bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {},
+    );
+    const seller = await context.newPage();
+    const response = await seller.goto(sellerLink);
+    expect(response?.headers()['x-robots-tag']).toContain('noindex');
+    await expect(seller.getByTestId('seller-accept')).toBeDisabled();
+    await seller.getByTestId('seller-name-1').fill('M. Lefebvre');
+    const canvas = seller.getByTestId('seller-signature-1');
+    await canvas.scrollIntoViewIfNeeded();
+    const box = (await canvas.boundingBox())!;
+    await seller.mouse.move(box.x + 30, box.y + box.height / 2);
+    await seller.mouse.down();
+    for (let step = 1; step <= 20; step += 1) {
+      await seller.mouse.move(
+        box.x + 30 + step * 15,
+        box.y + box.height / 2 + (step % 2 ? 18 : -18),
+      );
+    }
+    await seller.mouse.up();
+    await seller.getByTestId('seller-accept').click();
+    await expect(seller.getByTestId('offer-answer')).toHaveAttribute('data-decision', 'accepted', {
+      timeout: 20_000,
+    });
+    await expect(seller.getByTestId('seller-response')).toHaveCount(0);
+    await context.close();
+    // L'échéance quitte « À faire aujourd'hui ».
+    await page.goto('/suivi');
+    await expect(page.getByText('L’offre de la famille Keller expire demain')).toHaveCount(0);
+  });
+
+  await test.step('Une nouvelle offre, depuis la visite « Offre envisagée »', async () => {
+    await page.goto('/visites');
+    await page.getByTestId('visit-offer-open').first().click();
+    const form = page.getByTestId('offer-form');
+    await expect(form).toBeVisible();
+    // Repris : le n° de mandat (conclusion), les offrants de la dernière offre.
+    await expect(form.getByTestId('offer-mandate-known')).toHaveText('N° de mandat : M-2026-0142');
+    await expect(form.getByTestId('offer-lastname-1')).toHaveValue('Keller');
+    await expect(form.getByTestId('offer-lastname-2')).toHaveValue('Keller');
+    await form.getByTestId('offer-parcel-section-1').fill('AB');
+    await form.getByTestId('offer-parcel-number-1').fill('214');
+    await form.getByTestId('offer-parcel-area-1').fill('18 a 40 ca');
+    await form.getByTestId('offer-total-area').fill('18 a 40 ca');
+    await form.getByTestId('offer-deposit').fill('80000');
+    await expect(form).toContainText('quatre-vingt mille euros');
+    await expect(form.getByTestId('offer-sign')).toBeDisabled();
+    await form.getByTestId('offer-preview').locator('summary').click();
+    await expect(form.getByTestId('offer-preview')).toContainText("OFFRE D'ACHAT");
+    await form.getByTestId('offer-approved').check();
+    await draw('offer-signature-1');
+    await draw('offer-signature-2');
+    await form.getByTestId('offer-sign').click();
+    await expect(page.getByTestId('offer-signed')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId('offer-link-seller')).toContainText('/offre/');
+    await expect(page.getByText(/\bM\d{2,3}\b/)).toHaveCount(0);
+  });
+});

@@ -21,6 +21,7 @@ export async function createVoucherLink(documentId: unknown): Promise<CreateVouc
     .select('id')
     .eq('id', documentId)
     .eq('agency_id', profile.agency_id)
+    .eq('kind', 'visit_voucher')
     .maybeSingle();
   if (!document) return { ok: false, error: 'Bon de visite introuvable.' };
   const token = newDossierToken();
