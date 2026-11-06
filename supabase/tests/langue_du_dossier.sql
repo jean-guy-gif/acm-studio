@@ -77,10 +77,13 @@ begin
     raise exception 'FAIL 2: un membre retiré change la langue';
   end if;
 end $$;
+-- Le Live commencé pour de bon : son heure de début et son rythme sont figés (M95).
+update public.projects set live_started_at = now() - interval '10 minutes', live_rhythm = 'complete'
+where id = '141ccccc-0000-0000-0000-000000000001';
 select set_config('request.jwt.claims',
   '{"sub":"14111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 set local role authenticated;
--- Live commencé : la langue change, la réponse reste.
+-- Live commencé : la langue change, la réponse reste, ni le début ni le rythme ne bougent.
 update public.projects set language = 'en' where id = '141ccccc-0000-0000-0000-000000000001';
 reset role;
 do $$
@@ -91,6 +94,10 @@ begin
   if (select count(*) from public.live_seller_responses
       where project_id = '141ccccc-0000-0000-0000-000000000001') <> 1 then
     raise exception 'FAIL 2: changer la langue efface une réponse';
+  end if;
+  if (select live_started_at < now() - interval '9 minutes' and live_rhythm = 'complete'
+      from public.projects where id = '141ccccc-0000-0000-0000-000000000001') is not true then
+    raise exception 'FAIL 2: changer la langue touche au début ou au rythme du Live';
   end if;
   update public.projects set status = 'meeting_completed'
   where id = '141ccccc-0000-0000-0000-000000000001';
@@ -105,6 +112,10 @@ do $$
 begin
   if (select language from public.projects where id = '141ccccc-0000-0000-0000-000000000001') <> 'fr' then
     raise exception 'FAIL 2: la langue d''un dossier conclu ne change pas';
+  end if;
+  if (select live_presentation_mode from public.projects
+      where id = '141ccccc-0000-0000-0000-000000000001') <> 'interactive' then
+    raise exception 'FAIL 2: changer la langue touche à la façon de présenter';
   end if;
 end $$;
 
