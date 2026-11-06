@@ -1,5 +1,7 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -15,6 +17,24 @@ import { importedMandateColumns } from '@/features/competitor-mandate/services/m
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
+import { DEMO_LEGAL_IDENTITY } from '@/features/demo/data/demo-legal-identity';
+import { DEMO_SIGNATURE_PNG_BASE64 } from '@/features/demo/data/demo-signature';
+import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
+import {
+  cityOfAddress,
+  parisDateLabel,
+  visitorsLabel,
+  voucherAgency,
+  voucherPrice,
+} from '@/features/visit-voucher/services/voucher-fields';
+import type { StoredVoucherFields } from '@/features/visit-voucher/services/voucher-input';
+import { SIGNATURE_BUCKET } from '@/features/visit-voucher/services/voucher-link';
+import {
+  documentToText,
+  renderVoucher,
+  VISITOR_PIECES,
+  VOUCHER_TEMPLATE_VERSION,
+} from '@/features/visit-voucher/services/voucher-text';
 import { demoLocatorEntry } from '@/features/demo/services/demo-listing-data';
 import {
   DEMO_DANGEROUS_REASON,
@@ -30,6 +50,11 @@ import {
   DEMO_LAMBERT_SHARED_DAYS_AGO,
   demoKellerRefusalsPlan,
   demoKellerWatchFinds,
+  DEMO_VOUCHER_DAYS_AGO,
+  DEMO_VOUCHER_FEEDBACK,
+  DEMO_VOUCHER_MANDATE,
+  DEMO_VOUCHER_VISITOR,
+  DEMO_VOUCHER_VISITOR_ADDRESS,
   DEMO_WATCH_DAYS_AGO,
   demoKellerSelectionPlan,
   demoLambertSelectionPlan,
@@ -118,6 +143,13 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
   const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, {
     buyerIds: (own ?? []).map((buyer) => buyer.id),
   });
+  // Mission 137 — un bon signé ne part plus avec sa fiche (il reste, sans fiche) : ceux des
+  // acquéreurs de démo sont des données de démonstration, retirés ici avec leurs signatures.
+  await deleteDemoVouchers(
+    supabase,
+    closer,
+    (own ?? []).map((buyer) => buyer.id),
+  );
   const { data } = await supabase
     .from('buyers')
     .delete()
@@ -128,6 +160,188 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
   await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
   await deleteOrphanDemoProspects(supabase, closer);
   return data?.length ?? 0;
+}
+
+async function deleteDemoVouchers(
+  supabase: Client,
+  closer: Closer,
+  buyerIds: string[],
+): Promise<void> {
+  if (buyerIds.length === 0) return;
+  const { data: documents } = await supabase
+    .from('buyer_documents')
+    .select('id, signature_paths')
+    .eq('agency_id', closer.agencyId)
+    .in('buyer_id', buyerIds);
+  if (!documents || documents.length === 0) return;
+  await supabase
+    .from('buyer_documents')
+    .delete()
+    .eq('agency_id', closer.agencyId)
+    .in(
+      'id',
+      documents.map((document) => document.id),
+    );
+  const paths = documents
+    .flatMap((document) => document.signature_paths)
+    .filter((path) => path.startsWith(`${closer.agencyId}/`));
+  if (paths.length > 0) await supabase.storage.from(SIGNATURE_BUCKET).remove(paths);
+}
+
+// Mission 137 — l'identité légale de l'agence de démonstration (inventée), si elle n'en a pas ; et
+// un bon de visite signé sur la visite des Keller au mandat de Mougins (visitée il y a 2 jours,
+// « Offre envisagée »), par les mêmes services que l'écran : le texte validé, la signature dans
+// le stockage privé, l'heure et l'empreinte posées par la base.
+async function seedKellerVoucher(
+  supabase: Client,
+  closer: Closer,
+  kellerId: string,
+  mouginsProjectId: string,
+  now: Date,
+): Promise<boolean> {
+  await supabase
+    .from('agency_legal_identities')
+    .upsert(
+      { agency_id: closer.agencyId, ...DEMO_LEGAL_IDENTITY },
+      { onConflict: 'agency_id', ignoreDuplicates: true },
+    );
+  const [{ data: item }, legal, branding, agency, profile, conclusion, subject] = await Promise.all(
+    [
+      supabase
+        .from('buyer_selection_items')
+        .select('id, label, buyer_selections!inner(buyer_id)')
+        .eq('agency_id', closer.agencyId)
+        .eq('source', 'project')
+        .eq('reference', mouginsProjectId)
+        .eq('buyer_selections.buyer_id', kellerId)
+        .limit(1)
+        .maybeSingle(),
+      readLegalIdentity(supabase, closer.agencyId),
+      supabase
+        .from('agency_branding')
+        .select('document_name, postal_address, professional_card, professional_card_issuer')
+        .eq('agency_id', closer.agencyId)
+        .maybeSingle(),
+      supabase.from('agencies').select('name').eq('id', closer.agencyId).maybeSingle(),
+      supabase.from('profiles').select('first_name, last_name').eq('id', closer.id).maybeSingle(),
+      supabase
+        .from('project_meeting_conclusions')
+        .select('commercialization_price')
+        .eq('project_id', mouginsProjectId)
+        .maybeSingle(),
+      supabase
+        .from('subject_properties')
+        .select('address, postal_code, city')
+        .eq('project_id', mouginsProjectId)
+        .maybeSingle(),
+    ],
+  );
+  if (!item || !legal.ok) return false;
+  const voucherAgencyFields = voucherAgency({
+    identity: legal.identity,
+    branding: {
+      documentName: branding.data?.document_name ?? null,
+      postalAddress: branding.data?.postal_address ?? null,
+      professionalCard: branding.data?.professional_card ?? null,
+      professionalCardIssuer: branding.data?.professional_card_issuer ?? null,
+    },
+    agencyName: agency.data?.name ?? '',
+  });
+  const visitedAt = daysBefore(now, DEMO_VOUCHER_DAYS_AGO);
+  const { data: visit, error: visitError } = await supabase
+    .from('buyer_visit_requests')
+    .insert({
+      agency_id: closer.agencyId,
+      buyer_id: kellerId,
+      buyer_selection_item_id: item.id,
+      requested_during: 'presentation',
+      requested_at: daysBefore(now, DEMO_VOUCHER_DAYS_AGO + 1),
+      visited_at: visitedAt,
+      outcome: 'offer',
+      feedback: DEMO_VOUCHER_FEEDBACK,
+    })
+    .select('id')
+    .single();
+  if (visitError || !visit) return false;
+  // Identité légale ou charte incomplètes (une agence de démo réglée à la main) : la visite reste,
+  // sans bon — l'écran dira ce qui manque, comme pour une vraie agence.
+  if (!voucherAgencyFields) return true;
+  const address = [
+    subject.data?.address,
+    [subject.data?.postal_code, subject.data?.city].filter(Boolean).join(' '),
+  ]
+    .filter((part) => part && part.trim())
+    .join(', ');
+  const price = Number(conclusion.data?.commercialization_price ?? 0);
+  if (!address || !(price > 0)) return true;
+  const fields: StoredVoucherFields = {
+    agency: voucherAgencyFields,
+    visitors: [{ civility: 'M.', name: DEMO_VOUCHER_VISITOR }],
+    visitorAddress: DEMO_VOUCHER_VISITOR_ADDRESS,
+    piece: 'cni',
+    biens: [
+      {
+        visitId: visit.id,
+        reference: `project:${mouginsProjectId}`,
+        label: item.label,
+        mandate: DEMO_VOUCHER_MANDATE,
+        price,
+        address,
+      },
+    ],
+    advisorName:
+      [profile.data?.first_name, profile.data?.last_name].filter(Boolean).join(' ').trim() ||
+      'Le conseiller',
+    city: cityOfAddress(voucherAgencyFields.address) || 'Mougins',
+    date: parisDateLabel(new Date(visitedAt)),
+  };
+  const text = documentToText(
+    renderVoucher({
+      agency: fields.agency,
+      visitorName: visitorsLabel(fields.visitors),
+      visitorAddress: fields.visitorAddress,
+      visitorPiece: VISITOR_PIECES[fields.piece],
+      biens: fields.biens.map((bien) => ({
+        mandate: bien.mandate,
+        price: voucherPrice(bien.price),
+        address: bien.address,
+      })),
+      advisorName: fields.advisorName,
+      city: fields.city,
+      date: fields.date,
+    }),
+  );
+  const documentId = randomUUID();
+  const path = `${closer.agencyId}/${documentId}/signature-1.png`;
+  const { error: uploadError } = await supabase.storage
+    .from(SIGNATURE_BUCKET)
+    .upload(path, Buffer.from(DEMO_SIGNATURE_PNG_BASE64, 'base64'), {
+      contentType: 'image/png',
+      upsert: false,
+    });
+  if (uploadError) return false;
+  const { error: documentError } = await supabase.from('buyer_documents').insert({
+    id: documentId,
+    agency_id: closer.agencyId,
+    buyer_id: kellerId,
+    kind: 'visit_voucher',
+    template_version: VOUCHER_TEMPLATE_VERSION,
+    fields: fields as unknown as Json,
+    rendered_text: text,
+    content_sha256: '0'.repeat(64),
+    signature_paths: [path],
+    created_by: closer.id,
+  });
+  if (documentError) {
+    await supabase.storage.from(SIGNATURE_BUCKET).remove([path]);
+    return false;
+  }
+  const { error: linkError } = await supabase.from('buyer_document_visits').insert({
+    document_id: documentId,
+    visit_request_id: visit.id,
+    agency_id: closer.agencyId,
+  });
+  return !linkError;
 }
 
 // Mission 120 — les biens démarchés depuis les recherches de ses acquéreurs de démo : leurs origines
@@ -737,7 +951,8 @@ export async function seedDemoDossiers(
   return (
     (await seedLambertSharedSelection(supabase, closer, lambert.id, now)) &&
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
-    (await seedWatchRuns(supabase, closer, buyers, keller.id, now))
+    (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&
+    (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now))
   );
 }
 

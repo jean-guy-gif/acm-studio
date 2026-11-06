@@ -50,6 +50,7 @@ import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
+import { getVisitVouchers } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -125,7 +126,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
   const visits = ownVisits.filter((line) => line.visitedAt == null);
-  const letters = await getVisitLetters(visits);
+  // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
+  const [letters, vouchers] = await Promise.all([
+    getVisitLetters(visits),
+    getVisitVouchers(
+      supabase,
+      ownVisits.map((line) => line.id),
+    ),
+  ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
   const deck = loadedDeck?.deck ?? null;
   const journey = buyerJourney(facts);
@@ -446,12 +454,26 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               className={`${card} flex flex-col gap-3 p-5`}
               data-testid="buyer-visits-section"
             >
-              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-                Ses visites à organiser
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                  Ses visites à organiser
+                </h2>
+                <Link
+                  href={`/acquereurs/${buyer.id}/bon-de-visite`}
+                  className={btnSecondary}
+                  data-testid="buyer-voucher-open"
+                >
+                  Bon de visite
+                </Link>
+              </div>
               <ul className="flex flex-col gap-2">
                 {visits.map((line) => (
-                  <VisitRow key={line.id} line={line} letter={letters.get(line.id) ?? null} />
+                  <VisitRow
+                    key={line.id}
+                    line={line}
+                    letter={letters.get(line.id) ?? null}
+                    voucher={vouchers.get(line.id) ?? null}
+                  />
                 ))}
               </ul>
             </section>
