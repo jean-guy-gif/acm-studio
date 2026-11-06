@@ -54,8 +54,8 @@ Les étapes : `architecte`, `questions`, `code`, `gardien-sql`, `accord`, `relec
    le relecteur ne repasse que sur le delta qui corrige un bloquant.
 9. Commit `Mission <numéro> — <titre>`, puis `git push -u origin <branche>`. Si la branche `essai`
    existe (mission 64), fusionne aussi ta branche dans `essai` et pousse `essai` (`git fetch` puis
-   `git merge --ff-only origin/essai` d'abord : `git pull` échoue sur un auto-stash) : c'est là que
-   Jean-Guy essaie. Une fois l'essai déployé (`/api/version` répond ton commit) :
+   `git merge --ff-only origin/essai` d'abord : `git pull` échoue sur un auto-stash) : c'est l'étape
+   interne (Jean-Guy n'y teste plus jamais, règle du 06/11). Une fois l'essai déployé (`/api/version` répond ton commit) :
    - **E2E, par le chef, au premier plan** (jamais en tâche de fond) : la suite e2e complète si la
      mission change `src/`, `extension/` ou `supabase/` (sinon, les tests propres à la mission ;
      décision de Jean-Guy, 29/10), après une remise à zéro de la démo par l'écran ; un échec se
@@ -66,7 +66,8 @@ Les étapes : `architecte`, `questions`, `code`, `gardien-sql`, `accord`, `relec
     relecteur) et une pour l'e2e, qui disent ce qui a été corrigé et ce qui remonte — jamais leurs
     listes :
     - ce qui a changé (comportement, fichiers principaux) ;
-    - le scénario d'essai à l'écran, pas à pas, avec l'URL ;
+    - aucun scénario sur l'essai : Jean-Guy n'y teste plus (règle du 06/11) ; le test court sur la
+      production vient après le `/valide` ;
     - les risques restants ;
     - les décisions prises en route (elles iront dans `docs/DECISIONS.md` au moment de `/valide`).
 11. **`--parallele`** (mission 98, mission 126) : `git worktree add ../acm-studio-<numéro> -b
@@ -85,4 +86,4 @@ remontent à Jean-Guy que trois choses : un **choix de produit** (ce que voit le
 conseiller), un **coût** (appel payant, budget), une **donnée** (migration, suppression). Le rapport
 final dit ce qui a été corrigé, en une ligne par agent, pas les listes.
 
-Ne fusionne **jamais** dans `main` : c'est `/valide <numéro>` qui le fait, après l'essai de Jean-Guy.
+Ne fusionne **jamais** dans `main` : c'est `/valide <numéro>` qui le fait, sur l'ordre de Jean-Guy.
