@@ -1,3 +1,4 @@
+import type { ClientLanguage } from '@/lib/client-language';
 import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
 import type { LiveRhythm } from '@/features/live-seller/services/build-live-pages';
 import type { ComparableAnalysis } from '@/features/comparable-analysis/types/comparable-analysis';
@@ -117,6 +118,8 @@ export type SellerPresentationProject = {
   liveRhythm: LiveRhythm;
   // Mission 131 — la façon de présenter : Live interactif, présentation directe, document seul.
   presentationMode: LivePresentationMode;
+  // Mission 140 — la langue du vendeur : celle du Live et de ses documents.
+  language: ClientLanguage;
   liveStartedAt: string | null;
   liveEndedAt: string | null;
   createdAt: string;
