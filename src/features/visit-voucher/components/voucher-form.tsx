@@ -18,6 +18,7 @@ import { SignaturePad } from '@/features/visit-voucher/components/signature-pad'
 import { VoucherShare } from '@/features/visit-voucher/components/voucher-share';
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
+  parisDateLabel,
   VISITOR_CIVILITIES,
   type VisitorCivility,
 } from '@/features/visit-voucher/services/voucher-fields';
@@ -28,10 +29,8 @@ import {
 
 type Visitor = { civility: VisitorCivility; name: string };
 
-const dayLabel = (iso: string): string => {
-  const [year, month, day] = iso.slice(0, 10).split('-');
-  return `${day}/${month}/${year}`;
-};
+// Le jour de la visite, à Paris (une visite tard le soir n'est pas datée de la veille).
+const dayLabel = (iso: string): string => parisDateLabel(new Date(iso));
 type BienDraft = { checked: boolean; mandate: string; price: string; address: string };
 
 // « 1 639 500 », « 1 639 500,50 » : l'euro entier, la virgule décimale lue comme telle.

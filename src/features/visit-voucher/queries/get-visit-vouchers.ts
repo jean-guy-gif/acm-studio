@@ -38,19 +38,21 @@ export async function getVisitVouchers(
 
 export type BuyerVoucher = { documentId: string; signedAt: string; labels: string[] };
 
-// Les bons signés d'une fiche, du plus récent au plus ancien, avec les biens qu'ils portent.
+// Les bons signés d'une fiche, du plus récent au plus ancien, avec les biens qu'ils portent ; une
+// lecture en échec rend null, jamais « aucun bon » (M98).
 export async function getBuyerVouchers(
   supabase: SupabaseClient<Database>,
   agencyId: string,
   buyerId: string,
-): Promise<BuyerVoucher[]> {
-  const { data } = await supabase
+): Promise<BuyerVoucher[] | null> {
+  const { data, error } = await supabase
     .from('buyer_documents')
     .select('id, signed_at, fields')
     .eq('agency_id', agencyId)
     .eq('buyer_id', buyerId)
     .eq('kind', 'visit_voucher')
     .order('signed_at', { ascending: false });
+  if (error) return null;
   return (data ?? []).map((row) => {
     const biens = (row.fields as { biens?: { label?: unknown }[] } | null)?.biens ?? [];
     return {

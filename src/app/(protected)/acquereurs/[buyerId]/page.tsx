@@ -477,7 +477,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           ) : null}
 
           {/* Mission 137 — ses bons de visite : gardés sur la fiche, même ses visites toutes faites. */}
-          {ownVisits.length > 0 || signedVouchers.length > 0 ? (
+          {ownVisits.length > 0 || signedVouchers == null || signedVouchers.length > 0 ? (
             <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-vouchers">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
@@ -493,7 +493,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   </Link>
                 ) : null}
               </div>
-              {signedVouchers.length === 0 ? (
+              {signedVouchers == null ? (
+                <p role="alert" className="text-sm font-semibold text-red-700">
+                  Les bons de visite n’ont pas pu être lus : rechargez la page.
+                </p>
+              ) : signedVouchers.length === 0 ? (
                 <p className="text-sm text-zinc-600 stage:text-white/70">
                   Aucun bon signé pour l’instant.
                 </p>
