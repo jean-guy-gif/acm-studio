@@ -333,7 +333,8 @@ demande de Laurent.
 
 ### Quand un visiteur demande l'effacement
 
-1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites).
+1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites et leurs
+   comptes rendus, biens écartés pour lui et envois notés, missions 135 et 139).
 2. Ses documents signés de moins de cinq ans **restent** : le dire au demandeur (« conservés jusqu'au
    JJ/MM/AAAA au titre de la preuve du droit à commission, art. 17.3.e RGPD »), avec la date.
 3. Compter avant et après (`:nom` = le nom tel qu'il est sur le bon) :
