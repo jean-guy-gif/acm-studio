@@ -326,6 +326,11 @@ il est effacé. Il ne disparaît ni avec la fiche de l'acquéreur (`buyer_id` de
 document garde ses propres champs), ni avec le compte du conseiller (`created_by` devient vide) ;
 les images de signature restent dans le bucket privé `signed-documents`.
 
+Supprimer le compte d'un conseiller : ses fiches acquéreur passent à un manager de l'agence (sinon à
+un autre membre non retiré), ses bons signés restent sans auteur ; ses dossiers vendeur, eux,
+bloquent toujours la suppression (`projects.advisor_id` sans action) — les réattribuer d'abord, sur
+demande de Laurent.
+
 ### Quand un visiteur demande l'effacement
 
 1. Effacer la fiche acquéreur comme d'habitude (elle emporte sélections, réponses, visites).
