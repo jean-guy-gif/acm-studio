@@ -138,6 +138,8 @@ export type SellerSaidInput = {
   launchReadinessMissing: string | null;
   // « Durée du Live : 41 min » (M95), déjà formulée ; null si elle n'a pas été mesurée.
   liveDuration: string | null;
+  // Mission 133 — les acquéreurs prêts montrés pendant le Live ; null s'ils ne l'ont pas été.
+  buyersShownCount?: number | null;
 };
 
 export type SellerSaid = {
@@ -150,8 +152,14 @@ export type SellerSaid = {
   readiness: string | null;
   readinessMissing: string | null;
   liveDuration: string | null;
+  // « 7 acquéreurs montrés au rendez-vous ».
+  buyersShown: string | null;
   priceDrops: string | null;
 };
+
+export function buyersShownLabel(count: number | null | undefined): string | null {
+  return count != null && count > 0 ? `${count} acquéreurs montrés au rendez-vous` : null;
+}
 
 export const CURRENT_PRICES_NOTE = 'face aux prix affichés aujourd’hui';
 
@@ -188,6 +196,7 @@ export function buildSellerSaid(input: SellerSaidInput): SellerSaid | null {
     readiness,
     readinessMissing: input.launchReadinessMissing?.trim() || null,
     liveDuration: input.liveDuration,
+    buyersShown: buyersShownLabel(input.buyersShownCount),
     priceDrops: priceDropsLabel(priceDropsSinceMeeting(input.competitors)),
   };
 
@@ -198,6 +207,7 @@ export function buildSellerSaid(input: SellerSaidInput): SellerSaid | null {
     said.readiness == null &&
     said.readinessMissing == null &&
     said.liveDuration == null &&
+    said.buyersShown == null &&
     said.priceDrops == null;
   return empty ? null : said;
 }

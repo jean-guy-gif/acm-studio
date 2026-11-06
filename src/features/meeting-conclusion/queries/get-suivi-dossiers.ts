@@ -66,12 +66,16 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
     // Mission 94 — le prix reformulé par le vendeur, figé dans le résumé du Live.
     supabase
       .from('live_seller_summary')
-      .select('project_id, seller_revised_property_price')
+      .select('project_id, seller_revised_property_price, buyers_shown_count')
       .in('project_id', ids)
       .eq('agency_id', agencyId),
   ]);
   const revisedByProject = new Map(
     (revisedRes.data ?? []).map((row) => [row.project_id, row.seller_revised_property_price]),
+  );
+  // Mission 133 — les acquéreurs prêts montrés au rendez-vous.
+  const buyersShownByProject = new Map(
+    (revisedRes.data ?? []).map((row) => [row.project_id, row.buyers_shown_count]),
   );
 
   const propertyByProject = new Map<string, PreparationProperty>();
@@ -94,6 +98,7 @@ export async function getSuiviDossiers(): Promise<SuiviDossier[]> {
       commercializationPrice: row.commercialization_price,
       sellerPerceivedPrice: row.frozen_seller_perceived_price,
       sellerRevisedPrice: revisedByProject.get(row.project_id) ?? null,
+      buyersShownCount: buyersShownByProject.get(row.project_id) ?? null,
       launchReadinessFirst: row.frozen_launch_readiness_first,
       launchReadinessLast: row.frozen_launch_readiness_last,
       launchReadinessMissing: row.frozen_launch_readiness_missing,

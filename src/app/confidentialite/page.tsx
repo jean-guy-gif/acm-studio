@@ -177,7 +177,12 @@ export default function ConfidentialitePage() {
               sur demande. Le conseiller peut aussi noter l’état de son financement (validé, en
               cours ou inconnu, sans montant ni justificatif) et le jour de son dernier échange avec
               lui ; l’outil en déduit, sans rien envoyer, s’il est prêt à visiter ou s’il est à
-              recontacter, pour la seule agence.
+              recontacter, pour la seule agence. Pendant un rendez-vous avec un vendeur, et
+              seulement si le conseiller le choisit, l’outil peut montrer combien d’acquéreurs prêts
+              de l’agence cherchent un bien comme le sien, sous une forme anonyme : les communes
+              cherchées, le budget en fourchette arrondie, « financement validé » et depuis combien
+              de semaines il cherche — jamais un nom, un téléphone, un e-mail ni une note ; l’agence
+              garde le jour où ils ont été montrés et leur nombre.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

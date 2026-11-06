@@ -49,6 +49,9 @@ import {
 } from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
 import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
+import { LiveBuyersBadge } from '@/features/live-seller/components/live-buyers-badge';
+import { showBuyersToSeller } from '@/features/live-seller/actions/show-buyers-to-seller';
+import type { LiveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 import { livePositionKey } from '@/features/live-seller/services/live-resume';
 import { pendingBeforeAnalysis } from '@/features/live-seller/services/pending-before-analysis';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
@@ -87,6 +90,7 @@ export function LiveComparativeShell({
   agencyName = null,
   hasAgreedPrice = false,
   presentationMode = 'interactive',
+  buyersReveal = null,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -115,6 +119,8 @@ export function LiveComparativeShell({
   // Mission 131 — Live interactif ou présentation directe ; le conseiller en change en cours de
   // route par le menu « Réglages » (ce qui a été répondu est gardé).
   presentationMode?: 'interactive' | 'direct';
+  // Mission 133 — les acquéreurs prêts de l'agence, anonymes ; null sous 5 (rien ne part alors).
+  buyersReveal?: LiveBuyersReveal | null;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -1139,6 +1145,16 @@ export function LiveComparativeShell({
           </button>
         </div>
       </header>
+
+      {/* Mission 133 — le compteur caché : une pastille neutre, après l'introduction, en Live
+          interactif comme en présentation directe ; le moment montré est noté en fond, suivi comme
+          les autres enregistrements de fond (journal, « Relancer », M92, M100). */}
+      {!isIntro && buyersReveal ? (
+        <LiveBuyersBadge
+          reveal={buyersReveal}
+          onShow={() => runBackground('buyers-shown', () => showBuyersToSeller(projectId))}
+        />
+      ) : null}
 
       {/* Progression : fine, élégante, jamais envahissante. */}
       {!isIntro ? (

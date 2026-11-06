@@ -183,8 +183,16 @@ describe('le bloc n’affiche que des données existantes', () => {
       readiness: null,
       readinessMissing: null,
       liveDuration: null,
+      buyersShown: null,
       priceDrops: null,
     });
+  });
+
+  // Mission 133 — les acquéreurs prêts montrés pendant le Live, côté conseiller.
+  it('les acquéreurs montrés au rendez-vous, seulement s’ils l’ont été', () => {
+    const said = buildSellerSaid({ ...NOTHING, buyersShownCount: 7 });
+    expect(said?.buyersShown).toBe('7 acquéreurs montrés au rendez-vous');
+    expect(buildSellerSaid({ ...NOTHING, buyersShownCount: null })).toBeNull();
   });
 
   it('le vendeur a passé l’écran du prix reformulé : le chemin saute cette étape', () => {

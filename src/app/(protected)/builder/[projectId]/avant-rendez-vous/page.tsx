@@ -34,6 +34,8 @@ import {
   tooManyCompetitorsNote,
 } from '@/features/before-meeting/services/live-sequence';
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
+import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {
   EXPORT_COMPARISON_HINT,
@@ -134,6 +136,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     pendingImports,
     launch,
     profile,
+    buyers,
   ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
@@ -147,6 +150,13 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     // sont nommés ; les concurrents écartés du calcul sont comptés.
     getLiveLaunchInfo(projectId),
     getProfile(),
+    // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple
+    // (le profil est déjà lu pour cette requête, `cache` de React, M128 B).
+    project.is_example
+      ? undefined
+      : getProfile().then((viewer) =>
+          viewer ? getPropertyBuyers(viewer.agency_id, projectId, new Date()) : undefined,
+        ),
   ]);
 
   const generatedAt = new Date().toISOString();
@@ -442,6 +452,15 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
           )
         }
       />
+
+      {buyers !== undefined ? (
+        <PropertyBuyersBlock
+          result={buyers}
+          projectId={projectId}
+          canPropose={false}
+          advisorFirstName={profile?.first_name ?? null}
+        />
+      ) : null}
 
       {/* Mission 110 — au-delà de 6 retenus : les concurrents montrés au Live, modifiables tant
           que le Live n'a pas commencé. */}

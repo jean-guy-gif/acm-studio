@@ -131,6 +131,9 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 05/11 · M131 · Le test « rien en dehors de guardedSave » refuse tout `await` d'une fonction maison dans la scène du Live, même si elle passe elle-même par `guardedSave` : l'appeler avec `void`.
 - 05/11 · M131 · E2E d'un réglage enregistré « dès qu'il change » (transition) : attendre que les choix se réactivent avant de recharger, sinon le rechargement coupe l'action et l'ancien choix revient ; `innerText` rend les libellés en capitales (CSS) : comparer sans la casse.
 - 05/11 · M131 · `comparables.price` est NOT NULL : un cas de test « concurrent sans prix » ne s'insère pas ; le gardien proposait une défense pour ce cas, gardée, mais son test retiré.
+- 06/11 · M132 · Deux `parisDay` existent : celui de `point-day.ts` rend « jj/mm/aaaa » (affichage), celui de `follow-up-contacts` « aaaa-mm-jj » (calcul) ; compter des jours avec le premier donnait des écarts faux. Pour un calcul, `parisDay` de `follow-up-contacts` et `daysBetween`.
+- 06/11 · M132 · Une regex de clés d'environnement `^[A-Z_]+=` ne lit pas `E2E_EMAIL` (le chiffre) ; et `npm test` hors CI exige `NEXT_PUBLIC_SUPABASE_URL` et `…_ANON_KEY` (six fichiers tombent sans elles, sur `main` aussi) : les poser comme la CI, valeurs factices.
+- 06/11 · M132 · Le serveur local (`next dev`) parle à la base Supabase LOCALE (127.0.0.1:54321) : sans `supabase start`, la connexion répond « indisponible ». Une mise en page se mesure plus vite sur l'essai (déploiement ≈ 3 min, script Playwright avec l'en-tête de contournement Vercel) ; e2e parcours 2,7 à 2,8 min, la saisie rapide 1,8 s (Playwright tape d'un coup : les 30 s se vérifient au pouce).
 
 ## La base
 
