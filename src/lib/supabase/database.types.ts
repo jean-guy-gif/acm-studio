@@ -311,6 +311,74 @@ export type Database = {
           },
         ]
       }
+      buyer_events: {
+        Row: {
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          occurred_at: string
+          reason: string | null
+          selection_id: string | null
+          summary: string | null
+        }
+        Insert: {
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          occurred_at?: string
+          reason?: string | null
+          selection_id?: string | null
+          summary?: string | null
+        }
+        Update: {
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          occurred_at?: string
+          reason?: string | null
+          selection_id?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_events_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_events_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_events_selection_id_fkey"
+            columns: ["selection_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_selections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_item_responses: {
         Row: {
           agency_id: string

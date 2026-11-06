@@ -188,6 +188,8 @@ export type TimelineInput = {
   letters?: { at: string; label: string }[];
   // Mission 134 — les biens proposés : « Maison · 5 pièces · 140 m² · Vence proposée le 06/11 ».
   proposals?: { at: string; label: string }[];
+  // Mission 135 — ses relances et les ajustements de sa recherche.
+  events?: { at: string; kind: 'relaunch' | 'search_adjusted'; summary: string | null }[];
   visits: {
     requestedAt: string;
     visitedAt: string | null;
@@ -216,6 +218,15 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
   if (input.linkAt) entries.push({ at: input.linkAt, text: 'Lien de sa sélection envoyé' });
   if (input.answeredAt)
     entries.push({ at: input.answeredAt, text: 'Sa réponse reçue par le lien' });
+  for (const event of input.events ?? []) {
+    entries.push({
+      at: event.at,
+      text:
+        event.kind === 'relaunch'
+          ? 'Relancé : sa sélection restée sans réponse'
+          : `Recherche ajustée : ${event.summary ?? ''}`.trim(),
+    });
+  }
   for (const proposal of input.proposals ?? []) {
     entries.push({ at: proposal.at, text: `Bien proposé : ${proposal.label}` });
   }

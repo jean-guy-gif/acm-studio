@@ -27,8 +27,16 @@ import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
 // vendeur à relancer avec un prix, concurrent retenu, nouveau venu, bien démarché), due à l'arrivée
 // du bien, jamais en retard ; elle compte les acquéreurs prêts à qui il n'a pas encore été proposé et
 // disparaît à zéro (M134 : les envois notés, `buyer_proposals`).
+// Mission 135 — `buyer_relaunch` : un lien de sélection resté 48 h sans réponse, « Relancer M. et Mme
+// Lambert : sélection envoyée le 04/11, pas de réponse » ; une 2e relance 5 jours après, pas au-delà.
 export type SuiviTaskKind =
-  'visit' | 'propose_buyers' | 'market_update' | 'prospect' | 'follow_up' | 'buyer_recontact';
+  | 'visit'
+  | 'propose_buyers'
+  | 'buyer_relaunch'
+  | 'market_update'
+  | 'prospect'
+  | 'follow_up'
+  | 'buyer_recontact';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
 // relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
@@ -37,9 +45,10 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   follow_up: 0,
   visit: 1,
   propose_buyers: 2,
-  market_update: 3,
-  buyer_recontact: 4,
-  prospect: 5,
+  buyer_relaunch: 3,
+  market_update: 4,
+  buyer_recontact: 5,
+  prospect: 6,
 };
 
 export type SuiviTask = {
@@ -68,6 +77,9 @@ export type SuiviTask = {
   origin?: 'mandate' | 'follow_up' | 'competitor' | 'newcomer' | 'prospect';
   property?: { propertyType: string | null; city: string | null };
   figures?: { surfaceArea: number | null; price: number | null };
+  // Mission 135 — la relance : le jour d'envoi de la sélection, et son lien expiré.
+  sentOn?: string;
+  linkExpired?: boolean;
 };
 
 export type SuiviTaskInput = {

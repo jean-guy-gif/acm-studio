@@ -68,6 +68,7 @@ export function taskHref(task: SuiviTask): string {
     case 'propose_buyers':
       return proposeHref(task.propertyKey ?? '');
     case 'buyer_recontact':
+    case 'buyer_relaunch':
       return `/acquereurs/${task.buyerId ?? ''}`;
   }
 }
@@ -155,6 +156,24 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Mission 135 — un lien de sélection resté sans réponse.
+    case 'buyer_relaunch': {
+      const sent = task.sentOn
+        ? `sélection envoyée le ${dayLabel(task.sentOn)}`
+        : 'sélection envoyée';
+      const parts = [
+        `${sent}, pas de réponse`,
+        task.count === 2 ? '2e relance' : null,
+        task.linkExpired ? 'lien expiré' : null,
+      ].filter(Boolean);
+      return {
+        title: `Relancer ${buyerInSentence(task.buyerName)}`,
+        detail: late ? `${parts.join(' · ')} · ` : parts.join(' · '),
+        late,
+        button: task.linkExpired ? 'Envoyer un nouveau lien' : 'Relancer',
+        href,
+      };
+    }
     // Mission 132 — un acquéreur sans échange depuis 30 jours.
     case 'buyer_recontact': {
       const since =
@@ -184,9 +203,11 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
           ? `démarcher les concurrents de ${next.sellerName}`
           : next.kind === 'buyer_recontact'
             ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
-            : next.kind === 'propose_buyers'
-              ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
-              : `organiser une visite chez ${next.sellerName}`;
+            : next.kind === 'buyer_relaunch'
+              ? `relancer ${buyerInSentence(next.buyerName)}`
+              : next.kind === 'propose_buyers'
+                ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
+                : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -347,6 +368,7 @@ export function cardStep(
     }
     // Une tâche d'acquéreur ou d'un bien à proposer ne tient à aucune carte du Suivi.
     case 'propose_buyers':
+    case 'buyer_relaunch':
     case 'buyer_recontact':
       return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };
   }
