@@ -73,6 +73,11 @@ export default async function VisitsPage() {
           Les visites demandées par vos acquéreurs, à planifier, puis faites avec leur retour.
         </p>
       </div>
+      {offerAnswers == null ? (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          Les réponses aux offres d’achat n’ont pas pu être lues : rechargez la page.
+        </p>
+      ) : null}
       {lines.length === 0 ? (
         <div className={emptyState}>
           Aucune demande de visite pour l’instant : elles naissent pendant une présentation ou
@@ -117,7 +122,7 @@ export default async function VisitsPage() {
                       line={line}
                       letter={letters.get(line.id) ?? null}
                       voucher={vouchers.get(line.id) ?? null}
-                      offerAnswer={offerAnswers.get(line.id) ?? null}
+                      offerAnswer={offerAnswers?.get(line.id) ?? null}
                     />
                   ))}
                 </ul>

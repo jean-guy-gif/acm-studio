@@ -106,6 +106,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <h1 className={pageTitle}>{project.seller_name}</h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <span className={badgeNeutral}>{statusLabel(project.status)}</span>
+          {/* Mission 138 — une lecture en échec le dit, jamais « aucune réponse » (M98). */}
+          {offerAnswers == null ? (
+            <span role="alert" className="text-xs font-semibold text-red-700">
+              Les réponses aux offres n’ont pas pu être lues : rechargez la page.
+            </span>
+          ) : null}
           {(offerAnswers ?? []).map((answer) => (
             <OfferAnswerBadge
               key={answer.documentId}

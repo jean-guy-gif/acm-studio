@@ -25,11 +25,14 @@ export function OfferAnswerTask({
   buyerId,
   visitId,
   decision,
+  offerHref,
 }: {
   offerId: string;
   buyerId: string;
   visitId: string | null;
   decision: OfferDecision;
+  // « Voir l'offre » : l'offre signée, et la réponse du vendeur.
+  offerHref: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<'buyer' | 'notary' | null>(null);
@@ -118,6 +121,9 @@ export function OfferAnswerTask({
             Faire une nouvelle offre
           </Link>
         )}
+        <Link href={offerHref} className={btnSecondary} data-testid="offer-answer-open">
+          Voir l’offre
+        </Link>
         <button
           type="button"
           className={btnSecondary}

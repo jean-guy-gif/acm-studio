@@ -259,7 +259,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     );
     return (
       <li
-        key={`${task.propertyKey ?? task.buyerId ?? task.projectId}-${task.kind}`}
+        key={`${task.offerId ?? task.propertyKey ?? task.buyerId ?? task.projectId}-${task.kind}`}
         data-testid={copy ? undefined : 'suivi-task'}
         className={`flex items-start gap-3 border-t border-zinc-100 py-2 first:border-0 sm:items-center stage:border-white/10 ${
           !copy && index >= TASKS_SHOWN_PHONE ? 'max-sm:hidden' : ''
@@ -302,13 +302,14 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 </Link>
               ))}
             </span>
-          ) : task.kind === 'offer_answer' && task.buyerId && task.offerId ? (
+          ) : task.kind === 'offer_answer' && task.buyerId && task.offerId && task.decision ? (
             // Mission 138 — la réponse du vendeur à une offre : ses suites, sur place.
             <OfferAnswerTask
               offerId={task.offerId}
               buyerId={task.buyerId}
               visitId={task.visitId ?? null}
-              decision={task.decision ?? 'accepted'}
+              decision={task.decision}
+              offerHref={line.href}
             />
           ) : task.kind === 'buyer_relaunch' && task.buyerId ? (
             // Mission 135 — la relance d'un lien sans réponse se fait sur place.

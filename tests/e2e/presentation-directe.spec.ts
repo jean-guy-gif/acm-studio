@@ -614,11 +614,11 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
 
 // Mission 137 (partie B) et 138 — l'offre d'achat : la démo arrive avec l'offre des Keller signée
 // et ACCEPTÉE par le vendeur ; sa tâche est en tête de « À faire aujourd'hui » : prévenir l'acquéreur
-// (un lien neuf vers sa copie), transmettre au notaire (son lien à part, qui montre l'acceptation),
-// « Fait » ; les Keller sont « Sous offre », les badges datés sont sur la fiche, la visite et le
+// (un lien neuf vers sa copie), transmettre au notaire (son lien à part, qui montre l'acceptation) ; les Keller sont « Sous offre », les badges datés sont sur la fiche, la visite et le
 // dossier vendeur. Puis une nouvelle offre depuis la visite (l'écran prévient de l'offre acceptée),
 // valable jusqu'à demain : son échéance est rappelée ; le vendeur la refuse sur son lien : « L'offre
-// des Keller est refusée », « Faire une nouvelle offre ».
+// des Keller est refusée », « Faire une nouvelle offre » ; les deux tâches côte à côte, « Fait »
+// sur chacune.
 test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée', async ({
   page,
   browser,
@@ -705,19 +705,6 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     );
   });
 
-  await test.step('« Fait » ferme la tâche', async () => {
-    await page.goto('/suivi');
-    const task = page
-      .getByTestId('suivi-task')
-      .filter({ hasText: 'Le vendeur a accepté l’offre de la famille Keller' });
-    await task.getByTestId('offer-answer-mark-done').click();
-    await expect(page.getByTestId('offer-answer-done')).toBeVisible();
-    await page.reload();
-    await expect(page.getByText('Le vendeur a accepté l’offre de la famille Keller')).toHaveCount(
-      0,
-    );
-  });
-
   await test.step('L’offre signée s’ouvre : couverture, texte validé', async () => {
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller' }).click();
@@ -769,7 +756,8 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     expect(sellerLink).toMatch(/\/offre\/[A-Za-z0-9_-]{43}$/);
     await expect(page.getByText(/\bM\d{2,3}\b/)).toHaveCount(0);
     await page.goto('/suivi');
-    await expect(page.getByTestId('suivi-task').first()).toContainText(
+    // Sous la réponse de la première offre (en tête), l'échéance de la nouvelle, avant tout le reste.
+    await expect(page.getByTestId('suivi-task').nth(1)).toContainText(
       'L’offre de la famille Keller expire demain',
     );
   });
@@ -786,8 +774,11 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     await context.close();
     await page.goto('/suivi');
     await expect(page.getByText('L’offre de la famille Keller expire demain')).toHaveCount(0);
-    const task = page.getByTestId('suivi-task').first();
-    await expect(task).toContainText('L’offre des Keller est refusée');
+    // Les deux réponses, chacune sa tâche et son message (jamais l'état de l'une sur l'autre).
+    const task = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: 'L’offre des Keller est refusée' });
+    await expect(task).toHaveCount(1);
     await expect(task.getByTestId('offer-answer-notary')).toHaveCount(0);
     await task.getByTestId('offer-answer-buyer').click();
     await expect(task.getByTestId('offer-answer-message-buyer')).toContainText(
@@ -797,6 +788,36 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     await expect(task.getByTestId('offer-answer-new-offer')).toHaveAttribute(
       'href',
       /\/acquereurs\/[0-9a-f-]{36}\/offre\?visite=[0-9a-f-]{36}$/,
+    );
+    const accepted = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: 'Le vendeur a accepté l’offre de la famille Keller' });
+    await accepted.getByTestId('offer-answer-buyer').click();
+    await expect(accepted.getByTestId('offer-answer-message-buyer')).toContainText(
+      'Bonne nouvelle',
+    );
+    await expect(task.getByTestId('offer-answer-message-buyer')).not.toContainText(
+      'Bonne nouvelle',
+    );
+    await expect(accepted.getByTestId('offer-answer-open')).toHaveAttribute(
+      'href',
+      /\/acquereurs\/[0-9a-f-]{36}\/offre\/[0-9a-f-]{36}$/,
+    );
+    // « Fait » ferme une tâche, et seulement elle.
+    await task.getByTestId('offer-answer-mark-done').click();
+    await expect(task.getByTestId('offer-answer-done')).toBeVisible();
+    await expect(accepted.getByTestId('offer-answer-done')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText('L’offre des Keller est refusée')).toHaveCount(0);
+    await page
+      .getByTestId('suivi-task')
+      .filter({ hasText: 'Le vendeur a accepté l’offre de la famille Keller' })
+      .getByTestId('offer-answer-mark-done')
+      .click();
+    await expect(page.getByTestId('offer-answer-done')).toBeVisible();
+    await page.reload();
+    await expect(page.getByText('Le vendeur a accepté l’offre de la famille Keller')).toHaveCount(
+      0,
     );
     // Un refus ne change pas le statut : les Keller restent « Sous offre » (la première offre).
     await page.goto('/acquereurs');

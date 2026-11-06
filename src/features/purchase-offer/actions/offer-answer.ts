@@ -88,6 +88,7 @@ async function createLink(
 // « la maison de Mougins », lu sur le bien vendeur du dossier ; sinon l'adresse de l'offre.
 async function propertyOf(
   admin: Admin,
+  agencyId: string,
   projectId: string,
   propertyAddress: string,
 ): Promise<string> {
@@ -95,8 +96,9 @@ async function propertyOf(
     .from('subject_properties')
     .select('property_type, city')
     .eq('project_id', projectId)
+    .eq('agency_id', agencyId)
     .maybeSingle();
-  if (!data) return `le bien du ${propertyAddress}`;
+  if (!data) return `le bien situé ${propertyAddress}`;
   return propertyPhrase({ propertyType: data.property_type, city: data.city });
 }
 
@@ -120,7 +122,12 @@ export async function prepareOfferBuyerMessage(
     message: offerAnswerBuyerMessage({
       decision: offer.decision,
       buyerName: offer.buyer.name,
-      property: await propertyOf(admin, offer.fields.projectId, offer.fields.propertyAddress),
+      property: await propertyOf(
+        admin,
+        profile.agency_id,
+        offer.fields.projectId,
+        offer.fields.propertyAddress,
+      ),
       decidedAt: offer.decidedAt,
       url,
       advisorFirstName: profile.first_name,

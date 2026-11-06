@@ -41,20 +41,21 @@ function answerOf(row: Row): OfferAnswer | null {
 const latest = (a: OfferAnswer, b: OfferAnswer | undefined): OfferAnswer =>
   !b || a.decidedAt > b.decidedAt ? a : b;
 
-// Visite → la réponse la plus récente à une offre née d'elle. Une lecture en échec ne montre aucun
-// badge (l'offre reste lisible sur la fiche).
+// Visite → la réponse la plus récente à une offre née d'elle ; null si la lecture échoue (jamais
+// « aucune réponse », M98).
 export async function getVisitOfferAnswers(
   supabase: SupabaseClient<Database>,
   visitIds: string[],
-): Promise<Map<string, OfferAnswer>> {
+): Promise<Map<string, OfferAnswer> | null> {
   if (visitIds.length === 0) return new Map();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('buyer_document_visits')
     .select(
       'visit_request_id, buyer_documents!inner(id, buyer_id, kind, buyers(name), buyer_document_acceptances(decision, decided_at))',
     )
     .eq('buyer_documents.kind', 'purchase_offer')
     .in('visit_request_id', visitIds);
+  if (error) return null;
   const answers = new Map<string, OfferAnswer>();
   for (const row of data ?? []) {
     const answer = answerOf(row.buyer_documents as unknown as Row);
