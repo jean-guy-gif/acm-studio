@@ -9,6 +9,8 @@ import {
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
+import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
 import { ProspectingSection } from '@/features/competitor-locator/components/prospecting-section';
 import { withCardOpposition } from '@/features/prospecting/queries/prospecting-card-store';
@@ -22,6 +24,7 @@ import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launc
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { statusLabel } from '@/features/projects/status-label';
+import { getProfile } from '@/lib/auth/get-profile';
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
@@ -58,7 +61,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   // Mission 128 B — ce qui ne dépend que du dossier part ensemble.
-  const [conclusion, launch, reopenings, hasCompetitorsToLocate] = await Promise.all([
+  const [conclusion, launch, reopenings, hasCompetitorsToLocate, profile] = await Promise.all([
     // Mission 75 — mandat signé : les concurrents retenus deviennent une liste à prospecter.
     project.status === 'meeting_completed' ? getConclusion(projectId) : null,
     getLiveLaunchInfo(projectId),
@@ -67,7 +70,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     // Mission 128 B — la veille du Localisateur ne part que s'il reste une adresse à demander ;
     // un dossier conclu attend sa conclusion (un mandat signé a sa propre veille, en prospection).
     project.status === 'meeting_completed' ? null : hasSelectedCompetitorsToLocate(projectId),
+    getProfile(),
   ]);
+  // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple.
+  const buyers =
+    profile && !project.is_example
+      ? await getPropertyBuyers(profile.agency_id, projectId, new Date())
+      : undefined;
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
@@ -175,6 +184,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Link>
         ) : null}
       </div>
+
+      {buyers !== undefined ? (
+        <PropertyBuyersBlock
+          result={buyers}
+          projectId={projectId}
+          canPropose={conclusion?.outcome === 'signed'}
+          advisorFirstName={profile?.first_name ?? null}
+        />
+      ) : null}
 
       {prospectingRows ? (
         <ProspectingSection projectId={projectId} rows={prospectingRows} />

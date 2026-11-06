@@ -11,6 +11,8 @@ import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
+import { liveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-project-status';
 import { isLiveClosed } from '@/features/live-seller/services/live-closed';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
@@ -106,7 +108,14 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     getProfile(),
     getConclusion(projectId),
   ]);
-  const agency = profile ? await getAgency(profile.agency_id) : null;
+  const [agency, buyers] = profile
+    ? await Promise.all([
+        getAgency(profile.agency_id),
+        // Mission 133 — les acquéreurs prêts de l'agence pour ce bien : sous 5, rien ne part vers
+        // la scène ; jamais pour un dossier d'exemple.
+        project.is_example ? null : getPropertyBuyers(profile.agency_id, projectId, new Date()),
+      ])
+    : [null, null];
 
   return (
     <LiveComparativeShell
@@ -122,6 +131,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       agencyName={agency?.name ?? null}
       hasAgreedPrice={conclusion?.commercializationPrice != null}
       presentationMode={presentationMode}
+      buyersReveal={liveBuyersReveal(buyers, new Date())}
     />
   );
 }

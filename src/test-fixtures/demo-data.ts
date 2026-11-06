@@ -217,6 +217,8 @@ export const demoAnsweredSummary: LiveSellerSummary = {
   agency_id: 'demo',
   seller_most_dangerous_comparable_id: 'demo-a',
   advisor_closest_comparable_id: null,
+  buyers_shown_at: null,
+  buyers_shown_count: null,
   seller_most_dangerous_reason: 'better_condition',
   seller_most_dangerous_comment: null,
   seller_perceived_property_price: 398000,

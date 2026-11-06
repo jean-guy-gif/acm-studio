@@ -100,6 +100,10 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     notes: 'Quittent Paris ; accord de principe de leur banque.',
     budgetIdeal: 740_000,
     budgetMax: 790_000,
+    // Mission 133 — la piscine est indispensable : la maison des Bernard en a une, pas celle de
+    // Mme Garcia (décision de Jean-Guy, 06/11).
+    pool: true,
+    mustHave: ['cities', 'pool'],
     contactedDaysAgo: 2,
   }),
   venceHouse({

@@ -44,6 +44,11 @@ export function SellerSaidBlock({ said }: { said: SellerSaid }) {
         </p>
       ) : null}
       {said.liveDuration ? <p className={line}>{said.liveDuration}.</p> : null}
+      {said.buyersShown ? (
+        <p className={line} data-testid="seller-said-buyers-shown">
+          {said.buyersShown}.
+        </p>
+      ) : null}
     </section>
   );
 }

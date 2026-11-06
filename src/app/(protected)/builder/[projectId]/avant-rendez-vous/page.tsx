@@ -34,6 +34,8 @@ import {
   tooManyCompetitorsNote,
 } from '@/features/before-meeting/services/live-sequence';
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
+import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {
   EXPORT_COMPARISON_HINT,
@@ -148,6 +150,12 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     getLiveLaunchInfo(projectId),
     getProfile(),
   ]);
+
+  // Mission 133 — les acquéreurs de l'agence pour ce bien ; jamais pour un dossier d'exemple.
+  const buyers =
+    profile && !project.is_example
+      ? await getPropertyBuyers(profile.agency_id, projectId, new Date())
+      : undefined;
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({
@@ -442,6 +450,15 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
           )
         }
       />
+
+      {buyers !== undefined ? (
+        <PropertyBuyersBlock
+          result={buyers}
+          projectId={projectId}
+          canPropose={false}
+          advisorFirstName={profile?.first_name ?? null}
+        />
+      ) : null}
 
       {/* Mission 110 — au-delà de 6 retenus : les concurrents montrés au Live, modifiables tant
           que le Live n'a pas commencé. */}

@@ -31,7 +31,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   // Mission 94 — le prix reformulé par le vendeur, figé dans le résumé du Live.
   const { data: summary } = await supabase
     .from('live_seller_summary')
-    .select('seller_revised_property_price')
+    .select('seller_revised_property_price, buyers_shown_count')
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
@@ -42,6 +42,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
     commercializationPrice: data.commercialization_price,
     sellerPerceivedPrice: data.frozen_seller_perceived_price,
     sellerRevisedPrice: summary?.seller_revised_property_price ?? null,
+    buyersShownCount: summary?.buyers_shown_count ?? null,
     launchReadinessFirst: data.frozen_launch_readiness_first,
     launchReadinessLast: data.frozen_launch_readiness_last,
     launchReadinessMissing: data.frozen_launch_readiness_missing,

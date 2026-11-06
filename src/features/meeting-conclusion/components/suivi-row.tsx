@@ -264,6 +264,7 @@ export function SuiviRow({
   step,
   frieze,
   initialPanel = null,
+  readyBuyers = null,
 }: {
   dossier: SuiviDossier;
   followUp: DossierFollowUp;
@@ -271,6 +272,9 @@ export function SuiviRow({
   step: CardStep;
   frieze: SuiviFrieze | null;
   initialPanel?: 'relance' | 'point' | null;
+  // Mission 133 — un mandat signé : ses acquéreurs prêts (« Acquéreurs · 7 », vers le bloc du
+  // dossier) ; null hors mandat signé ou lecture en échec.
+  readyBuyers?: number | null;
 }) {
   const [panel, setPanel] = useState<Panel>(initialPanel);
   const [relancedOn, setRelancedOn] = useState<string | null>(null);
@@ -506,6 +510,15 @@ export function SuiviRow({
               )
             ) : null}
             <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 whitespace-nowrap">
+              {readyBuyers != null && readyBuyers > 0 ? (
+                <Link
+                  href={`/builder/${project.id}#acquereurs`}
+                  data-testid="suivi-link-buyers"
+                  className={`${link} text-sm font-semibold`}
+                >
+                  Acquéreurs · {readyBuyers}
+                </Link>
+              ) : null}
               {links.map((item) =>
                 item.key === 'prospection' ? (
                   <Link

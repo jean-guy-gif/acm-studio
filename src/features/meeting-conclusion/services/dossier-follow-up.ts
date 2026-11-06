@@ -60,6 +60,7 @@ export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollow
     launchReadinessLast: conclusion?.launchReadinessLast ?? null,
     launchReadinessMissing: conclusion?.launchReadinessMissing ?? null,
     liveDuration: liveDurationLabel(input.liveStartedAt, input.liveEndedAt),
+    buyersShownCount: conclusion?.buyersShownCount ?? null,
   });
 
   if (conclusion?.outcome !== 'follow_up') {
