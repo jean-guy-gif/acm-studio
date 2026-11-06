@@ -206,8 +206,23 @@ describe('signer l’offre d’achat', () => {
         { ...context().visits[0]!, mandateNumber: 'M-0', fees: 60_000, feesPaidBy: 'buyer' },
       ],
     });
-    await signPurchaseOffer(input());
+    await signPurchaseOffer(input({ mandateNumber: 'M-AUTRE' }));
     expect(state.writes.some(([table]) => table === 'project_meeting_conclusions')).toBe(false);
+    // Le n° gardé sur la conclusion l'emporte sur celui du navigateur.
+    const offer = state.writes[0]![2] as {
+      rendered_text: string;
+      fields: { mandateNumber: string };
+    };
+    expect(offer.rendered_text).toContain('sous le numéro M-0 .');
+    expect(offer.rendered_text).not.toContain('M-AUTRE');
+    expect(offer.fields.mandateNumber).toBe('M-0');
+  });
+
+  it('sans « Lu et approuvé » : refusé, rien n’est écrit', async () => {
+    expect((await signPurchaseOffer(input({ approved: false }))).ok).toBe(false);
+    expect((await signPurchaseOffer({ ...input(), approved: undefined })).ok).toBe(false);
+    expect(state.writes).toEqual([]);
+    expect(state.uploads).toEqual([]);
   });
 
   it('refusé sans rien écrire : avec prêt, sans cadastre, périmée, copropriété sans lot, bien hors mandat, identité incomplète', async () => {

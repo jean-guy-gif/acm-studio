@@ -90,7 +90,8 @@ export function sharesBaseInWords(base: number): string {
   const words = numberInWords(base);
   const cut = Math.max(words.lastIndexOf(' '), words.lastIndexOf('-')) + 1;
   const head = words.slice(0, cut);
-  const last = words.slice(cut).replace(/s$/, '');
+  // Le « s » du pluriel de « cents » et « vingts » seulement (jamais celui de « trois »).
+  const last = words.slice(cut).replace(/^(cent|vingt)s$/, '$1');
   const ordinal =
     last === 'mille'
       ? 'millième'

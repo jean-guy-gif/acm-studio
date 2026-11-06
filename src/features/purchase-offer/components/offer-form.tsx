@@ -106,7 +106,8 @@ export function OfferForm({
   const [validUntil, setValidUntil] = useState(parisDay(7));
   const [contractDeadline, setContractDeadline] = useState(parisDay(45));
   const [signatures, setSignatures] = useState<(string | null)[]>([null, null]);
-  const [approved, setApproved] = useState(false);
+  // « Lu et approuvé » vaut pour le texte relu : s'il change ensuite, la case se décoche.
+  const [approvedText, setApprovedText] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{
@@ -188,6 +189,8 @@ export function OfferForm({
           }),
         )
       : null;
+
+  const approved = preview != null && approvedText === preview;
 
   const setOffrant = (index: number, patch: Partial<Offrant>) =>
     setOffrants((current) =>
@@ -583,8 +586,9 @@ export function OfferForm({
             type="checkbox"
             className="h-5 w-5 accent-brand"
             checked={approved}
+            disabled={preview == null}
             data-testid="offer-approved"
-            onChange={(event) => setApproved(event.target.checked)}
+            onChange={(event) => setApprovedText(event.target.checked ? preview : null)}
           />
           Lu et approuvé
         </label>
