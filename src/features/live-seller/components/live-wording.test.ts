@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { closingQuestion } from '@/features/live-seller/components/live-page-closing';
 import { NO_COMPETITOR_REASON } from '@/features/live-seller/services/live-launch';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
 const DIR = join(process.cwd(), 'src', 'features', 'live-seller', 'components');
 // Ce qui s'affiche : le code sans ses commentaires.
@@ -19,6 +20,15 @@ const shown = (file: string): string =>
 const SELLER_SCREENS = readdirSync(DIR).filter((file) =>
   /^live-(page-.*|comparative-shell)\.tsx$/.test(file),
 );
+// Mission 140 — les mots des écrans vivent dans les textes du client : le français y est relu par
+// les mêmes contrôles que le code des écrans (`shownTexts`), et chaque écran lit sa clé.
+const shownTexts = (): string =>
+  readFileSync(join(process.cwd(), 'src', 'lib', 'client-texts', 'fr.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('//'))
+    .join('\n');
+const FR = FRENCH_TEXTS.live;
 
 describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
   it('ne parle plus du vendeur à la 3e personne sur son propre écran', () => {
@@ -29,15 +39,23 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
       ),
     );
     expect(offenders).toEqual([]);
+    expect(shownTexts()).not.toMatch(/(du|le|par le|au|un) vendeur\b|vendeur a en tête/i);
   });
 
   it('dit « vous » là où il disait « le vendeur »', () => {
-    expect(shown('live-page-competition.tsx')).toContain('Votre réponse');
-    expect(shown('live-page-price.tsx')).toContain('Le prix que vous imaginez');
-    expect(shown('live-page-price-reveal-pilot.tsx')).toContain('Selon vous, ce prix est…');
-    expect(shown('live-page-duration.tsx')).toContain('Selon vous, pourquoi ?');
-    expect(shown('live-page-duration.tsx')).toContain('La durée que vous imaginez');
-    expect(shown('live-page-perceived.tsx')).toContain('Votre valeur perçue');
+    expect(FRENCH_TEXTS.common.yourAnswer).toBe('Votre réponse');
+    expect(shown('live-page-competition.tsx')).toContain('texts.common.yourAnswer');
+    expect(FR.price.label).toBe('Le prix que vous imaginez');
+    expect(shown('live-page-price.tsx')).toContain('texts.live.price');
+    expect(shown('live-page-price.tsx')).toContain('{t.label}');
+    expect(FR.priceReveal.legend).toBe('Selon vous, ce prix est…');
+    expect(shown('live-page-price-reveal-pilot.tsx')).toContain('{t.legend}');
+    expect(FR.duration.why).toBe('Selon vous, pourquoi ?');
+    expect(FR.duration.label).toBe('La durée que vous imaginez');
+    expect(shown('live-page-duration.tsx')).toContain('{t.why}');
+    expect(shown('live-page-duration.tsx')).toContain('{t.label}');
+    expect(FR.perceived.label).toBe('Votre valeur perçue');
+    expect(shown('live-page-perceived.tsx')).toContain('{t.label}');
   });
 
   it('ne donne aucune consigne au conseiller devant le vendeur', () => {
@@ -45,18 +63,25 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
       /préparez le dossier|dans la Préparation|Aucun bien concurrent retenu/i.test(shown(file)),
     );
     expect(offenders).toEqual([]);
+    expect(shownTexts()).not.toMatch(
+      /préparez le dossier|dans la Préparation|Aucun bien concurrent retenu/i,
+    );
   });
 
   it('appelle le prix calculé « Prix des concurrents », plus jamais « Prix conseillé »', () => {
-    expect(shown('live-page-conclusion.tsx')).toContain('Prix des concurrents');
+    expect(FR.conclusion.competitorPrice).toBe('Prix des concurrents');
+    expect(shown('live-page-conclusion.tsx')).toContain('{t.competitorPrice}');
     expect(SELLER_SCREENS.filter((file) => /Prix conseillé/i.test(shown(file)))).toEqual([]);
+    expect(shownTexts()).not.toMatch(/Prix conseillé/i);
   });
 
   it('ne montre qu’un prix calculé au vendeur : jamais « Marché calculé »', () => {
     expect(
       SELLER_SCREENS.filter((file) => /Marché calculé|marché calculé/.test(shown(file))),
     ).toEqual([]);
-    expect(shown('live-page-analysis.tsx')).toContain('Prix des concurrents');
+    expect(shownTexts()).not.toMatch(/Marché calculé|marché calculé/);
+    expect(FR.analysis.competitorPrice).toBe('Prix des concurrents');
+    expect(shown('live-page-analysis.tsx')).toContain('{t.competitorPrice}');
   });
 
   it('« Quitter » ne mène ni à la préparation ni à la liste des autres clients', () => {
@@ -65,7 +90,8 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
     // Mission 92 — un écran neutre, « Rendez-vous en pause » ; jamais la liste `/live`.
     expect(shell).toContain('router.push(`/live/${projectId}/pause`)');
     expect(shell).not.toContain("router.push('/live')");
-    expect(shell).toContain('Quitter le rendez-vous');
+    expect(FR.shell.quitTitle).toContain('Quitter le rendez-vous');
+    expect(shell).toContain('{t.quitTitle}');
     expect(shell).not.toMatch(/window\.confirm|confirm\(/);
   });
 });
@@ -128,9 +154,10 @@ describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
       /(du|le|par le|au|un) vendeur\b|Prix conseillé|Marché calculé/i.test(shownBorrowed(file)),
     );
     expect(offenders).toEqual([]);
-    expect(shownBorrowed('live-commercialization-price.tsx')).toContain(
+    expect(FR.conclusion.priceHint).toBe(
       'Le prix que nous retenons ensemble. Rien n’est pré-rempli.',
     );
+    expect(shownBorrowed('live-commercialization-price.tsx')).toContain('{t.priceHint}');
   });
 
   it('« Terminer le rendez-vous » ouvre l’écran neutre, jamais la conclusion du conseiller', () => {
@@ -152,7 +179,7 @@ describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
   });
 
   it('une réponse déjà donnée se relit sans champ de saisie', () => {
-    expect(shown('live-locked-answer.tsx')).toContain('Votre réponse');
+    expect(shown('live-locked-answer.tsx')).toContain('texts.common.yourAnswer');
     expect(shown('live-locked-answer.tsx')).not.toMatch(/<input|<textarea/);
     for (const file of [
       'live-page-price.tsx',
@@ -165,7 +192,8 @@ describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
 
   it('dit quand une réponse n’a pas pu être enregistrée, avec un bouton qui relance', () => {
     const shell = shown('live-comparative-shell.tsx');
-    expect(shell).toContain('Une réponse n’a pas pu être enregistrée — touchez Réessayer');
+    expect(FR.shell.failedSave).toBe('Une réponse n’a pas pu être enregistrée — touchez Réessayer');
+    expect(shell).toContain('t.failedSave');
     expect(shell).toMatch(/onClick=\{retryFailedSaves\}/);
   });
 });
@@ -173,9 +201,10 @@ describe('la fin du Live reste tournée vers le vendeur (mission 92)', () => {
 describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () => {
   it('l’écran du prix reformulé ne révèle rien et ne se corrige plus', () => {
     const screen = shown('live-page-revised.tsx');
-    expect(screen).toContain(
+    expect(FR.revised.question).toBe(
       'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
     );
+    expect(screen).toContain('{t.question}');
     expect(screen).toContain('LiveLockedAnswer');
     expect(screen).not.toMatch(/marketReading|priceGaps|competitiveMarketCentral|advisorRange/);
   });
@@ -190,9 +219,12 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
 
   it('« Analyse des prix » dit le chemin du vendeur, et plus « observé sur le marché »', () => {
     const analysis = shown('live-page-analysis.tsx');
-    expect(analysis).toContain('Au début');
-    expect(analysis).toContain('Après avoir vu le marché');
+    expect(FR.analysis.pathStart('X')).toContain('Au début');
+    expect(FR.analysis.pathAfter('X')).toContain('Après avoir vu le marché');
+    expect(analysis).toContain('t.pathStart(');
+    expect(analysis).toContain('t.pathAfter(');
     expect(analysis).not.toMatch(/observé sur le marché/);
+    expect(JSON.stringify(FR.analysis)).not.toMatch(/observé sur le marché/);
     // La bande ne lit que la lecture venue du serveur (concurrents révélés), jamais la liste
     // des concurrents elle-même.
     expect(analysis).toContain('reading.prices');
@@ -220,14 +252,17 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
       ),
       'utf8',
     );
-    for (const source of [analysis, glance]) {
-      expect(source).toContain("label: 'Baisse de prix connue'");
+    expect(glance).toContain("label: 'Baisse de prix connue'");
+    expect(FR.analysis.dropped).toBe('Baisse de prix connue');
+    expect(analysis).toContain('label: t.dropped');
+    for (const source of [analysis, glance, shownTexts()]) {
       expect(source).not.toMatch(/Ont déjà baissé/);
-      // La ligne n'existe que si un nombre de baisses est connu.
-      expect(source).toMatch(
-        /droppedCount != null\) \{\s+figures\.push\(\{\s+label: 'Baisse de prix connue'/,
-      );
     }
+    // La ligne n'existe que si un nombre de baisses est connu.
+    expect(glance).toMatch(
+      /droppedCount != null\) \{\s+figures\.push\(\{\s+label: 'Baisse de prix connue'/,
+    );
+    expect(analysis).toMatch(/droppedCount != null\) \{\s+figures\.push\(\{\s+label: t\.dropped/);
   });
 });
 
@@ -235,16 +270,16 @@ describe('le rythme accéléré parle au vendeur comme le reste du Live (mission
   it('les deux nouveaux écrans sont couverts par le contrôle de vocabulaire', () => {
     expect(SELLER_SCREENS).toContain('live-page-quick-guess.tsx');
     expect(SELLER_SCREENS).toContain('live-page-quick-reveal.tsx');
-    expect(shown('live-page-quick-guess.tsx')).toContain('Le prix que vous imaginez');
-    expect(shown('live-page-quick-reveal.tsx')).toContain('Votre réponse');
-    expect(shown('live-page-quick-reveal.tsx')).toContain('La durée que vous imaginez');
+    expect(shown('live-page-quick-guess.tsx')).toContain('texts.live.price.label');
+    expect(shown('live-page-quick-reveal.tsx')).toContain('texts.common.yourAnswer');
+    expect(shown('live-page-quick-reveal.tsx')).toContain('texts.live.duration.label');
   });
 
   it('l’écran 1 ne peut montrer aucun prix : il ne lit que la donnée projetée', () => {
     const guess = shown('live-page-quick-guess.tsx');
     expect(guess).toContain('entry: SellerComparable');
     expect(guess).not.toMatch(/AuthorizedSellerComparable|entry\.price|entry\.title|priceReveal/);
-    expect(guess).toContain('neutralComparableLabel(entry)');
+    expect(guess).toContain('neutralComparableLabel(entry, language)');
     expect(guess).toContain('LiveLockedAnswer');
   });
 
