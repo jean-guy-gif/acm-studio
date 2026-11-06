@@ -21,6 +21,13 @@ describe('isPublicPath', () => {
     expect(isPublicPath(`/acquereurs/x/bon-de-visite`)).toBe(false);
   });
 
+  it('ouvre l’offre d’achat par son jeton de 43 caractères, et rien d’autre (mission 137 B)', () => {
+    expect(isPublicPath(`/offre/${'A'.repeat(43)}`)).toBe(true);
+    expect(isPublicPath(`/offre/${'A'.repeat(44)}`)).toBe(false);
+    expect(isPublicPath('/offre')).toBe(false);
+    expect(isPublicPath(`/acquereurs/x/offre`)).toBe(false);
+  });
+
   it('ouvre la page de confidentialité sans connexion (mission 73)', () => {
     expect(isPublicPath('/confidentialite')).toBe(true);
   });

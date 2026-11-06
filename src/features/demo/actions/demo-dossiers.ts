@@ -32,6 +32,12 @@ import {
   voucherPrice,
 } from '@/features/visit-voucher/services/voucher-fields';
 import type { StoredVoucherFields } from '@/features/visit-voucher/services/voucher-input';
+import type { StoredOfferFields } from '@/features/purchase-offer/services/offer-input';
+import {
+  OFFER_TEMPLATE_VERSION,
+  renderOffer,
+  type OfferAgency,
+} from '@/features/purchase-offer/services/offer-text';
 import { SIGNATURE_BUCKET } from '@/features/visit-voucher/services/voucher-link';
 import {
   documentToText,
@@ -55,6 +61,7 @@ import {
   demoKellerRefusalsPlan,
   demoKellerWatchFinds,
   DEMO_VOUCHER_DAYS_AGO,
+  demoKellerOfferPlan,
   DEMO_VOUCHER_FEEDBACK,
   DEMO_VOUCHER_MANDATE,
   DEMO_VOUCHER_VISITOR,
@@ -186,6 +193,15 @@ async function deleteDemoVouchers(
     .eq('agency_id', closer.agencyId)
     .in('buyer_id', buyerIds);
   if (!documents || documents.length === 0) return;
+  // Mission 137 B — les signatures du vendeur d'une offre partent aussi (sa réponse suit l'offre).
+  const { data: answers } = await supabase
+    .from('buyer_document_acceptances')
+    .select('signature_paths')
+    .eq('agency_id', closer.agencyId)
+    .in(
+      'document_id',
+      documents.map((document) => document.id),
+    );
   await supabase
     .from('buyer_documents')
     .delete()
@@ -194,9 +210,10 @@ async function deleteDemoVouchers(
       'id',
       documents.map((document) => document.id),
     );
-  const paths = documents
-    .flatMap((document) => document.signature_paths)
-    .filter((path) => path.startsWith(`${closer.agencyId}/`));
+  const paths = [
+    ...documents.flatMap((document) => document.signature_paths),
+    ...(answers ?? []).flatMap((answer) => answer.signature_paths ?? []),
+  ].filter((path) => path.startsWith(`${closer.agencyId}/`));
   if (paths.length > 0) await supabase.storage.from(SIGNATURE_BUCKET).remove(paths);
 }
 
@@ -243,7 +260,7 @@ async function seedKellerVoucher(
         .maybeSingle(),
       supabase
         .from('subject_properties')
-        .select('address, postal_code, city')
+        .select('address, postal_code, city, photo_urls')
         .eq('project_id', mouginsProjectId)
         .maybeSingle(),
     ],
@@ -354,7 +371,120 @@ async function seedKellerVoucher(
     visit_request_id: visit.id,
     agency_id: closer.agencyId,
   });
-  return !linkError;
+  if (linkError) return false;
+  // Mission 137 B — et l'offre d'achat qui en est née.
+  return seedKellerOffer(supabase, closer, {
+    kellerId,
+    mouginsProjectId,
+    visitId: visit.id,
+    agency:
+      legal.identity.guaranteeAmount != null
+        ? { ...voucherAgencyFields, guaranteeAmount: legal.identity.guaranteeAmount }
+        : null,
+    propertyAddress: address,
+    price,
+    // La couverture : la première photo du bien vendeur (stockage privé, signée à l'affichage).
+    photoPath:
+      (Array.isArray(subject.data?.photo_urls) ? subject.data.photo_urls : []).find(
+        (path): path is string =>
+          typeof path === 'string' && path.startsWith(`${closer.agencyId}/${mouginsProjectId}/`),
+      ) ?? null,
+    now,
+  });
+}
+
+// Mission 137 B — l'offre d'achat complète des Keller sur le mandat de Mougins : deux offrants
+// inventés, sans prêt, signée aujourd'hui, valable jusqu'à demain (sa tâche d'échéance est due
+// aujourd'hui), sans réponse du vendeur ; le n° de mandat et les honoraires posés sur la conclusion.
+// Par les mêmes services que l'écran ; rien d'un modèle d'origine.
+async function seedKellerOffer(
+  supabase: Client,
+  closer: Closer,
+  input: {
+    kellerId: string;
+    mouginsProjectId: string;
+    visitId: string;
+    agency: OfferAgency | null;
+    propertyAddress: string;
+    price: number;
+    photoPath: string | null;
+    now: Date;
+  },
+): Promise<boolean> {
+  if (!input.agency) return true;
+  const plan = demoKellerOfferPlan(input.price, input.now);
+  const text = documentToText(
+    renderOffer({
+      ...plan.text,
+      agency: input.agency,
+      propertyAddress: input.propertyAddress,
+    }),
+  );
+  const fields: StoredOfferFields = {
+    agency: input.agency,
+    offrants: plan.offrants,
+    address: plan.text.address,
+    matrimonial: plan.text.matrimonial,
+    fiscalResidenceFrance: plan.text.fiscalResidenceFrance,
+    mandateNumber: plan.text.mandateNumber,
+    propertyAddress: input.propertyAddress,
+    price: plan.text.price,
+    validUntil: plan.validUntil,
+    cover: {
+      agencyName: input.agency.name,
+      agencyAddress: input.agency.address,
+      agencyPhone: input.agency.phone,
+      agencyEmail: input.agency.email,
+      agencySite: null,
+      photoPath: input.photoPath,
+    },
+    visitId: input.visitId,
+    projectId: input.mouginsProjectId,
+  };
+  const documentId = randomUUID();
+  const paths = [1, 2].map((index) => `${closer.agencyId}/${documentId}/signature-${index}.png`);
+  for (const path of paths) {
+    const { error } = await supabase.storage
+      .from(SIGNATURE_BUCKET)
+      .upload(path, Buffer.from(DEMO_SIGNATURE_PNG_BASE64, 'base64'), {
+        contentType: 'image/png',
+        upsert: false,
+      });
+    if (error) return false;
+  }
+  const { error } = await supabase.from('buyer_documents').insert({
+    id: documentId,
+    agency_id: closer.agencyId,
+    buyer_id: input.kellerId,
+    kind: 'purchase_offer',
+    template_version: OFFER_TEMPLATE_VERSION,
+    fields: fields as unknown as Json,
+    rendered_text: text,
+    content_sha256: '0'.repeat(64),
+    signature_paths: paths,
+    valid_until: plan.validUntil,
+    created_by: closer.id,
+  });
+  if (error) {
+    await supabase.storage.from(SIGNATURE_BUCKET).remove(paths);
+    return false;
+  }
+  const { error: visitError } = await supabase.from('buyer_document_visits').insert({
+    document_id: documentId,
+    visit_request_id: input.visitId,
+    agency_id: closer.agencyId,
+  });
+  if (visitError) return false;
+  await supabase
+    .from('project_meeting_conclusions')
+    .update({
+      mandate_number: plan.text.mandateNumber,
+      fees_amount: plan.text.fees,
+      fees_paid_by: plan.text.feesPaidBy,
+    })
+    .eq('project_id', input.mouginsProjectId)
+    .eq('agency_id', closer.agencyId);
+  return true;
 }
 
 // Mission 120 — les biens démarchés depuis les recherches de ses acquéreurs de démo : leurs origines

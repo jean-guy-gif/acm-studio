@@ -14,6 +14,7 @@ import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-
 import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
 import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
+import { getOfferTasks } from '@/features/purchase-offer/queries/get-offer-tasks';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
@@ -139,7 +140,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, pointRead, buyerRead, mandateRead, watchRead] =
+  const [{ cards }, insights, agency, pointRead, buyerRead, mandateRead, watchRead, offerRead] =
     await Promise.all([
       getAgencyProspecting(counted),
       getSellerInsights(projectIds),
@@ -158,6 +159,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
       // Mission 136 — ce que la veille de la nuit a trouvé pour les acquéreurs.
       profile ? getWatchTasks(profile.agency_id, new Date()) : { tasks: [], failed: false },
+      // Mission 137 B — les offres d'achat qui expirent.
+      profile ? getOfferTasks(profile.agency_id, new Date()) : { tasks: [], failed: false },
     ]);
   const marketUpdates = pointRead.byProject;
   const signature = {
@@ -210,6 +213,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     ...buyerRead.tasks,
     ...mandateRead.tasks,
     ...watchRead.tasks,
+    ...offerRead.tasks,
   ]);
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);
@@ -356,7 +360,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               pointRead.failed ||
               buyerRead.failed ||
               mandateRead.failed ||
-              watchRead.failed ? null : (
+              watchRead.failed ||
+              offerRead.failed ? null : (
                 <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
                   {nothingTodayLabel(taskList.next)}
                 </p>
@@ -409,7 +414,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 Les Points marché n’ont pas pu être lus : rechargez la page.
               </p>
             ) : null}
-            {buyerRead.failed || mandateRead.failed || watchRead.failed ? (
+            {buyerRead.failed || mandateRead.failed || watchRead.failed || offerRead.failed ? (
               <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
                 Les acquéreurs n’ont pas pu être lus : rechargez la page.
               </p>

@@ -55,6 +55,16 @@ export function VisitRow({
         {VISIT_REQUEST_DURING_LABELS[line.requestedDuring]}
         {done ? ` · visitée le ${buyerDateLabel(line.visitedAt!)}` : ''}
       </p>
+      {/* Mission 137 B — une visite « Offre envisagée » mène à l'offre d'achat. */}
+      {done && line.outcome === 'offer' ? (
+        <Link
+          href={`/acquereurs/${line.buyerId}/offre?visite=${line.id}`}
+          className="self-start text-sm font-semibold text-brand-darker underline"
+          data-testid="visit-offer-open"
+        >
+          Offre d’achat
+        </Link>
+      ) : null}
       {voucher ? (
         <Link
           href={`/acquereurs/${line.buyerId}/bon-de-visite/${voucher.documentId}`}

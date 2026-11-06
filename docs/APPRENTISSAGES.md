@@ -174,6 +174,17 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   n'avait ni code postal ni commune (« Fait à » vide) : une donnée de démo réglée à la main se
   vérifie en base avant d'écrire un e2e qui la lit. Suite e2e 10,5 min ; un ECONNRESET sur le
   parcours, vert au second passage.
+- 06/11 · M137 B · Deux genres de documents dans une même table (bon, offre) : chaque lecture filtre
+  sur le genre. Le relecteur a trouvé que la visite affichait l'offre comme son « bon signé » (un
+  lien vers une page introuvable, le vrai bon caché) ; un rattachement partagé (`buyer_document_visits`)
+  se lit toujours avec le genre du document.
+- 06/11 · M137 B · Un correctif annoncé « testé » doit l'être : une réécriture de test par script a
+  échoué en silence (Prettier avait déjà reformaté le bloc visé) ; le relecteur l'a vu sur le delta.
+  Après une édition scriptée, relire le fichier ou compter les tests avant de l'annoncer.
+- 06/11 · M137 B · Un texte « mot pour mot » a des formats aussi : « ( 136 / 10 000 èmes) » (chiffres
+  groupés, lettres « dix millièmes ») ne se devine pas depuis la fiche, il se vérifie sur le modèle
+  (Jean-Guy) ; « troisièmes » : ne retirer le « s » que de « cents » et « vingts ». Suite e2e
+  13/13 au premier passage, 13,1 min.
 
 ## La base
 
