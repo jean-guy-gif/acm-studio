@@ -646,6 +646,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .getByTestId('suivi-task')
         .filter({ hasText: 'Point marché de M. Lefebvre' });
       if ((await pointTask.count()) > 0) {
+        // Mission 138 — la réponse du vendeur aux Keller prend une des cinq premières places : le
+        // point peut être derrière « Voir les N autres tâches ».
+        const more = page
+          .getByTestId('suivi-today')
+          .locator('summary')
+          .filter({ hasText: /^Voir/ });
+        if (!(await pointTask.first().isVisible()) && (await more.first().isVisible())) {
+          await more.first().click();
+        }
         await pointTask.getByRole('link', { name: 'Faire le point' }).click();
       } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
         await row.getByTestId('suivi-link-point').click();
