@@ -3,8 +3,15 @@ import type {
   RankingRow,
   RankingStep,
 } from '@/features/market-update/services/price-ranking';
-import { TIER_LEGEND, type RankingTier } from '@/features/market-update/services/ranking-tiers';
+import type { RankingTier } from '@/features/market-update/services/ranking-tiers';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatEuro } from '@/lib/format';
+
+type RankingTexts = ClientTexts['documents']['marketUpdate']['ranking'];
+// Mission 140 — les mots du classement, dans la langue du vendeur (le français par défaut).
+const rankingTexts = (language: TextLanguage): RankingTexts =>
+  clientTexts(language).documents.marketUpdate.ranking;
 
 // Mission 129 — « Où en est votre prix », d'après la maquette v2 validée par Jean-Guy : le verdict
 // de la couleur de la place, trois étapes et leurs réglettes, le classement du moins cher au plus
@@ -51,17 +58,24 @@ export const GOLD = {
   badge: 'bg-[#8f6a1c] text-white',
 };
 
-const ordinal = (rank: number) => (rank === 1 ? 'er' : 'e');
-
 // « Maison · 5 pièces · 113 m² · Biot » → « Maison · 5 p. · 113 m² · Biot » (maquette v2).
-const shortLabel = (label: string) => label.replace(/(\d+) pièces?/, '$1 p.');
 
-function Place({ rank, total, size }: { rank: number; total: number; size: 'lg' | 'md' }) {
+function Place({
+  rank,
+  total,
+  size,
+  t,
+}: {
+  rank: number;
+  total: number;
+  size: 'lg' | 'md';
+  t: RankingTexts;
+}) {
   return (
     <>
       {rank}
-      <sup className={size === 'lg' ? 'text-[0.55em]' : 'text-[0.6em]'}>{ordinal(rank)}</sup>
-      <span className="ml-2 font-semibold text-zinc-500 [font-size:0.5em]">sur {total}</span>
+      <sup className={size === 'lg' ? 'text-[0.55em]' : 'text-[0.6em]'}>{t.ordinal(rank)}</sup>
+      <span className="ml-2 font-semibold text-zinc-500 [font-size:0.5em]">{t.of(total)}</span>
     </>
   );
 }
@@ -88,11 +102,13 @@ function StepCard({
   step,
   empty,
   current,
+  t,
 }: {
   label: string;
   step: RankingStep | null;
   empty: string;
   current: boolean;
+  t: RankingTexts;
 }) {
   const tier = step ? TIER_CLASSES[step.tier] : null;
   return (
@@ -111,7 +127,7 @@ function StepCard({
       {step ? (
         <>
           <span className={`font-title text-4xl leading-none font-bold ${tier?.text}`}>
-            <Place rank={step.rank} total={step.total} size="md" />
+            <Place rank={step.rank} total={step.total} size="md" t={t} />
           </span>
           <Strip step={step} />
         </>
@@ -127,10 +143,13 @@ function StepCard({
 export function Verdict({
   ranking,
   testId = 'ranking-verdict',
+  language = 'fr',
 }: {
   ranking: Ranking;
   testId?: string;
+  language?: TextLanguage;
 }) {
+  const t = rankingTexts(language);
   const { verdict } = ranking;
   const tier = TIER_CLASSES[verdict.tier];
   const [before, after] = verdict.emphasis
@@ -150,8 +169,9 @@ export function Verdict({
       </span>
       <div className="flex min-w-0 flex-col gap-1">
         <p className={`font-title text-2xl leading-tight font-bold sm:text-3xl ${tier.text}`}>
-          {verdict.word} : vous êtes {verdict.rank}
-          <sup className="text-[0.55em]">{ordinal(verdict.rank)}</sup> sur {verdict.total}
+          {t.youAre(verdict.word)}
+          {verdict.rank}
+          <sup className="text-[0.55em]">{t.ordinal(verdict.rank)}</sup> {t.of(verdict.total)}
         </p>
         <p className="text-[0.95rem] text-zinc-800">
           {before}
@@ -168,13 +188,16 @@ export function RankingSteps({
   meetingDay,
   pointDay,
   searchedRange = null,
+  language = 'fr',
 }: {
   ranking: Ranking;
   meetingDay: string | null;
   pointDay: string | null;
   // Mission 129 — la fourchette cherchée pour les nouveaux venus, quand une recherche a été faite.
   searchedRange?: { min: number; max: number } | null;
+  language?: TextLanguage;
 }) {
+  const t = rankingTexts(language);
   const { steps } = ranking;
   const arrow = (
     <span className="hidden self-center text-zinc-400 sm:block" aria-hidden>
@@ -185,43 +208,48 @@ export function RankingSteps({
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-col gap-2 sm:flex-row sm:gap-3" data-testid="ranking-steps">
         <StepCard
-          label={`Au rendez-vous${meetingDay ? ` · ${meetingDay.slice(0, 5)}` : ''}`}
+          label={`${t.atMeeting}${meetingDay ? ` · ${meetingDay.slice(0, 5)}` : ''}`}
           step={steps.meeting}
-          empty="Prix du rendez-vous non relus"
+          empty={t.meetingUnread}
           current={false}
+          t={t}
         />
         {arrow}
         <StepCard
-          label={`Aujourd’hui${pointDay ? ` · ${pointDay.slice(0, 5)}` : ''}`}
+          label={`${t.today}${pointDay ? ` · ${pointDay.slice(0, 5)}` : ''}`}
           step={steps.today}
           empty=""
           current={steps.newcomers == null}
+          t={t}
         />
         {arrow}
         <StepCard
-          label="Avec les nouveaux venus"
+          label={t.withNewcomers}
           step={steps.newcomers}
-          empty="Aucun nouveau venu retenu"
+          empty={t.noNewcomer}
           current={steps.newcomers != null}
+          t={t}
         />
       </div>
       {/* La fourchette cherchée, sous la rangée : les trois cartes gardent la même hauteur. */}
       {searchedRange ? (
         <p className="text-right text-xs text-zinc-500" data-testid="ranking-searched-range">
-          Nouveaux venus cherchés entre {formatEuro(searchedRange.min)} et{' '}
-          {formatEuro(searchedRange.max)}
+          {t.searched(
+            formatEuro(searchedRange.min, { language }),
+            formatEuro(searchedRange.max, { language }),
+          )}
         </p>
       ) : null}
     </div>
   );
 }
 
-function Badge({ row }: { row: RankingRow }) {
+function Badge({ row, t }: { row: RankingRow; t: RankingTexts }) {
   return (
     <>
       {row.newcomer ? (
         <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[0.62rem] font-bold tracking-[0.12em] text-brand-darker uppercase">
-          Nouveau
+          {t.newBadge}
         </span>
       ) : null}
       {row.dangerous ? (
@@ -229,14 +257,16 @@ function Badge({ row }: { row: RankingRow }) {
           className={`rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-[0.12em] uppercase ${GOLD.badge}`}
           data-testid="ranking-dangerous"
         >
-          {row.dangerous === 'today' ? 'Le plus dangereux aujourd’hui' : 'Le plus dangereux'}
+          {row.dangerous === 'today' ? t.dangerousToday : t.dangerous}
         </span>
       ) : null}
     </>
   );
 }
 
-function Row({ row }: { row: RankingRow }) {
+function Row({ row, language }: { row: RankingRow; language: TextLanguage }) {
+  const t = rankingTexts(language);
+  const euro = (value: number) => formatEuro(value, { language });
   const tier = TIER_CLASSES[row.tier];
   if (row.subject) {
     return (
@@ -248,16 +278,16 @@ function Row({ row }: { row: RankingRow }) {
             <span className="w-6 text-center font-title text-2xl font-bold">{row.rank}</span>
             <div className="flex min-w-0 flex-1 flex-col">
               <span>
-                <strong>VOTRE BIEN</strong> · {shortLabel(row.label)}
+                <strong>{t.yourProperty}</strong> · {t.shortRooms(row.label)}
               </span>
               <span className="text-sm opacity-90">{row.detail}</span>
             </div>
             <div className="flex flex-col items-end max-sm:items-start sm:flex-row sm:items-baseline sm:gap-6">
               <span className="text-sm opacity-90 max-sm:hidden">
-                {formatEuro(row.meetingPrice ?? row.currentPrice)}
+                {euro(row.meetingPrice ?? row.currentPrice)}
               </span>
               <span className="font-title text-2xl font-bold sm:text-3xl print:text-2xl">
-                {formatEuro(row.currentPrice)}
+                {euro(row.currentPrice)}
               </span>
             </div>
           </div>
@@ -284,29 +314,29 @@ function Row({ row }: { row: RankingRow }) {
           </span>
           <div className="flex min-w-0 flex-col">
             <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span>{shortLabel(row.label)}</span>
-              <Badge row={row} />
+              <span>{t.shortRooms(row.label)}</span>
+              <Badge row={row} t={t} />
             </span>
             {row.detail ? <span className="text-sm text-zinc-500">{row.detail}</span> : null}
             {/* Téléphone : les deux prix l'un sous l'autre. */}
             <span className="mt-1 flex flex-col sm:hidden">
               {row.meetingPrice != null ? (
                 <span className="text-sm text-zinc-500">
-                  Au rendez-vous : {formatEuro(row.meetingPrice)}
+                  {t.atMeetingPrice(euro(row.meetingPrice))}
                 </span>
               ) : null}
               <span className="font-title text-lg font-bold">
-                Aujourd’hui : {formatEuro(row.currentPrice)}
+                {t.todayPrice(euro(row.currentPrice))}
               </span>
             </span>
           </div>
         </div>
       </td>
       <td className="py-2 pr-3 text-right text-sm whitespace-nowrap text-zinc-500 max-sm:hidden print:py-1">
-        {row.meetingPrice != null ? formatEuro(row.meetingPrice) : '—'}
+        {row.meetingPrice != null ? euro(row.meetingPrice) : '—'}
       </td>
       <td className="py-2 pr-3 text-right font-title text-xl font-bold whitespace-nowrap text-zinc-900 max-sm:hidden sm:text-2xl print:py-1 print:text-xl">
-        {formatEuro(row.currentPrice)}
+        {euro(row.currentPrice)}
       </td>
     </tr>
   );
@@ -317,39 +347,43 @@ export function PriceRankingView({
   meetingDay,
   pointDay,
   searchedRange = null,
+  language = 'fr',
 }: {
   ranking: Ranking;
   meetingDay: string | null;
   pointDay: string | null;
   searchedRange?: { min: number; max: number } | null;
+  language?: TextLanguage;
 }) {
+  const t = rankingTexts(language);
   return (
     <div className="flex flex-col gap-4" data-testid="price-ranking">
       <div className="flex flex-col gap-4 break-inside-avoid">
-        <Verdict ranking={ranking} />
+        <Verdict ranking={ranking} language={language} />
         <RankingSteps
           ranking={ranking}
           meetingDay={meetingDay}
           pointDay={pointDay}
           searchedRange={searchedRange}
+          language={language}
         />
       </div>
       <table className="w-full border-collapse text-left text-zinc-800">
         <thead className="[display:table-header-group]">
           <tr className="text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase">
             <th className="w-1" />
-            <th className="py-2 pl-9 font-semibold">Classement, du moins cher au plus cher</th>
+            <th className="py-2 pl-9 font-semibold">{t.tableTitle}</th>
             <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
-              Prix au rendez-vous
+              {t.tableMeeting}
             </th>
             <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
-              Prix aujourd’hui
+              {t.tableToday}
             </th>
           </tr>
         </thead>
         <tbody>
           {ranking.rows.map((row) => (
-            <Row key={row.key} row={row} />
+            <Row key={row.key} row={row} language={language} />
           ))}
         </tbody>
       </table>
@@ -361,18 +395,10 @@ export function PriceRankingView({
           <span key={tier} className="flex items-center gap-1.5">
             <span className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar}`} />
             <span>
-              {index === 0 ? (
-                <>
-                  1<sup>er</sup> tiers
-                </>
-              ) : index === 1 ? (
-                <>
-                  2<sup>e</sup> tiers
-                </>
-              ) : (
-                'dernier tiers'
-              )}{' '}
-              : {TIER_LEGEND[tier]}
+              {t.legendTiers[index].number}
+              {t.legendTiers[index].sup ? <sup>{t.legendTiers[index].sup}</sup> : null}
+              {t.legendTiers[index].rest}
+              {t.legend[tier]}
             </span>
           </span>
         ))}
@@ -387,16 +413,19 @@ export function PriceRankingCompact({
   meetingDay,
   pointDay,
   searchedRange = null,
+  language = 'fr',
 }: {
   ranking: Ranking;
   meetingDay: string | null;
   pointDay: string | null;
   searchedRange?: { min: number; max: number } | null;
+  language?: TextLanguage;
 }) {
   return (
     <div className="flex flex-col gap-3" data-testid="price-ranking-compact">
-      <Verdict ranking={ranking} />
+      <Verdict ranking={ranking} language={language} />
       <RankingSteps
+        language={language}
         ranking={ranking}
         meetingDay={meetingDay}
         pointDay={pointDay}

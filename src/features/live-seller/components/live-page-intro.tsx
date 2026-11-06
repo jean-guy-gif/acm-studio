@@ -1,4 +1,7 @@
+'use client';
+
 import { Logo } from '@/components/brand/logo';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 
 // Introduction premium : composition sombre, une seule idée principale, logo,
 // dossier vendeur, et un unique bouton de démarrage. Ne lit que le NOMBRE de
@@ -21,6 +24,7 @@ export function LivePageIntro({
   agencyName?: string | null;
 }) {
   const count = comparablesCount;
+  const t = useLiveTexts().texts.live.intro;
 
   return (
     <section className="relative overflow-hidden rounded-card bg-gradient-to-br from-brand-deep to-brand-darkest p-8 text-white sm:p-12">
@@ -34,12 +38,8 @@ export function LivePageIntro({
           fallbackName={agencyName}
         />
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium tracking-[0.2em] text-brand uppercase">
-            Rendez-vous vendeur
-          </p>
-          <h2 className="max-w-2xl text-3xl leading-tight font-semibold sm:text-4xl">
-            Découvrons ensemble les biens en concurrence avec votre logement.
-          </h2>
+          <p className="text-xs font-medium tracking-[0.2em] text-brand uppercase">{t.kicker}</p>
+          <h2 className="max-w-2xl text-3xl leading-tight font-semibold sm:text-4xl">{t.title}</h2>
           <div className="text-white/80">
             <p className="text-lg font-medium">{sellerName}</p>
             {address ? <p className="text-sm">{address}</p> : null}
@@ -54,13 +54,9 @@ export function LivePageIntro({
             onClick={onStart}
             className="rounded-md bg-brand px-6 py-3 text-base font-medium text-white shadow-sm transition-colors hover:bg-white hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            Démarrer la présentation
+            {t.start}
           </button>
-          {count > 0 ? (
-            <span className="text-sm text-white/70">
-              {count} bien{count > 1 ? 's' : ''} concurrent{count > 1 ? 's' : ''} à examiner
-            </span>
-          ) : null}
+          {count > 0 ? <span className="text-sm text-white/70">{t.count(count)}</span> : null}
         </div>
       </div>
     </section>

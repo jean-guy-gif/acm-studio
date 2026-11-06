@@ -1,5 +1,6 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
@@ -27,39 +28,34 @@ import { formatEuro } from '@/lib/format';
 // champ de saisie (la base la fige de toute façon).
 export function LivePagePrice({ entry }: { entry: SellerComparable }) {
   const savedEstimate = entry.response?.seller_estimated_listing_price ?? null;
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.price;
+  const label = neutralComparableLabel(entry, language);
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>À quel prix pensez-vous que ce bien est proposé ?</h2>
-        <p className={questionHint}>
-          {savedEstimate != null
-            ? 'Votre réponse est notée : elle ne se modifie plus.'
-            : 'Donnez le prix que vous imaginez : le prix réel s’affichera à l’écran suivant.'}
-        </p>
+        <h2 className={question}>{t.question}</h2>
+        <p className={questionHint}>{savedEstimate != null ? t.savedHint : t.hint}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
           {/* Le vendeur ESTIME le prix ici : le vrai prix est à l'écran suivant. Aucun
               montant ne doit fuir — ni le titre du portail, ni via le texte alternatif. */}
-          <LiveGallery photos={entry.photoUrls} alt={neutralComparableLabel(entry)} />
-          <LiveComparableHeader
-            heading={neutralComparableLabel(entry)}
-            city={entry.city}
-            district={entry.district}
-          />
+          <LiveGallery photos={entry.photoUrls} alt={label} />
+          <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
         </div>
 
         <div className="flex h-fit flex-col gap-4">
           {savedEstimate != null ? (
             <div className={`${panel} flex flex-col gap-4`}>
-              <LiveLockedAnswer value={formatEuro(savedEstimate)} />
+              <LiveLockedAnswer value={formatEuro(savedEstimate, { language })} />
             </div>
           ) : (
             <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
               <label className="flex flex-col gap-2">
-                <span className={statLabel}>Le prix que vous imaginez</span>
+                <span className={statLabel}>{t.label}</span>
                 <div className="flex items-center gap-3">
                   <input
                     type="number"
@@ -73,9 +69,7 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
                   <span className={bigInputUnit}>€</span>
                 </div>
               </label>
-              <p className="text-sm text-zinc-400 stage:text-white/50">
-                Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.
-              </p>
+              <p className="text-sm text-zinc-400 stage:text-white/50">{t.note}</p>
             </form>
           )}
         </div>

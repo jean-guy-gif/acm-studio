@@ -1,3 +1,4 @@
+import type { TextLanguage } from '@/lib/client-texts';
 import type { MarketUpdateSummary } from '@/features/market-update/services/market-update-summary';
 import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthesis/types';
 
@@ -20,6 +21,8 @@ export type MarketUpdateCompetitorView = {
 };
 
 export type MarketUpdateDocument = {
+  // Mission 140 — la langue du vendeur, celle de tout le document (les mentions légales mises à part).
+  language: TextLanguage;
   updateId: string;
   madeAt: string;
   sellerName: string;

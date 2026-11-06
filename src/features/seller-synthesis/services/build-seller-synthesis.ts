@@ -4,7 +4,7 @@ import {
 } from '@/features/comparables/services/calculate-comparable-summary';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { countDpe, dpeMarket } from '@/features/dpe/services/dpe';
-import { DANGEROUS_REASON_LABELS, type DangerousReason } from '@/features/live-seller/constants';
+import { DANGEROUS_REASONS, type DangerousReason } from '@/features/live-seller/constants';
 import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
 import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
 import {
@@ -15,15 +15,20 @@ import { storedFieldsPriceHistoryProvider } from '@/features/live-seller/service
 import { pricePositionSentence } from '@/features/live-seller/services/price-position';
 import type { FeatureBundle } from '@/features/live-seller/types';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import { guessLines, summarizeGuesses } from '@/features/meeting-conclusion/services/seller-said';
+import {
+  summarizeGuesses,
+  type GuessSummary,
+} from '@/features/meeting-conclusion/services/seller-said';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
 import type {
   SellerSynthesis,
   SynthesisCompetitor,
   SynthesisFeature,
 } from '@/features/seller-synthesis/types';
-import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
-import { formatSquareMeters } from '@/lib/format';
+import { isPropertyType } from '@/features/subject-property/services/property-type-choice';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
+import { formatPercent, formatSquareMeters } from '@/lib/format';
 
 // Mission 110, refondue par la mission 113 — la synthèse au vendeur, construite depuis des lignes
 // lues par listes de colonnes autorisées (queries/load-seller-synthesis.ts). Pure. Elle suit
@@ -88,6 +93,8 @@ export type SynthesisPropertyRow = {
 };
 
 export type SynthesisInput = {
+  // Mission 140 — la langue du vendeur ; le français par défaut.
+  language?: TextLanguage;
   sellerName: string;
   meetingDate: string | null;
   // L'heure de début du Live : la durée en vente se lit au jour du rendez-vous, pas d'aujourd'hui.
@@ -162,13 +169,15 @@ const EMPTY_BUNDLE: FeatureBundle = {
   exposure: null,
 };
 
-const ordinalFloor = (floor: number): string =>
-  floor === 0 ? 'Rez-de-chaussée' : floor === 1 ? '1er étage' : `${floor}e étage`;
-
 // La grille du bien vendeur : ses propres valeurs, lues comme le Live les écrit.
-function propertyFacts(row: SynthesisPropertyRow): { label: string; value: string }[] {
+function propertyFacts(
+  row: SynthesisPropertyRow,
+  language: TextLanguage,
+): { label: string; value: string }[] {
+  const texts = clientTexts(language);
+  const t = texts.documents.common;
   const own = new Map(
-    buildComparableFeatureComparison(bundle(row), bundle(row)).map((item) => [
+    buildComparableFeatureComparison(bundle(row), bundle(row), language).map((item) => [
       item.criterion,
       item.subjectValue,
     ]),
@@ -177,39 +186,55 @@ function propertyFacts(row: SynthesisPropertyRow): { label: string; value: strin
   const push = (label: string, value: string | null | undefined) => {
     if (value != null && value.trim() !== '') facts.push({ label, value });
   };
-  push('Surface habitable', row.surface_area != null ? formatSquareMeters(row.surface_area) : null);
+  const area = (value: number) => formatSquareMeters(value, { language });
+  push(t.livingArea, row.surface_area != null ? area(row.surface_area) : null);
   if (normalizePropertyType(row.property_type) === 'house' && row.land_area != null) {
-    push('Terrain', formatSquareMeters(row.land_area));
+    push(t.land, area(row.land_area));
   }
   const rooms = [
-    row.rooms_count != null ? `${row.rooms_count} pièce${row.rooms_count > 1 ? 's' : ''}` : null,
-    row.bedrooms_count != null
-      ? `${row.bedrooms_count} chambre${row.bedrooms_count > 1 ? 's' : ''}`
-      : null,
+    row.rooms_count != null ? texts.common.rooms(row.rooms_count) : null,
+    row.bedrooms_count != null ? t.bedrooms(row.bedrooms_count) : null,
   ].filter(Boolean);
-  push('Pièces · chambres', rooms.length > 0 ? rooms.join(' · ') : null);
-  push('Extérieurs', own.get('outdoor'));
-  push('Stationnement', own.get('parking'));
+  push(t.roomsBedrooms, rooms.length > 0 ? rooms.join(' · ') : null);
+  push(t.outdoor, own.get('outdoor'));
+  push(t.parking, own.get('parking'));
   const energy = [
-    row.energy_rating ? `DPE ${row.energy_rating}` : null,
-    row.ges_rating ? `GES ${row.ges_rating}` : null,
+    row.energy_rating ? t.energyLetter('dpe', row.energy_rating) : null,
+    row.ges_rating ? t.energyLetter('ges', row.ges_rating) : null,
   ].filter(Boolean);
-  push('DPE · GES', energy.length > 0 ? energy.join(' · ') : null);
+  push(t.energy, energy.length > 0 ? energy.join(' · ') : null);
   if (row.floor != null) {
     push(
-      'Étage',
-      `${ordinalFloor(row.floor)}${row.building_floors != null && row.floor > 0 ? ` sur ${row.building_floors}` : ''}`,
+      t.floor,
+      `${t.floorOrdinal(row.floor)}${row.building_floors != null && row.floor > 0 ? t.floorOf(row.building_floors) : ''}`,
     );
   }
   return facts;
+}
+
+// « Vous avez sous-estimé 4 concurrents sur 6, de 6 % en moyenne » : les mots du Suivi (M96), à la
+// 2e personne, dans la langue du vendeur.
+function synthesisGuessLines(summary: GuessSummary, texts: ClientTexts, language: TextLanguage) {
+  const t = texts.documents.common.guesses;
+  const percent = (value: number) => formatPercent(value, { maxDecimals: 1, language });
+  const lines: string[] = [];
+  if (summary.under > 0 && summary.underAveragePercent != null) {
+    lines.push(t.under(summary.under, summary.compared, percent(summary.underAveragePercent)));
+  }
+  if (summary.over > 0 && summary.overAveragePercent != null) {
+    lines.push(t.over(summary.over, summary.compared, percent(summary.overAveragePercent)));
+  }
+  if (lines.length === 0) lines.push(t.exact(summary.compared));
+  return lines;
 }
 
 // Les lignes de la grille du Live qui ont été montrées : un critère sans donnée ne s'affiche pas (M40).
 function synthesisFeatures(
   subject: FeatureBundle,
   row: SynthesisCompetitorRow,
+  language: TextLanguage,
 ): SynthesisFeature[] {
-  return buildComparableFeatureComparison(subject, bundle(row)).flatMap((item) =>
+  return buildComparableFeatureComparison(subject, bundle(row), language).flatMap((item) =>
     item.comparisonStatus === 'unknown' || item.comparableValue == null
       ? []
       : [
@@ -236,6 +261,8 @@ function snapshotCounts(value: unknown): { used: number; excludedOutliers: numbe
 }
 
 export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
+  const language = input.language ?? 'fr';
+  const texts = clientTexts(language);
   const responseById = new Map(
     input.responses
       .filter((response) => response.comparable_id != null)
@@ -314,17 +341,20 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       id: row.id,
       position: index + 1,
       surfaceArea: row.surface_area,
-      label: neutralComparableLabel({
-        propertyType: row.property_type,
-        roomsCount: row.rooms_count,
-        surfaceArea: row.surface_area,
-        city: row.city,
-        district: row.district,
-      }),
+      label: neutralComparableLabel(
+        {
+          propertyType: row.property_type,
+          roomsCount: row.rooms_count,
+          surfaceArea: row.surface_area,
+          city: row.city,
+          district: row.district,
+        },
+        language,
+      ),
       photoUrl: row.synthesis_hide_photo ? null : photo,
       hasPhoto: photo != null,
       photoHidden: row.synthesis_hide_photo,
-      features: synthesisFeatures(subjectBundle, row),
+      features: synthesisFeatures(subjectBundle, row, language),
       serious,
       revealed,
     };
@@ -372,15 +402,18 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
           competitorPrice,
           basisLabel:
             competitorPrice != null && counts
-              ? competitorPriceBasisLabel({
-                  calculationCount: counts.used,
-                  seenTogetherCount: seenTogether,
-                  competitorPriceBasis:
-                    marketComputed != null &&
-                    Math.round(marketComputed) !== Math.round(competitorPrice)
-                      ? 'advisor'
-                      : 'computed',
-                })
+              ? competitorPriceBasisLabel(
+                  {
+                    calculationCount: counts.used,
+                    seenTogetherCount: seenTogether,
+                    competitorPriceBasis:
+                      marketComputed != null &&
+                      Math.round(marketComputed) !== Math.round(competitorPrice)
+                        ? 'advisor'
+                        : 'computed',
+                  },
+                  language,
+                )
               : null,
           advisorAnalysis,
           justification,
@@ -392,8 +425,8 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     .map((item) => ({
       // Un libellé court, qui tient sur la barre : sa place au Live et sa surface.
       label: [
-        `Concurrent ${item.position}`,
-        item.surfaceArea != null ? formatSquareMeters(item.surfaceArea) : null,
+        texts.live.competitorReview.competitor(item.position),
+        item.surfaceArea != null ? formatSquareMeters(item.surfaceArea, { language }) : null,
       ]
         .filter(Boolean)
         .join(' · '),
@@ -413,10 +446,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   const reasonKey = input.summary?.seller_most_dangerous_reason ?? null;
   const surface = input.property?.surface_area ?? null;
   const agreed = input.commercializationPrice;
-  const typeLabel = propertyTypeLabel(input.property?.property_type);
+  const canonicalType = normalizePropertyType(input.property?.property_type ?? null);
+  const typeLabel =
+    canonicalType != null && isPropertyType(canonicalType)
+      ? texts.labels.propertyType[canonicalType]
+      : null;
   const commune = input.property?.city?.trim() || null;
 
   return {
+    language,
     sellerName: input.sellerName,
     meetingDate: input.meetingDate,
     propertyLabel: [typeLabel, commune].filter(Boolean).join(' · ') || null,
@@ -424,7 +462,7 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     property: input.property
       ? {
           photos: input.propertyPhotoUrls.slice(0, 3),
-          facts: propertyFacts(input.property),
+          facts: propertyFacts(input.property, language),
           surfaceArea: input.property.surface_area,
           roomsCount: input.property.rooms_count,
           bedroomsCount: input.property.bedrooms_count,
@@ -438,7 +476,10 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       ? {
           reference: dpe.reference,
           subject: dpe.subject,
-          message: dpe.message,
+          message:
+            dpe.verdict === 'unknown'
+              ? texts.live.dpe.unknown(dpe.reference)
+              : texts.live.dpe[dpe.verdict],
           classes: countDpe(shown.map((row) => row.energy_rating)).classes,
         }
       : null,
@@ -448,12 +489,12 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
             competitorId: dangerousId,
             ...(byAdvisor ? { byAdvisor: true } : {}),
             reason:
-              !byAdvisor && reasonKey && reasonKey in DANGEROUS_REASON_LABELS
-                ? DANGEROUS_REASON_LABELS[reasonKey as DangerousReason]
+              !byAdvisor && reasonKey && DANGEROUS_REASONS.includes(reasonKey as DangerousReason)
+                ? texts.live.answers.dangerousReason[reasonKey as DangerousReason]
                 : null,
           }
         : null,
-    guessLines: guessSummary ? guessLines(guessSummary, 'vous') : [],
+    guessLines: guessSummary ? synthesisGuessLines(guessSummary, texts, language) : [],
     analysis:
       market.lowestPrice != null && market.highestPrice != null
         ? {
@@ -471,7 +512,8 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     decision,
     commercializationPrice: agreed,
     agreedPricePerSquareMeter: agreed != null ? pricePerSquareMeter(agreed, surface) : null,
-    positionSentence: agreed != null ? pricePositionSentence(agreed, market.prices) : null,
+    positionSentence:
+      agreed != null ? pricePositionSentence(agreed, market.prices, language) : null,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
   };

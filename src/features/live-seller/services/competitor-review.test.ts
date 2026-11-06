@@ -99,7 +99,8 @@ describe('« Revoir » n’écrit rien et ne dit rien de trop', () => {
   });
 
   it('elle nomme le concurrent par son libellé neutre, sans titre, adresse, vendeur ni exclusivité', () => {
-    expect(review).toContain('entry.neutralLabel');
+    // Mission 140 — le libellé neutre, composé dans la langue du vendeur.
+    expect(review).toContain('neutralComparableLabel(entry, language)');
     expect(review).not.toMatch(/\.title\b|listingUrl|listing_url|sold_?[bB]y|exclusiv/);
   });
 

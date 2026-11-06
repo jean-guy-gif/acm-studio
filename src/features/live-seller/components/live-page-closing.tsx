@@ -1,5 +1,6 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   bigValue,
   fieldInput,
@@ -18,6 +19,7 @@ import {
   PRICE_ALIGNMENT_TEXT,
   priceAlignment,
 } from '@/features/price-positioning/services/price-alignment';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro } from '@/lib/format';
 
 const SCORES = Array.from(
@@ -30,10 +32,8 @@ const scoreButton =
   'flex min-h-16 cursor-pointer items-center justify-center rounded-xl border-2 border-zinc-200 bg-white font-title text-2xl font-bold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep aria-pressed:border-brand aria-pressed:bg-brand aria-pressed:text-white aria-pressed:shadow-lg aria-pressed:shadow-brand/30 sm:min-h-20 sm:text-3xl stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:aria-pressed:border-brand stage:aria-pressed:bg-brand stage:aria-pressed:text-white';
 
 // La question, selon qu'un prix de commercialisation est enregistré ou non (mission 89).
-export function closingQuestion(hasAgreedPrice: boolean): string {
-  return hasAgreedPrice
-    ? 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix\u00a0?'
-    : 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente\u00a0?';
+export function closingQuestion(hasAgreedPrice: boolean, language: TextLanguage = 'fr'): string {
+  return clientTexts(language).live.closing.question(hasAgreedPrice);
 }
 
 // MISSION 85 — après le prix de commercialisation, le vendeur se situe de 1 à 10. En dessous
@@ -63,14 +63,16 @@ export function LivePageClosing({
   onScore: (score: number) => void;
   onMissingChange: (missing: string) => void;
 }) {
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.closing;
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
         <h2 className={question}>
           {/* « à ce prix » seulement s'il y a un prix : sinon la phrase ne désigne rien. */}
-          {closingQuestion(hasAgreedPrice)}
+          {closingQuestion(hasAgreedPrice, language)}
         </h2>
-        <p className={questionHint}>1&nbsp;: pas encore prêt · 10&nbsp;: on y va.</p>
+        <p className={questionHint}>{t.scale}</p>
       </div>
 
       {agreedPrice != null ? (
@@ -79,7 +81,7 @@ export function LivePageClosing({
 
       <div
         role="group"
-        aria-label="Votre note, de 1 à 10"
+        aria-label={t.scoreGroup}
         className="grid grid-cols-5 gap-2 sm:grid-cols-10 sm:gap-3"
       >
         {SCORES.map((value) => (
@@ -97,13 +99,13 @@ export function LivePageClosing({
 
       {score === MAX_LAUNCH_READINESS ? (
         <div className={`${panel} live-fade-up flex flex-col gap-2`}>
-          <h3 className={question}>Alors, on lance la vente&nbsp;?</h3>
+          <h3 className={question}>{t.launch}</h3>
         </div>
       ) : score != null ? (
         <div className={`${panel} live-fade-up flex flex-col gap-4`}>
-          <h3 className={question}>Qu’est-ce qui vous manquerait pour être à 10&nbsp;?</h3>
+          <h3 className={question}>{t.missing}</h3>
           <label className="flex flex-col gap-2">
-            <span className={fieldLabel}>Votre réponse (facultative)</span>
+            <span className={fieldLabel}>{t.answerOptional}</span>
             <textarea
               name="seller_launch_readiness_missing"
               rows={3}
@@ -127,6 +129,7 @@ function AgreedPrice({
   advisorAnalysis: number | null;
 }) {
   const alignment = priceAlignment(price, advisorAnalysis);
+  const { language, texts } = useLiveTexts();
   const tone = alignment ? PRICE_ALIGNMENT_TEXT[alignment.tone] : '';
   return (
     <div
@@ -135,14 +138,14 @@ function AgreedPrice({
       data-alignment={alignment?.tone ?? ''}
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <div className={`${statLabel} ${tone}`}>Prix de commercialisation</div>
+        <div className={`${statLabel} ${tone}`}>{texts.live.closing.agreedPrice}</div>
         {alignment ? (
           <span data-testid="price-alignment" className={`text-sm font-semibold ${tone}`}>
-            {alignment.label}
+            {texts.common.alignment[alignment.tone]}
           </span>
         ) : null}
       </div>
-      <div className={`${bigValue} ${tone}`}>{formatEuro(price)}</div>
+      <div className={`${bigValue} ${tone}`}>{formatEuro(price, { language })}</div>
     </div>
   );
 }

@@ -1,4 +1,7 @@
+'use client';
+
 import { RemoteImage } from '@/components/ui/remote-image';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 
 // Read-only photo display for a comparable. Large main photo + optional gallery,
 // with a clean fallback when no accessible photo exists. No upload, no scraping.
@@ -22,6 +25,7 @@ export function LivePhoto({
   alt: string;
   compact?: boolean;
 }) {
+  const t = useLiveTexts().texts.common.photos;
   if (!photoUrl) {
     return (
       <div
@@ -31,7 +35,7 @@ export function LivePhoto({
             : 'h-56 rounded-card border border-dashed border-zinc-300 sm:h-72 stage:border-white/20'
         }`}
       >
-        Photos indisponibles pour cette annonce
+        {t.noneForListing}
       </div>
     );
   }
@@ -45,7 +49,7 @@ export function LivePhoto({
           compact ? 'h-40 w-full object-cover' : 'h-56 w-full rounded-lg object-cover sm:h-80'
         }
         fallbackClassName={compact ? 'h-40 w-full' : 'h-56 w-full rounded-lg sm:h-80'}
-        fallbackLabel="Photo indisponible pour cette annonce"
+        fallbackLabel={t.unavailable}
         eager
       />
       {gallery.length > 0 ? (
@@ -57,7 +61,7 @@ export function LivePhoto({
               alt={alt}
               className="h-16 w-24 shrink-0 rounded object-cover sm:h-20 sm:w-28"
               fallbackClassName="h-16 w-24 shrink-0 rounded sm:h-20 sm:w-28"
-              fallbackLabel="Indispo."
+              fallbackLabel={t.short}
             />
           ))}
         </div>

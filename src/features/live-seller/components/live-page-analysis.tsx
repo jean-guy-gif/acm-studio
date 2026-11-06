@@ -1,5 +1,6 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   bigValue,
   panel,
@@ -15,17 +16,19 @@ import {
   type MarketReading,
 } from '@/features/live-seller/services/market-reading';
 import type { LivePriceGaps, PriceGap } from '@/features/live-seller/types';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
 
-const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
-
 function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
+  const { language } = useLiveTexts();
   return (
     <div className="flex items-center justify-between gap-3 border-b border-zinc-100 py-2.5 text-base last:border-0 stage:border-white/10">
       <span className="text-zinc-500 stage:text-white/60">{label}</span>
       <span className="font-title font-semibold text-zinc-900 stage:text-white">
-        {gap.amount != null ? formatEuro(gap.amount, { signed: true }) : '—'}
-        {gap.percentage != null ? ` (${formatPercent(gap.percentage, { signed: true })})` : ''}
+        {gap.amount != null ? formatEuro(gap.amount, { signed: true, language }) : '—'}
+        {gap.percentage != null
+          ? ` (${formatPercent(gap.percentage, { signed: true, language })})`
+          : ''}
       </span>
     </div>
   );
@@ -45,7 +48,7 @@ const MARKER_COLORS: Record<string, string> = {
   dangerous: 'bg-brand-deep stage:bg-brand',
   competitors: 'bg-amber-500',
 };
-export const DANGEROUS_MARKER_LABEL = 'Le plus dangereux selon vous';
+export const DANGEROUS_MARKER_LABEL = FRENCH_TEXTS.live.analysis.band.dangerous;
 
 export function PriceBand({
   reading,
@@ -61,15 +64,18 @@ export function PriceBand({
   // Mission 115 — le concurrent désigné « le plus dangereux » ; null tant qu'aucun ne l'est.
   dangerousId?: string | null;
 }) {
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.analysis.band;
+  const euro = (value: number) => formatEuro(value, { language });
   const dangerousPrice =
     dangerousId != null
       ? (reading.revealed.find((entry) => entry.id === dangerousId)?.price ?? null)
       : null;
   const markers = [
-    { key: 'start', label: 'Au début', value: startPrice },
-    { key: 'revised', label: 'Après le marché', value: revisedPrice },
-    { key: 'dangerous', label: DANGEROUS_MARKER_LABEL, value: dangerousPrice },
-    { key: 'competitors', label: 'Prix des concurrents', value: competitorPrice },
+    { key: 'start', label: t.start, value: startPrice },
+    { key: 'revised', label: t.revised, value: revisedPrice },
+    { key: 'dangerous', label: t.dangerous, value: dangerousPrice },
+    { key: 'competitors', label: t.competitors, value: competitorPrice },
   ].filter(
     (marker): marker is { key: string; label: string; value: number } => marker.value != null,
   );
@@ -89,7 +95,7 @@ export function PriceBand({
 
   return (
     <div className={`${panelSoft} flex flex-col gap-3`} data-price-band>
-      <div className={statLabel}>Les prix affichés des biens que vous avez vus</div>
+      <div className={statLabel}>{t.title}</div>
       <div className="px-3">
         <div className="relative mt-5 h-16">
           <div className="absolute inset-x-0 top-1/2 h-px bg-zinc-300 stage:bg-white/25" />
@@ -99,7 +105,7 @@ export function PriceBand({
               data-band-dot
               className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-zinc-500 stage:border-brand-deep stage:bg-white/70"
               style={{ left: left(price) }}
-              title={formatEuro(price)}
+              title={euro(price)}
             />
           ))}
           {markers.map((marker) => (
@@ -108,7 +114,7 @@ export function PriceBand({
               data-band-marker={marker.key}
               className={`absolute h-full w-1 -translate-x-1/2 rounded-full ${MARKER_COLORS[marker.key]}`}
               style={{ left: left(marker.value) }}
-              title={`${marker.label} : ${formatEuro(marker.value)}`}
+              title={t.marker(marker.label, euro(marker.value))}
             >
               {marker.key === 'dangerous' ? (
                 <span
@@ -122,18 +128,18 @@ export function PriceBand({
         </div>
       </div>
       <div className="flex justify-between gap-3 text-xs text-zinc-500 stage:text-white/50">
-        <span>{formatEuro(low)}</span>
-        <span>{formatEuro(high)}</span>
+        <span>{euro(low)}</span>
+        <span>{euro(high)}</span>
       </div>
       <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
         <li className="flex items-center gap-2">
           <span className="size-3 rounded-full bg-zinc-500 stage:bg-white/70" aria-hidden />
-          Un bien concurrent
+          {t.dot}
         </li>
         {markers.map((marker) => (
           <li key={marker.key} className="flex items-center gap-2">
             <span className={`h-4 w-1 rounded-full ${MARKER_COLORS[marker.key]}`} aria-hidden />
-            {marker.label} : {formatEuro(marker.value)}
+            {t.marker(marker.label, euro(marker.value))}
           </li>
         ))}
       </ul>
@@ -162,52 +168,55 @@ export function LivePageAnalysis({
   dangerousId?: string | null;
 }) {
   const gaps = priceGaps;
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.analysis;
+  const euro = (value: number | null): string =>
+    value != null ? formatEuro(value, { language }) : '—';
   const figures: { label: string; value: string }[] = [];
   if (reading.lowestPrice != null && reading.highestPrice != null) {
     figures.push({
-      label: 'Prix affichés',
+      label: t.listed,
       value:
         reading.lowestPrice === reading.highestPrice
-          ? formatEuro(reading.lowestPrice)
-          : `${formatEuro(reading.lowestPrice)} à ${formatEuro(reading.highestPrice)}`,
+          ? euro(reading.lowestPrice)
+          : t.range(euro(reading.lowestPrice), euro(reading.highestPrice)),
     });
   }
   if (reading.medianPrice != null) {
-    figures.push({ label: 'Prix médian', value: formatEuro(reading.medianPrice) });
+    figures.push({ label: t.median, value: euro(reading.medianPrice) });
   }
   if (reading.droppedCount != null) {
     figures.push({
-      label: 'Baisse de prix connue',
-      value: `${reading.droppedCount} sur ${reading.revealedCount}`,
+      label: t.dropped,
+      value: t.droppedValue(reading.droppedCount, reading.revealedCount),
     });
   }
   if (reading.medianDaysOnMarket != null) {
     figures.push({
-      label: 'En vente depuis (médiane)',
-      value: `${formatNumber(reading.medianDaysOnMarket)} jour${reading.medianDaysOnMarket > 1 ? 's' : ''}`,
+      label: t.medianDays,
+      value: t.medianDaysValue(
+        formatNumber(reading.medianDaysOnMarket, { language }),
+        reading.medianDaysOnMarket,
+      ),
     });
   }
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Analyse des prix</h2>
+        <h2 className={question}>{t.title}</h2>
         {/* Mission 131 — en présentation directe, aucun prix n'a été demandé au vendeur : rien ne
             lui dit qu'il n'a pas répondu. */}
         <p className={questionHint}>
-          {gaps.sellerPerceivedPrice != null
-            ? 'Voici le marché, face au prix que vous aviez en tête.'
-            : 'Voici le marché des biens que nous avons regardés ensemble.'}
+          {gaps.sellerPerceivedPrice != null ? t.hintWithPrice : t.hintDirect}
         </p>
         {gaps.sellerPerceivedPrice != null ? (
           <p
             className="font-title text-xl font-semibold text-zinc-900 sm:text-2xl stage:text-white"
             data-seller-path
           >
-            Au début&nbsp;: {formatEuro(gaps.sellerPerceivedPrice)}
-            {revisedPrice != null ? (
-              <> → Après avoir vu le marché&nbsp;: {formatEuro(revisedPrice)}</>
-            ) : null}
+            {t.pathStart(euro(gaps.sellerPerceivedPrice))}
+            {revisedPrice != null ? t.pathAfter(euro(revisedPrice)) : null}
           </p>
         ) : null}
       </div>
@@ -215,7 +224,7 @@ export function LivePageAnalysis({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {gaps.sellerPerceivedPrice != null ? (
           <div className={`${panel} flex flex-col gap-1.5`}>
-            <div className={statLabel}>Votre valeur perçue</div>
+            <div className={statLabel}>{t.perceived}</div>
             <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
           </div>
         ) : null}
@@ -224,16 +233,16 @@ export function LivePageAnalysis({
         {gaps.competitiveMarketCentral != null ? (
           <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
             {/* Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ». */}
-            <div className={statLabel}>Prix des concurrents</div>
+            <div className={statLabel}>{t.competitorPrice}</div>
             <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
             {/* Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ». */}
             <div className="text-sm text-zinc-500 stage:text-white/60">
-              {competitorPriceBasisLabel(reading)}
+              {competitorPriceBasisLabel(reading, language)}
             </div>
           </div>
         ) : null}
         <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>Analyse du conseiller</div>
+          <div className={statLabel}>{t.advisor}</div>
           <div className={bigValue}>{euro(gaps.advisorComparativePrice)}</div>
         </div>
       </div>
@@ -261,16 +270,13 @@ export function LivePageAnalysis({
       ) : null}
 
       <div className={`${panelSoft} h-fit`}>
-        <div className={`${statLabel} mb-2`}>Écarts observés</div>
+        <div className={`${statLabel} mb-2`}>{t.gaps}</div>
         {gaps.competitiveMarketCentral != null ? (
-          <GapRow label="Votre valeur perçue vs prix des concurrents" gap={gaps.sellerVsMarket} />
+          <GapRow label={t.gapSellerMarket} gap={gaps.sellerVsMarket} />
         ) : null}
-        <GapRow label="Votre valeur perçue vs analyse du conseiller" gap={gaps.sellerVsAdvisor} />
+        <GapRow label={t.gapSellerAdvisor} gap={gaps.sellerVsAdvisor} />
         {gaps.competitiveMarketCentral != null ? (
-          <GapRow
-            label="Prix des concurrents vs analyse du conseiller"
-            gap={gaps.marketVsAdvisor}
-          />
+          <GapRow label={t.gapMarketAdvisor} gap={gaps.marketVsAdvisor} />
         ) : null}
       </div>
     </div>

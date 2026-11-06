@@ -1,5 +1,8 @@
+'use client';
+
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import { countDpe, dpeMarket } from '@/features/dpe/services/dpe';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   panel,
   panelSoft,
@@ -19,38 +22,36 @@ export function LivePageDpe({
   subjectEnergyRating: string | null;
   competitorEnergyRatings: (string | null)[];
 }) {
+  const t = useLiveTexts().texts.live.dpe;
   const market = dpeMarket(subjectEnergyRating, competitorEnergyRatings);
   if (market == null) return null;
   const { classes } = countDpe(competitorEnergyRatings);
+  const message = market.verdict === 'unknown' ? t.unknown(market.reference) : t[market.verdict];
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Le DPE face au marché</h2>
-        <p className={questionHint}>
-          Les acheteurs comparent la classe énergie de chaque bien avant de visiter.
-        </p>
+        <h2 className={question}>{t.title}</h2>
+        <p className={questionHint}>{t.hint}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={`${panel} flex flex-col gap-3`}>
-          <div className={statLabel}>Votre bien</div>
+          <div className={statLabel}>{t.yours}</div>
           {market.subject ? (
             <DpeLetter letter={market.subject} size="lg" />
           ) : (
-            <p className="text-base text-zinc-500 stage:text-white/70">
-              Pas encore de DPE : il sera établi par le diagnostiqueur.
-            </p>
+            <p className="text-base text-zinc-500 stage:text-white/70">{t.noDpe}</p>
           )}
         </div>
         <div className={`${panel} flex flex-col gap-3`}>
-          <div className={statLabel}>Vos concurrents</div>
+          <div className={statLabel}>{t.competitors}</div>
           <DpeLetter letter={market.reference} size="lg" />
           <ul className="flex flex-wrap gap-x-4 gap-y-2 text-base text-zinc-600 stage:text-white/70">
             {classes.map((entry) => (
               <li key={entry.letter} className="flex items-center gap-1.5">
                 <DpeLetter letter={entry.letter} />
-                {entry.count} concurrent{entry.count > 1 ? 's' : ''}
+                {t.competitorCount(entry.count)}
               </li>
             ))}
           </ul>
@@ -60,7 +61,7 @@ export function LivePageDpe({
       <p
         className={`${panelSoft} font-title text-xl leading-snug font-semibold text-zinc-900 sm:text-2xl stage:text-white`}
       >
-        {market.message}
+        {message}
       </p>
     </div>
   );

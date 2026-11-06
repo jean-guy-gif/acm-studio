@@ -175,6 +175,15 @@ describe('« Prêt, en présentation directe »', () => {
     expect(plan.sellerName).not.toBe(ready.sellerName);
     expect(plan.sellerName).not.toMatch(UNSPOKEN);
   });
+
+  // Mission 140 — les Bernard préfèrent l'anglais ; tous les autres vendeurs, le français.
+  it('« Mr and Mrs Bernard », en anglais ; les autres dossiers en français', () => {
+    expect(demoSeedPlan('direct', NOW).sellerName).toBe('Mr and Mrs Bernard');
+    expect(demoSeedPlan('direct', NOW).language).toBe('en');
+    for (const stage of DEMO_STAGES.filter((each) => each !== 'direct')) {
+      expect(demoSeedPlan(stage, NOW).language).toBe('fr');
+    }
+  });
 });
 
 // Finitions du 06/11 — cinq vendeurs, cinq foyers : le vendeur à relancer n'est plus un second

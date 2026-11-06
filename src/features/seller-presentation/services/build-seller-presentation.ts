@@ -1,3 +1,4 @@
+import { clientLanguage } from '@/lib/client-language';
 import {
   livePresentationMode,
   priceShown,
@@ -478,6 +479,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       status: project.status,
       liveRhythm: liveRhythm(project.live_rhythm),
       presentationMode: livePresentationMode(project.live_presentation_mode),
+      language: clientLanguage(project.language),
       liveStartedAt: project.live_started_at,
       liveEndedAt: project.live_ended_at,
       createdAt: project.created_at,

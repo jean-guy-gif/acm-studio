@@ -9,6 +9,7 @@ import { loadMarketStudy } from '@/features/market-study/queries/load-market-stu
 import { SynthesisPhotoChoices } from '@/features/seller-synthesis/components/synthesis-photo-choices';
 import { SynthesisPrintButton } from '@/features/seller-synthesis/components/synthesis-print-button';
 import { getProfile } from '@/lib/auth/get-profile';
+import { clientTexts } from '@/lib/client-texts';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -43,7 +44,9 @@ export default async function MarketStudyPage({
     return (
       <div className="flex min-h-screen flex-col gap-6 bg-zinc-100 p-4 lg:p-6 print:block print:bg-white print:p-0">
         <div className="mx-auto flex w-full max-w-[210mm] justify-end print:hidden">
-          <SynthesisPrintButton />
+          <SynthesisPrintButton
+            label={clientTexts(document.language).documents.marketStudy.print}
+          />
         </div>
         <MarketStudyDocument document={document} />
       </div>
@@ -95,6 +98,7 @@ export default async function MarketStudyPage({
           projectId={projectId}
           advisorFirstName={profile.first_name ?? null}
           studyDate={day(document.madeAt)}
+          language={document.language}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,

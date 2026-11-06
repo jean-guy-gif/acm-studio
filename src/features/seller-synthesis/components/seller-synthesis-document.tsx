@@ -3,9 +3,11 @@ import { RemoteImage } from '@/components/ui/remote-image';
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import { bandPosition } from '@/features/live-seller/services/market-reading';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
-import { SERIOUS_COMPETITOR_LABELS } from '@/features/live-seller/constants';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
 import {
+  formatDay,
   formatEuro,
   formatEuroPerSquareMeter,
   formatNumber,
@@ -23,25 +25,13 @@ import { displayPhotoUrl } from '@/lib/photo-url';
 // page — « Étude confidentielle · commune · date » et le numéro — est posé par le navigateur
 // (marges de page CSS). À l'écran, même document, lisible sur téléphone.
 
-const SERIOUS_SHORT: Record<'yes' | 'unsure' | 'no', string> = {
-  yes: 'Oui',
-  unsure: SERIOUS_COMPETITOR_LABELS.unsure,
-  no: SERIOUS_COMPETITOR_LABELS.no,
-};
-
 // Les couleurs de la grille, du côté du vendeur, comme au Live et sur le Point marché (Jean-Guy,
 // 05/11) : vert ce qui l'avantage, orange (« attention ») ce qui avantage le concurrent ; la charte
 // n'y touche pas (M55).
 const STATUS = {
-  competitor_advantage: {
-    label: 'Avantage pour lui',
-    className: 'border-amber-300 bg-orange-50 text-amber-800',
-  },
-  same: { label: 'Équivalent', className: 'border-zinc-300 bg-zinc-100 text-zinc-600' },
-  competitor_weakness: {
-    label: 'Avantage pour vous',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-800',
-  },
+  competitor_advantage: { className: 'border-amber-300 bg-orange-50 text-amber-800' },
+  same: { className: 'border-zinc-300 bg-zinc-100 text-zinc-600' },
+  competitor_weakness: { className: 'border-emerald-300 bg-emerald-50 text-emerald-800' },
 } as const;
 
 export const kicker = 'text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase';
@@ -50,17 +40,11 @@ export const card = 'border border-zinc-200 bg-white px-3.5 py-3 break-inside-av
 export const row = 'flex flex-col gap-2 sm:flex-row [&>*]:min-w-0 [&>*]:flex-1';
 export const bigNumber = 'font-title text-xl leading-tight font-bold text-brand-darker';
 
-export function meetingDay(value: string | null): string | null {
+// Mission 140 — « 6 novembre 2026 », « 6 November 2026 » : dans la langue du vendeur.
+export function meetingDay(value: string | null, language: TextLanguage = 'fr'): string | null {
   if (!value) return null;
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Europe/Paris',
-      });
+  return Number.isNaN(date.getTime()) ? null : formatDay(date.toISOString(), language);
 }
 
 // Une chaîne pour une feuille de style : ni guillemet, ni antislash, ni balise ne s'en échappe.
@@ -117,7 +101,14 @@ export function Photo({
   );
 }
 
-export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
+export function Grid({
+  competitor,
+  language = 'fr',
+}: {
+  competitor: SynthesisCompetitor;
+  language?: TextLanguage;
+}) {
+  const texts = clientTexts(language);
   if (competitor.features.length === 0) return null;
   return (
     <table className="w-full border-collapse text-[0.78rem]">
@@ -128,14 +119,16 @@ export function Grid({ competitor }: { competitor: SynthesisCompetitor }) {
             <td className="py-1 pr-2 break-words">
               {feature.value}
               {feature.sellerValue ? (
-                <span className="text-zinc-500"> (vous : {feature.sellerValue})</span>
+                <span className="text-zinc-500">
+                  {texts.documents.common.yours(feature.sellerValue)}
+                </span>
               ) : null}
             </td>
             <td className="py-1 text-right">
               <span
                 className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${STATUS[feature.status].className}`}
               >
-                {STATUS[feature.status].label}
+                {texts.common.grid.status[feature.status]}
               </span>
             </td>
           </tr>
@@ -161,11 +154,19 @@ function Pair({ label, value, strong }: { label: string; value: string; strong?:
 function CompetitorCard({
   competitor,
   dangerousReason,
+  language,
 }: {
   competitor: SynthesisCompetitor;
   // Défini : la fiche du « plus dangereux », avec son motif.
   dangerousReason?: string | null;
+  language: TextLanguage;
 }) {
+  const texts = clientTexts(language);
+  const t = texts.documents.synthesis;
+  const c = texts.documents.common;
+  const euro = (value: number) => formatEuro(value, { language });
+  const perSqm = (value: number) => formatEuroPerSquareMeter(value, { language });
+  const days = (value: number) => c.days(formatNumber(value, { language }));
   const revealed = competitor.revealed;
   const dangerous = dangerousReason !== undefined;
   return (
@@ -180,38 +181,44 @@ function CompetitorCard({
       ) : null}
       <div className="flex flex-col gap-2 p-3.5">
         <div>
-          <div className={kicker}>Concurrent {competitor.position}</div>
+          <div className={kicker}>
+            {texts.live.competitorReview.competitor(competitor.position)}
+          </div>
           <h3 className="font-title text-base leading-snug font-bold text-brand-darker">
             {competitor.label}
           </h3>
         </div>
-        <Grid competitor={competitor} />
+        <Grid competitor={competitor} language={language} />
         {!dangerous && competitor.serious ? (
           <p className="text-sm">
-            <span className={kicker}>Un sérieux concurrent ?</span>{' '}
-            <b>{SERIOUS_SHORT[competitor.serious]}</b>
+            <span className={kicker}>{t.seriousQuestion}</span>{' '}
+            <b>{t.seriousShort[competitor.serious]}</b>
           </p>
         ) : null}
         {!dangerous && competitor.serious === 'no' ? (
-          <p className="bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
-            Pas un concurrent pour vous : son prix n’a pas été regardé.
-          </p>
+          <p className="bg-zinc-100 px-3 py-2 text-sm text-zinc-600">{t.notConsidered}</p>
         ) : null}
         {revealed && !dangerous ? (
           <div className={`${row} text-[0.78rem]`}>
             <div className={`${card} flex flex-col gap-0.5`}>
-              <div className={kicker}>Le prix</div>
+              <div className={kicker}>{t.thePrice}</div>
               {revealed.guess != null ? (
-                <Pair label="Vous imaginiez" value={formatEuro(revealed.guess)} />
+                <Pair label={t.youImagined} value={euro(revealed.guess)} />
               ) : null}
-              <Pair label="Affiché" value={formatEuro(revealed.price)} strong />
+              <Pair label={t.listedShort} value={euro(revealed.price)} strong />
               <div className="font-semibold text-brand-deep">
                 {[
                   revealed.gapPercent != null && revealed.gapPercent !== 0
-                    ? `${formatPercent(revealed.gapPercent, { signed: true, maxDecimals: 1 })} par rapport à votre réponse`
+                    ? t.gapVsAnswer(
+                        formatPercent(revealed.gapPercent, {
+                          signed: true,
+                          maxDecimals: 1,
+                          language,
+                        }),
+                      )
                     : null,
                   revealed.pricePerSquareMeter != null
-                    ? formatEuroPerSquareMeter(revealed.pricePerSquareMeter)
+                    ? perSqm(revealed.pricePerSquareMeter)
                     : null,
                 ]
                   .filter(Boolean)
@@ -220,25 +227,18 @@ function CompetitorCard({
             </div>
             {revealed.duration ? (
               <div className={`${card} flex flex-col gap-0.5`}>
-                <div className={kicker}>La durée en vente</div>
+                <div className={kicker}>{t.durationTitle}</div>
                 {revealed.duration.guessDays != null ? (
-                  <Pair
-                    label="Vous imaginiez"
-                    value={`${formatNumber(revealed.duration.guessDays)} jours`}
-                  />
+                  <Pair label={t.youImagined} value={days(revealed.duration.guessDays)} />
                 ) : null}
                 {revealed.duration.days != null ? (
-                  <Pair
-                    label="En vente depuis"
-                    value={`${formatNumber(revealed.duration.days)} jours`}
-                    strong
-                  />
+                  <Pair label={c.since} value={days(revealed.duration.days)} strong />
                 ) : null}
                 {revealed.priceDrop ? (
                   <div className="text-zinc-600">
-                    Baisse de prix connue : {formatEuro(revealed.priceDrop.amount)}
+                    {t.knownDrop(euro(revealed.priceDrop.amount))}
                     {revealed.priceDrop.percent != null
-                      ? ` (${formatPercent(revealed.priceDrop.percent, { maxDecimals: 1 })})`
+                      ? ` (${formatPercent(revealed.priceDrop.percent, { maxDecimals: 1, language })})`
                       : ''}
                   </div>
                 ) : null}
@@ -250,15 +250,15 @@ function CompetitorCard({
           <div className={`${row} text-[0.78rem]`}>
             {revealed ? (
               <div className={card}>
-                <div className={kicker}>Prix affiché</div>
-                <div className={bigNumber}>{formatEuro(revealed.price)}</div>
+                <div className={kicker}>{t.listed}</div>
+                <div className={bigNumber}>{euro(revealed.price)}</div>
                 <div className="text-zinc-500">
                   {[
                     revealed.pricePerSquareMeter != null
-                      ? formatEuroPerSquareMeter(revealed.pricePerSquareMeter)
+                      ? perSqm(revealed.pricePerSquareMeter)
                       : null,
                     revealed.duration?.days != null
-                      ? `en vente depuis ${formatNumber(revealed.duration.days)} jours`
+                      ? c.onMarketFor(formatNumber(revealed.duration.days, { language }))
                       : null,
                   ]
                     .filter(Boolean)
@@ -268,7 +268,7 @@ function CompetitorCard({
             ) : null}
             {dangerousReason ? (
               <div className="border border-amber-300 bg-amber-50 px-3.5 py-3">
-                <div className={`${kicker} text-amber-800`}>Pourquoi, selon vous</div>
+                <div className={`${kicker} text-amber-800`}>{t.whyYou}</div>
                 <div className="font-title text-base font-bold text-zinc-900">
                   {dangerousReason}
                 </div>
@@ -292,7 +292,16 @@ const ALIGNMENT_TONE = {
 } as const;
 
 // La bande des prix affichés (M94), avec ses repères.
-function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] }) {
+function PriceBand({
+  prices,
+  markers,
+  language,
+}: {
+  prices: number[];
+  markers: Marker[];
+  language: TextLanguage;
+}) {
+  const euro = (value: number) => formatEuro(value, { language });
   const all = [...prices, ...markers.map((marker) => marker.value)];
   const at = (value: number) => `${Math.round(bandPosition(value, all) * 1000) / 10}%`;
   const tone = {
@@ -329,7 +338,7 @@ function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] })
                 <span className={`mb-0.5 h-4 w-0.5 ${tone[marker.tone].split(' ')[0]}`} />
               ) : null}
               <span>{marker.label}</span>
-              <b>{formatEuro(marker.value)}</b>
+              <b>{euro(marker.value)}</b>
               {below ? null : (
                 <span className={`mt-0.5 h-4 w-0.5 ${tone[marker.tone].split(' ')[0]}`} />
               )}
@@ -338,17 +347,23 @@ function PriceBand({ prices, markers }: { prices: number[]; markers: Marker[] })
         })}
       </div>
       <div className="flex justify-between text-xs text-zinc-500">
-        <span>{formatEuro(low)}</span>
-        <span>{formatEuro(high)}</span>
+        <span>{euro(low)}</span>
+        <span>{euro(high)}</span>
       </div>
     </div>
   );
 }
 
 export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthesis }) {
-  const { property, agency, analysis, decision } = synthesis;
-  const day = meetingDay(synthesis.meetingDate);
-  const footer = ['Étude confidentielle', synthesis.commune, day].filter(Boolean).join(' · ');
+  const { property, agency, analysis, decision, language } = synthesis;
+  const texts: ClientTexts = clientTexts(language);
+  const t = texts.documents.synthesis;
+  const c = texts.documents.common;
+  const band = texts.live.analysis.band;
+  const euro = (value: number) => formatEuro(value, { language });
+  const perSqm = (value: number) => formatEuroPerSquareMeter(value, { language });
+  const day = meetingDay(synthesis.meetingDate, language);
+  const footer = [c.confidential, synthesis.commune, day].filter(Boolean).join(' · ');
   const cover = property?.photos[0] ?? null;
   const dangerous = synthesis.dangerous
     ? (synthesis.competitors.find((item) => item.id === synthesis.dangerous!.competitorId) ?? null)
@@ -367,19 +382,19 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
   const coverFigures = [
     synthesis.commercializationPrice != null
       ? {
-          label: 'Prix de commercialisation convenu',
-          value: formatEuro(synthesis.commercializationPrice),
+          label: t.agreedPrice,
+          value: euro(synthesis.commercializationPrice),
         }
       : null,
     property?.surfaceArea != null
-      ? { label: 'Surface habitable', value: formatSquareMeters(property.surfaceArea) }
+      ? { label: c.livingArea, value: formatSquareMeters(property.surfaceArea, { language }) }
       : null,
     property?.roomsCount != null
       ? {
-          label: 'Pièces · chambres',
+          label: c.roomsBedrooms,
           value: [
-            `${property.roomsCount} pièce${property.roomsCount > 1 ? 's' : ''}`,
-            property.bedroomsCount != null ? `${property.bedroomsCount} ch.` : null,
+            texts.common.rooms(property.roomsCount),
+            property.bedroomsCount != null ? c.bedroomsShort(property.bedroomsCount) : null,
           ]
             .filter(Boolean)
             .join(' · '),
@@ -393,35 +408,33 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
   const dangerousPrice = dangerous?.revealed?.price ?? null;
   const analysisCandidates: (Marker | null)[] = [
     synthesis.perceivedPrice != null
-      ? { label: 'Au début', value: synthesis.perceivedPrice, tone: 'muted' as const }
+      ? { label: band.start, value: synthesis.perceivedPrice, tone: 'muted' as const }
       : null,
     synthesis.revisedPrice != null
-      ? { label: 'Après le marché', value: synthesis.revisedPrice, tone: 'brand' as const }
+      ? { label: band.revised, value: synthesis.revisedPrice, tone: 'brand' as const }
       : null,
     dangerousPrice != null
       ? {
-          label: synthesis.dangerous?.byAdvisor
-            ? 'Le plus proche de votre bien'
-            : 'Le plus dangereux selon vous',
+          label: synthesis.dangerous?.byAdvisor ? texts.live.closest.badge : band.dangerous,
           value: dangerousPrice,
           tone: 'deep' as const,
         }
       : null,
     decision?.competitorPrice != null
-      ? { label: 'Prix des concurrents', value: decision.competitorPrice, tone: 'dark' as const }
+      ? { label: band.competitors, value: decision.competitorPrice, tone: 'dark' as const }
       : null,
   ];
   const analysisMarkers = analysisCandidates.filter((item): item is Marker => item != null);
   const pathCandidates: (Marker | null)[] = [
     synthesis.perceivedPrice != null
-      ? { label: 'Au début', value: synthesis.perceivedPrice, tone: 'muted' as const }
+      ? { label: band.start, value: synthesis.perceivedPrice, tone: 'muted' as const }
       : null,
     synthesis.revisedPrice != null
-      ? { label: 'Après le marché', value: synthesis.revisedPrice, tone: 'brand' as const }
+      ? { label: band.revised, value: synthesis.revisedPrice, tone: 'brand' as const }
       : null,
     synthesis.commercializationPrice != null
       ? {
-          label: 'Convenu ensemble',
+          label: t.agreedTogether,
           value: synthesis.commercializationPrice,
           tone: 'dark' as const,
         }
@@ -435,20 +448,20 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
   );
   const steps = [
     synthesis.perceivedPrice != null
-      ? { label: 'Au début', value: synthesis.perceivedPrice, hint: 'Votre valeur perçue' }
+      ? { label: band.start, value: synthesis.perceivedPrice, hint: texts.live.analysis.perceived }
       : null,
     synthesis.revisedPrice != null
       ? {
-          label: 'Après le marché',
+          label: band.revised,
           value: synthesis.revisedPrice,
-          hint: 'Après avoir vu les biens',
+          hint: t.afterSeeing,
         }
       : null,
     synthesis.commercializationPrice != null
       ? {
-          label: 'Convenu ensemble',
+          label: t.agreedTogether,
           value: synthesis.commercializationPrice,
-          hint: 'Prix de commercialisation convenu ensemble',
+          hint: t.agreedTogetherHint,
         }
       : null,
   ].filter((item): item is { label: string; value: number; hint: string } => item != null);
@@ -498,7 +511,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
           <span className="self-start border border-white/80 px-3 py-1 text-[0.65rem] tracking-[0.2em] uppercase">
-            Dossier de rendez-vous
+            {t.badge}
           </span>
           {synthesis.propertyLabel ? (
             <span className="mt-3 text-xs tracking-[0.2em] uppercase opacity-85">
@@ -506,15 +519,15 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             </span>
           ) : null}
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            Notre rendez-vous
+            {t.coverTitle}
             {day ? (
               <>
                 <br />
-                du {day}
+                {t.titleDay(day)}
               </>
             ) : null}
           </h1>
-          <p className="text-sm opacity-90">Pour {synthesis.sellerName}</p>
+          <p className="text-sm opacity-90">{t.forSeller(synthesis.sellerName)}</p>
           {coverFigures.length > 0 ? (
             <div className="mt-8 flex flex-col gap-4 border-t border-white/35 pt-4 sm:flex-row [&>*]:flex-1">
               {coverFigures.map((figure) => (
@@ -536,21 +549,25 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           <section className="flex flex-col gap-3">
             <SectionTitle
               number={sectionNumber('property')}
-              title="Votre bien"
-              hint="Ce que nous avons regardé ensemble en début de rendez-vous."
+              title={t.propertyTitle}
+              hint={t.propertyHint}
             />
             {property && property.photos.length > 0 ? (
               <div
                 className={`grid gap-2 ${property.photos.length > 1 ? 'grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}
               >
-                <Photo url={property.photos[0]} alt="Votre bien" className="h-64 w-full sm:h-80" />
+                <Photo
+                  url={property.photos[0]}
+                  alt={t.propertyTitle}
+                  className="h-64 w-full sm:h-80"
+                />
                 {property.photos.length > 1 ? (
                   <div className="grid gap-2">
                     {property.photos.slice(1).map((url) => (
                       <Photo
                         key={url}
                         url={url}
-                        alt="Votre bien"
+                        alt={t.propertyTitle}
                         className="h-full min-h-24 w-full"
                       />
                     ))}
@@ -571,7 +588,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             {property && property.strengths.length > 0 ? (
               <div className="flex flex-col gap-1.5">
                 <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-                  Ses atouts
+                  {t.strengths}
                 </div>
                 <ul className="grid list-disc grid-cols-1 gap-x-6 gap-y-1 pl-5 text-sm sm:grid-cols-2">
                   {property.strengths.map((strength) => (
@@ -582,9 +599,9 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             ) : null}
             {synthesis.perceivedPrice != null ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border border-l-4 border-zinc-200 border-l-brand bg-white px-5 py-4">
-                <div className={kicker}>Votre valeur perçue, en début de rendez-vous</div>
+                <div className={kicker}>{t.perceivedAtStart}</div>
                 <div className="font-title text-3xl font-bold text-brand-darker">
-                  {formatEuro(synthesis.perceivedPrice)}
+                  {euro(synthesis.perceivedPrice)}
                 </div>
               </div>
             ) : null}
@@ -596,11 +613,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           <section className="flex flex-col gap-3">
             <SectionTitle
               number={sectionNumber('competitors')}
-              title="Les biens que nous avons regardés ensemble"
-              hint="Dans l’ordre du rendez-vous : ce que nous avons vu, et ce que vous avez répondu."
+              title={t.competitorsTitle}
+              hint={t.competitorsHint}
             />
             {synthesis.competitors.map((competitor) => (
-              <CompetitorCard key={competitor.id} competitor={competitor} />
+              <CompetitorCard key={competitor.id} competitor={competitor} language={language} />
             ))}
           </section>
         ) : null}
@@ -610,36 +627,34 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           <section className="flex flex-col gap-3 break-inside-avoid">
             <SectionTitle
               number={sectionNumber('dpe')}
-              title="Le DPE face au marché"
-              hint="La classe énergie des biens regardés, et celle du vôtre."
+              title={texts.live.dpe.title}
+              hint={t.dpeHint}
             />
             <div className={row}>
               <div className={`${card} flex flex-col gap-2`}>
-                <div className={kicker}>Votre bien</div>
+                <div className={kicker}>{texts.live.dpe.yours}</div>
                 {synthesis.dpe.subject ? (
                   <span className="self-start">
                     <DpeLetter letter={synthesis.dpe.subject} size="md" />
                   </span>
                 ) : (
-                  <p className="text-sm text-zinc-500">
-                    Pas encore de DPE : il sera établi par le diagnostiqueur.
-                  </p>
+                  <p className="text-sm text-zinc-500">{texts.live.dpe.noDpe}</p>
                 )}
               </div>
               <div className={`${card} flex flex-col gap-2`}>
-                <div className={kicker}>Vos concurrents</div>
+                <div className={kicker}>{texts.live.dpe.competitors}</div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   {synthesis.dpe.classes.map((entry) => (
                     <span key={entry.letter} className="flex items-center gap-1.5">
                       <DpeLetter letter={entry.letter} />
-                      {entry.count} bien{entry.count > 1 ? 's' : ''}
+                      {t.dpeProperties(entry.count)}
                     </span>
                   ))}
                 </div>
               </div>
             </div>
             <p className="border-l-4 border-brand-deep bg-brand-soft px-4 py-2.5 text-sm">
-              Repère du marché : {synthesis.dpe.reference}. {synthesis.dpe.message}
+              {t.dpeReference(synthesis.dpe.reference)} {synthesis.dpe.message}
             </p>
           </section>
         ) : null}
@@ -651,13 +666,14 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               number={sectionNumber('dangerous')}
               title={
                 synthesis.dangerous?.byAdvisor
-                  ? 'Le concurrent le plus proche de votre bien'
-                  : 'Le concurrent le plus dangereux, selon vous'
+                  ? texts.live.conclusion.closestCard
+                  : t.dangerousTitle
               }
             />
             <CompetitorCard
               competitor={dangerous}
               dangerousReason={synthesis.dangerous?.reason ?? null}
+              language={language}
             />
           </section>
         ) : null}
@@ -669,13 +685,17 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             <div className="flex flex-col gap-3 break-inside-avoid">
               <SectionTitle
                 number={sectionNumber('analysis')}
-                title="L’analyse des prix"
-                hint="Les prix affichés des biens dont nous avons regardé le prix ensemble."
+                title={t.analysisTitle}
+                hint={t.analysisHint}
               />
               {analysis ? (
                 <div className={card}>
-                  <div className={kicker}>Prix affichés, du moins cher au plus cher</div>
-                  <PriceBand prices={analysis.prices} markers={analysisMarkers} />
+                  <div className={kicker}>{t.bandTitle}</div>
+                  <PriceBand
+                    prices={analysis.prices}
+                    markers={analysisMarkers}
+                    language={language}
+                  />
                 </div>
               ) : null}
               {decision &&
@@ -684,10 +704,10 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   {decision.competitorPrice != null ? (
                     <div className="bg-brand-darker px-4 py-3.5 text-white">
                       <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
-                        Prix des concurrents
+                        {texts.live.analysis.competitorPrice}
                       </div>
                       <div className="font-title text-2xl font-bold">
-                        {formatEuro(decision.competitorPrice)}
+                        {euro(decision.competitorPrice)}
                       </div>
                       {decision.basisLabel ? (
                         <div className="text-xs text-white/80">{decision.basisLabel}</div>
@@ -697,10 +717,10 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   {decision.advisorAnalysis != null ? (
                     <div className="bg-brand-deep px-4 py-3.5 text-white">
                       <div className="text-[0.62rem] font-semibold tracking-[0.14em] text-white/75 uppercase">
-                        Analyse du conseiller
+                        {texts.live.analysis.advisor}
                       </div>
                       <div className="font-title text-2xl font-bold">
-                        {formatEuro(decision.advisorAnalysis)}
+                        {euro(decision.advisorAnalysis)}
                       </div>
                     </div>
                   ) : null}
@@ -708,7 +728,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               ) : null}
               {decision?.justification ? (
                 <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-4">
-                  <div className={`${kicker} text-brand-deep`}>Le point à retenir</div>
+                  <div className={`${kicker} text-brand-deep`}>{t.keyPoint}</div>
                   <p className="mt-1.5 text-[0.95rem] leading-relaxed whitespace-pre-line">
                     {decision.justification}
                   </p>
@@ -722,23 +742,26 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
               <div className={row}>
                 {analysis.medianPrice != null ? (
                   <div className={card}>
-                    <div className={kicker}>Prix médian</div>
-                    <div className={bigNumber}>{formatEuro(analysis.medianPrice)}</div>
+                    <div className={kicker}>{texts.live.analysis.median}</div>
+                    <div className={bigNumber}>{euro(analysis.medianPrice)}</div>
                   </div>
                 ) : null}
                 {analysis.medianDaysOnMarket != null ? (
                   <div className={card}>
-                    <div className={kicker}>Ancienneté médiane</div>
+                    <div className={kicker}>{t.medianAge}</div>
                     <div className={bigNumber}>
-                      {formatNumber(analysis.medianDaysOnMarket)} jours
+                      {c.days(formatNumber(analysis.medianDaysOnMarket, { language }))}
                     </div>
                   </div>
                 ) : null}
                 {analysis.droppedCount != null ? (
                   <div className={card}>
-                    <div className={kicker}>Baisse de prix connue</div>
+                    <div className={kicker}>{texts.live.analysis.dropped}</div>
                     <div className={bigNumber}>
-                      {analysis.droppedCount} sur {analysis.revealedCount}
+                      {texts.live.analysis.droppedValue(
+                        analysis.droppedCount,
+                        analysis.revealedCount,
+                      )}
                     </div>
                   </div>
                 ) : null}
@@ -746,14 +769,12 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             ) : null}
             {analysis && analysis.perSquareMeter.length > 0 ? (
               <div className={card}>
-                <div className={`${kicker} mb-1`}>
-                  Prix affichés au m², du moins cher au plus cher
-                </div>
+                <div className={`${kicker} mb-1`}>{t.perSqmTitle}</div>
                 {(() => {
                   const rows = [
                     ...analysis.perSquareMeter.map((item) => ({ ...item, median: false })),
                     ...(analysis.medianPerSquareMeter != null
-                      ? [{ label: 'Médiane', value: analysis.medianPerSquareMeter, median: true }]
+                      ? [{ label: t.median, value: analysis.medianPerSquareMeter, median: true }]
                       : []),
                   ].sort((a, b) => a.value - b.value);
                   const max = Math.max(...rows.map((item) => item.value));
@@ -769,7 +790,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                         className={`block h-2 rounded-sm ${item.median ? 'bg-brand-deep' : 'bg-zinc-400'}`}
                         style={{ width: `${Math.max(8, (item.value / max) * 100)}%` }}
                       />
-                      <b className="text-right">{formatEuroPerSquareMeter(item.value)}</b>
+                      <b className="text-right">{perSqm(item.value)}</b>
                     </div>
                   ));
                 })()}
@@ -780,15 +801,11 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
         {/* 06 · Le chemin de votre prix — « Après avoir vu le marché » et « Sur quel prix partons-nous ? ». */}
         <section className="flex flex-col gap-3">
-          <SectionTitle
-            number={sectionNumber('path')}
-            title="Le chemin de votre prix"
-            hint="Au début du rendez-vous, après avoir vu le marché, puis le prix retenu ensemble."
-          />
+          <SectionTitle number={sectionNumber('path')} title={t.pathTitle} hint={t.pathHint} />
           {steps.length > 0 ? (
             <div className="flex flex-col gap-2 break-inside-avoid sm:flex-row sm:items-stretch">
               {steps.map((step, index) => {
-                const last = step.label === 'Convenu ensemble';
+                const last = step.label === t.agreedTogether;
                 // Mission 116 — le prix convenu en couleur face à l'analyse du conseiller, sur les
                 // montants figés à la conclusion (M111) : titre et montant colorés, le libellé à
                 // côté. Sans analyse, la carte reste telle quelle.
@@ -828,7 +845,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                             data-testid="price-alignment"
                             className={`text-xs font-semibold ${toneClass.text}`}
                           >
-                            {alignment.label}
+                            {texts.common.alignment[alignment.tone]}
                           </span>
                         ) : null}
                       </div>
@@ -837,7 +854,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                           toneClass ? toneClass.text : last ? '' : 'text-brand-darker'
                         }`}
                       >
-                        {formatEuro(step.value)}
+                        {euro(step.value)}
                       </div>
                       <div
                         className={`text-xs ${toneClass ? 'text-zinc-600' : last ? 'text-white/80' : 'text-zinc-500'}`}
@@ -852,7 +869,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           ) : null}
           {synthesis.guessLines.length > 0 ? (
             <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-3">
-              <div className={`${kicker} text-brand-deep`}>Vos réponses face aux prix affichés</div>
+              <div className={`${kicker} text-brand-deep`}>{t.answersTitle}</div>
               {synthesis.guessLines.map((line) => (
                 <p key={line} className="mt-1 text-[0.95rem]">
                   {line}.
@@ -864,15 +881,13 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             <div className={row}>
               {synthesis.agreedPricePerSquareMeter != null ? (
                 <div className={card}>
-                  <div className={kicker}>Prix convenu au m²</div>
-                  <div className={bigNumber}>
-                    {formatEuroPerSquareMeter(synthesis.agreedPricePerSquareMeter)}
-                  </div>
+                  <div className={kicker}>{t.agreedPerSqm}</div>
+                  <div className={bigNumber}>{perSqm(synthesis.agreedPricePerSquareMeter)}</div>
                 </div>
               ) : null}
               {synthesis.positionSentence ? (
                 <div className={card}>
-                  <div className={kicker}>Parmi les biens comparés</div>
+                  <div className={kicker}>{t.amongCompared}</div>
                   <div className="font-title text-base font-bold text-brand-darker">
                     {synthesis.positionSentence}
                   </div>
@@ -882,16 +897,13 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           ) : null}
           {analysis && pathMarkers.length > 0 ? (
             <div className={card}>
-              <div className={kicker}>Les étapes face aux prix affichés des biens regardés</div>
-              <PriceBand prices={analysis.prices} markers={pathMarkers} />
+              <div className={kicker}>{t.stepsBand}</div>
+              <PriceBand prices={analysis.prices} markers={pathMarkers} language={language} />
             </div>
           ) : null}
 
           <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
-            <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">
-              Les prix cités sont ceux des annonces, pas des prix de vente. Surfaces et
-              caractéristiques telles qu’annoncées, à vérifier.
-            </p>
+            <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">{c.disclaimer}</p>
             {agency.advisorName ? (
               <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">
                 {agency.advisorPhotoUrl ? (
@@ -902,7 +914,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   />
                 ) : null}
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className={kicker}>Votre conseiller</span>
+                  <span className={kicker}>{c.advisor}</span>
                   <span className="font-semibold">{agency.advisorName}</span>
                   <span className="text-sm text-zinc-500">
                     {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
@@ -913,7 +925,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                     viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
                     className="h-16 w-16 shrink-0"
                     role="img"
-                    aria-label="Carte de contact du conseiller"
+                    aria-label={c.contactCard}
                     shapeRendering="crispEdges"
                   >
                     <path d={agency.advisorQr.path} fill="currentColor" />

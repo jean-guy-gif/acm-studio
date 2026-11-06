@@ -1,3 +1,4 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatSquareMeters } from '@/lib/format';
 // LIVE — étapes AVANT la révélation du prix (« Est-il un sérieux concurrent ? »,
 // « À quel prix pensez-vous ? »). Le vendeur juge le bien SANS son prix : la pédagogie
@@ -12,36 +13,34 @@ import { formatSquareMeters } from '@/lib/format';
 // en vocabulaire canonique), ouvre le libellé : « Appartement · 3 pièces · … ». Type
 // null (ancien import, saisie manuelle) → on s'en tient à pièces / surface / commune.
 // Déterministe, aucun prix.
-const TYPE_LABEL_FR: Record<string, string> = {
-  apartment: 'Appartement',
-  house: 'Maison',
-  land: 'Terrain',
-  building: 'Immeuble',
-  commercial: 'Local commercial',
-  parking: 'Parking',
-};
-
-export function neutralComparableLabel(entry: {
-  propertyType?: string | null;
-  roomsCount: number | null;
-  surfaceArea: number | null;
-  city: string | null;
-  district: string | null;
-}): string {
+// Mission 140 — dans la langue du vendeur (le français par défaut).
+export function neutralComparableLabel(
+  entry: {
+    propertyType?: string | null;
+    roomsCount: number | null;
+    surfaceArea: number | null;
+    city: string | null;
+    district: string | null;
+  },
+  language: TextLanguage = 'fr',
+): string {
+  const texts = clientTexts(language);
   const parts: string[] = [];
-  const typeLabel = entry.propertyType ? TYPE_LABEL_FR[entry.propertyType] : undefined;
+  const typeLabel = entry.propertyType
+    ? texts.labels.propertyType[entry.propertyType as keyof typeof texts.labels.propertyType]
+    : undefined;
   if (typeLabel) {
     parts.push(typeLabel);
   }
   if (entry.roomsCount != null && entry.roomsCount > 0) {
-    parts.push(`${entry.roomsCount} pièce${entry.roomsCount > 1 ? 's' : ''}`);
+    parts.push(texts.common.rooms(entry.roomsCount));
   }
   if (entry.surfaceArea != null && entry.surfaceArea > 0) {
-    parts.push(formatSquareMeters(entry.surfaceArea));
+    parts.push(formatSquareMeters(entry.surfaceArea, { language }));
   }
   const location = entry.district?.trim() || entry.city?.trim();
   if (location) {
     parts.push(location);
   }
-  return parts.length > 0 ? parts.join(' · ') : 'Bien concurrent';
+  return parts.length > 0 ? parts.join(' · ') : texts.common.competitorFallback;
 }

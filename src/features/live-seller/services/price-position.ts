@@ -1,3 +1,4 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro } from '@/lib/format';
 
 // Mission 94 — « Sur quel prix partons-nous ? » : dès qu'un montant est saisi, une ligne dit où
@@ -40,33 +41,34 @@ export function pricePosition(
   return { kind: 'rank', rank: cheaper + 1 };
 }
 
-const ordinal = (rank: number): string => (rank === 1 ? '1er' : `${rank}e`);
-
-// « À 380 000 €, votre bien serait le plus cher des 7 biens comparés. »
+// « À 380 000 €, votre bien serait le plus cher des 7 biens comparés. » Mission 140 — dans la
+// langue du vendeur (le français par défaut).
 export function pricePositionSentence(
   price: number,
   competitorPrices: readonly number[],
+  language: TextLanguage = 'fr',
 ): string | null {
   const position = pricePosition(price, competitorPrices);
   if (!position) {
     return null;
   }
+  const t = clientTexts(language).common.pricePosition;
   const total = competitorPrices.filter((value) => Number.isFinite(value) && value > 0).length + 1;
   const where = (() => {
     switch (position.kind) {
       case 'most_expensive':
-        return `le plus cher des ${total} biens comparés`;
+        return t.mostExpensive(total);
       case 'cheapest':
-        return `le moins cher des ${total} biens comparés`;
+        return t.cheapest(total);
       case 'among_most_expensive':
-        return `parmi les plus chers des ${total} biens comparés`;
+        return t.amongMostExpensive(total);
       case 'among_cheapest':
-        return `parmi les moins chers des ${total} biens comparés`;
+        return t.amongCheapest(total);
       case 'middle':
-        return `dans la moyenne des ${total} biens comparés`;
+        return t.middle(total);
       case 'rank':
-        return `le ${ordinal(position.rank)} moins cher sur ${total}`;
+        return t.rank(position.rank, total);
     }
   })();
-  return `À ${formatEuro(price)}, votre bien serait ${where}.`;
+  return t.sentence(formatEuro(price, { language }), where);
 }

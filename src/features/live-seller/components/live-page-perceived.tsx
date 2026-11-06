@@ -1,5 +1,6 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
   bigInput,
@@ -32,24 +33,22 @@ export function LivePagePerceived({
   confirming?: number | null;
 }) {
   const saved = summary?.seller_perceived_property_price ?? null;
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.perceived;
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>À quel prix positionneriez-vous aujourd’hui votre bien ?</h2>
-        <p className={questionHint}>
-          {saved != null
-            ? 'Votre prix de départ est noté : il ne se modifie plus.'
-            : 'D’abord votre intuition, avant de regarder le marché : c’est elle que nous notons ici.'}
-        </p>
+        <h2 className={question}>{t.question}</h2>
+        <p className={questionHint}>{saved != null ? t.savedHint : t.hint}</p>
       </div>
       {saved != null ? (
         <div className={`${panel} flex flex-col gap-4`}>
-          <LiveLockedAnswer value={formatEuro(saved)} />
+          <LiveLockedAnswer value={formatEuro(saved, { language })} />
         </div>
       ) : (
         <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
           <label className="flex flex-col gap-2">
-            <span className={statLabel}>Votre valeur perçue</span>
+            <span className={statLabel}>{t.label}</span>
             <div className="flex items-center gap-3">
               <input
                 type="number"
@@ -65,10 +64,11 @@ export function LivePagePerceived({
           </label>
           {confirming != null ? (
             <div className="live-reveal-pop flex flex-col gap-2" role="status" aria-live="polite">
-              <span className={revealValue}>{formatEuro(confirming)}&nbsp;?</span>
-              <span className={questionHint}>
-                Est-ce bien votre prix&nbsp;? Une fois confirmé, il ne se modifie plus.
+              <span className={revealValue}>
+                {formatEuro(confirming, { language })}
+                {texts.common.questionMark}
               </span>
+              <span className={questionHint}>{t.confirmHint}</span>
             </div>
           ) : null}
         </form>

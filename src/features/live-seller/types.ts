@@ -1,3 +1,4 @@
+import type { TextLanguage } from '@/lib/client-texts';
 import type {
   ComparisonCriterion,
   ComparisonStatus,
@@ -24,6 +25,9 @@ export type FeatureComparison = {
   comparableValue: string | null;
   comparisonStatus: ComparisonStatus;
   displayLabel: string;
+  // Mission 140 — la valeur du concurrent dans chaque langue des textes : le Live change de langue
+  // en direct, sans recharger ; absente d'une grille construite avant la mission.
+  comparableValues?: Record<TextLanguage, string | null>;
 };
 
 // Normalised feature bundle fed to the engine. Comparable-side fields absent from

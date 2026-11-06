@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   bigInput,
   bigInputUnit,
@@ -40,7 +41,10 @@ export function LiveCommercializationPrice({
   const inputRef = useRef<HTMLInputElement>(null);
   const lastSavedRef = useRef<string | null>(null);
   const [typedPrice, setTypedPrice] = useState<number | null>(null);
-  const position = typedPrice == null ? null : pricePositionSentence(typedPrice, comparedPrices);
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.conclusion;
+  const position =
+    typedPrice == null ? null : pricePositionSentence(typedPrice, comparedPrices, language);
 
   // Le champ repart vide à chaque ouverture de l'écran : en le quittant, plus rien n'attend.
   useEffect(() => () => onPendingChange?.(null), [onPendingChange]);
@@ -62,16 +66,14 @@ export function LiveCommercializationPrice({
             );
           }
           setState(
-            result.ok
-              ? { ok: true, message: 'Prix de commercialisation enregistré.' }
-              : { ok: false, message: result.error },
+            result.ok ? { ok: true, message: t.saved } : { ok: false, message: result.error },
           );
         });
       }}
     >
       <div className="flex flex-col gap-2">
-        <h3 className={question}>Sur quel prix partons-nous&nbsp;?</h3>
-        <p className={questionHint}>Le prix que nous retenons ensemble. Rien n’est pré-rempli.</p>
+        <h3 className={question}>{t.priceQuestion}</h3>
+        <p className={questionHint}>{t.priceHint}</p>
       </div>
       <div className="flex items-center gap-3">
         <input
@@ -104,7 +106,7 @@ export function LiveCommercializationPrice({
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className={ctaPrimary} disabled={pending}>
-          {pending ? 'Enregistrement…' : 'Enregistrer le prix'}
+          {pending ? t.saving : t.save}
         </button>
         {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
       </div>

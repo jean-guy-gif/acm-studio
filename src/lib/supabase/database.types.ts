@@ -2866,6 +2866,7 @@ export type Database = {
           demo_stage: string | null
           id: string
           is_example: boolean
+          language: string
           live_confirmed_at: string | null
           live_confirmed_by: string | null
           live_ended_at: string | null
@@ -2887,6 +2888,7 @@ export type Database = {
           demo_stage?: string | null
           id?: string
           is_example?: boolean
+          language?: string
           live_confirmed_at?: string | null
           live_confirmed_by?: string | null
           live_ended_at?: string | null
@@ -2908,6 +2910,7 @@ export type Database = {
           demo_stage?: string | null
           id?: string
           is_example?: boolean
+          language?: string
           live_confirmed_at?: string | null
           live_confirmed_by?: string | null
           live_ended_at?: string | null

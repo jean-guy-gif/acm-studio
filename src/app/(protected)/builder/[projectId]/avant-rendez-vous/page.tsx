@@ -27,6 +27,7 @@ import {
   type SequenceNote,
 } from '@/features/before-meeting/components/seller-sequence-card';
 import { LiveRhythmSetting } from '@/features/before-meeting/components/live-rhythm-setting';
+import { ClientLanguageSetting } from '@/features/before-meeting/components/client-language-setting';
 import { PresentationModeSetting } from '@/features/before-meeting/components/presentation-mode-setting';
 import {
   bothRhythmsLabel,
@@ -554,6 +555,12 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 presentation.project.status === 'archived'
               }
             />
+            {presentation.project.status === 'archived' ? null : (
+              <ClientLanguageSetting
+                projectId={projectId}
+                language={presentation.project.language}
+              />
+            )}
             {presentationMode === 'document' ? null : (
               <LiveRhythmSetting
                 rhythm={rhythm}

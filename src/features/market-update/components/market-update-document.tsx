@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { GOLD, PriceRankingView, Verdict } from '@/features/market-update/components/price-ranking';
+import { goneConclusionLabel } from '@/features/market-update/services/gone-listing-rule';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
 import { MARKET_UPDATE_STATE_LABELS } from '@/features/market-update/services/market-update-summary';
 import type { MarketUpdateCompetitor } from '@/features/market-update/services/market-update-summary';
@@ -21,7 +22,11 @@ import {
   row,
   SectionTitle,
 } from '@/features/seller-synthesis/components/seller-synthesis-document';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
+
+type UpdateTexts = ClientTexts['documents']['marketUpdate'];
 import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 127 — le « Point marché » : ce qui a bougé depuis le rendez-vous, à la forme de la
@@ -50,18 +55,26 @@ const STATE_CARD: Record<MarketUpdateCompetitor['state'], string> = {
   newcomer: 'border-brand-deep bg-brand-soft',
 };
 
-function days(item: MarketUpdateCompetitor): string | null {
+function days(item: MarketUpdateCompetitor, language: TextLanguage): string | null {
   return item.daysOnMarket != null
-    ? daysLabel({ days: item.daysOnMarket, approximate: item.daysApproximate })
+    ? daysLabel({ days: item.daysOnMarket, approximate: item.daysApproximate }, language)
     : null;
 }
 
 // Mission 127 B — le bloc d'un nouveau venu : « Vu sur le marché depuis le … » à la place du prix
 // du rendez-vous (il n'était pas là), son prix affiché, son prix au m².
-function NewcomerPriceBlock({ item }: { item: MarketUpdateCompetitor }) {
+function NewcomerPriceBlock({
+  item,
+  language,
+  t,
+}: {
+  item: MarketUpdateCompetitor;
+  language: TextLanguage;
+  t: UpdateTexts;
+}) {
   const perSquareMeter =
     item.currentPrice != null && item.surfaceArea
-      ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea)
+      ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea, { language })
       : null;
   return (
     <div
@@ -70,33 +83,42 @@ function NewcomerPriceBlock({ item }: { item: MarketUpdateCompetitor }) {
       data-state={item.state}
     >
       <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-        Le prix, depuis son arrivée sur le marché
+        {t.newcomerPriceTitle}
       </div>
       <div className={`${row} text-[0.78rem]`}>
         <div className={card}>
-          <div className={kicker}>Vu sur le marché depuis le</div>
+          <div className={kicker}>{t.seenSince}</div>
           <div className="font-title text-base font-bold text-zinc-900">
             {item.seenSince ? shortDay(item.seenSince) : '—'}
           </div>
-          <div className="text-zinc-500">pas encore en vente au rendez-vous</div>
+          <div className="text-zinc-500">{t.notYetListed}</div>
         </div>
         <div className={`border px-3.5 py-3 break-inside-avoid ${STATE_CARD.newcomer}`}>
-          <div className={kicker}>Prix affiché</div>
+          <div className={kicker}>{clientTexts(language).documents.synthesis.listed}</div>
           <div className={bigNumber}>
-            {item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}
+            {item.currentPrice != null ? formatEuro(item.currentPrice, { language }) : '—'}
           </div>
           {perSquareMeter ? <div className="text-zinc-600">{perSquareMeter}</div> : null}
         </div>
       </div>
-      <p className="text-[0.78rem] text-zinc-600">
-        {`Retenu par votre conseiller pour la comparaison : il compte dans « Avec les nouveaux venus », pas dans « Au rendez-vous » ni « Aujourd’hui ».`}
-      </p>
+      <p className="text-[0.78rem] text-zinc-600">{t.newcomerNote}</p>
     </div>
   );
 }
 
 // Le bloc des prix d'un concurrent : au rendez-vous, aujourd'hui, l'écart — ou ce qu'il est devenu.
-function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: string }) {
+function PriceBlock({
+  item,
+  madeAt,
+  language,
+  t,
+}: {
+  item: MarketUpdateCompetitor;
+  madeAt: string;
+  language: TextLanguage;
+  t: UpdateTexts;
+}) {
+  const euro = (value: number) => formatEuro(value, { language });
   const gone = item.goneAt != null;
   // Mission 127 A 2 — un prix du rendez-vous repris à la migration (source 'current') n'est pas un
   // prix relevé au rendez-vous : « Non relu », annonce disparue comprise.
@@ -104,8 +126,9 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
     item.state === 'unread' || item.meetingPriceSource === 'current' || item.meetingPrice == null;
   const perSquareMeter =
     item.currentPrice != null && item.surfaceArea
-      ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea)
+      ? formatEuroPerSquareMeter(item.currentPrice / item.surfaceArea, { language })
       : null;
+  const made = shortDay(madeAt) ?? '';
   return (
     <div
       className="flex flex-col gap-1.5"
@@ -113,79 +136,81 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
       data-state={item.state}
     >
       <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-        Le prix, depuis le rendez-vous
+        {t.priceTitle}
       </div>
       <div className={`${row} text-[0.78rem]`}>
         <div className={card}>
-          <div className={kicker}>Au rendez-vous</div>
+          <div className={kicker}>{t.atMeeting}</div>
           {unread ? (
             <>
-              <div className="font-title text-base font-bold text-amber-800">Non relu</div>
-              <div className="text-zinc-500">le prix d’alors n’a pas été relevé</div>
+              <div className="font-title text-base font-bold text-amber-800">{t.unread}</div>
+              <div className="text-zinc-500">{t.unreadHint}</div>
             </>
           ) : (
             <>
               <div className={bigNumber}>
-                {item.meetingPrice != null ? formatEuro(item.meetingPrice) : '—'}
+                {item.meetingPrice != null ? euro(item.meetingPrice) : '—'}
               </div>
-              <div className="text-zinc-500">prix affiché au rendez-vous</div>
+              <div className="text-zinc-500">{t.meetingPriceHint}</div>
             </>
           )}
         </div>
         <div className={`border px-3.5 py-3 break-inside-avoid ${STATE_CARD[item.state]}`}>
-          <div className={kicker}>{!gone && unread ? 'Prix du jour' : 'Aujourd’hui'}</div>
+          <div className={kicker}>{!gone && unread ? t.todayPrice : t.today}</div>
           {gone ? (
             <>
               <div className="font-title text-base leading-snug font-bold text-zinc-900">
-                Retirée{item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}
-                {days(item) ? `, après ${days(item)}` : ''}
+                {t.removed(item.goneAt ? shortDay(item.goneAt) : null, days(item, language))}
               </div>
               <div className="text-zinc-600">
-                dernier prix affiché :{' '}
-                {item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}
+                {t.lastPrice(item.currentPrice != null ? euro(item.currentPrice) : '—')}
               </div>
             </>
           ) : (
             <>
               <div className={bigNumber}>
-                {item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}
+                {item.currentPrice != null ? euro(item.currentPrice) : '—'}
               </div>
               <div className="text-zinc-600">
-                {item.state === 'dropped' || item.state === 'raised'
-                  ? `${item.state === 'dropped' ? 'baisse' : 'hausse'} vue le ${shortDay(madeAt)}`
-                  : `relu le ${shortDay(madeAt)}`}
+                {item.state === 'dropped'
+                  ? t.droppedSeen(made)
+                  : item.state === 'raised'
+                    ? t.raisedSeen(made)
+                    : t.readOn(made)}
               </div>
             </>
           )}
         </div>
         <div className={card}>
-          <div className={kicker}>{gone ? 'Conclusion' : 'Écart'}</div>
+          <div className={kicker}>{gone ? t.conclusion : t.gap}</div>
           {gone && item.conclusion ? (
             <div className="font-title text-base leading-snug font-bold text-zinc-900">
-              {item.conclusion.label}
+              {language === 'fr'
+                ? item.conclusion.label
+                : goneConclusionLabel(item.conclusion, language)}
             </div>
           ) : gone ? (
             <>
               <div className="font-title text-base font-bold text-zinc-500">—</div>
-              <div className="text-zinc-600">durée en vente inconnue : aucune conclusion</div>
+              <div className="text-zinc-600">{t.noConclusion}</div>
             </>
           ) : item.gapPercent != null && item.gapAmount != null ? (
             <>
               <div
                 className={`${bigNumber} ${item.gapAmount < 0 ? 'text-emerald-700' : item.gapAmount > 0 ? 'text-zinc-900' : ''}`}
               >
-                {formatPercent(item.gapPercent, { signed: true, maxDecimals: 1 })}
+                {formatPercent(item.gapPercent, { signed: true, maxDecimals: 1, language })}
               </div>
               <div className="text-zinc-600">
                 {item.gapAmount === 0
-                  ? 'prix inchangé'
-                  : `soit ${formatEuro(Math.abs(item.gapAmount))} de ${item.gapAmount < 0 ? 'moins' : 'plus'}`}
+                  ? t.unchanged
+                  : t.gapAmount(euro(Math.abs(item.gapAmount)), item.gapAmount < 0)}
               </div>
             </>
           ) : (
             <>
               <div className="font-title text-base font-bold text-zinc-500">—</div>
-              <div className="text-zinc-600">sans prix du rendez-vous, pas d’écart</div>
+              <div className="text-zinc-600">{t.noGap}</div>
             </>
           )}
         </div>
@@ -193,26 +218,23 @@ function PriceBlock({ item, madeAt }: { item: MarketUpdateCompetitor; madeAt: st
       {gone && item.conclusion?.kind === 'probable_sale' ? (
         <div className="border-l-4 border-orange-400 bg-orange-50 px-4 py-2.5 text-[0.82rem]">
           <b>
-            Prix de vente estimé : entre {formatEuro(item.conclusion.estimatedMin as number)} et{' '}
-            {formatEuro(item.conclusion.estimatedMax as number)}
+            {t.likelySale(
+              euro(item.conclusion.estimatedMin as number),
+              euro(item.conclusion.estimatedMax as number),
+            )}
           </b>
-          <p className="mt-0.5 text-zinc-600">
-            Déduit de la durée de commercialisation au retrait, selon la règle de l’agence : rien ne
-            dit que ce bien est vendu, ni à quel prix.
-          </p>
+          <p className="mt-0.5 text-zinc-600">{t.likelySaleNote}</p>
         </div>
       ) : null}
       {gone && item.conclusion?.kind === 'withdrawn' ? (
-        <p className="text-[0.78rem] text-zinc-600">
-          Plus de 300 jours en vente au retrait : retiré du marché sans vente.
-        </p>
+        <p className="text-[0.78rem] text-zinc-600">{t.withdrawnNote}</p>
       ) : null}
       {!gone ? (
         <p className="text-[0.78rem] text-zinc-600">
           {[
-            'Toujours en vente',
-            days(item) ? `depuis ${days(item)}` : null,
-            perSquareMeter ? `${perSquareMeter} aujourd’hui` : null,
+            t.stillListed,
+            days(item, language) ? t.sinceDays(days(item, language) as string) : null,
+            perSquareMeter ? t.perSqmToday(perSquareMeter) : null,
           ]
             .filter(Boolean)
             .join(' · ')}
@@ -229,7 +251,9 @@ function CompetitorPage({
   danger,
   meetingChoice,
   beforeMeeting = false,
+  language,
 }: {
+  language: TextLanguage;
   item: MarketUpdateCompetitor;
   view: MarketUpdateDocumentData['competitors'][number] | undefined;
   madeAt: string;
@@ -242,6 +266,8 @@ function CompetitorPage({
   beforeMeeting?: boolean;
 }) {
   const photos = view?.photoUrls ?? [];
+  const texts = clientTexts(language);
+  const t = texts.documents.marketUpdate;
   return (
     <article
       className={`flex flex-col gap-3 bg-white break-inside-avoid ${
@@ -257,7 +283,7 @@ function CompetitorPage({
           className={`px-4 py-1.5 text-xs font-bold tracking-[0.18em] uppercase ${GOLD.badge}`}
           data-testid="market-update-dangerous-band"
         >
-          {danger === 'today' ? 'Le plus dangereux aujourd’hui' : 'Le plus dangereux, selon vous'}
+          {danger === 'today' ? t.dangerousToday : t.dangerousYours}
         </div>
       ) : null}
       <div className={danger ? 'flex flex-col gap-3 px-4 pb-4' : 'contents'}>
@@ -265,11 +291,11 @@ function CompetitorPage({
           <div className={kicker}>
             {item.newcomer
               ? beforeMeeting
-                ? 'En vente avant le rendez-vous, non montré alors'
-                : 'Nouveau venu'
-              : `Concurrent ${item.position}`}
-            {meetingChoice && danger !== 'meeting' ? ' · votre choix au rendez-vous' : ''}
-            {!item.newcomer && !item.shownAtMeeting ? ' · Non montré au rendez-vous' : ''}
+                ? t.beforeMeeting
+                : t.newcomer
+              : texts.live.competitorReview.competitor(item.position)}
+            {meetingChoice && danger !== 'meeting' ? t.meetingChoice : ''}
+            {!item.newcomer && !item.shownAtMeeting ? t.notShown : ''}
           </div>
           <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
             {item.label}
@@ -304,9 +330,7 @@ function CompetitorPage({
         ) : null}
         {view && view.features.length > 0 ? (
           <div className="flex flex-col gap-1">
-            <div className={`${kicker} border-t-2 border-zinc-200 pt-2`}>
-              Ses caractéristiques face à votre bien
-            </div>
+            <div className={`${kicker} border-t-2 border-zinc-200 pt-2`}>{t.features}</div>
             <Grid
               competitor={{
                 id: item.id,
@@ -320,13 +344,14 @@ function CompetitorPage({
                 serious: null,
                 revealed: null,
               }}
+              language={language}
             />
           </div>
         ) : null}
         {item.newcomer ? (
-          <NewcomerPriceBlock item={item} />
+          <NewcomerPriceBlock item={item} language={language} t={t} />
         ) : (
-          <PriceBlock item={item} madeAt={madeAt} />
+          <PriceBlock item={item} madeAt={madeAt} language={language} t={t} />
         )}
       </div>
     </article>
@@ -334,14 +359,17 @@ function CompetitorPage({
 }
 
 export function MarketUpdateDocument({ document }: { document: MarketUpdateDocumentData }) {
-  const { summary, agency } = document;
-  const pointDay = meetingDay(document.madeAt);
-  const meeting = meetingDay(summary.meetingDate);
-  const footer = ['Étude confidentielle', document.commune, pointDay].filter(Boolean).join(' · ');
+  const { summary, agency, language } = document;
+  const texts = clientTexts(language);
+  const t = texts.documents.marketUpdate;
+  const c = texts.documents.common;
+  const pointDay = meetingDay(document.madeAt, language);
+  const meeting = meetingDay(summary.meetingDate, language);
+  const footer = [c.confidential, document.commune, pointDay].filter(Boolean).join(' · ');
   const viewById = new Map(document.competitors.map((item) => [item.id, item]));
   const newcomers = summary.competitors.filter((item) => item.newcomer);
   // Mission 129 — le classement remplace les trois lignes ; le plus dangereux en vigueur.
-  const ranking = buildPriceRanking(summary, document.subjectLabel);
+  const ranking = buildPriceRanking(summary, document.subjectLabel, language);
   const danger = dangerousInForce(summary);
   const dangerOf = (id: string): DangerousBadge | null =>
     id === danger.currentId ? (danger.changed ? 'today' : 'meeting') : null;
@@ -360,16 +388,16 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const coverFigures = [
     summary.agreedPrice != null
-      ? { label: 'Prix retenu ensemble', value: formatEuro(summary.agreedPrice) }
+      ? { label: t.agreedPrice, value: formatEuro(summary.agreedPrice, { language }) }
       : null,
     {
-      label: 'Concurrents suivis',
+      label: t.followed,
       value: String(summary.competitors.filter((item) => !item.newcomer).length),
     },
     // Mission 127 B — ce chiffre n'existe qu'après une recherche : sans elle, « 0 » dirait « rien
     // de nouveau sur le marché ».
     summary.newcomersSearch || realNewcomers.length > 0
-      ? { label: 'Nouveaux venus retenus', value: String(realNewcomers.length) }
+      ? { label: t.newcomersCount, value: String(realNewcomers.length) }
       : null,
   ].filter((item): item is { label: string; value: string } => item != null);
 
@@ -416,7 +444,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
           <span className="self-start border border-white/80 px-3 py-1 text-[0.65rem] tracking-[0.2em] uppercase">
-            Point marché
+            {t.badge}
           </span>
           {document.propertyLabel ? (
             <span className="mt-3 text-xs tracking-[0.2em] uppercase opacity-85">
@@ -424,18 +452,18 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
             </span>
           ) : null}
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            Point marché
+            {t.coverTitle}
             {pointDay ? (
               <>
                 <br />
-                du {pointDay}
+                {t.titleDay(pointDay)}
               </>
             ) : null}
           </h1>
           <p className="text-sm opacity-90">
             {[
-              meeting ? `Depuis notre rendez-vous du ${meeting}` : null,
-              document.sellerName.trim() ? `Pour ${document.sellerName.trim()}` : null,
+              meeting ? t.sinceMeeting(meeting) : null,
+              document.sellerName.trim() ? t.forSeller(document.sellerName.trim()) : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -443,7 +471,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           {/* Le verdict dès la couverture, de la couleur de la place (Jean-Guy, 05/11). */}
           {ranking ? (
             <div className="mt-6 text-zinc-800">
-              <Verdict ranking={ranking} testId="market-update-cover-verdict" />
+              <Verdict ranking={ranking} testId="market-update-cover-verdict" language={language} />
             </div>
           ) : null}
           <div className="mt-8 flex flex-col gap-4 border-t border-white/35 pt-4 sm:flex-row [&>*]:flex-1">
@@ -464,8 +492,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
         <section className="flex flex-col gap-3">
           <SectionTitle
             number={sectionNumber('competitors')}
-            title="Les concurrents, depuis le rendez-vous"
-            hint="Pour chaque concurrent retenu : son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu."
+            title={t.competitorsTitle}
+            hint={t.competitorsHint}
           />
           {/* M110, M113 : une page par concurrent MONTRÉ au rendez-vous ; les concurrents retenus
               hors Live comptent dans les lignes de prix, pas dans les pages. */}
@@ -479,6 +507,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 madeAt={document.madeAt}
                 danger={dangerOf(item.id)}
                 meetingChoice={item.id === danger.meetingId}
+                language={language}
               />
             ))}
         </section>
@@ -492,12 +521,13 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           >
             <SectionTitle
               number={sectionNumber('newcomers')}
-              title="Nouveaux sur le marché depuis le rendez-vous"
-              hint={`Les biens vus sur le marché${meeting ? ` depuis le ${meeting}` : ' depuis le rendez-vous'}, ${
+              title={t.newcomersTitle}
+              hint={t.newcomersHint(
+                meeting,
                 summary.newcomersSearch?.priceRange
-                  ? `de ${formatEuro(summary.newcomersSearch.priceRange.min)} à votre prix`
-                  : 'à votre prix ou moins'
-              }, et retenus par votre conseiller pour la comparaison.`}
+                  ? formatEuro(summary.newcomersSearch.priceRange.min, { language })
+                  : null,
+              )}
             />
             {realNewcomers.map((item) => (
               <CompetitorPage
@@ -507,6 +537,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 madeAt={document.madeAt}
                 danger={dangerOf(item.id)}
                 meetingChoice={false}
+                language={language}
               />
             ))}
           </section>
@@ -519,8 +550,8 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           >
             <SectionTitle
               number={sectionNumber('earlier')}
-              title="Retenus depuis le rendez-vous"
-              hint="Des biens déjà en vente avant notre rendez-vous, que nous n’avions pas regardés ensemble : ils ne comptent pas parmi les nouveaux venus."
+              title={t.earlierTitle}
+              hint={t.earlierHint}
             />
             {earlier.map((item) => (
               <CompetitorPage
@@ -531,6 +562,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 danger={dangerOf(item.id)}
                 meetingChoice={false}
                 beforeMeeting
+                language={language}
               />
             ))}
           </section>
@@ -542,34 +574,27 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
           className="flex flex-col gap-3 print:break-before-page"
           data-testid="market-update-ranking"
         >
-          <SectionTitle number={sectionNumber('lines')} title="Où en est votre prix" />
+          <SectionTitle number={sectionNumber('lines')} title={t.rankingTitle} />
           {ranking ? (
             <PriceRankingView
               ranking={ranking}
               meetingDay={shortDay(summary.meetingDate)}
               pointDay={shortDay(document.madeAt)}
               searchedRange={summary.newcomersSearch?.priceRange ?? null}
+              language={language}
             />
           ) : (
             <p className="border border-dashed border-zinc-300 px-3 py-4 text-center text-sm text-zinc-500">
-              Sans prix retenu ensemble, le classement ne se calcule pas.
+              {t.noRanking}
             </p>
           )}
         </section>
 
         <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
           <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-            Pour lire ce document
+            {t.readingTitle}
           </div>
-          <p className="text-xs leading-relaxed text-zinc-500">
-            Les prix cités sont ceux des annonces, pas des prix de vente. Une annonce disparue n’est
-            pas une vente constatée : « vente probable » et la négociation « estimée » sont déduites
-            de la durée de commercialisation au retrait, selon la règle de l’agence ; « retiré sans
-            vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien
-            est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier.
-            « Vu sur le marché depuis le … » est la date de publication dite par l’annonce, sinon le
-            jour où votre conseiller l’a retenue : jamais une date inventée.
-          </p>
+          <p className="text-xs leading-relaxed text-zinc-500">{t.reading}</p>
           {agency.advisorName ? (
             <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">
               {agency.advisorPhotoUrl ? (
@@ -580,7 +605,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                 />
               ) : null}
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className={kicker}>Votre conseiller</span>
+                <span className={kicker}>{c.advisor}</span>
                 <span className="font-semibold">{agency.advisorName}</span>
                 <span className="text-sm text-zinc-500">
                   {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
@@ -591,7 +616,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
                   viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
                   className="h-16 w-16 shrink-0"
                   role="img"
-                  aria-label="Carte de contact du conseiller"
+                  aria-label={c.contactCard}
                   shapeRendering="crispEdges"
                 >
                   <path d={agency.advisorQr.path} fill="currentColor" />

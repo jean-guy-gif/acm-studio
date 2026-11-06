@@ -1,6 +1,7 @@
 'use client';
 
-import { propertyTypeDisplay } from '@/features/subject-property/services/property-type-display';
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
+import { propertyTypeIn } from '@/lib/client-texts';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
   choice,
@@ -13,17 +14,9 @@ import {
   statLabel,
   statValue,
 } from '@/features/live-seller/components/live-stage';
-import {
-  PROPERTY_CONFIRMED_LABELS,
-  PROPERTY_CONFIRMED_VALUES,
-} from '@/features/live-seller/constants';
+import { PROPERTY_CONFIRMED_VALUES } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import {
-  EXPOSURE_LABELS,
-  GENERAL_CONDITION_LABELS,
-  HEATING_TYPE_LABELS,
-  OUTDOOR_SPACE_LABELS,
-  PARKING_TYPE_LABELS,
   type Exposure,
   type GeneralCondition,
   type HeatingType,
@@ -61,6 +54,8 @@ export function LivePageProperty({
   // Mission 131 — en présentation directe, le bien se montre sans rien demander au vendeur.
   asksSeller?: boolean;
 }) {
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.property;
   const currentAnswer = summary?.seller_property_confirmed ?? '';
   const currentComment = summary?.seller_property_comment ?? '';
 
@@ -73,53 +68,60 @@ export function LivePageProperty({
 
   // Recognition characteristics only — deliberately no price, charges or tax.
   const stats: { label: string; value: string | null }[] = [
-    { label: 'Type', value: propertyTypeDisplay(property.propertyType) },
+    { label: t.stats.type, value: propertyTypeIn(property.propertyType, texts) },
     {
-      label: 'Surface',
-      value: property.surfaceArea != null ? formatSquareMeters(property.surfaceArea) : null,
+      label: t.stats.surface,
+      value:
+        property.surfaceArea != null
+          ? formatSquareMeters(property.surfaceArea, { language })
+          : null,
     },
-    { label: 'Pièces', value: property.roomsCount != null ? String(property.roomsCount) : null },
     {
-      label: 'Chambres',
+      label: t.stats.rooms,
+      value: property.roomsCount != null ? String(property.roomsCount) : null,
+    },
+    {
+      label: t.stats.bedrooms,
       value: property.bedroomsCount != null ? String(property.bedroomsCount) : null,
     },
-    { label: 'Étage', value: floors },
-    { label: 'Exposition', value: labelOf<Exposure>(EXPOSURE_LABELS, property.exposure) },
+    { label: t.stats.floor, value: floors },
+    { label: t.stats.exposure, value: labelOf<Exposure>(texts.labels.exposure, property.exposure) },
     {
-      label: 'État',
-      value: labelOf<GeneralCondition>(GENERAL_CONDITION_LABELS, property.generalCondition),
+      label: t.stats.condition,
+      value: labelOf<GeneralCondition>(texts.labels.condition, property.generalCondition),
     },
     {
-      label: 'Construction',
+      label: t.stats.construction,
       value: property.constructionYear != null ? String(property.constructionYear) : null,
     },
-    { label: 'Chauffage', value: labelOf<HeatingType>(HEATING_TYPE_LABELS, property.heatingType) },
-    { label: 'DPE', value: property.energyRating },
-    { label: 'GES', value: property.gesRating },
     {
-      label: 'Extérieurs',
-      value: joinLabels<OutdoorSpace>(OUTDOOR_SPACE_LABELS, property.outdoorSpaces),
+      label: t.stats.heating,
+      value: labelOf<HeatingType>(texts.labels.heating, property.heatingType),
+    },
+    { label: t.stats.energy, value: property.energyRating },
+    { label: t.stats.ges, value: property.gesRating },
+    {
+      label: t.stats.outdoor,
+      value: joinLabels<OutdoorSpace>(texts.labels.outdoor, property.outdoorSpaces),
     },
     {
-      label: 'Stationnement',
-      value: joinLabels<ParkingType>(PARKING_TYPE_LABELS, property.parkingTypes),
+      label: t.stats.parking,
+      value: joinLabels<ParkingType>(texts.labels.parking, property.parkingTypes),
     },
-    { label: 'Quartier', value: property.district },
-    { label: 'Ville', value: property.city },
-    { label: 'Adresse', value: property.address },
+    { label: t.stats.district, value: property.district },
+    { label: t.stats.city, value: property.city },
+    { label: t.stats.address, value: property.address },
   ].filter((stat) => stat.value != null && stat.value !== '');
 
-  const alt = [property.propertyType, property.city].filter(Boolean).join(' · ') || 'Votre bien';
+  const alt =
+    [propertyTypeIn(property.propertyType, texts), property.city].filter(Boolean).join(' · ') ||
+    t.fallbackAlt;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className={question}>Votre bien</h2>
-        <p className={questionHint}>
-          {asksSeller
-            ? 'Reconnaissez-vous votre bien dans cette présentation ?'
-            : 'Votre bien, tel que nous allons le comparer aux biens en vente.'}
-        </p>
+        <h2 className={question}>{t.title}</h2>
+        <p className={questionHint}>{asksSeller ? t.askHint : t.showHint}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
@@ -145,7 +147,7 @@ export function LivePageProperty({
 
           {property.features.length > 0 ? (
             <div className={panelSoft}>
-              <div className={statLabel}>Points forts</div>
+              <div className={statLabel}>{t.highlights}</div>
               <div className={statValue}>{property.features.join(', ')}</div>
             </div>
           ) : null}
@@ -157,9 +159,7 @@ export function LivePageProperty({
             className={`${panel} flex h-fit flex-col gap-4`}
           >
             <fieldset className="flex flex-col gap-3">
-              <legend className={fieldLabel}>
-                Est-ce que cette présentation correspond bien à votre bien ?
-              </legend>
+              <legend className={fieldLabel}>{t.question}</legend>
               <div className="flex flex-col gap-3">
                 {PROPERTY_CONFIRMED_VALUES.map((value) => (
                   <label key={value} className={choice}>
@@ -170,14 +170,14 @@ export function LivePageProperty({
                       defaultChecked={currentAnswer === value}
                       className="sr-only"
                     />
-                    {PROPERTY_CONFIRMED_LABELS[value]}
+                    {t.confirmed[value]}
                   </label>
                 ))}
               </div>
             </fieldset>
 
             <label className="flex flex-col gap-1.5">
-              <span className={fieldLabel}>Commentaire (facultatif)</span>
+              <span className={fieldLabel}>{t.comment}</span>
               <textarea
                 name="seller_property_comment"
                 rows={3}

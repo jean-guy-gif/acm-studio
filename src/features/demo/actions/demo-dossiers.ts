@@ -855,6 +855,7 @@ async function seedDemoDossier(
       agency_id: closer.agencyId,
       advisor_id: closer.id,
       seller_name: plan.sellerName,
+      language: plan.language,
       // Mission 130 — le vendeur à relancer a de quoi être joint : SMS, WhatsApp et E-mail
       // s'ouvrent devant le closer (coordonnées fictives, décision de Jean-Guy, 05/11).
       ...(plan.stage === 'follow_up'

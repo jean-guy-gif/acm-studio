@@ -1,3 +1,5 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 // Mission 127 — la règle des annonces disparues (règle ACM, décidée par Jean-Guy le 29/10), d'après
 // les jours de commercialisation au jour où l'annonce a disparu. Pur.
 //   • plus de 300 jours   : « Retiré du marché sans vente » ;
@@ -44,11 +46,22 @@ export function goneListingConclusion(
   };
 }
 
-export const WITHDRAWN_LABEL = 'Retiré du marché sans vente';
+export const WITHDRAWN_LABEL = FRENCH_TEXTS.documents.marketUpdate.withdrawnLabel;
 
 // « Vente probable, négociation estimée de 5 à 10 % » — jamais le nom « estimation » (M105).
-export function goneConclusionLabel(conclusion: GoneListingConclusion): string {
+// Mission 140 — dans la langue du vendeur (le français par défaut).
+export function goneConclusionLabel(
+  conclusion: Pick<GoneListingConclusion, 'kind'> & {
+    negotiationMinPercent?: number | null;
+    negotiationMaxPercent?: number | null;
+  },
+  language: TextLanguage = 'fr',
+): string {
+  const t = clientTexts(language).documents.marketUpdate;
   return conclusion.kind === 'withdrawn'
-    ? WITHDRAWN_LABEL
-    : `Vente probable, négociation estimée de ${conclusion.negotiationMinPercent} à ${conclusion.negotiationMaxPercent} %`;
+    ? t.withdrawnLabel
+    : t.probableSaleLabel(
+        conclusion.negotiationMinPercent ?? 0,
+        conclusion.negotiationMaxPercent ?? 0,
+      );
 }

@@ -11,6 +11,7 @@ import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import { clientLanguage } from '@/lib/client-language';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { liveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-project-status';
@@ -132,6 +133,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
       hasAgreedPrice={conclusion?.commercializationPrice != null}
       presentationMode={presentationMode}
       buyersReveal={liveBuyersReveal(buyers, new Date())}
+      language={clientLanguage(project.language)}
     />
   );
 }

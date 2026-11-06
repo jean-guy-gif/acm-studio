@@ -1,5 +1,7 @@
 'use client';
 
+import type { TextLanguage } from '@/lib/client-texts';
+
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -26,7 +28,10 @@ export function MarketUpdateLinkButton({
   advisorFirstName,
   meetingDate,
   pointDate,
+  language = 'fr',
 }: {
+  // Mission 140 — le message prérempli, dans la langue du vendeur.
+  language?: TextLanguage;
   projectId: string;
   updateId: string;
   links: MarketUpdateLinkView[];
@@ -86,8 +91,13 @@ export function MarketUpdateLinkButton({
       </p>
       {created
         ? (() => {
-            const text = marketUpdateShareMessage(created.url, meetingDate, advisorFirstName);
-            const hrefs = marketUpdateShareHrefs(text, pointDate);
+            const text = marketUpdateShareMessage(
+              created.url,
+              meetingDate,
+              advisorFirstName,
+              language,
+            );
+            const hrefs = marketUpdateShareHrefs(text, pointDate, language);
             return (
               <div className="flex flex-col gap-2" data-testid="market-update-link-share">
                 <p className="text-sm break-all" data-testid="market-update-link">

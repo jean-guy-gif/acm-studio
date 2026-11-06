@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { ctaPrimary, statLabel, statValue } from '@/features/live-seller/components/live-stage';
 import { competitorReviewFacts } from '@/features/live-seller/services/competitor-review';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
 // Mission 113 — « Revoir » : la fiche d'un concurrent, en plein écran du Live, pour le retrouver
@@ -21,6 +23,9 @@ export function LiveCompetitorReview({
   onClose: () => void;
 }) {
   const facts = competitorReviewFacts(entry);
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.competitorReview;
+  const label = neutralComparableLabel(entry, language);
   const photos =
     entry.photoUrls.length > 0 ? entry.photoUrls : entry.photoUrl ? [entry.photoUrl] : [];
 
@@ -44,24 +49,24 @@ export function LiveCompetitorReview({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={entry.neutralLabel}
+      aria-label={label}
       data-testid="competitor-review"
       className="fixed inset-0 z-[45] overflow-x-hidden overflow-y-auto bg-white stage:bg-brand-deep"
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-8 sm:py-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
-            <span className={statLabel}>Concurrent {entry.position}</span>
+            <span className={statLabel}>{t.competitor(entry.position)}</span>
             <h2 className="font-title text-2xl leading-snug font-semibold text-zinc-900 sm:text-3xl stage:text-white">
-              {entry.neutralLabel}
+              {label}
             </h2>
           </div>
           <button type="button" onClick={onClose} className={`${ctaPrimary} shrink-0`}>
-            Fermer
+            {t.close}
           </button>
         </div>
 
-        <LiveGallery photos={photos} alt={entry.neutralLabel} />
+        <LiveGallery photos={photos} alt={label} />
 
         <LiveFeatureComparison items={entry.featureComparison} />
 
@@ -71,19 +76,23 @@ export function LiveCompetitorReview({
             data-testid="competitor-review-price"
           >
             <div>
-              <dt className={statLabel}>Prix affiché</dt>
-              <dd className={statValue}>{formatEuro(facts.price)}</dd>
+              <dt className={statLabel}>{t.listed}</dt>
+              <dd className={statValue}>{formatEuro(facts.price, { language })}</dd>
             </div>
             {facts.pricePerSquareMeter != null ? (
               <div>
-                <dt className={statLabel}>Prix au m²</dt>
-                <dd className={statValue}>{formatEuroPerSquareMeter(facts.pricePerSquareMeter)}</dd>
+                <dt className={statLabel}>{t.perSqm}</dt>
+                <dd className={statValue}>
+                  {formatEuroPerSquareMeter(facts.pricePerSquareMeter, { language })}
+                </dd>
               </div>
             ) : null}
             {facts.marketDays != null ? (
               <div>
-                <dt className={statLabel}>En vente depuis</dt>
-                <dd className={statValue}>{formatNumber(facts.marketDays)} jours</dd>
+                <dt className={statLabel}>{t.since}</dt>
+                <dd className={statValue}>
+                  {t.days(formatNumber(facts.marketDays, { language }))}
+                </dd>
               </div>
             ) : null}
           </dl>

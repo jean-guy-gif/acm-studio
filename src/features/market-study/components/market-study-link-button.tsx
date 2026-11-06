@@ -1,5 +1,7 @@
 'use client';
 
+import type { TextLanguage } from '@/lib/client-texts';
+
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -25,11 +27,14 @@ export function MarketStudyLinkButton({
   links,
   advisorFirstName,
   studyDate,
+  language = 'fr',
 }: {
   projectId: string;
   links: MarketStudyLinkView[];
   advisorFirstName: string | null;
   studyDate: string | null;
+  // Mission 140 — le message prérempli, dans la langue du vendeur.
+  language?: TextLanguage;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -82,8 +87,8 @@ export function MarketStudyLinkButton({
       </p>
       {created
         ? (() => {
-            const text = marketStudyShareMessage(created.url, advisorFirstName);
-            const hrefs = marketStudyShareHrefs(text, studyDate);
+            const text = marketStudyShareMessage(created.url, advisorFirstName, language);
+            const hrefs = marketStudyShareHrefs(text, studyDate, language);
             return (
               <div className="flex flex-col gap-2" data-testid="market-study-link-share">
                 <p className="text-sm break-all" data-testid="market-study-link">

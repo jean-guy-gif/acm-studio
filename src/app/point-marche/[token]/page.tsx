@@ -8,6 +8,7 @@ import {
   hashMarketUpdateToken,
   MARKET_UPDATE_TOKEN_PATTERN,
 } from '@/features/market-update/services/market-update-token';
+import { clientTexts } from '@/lib/client-texts';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +43,9 @@ export default async function PublicMarketUpdatePage({
   return (
     <main className="min-h-screen bg-zinc-100 p-4 pb-20 print:bg-white print:p-0">
       <MarketUpdateDocument document={document} />
-      <MarketUpdateDownloadButton />
+      <MarketUpdateDownloadButton
+        label={clientTexts(document.language).documents.marketUpdate.download}
+      />
     </main>
   );
 }

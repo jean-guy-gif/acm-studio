@@ -1,6 +1,7 @@
 import { priceShown } from '@/features/live-seller/services/presentation-mode';
 import { median } from '@/features/comparables/services/calculate-comparable-summary';
 import type { LiveComparableEntry } from '@/features/seller-presentation/types/seller-presentation';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 
 // Mission 94 — la lecture du marché sur « Analyse des prix » : quelques chiffres et une bande de
 // prix, pour que le vendeur comprenne d'où vient le « Prix des concurrents ».
@@ -97,20 +98,19 @@ export function competitorPriceBasisLabel(
   reading: Pick<MarketReading, 'calculationCount' | 'competitorPriceBasis'> & {
     seenTogetherCount?: number | null;
   },
+  // Mission 140 — dans la langue du vendeur (le français par défaut).
+  language: TextLanguage = 'fr',
 ): string {
+  const t = clientTexts(language).common.priceBasis;
   if (reading.competitorPriceBasis === 'advisor_only') {
-    return 'Prix retenu par votre conseiller';
+    return t.advisorOnly;
   }
-  const count = reading.calculationCount;
   // Mission 112 — des concurrents hors Live entrent dans le calcul : le vendeur sait combien il
   // en a vus. Le prix ne change pas.
-  const seen = reading.seenTogetherCount;
-  const competitors = `${count} concurrent${count > 1 ? 's' : ''}${
-    seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : ''
-  }`;
+  const competitors = t.competitors(reading.calculationCount, reading.seenTogetherCount ?? null);
   return reading.competitorPriceBasis === 'advisor'
-    ? `Prix retenu par votre conseiller à partir de ${competitors}`
-    : `Calculé sur ${competitors}`;
+    ? t.advisorFrom(competitors)
+    : t.calculatedOn(competitors);
 }
 
 // Où placer un prix sur la bande, de 0 à 1 — repères du vendeur compris, pour qu'ils y tiennent.

@@ -116,6 +116,15 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
 
   await test.step('Avant le rendez-vous : la façon de présenter, et l’Étude de marché', async () => {
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+    // Mission 140 — les Bernard préfèrent l'anglais (la spec « langue-du-vendeur » le joue) : ce
+    // passage-ci est mené en français.
+    const languages = page.locator('[data-client-language]');
+    await expect(languages.locator('input[value="en"]')).toBeChecked();
+    await languages.locator('label').filter({ hasText: 'Français' }).click();
+    await expect(languages.locator('input[value="fr"]')).toBeChecked();
+    await expect(languages.locator('input[value="en"]')).toBeEnabled();
+    await page.reload();
+    await expect(page.locator('[data-client-language] input[value="fr"]')).toBeChecked();
     const modes = page.locator('[data-presentation-mode]');
     await expect(modes.locator('input[value="direct"]')).toBeChecked();
     // Pas de note de 1 à 10 en directe : le déroulé ne la compte pas.

@@ -7,7 +7,18 @@
 //
 // Ce module ne calcule rien : il n'arrondit que pour l'affichage.
 
+import type { ClientLanguage } from '@/lib/client-language';
+
 const LOCALE = 'fr-FR';
+// Mission 140 — ce que voit le client suit sa langue (« 1 639 500 € » / « €1,639,500 ») ; le
+// conseiller lit toujours le français (sans `language`, rien ne change, à l'octet près).
+const LOCALES: Record<ClientLanguage, string> = {
+  fr: 'fr-FR',
+  en: 'en-GB',
+  it: 'it-IT',
+  de: 'de-DE',
+  ru: 'ru-RU',
+};
 const MAX_DECIMALS = 2;
 const MINUS = '−';
 const NBSP = ' ';
@@ -20,15 +31,21 @@ export type FormatNumberOptions = {
   minDecimals?: number;
   // Affiche « + » devant un nombre positif (un écart).
   signed?: boolean;
+  // Mission 140 — la langue du client ; absente : le français.
+  language?: ClientLanguage;
 };
 
 const formatters = new Map<string, Intl.NumberFormat>();
 
-function formatterFor(minDecimals: number, maxDecimals: number): Intl.NumberFormat {
-  const key = `${minDecimals}:${maxDecimals}`;
+function formatterFor(
+  minDecimals: number,
+  maxDecimals: number,
+  locale: string = LOCALE,
+): Intl.NumberFormat {
+  const key = `${locale}:${minDecimals}:${maxDecimals}`;
   let formatter = formatters.get(key);
   if (!formatter) {
-    formatter = new Intl.NumberFormat(LOCALE, {
+    formatter = new Intl.NumberFormat(locale, {
       minimumFractionDigits: minDecimals,
       maximumFractionDigits: maxDecimals,
     });
@@ -46,7 +63,8 @@ export function formatNumber(value: number, options: FormatNumberOptions = {}): 
   }
   const maxDecimals = clampDecimals(options.maxDecimals ?? MAX_DECIMALS);
   const minDecimals = Math.min(clampDecimals(options.minDecimals ?? 0), maxDecimals);
-  const body = formatterFor(minDecimals, maxDecimals).format(Math.abs(value));
+  const locale = options.language ? LOCALES[options.language] : LOCALE;
+  const body = formatterFor(minDecimals, maxDecimals, locale).format(Math.abs(value));
   // Un nombre qui s'arrondit à zéro ne porte aucun signe : jamais « −0 ».
   if (!/[1-9]/.test(body)) {
     return body;
@@ -60,14 +78,26 @@ export function formatNumber(value: number, options: FormatNumberOptions = {}): 
 const withUnit = (value: number, unit: string, options: FormatNumberOptions): string =>
   Number.isFinite(value) ? `${formatNumber(value, options)}${NBSP}${unit}` : MISSING;
 
+// Mission 140 — en anglais, l'euro se place devant le nombre, après son signe (« −€5,000 »).
+function euroFirst(value: number, suffix: string, options: FormatNumberOptions): string {
+  if (!Number.isFinite(value)) return MISSING;
+  const number = formatNumber(value, options);
+  const sign = number.startsWith(MINUS) || number.startsWith('+') ? number[0] : '';
+  return `${sign}€${sign ? number.slice(1) : number}${suffix}`;
+}
+
 // Un montant : à l'euro près, sauf demande contraire (« 300 000 € »).
 export function formatEuro(value: number, options: FormatNumberOptions = {}): string {
-  return withUnit(value, '€', { maxDecimals: 0, ...options });
+  const merged = { maxDecimals: 0, ...options };
+  return options.language === 'en' ? euroFirst(value, '', merged) : withUnit(value, '€', merged);
 }
 
 // Un prix au m² : à l'euro près (« 4 739 €/m² »).
 export function formatEuroPerSquareMeter(value: number, options: FormatNumberOptions = {}): string {
-  return withUnit(value, '€/m²', { maxDecimals: 0, ...options });
+  const merged = { maxDecimals: 0, ...options };
+  return options.language === 'en'
+    ? euroFirst(value, '/m²', merged)
+    : withUnit(value, '€/m²', merged);
 }
 
 // Une surface ou un écart de surface, au m² près (« 65 m² », « −2 m² ») : mission 97, partout
@@ -77,7 +107,33 @@ export function formatSquareMeters(value: number, options: FormatNumberOptions =
 }
 
 export function formatPercent(value: number, options: FormatNumberOptions = {}): string {
+  // Mission 140 — en anglais, « 5.8% », sans espace.
+  if (options.language === 'en') {
+    return Number.isFinite(value) ? `${formatNumber(value, options)}%` : MISSING;
+  }
   return withUnit(value, '%', options);
+}
+
+// Mission 140 — un jour pour le client, à Paris : « 6 novembre 2026 » / « 6 November 2026 »
+// (`long`), « 6 novembre » / « 6 November » (`dayMonth`), « 06/11/2026 » / « 06/11/2026 »
+// (`numeric`, jour d'abord en anglais britannique comme en français).
+export type DayStyle = 'long' | 'dayMonth' | 'numeric';
+const DAY_OPTIONS: Record<DayStyle, Intl.DateTimeFormatOptions> = {
+  long: { day: 'numeric', month: 'long', year: 'numeric' },
+  dayMonth: { day: 'numeric', month: 'long' },
+  numeric: { day: '2-digit', month: '2-digit', year: 'numeric' },
+};
+export function formatDay(
+  value: string | number | Date,
+  language: ClientLanguage = 'fr',
+  style: DayStyle = 'long',
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return MISSING;
+  return new Intl.DateTimeFormat(LOCALES[language], {
+    ...DAY_OPTIONS[style],
+    timeZone: 'Europe/Paris',
+  }).format(date);
 }
 
 // Une date et son heure (« 06/10/2026 21:14:03 »), pour « Validé le … ».
