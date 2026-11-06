@@ -402,3 +402,80 @@ export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin des Figurants, 69006 Lyon'
 export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
 export const DEMO_VOUCHER_FEEDBACK =
   'Coup de cœur pour le jardin et la piscine ; une offre se prépare.';
+
+// Mission 137 B — l'offre d'achat des Keller : deux offrants inventés (aucune donnée d'un modèle
+// d'origine), sans prêt, au prix de commercialisation moins 3 %, au millier ; honoraires de 4 % à la
+// charge du vendeur, au millier ; acompte de 5 % ; valable jusqu'à demain, avant-contrat sous 45 jours
+// (jours de Paris). Le cadastre et la contenance sont inventés, au format d'un relevé.
+const parisIsoDay = (date: Date): string => {
+  const [day, month, year] = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+    .format(date)
+    .split('/');
+  return `${year}-${month}-${day}`;
+};
+const frenchFromIso = (iso: string): string => {
+  const [year, month, day] = iso.split('-');
+  return `${day}/${month}/${year}`;
+};
+const thousand = (value: number): number => Math.round(value / 1000) * 1000;
+
+export function demoKellerOfferPlan(price: number, now: Date) {
+  const offered = thousand(price * 0.97);
+  const validUntil = parisIsoDay(new Date(now.getTime() + 86_400_000));
+  const contractDeadline = parisIsoDay(new Date(now.getTime() + 45 * 86_400_000));
+  const offrants = [
+    {
+      civility: 'M.' as const,
+      lastName: 'Keller',
+      firstNames: 'Paul Antoine',
+      birthDate: '1978-04-12',
+      birthPlace: 'Strasbourg (67)',
+      nationality: 'française',
+      profession: 'ingénieur',
+    },
+    {
+      civility: 'Mme' as const,
+      lastName: 'Keller',
+      firstNames: 'Anna Marie',
+      birthDate: '1980-09-03',
+      birthPlace: 'Colmar (68)',
+      nationality: 'française',
+      profession: 'architecte',
+    },
+  ];
+  return {
+    offrants,
+    validUntil,
+    text: {
+      offrants: offrants.map((offrant) => ({
+        ...offrant,
+        birthDate: frenchFromIso(offrant.birthDate),
+      })),
+      address: DEMO_VOUCHER_VISITOR_ADDRESS,
+      matrimonial:
+        'mariés sous le régime de la communauté réduite aux acquêts, le 14/06/2008 à Strasbourg (67)',
+      fiscalResidenceFrance: true,
+      mandateNumber: DEMO_VOUCHER_MANDATE,
+      agent: null,
+      condominium: false,
+      parcels: [
+        { prefix: '', section: 'AB', number: '214', lieudit: 'Les Restanques', area: '18 a 40 ca' },
+      ],
+      totalArea: '18 a 40 ca',
+      lots: [],
+      price: offered,
+      feesPaidBy: 'seller' as const,
+      fees: thousand(offered * 0.04),
+      financing: 'cash' as const,
+      loan: null,
+      validUntil: frenchFromIso(validUntil),
+      contractDeadline: frenchFromIso(contractDeadline),
+      deposit: thousand(offered * 0.05),
+    },
+  };
+}

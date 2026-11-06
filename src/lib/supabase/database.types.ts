@@ -345,9 +345,58 @@ export type Database = {
           },
         ]
       }
+      buyer_document_acceptances: {
+        Row: {
+          agency_id: string
+          created_at: string
+          decided_at: string
+          decision: string
+          document_id: string
+          id: string
+          signature_paths: string[] | null
+          signer_names: string[] | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          decided_at?: string
+          decision: string
+          document_id: string
+          id?: string
+          signature_paths?: string[] | null
+          signer_names?: string[] | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          decided_at?: string
+          decision?: string
+          document_id?: string
+          id?: string
+          signature_paths?: string[] | null
+          signer_names?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_document_acceptances_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_document_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "buyer_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_document_links: {
         Row: {
           agency_id: string
+          audience: string
           created_at: string
           created_by: string | null
           document_id: string
@@ -357,6 +406,7 @@ export type Database = {
         }
         Insert: {
           agency_id: string
+          audience?: string
           created_at?: string
           created_by?: string | null
           document_id: string
@@ -366,6 +416,7 @@ export type Database = {
         }
         Update: {
           agency_id?: string
+          audience?: string
           created_at?: string
           created_by?: string | null
           document_id?: string
@@ -454,6 +505,7 @@ export type Database = {
           signature_paths: string[]
           signed_at: string
           template_version: string
+          valid_until: string | null
         }
         Insert: {
           agency_id: string
@@ -468,6 +520,7 @@ export type Database = {
           signature_paths: string[]
           signed_at?: string
           template_version: string
+          valid_until?: string | null
         }
         Update: {
           agency_id?: string
@@ -482,6 +535,7 @@ export type Database = {
           signature_paths?: string[]
           signed_at?: string
           template_version?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -2480,6 +2534,8 @@ export type Database = {
           commercialization_price: number | null
           concluded_at: string | null
           created_at: string
+          fees_amount: number | null
+          fees_paid_by: string | null
           first_outcome: string | null
           follow_up_motive: string | null
           follow_up_motive_detail: string | null
@@ -2496,6 +2552,7 @@ export type Database = {
           frozen_seller_perceived_price: number | null
           frozen_seller_wanted_price: number | null
           id: string
+          mandate_number: string | null
           mandate_type: string | null
           next_follow_up_on: string | null
           objection_note: string | null
@@ -2512,6 +2569,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          fees_amount?: number | null
+          fees_paid_by?: string | null
           first_outcome?: string | null
           follow_up_motive?: string | null
           follow_up_motive_detail?: string | null
@@ -2528,6 +2587,7 @@ export type Database = {
           frozen_seller_perceived_price?: number | null
           frozen_seller_wanted_price?: number | null
           id?: string
+          mandate_number?: string | null
           mandate_type?: string | null
           next_follow_up_on?: string | null
           objection_note?: string | null
@@ -2544,6 +2604,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          fees_amount?: number | null
+          fees_paid_by?: string | null
           first_outcome?: string | null
           follow_up_motive?: string | null
           follow_up_motive_detail?: string | null
@@ -2560,6 +2622,7 @@ export type Database = {
           frozen_seller_perceived_price?: number | null
           frozen_seller_wanted_price?: number | null
           id?: string
+          mandate_number?: string | null
           mandate_type?: string | null
           next_follow_up_on?: string | null
           objection_note?: string | null

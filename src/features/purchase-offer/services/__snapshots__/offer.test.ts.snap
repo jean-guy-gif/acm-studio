@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`le texte validé de l’offre > est rendu à l’identique, champs remplacés (instantané) 1`] = `
+"# OFFRE D'ACHAT
+## En présence et avec le concours de l'Agence
+Agence Exemple , située 10 avenue du Prototype, 06250 Mougins , téléphone 06 39 98 00 00 , adresse mail agence@example.com , exploitée par la société Société Exemple SAS au capital de 10 000 euros, dont le siège social est situé 1 rue de la Maquette, 06000 Nice , RCS Nice n° 123 456 789 , titulaire de la carte professionnelle Transaction sur immeubles et fonds de commerce n° CPI 0601 2026 000 000 001 délivrée par CCI Nice Côte d’Azur , numéro de TVA FR32123456789 , assurée en responsabilité civile professionnelle par Assureur Exemple dont le siège est sis 2 rue de la Maquette, 06000 Nice sur le territoire national sous le n° RCP-1 ,
+Adhérente de la caisse de Garantie Garant Exemple dont le siège est sis 3 rue de la Maquette, 06000 Nice sous le n° GF-1 pour un montant de 120 000 € ,
+DECLARANT NE POUVOIR NI RECEVOIR NI DETENIR D'AUTRES FONDS, EFFETS OU VALEURS QUE CEUX REPRESENTATIFS DE SA REMUNERATION.
+N'ayant aucun lien capitalistique ou juridique avec une banque ou une société financière,
+Représentée par Claire Exemple , agissant en sa qualité de Présidente , ayant tous pouvoirs à l'effet des présentes,
+Ci-après "l'Agence" ou "le Mandataire",
+## L'OFFRANT
+M. Exemple Paul Antoine né(e) le 12/04/1978 à Strasbourg (67) , de nationalité française , ingénieur , demeurant 5 chemin des Figurants, 69006 Lyon ,
+Ayant leur résidence fiscale en France, au sens de la règlementation fiscale.
+Ci-après "l'OFFRANT"
+L'OFFRANT s'engage à acquérir, aux conditions arrêtées ci-après, avec faculté de substitution, les biens immobiliers ci-dessous désignés.
+L'OFFRANT reconnait que ces conditions ont été négociées par l'Agence titulaire d'un mandat de négociation régulièrement inscrit sur son Registre des mandats sous le numéro M-1 .
+## Nature et description des biens
+Cet ensemble immobilier étant édifié sur une parcelle de terrain cadastrée :
+|  | AB | 214 | Les Restanques | 18 a 40 ca
+Soit une contenance totale de 18 a 40 ca .
+Adresse postale des biens : 12 allée du Décor, 06250 Mougins
+## Conditions d'acquisition
+### Prix d'acquisition
+L'OFFRANT déclare son intention d'acquérir les biens ci-dessus désignés au prix de un million cinq cent quatre-vingt-dix mille euros ( 1 590 000 €).
+Les honoraires de l'Agence seront à la charge du VENDEUR.
+Le montant de ces honoraires sera de soixante-quatre mille euros ( 64 000 €).
+L'OFFRANT supportera en plus l'ensemble des frais, droits et émoluments relatifs à la vente.
+### Financement de l'acquisition
+L'OFFRANT déclare ne pas avoir l'intention de recourir à un prêt pour financer son acquisition. Par conséquent, en cas d'acceptation de son offre par le VENDEUR, l'OFFRANT devenu acquéreur s'engage à reproduire dans l'avant-contrat de vente ou dans une déclaration qui lui sera annexée et à laquelle cet avant-contrat fera référence la mention manuscrite de renonciation à la condition suspensive d'obtention d'un prêt prévue par l'article L. 313-42 du Code de la consommation.
+### Autres conditions de l'acquisition
+Les biens devront, au jour du transfert de propriété, être libres de tout titre locatif et de toute occupation.
+Outre les conditions ordinaires et de droit, la vente sera soumise aux conditions suspensives suivantes :
+- le certificat d'urbanisme ou les titres de propriété ne devront révéler aucune charge réelle ou servitude grave pouvant déprécier la valeur des biens objet des présentes ou altérer de manière significative la jouissance de l'ACQUEREUR,
+- l'état hypothécaire ne devra révéler aucune inscription de privilège ou d'hypothèque garantissant des créances dont le solde, en capital, intérêts et accessoires, ne pourra être remboursé à l'aide du prix de vente.
+## Acceptation de l'offre par le VENDEUR
+Cette offre d'achat est valable jusqu'au 08/11/2026 inclus.
+Passé cette date, et à défaut d'acceptation par le VENDEUR, elle deviendra caduque, sans autre formalité, sauf accord contraire de l'OFFRANT.
+L'acceptation de vendre aux conditions de la présente offre devra être actée par la signature de celle-ci par le VENDEUR.
+Elle sera notifiée à l'OFFRANT au plus tard le dernier jour de validité de l'offre.
+Un avant-contrat de vente devra ensuite être signé par le VENDEUR et l'OFFRANT au plus tard le 21/12/2026
+L'OFFRANT devenu ACQUEREUR versera la somme de quatre-vingt mille euros ( 80 000 €) à titre d'acompte dans les conditions définies par l'avant-contrat.
+L'offre acceptée constitue un accord sur la chose et sur le prix au sens des articles 1583 et 1589 du Code civil.
+En cas de refus de réitérer la présente :
+- le VENDEUR pourra être contraint de vendre les biens susvisés par tous les moyens et voies de droit, en supportant les frais de poursuites. S'il venait à décéder, ses héritiers et ayants droit seront tenus d'exécuter la présente ;
+- L'OFFRANT sous réserve de la levée des éventuelles conditions suspensives applicables ou de l'exercice d'un éventuel droit de rétractation, sera tenu d'acheter. Toutefois, s'il venait à décéder, ses héritiers et ayants droit auront la faculté de se désister sans indemnité.
+L'OFFRANT bénéficiera à la suite de la signature de l'avant-contrat de vente d'un délai de rétractation de 10 jours conformément aux dispositions de l'article L. 271-1 du code de la construction et de l'habitation.
+L'ACQUEREUR et le VENDEUR autorisent expressément le(s) notaire(s) à communiquer à l'AGENCE le projet d'avant-contrat ainsi que l'avant-contrat de vente signé, le projet d'acte authentique ainsi que l'acte authentique qui seront établis dans le cadre de la présente vente.
+## Données personnelles
+L'OFFRANT est informé que les données à caractère personnel le concernant collectées par le MANDATAIRE à l'occasion de la présente feront l'objet de traitements informatiques. Ces traitements se fondent soit sur la présente offre, soit sur le respect d'obligations légales, soit sur la poursuite d'intérêts légitimes.
+L'Agence est responsable des traitements des données à caractère personnel collectées à l'occasion des présentes.
+Ces données sont collectées et traitées aux fins de la réception et de la gestion de la présente offre d'achat, de sa transmission au vendeur, de la réalisation des opérations confiées, du suivi de la relation commerciale et de communication, de la gestion des fichiers clients-prospects, du respect des obligations légales et réglementaires applicables à l'activité de l'agence, notamment en matière de lutte contre le blanchiment de capitaux et le financement du terrorisme et, plus généralement, les finalités décrites dans la Politique générale de protection des données consultable sur le site de l'Agence ou, sur simple demande, auprès de l'Agence.
+Les données à caractère personnel sont destinées aux services et personnels habilités des responsables de l'Agence ainsi qu'aux intervenants participant à la réalisation de l'opération ou à l'exécution d'obligations légales ou réglementaires, notamment les notaires, établissements bancaires, assureurs, avocats, commissaires de justice, prestataires de signature électronique, prestataires de lettre recommandée électronique et, le cas échéant, aux professionnels de l'immobilier intervenant dans le cadre d'un partenariat nécessaire à l'exécution de la mission confiée.
+L'OFFRANT est également informé que ces données à caractère personnel pourront également être destinées aux opérations de prospection du MANDATAIRE dans le respect de la règlementation en vigueur.
+Les données à caractère personnel sont conservées pendant la durée nécessaire à l'exécution des présentes, augmentée des délais légaux de prescription applicables.
+L'OFFRANT pourra demander à l'Agence d'accéder aux données à caractère personnel la concernant, de les rectifier, de les modifier, de les supprimer ou de s'opposer à leur exploitation en adressant un courriel en ce sens à agence@example.com ou un courrier postal à l'adresse suivante : 10 avenue du Prototype, 06250 Mougins . Toute réclamation pourra être introduite auprès de la Commission Nationale de l'Informatique et des Libertés (www.cnil.fr).
+Le consommateur est informé que toute sollicitation téléphonique effectuée à des fins commerciales suppose son consentement préalable, sauf si elle intervient dans le cadre autorisé par la réglementation en vigueur et notamment dans le cadre de l'exécution d'un contrat en cours au sens du quatrième alinéa de l'article L223-1 du Code de la consommation.
+## Signature
+En la signant électroniquement, L'OFFRANT ACCEPTE D'ACQUERIR LES BIENS AUX PRIX ET CONDITIONS CONTENUS DANS LA PRESENTE OFFRE D'ACHAT."
+`;

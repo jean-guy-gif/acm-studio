@@ -354,7 +354,9 @@ effacement ») :
 select id, agency_id, signed_at, signature_paths
 from buyer_documents
 where signed_at < now() - interval '5 years';
--- Effacer (leurs liens partent avec eux, en cascade).
+-- Effacer (leurs liens, et la réponse du vendeur à une offre, partent avec eux, en cascade).
+-- Relever d'abord les signatures du vendeur d'une offre :
+-- select signature_paths from buyer_document_acceptances where document_id in (…);
 delete from buyer_documents where signed_at < now() - interval '5 years';
 ```
 

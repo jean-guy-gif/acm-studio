@@ -64,3 +64,39 @@ export async function getBuyerVouchers(
     };
   });
 }
+
+export type BuyerOffer = {
+  documentId: string;
+  signedAt: string;
+  validUntil: string;
+  answer: 'accepted' | 'refused' | null;
+};
+
+// Mission 137 B — les offres d'achat signées d'une fiche, et la réponse du vendeur ; une lecture en
+// échec rend null (M98).
+export async function getBuyerOffers(
+  supabase: SupabaseClient<Database>,
+  agencyId: string,
+  buyerId: string,
+): Promise<BuyerOffer[] | null> {
+  const { data, error } = await supabase
+    .from('buyer_documents')
+    .select('id, signed_at, valid_until, buyer_document_acceptances(decision)')
+    .eq('agency_id', agencyId)
+    .eq('buyer_id', buyerId)
+    .eq('kind', 'purchase_offer')
+    .order('signed_at', { ascending: false });
+  if (error) return null;
+  return (data ?? []).map((row) => {
+    const answers = row.buyer_document_acceptances as unknown as
+      { decision: string }[] | { decision: string } | null;
+    const answer = Array.isArray(answers) ? answers[0] : answers;
+    return {
+      documentId: row.id,
+      signedAt: row.signed_at,
+      validUntil: row.valid_until ?? '',
+      answer:
+        answer?.decision === 'accepted' || answer?.decision === 'refused' ? answer.decision : null,
+    };
+  });
+}

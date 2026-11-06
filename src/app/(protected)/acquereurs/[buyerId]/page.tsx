@@ -51,9 +51,11 @@ import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
 import {
+  getBuyerOffers,
   getBuyerVouchers,
   getVisitVouchers,
 } from '@/features/visit-voucher/queries/get-visit-vouchers';
+import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -130,13 +132,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
   const visits = ownVisits.filter((line) => line.visitedAt == null);
   // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
-  const [letters, vouchers, signedVouchers] = await Promise.all([
+  const [letters, vouchers, signedVouchers, signedOffers] = await Promise.all([
     getVisitLetters(visits),
     getVisitVouchers(
       supabase,
       ownVisits.map((line) => line.id),
     ),
     profile ? getBuyerVouchers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
+    profile ? getBuyerOffers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
   ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
   const deck = loadedDeck?.deck ?? null;
@@ -512,6 +515,39 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                       >
                         Signé le {buyerDateLabel(voucher.signedAt)}
                         {voucher.labels.length > 0 ? ` · ${voucher.labels.join(' ; ')}` : ''}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
+
+          {/* Mission 137 B — ses offres d'achat : signées, et la réponse du vendeur. */}
+          {signedOffers == null || signedOffers.length > 0 ? (
+            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-offers">
+              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                Ses offres d’achat
+              </h2>
+              {signedOffers == null ? (
+                <p role="alert" className="text-sm font-semibold text-red-700">
+                  Les offres n’ont pas pu être lues : rechargez la page.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {signedOffers.map((offer) => (
+                    <li key={offer.documentId}>
+                      <Link
+                        href={`/acquereurs/${buyer.id}/offre/${offer.documentId}`}
+                        className="text-sm font-semibold text-brand-darker underline"
+                        data-testid="buyer-offer-signed"
+                      >
+                        Signée le {buyerDateLabel(offer.signedAt)} ·{' '}
+                        {offer.answer === 'accepted'
+                          ? 'acceptée par le vendeur'
+                          : offer.answer === 'refused'
+                            ? 'refusée par le vendeur'
+                            : `en attente du vendeur jusqu’au ${frenchDay(offer.validUntil)}`}
                       </Link>
                     </li>
                   ))}
