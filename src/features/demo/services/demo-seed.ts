@@ -1,3 +1,9 @@
+import type {
+  DismissReason,
+  VisitNextStep,
+  VisitOpinion,
+  VisitTag,
+} from '@/features/buyer-messages/templates/types';
 import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
@@ -408,8 +414,35 @@ export const DEMO_VOUCHER_DAYS_AGO = 2;
 export const DEMO_VOUCHER_VISITOR = 'Paul Keller';
 export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin des Figurants, 69006 Lyon';
 export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
-export const DEMO_VOUCHER_FEEDBACK =
-  'Coup de cœur pour le jardin et la piscine ; une offre se prépare.';
+export const DEMO_VOUCHER_FEEDBACK = 'Une offre se prépare ; le prix reste leur question.';
+
+// Mission 139 — le compte rendu de la visite des Keller (la fiche de la mission) : « Intéressé ·
+// aimé : piscine, extérieur · gêné : prix », la suite « Offre envisagée ».
+export const DEMO_KELLER_VISIT_REPORT = {
+  opinion: 'interested',
+  liked: ['outdoor', 'pool'],
+  disliked: ['price'],
+  next_step: 'offer',
+} as const satisfies {
+  opinion: VisitOpinion;
+  liked: VisitTag[];
+  disliked: VisitTag[];
+  next_step: VisitNextStep;
+};
+
+// Mission 139 — les six biens écartés pour les Lambert la semaine écoulée : des villas de Mougins,
+// hors de leur secteur et de leur budget (« 3 pour le prix, 2 pour le secteur, 1 pour le
+// stationnement »).
+export function demoLambertDismissalPlan(): { listingId: string; reason: DismissReason }[] {
+  return [
+    { listingId: 'mou-04', reason: 'over_budget' },
+    { listingId: 'mou-05', reason: 'over_budget' },
+    { listingId: 'mou-06', reason: 'over_budget' },
+    { listingId: 'mou-08', reason: 'sector' },
+    { listingId: 'mou-10', reason: 'sector' },
+    { listingId: 'mou-11', reason: 'parking' },
+  ];
+}
 
 // Mission 137 B — l'offre d'achat des Keller : deux offrants inventés (aucune donnée d'un modèle
 // d'origine), sans prêt, au prix de commercialisation moins 3 %, au millier ; honoraires de 4 % à la

@@ -16,7 +16,7 @@ export async function readBuyerKnownKeys(
   agencyId: string,
   buyerIds: string[],
 ): Promise<{ ok: true; keys: (buyerId: string) => Set<string> } | { ok: false }> {
-  const [selections, proposals, comparables, prospects] = await Promise.all([
+  const [selections, proposals, dismissals, comparables, prospects] = await Promise.all([
     readPages((from, to) =>
       admin
         .from('buyer_selections')
@@ -28,6 +28,15 @@ export async function readBuyerKnownKeys(
     readPages((from, to) =>
       admin
         .from('buyer_proposals')
+        .select('buyer_id, property_key')
+        .eq('agency_id', agencyId)
+        .in('buyer_id', buyerIds)
+        .range(from, to),
+    ),
+    // Mission 139 — les biens écartés pour lui par le conseiller ne reviennent plus.
+    readPages((from, to) =>
+      admin
+        .from('buyer_dismissals')
         .select('buyer_id, property_key')
         .eq('agency_id', agencyId)
         .in('buyer_id', buyerIds)
@@ -49,7 +58,13 @@ export async function readBuyerKnownKeys(
         .range(from, to),
     ),
   ]);
-  if (selections.error || proposals.error || comparables.error || prospects.error) {
+  if (
+    selections.error ||
+    proposals.error ||
+    dismissals.error ||
+    comparables.error ||
+    prospects.error
+  ) {
     return { ok: false };
   }
   const selectionBuyer = new Map(selections.data.map((row) => [row.id, row.buyer_id]));
@@ -89,7 +104,7 @@ export async function readBuyerKnownKeys(
       if (url) add(buyerId, watchKey(url));
     }
   }
-  for (const row of proposals.data) {
+  for (const row of [...proposals.data, ...dismissals.data]) {
     // `listing:<portail>:<numéro>` (M134) : l'identité publiée.
     if (row.property_key.startsWith('listing:')) {
       add(row.buyer_id, row.property_key.slice('listing:'.length));

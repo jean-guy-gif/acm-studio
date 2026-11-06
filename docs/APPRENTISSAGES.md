@@ -198,6 +198,22 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   Lambert ») fait correspondre deux lignes à un filtre `hasText` de Playwright : le filtre de
   l'acquéreur devient une expression qui refuse la suite (`/Lambert(?!-)/`) ; un test vérifie que
   les cinq vendeurs de la démo sont cinq foyers, aucun au nom d'un acquéreur.
+- 06/11 · M139 · Une insertion groupée met NULL sur la colonne qu'une ligne n'a pas (postgrest-js,
+  `defaultToNull`) : un champ facultatif ajouté à un seul acquéreur de démo (la langue des Wilson)
+  cassait « Préparer ma démo » sur une colonne `not null`. Chaque ligne d'un lot porte chaque
+  colonne ; les types ne le voient pas (relecteur).
+- 06/11 · M139 · Une action qui revalide la page démonte le composant qui l'a appelée quand la ligne
+  change de liste (« À planifier » → « Visites faites ») : son état d'après (« messages prêts »)
+  disparaît. Ce qui doit suivre un enregistrement se porte par l'adresse (`?messages=<id>`), pas par
+  l'état du formulaire (relecteur).
+- 06/11 · M139 · Le client factice partagé (`fakeSupabase`) répond selon la DERNIÈRE table appelée :
+  deux lectures en parallèle (`Promise.all`) y reçoivent la même réponse. Un test de lectures
+  parallèles prend un client par table ; une action testée par lui lit en séquence.
+- 06/11 · M139 · Un test de modèle a trouvé « la visite de le bien » : la préposition se met dans
+  la forme du bien que la phrase attend (« du bien », « de la maison ») ; chaque langue, chaque avis,
+  chaque suite sont joués par un test. En e2e, un élément qui change à l'ouverture (« Écarter pour
+  lui » remplacé par ses raisons) se tient par son libellé, jamais par le filtre qu'il ne remplit
+  plus. Suite e2e : 13 sur 14 (13,4 min), le test de la mission vert après correction du test.
 
 ## La base
 

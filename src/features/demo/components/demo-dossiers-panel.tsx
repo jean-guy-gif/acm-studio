@@ -70,7 +70,13 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
             </SubmitButton>
           </form>
         ) : (
-          <DemoResetButton action={resetDemoDossiers} />
+          <DemoResetButton
+            action={resetDemoDossiers}
+            counts={{
+              dossiers: numberInWords(DEMO_STAGES.length),
+              buyers: numberInWords(DEMO_BUYERS.length),
+            }}
+          />
         )}
       </div>
     </section>

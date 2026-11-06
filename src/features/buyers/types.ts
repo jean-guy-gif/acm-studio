@@ -1,3 +1,4 @@
+import type { BuyerLanguage } from '@/features/buyer-messages/languages';
 import type { Database } from '@/lib/supabase/database.types';
 
 // Mission 117 — la fiche acquéreur. Un acquéreur n'appartient à aucun dossier vendeur : il vit par
@@ -100,6 +101,8 @@ export type BuyerInput = {
   name: string;
   phone: string | null;
   email: string | null;
+  // Mission 139 — la langue de ses messages ; absente : celle de la fiche ne change pas.
+  language?: BuyerLanguage;
   purpose: BuyerPurpose | null;
   timeline: BuyerTimeline | null;
   notes: string | null;
@@ -124,6 +127,8 @@ export type BuyerInput = {
 };
 
 export type Buyer = BuyerInput & {
+  // Mission 139 — lue en base : toujours une langue (le français par défaut).
+  language: BuyerLanguage;
   id: string;
   agencyId: string;
   advisorId: string;

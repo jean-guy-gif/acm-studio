@@ -91,7 +91,21 @@ export function isNewProperty(item: LoopProperty, now: Date): boolean {
 export type LoopContacts = {
   // property_key → acquéreur → date d'envoi.
   proposals: Map<string, Map<string, string>>;
+  // Mission 139 — property_key → les acquéreurs pour qui le conseiller l'a écarté : ils ne lui
+  // correspondent plus (ni à proposer, ni comptés).
+  dismissals?: Map<string, Set<string>>;
 };
+
+// Mission 139 — une seule règle partout (boucle, bloc du dossier, compteur du Live) : les acquéreurs
+// pour qui le conseiller a écarté ce bien ne lui correspondent plus.
+export function withoutDismissed<T extends { id: string }>(
+  buyers: T[],
+  dismissals: ReadonlyMap<string, ReadonlySet<string>> | undefined,
+  propertyKey: string,
+): T[] {
+  const dismissed = dismissals?.get(propertyKey);
+  return dismissed ? buyers.filter((buyer) => !dismissed.has(buyer.id)) : buyers;
+}
 
 export function alreadyContacted(
   item: LoopProperty,
@@ -117,7 +131,13 @@ export function loopBuyers(
   contacts: LoopContacts,
   now: Date,
 ): LoopBuyers {
-  const result = propertyBuyers(buyers, progress, item.property, item.price, now);
+  const result = propertyBuyers(
+    withoutDismissed(buyers, contacts.dismissals, item.key),
+    progress,
+    item.property,
+    item.price,
+    now,
+  );
   const all = [...result.ready, ...result.others];
   const sentOf = contacts.proposals.get(item.key);
   return {

@@ -39,3 +39,18 @@ export function startOfParisYesterday(now: Date): Date {
   const { year, month, day } = parisParts(now);
   return parisMidnight(year, month, day - 1);
 }
+
+// Mission 139 — la semaine de Paris : son lundi (AAAA-MM-JJ), et minuit à Paris d'un jour donné
+// (les bornes du point de la semaine, heure d'été comprise).
+export function parisMonday(now: Date): string {
+  const { year, month, day } = parisParts(now);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const fromMonday = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - fromMonday);
+  return date.toISOString().slice(0, 10);
+}
+
+export function parisMidnightOf(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number);
+  return parisMidnight(year!, month!, date!);
+}

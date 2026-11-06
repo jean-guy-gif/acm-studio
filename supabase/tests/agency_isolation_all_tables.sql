@@ -104,6 +104,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_document_links.token_hash' then $v$md5(random()::text) || md5(random()::text)$v$
     -- Mission 137 B — la réponse du vendeur : un refus (une acceptation exige sa signature).
     when 'buyer_document_acceptances.decision' then $v$'refused'$v$
+    -- Mission 139 — un bien écarté pour un acquéreur : une raison de la liste.
+    when 'buyer_dismissals.reason' then $v$'other'$v$
     else null
   end
 $$;

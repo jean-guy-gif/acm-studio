@@ -18,6 +18,7 @@ const service = fakeSupabase((calls) => {
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+vi.mock('@/lib/app-errors/report-server-error', () => ({ reportServerError: async () => {} }));
 
 const { requestVisit, cancelVisitRequest, recordVisitDone } =
   await import('@/features/buyer-presentation/actions/visit-requests');
@@ -34,6 +35,18 @@ const requestRow = {
   feedback: null,
   outcome: 'to_plan',
   created_at: '2026-10-24T10:00:00Z',
+  opinion: null,
+  liked: [],
+  disliked: [],
+  next_step: null,
+};
+// Mission 139 — le compte rendu de « Visite faite ».
+const REPORT = {
+  opinion: 'not_for_me',
+  liked: ['light'],
+  disliked: ['light', 'noise', 'noise'],
+  nextStep: 'keep_searching',
+  note: '  Trop sombre  ',
 };
 const itemRow = (presentedAt: string | null, archivedAt: string | null = null) => ({
   id: 'i1',
@@ -56,7 +69,7 @@ describe('les demandes de visite', () => {
     expect((await requestVisit('i1')).ok).toBe(false);
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: '2026-10-01' };
     expect((await cancelVisitRequest('r1')).ok).toBe(false);
-    expect((await recordVisitDone('r1', 'x', 'visited')).ok).toBe(false);
+    expect((await recordVisitDone('r1', REPORT)).ok).toBe(false);
     expect(service.writes()).toEqual([]);
   });
 
@@ -124,14 +137,14 @@ describe('les demandes de visite', () => {
     expect(service.writes()).toEqual([]);
   });
 
-  it('« Visite faite » : datée, retour tronqué, issue dans la liste ; « à planifier » refusé', async () => {
-    expect(await recordVisitDone('r1', 'x', 'to_plan')).toEqual({
+  it('« Visite faite » : le compte rendu relu, l’issue déduite, daté ; une seule fois', async () => {
+    expect(await recordVisitDone('r1', { ...REPORT, opinion: 'bof' })).toEqual({
       ok: false,
-      error: 'Choisissez l’issue de la visite.',
+      error: 'Choisissez son avis et la suite de la visite.',
     });
-    expect(await recordVisitDone('r1', 'x', 'signed')).toEqual({
+    expect(await recordVisitDone('r1', { ...REPORT, nextStep: 'offer' })).toEqual({
       ok: false,
-      error: 'Choisissez l’issue de la visite.',
+      error: 'Choisissez son avis et la suite de la visite.',
     });
     expect(service.writes()).toEqual([]);
     state.respond = () => ({
@@ -140,19 +153,71 @@ describe('les demandes de visite', () => {
         visited_at: '2026-10-25T10:00:00Z',
         feedback: 'Trop sombre',
         outcome: 'declined',
+        opinion: 'not_for_me',
+        liked: ['light'],
+        disliked: ['light', 'noise'],
+        next_step: 'keep_searching',
       },
     });
-    const result = await recordVisitDone('r1', '  Trop sombre  ', 'declined');
+    const result = await recordVisitDone('r1', REPORT);
     expect(result.ok && result.request.outcome).toBe('declined');
+    expect(result.ok && result.request.report).toEqual({
+      opinion: 'not_for_me',
+      liked: ['light'],
+      disliked: ['light', 'noise'],
+      nextStep: 'keep_searching',
+    });
     const update = service.calls.find((call) => call.method === 'update')?.args[0] as Record<
       string,
       unknown
     >;
-    expect(update).toMatchObject({ feedback: 'Trop sombre', outcome: 'declined' });
+    expect(update).toMatchObject({
+      feedback: 'Trop sombre',
+      outcome: 'declined',
+      opinion: 'not_for_me',
+      liked: ['light'],
+      disliked: ['light', 'noise'],
+      next_step: 'keep_searching',
+    });
     expect(typeof update.visited_at).toBe('string');
     // Une visite faite ne se redate pas : l'écriture ne vise que les demandes non visitées.
     expect(
       service.calls.filter((call) => call.method === 'is').map((call) => call.args[0]),
     ).toEqual(['cancelled_at', 'visited_at']);
+    // « On continue à chercher » : aucune deuxième visite demandée.
+    expect(service.calls.filter((call) => call.method === 'insert')).toEqual([]);
+  });
+
+  it('« Offre envisagée » : l’issue offre ; « Deuxième visite » : une nouvelle demande', async () => {
+    state.respond = () => ({
+      data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'offer' },
+    });
+    await recordVisitDone('r1', { ...REPORT, opinion: 'love', nextStep: 'offer' });
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toMatchObject({
+      outcome: 'offer',
+      next_step: 'offer',
+    });
+    service.reset();
+    // Aucune demande encore vivante sur ce bien : la deuxième visite est demandée.
+    state.respond = (_table, calls) =>
+      calls.some((call) => call.method === 'limit')
+        ? { data: [] }
+        : { data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' } };
+    await recordVisitDone('r1', { ...REPORT, opinion: 'mixed', nextStep: 'second_visit' });
+    expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
+      agency_id: 'agency-a',
+      buyer_id: 'b1',
+      buyer_selection_item_id: 'i1',
+      requested_during: 'conseiller',
+    });
+  });
+
+  it('« Deuxième visite » ne redouble pas une demande encore vivante sur ce bien', async () => {
+    state.respond = (_table, calls) =>
+      calls.some((call) => call.method === 'limit')
+        ? { data: [{ id: 'r2' }] }
+        : { data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' } };
+    await recordVisitDone('r1', { ...REPORT, opinion: 'mixed', nextStep: 'second_visit' });
+    expect(service.calls.filter((call) => call.method === 'insert')).toEqual([]);
   });
 });

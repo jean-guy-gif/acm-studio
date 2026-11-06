@@ -1,6 +1,8 @@
 import 'server-only';
 
+import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
+import { withoutDismissed } from '@/features/buyers/services/loop-properties';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import type { BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import {
@@ -136,14 +138,17 @@ export async function getPropertyBuyers(
   projectId: string,
   now: Date,
 ): Promise<PropertyBuyers | null> {
-  const [agency, loop] = await Promise.all([
+  const [agency, loop, dismissals] = await Promise.all([
     loadAgencyBuyers(agencyId),
     loadLoopProperties(agencyId, [projectId]),
+    createClient().then((supabase) => readDismissals(supabase, agencyId)),
   ]);
-  if (agency.failed || loop.failed) return null;
+  if (agency.failed || loop.failed || dismissals == null) return null;
   const entry = loop.properties.get(projectId) ?? null;
+  // Mission 139 — un acquéreur pour qui le conseiller a écarté ce bien ne compte plus (bloc du
+  // dossier, compteur du Live, « Montrer au vendeur ») : une seule règle partout.
   return propertyBuyers(
-    agency.buyers,
+    withoutDismissed(agency.buyers, dismissals, `project:${projectId}`),
     agency.progress,
     entry?.property ?? null,
     entry?.price ?? null,

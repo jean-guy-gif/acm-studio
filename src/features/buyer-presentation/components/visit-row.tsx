@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
 import type { VisitVoucher } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
+import { VisitMessagesPanel } from '@/features/buyer-messages/components/visit-messages-panel';
+import { NEXT_STEP_LABELS, visitReportLine } from '@/features/buyer-messages/report';
 import type { OfferAnswer } from '@/features/purchase-offer/queries/get-offer-answers';
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
@@ -26,6 +28,7 @@ export function VisitRow({
   letter = null,
   voucher = null,
   offerAnswer = null,
+  openMessages = false,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
@@ -33,10 +36,13 @@ export function VisitRow({
   voucher?: VisitVoucher | null;
   // Mission 138 — la réponse du vendeur à l'offre née de cette visite.
   offerAnswer?: OfferAnswer | null;
+  // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
+  openMessages?: boolean;
 }) {
   const done = line.visitedAt != null;
   return (
     <li
+      id={`visite-${line.id}`}
       data-testid="visit-line"
       data-state={done ? 'done' : 'pending'}
       className="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
@@ -89,11 +95,23 @@ export function VisitRow({
         </p>
       ) : null}
       {done ? (
-        line.feedback ? (
-          <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-feedback">
-            « {line.feedback} »
-          </p>
-        ) : null
+        <>
+          {/* Mission 139 — le compte rendu : l'avis, ce qui a plu et déplu, la suite. */}
+          {line.report ? (
+            <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-report">
+              {visitReportLine(line.report)}
+              {line.report.nextStep ? ` · ${NEXT_STEP_LABELS[line.report.nextStep]}` : ''}
+            </p>
+          ) : null}
+          {line.feedback ? (
+            <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-feedback">
+              « {line.feedback} »
+            </p>
+          ) : null}
+          {line.report?.nextStep ? (
+            <VisitMessagesPanel requestId={line.id} openAtOnce={openMessages} />
+          ) : null}
+        </>
       ) : (
         <>
           {letter ? (

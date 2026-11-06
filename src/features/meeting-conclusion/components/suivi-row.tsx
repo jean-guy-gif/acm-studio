@@ -105,7 +105,7 @@ export type SuiviFrieze = {
   pointDue: boolean;
   pointLateDays: number;
   latestPointOn: string | null;
-  visits: { done: number; pending: number };
+  visits: { done: number; pending: number; priceReturns?: number };
   // Mission 130 — une lecture en échec ne se lit jamais comme « rien » (M98).
   pointsUnknown?: boolean;
   visitsUnknown?: boolean;
@@ -156,6 +156,11 @@ function friezeSegments(frieze: SuiviFrieze): Segment[] {
       : visits.done > 0
         ? {
             label: `Visites acquéreurs · ${visits.done} faite${visits.done > 1 ? 's' : ''}`,
+            // Mission 139 — « 3 visites · 2 retours sur le prix », côté conseiller.
+            sub:
+              (visits.priceReturns ?? 0) > 0
+                ? `${visits.priceReturns} retour${(visits.priceReturns ?? 0) > 1 ? 's' : ''} sur le prix`
+                : undefined,
             tone: 'done',
           }
         : { label: 'Visites acquéreurs · 0', tone: 'later' };

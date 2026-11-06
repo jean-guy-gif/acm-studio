@@ -63,6 +63,8 @@ import {
   DEMO_VOUCHER_DAYS_AGO,
   demoKellerOfferPlan,
   DEMO_VOUCHER_FEEDBACK,
+  DEMO_KELLER_VISIT_REPORT,
+  demoLambertDismissalPlan,
   DEMO_VOUCHER_MANDATE,
   DEMO_VOUCHER_VISITOR,
   DEMO_VOUCHER_VISITOR_ADDRESS,
@@ -73,6 +75,8 @@ import {
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
+import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import { coveredWeek } from '@/features/buyer-messages/week';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
 import { addressKey } from '@/features/prospecting/services/address-key';
@@ -289,6 +293,8 @@ async function seedKellerVoucher(
       visited_at: visitedAt,
       outcome: 'offer',
       feedback: DEMO_VOUCHER_FEEDBACK,
+      // Mission 139 — le compte rendu : « Intéressé · aimé : piscine, extérieur · gêné : prix ».
+      ...DEMO_KELLER_VISIT_REPORT,
     })
     .select('id')
     .single();
@@ -564,6 +570,8 @@ async function insertDemoBuyers(
         ).toISOString();
         return {
           ...buyerColumns(buyer),
+          // Mission 139 — la langue sur chaque ligne (la même raison que les deux dates).
+          language: buyer.language ?? 'fr',
           created_at: createdAt,
           status_changed_at: createdAt,
           agency_id: closer.agencyId,
@@ -1122,8 +1130,41 @@ export async function seedDemoDossiers(
     (await seedLambertSharedSelection(supabase, closer, lambert.id, now)) &&
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
     (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&
-    (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now))
+    (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now)) &&
+    (await seedLambertDismissals(supabase, closer, lambert.id, now))
   );
+}
+
+// Mission 139 — la semaine écoulée des Lambert : six biens écartés pour eux par le conseiller,
+// datés de la semaine que raconte le point du lundi (la date d'un bien écarté n'est pas forcée par
+// la base, pour la démo seule) ; des villas de Mougins, hors de leur secteur et de leur budget.
+async function seedLambertDismissals(
+  supabase: Client,
+  closer: Closer,
+  lambertId: string,
+  now: Date,
+): Promise<boolean> {
+  const week = coveredWeek(now);
+  const rows = demoLambertDismissalPlan().flatMap((entry, index) => {
+    const listing = DEMO_LISTINGS.find((candidate) => candidate.id === entry.listingId);
+    if (!listing) return [];
+    return [
+      {
+        agency_id: closer.agencyId,
+        buyer_id: lambertId,
+        property_key: dismissalKey({ source: 'listing', url: demoListingUrl(listing) }),
+        label: `Maison · ${listing.roomsCount} pièces · ${listing.surfaceArea} m² · Mougins`,
+        reason: entry.reason,
+        dismissed_by: closer.id,
+        // Du mardi au samedi de la semaine écoulée, à 10 h (Paris, à l'heure près).
+        dismissed_at: new Date(
+          week.startAt.getTime() + ((index % 5) + 1) * 86_400_000 + 10 * 3_600_000,
+        ).toISOString(),
+      },
+    ];
+  });
+  const { error } = await supabase.from('buyer_dismissals').insert(rows);
+  return !error;
 }
 
 // Mission 136 — la veille de la démo, simulée (aucun appel, M114) : un passage d'il y a 2 jours
