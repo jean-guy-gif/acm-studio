@@ -10,6 +10,7 @@ import {
   toSelection,
 } from '@/features/ideal-properties/services/ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -80,6 +81,7 @@ export async function saveIdealSelection(
   if (error || !selection) return { ok: false, error: FAILED };
 
   const now = new Date();
+  const today = parisDay(now);
   const rows = read.items.map((item, index) => {
     const demoListing = demo && item.source === 'listing' ? findDemoListing(item.reference) : null;
     const before =
@@ -94,7 +96,12 @@ export async function saveIdealSelection(
       label: item.label,
       listed_price: item.listedPrice,
       price_seen_on:
-        item.source === 'listing' ? (reuse ? before.price_seen_on : priceSeenOn) : null,
+        item.source === 'listing'
+          ? reuse
+            ? before.price_seen_on
+            : // Mission 136 — le jour de la veille, jamais un jour à venir.
+              ((item.seenOn != null && item.seenOn <= today ? item.seenOn : null) ?? priceSeenOn)
+          : null,
       category: item.category,
       gaps: item.gaps,
       snapshot: (item.snapshot ?? (reuse ? before.snapshot : null) ?? null) as Json | null,

@@ -1,0 +1,135 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+import { btnSecondary, card, hintText, inputBase, kickerLabel } from '@/components/ui/styles';
+import { setBuyerWatchCap } from '@/features/buyer-watch/actions/set-watch-cap';
+import type { WatchAdmin } from '@/features/buyer-watch/queries/get-watch';
+import {
+  WATCH_BUDGET_LABELS,
+  watchUsageLabel,
+} from '@/features/buyer-watch/services/watch-schedule';
+import { formatDateTime, formatEuro } from '@/lib/format';
+
+const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
+  running: 'en cours',
+  done: 'terminée',
+  failed: 'en échec',
+};
+
+// Mission 136 — Administration, pour le manager : « Veille des acquéreurs : jusqu'à … € par mois »,
+// son état (« Veille en pause : plafond du mois atteint », « Veille coupée ») et le journal des
+// passages (acquéreur, biens trouvés, coût). Le conseiller ne voit rien de tout cela.
+export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
+  const router = useRouter();
+  const [value, setValue] = useState(String(Math.round(watch.watchCapCents / 100)));
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const maxEuros = Math.floor(watch.agencyCapCents / 200);
+
+  return (
+    <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-watch-admin">
+      <span className={kickerLabel}>Veille des acquéreurs · ce mois-ci</span>
+      <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
+        {watchUsageLabel(watch.watchSpentCents, watch.effectiveCapCents)}
+      </p>
+      <p
+        role="status"
+        data-testid="buyer-watch-state"
+        className={
+          watch.state === 'active'
+            ? 'text-sm font-medium text-emerald-700 stage:text-emerald-300'
+            : 'text-sm font-medium text-amber-700 stage:text-amber-300'
+        }
+      >
+        {WATCH_BUDGET_LABELS[watch.state]}
+      </p>
+      <form
+        className="flex flex-wrap items-end gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setMessage(null);
+          setPending(true);
+          void setBuyerWatchCap(value)
+            .then((result) => {
+              setPending(false);
+              if (!result.ok) {
+                setMessage({ ok: false, text: result.error });
+                return;
+              }
+              setMessage({ ok: true, text: 'Plafond de la veille enregistré.' });
+              router.refresh();
+            })
+            .catch(() => {
+              setPending(false);
+              setMessage({ ok: false, text: 'Connexion perdue : réessayez.' });
+            });
+        }}
+      >
+        <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700 stage:text-white/80">
+          Veille des acquéreurs : jusqu’à … € par mois
+          <input
+            className={`${inputBase} w-32`}
+            inputMode="numeric"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            data-testid="buyer-watch-cap"
+            aria-describedby="buyer-watch-cap-hint"
+          />
+        </label>
+        <button type="submit" className={btnSecondary} disabled={pending}>
+          {pending ? 'Enregistrement…' : 'Enregistrer'}
+        </button>
+      </form>
+      <p id="buyer-watch-cap-hint" className={hintText}>
+        Chaque semaine, une recherche sur le marché pour chaque acquéreur prêt à visiter, prise dans
+        le budget de recherche de l’agence ({formatEuro(watch.agencyCapCents / 100)}), jamais plus
+        de la moitié ({formatEuro(maxEuros)} au plus). 0 € coupe la veille. Le reste du budget va
+        aux recherches des conseillers.
+      </p>
+      {message ? (
+        <p
+          role={message.ok ? 'status' : 'alert'}
+          className={
+            message.ok
+              ? 'text-sm font-semibold text-emerald-700'
+              : 'text-sm font-semibold text-red-700'
+          }
+        >
+          {message.text}
+        </p>
+      ) : null}
+      <div className="flex flex-col gap-1.5">
+        <h3 className="font-title text-base font-semibold text-zinc-900 stage:text-white">
+          Les derniers passages
+        </h3>
+        {watch.journal.length === 0 ? (
+          <p className="text-sm text-zinc-500 stage:text-white/55">
+            Aucun passage pour l’instant : la veille cherche la nuit pour les acquéreurs prêts à
+            visiter.
+          </p>
+        ) : (
+          <ul
+            className="flex flex-col text-sm text-zinc-700 stage:text-white/80"
+            data-testid="buyer-watch-journal"
+          >
+            {watch.journal.map((entry, index) => (
+              <li key={`${entry.ranAt}-${index}`} className="flex flex-wrap gap-x-2 py-1">
+                <span className="font-medium">{formatDateTime(entry.ranAt)}</span>
+                <span>{entry.buyerName}</span>
+                <span className="text-zinc-500 stage:text-white/55">
+                  {[
+                    STATUS_LABELS[entry.status],
+                    `${entry.found} bien${entry.found > 1 ? 's' : ''} trouvé${entry.found > 1 ? 's' : ''}`,
+                    `${entry.adverts} annonce${entry.adverts > 1 ? 's' : ''} facturée${entry.adverts > 1 ? 's' : ''}`,
+                  ].join(' · ')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}

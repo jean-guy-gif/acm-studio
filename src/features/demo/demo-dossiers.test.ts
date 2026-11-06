@@ -171,7 +171,8 @@ describe('les acquéreurs de la démo', () => {
     expect(rows.slice(0, 2).map((row) => row.name)).toEqual(['M. et Mme Rossi', 'Famille Keller']);
     // Mission 132 — cinq financements validés, chacun avec son dernier contact.
     const validated = rows.filter((row) => row.financing === 'validated');
-    expect(validated).toHaveLength(5);
+    // Mission 136 — et les Keller, prêts à visiter : la veille cherche pour eux.
+    expect(validated).toHaveLength(6);
     for (const row of validated) expect(row.contacted_at).toEqual(expect.any(String));
     // Mission 133 — chaque ligne porte ses deux dates (une colonne absente d'une seule ligne
     // vaudrait NULL dans l'insertion groupée) ; les fiches de Vence datent de 1 à 7 semaines.

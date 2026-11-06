@@ -191,7 +191,13 @@ export default function ConfidentialitePage() {
               de sa sélection a été partagé et ses relances (deux au plus, quand il n’a pas
               répondu), pour rappeler au conseiller de le relancer ; et, quand ses refus le
               suggèrent, l’ajustement de sa recherche que le conseiller a choisi d’appliquer, daté.
-              Aucun message n’est envoyé par l’outil.
+              Aucun message n’est envoyé par l’outil. Pour un acquéreur prêt à visiter, une veille
+              cherche chaque semaine, la nuit, les biens arrivés sur le marché qui correspondent à
+              sa recherche : ses critères (type de bien, communes, budget, pièces, surface,
+              équipements, jamais son nom ni ses coordonnées) partent seuls vers le fournisseur
+              d’annonces, Stream Estate, dans la limite d’un budget mensuel réglé par l’agence ;
+              l’agence garde la date de chaque passage et les biens trouvés, tels que les annonces
+              les publient, jamais une adresse. Rien n’est envoyé à l’acquéreur sans le conseiller.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

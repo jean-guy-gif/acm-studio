@@ -4,20 +4,15 @@ import { z } from 'zod';
 
 import { toBuyer } from '@/features/buyers/services/buyer-row';
 import type { Buyer } from '@/features/buyers/types';
-import { geoProvider } from '@/features/competitor-search/services/geo-provider';
-import { baseStreamEstateQuery } from '@/features/competitor-search/services/stream-estate';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { liveStreamEstatePage } from '@/features/competitor-search/services/stream-estate-fetch';
 import {
-  planTiers,
-  runTieredSearch,
   STREAM_ESTATE_BILLING_CAP,
   STREAM_ESTATE_MORE_CAP,
   type FetchStreamEstatePage,
   type TierCursor,
   type TieredSearchCounts,
   type TieredSearchMemory,
-  type TierPlan,
   type TierReport,
 } from '@/features/competitor-search/services/stream-estate-tiers';
 import {
@@ -36,6 +31,10 @@ import {
   IDEAL_CRITERIA_MESSAGES,
   idealSearchCriteria,
 } from '@/features/ideal-properties/services/ideal-criteria';
+import {
+  resolveIdealPlans,
+  runIdealMarketSearch,
+} from '@/features/ideal-properties/services/ideal-market-search';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import {
   advertsAllowed,
@@ -121,7 +120,7 @@ export async function searchIdealProperties(
 
   const deduced = idealSearchCriteria(buyer);
   if (!deduced.ok) return { ok: false, error: IDEAL_CRITERIA_MESSAGES[deduced.reason] };
-  const { criteria, settings } = deduced;
+  const { criteria } = deduced;
 
   const demo = await isDemoAgency(profile.agency_id);
   const apiKey = demo ? null : streamEstateApiKey();
@@ -141,30 +140,11 @@ export async function searchIdealProperties(
   }
 
   // 1. Les communes de la fiche, toutes résolues en codes INSEE ; une seule introuvable retient.
-  const geo = geoProvider(demo);
-  const codes: string[] = [];
-  const names: string[] = [];
-  for (const city of deduced.cities) {
-    const commune = await geo.resolveCommune(city, null);
-    if (!commune.ok) {
-      const reasons: Record<typeof commune.reason, string> = {
-        unavailable:
-          'Le service des communes ne répond pas : réessayez dans un instant. Aucune recherche lancée.',
-        arrondissements: `${city} se cherche par arrondissement : écrivez-le sur la fiche (« Paris 15e »). Aucune recherche lancée.`,
-        ambiguous: `Plusieurs communes répondent à « ${city} » : précisez-la sur la fiche. Aucune recherche lancée.`,
-        not_found: `Commune introuvable (« ${city} ») : vérifiez la fiche. Aucune recherche lancée.`,
-      };
-      return { ok: false, error: reasons[commune.reason] };
-    }
-    if (!codes.includes(commune.code)) {
-      codes.push(commune.code);
-      names.push(commune.display);
-    }
-  }
+  //    Puis le plan : les réglages de la fiche, toute la commune — toutes les communes de la fiche.
   const now = new Date();
-  if (!baseStreamEstateQuery(criteria, now).ok) {
-    return { ok: false, error: IDEAL_CRITERIA_MESSAGES.no_type };
-  }
+  const resolvedPlans = await resolveIdealPlans(deduced, demo, now);
+  if (!resolvedPlans.ok) return { ok: false, error: resolvedPlans.error };
+  const { plans, names } = resolvedPlans.resolved;
 
   let billed = 0;
   const fetchPage: FetchStreamEstatePage = demo
@@ -177,12 +157,6 @@ export async function searchIdealProperties(
         'searchIdealProperties',
       );
 
-  // 2. Le plan : les réglages de la fiche, toute la commune — toutes les communes de la fiche.
-  const plans: TierPlan[] = planTiers(
-    criteria,
-    { located: false, hasCentre: false, arrondissement: null },
-    settings,
-  ).map((plan) => ({ ...plan, area: { kind: 'commune', codes } }));
   const resumeFrom = parsedResume?.data ?? null;
   if (
     resumeFrom != null &&
@@ -192,7 +166,7 @@ export async function searchIdealProperties(
     return { ok: false, error: 'La fiche a changé depuis la recherche : relancez-la.' };
   }
 
-  // 3. Le budget réservé avant l'appel (M105) ; rien en démo.
+  // 2. Le budget réservé avant l’appel (M105) ; rien en démo.
   const wanted = resumeFrom != null ? STREAM_ESTATE_MORE_CAP : STREAM_ESTATE_BILLING_CAP;
   const reservation = budgetRead?.ok
     ? await reserveSearchBudget({
@@ -211,23 +185,17 @@ export async function searchIdealProperties(
           : BUDGET_UNREADABLE_MESSAGE,
     };
   }
-  const outcome = await runTieredSearch({
-    criteria,
-    plans,
-    context: { inseeCode: codes[0]!, origin: null },
-    neighbours: null,
+  const outcome = await runIdealMarketSearch(deduced, resolvedPlans.resolved, {
     fetchPage,
     now,
     cap: reservation?.ok ? reservation.adverts : wanted,
-    filters: settings.filters,
-    ...(resumeFrom != null
-      ? {
-          resume: {
+    resume:
+      resumeFrom != null
+        ? {
             cursor: { ...resumeFrom.cursor, tier: plans[resumeFrom.cursor.plan]!.tier },
             memory: resumeFrom.memory,
-          },
-        }
-      : {}),
+          }
+        : null,
   });
   if (reservation?.ok) await settleSearchBudget(reservation.reservationId, billed);
   if (!outcome.ok) {

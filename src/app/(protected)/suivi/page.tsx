@@ -1,11 +1,19 @@
 import Link from 'next/link';
 
-import { emptyState, kickerLabel, link, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import {
+  btnSecondary,
+  emptyState,
+  kickerLabel,
+  link,
+  pageSubtitle,
+  pageTitle,
+} from '@/components/ui/styles';
 import { redirect } from 'next/navigation';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
+import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
@@ -131,23 +139,26 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, pointRead, buyerRead, mandateRead] = await Promise.all([
-    getAgencyProspecting(counted),
-    getSellerInsights(projectIds),
-    profile ? getAgency(profile.agency_id) : null,
-    // Mission 127 — les points marché de chaque dossier.
-    profile
-      ? createClient().then((supabase) =>
-          readMarketUpdates(supabase, profile.agency_id, projectIds),
-        )
-      : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
-    // Mission 132 — les acquéreurs sans échange depuis 30 jours.
-    profile ? getBuyerRecontactTasks(profile, new Date()) : { tasks: [], failed: false },
-    // Mission 134 — les nouveaux biens à proposer, et les acquéreurs prêts de chaque mandat.
-    profile
-      ? getLoopTasks(profile.agency_id, new Date())
-      : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
-  ]);
+  const [{ cards }, insights, agency, pointRead, buyerRead, mandateRead, watchRead] =
+    await Promise.all([
+      getAgencyProspecting(counted),
+      getSellerInsights(projectIds),
+      profile ? getAgency(profile.agency_id) : null,
+      // Mission 127 — les points marché de chaque dossier.
+      profile
+        ? createClient().then((supabase) =>
+            readMarketUpdates(supabase, profile.agency_id, projectIds),
+          )
+        : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
+      // Mission 132 — les acquéreurs sans échange depuis 30 jours.
+      profile ? getBuyerRecontactTasks(profile, new Date()) : { tasks: [], failed: false },
+      // Mission 134 — les nouveaux biens à proposer, et les acquéreurs prêts de chaque mandat.
+      profile
+        ? getLoopTasks(profile.agency_id, new Date())
+        : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
+      // Mission 136 — ce que la veille de la nuit a trouvé pour les acquéreurs.
+      profile ? getWatchTasks(profile.agency_id, new Date()) : { tasks: [], failed: false },
+    ]);
   const marketUpdates = pointRead.byProject;
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
@@ -195,7 +206,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     visits,
     pointsUnknown: pointRead.failed,
   });
-  const taskList = buildSuiviTaskList(inputs, now, [...buyerRead.tasks, ...mandateRead.tasks]);
+  const taskList = buildSuiviTaskList(inputs, now, [
+    ...buyerRead.tasks,
+    ...mandateRead.tasks,
+    ...watchRead.tasks,
+  ]);
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);
   const visitsByProject = visitCounts(visits);
@@ -269,7 +284,20 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               ) : null}
             </span>
           </span>
-          {task.kind === 'buyer_relaunch' && task.buyerId ? (
+          {task.kind === 'buyer_watch' && !task.buyerId && task.watchBuyers ? (
+            // Mission 136 — un bien trouvé pour plusieurs acquéreurs : les biens idéaux de chacun.
+            <span className="flex flex-wrap gap-2" data-testid="buyer-watch-buyers">
+              {task.watchBuyers.map((buyer) => (
+                <Link
+                  key={buyer.id}
+                  href={`/acquereurs/${buyer.id}/biens-ideaux#nouveau`}
+                  className={btnSecondary}
+                >
+                  {buyer.name}
+                </Link>
+              ))}
+            </span>
+          ) : task.kind === 'buyer_relaunch' && task.buyerId ? (
             // Mission 135 — la relance d'un lien sans réponse se fait sur place.
             <BuyerRelaunchTask buyerId={task.buyerId} label={line.button} />
           ) : (
@@ -327,7 +355,8 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               visitRead.failed ||
               pointRead.failed ||
               buyerRead.failed ||
-              mandateRead.failed ? null : (
+              mandateRead.failed ||
+              watchRead.failed ? null : (
                 <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
                   {nothingTodayLabel(taskList.next)}
                 </p>
@@ -380,7 +409,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 Les Points marché n’ont pas pu être lus : rechargez la page.
               </p>
             ) : null}
-            {buyerRead.failed || mandateRead.failed ? (
+            {buyerRead.failed || mandateRead.failed || watchRead.failed ? (
               <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
                 Les acquéreurs n’ont pas pu être lus : rechargez la page.
               </p>

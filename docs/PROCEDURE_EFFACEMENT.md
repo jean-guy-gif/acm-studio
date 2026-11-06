@@ -310,6 +310,11 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
   requête, sur demande de Laurent, avec comptage avant et après.
 - Un courrier déjà imprimé et remis ne peut pas être repris.
 - Les sauvegardes déjà faites contiennent encore l'adresse : les supprimer ou les refaire.
+- Mission 136 — la veille des acquéreurs a pu trouver son annonce : les passages
+  (`buyer_watch_runs.finds`) gardent ce que la recherche publie de l'annonce (prix, surface,
+  photos, lien), jamais une adresse ; comme l'annonce publique, ils restent, et partent avec la
+  fiche de l'acquéreur (cascade). À compter, s'il faut les citer :
+  `select count(*) from buyer_watch_runs where finds::text ilike '%IDENTIFIANT_ANNONCE%';`
 
 ## Après chaque effacement
 

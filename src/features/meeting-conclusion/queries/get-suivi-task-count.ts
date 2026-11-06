@@ -3,6 +3,7 @@ import 'server-only';
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
+import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { suiviTaskInputs } from '@/features/meeting-conclusion/services/suivi-task-inputs';
 import { buildSuiviTaskList } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -21,13 +22,15 @@ export async function getSuiviTaskCount(): Promise<number | null> {
   const now = new Date();
   // Mission 132 — les acquéreurs à recontacter comptent aussi, avec ou sans dossier conclu.
   // Mission 134 — et les nouveaux biens à proposer, avec ou sans dossier conclu.
-  const [allDossiers, buyerTasks, loopTasks] = await Promise.all([
+  // Mission 136 — et ce que la veille a trouvé.
+  const [allDossiers, buyerTasks, loopTasks, watchTasks] = await Promise.all([
     getSuiviDossiers(),
     getBuyerRecontactTasks(profile, now),
     getLoopTasks(profile.agency_id, now),
+    getWatchTasks(profile.agency_id, now),
   ]);
-  if (buyerTasks.failed || loopTasks.failed) return null;
-  const extra = [...buyerTasks.tasks, ...loopTasks.tasks];
+  if (buyerTasks.failed || loopTasks.failed || watchTasks.failed) return null;
+  const extra = [...buyerTasks.tasks, ...loopTasks.tasks, ...watchTasks.tasks];
   const dossiers = withoutExamples(allDossiers);
   if (dossiers.length === 0) return buildSuiviTaskList([], now, extra).dues.length;
   const projectIds = dossiers.map((dossier) => dossier.project.id);

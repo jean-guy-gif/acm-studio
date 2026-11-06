@@ -49,6 +49,8 @@ import {
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
+import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
+import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { createClient } from '@/lib/supabase/server';
@@ -100,7 +102,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
-  const [loadedDeck, answers, progress, prospecting, history] = await Promise.all([
+  const [loadedDeck, answers, progress, prospecting, history, lastWatch] = await Promise.all([
     selection ? loadDeck(buyer.id) : Promise.resolve(null),
     profile
       ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
@@ -114,6 +116,10 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     profile
       ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
       : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
+    // Mission 136 — son dernier passage de veille.
+    profile
+      ? getBuyerLastWatch(profile.agency_id, buyer.id)
+      : Promise.resolve({ ok: false as const }),
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
@@ -558,6 +564,19 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 buyer.contactedAt != null && parisDay(new Date(buyer.contactedAt)) === parisDay(now)
               }
             />
+            {/* Mission 136 — la veille : une recherche par semaine, pour un acquéreur prêt. */}
+            {lastWatch.ok ? (
+              <p
+                className="text-sm text-zinc-600 stage:text-white/70"
+                data-testid="buyer-watch-line"
+              >
+                {watchLine({
+                  ready: readiness.state === 'ready',
+                  lastRunAt: lastWatch.lastRunAt,
+                  now,
+                })}
+              </p>
+            ) : null}
           </section>
 
           {/* Rapprocher, gratuit. */}
