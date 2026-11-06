@@ -1,7 +1,15 @@
 import type { ClientTexts } from '@/lib/client-texts/types';
+import { formatNumber } from '@/lib/format';
 
 // Mission 140 — l'anglais (britannique : « 6 November », « €1,639,500 »). À FAIRE RELIRE par un
 // locuteur natif (`docs/MODELES_A_RELIRE.md`) ; écrit, jamais généré par une IA (23/10).
+// « €700k », « €1.2m » : un budget arrondi, en anglais.
+function englishBudget(value: number): string {
+  return value >= 1_000_000
+    ? `€${formatNumber(value / 1_000_000, { language: 'en' })}m`
+    : `€${formatNumber(value / 1_000, { language: 'en' })}k`;
+}
+
 // 1st, 2nd, 3rd, 4th… 11th, 12th, 13th, 21st.
 function englishOrdinal(rank: number): string {
   const lastTwo = rank % 100;
@@ -77,6 +85,18 @@ export const ENGLISH_TEXTS: ClientTexts = {
     competitorFallback: 'Competing property',
     yourAnswer: 'Your answer',
     commentOptional: 'Comment (optional)',
+    unknownLocation: 'Location unknown',
+    photos: {
+      noneForListing: 'No photos available for this listing',
+      unavailable: 'Photo not available for this listing',
+      short: 'N/A',
+      enlarge: (count) => `Enlarge the photos (${count})`,
+      photoOf: (index, count) => `Photo ${index} of ${count}`,
+      viewer: 'Photo viewer',
+      close: 'Close',
+      previous: 'Previous photo',
+      next: 'Next photo',
+    },
     priceBasis: {
       advisorOnly: 'Price set by your adviser',
       advisorFrom: (competitors) => `Price set by your adviser based on ${competitors}`,
@@ -85,6 +105,36 @@ export const ENGLISH_TEXTS: ClientTexts = {
         `${count} competitor${count > 1 ? 's' : ''}${
           seen != null && seen < count ? `, ${seen} of which we viewed together` : ''
         }`,
+    },
+    grid: {
+      title: 'Against your property, criterion by criterion',
+      empty: 'No comparable criteria are available for this competitor.',
+      criteria: {
+        surface: 'Floor area',
+        rooms: 'Rooms',
+        bedrooms: 'Bedrooms',
+        condition: 'Condition',
+        energy_rating: 'EPC',
+        ges_rating: 'GHG',
+        outdoor: 'Outdoor space',
+        parking: 'Parking',
+        exposure: 'Aspect',
+      },
+      status: {
+        same: 'Equivalent',
+        competitor_advantage: 'Advantage to them',
+        competitor_weakness: 'Advantage to you',
+        unknown: 'Not given',
+      },
+      none: 'None',
+      legend: {
+        green: 'green',
+        grey: 'grey',
+        orange: 'orange',
+        forYou: 'advantage to you',
+        equivalent: 'equivalent',
+        forThem: 'advantage to them',
+      },
     },
     alignment: {
       green: 'Price in line with the market',
@@ -300,7 +350,6 @@ export const ENGLISH_TEXTS: ClientTexts = {
       none: 'No property was judged a serious or possible competitor.',
       review: 'View again',
       others: 'The other properties we looked at',
-      unknownLocation: 'Location unknown',
       imagined: (price) => `Your guess: ${price}`,
       gap: (amount) => ` · difference ${amount}`,
       serious: (answer) => `Serious competitor: ${answer}`,
@@ -374,6 +423,30 @@ export const ENGLISH_TEXTS: ClientTexts = {
       missing: 'What would you need to be at 10?',
       answerOptional: 'Your answer (optional)',
       agreedPrice: 'Asking price',
+    },
+    competitorReview: {
+      competitor: (position) => `Competitor ${position}`,
+      close: 'Close',
+      listed: 'Asking price',
+      perSqm: 'Price per m²',
+      since: 'On the market for',
+      days: (days) => `${days} days`,
+    },
+    buyers: {
+      phrase: 'families are looking for a property like yours and are ready to view',
+      promise: 'With your agreement, I will contact them this week.',
+      financing: 'Financing approved',
+      back: 'Back to the meeting',
+      since: (weeks) =>
+        weeks < 1
+          ? 'searching for less than a week'
+          : `searching for ${weeks} week${weeks > 1 ? 's' : ''}`,
+      budget: (low, high) => `${englishBudget(low)} – ${englishBudget(high)}`,
+    },
+    neutral: {
+      pause: 'Meeting paused',
+      thanks: 'Thank you for your time',
+      resume: 'Resume →',
     },
     answers: {
       coherence: {

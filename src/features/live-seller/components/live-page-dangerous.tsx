@@ -96,7 +96,8 @@ export function LivePageDangerous({
                       {neutralComparableLabel(entry, language)}
                     </div>
                     <div className="text-sm text-zinc-500 stage:text-white/60">
-                      {[entry.district, entry.city].filter(Boolean).join(', ') || t.unknownLocation}
+                      {[entry.district, entry.city].filter(Boolean).join(', ') ||
+                        texts.common.unknownLocation}
                       {entry.surfaceArea != null
                         ? ` · ${formatSquareMeters(entry.surfaceArea, { language })}`
                         : ''}

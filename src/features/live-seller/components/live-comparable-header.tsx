@@ -1,3 +1,7 @@
+'use client';
+
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
+
 // Read-only identity facts shown under the photos. Never editable.
 //
 // MISSION 51 — l'en-tête ne connaît plus le concurrent, seulement le TITRE déjà choisi
@@ -13,7 +17,8 @@ export function LiveComparableHeader({
   city: string | null;
   district: string | null;
 }) {
-  const location = [district, city].filter(Boolean).join(', ') || 'Localisation inconnue';
+  const { texts } = useLiveTexts();
+  const location = [district, city].filter(Boolean).join(', ') || texts.common.unknownLocation;
   return (
     <div className="flex flex-col gap-0.5">
       <h3 className="font-title text-2xl leading-snug font-semibold text-zinc-900 stage:text-white">

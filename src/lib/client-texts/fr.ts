@@ -1,4 +1,5 @@
 import {
+  COMPARISON_CRITERION_LABELS,
   DANGEROUS_REASON_LABELS,
   MARKET_DURATION_REASON_LABELS,
   PRICE_COHERENCE_LABELS,
@@ -15,7 +16,9 @@ import {
 } from '@/features/subject-property/constants/property-options';
 import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/price-alignment';
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
+import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
 import type { ClientTexts } from '@/lib/client-texts/types';
+import { formatNumber } from '@/lib/format';
 
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
 // seule source), les phrases sont celles qui étaient écrites dans les écrans, mot pour mot.
@@ -34,6 +37,18 @@ export const FRENCH_TEXTS: ClientTexts = {
     yourAnswer: 'Votre réponse',
     commentOptional: 'Commentaire (facultatif)',
     questionMark: '\u00a0?',
+    unknownLocation: 'Localisation inconnue',
+    photos: {
+      noneForListing: 'Photos indisponibles pour cette annonce',
+      unavailable: 'Photo indisponible pour cette annonce',
+      short: 'Indispo.',
+      enlarge: (count) => `Agrandir les photos (${count})`,
+      photoOf: (index, count) => `Photo ${index} sur ${count}`,
+      viewer: 'Visionneuse photo',
+      close: 'Fermer',
+      previous: 'Photo précédente',
+      next: 'Photo suivante',
+    },
     priceBasis: {
       advisorOnly: 'Prix retenu par votre conseiller',
       advisorFrom: (competitors) => `Prix retenu par votre conseiller à partir de ${competitors}`,
@@ -42,6 +57,26 @@ export const FRENCH_TEXTS: ClientTexts = {
         `${count} concurrent${count > 1 ? 's' : ''}${
           seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : ''
         }`,
+    },
+    grid: {
+      title: 'Face à votre bien, critère par critère',
+      empty: 'Les critères comparables ne sont pas disponibles pour ce concurrent.',
+      criteria: COMPARISON_CRITERION_LABELS,
+      status: {
+        same: 'Équivalent',
+        competitor_advantage: 'Avantage pour lui',
+        competitor_weakness: 'Avantage pour vous',
+        unknown: 'Non renseigné',
+      },
+      none: 'Aucun',
+      legend: {
+        green: 'vert',
+        grey: 'gris',
+        orange: 'orange',
+        forYou: 'avantage pour vous',
+        equivalent: 'équivalent',
+        forThem: 'avantage pour lui',
+      },
     },
     alignment: PRICE_ALIGNMENT_LABELS,
     pricePosition: {
@@ -250,7 +285,6 @@ export const FRENCH_TEXTS: ClientTexts = {
       none: 'Aucun bien n’a été retenu comme concurrent sérieux ou incertain.',
       review: 'Revoir',
       others: 'Les autres biens regardés',
-      unknownLocation: 'Localisation inconnue',
       imagined: (price) => `Imaginé : ${price}`,
       gap: (amount) => ` · écart ${amount}`,
       serious: (answer) => `Sérieux concurrent : ${answer}`,
@@ -324,6 +358,37 @@ export const FRENCH_TEXTS: ClientTexts = {
       missing: 'Qu’est-ce qui vous manquerait pour être à 10\u00a0?',
       answerOptional: 'Votre réponse (facultative)',
       agreedPrice: 'Prix de commercialisation',
+    },
+    competitorReview: {
+      competitor: (position) => `Concurrent ${position}`,
+      close: 'Fermer',
+      listed: 'Prix affiché',
+      perSqm: 'Prix au m²',
+      since: 'En vente depuis',
+      days: (days) => `${days} jours`,
+    },
+    buyers: {
+      phrase: 'familles cherchent un bien comme le vôtre et sont prêtes à visiter',
+      promise: 'Avec votre accord, je les contacte dès cette semaine.',
+      financing: 'Financement validé',
+      back: 'Revenir au rendez-vous',
+      since: (weeks) =>
+        weeks < 1
+          ? 'cherche depuis moins d’une semaine'
+          : `cherche depuis ${weeks} semaine${weeks > 1 ? 's' : ''}`,
+      budget: (low, high) => {
+        if (high < 1_000_000)
+          return `${formatNumber(low / 1_000)} – ${formatNumber(high / 1_000)} k€`;
+        if (low >= 1_000_000) {
+          return `${formatNumber(low / 1_000_000)} – ${formatNumber(high / 1_000_000)} M€`;
+        }
+        return `${budgetStepLabel(low)} – ${budgetStepLabel(high)}`;
+      },
+    },
+    neutral: {
+      pause: 'Rendez-vous en pause',
+      thanks: 'Merci pour cet échange',
+      resume: 'Reprendre →',
     },
     answers: {
       coherence: PRICE_COHERENCE_LABELS,

@@ -1,7 +1,9 @@
 import 'server-only';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
-import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-project-status';
+import { getLiveProjectFacts } from '@/features/live-seller/queries/get-live-project-status';
+import { clientLanguage } from '@/lib/client-language';
+import { textLanguage, type TextLanguage } from '@/lib/client-texts';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -14,13 +16,16 @@ export type NeutralScreenContext = {
   logoDarkUrl: string | null;
   agencyName: string | null;
   advisorFirstName: string | null;
+  // Mission 140 — la langue des mots de l'écran, celle du dossier ; rien d'autre du dossier.
+  language: TextLanguage;
 };
 
 export async function getNeutralScreenContext(
   projectId: string,
 ): Promise<NeutralScreenContext | null> {
   // Mission 109 — un dossier archivé de l'agence ouvre aussi l'écran neutre (rien n'en sort).
-  if ((await getLiveProjectStatus(projectId)) == null) {
+  const facts = await getLiveProjectFacts(projectId);
+  if (facts == null) {
     return null;
   }
   const [branding, profile] = await Promise.all([getAgencyBranding(), getProfile()]);
@@ -30,5 +35,6 @@ export async function getNeutralScreenContext(
     logoDarkUrl: branding?.logoDarkUrl ?? null,
     agencyName: agency?.name ?? null,
     advisorFirstName: profile?.first_name?.trim() || null,
+    language: textLanguage(clientLanguage(facts.language)),
   };
 }

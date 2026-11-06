@@ -1,5 +1,7 @@
 import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type {
+  ComparisonCriterion,
+  ComparisonStatus,
   DangerousReason,
   MarketDurationReason,
   PriceCoherence,
@@ -39,12 +41,40 @@ export type ClientTexts = {
     yourAnswer: string;
     commentOptional: string;
     questionMark: string;
+    unknownLocation: string;
+    photos: {
+      noneForListing: string;
+      unavailable: string;
+      short: string;
+      enlarge: (count: number) => string;
+      photoOf: (index: number, count: number) => string;
+      viewer: string;
+      close: string;
+      previous: string;
+      next: string;
+    };
     // « Calculé sur 8 concurrents, dont 6 vus ensemble » : ce sur quoi porte le prix des concurrents.
     priceBasis: {
       advisorOnly: string;
       advisorFrom: (competitors: string) => string;
       calculatedOn: (competitors: string) => string;
       competitors: (count: number, seen: number | null) => string;
+    };
+    // La grille comparée d'un concurrent, lue du côté du vendeur (correctif M129).
+    grid: {
+      title: string;
+      empty: string;
+      criteria: Record<ComparisonCriterion, string>;
+      status: Record<ComparisonStatus, string>;
+      none: string;
+      legend: {
+        green: string;
+        grey: string;
+        orange: string;
+        forYou: string;
+        equivalent: string;
+        forThem: string;
+      };
     };
     // Le prix de commercialisation face à l'analyse du conseiller (M116) : le libellé de sa couleur.
     alignment: Record<'green' | 'orange' | 'red', string>;
@@ -236,7 +266,6 @@ export type LiveTexts = {
     none: string;
     review: string;
     others: string;
-    unknownLocation: string;
     imagined: (price: string) => string;
     gap: (amount: string) => string;
     serious: (answer: string) => string;
@@ -306,6 +335,30 @@ export type LiveTexts = {
     missing: string;
     answerOptional: string;
     agreedPrice: string;
+  };
+  // « Revoir » : la fiche d'un concurrent en plein écran (M113).
+  competitorReview: {
+    competitor: (position: number) => string;
+    close: string;
+    listed: string;
+    perSqm: string;
+    since: string;
+    days: (days: string) => string;
+  };
+  // Mission 133 — « Montrer au vendeur » : les acquéreurs prêts de l'agence, anonymes.
+  buyers: {
+    phrase: string;
+    promise: string;
+    financing: string;
+    back: string;
+    since: (weeks: number) => string;
+    budget: (low: number, high: number) => string;
+  };
+  // Les écrans neutres qui suspendent ou ferment le Live (M92).
+  neutral: {
+    pause: string;
+    thanks: string;
+    resume: string;
   };
   answers: {
     coherence: Record<PriceCoherence, string>;

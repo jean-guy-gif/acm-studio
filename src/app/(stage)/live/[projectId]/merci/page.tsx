@@ -7,6 +7,7 @@ import {
   LiveNeutralScreen,
 } from '@/features/live-seller/components/live-neutral-screen';
 import { getNeutralScreenContext } from '@/features/live-seller/queries/get-neutral-screen-context';
+import { clientTexts } from '@/lib/client-texts';
 
 export const metadata: Metadata = { title: 'Merci' };
 
@@ -22,9 +23,10 @@ export default async function LiveThanksPage({
   if (!context) {
     notFound();
   }
+  const t = clientTexts(context.language).live.neutral;
   return (
     <LiveNeutralScreen
-      title="Merci pour cet échange"
+      title={t.thanks}
       subtitle={context.advisorFirstName}
       logoLightUrl={context.logoLightUrl}
       logoDarkUrl={context.logoDarkUrl}
