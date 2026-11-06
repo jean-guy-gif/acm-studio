@@ -67,8 +67,11 @@ export const DEMO_LIVE_MINUTES = { startedAgo: 50, endedAgo: 9 } as const;
 // numéro de la plage 06 39 98 que l'ARCEP réserve à la fiction, une adresse en example.com.
 export const DEMO_FOLLOW_UP_CONTACT = {
   phone: '06 39 98 41 27',
-  email: 'famille.martin@example.com',
+  email: 'famille.lambert-duval@example.com',
 } as const;
+// Le vendeur à relancer : un autre foyer que celui du dossier à préparer (M. et Mme Martin, même
+// scénario d'Antibes) ; « M. et Mme Rossi » est déjà un acquéreur de la démo (Jean-Guy, 06/11).
+export const DEMO_FOLLOW_UP_SELLER = 'M. et Mme Lambert-Duval';
 export const DEMO_FOLLOW_UP_DAYS = { meetingAgo: 9, contactAgo: 8, nextIn: 0 } as const;
 // « Conclu, mandat signé » : rendez-vous et signature d'il y a un mois calendaire (même jour du mois
 // précédent, le dernier jour s'il n'existe pas), pour que le Point marché (M127) dise « depuis notre
@@ -209,7 +212,12 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
   return {
     stage,
     scenario,
-    sellerName: stage === 'direct' ? DEMO_DIRECT_SELLER : scenario.sellerName,
+    sellerName:
+      stage === 'direct'
+        ? DEMO_DIRECT_SELLER
+        : stage === 'follow_up'
+          ? DEMO_FOLLOW_UP_SELLER
+          : scenario.sellerName,
     property,
     photoFiles: subject.photos.slice(0, 3),
     competitors,

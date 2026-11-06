@@ -142,18 +142,18 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(signed.getByTestId('outcome-badge')).toHaveText('Mandat signé · exclusif');
-      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Martin' });
+      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
       await expect(followUp.getByTestId('outcome-badge')).toHaveText('À relancer');
       await followUp.getByTestId('suivi-link-details').click();
       await expect(followUp.getByTestId('objections-line')).toHaveText(
         'Ce qui le freine : le prix, le délai',
       );
-      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Martin, due aujourd'hui, et
+      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Lambert-Duval, due aujourd'hui, et
       // le premier Point marché de M. Lefebvre, signé il y a un mois ; le compteur du menu.
       if (prepared) {
         const today = page.getByTestId('suivi-today');
         await expect(
-          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Martin' }),
+          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert-Duval' }),
         ).toContainText(/dernier contact il y a 8 jours · relance prévue aujourd’hui/);
         await expect(
           today.getByTestId('suivi-task').filter({ hasText: 'Point marché de M. Lefebvre' }),

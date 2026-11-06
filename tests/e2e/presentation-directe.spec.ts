@@ -412,7 +412,9 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
 
   await test.step('Relancer M. et Mme Lambert, sur place', async () => {
     await page.goto('/suivi');
-    const task = page.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert' });
+    const task = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: /Relancer M\. et Mme Lambert(?!-)/ });
     await expect(task).toContainText(/sélection envoyée le \d{2}\/\d{2}, pas de réponse/);
     await task.getByTestId('buyer-relaunch-open').click();
     await task.getByTestId('buyer-relaunch-prepare').click();
@@ -424,7 +426,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     await expect(task.getByTestId('buyer-relaunch-done')).toBeVisible();
     await page.reload();
     await expect(
-      page.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert' }),
+      page.getByTestId('suivi-task').filter({ hasText: /Relancer M\. et Mme Lambert(?!-)/ }),
     ).toHaveCount(0);
   });
 
