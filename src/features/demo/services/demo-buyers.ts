@@ -5,6 +5,9 @@ import type { BuyerFinancing, BuyerInput } from '@/features/buyers/types';
 export type DemoBuyer = BuyerInput & {
   financing?: BuyerFinancing;
   contactedDaysAgo?: number | null;
+  // Mission 133 — depuis combien de jours sa fiche existe (« cherche depuis 3 semaines », au Live) ;
+  // étalé de 1 à 7 semaines pour que ce soit crédible (essai de Jean-Guy, 06/11).
+  createdDaysAgo?: number;
 };
 
 // Une maison de 4 ou 5 pièces autour de Vence, entre 700 000 et 800 000 € : ce que cherchent les
@@ -95,6 +98,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   // pas (décision de Jean-Guy, 05/11).
   venceHouse({
     name: 'M. et Mme Lambert',
+    createdDaysAgo: 8,
     phone: '06 39 98 21 46',
     email: 'lambert.vence@example.com',
     notes: 'Quittent Paris ; accord de principe de leur banque.',
@@ -108,6 +112,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'Famille Moreau',
+    createdDaysAgo: 15,
     phone: '06 39 98 34 81',
     email: 'famille.moreau@example.com',
     notes: 'Trois enfants ; une chambre de plus serait un vrai plus.',
@@ -119,6 +124,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'Mme Faure',
+    createdDaysAgo: 22,
     phone: '06 39 98 47 09',
     email: 'c.faure@example.com',
     notes: 'Apport de la vente de sa maison à Cagnes, signée.',
@@ -128,6 +134,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'M. Girard et Mme Chevalier',
+    createdDaysAgo: 36,
     phone: '06 39 98 58 62',
     email: 'girard.chevalier@example.com',
     notes: 'Télétravail : un bureau au calme.',
@@ -138,6 +145,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'M. et Mme Roux',
+    createdDaysAgo: 50,
     phone: '06 39 98 69 35',
     email: 'roux.famille@example.com',
     notes: 'Retraités, cherchent de plain-pied si possible.',
@@ -148,6 +156,7 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'M. Fontaine',
+    createdDaysAgo: 12,
     phone: '06 39 98 72 18',
     email: 'f.fontaine@example.com',
     notes: 'Rendez-vous à la banque dans quinze jours.',
