@@ -11,6 +11,8 @@ import type { OfferAgency } from '@/features/purchase-offer/services/offer-text'
 import { voucherAgency } from '@/features/visit-voucher/services/voucher-fields';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { parisDateLabel } from '@/features/visit-voucher/services/voucher-fields';
 
 // Mission 137 (partie B) — ce que l'écran de l'offre d'achat sait déjà : les visites de l'acquéreur
 // « Offre envisagée » (M119) sur un bien en MANDAT SIGNÉ de l'agence (« l'Agence titulaire d'un
@@ -40,6 +42,9 @@ export type OfferVisit = {
   // Les coordonnées du vendeur (dossier), pour lui envoyer son lien (l'outil n'envoie rien).
   sellerEmail: string | null;
   sellerPhone: string | null;
+  // Mission 138 — une offre déjà acceptée sur ce bien : le jour de l'acceptation (JJ/MM/AAAA), pour
+  // prévenir ; rien n'est bloqué.
+  acceptedOfferOn: string | null;
 };
 
 export type OfferContext = {
@@ -118,7 +123,7 @@ export async function getOfferContext(
   const projectIds = [
     ...new Set(lines.filter((line) => line.itemSource === 'project').map((l) => l.itemReference)),
   ];
-  const [conclusions, subjects, projects] = await Promise.all([
+  const [conclusions, subjects, projects, answers] = await Promise.all([
     projectIds.length > 0
       ? supabase
           .from('project_meeting_conclusions')
@@ -142,8 +147,10 @@ export async function getOfferContext(
           .eq('agency_id', agencyId)
           .in('id', projectIds)
       : Promise.resolve({ data: [], error: null }),
+    getProjectOfferAnswers(supabase, agencyId, projectIds),
   ]);
-  if (conclusions.error || subjects.error || projects.error) {
+  // Une lecture en échec n'est jamais lue comme « aucune offre acceptée » (M98).
+  if (conclusions.error || subjects.error || projects.error || answers == null) {
     return { ok: false, error: 'L’offre d’achat n’a pas pu être préparée : rechargez la page.' };
   }
   const subjectIds = (subjects.data ?? []).map((row) => row.id);
@@ -155,6 +162,13 @@ export async function getOfferContext(
           .eq('agency_id', agencyId)
           .in('subject_property_id', subjectIds)
       : { data: [], error: null };
+  // La plus récente offre acceptée sur chaque bien (les réponses arrivent de la plus récente).
+  const acceptedOn = (projectId: string | null): string | null => {
+    const accepted = (answers ?? []).find(
+      (answer) => answer.projectId === projectId && answer.decision === 'accepted',
+    );
+    return accepted ? parisDateLabel(new Date(accepted.decidedAt)) : null;
+  };
   const conclusionOf = new Map((conclusions.data ?? []).map((row) => [row.project_id, row]));
   const projectOf = new Map((projects.data ?? []).map((row) => [row.id, row]));
   const subjectOf = new Map((subjects.data ?? []).map((row) => [row.project_id, row]));
@@ -201,6 +215,7 @@ export async function getOfferContext(
       visitedAt: line.visitedAt,
       sellerEmail: projectId ? (projectOf.get(projectId)?.seller_email ?? null) : null,
       sellerPhone: projectId ? (projectOf.get(projectId)?.seller_phone ?? null) : null,
+      acceptedOfferOn: acceptedOn(projectId),
     };
   });
 

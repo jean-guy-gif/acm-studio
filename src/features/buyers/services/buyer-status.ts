@@ -3,12 +3,15 @@ import { BUYER_STATUS_LABELS, type BuyerStatus } from '@/features/buyers/types';
 // Mission 117 — le statut d'un acquéreur avance un cran à la fois, et revient d'un cran (M86) :
 //   en recherche → en visite → a acheté ; « abandonné » depuis la recherche ou la visite ;
 //   « abandonné » reprend la recherche. Chaque changement est un fait daté (`status_changed_at`).
+// Mission 138 — « Sous offre » vient de l'acceptation du vendeur (la base l'écrit) : de là, « a
+// acheté », « abandonné », ou, si l'offre tombe, retour « en visite » à la main du conseiller.
 export const BUYER_STATUS_MOVES = ['forward', 'back', 'abandon'] as const;
 export type BuyerStatusMove = (typeof BUYER_STATUS_MOVES)[number];
 
 const NEXT: Record<BuyerStatus, Partial<Record<BuyerStatusMove, BuyerStatus>>> = {
   searching: { forward: 'visiting', abandon: 'abandoned' },
   visiting: { forward: 'bought', back: 'searching', abandon: 'abandoned' },
+  under_offer: { forward: 'bought', back: 'visiting', abandon: 'abandoned' },
   bought: { back: 'visiting' },
   abandoned: { back: 'searching' },
 };
@@ -37,7 +40,9 @@ export function buyerStatusActions(
       label:
         current === 'abandoned'
           ? 'Reprendre la recherche'
-          : `Revenir : ${BUYER_STATUS_LABELS[back].toLowerCase()}`,
+          : current === 'under_offer'
+            ? 'L’offre est tombée : revenir en visite'
+            : `Revenir : ${BUYER_STATUS_LABELS[back].toLowerCase()}`,
       primary: false,
     });
   }

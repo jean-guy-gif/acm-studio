@@ -394,9 +394,11 @@ async function seedKellerVoucher(
 }
 
 // Mission 137 B — l'offre d'achat complète des Keller sur le mandat de Mougins : deux offrants
-// inventés, sans prêt, signée aujourd'hui, valable jusqu'à demain (sa tâche d'échéance est due
-// aujourd'hui), sans réponse du vendeur ; le n° de mandat et les honoraires posés sur la conclusion.
+// inventés, sans prêt, signée aujourd'hui, valable jusqu'à demain ; acceptée par le vendeur
+// (mission 138, décision de Jean-Guy du 06/11) ; le n° de mandat et les honoraires posés sur la conclusion.
 // Par les mêmes services que l'écran ; rien d'un modèle d'origine.
+const DEMO_MOUGINS_SELLER = 'M. Lefebvre';
+
 async function seedKellerOffer(
   supabase: Client,
   closer: Closer,
@@ -475,6 +477,28 @@ async function seedKellerOffer(
     agency_id: closer.agencyId,
   });
   if (visitError) return false;
+  // Mission 138 — le vendeur a accepté l'offre, par son « Bon pour acceptation » signé (un tracé
+  // inventé) : la tâche « Le vendeur a accepté l'offre de la famille Keller » est due aujourd'hui, et
+  // la base fait passer les Keller « Sous offre ».
+  const sellerPath = `${closer.agencyId}/${documentId}/vendeur-1.png`;
+  const { error: sellerUpload } = await supabase.storage
+    .from(SIGNATURE_BUCKET)
+    .upload(sellerPath, Buffer.from(DEMO_SIGNATURE_PNG_BASE64, 'base64'), {
+      contentType: 'image/png',
+      upsert: false,
+    });
+  if (sellerUpload) return false;
+  const { error: answerError } = await supabase.from('buyer_document_acceptances').insert({
+    agency_id: closer.agencyId,
+    document_id: documentId,
+    decision: 'accepted',
+    signer_names: [DEMO_MOUGINS_SELLER],
+    signature_paths: [sellerPath],
+  });
+  if (answerError) {
+    await supabase.storage.from(SIGNATURE_BUCKET).remove([sellerPath]);
+    return false;
+  }
   await supabase
     .from('project_meeting_conclusions')
     .update({

@@ -26,8 +26,9 @@ const CLEANED = [
   // Mission 120 — les origines « Recherche acquéreur » et les biens démarchés.
   // Mission 134 — les biens proposés aux acquéreurs ; mission 135 — leurs événements datés ;
   // mission 136 — les passages de leur veille ; mission 137 — leurs documents signés (bons de
-  // visite), leurs visites et leurs liens.
+  // visite), leurs visites et leurs liens ; mission 138 — le « Fait » des réponses aux offres.
   'buyer_watch_runs',
+  'buyer_offer_follow_ups',
   'buyer_document_acceptances',
   'buyer_document_links',
   'buyer_document_visits',
@@ -240,6 +241,7 @@ begin
   -- Mission 134 — les biens proposés aux acquéreurs ; mission 135 — leurs événements datés.
   -- Mission 136 — les passages de la veille des acquéreurs ; mission 137 — les documents signés.
   delete from public.buyer_watch_runs where agency_id = v_agency;
+  delete from public.buyer_offer_follow_ups where agency_id = v_agency;
   delete from public.buyer_document_acceptances where agency_id = v_agency;
   delete from public.buyer_document_links where agency_id = v_agency;
   delete from public.buyer_document_visits where agency_id = v_agency;

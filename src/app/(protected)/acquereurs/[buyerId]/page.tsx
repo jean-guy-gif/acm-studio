@@ -56,6 +56,7 @@ import {
   getVisitVouchers,
 } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
+import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -142,6 +143,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     profile ? getBuyerOffers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
   ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
+  const lastAnswer =
+    (signedOffers ?? [])
+      .flatMap((offer) =>
+        offer.answer && offer.decidedAt
+          ? [{ answer: offer.answer, decidedAt: offer.decidedAt }]
+          : [],
+      )
+      .sort((a, b) => b.decidedAt.localeCompare(a.decidedAt))[0] ?? null;
   const deck = loadedDeck?.deck ?? null;
   const journey = buyerJourney(facts);
   const next = buyerNextAction(buyer, facts);
@@ -258,6 +267,10 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <a href="#statut" className={`${badgeBrand} whitespace-nowrap`}>
               {BUYER_STATUS_LABELS[buyer.status]} ▾
             </a>
+            {/* Mission 138 — la dernière réponse du vendeur à une de ses offres. */}
+            {lastAnswer ? (
+              <OfferAnswerBadge decision={lastAnswer.answer} decidedAt={lastAnswer.decidedAt} />
+            ) : null}
             {readiness.state === 'ready' ? (
               <span
                 className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white"
@@ -552,13 +565,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                         className="text-sm font-semibold text-brand-darker underline"
                         data-testid="buyer-offer-signed"
                       >
-                        Signée le {buyerDateLabel(offer.signedAt)} ·{' '}
-                        {offer.answer === 'accepted'
-                          ? 'acceptée par le vendeur'
-                          : offer.answer === 'refused'
-                            ? 'refusée par le vendeur'
-                            : `en attente du vendeur jusqu’au ${frenchDay(offer.validUntil)}`}
+                        Signée le {buyerDateLabel(offer.signedAt)}
+                        {offer.answer
+                          ? ''
+                          : ` · en attente du vendeur jusqu’au ${frenchDay(offer.validUntil)}`}
                       </Link>
+                      {offer.answer && offer.decidedAt ? (
+                        <>
+                          {' '}
+                          <OfferAnswerBadge decision={offer.answer} decidedAt={offer.decidedAt} />
+                        </>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

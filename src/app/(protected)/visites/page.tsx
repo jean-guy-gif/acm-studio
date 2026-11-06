@@ -20,6 +20,7 @@ import {
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { getVisitVouchers } from '@/features/visit-voucher/queries/get-visit-vouchers';
+import { getVisitOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Visites — ACM Studio' };
@@ -49,10 +50,18 @@ export default async function VisitsPage() {
   // Mission 120 — l'action de chaque visite et l'état de son courrier.
   const letters = await getVisitLetters(lines.filter((line) => line.visitedAt == null));
   // Mission 137 — le bon de visite signé de chaque visite.
-  const vouchers = await getVisitVouchers(
-    await createClient(),
-    lines.map((line) => line.id),
-  );
+  const supabase = await createClient();
+  // Mission 138 — et la réponse du vendeur à l'offre née de chaque visite.
+  const [vouchers, offerAnswers] = await Promise.all([
+    getVisitVouchers(
+      supabase,
+      lines.map((line) => line.id),
+    ),
+    getVisitOfferAnswers(
+      supabase,
+      lines.map((line) => line.id),
+    ),
+  ]);
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
   return (
@@ -64,6 +73,11 @@ export default async function VisitsPage() {
           Les visites demandées par vos acquéreurs, à planifier, puis faites avec leur retour.
         </p>
       </div>
+      {offerAnswers == null ? (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          Les réponses aux offres d’achat n’ont pas pu être lues : rechargez la page.
+        </p>
+      ) : null}
       {lines.length === 0 ? (
         <div className={emptyState}>
           Aucune demande de visite pour l’instant : elles naissent pendant une présentation ou
@@ -108,6 +122,7 @@ export default async function VisitsPage() {
                       line={line}
                       letter={letters.get(line.id) ?? null}
                       voucher={vouchers.get(line.id) ?? null}
+                      offerAnswer={offerAnswers?.get(line.id) ?? null}
                     />
                   ))}
                 </ul>

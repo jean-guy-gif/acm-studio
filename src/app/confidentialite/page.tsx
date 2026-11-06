@@ -221,9 +221,12 @@ export default function ConfidentialitePage() {
               prénoms, date et lieu de naissance, nationalité, profession, adresse, situation
               matrimoniale et régime s’il est indiqué, résidence fiscale en France ou non), le prix,
               les honoraires, l’acompte et les dates. Le vendeur la reçoit par un lien et l’accepte
-              en la signant (son nom et sa signature, datés) ou la refuse. Comme le bon de visite,
-              l’offre est conservée cinq ans à compter de la visite, puis effacée. Texte à faire
-              relire par un juriste.
+              en la signant (son nom et sa signature, datés) ou la refuse. Une offre acceptée peut
+              être transmise au notaire, par un lien de 30 jours que le conseiller lui envoie
+              lui-même : le notaire y lit l’offre signée, rien d’autre de la fiche de l’acquéreur.
+              L’agence garde aussi le jour où le conseiller a donné suite à la réponse du vendeur.
+              Comme le bon de visite, l’offre est conservée cinq ans à compter de la visite, puis
+              effacée. Texte à faire relire par un juriste.
             </li>
             <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du

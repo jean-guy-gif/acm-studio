@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
 import type { VisitVoucher } from '@/features/visit-voucher/queries/get-visit-vouchers';
+import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
+import type { OfferAnswer } from '@/features/purchase-offer/queries/get-offer-answers';
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
@@ -23,11 +25,14 @@ export function VisitRow({
   line,
   letter = null,
   voucher = null,
+  offerAnswer = null,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
   // Mission 137 — le bon de visite signé pour cette visite, gardé sur elle.
   voucher?: VisitVoucher | null;
+  // Mission 138 — la réponse du vendeur à l'offre née de cette visite.
+  offerAnswer?: OfferAnswer | null;
 }) {
   const done = line.visitedAt != null;
   return (
@@ -49,6 +54,9 @@ export function VisitRow({
         <span className={done ? badgeBrand : badgeNeutral} data-testid="visit-outcome">
           {!done && letter?.waiting ? letter.waiting : VISIT_OUTCOME_LABELS[line.outcome]}
         </span>
+        {offerAnswer ? (
+          <OfferAnswerBadge decision={offerAnswer.decision} decidedAt={offerAnswer.decidedAt} />
+        ) : null}
       </div>
       <p className="text-xs text-zinc-500 stage:text-white/60">
         Demandée le {buyerDateLabel(line.requestedAt)}{' '}

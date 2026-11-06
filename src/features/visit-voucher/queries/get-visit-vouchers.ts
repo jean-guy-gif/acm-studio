@@ -71,6 +71,8 @@ export type BuyerOffer = {
   signedAt: string;
   validUntil: string;
   answer: 'accepted' | 'refused' | null;
+  // Mission 138 — l'heure de la réponse, pour le badge daté.
+  decidedAt: string | null;
 };
 
 // Mission 137 B — les offres d'achat signées d'une fiche, et la réponse du vendeur ; une lecture en
@@ -82,7 +84,7 @@ export async function getBuyerOffers(
 ): Promise<BuyerOffer[] | null> {
   const { data, error } = await supabase
     .from('buyer_documents')
-    .select('id, signed_at, valid_until, buyer_document_acceptances(decision)')
+    .select('id, signed_at, valid_until, buyer_document_acceptances(decision, decided_at)')
     .eq('agency_id', agencyId)
     .eq('buyer_id', buyerId)
     .eq('kind', 'purchase_offer')
@@ -90,7 +92,7 @@ export async function getBuyerOffers(
   if (error) return null;
   return (data ?? []).map((row) => {
     const answers = row.buyer_document_acceptances as unknown as
-      { decision: string }[] | { decision: string } | null;
+      { decision: string; decided_at: string }[] | { decision: string; decided_at: string } | null;
     const answer = Array.isArray(answers) ? answers[0] : answers;
     return {
       documentId: row.id,
@@ -98,6 +100,7 @@ export async function getBuyerOffers(
       validUntil: row.valid_until ?? '',
       answer:
         answer?.decision === 'accepted' || answer?.decision === 'refused' ? answer.decision : null,
+      decidedAt: answer?.decided_at ?? null,
     };
   });
 }

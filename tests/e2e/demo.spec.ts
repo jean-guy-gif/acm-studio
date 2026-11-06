@@ -646,6 +646,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .getByTestId('suivi-task')
         .filter({ hasText: 'Point marché de M. Lefebvre' });
       if ((await pointTask.count()) > 0) {
+        // Mission 138 — la réponse du vendeur aux Keller prend une des cinq premières places : le
+        // point peut être derrière « Voir les N autres tâches ».
+        const more = page
+          .getByTestId('suivi-today')
+          .locator('summary')
+          .filter({ hasText: /^Voir/ });
+        if (!(await pointTask.first().isVisible()) && (await more.first().isVisible())) {
+          await more.first().click();
+        }
         await pointTask.getByRole('link', { name: 'Faire le point' }).click();
       } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
         await row.getByTestId('suivi-link-point').click();
@@ -1187,10 +1196,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
   // Mission 132 — huit acquéreurs : Rossi, Keller, et six autour de Vence, dont cinq prêts à
-  // visiter ; M. Fontaine, financement en cours, ne l'est pas. Mission 136 — les Keller aussi sont
-  // prêts : la veille cherche pour eux.
+  // visiter ; M. Fontaine, financement en cours, ne l'est pas. Mission 138 — les Keller, dont
+  // l'offre est acceptée, sont « Sous offre » : plus prêts à visiter.
   await expect(rows).toHaveCount(8);
-  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(6);
+  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(5);
+  await expect(rows.filter({ hasText: 'Famille Keller' })).toContainText('Sous offre');
   await expect(rows.filter({ hasText: 'M. Fontaine' }).getByTestId('buyer-row-ready')).toHaveCount(
     0,
   );
