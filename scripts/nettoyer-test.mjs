@@ -25,8 +25,12 @@ const CLEANED = [
   // Mission 122 — les réponses de l'acquéreur à chaque bien.
   // Mission 120 — les origines « Recherche acquéreur » et les biens démarchés.
   // Mission 134 — les biens proposés aux acquéreurs ; mission 135 — leurs événements datés ;
-  // mission 136 — les passages de leur veille.
+  // mission 136 — les passages de leur veille ; mission 137 — leurs documents signés (bons de
+  // visite), leurs visites et leurs liens.
   'buyer_watch_runs',
+  'buyer_document_links',
+  'buyer_document_visits',
+  'buyer_documents',
   'buyer_proposals',
   'buyer_events',
   'buyer_prospect_origins',
@@ -64,6 +68,8 @@ const CLEANED = [
 ];
 const KEPT = [
   'agency_branding',
+  // Mission 137 — l'identité légale de l'agence de test, comme sa charte.
+  'agency_legal_identities',
   'agency_invitations',
   'agency_search_budgets',
   'app_errors',
@@ -231,8 +237,11 @@ begin
   -- leurs sélections partent avec elles (cascade), supprimées ici explicitement.
   -- Mission 120 — les origines « Recherche acquéreur », puis les biens démarchés.
   -- Mission 134 — les biens proposés aux acquéreurs ; mission 135 — leurs événements datés.
-  -- Mission 136 — les passages de la veille des acquéreurs.
+  -- Mission 136 — les passages de la veille des acquéreurs ; mission 137 — les documents signés.
   delete from public.buyer_watch_runs where agency_id = v_agency;
+  delete from public.buyer_document_links where agency_id = v_agency;
+  delete from public.buyer_document_visits where agency_id = v_agency;
+  delete from public.buyer_documents where agency_id = v_agency;
   delete from public.buyer_proposals where agency_id = v_agency;
   delete from public.buyer_events where agency_id = v_agency;
   delete from public.buyer_prospect_origins where agency_id = v_agency;
