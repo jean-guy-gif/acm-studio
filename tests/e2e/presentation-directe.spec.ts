@@ -553,8 +553,10 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
   await test.step('Un nouveau bon, signé à la souris', async () => {
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller' }).click();
-    const fiche = page.url();
-    await page.goto(`${fiche}/bon-de-visite`);
+    // Le bon signé se lit sur la fiche, ses visites toutes faites ; un nouveau bon part d'ici.
+    await expect(page.getByTestId('buyer-voucher-signed').first()).toContainText(/^Signé le /);
+    await page.getByTestId('buyer-voucher-new').click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/bon-de-visite$/);
     const form = page.getByTestId('voucher-form');
     await expect(form).toBeVisible();
     // Le n° de mandat du bon précédent est repris ; le visiteur aussi.
