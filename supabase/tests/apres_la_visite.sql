@@ -81,6 +81,13 @@ begin
   end;
   begin
     update public.buyer_visit_requests
+    set visited_at = now(), outcome = 'visited', opinion = 'interested', disliked = array['vue']
+    where id = '140fffff-0000-0000-0000-000000000001';
+    raise exception 'FAIL 2: une étiquette déplue hors liste est acceptée';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.buyer_visit_requests
     set visited_at = now(), outcome = 'visited', opinion = 'love', next_step = 'offer'
     where id = '140fffff-0000-0000-0000-000000000001';
     raise exception 'FAIL 2: « Offre envisagée » sans l''issue offre est accepté';
@@ -147,13 +154,16 @@ begin
     (agency_id, buyer_id, property_key, label, reason, dismissed_by, dismissed_at)
   values ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
           'listing:seloger:1', 'Maison · Mougins', 'parking', '14011111-1111-1111-1111-111111111111',
-          now() - interval '9 days'),
-         ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
+          now() - interval '9 days');
+  insert into public.buyer_dismissals (agency_id, buyer_id, property_key, label, reason, dismissed_by)
+  values ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
           'listing:bienici:2', 'Maison · Valbonne', 'over_budget',
-          '14044444-4444-4444-4444-444444444444', now());
-  select dismissed_at into v_at from public.buyer_dismissals where property_key = 'listing:seloger:1';
+          '14044444-4444-4444-4444-444444444444');
+  -- La date n'est pas forcée (la démo date les siens, comme `buyer_events.occurred_at`) ; sans date
+  -- envoyée, l'heure de la base.
+  select dismissed_at into v_at from public.buyer_dismissals where property_key = 'listing:bienici:2';
   if v_at < now() - interval '1 minute' then
-    raise exception 'FAIL 3: la date du bien écarté vient de l''appelant';
+    raise exception 'FAIL 3: un bien écarté sans date n''a pas l''heure de la base';
   end if;
   begin
     insert into public.buyer_dismissals (agency_id, buyer_id, property_key, label, reason, dismissed_by)
@@ -201,6 +211,14 @@ begin
   exception when check_violation then null;
   end;
   begin
+    insert into public.buyer_events (agency_id, buyer_id, kind, week_start, selection_id, created_by)
+    values ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
+            'weekly_report', v_monday, '140ddddd-0000-0000-0000-000000000001',
+            '14011111-1111-1111-1111-111111111111');
+    raise exception 'FAIL 4: un point de la semaine avec une sélection est accepté';
+  exception when check_violation then null;
+  end;
+  begin
     insert into public.buyer_events (agency_id, buyer_id, kind, week_start, created_by)
     values ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
             'meeting_proposed', v_monday, '14011111-1111-1111-1111-111111111111');
@@ -242,6 +260,30 @@ begin
   values ('140aaaaa-0000-0000-0000-000000000000', '140ccccc-0000-0000-0000-000000000001',
           'link_shared', '140ddddd-0000-0000-0000-000000000001',
           '14011111-1111-1111-1111-111111111111');
+end $$;
+
+-- §6 — le dernier membre d'une agence supprimé, ses fiches et leurs envois notés avec lui (la
+-- fermeture d'une agence) : la base ne refuse rien (gardien-sql ; le défaut datait de la M135).
+do $$
+begin
+  insert into public.agencies (id, name) values ('140ccccc-9999-0000-0000-000000000000', 'C140');
+  insert into auth.users (id) values ('14055555-5555-5555-5555-555555555555');
+  insert into public.profiles (id, agency_id, first_name, last_name, email, role) values
+    ('14055555-5555-5555-5555-555555555555', '140ccccc-9999-0000-0000-000000000000',
+     'Dé', 'D', 'd140@t.l', 'manager');
+  insert into public.buyers (id, agency_id, advisor_id, name, cities) values
+    ('140ccccc-9999-0000-0000-000000000001', '140ccccc-9999-0000-0000-000000000000',
+     '14055555-5555-5555-5555-555555555555', 'Seule fiche', array['Vence']);
+  insert into public.buyer_events (agency_id, buyer_id, kind, week_start, created_by)
+  values ('140ccccc-9999-0000-0000-000000000000', '140ccccc-9999-0000-0000-000000000001',
+          'weekly_report', date_trunc('week', (now() at time zone 'Europe/Paris'))::date,
+          '14055555-5555-5555-5555-555555555555');
+  delete from public.profiles where id = '14055555-5555-5555-5555-555555555555';
+  if exists (select 1 from public.buyer_events where buyer_id = '140ccccc-9999-0000-0000-000000000001'
+             and created_by is not null) then
+    raise exception 'FAIL 6: l''envoi garde l''auteur supprimé';
+  end if;
+  delete from public.agencies where id = '140ccccc-9999-0000-0000-000000000000';
 end $$;
 
 -- §5 — le navigateur.

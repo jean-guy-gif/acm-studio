@@ -63,6 +63,9 @@ select
   (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
   -- Mission 134 : les envois de ce bien aux acquéreurs ; ils partent avec le dossier (cascade).
   (select count(*) from buyer_proposals where project_id = ':dossier') as biens_proposes,
+  -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
+  -- avec le dossier : delete from buyer_dismissals where property_key = 'project::dossier';
+  (select count(*) from buyer_dismissals where property_key = 'project:' || ':dossier') as biens_ecartes,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

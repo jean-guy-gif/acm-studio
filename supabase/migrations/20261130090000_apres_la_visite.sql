@@ -31,10 +31,10 @@ alter table public.buyer_visit_requests
 
 alter table public.buyer_visit_requests
   add constraint buyer_visit_requests_report_tags check (
-    liked <@ array['district', 'surface', 'outdoor', 'parking', 'price', 'works', 'light', 'view',
+    liked <@ array['district', 'surface', 'outdoor', 'parking', 'price', 'works', 'light', 'overlooked',
                    'noise', 'pool', 'other']::text[]
     and disliked <@ array['district', 'surface', 'outdoor', 'parking', 'price', 'works', 'light',
-                          'view', 'noise', 'pool', 'other']::text[]
+                          'overlooked', 'noise', 'pool', 'other']::text[]
     and cardinality(liked) <= 11 and cardinality(disliked) <= 11
   ),
   -- Un compte rendu n'existe que pour une visite faite ; « Offre envisagée » est l'issue 'offer'.
@@ -67,12 +67,15 @@ create table public.buyer_dismissals (
 create index buyer_dismissals_agency on public.buyer_dismissals (agency_id);
 create index buyer_dismissals_buyer on public.buyer_dismissals (buyer_id, dismissed_at desc);
 create index buyer_dismissals_dismissed_by on public.buyer_dismissals (dismissed_by);
+-- La tâche « par bien » (M134) cherche les fiches qui ont écarté un bien.
+create index buyer_dismissals_property on public.buyer_dismissals (agency_id, property_key);
 
 comment on table public.buyer_dismissals is
-  'Mission 139 — un bien écarté pour un acquéreur par le conseiller, avec sa raison, une fois, daté par la base ; il ne lui est plus proposé ; écrit par le serveur seul.';
+  'Mission 139 — un bien écarté pour un acquéreur par le conseiller, avec sa raison, une fois ; il ne lui est plus proposé ; écrit par le serveur seul.';
 
--- La fiche et l'auteur de l'agence ; l'heure de la base ; seule modification permise : l'auteur
--- vidé par la suppression de son compte.
+-- La fiche et l'auteur de l'agence ; seule modification permise : l'auteur vidé par la suppression
+-- de son compte. La date n'est pas forcée, comme `buyer_events.occurred_at` (M135) : le serveur ne
+-- l'envoie jamais (l'heure de la base, par défaut), la démo seule date ses biens écartés de la semaine.
 create function public.check_buyer_dismissal()
 returns trigger
 language plpgsql
@@ -105,7 +108,6 @@ begin
     raise exception 'buyer_dismissals : l''auteur n''est pas de cette agence' using errcode = 'check_violation';
   end if;
   new.created_at := now();
-  new.dismissed_at := now();
   return new;
 end $$;
 
@@ -158,6 +160,20 @@ language plpgsql
 set search_path = public
 as $$
 begin
+  -- L'auteur vidé par la suppression de son compte (`on delete set null`) : rien d'autre ne change,
+  -- et la fiche peut déjà être en cours de suppression (le dernier membre d'une agence qui ferme) —
+  -- ne rien revérifier (gardien-sql, mission 139 ; le défaut datait de la M135).
+  if tg_op = 'UPDATE' and new.created_by is null and old.created_by is not null
+     and new.agency_id is not distinct from old.agency_id
+     and new.buyer_id is not distinct from old.buyer_id
+     and new.selection_id is not distinct from old.selection_id
+     and new.kind is not distinct from old.kind
+     and new.week_start is not distinct from old.week_start
+     and new.reason is not distinct from old.reason
+     and new.summary is not distinct from old.summary
+     and new.occurred_at is not distinct from old.occurred_at then
+    return new;
+  end if;
   -- Un fait daté ne se déplace pas : ni d'agence, ni de fiche, ni de sélection, ni de genre, ni de
   -- semaine (seul l'auteur peut devenir nul, quand son profil est supprimé).
   if tg_op = 'UPDATE' and (
