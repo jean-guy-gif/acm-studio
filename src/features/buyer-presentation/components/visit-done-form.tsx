@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { btnPrimary, btnSecondary, errorText, inputBase, link } from '@/components/ui/styles';
-import { VisitMessagesPanel } from '@/features/buyer-messages/components/visit-messages-panel';
+import { btnPrimary, btnSecondary, errorText, inputBase } from '@/components/ui/styles';
 import {
   DISLIKED_LABELS,
   LIKED_LABELS,
@@ -24,7 +23,8 @@ import { FEEDBACK_MAX } from '@/features/buyer-presentation/services/visit-reque
 
 // Mission 119 — « Visite faite », datée par le serveur. Mission 139 — un écran court, au pouce :
 // l'avis en boutons, ce qui a plu et déplu en étiquettes, une note libre facultative, la suite ;
-// puis les deux messages prêts (à l'acquéreur, au vendeur d'un bien de l'agence).
+// puis les deux messages prêts (à l'acquéreur, au vendeur d'un bien de l'agence), ouverts aussitôt
+// sur Visites (la visite quitte « À planifier » : le formulaire disparaît avec elle).
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
     on
@@ -40,7 +40,6 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
   const [disliked, setDisliked] = useState<VisitTag[]>([]);
   const [note, setNote] = useState('');
   const [nextStep, setNextStep] = useState<VisitNextStep | null>(null);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -54,23 +53,6 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
       >
         Visite faite
       </button>
-    );
-  }
-  if (saved) {
-    return (
-      <div className="flex w-full flex-col gap-3" data-testid="visit-report-saved">
-        <p role="status" className="text-sm font-semibold text-emerald-700">
-          Compte rendu noté.
-        </p>
-        <VisitMessagesPanel requestId={requestId} openAtOnce />
-        <button
-          type="button"
-          className={`${link} self-start text-sm`}
-          onClick={() => router.refresh()}
-        >
-          Fermer
-        </button>
-      </div>
     );
   }
   const toggle = (list: VisitTag[], tag: VisitTag) =>
@@ -96,7 +78,8 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
             setError(result.error);
             return;
           }
-          setSaved(true);
+          // La page se rafraîchit avec la visite faite : ses deux messages s'ouvrent sur Visites.
+          router.push(`/visites?messages=${requestId}#visite-${requestId}`);
         });
       }}
     >

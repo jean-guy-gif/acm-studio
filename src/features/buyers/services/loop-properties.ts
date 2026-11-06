@@ -96,6 +96,17 @@ export type LoopContacts = {
   dismissals?: Map<string, Set<string>>;
 };
 
+// Mission 139 — une seule règle partout (boucle, bloc du dossier, compteur du Live) : les acquéreurs
+// pour qui le conseiller a écarté ce bien ne lui correspondent plus.
+export function withoutDismissed<T extends { id: string }>(
+  buyers: T[],
+  dismissals: ReadonlyMap<string, ReadonlySet<string>> | undefined,
+  propertyKey: string,
+): T[] {
+  const dismissed = dismissals?.get(propertyKey);
+  return dismissed ? buyers.filter((buyer) => !dismissed.has(buyer.id)) : buyers;
+}
+
 export function alreadyContacted(
   item: LoopProperty,
   buyerId: string,
@@ -120,9 +131,8 @@ export function loopBuyers(
   contacts: LoopContacts,
   now: Date,
 ): LoopBuyers {
-  const dismissed = contacts.dismissals?.get(item.key);
   const result = propertyBuyers(
-    dismissed ? buyers.filter((buyer) => !dismissed.has(buyer.id)) : buyers,
+    withoutDismissed(buyers, contacts.dismissals, item.key),
     progress,
     item.property,
     item.price,

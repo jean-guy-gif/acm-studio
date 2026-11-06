@@ -26,17 +26,25 @@ export type ReportBuyer = {
 
 export function weeklyReportTasks(buyers: ReportBuyer[], now: Date): SuiviTask[] {
   const week = coveredWeek(now);
-  return buyers
-    .filter((buyer) => buyer.active && !buyer.reportedWeeks.has(week.start))
-    .map((buyer) => ({
-      kind: 'buyer_weekly_report' as const,
-      projectId: '',
-      sellerName: '',
-      dueOn: week.end,
-      buyerId: buyer.id,
-      buyerName: buyer.name,
-      weekStart: week.start,
-    }));
+  return (
+    buyers
+      // Une fiche créée après la semaine écoulée n'a pas de point pour elle.
+      .filter(
+        (buyer) =>
+          buyer.active &&
+          !buyer.reportedWeeks.has(week.start) &&
+          new Date(buyer.createdAt).getTime() < week.endAt.getTime(),
+      )
+      .map((buyer) => ({
+        kind: 'buyer_weekly_report' as const,
+        projectId: '',
+        sellerName: '',
+        dueOn: week.end,
+        buyerId: buyer.id,
+        buyerName: buyer.name,
+        weekStart: week.start,
+      }))
+  );
 }
 
 export function meetingTasks(buyers: ReportBuyer[]): SuiviTask[] {

@@ -28,6 +28,7 @@ export function VisitRow({
   letter = null,
   voucher = null,
   offerAnswer = null,
+  openMessages = false,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
@@ -35,10 +36,13 @@ export function VisitRow({
   voucher?: VisitVoucher | null;
   // Mission 138 — la réponse du vendeur à l'offre née de cette visite.
   offerAnswer?: OfferAnswer | null;
+  // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
+  openMessages?: boolean;
 }) {
   const done = line.visitedAt != null;
   return (
     <li
+      id={`visite-${line.id}`}
       data-testid="visit-line"
       data-state={done ? 'done' : 'pending'}
       className="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
@@ -104,7 +108,9 @@ export function VisitRow({
               « {line.feedback} »
             </p>
           ) : null}
-          {line.report?.nextStep ? <VisitMessagesPanel requestId={line.id} /> : null}
+          {line.report?.nextStep ? (
+            <VisitMessagesPanel requestId={line.id} openAtOnce={openMessages} />
+          ) : null}
         </>
       ) : (
         <>

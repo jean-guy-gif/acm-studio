@@ -1117,10 +1117,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await doneForm.getByTestId('visit-note').fill('Trop sombre, d’après le test automatique');
     await doneForm.getByTestId('visit-next-keep_searching').click();
     await doneForm.getByTestId('visit-done-save').click();
+    await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
     await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(
       /Ce qui vous a gêné : la luminosité\./,
     );
-    await page.getByRole('button', { name: 'Fermer' }).click();
     await expect(page.getByTestId('visits-done')).toContainText(
       'Trop sombre, d’après le test automatique',
     );

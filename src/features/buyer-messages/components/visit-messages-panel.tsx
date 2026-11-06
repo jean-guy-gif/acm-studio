@@ -16,16 +16,14 @@ function MessageBox({
   title,
   testId,
   initial,
-  subject,
 }: {
   title: string;
   testId: string;
   initial: VisitMessage;
-  subject: string;
 }) {
   const [text, setText] = useState(initial.message);
   const [note, setNote] = useState<string | null>(null);
-  const hrefs = followUpShareHrefs(text, initial.phone, initial.email, subject);
+  const hrefs = followUpShareHrefs(text, initial.phone, initial.email, initial.subject);
   return (
     <div className="flex flex-col gap-2" data-testid={testId}>
       <span className="text-sm font-semibold text-zinc-800 stage:text-white">{title}</span>
@@ -128,18 +126,12 @@ export function VisitMessagesPanel({
         </p>
       ) : messages ? (
         <>
-          <MessageBox
-            title="À l’acquéreur"
-            testId="visit-message-buyer"
-            initial={messages.buyer}
-            subject="Notre visite"
-          />
+          <MessageBox title="À l’acquéreur" testId="visit-message-buyer" initial={messages.buyer} />
           {messages.seller ? (
             <MessageBox
               title="Au vendeur"
               testId="visit-message-seller"
               initial={messages.seller}
-              subject="La visite de votre bien"
             />
           ) : null}
         </>

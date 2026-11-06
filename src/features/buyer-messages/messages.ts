@@ -97,11 +97,12 @@ export function visitBuyerMessage(input: {
   );
 }
 
+// La proposition entière, pour chaque avis : « pas convaincu » ne s'accorde pas avec « a été ».
 const SELLER_OPINION: Record<VisitOpinion, string> = {
-  love: 'conquis : un coup de cœur',
-  interested: 'intéressé',
-  mixed: 'mitigé',
-  not_for_me: 'pas convaincu',
+  love: 'l’acquéreur a eu un coup de cœur',
+  interested: 'l’acquéreur a été intéressé',
+  mixed: 'l’acquéreur est resté mitigé',
+  not_for_me: 'le bien n’a pas convaincu l’acquéreur',
 };
 
 // Au vendeur (un bien de l'agence), en français : le retour honnête, sans le nom de l'acquéreur, ni
@@ -118,7 +119,7 @@ export function visitSellerMessage(input: {
   return signed(
     [
       `Bonjour ${input.sellerName},`,
-      `La visite de votre bien du ${visitDay(input.visitedAt, t.locale)} : l’acquéreur a été ${SELLER_OPINION[input.report.opinion]}.`,
+      `La visite de votre bien du ${visitDay(input.visitedAt, t.locale)} : ${SELLER_OPINION[input.report.opinion]}.`,
       liked.length > 0 ? `Ce qui lui a plu : ${listOf(liked, t.locale)}.` : '',
       disliked.length > 0 ? `Ce qui l’a gêné : ${listOf(disliked, t.locale)}.` : '',
       'Je reviens vers vous très vite.',

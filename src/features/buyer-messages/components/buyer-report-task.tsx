@@ -28,9 +28,11 @@ export function BuyerReportTask({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [prepared, setPrepared] = useState<{ phone: string | null; email: string | null } | null>(
-    null,
-  );
+  const [prepared, setPrepared] = useState<{
+    phone: string | null;
+    email: string | null;
+    subject: string;
+  } | null>(null);
   const [text, setText] = useState('');
   const [done, setDone] = useState(false);
 
@@ -63,7 +65,7 @@ export function BuyerReportTask({
                 return;
               }
               setText(result.message);
-              setPrepared({ phone: result.phone, email: result.email });
+              setPrepared({ phone: result.phone, email: result.email, subject: result.subject });
             })
             .catch(() => {
               setPending(false);
@@ -76,12 +78,7 @@ export function BuyerReportTask({
     );
   }
   const hrefs = prepared
-    ? followUpShareHrefs(
-        text,
-        prepared.phone,
-        prepared.email,
-        kind === 'weekly_report' ? 'Le point de la semaine' : 'Faire le point',
-      )
+    ? followUpShareHrefs(text, prepared.phone, prepared.email, prepared.subject)
     : null;
   return (
     <div className="flex w-full flex-col gap-2" data-testid="buyer-report-panel">

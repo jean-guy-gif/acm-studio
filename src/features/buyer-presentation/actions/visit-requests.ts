@@ -138,7 +138,20 @@ export async function recordVisitDone(requestId: string, raw: unknown): Promise<
     .maybeSingle();
   if (error || !data)
     return { ok: false, error: 'Le retour de visite n’a pas pu être enregistré.' };
-  if (report.nextStep === 'second_visit') {
+  // Une demande encore vivante sur ce bien ne se redouble pas (M122).
+  const { data: alive } =
+    report.nextStep === 'second_visit'
+      ? await client
+          .from('buyer_visit_requests')
+          .select('id')
+          .eq('agency_id', profile.agency_id)
+          .eq('buyer_id', data.buyer_id)
+          .eq('buyer_selection_item_id', data.buyer_selection_item_id)
+          .is('cancelled_at', null)
+          .is('visited_at', null)
+          .limit(1)
+      : { data: [] };
+  if (report.nextStep === 'second_visit' && (alive ?? []).length === 0) {
     const { error: secondError } = await client.from('buyer_visit_requests').insert({
       agency_id: profile.agency_id,
       buyer_id: data.buyer_id,

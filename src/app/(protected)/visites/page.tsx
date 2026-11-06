@@ -44,7 +44,14 @@ function groupByBuyer(
   return [...groups.values()];
 }
 
-export default async function VisitsPage() {
+// Mission 139 — `?messages=<visite>` : juste après « Visite faite », les deux messages de cette
+// visite s'ouvrent aussitôt.
+export default async function VisitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ messages?: string }>;
+}) {
+  const { messages: openMessages } = await searchParams;
   const [allLines, others] = await Promise.all([getVisitLines(), getOtherAnswers()]);
   const lines = allLines.filter((line) => !line.buyerArchived);
   // Mission 120 — l'action de chaque visite et l'état de son courrier.
@@ -120,6 +127,7 @@ export default async function VisitsPage() {
                     <VisitRow
                       key={line.id}
                       line={line}
+                      openMessages={line.id === openMessages}
                       letter={letters.get(line.id) ?? null}
                       voucher={vouchers.get(line.id) ?? null}
                       offerAnswer={offerAnswers?.get(line.id) ?? null}

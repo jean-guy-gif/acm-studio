@@ -197,9 +197,11 @@ describe('les demandes de visite', () => {
       next_step: 'offer',
     });
     service.reset();
-    state.respond = () => ({
-      data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' },
-    });
+    // Aucune demande encore vivante sur ce bien : la deuxième visite est demandée.
+    state.respond = (_table, calls) =>
+      calls.some((call) => call.method === 'limit')
+        ? { data: [] }
+        : { data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' } };
     await recordVisitDone('r1', { ...REPORT, opinion: 'mixed', nextStep: 'second_visit' });
     expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
       agency_id: 'agency-a',
@@ -207,5 +209,14 @@ describe('les demandes de visite', () => {
       buyer_selection_item_id: 'i1',
       requested_during: 'conseiller',
     });
+  });
+
+  it('« Deuxième visite » ne redouble pas une demande encore vivante sur ce bien', async () => {
+    state.respond = (_table, calls) =>
+      calls.some((call) => call.method === 'limit')
+        ? { data: [{ id: 'r2' }] }
+        : { data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' } };
+    await recordVisitDone('r1', { ...REPORT, opinion: 'mixed', nextStep: 'second_visit' });
+    expect(service.calls.filter((call) => call.method === 'insert')).toEqual([]);
   });
 });

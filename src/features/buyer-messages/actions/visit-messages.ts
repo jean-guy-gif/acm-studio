@@ -2,6 +2,7 @@
 
 import { buyerLanguage } from '@/features/buyer-messages/languages';
 import {
+  TEMPLATES,
   propertyKind,
   visitBuyerMessage,
   visitSellerMessage,
@@ -15,7 +16,13 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 // seulement, en français (aux coordonnées du dossier), sans le nom de l'acquéreur. L'outil n'envoie
 // rien ; tout est relu ici, dans l'agence de l'appelant.
 
-export type VisitMessage = { message: string; phone: string | null; email: string | null };
+export type VisitMessage = {
+  message: string;
+  phone: string | null;
+  email: string | null;
+  // L'objet de l'e-mail, dans la langue du destinataire.
+  subject: string;
+};
 export type PreparedVisitMessages =
   { ok: true; buyer: VisitMessage; seller: VisitMessage | null } | { ok: false; error: string };
 
@@ -83,6 +90,7 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
     }),
     phone: buyer.phone,
     email: buyer.email,
+    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.visit,
   };
   // Le vendeur : un bien de l'agence (son dossier), jamais un concurrent ni une annonce.
   let seller: VisitMessage | null = null;
@@ -92,6 +100,8 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
       .select('seller_name, seller_phone, seller_email')
       .eq('id', item.reference)
       .eq('agency_id', profile.agency_id)
+      // Un dossier supprimé (archivé, M93) ne reçoit plus rien.
+      .neq('status', 'archived')
       .maybeSingle();
     if (project) {
       seller = {
@@ -103,6 +113,7 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
         }),
         phone: project.seller_phone,
         email: project.seller_email,
+        subject: 'La visite de votre bien',
       };
     }
   }

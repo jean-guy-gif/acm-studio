@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { buyerLanguage } from '@/features/buyer-messages/languages';
 import {
+  TEMPLATES,
   meetingProposalMessage,
   weeklyReportMessage,
   type WeekFigures,
@@ -22,7 +23,15 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 // chiffres se relisent ici, en base, pour la semaine écoulée : rien n'est reçu du navigateur.
 
 export type PreparedReport =
-  | { ok: true; message: string; phone: string | null; email: string | null; figures?: WeekFigures }
+  | {
+      ok: true;
+      message: string;
+      phone: string | null;
+      email: string | null;
+      // L'objet de l'e-mail, dans la langue du client.
+      subject: string;
+      figures?: WeekFigures;
+    }
   | { ok: false; error: string };
 export type NotedResult = { ok: true } | { ok: false; error: string };
 
@@ -88,7 +97,34 @@ async function readWeekFacts(
   if (runs.error || dismissals.error || selections.error || proposals.error || visits.error) {
     return null;
   }
-  // Un bien « retenu » : la première sélection où il entre, et les biens proposés (M134).
+  // Un bien « retenu » : la première sélection où il entre, et les biens proposés (M134). Un
+  // concurrent porte la clé de son annonce, comme une proposition ou un écart (M134) : un même bien
+  // ne compte qu'une fois.
+  const competitorIds = (selections.data ?? []).flatMap((selection) =>
+    ((selection.buyer_selection_items ?? []) as { source: string; reference: string }[])
+      .filter((item) => item.source === 'competitor')
+      .map((item) => item.reference),
+  );
+  const competitors =
+    competitorIds.length > 0
+      ? await admin
+          .from('comparables')
+          .select('id, listing_url')
+          .eq('agency_id', agencyId)
+          .in('id', competitorIds)
+      : { data: [], error: null };
+  if (competitors.error) return null;
+  const competitorUrl = new Map(
+    (competitors.data ?? []).map((row) => [row.id, row.listing_url ?? null]),
+  );
+  const keyOf = (item: { source: string; reference: string }): string => {
+    if (item.source === 'listing') return listingKey(item.reference);
+    if (item.source === 'competitor') {
+      const url = competitorUrl.get(item.reference);
+      return url ? listingKey(url) : `competitor:${item.reference}`;
+    }
+    return `project:${item.reference}`;
+  };
   const firstSeen = new Map<string, string>();
   for (const selection of selections.data ?? []) {
     const items = (selection.buyer_selection_items ?? []) as {
@@ -96,8 +132,7 @@ async function readWeekFacts(
       reference: string;
     }[];
     for (const item of items) {
-      const key =
-        item.source === 'listing' ? listingKey(item.reference) : `${item.source}:${item.reference}`;
+      const key = keyOf(item);
       if (!firstSeen.has(key)) firstSeen.set(key, selection.created_at);
     }
   }
@@ -139,6 +174,7 @@ export async function prepareWeeklyReport(buyerId: unknown): Promise<PreparedRep
     }),
     phone: buyer.phone,
     email: buyer.email,
+    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.weekly,
     figures,
   };
 }
@@ -158,6 +194,7 @@ export async function prepareMeetingProposal(buyerId: unknown): Promise<Prepared
     }),
     phone: buyer.phone,
     email: buyer.email,
+    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.meeting,
   };
 }
 

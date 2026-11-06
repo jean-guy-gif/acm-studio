@@ -52,8 +52,4 @@ export function toVisitRequest(row: VisitRequestRow): VisitRequest {
 export const isPendingVisit = (request: VisitRequest): boolean =>
   request.cancelledAt == null && request.visitedAt == null;
 
-export function isVisitOutcome(value: unknown): value is VisitOutcome {
-  return typeof value === 'string' && (VISIT_OUTCOMES as readonly string[]).includes(value);
-}
-
 export const FEEDBACK_MAX = 2000;

@@ -59,4 +59,9 @@ export const ENGLISH: LanguageTemplates = {
   meeting: {
     body: 'I would like to suggest a meeting to review your search together, at the agency or by video call, whichever suits you best. When would be convenient for you?',
   },
+  subjects: {
+    visit: 'Our viewing',
+    weekly: 'Your weekly update',
+    meeting: 'Reviewing your search',
+  },
 };

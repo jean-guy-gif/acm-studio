@@ -58,4 +58,9 @@ export const ITALIAN: LanguageTemplates = {
   meeting: {
     body: 'Vi propongo di fare il punto insieme sulla vostra ricerca, in agenzia o in videochiamata, come preferite. Quando vi andrebbe bene?',
   },
+  subjects: {
+    visit: 'La nostra visita',
+    weekly: 'Il punto della settimana',
+    meeting: 'Fare il punto',
+  },
 };

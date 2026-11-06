@@ -1801,9 +1801,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await doneForm.getByTestId('visit-note').fill('Belle lumière, jardin un peu petit');
   await doneForm.getByTestId('visit-next-offer').click();
   await doneForm.getByTestId('visit-done-save').click();
-  await expect(page.getByTestId('visit-report-saved')).toBeVisible();
+  // Les deux messages s'ouvrent aussitôt, sur Visites, la visite faite.
+  await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
   await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(/Bonjour Famille Keller,/);
-  await page.getByRole('button', { name: 'Fermer' }).click();
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
 
   // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu

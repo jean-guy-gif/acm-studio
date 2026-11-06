@@ -61,4 +61,5 @@ export const FRENCH: LanguageTemplates = {
   meeting: {
     body: 'Je vous propose de faire le point ensemble sur votre recherche, à l’agence ou en visio, comme vous préférez. Quel moment vous conviendrait ?',
   },
+  subjects: { visit: 'Notre visite', weekly: 'Le point de la semaine', meeting: 'Faire le point' },
 };

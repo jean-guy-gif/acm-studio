@@ -167,6 +167,25 @@ describe('le retour au vendeur', () => {
     );
     expect(message).not.toMatch(/Keller|offre|budget/i);
   });
+
+  it('chaque avis se dit en une proposition juste', () => {
+    const line = (opinion: VisitReport['opinion']) =>
+      visitSellerMessage({
+        sellerName: 'M. Lefebvre',
+        visitedAt: VISITED_AT,
+        report: { ...KELLER, opinion },
+        advisorFirstName: null,
+      }).split('\n')[1];
+    expect(line('love')).toBe(
+      'La visite de votre bien du 6 novembre : l’acquéreur a eu un coup de cœur.',
+    );
+    expect(line('mixed')).toBe(
+      'La visite de votre bien du 6 novembre : l’acquéreur est resté mitigé.',
+    );
+    expect(line('not_for_me')).toBe(
+      'La visite de votre bien du 6 novembre : le bien n’a pas convaincu l’acquéreur.',
+    );
+  });
 });
 
 describe('le compte rendu, relu au serveur', () => {

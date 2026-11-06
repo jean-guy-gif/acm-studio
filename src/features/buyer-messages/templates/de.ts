@@ -60,4 +60,9 @@ export const GERMAN: LanguageTemplates = {
   meeting: {
     body: 'Ich schlage Ihnen ein gemeinsames Gespräch über Ihre Suche vor, in der Agentur oder per Videoanruf, wie es Ihnen lieber ist. Wann passt es Ihnen?',
   },
+  subjects: {
+    visit: 'Unsere Besichtigung',
+    weekly: 'Ihr Wochenüberblick',
+    meeting: 'Gespräch zu Ihrer Suche',
+  },
 };

@@ -570,6 +570,8 @@ async function insertDemoBuyers(
         ).toISOString();
         return {
           ...buyerColumns(buyer),
+          // Mission 139 — la langue sur chaque ligne (la même raison que les deux dates).
+          language: buyer.language ?? 'fr',
           created_at: createdAt,
           status_changed_at: createdAt,
           agency_id: closer.agencyId,

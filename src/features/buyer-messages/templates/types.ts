@@ -69,4 +69,6 @@ export type LanguageTemplates = {
     closing: string;
   };
   meeting: { body: string };
+  // L'objet de l'e-mail, dans la langue du client.
+  subjects: { visit: string; weekly: string; meeting: string };
 };
