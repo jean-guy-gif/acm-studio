@@ -18,6 +18,7 @@ const service = fakeSupabase((calls) => {
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+vi.mock('@/lib/app-errors/report-server-error', () => ({ reportServerError: async () => {} }));
 
 const { requestVisit, cancelVisitRequest, recordVisitDone } =
   await import('@/features/buyer-presentation/actions/visit-requests');
