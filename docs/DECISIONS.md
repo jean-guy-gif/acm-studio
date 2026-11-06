@@ -20,6 +20,7 @@ chaque mission validée.
 - 10/09 · M44 · Les prestations de la fiche alimentent « Points forts » (10 au plus) ; rien n'alimente les « Points de vigilance ».
 - 10/09 · M44 · « À compléter » porte sur la liste réelle des champs du formulaire, pas sur ce que le lecteur sait lire.
 - 22/09 · M52 · Carte de Préparation : bien tel que saisi (champ absent omis, jamais « — »), fourchette ou « non saisie », avancement nommé.
+- 06/11 · Finitions · Sur la carte de Préparation, « 2/3 concurrents » tant qu'il en manque ; atteint, le seul nombre, « 5 concurrents ✓ », jamais « 5/3 » (décision de Jean-Guy, 06/11 ; précise M52).
 - 22/09 · M52 · Prêt = bien vendeur + au moins 3 concurrents exploitables retenus + fourchette validée : la bascule dans le Live est automatique et se voit.
 - 22/09 · M52 · Il manque un élément : le conseiller peut déclarer prêt lui-même ; l'outil informe, il ne barre pas la route.
 - 22/09 · M52 · Un dossier prêt reste modifiable : onglet « Prêts » de Préparation, et « Remettre en préparation ».
@@ -678,6 +679,8 @@ chaque mission validée.
 - 06/11 · M138 · Une nouvelle offre sur un bien qui a déjà une offre acceptée n'est pas bloquée : le formulaire prévient « Une offre acceptée existe déjà sur ce bien (le 06/11/2026). » (décision de Jean-Guy, 06/11) ; une lecture en échec arrête la page, jamais lue comme « aucune offre acceptée » (M98).
 - 06/11 · M138 · Démo : l'offre des Keller sur le mandat de Mougins est acceptée par le vendeur, « M. Lefebvre », par un « Bon pour acceptation » au tracé inventé (décision de Jean-Guy, 06/11) : sa tâche est en tête, les Keller sont « Sous offre » ; la remise à zéro retire l'offre, sa réponse et leurs signatures (remplace M137 B, « une offre qui attend la réponse du vendeur »).
 - 06/11 · M138 · Restent tels quels, notés par le relecteur : la prochaine étape d'une fiche « Sous offre » propose encore d'autres biens (comme « A acheté ») ; après une offre acceptée puis une refusée, la fiche montre « Sous offre » à côté de « Offre refusée le … » (la dernière réponse) ; chaque ouverture du panneau après un rechargement crée un lien neuf, aucun n'est retiré.
+- 06/11 · Finitions · « Ma démo » dit le vrai nombre, lu sur ce que la démo crée : « Cinq dossiers, un par étape de l'outil : à préparer, prêt pour le Live, prêt en présentation directe, conclu avec un mandat signé, à relancer ; et huit acquéreurs à rapprocher » (remplace M114 B, « quatre dossiers… deux acquéreurs »).
+- 06/11 · Finitions · Le vendeur à relancer de la démo s'appelle « M. et Mme Lambert-Duval » (« M. et Mme Rossi » est déjà un acquéreur), 06 39 98 41 27, famille.lambert-duval@example.com : deux familles différentes, plus deux « M. et Mme Martin » (décision de Jean-Guy, 06/11 ; remplace M130 A et B, « M. et Mme Martin », famille.martin@example.com, pour ce dossier ; le dossier à préparer garde M. et Mme Martin).
 
 ## Agence & équipe
 
