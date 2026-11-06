@@ -2,6 +2,10 @@ import {
   runAgencyWatch,
   type AgencyWatchReport,
 } from '@/features/buyer-watch/server/run-buyer-watch';
+import {
+  agenciesInWatchOrder,
+  releaseStaleWatchRuns,
+} from '@/features/buyer-watch/server/watch-housekeeping';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isCronAuthorized } from '@/features/prospecting/services/opposition-recheck';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -34,10 +38,21 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 500 });
   }
   const now = new Date();
-  const reports: AgencyWatchReport[] = [];
-  for (const agency of data ?? []) {
-    if (Date.now() > deadline) break;
-    reports.push(await runAgencyWatch(admin, agency.id, now, deadline));
+  // Les passages coupés (plus d'une heure « en cours ») : échoués, réservation rendue.
+  const released = await releaseStaleWatchRuns(admin, now);
+  // La moins récemment servie d'abord : aucune agence ne prend toute la nuit.
+  const order = await agenciesInWatchOrder(
+    admin,
+    (data ?? []).map((agency) => agency.id),
+  );
+  if (order == null) {
+    await reportServerError('buyerWatch', new Error('ordre des agences illisible'));
+    return Response.json({ ok: false }, { status: 500 });
   }
-  return Response.json({ ok: true, agencies: reports });
+  const reports: AgencyWatchReport[] = [];
+  for (const agencyId of order) {
+    if (Date.now() > deadline) break;
+    reports.push(await runAgencyWatch(admin, agencyId, now, deadline));
+  }
+  return Response.json({ ok: true, released, agencies: reports });
 }
