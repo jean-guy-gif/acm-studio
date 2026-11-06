@@ -338,8 +338,17 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
   });
 
   const openTask = async (count: number) => {
-    await page.goto('/suivi');
     const task = page.getByTestId('suivi-task').filter({ hasText: vence });
+    // La retenue peut s'achever juste après l'import : le Suivi se relit jusqu'à la tâche.
+    await expect
+      .poll(
+        async () => {
+          await page.goto('/suivi');
+          return task.count();
+        },
+        { timeout: 45_000, intervals: [2_000, 3_000, 5_000] },
+      )
+      .toBe(1);
     await expect(task).toContainText(
       `${count} ${count > 1 ? 'acquéreurs' : 'acquéreur'} pour la maison de Vence`,
     );

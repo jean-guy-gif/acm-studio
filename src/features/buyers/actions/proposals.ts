@@ -63,8 +63,8 @@ async function resolve(
 // Mission 134 (§ 6) — le lien du dossier acquéreur (M119, M122 B) avec CE bien en tête : une
 // nouvelle sélection — ce bien, puis les deux premiers biens encore retenus de la sélection
 // actuelle, sa phrase « Vous m'avez dit » reprise — et un lien qui la porte, le précédent cessant
-// de marcher (M122 B). Préparé au premier geste de partage, jamais à l'ouverture de l'étape :
-// « Passer » ne laisse rien. Le prix d'un vendeur à relancer n'est pas posé (M119 : « Prix à
+// de marcher (M122 B), ce que l'écran dit avant « Préparer son lien ». Rien n'est noté ici : seul
+// « Envoyé, suivant » note l'envoi. Le prix d'un vendeur à relancer n'est pas posé (M119 : « Prix à
 // confirmer avec le propriétaire »). Une sélection illisible n'est jamais lue comme vide (M98) ; si
 // le lien échoue, la nouvelle sélection est retirée.
 export async function prepareProposalLink(

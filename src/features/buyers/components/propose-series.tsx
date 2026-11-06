@@ -192,14 +192,19 @@ export function ProposeSeries({
   const prepare = () => {
     setError(null);
     setPending(true);
-    void prepareProposalLink(current.id, propertyKey).then((result) => {
-      setPending(false);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setPrepared({ url: result.url, selectionItemId: result.selectionItemId });
-    });
+    void prepareProposalLink(current.id, propertyKey)
+      .then((result) => {
+        setPending(false);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        setPrepared({ url: result.url, selectionItemId: result.selectionItemId });
+      })
+      .catch(() => {
+        setPending(false);
+        setError('Connexion perdue : réessayez.');
+      });
   };
   const next = () => {
     setPrepared(null);
@@ -300,8 +305,8 @@ export function ProposeSeries({
           onClick={() => {
             if (!prepared) return;
             setPending(true);
-            void recordProposal(current.id, propertyKey, prepared.selectionItemId).then(
-              (result) => {
+            void recordProposal(current.id, propertyKey, prepared.selectionItemId)
+              .then((result) => {
                 setPending(false);
                 if (!result.ok) {
                   setError(result.error);
@@ -309,8 +314,11 @@ export function ProposeSeries({
                 }
                 setSent((list) => [...list, `${current.name} · ${sentDayLabel(result.sentAt)}`]);
                 next();
-              },
-            );
+              })
+              .catch(() => {
+                setPending(false);
+                setError('Connexion perdue : réessayez.');
+              });
           }}
         >
           Envoyé, suivant
