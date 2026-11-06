@@ -358,6 +358,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/bon_de_visite.sql
 
+      # Mission 137 B — l'offre d'achat : sa validité, la réponse du vendeur une fois, datée par la
+      # base, signée si elle accepte ; le n° de mandat et les honoraires sur la conclusion.
+      - name: L'offre d'achat (mission 137 B)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/offre_achat.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes
