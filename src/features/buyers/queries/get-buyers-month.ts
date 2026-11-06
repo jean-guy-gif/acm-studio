@@ -34,7 +34,7 @@ export async function getBuyersMonth(
     readPages((from, to) =>
       supabase
         .from('buyer_proposals')
-        .select('buyer_id, property_key, sent_at')
+        .select('buyer_id, source, reference, sent_at')
         .eq('agency_id', agencyId)
         .in('buyer_id', buyerIds)
         .gte('sent_at', since)
@@ -109,7 +109,8 @@ export async function getBuyersMonth(
   if (items.error) return { ...empty, failed: true };
 
   const proposed = new Set<string>();
-  for (const row of proposals.data) proposed.add(`${row.buyer_id}|${row.property_key}`);
+  // La même clé des deux côtés (`source:reference`) : un bien proposé puis partagé compte une fois.
+  for (const row of proposals.data) proposed.add(`${row.buyer_id}|${row.source}:${row.reference}`);
   for (const row of items.data) {
     const buyerId = selectionBuyer.get(row.selection_id);
     if (buyerId) proposed.add(`${buyerId}|${row.source}:${row.reference}`);

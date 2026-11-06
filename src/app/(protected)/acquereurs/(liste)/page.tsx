@@ -78,6 +78,10 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         >
           {buyersMonthLine(month.month)}
         </p>
+      ) : month?.failed ? (
+        <p role="alert" className="text-sm font-semibold text-red-700">
+          « Ce mois-ci » n’a pas pu être lu : rechargez la page.
+        </p>
       ) : null}
 
       <form method="get" action="/acquereurs" className="flex flex-wrap items-center gap-2">

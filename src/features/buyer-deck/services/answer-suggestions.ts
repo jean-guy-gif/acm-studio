@@ -128,7 +128,6 @@ function proposal(
     // au moins deux de ces refus se propose au retrait, écrite comme sur la fiche ; jamais la
     // dernière commune ; des communes différentes ne donnent que le constat.
     case 'district': {
-      if (buyer.cities.length < 2) return undefined;
       const counts = new Map<string, number>();
       for (const answer of refused) {
         const key = answer.city ? communeKey(answer.city) : null;
@@ -137,7 +136,10 @@ function proposal(
       const [key, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
       if (!key || count < 2) return undefined;
       const city = buyer.cities.find((entry) => communeKey(entry) === key);
-      if (!city) return undefined;
+      // Déjà retirée (« Accepter ») : la suggestion disparaît d'elle-même (M122).
+      if (!city) return null;
+      // Jamais la dernière commune : le constat seul.
+      if (buyer.cities.length < 2) return undefined;
       return {
         patch: { cities: buyer.cities.filter((entry) => communeKey(entry) !== key) },
         text: `retirer ${city} de sa recherche ?`,

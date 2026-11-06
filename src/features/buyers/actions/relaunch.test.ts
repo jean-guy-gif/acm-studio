@@ -17,7 +17,11 @@ const profile = vi.hoisted(() => ({
   },
 }));
 const relaunch = vi.hoisted(() => ({ facts: null as RelaunchFacts | null, failed: false }));
-const writes = vi.hoisted(() => ({ list: [] as string[], insertError: null as unknown }));
+const writes = vi.hoisted(() => ({
+  list: [] as string[],
+  insertError: null as unknown,
+  linkValid: true,
+}));
 
 const buyerRow = {
   id: '22222222-2222-4222-8222-222222222222',
@@ -62,7 +66,7 @@ function client() {
   return {
     from(table: string) {
       const chain: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'is', 'in', 'order', 'limit', 'maybeSingle']) {
+      for (const method of ['select', 'eq', 'is', 'in', 'gt', 'order', 'limit', 'maybeSingle']) {
         chain[method] = () => chain;
       }
       for (const method of ['insert', 'update']) {
@@ -77,7 +81,9 @@ function client() {
             ? { data: buyerRow, error: null }
             : table === 'buyer_selections'
               ? { data: { id: 's1' }, error: null }
-              : { data: null, error: writes.insertError },
+              : table === 'buyer_dossier_links'
+                ? { data: writes.linkValid ? { id: 'l1' } : null, error: null }
+                : { data: null, error: writes.insertError },
         );
       return chain;
     },
@@ -113,6 +119,7 @@ beforeEach(() => {
   relaunch.failed = false;
   writes.list = [];
   writes.insertError = null;
+  writes.linkValid = true;
 });
 
 describe('« J’ai relancé »', () => {
@@ -144,6 +151,12 @@ describe('le partage noté', () => {
     expect(await recordLinkShared(BUYER)).toEqual({ ok: true });
     writes.insertError = { code: '42501' };
     expect((await recordLinkShared(BUYER)).ok).toBe(false);
+  });
+
+  it('sans lien valable pour sa dernière sélection, aucun partage n’est noté', async () => {
+    writes.linkValid = false;
+    expect((await recordLinkShared(BUYER)).ok).toBe(false);
+    expect(writes.list).toEqual([]);
   });
 });
 

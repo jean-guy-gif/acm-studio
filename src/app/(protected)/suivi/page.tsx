@@ -269,7 +269,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               ) : null}
             </span>
           </span>
-          {task.kind === 'buyer_relaunch' && task.buyerId && !copy ? (
+          {task.kind === 'buyer_relaunch' && task.buyerId ? (
             // Mission 135 — la relance d'un lien sans réponse se fait sur place.
             <BuyerRelaunchTask buyerId={task.buyerId} label={line.button} />
           ) : (

@@ -215,7 +215,7 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
     });
   }
   if (input.presentedAt) entries.push({ at: input.presentedAt, text: 'Sélection présentée' });
-  if (input.linkAt) entries.push({ at: input.linkAt, text: 'Lien de sa sélection envoyé' });
+  if (input.linkAt) entries.push({ at: input.linkAt, text: 'Lien de sa sélection créé' });
   if (input.answeredAt)
     entries.push({ at: input.answeredAt, text: 'Sa réponse reçue par le lien' });
   for (const event of input.events ?? []) {
