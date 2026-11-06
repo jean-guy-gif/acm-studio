@@ -178,6 +178,13 @@ describe('le bien du message ne ment pas', () => {
     expect(
       bestBien(lambert, [{ property: property({ hasPool: false }), price: 779_000 }])?.fits,
     ).toBe(false);
+    // Une ★ commune remplie, mais le bien dépasse la ★ du budget : il ne « coche » pas.
+    const overBudget = { ...(lambert as object), mustHave: ['cities', 'budget'] } as never;
+    expect(bestBien(overBudget, [{ property: property(), price: 820_000 }])?.fits).toBe(false);
+    // Hors de ses communes, avec la piscine : ne coche pas non plus.
+    expect(
+      bestBien(lambert, [{ property: property({ city: 'Antibes' }), price: 779_000 }])?.fits,
+    ).toBe(false);
     const noStar = { ...(lambert as object), mustHave: ['budget'] } as never;
     // Un prix inconnu ne remplit jamais la ★ du budget.
     expect(bestBien(noStar, [{ property: property(), price: null }])?.fits).toBe(false);

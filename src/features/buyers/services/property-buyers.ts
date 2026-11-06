@@ -107,11 +107,7 @@ function asCandidate(property: BuyerLoopProperty, price: number): CompetitorCand
 }
 
 // Un indispensable ★ que le bien contredit.
-export function starContradicted(
-  buyer: Buyer,
-  property: BuyerLoopProperty,
-  price: number,
-): boolean {
+function starContradicted(buyer: Buyer, property: BuyerLoopProperty, price: number): boolean {
   if (
     buyer.mustHave.includes('bedrooms') &&
     buyer.bedroomsMin != null &&
@@ -257,4 +253,22 @@ export function starsFilled(buyer: Buyer, property: BuyerLoopProperty, price: nu
         : judgeCriterion(criterion, buyer, candidate)?.kind === 'ok',
     )
     .map((criterion) => BUYER_CRITERION_LABELS[criterion]);
+}
+
+// Mission 135 — un indispensable ★, quel qu'il soit, que le bien CONTREDIT (une sélection déjà
+// retenue n'a pas forcément passé les règles du rapprochement : la fiche a pu changer depuis).
+// Un prix inconnu ne remplit jamais la ★ du budget.
+export function anyStarContradicted(
+  buyer: Buyer,
+  property: BuyerLoopProperty,
+  price: number,
+): boolean {
+  const candidate = asCandidate(property, price);
+  return buyer.mustHave.some((criterion) =>
+    criterion === 'bedrooms'
+      ? buyer.bedroomsMin != null &&
+        property.bedroomsCount != null &&
+        property.bedroomsCount < buyer.bedroomsMin
+      : judgeCriterion(criterion, buyer, candidate)?.kind === 'gap',
+  );
 }
