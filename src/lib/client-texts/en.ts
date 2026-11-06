@@ -683,5 +683,40 @@ export const ENGLISH_TEXTS: ClientTexts = {
         subject: (day) => (day ? `Market update of ${day}` : 'Market update'),
       },
     },
+    marketStudy: {
+      badge: 'Market study',
+      coverTitle: 'Market study',
+      byAdvisor: (name) => `By ${name}`,
+      competitorsTitle: 'The properties on the market against yours',
+      competitorsHint:
+        'Each competitor selected by your adviser: its features against your property, its asking price and how long it has been on the market.',
+      noCompetitors: 'No competitor selected yet: the ranking cannot be calculated.',
+      priceToday: 'Its price today',
+      listing: 'Listing',
+      removedOn: (day) => `Withdrawn on ${day}`,
+      notRanked: 'it does not count in the ranking',
+      alreadyDropped: 'has already reduced its price',
+      advisorProposed: 'price proposed by your adviser',
+      surface: 'Floor area',
+      rooms: 'Rooms',
+      studied: 'Competitors studied',
+      cheapest:
+        'your property would be the least expensive of the properties on the market that we studied.',
+      priciest:
+        'your property would be the most expensive of the properties on the market that we studied.',
+      cheaperCount: (count) =>
+        `${count} ${count > 1 ? 'properties on the market are' : 'property on the market is'} less expensive than yours.`,
+      atPrice: (price, rest) => `At ${price}, ${rest}`,
+      noReference:
+        'The properties on the market today, from lowest to highest price. Your property will take its place once your adviser has proposed a price.',
+      share: {
+        message: (url) =>
+          [
+            `Hello, here is the market study for your property: ${url}`,
+            'It shows the properties on the market around yours today, and where your price stands.',
+          ].join('\n'),
+        subject: (day) => (day ? `Market study of ${day}` : 'Market study'),
+      },
+    },
   },
 };

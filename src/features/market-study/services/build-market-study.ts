@@ -4,7 +4,7 @@ import type { FeatureBundle } from '@/features/live-seller/types';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { daysOnMarketAt } from '@/features/market-update/services/meeting-days';
 import { subjectRank } from '@/features/market-update/services/price-ranking';
-import { tierOf, TIER_WORDS } from '@/features/market-update/services/ranking-tiers';
+import { tierOf } from '@/features/market-update/services/ranking-tiers';
 import type {
   MarketStudyCompetitor,
   MarketStudyDocument,
@@ -12,7 +12,8 @@ import type {
   MarketStudyRankingRow,
 } from '@/features/market-study/types';
 import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthesis/types';
-import { propertyTypeLabel } from '@/features/subject-property/services/property-type-choice';
+import { isPropertyType } from '@/features/subject-property/services/property-type-choice';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatSquareMeters } from '@/lib/format';
 
 // Mission 131 — le constructeur de l'Étude de marché. Pur. Son entrée est une LISTE
@@ -61,6 +62,8 @@ export type MarketStudyCompetitorRow = {
 };
 
 export type MarketStudyInput = {
+  // Mission 140 — la langue du vendeur ; le français par défaut.
+  language?: TextLanguage;
   madeAt: string;
   sellerName: string | null;
   property: PropertyRow | null;
@@ -96,8 +99,12 @@ const bundle = (row: PropertyRow | MarketStudyCompetitorRow): FeatureBundle => (
 });
 
 // La grille du Live (M40, M80) : un critère sans donnée ne s'affiche pas.
-const features = (subject: FeatureBundle, competitor: FeatureBundle): SynthesisFeature[] =>
-  buildComparableFeatureComparison(subject, competitor).flatMap((item) =>
+const features = (
+  subject: FeatureBundle,
+  competitor: FeatureBundle,
+  language: TextLanguage,
+): SynthesisFeature[] =>
+  buildComparableFeatureComparison(subject, competitor, language).flatMap((item) =>
     item.comparisonStatus === 'unknown' || item.comparableValue == null
       ? []
       : [
@@ -113,26 +120,33 @@ const features = (subject: FeatureBundle, competitor: FeatureBundle): SynthesisF
 const positive = (value: number | null | undefined): number | null =>
   value != null && Number.isFinite(value) && value > 0 ? value : null;
 
-const labelOf = (row: {
-  property_type: string | null;
-  rooms_count: number | null;
-  surface_area: number | null;
-  city: string | null;
-  district: string | null;
-}): string =>
-  neutralComparableLabel({
-    propertyType: normalizePropertyType(row.property_type),
-    roomsCount: row.rooms_count,
-    surfaceArea: row.surface_area,
-    city: row.city,
-    district: row.district,
-  });
+const labelOf = (
+  row: {
+    property_type: string | null;
+    rooms_count: number | null;
+    surface_area: number | null;
+    city: string | null;
+    district: string | null;
+  },
+  language: TextLanguage,
+): string =>
+  neutralComparableLabel(
+    {
+      propertyType: normalizePropertyType(row.property_type),
+      roomsCount: row.rooms_count,
+      surfaceArea: row.surface_area,
+      city: row.city,
+      district: row.district,
+    },
+    language,
+  );
 
 function competitorOf(
   row: MarketStudyCompetitorRow,
   position: number,
   subject: FeatureBundle | null,
   madeAt: string,
+  language: TextLanguage,
 ): MarketStudyCompetitor {
   const photos = strings(row.photo_urls).filter((url) => /^https?:\/\/|^\//.test(url));
   const hidden = row.synthesis_hide_photo === true;
@@ -141,11 +155,11 @@ function competitorOf(
   return {
     id: row.id,
     position,
-    label: labelOf(row),
+    label: labelOf(row, language),
     photoUrls: hidden ? [] : photos.slice(0, MAX_STUDY_PHOTOS),
     hasPhoto: photos.length > 0,
     photoHidden: hidden,
-    features: subject ? features(subject, bundle(row)) : [],
+    features: subject ? features(subject, bundle(row), language) : [],
     price: row.price,
     pricePerSquareMeter: surface ? Math.round(row.price / surface) : null,
     daysOnMarket: row.listing_gone_at
@@ -163,14 +177,13 @@ function competitorOf(
   };
 }
 
-const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
-
-function detailOf(item: MarketStudyCompetitor): string | null {
+function detailOf(item: MarketStudyCompetitor, language: TextLanguage): string | null {
+  const t = clientTexts(language).documents;
   const parts: string[] = [];
-  if (item.priceDrop) parts.push('a déjà baissé son prix');
+  if (item.priceDrop) parts.push(t.marketStudy.alreadyDropped);
   if (item.daysOnMarket) {
     parts.push(
-      `en vente depuis ${item.daysOnMarket.approximate ? 'environ ' : ''}${item.daysOnMarket.days} ${plural(item.daysOnMarket.days, 'jour', 'jours')}`,
+      t.marketUpdate.ranking.onMarketFor(item.daysOnMarket.days, item.daysOnMarket.approximate),
     );
   }
   return parts.length > 0 ? parts.join(' · ') : null;
@@ -182,7 +195,10 @@ export function buildStudyRanking(
   competitors: MarketStudyCompetitor[],
   subjectLabel: string,
   reference: { price: number; source: 'agreed' | 'advisor' } | null,
+  // Mission 140 — dans la langue du vendeur (le français par défaut).
+  language: TextLanguage = 'fr',
 ): MarketStudyRanking {
+  const texts = clientTexts(language).documents;
   const listed = competitors
     .filter((item) => item.goneAt == null && item.price > 0)
     .sort((a, b) => a.price - b.price || a.position - b.position);
@@ -197,7 +213,7 @@ export function buildStudyRanking(
         tier: tierOf(index + 1, total),
         label: item.label,
         price: item.price,
-        detail: detailOf(item),
+        detail: detailOf(item, language),
       })),
     };
   }
@@ -214,7 +230,9 @@ export function buildStudyRanking(
     label: subjectLabel,
     price: reference.price,
     detail:
-      reference.source === 'agreed' ? 'prix retenu ensemble' : 'prix proposé par votre conseiller',
+      reference.source === 'agreed'
+        ? texts.marketUpdate.ranking.agreedTogether
+        : texts.marketStudy.advisorProposed,
   });
   const rows: MarketStudyRankingRow[] = [];
   let rank = 1;
@@ -230,7 +248,7 @@ export function buildStudyRanking(
       tier: tierOf(rank, total),
       label: item.label,
       price: item.price,
-      detail: detailOf(item),
+      detail: detailOf(item, language),
     });
     rank += 1;
   }
@@ -243,7 +261,7 @@ export function buildStudyRanking(
       rank: subjectPosition,
       total,
       tier,
-      word: TIER_WORDS[tier],
+      word: texts.marketUpdate.ranking.words[tier],
       cells: Array.from({ length: total }, (_, index) => tierOf(index + 1, total)),
     },
     rows,
@@ -261,34 +279,43 @@ export function referencePrice(
 }
 
 export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
+  const language = input.language ?? 'fr';
+  const texts = clientTexts(language);
+  const t = texts.documents.marketStudy;
   const property = input.property;
   const subject = property ? bundle(property) : null;
   const competitors = [...input.competitors]
     .sort((a, b) => a.display_order - b.display_order || a.id.localeCompare(b.id))
-    .map((row, index) => competitorOf(row, index + 1, subject, input.madeAt));
-  const subjectLabel = property
-    ? labelOf(property).replace(/^Bien concurrent$/, 'Votre bien')
-    : 'Votre bien';
+    .map((row, index) => competitorOf(row, index + 1, subject, input.madeAt, language));
+  const ownLabel = property ? labelOf(property, language) : '';
+  const subjectLabel =
+    property && ownLabel !== texts.common.competitorFallback
+      ? ownLabel
+      : texts.documents.synthesis.propertyTitle;
   const city = property?.city?.trim() || null;
   const surface = positive(property?.surface_area);
   const rooms = positive(property?.rooms_count);
   const bedrooms = positive(property?.bedrooms_count);
   const coverFigures = [
-    surface ? { label: 'Surface', value: formatSquareMeters(surface) } : null,
+    surface ? { label: t.surface, value: formatSquareMeters(surface, { language }) } : null,
     rooms
       ? {
-          label: 'Pièces',
-          value: `${rooms}${bedrooms ? ` · ${bedrooms} ${plural(bedrooms, 'chambre', 'chambres')}` : ''}`,
+          label: t.rooms,
+          value: `${rooms}${bedrooms ? ` · ${texts.documents.common.bedrooms(bedrooms)}` : ''}`,
         }
       : null,
-    { label: 'Concurrents étudiés', value: String(competitors.length) },
+    { label: t.studied, value: String(competitors.length) },
   ].filter((item): item is { label: string; value: string } => item != null);
+  const canonicalType = property ? normalizePropertyType(property.property_type) : null;
+  const typeLabel =
+    canonicalType != null && isPropertyType(canonicalType)
+      ? texts.labels.propertyType[canonicalType]
+      : null;
   return {
+    language,
     madeAt: input.madeAt,
     sellerName: input.sellerName?.trim() ?? '',
-    propertyLabel: property
-      ? [propertyTypeLabel(property.property_type), city].filter(Boolean).join(' · ') || null
-      : null,
+    propertyLabel: property ? [typeLabel, city].filter(Boolean).join(' · ') || null : null,
     subjectLabel,
     commune: city,
     coverPhotoUrl: input.coverPhotoUrl,
@@ -298,6 +325,7 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
       competitors,
       subjectLabel,
       referencePrice(input.commercializationPrice, input.advisorAnalysis),
+      language,
     ),
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,

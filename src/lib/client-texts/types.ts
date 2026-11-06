@@ -275,6 +275,33 @@ export type DocumentTexts = {
       subject: (day: string | null) => string;
     };
   };
+  // L'Étude de marché (M131).
+  marketStudy: {
+    badge: string;
+    coverTitle: string;
+    byAdvisor: (name: string) => string;
+    competitorsTitle: string;
+    competitorsHint: string;
+    noCompetitors: string;
+    priceToday: string;
+    listing: string;
+    removedOn: (day: string) => string;
+    notRanked: string;
+    alreadyDropped: string;
+    advisorProposed: string;
+    surface: string;
+    rooms: string;
+    studied: string;
+    cheapest: string;
+    priciest: string;
+    cheaperCount: (count: number) => string;
+    atPrice: (price: string, rest: string) => string;
+    noReference: string;
+    share: {
+      message: (url: string) => string;
+      subject: (day: string | null) => string;
+    };
+  };
 };
 
 export type LiveTexts = {

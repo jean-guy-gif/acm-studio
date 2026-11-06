@@ -603,5 +603,38 @@ export const FRENCH_TEXTS: ClientTexts = {
         subject: (day) => (day ? `Point marché du ${day}` : 'Point marché'),
       },
     },
+    marketStudy: {
+      badge: 'Étude de marché',
+      coverTitle: 'Étude de marché',
+      byAdvisor: (name) => `Par ${name}`,
+      competitorsTitle: 'Les biens en vente face au vôtre',
+      competitorsHint:
+        'Chaque concurrent retenu par votre conseiller : ses caractéristiques face à votre bien, son prix affiché et depuis quand il est en vente.',
+      noCompetitors: 'Aucun concurrent retenu pour l’instant : le classement ne se calcule pas.',
+      priceToday: 'Son prix aujourd’hui',
+      listing: 'Annonce',
+      removedOn: (day) => `Retirée le ${day}`,
+      notRanked: 'elle ne compte pas dans le classement',
+      alreadyDropped: 'a déjà baissé son prix',
+      advisorProposed: 'prix proposé par votre conseiller',
+      surface: 'Surface',
+      rooms: 'Pièces',
+      studied: 'Concurrents étudiés',
+      cheapest: 'votre bien serait le moins cher des biens en vente que nous avons étudiés.',
+      priciest: 'votre bien serait le plus cher des biens en vente que nous avons étudiés.',
+      cheaperCount: (count) =>
+        `${count} ${count > 1 ? 'biens en vente sont' : 'bien en vente est'} moins ${count > 1 ? 'chers' : 'cher'} que le vôtre.`,
+      atPrice: (price, rest) => `À ${price}, ${rest}`,
+      noReference:
+        'Les biens en vente aujourd’hui, du moins cher au plus cher. Votre bien s’y placera quand votre conseiller vous aura proposé un prix.',
+      share: {
+        message: (url) =>
+          [
+            `Bonjour, voici l’Étude de marché de votre bien : ${url}`,
+            'Elle montre les biens en vente autour du vôtre aujourd’hui, et où se situe votre prix.',
+          ].join('\n'),
+        subject: (day) => (day ? `Étude de marché du ${day}` : 'Étude de marché'),
+      },
+    },
   },
 };

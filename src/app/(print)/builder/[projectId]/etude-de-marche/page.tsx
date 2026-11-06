@@ -95,6 +95,7 @@ export default async function MarketStudyPage({
           projectId={projectId}
           advisorFirstName={profile.first_name ?? null}
           studyDate={day(document.madeAt)}
+          language={document.language}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,
