@@ -22,6 +22,12 @@ const itemSchema = z.object({
   category: z.enum([...IDEAL_CATEGORIES, 'agency']).nullable(),
   gaps: z.array(z.string().trim().min(1).max(200)).max(20),
   snapshot: z.record(z.string(), z.unknown()).nullable(),
+  // Mission 136 — une annonce trouvée par la veille garde le jour où son prix a été lu.
+  seenOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
 });
 
 export type SelectionItemInput = z.infer<typeof itemSchema>;

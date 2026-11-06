@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       agencies: {
         Row: {
+          buyer_watch_cap_cents: number
           created_at: string
           follow_up_dormant_days: number
           id: string
@@ -20,6 +21,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          buyer_watch_cap_cents?: number
           created_at?: string
           follow_up_dormant_days?: number
           id?: string
@@ -29,6 +31,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          buyer_watch_cap_cents?: number
           created_at?: string
           follow_up_dormant_days?: number
           id?: string
@@ -947,6 +950,60 @@ export type Database = {
             columns: ["buyer_selection_item_id"]
             isOneToOne: false
             referencedRelation: "buyer_selection_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_watch_runs: {
+        Row: {
+          adverts: number
+          agency_id: string
+          buyer_id: string
+          created_at: string
+          finds: Json
+          found_count: number
+          id: string
+          ran_at: string
+          seen_since: string
+          status: string
+        }
+        Insert: {
+          adverts?: number
+          agency_id: string
+          buyer_id: string
+          created_at?: string
+          finds?: Json
+          found_count?: number
+          id?: string
+          ran_at?: string
+          seen_since: string
+          status?: string
+        }
+        Update: {
+          adverts?: number
+          agency_id?: string
+          buyer_id?: string
+          created_at?: string
+          finds?: Json
+          found_count?: number
+          id?: string
+          ran_at?: string
+          seen_since?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_watch_runs_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_watch_runs_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
             referencedColumns: ["id"]
           },
         ]
@@ -2662,6 +2719,8 @@ export type Database = {
         Row: {
           adverts: number
           agency_id: string
+          buyer_id: string | null
+          buyer_watch: boolean
           created_at: string
           id: string
           project_id: string | null
@@ -2671,6 +2730,8 @@ export type Database = {
         Insert: {
           adverts: number
           agency_id: string
+          buyer_id?: string | null
+          buyer_watch?: boolean
           created_at?: string
           id?: string
           project_id?: string | null
@@ -2680,6 +2741,8 @@ export type Database = {
         Update: {
           adverts?: number
           agency_id?: string
+          buyer_id?: string | null
+          buyer_watch?: boolean
           created_at?: string
           id?: string
           project_id?: string | null
@@ -2692,6 +2755,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_estate_usage_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
             referencedColumns: ["id"]
           },
           {
@@ -3179,6 +3249,21 @@ export type Database = {
       settle_stream_estate_budget: {
         Args: { p_billed: number; p_reservation_id: string }
         Returns: undefined
+      }
+      start_buyer_watch: {
+        Args: {
+          p_agency_id: string
+          p_buyer_id: string
+          p_default_cap_cents: number
+          p_seen_since: string
+          p_since: string
+          p_wanted: number
+        }
+        Returns: {
+          adverts: number
+          reservation_id: string
+          run_id: string
+        }[]
       }
       stream_estate_usage_since: {
         Args: { p_since: string }

@@ -12,6 +12,8 @@ import {
 } from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { getProfile } from '@/lib/auth/get-profile';
+import { BuyerWatchAdmin } from '@/features/buyer-watch/components/buyer-watch-admin';
+import { getWatchAdmin } from '@/features/buyer-watch/queries/get-watch';
 
 export default async function AdminPage() {
   // Mission 59 — le lien vers la vue manager n'apparaît qu'aux managers (la page elle-même
@@ -24,6 +26,8 @@ export default async function AdminPage() {
   // Mission 105 — les oppositions dont la commune est restée inconnue après la revérification.
   const unknownCommunes =
     profile && isManager ? await getUnknownCommuneOppositions(profile.agency_id) : [];
+  // Mission 136 — la veille des acquéreurs : son plafond, son état, ses passages.
+  const watch = profile && isManager ? await getWatchAdmin(profile.agency_id) : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -105,6 +109,13 @@ export default async function AdminPage() {
             </p>
           )}
         </div>
+      ) : null}
+
+      {watch ? <BuyerWatchAdmin watch={watch} /> : null}
+      {profile && isManager && watch == null ? (
+        <p className="text-sm text-zinc-500 stage:text-white/55">
+          La veille des acquéreurs n’a pas pu être lue. Rechargez la page.
+        </p>
       ) : null}
     </div>
   );

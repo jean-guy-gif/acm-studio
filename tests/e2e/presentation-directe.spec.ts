@@ -456,3 +456,70 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     expect(after).toBeLessThan(before);
   });
 });
+
+// Mission 136 — « La veille des acquéreurs » : la veille simulée de la démo (un passage d'il y a
+// 2 jours, aucun appel) fait naître la tâche des Keller ; elle ouvre leurs biens idéaux, les deux
+// nouveaux biens en tête ; la fiche dit la veille ; le manager règle son plafond (jamais plus de la
+// moitié du budget de l'agence, 0 € la coupe), remis à 10 € en fin de passage.
+test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le plafond', async ({
+  page,
+}) => {
+  await login(page, demoCredentials());
+  await freshDemo(page);
+
+  await test.step('« 2 nouveaux biens pour la famille Keller » dans À faire aujourd’hui', async () => {
+    await page.goto('/suivi');
+    const task = page
+      .getByTestId('suivi-task')
+      .filter({ hasText: '2 nouveaux biens pour la famille Keller' });
+    await expect(task).toContainText('trouvés par la veille');
+    await task.getByRole('link', { name: 'Voir les biens' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/biens-ideaux#nouveau$/);
+  });
+
+  await test.step('Les biens idéaux, « Nouveau cette semaine » en tête', async () => {
+    const watch = page.getByTestId('ideal-watch');
+    await expect(watch).toContainText('Nouveau cette semaine');
+    await expect(watch.getByTestId('ideal-watch-hit')).toHaveCount(2);
+    await expect(watch.getByTestId('ideal-watch-hit').first()).toContainText(
+      /affiché le \d{2}\/\d{2}\/\d{4}/,
+    );
+    await expect(watch.getByTestId('ideal-watch-hit').first()).toContainText(
+      /\d+ critères? sur \d+/,
+    );
+    // Elle vient avant ce que l'agence a déjà.
+    const watchBox = await watch.boundingBox();
+    const agencyBox = await page.getByTestId('ideal-agency').boundingBox();
+    expect(watchBox!.y).toBeLessThan(agencyBox!.y);
+    await expect(page.getByText(/disponible|estimation/i)).toHaveCount(0);
+    await expect(page.getByText(/\bM\d{2,3}\b/)).toHaveCount(0);
+  });
+
+  await test.step('La fiche dit la veille', async () => {
+    await page.goto('/acquereurs');
+    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await expect(page.getByTestId('buyer-watch-line')).toHaveText(
+      /^Veille : dernière recherche le \d{2}\/\d{2}, prochaine le \d{2}\/\d{2}$/,
+    );
+  });
+
+  await test.step('Le manager règle le plafond de la veille', async () => {
+    await page.goto('/admin');
+    const admin = page.getByTestId('buyer-watch-admin');
+    await expect(admin).toContainText('Veille des acquéreurs');
+    await expect(admin.getByTestId('buyer-watch-journal')).toContainText('Famille Keller');
+    const cap = admin.getByTestId('buyer-watch-cap');
+    try {
+      await cap.fill('16');
+      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByRole('alert')).toContainText('moitié');
+      await cap.fill('0');
+      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille coupée');
+    } finally {
+      await cap.fill('10');
+      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+    }
+  });
+});

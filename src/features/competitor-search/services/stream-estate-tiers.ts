@@ -550,6 +550,9 @@ export type TieredSearchInput = {
   resume?: { cursor: TierCursor; memory: TieredSearchMemory } | null;
   // Mission 110 — les critères réglés : le DPE part dans la requête, le reste trie la réponse.
   filters?: SearchFilters | null;
+  // Mission 136 — la veille des acquéreurs : les biens arrivés le plus récemment chez Stream Estate
+  // d'abord (`order[createdAt]`, mesuré le 06/11 ; `fromCreatedAt`, lui, est ignoré par l'API).
+  newestFirst?: boolean;
 };
 
 export async function runTieredSearch(input: TieredSearchInput): Promise<TieredSearchOutcome> {
@@ -640,8 +643,22 @@ export async function runTieredSearch(input: TieredSearchInput): Promise<TieredS
         }
         size = itemsPerPage;
 
-        const params = () =>
-          tierQueryParams(base.params, query, price, input.context, excluded, page, itemsPerPage);
+        const params = () => {
+          const built = tierQueryParams(
+            base.params,
+            query,
+            price,
+            input.context,
+            excluded,
+            page,
+            itemsPerPage,
+          );
+          if (input.newestFirst) {
+            built.delete('order[updatedAt]');
+            built.append('order[createdAt]', 'desc');
+          }
+          return built;
+        };
         let response = await input.fetchPage(params());
         if (!response.ok && !response.refused && excluded != null && excluded.length > 0) {
           // L'API refuse la liste des communes voisines (adresse trop longue, erreur) : repli sur

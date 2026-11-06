@@ -29,6 +29,8 @@ import {
   DEMO_KELLER_REFUSALS_DAYS_AGO,
   DEMO_LAMBERT_SHARED_DAYS_AGO,
   demoKellerRefusalsPlan,
+  demoKellerWatchFinds,
+  DEMO_WATCH_DAYS_AGO,
   demoKellerSelectionPlan,
   demoLambertSelectionPlan,
   demoSeedPlan,
@@ -734,8 +736,45 @@ export async function seedDemoDossiers(
   if (!lambert) return false;
   return (
     (await seedLambertSharedSelection(supabase, closer, lambert.id, now)) &&
-    (await seedKellerRefusals(supabase, closer, keller.id, now))
+    (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
+    (await seedWatchRuns(supabase, closer, buyers, keller.id, now))
   );
+}
+
+// Mission 136 — la veille de la démo, simulée (aucun appel, M114) : un passage d'il y a 2 jours
+// pour chaque acquéreur prêt à visiter, deux nouveaux biens pour les Keller, rien pour les autres.
+// Écrit directement, jamais par `start_buyer_watch`, qui compterait une consommation.
+async function seedWatchRuns(
+  supabase: Client,
+  closer: Closer,
+  buyers: { id: string; name: string }[],
+  kellerId: string,
+  now: Date,
+): Promise<boolean> {
+  const ready = new Set(
+    DEMO_BUYERS.filter((buyer) => buyer.financing === 'validated').map((buyer) => buyer.name),
+  );
+  const ranAt = daysBefore(now, DEMO_WATCH_DAYS_AGO);
+  const seenSince = daysBefore(now, DEMO_WATCH_DAYS_AGO + 7);
+  const kellerFinds = demoKellerWatchFinds(now);
+  const rows = buyers
+    .filter((buyer) => ready.has(buyer.name))
+    .map((buyer) => {
+      const finds = buyer.id === kellerId ? kellerFinds : [];
+      return {
+        agency_id: closer.agencyId,
+        buyer_id: buyer.id,
+        ran_at: ranAt,
+        status: 'done',
+        seen_since: seenSince,
+        adverts: 0,
+        found_count: finds.length,
+        finds: finds as unknown as Json,
+      };
+    });
+  if (rows.length === 0) return true;
+  const { error } = await supabase.from('buyer_watch_runs').insert(rows);
+  return !error;
 }
 
 // « Préparer ma démo » : cinq dossiers, s'il n'en a pas encore.

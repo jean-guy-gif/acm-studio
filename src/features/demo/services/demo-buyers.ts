@@ -92,6 +92,9 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     worksAccepted: false,
     mustHave: ['pool', 'cities'],
     dealBreakers: 'Pas de route passante, pas de travaux lourds.',
+    // Mission 136 — prêts à visiter : la veille cherche pour eux.
+    financing: 'validated',
+    contactedDaysAgo: 5,
   },
   // Mission 132 — cinq acquéreurs PRÊTS À VISITER autour de Vence (financement validé, contact il
   // y a moins de 30 jours, un budget plafond), et un sixième sans financement validé : il ne compte
