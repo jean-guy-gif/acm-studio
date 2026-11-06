@@ -1655,8 +1655,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByTestId('presentation-finish').click();
   await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
   const answers = page.getByTestId('buyer-answers');
-  // Trois réponses de la présentation, trois du lien.
-  await expect(answers.getByTestId('buyer-answer')).toHaveCount(6);
+  // Trois réponses de la présentation, trois du lien ; mission 135 — plus les deux refus « Le
+  // prix » semés sur une sélection plus ancienne.
+  await expect(answers.getByTestId('buyer-answer')).toHaveCount(8);
   await expect(answers).toContainText('Veut le visiter');
   await expect(answers).toContainText('Pas pour lui : La surface');
   await expect(answers).toContainText('Peut-être');
