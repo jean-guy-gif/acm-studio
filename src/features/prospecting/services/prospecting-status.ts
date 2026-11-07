@@ -8,6 +8,7 @@
 // en était.
 
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
+import { formatDay } from '@/lib/format';
 
 // Mission 115 — le confrère (exclusivité) : après « Contacté », « Collaboration obtenue » clôt sa
 // prospection (comme un mandat rentré, comptée à part) ; « Collaboration refusée » remet le bien
@@ -177,13 +178,7 @@ export function shortDate(iso: string | null): string | null {
     return null;
   }
   const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        timeZone: 'Europe/Paris',
-      });
+  return Number.isNaN(date.getTime()) ? null : formatDay(date, 'fr', 'short');
 }
 
 // Les quatre colonnes du tableau. « Pas intéressé » sort du tableau : compté à part.

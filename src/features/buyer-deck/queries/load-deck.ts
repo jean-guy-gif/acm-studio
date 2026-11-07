@@ -38,6 +38,8 @@ export type LoadedDeck = {
   // « Ce que je fais ensuite » : le conseiller qui présente, et son téléphone.
   advisorName: string | null;
   advisorPhone: string | null;
+  // Mission 143 (I11) — et son e-mail, en lien.
+  advisorEmail: string | null;
 };
 
 // Mission 122 — le déroulé calculé sur la fiche et les faits du moment : ce qu'affiche la
@@ -137,5 +139,6 @@ export async function loadDeck(buyerId: string): Promise<LoadedDeck | null> {
     agencyName: agency?.name ?? null,
     advisorName: advisorName || null,
     advisorPhone: profile.phone ?? null,
+    advisorEmail: profile.email ?? null,
   };
 }

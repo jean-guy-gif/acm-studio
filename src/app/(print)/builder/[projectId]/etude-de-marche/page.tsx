@@ -11,14 +11,14 @@ import { SynthesisPrintButton } from '@/features/seller-synthesis/components/syn
 import { getProfile } from '@/lib/auth/get-profile';
 import { clientTexts } from '@/lib/client-texts';
 import { createClient } from '@/lib/supabase/server';
+import { formatDay } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Étude de marché',
   robots: { index: false, follow: false },
 };
 
-const day = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+const day = (value: string): string => formatDay(value, 'fr', 'numeric');
 
 // Mission 131 — l'Étude de marché, côté conseiller : le document du jour, à imprimer (« Enregistrer
 // au format PDF ») ou à envoyer par un lien de 30 jours ; « Sans photo » par concurrent, le même

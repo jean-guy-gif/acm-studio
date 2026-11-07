@@ -14,6 +14,7 @@ import { LiveLaunchActions } from '@/features/live-seller/components/live-launch
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { getReadyProjects } from '@/features/projects/queries/get-ready-projects';
 import { statusLabel } from '@/features/projects/status-label';
+import { formatRelativeDay } from '@/lib/format';
 
 // Rampe de lancement du Live : on choisit le dossier, la scène s'ouvre plein cadre.
 // MISSION 52 — que des dossiers PRÊTS (filtre sur status), jamais de brouillon.
@@ -62,8 +63,8 @@ export default async function LivePage() {
                   <span className={badgeNeutral}>{statusLabel(project.status)}</span>
                   {project.is_example ? <ExampleBadge /> : null}
                 </div>
-                <span className="text-xs text-zinc-400 stage:text-white/40">
-                  Dossier créé le {new Date(project.created_at).toLocaleDateString('fr-FR')}
+                <span className="text-xs text-zinc-500 stage:text-white/40">
+                  Dossier créé {formatRelativeDay(project.created_at)}
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-3">

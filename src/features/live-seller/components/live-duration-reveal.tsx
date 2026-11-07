@@ -66,7 +66,7 @@ export function LiveDurationReveal({
           </div>
         </div>
       ) : (
-        <p className="text-sm text-zinc-400 stage:text-white/50">{t.noHistory}</p>
+        <p className="text-sm text-zinc-500 stage:text-white/50">{t.noHistory}</p>
       )}
     </>
   );

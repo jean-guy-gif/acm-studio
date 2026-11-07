@@ -95,7 +95,7 @@ import { getSubjectPropertyCondominium } from '@/features/subject-property-condo
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
 import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
-import { formatDateTime } from '@/lib/format';
+import { formatRelativeMoment } from '@/lib/format';
 import {
   addressDossierView,
   getAddressDossier,
@@ -441,7 +441,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
             ) : null}
             {saved ? (
               <p className="text-xs text-zinc-500 stage:text-white/50">
-                Décision enregistrée le {formatDateTime(saved.validatedAt)}.
+                Décision enregistrée {formatRelativeMoment(saved.validatedAt)}.
                 {presentation.positioningStatus === 'outdated'
                   ? ' Les concurrents ou le bien ont changé depuis : le prix calculé n’est plus le même.'
                   : ''}

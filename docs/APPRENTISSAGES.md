@@ -256,6 +256,22 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   la dernière. L'action lit donc à la suite, le dossier d'abord. Suite e2e : 17 sur 17 au premier
   passage (16,5 min, en quatre groupes de moins de 10 minutes pour rester au premier plan).
 
+- 07/11 · M142 · Ce qui part vers le client se relit champ par champ, même un objet « interne » :
+  la fiche « Vivre ici » partait entière vers le lien, clé du bien comprise, et cette clé peut
+  contenir l'adresse d'une annonce (`listing:<URL>`). Le relecteur l'a vu ; une fonction
+  `publicSheet()` et un test qui cherche « https » dans la charge l'empêchent désormais.
+- 07/11 · M142 · Un écran client a plusieurs états : le lien d'un acquéreur montre le déroulé, le
+  merci après sa réponse, ou « Ce que nous avons vu ensemble ». « Vivre ici » n'était branché que
+  sur le premier, alors que les visites naissent surtout des deux autres. Et l'e2e ne jouait que ce
+  premier cas : un e2e doit jouer le chemin le plus fréquent, pas le plus simple à semer.
+- 07/11 · M142 · zod 4 refuse une clé ABSENTE même quand le schéma accepte `undefined`
+  (« expected nonoptional ») : un champ caché ajouté à un formulaire relu par une liste de champs
+  doit entrer dans cette liste. OpenStreetMap (Overpass) répond en 30 s environ pour une fiche, et
+  refuse une requête sans `User-Agent` (406) : d'où la tâche de fond. Une semence de démo qui donne
+  une sélection aux Wilson a cassé la spec qui partait d'une sélection vide : relire les specs des
+  acquéreurs semés quand on sème. Suite e2e : 18 sur 18, un aléa (deux specs qui remettaient la même
+  démo à zéro en même temps), une spec ajustée.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

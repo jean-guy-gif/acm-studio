@@ -28,6 +28,7 @@ export function DossierPublicView({ token, dossier }: { token: string; dossier: 
           logoUrl={dossier.agency.logoUrl}
           advisorName={dossier.agency.advisorName}
           advisorPhone={dossier.agency.advisorPhone}
+          advisorEmail={dossier.agency.advisorEmail}
           livingHere={dossier.livingHere ?? []}
         />
       </div>

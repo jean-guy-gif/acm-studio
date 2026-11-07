@@ -50,7 +50,7 @@ export function LivePageClosest({
               <LivePhoto photoUrl={entry.photoUrl} photoUrls={[]} alt={label} compact />
               <div className="flex flex-col gap-2 p-4">
                 {chosen ? (
-                  <span className="w-fit rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
+                  <span className="w-fit rounded-full bg-brand-deep px-3 py-1 text-xs font-semibold text-white stage:bg-white stage:text-brand-deep">
                     {t.badge}
                   </span>
                 ) : null}

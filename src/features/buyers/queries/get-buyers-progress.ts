@@ -2,7 +2,13 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
+import {
+  NO_PROGRESS,
+  latestOfferOf,
+  offerFactsOf,
+  type BuyerDocumentRow,
+  type BuyerProgressFacts,
+} from '@/features/buyers/services/buyer-progress';
 import type { Database } from '@/lib/supabase/database.types';
 
 // Essai de Jean-Guy (26/10) ; Mission 130 B — les faits du parcours de chaque fiche (`buyerJourney`), cadrés
@@ -18,22 +24,49 @@ export async function getBuyersProgress(
     buyerIds.map((id) => [id, { ...NO_PROGRESS }]),
   );
   if (buyerIds.length === 0) return progress;
-  // Ses demandes de visite, toutes sélections confondues : à organiser, et faites (M130).
-  const { data: visits, error: visitsError } = await supabase
-    .from('buyer_visit_requests')
-    .select('buyer_id, visited_at, requested_at')
-    .eq('agency_id', agencyId)
-    .in('buyer_id', buyerIds)
-    .is('cancelled_at', null);
+  // Ses demandes de visite, toutes sélections confondues : à organiser, et faites (M130) ; ses bons
+  // de visite et ses offres d'achat, avec la réponse du vendeur et leurs liens (M143, B1).
+  const [{ data: visits, error: visitsError }, { data: documents, error: documentsError }] =
+    await Promise.all([
+      supabase
+        .from('buyer_visit_requests')
+        .select('buyer_id, visited_at, requested_at')
+        .eq('agency_id', agencyId)
+        .in('buyer_id', buyerIds)
+        .is('cancelled_at', null),
+      supabase
+        .from('buyer_documents')
+        .select(
+          'id, buyer_id, kind, signed_at, valid_until, fields, buyer_document_acceptances(decision, decided_at), buyer_document_links(audience, created_at)',
+        )
+        .eq('agency_id', agencyId)
+        .in('buyer_id', buyerIds)
+        .in('kind', ['purchase_offer', 'visit_voucher']),
+    ]);
   for (const row of visits ?? []) {
     const facts = progress.get(row.buyer_id);
     if (!facts) continue;
-    if (row.visited_at) facts.visitsDone = (facts.visitsDone ?? 0) + 1;
-    else facts.visitsToOrganize += 1;
+    if (row.visited_at) {
+      facts.visitsDone = (facts.visitsDone ?? 0) + 1;
+      if (!facts.lastVisitDoneAt || row.visited_at > facts.lastVisitDoneAt)
+        facts.lastVisitDoneAt = row.visited_at;
+    } else facts.visitsToOrganize += 1;
     // Mission 132 — la visite demandée ou faite est un échange daté.
     const at =
       row.visited_at && row.visited_at > row.requested_at ? row.visited_at : row.requested_at;
     if (!facts.lastVisitAt || at > facts.lastVisitAt) facts.lastVisitAt = at;
+  }
+  const documentsOf = new Map<string, BuyerDocumentRow[]>();
+  for (const row of documents ?? []) {
+    if (!row.buyer_id) continue;
+    documentsOf.set(row.buyer_id, [...(documentsOf.get(row.buyer_id) ?? []), row]);
+  }
+  for (const [buyerId, rows] of documentsOf) {
+    const facts = progress.get(buyerId);
+    if (!facts) continue;
+    facts.voucherSigned = rows.some((row) => row.kind === 'visit_voucher');
+    facts.offer = offerFactsOf(rows);
+    facts.latestOffer = latestOfferOf(rows);
   }
   const { data: selections, error: selectionsError } = await supabase
     .from('buyer_selections')
@@ -56,7 +89,7 @@ export async function getBuyersProgress(
     for (const facts of progress.values()) facts.unread = true;
     return progress;
   };
-  if (visitsError || selectionsError) return markUnread();
+  if (visitsError || documentsError || selectionsError) return markUnread();
   const selectionIds = [...latest.values()].map((selection) => selection.id);
   if (selectionIds.length === 0) return progress;
   const [{ data: items, error: itemsError }, { data: links, error: linksError }] =
@@ -110,6 +143,10 @@ export async function getBuyersProgress(
       visitsToOrganize: progress.get(buyerId)?.visitsToOrganize ?? 0,
       visitsDone: progress.get(buyerId)?.visitsDone ?? 0,
       lastVisitAt: progress.get(buyerId)?.lastVisitAt ?? null,
+      lastVisitDoneAt: progress.get(buyerId)?.lastVisitDoneAt ?? null,
+      voucherSigned: progress.get(buyerId)?.voucherSigned ?? false,
+      offer: progress.get(buyerId)?.offer ?? null,
+      latestOffer: progress.get(buyerId)?.latestOffer ?? null,
       selectionAt: selection.createdAt,
       linkAt: linked.get(selection.id) ?? null,
       answeredAt: answered.get(selection.id) ?? null,

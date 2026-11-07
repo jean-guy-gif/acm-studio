@@ -89,7 +89,7 @@ async function interactiveCompetitor(page: Page, position: number): Promise<void
   await expect(
     page.getByRole('heading', { name: 'À quel prix pensez-vous que ce bien est proposé ?' }),
   ).toBeVisible();
-  await page.locator('input[name="seller_estimated_listing_price"]').fill(String(GUESS));
+  await page.locator('input[data-price-for="seller_estimated_listing_price"]').fill(String(GUESS));
   await validate(page);
   await expect(
     page.getByRole('heading', { name: 'Ce prix vous paraît-il cohérent ?' }).first(),
@@ -204,7 +204,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect.poll(() => readDemoBuyersShown(projectId), { timeout: 20_000 }).toBe(5);
     await validate(page);
     await page
-      .locator('input[name="seller_perceived_property_price"]')
+      .locator('input[data-price-for="seller_perceived_property_price"]')
       .fill(String(PERCEIVED_PRICE));
     await validate(page);
     await page.getByRole('button', { name: /Confirmer et continuer/ }).click();
@@ -271,7 +271,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
     await expect(page.getByText('Concurrent le plus proche de votre bien').first()).toBeVisible();
     await page
-      .locator('input[name="commercialization_price"]')
+      .locator('input[data-price-for="commercialization_price"]')
       .fill(String(COMMERCIALIZATION_PRICE));
     await page.getByRole('button', { name: 'Enregistrer le prix' }).click();
     await expect(page.getByText('Prix de commercialisation enregistré.')).toBeVisible();
@@ -294,6 +294,26 @@ test('la boucle : un dossier à 4 acquéreurs prêts n’a pas de pastille', asy
   await expect(page.getByTestId('property-buyers-headline')).toHaveText(
     '4 prêts à visiter · 1 autre correspond',
   );
+  // Mission 143 (B4, maquette AUDIT-garcia.png) — la Vue d'ensemble dit vrai : le bien, ses
+  // concurrents et la décision de prix sont faits, le Live est maintenant ; UNE prochaine étape,
+  // un seul bouton plein, et pas de second bouton dans l'en-tête.
+  const steps = page.getByTestId('overview-step');
+  await expect(steps).toHaveCount(5);
+  for (const key of ['property', 'competitors', 'decision']) {
+    await expect(page.locator(`[data-testid="overview-step"][data-step="${key}"]`)).toHaveAttribute(
+      'data-status',
+      'done',
+    );
+  }
+  await expect(page.locator('[data-testid="overview-step"][data-step="live"]')).toHaveAttribute(
+    'data-status',
+    'current',
+  );
+  await expect(page.getByTestId('overview-next-step')).toContainText(
+    'Faire le Live avec Mme Garcia',
+  );
+  await expect(page.getByTestId('next-step')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Supprimer le dossier…' })).toBeVisible();
   await page.goto(`/live/${garciaId}`);
   await expect(page).toHaveURL(new RegExp(`/builder/${garciaId}/lancer-le-live$`));
   await page.getByTestId('launch-for-real').click();
@@ -447,6 +467,14 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
       'Pas pour moi · Le prix',
     );
     await kellerRow.getByRole('link', { name: 'Famille Keller' }).click();
+    // Mission 143 (B1) — leur offre est acceptée : la recherche est en pause, ni suggestion de
+    // budget ni « Rapprocher » ; l'offre tombée, tout revient.
+    await expect(page.getByTestId('buyer-paused')).toBeVisible();
+    await expect(page.getByTestId('answer-suggestion')).toHaveCount(0);
+    await expect(page.getByTestId('buyer-matching')).toHaveCount(0);
+    await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
+    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
+    await expect(page.getByTestId('buyer-paused')).toHaveCount(0);
     const before = Number(
       /· (\d+)/.exec(await page.getByTestId('buyer-matches-link').innerText())?.[1] ?? -1,
     );
@@ -486,9 +514,8 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
-    await expect(page.getByTestId('buyer-watch-line')).toHaveText(
-      'Veille arrêtée : pas prêt à visiter',
-    );
+    // Mission 143 (B1) — pendant la vente, la veille et « Prêt à visiter ? » sont en pause.
+    await expect(page.getByTestId('buyer-watch-line')).toHaveCount(0);
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
     await page.reload();
@@ -693,9 +720,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     await page.getByRole('link', { name: 'Famille Keller' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
     await expect(page.getByTestId('buyer-ready')).toHaveCount(0);
-    await expect(page.getByTestId('buyer-watch-line')).toHaveText(
-      'Veille arrêtée : pas prêt à visiter',
-    );
+    await expect(page.getByTestId('buyer-paused')).toBeVisible();
     await expect(page.getByTestId('offer-answer-badge').first()).toHaveText(
       /^Offre acceptée le \d{2}\/\d{2}$/,
     );

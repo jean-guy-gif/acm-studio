@@ -6,11 +6,11 @@ import { useState, useTransition } from 'react';
 import { btnSecondary, hintText, link as linkStyle } from '@/components/ui/styles';
 import { createSynthesisLink } from '@/features/seller-synthesis/actions/create-synthesis-link';
 import { removeSynthesisLink } from '@/features/seller-synthesis/actions/remove-synthesis-link';
+import { formatDay } from '@/lib/format';
 
 export type SynthesisLinkView = { id: string; createdAt: string; expiresAt: string };
 
-const day = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+const day = (value: string): string => formatDay(value, 'fr', 'numeric');
 
 // Mission 110 — « Créer un lien pour le vendeur » : valable 30 jours, jamais indexé ; le lien ne
 // s'affiche qu'une fois, à copier ; rien n'est envoyé par l'outil. « Retirer le lien » le rend

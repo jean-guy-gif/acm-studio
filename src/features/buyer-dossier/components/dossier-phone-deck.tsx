@@ -69,10 +69,10 @@ type LocalAnswer = { answer: ItemAnswer; reasons: NoReason[] };
 const navBtn =
   'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-300 bg-white px-3 py-3 font-title text-base font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-40';
 const primaryBtn =
-  'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-4 py-3 font-title text-base font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand-deep px-4 py-3 font-title text-base font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-50';
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold ${
-    on ? 'border-brand bg-brand text-white' : 'border-zinc-300 bg-white text-zinc-700'
+    on ? 'border-brand bg-brand-deep text-white' : 'border-zinc-300 bg-white text-zinc-700'
   }`;
 
 const toLocal = (responses: ItemResponse[]): Map<string, LocalAnswer> =>
@@ -147,6 +147,7 @@ type FrameProps = {
   logoUrl: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
+  advisorEmail?: string | null;
 };
 
 function LinkHeader({ agencyName, logoUrl }: Pick<FrameProps, 'agencyName' | 'logoUrl'>) {
@@ -162,15 +163,39 @@ function LinkHeader({ agencyName, logoUrl }: Pick<FrameProps, 'agencyName' | 'lo
   );
 }
 
-// Le numéro ne se coupe jamais en deux lignes (rendus du 26/10 : « 06 00 / 00 00 01 »).
-function AdvisorContact({ name, phone }: { name: string; phone: string | null }) {
+// Le numéro ne se coupe jamais en deux lignes (rendus du 26/10 : « 06 00 / 00 00 01 »). Mission 143
+// (I11) — il s'appelle d'un toucher (`tel:`), l'e-mail s'écrit (`mailto:`) : le geste n° 1 sur un
+// téléphone ; le numéro reste écrit en clair (un `tel:` ne marche pas partout).
+const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
+const contactLink =
+  'inline-flex min-h-11 items-center whitespace-nowrap font-semibold text-brand-deep underline decoration-brand-deep/30 underline-offset-4';
+
+function AdvisorContact({
+  name,
+  phone,
+  email = null,
+}: {
+  name: string;
+  phone: string | null;
+  email?: string | null;
+}) {
   return (
     <>
       {name}
       {phone ? (
         <>
           {' · '}
-          <span className="whitespace-nowrap">{phone}</span>
+          <a href={telHref(phone)} className={contactLink} data-testid="dossier-advisor-phone">
+            {phone}
+          </a>
+        </>
+      ) : null}
+      {email ? (
+        <>
+          {' · '}
+          <a href={`mailto:${email}`} className={contactLink} data-testid="dossier-advisor-email">
+            {email}
+          </a>
         </>
       ) : null}
     </>
@@ -180,10 +205,11 @@ function AdvisorContact({ name, phone }: { name: string; phone: string | null })
 function AdvisorLine({
   advisorName,
   advisorPhone,
-}: Pick<FrameProps, 'advisorName' | 'advisorPhone'>) {
+  advisorEmail = null,
+}: Pick<FrameProps, 'advisorName' | 'advisorPhone' | 'advisorEmail'>) {
   return advisorName ? (
     <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
-      <AdvisorContact name={advisorName} phone={advisorPhone} />
+      <AdvisorContact name={advisorName} phone={advisorPhone} email={advisorEmail} />
     </p>
   ) : null;
 }
@@ -254,7 +280,11 @@ export function SeenTogetherView({
           </p>
         )}
         <LivingHereList deck={deck} entries={livingHere} />
-        <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
+        <AdvisorLine
+          advisorName={frame.advisorName}
+          advisorPhone={frame.advisorPhone}
+          advisorEmail={frame.advisorEmail}
+        />
         <DownloadButton label={t.download} />
       </main>
     </div>
@@ -291,7 +321,11 @@ export function ThanksView({
           </>
         ) : null}
         <LivingHereList deck={deck} entries={livingHere} />
-        <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
+        <AdvisorLine
+          advisorName={frame.advisorName}
+          advisorPhone={frame.advisorPhone}
+          advisorEmail={frame.advisorEmail}
+        />
         <DownloadButton label={t.download} />
       </main>
     </div>
@@ -310,6 +344,7 @@ export function DossierPhoneDeck({
   logoUrl,
   advisorName,
   advisorPhone,
+  advisorEmail = null,
   livingHere = [],
 }: {
   token: string;
@@ -323,6 +358,7 @@ export function DossierPhoneDeck({
   logoUrl: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
+  advisorEmail?: string | null;
   // Mission 142 — « Vivre ici » des biens qu'il va visiter, dans sa langue.
   livingHere?: DossierLivingHere[];
 }) {
@@ -443,7 +479,7 @@ export function DossierPhoneDeck({
     });
   };
 
-  const frame = { agencyName, logoUrl, advisorName, advisorPhone };
+  const frame = { agencyName, logoUrl, advisorName, advisorPhone, advisorEmail };
   const header = <LinkHeader agencyName={agencyName} logoUrl={logoUrl} />;
   const shown = linkScreen({
     presented: deck.presentedAt != null,
@@ -526,7 +562,7 @@ export function DossierPhoneDeck({
             {advisorName ? (
               <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
                 {t.advisorLabel}
-                <AdvisorContact name={advisorName} phone={advisorPhone} />
+                <AdvisorContact name={advisorName} phone={advisorPhone} email={advisorEmail} />
               </p>
             ) : null}
             <button
@@ -650,7 +686,7 @@ export function DossierPhoneDeck({
                 </p>
                 {advisorName ? (
                   <p className="text-sm font-semibold text-zinc-700">
-                    <AdvisorContact name={advisorName} phone={advisorPhone} />
+                    <AdvisorContact name={advisorName} phone={advisorPhone} email={advisorEmail} />
                   </p>
                 ) : null}
               </section>
@@ -744,6 +780,15 @@ export function DossierPhoneDeck({
           ) : null}
         </div>
       </nav>
+      {/* Mission 143 (I11) — le conseiller, à appeler ou à écrire, en bas de chaque écran. */}
+      {advisorName && screen.type !== 'words' ? (
+        <footer
+          className="mx-auto w-full max-w-xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] text-sm text-zinc-700"
+          data-testid="dossier-advisor-footer"
+        >
+          <AdvisorContact name={advisorName} phone={advisorPhone} email={advisorEmail} />
+        </footer>
+      ) : null}
 
       {/* Essai de Jean-Guy (26/10) : dès qu'un bien a une réponse, « Envoyer ma réponse » est le
           bouton principal, fixé en bas de chaque bien et de la grille ; il mène à ses créneaux,

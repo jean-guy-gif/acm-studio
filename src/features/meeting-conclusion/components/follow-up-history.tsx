@@ -3,9 +3,13 @@ import {
   nextFollowUpLabel,
   type FollowUpContact,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { formatRelativeDay } from '@/lib/format';
 
-const day = (iso: string): string =>
-  new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+// En tête de ligne : « Aujourd’hui », « Il y a 3 jours », « Le 31/10 » (M143, C1).
+const day = (iso: string): string => {
+  const label = formatRelativeDay(iso);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 // Mission 96 — l'historique des relances d'un dossier : date, note, auteur. Écran conseiller.
 export function FollowUpHistory({ contacts }: { contacts: FollowUpContact[] }) {

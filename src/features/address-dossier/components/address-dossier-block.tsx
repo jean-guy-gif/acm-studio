@@ -34,6 +34,7 @@ import {
   formatEuro,
   formatEuroPerSquareMeter,
   formatNumber,
+  formatRelativeDay,
   formatSquareMeters,
 } from '@/lib/format';
 
@@ -137,7 +138,7 @@ export function AddressDossierBlock({
               className="text-xs text-zinc-500 stage:text-white/50"
               data-testid="address-dossier-built"
             >
-              Construit le {formatDay(view.builtAt, 'fr', 'numeric')}.
+              Construit {formatRelativeDay(view.builtAt)}.
             </p>
           ) : null}
         </div>

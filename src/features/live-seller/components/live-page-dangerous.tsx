@@ -108,7 +108,7 @@ export function LivePageDangerous({
                         {euro(entry.price)}
                       </span>
                       {entry.marketDuration?.available && entry.marketDuration.days != null ? (
-                        <span className="text-xs text-zinc-400 stage:text-white/50">
+                        <span className="text-xs text-zinc-500 stage:text-white/50">
                           {texts.live.duration.observedSince(entry.marketDuration.days)}
                         </span>
                       ) : null}

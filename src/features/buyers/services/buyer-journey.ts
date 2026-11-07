@@ -2,18 +2,20 @@ import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { daysBetween } from '@/features/meeting-conclusion/services/suivi-tasks';
 import type { BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
+import { buyerInSentence } from '@/features/meeting-conclusion/services/suivi-step-labels';
 
-// Mission 130 B — « Une seule prochaine étape » côté acquéreur (maquette M130-fiche-acquereur.png,
-// validée par Jean-Guy) : son parcours en quatre étapes — Biens idéaux → Présenter → Sa réponse →
-// Visites —, UNE prochaine étape avec un bouton plein, et ce qui s'est passé, daté, lu dans les
-// tables existantes. Pur.
+// Mission 130 B — « Une seule prochaine étape » côté acquéreur : son parcours, UNE prochaine étape
+// avec un bouton plein, et ce qui s'est passé, daté, lu dans les tables existantes. Pur.
+// Mission 143 (B1, maquette AUDIT-keller.png) — cinq étapes, Sélection → Présentée → Visite → Offre
+// → Compromis (remplace Biens idéaux → Présenter → Sa réponse → Visites), lues à leur état le PLUS
+// AVANCÉ : une étape plus loin faite coche toutes celles d'avant, même si leur fait propre manque.
 
-export type JourneyKey = 'ideal' | 'present' | 'answer' | 'visits';
+export type JourneyKey = 'selection' | 'present' | 'visit' | 'offer' | 'compromise';
 export type JourneyStatus = 'done' | 'current' | 'later';
 
 export type JourneyStep = {
   key: JourneyKey;
-  number: 1 | 2 | 3 | 4;
+  number: 1 | 2 | 3 | 4 | 5;
   title: string;
   state: string;
   status: JourneyStatus;
@@ -22,60 +24,100 @@ export type JourneyStep = {
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
+// « 05/11 » : le jour et le mois, à l'heure de Paris.
+const dayMonth = (iso: string): string => buyerDateLabel(iso).slice(0, 5);
+
 const presented = (facts: BuyerProgressFacts) => facts.presentedAt != null;
 const answered = (facts: BuyerProgressFacts) => presented(facts) || facts.answeredOnLink;
 
-export function buyerJourney(facts: BuyerProgressFacts): JourneyStep[] {
-  const hasSelection = facts.selectionCount > 0;
+// La vente est en cours tant que l'acquéreur est « Sous offre » : « L'offre est tombée : revenir en
+// visite » (M138) la défait, et tout revient comme avant l'offre ; « A acheté » la clôt.
+export function saleInProgress(facts: BuyerProgressFacts, status?: string): boolean {
+  return facts.offer?.decision === 'accepted' && (status === undefined || status === 'under_offer');
+}
+
+// L'offre qui compte : l'acceptée tant que la vente tient (ou qu'il a acheté), sinon la plus
+// récente signée — une nouvelle offre après « L'offre est tombée » attend sa réponse.
+export function currentOffer(facts: BuyerProgressFacts, status?: string) {
+  if (
+    saleInProgress(facts, status) ||
+    (status === 'purchased' && facts.offer?.decision === 'accepted')
+  )
+    return facts.offer ?? null;
+  return facts.latestOffer ?? facts.offer ?? null;
+}
+
+export function buyerJourney(facts: BuyerProgressFacts, status?: string): JourneyStep[] {
   const done = facts.visitsDone ?? 0;
+  const offer = currentOffer(facts, status);
+  const purchased = status === 'purchased';
+  const sold = saleInProgress(facts, status) || purchased;
+  const visited = done > 0 || offer != null || purchased;
+  const shown = answered(facts) || visited;
   const raw: Omit<JourneyStep, 'status'>[] = [
     {
-      key: 'ideal',
+      key: 'selection',
       number: 1,
-      title: 'Biens idéaux',
-      state: hasSelection
-        ? plural(facts.selectionCount, 'bien sélectionné', 'biens sélectionnés')
-        : 'à faire',
+      title: 'Sélection',
+      state:
+        facts.selectionCount > 0
+          ? plural(facts.selectionCount, 'bien', 'biens')
+          : shown
+            ? 'faite'
+            : 'à faire',
     },
     {
       key: 'present',
       number: 2,
-      title: 'Présenter',
+      title: 'Présentée',
       state: presented(facts)
-        ? `présentée le ${buyerDateLabel(facts.presentedAt!)}`
-        : facts.linkCreated
-          ? 'lien envoyé'
-          : 'à faire',
-    },
-    {
-      key: 'answer',
-      number: 3,
-      title: 'Sa réponse',
-      state: facts.answeredOnLink
-        ? 'reçue par le lien'
-        : presented(facts)
-          ? 'donnée en rendez-vous'
+        ? `le ${dayMonth(facts.presentedAt!)}`
+        : facts.answeredOnLink && facts.answeredAt
+          ? `réponse par le lien le ${dayMonth(facts.answeredAt)}`
           : facts.linkCreated
-            ? 'attendue'
-            : 'lien à envoyer',
+            ? 'lien envoyé, sans réponse'
+            : shown
+              ? 'faite'
+              : 'à faire',
     },
     {
-      key: 'visits',
-      number: 4,
-      title: 'Visites',
+      key: 'visit',
+      number: 3,
+      title: 'Visite',
       state:
-        facts.visitsToOrganize > 0
+        facts.visitsToOrganize > 0 && !offer
           ? `${plural(facts.visitsToOrganize, 'demandée', 'demandées')}, à organiser`
-          : done > 0
-            ? plural(done, 'faite', 'faites')
-            : '0 demandée',
+          : facts.lastVisitDoneAt
+            ? `le ${dayMonth(facts.lastVisitDoneAt)}${facts.voucherSigned ? ' · bon signé' : ''}`
+            : visited
+              ? 'faite'
+              : 'à faire',
+    },
+    {
+      key: 'offer',
+      number: 4,
+      title: 'Offre',
+      state: !offer
+        ? 'à faire'
+        : offer.decision === 'accepted' && offer.decidedAt
+          ? `acceptée le ${dayMonth(offer.decidedAt)}`
+          : offer.decision === 'refused' && offer.decidedAt
+            ? `refusée le ${dayMonth(offer.decidedAt)}`
+            : `signée le ${dayMonth(offer.signedAt)}`,
+    },
+    {
+      key: 'compromise',
+      number: 5,
+      title: 'Compromis',
+      state: purchased ? 'signé' : sold ? 'à lancer' : 'après l’offre acceptée',
     },
   ];
   const isDone: Record<JourneyKey, boolean> = {
-    ideal: hasSelection,
-    present: presented(facts) || facts.linkCreated,
-    answer: answered(facts),
-    visits: done > 0 && facts.visitsToOrganize === 0,
+    selection: facts.selectionCount > 0 || shown,
+    present: shown,
+    visit: visited,
+    offer: sold,
+    compromise: purchased,
   };
   const current = raw.find((step) => !isDone[step.key])?.key ?? null;
   return raw.map((step) => ({
@@ -93,6 +135,8 @@ export type BuyerNextAction = {
   secondary: BuyerAction | null;
   // Le jour où l'étape a commencé (ISO) : la liste le dit.
   since: string | null;
+  // Mission 143 (B1) — « Lancer le compromis » : la fiche joue les gestes de la M138 sur cette offre.
+  compromiseOfferId?: string;
 };
 
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
@@ -100,10 +144,43 @@ const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 // La prochaine étape d'un acquéreur, selon où il en est : trouver les biens idéaux → présenter
 // (ou envoyer le lien) → relancer sa réponse → organiser la visite → lui proposer d'autres biens.
 export function buyerNextAction(
-  buyer: { id: string; createdAt: string; phone: string | null },
+  buyer: {
+    id: string;
+    createdAt: string;
+    phone: string | null;
+    name?: string;
+    status?: string;
+  },
   facts: BuyerProgressFacts,
+  now: Date = new Date(),
 ): BuyerNextAction {
   const id = buyer.id;
+  const offer = currentOffer(facts, buyer.status);
+  // Mission 143 (B1) — la prochaine étape suit l'état le plus avancé : l'offre d'abord.
+  if (offer && buyer.status !== 'purchased') {
+    if (saleInProgress(facts, buyer.status)) {
+      const who = buyerInSentence(buyer.name);
+      return {
+        title: 'Lancer le compromis',
+        phrase: `Prévenez ${who}, puis envoyez le dossier au notaire.`,
+        primary: { label: `Prévenir ${who}`, href: `/acquereurs/${id}#la-vente` },
+        secondary: { label: 'Transmettre au notaire', href: `/acquereurs/${id}#la-vente` },
+        since: offer.decidedAt,
+        compromiseOfferId: offer.documentId,
+      };
+    }
+    const today = parisDay(now);
+    if (offer.decision == null && offer.validUntil != null && offer.validUntil >= today) {
+      return {
+        title: 'Attendre la réponse du vendeur',
+        phrase: `L’offre est valable jusqu’au ${buyerDateLabel(offer.validUntil)} : le vendeur répond sur son lien.`,
+        primary: { label: 'Voir l’offre', href: `/acquereurs/${id}/offre/${offer.documentId}` },
+        secondary: null,
+        since: offer.signedAt,
+      };
+    }
+    // Refusée, ou expirée sans réponse : la prochaine étape d'avant l'offre, comme avant.
+  }
   const ideal = { label: 'Trouver les biens idéaux', href: `/acquereurs/${id}/biens-ideaux` };
   const present = { label: 'Présenter maintenant', href: `/presentation/${id}` };
   const link = { label: 'Envoyer le lien à la place', href: `/acquereurs/${id}/dossier` };

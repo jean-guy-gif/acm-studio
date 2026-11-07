@@ -21,6 +21,7 @@ import {
   type OutdoorSpace,
   type ParkingType,
 } from '@/features/subject-property/constants/property-options';
+import { formatRelativeDay } from '@/lib/format';
 
 // Optional prefill values coming from the URL import (never from an existing row).
 export type ComparableFieldDefaults = {
@@ -530,9 +531,8 @@ export function ComparableFormFields({
         />
         {listingPublishedAt ? (
           <span className={hintText}>
-            Mise en ligne le {new Date(listingPublishedAt).toLocaleDateString('fr-FR')} d’après le
-            portail — le délai est recalculé le jour du rendez-vous. Une correction manuelle a
-            priorité.
+            Mise en ligne {formatRelativeDay(listingPublishedAt)} d’après le portail — le délai est
+            recalculé le jour du rendez-vous. Une correction manuelle a priorité.
           </span>
         ) : null}
         {fieldError('days_on_market')}

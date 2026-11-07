@@ -72,7 +72,7 @@ function ReasonList({ reasons }: { reasons: ProximityReason[] }) {
                   ? 'text-amber-800 stage:text-amber-300'
                   : reason.known
                     ? ''
-                    : 'text-zinc-400 stage:text-white/40'
+                    : 'text-zinc-500 stage:text-white/40'
             }
           >
             {reason.label}
@@ -123,7 +123,7 @@ const VERDICT: Record<MatchDetailLine['verdict'], { sign: string; label: string;
   none: {
     sign: '✗',
     label: 'ne correspond pas',
-    tone: 'font-bold text-zinc-400 stage:text-white/40',
+    tone: 'font-bold text-zinc-500 stage:text-white/40',
   },
 };
 
@@ -209,7 +209,7 @@ export function RankedCandidateCard({
           ) : null}
         </div>
       ) : (
-        <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
+        <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-500 stage:bg-white/5 stage:text-white/40">
           Photo indisponible
         </div>
       )}

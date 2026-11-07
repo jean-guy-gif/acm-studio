@@ -18,8 +18,32 @@ export type BuyerProgressFacts = {
   answeredAt?: string | null;
   // Mission 132 — la plus récente visite demandée ou faite (un échange avec l'acquéreur).
   lastVisitAt?: string | null;
+  // Mission 143 (B1) — la plus récente visite faite, un bon de visite signé, et son offre d'achat :
+  // l'étape la plus avancée de son parcours.
+  lastVisitDoneAt?: string | null;
+  voucherSigned?: boolean;
+  offer?: BuyerOfferFacts | null;
+  // La plus récente signée : elle vaut dès que la vente ne tient plus (« L'offre est tombée »).
+  latestOffer?: BuyerOfferFacts | null;
   // Une lecture en échec : l'avancement n'est pas connu, la fiche le dit (M98).
   unread?: boolean;
+};
+
+// Son offre d'achat la plus avancée : la plus récente acceptée, sinon la plus récente signée (M138 :
+// une offre refusée après une acceptée ne défait pas la vente). « Prévenu » : un lien vers sa copie
+// créé APRÈS la réponse du vendeur (le geste « Prévenir l'acquéreur » en crée un) ; « notaire » : le
+// lien du notaire existe. Rien d'autre n'est déduit (décision de Jean-Guy, 07/11).
+export type BuyerOfferFacts = {
+  documentId: string;
+  signedAt: string;
+  validUntil: string | null;
+  price: number | null;
+  projectId: string | null;
+  visitId: string | null;
+  decision: 'accepted' | 'refused' | null;
+  decidedAt: string | null;
+  buyerNotified: boolean;
+  notaryLinked: boolean;
 };
 
 export const NO_PROGRESS: BuyerProgressFacts = {
@@ -29,3 +53,72 @@ export const NO_PROGRESS: BuyerProgressFacts = {
   answeredOnLink: false,
   visitsToOrganize: 0,
 };
+
+// Une ligne de `buyer_documents` lue avec sa réponse et ses liens (`getBuyersProgress`).
+export type BuyerDocumentRow = {
+  id: string;
+  kind: string;
+  signed_at: string;
+  valid_until: string | null;
+  fields: unknown;
+  buyer_document_acceptances: unknown;
+  buyer_document_links: unknown;
+};
+
+const asList = <T>(value: unknown): T[] =>
+  Array.isArray(value) ? (value as T[]) : value ? [value as T] : [];
+
+// Son offre la plus avancée parmi ses documents (pur) : la plus récente acceptée, sinon la plus
+// récente signée ; null sans offre.
+export function offerFactsOf(rows: readonly BuyerDocumentRow[]): BuyerOfferFacts | null {
+  const offers = offersOf(rows);
+  return offers.find((offer) => offer.decision === 'accepted') ?? offers[0] ?? null;
+}
+
+// La plus récente signée, quelle que soit la réponse du vendeur.
+export function latestOfferOf(rows: readonly BuyerDocumentRow[]): BuyerOfferFacts | null {
+  return offersOf(rows)[0] ?? null;
+}
+
+function offersOf(rows: readonly BuyerDocumentRow[]): BuyerOfferFacts[] {
+  return rows
+    .filter((row) => row.kind === 'purchase_offer')
+    .map((row): BuyerOfferFacts => {
+      const answer = asList<{ decision: string; decided_at: string }>(
+        row.buyer_document_acceptances,
+      )[0];
+      const decision =
+        answer?.decision === 'accepted' || answer?.decision === 'refused' ? answer.decision : null;
+      const decidedAt = decision ? answer!.decided_at : null;
+      const links = asList<{ audience: string; created_at: string }>(row.buyer_document_links);
+      const fields = (row.fields ?? {}) as {
+        price?: unknown;
+        projectId?: unknown;
+        visitId?: unknown;
+      };
+      return {
+        documentId: row.id,
+        signedAt: row.signed_at,
+        validUntil: row.valid_until,
+        price: typeof fields.price === 'number' ? fields.price : null,
+        projectId: typeof fields.projectId === 'string' ? fields.projectId : null,
+        visitId: typeof fields.visitId === 'string' ? fields.visitId : null,
+        decision,
+        decidedAt,
+        // « Créer de nouveaux liens » écrit la copie des offrants ET le lien du vendeur ensemble,
+        // à la même heure : ce n'est pas « Prévenir l'acquéreur », qui n'écrit que sa copie.
+        buyerNotified:
+          decidedAt != null &&
+          links.some(
+            (link) =>
+              link.audience === 'visitor' &&
+              link.created_at > decidedAt &&
+              !links.some(
+                (other) => other.audience === 'seller' && other.created_at === link.created_at,
+              ),
+          ),
+        notaryLinked: links.some((link) => link.audience === 'notary'),
+      };
+    })
+    .sort((a, b) => b.signedAt.localeCompare(a.signedAt));
+}

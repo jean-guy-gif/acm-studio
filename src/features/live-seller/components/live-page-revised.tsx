@@ -13,6 +13,7 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import { formatEuro } from '@/lib/format';
+import { PriceInput } from '@/features/live-seller/components/price-input';
 
 // Mission 94 — Acte 5 du Storyboard. Le vendeur vient de voir les biens, un par un ; avant que
 // l'analyse ne s'affiche, c'est LUI qui reformule son prix. L'écran ne révèle rien (ni prix des
@@ -47,13 +48,10 @@ export function LivePageRevised({
           <label className="flex flex-col gap-2">
             <span className={statLabel}>{t.label}</span>
             <div className="flex items-center gap-3">
-              <input
-                type="number"
+              <PriceInput
                 name="seller_revised_property_price"
-                min={0}
-                step="any"
-                placeholder="0"
-                defaultValue=""
+                language={language}
+                required
                 className={bigInput}
               />
               <span className={bigInputUnit}>€</span>

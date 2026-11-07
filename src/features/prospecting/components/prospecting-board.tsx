@@ -61,7 +61,7 @@ export function ProspectingBoard({
                   ))}
                 </ul>
               ) : (
-                <p className="px-1 pb-1 text-xs text-zinc-400 stage:text-white/40">Aucun.</p>
+                <p className="px-1 pb-1 text-xs text-zinc-500 stage:text-white/40">Aucun.</p>
               )}
             </section>
           );

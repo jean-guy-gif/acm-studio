@@ -37,7 +37,7 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className={statLabel}>{t.title}</span>
-        <span className="text-xs text-zinc-400 stage:text-white/40">
+        <span className="text-xs text-zinc-500 stage:text-white/40">
           <span className="font-semibold text-emerald-600 stage:text-emerald-300">
             {t.legend.green}
           </span>{' '}

@@ -5,10 +5,12 @@ import { describe, expect, it } from 'vitest';
 
 // Mission 74 — garde-fou volontairement simple : aucun `toFixed(` ni `toLocaleString(` dans src/
 // hors de src/lib/format (tests exclus). Un nombre s'affiche par le formateur, ou pas du tout.
+// Mission 143 — ni `toLocaleDateString(` : une date aussi (relative côté conseiller, absolue côté
+// client, toujours à l'heure de Paris).
 
 const SRC = join(process.cwd(), 'src');
 const ALLOWED = join('lib', 'format') + sep;
-const FORBIDDEN = /\b(toFixed|toLocaleString)\(/;
+const FORBIDDEN = /\b(toFixed|toLocaleString|toLocaleDateString)\(/;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

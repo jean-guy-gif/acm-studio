@@ -35,6 +35,7 @@ export default async function PresentationPage({
         agencyName={loaded.agencyName}
         advisorName={loaded.advisorName}
         advisorPhone={loaded.advisorPhone}
+        advisorEmail={loaded.advisorEmail}
       />
     </DeckWithPrelude>
   );

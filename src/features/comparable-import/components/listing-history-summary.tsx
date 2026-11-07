@@ -1,5 +1,5 @@
 import type { ListingHistory } from '@/features/comparable-import/types';
-import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatNumber, formatPercent } from '@/lib/format';
 
 // Shows what ACM knows about a listing over time (Mission 47 §5). Rules held here:
 //   - the source is ALWAYS named ("d'après SeLoger", "(Bien'ici)", "par ACM") — a
@@ -13,9 +13,7 @@ const euro = (value: number): string => formatEuro(value);
 
 const frDate = (iso: string): string => {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? iso
-    : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return Number.isNaN(date.getTime()) ? iso : formatDay(date, 'fr', 'long');
 };
 
 function AgeLine({ age }: { age: NonNullable<ListingHistory['age']> }) {

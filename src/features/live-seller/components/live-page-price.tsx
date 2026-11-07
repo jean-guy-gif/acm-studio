@@ -15,6 +15,7 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import { formatEuro } from '@/lib/format';
+import { PriceInput } from '@/features/live-seller/components/price-input';
 
 // Screen 2 — "À quel prix ?" The seller commits a guess. The real price stays MASKED
 // here: it is revealed only on the next screen. Le verrou vit dans la navigation
@@ -57,19 +58,17 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
               <label className="flex flex-col gap-2">
                 <span className={statLabel}>{t.label}</span>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="number"
+                  <PriceInput
                     name="seller_estimated_listing_price"
-                    min={0}
-                    step="any"
-                    placeholder="0"
-                    defaultValue={savedEstimate ?? ''}
+                    language={language}
+                    required
+                    defaultValue={savedEstimate}
                     className={bigInput}
                   />
                   <span className={bigInputUnit}>€</span>
                 </div>
               </label>
-              <p className="text-sm text-zinc-400 stage:text-white/50">{t.note}</p>
+              <p className="text-sm text-zinc-500 stage:text-white/50">{t.note}</p>
             </form>
           )}
         </div>

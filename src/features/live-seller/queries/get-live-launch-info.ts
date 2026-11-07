@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { estimateLiveMinutes } from '@/features/before-meeting/services/live-sequence';
 import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-fields/services/fields-to-verify';
@@ -31,6 +32,8 @@ export type LiveLaunchInfo = {
   pendingImportCount: number;
   // Mission 131 — « Document seul » : pas de Live à lancer.
   presentationMode: LivePresentationMode;
+  // Mission 143 (B4) — la durée estimée, sur le moteur du Live lui-même (M95).
+  estimatedMinutes: number;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -64,5 +67,6 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     ),
     pendingImportCount: pending.length,
     presentationMode: presentation.project.presentationMode,
+    estimatedMinutes: estimateLiveMinutes(pages.length),
   };
 }

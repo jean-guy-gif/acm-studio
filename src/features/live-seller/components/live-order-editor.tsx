@@ -81,7 +81,7 @@ export function LiveOrderEditor({
               dragged === index ? 'border-brand bg-brand-soft' : 'border-zinc-200 bg-white'
             }`}
           >
-            <span aria-hidden="true" className="text-zinc-400">
+            <span aria-hidden="true" className="text-zinc-500">
               ⋮⋮
             </span>
             <span className="w-6 font-semibold text-brand-deep">{index + 1}</span>

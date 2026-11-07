@@ -161,7 +161,7 @@ export function ComparableCard({
             fallbackClassName="h-full w-full"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400 stage:text-white/40">
+          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500 stage:text-white/40">
             Pas de photo
           </div>
         )}
@@ -253,7 +253,7 @@ export function ComparableCard({
         </div>
 
         {gap ? (
-          <div className="text-xs text-zinc-400 stage:text-white/40">
+          <div className="text-xs text-zinc-500 stage:text-white/40">
             Écart de surface avec le bien vendeur :{' '}
             {formatSquareMeters(gap.deltaSquareMeters, { signed: true })} (
             {formatPercent(gap.deltaPercent, { signed: true })})

@@ -52,7 +52,7 @@ export function LivePageIntro({
           <button
             type="button"
             onClick={onStart}
-            className="rounded-md bg-brand px-6 py-3 text-base font-medium text-white shadow-sm transition-colors hover:bg-white hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="rounded-md bg-white px-6 py-3 text-base font-semibold text-brand-deep shadow-sm transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             {t.start}
           </button>
