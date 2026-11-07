@@ -109,5 +109,9 @@ export function clampInitialLiveIndex(
   if (requested <= 0) {
     return 0;
   }
-  return Math.min(requested, maxReachableLiveIndex(pages, live), answeredResumeBound(pages, live));
+  return Math.min(
+    requested,
+    maxReachableLiveIndex(pages, live),
+    answeredResumeBound(pages, live, mode),
+  );
 }
