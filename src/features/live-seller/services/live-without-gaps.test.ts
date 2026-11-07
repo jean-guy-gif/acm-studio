@@ -198,6 +198,21 @@ describe('la reprise après un rechargement, jamais plus loin que la base', () =
   });
 });
 
+describe('la reprise en présentation directe', () => {
+  it('« Votre bien » ne demande rien : il ne retient pas la reprise', () => {
+    const pages: LivePage[] = [
+      page('intro', 'intro'),
+      page('subject_property', 'subject_property'),
+      page('direct:c1', 'comparable_direct', 'c1'),
+      page('direct:c2', 'comparable_direct', 'c2'),
+      page('conclusion', 'conclusion'),
+    ];
+    const state = { sellerSummary: null, comparables: [{ id: 'c1', response: null }] };
+    expect(answeredResumeBound(pages, state, 'direct')).toBe(4);
+    expect(answeredResumeBound(pages, state)).toBe(1);
+  });
+});
+
 describe('l’entrée d’un écran', () => {
   it('aucun fondu entre deux écrans du même concurrent ; un fondu bref au changement', () => {
     expect(screenEnter(PAGES[3]!, PAGES[4]!)).toBe('none');
