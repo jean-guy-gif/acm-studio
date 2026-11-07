@@ -15,7 +15,7 @@ export function SellerSaidBlock({ said }: { said: SellerSaid }) {
           {said.path.map((step, index) => (
             <span key={step.label} className="whitespace-nowrap">
               {index > 0 ? (
-                <span className="mr-2 text-zinc-400 stage:text-white/40" aria-hidden>
+                <span className="mr-2 text-zinc-500 stage:text-white/40" aria-hidden>
                   →
                 </span>
               ) : null}

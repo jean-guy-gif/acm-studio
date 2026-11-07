@@ -126,14 +126,15 @@ export function nextDossierAction(
 }
 
 // L'en-tête ne répète pas l'écran où l'on est déjà, ni la fiche du bien, dont la barre fixée porte
-// l'enregistrement et « Trouver des concurrents » (M77).
+// l'enregistrement et « Trouver des concurrents » (M77), ni la Vue d'ensemble, dont le bloc
+// « Prochaine étape » porte le seul bouton plein (M143, B4).
 export function showsNextAction(
   pathname: string,
   projectId: string,
   action: NextDossierAction,
 ): boolean {
   const base = `/builder/${projectId}`;
-  if (pathname.startsWith(`${base}/property`)) return false;
+  if (pathname === base || pathname.startsWith(`${base}/property`)) return false;
   const target = action.href.split('#')[0];
   return !(pathname === target || (target !== base && pathname.startsWith(`${target}/`)));
 }

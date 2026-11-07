@@ -56,8 +56,10 @@ const WHITE = '#ffffff';
 const NEAR_BLACK = '#0b1220';
 const TEXT_AA = 4.5; // contraste minimal pour un texte normal (WCAG AA)
 
-// Assombrit une couleur jusqu'à ce qu'elle soit lisible EN TEXTE sur blanc (§5).
-function ensureTextContrast(hex: string): string {
+// Assombrit une couleur jusqu'à ce qu'elle soit lisible EN TEXTE sur blanc (§5) — et donc, le
+// contraste étant symétrique, qu'un texte BLANC y soit lisible : c'est la couleur des boutons pleins
+// (mission 143, décision de Jean-Guy du 07/11), au moins 4,5 : 1 pour toute couleur d'agence.
+export function ensureTextContrast(hex: string): string {
   let current = hex;
   for (let i = 0; i < 20 && contrastRatio(current, WHITE) < TEXT_AA; i += 1) {
     current = darken(current, 0.1);
@@ -66,8 +68,8 @@ function ensureTextContrast(hex: string): string {
 }
 
 export type BrandPalette = {
-  brand: string; // l'accent EXACT de l'agence — aplats, boutons, accents
-  brandDeep: string; // la couleur profonde, garantie lisible en texte sur blanc
+  brand: string; // l'accent EXACT de l'agence — aplats décoratifs, accents (plus les boutons, M143)
+  brandDeep: string; // la couleur profonde, garantie lisible en texte sur blanc ET sous un texte blanc : les boutons pleins
   brandSoft: string; // teinte très claire — fonds doux
   brandDarker: string; // stop du dégradé du Live
   brandDarkest: string; // stop du dégradé du Live

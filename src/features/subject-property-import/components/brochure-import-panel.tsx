@@ -236,7 +236,7 @@ export function BrochureImportPanel({
                 Photos du bien vendeur ».
               </p>
             ) : (
-              <p className="text-xs text-zinc-400 stage:text-white/40">
+              <p className="text-xs text-zinc-500 stage:text-white/40">
                 Les photos récupérées s’ajoutent à celles déjà présentes, sans les remplacer.
               </p>
             )}
@@ -244,7 +244,7 @@ export function BrochureImportPanel({
         </div>
       ) : null}
 
-      <p className="text-xs text-zinc-400 stage:text-white/40">
+      <p className="text-xs text-zinc-500 stage:text-white/40">
         L’outil lit les fiches de votre logiciel. Si la vôtre vient d’un autre, envoyez-la nous et
         on l’ajoute. Vérifiez et complétez la fiche avant d’enregistrer.
       </p>

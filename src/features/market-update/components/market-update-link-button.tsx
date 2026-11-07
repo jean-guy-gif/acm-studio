@@ -12,11 +12,11 @@ import {
   marketUpdateShareHrefs,
   marketUpdateShareMessage,
 } from '@/features/market-update/services/market-update-share';
+import { formatDay } from '@/lib/format';
 
 export type MarketUpdateLinkView = { id: string; createdAt: string; expiresAt: string };
 
-const day = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+const day = (value: string): string => formatDay(value, 'fr', 'numeric');
 
 // Mission 127 — « Créer un lien pour le vendeur (30 jours) » sur un Point marché : le lien ne
 // s'affiche qu'une fois, à copier ; rien n'est envoyé par l'outil ; « Retirer le lien » le rend

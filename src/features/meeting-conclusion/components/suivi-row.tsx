@@ -55,7 +55,7 @@ import {
 } from '@/features/price-positioning/services/price-alignment';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { ExampleBadge } from '@/features/welcome/components/example-badge';
-import { formatEuro, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatPercent, formatRelativeDay } from '@/lib/format';
 
 // Mission 130 — la barre de gauche : vert mandat signé, orange à relancer (« attention », M129),
 // gris vendu ailleurs ou retiré. Le bleu dit désormais l'action et l'étape du jour.
@@ -83,7 +83,7 @@ const smallCaps =
   'text-[11px] font-bold tracking-[0.12em] text-zinc-500 uppercase stage:text-white/50';
 
 const longDate = (iso: string | null): string | null =>
-  iso ? new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) : null;
+  iso ? formatDay(iso, 'fr', 'numeric') : null;
 
 const parisDayOf = (iso: string | null): string | null =>
   iso
@@ -735,13 +735,13 @@ export function SuiviRow({
               </div>
             ) : null}
 
-            <span className="text-xs text-zinc-400 stage:text-white/40">
+            <span className="text-xs text-zinc-500 stage:text-white/40">
               {longDate(conclusion?.concludedAt ?? null)
-                ? `Rendez-vous conclu le ${longDate(conclusion?.concludedAt ?? null)}`
+                ? `Rendez-vous conclu ${formatRelativeDay(conclusion!.concludedAt!)}`
                 : null}
               {conclusion?.outcomeChangedAt &&
               longDate(conclusion.outcomeChangedAt) !== longDate(conclusion.concludedAt)
-                ? ` · Issue changée le ${longDate(conclusion.outcomeChangedAt)}`
+                ? ` · Issue changée ${formatRelativeDay(conclusion.outcomeChangedAt!)}`
                 : null}
             </span>
 

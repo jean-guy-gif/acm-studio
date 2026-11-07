@@ -1,4 +1,4 @@
-import { isValidHex } from '@/features/branding/services/palette';
+import { ensureTextContrast, isValidHex } from '@/features/branding/services/palette';
 import type { AgencyBranding } from '@/features/branding/types';
 
 // Mission 55 §3 — une couleur venue de la base est une DONNÉE, jamais une instruction.
@@ -26,7 +26,10 @@ export function brandingCssVariables(branding: Pick<AgencyBranding, ColorKey>): 
   for (const [key, cssVar] of TOKEN_MAP) {
     const value = branding[key];
     if (isValidHex(value)) {
-      declarations.push(`${cssVar}: ${value};`);
+      // Mission 143 — la couleur des boutons pleins, sous un texte blanc : relue à 4,5 : 1 au moins,
+      // même si la valeur gardée en base ne l'était pas (une charte d'avant, une saisie directe).
+      const safe = key === 'brandDeep' ? ensureTextContrast(value) : value;
+      declarations.push(`${cssVar}: ${safe};`);
     }
   }
   return declarations.join(' ');

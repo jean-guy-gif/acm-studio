@@ -11,7 +11,7 @@ export function LocatorNotice({ availability }: { availability: LocatorAvailabil
     return null;
   }
   return (
-    <p className="text-xs text-zinc-400 stage:text-white/40">
+    <p className="text-xs text-zinc-500 stage:text-white/40">
       {availability === 'sharing_off' ? LOCATOR_SHARING_OFF_MESSAGE : LOCATOR_UNAVAILABLE_MESSAGE}.
     </p>
   );

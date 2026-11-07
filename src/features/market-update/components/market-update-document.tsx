@@ -24,7 +24,7 @@ import {
 } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
-import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 
 type UpdateTexts = ClientTexts['documents']['marketUpdate'];
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -38,9 +38,7 @@ import { displayPhotoUrl } from '@/lib/photo-url';
 const shortDay = (value: string | null): string | null => {
   if (!value) return null;
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+  return Number.isNaN(date.getTime()) ? null : formatDay(date, 'fr', 'numeric');
 };
 
 // La carte du jour, en couleur : vert baisse, orange vente probable, gris retiré, ambre non relu.

@@ -16,6 +16,7 @@ import {
   type DangerousChoice,
 } from '@/features/live-seller/services/dangerous-choice';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
+import { priceDigits } from '@/features/live-seller/components/price-input';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
 import { LivePageClosest } from '@/features/live-seller/components/live-page-closest';
@@ -199,6 +200,14 @@ export function LiveComparativeShell({
     Record<string, LiveComparableResponse>
   >({});
   const mainRef = useRef<HTMLElement | null>(null);
+  // Mission 143 (I6) — un prix requis encore vide sur l'écran : « Valider » reste grisé.
+  const [priceMissing, setPriceMissing] = useState(false);
+  const checkPriceMissing = useCallback(() => {
+    const required = mainRef.current?.querySelectorAll<HTMLInputElement>(
+      'input[data-price-required="true"]',
+    );
+    setPriceMissing([...(required ?? [])].some((input) => Number(priceDigits(input.value)) === 0));
+  }, []);
 
   const hasSubjectProperty = property != null;
 
@@ -321,6 +330,11 @@ export function LiveComparativeShell({
   );
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
+  // Mission 143 (I6) — l'écran vient de changer : un prix requis s'y trouve-t-il, vide ?
+  useEffect(() => {
+    const frame = requestAnimationFrame(checkPriceMissing);
+    return () => cancelAnimationFrame(frame);
+  }, [page.key, checkPriceMissing]);
   const entry =
     page.comparableId != null
       ? (comparables.find((c) => c.id === page.comparableId) ?? null)
@@ -1123,7 +1137,7 @@ export function LiveComparativeShell({
                   type="button"
                   autoFocus
                   onClick={() => setQuitOpen(false)}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-deep"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-deep px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-darker"
                 >
                   {t.stay}
                 </button>
@@ -1155,7 +1169,7 @@ export function LiveComparativeShell({
               darkSrc={logoDarkUrl}
               fallbackName={agencyName}
             />
-            <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
+            <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 sm:inline stage:text-white/50">
               {t.kicker}
             </span>
           </div>
@@ -1251,7 +1265,7 @@ export function LiveComparativeShell({
               <span className="text-xs font-semibold tracking-[0.25em] uppercase text-brand-deep/70 stage:text-brand">
                 {stepLabel}
               </span>
-              <span className="text-xs text-zinc-400 stage:text-white/40">
+              <span className="text-xs text-zinc-500 stage:text-white/40">
                 {index + 1} / {pages.length}
               </span>
             </div>
@@ -1269,6 +1283,8 @@ export function LiveComparativeShell({
         <main
           ref={mainRef}
           key={page.key}
+          // Après le rendu : un choix (« Non ») change ce qui est requis.
+          onInput={() => requestAnimationFrame(checkPriceMissing)}
           // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
           // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
           // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
@@ -1395,7 +1411,7 @@ export function LiveComparativeShell({
                 {buyersDot}
               </span>
               <span
-                className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-400 stage:text-white/40'}`}
+                className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-500 stage:text-white/40'}`}
                 aria-live="polite"
               >
                 {busy
@@ -1430,8 +1446,9 @@ export function LiveComparativeShell({
                 <button
                   type="button"
                   onClick={() => void onValidate()}
-                  disabled={busy || index >= pages.length - 1}
+                  disabled={busy || index >= pages.length - 1 || priceMissing}
                   className={ctaPrimary}
+                  data-testid="live-validate"
                 >
                   {(page.type === 'comparable_duration' && !durationRevealed) ||
                   quickDurationPending
@@ -1519,7 +1536,7 @@ export function LiveComparativeShell({
                 {finishError ? (
                   <span className={errorText}>{finishError}</span>
                 ) : closingSave === 'pending' || closingSave === 'ok' ? (
-                  <span className="text-xs text-zinc-400 stage:text-white/40" aria-live="polite">
+                  <span className="text-xs text-zinc-500 stage:text-white/40" aria-live="polite">
                     {closingSave === 'pending' ? t.saving : t.noteSaved}
                   </span>
                 ) : null}

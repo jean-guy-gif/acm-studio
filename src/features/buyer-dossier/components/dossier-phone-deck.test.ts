@@ -139,6 +139,15 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page.indexOf('data-testid="dossier-nav"')).toBeGreaterThan(page.indexOf('</main>'));
   });
 
+  // Mission 143 (I11) — le conseiller se joint d'un toucher : son numéro et son e-mail sont des
+  // liens, assez grands pour le doigt.
+  it('le numéro et l’e-mail du conseiller sont des liens tel: et mailto:', () => {
+    const page = render({ advisorEmail: 'carl@example.com' });
+    expect(page).toContain('href="tel:0611223344"');
+    expect(page).toContain('href="mailto:carl@example.com"');
+    expect(page).toMatch(/data-testid="dossier-advisor-phone"[^>]*/);
+  });
+
   it('pas encore répondu : le déroulé, et « Télécharger en PDF » à la fin', () => {
     const page = render();
     expect(page).toContain('data-testid="dossier-phone-deck"');
@@ -187,9 +196,9 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).toContain('Je veux le visiter');
     expect(page).toContain('Pas pour moi');
     expect(page).toContain('Vos créneaux : Samedi matin');
-    // Le numéro tient sur une ligne (rendus du 26/10).
+    // Le numéro tient sur une ligne (rendus du 26/10) et s'appelle d'un toucher (M143, I11).
     expect(page).toMatch(
-      /Carl Conseiller(<!-- -->)? · <span class="whitespace-nowrap">06 11 22 33 44<\/span>/,
+      /Carl Conseiller(<!-- -->)? · <a href="tel:0611223344" class="[^"]*whitespace-nowrap[^"]*"[^>]*>06 11 22 33 44<\/a>/,
     );
     expect(page).toContain('Télécharger en PDF');
     for (const form of [

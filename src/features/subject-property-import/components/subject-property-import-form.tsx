@@ -337,7 +337,7 @@ export function SubjectPropertyImportForm({
           </span>
           <span
             aria-hidden="true"
-            className="text-zinc-400 transition-transform group-open:rotate-180"
+            className="text-zinc-500 transition-transform group-open:rotate-180"
           >
             ▾
           </span>

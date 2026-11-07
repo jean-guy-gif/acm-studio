@@ -58,7 +58,7 @@ export function RemoteImage({
       <div
         role="img"
         aria-label={`${alt} — ${fallbackLabel}`}
-        className={`flex items-center justify-center bg-zinc-100 px-2 text-center text-xs text-zinc-400 stage:bg-white/10 stage:text-white/40 ${fallbackClassName ?? className ?? ''}`}
+        className={`flex items-center justify-center bg-zinc-100 px-2 text-center text-xs text-zinc-500 stage:bg-white/10 stage:text-white/40 ${fallbackClassName ?? className ?? ''}`}
       >
         {fallbackLabel}
       </div>

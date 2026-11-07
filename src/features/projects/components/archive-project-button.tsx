@@ -11,17 +11,23 @@ export function ArchiveProjectButton({
   projectId,
   projectName,
   action,
+  label = 'Supprimer',
+  triggerClassName = btnDangerGhost,
 }: {
   projectId: string;
   projectName: string;
   action: (formData: FormData) => Promise<void>;
+  // Mission 143 (B4) — sur la Vue d'ensemble, « Supprimer le dossier… » en lien discret, loin du
+  // bouton principal.
+  label?: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const titleId = `archive-${projectId}`;
   return (
     <>
-      <button type="button" className={btnDangerGhost} onClick={() => setOpen(true)}>
-        Supprimer
+      <button type="button" className={triggerClassName} onClick={() => setOpen(true)}>
+        {label}
       </button>
       {open ? (
         <div

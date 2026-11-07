@@ -29,7 +29,7 @@ const SCORES = Array.from(
 
 // Grand bouton tactile de l'échelle : même langage que `choice`, porté par `aria-pressed`.
 const scoreButton =
-  'flex min-h-16 cursor-pointer items-center justify-center rounded-xl border-2 border-zinc-200 bg-white font-title text-2xl font-bold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep aria-pressed:border-brand aria-pressed:bg-brand aria-pressed:text-white aria-pressed:shadow-lg aria-pressed:shadow-brand/30 sm:min-h-20 sm:text-3xl stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:aria-pressed:border-brand stage:aria-pressed:bg-brand stage:aria-pressed:text-white';
+  'flex min-h-16 cursor-pointer items-center justify-center rounded-xl border-2 border-zinc-200 bg-white font-title text-2xl font-bold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep aria-pressed:border-brand aria-pressed:bg-brand-deep aria-pressed:text-white aria-pressed:shadow-lg aria-pressed:shadow-brand/30 sm:min-h-20 sm:text-3xl stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:aria-pressed:border-brand stage:aria-pressed:bg-brand-deep stage:aria-pressed:text-white';
 
 // La question, selon qu'un prix de commercialisation est enregistré ou non (mission 89).
 export function closingQuestion(hasAgreedPrice: boolean, language: TextLanguage = 'fr'): string {

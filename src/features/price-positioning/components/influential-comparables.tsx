@@ -45,7 +45,7 @@ export function InfluentialComparablesView({
                     fallbackClassName="h-full w-full"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400 stage:text-white/40">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500 stage:text-white/40">
                     Pas de photo
                   </div>
                 )}

@@ -18,7 +18,7 @@ export function ErrorScreen({ title, message }: { title: string; message: string
       {/* Lien plein (rechargement complet) : on repart d'un état propre. */}
       <a
         href={HOME_PATH}
-        className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="inline-flex items-center justify-center rounded-xl bg-brand-deep px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-colors hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         {HOME_LABEL}
       </a>

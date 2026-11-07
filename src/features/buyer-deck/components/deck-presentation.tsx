@@ -66,7 +66,7 @@ const chromeBtn =
 const navBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
 const primaryBtn =
-  'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand-deep px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-darker disabled:cursor-not-allowed disabled:opacity-50 stage:bg-white stage:text-brand-deep stage:hover:bg-brand-soft';
 // Essai de Jean-Guy (25/10) : la navigation est discrète, jamais plus visible que la réponse.
 export const quietNavBtn =
   'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl px-4 py-2.5 font-title text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 stage:text-white/65 stage:hover:bg-white/10 stage:hover:text-white';
@@ -80,7 +80,7 @@ export function answerBtn(_value: ItemAnswer, on: boolean): string {
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
     on
-      ? 'border-brand bg-brand text-white'
+      ? 'border-brand bg-brand-deep text-white stage:border-white stage:bg-white stage:text-brand-deep'
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/25 stage:bg-white/5 stage:text-white/80'
   }`;
 
@@ -96,6 +96,7 @@ export function DeckPresentation({
   agencyName,
   advisorName,
   advisorPhone,
+  advisorEmail = null,
   initialStage = 'dark',
 }: {
   deck: BuyerDeck;
@@ -106,6 +107,7 @@ export function DeckPresentation({
   agencyName: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
+  advisorEmail?: string | null;
   initialStage?: LiveStageTheme;
 }) {
   const router = useRouter();
@@ -279,7 +281,7 @@ export function DeckPresentation({
             darkSrc={logoDarkUrl}
             fallbackName={agencyName}
           />
-          <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
+          <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 sm:inline stage:text-white/50">
             {readOnly ? t.finishedOn(buyerDateIn(deck.presentedAt!, language)) : t.meetingLabel}
           </span>
         </div>
@@ -305,7 +307,7 @@ export function DeckPresentation({
           <span className={kicker} data-testid="deck-kicker">
             {kickerText}
           </span>
-          <span className="text-xs text-zinc-400 stage:text-white/40">
+          <span className="text-xs text-zinc-500 stage:text-white/40">
             {screenPosition(screen, itemCount) + 1} / {screenTotal}
           </span>
         </div>
@@ -443,7 +445,32 @@ export function DeckPresentation({
                 </p>
                 {advisorName ? (
                   <p className="text-sm font-semibold text-zinc-700 stage:text-white/80">
-                    {[advisorName, advisorPhone].filter(Boolean).join(' · ')}
+                    {advisorName}
+                    {/* Mission 143 (I11) — le numéro s'appelle d'un toucher, et reste écrit. */}
+                    {advisorPhone ? (
+                      <>
+                        {' · '}
+                        <a
+                          href={`tel:${advisorPhone.replace(/[^\d+]/g, '')}`}
+                          className="inline-flex min-h-11 items-center whitespace-nowrap underline underline-offset-4"
+                          data-testid="deck-advisor-phone"
+                        >
+                          {advisorPhone}
+                        </a>
+                      </>
+                    ) : null}
+                    {advisorEmail ? (
+                      <>
+                        {' · '}
+                        <a
+                          href={`mailto:${advisorEmail}`}
+                          className="inline-flex min-h-11 items-center underline underline-offset-4"
+                          data-testid="deck-advisor-email"
+                        >
+                          {advisorEmail}
+                        </a>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
               </section>
@@ -651,7 +678,7 @@ export function GridScreen({
                         src={item.photos[0]}
                         alt=""
                         className="aspect-[4/3] w-full rounded-lg object-cover"
-                        fallbackClassName="aspect-[4/3] w-full rounded-lg bg-zinc-100 text-[0.6rem] text-zinc-400 stage:bg-white/10"
+                        fallbackClassName="aspect-[4/3] w-full rounded-lg bg-zinc-100 text-[0.6rem] text-zinc-500 stage:bg-white/10"
                         fallbackLabel=""
                       />
                     ) : null}
@@ -761,7 +788,7 @@ export function ItemScreen({
               alt=""
               eager={photoIndex === 0}
               className={`h-36 w-full rounded-2xl object-cover sm:h-40 ${photoIndex === 0 ? 'col-span-2 row-span-2 h-56 sm:h-full' : ''}`}
-              fallbackClassName="flex h-36 w-full items-center justify-center rounded-2xl bg-zinc-100 text-sm text-zinc-400 stage:bg-white/10 stage:text-white/50"
+              fallbackClassName="flex h-36 w-full items-center justify-center rounded-2xl bg-zinc-100 text-sm text-zinc-500 stage:bg-white/10 stage:text-white/50"
             />
           ))}
         </div>

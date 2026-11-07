@@ -62,7 +62,7 @@ export function PropertyListField({
       >
         + Ajouter un élément
       </button>
-      <span className="text-xs text-zinc-400 stage:text-white/40">
+      <span className="text-xs text-zinc-500 stage:text-white/40">
         {items.length} / {MAX_LIST_ITEMS} éléments · {MAX_LIST_ITEM_LENGTH} caractères max.
       </span>
       {error ? (

@@ -962,7 +962,7 @@ async function walkLive(
   ).toBeVisible();
   await onScreen('Votre valeur perçue');
   await expect(page.locator('[data-price-band]')).toHaveCount(0);
-  const perceivedInput = page.locator('input[name="seller_perceived_property_price"]');
+  const perceivedInput = page.locator('input[data-price-for="seller_perceived_property_price"]');
   if (firstPass) {
     for (const competitor of competitors)
       await expectPriceHidden(competitor, 'Votre valeur perçue');
@@ -988,7 +988,7 @@ async function walkLive(
       await expect(page.getByText(`${label} · Étape 1 sur 2`)).toBeVisible();
       await onScreen(`${label} · accéléré, écran 1`);
       if (firstPass) await expectPriceHidden(competitor, `${label} · accéléré, écran 1`);
-      const quickGuess = page.locator('input[name="seller_estimated_listing_price"]');
+      const quickGuess = page.locator('input[data-price-for="seller_estimated_listing_price"]');
       if (firstPass) {
         await choose('Oui, un concurrent sérieux');
         await quickGuess.fill(String(guess(competitor)));
@@ -1030,7 +1030,7 @@ async function walkLive(
       page.getByRole('heading', { name: 'À quel prix pensez-vous que ce bien est proposé ?' }),
     ).toBeVisible();
     await onScreen(`${label} · À quel prix ?`);
-    const guessInput = page.locator('input[name="seller_estimated_listing_price"]');
+    const guessInput = page.locator('input[data-price-for="seller_estimated_listing_price"]');
     if (firstPass) {
       await expectPriceHidden(competitor, `${label} · À quel prix ?`);
       await guessInput.fill(String(guess(competitor)));
@@ -1115,7 +1115,7 @@ async function walkLive(
     }),
   ).toBeVisible();
   await onScreen('Votre prix après le marché');
-  const revisedInput = page.locator('input[name="seller_revised_property_price"]');
+  const revisedInput = page.locator('input[data-price-for="seller_revised_property_price"]');
   if (firstPass) {
     await revisedInput.fill(String(REVISED_PRICE));
     await validate();
@@ -1145,7 +1145,7 @@ async function walkLive(
   await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
   await onScreen('Conclusion');
   if (firstPass) {
-    const commercialization = page.locator('input[name="commercialization_price"]');
+    const commercialization = page.locator('input[data-price-for="commercialization_price"]');
     await expect(commercialization).toHaveValue('');
     await commercialization.fill(String(COMMERCIALIZATION_PRICE));
     // Mission 94 — un repère parmi les biens comparés, sans conseil : « le 3e moins cher sur 6 »,
@@ -1209,34 +1209,69 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   );
   const keller = rows.filter({ hasText: 'Famille Keller' });
   await expect(keller).toContainText('Maison · Mougins');
-  // Essai de Jean-Guy (26/10) : le bouton de la carte dit l'étape suivante — sa sélection est
-  // retenue (« Préparer ma démo »), elle est à présenter.
-  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Présenter maintenant →');
-  // Mission 130 B — la ligne dit sa prochaine étape et depuis quand.
-  await expect(keller).toContainText(/Prochaine étape · Lui présenter sa sélection · depuis le/);
+  // Mission 143 (B1) — la prochaine étape suit l'état le plus avancé : l'offre des Keller est
+  // acceptée, la ligne dit « Lancer le compromis », jamais plus « Lui présenter sa sélection ».
+  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller →');
+  await expect(keller).toContainText(/Prochaine étape · Lancer le compromis · depuis /);
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
   ).toHaveText('Trouver les biens idéaux →');
   await keller.getByRole('link', { name: 'Famille Keller' }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
-  // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone ; ses
-  // quatre étapes ; UNE prochaine étape ; « Rapprocher » en bloc.
+  const kellerUrl = new URL(page.url()).pathname;
+  // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone.
   await expect(page.getByTestId('buyer-words')).toBeVisible();
   await expect(page.getByTestId('buyer-criteria')).toContainText('★');
+  // Mission 143 (B1, maquette AUDIT-keller.png) — cinq étapes à l'état le plus avancé : l'offre
+  // acceptée coche la sélection, la présentation et la visite ; le compromis est à lancer.
   const steps = page.getByTestId('buyer-step');
-  await expect(steps).toHaveCount(4);
-  await expect(steps.nth(0)).toContainText('1 · Biens idéaux');
-  await expect(steps.nth(0)).toContainText('3 biens sélectionnés');
-  await expect(steps.nth(1)).toContainText('2 · Présenter');
-  await expect(steps.nth(1)).toHaveAttribute('data-status', 'current');
-  await expect(steps.nth(2)).toContainText('3 · Sa réponse');
-  await expect(steps.nth(3)).toContainText('4 · Visites');
-  await expect(page.getByTestId('buyer-next-step')).toContainText('Lui présenter sa sélection');
-  await expect(page.getByTestId('buyer-timeline')).toContainText('3 biens sélectionnés');
-  await expect(page.getByTestId('buyer-matching')).toContainText(
-    /Voir les correspondances · [1-9]/,
+  await expect(steps).toHaveCount(5);
+  for (const [index, title] of ['Sélection', 'Présentée', 'Visite', 'Offre'].entries()) {
+    await expect(steps.nth(index)).toContainText(`${index + 1} · ${title}`);
+    await expect(steps.nth(index)).toHaveAttribute('data-status', 'done');
+  }
+  await expect(steps.nth(2)).toContainText('bon signé');
+  await expect(steps.nth(3)).toContainText(/acceptée le \d{2}\/\d{2}/);
+  await expect(steps.nth(4)).toContainText('5 · Compromis');
+  await expect(steps.nth(4)).toContainText('à lancer');
+  await expect(steps.nth(4)).toHaveAttribute('data-status', 'current');
+  // Un seul badge d'état : « Offre acceptée le … » remplace « Sous offre » et « Prêt à visiter ».
+  await expect(page.getByTestId('buyer-sale-badge')).toContainText(/Offre acceptée le/);
+  await expect(page.getByTestId('buyer-ready')).toHaveCount(0);
+  await expect(page.getByTestId('buyer-paused')).toContainText(
+    'Recherche en pause pendant la vente',
   );
-  await page.getByRole('link', { name: /^Voir les correspondances/ }).click();
+  // La prochaine étape : prévenir la famille, puis le notaire ; la vente et ce qui reste à faire.
+  const next = page.getByTestId('buyer-next-step');
+  await expect(next).toContainText('Lancer le compromis');
+  await expect(page.getByTestId('buyer-next-button')).toHaveText('Prévenir la famille Keller');
+  await expect(page.getByTestId('buyer-next-secondary')).toHaveText('Transmettre au notaire');
+  await expect(page.getByTestId('buyer-sale')).toContainText('Vendeur : M. Lefebvre');
+  await expect(page.getByTestId('buyer-sale-amount')).toBeVisible();
+  const before = page.getByTestId('buyer-before-compromise-item');
+  await expect(before).toHaveCount(4);
+  await expect(before.nth(0)).toHaveAttribute('data-done', 'true');
+  await expect(before.nth(1)).toHaveAttribute('data-done', 'true');
+  // Masqués pendant la vente : sa sélection, « Prêt à visiter ? », « Rapprocher ».
+  for (const hidden of ['ideal-selection', 'buyer-readiness', 'buyer-matching']) {
+    await expect(page.getByTestId(hidden), hidden).toHaveCount(0);
+  }
+  // « Prévenir la famille Keller » prépare le message de la M138 (un lien neuf vers sa copie) :
+  // « Acquéreur prévenu » se coche.
+  await page.getByTestId('buyer-next-button').click();
+  await expect(page.getByTestId('offer-answer-message-buyer')).toContainText(
+    'Bonjour Famille Keller,',
+  );
+  await expect(before.nth(2)).toHaveAttribute('data-done', 'true');
+  await expect(before.nth(3)).toHaveAttribute('data-done', 'false');
+  // « Ce qui s'est passé », le plus récent en haut ; la fiche existe avant sa première sélection.
+  await expect(page.getByTestId('buyer-timeline').locator('li').last()).toContainText(
+    'Fiche créée',
+  );
+  // La recherche reste joignable par son adresse (le rapprochement, les biens idéaux).
+  await page.goto(
+    `/acquereurs/rapprochement?acquereur=${kellerUrl.split('/').pop()}#rapprochement`,
+  );
   const panel = page.getByTestId('buyer-search');
   await expect(panel.locator('input[name="city"]')).toHaveValue(
     'Mougins, Mouans-Sartoux, Valbonne',
@@ -1246,11 +1281,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
 
   // Mission 118 (partie B) — « Trouver les biens idéaux » : l'agence d'abord (le mandat de
   // Mougins), puis le marché simulé (M114), en trois catégories ; trois biens retenus, retrouvés.
-  await page.goBack();
   // Relecture des rendus (25/10) : « Préparer ma démo » (ou sa remise à zéro) a déjà retenu pour
   // les Keller le mandat de Mougins, un compromis au budget en orange et un bien à vérifier.
-  await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
-  await page.getByRole('link', { name: 'Changer la sélection' }).click();
+  await page.goto(`${kellerUrl}/biens-ideaux`);
   await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
   await expectUnspoken(page, 'Biens idéaux');
   // Essai de Jean-Guy (26/10) : la sélection actuelle n'apparaît qu'une fois, dans le bandeau
@@ -1305,16 +1338,13 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await toCheck.check();
   await expect(page.getByTestId('ideal-retain')).toBeDisabled();
   await expectUnspoken(page, 'Biens idéaux, sélection retenue');
-  await page.goto('/acquereurs');
-  await page.getByRole('link', { name: 'Famille Keller' }).click();
-  await expect(page.getByTestId('ideal-selection-item')).toHaveCount(3);
 
   // Mission 122 (partie B) — avant la présentation, le lien du dossier des Keller, répondu au doigt
   // depuis un téléphone (390 × 844) : A « Je veux le visiter », B « Peut-être », C d'abord sans
   // réponse — « Envoyer ma réponse » demande confirmation (décision de Jean-Guy, 25/10) — puis
   // « Pas pour moi » avec une raison ; la base relue dit exactement ce qui a été touché ; le merci,
   // puis une seconde ouverture sans formulaire ; la réponse se lit sur la fiche, « depuis le lien ».
-  await page.getByTestId('buyer-dossier').click();
+  await page.goto(`${kellerUrl}/dossier`);
   const dossier = page.getByTestId('buyer-dossier');
   await expect(dossier.getByTestId('dossier-item')).toHaveCount(3);
   await expect(dossier.getByTestId('dossier-choice-row')).toHaveCount(3);
@@ -1367,6 +1397,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await expect(cover).toContainText(/Votre sélection du \d{2}\/\d{2}\/\d{4}/);
     await expect(cover).toContainText('« ');
     await expect(cover.getByTestId('dossier-advisor-line')).toBeVisible();
+    // Mission 143 (I11) — son conseiller s'appelle d'un toucher.
+    await expect(cover.getByTestId('dossier-advisor-phone')).toHaveAttribute(
+      'href',
+      /^tel:\+?\d+$/,
+    );
     await expect(visitor.getByTestId('dossier-nav')).toBeHidden();
     await expectNoHorizontalScroll(visitor, 'Le lien — couverture (390 × 844)');
     await visitor.getByTestId('dossier-start').tap();
@@ -1466,25 +1501,16 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
   // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
   await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
-  // Mission 130 B — sa réponse sur le lien : l'étape 3 la dit ; l'étape du jour est « 4 · Visites »,
-  // la prochaine étape « Organiser la visite », vers Visites ; le fil la date.
-  await expect(page.getByTestId('buyer-step').nth(2)).toContainText('reçue par le lien');
-  const visitsStep = page.locator('[data-testid="buyer-step"][data-step="visits"]');
-  await expect(visitsStep).toContainText(/\d+ demandées?, à organiser/);
-  await expect(visitsStep).toHaveAttribute('data-status', 'current');
-  await expect(page.locator('[data-testid="buyer-step"][data-step="present"]')).toHaveAttribute(
-    'data-status',
-    'done',
-  );
-  await expect(page.getByTestId('buyer-next-step')).toContainText('Organiser la visite');
-  await expect(page.getByTestId('buyer-next-button')).toHaveAttribute('href', '/visites');
+  // Mission 143 (B1) — l'offre acceptée reste l'état le plus avancé : sa réponse par le lien ne
+  // ramène pas la fiche en arrière ; le fil la date.
+  await expect(page.getByTestId('buyer-next-step')).toContainText('Lancer le compromis');
   await expect(page.getByTestId('buyer-timeline')).toContainText('Sa réponse reçue par le lien');
   await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
   await expect(page.getByTestId('buyer-answer-group').first()).toContainText(
     /Sélection du \d{2}\/\d{2}\/\d{4}/,
   );
   // « Créer un nouveau lien » remplace l'ancien, qui cesse de marcher ; la réponse reçue reste.
-  await page.getByTestId('buyer-dossier').click();
+  await page.goto(`${kellerUrl}/dossier`);
   await page.getByTestId('dossier-link-renew').click();
   const renewedLink = (await page.getByTestId('dossier-link').innerText()).trim();
   expect(renewedLink).not.toBe(dossierLink);
@@ -1501,15 +1527,12 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   }
   await page.goto('/visites');
   await expect(page.getByTestId('visits-pending')).toContainText('depuis le dossier');
-  await page.goto('/acquereurs');
-  await page.getByRole('link', { name: 'Famille Keller' }).click();
-
   // Mission 122 — le dossier qui fait agir : ses mots, la grille des trois biens ; le bien C ouvert
   // EN PREMIER depuis la grille (essai de Jean-Guy, 25/10), « Je veux le visiter », retour à la
   // grille qui montre la réponse ; A : « Pas pour moi » (la surface) ; « Terminer » avec B sans
   // réponse demande confirmation ; B : « Peut-être » ; ses créneaux ; la fiche montre ses réponses.
   // Mission 130 B — « Avant de présenter » ouvre la présentation, pour le conseiller seul.
-  await page.getByTestId('reread-before-presenting').click();
+  await page.goto(`/presentation/${kellerUrl.split('/').pop()}`);
   await expect(page.getByTestId('deck-prelude')).toBeVisible();
   await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
   await page.getByTestId('deck-start').click();
@@ -1658,13 +1681,16 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(scene).toHaveAttribute('data-screen', 'answer');
   await expect(page.getByTestId('deck-response')).toContainText('Vous voulez visiter le bien C.');
   await expect(page.getByTestId('deck-response')).toContainText('Vous hésitez pour le bien B.');
+  // Mission 143 (I11) — le conseiller se joint d'un toucher : son numéro et son e-mail en liens.
+  await expect(page.getByTestId('deck-advisor-phone')).toHaveAttribute('href', /^tel:\+?\d+$/);
+  await expect(page.getByTestId('deck-advisor-email')).toHaveAttribute('href', /^mailto:.+@/);
   const surface = page.getByTestId('deck-reason').filter({ hasText: 'La surface' });
   await surface.click();
   await expect(surface).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('deck-availability').filter({ hasText: 'Samedi matin' }).click();
   await expectUnspoken(page, 'Présentation — sa réponse');
   await page.getByTestId('presentation-finish').click();
-  await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
+  await expect(page).toHaveURL(new RegExp(`${kellerUrl}$`));
   const answers = page.getByTestId('buyer-answers');
   // Trois réponses de la présentation, trois du lien ; mission 135 — plus les deux refus « Le
   // prix » semés sur une sélection plus ancienne.
@@ -1809,9 +1835,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu
   // ensemble » : ses réponses du rendez-vous, le conseiller, « Télécharger en PDF », sans
   // formulaire (décision de Jean-Guy, 25/10) ; le lien retiré ne s'ouvre plus.
-  await page.goto('/acquereurs');
-  await page.getByRole('link', { name: 'Famille Keller' }).click();
-  await page.getByTestId('buyer-dossier').click();
+  await page.goto(`${kellerUrl}/dossier`);
   await expect(page.getByTestId('buyer-dossier').getByTestId('dossier-item')).toHaveCount(3);
   const rereading = await phoneContext();
   try {

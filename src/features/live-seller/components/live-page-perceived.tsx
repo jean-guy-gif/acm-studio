@@ -13,6 +13,7 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 import { formatEuro } from '@/lib/format';
+import { PriceInput } from '@/features/live-seller/components/price-input';
 
 // "Valeur perçue par le vendeur" — saisie manuelle du vendeur.
 //
@@ -50,13 +51,10 @@ export function LivePagePerceived({
           <label className="flex flex-col gap-2">
             <span className={statLabel}>{t.label}</span>
             <div className="flex items-center gap-3">
-              <input
-                type="number"
+              <PriceInput
                 name="seller_perceived_property_price"
-                min={0}
-                step="any"
-                placeholder="0"
-                defaultValue=""
+                language={language}
+                required
                 className={bigInput}
               />
               <span className={bigInputUnit}>€</span>

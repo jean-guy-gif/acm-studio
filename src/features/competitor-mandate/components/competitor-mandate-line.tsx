@@ -115,7 +115,7 @@ export function CompetitorMandateLine({
           );
         })}
         {isMandateSource(source) && (stored[field] != null || source === 'advisor') ? (
-          <span className="text-xs text-zinc-400 stage:text-white/40">
+          <span className="text-xs text-zinc-500 stage:text-white/40">
             {MANDATE_SOURCE_LABELS[source]}
           </span>
         ) : null}

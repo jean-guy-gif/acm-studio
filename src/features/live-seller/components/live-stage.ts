@@ -42,7 +42,7 @@ export const panelSoft =
 
 // Étiquette au-dessus d'une valeur.
 export const statLabel =
-  'text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-zinc-400 stage:text-white/50';
+  'text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-zinc-500 stage:text-white/50';
 
 // Valeur moyenne (caractéristiques, lignes de synthèse).
 export const statValue = 'font-title text-xl font-semibold text-zinc-900 stage:text-white';
@@ -57,14 +57,14 @@ export const bigValue =
 
 // Grand choix tactile (radio stylisée) : OUI / NON / INCERTAIN, raisons…
 export const choice =
-  'flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-6 py-3 text-center font-title text-xl font-semibold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep has-checked:border-brand has-checked:bg-brand has-checked:text-white has-checked:shadow-lg has-checked:shadow-brand/30 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:has-checked:border-brand stage:has-checked:bg-brand stage:has-checked:text-white';
+  'flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-6 py-3 text-center font-title text-xl font-semibold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep has-checked:border-brand has-checked:bg-brand-deep has-checked:text-white has-checked:shadow-lg has-checked:shadow-brand/30 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:has-checked:border-white stage:has-checked:bg-white stage:has-checked:text-brand-deep';
 
 // Grand champ numérique (devinette de prix, durée, valeur perçue).
 export const bigInput =
   'live-number-input w-full rounded-xl border-2 border-zinc-200 bg-white px-5 py-4 text-center font-title text-4xl font-bold text-brand-deep outline-none transition-colors placeholder:text-zinc-300 focus:border-brand focus:ring-4 focus:ring-brand/20 sm:text-5xl stage:border-white/20 stage:bg-white/10 stage:text-white stage:placeholder:text-white/30 stage:focus:border-brand';
 
 // Suffixe d'unité accolé au grand champ (€, jours).
-export const bigInputUnit = 'font-title text-3xl font-semibold text-zinc-400 stage:text-white/60';
+export const bigInputUnit = 'font-title text-3xl font-semibold text-zinc-500 stage:text-white/60';
 
 // Champ texte / liste secondaire (commentaires, raisons en select).
 export const fieldInput =
@@ -72,9 +72,11 @@ export const fieldInput =
 
 export const fieldLabel = 'text-sm font-medium text-zinc-600 stage:text-white/70';
 
-// Bouton principal (valider / révéler) — large et évident.
+// Bouton principal (valider / révéler) — large et évident. Mission 143 (B3) — la variante foncée
+// de la marque sur fond clair ; sur la scène sombre, dont la barre du bas est déjà de cette couleur,
+// le bouton est blanc, écrit dans la variante foncée (contraste > 8 : 1).
 export const ctaPrimary =
-  'inline-flex min-h-13 items-center justify-center rounded-xl bg-brand px-8 py-3 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+  'inline-flex min-h-13 items-center justify-center rounded-xl bg-brand-deep px-8 py-3 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:bg-white stage:text-brand-deep stage:shadow-black/20 stage:hover:bg-brand-soft';
 
 // Bouton de navigation (Précédent / Suivant / chrome).
 export const navBtn =
@@ -97,7 +99,7 @@ export const comparisonValueClass: Record<string, string> = {
   same: 'font-semibold text-zinc-600 stage:text-white/80',
   competitor_advantage: 'font-semibold text-amber-600 stage:text-amber-300',
   competitor_weakness: 'font-semibold text-emerald-600 stage:text-emerald-300',
-  unknown: 'text-zinc-400 stage:text-white/40',
+  unknown: 'text-zinc-500 stage:text-white/40',
 };
 
 export const comparisonBadgeClass: Record<string, string> = {
@@ -107,5 +109,5 @@ export const comparisonBadgeClass: Record<string, string> = {
   competitor_weakness:
     'border-emerald-200 bg-emerald-50 text-emerald-700 stage:border-emerald-300/30 stage:bg-emerald-400/10 stage:text-emerald-300',
   unknown:
-    'border-zinc-200 bg-zinc-50 text-zinc-400 stage:border-white/10 stage:bg-white/5 stage:text-white/40',
+    'border-zinc-200 bg-zinc-50 text-zinc-500 stage:border-white/10 stage:bg-white/5 stage:text-white/40',
 };

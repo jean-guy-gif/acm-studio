@@ -29,7 +29,7 @@ import {
   ComparableFormFields,
   type ComparableFieldDefaults,
 } from '@/features/comparables/comparable-form-fields';
-import { formatEuroPerSquareMeter } from '@/lib/format';
+import { formatEuroPerSquareMeter, formatRelativeDay } from '@/lib/format';
 
 const FIELD_LABELS: Record<string, string> = {
   title: 'Titre',
@@ -291,7 +291,7 @@ export function NewComparablePanel({
                     Délai de commercialisation
                   </p>
                   <p className="text-zinc-600 stage:text-white/65">
-                    Mise en ligne le {new Date(publishedAt).toLocaleDateString('fr-FR')} · {days}{' '}
+                    Mise en ligne {formatRelativeDay(publishedAt)} · {days}{' '}
                     {days > 1 ? 'jours' : 'jour'} — d’après la date publiée par le portail.
                   </p>
                 </div>
@@ -306,7 +306,7 @@ export function NewComparablePanel({
             viewCountSince={result.data.viewCountSince}
           />
         ) : null}
-        <p className="text-xs text-zinc-400 stage:text-white/40">
+        <p className="text-xs text-zinc-500 stage:text-white/40">
           L’import est une aide à la saisie. Vérifiez et complétez le formulaire avant
           d’enregistrer.
         </p>

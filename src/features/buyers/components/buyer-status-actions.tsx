@@ -5,9 +5,9 @@ import { useState, useTransition } from 'react';
 
 import { badgeBrand, btnPrimary, btnSecondary, errorText } from '@/components/ui/styles';
 import { moveBuyerStatus } from '@/features/buyers/actions/buyers';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { buyerStatusActions, type BuyerStatusMove } from '@/features/buyers/services/buyer-status';
 import { BUYER_STATUS_LABELS, type Buyer } from '@/features/buyers/types';
+import { formatRelativeSince } from '@/lib/format';
 
 // Mission 117 — le statut, un cran à la fois, daté à chaque changement.
 export function BuyerStatusActions({ buyer }: { buyer: Buyer }) {
@@ -42,7 +42,7 @@ export function BuyerStatusActions({ buyer }: { buyer: Buyer }) {
           {BUYER_STATUS_LABELS[current.status]}
         </span>
         <span className="text-xs text-zinc-500 stage:text-white/60">
-          depuis le {buyerDateLabel(current.changedAt)}
+          {formatRelativeSince(current.changedAt)}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">

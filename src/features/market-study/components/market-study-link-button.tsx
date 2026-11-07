@@ -12,11 +12,11 @@ import {
   marketStudyShareHrefs,
   marketStudyShareMessage,
 } from '@/features/market-study/services/market-study-link';
+import { formatDay } from '@/lib/format';
 
 export type MarketStudyLinkView = { id: string; createdAt: string; expiresAt: string };
 
-const day = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+const day = (value: string): string => formatDay(value, 'fr', 'numeric');
 
 // Mission 131 — « Créer un lien pour le vendeur (30 jours) » sur l'Étude de marché, modèle du Point
 // marché (M127) : le lien ne s'affiche qu'une fois, à copier ou à envoyer par SMS, WhatsApp ou

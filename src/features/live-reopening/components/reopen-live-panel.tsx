@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { btnSecondary, card, hintText, inputBase, sectionTitle } from '@/components/ui/styles';
 import { reopenLive } from '@/features/live-reopening/actions/reopen-live';
 import { REOPEN_REASON_MAX, type LiveReopening } from '@/features/live-reopening/types';
-import { formatDateTime } from '@/lib/format';
+import { formatRelativeMoment } from '@/lib/format';
 
 // Mission 104 — sur la fiche du dossier, pour les SEULS opérateurs : rouvrir un Live figé par
 // erreur. Le motif est demandé, puis confirmé dans l'écran ; l'historique dit qui, quand, motif.
@@ -117,7 +117,7 @@ export function ReopenLivePanel({
         <ul className="flex flex-col gap-1 text-xs text-zinc-500 stage:text-white/55">
           {history.map((entry) => (
             <li key={`${entry.createdAt}-${entry.operatorEmail}`}>
-              Rouvert le {formatDateTime(entry.createdAt)} par {entry.operatorEmail} :{' '}
+              Rouvert {formatRelativeMoment(entry.createdAt)} par {entry.operatorEmail} :{' '}
               {entry.reason}
             </li>
           ))}

@@ -19,14 +19,14 @@ import {
   buildPriceRanking,
   dangerousInForce,
 } from '@/features/market-update/services/price-ranking';
-import { formatEuro, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatPercent } from '@/lib/format';
 
 // Mission 127 — sur le Suivi, côté conseiller : la liste des points datés (« Point du 15/11 »),
 // la ligne d'un concurrent avec sa pastille et sa phrase de fait, et les trois lignes de prix en
 // compact, à côté de « Ce que le vendeur a dit » (M96), pour préparer la relance. Affichage.
 
 export const shortDay = (value: string | null): string =>
-  value ? new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) : '';
+  value ? formatDay(value, 'fr', 'numeric') : '';
 
 const STATE_BADGE: Record<MarketUpdateCompetitor['state'], string> = {
   unchanged: 'bg-zinc-100 text-zinc-600 stage:bg-white/10 stage:text-white/70',

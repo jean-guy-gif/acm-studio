@@ -19,7 +19,7 @@ export function ConfidenceCard({ confidence }: { confidence: PositioningConfiden
         Niveau : <span className="font-medium">{LEVEL_LABEL[confidence.level]}</span> · Score :{' '}
         {confidence.score} / 100
       </p>
-      <p className="text-xs text-zinc-400 stage:text-white/40">
+      <p className="text-xs text-zinc-500 stage:text-white/40">
         Grille métier indicative sur la qualité des données — jamais une garantie.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">

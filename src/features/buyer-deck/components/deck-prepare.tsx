@@ -187,7 +187,7 @@ function TextEditor({
         />
       </label>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-zinc-400 stage:text-white/40">
+        <span className="text-xs text-zinc-500 stage:text-white/40">
           {text.length} / {max}
         </span>
         <button

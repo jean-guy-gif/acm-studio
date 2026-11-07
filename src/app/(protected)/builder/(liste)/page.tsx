@@ -33,13 +33,14 @@ import {
   pendingImportLabel,
   propertyLabel,
 } from '@/features/projects/services/preparation-card';
+import { formatRelativeDay } from '@/lib/format';
 
 type BuilderPageProps = {
   searchParams: Promise<{ error?: string; prets?: string }>;
 };
 
 const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors';
-const tabActive = `${tab} bg-brand text-white`;
+const tabActive = `${tab} bg-brand-deep text-white`;
 const tabIdle = `${tab} text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/55 stage:hover:bg-white/10`;
 
 export default async function BuilderPage({ searchParams }: BuilderPageProps) {
@@ -130,7 +131,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                       {bien}
                     </span>
                   ) : (
-                    <span className="text-sm text-zinc-400 italic stage:text-white/45">
+                    <span className="text-sm text-zinc-500 italic stage:text-white/45">
                       Bien vendeur non renseigné
                     </span>
                   )}
@@ -154,7 +155,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                         className={
                           step.done
                             ? 'font-medium text-emerald-700 stage:text-emerald-300'
-                            : 'text-zinc-400 stage:text-white/45'
+                            : 'text-zinc-500 stage:text-white/45'
                         }
                       >
                         {step.done ? `${step.label} ✓` : `${step.label} — à compléter`}
@@ -171,10 +172,10 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                     ) : null}
                   </div>
 
-                  <span className="text-xs text-zinc-400 stage:text-white/40">
+                  <span className="text-xs text-zinc-500 stage:text-white/40">
                     {project.seller_email || 'E-mail non renseigné'} ·{' '}
-                    {project.seller_phone || 'Téléphone non renseigné'} · Créé le{' '}
-                    {new Date(project.created_at).toLocaleDateString('fr-FR')}
+                    {project.seller_phone || 'Téléphone non renseigné'} · Créé{' '}
+                    {formatRelativeDay(project.created_at)}
                   </span>
                 </div>
 

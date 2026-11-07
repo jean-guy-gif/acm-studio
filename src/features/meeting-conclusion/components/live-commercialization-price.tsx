@@ -16,6 +16,7 @@ import {
 import { pricePositionSentence } from '@/features/live-seller/services/price-position';
 import { saveCommercializationPrice } from '@/features/meeting-conclusion/actions/save-commercialization-price';
 import { pendingCommercializationPrice } from '@/features/meeting-conclusion/services/pending-commercialization-price';
+import { PriceInput } from '@/features/live-seller/components/price-input';
 
 // Mission 53 §1 — la seule question de l'écran « Conclusion » : « Sur quel prix partons-nous ? ».
 // Champ VIDE à l'ouverture, jamais pré-rempli avec le prix conseillé (§7.5, règle M51).
@@ -76,23 +77,17 @@ export function LiveCommercializationPrice({
         <p className={questionHint}>{t.priceHint}</p>
       </div>
       <div className="flex items-center gap-3">
-        <input
-          ref={inputRef}
-          type="number"
+        {/* Mission 143 (I6) — « 790 000 » pendant la frappe, au clavier numérique ; le champ caché
+            (`inputRef`) porte le nombre, sans séparateur. */}
+        <PriceInput
+          inputRef={inputRef}
           name="commercialization_price"
-          min={0}
-          step="any"
+          language={language}
           placeholder="—"
-          defaultValue=""
-          autoComplete="off"
-          onChange={(event) => {
-            const value = Number(event.currentTarget.value);
-            setTypedPrice(
-              event.currentTarget.value.trim() !== '' && Number.isFinite(value) ? value : null,
-            );
-            onPendingChange?.(
-              pendingCommercializationPrice(event.currentTarget.value, lastSavedRef.current),
-            );
+          onDigitsChange={(digits) => {
+            const value = Number(digits);
+            setTypedPrice(digits !== '' && Number.isFinite(value) ? value : null);
+            onPendingChange?.(pendingCommercializationPrice(digits, lastSavedRef.current));
           }}
           className={bigInput}
         />

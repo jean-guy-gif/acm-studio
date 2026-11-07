@@ -85,7 +85,7 @@ export function NumberField({
           className={`${inputBase} w-full min-w-0 flex-1`}
         />
         {suffix ? (
-          <span className="shrink-0 text-sm text-zinc-400 stage:text-white/50">{suffix}</span>
+          <span className="shrink-0 text-sm text-zinc-500 stage:text-white/50">{suffix}</span>
         ) : null}
       </span>
       <FieldError error={error} />

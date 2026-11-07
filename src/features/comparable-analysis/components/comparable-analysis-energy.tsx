@@ -19,7 +19,7 @@ function Distribution({ title, data }: { title: string; data: EnergyDistribution
             {rating} : {data.distribution[rating]}
           </span>
         ))}
-        <span className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-zinc-400 stage:border-white/15 stage:bg-white/5 stage:text-white/45">
+        <span className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-zinc-500 stage:border-white/15 stage:bg-white/5 stage:text-white/45">
           Non renseigné : {data.unknown}
         </span>
       </div>

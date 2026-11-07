@@ -38,7 +38,7 @@ export function ProspectingList({
 
         return (
           <li key={row.id} className="flex break-inside-avoid gap-3 py-3 text-sm">
-            <span className="w-6 shrink-0 font-semibold text-zinc-400 stage:text-white/40 print:text-zinc-500">
+            <span className="w-6 shrink-0 font-semibold text-zinc-500 stage:text-white/40 print:text-zinc-500">
               {index + start}.
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">

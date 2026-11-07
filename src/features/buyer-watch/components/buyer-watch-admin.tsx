@@ -10,7 +10,7 @@ import {
   WATCH_BUDGET_LABELS,
   watchUsageLabel,
 } from '@/features/buyer-watch/services/watch-schedule';
-import { formatDateTime, formatEuro } from '@/lib/format';
+import { formatEuro, formatRelativeMoment } from '@/lib/format';
 
 const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
   running: 'en cours',
@@ -116,7 +116,7 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
           >
             {watch.journal.map((entry, index) => (
               <li key={`${entry.ranAt}-${index}`} className="flex flex-wrap gap-x-2 py-1">
-                <span className="font-medium">{formatDateTime(entry.ranAt)}</span>
+                <span className="font-medium">{formatRelativeMoment(entry.ranAt)}</span>
                 <span>{entry.buyerName}</span>
                 <span className="text-zinc-500 stage:text-white/55">
                   {[

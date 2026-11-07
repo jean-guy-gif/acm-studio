@@ -146,7 +146,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     await expect(page.getByRole('heading', { name: 'Conclusion', exact: true })).toBeVisible();
     await expect(page.getByText('What price shall we go with?')).toBeVisible();
     await page
-      .locator('input[name="commercialization_price"]')
+      .locator('input[data-price-for="commercialization_price"]')
       .fill(String(COMMERCIALIZATION_PRICE));
     await expect(page.locator('[data-price-position]')).toContainText(
       /^At €952,500, your property would be/,

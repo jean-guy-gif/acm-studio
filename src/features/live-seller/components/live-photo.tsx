@@ -29,7 +29,7 @@ export function LivePhoto({
   if (!photoUrl) {
     return (
       <div
-        className={`flex w-full items-center justify-center text-sm text-zinc-400 stage:text-white/40 ${
+        className={`flex w-full items-center justify-center text-sm text-zinc-500 stage:text-white/40 ${
           compact
             ? 'h-40 border-b border-dashed border-zinc-200 bg-zinc-50 stage:border-white/10 stage:bg-white/5'
             : 'h-56 rounded-card border border-dashed border-zinc-300 sm:h-72 stage:border-white/20'

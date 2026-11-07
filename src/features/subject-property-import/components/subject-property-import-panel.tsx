@@ -267,7 +267,7 @@ export function SubjectPropertyImportPanel({
                   ) : null}
                 </>
               ) : (
-                <p className="text-xs text-zinc-400 stage:text-white/40">
+                <p className="text-xs text-zinc-500 stage:text-white/40">
                   Les photos récupérées s’ajoutent à celles déjà présentes, sans les remplacer.
                 </p>
               )}
@@ -275,7 +275,7 @@ export function SubjectPropertyImportPanel({
           ) : null}
         </div>
       ) : null}
-      <p className="text-xs text-zinc-400 stage:text-white/40">
+      <p className="text-xs text-zinc-500 stage:text-white/40">
         L’import est une aide à la saisie. Vérifiez et complétez la fiche avant d’enregistrer.
       </p>
     </section>
