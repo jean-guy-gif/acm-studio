@@ -8,6 +8,7 @@ import { allowedDeck } from '@/features/buyer-deck/services/frozen-deck';
 import type {
   BuyerDossier,
   DossierAgency,
+  DossierLivingHere,
   DossierPhotoChoice,
 } from '@/features/buyer-dossier/types';
 
@@ -49,6 +50,7 @@ export function buildBuyerDossier(input: {
   meetingAvailability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
+  livingHere?: DossierLivingHere[];
 }): BuyerDossier {
   const photoChoices: DossierPhotoChoice[] = input.deck.items.map((entry) => ({
     itemId: entry.item.itemId,
@@ -71,5 +73,6 @@ export function buildBuyerDossier(input: {
     meetingAvailability: input.meetingAvailability,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
+    livingHere: input.livingHere ?? [],
   };
 }

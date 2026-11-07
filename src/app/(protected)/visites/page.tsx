@@ -21,6 +21,7 @@ import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { getVisitVouchers } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { getVisitOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { loadVisitLivingHere } from '@/features/living-here/queries/visit-living-here';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Visites — ACM Studio' };
@@ -71,6 +72,8 @@ export default async function VisitsPage({
   ]);
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
+  // Mission 142 — « Vivre ici » de chaque bien à visiter, et ce qui compte pour chaque acquéreur.
+  const livingHere = await loadVisitLivingHere(supabase, pending);
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col gap-1.5">
@@ -131,6 +134,7 @@ export default async function VisitsPage({
                       letter={letters.get(line.id) ?? null}
                       voucher={vouchers.get(line.id) ?? null}
                       offerAnswer={offerAnswers?.get(line.id) ?? null}
+                      livingHere={livingHere.get(line.id) ?? null}
                     />
                   ))}
                 </ul>

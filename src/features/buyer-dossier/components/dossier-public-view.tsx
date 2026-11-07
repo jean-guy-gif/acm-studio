@@ -28,6 +28,7 @@ export function DossierPublicView({ token, dossier }: { token: string; dossier: 
           logoUrl={dossier.agency.logoUrl}
           advisorName={dossier.agency.advisorName}
           advisorPhone={dossier.agency.advisorPhone}
+          livingHere={dossier.livingHere ?? []}
         />
       </div>
       {/* Hors de l'écran mais rendu, pour que ses photos soient chargées avant d'imprimer ; seul

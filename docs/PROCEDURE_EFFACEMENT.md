@@ -63,6 +63,10 @@ select
   (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
   -- Mission 141 : le dossier d'adresse (données publiques de l'adresse) ; il part avec le dossier.
   (select count(*) from address_dossiers where project_id = ':dossier') as dossier_adresse,
+  -- Mission 142 : la fiche « Vivre ici » du bien vendeur (clé `project:<id>`, sans lien en base).
+  (select count(*) from living_here_sheets where property_key = 'project:' || ':dossier'
+     or property_key in (select 'competitor:' || id from comparables where project_id = ':dossier'))
+     as vivre_ici,
   -- Mission 134 : les envois de ce bien aux acquéreurs ; ils partent avec le dossier (cascade).
   (select count(*) from buyer_proposals where project_id = ':dossier') as biens_proposes,
   -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
@@ -96,6 +100,10 @@ delete from project_market_update_links where project_id = ':dossier' and agency
 delete from market_study_links where project_id = ':dossier' and agency_id = ':agence';
 delete from project_market_updates where project_id = ':dossier' and agency_id = ':agence';
 delete from address_dossiers where project_id = ':dossier' and agency_id = ':agence';
+-- Avant `comparables` : les fiches de ses concurrents se retrouvent par leur clé.
+delete from living_here_sheets where agency_id = ':agence'
+  and (property_key = 'project:' || ':dossier'
+       or property_key in (select 'competitor:' || id from comparables where project_id = ':dossier'));
 delete from comparables where project_id = ':dossier' and agency_id = ':agence';
 delete from subject_properties where project_id = ':dossier' and agency_id = ':agence';
 delete from projects where id = ':dossier' and agency_id = ':agence';
@@ -321,6 +329,21 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
   photos, lien), jamais une adresse ; comme l'annonce publique, ils restent, et partent avec la
   fiche de l'acquéreur (cascade). À compter, s'il faut les citer :
   `select count(*) from buyer_watch_runs where finds::text ilike '%IDENTIFIANT_ANNONCE%';`
+
+### B bis. Sa fiche « Vivre ici » (mission 142)
+
+La fiche « Vivre ici » d'un bien concurrent ne porte que des données publiques autour du quartier,
+jamais son adresse, et aucune donnée d'acquéreur ; elle n'a pas de lien en base. Elle s'efface quand
+même, par sa clé : celle du concurrent et celle de son annonce.
+
+```sql
+select count(*) from living_here_sheets
+ where agency_id = ':agence'
+   and property_key in ('competitor:' || ':concurrent', 'listing:' || ':portail' || ':' || ':numero');
+delete from living_here_sheets
+ where agency_id = ':agence'
+   and property_key in ('competitor:' || ':concurrent', 'listing:' || ':portail' || ':' || ':numero');
+```
 
 ## C. Les documents signés (bon de visite ; offre d'achat, mission 137 B)
 

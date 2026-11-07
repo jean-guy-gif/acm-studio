@@ -296,6 +296,25 @@ export default function ConfidentialitePage() {
               n’intervient, et l’outil n’en tire aucun prix pour le bien.
             </li>
             <li>
+              « Vivre ici » : pour un bien qu’un acquéreur va visiter, ACM Studio lit des données
+              publiques et gratuites autour de lui — les commerces, les médecins, les arrêts et les
+              espaces verts d’OpenStreetMap, les écoles de l’annuaire de l’Éducation nationale, les
+              temps de trajet à pied et en voiture des itinéraires de l’IGN, les risques de la
+              commune (Géorisques). Les distances partent de l’adresse d’un bien dont l’agence a le
+              mandat, sinon du quartier (une position arrondie à environ 500 mètres) ou du centre de
+              la commune : l’adresse d’un bien qui n’est pas de l’agence n’est jamais montrée.
+              Chaque lieu est dit par sa catégorie, son nom public et le temps pour y aller, jamais
+              par son adresse. La fiche ne contient aucune donnée de l’acquéreur ; elle est gardée
+              par l’agence, datée, et l’acquéreur la lit sur le lien de sa sélection. Si l’acquéreur
+              l’a donné, « Un lieu qui compte pour vous » (son travail, l’école de ses enfants) est
+              gardé sur sa fiche, et seul ce texte part vers la Base Adresse Nationale pour en
+              connaître la position ; le temps en voiture depuis le bien visité est gardé sur sa
+              visite, sans ce lieu ni sa position. La fiche acquéreur peut aussi dire ce qui compte
+              pour lui autour du bien (le calme, des écoles, des commerces à pied), et le jour et
+              l’heure de sa visite quand le conseiller la confirme. Aucune intelligence artificielle
+              n’intervient.
+            </li>
+            <li>
               Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et
               lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
               caractéristiques, son prix affiché, pourquoi il correspond et ce qu’il faut savoir,

@@ -17,6 +17,7 @@ import {
 import type { LinkClosed } from '@/features/buyer-dossier/services/link-screen';
 import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { scheduleLivingHere } from '@/features/living-here/services/schedule-living-here';
 
 // `closed` : la réponse ne se donne plus sur ce lien (déjà donnée, ou présentation terminée) ; la
 // page se recharge et montre le merci ou le récapitulatif, jamais de nouveau le formulaire.
@@ -91,5 +92,12 @@ export async function submitDossierAnswers(
     }
     return { ok: false, error: FAILURE };
   }
+  // Mission 142 — les biens qu'il veut visiter : leur fiche « Vivre ici », en tâche de fond, par
+  // l'agence du lien (aucun compte).
+  scheduleLivingHere({
+    agencyId: link.agency_id,
+    itemIds: answers.filter((entry) => entry.answer === 'visit').map((entry) => entry.itemId),
+    builtBy: null,
+  });
   return { ok: true, answered: typeof data === 'number' ? data : answers.length };
 }

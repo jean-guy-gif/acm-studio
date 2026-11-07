@@ -32,6 +32,13 @@ import {
   type BuyerInput,
 } from '@/features/buyers/types';
 import { PROPERTY_TYPE_LABELS } from '@/features/subject-property/constants/property-options';
+import { SECTOR_PRIORITIES } from '@/features/living-here/types';
+
+const SECTOR_PRIORITY_LABELS = {
+  quiet: 'Le calme',
+  schools: 'Des écoles proches',
+  shops_on_foot: 'Des commerces à pied',
+} as const;
 
 // Mission 117 — la fiche acquéreur, en trois blocs : qui, ce qu'il cherche, ses lignes rouges.
 // Tout est facultatif sauf le nom et au moins une commune ; le serveur revalide tout avant
@@ -292,6 +299,48 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
             className={`${inputBase} w-full`}
           />
           {error('deal_breakers')}
+        </label>
+      </section>
+
+      {/* Mission 142 — ce qui compte pour lui autour du bien : « Vivre ici » les met en tête. */}
+      <section className={formSection} data-testid="buyer-sector">
+        <h2 className={formSectionTitle}>Autour du bien</h2>
+        <input type="hidden" name="sector_fields" value="1" />
+        <div className="flex flex-col gap-1">
+          <span className={fieldLabel}>Ce qui compte pour lui</span>
+          <p className={hintText}>
+            « Vivre ici » le dit en tête de chaque bien qu’il visite ; le calme se vérifie à la
+            visite.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SECTOR_PRIORITIES.map((priority) => (
+              <label key={priority} className={checkChip}>
+                <input
+                  type="checkbox"
+                  name="sector_priorities"
+                  value={priority}
+                  defaultChecked={(initial.sectorPriorities ?? []).includes(priority)}
+                  className="accent-brand"
+                />
+                ★ {SECTOR_PRIORITY_LABELS[priority]}
+              </label>
+            ))}
+          </div>
+        </div>
+        <label className="flex flex-col gap-1">
+          <span className={fieldLabel}>Un lieu qui compte pour vous (facultatif)</span>
+          <input
+            name="living_place"
+            maxLength={200}
+            defaultValue={initial.livingPlace ?? ''}
+            placeholder="Son travail, l’école des enfants : « Sophia Antipolis », « Lycée de Valbonne »"
+            className={`${inputBase} w-full`}
+            data-testid="buyer-living-place"
+          />
+          <span className={hintText}>
+            « Vivre ici » donne le temps en voiture depuis chaque bien qu’il visite.
+          </span>
+          {error('living_place')}
         </label>
       </section>
 

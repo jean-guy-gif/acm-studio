@@ -12,6 +12,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { deleteLivingHereSheets } from '@/features/living-here/services/delete-sheets';
 
 export async function deleteComparable(projectId: string, formData: FormData): Promise<void> {
   const profile = await getProfile();
@@ -34,6 +35,8 @@ export async function deleteComparable(projectId: string, formData: FormData): P
       comparableIds: [comparableId],
     });
 
+    // Mission 142 — sa fiche « Vivre ici », par sa clé (aucun lien en base).
+    await deleteLivingHereSheets(profile.agency_id, [`competitor:${comparableId}`]);
     const { error } = await supabase
       .from('comparables')
       .delete()
