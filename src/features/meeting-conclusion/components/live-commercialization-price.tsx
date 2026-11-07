@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
+import { liveErrorMessage } from '@/features/live-seller/services/live-error-message';
 import {
   bigInput,
   bigInputUnit,
@@ -67,7 +68,19 @@ export function LiveCommercializationPrice({
             );
           }
           setState(
-            result.ok ? { ok: true, message: t.saved } : { ok: false, message: result.error },
+            result.ok
+              ? { ok: true, message: t.saved }
+              : {
+                  ok: false,
+                  // Mission 144 — devant le vendeur, un message qui dit quoi faire, jamais le
+                  // détail du serveur.
+                  message: liveErrorMessage(
+                    result.error,
+                    language,
+                    texts.live.shell,
+                    texts.live.shell.saveFailed,
+                  ),
+                },
           );
         });
       }}

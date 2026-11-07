@@ -21,6 +21,7 @@ import { usePhotoPreload } from '@/features/live-seller/components/use-photo-pre
 import { livePhotoPreloadUrls } from '@/features/live-seller/services/photo-preload';
 import { createSaveChain } from '@/features/live-seller/services/save-chain';
 import { screenEnter } from '@/features/live-seller/services/screen-enter';
+import { liveErrorMessage } from '@/features/live-seller/services/live-error-message';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
 import { LivePageClosest } from '@/features/live-seller/components/live-page-closest';
@@ -58,11 +59,7 @@ import {
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
-import {
-  CONNECTION_LOST_MESSAGE,
-  guardedSave,
-  type SaveResult,
-} from '@/features/live-seller/services/guarded-save';
+import { guardedSave, type SaveResult } from '@/features/live-seller/services/guarded-save';
 import {
   LiveBuyersDot,
   LiveBuyersScreen,
@@ -155,13 +152,10 @@ export function LiveComparativeShell({
   const t = texts.live.shell;
   // Un message d'erreur du serveur est écrit en français : devant un vendeur d'une autre langue,
   // la scène dit le sien ; la perte de connexion garde son sens.
+  // Mission 144 — trois messages d'échec, qui disent quoi faire ; jamais le détail du serveur.
   const errorFor = useCallback(
     (error: string | undefined, fallback: string): string =>
-      error === CONNECTION_LOST_MESSAGE
-        ? t.connectionLost
-        : language === 'fr'
-          ? (error ?? fallback)
-          : fallback,
+      liveErrorMessage(error, language, t, fallback),
     [language, t],
   );
   // Mission 133 — l'écran des acquéreurs prêts, ouvert par « Montrer au vendeur ».
@@ -479,7 +473,7 @@ export function LiveComparativeShell({
       setBusy,
     });
     if (!result.ok) {
-      setAwaitError(result.error);
+      setAwaitError(errorFor(result.error, t.saveFailed));
       return;
     }
     pendingPriceRef.current = null;
