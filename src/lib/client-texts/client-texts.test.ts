@@ -12,10 +12,17 @@ import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
 type Tree = Record<string, unknown>;
 
+// Les phrases dont une langue n'a pas besoin de tous les arguments : écrites ici, une par une.
+//   • la relance : l'anglais ne fait pas l'accord « la / le visiter » (le genre du bien) ;
+//   • le lien expiré : l'anglais ne fait pas l'accord « retiré / retirée ».
+const ARITY_EXCEPTIONS = new Set(['buyer.messages.relaunch.fits', 'common.linkGone.body']);
+
 function shape(tree: Tree, path = ''): string[] {
   return Object.entries(tree).flatMap(([key, value]) => {
     const here = path ? `${path}.${key}` : key;
-    if (typeof value === 'function') return [`${here}()`];
+    if (typeof value === 'function') {
+      return [ARITY_EXCEPTIONS.has(here) ? `${here}()` : `${here}()${value.length}`];
+    }
     if (value != null && typeof value === 'object') return shape(value as Tree, here);
     return [here];
   });
@@ -98,6 +105,19 @@ describe('les textes du client', () => {
   it('le français ne dit jamais « estimation »', () => {
     const offenders = rendered(FRENCH_TEXTS).filter((text) => /estimation/i.test(text));
     expect(offenders).toEqual([]);
+  });
+
+  // M118, M119 : un bien proposé à un acquéreur n'est jamais « disponible » (l'outil ne le sait
+  // pas) ; jamais « estimation » ; « acquéreur », jamais « acheteur » (M117).
+  it('ce que lit l’acquéreur ne dit ni « disponible », ni « estimation », ni « acheteur »', () => {
+    expect(
+      rendered(FRENCH_TEXTS.buyer).filter((text) => /\bdisponible|estimation|acheteur/i.test(text)),
+    ).toEqual([]);
+    expect(
+      rendered(ENGLISH_TEXTS.buyer).filter((text) =>
+        /\bavailab|\bestimates?\b|estimation|valuation/i.test(text),
+      ),
+    ).toEqual([]);
   });
 
   it('l’anglais n’a laissé aucun mot français', () => {

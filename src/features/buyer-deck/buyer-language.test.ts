@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { GridScreen, ItemScreen } from '@/features/buyer-deck/components/deck-presentation';
 import { buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
+import { allowedDeck } from '@/features/buyer-deck/services/frozen-deck';
+import { publicDeck } from '@/features/buyer-dossier/services/build-buyer-dossier';
 import {
   finishConfirmation,
   sendConfirmation,
@@ -172,6 +174,17 @@ describe('l’acquéreur dans sa langue', () => {
     expect(frenchLeaks(grid + screen, PROPER)).toEqual([]);
   });
 
+  it('un déroulé figé garde sa langue ; figé avant la mission (sans langue), il se lit en français', () => {
+    expect(allowedDeck(deck('en')).language).toBe('en');
+    expect(publicDeck(allowedDeck(deck('en')), new Map()).language).toBe('en');
+    const { language: _dropped, ...before } = deck();
+    void _dropped;
+    expect(allowedDeck(before).language).toBe('fr');
+    expect(publicDeck(allowedDeck(before), new Map()).language).toBe('fr');
+    // Une valeur inattendue relue de la base vaut le français.
+    expect(allowedDeck({ ...before, language: 'xx' as never }).language).toBe('fr');
+  });
+
   it('les confirmations, en anglais', () => {
     expect(finishConfirmation(['A', 'B'], 'en')).toBe(
       '2 properties without an answer: A and B. Finish anyway?',
@@ -218,6 +231,9 @@ describe('l’acquéreur dans sa langue', () => {
       'The house in Vence with the pool you wanted, outdoor space, parking ticks what you are looking for',
     );
     expect(messages[3]).toContain('the seller accepted your purchase offer for the house in Vence');
+    // Les dates en toutes lettres : « 4 November », jamais « 04/11 » qu'un lecteur américain lirait le 11 avril.
+    expect(messages[1]).toContain('the selection I sent on 4 November?');
+    expect(messages[3]).toContain('on 6 November.');
     for (const message of messages) {
       expect(frenchLeaks(message, PROPER)).toEqual([]);
       expect(message).not.toMatch(/\bavailab/i);

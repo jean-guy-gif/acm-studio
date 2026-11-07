@@ -2,6 +2,7 @@ import { parisDay } from '@/features/meeting-conclusion/services/follow-up-conta
 import { addDays } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { propertyHas, propertyKind } from '@/features/buyers/services/loop-properties';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { formatDay } from '@/lib/format';
 import {
   anyStarContradicted,
   starsFilled,
@@ -107,7 +108,11 @@ export function relaunchMessage(input: {
   const language = input.language ?? 'fr';
   const t = clientTexts(language).buyer.messages;
   const lines = [t.hello(input.buyer.name)];
-  const ask = t.relaunch.ask(dayLabel(input.sentOn));
+  const ask = t.relaunch.ask(
+    language === 'fr'
+      ? dayLabel(input.sentOn)
+      : formatDay(`${input.sentOn}T12:00:00Z`, language, 'dayMonth'),
+  );
   if (input.bien && input.fits) {
     const p = input.bien.property;
     const kind = propertyKind(p.propertyType);

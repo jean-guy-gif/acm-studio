@@ -1,4 +1,5 @@
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { formatDay } from '@/lib/format';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 
@@ -82,11 +83,16 @@ export function offerAnswerBuyerMessage(input: {
   // Mission 140 — dans la langue de l'acquéreur (le français par défaut).
   language?: TextLanguage;
 }): string {
-  const t = clientTexts(input.language ?? 'fr').buyer.messages;
+  const language = input.language ?? 'fr';
+  const t = clientTexts(language).buyer.messages;
+  const day =
+    language === 'fr'
+      ? decidedDayLabel(input.decidedAt)
+      : formatDay(input.decidedAt, language, 'dayMonth');
   const lines = [
     t.hello(input.buyerName),
     ...(input.decision === 'accepted'
-      ? t.offer.accepted(input.property, decidedDayLabel(input.decidedAt), input.url)
+      ? t.offer.accepted(input.property, day, input.url)
       : t.offer.refused(input.property)),
   ];
   return [...lines, input.advisorFirstName?.trim() ?? ''].filter(Boolean).join('\n');

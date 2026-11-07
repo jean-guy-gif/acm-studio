@@ -31,11 +31,12 @@ import {
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { buyerDateIn } from '@/features/buyers/services/buyer-criteria';
 import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
 import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/link-screen';
 import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-dossier/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
 // Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
 const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
@@ -45,7 +46,12 @@ function localError(message: string, deck: BuyerDeck): string {
   const t = screensOf(deck);
   if (message === DOSSIER_PRESENTED) return t.presented;
   if (message === DOSSIER_ALREADY_ANSWERED) return t.alreadyAnswered;
-  return languageOf(deck) === 'fr' ? message : t.connectionLost;
+  if (languageOf(deck) === 'fr') return message;
+  const french = FRENCH_TEXTS.buyer.screens;
+  if (message === french.expired) return t.expired;
+  if (message === french.noAnswerYet) return t.noAnswerYet;
+  if (message === french.sendFailed) return t.sendFailed;
+  return t.connectionLost;
 }
 
 // Mission 122 (partie B) — le lien du dossier, pensé pour le téléphone : le même déroulé que la
@@ -462,7 +468,7 @@ export function DossierPhoneDeck({
             ) : null}
             <div className="flex flex-col gap-2">
               <h1 className="font-title text-2xl font-bold text-zinc-900">
-                {t.selectionOf(buyerDateLabel(deck.selectedAt))}
+                {t.selectionOf(buyerDateIn(deck.selectedAt, language))}
               </h1>
               <p className="text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
                 {t.wordsTitle}

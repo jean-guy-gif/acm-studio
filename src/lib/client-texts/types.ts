@@ -262,6 +262,8 @@ export type BuyerTexts = {
     download: string;
     presented: string;
     alreadyAnswered: string;
+    expired: string;
+    sendFailed: string;
     confidential: string;
     criterion: string;
     choicesTitle: string;

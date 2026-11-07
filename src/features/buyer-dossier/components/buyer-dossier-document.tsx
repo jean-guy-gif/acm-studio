@@ -3,7 +3,7 @@ import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/b
 import { AVAILABILITY_SLOTS, ITEM_ANSWERS, type DeckItem } from '@/features/buyer-deck/types';
 import type { BuyerDossier } from '@/features/buyer-dossier/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { buyerDateIn } from '@/features/buyers/services/buyer-criteria';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 122 (partie B) — le PDF du dossier qui fait agir : la même logique sur papier. Couverture
@@ -98,7 +98,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
   const language: TextLanguage = deck.language ?? 'fr';
   const texts = clientTexts(language);
   const t = texts.buyer.screens;
-  const day = buyerDateLabel(dossier.selectedAt);
+  const day = buyerDateIn(dossier.selectedAt, language);
   const footer = `${t.confidential} · ${dossier.sector} · ${day}`;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   // La photo du bien A en pleine page ; s'il est « Sans photo » ou n'en a pas, la première photo de

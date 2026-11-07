@@ -746,6 +746,8 @@ export const FRENCH_TEXTS: ClientTexts = {
       download: DOSSIER_DOWNLOAD,
       presented: DOSSIER_PRESENTED,
       alreadyAnswered: DOSSIER_ALREADY_ANSWERED,
+      expired: 'Ce lien n’est plus valable.',
+      sendFailed: 'Votre réponse n’a pas pu être envoyée. Réessayez.',
       confidential: 'Sélection confidentielle',
       criterion: 'Critère',
       choicesTitle: DOSSIER_CHOICES_TITLE,

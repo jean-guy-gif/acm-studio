@@ -32,7 +32,7 @@ import {
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { buyerDateIn } from '@/features/buyers/services/buyer-criteria';
 import {
   kicker,
   panel,
@@ -280,7 +280,7 @@ export function DeckPresentation({
             fallbackName={agencyName}
           />
           <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
-            {readOnly ? t.finishedOn(buyerDateLabel(deck.presentedAt!)) : t.meetingLabel}
+            {readOnly ? t.finishedOn(buyerDateIn(deck.presentedAt!, language)) : t.meetingLabel}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -322,7 +322,7 @@ export function DeckPresentation({
           data-testid="presentation-finished"
           className="relative mx-auto mt-4 w-full max-w-5xl px-4 text-sm text-zinc-600 sm:px-8 stage:text-white/70"
         >
-          Présentation terminée le {buyerDateLabel(deck.presentedAt!)} : pour en refaire une,{' '}
+          Présentation terminée le {buyerDateIn(deck.presentedAt!, 'fr')} : pour en refaire une,{' '}
           <Link
             href={`/acquereurs/${deck.buyerId}/biens-ideaux`}
             className="font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
