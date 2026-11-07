@@ -7,9 +7,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => nav.pathname,
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
-vi.mock('@/features/workspace-mode/actions/set-workspace-mode', () => ({
-  setWorkspaceMode: vi.fn(),
-}));
 
 const { AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
   await import('@/components/app-shell/account-menu');
@@ -47,16 +44,28 @@ describe('le menu de gauche', () => {
     nav.pathname = '/builder';
   });
 
-  it('mode Vendeur : les quatre espaces, rien d’autre', () => {
-    const html = renderToStaticMarkup(createElement(SidebarNav, { workspaceMode: 'seller' }));
-    expect(links(html)).toEqual(['/builder', '/live', '/suivi', '/prospection']);
+  // Mission 145 (partie B) — un seul menu en trois groupes, sans interrupteur (remplace M118).
+  it('Aujourd’hui, puis Vendeurs, Acquéreurs, Les deux : les espaces, rien d’autre', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNav));
+    expect(links(html)).toEqual([
+      '/aujourdhui',
+      '/builder',
+      '/live',
+      '/suivi',
+      '/acquereurs',
+      '/visites',
+      '/prospection',
+    ]);
+    for (const group of ['Vendeurs', 'Acquéreurs', 'Les deux']) expect(html).toContain(group);
     expect(html).not.toMatch(/Administration|Aide|Ma démo|Erreurs|Mon profil/);
+    expect(html).not.toContain('workspace-switch');
   });
 
-  it('mode Acquéreur : ses trois espaces, rien d’autre (M130 B)', () => {
-    nav.pathname = '/acquereurs';
-    const html = renderToStaticMarkup(createElement(SidebarNav, { workspaceMode: 'buyer' }));
-    expect(links(html)).toEqual(['/acquereurs', '/visites', '/prospection']);
+  it('la pastille d’Aujourd’hui ne s’affiche pas tant que le nombre n’est pas lu', () => {
+    nav.pathname = '/aujourdhui';
+    const html = renderToStaticMarkup(createElement(SidebarNav));
+    expect(html).toContain('aria-current="page"');
+    expect(html).not.toContain('data-testid="today-count"');
   });
 
   it('une page du menu de la carte ne surligne aucun des quatre espaces', () => {
@@ -69,7 +78,7 @@ describe('le menu de gauche', () => {
       '/erreurs',
     ]) {
       nav.pathname = pathname;
-      const html = renderToStaticMarkup(createElement(SidebarNav, { workspaceMode: 'seller' }));
+      const html = renderToStaticMarkup(createElement(SidebarNav));
       expect(html).not.toContain('aria-current="page"');
     }
   });
@@ -137,8 +146,8 @@ describe('le menu ouvert de la carte', () => {
   });
 });
 
-// Sous 768 px (décision de Jean-Guy, 06/11) : une barre compacte en haut — le nom de l'agence,
-// Vendeur | Acquéreur, ☰ — et le menu replié ; à partir de 768 px, la colonne toujours dépliée.
+// Sous 768 px (décision de Jean-Guy, 06/11) : une barre compacte en haut — le nom de l'agence et
+// ☰ (plus d'interrupteur depuis la M145) — et le menu replié ; à partir de 768 px, la colonne toujours dépliée.
 describe('la barre compacte du téléphone', () => {
   const shell = () =>
     renderToStaticMarkup(
@@ -154,18 +163,14 @@ describe('la barre compacte du téléphone', () => {
           logoDarkUrl: null,
           errorsBadge: null,
           demoEntry: false,
-          workspaceMode: 'seller',
         }),
       ),
     );
 
-  it('le nom de l’agence, l’interrupteur, puis ☰ fermé', () => {
+  it('le nom de l’agence, puis ☰ fermé ; plus d’interrupteur', () => {
     const html = shell();
-    const order = [
-      'Agence Test',
-      'data-testid="workspace-switch"',
-      'data-testid="mobile-menu-toggle"',
-    ];
+    expect(html).not.toContain('workspace-switch');
+    const order = ['Agence Test', 'data-testid="mobile-menu-toggle"'];
     const positions = order.map((needle) => html.indexOf(needle));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
@@ -179,7 +184,15 @@ describe('la barre compacte du téléphone', () => {
     const panel = html.match(/<div id="[^"]+" data-testid="shell-menu-panel" class="([^"]+)"/);
     expect(panel?.[1]).toMatch(/^hidden .*md:flex/);
     const inside = html.slice(html.indexOf('data-testid="shell-menu-panel"'));
-    expect(links(inside)).toEqual(['/builder', '/live', '/suivi', '/prospection']);
+    expect(links(inside)).toEqual([
+      '/aujourdhui',
+      '/builder',
+      '/live',
+      '/suivi',
+      '/acquereurs',
+      '/visites',
+      '/prospection',
+    ]);
     expect(inside).toContain('data-testid="account-card"');
   });
 });

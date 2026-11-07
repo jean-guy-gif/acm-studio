@@ -2,7 +2,9 @@ import { buyerProspectingCard } from '@/features/buyer-prospecting/services/buye
 import type { BuyerOriginLabel, BuyerProspectCard } from '@/features/buyer-prospecting/types';
 import { ProspectingCard } from '@/features/prospecting/components/prospecting-card';
 import { BOARD_COLUMNS } from '@/features/prospecting/services/prospecting-status';
+import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
 import type { ProspectingCard as Card } from '@/features/prospecting/types';
+import type { CardAlert } from '@/features/today/services/mandate-alerts';
 
 // Mission 86 — le tableau de la page Prospection : quatre colonnes côte à côte quand la place
 // le permet, deux puis une quand elle manque (tablette en portrait). La largeur lue est celle
@@ -15,11 +17,14 @@ export function ProspectingBoard({
   sellerId,
   buyerCards = [],
   originsByComparable = new Map(),
+  readyBuyers = new Map(),
 }: {
   cards: Card[];
   sellerId: string | null;
   buyerCards?: BuyerProspectCard[];
   originsByComparable?: Map<string, BuyerOriginLabel[]>;
+  // Mission 145 (partie B) — les acquéreurs prêts qui veulent un bien, par carte.
+  readyBuyers?: ReadonlyMap<ProspectingRow, CardAlert>;
 }) {
   return (
     <div className="@container">
@@ -49,6 +54,7 @@ export function ProspectingBoard({
                       card={card}
                       sellerId={sellerId}
                       buyerOrigins={buyerOriginsOf(card, originsByComparable)}
+                      readyBuyers={readyBuyers.get(card.row)}
                     />
                   ))}
                   {buyers.map((card) => (
@@ -57,6 +63,7 @@ export function ProspectingBoard({
                       card={buyerProspectingCard(card)}
                       buyerOrigins={card.origins}
                       buyerProspectId={card.prospectId}
+                      readyBuyers={readyBuyers.get(card.row)}
                     />
                   ))}
                 </ul>

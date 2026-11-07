@@ -49,7 +49,13 @@ export type SuiviTaskKind =
   // Mission 139 — le point proposé à un acquéreur prêt à visiter (tous les 14 jours), et le point
   // de la semaine, chaque lundi, à chaque acquéreur actif.
   | 'buyer_meeting'
-  | 'buyer_weekly_report';
+  | 'buyer_weekly_report'
+  // Mission 145 (partie B) — un bien sans mandat que veulent des acquéreurs prêts : une alerte pour
+  // rentrer le mandat, jamais une proposition. « Relancer plus tôt ? » : la relance d'un vendeur à
+  // relancer pas encore due ; « Démarcher » : un concurrent ou un bien démarché en mandat simple ou
+  // chez un particulier.
+  | 'follow_up_early'
+  | 'prospect_buyers';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
 // relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
@@ -60,6 +66,7 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   // Mission 137 B — une offre qui expire passe ensuite avant tout (décision du 06/11).
   offer_expiry: -1,
   follow_up: 0,
+  follow_up_early: 0.5,
   visit: 1,
   propose_buyers: 2,
   buyer_watch: 3,
@@ -69,6 +76,7 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   // Mission 139 — après « Reprendre contact », avant le démarchage, désormais le dernier.
   buyer_meeting: 7,
   buyer_weekly_report: 8,
+  prospect_buyers: 8.5,
   prospect: 9,
 };
 
@@ -111,6 +119,21 @@ export type SuiviTask = {
   visitId?: string;
   // Mission 139 — le point de la semaine : le lundi de la semaine qu'il raconte (AAAA-MM-JJ).
   weekStart?: string;
+  // Mission 145 — relance d'un vendeur à relancer : les acquéreurs prêts qui correspondent à son
+  // bien (l'argument), et le jour de la relance prévue (« Relancer plus tôt ? »).
+  readyBuyers?: number;
+  plannedOn?: string;
+  // Mission 145 — démarcher un bien que veulent des acquéreurs prêts : la carte de Prospection
+  // (concurrent ou bien démarché), son libellé, son adresse à confirmer, et ses acquéreurs d'origine.
+  prospectCard?: {
+    kind: 'competitor' | 'buyer_prospect';
+    id: string;
+    label: string;
+    toConfirm: boolean;
+    originBuyerIds: string[];
+    // Un bien démarché : l'origine dont le courrier au propriétaire se prépare (M120 A).
+    letterOriginId: string | null;
+  };
 };
 
 export type SuiviTaskInput = {
@@ -271,7 +294,9 @@ export function taskLateDays(task: SuiviTask, today: string): number {
     task.kind === 'offer_expiry' ||
     task.kind === 'offer_answer' ||
     task.kind === 'buyer_meeting' ||
-    task.kind === 'buyer_weekly_report'
+    task.kind === 'buyer_weekly_report' ||
+    task.kind === 'follow_up_early' ||
+    task.kind === 'prospect_buyers'
     ? 0
     : Math.max(0, daysBetween(task.dueOn, today));
 }

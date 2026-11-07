@@ -41,5 +41,6 @@ export async function chooseNewPassword(formData: FormData): Promise<NewPassword
   }
 
   revalidatePath('/', 'layout');
-  redirect('/builder');
+  // Mission 145 — par `/` : « Aujourd'hui », ou « Bienvenue » pour un conseiller sans dossier.
+  redirect('/');
 }

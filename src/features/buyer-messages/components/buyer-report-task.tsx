@@ -18,10 +18,13 @@ export function BuyerReportTask({
   buyerId,
   kind,
   label,
+  primary = true,
 }: {
   buyerId: string;
   kind: 'weekly_report' | 'meeting_proposed';
   label: string;
+  // Mission 145 — un seul bouton plein par page (« Aujourd'hui ») : les autres en contour.
+  primary?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -51,7 +54,7 @@ export function BuyerReportTask({
     return (
       <button
         type="button"
-        className={`${btnPrimary} self-start whitespace-nowrap sm:self-auto`}
+        className={`${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`}
         data-testid={`buyer-report-open-${kind}`}
         onClick={() => {
           setOpen(true);

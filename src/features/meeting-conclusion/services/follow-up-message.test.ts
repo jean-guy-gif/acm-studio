@@ -27,6 +27,17 @@ const BASE: FollowUpMessageInput = {
 };
 
 describe('le message de relance (mission 96)', () => {
+  // Mission 145 (partie B) — des acquéreurs prêts : une phrase anonyme, modifiable, jamais un nom.
+  it('dit les acquéreurs prêts par leur nombre, jamais par leur nom', () => {
+    expect(plain(buildFollowUpMessage({ ...BASE, readyBuyers: 1 }))).toContain(
+      'Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.',
+    );
+    expect(plain(buildFollowUpMessage({ ...BASE, readyBuyers: 3 }))).toContain(
+      '3 acquéreurs prêts à visiter cherchent un bien comme le vôtre.',
+    );
+    expect(buildFollowUpMessage(BASE)).not.toContain('acquéreur');
+  });
+
   it('reprend ce que le vendeur a dit lui-même', () => {
     const message = plain(buildFollowUpMessage(BASE));
     expect(message).toContain(

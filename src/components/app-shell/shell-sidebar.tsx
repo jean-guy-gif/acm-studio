@@ -1,21 +1,19 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useId, useState } from 'react';
 
 import { AccountMenu, type ErrorsBadge } from '@/components/app-shell/account-menu';
 import { SidebarNav } from '@/components/app-shell/sidebar-nav';
 import { AppLogo } from '@/components/theme/app-logo';
-import { WorkspaceSwitch } from '@/features/workspace-mode/components/workspace-switch';
-import { effectiveMode } from '@/features/workspace-mode/services/workspace-mode';
-import type { WorkspaceMode } from '@/features/workspace-mode/types';
+import { useTodayCount } from '@/features/today/components/today-count';
 
 export const MOBILE_MENU_LABEL = 'Menu';
 
 // Le menu de gauche. Sous 768 px (décision de Jean-Guy, 06/11), il devient une barre compacte en
-// haut : le nom de l'agence (ou son logo) à gauche, l'interrupteur Vendeur | Acquéreur, et ☰ qui
-// déplie les entrées du menu et la carte du conseiller ; le contenu de la page commence juste
-// dessous. À partir de 768 px, rien ne change : la colonne de gauche, toujours dépliée.
+// haut : le nom de l'agence (ou son logo) à gauche, et ☰ qui déplie les entrées du menu et la carte
+// du conseiller ; le contenu de la page commence juste dessous. À partir de 768 px, rien ne change :
+// la colonne de gauche, toujours dépliée. Mission 145 — plus d'interrupteur Vendeur | Acquéreur (le
+// menu a trois groupes) ; ☰ porte la pastille d'« Aujourd'hui ».
 export function ShellSidebar({
   profileName,
   profileEmail,
@@ -25,7 +23,6 @@ export function ShellSidebar({
   logoDarkUrl,
   errorsBadge,
   demoEntry,
-  workspaceMode,
 }: {
   profileName: string;
   profileEmail: string;
@@ -35,10 +32,8 @@ export function ShellSidebar({
   logoDarkUrl: string | null;
   errorsBadge: ErrorsBadge | null;
   demoEntry: boolean;
-  workspaceMode: WorkspaceMode;
 }) {
-  const pathname = usePathname();
-  const mode = effectiveMode(workspaceMode, pathname);
+  const todayCount = useTodayCount();
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -53,9 +48,14 @@ export function ShellSidebar({
             fallbackName={agencyName}
           />
         </div>
-        <div className="shrink-0">
-          <WorkspaceSwitch mode={mode} />
-        </div>
+        {todayCount != null && todayCount > 0 ? (
+          <span
+            className="rounded-full bg-orange-600 px-2 py-px text-xs font-bold text-white md:hidden"
+            data-testid="mobile-today-count"
+          >
+            {todayCount}
+          </span>
+        ) : null}
         <button
           type="button"
           aria-label={MOBILE_MENU_LABEL}
@@ -78,7 +78,7 @@ export function ShellSidebar({
         }}
         className={`${open ? 'flex' : 'hidden'} flex-col gap-4 pt-3 pb-1 md:flex md:flex-1 md:justify-between md:pt-0 md:pb-0`}
       >
-        <SidebarNav workspaceMode={workspaceMode} />
+        <SidebarNav />
         {/* Mission 125 — tout ce qui n'est pas le travail passe derrière la carte du conseiller. */}
         <AccountMenu
           profileName={profileName}

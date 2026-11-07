@@ -109,5 +109,6 @@ export async function confirmCompetitorAddress(
   revalidatePath('/prospection/courriers');
   revalidatePath('/prospection');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true };
 }

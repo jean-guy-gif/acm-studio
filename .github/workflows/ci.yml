@@ -400,6 +400,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici.sql
 
+      # Mission 145 (partie B) — « Garder la date » : deux colonnes nullables sur la conclusion,
+      # ensemble, 1 au moins, écrites par le serveur seul ; le navigateur n'y écrit rien.
+      - name: Garder la date (mission 145)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/garder_la_date.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

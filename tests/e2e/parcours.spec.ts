@@ -7,6 +7,8 @@ import {
   login,
   mainText,
   openAccountMenu,
+  openToday,
+  sideNav,
   pagePayload,
   TEST_PRICE_DROP,
   ageTestFollowUp,
@@ -14,7 +16,6 @@ import {
   removeTestOppositions,
   uniqueDossierName,
   withoutSpaces,
-  ensureSellerMode,
 } from './support';
 
 // Mission 66 — un dossier de bout en bout, sans portail : Préparation → Live → Suivi.
@@ -72,7 +73,6 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   await test.step('Connexion', async () => {
     await login(page);
-    await ensureSellerMode(page);
   });
 
   // Mission 93 — « Supprimer » demande confirmation dans l'écran, puis archive : le dossier
@@ -611,21 +611,23 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     );
     try {
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      // Mission 145 (partie B) — la relance due est sur « Aujourd'hui », plus dans le Suivi.
       await page.goto('/suivi');
-      const task = page
-        .getByTestId('suivi-today')
-        .getByTestId('suivi-task')
-        .filter({ hasText: `Relancer ${dossierName}` });
-      await expect(task, 'La relance due manque dans « À faire aujourd’hui »').toBeVisible();
+      await expect(page.getByTestId('suivi-today-link')).toBeVisible();
+      await expect(page.getByTestId('suivi-task')).toHaveCount(0);
+      await openToday(page);
+      const task = page.getByTestId('today-task').filter({ hasText: `Relancer ${dossierName}` });
+      await expect(task, 'La relance due manque dans « Aujourd’hui »').toBeVisible();
       await expect(task).toContainText(/dernier contact il y a 8 jours/);
       await expect(task).toContainText(/en retard/);
       await expect(
-        page.getByTestId('suivi-task-count'),
-        'Le compteur du menu « Suivi » manque',
-      ).toHaveText(/^\d+$/);
+        page.getByTestId('today-count'),
+        'La pastille du menu « Aujourd’hui » manque',
+      ).toHaveText(/^[1-9]\d*$/);
 
-      // Le bouton de la tâche ramène à la carte, la relance ouverte.
+      // Le bouton de la tâche mène à la carte du Suivi, la relance ouverte.
       await task.getByRole('link', { name: 'Relancer' }).click();
+      await expect(page).toHaveURL(/\/suivi\?relancer=/);
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
       await expect(row.getByTestId('suivi-next-step')).toContainText(/en retard/i);
       const panel = row.getByTestId('follow-up-panel');
@@ -654,7 +656,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       ).toBe(edited);
       await panel.getByRole('button', { name: 'Annuler' }).click();
       await expect(panel).toHaveCount(0);
-      // Un second clic sur la tâche rouvre la relance.
+      // Un second passage par « Aujourd'hui » rouvre la relance.
+      await openToday(page);
       await task.getByRole('link', { name: 'Relancer' }).click();
       await expect(row.getByTestId('follow-up-panel')).toBeVisible();
       await row.getByTestId('follow-up-panel').getByRole('button', { name: 'Annuler' }).click();
@@ -671,10 +674,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     }
 
     // Remis en état : la relance n'est plus due, plus de baisse.
-    await page.goto('/suivi');
+    await openToday(page);
     await expect(
-      page.getByTestId('suivi-task').filter({ hasText: `Relancer ${dossierName}` }),
+      page.getByTestId('today-task').filter({ hasText: `Relancer ${dossierName}` }),
     ).toHaveCount(0);
+    await page.goto('/suivi');
     const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
     await row.getByTestId('suivi-link-details').click();
     await expect(row.getByTestId('seller-said')).toBeVisible();
@@ -727,29 +731,30 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   // statut, archivage.
   await test.step('La fiche acquéreur : créer, retrouver, rapprocher, statut, archiver', async () => {
     const buyerName = `Acquéreur ${dossierName}`;
-    // Mission 118 — l'interrupteur Vendeur | Acquéreur : le menu change, le mode est retenu après
-    // un rechargement, et une page de l'autre mode ouverte par son adresse place l'interrupteur.
-    const switcher = page.getByTestId('workspace-switch');
-    const modeWord = page.getByTestId('workspace-mode-word');
-    await expect(switcher).toHaveAttribute('data-mode', 'seller');
-    await expect(modeWord).toHaveText('Mode Vendeur');
-    await expect(page.getByRole('link', { name: /^Préparation/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /^Acquéreurs/ })).toHaveCount(0);
-    await switcher.getByRole('button', { name: 'Acquéreur' }).click();
-    await expect(page).toHaveURL(/\/acquereurs$/);
-    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
-    await expect(modeWord).toHaveText('Mode Acquéreur');
-    // Mission 130 B — « Biens idéaux » a quitté le menu.
-    for (const label of ['Acquéreurs', 'Visites', 'Prospection']) {
-      await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
+    // Mission 145 (partie B) — un seul menu en trois groupes, sans interrupteur (remplace M118) :
+    // Aujourd'hui, puis Vendeurs, Acquéreurs, Les deux.
+    await expect(page.getByTestId('workspace-switch')).toHaveCount(0);
+    const nav = sideNav(page);
+    await expect(nav.getByRole('link')).toHaveCount(7);
+    for (const label of [
+      'Aujourd’hui',
+      'Préparation',
+      'Live',
+      'Suivi',
+      'Acquéreurs',
+      'Visites',
+      'Prospection',
+    ]) {
+      await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
-    // Mission 125 — le menu de gauche n'a que les quatre espaces du mode ; le reste est derrière la
-    // carte du conseiller, qui se ferme par Échap et par un clic dehors.
-    const sideNav = page.locator('nav[data-mode]');
-    await expect(sideNav.locator('a')).toHaveCount(3);
-    await expect(
-      sideNav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ }),
-    ).toHaveCount(0);
+    for (const group of ['Vendeurs', 'Les deux']) await expect(nav).toContainText(group);
+    await nav.getByRole('link', { name: /^Acquéreurs/ }).click();
+    await expect(page).toHaveURL(/\/acquereurs$/);
+    // Mission 125 — le reste est derrière la carte du conseiller, qui se ferme par Échap et par un
+    // clic dehors.
+    await expect(nav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ })).toHaveCount(
+      0,
+    );
     const accountMenu = await openAccountMenu(page);
     for (const label of ['Mon profil', 'Administration', 'Aide', 'Sombre', 'Déconnexion']) {
       await expect(
@@ -765,22 +770,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await openAccountMenu(page);
     await page.getByRole('heading').first().click();
     await expect(accountMenu).toHaveCount(0);
-    for (const label of ['Préparation', 'Live', 'Suivi']) {
-      await expect(page.getByRole('link', { name: new RegExp(`^${label}`) })).toHaveCount(0);
-    }
-    // Mémorisé : une page commune relit le mode enregistré.
-    await page.goto('/prospection');
-    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
-    // Une page du mode Vendeur ouverte par son adresse : l'interrupteur se place sur Vendeur, le
-    // menu Vendeur s'affiche, le mode mémorisé ne change pas.
-    await page.goto('/suivi');
-    await expect(switcher).toHaveAttribute('data-mode', 'seller');
-    await expect(page.getByRole('link', { name: /^Live/ })).toBeVisible();
-    // Administration, par la carte : l'adresse ne change pas, aucun des quatre espaces n'est surligné.
+    // Administration, par la carte : l'adresse ne change pas, aucun espace n'est surligné.
     await goViaAccountMenu(page, 'Administration');
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(switcher).toHaveAttribute('data-mode', 'buyer');
-    await expect(sideNav.locator('[aria-current="page"]')).toHaveCount(0);
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
     // Mission 130 B — l'ancienne adresse « Biens idéaux » ramène aux acquéreurs.
     await page.goto('/biens-ideaux');
     await expect(page).toHaveURL(/\/acquereurs$/);
@@ -794,7 +787,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
     // Sous 768 px, le menu est une barre compacte : le champ Nom se voit sans défiler.
     await expect(page.getByTestId('mobile-menu-toggle')).toBeVisible();
-    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await expect(sideNav(page)).toBeHidden();
     await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
     await quick.locator('input[name="name"]').fill(buyerName);
     await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
@@ -831,28 +824,28 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(ageTestBuyer(buyerId), 'La fiche du test n’a pas été vieillie').toBe(1);
     await page.reload();
     await expect(page.getByTestId('buyer-recontact')).toHaveText('À recontacter');
-    await page.goto('/suivi');
-    await expect(page.getByTestId('suivi-today')).toContainText(
+    await openToday(page);
+    await expect(page.getByTestId('today-page')).toContainText(
       `Reprendre contact avec ${buyerName}`,
     );
-    // Sur téléphone, la première tâche du jour se voit sans défiler ; ☰ déplie le menu et la
+    // Sur téléphone, la première ligne du jour se voit sans défiler ; ☰ déplie le menu et la
     // carte du conseiller, un lien choisi le replie.
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.getByTestId('suivi-task').first()).toBeInViewport({ ratio: 1 });
-    await expectNoHorizontalScroll(page, 'Suivi (390 × 844)');
+    await expect(page.getByTestId('today-line').first()).toBeInViewport({ ratio: 1 });
+    await expectNoHorizontalScroll(page, 'Aujourd’hui (390 × 844)');
     await page.getByTestId('mobile-menu-toggle').click();
     await expect(page.getByTestId('account-card')).toBeVisible();
-    await page.locator('nav[data-mode]').getByRole('link', { name: /^Live/ }).click();
+    await sideNav(page).getByRole('link', { name: /^Live/ }).click();
     await expect(page).toHaveURL(/\/live$/);
-    await expect(page.locator('nav[data-mode]')).toBeHidden();
+    await expect(sideNav(page)).toBeHidden();
     await page.setViewportSize({ width: 1280, height: 720 });
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-contacted').click();
     await expect(page.getByTestId('buyer-contacted')).toHaveText('Contact noté aujourd’hui ✓');
     await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
-    await page.goto('/suivi');
-    await expect(page.getByTestId('suivi-today')).not.toContainText(
+    await openToday(page);
+    await expect(page.getByTestId('today-page')).not.toContainText(
       `Reprendre contact avec ${buyerName}`,
     );
     await page.goto(buyerUrl);
@@ -1233,13 +1226,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toHaveCount(0);
     const gone = await page.goto(buyerUrl);
     expect(gone?.status()).toBe(404);
-    // Retour au mode Vendeur, retenu : la suite du parcours repart du Suivi.
-    await page.goto('/acquereurs');
-    await switcher.getByRole('button', { name: 'Vendeur' }).click();
-    await expect(page).toHaveURL(/\/builder$/);
-    await expect(switcher).toHaveAttribute('data-mode', 'seller');
-    await page.goto('/prospection');
-    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+    // La suite du parcours repart du Suivi.
     await page.goto('/suivi');
   });
 

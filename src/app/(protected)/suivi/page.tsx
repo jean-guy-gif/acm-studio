@@ -1,26 +1,11 @@
 import Link from 'next/link';
 
-import {
-  btnSecondary,
-  emptyState,
-  kickerLabel,
-  link,
-  pageSubtitle,
-  pageTitle,
-} from '@/components/ui/styles';
+import { emptyState, kickerLabel, link, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { redirect } from 'next/navigation';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
-import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
-import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
-import { getOfferTasks } from '@/features/purchase-offer/queries/get-offer-tasks';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
-import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
-import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
-import { OfferAnswerTask } from '@/features/purchase-offer/components/offer-answer-task';
-import { BuyerReportTask } from '@/features/buyer-messages/components/buyer-report-task';
-import { SuiviTaskCountSync } from '@/features/meeting-conclusion/components/suivi-task-count';
 import {
   readMarketUpdates,
   type MarketUpdateEntry,
@@ -47,11 +32,7 @@ import {
   suiviCounts,
   type SuiviGroup,
 } from '@/features/meeting-conclusion/services/filter-suivi';
-import {
-  cardStep,
-  nothingTodayLabel,
-  taskLine,
-} from '@/features/meeting-conclusion/services/suivi-step-labels';
+import { cardStep } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import {
   competitorCounts,
   prospectingCounts,
@@ -59,7 +40,6 @@ import {
   visitCounts,
 } from '@/features/meeting-conclusion/services/suivi-task-inputs';
 import {
-  buildSuiviTaskList,
   dossierTasks,
   isTaskDue,
   nextMarketUpdateOn,
@@ -69,10 +49,17 @@ import {
 import {
   FOLLOW_UP_MOTIVES,
   FOLLOW_UP_MOTIVE_LABELS,
-  followUpMotiveLabel,
   type FollowUpMotive,
 } from '@/features/meeting-conclusion/types';
-import { propertyLabel } from '@/features/projects/services/property-label';
+import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import {
+  loadAgencyBuyers,
+  loadLoopProperties,
+} from '@/features/buyers/queries/get-property-buyers';
+import { heldOffers } from '@/features/buyers/services/proposable';
+import { buyerInSentence } from '@/features/meeting-conclusion/services/suivi-step-labels';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { projectReadyBuyers } from '@/features/today/services/mandate-alerts';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
@@ -95,18 +82,6 @@ const chip =
   'rounded-full border px-3 py-1 text-sm font-semibold whitespace-nowrap transition-colors';
 const chipActive = `${chip} border-brand-deep bg-brand-deep text-white`;
 const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand-deep stage:border-white/15 stage:bg-white/5 stage:text-white/70`;
-
-// Mission 130 — la pastille numérotée d'une tâche : la couleur du groupe du vendeur.
-const TASK_DOT = {
-  follow_up: 'bg-orange-500',
-  signed: 'bg-emerald-600',
-  // Mission 132 — la couleur du mode Acquéreur (M118).
-  buyer: 'bg-emerald-500',
-};
-
-// Cinq tâches à l'écran, trois sur téléphone (designer, 05/11) ; les autres derrière « Voir ».
-const TASKS_SHOWN = 5;
-const TASKS_SHOWN_PHONE = 3;
 
 const groupHref = (group: SuiviGroup | null): string =>
   group == null ? '/suivi' : `/suivi?issue=${group}`;
@@ -142,7 +117,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   // nulle part : compteurs, « À faire aujourd'hui », motifs.
   const counted = withoutExamples(allDossiers);
   const projectIds = allDossiers.map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, pointRead, buyerRead, mandateRead, watchRead, offerRead] =
+  const followUpIds = withoutExamples(allDossiers)
+    .filter((dossier) => dossier.conclusion?.outcome === 'follow_up')
+    .map((dossier) => dossier.project.id);
+  const [{ cards }, insights, agency, pointRead, mandateRead, agencyBuyers, loop, offers] =
     await Promise.all([
       getAgencyProspecting(counted),
       getSellerInsights(projectIds),
@@ -153,17 +131,51 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
             readMarketUpdates(supabase, profile.agency_id, projectIds),
           )
         : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
-      // Mission 132 — les acquéreurs sans échange depuis 30 jours.
-      profile ? getBuyerRecontactTasks(profile, new Date()) : { tasks: [], failed: false },
-      // Mission 134 — les nouveaux biens à proposer, et les acquéreurs prêts de chaque mandat.
+      // Mission 134 — les acquéreurs prêts de chaque mandat (« Acquéreurs · N »).
       profile
         ? getLoopTasks(profile.agency_id, new Date())
         : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
-      // Mission 136 — ce que la veille de la nuit a trouvé pour les acquéreurs.
-      profile ? getWatchTasks(profile.agency_id, new Date()) : { tasks: [], failed: false },
-      // Mission 137 B — les offres d'achat qui expirent.
-      profile ? getOfferTasks(profile.agency_id, new Date()) : { tasks: [], failed: false },
+      // Mission 145 — les acquéreurs prêts d'un vendeur à relancer (l'argument pour rentrer le
+      // mandat), et l'offre acceptée d'un mandat (« Offre acceptée · famille Keller »).
+      profile ? loadAgencyBuyers(profile.agency_id) : null,
+      profile ? loadLoopProperties(profile.agency_id, followUpIds) : null,
+      profile
+        ? createClient().then((supabase) => getAgencyOfferAnswers(supabase, profile.agency_id))
+        : null,
     ]);
+  const dismissals = profile
+    ? await createClient().then((supabase) => readDismissals(supabase, profile.agency_id))
+    : null;
+  const nowForBuyers = new Date();
+  const followUpReady = new Map<string, number>();
+  if (agencyBuyers && !agencyBuyers.failed && loop && !loop.failed && dismissals != null) {
+    for (const id of followUpIds) {
+      followUpReady.set(
+        id,
+        projectReadyBuyers(
+          id,
+          agencyBuyers.buyers,
+          agencyBuyers.progress,
+          loop.properties.get(id),
+          dismissals,
+          nowForBuyers,
+        ),
+      );
+    }
+  }
+  // Un mandat sous offre acceptée (M145 A) : l'acquéreur de sa plus récente offre acceptée.
+  const heldBy = new Map<string, { buyerId: string; name: string }>();
+  if (offers) {
+    for (const [projectId, answer] of heldOffers(offers)) {
+      if (answer.buyerId) {
+        heldBy.set(projectId, {
+          buyerId: answer.buyerId,
+          // « famille Keller » : le nom dans la phrase, sans son article.
+          name: buyerInSentence(answer.buyerName).replace(/^la /, ''),
+        });
+      }
+    }
+  }
   const marketUpdates = pointRead.byProject;
   const signature = {
     advisorFirstName: profile?.first_name ?? null,
@@ -180,6 +192,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     followUps.set(
       dossier.project.id,
       buildDossierFollowUp({
+        readyBuyers: followUpReady.get(dossier.project.id) ?? 0,
         conclusion: dossier.conclusion,
         liveStartedAt: dossier.project.live_started_at,
         liveEndedAt: dossier.project.live_ended_at,
@@ -211,23 +224,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     visits,
     pointsUnknown: pointRead.failed,
   });
-  const taskList = buildSuiviTaskList(inputs, now, [
-    ...buyerRead.tasks,
-    ...mandateRead.tasks,
-    ...watchRead.tasks,
-    ...offerRead.tasks,
-  ]);
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);
   const visitsByProject = visitCounts(visits);
-  const dossierById = new Map(allDossiers.map((dossier) => [dossier.project.id, dossier]));
   const inputById = new Map(inputs.map((input) => [input.projectId, input]));
-  const signedDay = (dossier: {
-    conclusion: { signedAt: string | null; concludedAt: string | null } | null;
-  }) => {
-    const iso = dossier.conclusion?.signedAt ?? dossier.conclusion?.concludedAt ?? null;
-    return iso ? parisDay(new Date(iso)) : null;
-  };
 
   const motiveCounts = followUpMotiveCounts(counted);
   // Les « à relancer » du plus ancien contact au plus récent.
@@ -236,126 +236,23 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     lastContacts,
   );
   const counts = suiviCounts(counted);
-  const shownTasks = taskList.dues.slice(0, TASKS_SHOWN);
-  const moreTasks = taskList.dues.slice(TASKS_SHOWN);
-
-  // `copy` : la copie d'une tâche dans la liste dépliable du téléphone (sans repère de test).
-  const renderTask = (task: (typeof taskList.dues)[number], index: number, copy = false) => {
-    const dossier = dossierById.get(task.projectId);
-    const line = taskLine(
-      task,
-      {
-        motiveLabel:
-          dossier?.conclusion?.outcome === 'follow_up'
-            ? followUpMotiveLabel(
-                dossier.conclusion.followUpMotive ?? null,
-                dossier.conclusion.followUpMotiveDetail ?? null,
-              )
-            : null,
-        lastContactDays: followUps.get(task.projectId)?.lastContactDays ?? null,
-        signedOn: dossier ? signedDay(dossier) : null,
-        propertyLabel: dossier ? propertyLabel(dossier.property) : null,
-      },
-      today,
-    );
-    return (
-      <li
-        key={`${task.offerId ?? task.propertyKey ?? task.buyerId ?? task.projectId}-${task.kind}`}
-        data-testid={copy ? undefined : 'suivi-task'}
-        className={`flex items-start gap-3 border-t border-zinc-100 py-2 first:border-0 sm:items-center stage:border-white/10 ${
-          !copy && index >= TASKS_SHOWN_PHONE ? 'max-sm:hidden' : ''
-        }`}
-      >
-        <span
-          className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${
-            task.kind === 'follow_up'
-              ? TASK_DOT.follow_up
-              : task.kind === 'buyer_recontact'
-                ? TASK_DOT.buyer
-                : TASK_DOT.signed
-          }`}
-          aria-hidden
-        >
-          {index + 1}
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1.5 leading-snug sm:flex-row sm:items-center sm:gap-3">
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
-              {line.title}
-            </span>
-            <span className="text-sm text-zinc-500 stage:text-white/60">
-              {line.detail}
-              {line.late ? (
-                <span className="font-semibold text-orange-700">{line.late}</span>
-              ) : null}
-            </span>
-          </span>
-          {task.kind === 'buyer_watch' && !task.buyerId && task.watchBuyers ? (
-            // Mission 136 — un bien trouvé pour plusieurs acquéreurs : les biens idéaux de chacun.
-            <span className="flex flex-wrap gap-2" data-testid="buyer-watch-buyers">
-              {task.watchBuyers.map((buyer) => (
-                <Link
-                  key={buyer.id}
-                  href={`/acquereurs/${buyer.id}/biens-ideaux#nouveau`}
-                  className={btnSecondary}
-                >
-                  {buyer.name}
-                </Link>
-              ))}
-            </span>
-          ) : task.kind === 'offer_answer' && task.buyerId && task.offerId && task.decision ? (
-            // Mission 138 — la réponse du vendeur à une offre : ses suites, sur place.
-            <OfferAnswerTask
-              offerId={task.offerId}
-              buyerId={task.buyerId}
-              visitId={task.visitId ?? null}
-              decision={task.decision}
-              offerHref={line.href}
-            />
-          ) : (task.kind === 'buyer_weekly_report' || task.kind === 'buyer_meeting') &&
-            task.buyerId ? (
-            // Mission 139 — le point de la semaine et le point proposé, sur place.
-            <BuyerReportTask
-              buyerId={task.buyerId}
-              kind={task.kind === 'buyer_weekly_report' ? 'weekly_report' : 'meeting_proposed'}
-              label={line.button}
-            />
-          ) : task.kind === 'buyer_relaunch' && task.buyerId ? (
-            // Mission 135 — la relance d'un lien sans réponse se fait sur place.
-            <BuyerRelaunchTask buyerId={task.buyerId} label={line.button} />
-          ) : (
-            <SuiviTaskButton
-              href={line.href}
-              label={line.button}
-              open={
-                task.kind === 'follow_up'
-                  ? { projectId: task.projectId, panel: 'relance' }
-                  : task.kind === 'market_update'
-                    ? { projectId: task.projectId, panel: 'point' }
-                    : null
-              }
-            />
-          )}
-        </span>
-      </li>
-    );
-  };
-
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col gap-1.5">
         <span className={kickerLabel}>Après le rendez-vous</span>
         <h1 className={pageTitle}>Suivi</h1>
-        <p className={pageSubtitle}>Ce que vous avez à faire, puis chaque vendeur.</p>
+        <p className={pageSubtitle}>Chaque vendeur après le rendez-vous, et sa prochaine étape.</p>
       </div>
-      <SuiviTaskCountSync count={taskList.dues.length} />
+      {/* Mission 145 — ce qu'il y a à faire aujourd'hui vit dans « Aujourd'hui » (remplace M130 A,
+          le bloc « À faire aujourd'hui » du Suivi). */}
+      <p className="text-sm text-zinc-600 stage:text-white/70" data-testid="suivi-today-link">
+        Ce que vous avez à faire aujourd’hui :{' '}
+        <Link href="/aujourdhui" className={`${link} font-semibold`}>
+          Aujourd’hui ›
+        </Link>
+      </p>
 
-      {/* Mission 132 — sans dossier conclu, « À faire aujourd'hui » reste là pour les acquéreurs : une
-          tâche due ou à venir, ou leur lecture en échec (jamais lue comme « rien à faire », M98). */}
-      {allDossiers.length === 0 &&
-      taskList.dues.length === 0 &&
-      taskList.next == null &&
-      !buyerRead.failed ? (
+      {allDossiers.length === 0 ? (
         <div className={emptyState}>
           <p className="font-title text-lg font-semibold text-zinc-700 stage:text-white/85">
             Aucun dossier conclu pour le moment.
@@ -366,79 +263,22 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         </div>
       ) : (
         <>
-          <section
-            data-testid="suivi-today"
-            className="rounded-2xl border border-zinc-200/80 bg-white px-5 py-4 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none"
-          >
-            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-              À faire aujourd’hui
-              {taskList.dues.length > 0 ? ` · ${taskList.dues.length}` : ''}
-            </h2>
-            {taskList.dues.length === 0 ? (
-              visitRead.failed ||
-              pointRead.failed ||
-              buyerRead.failed ||
-              mandateRead.failed ||
-              watchRead.failed ||
-              offerRead.failed ? null : (
-                <p className="mt-2 text-sm text-zinc-600 stage:text-white/70">
-                  {nothingTodayLabel(taskList.next)}
-                </p>
-              )
-            ) : (
-              <>
-                <ol className="mt-2 flex flex-col">
-                  {shownTasks.map((task, index) => renderTask(task, index))}
-                </ol>
-                {moreTasks.length > 0 ? (
-                  <details className="max-sm:hidden">
-                    <summary className={`${link} cursor-pointer text-sm`}>
-                      Voir{' '}
-                      {moreTasks.length > 1
-                        ? `les ${moreTasks.length} autres tâches`
-                        : 'l’autre tâche'}{' '}
-                      ▾
-                    </summary>
-                    <ol className="flex flex-col">
-                      {moreTasks.map((task, index) => renderTask(task, TASKS_SHOWN + index))}
-                    </ol>
-                  </details>
-                ) : null}
-                {taskList.dues.length > TASKS_SHOWN_PHONE ? (
-                  <details className="sm:hidden">
-                    <summary className={`${link} cursor-pointer text-sm`}>
-                      Voir{' '}
-                      {taskList.dues.length - TASKS_SHOWN_PHONE > 1
-                        ? `les ${taskList.dues.length - TASKS_SHOWN_PHONE} autres tâches`
-                        : 'l’autre tâche'}{' '}
-                      ▾
-                    </summary>
-                    <ol className="flex flex-col">
-                      {taskList.dues
-                        .slice(TASKS_SHOWN_PHONE)
-                        .map((task, index) => renderTask(task, TASKS_SHOWN_PHONE + index, true))}
-                    </ol>
-                  </details>
-                ) : null}
-              </>
-            )}
-            {/* Mission 130 — une lecture en échec n'est jamais lue comme « rien à faire » (M98). */}
-            {visitRead.failed ? (
-              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
-                Les visites demandées n’ont pas pu être lues : rechargez la page.
-              </p>
-            ) : null}
-            {pointRead.failed ? (
-              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
-                Les Points marché n’ont pas pu être lus : rechargez la page.
-              </p>
-            ) : null}
-            {buyerRead.failed || mandateRead.failed || watchRead.failed || offerRead.failed ? (
-              <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
-                Les acquéreurs n’ont pas pu être lus : rechargez la page.
-              </p>
-            ) : null}
-          </section>
+          {/* Une lecture en échec n'est jamais lue comme « rien » (M98). */}
+          {visitRead.failed ? (
+            <p role="alert" className="text-sm font-semibold text-red-700">
+              Les visites demandées n’ont pas pu être lues : rechargez la page.
+            </p>
+          ) : null}
+          {pointRead.failed ? (
+            <p role="alert" className="text-sm font-semibold text-red-700">
+              Les Points marché n’ont pas pu être lus : rechargez la page.
+            </p>
+          ) : null}
+          {mandateRead.failed ? (
+            <p role="alert" className="text-sm font-semibold text-red-700">
+              Les acquéreurs n’ont pas pu être lus : rechargez la page.
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-2" data-testid="suivi-filters">
             <Link
@@ -568,6 +408,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                     frieze={frieze}
                     initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
                     readyBuyers={mandateRead.readyByProject.get(id) ?? null}
+                    followUpReadyBuyers={
+                      outcome === 'follow_up' ? (followUpReady.get(id) ?? null) : null
+                    }
+                    acceptedOfferBuyer={outcome === 'signed' ? (heldBy.get(id) ?? null) : null}
                   />
                 );
               })}

@@ -73,16 +73,21 @@ function loginPath(): string {
   return `/login?${query.toString()}`;
 }
 
-// Mission 118 — le mode du menu (Vendeur | Acquéreur) est mémorisé sur le profil : un passage
-// interrompu en mode Acquéreur le laisse ainsi pour le suivant. Les parcours qui cliquent le menu
-// Vendeur commencent par s'y remettre, sans rien supposer.
-export async function ensureSellerMode(page: Page): Promise<void> {
-  const switcher = page.getByTestId('workspace-switch');
-  await expect(switcher).toBeVisible();
-  if ((await switcher.getAttribute('data-mode')) === 'buyer') {
-    await switcher.getByRole('button', { name: 'Vendeur' }).click();
-    await expect(switcher).toHaveAttribute('data-mode', 'seller');
+// Mission 145 (partie B) — « Aujourd'hui », la page d'arrivée : ouverte, chaque série dépliée,
+// pour que toutes les tâches du jour se lisent (`today-task`), une par ligne ou dans sa série.
+export async function openToday(page: Page, query = ''): Promise<Locator> {
+  await page.goto(`/aujourdhui${query}`);
+  await expect(page.getByTestId('today-page')).toBeVisible();
+  const toggles = page.getByTestId('today-series-toggle');
+  for (const toggle of await toggles.all()) {
+    if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
   }
+  return page.getByTestId('today-page');
+}
+
+// Le menu de gauche (M145 : trois groupes, plus d'interrupteur).
+export function sideNav(page: Page): Locator {
+  return page.getByRole('navigation', { name: 'Menu principal' });
 }
 
 // Mission 125 — Mon profil, Administration, Aide, Ma démo et Erreurs sont derrière la carte du
@@ -116,9 +121,11 @@ export async function login(page: Page, credentials?: Credentials): Promise<void
   await page.getByLabel('Mot de passe').fill(credentials?.password ?? requireEnv('E2E_PASSWORD'));
   await page.getByRole('button', { name: 'Se connecter' }).click();
   // Mission 100 — l'agence de test est vidée à la fin de chaque passage : un conseiller sans
-  // dossier arrive sur « Bienvenue » (M97), avec des dossiers sur ses dossiers. Les parcours
-  // partent tous de la liste des dossiers.
-  await expect(page, 'La connexion du compte de test a échoué').toHaveURL(/\/(builder|bienvenue)$/);
+  // dossier arrive sur « Bienvenue » (M97), avec des dossiers sur « Aujourd'hui » (M145). Les
+  // parcours partent tous de la liste des dossiers.
+  await expect(page, 'La connexion du compte de test a échoué').toHaveURL(
+    /\/(aujourdhui|bienvenue)$/,
+  );
   if (!/\/builder$/.test(page.url())) {
     await page.goto('/builder');
     await expect(page).toHaveURL(/\/builder$/);

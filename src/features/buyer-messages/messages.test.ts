@@ -362,16 +362,21 @@ describe('les tâches de la recherche', () => {
   };
 
   it('le point de la semaine : dû le lundi, une fois par semaine, pour un acquéreur actif', () => {
-    const [task] = weeklyReportTasks([base], NOW);
+    // Mission 145 — proposé du lundi au mercredi soir (Paris), retiré ensuite (NOW est un jeudi).
+    const WEDNESDAY = new Date('2026-11-11T21:00:00Z');
+    expect(weeklyReportTasks([base], NOW)).toEqual([]);
+    expect(weeklyReportTasks([base], new Date('2026-11-11T23:30:00Z'))).toEqual([]);
+    expect(weeklyReportTasks([base], new Date('2026-11-09T07:00:00Z'))).toHaveLength(1);
+    const [task] = weeklyReportTasks([base], WEDNESDAY);
     expect(task).toMatchObject({
       kind: 'buyer_weekly_report',
       dueOn: '2026-11-09',
       weekStart: '2026-11-02',
     });
-    expect(weeklyReportTasks([{ ...base, reportedWeeks: new Set(['2026-11-02']) }], NOW)).toEqual(
-      [],
-    );
-    expect(weeklyReportTasks([{ ...base, active: false }], NOW)).toEqual([]);
+    expect(
+      weeklyReportTasks([{ ...base, reportedWeeks: new Set(['2026-11-02']) }], WEDNESDAY),
+    ).toEqual([]);
+    expect(weeklyReportTasks([{ ...base, active: false }], WEDNESDAY)).toEqual([]);
   });
 
   it('le point proposé : 14 jours après la fiche, puis après le dernier ; prêt seulement', () => {

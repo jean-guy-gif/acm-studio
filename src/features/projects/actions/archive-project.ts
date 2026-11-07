@@ -38,6 +38,7 @@ export async function archiveProjectAction(formData: FormData): Promise<void> {
   revalidatePath('/builder');
   revalidatePath('/live');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath('/prospection');
   redirect('/builder');
 }

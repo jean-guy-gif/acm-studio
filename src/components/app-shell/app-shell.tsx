@@ -2,7 +2,6 @@ import type { ErrorsBadge } from '@/components/app-shell/account-menu';
 import { ShellSidebar } from '@/components/app-shell/shell-sidebar';
 import { AppStage } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
-import type { WorkspaceMode } from '@/features/workspace-mode/types';
 
 // Shell applicatif présentational : barre latérale + zone principale, dans le
 // thème choisi par l'utilisateur (bouton Clair/Sombre). Aucune donnée chargée
@@ -17,7 +16,6 @@ export function AppShell({
   logoDarkUrl = null,
   errorsBadge = null,
   demoEntry = false,
-  workspaceMode = 'seller',
   children,
 }: {
   profileName: string;
@@ -31,8 +29,6 @@ export function AppShell({
   errorsBadge?: ErrorsBadge | null;
   // Mission 114 (partie B) — l'entrée « Ma démo », pour l'agence de démonstration seulement.
   demoEntry?: boolean;
-  // Mission 118 — le mode du menu mémorisé par le conseiller (Vendeur par défaut).
-  workspaceMode?: WorkspaceMode;
   children: React.ReactNode;
 }) {
   return (
@@ -53,7 +49,6 @@ export function AppShell({
           logoDarkUrl={logoDarkUrl}
           errorsBadge={errorsBadge}
           demoEntry={demoEntry}
-          workspaceMode={workspaceMode}
         />
 
         <main className="min-w-0 flex-1">

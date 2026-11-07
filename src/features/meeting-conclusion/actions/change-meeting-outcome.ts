@@ -114,6 +114,7 @@ export async function changeMeetingOutcome(
     revalidatePath('/prospection');
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId}/conclusion`);
   return { ok: true };
 }

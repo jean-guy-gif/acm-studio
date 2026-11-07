@@ -7,8 +7,18 @@ import {
   login,
   mainText,
   pagePayload,
+  openToday,
   readDemoBuyersShown,
 } from './support';
+
+// Mission 145 (partie B) — le point de la semaine est dû le lundi et retiré le mercredi soir
+// (décision de Jean-Guy, 07/11) : du jeudi au dimanche, il n'est pas sur « Aujourd'hui ».
+const weeklyReportDue = (): boolean =>
+  ['Mon', 'Tue', 'Wed'].includes(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', weekday: 'short' }).format(
+      new Date(),
+    ),
+  );
 
 // Mission 131 — la présentation directe, sur l'URL d'essai, avec le compte de l'agence de
 // démonstration (rien d'extérieur, rien de payant) et son dossier « Prêt, en présentation
@@ -367,8 +377,8 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
       timeout: 120_000,
     });
     await expect(page.getByText(/en échec/)).toHaveCount(0);
-    await page.goto('/suivi');
-    await expect(page.getByTestId('suivi-today')).not.toContainText('bien du marché');
+    await openToday(page);
+    await expect(page.getByTestId('today-page')).not.toContainText('bien du marché');
   });
 
   await test.step('La fiche et la liste de la famille Moreau : « Lui proposer la maison de M. et Mme Lopez »', async () => {
@@ -385,11 +395,11 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
   });
 
   const openTask = async (count: number) => {
-    const task = page.getByTestId('suivi-task').filter({ hasText: vence });
+    const task = page.getByTestId('today-task').filter({ hasText: vence });
     await expect
       .poll(
         async () => {
-          await page.goto('/suivi');
+          await openToday(page);
           return task.count();
         },
         { timeout: 45_000, intervals: [2_000, 3_000, 5_000] },
@@ -414,8 +424,14 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
   await test.step('La tâche, puis la série : trois envoyés, un passé', async () => {
     await openTask(4);
     await expect(page.getByTestId('propose-candidate')).toHaveCount(5);
-    // M. Fontaine correspond sans être prêt : coché, le conseiller le décoche.
-    await page.getByRole('checkbox', { name: 'M. Fontaine' }).uncheck();
+    // Mission 145 (partie B) — M. Fontaine correspond sans être prêt : à part, décoché.
+    await expect(page.getByTestId('propose-ready-title')).toHaveText(
+      '4 acquéreurs prêts à visiter',
+    );
+    await expect(page.getByTestId('propose-others-title')).toHaveText(
+      'Correspond aussi, pas encore prêt · 1',
+    );
+    await expect(page.getByRole('checkbox', { name: 'M. Fontaine' })).not.toBeChecked();
     await page.getByTestId('propose-start').click();
     for (let index = 0; index < 3; index += 1) {
       await expect(page.getByText(`${index + 1} sur 4`)).toBeVisible();
@@ -430,12 +446,12 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
     await openTask(1);
     await expect(page.getByTestId('propose-already')).toHaveCount(3);
     await expect(page.getByTestId('propose-already').first()).toContainText('déjà proposé le');
-    await page.getByRole('checkbox', { name: 'M. Fontaine' }).uncheck();
+    await expect(page.getByRole('checkbox', { name: 'M. Fontaine' })).not.toBeChecked();
     await page.getByTestId('propose-start').click();
     await sendOne();
     await expect(page.getByTestId('propose-done')).toContainText('1 envoi noté');
-    await page.goto('/suivi');
-    await expect(page.getByTestId('suivi-today')).not.toContainText(vence);
+    await openToday(page);
+    await expect(page.getByTestId('today-page')).not.toContainText(vence);
   });
 
   await test.step('Les fiches disent « proposé le … » ; la prochaine étape revient', async () => {
@@ -459,9 +475,9 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
   await freshDemo(page);
 
   await test.step('Relancer M. et Mme Lambert, sur place', async () => {
-    await page.goto('/suivi');
+    await openToday(page);
     const task = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: /Relancer M\. et Mme Lambert(?!-)/ });
     await expect(task).toContainText(/sélection envoyée le \d{2}\/\d{2}, pas de réponse/);
     await task.getByTestId('buyer-relaunch-open').click();
@@ -472,9 +488,9 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     expect(await message.innerText()).not.toMatch(/disponible|€/);
     await task.getByTestId('buyer-relaunch-record').click();
     await expect(task.getByTestId('buyer-relaunch-done')).toBeVisible();
-    await page.reload();
+    await openToday(page);
     await expect(
-      page.getByTestId('suivi-task').filter({ hasText: /Relancer M\. et Mme Lambert(?!-)/ }),
+      page.getByTestId('today-task').filter({ hasText: /Relancer M\. et Mme Lambert(?!-)/ }),
     ).toHaveCount(0);
   });
 
@@ -528,7 +544,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
   // Mission 138 — l'offre des Keller est acceptée : « Sous offre », ils ne sont plus veillés ; la
   // veille revient quand le conseiller remet leur statut, l'offre tombée.
   await test.step('« Sous offre » : plus de veille, jusqu’à « L’offre est tombée »', async () => {
-    await page.goto('/suivi');
+    await openToday(page);
     await expect(page.getByText('2 nouveaux biens pour la famille Keller')).toHaveCount(0);
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
@@ -537,14 +553,14 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await expect(page.getByTestId('buyer-watch-line')).toHaveCount(0);
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
-    await page.reload();
+    await openToday(page);
     await expect(page.getByTestId('buyer-ready')).toBeVisible();
   });
 
   await test.step('« 2 nouveaux biens pour la famille Keller » dans À faire aujourd’hui', async () => {
-    await page.goto('/suivi');
+    await openToday(page);
     const task = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: '2 nouveaux biens pour la famille Keller' });
     await expect(task).toContainText('trouvés par la veille');
     await task.getByRole('link', { name: 'Voir les biens' }).click();
@@ -706,8 +722,8 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     /https?:\/\/\S+\/offre\/[A-Za-z0-9_-]{43}/.exec(message)?.[0] ?? '';
 
   await test.step('« Le vendeur a accepté l’offre de la famille Keller », en tête', async () => {
-    await page.goto('/suivi');
-    const task = page.getByTestId('suivi-task').first();
+    await openToday(page);
+    const task = page.getByTestId('today-task').first();
     await expect(task).toContainText('Le vendeur a accepté l’offre de la famille Keller');
     await expect(task).toContainText('prévenir l’acquéreur, transmettre au notaire');
     await task.getByTestId('offer-answer-buyer').click();
@@ -810,9 +826,9 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     sellerLink = (await page.getByTestId('offer-link-seller').innerText()).trim();
     expect(sellerLink).toMatch(/\/offre\/[A-Za-z0-9_-]{43}$/);
     await expect(page.getByText(/\bM\d{2,3}\b/)).toHaveCount(0);
-    await page.goto('/suivi');
+    await openToday(page);
     // Sous la réponse de la première offre (en tête), l'échéance de la nouvelle, avant tout le reste.
-    await expect(page.getByTestId('suivi-task').nth(1)).toContainText(
+    await expect(page.getByTestId('today-task').nth(1)).toContainText(
       'L’offre de la famille Keller expire demain',
     );
   });
@@ -827,11 +843,11 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
       timeout: 20_000,
     });
     await context.close();
-    await page.goto('/suivi');
+    await openToday(page);
     await expect(page.getByText('L’offre de la famille Keller expire demain')).toHaveCount(0);
     // Les deux réponses, chacune sa tâche et son message (jamais l'état de l'une sur l'autre).
     const task = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: 'L’offre des Keller est refusée' });
     await expect(task).toHaveCount(1);
     await expect(task.getByTestId('offer-answer-notary')).toHaveCount(0);
@@ -845,7 +861,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
       /\/acquereurs\/[0-9a-f-]{36}\/offre\?visite=[0-9a-f-]{36}$/,
     );
     const accepted = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: 'Le vendeur a accepté l’offre de la famille Keller' });
     await accepted.getByTestId('offer-answer-buyer').click();
     await expect(accepted.getByTestId('offer-answer-message-buyer')).toContainText(
@@ -862,15 +878,15 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     await task.getByTestId('offer-answer-mark-done').click();
     await expect(task.getByTestId('offer-answer-done')).toBeVisible();
     await expect(accepted.getByTestId('offer-answer-done')).toHaveCount(0);
-    await page.reload();
+    await openToday(page);
     await expect(page.getByText('L’offre des Keller est refusée')).toHaveCount(0);
     await page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: 'Le vendeur a accepté l’offre de la famille Keller' })
       .getByTestId('offer-answer-mark-done')
       .click();
     await expect(page.getByTestId('offer-answer-done')).toBeVisible();
-    await page.reload();
+    await openToday(page);
     await expect(page.getByText('Le vendeur a accepté l’offre de la famille Keller')).toHaveCount(
       0,
     );
@@ -918,14 +934,13 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
   });
 
   await test.step('Le point de la semaine des Lambert : six biens écartés, « Envoyé »', async () => {
-    await page.goto('/suivi');
+    await openToday(page);
     const task = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: /Envoyer le point de la semaine à M\. et Mme Lambert(?!-)/ });
-    // Le point de la semaine vient après les autres tâches : il peut être derrière « Voir ».
-    const more = page.getByTestId('suivi-today').locator('summary').filter({ hasText: /^Voir/ });
-    if (!(await task.first().isVisible()) && (await more.first().isVisible())) {
-      await more.first().click();
+    if (!weeklyReportDue()) {
+      await expect(task).toHaveCount(0);
+      return;
     }
     await expect(task).toContainText(/semaine du \d{2}\/\d{2} au \d{2}\/\d{2}/);
     await task.getByTestId('buyer-report-open-weekly_report').click();
@@ -936,21 +951,21 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
     );
     await task.getByTestId('buyer-report-sent').click();
     await expect(page.getByTestId('buyer-report-done')).toBeVisible();
-    await page.reload();
+    await openToday(page);
     await expect(
       page
-        .getByTestId('suivi-task')
+        .getByTestId('today-task')
         .filter({ hasText: /Envoyer le point de la semaine à M\. et Mme Lambert(?!-)/ }),
     ).toHaveCount(0);
   });
 
   await test.step('Le point des Wilson, en anglais', async () => {
-    const more = page.getByTestId('suivi-today').locator('summary').filter({ hasText: /^Voir/ });
     const task = page
-      .getByTestId('suivi-task')
+      .getByTestId('today-task')
       .filter({ hasText: 'Envoyer le point de la semaine à Mr and Mrs Wilson' });
-    if (!(await task.first().isVisible()) && (await more.first().isVisible())) {
-      await more.first().click();
+    if (!weeklyReportDue()) {
+      await expect(task).toHaveCount(0);
+      return;
     }
     await task.getByTestId('buyer-report-open-weekly_report').click();
     await expect(task.getByTestId('buyer-report-message')).toHaveValue(

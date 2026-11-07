@@ -274,6 +274,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {buyers !== undefined ? (
         <PropertyBuyersBlock
           result={buyers}
+          followUp={
+            conclusion?.outcome === 'follow_up'
+              ? {
+                  sellerName: project.seller_name ?? 'le vendeur',
+                  href: `/suivi?relancer=${projectId}#suivi-${projectId}`,
+                }
+              : null
+          }
           proposeKey={
             // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
             // lecture des offres en échec ne propose rien (M98).

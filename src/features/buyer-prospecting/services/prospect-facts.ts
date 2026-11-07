@@ -1,6 +1,7 @@
 import { poolFromLabels } from '@/features/competitor-search/services/stream-estate-features';
 import { listingPhotoUrls } from '@/features/prospecting-file/services/their-photo';
 import type { BuyerProspectFacts } from '@/features/buyer-prospecting/types';
+import type { BuyerLoopProperty } from '@/features/buyers/services/property-buyers';
 import {
   OUTDOOR_SPACES,
   PARKING_TYPES,
@@ -117,4 +118,26 @@ export function storedFacts(raw: unknown): BuyerProspectFacts {
   return raw != null && typeof raw === 'object' && !Array.isArray(raw)
     ? prospectFacts(raw as Record<string, unknown>)
     : NO_FACTS;
+}
+
+// Mission 145 — les faits d'un bien en prospection, sous la forme que la boucle rapproche des
+// acquéreurs (M133) : le même calcul pour un mandat, un concurrent et un bien démarché.
+export function factsLoopProperty(
+  facts: BuyerProspectFacts,
+  bedroomsCount: number | null = null,
+): BuyerLoopProperty {
+  return {
+    propertyType: facts.propertyType,
+    roomsCount: facts.roomsCount,
+    surfaceArea: facts.surfaceArea,
+    city: facts.city,
+    bedroomsCount,
+    floor: null,
+    hasElevator: null,
+    hasPool: facts.hasPool,
+    outdoorSpaces: facts.outdoorSpaces,
+    parkingTypes: facts.parkingTypes,
+    energyRating: facts.energyRating,
+    generalCondition: null,
+  };
 }

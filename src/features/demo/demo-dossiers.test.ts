@@ -172,7 +172,8 @@ describe('les acquéreurs de la démo', () => {
     // Mission 132 — cinq financements validés, chacun avec son dernier contact.
     const validated = rows.filter((row) => row.financing === 'validated');
     // Mission 136 — et les Keller, prêts à visiter : la veille cherche pour eux.
-    expect(validated).toHaveLength(6);
+    // Mission 145 (partie B) — et les Rossi, pour l'alerte « rentrer le mandat » d'Antibes.
+    expect(validated).toHaveLength(7);
     for (const row of validated) expect(row.contacted_at).toEqual(expect.any(String));
     // Mission 133 — chaque ligne porte ses deux dates (une colonne absente d'une seule ligne
     // vaudrait NULL dans l'insertion groupée) ; les fiches de Vence datent de 1 à 7 semaines.

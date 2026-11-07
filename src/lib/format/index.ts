@@ -117,12 +117,14 @@ export function formatPercent(value: number, options: FormatNumberOptions = {}):
 // Mission 140 — un jour pour le client, à Paris : « 6 novembre 2026 » / « 6 November 2026 »
 // (`long`), « 6 novembre » / « 6 November » (`dayMonth`), « 06/11/2026 » / « 06/11/2026 »
 // (`numeric`, jour d'abord en anglais britannique comme en français).
-export type DayStyle = 'long' | 'dayMonth' | 'numeric' | 'short';
+export type DayStyle = 'long' | 'dayMonth' | 'numeric' | 'short' | 'weekday';
 const DAY_OPTIONS: Record<DayStyle, Intl.DateTimeFormatOptions> = {
   long: { day: 'numeric', month: 'long', year: 'numeric' },
   dayMonth: { day: 'numeric', month: 'long' },
   numeric: { day: '2-digit', month: '2-digit', year: 'numeric' },
   short: { day: '2-digit', month: '2-digit' },
+  // Mission 145 — « samedi 7 novembre », en tête d'« Aujourd'hui ».
+  weekday: { weekday: 'long', day: 'numeric', month: 'long' },
 };
 export function formatDay(
   value: string | number | Date,

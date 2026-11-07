@@ -2780,6 +2780,8 @@ export type Database = {
           commercialization_price: number | null
           concluded_at: string | null
           created_at: string
+          early_follow_up_kept_at: string | null
+          early_follow_up_kept_ready: number | null
           fees_amount: number | null
           fees_paid_by: string | null
           first_outcome: string | null
@@ -2815,6 +2817,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          early_follow_up_kept_at?: string | null
+          early_follow_up_kept_ready?: number | null
           fees_amount?: number | null
           fees_paid_by?: string | null
           first_outcome?: string | null
@@ -2850,6 +2854,8 @@ export type Database = {
           commercialization_price?: number | null
           concluded_at?: string | null
           created_at?: string
+          early_follow_up_kept_at?: string | null
+          early_follow_up_kept_ready?: number | null
           fees_amount?: number | null
           fees_paid_by?: string | null
           first_outcome?: string | null

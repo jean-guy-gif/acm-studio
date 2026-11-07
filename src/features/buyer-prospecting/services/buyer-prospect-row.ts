@@ -9,7 +9,10 @@ import {
   LISTING_PORTAL_LABELS,
   extractListingKey,
 } from '@/features/comparable-import/utils/extract-listing-key';
-import { storedFacts } from '@/features/buyer-prospecting/services/prospect-facts';
+import {
+  factsLoopProperty,
+  storedFacts,
+} from '@/features/buyer-prospecting/services/prospect-facts';
 import type { BuyerProspectRecord } from '@/features/buyer-prospecting/types';
 import {
   NO_OPPOSITIONS,
@@ -56,6 +59,8 @@ export function buildBuyerProspectRow(
     propertyType: facts.propertyType,
     city: displayCommune(facts.city, null),
     portal: identity ? (LISTING_PORTAL_LABELS[identity.portal] ?? identity.portal) : null,
+    // Mission 145 — les faits que la boucle rapproche des acquéreurs prêts (M133).
+    loopProperty: factsLoopProperty(facts),
     status: prospectingStatus(prospect, prospect.locator_confirmed === true && address != null),
     handedAt: prospect.prospecting_handed_at,
     meetingAt: prospect.prospecting_meeting_at,

@@ -68,6 +68,10 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     worksAccepted: false,
     mustHave: ['outdoor', 'budget'],
     dealBreakers: 'Rez-de-chaussée sur rue.',
+    // Mission 145 (partie B) — prêts à visiter : ils correspondent à l'appartement d'Antibes
+    // des Lambert-Duval, vendeurs à relancer, et font jouer l'alerte « rentrer le mandat ».
+    financing: 'validated',
+    contactedDaysAgo: 3,
   },
   {
     name: 'Famille Keller',

@@ -22,6 +22,9 @@ export type FollowUpMessageInput = {
   objections?: Objection[];
   // Combien des concurrents vus ensemble ont baissé leur prix depuis (prix révélé → prix actuel).
   priceDropsSinceMeeting: number;
+  // Mission 145 — les acquéreurs prêts à visiter qui correspondent à son bien : un nombre, jamais un
+  // nom, un budget ni une commune (le type ne peut rien porter d'autre ; décision du 07/11).
+  readyBuyers?: number;
   advisorFirstName: string | null;
   // « Nom sur les documents » (M87), sinon le nom de l'agence.
   agencyName: string | null;
@@ -68,6 +71,14 @@ function objectionLines(objections: Objection[] | undefined): string[] {
   return (objections ?? []).map((objection) => OBJECTION_LINES[objection]);
 }
 
+// « Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre. »
+export function readyBuyersLine(count: number | undefined): string | null {
+  if (!count || count < 1) return null;
+  return count === 1
+    ? 'Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.'
+    : `Depuis notre rendez-vous, ${count} acquéreurs prêts à visiter cherchent un bien comme le vôtre.`;
+}
+
 function priceDropsLine(count: number): string | null {
   if (count <= 0) {
     return null;
@@ -105,6 +116,7 @@ export function buildFollowUpMessage(input: FollowUpMessageInput): string {
     ...sellerWords(input),
     ...objectionLines(input.objections),
     priceDropsLine(input.priceDropsSinceMeeting),
+    readyBuyersLine(input.readyBuyers),
     motiveLine(input),
   ].filter((line): line is string => Boolean(line));
   const signature = [input.advisorFirstName?.trim(), input.agencyName?.trim()].filter(Boolean);

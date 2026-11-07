@@ -84,5 +84,6 @@ export async function saveCommercializationPrice(
 
   revalidatePath(`/builder/${projectId}/conclusion`);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true };
 }

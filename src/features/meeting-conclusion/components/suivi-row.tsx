@@ -270,6 +270,8 @@ export function SuiviRow({
   frieze,
   initialPanel = null,
   readyBuyers = null,
+  followUpReadyBuyers = null,
+  acceptedOfferBuyer = null,
 }: {
   dossier: SuiviDossier;
   followUp: DossierFollowUp;
@@ -280,6 +282,11 @@ export function SuiviRow({
   // Mission 133 — un mandat signé : ses acquéreurs prêts (« Acquéreurs · 7 », vers le bloc du
   // dossier) ; null hors mandat signé ou lecture en échec.
   readyBuyers?: number | null;
+  // Mission 145 — un vendeur à relancer : les acquéreurs prêts qui correspondent à son bien (un
+  // argument pour rentrer le mandat) ; un mandat sous offre acceptée : l'acquéreur de l'offre, à la
+  // place de « Acquéreurs · N » (un seul libellé).
+  followUpReadyBuyers?: number | null;
+  acceptedOfferBuyer?: { buyerId: string; name: string } | null;
 }) {
   const [panel, setPanel] = useState<Panel>(initialPanel);
   const [relancedOn, setRelancedOn] = useState<string | null>(null);
@@ -515,13 +522,32 @@ export function SuiviRow({
               )
             ) : null}
             <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 whitespace-nowrap">
-              {readyBuyers != null && readyBuyers > 0 ? (
+              {acceptedOfferBuyer ? (
+                <Link
+                  href={`/acquereurs/${acceptedOfferBuyer.buyerId}`}
+                  data-testid="suivi-accepted-offer"
+                  className="rounded-full bg-emerald-700 px-2.5 py-0.5 text-xs font-bold text-white"
+                >
+                  Offre acceptée · {acceptedOfferBuyer.name}
+                </Link>
+              ) : readyBuyers != null && readyBuyers > 0 ? (
                 <Link
                   href={`/builder/${project.id}#acquereurs`}
                   data-testid="suivi-link-buyers"
                   className={`${link} text-sm font-semibold`}
                 >
                   Acquéreurs · {readyBuyers}
+                </Link>
+              ) : null}
+              {followUpReadyBuyers != null && followUpReadyBuyers > 0 ? (
+                <Link
+                  href={`/builder/${project.id}#acquereurs`}
+                  data-testid="suivi-follow-up-buyers"
+                  className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800"
+                >
+                  {followUpReadyBuyers > 1
+                    ? `${followUpReadyBuyers} acquéreurs prêts correspondent à ce bien`
+                    : '1 acquéreur prêt correspond à ce bien'}
                 </Link>
               ) : null}
               {links.map((item) =>

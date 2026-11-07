@@ -58,8 +58,11 @@ export function ProposeSeries({
   proposed: { id: string; name: string; label: string }[];
   advisorFirstName: string | null;
 }) {
+  // Mission 145 — les prêts à visiter, cochés, comme la tâche les compte ; ceux qui correspondent
+  // sans être prêts, à part et décochés (remplace M134, « tous cochés »).
   const [checked, setChecked] = useState<Set<string>>(
-    () => new Set(candidates.map((candidate) => candidate.id)),
+    () =>
+      new Set(candidates.filter((candidate) => candidate.ready).map((candidate) => candidate.id)),
   );
   const [series, setSeries] = useState<ProposeCandidate[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -69,70 +72,82 @@ export function ProposeSeries({
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState<string[]>([]);
 
+  const readyCandidates = candidates.filter((candidate) => candidate.ready);
+  const otherCandidates = candidates.filter((candidate) => !candidate.ready);
+  const renderCandidate = (candidate: ProposeCandidate) => (
+    <li
+      key={candidate.id}
+      className="flex items-start gap-3 border-t border-zinc-100 py-2.5 first:border-0 stage:border-white/10"
+      data-testid="propose-candidate"
+    >
+      <input
+        type="checkbox"
+        className="mt-1 size-5 accent-brand"
+        aria-label={candidate.name}
+        checked={checked.has(candidate.id)}
+        onChange={(event) =>
+          setChecked((current) => {
+            const next = new Set(current);
+            if (event.target.checked) next.add(candidate.id);
+            else next.delete(candidate.id);
+            return next;
+          })
+        }
+      />
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <Link href={`/acquereurs/${candidate.id}`} className={`${linkStyle} font-semibold`}>
+            {candidate.name}
+          </Link>
+          <span
+            className={
+              candidate.ready
+                ? 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800'
+                : 'rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600'
+            }
+          >
+            {candidate.ready ? READY_LABEL : candidate.missing}
+          </span>
+        </span>
+        <span className="flex flex-wrap gap-1.5 text-sm text-zinc-600 stage:text-white/70">
+          {candidate.stars.map((star) => (
+            <span
+              key={star}
+              className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-900"
+            >
+              ★ {star}
+            </span>
+          ))}
+          {candidate.budgetGap ? <span>{candidate.budgetGap}</span> : null}
+        </span>
+      </span>
+    </li>
+  );
+
   if (series == null) {
     const count = checked.size;
     return (
       <div className="flex flex-col gap-4">
         <section className={`${card} flex flex-col gap-3 p-5`} data-testid="propose-list">
-          <h2 className={sectionTitle}>
+          <h2 className={sectionTitle} data-testid="propose-ready-title">
             {candidates.length === 0
               ? 'Plus personne à qui le proposer'
-              : `${candidates.length} ${candidates.length > 1 ? 'acquéreurs correspondent' : 'acquéreur correspond'}`}
+              : readyCandidates.length === 0
+                ? 'Aucun acquéreur prêt à visiter'
+                : `${readyCandidates.length} ${readyCandidates.length > 1 ? 'acquéreurs prêts' : 'acquéreur prêt'} à visiter`}
           </h2>
-          <ul className="flex flex-col">
-            {candidates.map((candidate) => (
-              <li
-                key={candidate.id}
-                className="flex items-start gap-3 border-t border-zinc-100 py-2.5 first:border-0 stage:border-white/10"
-                data-testid="propose-candidate"
+          <ul className="flex flex-col">{readyCandidates.map(renderCandidate)}</ul>
+          {otherCandidates.length > 0 ? (
+            <>
+              <h3
+                className="font-title text-base font-bold text-brand-darker stage:text-white"
+                data-testid="propose-others-title"
               >
-                <input
-                  type="checkbox"
-                  className="mt-1 size-5 accent-brand"
-                  aria-label={candidate.name}
-                  checked={checked.has(candidate.id)}
-                  onChange={(event) =>
-                    setChecked((current) => {
-                      const next = new Set(current);
-                      if (event.target.checked) next.add(candidate.id);
-                      else next.delete(candidate.id);
-                      return next;
-                    })
-                  }
-                />
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/acquereurs/${candidate.id}`}
-                      className={`${linkStyle} font-semibold`}
-                    >
-                      {candidate.name}
-                    </Link>
-                    <span
-                      className={
-                        candidate.ready
-                          ? 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800'
-                          : 'rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600'
-                      }
-                    >
-                      {candidate.ready ? READY_LABEL : candidate.missing}
-                    </span>
-                  </span>
-                  <span className="flex flex-wrap gap-1.5 text-sm text-zinc-600 stage:text-white/70">
-                    {candidate.stars.map((star) => (
-                      <span
-                        key={star}
-                        className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-900"
-                      >
-                        ★ {star}
-                      </span>
-                    ))}
-                    {candidate.budgetGap ? <span>{candidate.budgetGap}</span> : null}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+                Correspond aussi, pas encore prêt · {otherCandidates.length}
+              </h3>
+              <ul className="flex flex-col">{otherCandidates.map(renderCandidate)}</ul>
+            </>
+          ) : null}
           {proposed.length > 0 ? (
             <ul className="flex flex-col gap-1 border-t border-zinc-100 pt-3 text-sm text-zinc-500 stage:border-white/10 stage:text-white/60">
               {proposed.map((entry) => (

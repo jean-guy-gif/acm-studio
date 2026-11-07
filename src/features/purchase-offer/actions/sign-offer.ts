@@ -217,6 +217,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   revalidatePath(`/acquereurs/${input.buyerId}`);
   revalidatePath('/visites');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return {
     ok: true,
     documentId,

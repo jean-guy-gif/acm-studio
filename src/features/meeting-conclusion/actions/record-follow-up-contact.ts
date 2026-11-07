@@ -6,7 +6,10 @@ import { z } from 'zod';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { parseNextFollowUpOn } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProject } from '@/features/projects/queries/get-project';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import { createClient } from '@/lib/supabase/server';
 
 export type RecordFollowUpResult = { ok: true } | { ok: false; error: string };
@@ -67,18 +70,50 @@ export async function recordFollowUpContact(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from('follow_up_contacts').insert({
-    project_id: projectId,
-    agency_id: profile.agency_id,
-    author_id: profile.id,
-    note: note.data,
-    next_follow_up_on: next.day,
-  });
+  const { data: inserted, error } = await supabase
+    .from('follow_up_contacts')
+    .insert({
+      project_id: projectId,
+      agency_id: profile.agency_id,
+      author_id: profile.id,
+      note: note.data,
+      next_follow_up_on: next.day,
+    })
+    .select('contacted_at')
+    .single();
   if (error) {
     return { ok: false, error: 'La relance n’a pas pu être enregistrée. Réessayez.' };
   }
 
+  // Mission 145 (partie B) — une relance faite vaut « Garder la date » pour les acquéreurs prêts
+  // qu'elle a déjà comptés : « Relancer plus tôt ? » ne revient qu'avec un acquéreur prêt de plus,
+  // jamais le jour même. Un échec ici ne défait pas la relance ; il entre au journal.
+  await keepDateAfterRelance(projectId, profile.agency_id, inserted?.contacted_at ?? null);
+
   revalidatePath('/suivi');
+
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId}/conclusion`);
   return { ok: true };
+}
+
+async function keepDateAfterRelance(
+  projectId: string,
+  agencyId: string,
+  contactedAt: string | null,
+): Promise<void> {
+  if (!contactedAt) return;
+  try {
+    const buyers = await getPropertyBuyers(agencyId, projectId, new Date());
+    const ready = buyers?.ready.length ?? 0;
+    if (ready < 1) return;
+    const { error } = await createServiceRoleClient()
+      .from('project_meeting_conclusions')
+      .update({ early_follow_up_kept_at: contactedAt, early_follow_up_kept_ready: ready })
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId);
+    if (error) throw error;
+  } catch (cause) {
+    await reportServerError('record-follow-up-contact: garder la date', cause);
+  }
 }

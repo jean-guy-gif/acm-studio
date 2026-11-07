@@ -105,6 +105,7 @@ export async function dismissForBuyer(
   }
   revalidatePath(`/acquereurs/${buyer.id}/biens-ideaux`);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true, key };
 }
 
@@ -132,5 +133,6 @@ export async function undoDismissal(buyerId: unknown, key: unknown): Promise<Dis
   }
   revalidatePath(`/acquereurs/${buyer.id}/biens-ideaux`);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true, key };
 }

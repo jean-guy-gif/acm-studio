@@ -377,6 +377,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     },
   });
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId}/point-marche`);
   return {
     ok: true,
