@@ -1059,7 +1059,8 @@ export const ENGLISH_TEXTS: ClientTexts = {
     walk: (minutes) => `${minutes} min on foot`,
     drive: (minutes) => `${minutes} min by car`,
     driveTo: {
-      tgv_station: (name) => `${name} high-speed train station`,
+      tgv_station: (name) =>
+        /TGV/.test(name) ? `${name} station` : `${name} high-speed train station`,
       airport: (name) => `${name} Airport`,
       town_centre: (name) => `${name} town centre`,
     },

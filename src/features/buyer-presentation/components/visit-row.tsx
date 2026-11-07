@@ -99,6 +99,19 @@ export function VisitRow({
           Ses créneaux : {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
         </p>
       ) : null}
+      {/* Mission 142 — « Vivre ici » du bien, et « Confirmer la visite » tant qu'elle est à faire. */}
+      {livingHere ? (
+        <LivingHereVisitPanel
+          visitId={line.id}
+          sheet={livingHere.sheet}
+          sheetsFailed={livingHere.failed}
+          scheduledAt={line.scheduledAt ?? null}
+          priorities={livingHere.priorities}
+          livingPlace={livingHere.livingPlace}
+          livingPlaceMinutes={livingHere.livingPlaceMinutes}
+          canConfirm={!done}
+        />
+      ) : null}
       {done ? (
         <>
           {/* Mission 139 — le compte rendu : l'avis, ce qui a plu et déplu, la suite. */}
@@ -126,17 +139,6 @@ export function VisitRow({
               letterHref={letter.letterHref}
               state={letter.state}
               colleague={letter.colleague}
-            />
-          ) : null}
-          {livingHere ? (
-            <LivingHereVisitPanel
-              visitId={line.id}
-              sheet={livingHere.sheet}
-              sheetsFailed={livingHere.failed}
-              scheduledAt={line.scheduledAt ?? null}
-              priorities={livingHere.priorities}
-              livingPlace={livingHere.livingPlace}
-              livingPlaceMinutes={line.livingPlaceMinutes ?? null}
             />
           ) : null}
           <VisitDoneForm requestId={line.id} />

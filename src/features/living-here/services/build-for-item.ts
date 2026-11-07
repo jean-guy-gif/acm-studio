@@ -4,7 +4,7 @@ import { geoProvider } from '@/features/competitor-search/services/geo-provider'
 import type { GeoPoint } from '@/features/competitor-search/types';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import { buildSheetBlocks } from '@/features/living-here/services/build-sheet';
-import { startPoint } from '@/features/living-here/services/living-here-rules';
+import { placeFingerprint, startPoint } from '@/features/living-here/services/living-here-rules';
 import { readLivingHereBlocks } from '@/features/living-here/services/sheet-schema';
 import { demoLivingHereBlocks } from '@/features/demo/services/demo-living-here';
 import { liveLivingHereReaders } from '@/features/living-here/services/live-readers';
@@ -106,17 +106,6 @@ export async function buildLivingHereForItem(input: {
     city = typeof snapshot?.city === 'string' ? snapshot.city : null;
   }
   if (!city) return { ok: false, reason: 'city' };
-  if (input.onlyIfMissing) {
-    const { data: fresh } = await admin
-      .from('living_here_sheets')
-      .select('built_at')
-      .eq('agency_id', input.agencyId)
-      .eq('property_key', key)
-      .maybeSingle();
-    if (fresh && Date.now() - new Date(fresh.built_at).getTime() < FRESH_MS) {
-      return { ok: true, propertyKey: key };
-    }
-  }
 
   const commune = await geo.resolveCommune(city, postalCode);
   if (!commune.ok) return { ok: false, reason: 'commune' };
@@ -131,6 +120,20 @@ export async function buildLivingHereForItem(input: {
     communeCentre: commune.centre,
   });
   if (!start) return { ok: false, reason: 'start' };
+  if (input.onlyIfMissing) {
+    const { data: fresh } = await admin
+      .from('living_here_sheets')
+      .select('built_at')
+      .eq('agency_id', input.agencyId)
+      .eq('property_key', key)
+      .maybeSingle();
+    if (fresh && Date.now() - new Date(fresh.built_at).getTime() < FRESH_MS) {
+      // La fiche reste ; le trajet d'un nouvel acquéreur se calcule quand même (relecture du 07/11).
+      if (!isDemo)
+        await recordTrips({ agencyId: input.agencyId, itemId: item.id, from: start.point });
+      return { ok: true, propertyKey: key };
+    }
+  }
 
   const { data: existing } = await admin
     .from('living_here_sheets')
@@ -203,7 +206,11 @@ async function recordTrips(input: {
       await admin
         .from('buyer_visit_requests')
         .update({
-          living_place_trip: { mode: 'car', minutes: Math.max(1, Math.round(seconds / 60)) },
+          living_place_trip: {
+            mode: 'car',
+            minutes: Math.max(1, Math.round(seconds / 60)),
+            place: placeFingerprint(place),
+          },
         })
         .eq('id', visit.id)
         .eq('agency_id', input.agencyId);

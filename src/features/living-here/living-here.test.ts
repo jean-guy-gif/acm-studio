@@ -16,6 +16,7 @@ import {
 } from '@/features/living-here/services/living-here-judges';
 import {
   minutesOf,
+  placeFingerprint,
   nearestByCategory,
   priorityVerdict,
   readTrip,
@@ -23,7 +24,7 @@ import {
   sectorPrioritiesOf,
   startPoint,
 } from '@/features/living-here/services/living-here-rules';
-import { readLivingHereBlocks } from '@/features/living-here/services/sheet-schema';
+import { publicSheet, readLivingHereBlocks } from '@/features/living-here/services/sheet-schema';
 import { visitMoment } from '@/features/living-here/services/visit-moment';
 import type { LivingHereBlocks, LivingHereSheet } from '@/features/living-here/types';
 import { demoLivingHereBlocks } from '@/features/demo/services/demo-living-here';
@@ -213,11 +214,16 @@ describe('ce qui compte pour lui', () => {
     expect(sectorPrioritiesOf(null)).toEqual([]);
   });
   it('le trajet jusqu’à son lieu : la durée seulement', () => {
-    expect(readTrip({ mode: 'car', minutes: 18 })).toEqual({ minutes: 18 });
-    expect(readTrip({ mode: 'car', minutes: 18, label: 'Sophia', lat: 43 })).toEqual({
+    const place = placeFingerprint('Sophia Antipolis');
+    expect(readTrip({ mode: 'car', minutes: 18, place }, ' sophia  antipolis ')).toEqual({
       minutes: 18,
     });
-    expect(readTrip({ mode: 'bike', minutes: 18 })).toBeNull();
+    expect(
+      readTrip({ mode: 'car', minutes: 18, place, label: 'Sophia', lat: 43 }, 'Sophia Antipolis'),
+    ).toEqual({ minutes: 18 });
+    // Le lieu a changé depuis : les minutes de l'ancien lieu ne se montrent pas (M47).
+    expect(readTrip({ mode: 'car', minutes: 18, place }, 'Valbonne')).toBeNull();
+    expect(readTrip({ mode: 'bike', minutes: 18, place }, 'Sophia Antipolis')).toBeNull();
   });
 });
 
@@ -301,7 +307,7 @@ describe('la fiche à l’écran', () => {
     expect(render('district', 'fr')).toContain(
       'Distances depuis le quartier, pas depuis le bien lui-même.',
     );
-    expect(render('commune', 'fr')).toContain('Distances depuis le centre de Antibes.');
+    expect(render('commune', 'fr')).toContain('Distances depuis le centre d’Antibes.');
     const english = render('district', 'en');
     expect(english).toContain('Distances from the neighbourhood');
     expect(english).toContain('To Sophia Antipolis: 18 min by car');
@@ -355,5 +361,24 @@ describe('la démo', () => {
     expect(demoLivingHereBlocks({ lat: 48.85, lon: 2.35 }, now).daily.state).toBe('empty');
     // Le quartier d'Antibes est un point de la grille de 500 m, jamais l'adresse de l'annonce.
     expect(roundToDistrict(DEMO_LIVING_HERE[1]!.from)).toEqual(DEMO_LIVING_HERE[1]!.from);
+  });
+});
+
+describe('ce qui part vers l’acquéreur', () => {
+  it('ni la clé du bien (l’adresse de l’annonce), ni sa date : l’origine, la commune, les blocs', () => {
+    const sheet: LivingHereSheet = {
+      propertyKey: 'listing:https://annonces.example/12-rue-des-lilas-antibes',
+      origin: 'district',
+      commune: 'Antibes',
+      builtAt: '2026-11-07T10:00:00.000Z',
+      blocks: blocks(),
+    };
+    const shown = publicSheet(sheet);
+    expect(Object.keys(shown).sort()).toEqual(['blocks', 'commune', 'origin']);
+    expect(JSON.stringify(shown)).not.toMatch(/lilas|https?:/i);
+  });
+  it('depuis le centre de la commune, aucune ★ ne s’affirme', () => {
+    expect(priorityVerdict('shops_on_foot', blocks(), 'commune')).toBe('to_check');
+    expect(priorityVerdict('shops_on_foot', blocks(), 'district')).toBe('yes');
   });
 });

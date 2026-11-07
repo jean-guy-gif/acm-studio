@@ -93,6 +93,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import type { Database, Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import { buildLivingHereForItem } from '@/features/living-here/services/build-for-item';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 
 type Client = SupabaseClient<Database>;
 
@@ -1149,7 +1150,7 @@ export async function seedDemoDossiers(
     (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now)) &&
     (await seedLambertDismissals(supabase, closer, lambert.id, now)) &&
     (await seedWilsonVisit(supabase, closer, buyers, now)) &&
-    (await seedLivingHere(supabase, closer))
+    (await seedLivingHere(supabase, closer, buyers))
   );
 }
 
@@ -1190,20 +1191,30 @@ async function seedWilsonVisit(
 
 // Mission 142 — « Vivre ici », pré-construit pour chaque bien visité de la démo (les Keller à
 // Mougins, les Wilson à Antibes), par le même service que l'outil, sans aucun appel réseau (M114).
-async function seedLivingHere(supabase: Client, closer: Closer): Promise<boolean> {
+async function seedLivingHere(
+  supabase: Client,
+  closer: Closer,
+  buyers: { id: string }[],
+): Promise<boolean> {
+  // Les visites des acquéreurs du closer connecté, et elles seules (M114 B).
   const { data: visits, error } = await supabase
     .from('buyer_visit_requests')
     .select('buyer_selection_item_id')
     .eq('agency_id', closer.agencyId)
+    .in(
+      'buyer_id',
+      buyers.map((buyer) => buyer.id),
+    )
     .is('cancelled_at', null);
   if (error) return false;
   for (const itemId of new Set((visits ?? []).map((visit) => visit.buyer_selection_item_id))) {
+    // Une fiche qui ne se construit pas n'empêche pas la démo : la visite dit « se prépare ».
     const built = await buildLivingHereForItem({
       agencyId: closer.agencyId,
       itemId,
       builtBy: closer.id,
     });
-    if (!built.ok) return false;
+    if (!built.ok) await reportServerError('demo:living-here', new Error(built.reason));
   }
   return true;
 }

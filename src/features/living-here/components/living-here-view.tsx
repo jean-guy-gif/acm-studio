@@ -1,6 +1,10 @@
 import type { SourceBlock } from '@/features/address-dossier/types';
 import { priorityVerdict } from '@/features/living-here/services/living-here-rules';
-import type { LivingHereSheet, NearbyPlace, SectorPriority } from '@/features/living-here/types';
+import type {
+  NearbyPlace,
+  PublicLivingHereSheet,
+  SectorPriority,
+} from '@/features/living-here/types';
 import type { ReactNode } from 'react';
 
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
@@ -25,7 +29,7 @@ export function LivingHereView({
   livingPlace,
   livingPlaceMinutes,
 }: {
-  sheet: LivingHereSheet;
+  sheet: PublicLivingHereSheet;
   language: TextLanguage;
   priorities: readonly SectorPriority[];
   livingPlace: string | null;
@@ -87,7 +91,7 @@ export function LivingHereView({
           </h3>
           <ul className="flex flex-col gap-1 text-sm">
             {priorities.map((priority) => {
-              const verdict = priorityVerdict(priority, blocks);
+              const verdict = priorityVerdict(priority, blocks, sheet.origin);
               return (
                 <li key={priority} className="flex flex-wrap justify-between gap-x-3">
                   <span>★ {t.priorities[priority]}</span>

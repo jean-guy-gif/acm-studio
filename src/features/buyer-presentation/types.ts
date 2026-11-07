@@ -49,10 +49,8 @@ export type VisitRequest = {
     disliked: VisitTag[];
     nextStep: VisitNextStep | null;
   } | null;
-  // Mission 142 — le jour et l'heure posés par « Confirmer la visite », et le temps en voiture
-  // jusqu'au lieu de l'acquéreur (en minutes), calculé une fois.
+  // Mission 142 — le jour et l'heure posés par « Confirmer la visite ».
   scheduledAt?: string | null;
-  livingPlaceMinutes?: number | null;
 };
 
 // Ce qu'un bien a le droit de porter devant l'acquéreur : LISTE D'AUTORISATION. Ni titre, ni

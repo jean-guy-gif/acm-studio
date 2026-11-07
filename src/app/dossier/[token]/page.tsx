@@ -11,6 +11,10 @@ import { clientTexts } from '@/lib/client-texts';
 import { buyerLanguage } from '@/lib/client-texts/link-language';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
+// Mission 142 — une demande de visite lance « Vivre ici » en tâche de fond (`after()`), dans la
+// même fonction : OpenStreetMap peut prendre jusqu'à 45 s par bien. La limite, gardée large.
+export const maxDuration = 300;
+
 export const dynamic = 'force-dynamic';
 
 // Jamais indexée (l'en-tête X-Robots-Tag le redit, next.config.ts).

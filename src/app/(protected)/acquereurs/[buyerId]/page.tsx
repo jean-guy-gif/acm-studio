@@ -63,6 +63,10 @@ import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { createClient } from '@/lib/supabase/server';
 
+// Mission 142 — une demande de visite lance « Vivre ici » en tâche de fond (`after()`), dans la
+// même fonction : OpenStreetMap peut prendre jusqu'à 45 s par bien. La limite, gardée large.
+export const maxDuration = 300;
+
 export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
 
 type BuyerPageProps = {

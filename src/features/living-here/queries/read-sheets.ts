@@ -16,17 +16,17 @@ export async function propertyKeysForItems(
   client: Client,
   agencyId: string,
   items: ItemRef[],
-): Promise<Map<string, string>> {
+): Promise<{ keys: Map<string, string>; failed: boolean }> {
   const competitorIds = items
     .filter((item) => item.source === 'competitor')
     .map((item) => item.reference);
-  const { data: competitors } = competitorIds.length
+  const { data: competitors, error } = competitorIds.length
     ? await client
         .from('comparables')
         .select('id, listing_url')
         .eq('agency_id', agencyId)
         .in('id', competitorIds)
-    : { data: [] };
+    : { data: [], error: null };
   const listingOf = new Map((competitors ?? []).map((row) => [row.id, row.listing_url]));
   const keys = new Map<string, string>();
   for (const item of items) {
@@ -45,7 +45,8 @@ export async function propertyKeysForItems(
       keys.set(item.id, dismissalKey({ source: 'listing', url: item.reference }));
     }
   }
-  return keys;
+  // Une lecture en échec n'est jamais lue comme « pas encore de fiche » (M98).
+  return { keys, failed: error != null };
 }
 
 const ORIGINS: readonly StartOrigin[] = ['address', 'district', 'commune'];

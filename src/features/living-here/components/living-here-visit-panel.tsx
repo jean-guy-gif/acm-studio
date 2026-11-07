@@ -18,9 +18,19 @@ import {
 import { LivingHereView } from '@/features/living-here/components/living-here-view';
 import type { LivingHereSheet, SectorPriority } from '@/features/living-here/types';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
-import { formatDateTime } from '@/lib/format';
 
 const LOST = 'Connexion perdue — réessayez.';
+
+// Le jour et l'heure à Paris, quel que soit le fuseau du serveur ou du navigateur.
+const parisMoment = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
 
 // Mission 142 — sur une visite demandée, pour le conseiller : « Vivre ici » en français (construit
 // en tâche de fond, « Construire » ou « Actualiser » en secours), puis « Confirmer la visite » : le
@@ -34,6 +44,7 @@ export function LivingHereVisitPanel({
   priorities,
   livingPlace,
   livingPlaceMinutes,
+  canConfirm = true,
 }: {
   visitId: string;
   sheet: LivingHereSheet | null;
@@ -42,6 +53,7 @@ export function LivingHereVisitPanel({
   priorities: readonly SectorPriority[];
   livingPlace: string | null;
   livingPlaceMinutes: number | null;
+  canConfirm?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -91,7 +103,7 @@ export function LivingHereVisitPanel({
     <div className="flex flex-col gap-3" data-testid="living-here-panel">
       {scheduledAt ? (
         <p className="text-sm font-medium text-emerald-700" data-testid="visit-scheduled">
-          Visite planifiée le {formatDateTime(scheduledAt).slice(0, 16)}
+          Visite planifiée le {parisMoment(scheduledAt)}
         </p>
       ) : null}
       {sheetsFailed ? (
@@ -134,16 +146,18 @@ export function LivingHereVisitPanel({
                 : 'Construire Vivre ici'}
           </button>
         )}
-        <button
-          type="button"
-          className={btnSecondary}
-          onClick={() => setConfirming((open) => !open)}
-          data-testid="visit-confirm-open"
-        >
-          Confirmer la visite
-        </button>
+        {canConfirm ? (
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={() => setConfirming((open) => !open)}
+            data-testid="visit-confirm-open"
+          >
+            Confirmer la visite
+          </button>
+        ) : null}
       </div>
-      {confirming ? (
+      {confirming && canConfirm ? (
         <div className="flex flex-col gap-2" data-testid="visit-confirm">
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1">
