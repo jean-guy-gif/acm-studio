@@ -1,3 +1,4 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ItemAnswer, ItemResponse } from '@/features/buyer-deck/types';
 
 // Mission 122 (essai de Jean-Guy, 25/10) — la navigation de la présentation, LIBRE : depuis la
@@ -71,25 +72,24 @@ export function unansweredLetters(
     .map((item) => item.letter);
 }
 
-const joinLetters = (letters: string[]): string =>
-  letters.length <= 1
-    ? (letters[0] ?? '')
-    : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`;
-
-const unansweredQuestion = (letters: string[], verb: string): string | null =>
-  letters.length === 0
-    ? null
-    : `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse : ${joinLetters(
-        letters,
-      )}. ${verb} quand même ?`;
+// Mission 140 — dans la langue de l'acquéreur (le français par défaut).
+const unansweredQuestion = (
+  letters: string[],
+  verb: 'finish' | 'send',
+  language: TextLanguage,
+): string | null =>
+  letters.length === 0 ? null : clientTexts(language).buyer.screens.unanswered(letters, verb);
 
 // « 2 biens sans réponse : A et B. Terminer quand même ? » ; null quand tout a une réponse.
-export function finishConfirmation(letters: string[]): string | null {
-  return unansweredQuestion(letters, 'Terminer');
+export function finishConfirmation(
+  letters: string[],
+  language: TextLanguage = 'fr',
+): string | null {
+  return unansweredQuestion(letters, 'finish', language);
 }
 
 // Mission 122 (partie B, décision de Jean-Guy, 25/10) — sur le lien, l'envoi est définitif :
 // « 2 biens sans réponse : A et B. Envoyer quand même ? » ; null quand tout a une réponse.
-export function sendConfirmation(letters: string[]): string | null {
-  return unansweredQuestion(letters, 'Envoyer');
+export function sendConfirmation(letters: string[], language: TextLanguage = 'fr'): string | null {
+  return unansweredQuestion(letters, 'send', language);
 }

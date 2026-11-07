@@ -1,18 +1,9 @@
 import { GridLegend, MustHaveStar, markClass } from '@/features/buyer-deck/components/deck-marks';
 import { criteriaCountLabel, markSymbol } from '@/features/buyer-deck/services/buyer-deck';
-import {
-  AVAILABILITY_LABELS,
-  AVAILABILITY_SLOTS,
-  ITEM_ANSWER_LABELS,
-  ITEM_ANSWERS,
-  type DeckItem,
-} from '@/features/buyer-deck/types';
-import {
-  DOSSIER_CHOICES_TITLE,
-  DOSSIER_DISCLAIMER,
-  type BuyerDossier,
-} from '@/features/buyer-dossier/types';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { AVAILABILITY_SLOTS, ITEM_ANSWERS, type DeckItem } from '@/features/buyer-deck/types';
+import type { BuyerDossier } from '@/features/buyer-dossier/types';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { buyerDateIn } from '@/features/buyers/services/buyer-criteria';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 122 (partie B) — le PDF du dossier qui fait agir : la même logique sur papier. Couverture
@@ -39,8 +30,9 @@ function Box({ label }: { label: string }) {
   );
 }
 
-function ItemPage({ entry }: { entry: DeckItem }) {
+function ItemPage({ entry, language }: { entry: DeckItem; language: TextLanguage }) {
   const { item } = entry;
+  const t = clientTexts(language).buyer.screens;
   const where = [item.district, item.city]
     .filter((part): part is string => part != null && part !== '')
     .join(' · ');
@@ -51,7 +43,7 @@ function ItemPage({ entry }: { entry: DeckItem }) {
     >
       <div className="flex flex-col gap-1">
         <span className={kicker}>
-          Bien {entry.letter} · {criteriaCountLabel(entry)}
+          {t.kickerItem(entry.letter, criteriaCountLabel(entry, language))}
         </span>
         <h2 className="font-title text-2xl font-bold text-brand-darker">{item.label}</h2>
         {where ? <p className="text-sm text-zinc-600">{where}</p> : null}
@@ -91,7 +83,7 @@ function ItemPage({ entry }: { entry: DeckItem }) {
       </ul>
       {entry.pitch ? (
         <div className="border-l-4 border-brand bg-white px-4 py-3" data-testid="dossier-pitch">
-          <div className={kicker}>Pourquoi je vous le propose</div>
+          <div className={kicker}>{t.pitchTitle}</div>
           <p className="mt-1 text-base">« {entry.pitch} »</p>
         </div>
       ) : null}
@@ -102,8 +94,12 @@ function ItemPage({ entry }: { entry: DeckItem }) {
 
 export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
   const { agency, deck } = dossier;
-  const day = buyerDateLabel(dossier.selectedAt);
-  const footer = `Sélection confidentielle · ${dossier.sector} · ${day}`;
+  // Mission 140 — dans la langue de l'acquéreur ; les mentions légales de l'agence en français.
+  const language: TextLanguage = deck.language ?? 'fr';
+  const texts = clientTexts(language);
+  const t = texts.buyer.screens;
+  const day = buyerDateIn(dossier.selectedAt, language);
+  const footer = `${t.confidential} · ${dossier.sector} · ${day}`;
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   // La photo du bien A en pleine page ; s'il est « Sans photo » ou n'en a pas, la première photo de
   // la sélection — un aplat seulement quand aucun bien n'a de photo, et jamais vide : sa phrase,
@@ -163,18 +159,18 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            Votre sélection du {day}
+            {t.selectionOf(day)}
           </h1>
-          <p className="text-xs tracking-[0.16em] uppercase opacity-90">Vous m’avez dit :</p>
+          <p className="text-xs tracking-[0.16em] uppercase opacity-90">{t.wordsTitle}</p>
           <p className="font-title text-xl leading-snug font-semibold" data-testid="dossier-words">
             « {deck.words} »
           </p>
           <p className="text-sm opacity-90">
-            {deck.items.length} bien{deck.items.length > 1 ? 's' : ''} · {dossier.sector}
+            {t.propertiesCount(deck.items.length)} · {dossier.sector}
           </p>
           {agency.advisorName ? (
             <p className="mt-2 text-sm font-semibold" data-testid="dossier-cover-advisor">
-              Votre conseiller :{' '}
+              {t.advisorLabel}
               {[agency.advisorName, agency.advisorPhone].filter(Boolean).join(' · ')}
             </p>
           ) : null}
@@ -186,11 +182,11 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
           className="flex flex-col gap-3 break-inside-avoid print:pt-[4mm]"
           data-testid="dossier-grid"
         >
-          <h2 className="font-title text-2xl font-bold text-brand-darker">Vos critères</h2>
+          <h2 className="font-title text-2xl font-bold text-brand-darker">{t.kickerCriteria}</h2>
           <table className="w-full border-collapse border border-zinc-200 bg-white text-left">
             <thead>
               <tr>
-                <th className={`${kicker} border-b border-zinc-200 px-3 py-2`}>Critère</th>
+                <th className={`${kicker} border-b border-zinc-200 px-3 py-2`}>{t.criterion}</th>
                 {deck.items.map((entry) => (
                   <th
                     key={entry.item.itemId}
@@ -225,7 +221,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                     {row.mustHave ? (
                       <>
                         {' '}
-                        <MustHaveStar />
+                        <MustHaveStar language={language} />
                       </>
                     ) : null}
                   </th>
@@ -246,7 +242,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
               ))}
             </tbody>
           </table>
-          <GridLegend className="text-sm text-zinc-500" />
+          <GridLegend className="text-sm text-zinc-500" language={language} />
           {deck.lead ? (
             <p className="mt-4 border-l-4 border-brand bg-white px-5 py-4 font-title text-2xl font-semibold text-brand-darker">
               {deck.lead}
@@ -255,16 +251,14 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
         </section>
 
         {deck.items.map((entry) => (
-          <ItemPage key={entry.item.itemId} entry={entry} />
+          <ItemPage key={entry.item.itemId} entry={entry} language={language} />
         ))}
 
         <section
           className="flex flex-col gap-4 break-before-page break-inside-avoid print:pt-[4mm]"
           data-testid="dossier-choices"
         >
-          <h2 className="font-title text-2xl font-bold text-brand-darker">
-            {DOSSIER_CHOICES_TITLE}
-          </h2>
+          <h2 className="font-title text-2xl font-bold text-brand-darker">{t.choicesTitle}</h2>
           <ul className="flex flex-col gap-2">
             {deck.items.map((entry) => (
               <li
@@ -273,28 +267,26 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                 data-testid="dossier-choice-row"
               >
                 <span className="font-semibold">
-                  Bien {entry.letter} · {entry.item.label}
+                  {t.kickerItem(entry.letter, entry.item.label)}
                 </span>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   {ITEM_ANSWERS.map((answer) => (
-                    <Box key={answer} label={ITEM_ANSWER_LABELS[answer]} />
+                    <Box key={answer} label={t.answers[answer]} />
                   ))}
                 </div>
               </li>
             ))}
           </ul>
           <div className="flex flex-col gap-2 border border-zinc-200 bg-white px-4 py-3">
-            <span className="font-semibold">Quand pouvez-vous visiter ?</span>
+            <span className="font-semibold">{t.when}</span>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {AVAILABILITY_SLOTS.map((slot) => (
-                <Box key={slot} label={AVAILABILITY_LABELS[slot]} />
+                <Box key={slot} label={t.slots[slot]} />
               ))}
             </div>
           </div>
           <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
-            <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">
-              {DOSSIER_DISCLAIMER}
-            </p>
+            <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">{t.disclaimer}</p>
             {agency.advisorName ? (
               <div
                 className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3"
@@ -309,7 +301,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                   />
                 ) : null}
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className={kicker}>Votre conseiller</span>
+                  <span className={kicker}>{texts.documents.common.advisor}</span>
                   <span className="font-semibold">{agency.advisorName}</span>
                   <span className="text-sm text-zinc-500">
                     {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
@@ -320,7 +312,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
                     viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
                     className="h-16 w-16 shrink-0"
                     role="img"
-                    aria-label="Carte de contact du conseiller"
+                    aria-label={texts.documents.common.contactCard}
                     shapeRendering="crispEdges"
                   >
                     <path d={agency.advisorQr.path} fill="currentColor" />

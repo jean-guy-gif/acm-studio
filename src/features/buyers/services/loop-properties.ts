@@ -8,6 +8,7 @@ import {
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
 import type { Buyer } from '@/features/buyers/types';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 134 — « Personne n'est oublié » : chaque nouveau bien appelle les acquéreurs de l'agence
@@ -154,17 +155,28 @@ export function readyToPropose(loop: LoopBuyers): number {
   return loop.toPropose.filter((entry) => entry.ready).length;
 }
 
-// « la maison de Vence », « l'appartement d'Antibes », « le bien de Mougins ».
-export function propertyPhrase(property: Pick<BuyerLoopProperty, 'propertyType' | 'city'>): string {
-  const type = (property.propertyType ?? '').toLowerCase();
-  const noun = /house|maison/.test(type)
-    ? 'la maison'
+// Le genre d'un bien, pour le dire dans une phrase.
+export function propertyKind(
+  propertyType: string | null | undefined,
+): 'house' | 'apartment' | 'other' {
+  const type = (propertyType ?? '').toLowerCase();
+  return /house|maison/.test(type)
+    ? 'house'
     : /apartment|appartement/.test(type)
-      ? 'l’appartement'
-      : 'le bien';
-  const city = property.city?.trim();
-  if (!city) return noun;
-  return /^[aeiouyàâéèêîôûh]/i.test(city) ? `${noun} d’${city}` : `${noun} de ${city}`;
+      ? 'apartment'
+      : 'other';
+}
+
+// « la maison de Vence », « l'appartement d'Antibes », « le bien de Mougins ». Mission 140 — dans
+// la langue de l'acquéreur (le français par défaut, et pour tout ce que voit le conseiller).
+export function propertyPhrase(
+  property: Pick<BuyerLoopProperty, 'propertyType' | 'city'>,
+  language: TextLanguage = 'fr',
+): string {
+  return clientTexts(language).buyer.messages.phrase(
+    propertyKind(property.propertyType),
+    property.city?.trim() || null,
+  );
 }
 
 // « 140 m², 779 000 € » : ce que le conseiller lit sur la tâche.
@@ -201,41 +213,56 @@ export function budgetGapLabel(price: number | null, budgetMax: number | null): 
 // § 6 — le message à l'acquéreur : son nom tel que saisi (la fiche n'a pas de prénom, M119), ce
 // que le bien a de ce qu'il cherche, la marge sous son budget — jamais pour un vendeur à relancer,
 // dont le prix se confirme avec le propriétaire (M119) —, le lien de son dossier, la signature.
+// Ce que le bien a de ce qu'il cherche : « la piscine que vous vouliez, un extérieur ».
+export function propertyHas(
+  buyer: Pick<Buyer, 'pool' | 'outdoor' | 'parking' | 'elevator'>,
+  p: BuyerLoopProperty,
+  language: TextLanguage = 'fr',
+): string[] {
+  const t = clientTexts(language).buyer.messages.has;
+  const has: string[] = [];
+  if (buyer.pool === true && p.hasPool === true) has.push(t.pool);
+  if (buyer.outdoor === true && p.outdoorSpaces.length > 0) has.push(t.outdoor);
+  if (buyer.parking === true && p.parkingTypes.length > 0) has.push(t.parking);
+  if (buyer.elevator === true && p.hasElevator === true) has.push(t.elevator);
+  return has;
+}
+
+// Mission 140 — dans la langue de l'acquéreur (le français par défaut).
 export function proposalMessage(input: {
   buyer: Pick<Buyer, 'name' | 'pool' | 'outdoor' | 'parking' | 'elevator' | 'budgetMax'>;
   item: Pick<LoopProperty, 'property' | 'price' | 'origin'>;
   url: string;
   advisorFirstName: string | null;
+  language?: TextLanguage;
 }): string {
   const { buyer, item } = input;
+  const language = input.language ?? 'fr';
+  const t = clientTexts(language).buyer.messages;
   const p = item.property;
-  const has: string[] = [];
-  if (buyer.pool === true && p.hasPool === true) has.push('la piscine que vous vouliez');
-  if (buyer.outdoor === true && p.outdoorSpaces.length > 0) has.push('un extérieur');
-  if (buyer.parking === true && p.parkingTypes.length > 0) has.push('un stationnement');
-  if (buyer.elevator === true && p.hasElevator === true) has.push('un ascenseur');
-  const where = p.city?.trim() ? `à ${p.city.trim()}` : null;
+  const has = propertyHas(buyer, p, language);
+  const where = p.city?.trim() ? t.at(p.city.trim()) : null;
   const margin =
     item.origin !== 'follow_up' &&
     item.price != null &&
     buyer.budgetMax != null &&
     item.price < buyer.budgetMax
-      ? `${formatEuro(buyer.budgetMax - item.price)} sous votre budget`
+      ? t.proposal.margin(formatEuro(buyer.budgetMax - item.price, { language }))
       : null;
   // « maison », « appartement » ; un type inconnu ne se dit pas (jamais « bien à Vence »).
-  const noun = propertyPhrase({ propertyType: p.propertyType, city: null });
+  const kind = propertyKind(p.propertyType);
   const what = [
-    noun === 'le bien' ? null : noun.replace(/^(la|le|l’)\s?/, ''),
+    kind === 'other' ? null : t.proposal.noun[kind],
     where,
-    has.length > 0 ? `avec ${has.join(', ')}` : null,
+    has.length > 0 ? t.withList(has) : null,
   ]
     .filter(Boolean)
     .join(' ');
   const lines = [
-    `Bonjour ${buyer.name},`,
-    `J’ai un bien pour vous : ${what}${margin ? `, ${margin}` : ''}.`,
-    `Votre sélection : ${input.url}`,
-    'Dites-moi si vous voulez le visiter.',
+    t.hello(buyer.name),
+    t.proposal.line(what, margin),
+    t.selection(input.url),
+    t.proposal.ask,
   ];
   if (input.advisorFirstName?.trim()) lines.push(input.advisorFirstName.trim());
   return lines.join('\n');

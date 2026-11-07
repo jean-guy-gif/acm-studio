@@ -16,6 +16,12 @@ import {
   textToDocument,
   type RenderedDocument,
 } from '@/features/visit-voucher/services/voucher-text';
+import {
+  legalTranslation,
+  voucherFieldsForTranslation,
+} from '@/features/legal-translation/legal-translation';
+import { clientLanguage } from '@/lib/client-language';
+import { textLanguage } from '@/lib/client-texts';
 import type { Database } from '@/lib/supabase/database.types';
 
 type Admin = SupabaseClient<Database>;
@@ -31,6 +37,9 @@ export type SignedVoucher = {
   signedAt: string;
   contentSha256: string;
   signatureUrls: string[];
+  // Mission 140 B — la traduction jointe pour un client non francophone ; null tant que le juriste
+  // ne l'a pas validée (`TRADUCTION_DOCUMENTS_JURIDIQUES_VALIDEE`), et pour un client francophone.
+  translation: RenderedDocument | null;
   header: { name: string; logoUrl: string | null; brandDeclarations: string };
 };
 
@@ -44,7 +53,9 @@ export async function loadSignedVoucher(
   if (!/^[0-9a-f-]{36}$/i.test(documentId)) return null;
   const { data } = await admin
     .from('buyer_documents')
-    .select('id, buyer_id, rendered_text, fields, signed_at, content_sha256, signature_paths')
+    .select(
+      'id, buyer_id, rendered_text, fields, signed_at, content_sha256, signature_paths, buyers(language)',
+    )
     .eq('id', documentId)
     .eq('agency_id', agencyId)
     .eq('kind', 'visit_voucher')
@@ -57,11 +68,21 @@ export async function loadSignedVoucher(
       : Promise.resolve({ data: [] as { signedUrl: string | null }[] }),
     loadDocumentAgency(admin, agencyId, null),
   ]);
+  const fields = readVoucherFields(data.fields);
+  const language = textLanguage(
+    clientLanguage((data.buyers as unknown as { language: string | null } | null)?.language),
+  );
   return {
     id: data.id,
     buyerId: data.buyer_id,
     document: textToDocument(data.rendered_text),
-    fields: readVoucherFields(data.fields),
+    fields,
+    translation: fields
+      ? legalTranslation(
+          { kind: 'visit_voucher', fields: voucherFieldsForTranslation(fields) },
+          language,
+        )
+      : null,
     signedAt: data.signed_at,
     contentSha256: data.content_sha256,
     signatureUrls: (signed.data ?? [])

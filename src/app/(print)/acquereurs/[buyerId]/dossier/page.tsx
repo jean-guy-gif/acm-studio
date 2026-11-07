@@ -65,6 +65,7 @@ export default async function BuyerDossierPage({
         <DossierLinkButton
           buyerId={buyerId}
           advisorFirstName={profile.first_name}
+          language={dossier.deck.language ?? 'fr'}
           links={(links ?? []).map((item) => ({
             id: item.id,
             createdAt: item.created_at,

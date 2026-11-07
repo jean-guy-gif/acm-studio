@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- logo et signatures : liens signés courts, tels quels. */
+import { TRANSLATION_NOTICE } from '@/features/legal-translation/legal-translation';
 import { parisDateTimeLabel } from '@/features/visit-voucher/services/voucher-fields';
 import type { SignedVoucher } from '@/features/visit-voucher/queries/load-voucher';
 
@@ -64,6 +65,36 @@ export function VoucherDocument({ voucher }: { voucher: SignedVoucher }) {
         Signé le {parisDateTimeLabel(voucher.signedAt)} · empreinte du texte signé :{' '}
         <span className="break-all font-mono">{voucher.contentSha256}</span>
       </footer>
+      {/* Mission 140 B — la traduction jointe : marquée en tête, jamais signée, jamais à la place
+          du français qui fait foi. */}
+      {voucher.translation ? (
+        <section
+          className="mt-6 flex flex-col gap-3 border-t-2 border-zinc-300 pt-4 break-before-page"
+          data-testid="voucher-translation"
+          lang="en"
+        >
+          <p className="rounded bg-amber-50 px-3 py-2 text-center text-[12px] font-semibold text-amber-900">
+            {TRANSLATION_NOTICE}
+          </p>
+          <h2 className="text-center font-title text-lg font-bold tracking-wide">
+            {voucher.translation.title}
+          </h2>
+          {voucher.translation.sections.map((section, index) => (
+            <section key={`${section.heading}-${index}`} className="flex flex-col gap-1.5">
+              {section.heading ? (
+                <h3 className="font-title text-sm font-bold uppercase tracking-wide text-brand-darker">
+                  {section.heading}
+                </h3>
+              ) : null}
+              {section.paragraphs.map((paragraph, line) => (
+                <p key={line} className="whitespace-pre-wrap">
+                  {paragraph}
+                </p>
+              ))}
+            </section>
+          ))}
+        </section>
+      ) : null}
     </article>
   );
 }

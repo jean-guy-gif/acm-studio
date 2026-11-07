@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import { textLanguage } from '@/lib/client-texts';
 import { notFound } from 'next/navigation';
 
 import { alertError, backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
@@ -62,6 +64,7 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
       elevator: buyer.elevator,
       budgetMax: buyer.budgetMax,
     },
+    language: textLanguage(buyer.language),
   });
   const figures = item
     ? propertyFigures({ surfaceArea: item.property.surfaceArea, price: item.price })

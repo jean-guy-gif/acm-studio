@@ -58,3 +58,17 @@ Relu par le relecteur produit de Jean-Guy (07/11) : « Your listing price » pou
 ensemble, « Asking price » pour le prix affiché d'un concurrent, « competing property / competing
 properties » partout où le vendeur lit « concurrent » ; « estimated » accepté. La relecture d'un
 locuteur natif reste à faire.
+
+## Mission 140 B — ce que voit l'acquéreur, dans sa langue
+
+La présentation, le lien et le PDF du dossier acquéreur, les messages de proposition, de relance,
+du lien et de la réponse du vendeur à son offre lisent leurs mots dans les mêmes fichiers
+(`src/lib/client-texts/fr.ts` et `en.ts`, section `buyer`). Le message au notaire reste en français.
+
+**Le bon de visite et l'offre d'achat** : la version française reste la seule signée. Une traduction
+anglaise, à joindre « pour information — seule la version française fait foi », est écrite dans
+`src/features/legal-translation/legal-translation.ts` et **désactivée**
+(`TRADUCTION_DOCUMENTS_JURIDIQUES_VALIDEE = false`) : à faire relire par le juriste et par un
+locuteur natif avant de l'allumer. Le bon la recompose depuis ses champs figés ; l'offre ne garde pas
+tous ses champs à la signature (parcelles, honoraires, dates) : l'allumer pour l'offre demandera de
+garder sa traduction à la signature (une colonne, une migration).

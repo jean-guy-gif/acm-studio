@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 
 // Mission 131 — un lien retiré ou expiré parle à la personne qui l'a reçu (M127 B).
 export default function NotFound() {
-  return <LinkExpiredScreen what="L’Étude de marché" feminine />;
+  return <LinkExpiredScreen kind="marketStudy" feminine />;
 }

@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+
 import {
   ANSWER,
   GRID,
@@ -100,8 +102,11 @@ describe('la navigation de la présentation', () => {
     );
     expect(finishButton).toContain('className={navBtn}');
     expect(finishButton).not.toContain('primaryBtn');
-    expect(scene).toContain('Passer à ses disponibilités');
-    expect(scene).toContain('Revenir à la grille');
+    // Mission 140 — les mots dans les textes du client ; la scène lit leurs clés.
+    expect(FRENCH_TEXTS.buyer.screens.toAvailability).toBe('Passer à ses disponibilités');
+    expect(FRENCH_TEXTS.buyer.screens.backToGrid).toBe('Revenir à la grille');
+    expect(scene).toContain('t.toAvailability');
+    expect(scene).toContain('t.backToGrid');
     // Une réponse n'appelle jamais la navigation.
     const send = scene.slice(scene.indexOf('const send = '), scene.indexOf('const toggleReason'));
     expect(send).not.toMatch(/\bgo\(|setScreen/);

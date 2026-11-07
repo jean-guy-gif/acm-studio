@@ -13,7 +13,7 @@ import {
 } from '@/features/purchase-offer/actions/offer-answer';
 import { newOfferHref, type OfferDecision } from '@/features/purchase-offer/services/offer-answer';
 
-type Prepared = { message: string; phone: string | null; email: string | null };
+type Prepared = { message: string; phone: string | null; email: string | null; subject?: string };
 
 // Mission 138 — la réponse du vendeur à une offre, sur place dans « À faire aujourd'hui ». Acceptée :
 // « Prévenir l'acquéreur » (son message et un lien neuf vers sa copie) et « Transmettre au notaire »
@@ -70,7 +70,12 @@ export function OfferAnswerTask({
         }
         setPrepared((current) => ({
           ...current,
-          [target]: { message: result.message, phone: result.phone, email: result.email },
+          [target]: {
+            message: result.message,
+            phone: result.phone,
+            email: result.email,
+            subject: result.subject,
+          },
         }));
       })
       .catch(() => {
@@ -85,7 +90,7 @@ export function OfferAnswerTask({
         shown.message,
         shown.phone,
         shown.email,
-        open === 'notary' ? 'Offre d’achat acceptée' : 'Votre offre d’achat',
+        shown.subject ?? (open === 'notary' ? 'Offre d’achat acceptée' : 'Votre offre d’achat'),
       )
     : null;
 

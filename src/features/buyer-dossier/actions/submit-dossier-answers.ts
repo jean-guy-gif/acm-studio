@@ -1,5 +1,6 @@
 'use server';
 
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 import { z } from 'zod';
 
 import { onlyReasons } from '@/features/buyer-deck/services/response-row';
@@ -22,8 +23,10 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 export type SubmitDossierResult =
   { ok: true; answered: number } | { ok: false; error: string; closed?: LinkClosed };
 
-const FAILURE = 'Votre réponse n’a pas pu être envoyée. Réessayez.';
-const EXPIRED = 'Ce lien n’est plus valable.';
+// Mission 140 — une seule source, les textes du client ; le lien les redit dans la langue de
+// l'acquéreur.
+const FAILURE = FRENCH_TEXTS.buyer.screens.sendFailed;
+const EXPIRED = FRENCH_TEXTS.buyer.screens.expired;
 
 const answerSchema = z.object({
   itemId: z.uuid(),

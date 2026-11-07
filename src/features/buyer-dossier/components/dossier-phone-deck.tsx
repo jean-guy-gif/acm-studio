@@ -22,10 +22,7 @@ import {
   type DeckScreen,
 } from '@/features/buyer-deck/services/deck-navigation';
 import {
-  AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
-  ITEM_ANSWER_LABELS,
-  NO_REASON_LABELS,
   NO_REASONS,
   type AvailabilitySlot,
   type BuyerDeck,
@@ -34,16 +31,28 @@ import {
   type ItemResponse,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
+import { buyerDateIn } from '@/features/buyers/services/buyer-criteria';
 import { submitDossierAnswers } from '@/features/buyer-dossier/actions/submit-dossier-answers';
 import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/link-screen';
-import {
-  DOSSIER_DOWNLOAD,
-  DOSSIER_NO_ANSWER,
-  DOSSIER_SEEN_TOGETHER,
-  DOSSIER_SEND,
-  DOSSIER_THANKS,
-} from '@/features/buyer-dossier/types';
+import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-dossier/types';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+
+// Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
+const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
+const languageOf = (deck: BuyerDeck): TextLanguage => deck.language ?? 'fr';
+// Les refus du serveur, redits dans sa langue ; un autre message, la connexion perdue.
+function localError(message: string, deck: BuyerDeck): string {
+  const t = screensOf(deck);
+  if (message === DOSSIER_PRESENTED) return t.presented;
+  if (message === DOSSIER_ALREADY_ANSWERED) return t.alreadyAnswered;
+  if (languageOf(deck) === 'fr') return message;
+  const french = FRENCH_TEXTS.buyer.screens;
+  if (message === french.expired) return t.expired;
+  if (message === french.noAnswerYet) return t.noAnswerYet;
+  if (message === french.sendFailed) return t.sendFailed;
+  return t.connectionLost;
+}
 
 // Mission 122 (partie B) — le lien du dossier, pensé pour le téléphone : le même déroulé que la
 // présentation (M122 A), un écran à la fois, défilement vertical, boutons au pouce. Ses réponses
@@ -72,7 +81,7 @@ const toLocal = (responses: ItemResponse[]): Map<string, LocalAnswer> =>
     ]),
   );
 
-function DownloadButton() {
+function DownloadButton({ label }: { label: string }) {
   return (
     <button
       type="button"
@@ -80,18 +89,13 @@ function DownloadButton() {
       className="self-center py-3 text-sm font-medium text-zinc-500 underline underline-offset-4"
       data-testid="dossier-download"
     >
-      {DOSSIER_DOWNLOAD}
+      {label}
     </button>
   );
 }
 
-const lettersOf = (items: DeckItem[]): string =>
-  items.length <= 1
-    ? (items[0]?.letter ?? '')
-    : `${items
-        .slice(0, -1)
-        .map((item) => item.letter)
-        .join(', ')} et ${items.at(-1)!.letter}`;
+const lettersOf = (items: DeckItem[], deck: BuyerDeck): string =>
+  screensOf(deck).letters(items.map((item) => item.letter));
 
 function Recap({
   deck,
@@ -102,6 +106,7 @@ function Recap({
   answers: Map<string, LocalAnswer>;
   availability: AvailabilitySlot[];
 }) {
+  const t = screensOf(deck);
   return (
     <ul className="flex flex-col gap-2" data-testid="dossier-recap">
       {deck.items.map((entry) => {
@@ -115,12 +120,12 @@ function Recap({
             data-answer={given.answer}
           >
             <span className="block font-semibold">
-              Bien {entry.letter} · {entry.item.label}
+              {t.kickerItem(entry.letter, entry.item.label)}
             </span>
             <span className="text-sm text-zinc-700">
-              {ITEM_ANSWER_LABELS[given.answer]}
+              {t.answers[given.answer]}
               {given.reasons.length > 0
-                ? ` : ${given.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
+                ? t.reasonsSuffix(given.reasons.map((reason) => t.reasons[reason]).join(', '))
                 : ''}
             </span>
           </li>
@@ -128,7 +133,7 @@ function Recap({
       })}
       {availability.length > 0 ? (
         <li className="text-sm text-zinc-700" data-testid="dossier-recap-availability">
-          Vos créneaux : {availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
+          {t.yourSlots(availability.map((slot) => t.slots[slot]).join(', '))}
         </li>
       ) : null}
     </ul>
@@ -195,25 +200,25 @@ export function SeenTogetherView({
   availability: AvailabilitySlot[];
   note: string | null;
 }) {
+  const t = screensOf(deck);
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-seen-together">
       <LinkHeader agencyName={frame.agencyName} logoUrl={frame.logoUrl} />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
-        <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_SEEN_TOGETHER}</h1>
+        <h1 className="font-title text-2xl font-bold text-brand-deep">{t.seenTogetherTitle}</h1>
         {note ? <p className="text-base text-zinc-700">{note}</p> : null}
         {answers.length > 0 ? (
           <>
-            <p className="text-base text-zinc-700">Ce que vous m’avez répondu :</p>
+            <p className="text-base text-zinc-700">{t.answeredTitle}</p>
             <Recap deck={deck} answers={toLocal(answers)} availability={availability} />
           </>
         ) : (
           <p className="text-base text-zinc-700">
-            {deck.items.length > 1 ? 'Les biens' : 'Le bien'} {lettersOf(deck.items)}, que nous
-            avons regardés ensemble.
+            {t.seenTogether(deck.items.length, lettersOf(deck.items, deck))}
           </p>
         )}
         <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
-        <DownloadButton />
+        <DownloadButton label={t.download} />
       </main>
     </div>
   );
@@ -233,20 +238,21 @@ export function ThanksView({
   availability: AvailabilitySlot[];
   note: string | null;
 }) {
+  const t = screensOf(deck);
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white" data-testid="dossier-thanks">
       <LinkHeader agencyName={frame.agencyName} logoUrl={frame.logoUrl} />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6">
-        <h1 className="font-title text-2xl font-bold text-brand-deep">{DOSSIER_THANKS}</h1>
+        <h1 className="font-title text-2xl font-bold text-brand-deep">{t.thanks}</h1>
         {note ? <p className="text-base text-zinc-700">{note}</p> : null}
         {answers.size > 0 ? (
           <>
-            <p className="text-base text-zinc-700">Voici ce que vous m’avez répondu :</p>
+            <p className="text-base text-zinc-700">{t.hereIsWhat}</p>
             <Recap deck={deck} answers={answers} availability={availability} />
           </>
         ) : null}
         <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
-        <DownloadButton />
+        <DownloadButton label={t.download} />
       </main>
     </div>
   );
@@ -278,6 +284,8 @@ export function DossierPhoneDeck({
   advisorPhone: string | null;
 }) {
   const router = useRouter();
+  const t = screensOf(deck);
+  const language = languageOf(deck);
   const [screen, setScreen] = useState<DeckScreen>(WORDS);
   const [answers, setAnswers] = useState<Map<string, LocalAnswer>>(() => new Map());
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
@@ -351,7 +359,7 @@ export function DossierPhoneDeck({
 
   const askSend = () => {
     if (answers.size === 0) {
-      setError(DOSSIER_NO_ANSWER);
+      setError(t.noAnswerYet);
       return;
     }
     setError(null);
@@ -360,6 +368,7 @@ export function DossierPhoneDeck({
         deck.items.map((entry) => ({ letter: entry.letter, itemId: entry.item.itemId })),
         asResponses,
       ),
+      language,
     );
     if (question) {
       setConfirmSend(question);
@@ -375,15 +384,15 @@ export function DossierPhoneDeck({
         token,
         [...answers.entries()].map(([itemId, given]) => ({ itemId, ...given })),
         visits.length > 0 ? availability : [],
-      ).catch(() => ({ ok: false as const, error: 'Connexion perdue — réessayez.' }));
+      ).catch(() => ({ ok: false as const, error: t.connectionLost }));
       if (!result.ok) {
         if ('closed' in result && result.closed) {
-          setClosed({ kind: result.closed, message: result.error });
+          setClosed({ kind: result.closed, message: localError(result.error, deck) });
           router.refresh();
           window.scrollTo({ top: 0 });
           return;
         }
-        setError(result.error);
+        setError(localError(result.error, deck));
         return;
       }
       setSent(true);
@@ -436,10 +445,10 @@ export function DossierPhoneDeck({
       {screen.type === 'words' ? null : (
         <p className="px-4 pt-3 text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
           {screen.type === 'grid'
-            ? 'Vos critères'
+            ? t.kickerCriteria
             : current
-              ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
-              : 'Votre réponse'}
+              ? t.kickerItem(current.letter, criteriaCountLabel(current, language))
+              : t.kickerAnswer}
         </p>
       )}
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 pt-4 pb-6">
@@ -459,21 +468,20 @@ export function DossierPhoneDeck({
             ) : null}
             <div className="flex flex-col gap-2">
               <h1 className="font-title text-2xl font-bold text-zinc-900">
-                Votre sélection du {buyerDateLabel(deck.selectedAt)}
+                {t.selectionOf(buyerDateIn(deck.selectedAt, language))}
               </h1>
               <p className="text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
-                Vous m’avez dit :
+                {t.wordsTitle}
               </p>
               <p className="font-title text-lg leading-snug font-semibold text-zinc-800">
                 « {deck.words} »
               </p>
-              <p className="text-sm text-zinc-600">
-                {itemCount} bien{itemCount > 1 ? 's' : ''} pour vous
-              </p>
+              <p className="text-sm text-zinc-600">{t.propertiesForYou(itemCount)}</p>
             </div>
             {advisorName ? (
               <p className="text-sm font-semibold text-zinc-700" data-testid="dossier-advisor-line">
-                Votre conseiller : <AdvisorContact name={advisorName} phone={advisorPhone} />
+                {t.advisorLabel}
+                <AdvisorContact name={advisorName} phone={advisorPhone} />
               </p>
             ) : null}
             <button
@@ -482,7 +490,7 @@ export function DossierPhoneDeck({
               onClick={() => go(GRID)}
               data-testid="dossier-start"
             >
-              Voir ma sélection →
+              {t.seeSelection}
             </button>
           </div>
         ) : screen.type === 'grid' ? (
@@ -500,6 +508,7 @@ export function DossierPhoneDeck({
                 : null
             }
             leadLetter={deck.leadLetter}
+            language={language}
           />
         ) : current ? (
           <ItemScreen
@@ -510,21 +519,19 @@ export function DossierPhoneDeck({
             onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
             reasons={answers.get(current.item.itemId)?.reasons ?? []}
             onReason={(reason) => toggleReason(current.item.itemId, reason)}
+            language={language}
           />
         ) : (
           <div className="flex flex-col gap-6" data-testid="dossier-answer">
             {answers.size === 0 ? (
-              <p className="text-base text-zinc-600">
-                Vous n’avez pas encore répondu : ouvrez un bien depuis la grille.
-              </p>
+              <p className="text-base text-zinc-600">{t.notYetAnswered}</p>
             ) : null}
             {visits.length > 0 ? (
               <section className="flex flex-col gap-3">
                 <h1 className="font-title text-xl font-bold text-zinc-900">
-                  Vous voulez visiter {visits.length > 1 ? 'les biens' : 'le bien'}{' '}
-                  {lettersOf(visits)}.
+                  {t.visit(visits.length, lettersOf(visits, deck))}
                 </h1>
-                <p className="text-base text-zinc-700">Quand pouvez-vous visiter ?</p>
+                <p className="text-base text-zinc-700">{t.when}</p>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABILITY_SLOTS.map((slot) => {
                     const on = availability.includes(slot);
@@ -543,7 +550,7 @@ export function DossierPhoneDeck({
                           )
                         }
                       >
-                        {AVAILABILITY_LABELS[slot]}
+                        {t.slots[slot]}
                       </button>
                     );
                   })}
@@ -552,16 +559,14 @@ export function DossierPhoneDeck({
             ) : null}
             {maybes.length > 0 ? (
               <p className="text-base text-zinc-700">
-                Vous hésitez pour {maybes.length > 1 ? 'les biens' : 'le bien'} {lettersOf(maybes)}.
+                {t.hesitate(maybes.length, lettersOf(maybes, deck))}
               </p>
             ) : null}
             {noes.map((entry) => {
               const reasons = answers.get(entry.item.itemId)?.reasons ?? [];
               return (
                 <section key={entry.item.itemId} className="flex flex-col gap-3">
-                  <p className="font-semibold text-zinc-900">
-                    Le bien {entry.letter} : pas pour vous. Pourquoi ?
-                  </p>
+                  <p className="font-semibold text-zinc-900">{t.notForYou(entry.letter)}</p>
                   <div className="flex flex-wrap gap-2">
                     {NO_REASONS.map((reason) => {
                       const on = reasons.includes(reason);
@@ -574,7 +579,7 @@ export function DossierPhoneDeck({
                           data-testid="dossier-reason"
                           onClick={() => toggleReason(entry.item.itemId, reason)}
                         >
-                          {NO_REASON_LABELS[reason]}
+                          {t.reasons[reason]}
                         </button>
                       );
                     })}
@@ -585,11 +590,10 @@ export function DossierPhoneDeck({
             {visits.length > 0 ? (
               <section className="flex flex-col gap-1 rounded-xl bg-zinc-50 px-4 py-3">
                 <h2 className="text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">
-                  Ce que je fais ensuite
+                  {t.nextTitle}
                 </h2>
                 <p className="text-base text-zinc-800">
-                  Je contacte {visits.length > 1 ? 'les propriétaires' : 'le propriétaire'} de{' '}
-                  {lettersOf(visits)} et je vous confirme les visites sous 24 h.
+                  {t.nextStep(visits.length, lettersOf(visits, deck))}
                 </p>
                 {advisorName ? (
                   <p className="text-sm font-semibold text-zinc-700">
@@ -612,7 +616,7 @@ export function DossierPhoneDeck({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className={navBtn} onClick={() => setConfirmSend(null)}>
-                    Annuler
+                    {t.cancel}
                   </button>
                   <button
                     type="button"
@@ -621,7 +625,7 @@ export function DossierPhoneDeck({
                     onClick={send}
                     data-testid="dossier-send-anyway"
                   >
-                    Envoyer quand même
+                    {t.sendAnyway}
                   </button>
                 </div>
               </div>
@@ -633,9 +637,9 @@ export function DossierPhoneDeck({
               onClick={askSend}
               data-testid="dossier-send"
             >
-              {pending ? 'Envoi…' : DOSSIER_SEND}
+              {pending ? t.sending : t.send}
             </button>
-            <DownloadButton />
+            <DownloadButton label={t.download} />
           </div>
         )}
         {error ? (
@@ -662,7 +666,7 @@ export function DossierPhoneDeck({
             onClick={() => go(previous)}
             data-testid="dossier-previous"
           >
-            Précédent
+            {t.previous}
           </button>
           {lastItem ? (
             // Sur le dernier bien, à la place de « Suivant » grisé (essai de Jean-Guy, 26/10).
@@ -672,7 +676,7 @@ export function DossierPhoneDeck({
               onClick={() => go(ANSWER)}
               data-testid="dossier-last-send"
             >
-              {DOSSIER_SEND}
+              {t.send}
             </button>
           ) : screen.type !== 'answer' ? (
             <button
@@ -682,7 +686,7 @@ export function DossierPhoneDeck({
               onClick={() => go(next)}
               data-testid="dossier-next"
             >
-              Suivant
+              {t.next}
             </button>
           ) : null}
         </div>
@@ -703,7 +707,7 @@ export function DossierPhoneDeck({
             onClick={() => go(ANSWER)}
             data-testid="dossier-to-answer"
           >
-            {DOSSIER_SEND}
+            {t.send}
           </button>
         </div>
       ) : null}

@@ -1,3 +1,5 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { formatDay } from '@/lib/format';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 
@@ -78,20 +80,21 @@ export function offerAnswerBuyerMessage(input: {
   decidedAt: string;
   url: string | null;
   advisorFirstName: string | null;
+  // Mission 140 — dans la langue de l'acquéreur (le français par défaut).
+  language?: TextLanguage;
 }): string {
-  const lines =
-    input.decision === 'accepted'
-      ? [
-          `Bonjour ${input.buyerName},`,
-          `Bonne nouvelle : le vendeur a accepté votre offre d’achat pour ${input.property}, le ${decidedDayLabel(input.decidedAt)}.`,
-          input.url ? `Votre offre, signée par vous et par le vendeur : ${input.url}` : '',
-          'Je vous appelle pour la suite chez le notaire.',
-        ]
-      : [
-          `Bonjour ${input.buyerName},`,
-          `Le vendeur n’a pas retenu votre offre d’achat pour ${input.property}.`,
-          'Je vous appelle pour en parler et voir ensemble la suite.',
-        ];
+  const language = input.language ?? 'fr';
+  const t = clientTexts(language).buyer.messages;
+  const day =
+    language === 'fr'
+      ? decidedDayLabel(input.decidedAt)
+      : formatDay(input.decidedAt, language, 'dayMonth');
+  const lines = [
+    t.hello(input.buyerName),
+    ...(input.decision === 'accepted'
+      ? t.offer.accepted(input.property, day, input.url)
+      : t.offer.refused(input.property)),
+  ];
   return [...lines, input.advisorFirstName?.trim() ?? ''].filter(Boolean).join('\n');
 }
 

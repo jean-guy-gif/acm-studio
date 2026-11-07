@@ -1,5 +1,6 @@
 'use server';
 
+import { clientTexts, textLanguage } from '@/lib/client-texts';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -20,7 +21,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type PrepareRelaunchResult =
-  | { ok: true; message: string; phone: string | null; email: string | null }
+  | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
   | { ok: false; error: string };
 export type PlainRelaunchResult = { ok: true } | { ok: false; error: string };
 
@@ -120,7 +121,9 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
       sentOn: due.sentOn,
       url: link.url,
       advisorFirstName: firstName,
+      language: textLanguage(buyer.language),
     }),
+    subject: clientTexts(buyer.language).buyer.messages.relaunch.subject,
     phone: buyer.phone,
     email: buyer.email,
   };

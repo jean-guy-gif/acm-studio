@@ -45,3 +45,11 @@ export function offeredLanguages(current?: ClientLanguage | null): ClientLanguag
 export function clientLanguage(value: unknown): ClientLanguage {
   return isClientLanguage(value) ? value : 'fr';
 }
+
+// Mission 140 (décision de Jean-Guy, 07/11) — la langue dans laquelle on écrit vraiment au client :
+// la sienne si elle est proposée (relue par un natif), sinon le français. Aucune langue non relue
+// n'atteint un client, même si une fiche la porte déjà.
+export function spokenLanguage(value: unknown): ClientLanguage {
+  const language = clientLanguage(value);
+  return OFFERED[language] ? language : 'fr';
+}

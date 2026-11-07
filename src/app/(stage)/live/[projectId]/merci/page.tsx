@@ -9,7 +9,16 @@ import {
 import { getNeutralScreenContext } from '@/features/live-seller/queries/get-neutral-screen-context';
 import { clientTexts } from '@/lib/client-texts';
 
-export const metadata: Metadata = { title: 'Merci' };
+// Mission 140 — le titre d'onglet dans la langue du dossier.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}): Promise<Metadata> {
+  const { projectId } = await params;
+  const context = await getNeutralScreenContext(projectId);
+  return { title: clientTexts(context?.language ?? 'fr').live.neutral.thanksTab };
+}
 
 // Mission 92 — la fin du Live. « Terminer le rendez-vous » ouvre cet écran neutre, encore
 // tourné vers le vendeur ; « Accès conseiller » mène ensuite à la conclusion.
