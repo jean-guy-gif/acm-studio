@@ -20,6 +20,7 @@ const oneOf = <T extends string>(list: readonly T[], value: string, fallback: T)
 
 export function toVisitRequest(row: VisitRequestRow): VisitRequest {
   return {
+    scheduledAt: row.scheduled_at ?? null,
     id: row.id,
     buyerId: row.buyer_id,
     itemId: row.buyer_selection_item_id,

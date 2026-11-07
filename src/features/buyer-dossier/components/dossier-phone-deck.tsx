@@ -37,6 +37,8 @@ import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/l
 import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-dossier/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+import type { DossierLivingHere } from '@/features/buyer-dossier/types';
+import { LivingHereView } from '@/features/living-here/components/living-here-view';
 
 // Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
 const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
@@ -186,6 +188,38 @@ function AdvisorLine({
   ) : null;
 }
 
+// Mission 142 — « Vivre ici » de chaque bien qu'il va visiter, sous sa lettre et son libellé
+// neutre : sur l'écran du bien, et après sa réponse (merci, « Ce que nous avons vu ensemble »).
+function LivingHereList({ deck, entries }: { deck: BuyerDeck; entries: DossierLivingHere[] }) {
+  const language = languageOf(deck);
+  return (
+    <>
+      {entries.map((entry) => {
+        const item = deck.items.find((candidate) => candidate.item.itemId === entry.itemId);
+        if (!item) return null;
+        return (
+          <section
+            key={entry.itemId}
+            className="flex flex-col gap-2 rounded-2xl bg-zinc-50 p-4"
+            data-testid="dossier-living-here"
+          >
+            <p className="font-title text-base font-bold text-zinc-900">
+              {item.letter} · {item.item.label}
+            </p>
+            <LivingHereView
+              sheet={entry.sheet}
+              language={language}
+              priorities={entry.priorities}
+              livingPlace={entry.livingPlace}
+              livingPlaceMinutes={entry.livingPlaceMinutes}
+            />
+          </section>
+        );
+      })}
+    </>
+  );
+}
+
 // La présentation terminée : « Ce que nous avons vu ensemble », ses réponses du rendez-vous et ses
 // créneaux du rendez-vous (rangés dans le déroulé figé), le conseiller, en lecture seule.
 export function SeenTogetherView({
@@ -193,12 +227,14 @@ export function SeenTogetherView({
   answers,
   availability,
   note,
+  livingHere = [],
   ...frame
 }: FrameProps & {
   deck: BuyerDeck;
   answers: ItemResponse[];
   availability: AvailabilitySlot[];
   note: string | null;
+  livingHere?: DossierLivingHere[];
 }) {
   const t = screensOf(deck);
   return (
@@ -217,6 +253,7 @@ export function SeenTogetherView({
             {t.seenTogether(deck.items.length, lettersOf(deck.items, deck))}
           </p>
         )}
+        <LivingHereList deck={deck} entries={livingHere} />
         <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
         <DownloadButton label={t.download} />
       </main>
@@ -231,12 +268,14 @@ export function ThanksView({
   answers,
   availability,
   note,
+  livingHere = [],
   ...frame
 }: FrameProps & {
   deck: BuyerDeck;
   answers: Map<string, LocalAnswer>;
   availability: AvailabilitySlot[];
   note: string | null;
+  livingHere?: DossierLivingHere[];
 }) {
   const t = screensOf(deck);
   return (
@@ -251,6 +290,7 @@ export function ThanksView({
             <Recap deck={deck} answers={answers} availability={availability} />
           </>
         ) : null}
+        <LivingHereList deck={deck} entries={livingHere} />
         <AdvisorLine advisorName={frame.advisorName} advisorPhone={frame.advisorPhone} />
         <DownloadButton label={t.download} />
       </main>
@@ -270,6 +310,7 @@ export function DossierPhoneDeck({
   logoUrl,
   advisorName,
   advisorPhone,
+  livingHere = [],
 }: {
   token: string;
   deck: BuyerDeck;
@@ -282,6 +323,8 @@ export function DossierPhoneDeck({
   logoUrl: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
+  // Mission 142 — « Vivre ici » des biens qu'il va visiter, dans sa langue.
+  livingHere?: DossierLivingHere[];
 }) {
   const router = useRouter();
   const t = screensOf(deck);
@@ -416,6 +459,7 @@ export function DossierPhoneDeck({
         answers={meetingAnswers}
         availability={meetingAvailability}
         note={deck.presentedAt == null ? (closed?.message ?? null) : null}
+        livingHere={livingHere}
       />
     );
   }
@@ -429,6 +473,7 @@ export function DossierPhoneDeck({
         answers={fromServer ? toLocal(initialAnswers) : answers}
         availability={fromServer ? initialAvailability : visits.length > 0 ? availability : []}
         note={closed && !answered ? closed.message : null}
+        livingHere={livingHere}
       />
     );
   }
@@ -511,16 +556,24 @@ export function DossierPhoneDeck({
             language={language}
           />
         ) : current ? (
-          <ItemScreen
-            item={current}
-            answer={answers.get(current.item.itemId)?.answer ?? null}
-            readOnly={false}
-            busy={false}
-            onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
-            reasons={answers.get(current.item.itemId)?.reasons ?? []}
-            onReason={(reason) => toggleReason(current.item.itemId, reason)}
-            language={language}
-          />
+          <>
+            <ItemScreen
+              item={current}
+              answer={answers.get(current.item.itemId)?.answer ?? null}
+              readOnly={false}
+              busy={false}
+              onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
+              reasons={answers.get(current.item.itemId)?.reasons ?? []}
+              onReason={(reason) => toggleReason(current.item.itemId, reason)}
+              language={language}
+            />
+            <div className="mt-6">
+              <LivingHereList
+                deck={deck}
+                entries={livingHere.filter((entry) => entry.itemId === current.item.itemId)}
+              />
+            </div>
+          </>
         ) : (
           <div className="flex flex-col gap-6" data-testid="dossier-answer">
             {answers.size === 0 ? (

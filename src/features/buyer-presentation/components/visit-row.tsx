@@ -17,6 +17,8 @@ import { VisitLetterAction } from '@/features/buyer-prospecting/components/visit
 import type { VisitLetter } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { SELECTION_SOURCE_LABELS } from '@/features/ideal-properties/types';
+import { LivingHereVisitPanel } from '@/features/living-here/components/living-here-visit-panel';
+import type { VisitLivingHere } from '@/features/living-here/queries/visit-living-here';
 import { formatEuro } from '@/lib/format';
 
 // Mission 119 — une visite demandée ou faite. Mission 120 — une visite demandée porte l'action qui
@@ -29,6 +31,7 @@ export function VisitRow({
   voucher = null,
   offerAnswer = null,
   openMessages = false,
+  livingHere = null,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
@@ -38,6 +41,8 @@ export function VisitRow({
   offerAnswer?: OfferAnswer | null;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
+  // Mission 142 — « Vivre ici » du bien, et ce qui compte pour l'acquéreur.
+  livingHere?: VisitLivingHere | null;
 }) {
   const done = line.visitedAt != null;
   return (
@@ -93,6 +98,19 @@ export function VisitRow({
         <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-availability">
           Ses créneaux : {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
         </p>
+      ) : null}
+      {/* Mission 142 — « Vivre ici » du bien, et « Confirmer la visite » tant qu'elle est à faire. */}
+      {livingHere ? (
+        <LivingHereVisitPanel
+          visitId={line.id}
+          sheet={livingHere.sheet}
+          sheetsFailed={livingHere.failed}
+          scheduledAt={line.scheduledAt ?? null}
+          priorities={livingHere.priorities}
+          livingPlace={livingHere.livingPlace}
+          livingPlaceMinutes={livingHere.livingPlaceMinutes}
+          canConfirm={!done}
+        />
       ) : null}
       {done ? (
         <>

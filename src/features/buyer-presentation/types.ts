@@ -49,6 +49,8 @@ export type VisitRequest = {
     disliked: VisitTag[];
     nextStep: VisitNextStep | null;
   } | null;
+  // Mission 142 — le jour et l'heure posés par « Confirmer la visite ».
+  scheduledAt?: string | null;
 };
 
 // Ce qu'un bien a le droit de porter devant l'acquéreur : LISTE D'AUTORISATION. Ni titre, ni

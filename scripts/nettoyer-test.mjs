@@ -67,6 +67,8 @@ const CLEANED = [
   'project_market_updates',
   // Mission 141 — le dossier d'adresse part avec son dossier.
   'address_dossiers',
+  // Mission 142 — les fiches « Vivre ici » de l'agence.
+  'living_here_sheets',
   'seller_synthesis_links',
   'subject_properties',
   'subject_property_condominiums',
@@ -261,6 +263,7 @@ begin
   delete from public.market_study_links where agency_id = v_agency;
   delete from public.project_market_updates where agency_id = v_agency;
   delete from public.address_dossiers where agency_id = v_agency;
+  delete from public.living_here_sheets where agency_id = v_agency;
   delete from public.buyer_visit_requests where agency_id = v_agency;
   delete from public.buyer_selection_items where agency_id = v_agency;
   delete from public.buyer_selections where agency_id = v_agency;
