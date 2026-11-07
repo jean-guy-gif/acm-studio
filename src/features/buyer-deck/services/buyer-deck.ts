@@ -19,6 +19,7 @@ import {
   buyerCommuneKey,
   communeCovered,
 } from '@/features/meeting-conclusion/services/commune-alias';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatDay, formatEuro, formatSquareMeters } from '@/lib/format';
@@ -450,7 +451,10 @@ export function buildBuyerDeck(input: {
   const criteria = deckCriteria(input.buyer, language);
   const ordered = [...input.items].sort((a, b) => a.position - b.position);
   const items = ordered.map((raw, index): DeckItem => {
-    const item = allowedItem(raw);
+    // Mission 140 — le libellé neutre, écrit en français à la sélection : hors français, il se
+    // recompose depuis les champs du bien, dans la langue de l'acquéreur.
+    const allowed = allowedItem(raw);
+    const item = language === 'fr' ? allowed : { ...allowed, label: buyerLabel(allowed, language) };
     const budgetTone = buyerBudgetTone(item.price, input.buyer.budgetMax);
     const marks = criteria.map((row): DeckMark => {
       const verdict = judgeForBuyer(row.criterion, input.buyer, item, language);
@@ -513,6 +517,22 @@ export function buildBuyerDeck(input: {
 }
 
 // « 7 critères sur 7 » en tête d'un bien.
+function buyerLabel(item: PresentedItemInput, language: TextLanguage): string {
+  const label = neutralComparableLabel(
+    {
+      propertyType: normalizePropertyType(item.propertyType),
+      roomsCount: item.roomsCount,
+      surfaceArea: item.surfaceArea,
+      city: item.city,
+      district: item.district,
+    },
+    language,
+  );
+  const texts = clientTexts(language);
+  // Pour l'acquéreur, un bien n'est jamais « un concurrent ».
+  return label === texts.common.competitorFallback ? texts.buyer.screens.propertyFallback : label;
+}
+
 export const criteriaCountLabel = (item: DeckItem, language: TextLanguage = 'fr'): string =>
   deckTexts(language).criteriaCount(item.okCount, item.total);
 

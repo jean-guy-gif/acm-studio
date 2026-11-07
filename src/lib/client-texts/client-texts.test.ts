@@ -85,7 +85,7 @@ describe('les textes du client', () => {
   // refusé que pour un bien proposé à un acquéreur (M118, partie B).
   it('l’anglais ne dit jamais « estimate » ni « valuation », ni « the seller »', () => {
     // Les messages à l'acquéreur parlent du vendeur, un tiers : « the seller » y est juste.
-    const { buyer: _buyer, ...sellerSide } = ENGLISH_TEXTS;
+    const sellerSide = { ...ENGLISH_TEXTS, buyer: {} };
     const offenders = [
       ...rendered(sellerSide).filter((text) => /the seller|\bvendor/i.test(text)),
       ...rendered(ENGLISH_TEXTS).filter((text) =>

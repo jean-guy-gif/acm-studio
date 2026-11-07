@@ -267,6 +267,7 @@ export type BuyerTexts = {
     choicesTitle: string;
     disclaimer: string;
     tabTitle: string;
+    propertyFallback: string;
   };
   messages: {
     hello: (name: string) => string;

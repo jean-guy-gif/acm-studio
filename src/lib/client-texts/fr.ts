@@ -751,6 +751,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       choicesTitle: DOSSIER_CHOICES_TITLE,
       disclaimer: DOSSIER_DISCLAIMER,
       tabTitle: 'Votre sélection',
+      propertyFallback: 'Bien',
     },
     deck: {
       count: {

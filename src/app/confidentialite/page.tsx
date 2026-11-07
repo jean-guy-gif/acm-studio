@@ -248,6 +248,14 @@ export default function ConfidentialitePage() {
               l’agence restent en français. Texte à faire relire par un juriste.
             </li>
             <li>
+              La fiche d’un acquéreur garde aussi sa langue : la présentation, son dossier, son
+              lien, les biens qui lui sont proposés, ses relances et la réponse du vendeur à son
+              offre lui sont écrits dans cette langue, depuis des textes écrits et relus. Le bon de
+              visite et l’offre d’achat restent signés en français, seule version qui fait foi ; une
+              traduction pour information pourra y être jointe, une fois validée par un juriste.
+              Texte à faire relire par un juriste.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

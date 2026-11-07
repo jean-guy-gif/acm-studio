@@ -32,10 +32,24 @@ const FILES = [
   'src/features/market-study/services/build-market-study.ts',
   'src/features/seller-synthesis/services/build-seller-synthesis.ts',
   'src/features/live-seller/utils/neutral-comparable-label.ts',
+  // Mission 140 B — ce que voit l'acquéreur : la présentation, le lien, le PDF, ses messages.
+  'src/features/buyer-deck/components/deck-presentation.tsx',
+  'src/features/buyer-deck/components/deck-marks.tsx',
+  'src/features/buyer-deck/services/buyer-deck.ts',
+  'src/features/buyer-deck/services/deck-navigation.ts',
+  'src/features/buyer-dossier/components/dossier-phone-deck.tsx',
+  'src/features/buyer-dossier/components/buyer-dossier-document.tsx',
+  'src/features/buyer-dossier/services/dossier-share.ts',
 ];
 
 const LEGAL = ['Carte professionnelle', 'délivrée par', 'Ne peut recevoir aucun fonds'];
 const ADVISOR: Record<string, string[]> = {
+  // La relecture d'une présentation terminée : la note du conseiller, qui mène à ses biens idéaux.
+  'deck-presentation.tsx': [
+    'Présentation terminée le',
+    ': pour en refaire une,',
+    'retenez une nouvelle sélection',
+  ],
   'live-buyers-badge.tsx': ['Acquéreurs de l’agence', 'acquéreurs prêts', 'Montrer au vendeur'],
   'live-comparative-shell.tsx': [
     '[live] enregistrement échoué',

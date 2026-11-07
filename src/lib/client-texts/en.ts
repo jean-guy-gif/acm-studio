@@ -831,6 +831,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       disclaimer:
         'The prices quoted are asking prices. Floor areas and features as advertised, to be checked.',
       tabTitle: 'Your selection',
+      propertyFallback: 'Property',
     },
     deck: {
       count: {
