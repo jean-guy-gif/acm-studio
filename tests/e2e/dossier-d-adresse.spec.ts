@@ -26,7 +26,7 @@ async function freshReadyDossier(page: Page): Promise<string> {
       .click();
     await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
   }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(5, { timeout: 180_000 });
+  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
   const href = await page
     .locator('[data-testid="demo-dossier"][data-stage="ready"] a')
     .first()

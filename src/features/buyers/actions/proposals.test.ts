@@ -181,16 +181,26 @@ describe('le lien de sa sélection, ce bien en tête', () => {
     });
   });
 
-  it('un vendeur à relancer : aucun prix posé devant l’acquéreur (M119)', async () => {
-    catalog.items = [bien({ origin: 'follow_up', source: 'project', reference: 'p1', key: KEY })];
+  // Mission 145 — un bien de l'agence de sa sélection actuelle qui ne se propose plus (vendeur à
+  // relancer, mandat sous offre acceptée : absent du catalogue) n'est pas recopié dans le lien.
+  it('un bien de l’agence qui ne se propose plus n’est pas recopié', async () => {
+    catalog.items = [
+      bien({ origin: 'mandate', source: 'project', reference: 'p-lopez', key: 'project:p-lopez' }),
+    ];
     answers.buyers = { budget_max: 790_000 };
     answers.buyer_selections = { id: 's-new', buyer_words: null };
-    answers.buyer_selection_items = [{ id: ITEM_ID, position: 1 }];
-    await prepareProposalLink(BUYER, KEY);
+    answers.buyer_selection_items = [
+      { id: ITEM_ID, position: 1, source: 'project', reference: 'p-lambert-duval' },
+      { id: 'i-2', position: 2, source: 'listing', reference: 'https://www.seloger.com/1.htm' },
+    ];
+    await prepareProposalLink(BUYER, 'project:p-lopez');
     const rows = fake.calls.filter((call) => call.method === 'insert')[1]?.args[0] as Record<
       string,
       unknown
     >[];
-    expect(rows[0]).toMatchObject({ source: 'project', listed_price: null, gaps: [] });
+    expect(rows.map((row) => [row.source, row.reference])).toEqual([
+      ['project', 'p-lopez'],
+      ['listing', 'https://www.seloger.com/1.htm'],
+    ]);
   });
 });

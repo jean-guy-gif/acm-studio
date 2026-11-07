@@ -1,13 +1,40 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mission 134 — le catalogue des biens de la boucle : un concurrent retenu sur deux dossiers est un
-// seul bien ; un dossier archivé ou d'exemple n'entre pas (lu par la requête) ; un envoi noté exclut
-// son acquéreur ; une lecture en échec le dit, jamais « rien à proposer » (M98).
+// Mission 134 — le catalogue des biens de la boucle ; Mission 145 (partie A) — seul un bien sous
+// MANDAT SIGNÉ, sans offre acceptée, se propose à un acquéreur (décision de Jean-Guy, 07/11) : un
+// vendeur à relancer, un concurrent retenu, un nouveau venu ou un bien démarché n'y entrent plus,
+// ni un mandat qu'une offre acceptée tient ; l'offre tombée, il revient. Un dossier archivé ou
+// d'exemple n'entre pas (lu par la requête) ; un envoi noté exclut son acquéreur ; une lecture en
+// échec le dit, jamais « rien à proposer » (M98).
 const user = vi.hoisted(() => ({ client: null as unknown }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => user.client }));
 vi.mock('@/features/buyers/queries/get-property-buyers', async (original) => ({
   ...(await original<typeof import('@/features/buyers/queries/get-property-buyers')>()),
-  loadLoopProperties: async () => ({ properties: new Map(), failed: false }),
+  loadLoopProperties: async (_agencyId: string, ids: string[]) => ({
+    properties: new Map(
+      ids.map((id) => [
+        id,
+        {
+          property: {
+            propertyType: 'house',
+            roomsCount: 5,
+            surfaceArea: 135,
+            city: 'Vence',
+            bedroomsCount: 4,
+            floor: null,
+            hasElevator: null,
+            hasPool: false,
+            outdoorSpaces: ['garden'],
+            parkingTypes: [],
+            energyRating: null,
+            generalCondition: null,
+          },
+          price: 713_000,
+        },
+      ]),
+    ),
+    failed: false,
+  }),
 }));
 
 const { loadLoopCatalog } = await import('@/features/buyers/queries/get-loop-properties');
@@ -26,27 +53,13 @@ function tableClient(respond: (table: string) => { data?: unknown; error?: unkno
     },
   };
 }
-const now = new Date('2026-11-06T10:00:00Z');
-const comparable = (id: string, projectId: string) => ({
-  id,
-  project_id: projectId,
-  created_at: '2026-11-05T10:00:00Z',
-  listing_url: 'https://www.seloger.com/annonces/achat/maison/vence-06/123456789.htm',
-  listing_gone_at: null,
-  meeting_frozen_at: null,
-  property_type: 'house',
-  rooms_count: 5,
-  surface_area: '140.00',
-  land_area: null,
-  city: 'Vence',
-  district: null,
-  bedrooms_count: 4,
-  outdoor_spaces: [],
-  parking_types: [],
-  listing_features: ['Piscine'],
-  energy_rating: null,
-  price: '779000',
-  photo_urls: [],
+const now = new Date('2026-11-07T10:00:00Z');
+const offer = (projectId: string, decision: string, status: string) => ({
+  id: `o-${projectId}-${status}`,
+  buyer_id: 'b-keller',
+  fields: { projectId },
+  buyers: { name: 'Famille Keller', status },
+  buyer_document_acceptances: [{ decision, decided_at: '2026-11-06T10:00:00Z' }],
 });
 
 let answers: Record<string, unknown>;
@@ -54,14 +67,42 @@ let failing: string | null;
 beforeEach(() => {
   failing = null;
   answers = {
-    project_meeting_conclusions: [],
-    projects: [
-      { id: 'p1', seller_name: 'Bernard', status: 'ready_for_meeting', is_example: false },
-      { id: 'p2', seller_name: 'Garcia', status: 'ready_for_meeting', is_example: false },
+    // La requête ne lit que les mandats signés : la base ne rend que ceux-là.
+    project_meeting_conclusions: [
+      {
+        project_id: 'p-lopez',
+        outcome: 'signed',
+        signed_at: '2026-11-04T10:00:00Z',
+        concluded_at: '2026-11-04T10:00:00Z',
+      },
+      {
+        project_id: 'p-mougins',
+        outcome: 'signed',
+        signed_at: '2026-10-07T10:00:00Z',
+        concluded_at: '2026-10-07T10:00:00Z',
+      },
     ],
-    comparables: [comparable('c1', 'p1'), comparable('c2', 'p2'), comparable('c3', 'p-archive')],
-    buyer_prospects: [],
-    buyer_prospect_origins: [],
+    projects: [
+      {
+        id: 'p-lopez',
+        seller_name: 'M. et Mme Lopez',
+        status: 'meeting_completed',
+        is_example: false,
+      },
+      {
+        id: 'p-mougins',
+        seller_name: 'M. Lefebvre',
+        status: 'meeting_completed',
+        is_example: false,
+      },
+      {
+        id: 'p-lambert-duval',
+        seller_name: 'M. et Mme Lambert-Duval',
+        status: 'meeting_completed',
+        is_example: false,
+      },
+    ],
+    buyer_documents: [offer('p-mougins', 'accepted', 'under_offer')],
     buyer_proposals: [{ buyer_id: 'b1', property_key: 'x', sent_at: '2026-11-06T09:00:00Z' }],
   };
   user.client = tableClient((table) =>
@@ -70,24 +111,65 @@ beforeEach(() => {
 });
 
 describe('le catalogue de la boucle', () => {
-  it('un bien retenu sur deux dossiers est un seul bien ; un dossier hors liste n’entre pas', async () => {
+  it('un mandat signé sans offre acceptée, et lui seul', async () => {
     const catalog = await loadLoopCatalog('agency-a', now);
     expect(catalog.failed).toBe(false);
-    expect(catalog.items).toHaveLength(1);
-    const [bien] = catalog.items;
-    expect(bien?.key).toMatch(/^listing:/);
-    expect(bien?.selectionRefs.filter((ref) => ref.startsWith('competitor:')).sort()).toEqual([
-      'competitor:c1',
-      'competitor:c2',
-    ]);
-    // Une colonne numérique en texte est convertie : prix et surface sont des nombres.
-    expect(bien?.price).toBe(779_000);
-    expect(bien?.property.surfaceArea).toBe(140);
+    expect(catalog.items.map((item) => item.key)).toEqual(['project:p-lopez']);
+    const [lopez] = catalog.items;
+    expect(lopez?.origin).toBe('mandate');
+    expect(lopez?.sellerName).toBe('M. et Mme Lopez');
+    expect(lopez?.price).toBe(713_000);
+    expect(lopez?.bornAt).toBe('2026-11-04T10:00:00Z');
     expect(catalog.contacts.proposals.get('x')?.get('b1')).toBe('2026-11-06T09:00:00Z');
   });
 
+  it('ne lit ni les concurrents, ni les biens démarchés, ni les vendeurs à relancer', async () => {
+    const tables: string[] = [];
+    const filters: unknown[][] = [];
+    user.client = {
+      from(table: string) {
+        tables.push(table);
+        const chain: Record<string, unknown> = {};
+        for (const method of ['select', 'neq', 'in', 'is', 'gte', 'order', 'range']) {
+          chain[method] = () => chain;
+        }
+        chain.eq = (...args: unknown[]) => {
+          if (table === 'project_meeting_conclusions') filters.push(args);
+          return chain;
+        };
+        chain.then = (resolve: (value: unknown) => unknown) =>
+          resolve({ data: answers[table] ?? [], error: null });
+        return chain;
+      },
+    };
+    await loadLoopCatalog('agency-a', now);
+    expect(tables).not.toContain('comparables');
+    expect(tables).not.toContain('buyer_prospects');
+    expect(filters).toContainEqual(['outcome', 'signed']);
+  });
+
+  it('l’offre tombée (l’acquéreur revenu en visite), le mandat se propose de nouveau', async () => {
+    answers.buyer_documents = [offer('p-mougins', 'accepted', 'visiting')];
+    const keys = (await loadLoopCatalog('agency-a', now)).items.map((item) => item.key).sort();
+    expect(keys).toEqual(['project:p-lopez', 'project:p-mougins']);
+  });
+
+  it('une offre refusée ne tient pas le mandat ; « A acheté » le tient', async () => {
+    answers.buyer_documents = [offer('p-mougins', 'refused', 'visiting')];
+    expect((await loadLoopCatalog('agency-a', now)).items).toHaveLength(2);
+    answers.buyer_documents = [offer('p-mougins', 'accepted', 'purchased')];
+    expect((await loadLoopCatalog('agency-a', now)).items.map((item) => item.key)).toEqual([
+      'project:p-lopez',
+    ]);
+  });
+
   it('une lecture en échec le dit', async () => {
-    for (const table of ['comparables', 'buyer_proposals', 'projects', 'buyer_prospects']) {
+    for (const table of [
+      'project_meeting_conclusions',
+      'buyer_proposals',
+      'projects',
+      'buyer_documents',
+    ]) {
       failing = table;
       expect((await loadLoopCatalog('agency-a', now)).failed).toBe(true);
     }

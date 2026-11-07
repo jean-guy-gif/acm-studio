@@ -26,7 +26,7 @@ async function resetDemo(page: Page): Promise<void> {
       .click();
     await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
   }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(5, { timeout: 180_000 });
+  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
 }
 
 // Demain, à Paris.

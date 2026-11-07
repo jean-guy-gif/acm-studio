@@ -29,6 +29,9 @@ import { createClient } from '@/lib/supabase/server';
 import { getBuyerWatchFinds } from '@/features/buyer-watch/queries/get-watch';
 import { findAsCandidate } from '@/features/buyer-watch/services/watch-finds';
 import { categorizeIdeal } from '@/features/ideal-properties/services/categorize-ideal';
+import { idealAgencyCandidates } from '@/features/ideal-properties/services/ideal-agency';
+import { projectsUnderOffer } from '@/features/buyers/services/proposable';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { IDEAL_CATEGORIES } from '@/features/ideal-properties/types';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 
@@ -46,28 +49,37 @@ export default async function IdealPropertiesPage({ params }: Props) {
   if (!buyer || !profile) notFound();
 
   const dossiers = withoutExamples(await getSuiviDossiers());
-  const [{ cards }, selection, demo, watchRun, dismissals] = await Promise.all([
+  const supabase = await createClient();
+  const signedIds = dossiers
+    .filter((dossier) => dossier.conclusion?.outcome === 'signed')
+    .map((dossier) => dossier.project.id);
+  const [{ cards }, selection, demo, watchRun, dismissals, offers] = await Promise.all([
     getAgencyProspecting(dossiers),
     getIdealSelection(buyer.id),
     isDemoAgency(profile.agency_id),
     // Mission 136 — ce que la veille a trouvé cette semaine, en tête.
     getBuyerWatchFinds(profile.agency_id, buyer.id),
     // Mission 139 — les biens écartés pour lui : ils ne s'affichent plus.
-    createClient().then((supabase) =>
-      supabase
-        .from('buyer_dismissals')
-        .select('property_key')
-        .eq('agency_id', profile.agency_id)
-        .eq('buyer_id', buyer.id),
-    ),
+    supabase
+      .from('buyer_dismissals')
+      .select('property_key')
+      .eq('agency_id', profile.agency_id)
+      .eq('buyer_id', buyer.id),
+    // Mission 145 (partie A) — un mandat sous offre acceptée ne se propose plus.
+    getAgencyOfferAnswers(supabase, profile.agency_id),
   ]);
+  // Une lecture des offres en échec ne propose aucun mandat (M98) : les concurrents restent.
+  const underOffer = offers == null ? new Set(signedIds) : projectsUnderOffer(offers);
   const agency = reconcileBuyer(
     buyerToCriteria(buyer),
-    buyerCandidates(
-      dossiers,
-      cards
-        .filter((card) => card.row.opposedOn == null)
-        .map(({ row, seller }) => ({ row, seller })),
+    idealAgencyCandidates(
+      buyerCandidates(
+        dossiers,
+        cards
+          .filter((card) => card.row.opposedOn == null)
+          .map(({ row, seller }) => ({ row, seller })),
+      ),
+      underOffer,
     ),
   );
   const deduced = idealSearchCriteria(buyer);
@@ -122,6 +134,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
         budgetWarning={budgetWarning}
         watch={watch}
         dismissed={dismissals.error ? null : (dismissals.data ?? []).map((row) => row.property_key)}
+        mandatesUnread={offers == null}
       />
     </div>
   );

@@ -55,7 +55,7 @@ import {
   DEMO_JUSTIFICATION,
   DEMO_LIVE_MINUTES,
   DEMO_READINESS_MISSING,
-  DEMO_STAGES,
+  DEMO_SEEDS,
   DEMO_KELLER_REFUSALS_DAYS_AGO,
   DEMO_LAMBERT_SHARED_DAYS_AGO,
   demoKellerRefusalsPlan,
@@ -75,6 +75,8 @@ import {
   DEMO_WILSON_SELECTED_DAYS_AGO,
   demoLambertSelectionPlan,
   demoSeedPlan,
+  mouginsMandateId,
+  type DemoSeedKey,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
@@ -1051,13 +1053,13 @@ async function seedDemoDossier(
 
   if (plan.conclusion.outcome === 'signed') {
     // Mission 127 — un rendez-vous d'il y a un mois ; Mission 130 — signé le jour même : le
-    // premier Point marché (mensuel) est dû, la tâche du jour le montre.
+    // premier Point marché (mensuel) est dû, la tâche du jour le montre. Mission 145 — le mandat de
+    // Vence (M. et Mme Lopez) est signé il y a 3 jours : la boucle le propose à ses acquéreurs.
+    const signedAt =
+      plan.signedDaysAgo != null ? daysAgo(now, plan.signedDaysAgo) : oneMonthAgo(now);
     await supabase
       .from('project_meeting_conclusions')
-      .update({
-        concluded_at: oneMonthAgo(now),
-        signed_at: oneMonthAgo(now),
-      })
+      .update({ concluded_at: signedAt, signed_at: signedAt })
       .eq('project_id', projectId);
   }
   if (plan.conclusion.outcome === 'follow_up') {
@@ -1125,12 +1127,15 @@ export async function seedDemoDossiers(
   // Décision de Jean-Guy (06/11) : le nom et l'adresse de l'agence de démonstration, que les
   // documents impriment (« Agence Horizon Côte d'Azur », jamais « Démo »).
   await nameDemoAgency(supabase, closer);
-  let mouginsProjectId: string | null = null;
-  for (const stage of DEMO_STAGES) {
-    const id = await seedDemoDossier(supabase, closer, demoSeedPlan(stage, now), now);
+  // Mission 145 — deux dossiers portent la marque « signed » (Mougins, et Vence chez M. et Mme
+  // Lopez) : le mandat des Keller se retrouve par sa clé et son scénario, jamais par la marque seule.
+  const created: { key: DemoSeedKey; id: string }[] = [];
+  for (const key of DEMO_SEEDS) {
+    const id = await seedDemoDossier(supabase, closer, demoSeedPlan(key, now), now);
     if (!id) return false;
-    if (stage === 'signed') mouginsProjectId = id;
+    created.push({ key, id });
   }
+  const mouginsProjectId = mouginsMandateId(created);
   // Mission 117 — et ses deux acquéreurs, qui vont avec les scénarios ; les Keller avec leur
   // sélection (essai de Jean-Guy, 25/10).
   const buyers = await insertDemoBuyers(supabase, closer);
@@ -1287,7 +1292,7 @@ async function seedWatchRuns(
   return !error;
 }
 
-// « Préparer ma démo » : cinq dossiers, s'il n'en a pas encore.
+// « Préparer ma démo » : six dossiers, s'il n'en a pas encore.
 export async function prepareDemoDossiers(): Promise<void> {
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();
