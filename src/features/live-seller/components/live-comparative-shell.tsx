@@ -180,6 +180,9 @@ export function LiveComparativeShell({
   const [saves, setSaves] = useState<Record<string, SaveRecord>>({});
   // Vrai pendant une transition qui ATTEND la confirmation serveur (quitter 1/2/3/5).
   const [busy, setBusy] = useState(false);
+  // Mission 144 — vrai pendant ce que « Valider » attend lui-même (une révélation) : le bouton
+  // reste plein et se voit pressé ; toute autre attente le désactive, comme avant.
+  const [validating, setValidating] = useState(false);
   // Mission 144 — la file des enregistrements de fond : dans l'ordre ; une révélation la solde.
   const retriesRef = useRef(new Map<string, () => void>());
   // La clé de l'écran de la valeur perçue (`build-live-pages`) : son échec retient les révélations.
@@ -631,7 +634,12 @@ export function LiveComparativeShell({
               ? ({ ok: false, error: perceived.error ?? t.saveFailed } as unknown as T)
               : save();
           }),
-        { setBusy },
+        {
+          setBusy: (pending) => {
+            setBusy(pending);
+            setValidating(pending);
+          },
+        },
       );
 
     if (page.type === 'comparable_direct' && entry) {
@@ -1487,8 +1495,8 @@ export function LiveComparativeShell({
                   onClick={() => void onValidate()}
                   // Mission 144 — pendant une révélation, le bouton reste plein et se voit pressé
                   // (`aria-busy`) ; `onValidate` ignore un second toucher.
-                  disabled={index >= pages.length - 1 || priceMissing}
-                  aria-busy={busy}
+                  disabled={(busy && !validating) || index >= pages.length - 1 || priceMissing}
+                  aria-busy={validating}
                   className={ctaPrimary}
                   data-testid="live-validate"
                 >
