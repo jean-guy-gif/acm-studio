@@ -30,6 +30,7 @@ export function BuyerRelaunchTask({
     message: string;
     phone: string | null;
     email: string | null;
+    subject?: string;
   } | null>(null);
   const [done, setDone] = useState(false);
 
@@ -57,7 +58,12 @@ export function BuyerRelaunchTask({
     );
   }
   const hrefs = prepared
-    ? followUpShareHrefs(prepared.message, prepared.phone, prepared.email, SUBJECT)
+    ? followUpShareHrefs(
+        prepared.message,
+        prepared.phone,
+        prepared.email,
+        prepared.subject ?? SUBJECT,
+      )
     : null;
   const fail = () => {
     setPending(false);

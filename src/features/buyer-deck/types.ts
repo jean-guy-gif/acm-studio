@@ -1,3 +1,4 @@
+import type { TextLanguage } from '@/lib/client-texts';
 import type { PriceAlignmentTone } from '@/features/price-positioning/services/price-alignment';
 import type { BuyerCriterion } from '@/features/buyers/types';
 import type { PresentedItemInput } from '@/features/buyer-presentation/types';
@@ -143,6 +144,8 @@ export type DeckItem = {
 };
 
 export type BuyerDeck = {
+  // Mission 140 — la langue de l'acquéreur ; absente d'un déroulé figé avant la mission (français).
+  language?: TextLanguage;
   buyerId: string;
   buyerName: string;
   selectionId: string;

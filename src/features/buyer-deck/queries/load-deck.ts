@@ -16,6 +16,7 @@ import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import type { BuyerInput } from '@/features/buyers/types';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
+import { textLanguage } from '@/lib/client-texts';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -57,6 +58,8 @@ export async function computeDeck(
     buyerWords: selection.buyerWords,
     items: items.map((item) => ({ ...item, pitch: pitchById.get(item.itemId) ?? null })),
     now,
+    // Mission 140 — dans la langue de l'acquéreur.
+    language: textLanguage(buyer.language),
   });
 }
 

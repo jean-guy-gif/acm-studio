@@ -1,5 +1,7 @@
 'use server';
 
+import { clientLanguage } from '@/lib/client-language';
+import { clientTexts, textLanguage, type TextLanguage } from '@/lib/client-texts';
 import { revalidatePath } from 'next/cache';
 
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
@@ -22,7 +24,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 // l'offre, son agence et sa réponse au serveur.
 
 export type PreparedOfferMessage =
-  | { ok: true; message: string; phone: string | null; email: string | null }
+  | { ok: true; message: string; phone: string | null; email: string | null; subject?: string }
   | { ok: false; error: string };
 
 const GONE = 'Offre introuvable.';
@@ -35,7 +37,7 @@ async function readAnsweredOffer(admin: Admin, agencyId: string, documentId: unk
   const { data } = await admin
     .from('buyer_documents')
     .select(
-      'id, fields, buyers(name, email, phone, archived_at), buyer_document_acceptances(decision, decided_at)',
+      'id, fields, buyers(name, email, phone, archived_at, language), buyer_document_acceptances(decision, decided_at)',
     )
     .eq('id', documentId)
     .eq('agency_id', agencyId)
@@ -53,6 +55,7 @@ async function readAnsweredOffer(admin: Admin, agencyId: string, documentId: unk
     email: string | null;
     phone: string | null;
     archived_at: string | null;
+    language: string | null;
   } | null;
   return {
     id: data.id,
@@ -91,6 +94,7 @@ async function propertyOf(
   agencyId: string,
   projectId: string,
   propertyAddress: string,
+  language: TextLanguage = 'fr',
 ): Promise<string> {
   const { data } = await admin
     .from('subject_properties')
@@ -98,8 +102,8 @@ async function propertyOf(
     .eq('project_id', projectId)
     .eq('agency_id', agencyId)
     .maybeSingle();
-  if (!data) return `le bien situé ${propertyAddress}`;
-  return propertyPhrase({ propertyType: data.property_type, city: data.city });
+  if (!data) return clientTexts(language).buyer.messages.propertyAt(propertyAddress);
+  return propertyPhrase({ propertyType: data.property_type, city: data.city }, language);
 }
 
 export async function prepareOfferBuyerMessage(
@@ -117,6 +121,8 @@ export async function prepareOfferBuyerMessage(
     if (!path) return { ok: false, error: 'Le lien n’a pas pu être créé. Réessayez.' };
     url = `${typeof origin === 'string' && /^https?:\/\/[^/\s]+$/.test(origin) ? origin : ''}${path}`;
   }
+  // Mission 140 — à l'acquéreur, dans sa langue ; au notaire, en français.
+  const language = textLanguage(clientLanguage(offer.buyer.language));
   return {
     ok: true,
     message: offerAnswerBuyerMessage({
@@ -127,13 +133,16 @@ export async function prepareOfferBuyerMessage(
         profile.agency_id,
         offer.fields.projectId,
         offer.fields.propertyAddress,
+        language,
       ),
       decidedAt: offer.decidedAt,
       url,
       advisorFirstName: profile.first_name,
+      language,
     }),
     phone: offer.buyer.phone,
     email: offer.buyer.email,
+    subject: clientTexts(language).buyer.messages.offer.subject,
   };
 }
 

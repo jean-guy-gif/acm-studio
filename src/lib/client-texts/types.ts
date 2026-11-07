@@ -8,6 +8,8 @@ import type {
   PropertyConfirmed,
   SeriousCompetitor,
 } from '@/features/live-seller/constants';
+import type { AvailabilitySlot, ItemAnswer, NoReason } from '@/features/buyer-deck/types';
+import type { BuyerCriterion } from '@/features/buyers/types';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 import type {
   Exposure,
@@ -42,6 +44,15 @@ export type ClientTexts = {
     commentOptional: string;
     questionMark: string;
     unknownLocation: string;
+    // Un lien remis qui ne s'ouvre plus (M127 B) : la personne n'est pas connue, la page dit les deux.
+    linkGone: {
+      title: string;
+      body: (what: string, feminine: boolean) => string;
+      what: Record<
+        'synthesis' | 'marketUpdate' | 'marketStudy' | 'dossier' | 'offer' | 'voucher',
+        string
+      >;
+    };
     photos: {
       noneForListing: string;
       unavailable: string;
@@ -91,6 +102,205 @@ export type ClientTexts = {
   };
   live: LiveTexts;
   documents: DocumentTexts;
+  buyer: BuyerTexts;
+};
+
+// Mission 140 B — ce que voit ou reçoit l'acquéreur, dans sa langue : ses messages (proposition,
+// relance, lien, réponse à son offre), la présentation, son dossier et son lien.
+export type BuyerTexts = {
+  // Le déroulé de sa recherche (M122) : la grille, ses critères bien par bien, ses mots.
+  deck: {
+    count: {
+      rooms: (n: number) => string;
+      bedrooms: (n: number) => string;
+      days: (n: number) => string;
+    };
+    ordinal: (n: number) => string;
+    criteria: Record<BuyerCriterion, string>;
+    nouns: Record<BuyerCriterion, string>;
+    and: (items: string[]) => string;
+    row: {
+      house: string;
+      apartment: string;
+      or: string;
+      budget: (amount: string) => string;
+      andMore: (text: string) => string;
+      groundFloorAccepted: string;
+      floor: (n: number) => string;
+      energy: (letter: string) => string;
+      noWorks: string;
+    };
+    judge: {
+      check: (label: string) => string;
+      aHouse: string;
+      anApartment: string;
+      houseNotFlat: string;
+      flatNotHouse: string;
+      inCity: (city: string) => string;
+      outsideCities: (city: string) => string;
+      priceToConfirm: string;
+      priceToCheck: string;
+      inBudgetMargin: (amount: string) => string;
+      inBudget: string;
+      overNegotiable: (amount: string) => string;
+      overBudget: (amount: string) => string;
+      asAsked: (said: string) => string;
+      insteadOf: (said: string, wanted: string) => string;
+      floorInsteadOf: (said: string, min: number) => string;
+      noOutdoor: string;
+      noParking: string;
+      aPool: string;
+      noPool: string;
+      groundFloor: string;
+      floor: (n: number) => string;
+      anElevator: string;
+      noElevator: string;
+      dpe: (letter: string) => string;
+      dpeBeyond: (letter: string, max: string) => string;
+      worksNeeded: string;
+      noWorksAnnounced: string;
+    };
+    words: {
+      house: (rooms: number | null) => string;
+      rooms: (rooms: number) => string;
+      apartment: string;
+      property: string;
+      where: (cities: string[]) => string;
+      bedrooms: (n: number) => string;
+      surface: (area: string) => string;
+      outdoor: string;
+      parking: string;
+      pool: string;
+      floor: (n: number) => string;
+      elevator: string;
+      energy: (letter: string) => string;
+      noWorks: string;
+      budget: (amount: string) => string;
+    };
+    pitch: {
+      pool: string;
+      garden: string;
+      terrace: string;
+      garage: string;
+      at: (city: string) => string;
+      margin: (amount: string) => string;
+      fallback: (ok: number, total: number, nouns: string, many: boolean) => string;
+    };
+    dated: {
+      listedToday: string;
+      listedFor: (days: number) => string;
+      drop: (amount: string, days: number | null) => string;
+    };
+    lead: {
+      several: (letters: string[]) => string;
+      full: (letter: string) => string;
+      most: (letter: string, ok: number, total: number) => string;
+    };
+    priceLine: (amount: string) => string;
+    seenOn: (day: string) => string;
+    criteriaCount: (ok: number, total: number) => string;
+  };
+  // La présentation (M122), le lien sur téléphone et le PDF du dossier acquéreur (M122 B).
+  screens: {
+    answers: Record<ItemAnswer, string>;
+    gridAnswers: Record<ItemAnswer, string>;
+    reasons: Record<NoReason, string>;
+    slots: Record<AvailabilitySlot, string>;
+    mustHave: string;
+    legendMarks: string;
+    wordsTitle: string;
+    pitchTitle: string;
+    nextTitle: string;
+    connectionLost: string;
+    kickerSelection: (count: number) => string;
+    kickerCriteria: string;
+    kickerItem: (letter: string, count: string) => string;
+    kickerAnswer: string;
+    finishedOn: (day: string) => string;
+    meetingLabel: string;
+    noAnswer: string;
+    visit: (count: number, letters: string) => string;
+    when: string;
+    hesitate: (count: number, letters: string) => string;
+    notForYou: (letter: string) => string;
+    nextStep: (count: number, letters: string) => string;
+    letters: (letters: string[]) => string;
+    unanswered: (letters: string[], verb: 'finish' | 'send') => string;
+    cancel: string;
+    finishAnyway: string;
+    sendAnyway: string;
+    close: string;
+    finish: string;
+    previous: string;
+    next: string;
+    backToGrid: string;
+    gridShort: string;
+    toAvailability: string;
+    availabilityShort: string;
+    quitTitle: string;
+    quitSaved: string;
+    seeItem: (letter: string) => string;
+    why: string;
+    // Le lien sur téléphone et le PDF.
+    yourSlots: (slots: string) => string;
+    reasonsSuffix: (reasons: string) => string;
+    propertiesForYou: (count: number) => string;
+    advisorLabel: string;
+    propertiesCount: (count: number) => string;
+    answeredTitle: string;
+    seenTogether: (count: number, letters: string) => string;
+    hereIsWhat: string;
+    selectionOf: (day: string) => string;
+    forYou: string;
+    seeSelection: string;
+    notYetAnswered: string;
+    sending: string;
+    send: string;
+    noAnswerYet: string;
+    thanks: string;
+    seenTogetherTitle: string;
+    download: string;
+    presented: string;
+    alreadyAnswered: string;
+    expired: string;
+    sendFailed: string;
+    confidential: string;
+    criterion: string;
+    choicesTitle: string;
+    disclaimer: string;
+    tabTitle: string;
+    propertyFallback: string;
+  };
+  messages: {
+    hello: (name: string) => string;
+    // « la maison de Vence », « the house in Vence » : le bien dans une phrase.
+    phrase: (kind: 'house' | 'apartment' | 'other', city: string | null) => string;
+    propertyAt: (address: string) => string;
+    has: { pool: string; outdoor: string; parking: string; elevator: string };
+    withList: (items: string[]) => string;
+    at: (city: string) => string;
+    selection: (url: string) => string;
+    proposal: {
+      noun: { house: string; apartment: string };
+      margin: (amount: string) => string;
+      line: (what: string, margin: string | null) => string;
+      ask: string;
+      subject: string;
+    };
+    relaunch: {
+      ask: (day: string) => string;
+      subjectNoun: { house: string; apartment: string; other: string };
+      fits: (ask: string, what: string, feminine: boolean) => string;
+      noFit: (ask: string) => string;
+      subject: string;
+    };
+    share: { message: (url: string) => string; subject: string };
+    offer: {
+      accepted: (property: string, day: string, url: string | null) => string[];
+      refused: (property: string) => string[];
+      subject: string;
+    };
+  };
 };
 
 // Mission 140 — les documents remis au vendeur : la synthèse (M113), le Point marché (M127, M129),
@@ -573,6 +783,7 @@ export type LiveTexts = {
   neutral: {
     pause: string;
     thanks: string;
+    thanksTab: string;
     resume: string;
   };
   answers: {

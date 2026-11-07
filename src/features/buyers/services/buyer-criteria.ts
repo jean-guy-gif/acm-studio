@@ -5,6 +5,8 @@ import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import type { BuyerCriteria } from '@/features/meeting-conclusion/services/buyer-match';
 import { PROPERTY_TYPE_LABELS } from '@/features/subject-property/constants/property-options';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
+import type { TextLanguage } from '@/lib/client-texts';
+import { formatDay } from '@/lib/format';
 
 // Mission 117 — la fiche nourrit le rapprochement de M86, qui ne change pas : ses critères sont
 // ceux de son formulaire. Un seul type décide (deux types = pas de filtre de type, M54) ; les
@@ -164,4 +166,12 @@ export function suggestedCities(names: (string | null | undefined)[]): string[] 
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fr'))
     .slice(0, QUICK_CITIES_MAX)
     .map((item) => item.name);
+}
+
+// Mission 140 — la date d'un écran de l'acquéreur, dans sa langue : « 06/11/2026 » en français (comme
+// avant), « 6 November 2026 » en anglais.
+export function buyerDateIn(iso: string, language: TextLanguage): string {
+  if (language === 'fr') return buyerDateLabel(iso);
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : formatDay(date.toISOString(), language);
 }

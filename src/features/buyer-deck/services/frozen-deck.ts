@@ -19,6 +19,9 @@ export function allowedDeck(deck: BuyerDeck): BuyerDeck {
     ? deck.meetingAvailability
     : [];
   return {
+    // Mission 140 — la langue du déroulé : un code de la liste, sinon le français (un déroulé figé
+    // avant la mission est en français).
+    language: deck.language === 'en' ? 'en' : 'fr',
     buyerId: deck.buyerId,
     buyerName: deck.buyerName,
     selectionId: deck.selectionId,

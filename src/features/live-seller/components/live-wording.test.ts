@@ -22,8 +22,11 @@ const SELLER_SCREENS = readdirSync(DIR).filter((file) =>
 );
 // Mission 140 — les mots des écrans vivent dans les textes du client : le français y est relu par
 // les mêmes contrôles que le code des écrans (`shownTexts`), et chaque écran lit sa clé.
+// Les textes vus par le vendeur : tout ce qui précède les textes de l'acquéreur (qui, eux, parlent
+// du vendeur comme d'un tiers).
 const shownTexts = (): string =>
   readFileSync(join(process.cwd(), 'src', 'lib', 'client-texts', 'fr.ts'), 'utf8')
+    .split('\n  buyer: {')[0]!
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .split('\n')
     .filter((line) => !line.trim().startsWith('//'))

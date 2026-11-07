@@ -86,6 +86,19 @@ export const ENGLISH_TEXTS: ClientTexts = {
     yourAnswer: 'Your answer',
     commentOptional: 'Comment (optional)',
     unknownLocation: 'Location unknown',
+    linkGone: {
+      title: 'This link is no longer valid',
+      body: (what) =>
+        `${what} has been withdrawn, or its link has expired: it is valid for 30 days. To receive it again, ask your adviser.`,
+      what: {
+        synthesis: 'The meeting file',
+        marketUpdate: 'The market update',
+        marketStudy: 'The market study',
+        dossier: 'Your selection',
+        offer: 'The purchase offer',
+        voucher: 'The viewing form',
+      },
+    },
     photos: {
       noneForListing: 'No photos available for this listing',
       unavailable: 'Photo not available for this listing',
@@ -448,6 +461,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
     neutral: {
       pause: 'Meeting paused',
       thanks: 'Thank you for your time',
+      thanksTab: 'Thank you',
       resume: 'Resume →',
     },
     answers: {
@@ -720,6 +734,291 @@ export const ENGLISH_TEXTS: ClientTexts = {
             'It shows the properties on the market around yours today, and where your price stands.',
           ].join('\n'),
         subject: (day) => (day ? `Market study of ${day}` : 'Market study'),
+      },
+    },
+  },
+  buyer: {
+    screens: {
+      answers: { visit: 'I’d like to view it', maybe: 'Maybe', no: 'Not for me' },
+      gridAnswers: { visit: 'To view', maybe: 'Maybe', no: 'Not for me' },
+      reasons: {
+        district: 'The neighbourhood',
+        surface: 'The floor area',
+        outdoor: 'The outdoor space',
+        parking: 'The parking',
+        price: 'The price',
+        works: 'The work needed',
+        photos: 'The photos',
+        other: 'Other',
+      },
+      slots: {
+        sat_morning: 'Saturday morning',
+        sat_afternoon: 'Saturday afternoon',
+        sunday: 'Sunday',
+        weekday_day: 'Weekdays, daytime',
+        weekday_evening: 'Weekdays, evening',
+      },
+      mustHave: 'must-have',
+      legendMarks: '✓ yes · ≈ close · ✗ no · ? to check together',
+      wordsTitle: 'You told me:',
+      pitchTitle: 'Why I am suggesting it',
+      nextTitle: 'What I will do next',
+      connectionLost: 'Connection lost — please try again.',
+      kickerSelection: (count) => `Your selection · ${count} propert${count > 1 ? 'ies' : 'y'}`,
+      kickerCriteria: 'Your criteria',
+      kickerItem: (letter, count) => `Property ${letter} · ${count}`,
+      kickerAnswer: 'Your answer',
+      finishedOn: (day) => `Finished on ${day}`,
+      meetingLabel: 'Buyer meeting',
+      noAnswer: 'No answer yet.',
+      visit: (count, letters) =>
+        `You would like to view ${count > 1 ? 'properties' : 'property'} ${letters}.`,
+      when: 'When can you view?',
+      hesitate: (count, letters) =>
+        `You are unsure about ${count > 1 ? 'properties' : 'property'} ${letters}.`,
+      notForYou: (letter) => `Property ${letter}: not for you. Why?`,
+      nextStep: (count, letters) =>
+        `I will contact the owner${count > 1 ? 's' : ''} of ${letters} and confirm the viewings within 24 hours.`,
+      letters: (letters) =>
+        letters.length <= 1
+          ? (letters[0] ?? '')
+          : `${letters.slice(0, -1).join(', ')} and ${letters.at(-1)}`,
+      unanswered: (letters, verb) =>
+        `${letters.length} propert${letters.length > 1 ? 'ies' : 'y'} without an answer: ${
+          letters.length <= 1
+            ? (letters[0] ?? '')
+            : `${letters.slice(0, -1).join(', ')} and ${letters.at(-1)}`
+        }. ${verb === 'finish' ? 'Finish' : 'Send'} anyway?`,
+      cancel: 'Cancel',
+      finishAnyway: 'Finish anyway',
+      sendAnyway: 'Send anyway',
+      close: 'Close',
+      finish: 'Finish the presentation',
+      previous: 'Previous',
+      next: 'Next',
+      backToGrid: 'Back to the grid',
+      gridShort: 'Grid',
+      toAvailability: 'Go to time slots',
+      availabilityShort: 'Time slots',
+      quitTitle: 'Leave the presentation?',
+      quitSaved: 'The answers are saved.',
+      seeItem: (letter) => `See property ${letter}`,
+      why: 'Why?',
+      yourSlots: (slots) => `Your time slots: ${slots}`,
+      reasonsSuffix: (reasons) => `: ${reasons}`,
+      propertiesForYou: (count) => `${count} propert${count > 1 ? 'ies' : 'y'} for you`,
+      advisorLabel: 'Your adviser: ',
+      propertiesCount: (count) => `${count} propert${count > 1 ? 'ies' : 'y'}`,
+      answeredTitle: 'What you answered:',
+      seenTogether: (count, letters) =>
+        `${count > 1 ? 'Properties' : 'Property'} ${letters}, which we looked at together.`,
+      hereIsWhat: 'Here is what you answered:',
+      selectionOf: (day) => `Your selection of ${day}`,
+      forYou: 'for you',
+      seeSelection: 'See my selection →',
+      notYetAnswered: 'You have not answered yet: open a property from the grid.',
+      sending: 'Sending…',
+      send: 'Send my answer',
+      noAnswerYet: 'Answer for at least one property.',
+      thanks: 'Thank you, I have received your answer',
+      seenTogetherTitle: 'What we looked at together',
+      download: 'Download as PDF',
+      presented: 'We looked at this selection together: this link no longer takes answers.',
+      alreadyAnswered: 'Thank you, I have received your answer: it cannot be sent again.',
+      expired: 'This link is no longer valid.',
+      sendFailed: 'Your answer could not be sent. Please try again.',
+      confidential: 'Confidential selection',
+      criterion: 'Criterion',
+      choicesTitle: 'My choices',
+      disclaimer:
+        'The prices quoted are asking prices. Floor areas and features as advertised, to be checked.',
+      tabTitle: 'Your selection',
+      propertyFallback: 'Property',
+    },
+    deck: {
+      count: {
+        rooms: (n) => `${n} room${n > 1 ? 's' : ''}`,
+        bedrooms: (n) => `${n} bedroom${n > 1 ? 's' : ''}`,
+        days: (n) => `${n} day${n > 1 ? 's' : ''}`,
+      },
+      ordinal: (n) => englishOrdinal(n),
+      criteria: {
+        property_types: 'Type of property',
+        cities: 'Towns',
+        budget: 'Budget',
+        rooms: 'Rooms',
+        bedrooms: 'Bedrooms',
+        surface: 'Floor area',
+        outdoor: 'Outdoor space',
+        parking: 'Parking',
+        pool: 'Pool',
+        floor: 'Floor',
+        elevator: 'Lift',
+        energy_rating: 'EPC',
+        works: 'Work needed',
+      },
+      nouns: {
+        property_types: 'the type of property',
+        cities: 'the town',
+        budget: 'the price',
+        rooms: 'the number of rooms',
+        bedrooms: 'the number of bedrooms',
+        surface: 'the floor area',
+        outdoor: 'the outdoor space',
+        parking: 'the parking',
+        pool: 'the pool',
+        floor: 'the floor',
+        elevator: 'the lift',
+        energy_rating: 'the EPC',
+        works: 'the condition of the property',
+      },
+      and: (items) =>
+        items.length <= 1
+          ? (items[0] ?? '')
+          : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`,
+      row: {
+        house: 'House',
+        apartment: 'Flat',
+        or: ' or ',
+        budget: (amount) => `Budget ≤ ${amount}`,
+        andMore: (text) => `${text} or more`,
+        groundFloorAccepted: 'Ground floor accepted',
+        floor: (n) => `${englishOrdinal(n)} floor or above`,
+        energy: (letter) => `EPC ${letter} or better`,
+        noWorks: 'No work needed',
+      },
+      judge: {
+        check: (label) => `${label}: to check at the viewing`,
+        aHouse: 'A house',
+        anApartment: 'A flat',
+        houseNotFlat: 'A house, not a flat',
+        flatNotHouse: 'A flat, not a house',
+        inCity: (city) => `In ${city}`,
+        outsideCities: (city) => `Outside your towns (${city})`,
+        priceToConfirm: 'Price to be confirmed with the owner',
+        priceToCheck: 'Price: to check together',
+        inBudgetMargin: (amount) => `Within your budget: ${amount} to spare`,
+        inBudget: 'Within your budget',
+        overNegotiable: (amount) => `${amount} above your budget, negotiable`,
+        overBudget: (amount) => `Over budget by ${amount}`,
+        asAsked: (said) => `${said}, as requested`,
+        insteadOf: (said, wanted) => `${said} instead of ${wanted}`,
+        floorInsteadOf: (said, min) => `${said} instead of the ${englishOrdinal(min)}`,
+        noOutdoor: 'No outdoor space',
+        noParking: 'No parking',
+        aPool: 'A pool',
+        noPool: 'No pool',
+        groundFloor: 'Ground floor',
+        floor: (n) => `${englishOrdinal(n)} floor`,
+        anElevator: 'A lift',
+        noElevator: 'No lift',
+        dpe: (letter) => `EPC ${letter}`,
+        dpeBeyond: (letter, max) => `EPC ${letter}, below ${max}`,
+        worksNeeded: 'Work needed',
+        noWorksAnnounced: 'No work mentioned',
+      },
+      words: {
+        house: (rooms) =>
+          `A house${rooms != null ? ` with ${rooms} room${rooms > 1 ? 's' : ''}` : ''}`,
+        rooms: (rooms) => `A ${rooms}-room property`,
+        apartment: 'A flat',
+        property: 'A property',
+        where: (cities) =>
+          cities.length === 0
+            ? ''
+            : cities.length === 1
+              ? ` in ${cities[0]}`
+              : ` in ${cities.slice(0, -1).join(', ')} or ${cities[cities.length - 1]}`,
+        bedrooms: (n) => `with at least ${n} bedroom${n > 1 ? 's' : ''}`,
+        surface: (area) => `of at least ${area}`,
+        outdoor: 'with outdoor space',
+        parking: 'with parking',
+        pool: 'with a pool',
+        floor: (n) => `on the ${englishOrdinal(n)} floor or above`,
+        elevator: 'with a lift',
+        energy: (letter) => `EPC ${letter} or better`,
+        noWorks: 'with no work needed',
+        budget: (amount) => `up to ${amount}`,
+      },
+      pitch: {
+        pool: 'pool',
+        garden: 'garden',
+        terrace: 'terrace',
+        garage: 'garage',
+        at: (city) => `in ${city}`,
+        margin: (amount) => `${amount} below your budget`,
+        fallback: (ok, total, nouns, many) =>
+          `It ticks ${ok} of your ${total} criteria: ${nouns} ${many ? 'are' : 'is'} to look at together.`,
+      },
+      dated: {
+        listedToday: 'Listed today',
+        listedFor: (days) => `On the market for ${days} day${days > 1 ? 's' : ''}`,
+        drop: (amount, days) =>
+          `Price reduced by ${amount}${
+            days == null ? '' : days === 0 ? ' today' : ` ${days} day${days > 1 ? 's' : ''} ago`
+          }`,
+      },
+      lead: {
+        several: (letters) =>
+          `Properties ${letters.slice(0, -1).join(', ')} and ${letters.at(-1)} tick all your criteria.`,
+        full: (letter) => `Property ${letter} ticks all your criteria: I suggest we start with it.`,
+        most: (letter, ok, total) => `Property ${letter} ticks the most: ${ok} of ${total}.`,
+      },
+      priceLine: (amount) => `Asking price: ${amount}`,
+      seenOn: (day) => `price as of ${day}`,
+      criteriaCount: (ok, total) => `${ok} of ${total} criteria`,
+    },
+    messages: {
+      hello: (name) => `Hello ${name},`,
+      phrase: (kind, city) => {
+        const noun =
+          kind === 'house' ? 'the house' : kind === 'apartment' ? 'the flat' : 'the property';
+        return city ? `${noun} in ${city}` : noun;
+      },
+      propertyAt: (address) => `the property at ${address}`,
+      has: {
+        pool: 'the pool you wanted',
+        outdoor: 'outdoor space',
+        parking: 'parking',
+        elevator: 'a lift',
+      },
+      withList: (items) => `with ${items.join(', ')}`,
+      at: (city) => `in ${city}`,
+      selection: (url) => `Your selection: ${url}`,
+      proposal: {
+        noun: { house: 'a house', apartment: 'a flat' },
+        margin: (amount) => `${amount} below your budget`,
+        line: (what, margin) => `I have a property for you: ${what}${margin ? `, ${margin}` : ''}.`,
+        ask: 'Let me know if you would like to view it.',
+        subject: 'A property for you',
+      },
+      relaunch: {
+        ask: (day) => `Have you had a chance to look at the selection I sent on ${day}?`,
+        subjectNoun: { house: 'The house', apartment: 'The flat', other: 'The property' },
+        fits: (ask, what) =>
+          `${ask} ${what} ticks what you are looking for: would you like to view it on Saturday?`,
+        noFit: (ask) => `${ask} Let me know which properties you would like to view.`,
+        subject: 'Your selection',
+      },
+      share: {
+        message: (url) =>
+          [
+            `Hello, here are the properties I have selected for you: ${url}`,
+            'Let me know which ones you would like to view.',
+          ].join('\n'),
+        subject: 'Your selection of properties',
+      },
+      offer: {
+        accepted: (property, day, url) => [
+          `Good news: the seller accepted your purchase offer for ${property} on ${day}.`,
+          url ? `Your offer, signed by you and by the seller: ${url}` : '',
+          'I will call you about the next steps with the notary.',
+        ],
+        refused: (property) => [
+          `The seller has not accepted your purchase offer for ${property}.`,
+          'I will call you to talk it over and look at the next steps together.',
+        ],
+        subject: 'Your purchase offer',
       },
     },
   },

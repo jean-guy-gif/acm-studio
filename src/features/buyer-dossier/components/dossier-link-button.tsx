@@ -1,5 +1,6 @@
 'use client';
 
+import type { TextLanguage } from '@/lib/client-texts';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -27,10 +28,13 @@ export function DossierLinkButton({
   buyerId,
   links,
   advisorFirstName,
+  language = 'fr',
 }: {
   buyerId: string;
   links: DossierLinkView[];
   advisorFirstName: string | null;
+  // Mission 140 — le message prérempli, dans la langue de l'acquéreur.
+  language?: TextLanguage;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -77,7 +81,12 @@ export function DossierLinkButton({
         </p>
       ) : null}
       {created ? (
-        <DossierLinkShare url={created.url} advisorFirstName={advisorFirstName} buyerId={buyerId} />
+        <DossierLinkShare
+          url={created.url}
+          advisorFirstName={advisorFirstName}
+          buyerId={buyerId}
+          language={language}
+        />
       ) : null}
       {links.length > 0 ? (
         <ul className="flex flex-col gap-1 text-sm">
@@ -122,9 +131,11 @@ export function DossierLinkShare({
   url,
   advisorFirstName,
   buyerId = null,
+  language = 'fr',
 }: {
   url: string;
   advisorFirstName: string | null;
+  language?: TextLanguage;
   // Mission 135 — le premier partage est noté : c'est lui qui « envoie » la sélection (relance à
   // 48 h sans réponse). En fond, sans retenir le geste.
   buyerId?: string | null;
@@ -133,8 +144,8 @@ export function DossierLinkShare({
   const shared = () => {
     if (buyerId) void recordLinkShared(buyerId).catch(() => undefined);
   };
-  const text = dossierShareMessage(url, advisorFirstName);
-  const hrefs = dossierShareHrefs(text);
+  const text = dossierShareMessage(url, advisorFirstName, language);
+  const hrefs = dossierShareHrefs(text, language);
   return (
     <div className="flex flex-col gap-2" data-testid="dossier-link-share">
       <p className="text-sm break-all" data-testid="dossier-link">

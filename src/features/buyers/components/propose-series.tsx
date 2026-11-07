@@ -1,5 +1,6 @@
 'use client';
 
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -32,6 +33,8 @@ export type ProposeCandidate = {
   stars: string[];
   budgetGap: string | null;
   wants: Pick<Buyer, 'name' | 'pool' | 'outdoor' | 'parking' | 'elevator' | 'budgetMax'>;
+  // Mission 140 — la langue de ses messages.
+  language: TextLanguage;
 };
 
 type Prepared = { url: string; selectionItemId: string };
@@ -183,8 +186,16 @@ export function ProposeSeries({
     item,
     url: prepared?.url ?? '[le lien de sa sélection]',
     advisorFirstName,
+    language: current.language,
   });
-  const hrefs = followUpShareHrefs(message, current.phone, current.email, EMAIL_SUBJECT);
+  const hrefs = followUpShareHrefs(
+    message,
+    current.phone,
+    current.email,
+    current.language === 'fr'
+      ? EMAIL_SUBJECT
+      : clientTexts(current.language).buyer.messages.proposal.subject,
+  );
 
   // Le lien se prépare par son propre geste (une nouvelle sélection, ce bien en tête) ; les partages
   // partent ensuite tout de suite, dans le geste (Safari et iPad refusent une copie ou une fenêtre
