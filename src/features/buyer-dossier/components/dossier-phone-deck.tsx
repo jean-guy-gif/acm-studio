@@ -37,6 +37,8 @@ import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/l
 import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-dossier/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+import type { DossierLivingHere } from '@/features/buyer-dossier/types';
+import { LivingHereView } from '@/features/living-here/components/living-here-view';
 
 // Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
 const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
@@ -270,6 +272,7 @@ export function DossierPhoneDeck({
   logoUrl,
   advisorName,
   advisorPhone,
+  livingHere = [],
 }: {
   token: string;
   deck: BuyerDeck;
@@ -282,6 +285,8 @@ export function DossierPhoneDeck({
   logoUrl: string | null;
   advisorName: string | null;
   advisorPhone: string | null;
+  // Mission 142 — « Vivre ici » des biens qu'il va visiter, dans sa langue.
+  livingHere?: DossierLivingHere[];
 }) {
   const router = useRouter();
   const t = screensOf(deck);
@@ -511,16 +516,31 @@ export function DossierPhoneDeck({
             language={language}
           />
         ) : current ? (
-          <ItemScreen
-            item={current}
-            answer={answers.get(current.item.itemId)?.answer ?? null}
-            readOnly={false}
-            busy={false}
-            onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
-            reasons={answers.get(current.item.itemId)?.reasons ?? []}
-            onReason={(reason) => toggleReason(current.item.itemId, reason)}
-            language={language}
-          />
+          <>
+            <ItemScreen
+              item={current}
+              answer={answers.get(current.item.itemId)?.answer ?? null}
+              readOnly={false}
+              busy={false}
+              onAnswer={(answer) => setAnswer(current.item.itemId, answer)}
+              reasons={answers.get(current.item.itemId)?.reasons ?? []}
+              onReason={(reason) => toggleReason(current.item.itemId, reason)}
+              language={language}
+            />
+            {livingHere
+              .filter((entry) => entry.itemId === current.item.itemId)
+              .map((entry) => (
+                <div key={entry.itemId} className="mt-6 rounded-2xl bg-zinc-50 p-4">
+                  <LivingHereView
+                    sheet={entry.sheet}
+                    language={language}
+                    priorities={entry.priorities}
+                    livingPlace={entry.livingPlace}
+                    livingPlaceMinutes={entry.livingPlaceMinutes}
+                  />
+                </div>
+              ))}
+          </>
         ) : (
           <div className="flex flex-col gap-6" data-testid="dossier-answer">
             {answers.size === 0 ? (

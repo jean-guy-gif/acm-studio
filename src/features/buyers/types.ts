@@ -1,3 +1,4 @@
+import type { SectorPriority } from '@/features/living-here/types';
 import type { BuyerLanguage } from '@/features/buyer-messages/languages';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -102,6 +103,10 @@ export type BuyerInput = {
   phone: string | null;
   email: string | null;
   // Mission 139 — la langue de ses messages ; absente : celle de la fiche ne change pas.
+  // Mission 142 — les ★ du secteur et « Un lieu qui compte pour vous » : écrits seulement quand le
+  // formulaire complet les donne (la saisie rapide ne les touche pas).
+  sectorPriorities?: SectorPriority[];
+  livingPlace?: string | null;
   language?: BuyerLanguage;
   purpose: BuyerPurpose | null;
   timeline: BuyerTimeline | null;

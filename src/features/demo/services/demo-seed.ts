@@ -337,7 +337,7 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
 
 // Mission 135 — une annonce de la démo, telle qu'une sélection la porte.
 function demoListingItem(
-  scenarioId: 'vence' | 'mougins',
+  scenarioId: 'vence' | 'mougins' | 'antibes',
   id: string,
   now: Date,
 ): DemoSelectionItemPlan {
@@ -358,8 +358,19 @@ function demoListingItem(
       city: data.city ?? null,
       surfaceArea: data.surfaceArea ?? null,
       roomsCount: data.roomsCount ?? null,
+      // Mission 142 — la position de l'annonce, comme Stream Estate la donne : « Vivre ici » en part,
+      // arrondie au quartier.
+      features: { location: listing.location },
     },
   };
+}
+
+// Mission 142 — Mr and Mrs Wilson (anglophones) : une sélection d'un appartement d'Antibes, et une
+// visite demandée sur lui ; sa fiche « Vivre ici » part du quartier de l'annonce.
+export const DEMO_WILSON_SELECTED_DAYS_AGO = 4;
+export const DEMO_WILSON_PRIORITIES = ['shops_on_foot', 'schools'] as const;
+export function demoWilsonSelectionPlan(now: Date): DemoSelectionItemPlan[] {
+  return [demoListingItem('antibes', 'ant-01', now)];
 }
 
 // Mission 135 — les Lambert : une sélection partagée il y a 3 jours, sans réponse (la relance de

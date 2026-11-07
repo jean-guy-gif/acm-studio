@@ -66,7 +66,7 @@ async function dvfFile(url: string): Promise<string | null> {
 }
 
 // Une réponse JSON lue à neuf : « Actualiser » relit vraiment la source, jamais un cache d'un jour.
-async function fetchJson(url: string): Promise<unknown> {
+export async function fetchJson(url: string): Promise<unknown> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
@@ -197,7 +197,7 @@ async function readDpe(banId: string) {
 
 // Le retrait-gonflement des argiles : une réponse vide veut dire « hors zone d'exposition » (mesuré
 // le 07/11 à Paris 15e), jamais une panne ; une erreur du service reste une panne.
-async function clayExposure(url: string): Promise<unknown> {
+export async function clayExposure(url: string): Promise<unknown> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {

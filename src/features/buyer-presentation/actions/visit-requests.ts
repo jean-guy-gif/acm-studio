@@ -12,6 +12,7 @@ import { type VisitRequest, type VisitRequestDuring } from '@/features/buyer-pre
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { scheduleLivingHere } from '@/features/living-here/services/schedule-living-here';
 
 export type VisitActionResult = { ok: true; request: VisitRequest } | { ok: false; error: string };
 export type PlainResult = { ok: true } | { ok: false; error: string };
@@ -68,6 +69,8 @@ export async function requestVisit(itemId: string): Promise<VisitActionResult> {
     .single();
   if (error || !data) return { ok: false, error: FAILED };
   revalidate(selection.buyer_id);
+  // Mission 142 — sa fiche « Vivre ici », en tâche de fond.
+  scheduleLivingHere({ agencyId: profile.agency_id, itemIds: [itemId], builtBy: profile.id });
   return { ok: true, request: toVisitRequest(data) };
 }
 

@@ -1,5 +1,6 @@
 import type { AvailabilitySlot, BuyerDeck, ItemResponse } from '@/features/buyer-deck/types';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
+import type { LivingHereSheet, SectorPriority } from '@/features/living-here/types';
 
 // Mission 119 (partie B) — le dossier acquéreur, à imprimer ou à envoyer par un lien. Mission 122
 // (partie B) — il suit le déroulé du dossier qui fait agir (M122 A) : ses mots, la grille, un bien
@@ -51,6 +52,16 @@ export type BuyerDossier = {
   meetingAvailability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
+  // Mission 142 — « Vivre ici » des biens qu'il va visiter (une demande vivante), dans sa langue.
+  livingHere?: DossierLivingHere[];
+};
+
+export type DossierLivingHere = {
+  itemId: string;
+  sheet: LivingHereSheet;
+  priorities: SectorPriority[];
+  livingPlace: string | null;
+  livingPlaceMinutes: number | null;
 };
 
 export const DOSSIER_DISCLAIMER =

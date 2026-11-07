@@ -45,7 +45,8 @@ export type SourceReaders = {
 
 export type SourceFailure = { source: keyof DossierBlocks; error: unknown };
 
-async function read<T>(
+// Mission 142 — partagée avec « Vivre ici ».
+export async function readSource<T>(
   readAt: string,
   previous: SourceBlock<T> | undefined,
   run: () => Promise<{ data: T | null; sourceDate: string | null; note?: EmptyNote }>,
@@ -80,7 +81,7 @@ export async function buildBlocks(input: {
   const propertyType = context.propertyType;
 
   const [sales, dpe, risks, urbanism, parcel, condo] = await Promise.all([
-    read<SalesData>(
+    readSource<SalesData>(
       readAt,
       previous?.sales,
       propertyType == null
@@ -91,7 +92,7 @@ export async function buildBlocks(input: {
           },
       failed('sales'),
     ),
-    read<DpeData>(
+    readSource<DpeData>(
       readAt,
       previous?.dpe,
       !atNumber
@@ -103,19 +104,19 @@ export async function buildBlocks(input: {
           },
       failed('dpe'),
     ),
-    read<RisksData>(
+    readSource<RisksData>(
       readAt,
       previous?.risks,
       async () => ({ data: await readers.risks(context), sourceDate: null }),
       failed('risks'),
     ),
-    read<UrbanismData>(
+    readSource<UrbanismData>(
       readAt,
       previous?.urbanism,
       async () => ({ data: await readers.urbanism(context), sourceDate: null }),
       failed('urbanism'),
     ),
-    read<ParcelData>(
+    readSource<ParcelData>(
       readAt,
       previous?.parcel,
       !atNumber
@@ -128,7 +129,7 @@ export async function buildBlocks(input: {
           },
       failed('parcel'),
     ),
-    read<CondoData>(
+    readSource<CondoData>(
       readAt,
       previous?.condo,
       !atNumber

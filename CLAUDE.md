@@ -63,6 +63,9 @@ l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
   Exception (Jean-Guy, 25/10) : « Dossier acquéreur » est le nom du document remis à l'acquéreur
   (M119) ; ses identifiants sont donc permis : `buyer-dossier`, `buyer_dossier_links`, `DossierItem`,
   et les préfixes `dossier_` / `DOSSIER_` / `Dossier` qui ne désignent que lui (Jean-Guy, 25/10, M122 B).
+  Exception (Jean-Guy, 07/11) : « Dossier d'adresse » est le nom de l'écran du conseiller sur
+  l'adresse du bien vendeur (M141) ; ses identifiants sont permis : `address-dossier`,
+  `address_dossiers`, `AddressDossier`, qui ne désignent que lui.
 - Écran : Dossier vendeur · Votre bien / Bien vendeur · toujours « Concurrent » · Rendez-vous
   vendeur · Marché calculé, Analyse du conseiller, Prix des concurrents, Prix de commercialisation.
 

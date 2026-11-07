@@ -70,11 +70,15 @@ import {
   DEMO_VOUCHER_VISITOR_ADDRESS,
   DEMO_WATCH_DAYS_AGO,
   demoKellerSelectionPlan,
+  demoWilsonSelectionPlan,
+  DEMO_WILSON_PRIORITIES,
+  DEMO_WILSON_SELECTED_DAYS_AGO,
   demoLambertSelectionPlan,
   demoSeedPlan,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
+import { deleteLivingHereSheets } from '@/features/living-here/services/delete-sheets';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import { coveredWeek } from '@/features/buyer-messages/week';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -88,6 +92,7 @@ import { exampleDecisionRow } from '@/features/welcome/services/example-decision
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database, Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { buildLivingHereForItem } from '@/features/living-here/services/build-for-item';
 
 type Client = SupabaseClient<Database>;
 
@@ -754,6 +759,16 @@ async function seedKellerRefusals(
 export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
   const ids = await ownDemoDossierIds(supabase, closer);
   if (ids.length === 0) return 0;
+  // Mission 142 — les fiches « Vivre ici » de ses dossiers et de leurs concurrents, par leur clé.
+  const { data: ownComparables } = await supabase
+    .from('comparables')
+    .select('id')
+    .in('project_id', ids)
+    .eq('agency_id', closer.agencyId);
+  await deleteLivingHereSheets(closer.agencyId, [
+    ...ids.map((id) => `project:${id}`),
+    ...(ownComparables ?? []).map((row) => `competitor:${row.id}`),
+  ]);
   const { data: properties } = await supabase
     .from('subject_properties')
     .select('id, photo_urls')
@@ -1132,8 +1147,65 @@ export async function seedDemoDossiers(
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
     (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&
     (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now)) &&
-    (await seedLambertDismissals(supabase, closer, lambert.id, now))
+    (await seedLambertDismissals(supabase, closer, lambert.id, now)) &&
+    (await seedWilsonVisit(supabase, closer, buyers, now)) &&
+    (await seedLivingHere(supabase, closer))
   );
+}
+
+// Mission 142 — Mr and Mrs Wilson : leur sélection (un appartement d'Antibes), une visite demandée
+// sur lui, et ce qui compte pour eux (des commerces et des écoles à pied).
+async function seedWilsonVisit(
+  supabase: Client,
+  closer: Closer,
+  buyers: { id: string; name: string }[],
+  now: Date,
+): Promise<boolean> {
+  const wilson = buyers.find((buyer) => buyer.name === 'Mr and Mrs Wilson');
+  if (!wilson) return true;
+  const seeded = await insertDatedSelection(
+    supabase,
+    closer,
+    wilson.id,
+    daysBefore(now, DEMO_WILSON_SELECTED_DAYS_AGO),
+    demoWilsonSelectionPlan(now),
+  );
+  if (!seeded) return false;
+  const [{ error: visitError }, { error: buyerError }] = await Promise.all([
+    supabase.from('buyer_visit_requests').insert({
+      agency_id: closer.agencyId,
+      buyer_id: wilson.id,
+      buyer_selection_item_id: seeded.itemIds[0]!,
+      requested_during: 'conseiller',
+      requested_at: daysBefore(now, 1),
+    }),
+    supabase
+      .from('buyers')
+      .update({ sector_priorities: [...DEMO_WILSON_PRIORITIES] })
+      .eq('id', wilson.id)
+      .eq('agency_id', closer.agencyId),
+  ]);
+  return !visitError && !buyerError;
+}
+
+// Mission 142 — « Vivre ici », pré-construit pour chaque bien visité de la démo (les Keller à
+// Mougins, les Wilson à Antibes), par le même service que l'outil, sans aucun appel réseau (M114).
+async function seedLivingHere(supabase: Client, closer: Closer): Promise<boolean> {
+  const { data: visits, error } = await supabase
+    .from('buyer_visit_requests')
+    .select('buyer_selection_item_id')
+    .eq('agency_id', closer.agencyId)
+    .is('cancelled_at', null);
+  if (error) return false;
+  for (const itemId of new Set((visits ?? []).map((visit) => visit.buyer_selection_item_id))) {
+    const built = await buildLivingHereForItem({
+      agencyId: closer.agencyId,
+      itemId,
+      builtBy: closer.id,
+    });
+    if (!built.ok) return false;
+  }
+  return true;
 }
 
 // Mission 139 — la semaine écoulée des Lambert : six biens écartés pour eux par le conseiller,
