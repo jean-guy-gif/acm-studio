@@ -102,7 +102,12 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     rhythm,
     presentationMode,
   );
-  const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
+  const initialIndex = clampInitialLiveIndex(
+    parseInitialIndex(fiche),
+    pages,
+    projectedLive,
+    presentationMode === 'direct' ? 'direct' : 'interactive',
+  );
   // Mission 89 — un prix de commercialisation est-il déjà enregistré ? Seul le oui/non part
   // vers la scène, jamais le montant.
   const [branding, profile, conclusion] = await Promise.all([

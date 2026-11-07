@@ -64,7 +64,12 @@ const ASKING_SCREENS: ReadonlySet<LivePageType> = new Set<LivePageType>([
 // une réponse partie en fond et perdue se redemande. Les écrans sans question (DPE, analyse,
 // conclusion) ne retiennent pas ; une question passée sans réponse AVANT la dernière réponse non
 // plus. Pur.
-export function answeredResumeBound(pages: LivePage[], live: LiveReachSource | null): number {
+export function answeredResumeBound(
+  pages: LivePage[],
+  live: LiveReachSource | null,
+  // Mission 131 — en présentation directe, « Votre bien » ne demande rien.
+  mode: 'interactive' | 'direct' = 'interactive',
+): number {
   const summary = live?.sellerSummary ?? null;
   const entryOf = (page: LivePage) =>
     page.comparableId != null
@@ -77,6 +82,7 @@ export function answeredResumeBound(pages: LivePage[], live: LiveReachSource | n
   for (let i = lastAnswered + 1; i < pages.length; i += 1) {
     const page = pages[i]!;
     if (!ASKING_SCREENS.has(page.type)) continue;
+    if (mode === 'direct' && page.type === 'subject_property') continue;
     const entry = entryOf(page);
     // « Non » à « Un sérieux concurrent ? » saute la suite de ce concurrent (M41) : elle ne
     // retient pas.
@@ -98,6 +104,7 @@ export function clampInitialLiveIndex(
   requested: number,
   pages: LivePage[],
   live: LiveReachSource | null,
+  mode: 'interactive' | 'direct' = 'interactive',
 ): number {
   if (requested <= 0) {
     return 0;
