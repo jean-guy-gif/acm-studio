@@ -32,8 +32,9 @@ import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
 // Mission 141 — « Construire le dossier d'adresse » lit six sources publiques, dont les fichiers
-// de ventes des communes voisines : jusqu'à une minute.
-export const maxDuration = 60;
+// de ventes des communes voisines (mesuré le 07/11 : 3 s à Paris 15e, 6 s à Vence, 13 s à
+// Boulogne-Billancourt) ; la limite de Vercel, gardée large.
+export const maxDuration = 300;
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
