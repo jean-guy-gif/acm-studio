@@ -29,3 +29,8 @@ export const MAX_PROPERTY_PHOTOS = 20;
 
 // Short-lived signed URLs, regenerated server-side at every render.
 export const SIGNED_URL_TTL_SECONDS = 60 * 30; // 30 minutes
+
+// Mission 144 — pendant le Live, les photos du bien sont préchargées dès l'introduction et servent
+// tout le rendez-vous : leurs liens restent valables bien plus longtemps qu'un Live (2 h au moins,
+// décision de Jean-Guy, 07/11).
+export const LIVE_SIGNED_URL_TTL_SECONDS = 60 * 60 * 3; // 3 heures

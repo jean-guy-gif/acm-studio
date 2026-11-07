@@ -173,6 +173,10 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
   push, e2e sur l'essai. Puis `/valide NN` fusionne dans `main` et complète `docs/DECISIONS.md`.
   **Jamais de fusion dans `main` sans « valide ».**
+- **Maquette d'abord** (Jean-Guy, 07/11) : toute mission qui change la disposition ou le parcours
+  d'un écran commence par une maquette des écrans touchés, sur tablette, téléphone et ordinateur,
+  avec des notes avant / après, rangée dans `missions/maquettes/`. Aucun code avant l'accord sur la
+  maquette. Une mission qui corrige sans rien changer à la disposition en est dispensée.
 - **Jean-Guy ne teste plus jamais sur l'essai** (Jean-Guy, 06/11) : aucun rapport ne lui donne de
   scénario sur l'essai ; après le `/valide`, un seul test court, sur la production
   (acm-studio-henna.vercel.app). L'essai reste l'étape interne : l'e2e et le parcours du relecteur.

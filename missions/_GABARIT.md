@@ -7,6 +7,15 @@ ligne, avec une citation si possible.
 
 <une phrase>
 
+## Maquette
+
+Toute mission qui change la disposition ou le parcours d'un écran commence par une maquette des
+écrans touchés, sur tablette, téléphone et ordinateur, avec des notes avant / après, rangée dans
+`missions/maquettes/`. Aucun code avant l'accord sur la maquette. Une mission qui corrige sans rien
+changer à la disposition en est dispensée.
+
+<les fichiers de la maquette, ou « dispensée : correction sans changement de disposition »>
+
 ## Critères d'acceptation (testables à l'écran)
 
 1. …

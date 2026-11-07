@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Logo } from '@/components/brand/logo';
 import { persistLiveComparableResponse } from '@/features/live-seller/actions/save-live-comparable-response';
@@ -17,6 +17,10 @@ import {
 } from '@/features/live-seller/services/dangerous-choice';
 import { LivePageAnalysis } from '@/features/live-seller/components/live-page-analysis';
 import { priceDigits } from '@/features/live-seller/components/price-input';
+import { usePhotoPreload } from '@/features/live-seller/components/use-photo-preload';
+import { livePhotoPreloadUrls } from '@/features/live-seller/services/photo-preload';
+import { createSaveChain } from '@/features/live-seller/services/save-chain';
+import { screenEnter } from '@/features/live-seller/services/screen-enter';
 import { LivePageAnalysisPending } from '@/features/live-seller/components/live-page-analysis-pending';
 import { LivePageClosing } from '@/features/live-seller/components/live-page-closing';
 import { LivePageClosest } from '@/features/live-seller/components/live-page-closest';
@@ -50,6 +54,7 @@ import {
 import {
   buildLivePages,
   indexAfterModeChange,
+  type LivePage,
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
 import { invalidatesAnalysis } from '@/features/live-seller/services/analysis-invalidation';
@@ -175,6 +180,30 @@ export function LiveComparativeShell({
   const [saves, setSaves] = useState<Record<string, SaveRecord>>({});
   // Vrai pendant une transition qui ATTEND la confirmation serveur (quitter 1/2/3/5).
   const [busy, setBusy] = useState(false);
+  // Mission 144 — la file des enregistrements de fond : dans l'ordre ; une révélation la solde.
+  const retriesRef = useRef(new Map<string, () => void>());
+  // La clé de l'écran de la valeur perçue (`build-live-pages`) : son échec retient les révélations.
+  const PERCEIVED_PAGE_KEY = 'seller_perceived_price';
+  const [saveChain] = useState(() =>
+    createSaveChain({
+      onStart: (key) => {
+        const retry = () => retriesRef.current.get(key)?.();
+        setSaves((s) => ({ ...s, [key]: { status: 'pending', retry } }));
+      },
+      onResult: (key, r) => {
+        if (!r.ok) {
+          console.error('[live] enregistrement échoué', { key, error: r.error });
+          // Mission 100 — au journal des erreurs ; l'écran du vendeur ne change pas (M92).
+          signalClientError('live', `Enregistrement de fond échoué (${key}) : ${r.error ?? ''}`);
+        }
+        const retry = () => retriesRef.current.get(key)?.();
+        setSaves((s) => ({
+          ...s,
+          [key]: { status: r.ok ? 'ok' : 'failed', retry, error: r.error },
+        }));
+      },
+    }),
+  );
   const [awaitError, setAwaitError] = useState<string | null>(null);
   // Fragments LIVRÉS pendant la séance (jamais dans la charge initiale) : la révélation
   // d'un concurrent (prix), la fourchette conseiller (central). `range` part de ce que le
@@ -330,6 +359,22 @@ export function LiveComparativeShell({
   );
   const currentIndex = Math.min(index, pages.length - 1);
   const page = pages[currentIndex];
+  // Mission 144 — toutes les photos du Live, dès l'introduction : celles déjà livrées, rien d'autre.
+  const preloadUrls = useMemo(
+    () => livePhotoPreloadUrls(pages, property?.photoUrls ?? [], comparables),
+    [pages, property, comparables],
+  );
+  const photosPreloaded = usePhotoPreload(preloadUrls);
+  // Mission 144 — l'entrée d'un écran, posée AVANT qu'il soit peint : rien entre deux écrans du même
+  // concurrent, un fondu bref depuis 60 % au changement de concurrent (jamais un écran transparent).
+  const previousPageRef = useRef<LivePage | null>(null);
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (main && screenEnter(previousPageRef.current, page) === 'switch') {
+      main.classList.add('live-enter');
+    }
+    previousPageRef.current = page;
+  }, [page]);
   // Mission 143 (I6) — l'écran vient de changer : un prix requis s'y trouve-t-il, vide ?
   useEffect(() => {
     const frame = requestAnimationFrame(checkPriceMissing);
@@ -439,41 +484,18 @@ export function LiveComparativeShell({
     advanceFromPrice();
   };
 
-  // Enregistrement EN ARRIÈRE-PLAN (avance optimiste), suivi, avec relance.
+  // Enregistrement EN ARRIÈRE-PLAN (avance optimiste), suivi, avec relance. Mission 144 — dans la
+  // file, dans l'ordre ; son suivi (« Relancer », M92) est tenu par la file elle-même, relances
+  // faites avant une révélation comprises.
   const runBackground = useCallback(
     (key: string, save: () => Promise<{ ok: boolean; error?: string }>) => {
       const attempt = () => {
-        setSaves((s) => ({ ...s, [key]: { status: 'pending', retry: attempt } }));
-        void save()
-          .then((r) => {
-            if (!r.ok) {
-              console.error('[live] enregistrement échoué', { key, error: r.error });
-              // Mission 100 — au journal des erreurs ; l'écran du vendeur ne change pas (M92).
-              signalClientError(
-                'live',
-                `Enregistrement de fond échoué (${key}) : ${r.error ?? ''}`,
-              );
-            }
-            setSaves((s) => ({
-              ...s,
-              [key]: { status: r.ok ? 'ok' : 'failed', retry: attempt, error: r.error },
-            }));
-          })
-          .catch((cause) => {
-            console.error('[live] enregistrement injoignable', { key, cause });
-            signalClientError(
-              'live',
-              `Enregistrement de fond injoignable (${key}) : ${cause instanceof Error ? cause.message : ''}`,
-            );
-            setSaves((s) => ({
-              ...s,
-              [key]: { status: 'failed', retry: attempt, error: 'Réseau indisponible.' },
-            }));
-          });
+        void saveChain.run(key, save);
       };
+      retriesRef.current.set(key, attempt);
       attempt();
     },
-    [],
+    [saveChain],
   );
 
   // Mission 131 — un concurrent en présentation directe : le fait « montré » est enregistré, puis
@@ -596,8 +618,21 @@ export function LiveComparativeShell({
     };
     // Mission 89 — tout enregistrement attendu par le bouton est protégé : quoi qu'il arrive,
     // le bouton redevient actif, avec « Connexion perdue — touchez Valider pour réessayer ».
+    // Mission 144 — jamais avant les enregistrements de fond qui le précèdent : la file est soldée
+    // (vidée, ses échecs relancés une fois). Le prix du vendeur manque encore en base : rien n'est
+    // révélé, et l'écran dit le refus du serveur (M82). Un autre échec ne retient pas la révélation :
+    // il reste sous « Relancer », et retient la Conclusion comme avant (M92).
     const awaited = <T extends SaveResult>(save: () => Promise<T>) =>
-      guardedSave(save, { setBusy });
+      guardedSave(
+        () =>
+          saveChain.settle().then((missing) => {
+            const perceived = missing.find((failure) => failure.key === PERCEIVED_PAGE_KEY);
+            return perceived
+              ? ({ ok: false, error: perceived.error ?? t.saveFailed } as unknown as T)
+              : save();
+          }),
+        { setBusy },
+      );
 
     if (page.type === 'comparable_direct' && entry) {
       if (entry.authorized) {
@@ -623,19 +658,15 @@ export function LiveComparativeShell({
       go(1);
       return;
     }
+    // Mission 144 — « Votre bien » s'enregistre en fond, dans la file (décision de Jean-Guy, 07/11).
     if (page.type === 'subject_property') {
-      const r = await awaited(() => persistLiveSellerSummary(projectId, fd));
-      if (r.ok) go(1);
-      else setAwaitError(errorFor(r.error, t.saveFailed));
+      runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
+      go(1);
       return;
     }
     if (page.type === 'comparable_competition' && entry) {
-      const r = await awaited(() => persistLiveComparableResponse(projectId, entry.id, fd));
-      if (!r.ok) {
-        setAwaitError(errorFor(r.error, t.saveFailed));
-        return;
-      }
-      // BASE PUIS GRAPHE : réponse en base d'abord, graphe client ensuite.
+      // Mission 144 — en fond, dans la file : la devinette qui suit l'attend avant sa révélation.
+      runBackground(page.key, () => persistLiveComparableResponse(projectId, entry.id, fd));
       // Seuls les champs de CET écran : une copie de toute la réponse figerait ici une durée
       // ou un prix encore vides, qui écraseraient ensuite la révélation livrée par le serveur.
       setResponseOverrides((o) => ({
@@ -808,12 +839,15 @@ export function LiveComparativeShell({
           return;
         }
         // Sans concurrent, « Analyse des prix » suit directement : la fourchette se livre ici.
-        const r = await awaited(() =>
-          entersAnalysis ? deliverRange() : persistLiveSellerSummary(projectId, fd),
-        );
-        if (!r.ok) {
-          setAwaitError(errorFor(r.error, t.saveFailed));
-          return;
+        if (entersAnalysis) {
+          const r = await awaited(deliverRange);
+          if (!r.ok) {
+            setAwaitError(errorFor(r.error, t.saveFailed));
+            return;
+          }
+        } else {
+          // Mission 144 — en fond, dans la file : le premier concurrent l'attend (M89).
+          runBackground(page.key, () => persistLiveSellerSummary(projectId, fd));
         }
         setPerceivedOverride(typed);
         go(1);
@@ -895,6 +929,7 @@ export function LiveComparativeShell({
     pendingSteps,
     go,
     runBackground,
+    saveChain,
     harvest,
     showDirectly,
     mode,
@@ -1088,6 +1123,8 @@ export function LiveComparativeShell({
       <div
         ref={rootRef}
         data-stage={stage}
+        // Mission 144 — les photos du Live sont dans le cache du navigateur (lu par l'e2e).
+        data-photos-preloaded={photosPreloaded ? 'true' : 'false'}
         className={`${stageRoot} ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
       >
         {/* MISSION 51 §3.2 — un enregistrement en échec ne doit pas passer inaperçu,
@@ -1283,13 +1320,15 @@ export function LiveComparativeShell({
         <main
           ref={mainRef}
           key={page.key}
+          // Mission 144 — le type d'écran (jamais une donnée du dossier), lu par l'e2e chronométré.
+          data-live-page={page.type}
           // Après le rendu : un choix (« Non ») change ce qui est requis.
           onInput={() => requestAnimationFrame(checkPriceMissing)}
           // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
           // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
           // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
           // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
-          className={`live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
+          className={`relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
             isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
           }`}
         >
@@ -1446,7 +1485,10 @@ export function LiveComparativeShell({
                 <button
                   type="button"
                   onClick={() => void onValidate()}
-                  disabled={busy || index >= pages.length - 1 || priceMissing}
+                  // Mission 144 — pendant une révélation, le bouton reste plein et se voit pressé
+                  // (`aria-busy`) ; `onValidate` ignore un second toucher.
+                  disabled={index >= pages.length - 1 || priceMissing}
+                  aria-busy={busy}
                   className={ctaPrimary}
                   data-testid="live-validate"
                 >

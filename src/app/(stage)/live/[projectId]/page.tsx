@@ -51,7 +51,8 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   }
 
   // Chargement unique (accès contrôlé : getProject cadré sur l'agence → 404 sinon).
-  const presentation = await loadLivePresentation(projectId);
+  // Mission 144 — les photos du bien, préchargées dès l'introduction, valables tout le rendez-vous.
+  const presentation = await loadLivePresentation(projectId, 'scene');
   if (!presentation) {
     notFound();
   }

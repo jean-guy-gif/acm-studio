@@ -271,6 +271,19 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   une sélection aux Wilson a cassé la spec qui partait d'une sélection vide : relire les specs des
   acquéreurs semés quand on sème. Suite e2e : 18 sur 18, un aléa (deux specs qui remettaient la même
   démo à zéro en même temps), une spec ajustée.
+- 07/11 · M143 · Un bouton qui reprend le nom d'une fiche ou d'un dossier (« Prévenir la famille
+  Keller », « Faire le Live avec Exemple — M. et Mme Démo ») casse les locators `getByRole({ name })`
+  sans `exact: true` : la correspondance est partielle et insensible à la casse. Chercher un nom de
+  fiche ou de dossier toujours avec `exact: true`.
+- 07/11 · M143 · Un champ dont la valeur envoyée vit dans un champ caché (le prix groupé du Live) :
+  `input[name=…]` désigne alors le champ caché, que Playwright ne remplit pas ; l'e2e passe par
+  `data-price-for`. Masquer un bloc d'une fiche (la vente des Keller) casse les specs qui y
+  naviguaient par clic : passer par l'adresse de la page.
+- 07/11 · M143 · Changer la couleur d'un bouton (`bg-brand` → `bg-brand-deep`) le fondait dans la
+  barre du Live sombre, déjà de cette couleur : relu par le relecteur, pas par le test de contraste.
+  Toute couleur de bouton changée se vérifie aussi sous `stage:`. E2e au premier plan : 18 sur 18,
+  démo 4,7 min, présentation directe 5,7 min, parcours 2,8 min, les six autres 2,7 min ; trois
+  échecs du premier passage étaient des specs à mettre à jour, aucun défaut du code.
 
 ## La base
 
