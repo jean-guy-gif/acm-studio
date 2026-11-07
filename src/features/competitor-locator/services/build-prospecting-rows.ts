@@ -1,3 +1,9 @@
+import {
+  comparableFacts,
+  factsLoopProperty,
+} from '@/features/buyer-prospecting/services/prospect-facts';
+import type { BuyerLoopProperty } from '@/features/buyers/services/property-buyers';
+import { toNumber } from '@/lib/format/to-number';
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { deriveListingAge } from '@/features/comparable-import/services/derive-listing-age';
 import { derivePriceChange } from '@/features/comparable-import/services/derive-price-change';
@@ -97,6 +103,8 @@ export type ProspectingRow = {
     exclusivity: string | null;
     exclusivity_source: string | null;
   };
+  // Mission 145 — les faits du bien que la boucle rapproche des acquéreurs prêts (M133).
+  loopProperty?: BuyerLoopProperty | null;
 };
 
 const frDate = (iso: string): string => {
@@ -231,6 +239,17 @@ export function buildProspectingRows(
           exclusivity: competitor.exclusivity,
           exclusivity_source: competitor.exclusivity_source,
         },
+        // Une colonne `numeric` revient en texte de l'API : convertie avant la liste d'autorisation.
+        loopProperty: factsLoopProperty(
+          comparableFacts({
+            ...competitor,
+            price: toNumber(competitor.price),
+            surface_area: toNumber(competitor.surface_area),
+            land_area: toNumber(competitor.land_area),
+            rooms_count: toNumber(competitor.rooms_count),
+          }),
+          toNumber(competitor.bedrooms_count),
+        ),
       };
     });
 }

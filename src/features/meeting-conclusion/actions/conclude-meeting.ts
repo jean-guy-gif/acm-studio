@@ -153,5 +153,6 @@ export async function concludeMeeting(
   revalidatePath('/builder');
   revalidatePath(`/builder/${projectId}`);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   redirect('/suivi');
 }

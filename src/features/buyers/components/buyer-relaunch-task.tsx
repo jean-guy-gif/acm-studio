@@ -16,10 +16,13 @@ const SUBJECT = 'Votre sélection';
 export function BuyerRelaunchTask({
   buyerId,
   label,
+  primary = true,
 }: {
   buyerId: string;
   // « Relancer », ou « Envoyer un nouveau lien » quand le lien a expiré.
   label: string;
+  // Mission 145 — un seul bouton plein par page (« Aujourd'hui ») : les autres en contour.
+  primary?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -38,7 +41,7 @@ export function BuyerRelaunchTask({
     return (
       <button
         type="button"
-        className={`${btnPrimary} self-start whitespace-nowrap sm:self-auto`}
+        className={`${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`}
         data-testid="buyer-relaunch-open"
         onClick={() => setOpen(true)}
       >

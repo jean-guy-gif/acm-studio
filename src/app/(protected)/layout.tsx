@@ -12,7 +12,6 @@ import { isOperatorEmail } from '@/features/operations/services/operators';
 import { requireOperator } from '@/features/operations/services/require-operator';
 import { DemoModeProvider } from '@/features/demo/components/demo-mode-provider';
 import { TestAccountBanner } from '@/features/test-account/test-account-banner';
-import { parseWorkspaceMode } from '@/features/workspace-mode/types';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -86,7 +85,6 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         logoDarkUrl={branding?.logoDarkUrl ?? null}
         errorsBadge={errorsBadge}
         demoEntry={isDemo}
-        workspaceMode={parseWorkspaceMode(profile.workspace_mode)}
       >
         {children}
       </AppShell>

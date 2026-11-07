@@ -206,5 +206,6 @@ export async function markBuyerContacted(buyerId: string): Promise<BuyerActionRe
   if (error || !data) return { ok: false, error: 'Le contact n’a pas pu être noté. Réessayez.' };
   revalidateBuyers(buyerId);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true, buyer: toBuyer(data) };
 }

@@ -76,6 +76,7 @@ export async function addProspectingOpposition(
   revalidatePath('/prospection/tournee');
   revalidatePath('/prospection/courriers');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   for (const seller of card.sellers) {
     revalidatePath(`/builder/${seller.projectId}`);
   }
@@ -146,6 +147,7 @@ export async function addManualOpposition(
   revalidatePath('/prospection/tournee');
   revalidatePath('/prospection/courriers');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath('/builder', 'layout');
   return { ok: true };
 }

@@ -221,6 +221,7 @@ export async function noteReportSent(buyerId: unknown, kind: unknown): Promise<N
     return { ok: false, error: 'L’envoi n’a pas pu être noté. Réessayez.' };
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/acquereurs/${buyer.id}`);
   return { ok: true };
 }

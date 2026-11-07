@@ -68,6 +68,7 @@ export async function saveSellerContact(
     return { ok: false, error: 'Les coordonnées n’ont pas pu être enregistrées. Réessayez.' };
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return {
     ok: true,
     phone: update.seller_phone ?? project.seller_phone ?? null,

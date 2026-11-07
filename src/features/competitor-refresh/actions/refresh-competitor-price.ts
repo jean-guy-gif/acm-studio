@@ -119,6 +119,7 @@ export async function refreshCompetitorPrice(
 
 export async function finishPriceRefresh(projectId: string): Promise<void> {
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId}`);
   revalidatePath('/prospection');
 }

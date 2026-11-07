@@ -52,6 +52,7 @@ export async function recordMarketUpdate(
   });
   if (!written) return { ok: false, error: MARKET_UPDATE_FAILURE };
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId}/point-marche`);
   return { ok: true, ...written };
 }

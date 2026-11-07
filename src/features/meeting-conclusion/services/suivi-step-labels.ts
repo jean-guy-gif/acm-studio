@@ -50,6 +50,8 @@ export type TaskContext = {
 
 export type TaskLine = {
   title: string;
+  // Mission 145 — l'argument pour rentrer le mandat : « 1 acquéreur prêt correspond à votre bien ».
+  argue?: string | null;
   // Le sous-titre, et sa fin en orange quand la tâche est en retard.
   detail: string;
   late: string | null;
@@ -57,10 +59,38 @@ export type TaskLine = {
   href: string;
 };
 
+// Mission 145 — « 1 acquéreur prêt correspond à votre bien », ce que le conseiller dit au vendeur.
+export function readyBuyersArgument(count: number): string {
+  return count > 1
+    ? `${count} acquéreurs prêts correspondent à votre bien`
+    : '1 acquéreur prêt correspond à votre bien';
+}
+
+// « 1 acquéreur prêt » / « 4 acquéreurs prêts ».
+export function readyBuyersCount(count: number): string {
+  return count > 1 ? `${count} acquéreurs prêts` : '1 acquéreur prêt';
+}
+
 export function taskHref(task: SuiviTask): string {
   switch (task.kind) {
     case 'follow_up':
+    case 'follow_up_early':
       return `/suivi?relancer=${task.projectId}#suivi-${task.projectId}`;
+    // Mission 145 — démarcher : préparer le courrier au propriétaire (M84, M120 A), ou confirmer
+    // l'adresse d'abord, sur la carte de Prospection ; jamais un appel.
+    case 'prospect_buyers': {
+      const card = task.prospectCard;
+      if (!card || card.toConfirm) {
+        return card?.kind === 'buyer_prospect'
+          ? '/prospection?origine=acquereur'
+          : `/prospection?bien=${task.projectId}`;
+      }
+      return card.kind === 'competitor'
+        ? `/builder/${task.projectId}/prospection/${card.id}?version=owner`
+        : card.letterOriginId
+          ? `/acquereurs/courrier/${card.letterOriginId}`
+          : '/prospection?origine=acquereur';
+    }
     case 'market_update':
       return `/suivi?point=${task.projectId}#suivi-${task.projectId}`;
     case 'prospect':
@@ -101,9 +131,46 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         : 'relance prévue aujourd’hui';
       return {
         title: `Relancer ${task.sellerName}`,
+        argue: task.readyBuyers ? readyBuyersArgument(task.readyBuyers) : null,
         detail: [context.motiveLabel, contact, planned].filter(Boolean).join(' · '),
         late,
         button: 'Relancer',
+        href,
+      };
+    }
+    // Mission 145 — la relance n'est pas encore due, mais des acquéreurs prêts correspondent.
+    case 'follow_up_early': {
+      const count = task.readyBuyers ?? 0;
+      return {
+        title: `Relancer plus tôt ? ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'} au bien de ${task.sellerName}`,
+        argue: null,
+        detail: [
+          task.plannedOn ? `relance prévue le ${dayLabel(task.plannedOn)}` : null,
+          context.motiveLabel,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        late: null,
+        button: 'Relancer',
+        href,
+      };
+    }
+    // Mission 145 — un bien sans mandat que veulent des acquéreurs prêts : courrier ou passage.
+    case 'prospect_buyers': {
+      const count = task.count ?? 0;
+      const card = task.prospectCard;
+      return {
+        title: `Démarcher : ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'}`,
+        argue: null,
+        detail: [
+          card?.label ?? null,
+          card?.toConfirm ? 'adresse à confirmer' : 'courrier au propriétaire',
+          'par courrier ou passage, jamais par téléphone',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        late: null,
+        button: card?.toConfirm ? 'Confirmer l’adresse' : 'Préparer le courrier',
         href,
       };
     }
@@ -281,27 +348,31 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
   const what =
     next.kind === 'follow_up'
       ? `relancer ${next.sellerName}`
-      : next.kind === 'market_update'
-        ? `Point marché de ${next.sellerName}`
-        : next.kind === 'prospect'
-          ? `démarcher les concurrents de ${next.sellerName}`
-          : next.kind === 'buyer_recontact'
-            ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
-            : next.kind === 'buyer_meeting'
-              ? `proposer un point avec ${buyerInSentence(next.buyerName)}`
-              : next.kind === 'buyer_weekly_report'
-                ? `envoyer le point de la semaine à ${buyerInSentence(next.buyerName)}`
-                : next.kind === 'buyer_relaunch'
-                  ? `relancer ${buyerInSentence(next.buyerName)}`
-                  : next.kind === 'offer_answer'
-                    ? `donner suite à la réponse du vendeur à ${buyerInSentence(next.buyerName)}`
-                    : next.kind === 'offer_expiry'
-                      ? `rappeler l’échéance de l’offre de ${buyerInSentence(next.buyerName)}`
-                      : next.kind === 'buyer_watch'
-                        ? `voir les biens trouvés par la veille`
-                        : next.kind === 'propose_buyers'
-                          ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
-                          : `organiser une visite chez ${next.sellerName}`;
+      : next.kind === 'follow_up_early'
+        ? `relancer ${next.sellerName}`
+        : next.kind === 'prospect_buyers'
+          ? 'démarcher un bien que veulent des acquéreurs prêts'
+          : next.kind === 'market_update'
+            ? `Point marché de ${next.sellerName}`
+            : next.kind === 'prospect'
+              ? `démarcher les concurrents de ${next.sellerName}`
+              : next.kind === 'buyer_recontact'
+                ? `reprendre contact avec ${buyerInSentence(next.buyerName)}`
+                : next.kind === 'buyer_meeting'
+                  ? `proposer un point avec ${buyerInSentence(next.buyerName)}`
+                  : next.kind === 'buyer_weekly_report'
+                    ? `envoyer le point de la semaine à ${buyerInSentence(next.buyerName)}`
+                    : next.kind === 'buyer_relaunch'
+                      ? `relancer ${buyerInSentence(next.buyerName)}`
+                      : next.kind === 'offer_answer'
+                        ? `donner suite à la réponse du vendeur à ${buyerInSentence(next.buyerName)}`
+                        : next.kind === 'offer_expiry'
+                          ? `rappeler l’échéance de l’offre de ${buyerInSentence(next.buyerName)}`
+                          : next.kind === 'buyer_watch'
+                            ? `voir les biens trouvés par la veille`
+                            : next.kind === 'propose_buyers'
+                              ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
+                              : `organiser une visite chez ${next.sellerName}`;
   return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
@@ -460,7 +531,10 @@ export function cardStep(
         },
       };
     }
-    // Une tâche d'acquéreur ou d'un bien à proposer ne tient à aucune carte du Suivi.
+    // Une tâche d'acquéreur ou d'un bien à proposer ne tient à aucune carte du Suivi ; « Relancer
+    // plus tôt ? » et « Démarcher » non plus (Mission 145 : « Aujourd'hui » seulement).
+    case 'follow_up_early':
+    case 'prospect_buyers':
     case 'offer_expiry':
     case 'offer_answer':
     case 'propose_buyers':

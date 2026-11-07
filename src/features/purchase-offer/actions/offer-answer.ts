@@ -198,5 +198,6 @@ export async function markOfferAnswerDone(documentId: unknown): Promise<MarkOffe
     return { ok: false, error: 'Ce n’a pas pu être noté. Réessayez.' };
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true };
 }

@@ -324,6 +324,7 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   six endroits. Chercher l'ancien comportement dans `tests/e2e` avant de pousser. Durées : relecteur
   3,5 min, démo 4,6 min, présentation directe 6,0 min, parcours 2,6 min, les autres 2,9 + 5,2 min,
   CI 3,5 à 4,3 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -363,6 +364,7 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   `storage ls -r`, puis on relit le dossier vide. Le comptage suit les clés étrangères depuis
   `projects` (lues dans `pg_constraint`), plus ce qui se rattache par une clé texte (« Vivre ici »,
   biens écartés, sélections).
+
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq

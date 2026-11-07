@@ -37,6 +37,8 @@ export type DossierFollowUpInput = {
   contacts: FollowUpContact[];
   now: Date;
   signature: { advisorFirstName: string | null; agencyName: string | null };
+  // Mission 145 — les acquéreurs prêts qui correspondent à son bien : un nombre, jamais un nom.
+  readyBuyers?: number;
 };
 
 const meetingDay = (iso: string | null | undefined): string | null => {
@@ -96,6 +98,7 @@ export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollow
       launchReadinessMissing: conclusion.launchReadinessMissing,
       objections: conclusion.objections ?? [],
       priceDropsSinceMeeting: priceDropsSinceMeeting(input.competitors),
+      readyBuyers: input.readyBuyers ?? 0,
       advisorFirstName: input.signature.advisorFirstName,
       agencyName: input.signature.agencyName,
     }),

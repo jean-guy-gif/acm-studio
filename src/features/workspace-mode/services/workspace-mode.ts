@@ -1,22 +1,37 @@
-import type { WorkspaceMode } from '@/features/workspace-mode/types';
-
 export type NavItem = { href: string; label: string; hint: string };
+export type NavGroup = { label: string | null; items: NavItem[] };
 
-// Mode Vendeur : le menu d'aujourd'hui, à l'identique.
-const SELLER_NAV: NavItem[] = [
-  { href: '/builder', label: 'Préparation', hint: 'Dossiers vendeurs' },
-  { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
-  { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
-  { href: '/prospection', label: 'Prospection', hint: 'Concurrents à démarcher' },
+// Mission 145 (partie B) — un seul menu, en trois groupes, au lieu de l'interrupteur Vendeur |
+// Acquéreur (remplace M118, décision de Jean-Guy, 07/11) : « Aujourd'hui » en tête, puis Vendeurs,
+// Acquéreurs, et Prospection une seule fois, sous « Les deux ». Rien ne change de mode tout seul :
+// il n'y a plus de mode. Les adresses ne changent pas ; `profiles.workspace_mode` n'est plus lu.
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [{ href: '/aujourdhui', label: 'Aujourd’hui', hint: 'Ce qu’il y a à faire' }],
+  },
+  {
+    label: 'Vendeurs',
+    items: [
+      { href: '/builder', label: 'Préparation', hint: 'Dossiers vendeurs' },
+      { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
+      { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
+    ],
+  },
+  {
+    label: 'Acquéreurs',
+    items: [
+      { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
+      { href: '/visites', label: 'Visites', hint: 'À planifier, faites, retours' },
+    ],
+  },
+  {
+    label: 'Les deux',
+    items: [{ href: '/prospection', label: 'Prospection', hint: 'Courriers et passages' }],
+  },
 ];
 
-// Mode Acquéreur : les fiches (M117), les visites (M119), la même Prospection. Mission 130 B —
-// « Biens idéaux » quitte le menu : c'était la même liste que « Acquéreurs ».
-const BUYER_NAV: NavItem[] = [
-  { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
-  { href: '/visites', label: 'Visites', hint: 'À planifier, faites, retours' },
-  { href: '/prospection', label: 'Prospection', hint: 'Propriétaires et confrères' },
-];
+export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
 // Mission 125 — le menu de gauche ne montre que le travail : les quatre espaces du mode. Tout le
 // reste passe derrière la carte du conseiller, en bas (décision de Jean-Guy, 25/10) : Mon profil,
@@ -39,34 +54,4 @@ export function accountMenuFor({
     ...(demo ? [{ href: '/ma-demo', label: 'Ma démo' }] : []),
     ...(operator ? [{ href: '/erreurs', label: 'Erreurs' }] : []),
   ];
-}
-
-export function navForMode(mode: WorkspaceMode): NavItem[] {
-  return mode === 'buyer' ? BUYER_NAV : SELLER_NAV;
-}
-
-// La page qu'ouvre l'interrupteur : la première du mode.
-export function homeForMode(mode: WorkspaceMode): string {
-  return navForMode(mode)[0]!.href;
-}
-
-const under = (pathname: string, href: string): boolean =>
-  pathname === href || pathname.startsWith(`${href}/`);
-
-// Le mode d'une adresse : une page propre à un mode le désigne ; une page commune (Prospection, et
-// celles du menu de la carte : profil, Administration, Aide…) ne désigne rien.
-export function modeForPath(pathname: string): WorkspaceMode | null {
-  for (const mode of ['buyer', 'seller'] as const) {
-    for (const item of navForMode(mode)) {
-      if (item.href === '/prospection') continue;
-      if (under(pathname, item.href)) return mode;
-    }
-  }
-  return null;
-}
-
-// Le mode affiché : celui de la page quand elle en a un (un lien envoyé par un collègue fonctionne,
-// l'interrupteur se place sur le mode de la page), sinon le mode mémorisé.
-export function effectiveMode(stored: WorkspaceMode, pathname: string): WorkspaceMode {
-  return modeForPath(pathname) ?? stored;
 }
