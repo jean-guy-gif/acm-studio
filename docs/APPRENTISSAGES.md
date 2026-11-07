@@ -305,6 +305,25 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   base : le recomptage disait 0 ligne). Suite : démo 4,5 min, parcours 2,9 min, présentation
   directe 6,0 min, Live sans trou 2,5 min ; un aléa (la langue du vendeur, vert au second passage).
 
+- 07/11 · M145 A · Une remise à zéro de la démo par un script n'est finie ni au premier « 6 dossiers »
+  ni au clic : les anciens restent affichés quelques secondes. Le script a rendu la main sur les six
+  anciens ; l'e2e a vu 0 dossier en pleine remise à zéro, a cliqué « Préparer ma démo » : 12
+  dossiers. Attendre que les liens changent ET que la liste reste stable 20 s ; une nouvelle remise
+  à zéro rattrape tout (elle retire tous les dossiers marqués du closer).
+- 07/11 · M145 A · Les vérifications « si préparée » de l'e2e démo sont sautées quand la démo existe
+  déjà (remise à zéro faite avant le passage) : une règle nouvelle de la boucle se prouve dans une
+  spec qui remet elle-même la démo à zéro (`presentation-directe`, `freshDemo`).
+- 07/11 · M145 A · Un fichier `'use server'` n'exporte que des fonctions async : une constante de
+  message y casse le build ; elle va dans un service. Et, rappel de la M127 B, le faux client
+  répond par la dernière table : les deux lectures du contrôle de sélection sont écrites en série.
+- 07/11 · M145 A · Un test « écrit d'abord » se prouve rouge après coup : remettre un instant les
+  fichiers de `main` (`git show main:…`), jouer les nouveaux tests (6 rouges), restaurer.
+- 07/11 · M145 A · Une règle produit qui change (« seul un mandat signé se propose ») rend fausses
+  des attentes e2e qui la décrivaient : la spec M134 (un concurrent retenu faisait naître la
+  tâche), la fiche du parcours (« Trouver ses biens idéaux »), le nombre de dossiers de démo en
+  six endroits. Chercher l'ancien comportement dans `tests/e2e` avant de pousser. Durées : relecteur
+  3,5 min, démo 4,6 min, présentation directe 6,0 min, parcours 2,6 min, les autres 2,9 + 5,2 min,
+  CI 3,5 à 4,3 min.
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -339,6 +358,11 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   pour vérifier un défaut constaté la veille, demander l'heure du constat et lire le journal
   d'erreurs, avant toute remise à zéro.
 
+- 07/11 · Retrait du dossier « Martin » (avant la M145) : `storage rm -r` sur le dossier d'un projet
+  répond « Object not found » ; on supprime fichier par fichier, les chemins lus par
+  `storage ls -r`, puis on relit le dossier vide. Le comptage suit les clés étrangères depuis
+  `projects` (lues dans `pg_constraint`), plus ce qui se rattache par une clé texte (« Vivre ici »,
+  biens écartés, sélections).
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq
