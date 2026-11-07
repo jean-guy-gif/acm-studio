@@ -41,14 +41,57 @@ export const DEMO_STAGE_LABELS: Record<DemoStage, string> = {
   follow_up: 'À relancer',
 };
 
-// Chaque étape a son scénario (M114 B.9) ; « À relancer » reprend celui d'Antibes, conclu.
-export const DEMO_STAGE_SCENARIO: Record<DemoStage, DemoScenarioId> = {
+// Mission 145 (partie A) — les dossiers que « Préparer ma démo » crée, chacun à son étape (la marque
+// en base, `projects.demo_stage`, liste fermée, M114, M131) et dans son scénario. Deux dossiers
+// portent la marque « signed » : la villa de Mougins (M. Lefebvre, l'offre des Keller) et la maison
+// de Vence de M. et Mme Lopez, signée il y a 3 jours, que la boucle propose à ses acquéreurs prêts.
+// Un dossier se retrouve donc par sa clé, ou par sa marque ET son scénario, jamais par sa marque
+// seule.
+export const DEMO_DOSSIERS = [
+  'to_prepare',
+  'ready',
+  'direct',
+  'signed',
+  'signed_vence',
+  'follow_up',
+] as const;
+export type DemoDossierKey = (typeof DEMO_DOSSIERS)[number];
+
+export const DEMO_DOSSIER_STAGE: Record<DemoDossierKey, DemoStage> = {
+  to_prepare: 'to_prepare',
+  ready: 'ready',
+  direct: 'direct',
+  signed: 'signed',
+  signed_vence: 'signed',
+  follow_up: 'follow_up',
+};
+
+// Chaque dossier a son scénario (M114 B.9) ; « À relancer » reprend celui d'Antibes, conclu.
+export const DEMO_DOSSIER_SCENARIO: Record<DemoDossierKey, DemoScenarioId> = {
   to_prepare: 'antibes',
   ready: 'vence',
   direct: 'vence',
   signed: 'mougins',
+  signed_vence: 'vence',
   follow_up: 'antibes',
 };
+
+// Mission 145 — le mandat signé de Vence : un autre foyer que Mme Garcia et les Bernard, signé
+// 3 jours avant « Préparer ma démo » (dates relatives).
+export const DEMO_SIGNED_VENCE_SELLER = 'M. et Mme Lopez';
+export const DEMO_SIGNED_VENCE_DAYS_AGO = 3;
+
+// Le mandat de Mougins, où vivent la sélection, le bon de visite et l'offre acceptée des Keller :
+// trouvé par sa marque ET son scénario, quel que soit l'ordre de création des dossiers.
+export function mouginsMandateId(
+  created: readonly { key: DemoDossierKey; id: string }[],
+): string | null {
+  return (
+    created.find(
+      ({ key }) => DEMO_DOSSIER_STAGE[key] === 'signed' && DEMO_DOSSIER_SCENARIO[key] === 'mougins',
+    )?.id ?? null
+  );
+}
 
 export const DEMO_SEED_COMPETITORS = 5;
 // Le vendeur du dossier en présentation directe : un autre foyer que celui du Live interactif de
@@ -114,6 +157,7 @@ export type DemoSeedLive = {
 };
 
 export type DemoSeedPlan = {
+  key: DemoDossierKey;
   stage: DemoStage;
   scenario: DemoScenario;
   sellerName: string;
@@ -133,6 +177,8 @@ export type DemoSeedPlan = {
   priceDrop: { index: number; price: number } | null;
   // « Mandat signé » : l'adresse inscrite « Ne plus solliciter ».
   opposedAddress: string | null;
+  // Mission 145 — un mandat signé il y a N jours ; null : il y a un mois calendaire (Mougins).
+  signedDaysAgo: number | null;
 };
 
 const round500 = (value: number): number => Math.round(value / 500) * 500;
@@ -168,11 +214,13 @@ export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
   return chosen;
 }
 
-export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
-  const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_STAGE_SCENARIO[stage])!;
+export function demoSeedPlan(key: DemoDossierKey, now: Date): DemoSeedPlan {
+  const stage = DEMO_DOSSIER_STAGE[key];
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_DOSSIER_SCENARIO[key])!;
   const { subject } = scenario;
   if (stage === 'to_prepare') {
     return {
+      key,
       stage,
       scenario,
       sellerName: scenario.sellerName,
@@ -184,6 +232,7 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
       conclusion: null,
       priceDrop: null,
       opposedAddress: null,
+      signedDaysAgo: null,
     };
   }
   const imported = mapListingToProperty(demoSubjectImportedData(scenario, now));
@@ -222,14 +271,17 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
     ({ listing }) => listing.priceAfterMeeting != null && listing.priceAfterMeeting < listing.price,
   );
   return {
+    key,
     stage,
     scenario,
     sellerName:
-      stage === 'direct'
+      key === 'direct'
         ? DEMO_DIRECT_SELLER
-        : stage === 'follow_up'
+        : key === 'follow_up'
           ? DEMO_FOLLOW_UP_SELLER
-          : scenario.sellerName,
+          : key === 'signed_vence'
+            ? DEMO_SIGNED_VENCE_SELLER
+            : scenario.sellerName,
     language: stage === 'direct' ? DEMO_DIRECT_LANGUAGE : 'fr',
     property,
     photoFiles: subject.photos.slice(0, 3),
@@ -252,8 +304,10 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
             price: competitors[droppedIndex].listing.priceAfterMeeting as number,
           }
         : null,
+    // L'adresse « Ne plus solliciter » : sur le seul mandat de Mougins.
     opposedAddress:
-      stage === 'signed' ? demoAddressLine(competitors[competitors.length - 1].listing) : null,
+      key === 'signed' ? demoAddressLine(competitors[competitors.length - 1].listing) : null,
+    signedDaysAgo: key === 'signed_vence' ? DEMO_SIGNED_VENCE_DAYS_AGO : null,
   };
 }
 

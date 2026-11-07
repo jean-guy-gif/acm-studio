@@ -34,6 +34,7 @@ import { getSubjectProperty } from '@/features/subject-property/queries/get-subj
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
 import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { proposableMandate } from '@/features/buyers/services/proposable';
 import { createClient } from '@/lib/supabase/server';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
@@ -265,7 +266,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <PropertyBuyersBlock
           result={buyers}
           proposeKey={
-            conclusion?.outcome === 'signed' || conclusion?.outcome === 'follow_up'
+            // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
+            // lecture des offres en échec ne propose rien (M98).
+            offerAnswers != null && proposableMandate(conclusion?.outcome, offerAnswers)
               ? `project:${projectId}`
               : null
           }

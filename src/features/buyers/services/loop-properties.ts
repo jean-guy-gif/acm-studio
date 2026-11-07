@@ -150,6 +150,37 @@ export function loopBuyers(
   };
 }
 
+// Mission 145 (partie A, I2) — un mandat à proposer à un acquéreur, vu de sa fiche.
+export type BuyerLoopProposal = {
+  key: string;
+  sellerName: string | null;
+  property: BuyerLoopProperty;
+  price: number | null;
+  // La signature du mandat : le plus récent d'abord, et « Mandat signé le … ».
+  bornAt: string;
+};
+
+export function loopProposalOf(item: LoopProperty): BuyerLoopProposal {
+  return {
+    key: item.key,
+    sellerName: item.sellerName,
+    property: item.property,
+    price: item.price,
+    bornAt: item.bornAt,
+  };
+}
+
+// « la maison de M. et Mme Lopez », « l'appartement d'Anne Martin », « le bien de M. Lefebvre ».
+export function proposalTarget(
+  proposal: Pick<BuyerLoopProposal, 'sellerName' | 'property'>,
+): string {
+  const kind = propertyKind(proposal.property.propertyType);
+  const what = kind === 'house' ? 'la maison' : kind === 'apartment' ? 'l’appartement' : 'le bien';
+  const seller = proposal.sellerName?.trim();
+  if (!seller) return what;
+  return /^[aeiouyàâéèêëîïôûü]/i.test(seller) ? `${what} d’${seller}` : `${what} de ${seller}`;
+}
+
 // La tâche d'un nouveau bien : le nombre d'acquéreurs PRÊTS à qui il n'a pas été proposé.
 export function readyToPropose(loop: LoopBuyers): number {
   return loop.toPropose.filter((entry) => entry.ready).length;

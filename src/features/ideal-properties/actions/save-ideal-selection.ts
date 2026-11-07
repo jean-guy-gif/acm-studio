@@ -11,6 +11,9 @@ import {
 } from '@/features/ideal-properties/services/ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
 import { readWatchFinds } from '@/features/buyer-watch/services/watch-finds';
+import { proposableMandate } from '@/features/buyers/services/proposable';
+import { NOT_PROPOSABLE } from '@/features/ideal-properties/services/ideal-agency';
+import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
@@ -74,6 +77,32 @@ export async function saveIdealSelection(
       row,
     ]),
   );
+  // Mission 145 (partie A) — un bien de l'agence NOUVEAU dans la sélection doit être un mandat
+  // signé sans offre acceptée (décision de Jean-Guy, 07/11) : ni un vendeur à relancer, ni un
+  // dossier sans mandat ; relu en base, jamais cru du navigateur. Un bien déjà retenu reste.
+  const newProjects = read.items
+    .filter((item) => item.source === 'project' && !kept.has(`project:${item.reference}`))
+    .map((item) => item.reference);
+  if (newProjects.length > 0) {
+    const { data: conclusions, error: conclusionsError } = await client
+      .from('project_meeting_conclusions')
+      .select('project_id, outcome')
+      .eq('agency_id', profile.agency_id)
+      .in('project_id', newProjects);
+    if (conclusionsError) return { ok: false, error: FAILED };
+    const answers = await getProjectOfferAnswers(client, profile.agency_id, newProjects);
+    if (answers == null) return { ok: false, error: FAILED };
+    const outcomeOf = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
+    const refused = newProjects.some(
+      (projectId) =>
+        !proposableMandate(
+          outcomeOf.get(projectId),
+          answers.filter((answer) => answer.projectId === projectId),
+        ),
+    );
+    if (refused) return { ok: false, error: NOT_PROPOSABLE };
+  }
+
   const { data: selection, error } = await client
     .from('buyer_selections')
     .insert({ agency_id: profile.agency_id, buyer_id: buyerId, created_by: profile.id })

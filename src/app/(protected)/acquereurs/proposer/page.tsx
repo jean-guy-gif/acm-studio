@@ -38,7 +38,7 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
   const now = new Date();
   const [agency, catalog] = await Promise.all([
     loadAgencyBuyers(profile.agency_id),
-    loadLoopCatalog(profile.agency_id, now, null),
+    loadLoopCatalog(profile.agency_id, now),
   ]);
   const failed = agency.failed || catalog.failed;
   const item = failed ? null : (catalog.items.find((entry) => entry.key === bien) ?? null);

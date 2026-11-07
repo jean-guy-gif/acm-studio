@@ -269,3 +269,92 @@ describe('le prix face au budget', () => {
     expect(budgetGap(1_000, null)).toBeNull();
   });
 });
+
+// Mission 145 (partie A, I2) — un mandat signé à lui proposer : sa fiche et sa ligne le disent, à la
+// place de « Trouver ses biens idéaux » et de « Lui proposer d'autres biens » seulement.
+describe('la boucle côté acquéreur : « Lui proposer la maison de … »', () => {
+  const lopez = {
+    key: 'project:p-lopez',
+    sellerName: 'M. et Mme Lopez',
+    property: {
+      propertyType: 'house',
+      roomsCount: 5,
+      surfaceArea: 135,
+      city: 'Vence',
+      bedroomsCount: 4,
+      floor: null,
+      hasElevator: null,
+      hasPool: false,
+      outdoorSpaces: ['garden'],
+      parkingTypes: [],
+      energyRating: null,
+      generalCondition: null,
+    },
+    price: 713_000,
+    bornAt: '2026-11-04T10:00:00Z',
+  };
+  const moreau = { ...buyer, budgetMax: 800_000 };
+
+  it('sans sélection : lui proposer le mandat, « Proposer ce bien »', () => {
+    const next = buyerNextAction(moreau, NO_PROGRESS, new Date(), [lopez]);
+    expect(next.title).toBe('Lui proposer la maison de M. et Mme Lopez');
+    // Le formateur lie les nombres par des espaces insécables (M74).
+    expect(next.phrase.replace(/\s/g, ' ')).toBe(
+      'Maison · 5 pièces · 135 m² · Vence · 713 000 €, 87 000 € sous le budget. Mandat signé le 04/11.',
+    );
+    expect(next.primary).toEqual({
+      label: 'Proposer ce bien',
+      href: '/acquereurs/proposer?bien=project%3Ap-lopez',
+    });
+    expect(next.secondary?.href).toBe('/acquereurs/b1/biens-ideaux');
+    expect(next.since).toBe(lopez.bornAt);
+  });
+
+  it('après une présentation sans visite : le mandat avant « d’autres biens » ; « + 1 autre bien »', () => {
+    const other = {
+      ...lopez,
+      key: 'project:p-2',
+      sellerName: 'Anne Martin',
+      bornAt: '2026-11-01T10:00:00Z',
+    };
+    const next = buyerNextAction(
+      moreau,
+      facts({ selectionCount: 3, presentedAt: '2026-11-04T09:00:00Z' }),
+      new Date(),
+      [lopez, other],
+    );
+    expect(next.title).toBe('Lui proposer la maison de M. et Mme Lopez');
+    expect(next.phrase).toMatch(/\+ 1 autre bien à lui proposer\.$/);
+  });
+
+  it('une sélection à présenter, une relance ou une visite à organiser passent avant', () => {
+    for (const progress of [
+      facts({ selectionCount: 3 }),
+      facts({ selectionCount: 3, linkCreated: true, linkAt: '2026-11-04T09:00:00Z' }),
+      facts({ selectionCount: 3, answeredOnLink: true, visitsToOrganize: 1 }),
+    ]) {
+      expect(buyerNextAction(moreau, progress, new Date(), [lopez]).title).not.toMatch(
+        /^Lui proposer la maison/,
+      );
+    }
+  });
+
+  it('l’appartement d’Anne, le bien de M. Lefebvre : le genre et l’élision', () => {
+    const flat = {
+      ...lopez,
+      sellerName: 'Anne Martin',
+      property: { ...lopez.property, propertyType: 'apartment' },
+    };
+    expect(buyerNextAction(moreau, NO_PROGRESS, new Date(), [flat]).title).toBe(
+      'Lui proposer l’appartement d’Anne Martin',
+    );
+    const other = {
+      ...lopez,
+      sellerName: 'M. Lefebvre',
+      property: { ...lopez.property, propertyType: null },
+    };
+    expect(buyerNextAction(moreau, NO_PROGRESS, new Date(), [other]).title).toBe(
+      'Lui proposer le bien de M. Lefebvre',
+    );
+  });
+});

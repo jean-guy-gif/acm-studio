@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/components/ui/styles';
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
+import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
@@ -118,25 +119,28 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
-  const [loadedDeck, answers, progress, prospecting, history, lastWatch] = await Promise.all([
-    selection ? loadDeck(buyer.id) : Promise.resolve(null),
-    profile
-      ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
-      : Promise.resolve({ lines: [], forSuggestions: [] }),
-    profile
-      ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
-      : Promise.resolve(new Map()),
-    // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
-    // fiche s'affiche quand même : seules les correspondances le disent.
-    getAgencyProspecting(counted).catch(() => null),
-    profile
-      ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-      : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
-    // Mission 136 — son dernier passage de veille.
-    profile
-      ? getBuyerLastWatch(profile.agency_id, buyer.id)
-      : Promise.resolve({ ok: false as const }),
-  ]);
+  const [loadedDeck, answers, progress, prospecting, history, lastWatch, loopProposals] =
+    await Promise.all([
+      selection ? loadDeck(buyer.id) : Promise.resolve(null),
+      profile
+        ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
+        : Promise.resolve({ lines: [], forSuggestions: [] }),
+      profile
+        ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
+        : Promise.resolve(new Map()),
+      // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
+      // fiche s'affiche quand même : seules les correspondances le disent.
+      getAgencyProspecting(counted).catch(() => null),
+      profile
+        ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
+        : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
+      // Mission 136 — son dernier passage de veille.
+      profile
+        ? getBuyerLastWatch(profile.agency_id, buyer.id)
+        : Promise.resolve({ ok: false as const }),
+      // Mission 145 (partie A, I2) — les mandats signés à lui proposer.
+      profile ? getBuyerLoopProposals(profile.agency_id, new Date()) : null,
+    ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
@@ -163,7 +167,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const deck = loadedDeck?.advisorDeck ?? null;
   const now = new Date();
   const journey = buyerJourney(facts, buyer.status);
-  const next = buyerNextAction(buyer, facts, now);
+  const next = buyerNextAction(buyer, facts, now, loopProposals?.byBuyer.get(buyer.id) ?? []);
   // Mission 143 (B1) — pendant une offre acceptée, la fiche suit la vente : sa recherche est en
   // pause (sélection, « Prêt à visiter ? », « Rapprocher », suggestions masqués), tout revient si
   // l'offre tombe (M138).

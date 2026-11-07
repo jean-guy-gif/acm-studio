@@ -43,7 +43,7 @@ async function resolve(
   const now = new Date();
   const [agency, catalog] = await Promise.all([
     loadAgencyBuyers(profile.agency_id),
-    loadLoopCatalog(profile.agency_id, now, null),
+    loadLoopCatalog(profile.agency_id, now),
   ]);
   if (agency.failed || catalog.failed) return { ok: false, error: PROPOSAL_FAILED };
   const item = catalog.items.find((entry) => entry.key === propertyKey);

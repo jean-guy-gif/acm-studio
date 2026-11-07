@@ -2,7 +2,17 @@ import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { daysBetween } from '@/features/meeting-conclusion/services/suivi-tasks';
 import type { BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
-import { buyerInSentence } from '@/features/meeting-conclusion/services/suivi-step-labels';
+import {
+  budgetGapLabel,
+  proposalTarget,
+  type BuyerLoopProposal,
+} from '@/features/buyers/services/loop-properties';
+import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import {
+  buyerInSentence,
+  proposeHref,
+} from '@/features/meeting-conclusion/services/suivi-step-labels';
+import { formatEuro } from '@/lib/format';
 
 // Mission 130 B — « Une seule prochaine étape » côté acquéreur : son parcours, UNE prochaine étape
 // avec un bouton plein, et ce qui s'est passé, daté, lu dans les tables existantes. Pur.
@@ -141,6 +151,35 @@ export type BuyerNextAction = {
 
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
+// Mission 145 (partie A, I2) — un mandat signé à lui proposer (la tâche « N acquéreurs pour … ») :
+// « Lui proposer la maison de M. et Mme Lopez », à la place de « Trouver ses biens idéaux » et de
+// « Lui proposer d'autres biens » seulement ; le plus récent, et « + N autres » s'il y en a.
+function proposeStep(
+  proposals: readonly BuyerLoopProposal[],
+  budgetMax: number | null | undefined,
+  id: string,
+): BuyerNextAction | null {
+  const [first, ...others] = proposals;
+  if (!first) return null;
+  const facts = [
+    idealLabel(first.property),
+    first.price != null ? formatEuro(first.price) : null,
+  ].filter((part): part is string => part != null);
+  const gap = budgetGapLabel(first.price, budgetMax ?? null);
+  const signedOn = buyerDateLabel(first.bornAt).slice(0, 5);
+  const more =
+    others.length > 0
+      ? ` + ${others.length} ${others.length > 1 ? 'autres biens' : 'autre bien'} à lui proposer.`
+      : '';
+  return {
+    title: `Lui proposer ${proposalTarget(first)}`,
+    phrase: `${facts.join(' · ')}${gap ? `, ${gap.charAt(0).toLowerCase()}${gap.slice(1)}` : ''}. Mandat signé le ${signedOn}.${more}`,
+    primary: { label: 'Proposer ce bien', href: proposeHref(first.key) },
+    secondary: { label: 'Trouver d’autres biens', href: `/acquereurs/${id}/biens-ideaux` },
+    since: first.bornAt,
+  };
+}
+
 // La prochaine étape d'un acquéreur, selon où il en est : trouver les biens idéaux → présenter
 // (ou envoyer le lien) → relancer sa réponse → organiser la visite → lui proposer d'autres biens.
 export function buyerNextAction(
@@ -150,9 +189,11 @@ export function buyerNextAction(
     phone: string | null;
     name?: string;
     status?: string;
+    budgetMax?: number | null;
   },
   facts: BuyerProgressFacts,
   now: Date = new Date(),
+  proposals: readonly BuyerLoopProposal[] = [],
 ): BuyerNextAction {
   const id = buyer.id;
   const offer = currentOffer(facts, buyer.status);
@@ -184,7 +225,9 @@ export function buyerNextAction(
   const ideal = { label: 'Trouver les biens idéaux', href: `/acquereurs/${id}/biens-ideaux` };
   const present = { label: 'Présenter maintenant', href: `/presentation/${id}` };
   const link = { label: 'Envoyer le lien à la place', href: `/acquereurs/${id}/dossier` };
+  const propose = proposeStep(proposals, buyer.budgetMax, id);
   if (facts.selectionCount === 0) {
+    if (propose) return propose;
     return {
       title: 'Trouver ses biens idéaux',
       phrase: 'Ce que l’agence a déjà, puis le marché ; vous retenez trois biens au plus.',
@@ -224,6 +267,7 @@ export function buyerNextAction(
       since: facts.answeredAt ?? facts.presentedAt ?? null,
     };
   }
+  if (propose) return propose;
   return {
     title: 'Lui proposer d’autres biens',
     phrase:

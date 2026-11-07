@@ -10,6 +10,7 @@ import {
   buyerTypesLabel,
 } from '@/features/buyers/services/buyer-criteria';
 import { buyerNextAction } from '@/features/buyers/services/buyer-journey';
+import type { BuyerLoopProposal } from '@/features/buyers/services/loop-properties';
 import {
   buyerReadiness,
   READY_LABEL,
@@ -28,6 +29,7 @@ export function BuyerList({
   progress = new Map(),
   now = new Date(),
   lastAnswers = new Map(),
+  loopProposals = new Map(),
 }: {
   buyers: Buyer[];
   advisorId: string | null;
@@ -37,6 +39,8 @@ export function BuyerList({
   now?: Date;
   // Mission 135 — sa dernière réponse, toutes sélections confondues.
   lastAnswers?: ReadonlyMap<string, { at: string; answer: string; reasons: string[] }>;
+  // Mission 145 (partie A, I2) — les mandats signés à proposer à chacun.
+  loopProposals?: ReadonlyMap<string, readonly BuyerLoopProposal[]>;
 }) {
   if (buyers.length === 0) {
     return (
@@ -109,7 +113,7 @@ export function BuyerList({
                   fait, comme le bloc de la fiche. */}
               {(() => {
                 const facts = progress.get(buyer.id) ?? NO_PROGRESS;
-                const next = buyerNextAction(buyer, facts);
+                const next = buyerNextAction(buyer, facts, now, loopProposals.get(buyer.id) ?? []);
                 if (facts.unread) {
                   return (
                     <span className="text-xs font-semibold text-red-700">

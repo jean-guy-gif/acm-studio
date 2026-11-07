@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/styles';
 import { BuyerList } from '@/features/buyers/components/buyer-list';
 import { getBuyers } from '@/features/buyers/queries/get-buyers';
+import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyersMonth } from '@/features/buyers/queries/get-buyers-month';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { buyersMonthLine } from '@/features/buyers/services/buyers-month';
@@ -32,7 +33,7 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   const supabase = await createClient();
   // Mission 135 — « Ce mois-ci » se compte sur toutes les fiches de l'agence, la recherche par nom
   // n'y change rien.
-  const [progress, month] = profile
+  const [progress, month, loopProposals] = profile
     ? await Promise.all([
         getBuyersProgress(
           supabase,
@@ -45,8 +46,10 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
           all.map((buyer) => buyer.id),
           new Date(),
         ),
+        // Mission 145 (partie A, I2) — les mandats signés à proposer à chacun.
+        getBuyerLoopProposals(profile.agency_id, new Date()),
       ])
-    : [new Map(), null];
+    : [new Map(), null, null];
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -114,6 +117,7 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         advisorId={profile?.id ?? null}
         query={query}
         progress={progress}
+        loopProposals={loopProposals?.byBuyer ?? new Map()}
         lastAnswers={month?.lastAnswers ?? new Map()}
       />
     </div>

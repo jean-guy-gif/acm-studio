@@ -1,115 +1,64 @@
 import 'server-only';
 
 import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
-
-import { storedFacts } from '@/features/buyer-prospecting/services/prospect-facts';
 import {
   loadAgencyBuyers,
   loadLoopProperties,
-  toNumber,
   type AgencyBuyers,
 } from '@/features/buyers/queries/get-property-buyers';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import {
   isNewProperty,
   loopBuyers,
+  loopProposalOf,
   mergeLoopProperties,
-  NEW_PROPERTY_WINDOW_DAYS,
   readyToPropose,
+  type BuyerLoopProposal,
   type LoopContacts,
   type LoopProperty,
 } from '@/features/buyers/services/loop-properties';
-import { comparableFacts } from '@/features/buyer-prospecting/services/prospect-facts';
-import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { projectsUnderOffer } from '@/features/buyers/services/proposable';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
+import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { readPages } from '@/lib/supabase/read-pages';
 import { createClient } from '@/lib/supabase/server';
 
-// Mission 134 — les biens qui appellent les acquéreurs de l'agence, lus en une vague : les dossiers
-// signés ou à relancer et leur prix (la 133), les concurrents retenus, les biens démarchés, et les
-// envois déjà notés. Une lecture en échec le dit (`failed`) : aucune tâche n'est alors déduite,
-// jamais « rien à proposer » (M98).
-
-const DAY = 86_400_000;
-
-// Une colonne `numeric` revient en texte de l'API : convertie avant la liste d'autorisation.
-const num = toNumber;
-
-const competitorKey = (row: { id: string; listing_url: string | null }): string => {
-  const listing = listingIdentityKey(row.listing_url);
-  return listing ? `listing:${listing}` : `competitor:${row.id}`;
-};
-
+// Mission 134 — les biens qui appellent les acquéreurs de l'agence, lus en une vague, et les envois
+// déjà notés. Mission 145 (partie A) — seul un bien sous MANDAT SIGNÉ, sans offre acceptée, se
+// propose (décision de Jean-Guy, 07/11 ; `proposable.ts`) : ni un vendeur à relancer, ni un
+// concurrent, un nouveau venu ou un bien démarché — le catalogue ne les lit plus. Une lecture en
+// échec le dit (`failed`) : aucune tâche n'est alors déduite, jamais « rien à proposer » (M98).
 export async function loadLoopCatalog(
   agencyId: string,
   now: Date,
-  // null : tous les biens du marché, pas seulement ceux des 14 derniers jours (la page d'un bien).
-  windowDays: number | null = NEW_PROPERTY_WINDOW_DAYS,
 ): Promise<{ items: LoopProperty[]; contacts: LoopContacts; failed: boolean }> {
   const empty: LoopContacts = { proposals: new Map() };
   const supabase = await createClient();
-  const since =
-    windowDays == null ? null : new Date(now.getTime() - windowDays * DAY).toISOString();
-  const COMPARABLE_COLUMNS =
-    'id, project_id, created_at, listing_url, listing_gone_at, meeting_frozen_at, property_type, rooms_count, surface_area, land_area, city, district, bedrooms_count, outdoor_spaces, parking_types, listing_features, energy_rating, price, photo_urls';
-  const [conclusions, projects, comparables, prospects, origins, proposals, dismissals] =
-    await Promise.all([
+  const [conclusions, projects, proposals, dismissals] = await Promise.all([
+    supabase
+      .from('project_meeting_conclusions')
+      .select('project_id, outcome, signed_at, concluded_at')
+      .eq('agency_id', agencyId)
+      .eq('outcome', 'signed'),
+    supabase
+      .from('projects')
+      .select('id, seller_name, status, is_example')
+      .eq('agency_id', agencyId)
+      .neq('status', 'archived')
+      .eq('is_example', false),
+    readPages((from, to) =>
       supabase
-        .from('project_meeting_conclusions')
-        .select('project_id, outcome, signed_at, concluded_at, outcome_changed_at')
+        .from('buyer_proposals')
+        .select('buyer_id, property_key, sent_at')
         .eq('agency_id', agencyId)
-        .in('outcome', ['signed', 'follow_up']),
-      supabase
-        .from('projects')
-        .select('id, seller_name, status, is_example')
-        .eq('agency_id', agencyId)
-        .neq('status', 'archived')
-        .eq('is_example', false),
-      readPages((from, to) => {
-        const query = supabase
-          .from('comparables')
-          .select(COMPARABLE_COLUMNS)
-          .eq('agency_id', agencyId)
-          .eq('is_selected', true)
-          .is('listing_gone_at', null);
-        return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
-      }),
-      readPages((from, to) => {
-        const query = supabase
-          .from('buyer_prospects')
-          .select('id, created_at, listing_url, listing_key, facts')
-          .eq('agency_id', agencyId);
-        return (since ? query.gte('created_at', since) : query).order('id').range(from, to);
-      }),
-      readPages((from, to) =>
-        supabase
-          .from('buyer_prospect_origins')
-          .select('prospect_id, buyer_id')
-          .eq('agency_id', agencyId)
-          .order('id')
-          .range(from, to),
-      ),
-      readPages((from, to) =>
-        supabase
-          .from('buyer_proposals')
-          .select('buyer_id, property_key, sent_at')
-          .eq('agency_id', agencyId)
-          .order('id')
-          .range(from, to),
-      ),
-      // Mission 139 — les biens écartés pour un acquéreur ne lui sont plus proposés.
-      readDismissals(supabase, agencyId),
-    ]);
-  if (
-    conclusions.error ||
-    projects.error ||
-    comparables.error ||
-    prospects.error ||
-    origins.error ||
-    proposals.error ||
-    dismissals == null
-  ) {
+        .order('id')
+        .range(from, to),
+    ),
+    // Mission 139 — les biens écartés pour un acquéreur ne lui sont plus proposés.
+    readDismissals(supabase, agencyId),
+  ]);
+  if (conclusions.error || projects.error || proposals.error || dismissals == null) {
     return { items: [], contacts: empty, failed: true };
   }
   const projectOf = new Map((projects.data ?? []).map((row) => [row.id, row]));
@@ -120,122 +69,35 @@ export async function loadLoopCatalog(
     contacts.proposals.set(row.property_key, byBuyer);
   }
 
+  // Les mandats signés de l'agence, au prix de la 133, sauf ceux qu'une offre acceptée tient.
+  const signed = (conclusions.data ?? []).filter((row) => projectOf.has(row.project_id));
+  const signedIds = signed.map((row) => row.project_id);
+  const [loop, answers] = await Promise.all([
+    loadLoopProperties(agencyId, signedIds),
+    getProjectOfferAnswers(supabase, agencyId, signedIds),
+  ]);
+  if (loop.failed || answers == null) return { items: [], contacts: empty, failed: true };
+  const held = projectsUnderOffer(answers);
   const list: LoopProperty[] = [];
-
-  // Les biens de l'agence : mandats signés, vendeurs à relancer, au prix de la 133.
-  const agencyProjects = (conclusions.data ?? []).filter((row) => projectOf.has(row.project_id));
-  const loop = await loadLoopProperties(
-    agencyId,
-    agencyProjects.map((row) => row.project_id),
-  );
-  if (loop.failed) return { items: [], contacts: empty, failed: true };
-  for (const row of agencyProjects) {
+  for (const row of signed) {
+    if (held.has(row.project_id)) continue;
     const entry = loop.properties.get(row.project_id);
     if (!entry) continue;
-    const signed = row.outcome === 'signed';
     list.push({
       key: `project:${row.project_id}`,
       source: 'project',
       reference: row.project_id,
       projectId: row.project_id,
       sellerName: projectOf.get(row.project_id)?.seller_name ?? null,
-      origin: signed ? 'mandate' : 'follow_up',
+      origin: 'mandate',
       label: idealLabel(entry.property),
       property: entry.property,
       price: entry.price,
-      bornAt:
-        (signed
-          ? (row.signed_at ?? row.concluded_at)
-          : (row.outcome_changed_at ?? row.concluded_at)) ?? now.toISOString(),
+      bornAt: row.signed_at ?? row.concluded_at ?? now.toISOString(),
       selectionRefs: [`project:${row.project_id}`],
       originBuyerIds: [],
     });
   }
-
-  // Les concurrents retenus sur un dossier vendeur (un nouveau venu : retenu après la conclusion).
-  for (const row of comparables.data) {
-    const project = projectOf.get(row.project_id);
-    if (!project) continue;
-    const facts = comparableFacts({
-      ...row,
-      price: num(row.price),
-      surface_area: num(row.surface_area),
-      land_area: num(row.land_area),
-      rooms_count: num(row.rooms_count),
-    });
-    const property = {
-      propertyType: facts.propertyType,
-      roomsCount: facts.roomsCount,
-      surfaceArea: facts.surfaceArea,
-      city: facts.city,
-      bedroomsCount: num(row.bedrooms_count),
-      floor: null,
-      hasElevator: null,
-      hasPool: facts.hasPool,
-      outdoorSpaces: facts.outdoorSpaces,
-      parkingTypes: facts.parkingTypes,
-      energyRating: facts.energyRating,
-      generalCondition: null,
-    };
-    const newcomer = project.status === 'meeting_completed' && row.meeting_frozen_at == null;
-    list.push({
-      key: competitorKey(row),
-      source: 'competitor',
-      reference: row.id,
-      projectId: row.project_id,
-      sellerName: project.seller_name ?? null,
-      origin: newcomer ? 'newcomer' : 'competitor',
-      label: idealLabel(property),
-      property,
-      price: facts.price,
-      bornAt: row.created_at,
-      selectionRefs: [
-        `competitor:${row.id}`,
-        ...(row.listing_url ? [`listing:${row.listing_url}`] : []),
-      ],
-      originBuyerIds: [],
-    });
-  }
-
-  // Les biens démarchés depuis une recherche acquéreur (M120) : ses acquéreurs d'origine l'ont déjà.
-  const originsOf = new Map<string, string[]>();
-  for (const row of origins.data) {
-    if (!row.prospect_id) continue;
-    originsOf.set(row.prospect_id, [...(originsOf.get(row.prospect_id) ?? []), row.buyer_id]);
-  }
-  for (const row of prospects.data) {
-    const facts = storedFacts(row.facts);
-    const property = {
-      propertyType: facts.propertyType,
-      roomsCount: facts.roomsCount,
-      surfaceArea: facts.surfaceArea,
-      city: facts.city,
-      bedroomsCount: null,
-      floor: null,
-      hasElevator: null,
-      hasPool: facts.hasPool,
-      outdoorSpaces: facts.outdoorSpaces,
-      parkingTypes: facts.parkingTypes,
-      energyRating: facts.energyRating,
-      generalCondition: null,
-    };
-    list.push({
-      key: `listing:${row.listing_key}`,
-      source: 'listing',
-      reference: row.listing_url,
-      projectId: null,
-      sellerName: null,
-      origin: 'prospect',
-      label: idealLabel(property),
-      property,
-      price: facts.price,
-      bornAt: row.created_at,
-      selectionRefs: [`listing:${row.listing_url}`],
-      originBuyerIds: originsOf.get(row.id) ?? [],
-      facts: facts as unknown as Record<string, unknown>,
-    });
-  }
-
   return { items: mergeLoopProperties(list), contacts, failed: false };
 }
 
@@ -282,4 +144,34 @@ export async function getLoopTasks(
     });
   }
   return { tasks, readyByProject, failed: false };
+}
+
+// Mission 145 (partie A, I2) — la boucle vue de l'acquéreur : pour chaque acquéreur PRÊT, les
+// mandats à lui proposer (ceux que compte la tâche « N acquéreurs pour … »), le plus récent
+// d'abord. Sa fiche et sa ligne disent alors « Lui proposer la maison de M. et Mme Lopez ».
+export type BuyerLoopProposals = {
+  byBuyer: Map<string, BuyerLoopProposal[]>;
+  failed: boolean;
+};
+
+export async function getBuyerLoopProposals(
+  agencyId: string,
+  now: Date,
+): Promise<BuyerLoopProposals> {
+  const [agency, catalog] = await Promise.all([
+    loadAgencyBuyers(agencyId),
+    loadLoopCatalog(agencyId, now),
+  ]);
+  const byBuyer = new Map<string, BuyerLoopProposal[]>();
+  if (agency.failed || catalog.failed) return { byBuyer, failed: true };
+  for (const item of catalog.items) {
+    if (!isNewProperty(item, now)) continue;
+    const loop = loopBuyers(item, agency.buyers, agency.progress, catalog.contacts, now);
+    for (const { buyer, ready } of loop.toPropose) {
+      if (!ready) continue;
+      byBuyer.set(buyer.id, [...(byBuyer.get(buyer.id) ?? []), loopProposalOf(item)]);
+    }
+  }
+  for (const list of byBuyer.values()) list.sort((a, b) => b.bornAt.localeCompare(a.bornAt));
+  return { byBuyer, failed: false };
 }

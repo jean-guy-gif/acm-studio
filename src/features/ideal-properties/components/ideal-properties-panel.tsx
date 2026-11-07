@@ -527,7 +527,7 @@ export function IdealPropertiesPanel({
         <div className="flex flex-col gap-0.5">
           <h2 className={sectionTitle}>Ce que l’agence a déjà</h2>
           <p className={hintText}>
-            Vos mandats signés, vos vendeurs à relancer et les concurrents à prospecter qui
+            Vos mandats signés sans offre acceptée, et les concurrents à prospecter qui
             correspondent à sa recherche. Gratuit.
           </p>
         </div>
