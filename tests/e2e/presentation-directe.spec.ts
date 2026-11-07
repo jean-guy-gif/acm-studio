@@ -466,7 +466,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     await expect(kellerRow.getByTestId('buyer-row-last-answer')).toContainText(
       'Pas pour moi · Le prix',
     );
-    await kellerRow.getByRole('link', { name: 'Famille Keller' }).click();
+    await kellerRow.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     // Mission 143 (B1) — leur offre est acceptée : la recherche est en pause, ni suggestion de
     // budget ni « Rapprocher » ; l'offre tombée, tout revient.
     await expect(page.getByTestId('buyer-paused')).toBeVisible();
@@ -512,7 +512,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await page.goto('/suivi');
     await expect(page.getByText('2 nouveaux biens pour la famille Keller')).toHaveCount(0);
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
     // Mission 143 (B1) — pendant la vente, la veille et « Prêt à visiter ? » sont en pause.
     await expect(page.getByTestId('buyer-watch-line')).toHaveCount(0);
@@ -552,7 +552,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
 
   await test.step('La fiche dit la veille', async () => {
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-watch-line')).toHaveText(
       /^Veille : dernière recherche le \d{2}\/\d{2}, prochaine le \d{2}\/\d{2}$/,
     );
@@ -607,7 +607,7 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
   let linkPath = '';
   await test.step('Un nouveau bon, signé à la souris', async () => {
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     // Le bon signé se lit sur la fiche, ses visites toutes faites ; un nouveau bon part d'ici.
     await expect(page.getByTestId('buyer-voucher-signed').first()).toContainText(/^Signé le /);
     await page.getByTestId('buyer-voucher-new').click();
@@ -717,7 +717,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
 
   await test.step('Les Keller « Sous offre », les badges datés', async () => {
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
     await expect(page.getByTestId('buyer-ready')).toHaveCount(0);
     await expect(page.getByTestId('buyer-paused')).toBeVisible();
@@ -743,7 +743,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
 
   await test.step('L’offre signée s’ouvre : couverture, texte validé', async () => {
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await page.getByTestId('buyer-offer-signed').first().click();
     await expect(page.getByTestId('offer-cover')).toContainText("OFFRE D'ACHAT FERME");
     await expect(page.getByTestId('offer-cover-mandate')).toHaveText('Mandat n° M-2026-0142');
@@ -857,7 +857,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
     );
     // Un refus ne change pas le statut : les Keller restent « Sous offre » (la première offre).
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
     await expect(page.getByTestId('offer-answer-badge').first()).toHaveText(
       /^Offre (acceptée|refusée) le \d{2}\/\d{2}$/,
@@ -942,9 +942,11 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
   await test.step('« Écarter pour lui » : le bien sort, « Annuler » le rend', async () => {
     // Les biens idéaux des Keller, le marché simulé de la démo (aucun appel, « 0 annonce facturée »).
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'Famille Keller' }).click();
+    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
-    await page.getByRole('link', { name: 'Changer la sélection' }).click();
+    // Mission 143 (B1) — leur offre est acceptée : la sélection est masquée sur la fiche, les biens
+    // idéaux restent joignables par leur adresse.
+    await page.goto(`${new URL(page.url()).pathname}/biens-ideaux`);
     await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Keller');
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page

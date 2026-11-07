@@ -344,7 +344,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
       await expectUnspoken(page, 'Avant le rendez-vous');
       await page.goto(`/builder/${projectId}`);
-      await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
+      // Mission 143 (B4) — sur la Vue d'ensemble, la prochaine étape vit dans son bloc, un seul
+      // bouton plein ; l'en-tête ne la répète pas.
+      const nextStep = page.getByTestId('overview-next-step');
+      await expect(nextStep).toContainText('Faire le Live avec');
+      await expect(nextStep.getByText(/^Lancer le Live/).first()).toBeVisible();
+      await expect(page.getByTestId('next-step')).toHaveCount(0);
     });
 
     await test.step('Le Live, au bureau', async () => {
@@ -1216,7 +1221,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
   ).toHaveText('Trouver les biens idéaux →');
-  await keller.getByRole('link', { name: 'Famille Keller' }).click();
+  await keller.getByRole('link', { name: 'Famille Keller', exact: true }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
   const kellerUrl = new URL(page.url()).pathname;
   // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone.
@@ -1496,7 +1501,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
     await answering.close();
   }
   await page.goto('/acquereurs');
-  await page.getByRole('link', { name: 'Famille Keller' }).click();
+  await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
   await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
   // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
