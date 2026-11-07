@@ -55,7 +55,7 @@ import {
   DEMO_JUSTIFICATION,
   DEMO_LIVE_MINUTES,
   DEMO_READINESS_MISSING,
-  DEMO_DOSSIERS,
+  DEMO_SEEDS,
   DEMO_KELLER_REFUSALS_DAYS_AGO,
   DEMO_LAMBERT_SHARED_DAYS_AGO,
   demoKellerRefusalsPlan,
@@ -76,7 +76,7 @@ import {
   demoLambertSelectionPlan,
   demoSeedPlan,
   mouginsMandateId,
-  type DemoDossierKey,
+  type DemoSeedKey,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
@@ -1129,8 +1129,8 @@ export async function seedDemoDossiers(
   await nameDemoAgency(supabase, closer);
   // Mission 145 — deux dossiers portent la marque « signed » (Mougins, et Vence chez M. et Mme
   // Lopez) : le mandat des Keller se retrouve par sa clé et son scénario, jamais par la marque seule.
-  const created: { key: DemoDossierKey; id: string }[] = [];
-  for (const key of DEMO_DOSSIERS) {
+  const created: { key: DemoSeedKey; id: string }[] = [];
+  for (const key of DEMO_SEEDS) {
     const id = await seedDemoDossier(supabase, closer, demoSeedPlan(key, now), now);
     if (!id) return false;
     created.push({ key, id });

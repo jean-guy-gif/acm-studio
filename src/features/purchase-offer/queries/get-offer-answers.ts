@@ -70,21 +70,38 @@ export async function getVisitOfferAnswers(
 }
 
 // Les réponses aux offres faites sur le bien d'un dossier vendeur, la plus récente d'abord ; null
-// si la lecture échoue (jamais « aucune », M98).
+// si la lecture échoue (jamais « aucune », M98). Mission 145 — sans dossier précisé
+// (`getAgencyOfferAnswers`) : toutes les offres de l'agence, pour savoir quelle offre acceptée tient
+// encore son mandat (la plus récente de chaque acquéreur).
 export async function getProjectOfferAnswers(
   supabase: SupabaseClient<Database>,
   agencyId: string,
   projectIds: string[],
 ): Promise<(OfferAnswer & { projectId: string })[] | null> {
   if (projectIds.length === 0) return [];
-  const { data, error } = await supabase
+  return readOfferAnswers(supabase, agencyId, projectIds);
+}
+
+export async function getAgencyOfferAnswers(
+  supabase: SupabaseClient<Database>,
+  agencyId: string,
+): Promise<(OfferAnswer & { projectId: string })[] | null> {
+  return readOfferAnswers(supabase, agencyId, null);
+}
+
+async function readOfferAnswers(
+  supabase: SupabaseClient<Database>,
+  agencyId: string,
+  projectIds: string[] | null,
+): Promise<(OfferAnswer & { projectId: string })[] | null> {
+  const query = supabase
     .from('buyer_documents')
     .select(
       'id, buyer_id, fields, buyers(name, status), buyer_document_acceptances(decision, decided_at)',
     )
     .eq('agency_id', agencyId)
-    .eq('kind', 'purchase_offer')
-    .in('fields->>projectId', projectIds);
+    .eq('kind', 'purchase_offer');
+  const { data, error } = await (projectIds ? query.in('fields->>projectId', projectIds) : query);
   if (error) return null;
   return (data ?? [])
     .map((row) => {

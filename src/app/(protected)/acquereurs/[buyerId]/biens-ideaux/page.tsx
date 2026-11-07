@@ -31,7 +31,7 @@ import { findAsCandidate } from '@/features/buyer-watch/services/watch-finds';
 import { categorizeIdeal } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealAgencyCandidates } from '@/features/ideal-properties/services/ideal-agency';
 import { projectsUnderOffer } from '@/features/buyers/services/proposable';
-import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { IDEAL_CATEGORIES } from '@/features/ideal-properties/types';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 
@@ -66,7 +66,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
       .eq('agency_id', profile.agency_id)
       .eq('buyer_id', buyer.id),
     // Mission 145 (partie A) — un mandat sous offre acceptée ne se propose plus.
-    getProjectOfferAnswers(supabase, profile.agency_id, signedIds),
+    getAgencyOfferAnswers(supabase, profile.agency_id),
   ]);
   // Une lecture des offres en échec ne propose aucun mandat (M98) : les concurrents restent.
   const underOffer = offers == null ? new Set(signedIds) : projectsUnderOffer(offers);
@@ -134,6 +134,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
         budgetWarning={budgetWarning}
         watch={watch}
         dismissed={dismissals.error ? null : (dismissals.data ?? []).map((row) => row.property_key)}
+        mandatesUnread={offers == null}
       />
     </div>
   );

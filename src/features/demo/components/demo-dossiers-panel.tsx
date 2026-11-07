@@ -6,7 +6,7 @@ import { prepareDemoDossiers, resetDemoDossiers } from '@/features/demo/actions/
 import { DemoResetButton } from '@/features/demo/components/demo-reset-button';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
-import { DEMO_DOSSIERS, DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
+import { DEMO_SEEDS, DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
 import { numberInWords } from '@/features/purchase-offer/services/amount-in-words';
 
 // Le vrai nombre de dossiers et d'acquéreurs de la démo, lu sur ce qu'elle crée (finitions, 06/11).
@@ -28,9 +28,9 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
     <section className={`${card} flex flex-col gap-4 p-5 sm:p-6`} data-testid="demo-dossiers">
       <h2 className={sectionTitle}>Ma démo</h2>
       <p className={hintText}>
-        {capitalized(numberInWords(DEMO_DOSSIERS.length))} dossiers aux étapes de l’outil : à
-        préparer, prêt pour le Live, prêt en présentation directe, deux mandats signés, à relancer ;
-        et {numberInWords(DEMO_BUYERS.length)}{' '}
+        {capitalized(numberInWords(DEMO_SEEDS.length))} dossiers aux étapes de l’outil : à préparer,
+        prêt pour le Live, prêt en présentation directe, deux mandats signés, à relancer ; et{' '}
+        {numberInWords(DEMO_BUYERS.length)}{' '}
         <Link href="/acquereurs" className={link}>
           acquéreurs
         </Link>{' '}
@@ -74,7 +74,7 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
           <DemoResetButton
             action={resetDemoDossiers}
             counts={{
-              dossiers: numberInWords(DEMO_DOSSIERS.length),
+              dossiers: numberInWords(DEMO_SEEDS.length),
               buyers: numberInWords(DEMO_BUYERS.length),
             }}
           />

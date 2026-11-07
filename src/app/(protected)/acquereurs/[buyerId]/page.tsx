@@ -781,6 +781,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <>
                 <h2 className="font-title text-xl font-bold">{next.title}</h2>
                 <p className="text-sm text-white/85">{next.phrase}</p>
+                {/* Mission 145 — les mandats à lui proposer n'ont pas pu être lus (M98). */}
+                {loopProposals?.failed ? (
+                  <p role="alert" className="text-sm font-semibold text-white">
+                    Les mandats à lui proposer n’ont pas pu être lus : rechargez la page.
+                  </p>
+                ) : null}
                 {next.compromiseOfferId ? (
                   <CompromiseActions
                     offerId={next.compromiseOfferId}

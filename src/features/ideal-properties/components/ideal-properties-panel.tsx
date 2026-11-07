@@ -134,6 +134,7 @@ export function IdealPropertiesPanel({
   presented = false,
   watch = null,
   dismissed = [],
+  mandatesUnread = false,
 }: {
   buyerId: string;
   agency: BuyerReconciliation;
@@ -150,6 +151,9 @@ export function IdealPropertiesPanel({
   // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
   // lecture a échoué (M98).
   dismissed?: string[] | null;
+  // Mission 145 — les offres de l'agence n'ont pas pu être lues : aucun mandat n'est proposé, et
+  // l'écran le dit (M98).
+  mandatesUnread?: boolean;
 }) {
   const demo = useDemoMode();
   const router = useRouter();
@@ -531,6 +535,11 @@ export function IdealPropertiesPanel({
             correspondent à sa recherche. Gratuit.
           </p>
         </div>
+        {mandatesUnread ? (
+          <p role="alert" className="text-sm font-semibold text-red-700">
+            Vos mandats n’ont pas pu être lus : rechargez la page.
+          </p>
+        ) : null}
         {allAgencyHits.length > 0 && agencyHits.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Les biens de l’agence qui correspondent sont dans la sélection actuelle.

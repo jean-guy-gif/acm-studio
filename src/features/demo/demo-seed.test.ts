@@ -3,16 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import {
-  DEMO_DOSSIER_SCENARIO,
-  DEMO_DOSSIER_STAGE,
-  DEMO_DOSSIERS,
+  DEMO_SEED_SCENARIO,
+  DEMO_SEED_STAGE,
+  DEMO_SEEDS,
   DEMO_SEED_COMPETITORS,
   DEMO_STAGE_LABELS,
   DEMO_STAGES,
   demoSeedCompetitors,
   demoSeedPlan,
   mouginsMandateId,
-  type DemoDossierKey,
+  type DemoSeedKey,
 } from '@/features/demo/services/demo-seed';
 
 // Mission 114 (partie B) — les quatre dossiers d'un closer, décrits avant d'être écrits : quatre
@@ -25,7 +25,7 @@ const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
 describe('le plan des dossiers de démo', () => {
   it('six dossiers à cinq étapes nommées, chacun avec son scénario', () => {
     expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
-    expect(DEMO_DOSSIERS).toEqual([
+    expect(DEMO_SEEDS).toEqual([
       'to_prepare',
       'ready',
       'direct',
@@ -34,9 +34,9 @@ describe('le plan des dossiers de démo', () => {
       'follow_up',
     ]);
     for (const stage of DEMO_STAGES) expect(DEMO_STAGE_LABELS[stage]).not.toMatch(UNSPOKEN);
-    for (const key of DEMO_DOSSIERS) {
-      expect(DEMO_SCENARIOS.some((s) => s.id === DEMO_DOSSIER_SCENARIO[key])).toBe(true);
-      expect(DEMO_STAGES).toContain(DEMO_DOSSIER_STAGE[key]);
+    for (const key of DEMO_SEEDS) {
+      expect(DEMO_SCENARIOS.some((s) => s.id === DEMO_SEED_SCENARIO[key])).toBe(true);
+      expect(DEMO_STAGES).toContain(DEMO_SEED_STAGE[key]);
       expect(demoSeedPlan(key, NOW).key).toBe(key);
     }
   });
@@ -194,7 +194,7 @@ describe('« Prêt, en présentation directe »', () => {
   it('« Mr and Mrs Bernard », en anglais ; les autres dossiers en français', () => {
     expect(demoSeedPlan('direct', NOW).sellerName).toBe('Mr and Mrs Bernard');
     expect(demoSeedPlan('direct', NOW).language).toBe('en');
-    for (const key of DEMO_DOSSIERS.filter((each) => each !== 'direct')) {
+    for (const key of DEMO_SEEDS.filter((each) => each !== 'direct')) {
       expect(demoSeedPlan(key, NOW).language).toBe('fr');
     }
   });
@@ -204,8 +204,8 @@ describe('« Prêt, en présentation directe »', () => {
 // « M. et Mme Martin » (le dossier à préparer, même scénario d'Antibes), ni le nom d'un acquéreur.
 describe('les vendeurs de la démo', () => {
   it('cinq noms différents, aucun pris à un acquéreur de la démo', () => {
-    const names = DEMO_DOSSIERS.map((key) => demoSeedPlan(key, NOW).sellerName);
-    expect(new Set(names).size).toBe(DEMO_DOSSIERS.length);
+    const names = DEMO_SEEDS.map((key) => demoSeedPlan(key, NOW).sellerName);
+    expect(new Set(names).size).toBe(DEMO_SEEDS.length);
     expect(demoSeedPlan('follow_up', NOW).sellerName).toBe('M. et Mme Lambert-Duval');
     for (const buyer of DEMO_BUYERS) expect(names).not.toContain(buyer.name);
   });
@@ -232,7 +232,7 @@ describe('le mandat signé de Vence (M. et Mme Lopez)', () => {
   });
 
   it('l’offre des Keller reste sur Mougins, quel que soit l’ordre de création', () => {
-    const ids: Record<DemoDossierKey, string> = {
+    const ids: Record<DemoSeedKey, string> = {
       to_prepare: 'p-antibes',
       ready: 'p-garcia',
       direct: 'p-bernard',
@@ -240,7 +240,7 @@ describe('le mandat signé de Vence (M. et Mme Lopez)', () => {
       signed_vence: 'p-lopez',
       follow_up: 'p-lambert-duval',
     };
-    const inOrder = DEMO_DOSSIERS.map((key) => ({ key, id: ids[key] }));
+    const inOrder = DEMO_SEEDS.map((key) => ({ key, id: ids[key] }));
     expect(mouginsMandateId(inOrder)).toBe('p-mougins');
     expect(mouginsMandateId([...inOrder].reverse())).toBe('p-mougins');
     const lopezFirst = [

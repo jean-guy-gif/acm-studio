@@ -12,6 +12,7 @@ import {
   budgetGapLabel,
   LOOP_ORIGIN_NOTES,
   loopBuyers,
+  PROPOSAL_UNKNOWN_PROPERTY,
   propertyFigures,
   propertyPhrase,
   sentDayLabel,
@@ -42,7 +43,9 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
   ]);
   const failed = agency.failed || catalog.failed;
   const item = failed ? null : (catalog.items.find((entry) => entry.key === bien) ?? null);
-  if (!failed && !item) notFound();
+  // Mission 145 — un bien qui n'est plus à proposer (un ancien lien, une offre acceptée depuis, un
+  // vendeur à relancer) : la page le dit, plutôt qu'une page introuvable.
+  const gone = !failed && !item;
 
   const loop = item
     ? loopBuyers(item, agency.buyers, agency.progress, catalog.contacts, now)
@@ -84,7 +87,12 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
           <p className={pageSubtitle}>{[item.label, LOOP_ORIGIN_NOTES[item.origin]].join(' · ')}</p>
         ) : null}
       </div>
-      {failed || !item || !loop ? (
+      {gone ? (
+        <p role="status" className={alertError} data-testid="propose-gone">
+          {PROPOSAL_UNKNOWN_PROPERTY} Seul un mandat signé, sans offre acceptée, se propose à un
+          acquéreur.
+        </p>
+      ) : failed || !item || !loop ? (
         <p role="alert" className={alertError}>
           Les acquéreurs n’ont pas pu être lus pour l’instant : rechargez la page.
         </p>

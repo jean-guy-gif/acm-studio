@@ -11,9 +11,9 @@ import {
 } from '@/features/ideal-properties/services/ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
 import { readWatchFinds } from '@/features/buyer-watch/services/watch-finds';
-import { proposableMandate } from '@/features/buyers/services/proposable';
+import { projectsUnderOffer, proposableMandate } from '@/features/buyers/services/proposable';
 import { NOT_PROPOSABLE } from '@/features/ideal-properties/services/ideal-agency';
-import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
@@ -90,15 +90,12 @@ export async function saveIdealSelection(
       .eq('agency_id', profile.agency_id)
       .in('project_id', newProjects);
     if (conclusionsError) return { ok: false, error: FAILED };
-    const answers = await getProjectOfferAnswers(client, profile.agency_id, newProjects);
+    const answers = await getAgencyOfferAnswers(client, profile.agency_id);
     if (answers == null) return { ok: false, error: FAILED };
     const outcomeOf = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
+    const held = projectsUnderOffer(answers);
     const refused = newProjects.some(
-      (projectId) =>
-        !proposableMandate(
-          outcomeOf.get(projectId),
-          answers.filter((answer) => answer.projectId === projectId),
-        ),
+      (projectId) => !proposableMandate(outcomeOf.get(projectId), projectId, held),
     );
     if (refused) return { ok: false, error: NOT_PROPOSABLE };
   }

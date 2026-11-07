@@ -32,7 +32,15 @@ async function resolve(
   buyerId: unknown,
   propertyKey: unknown,
 ): Promise<
-  | { ok: true; agencyId: string; profileId: string; item: LoopProperty; buyerIdOk: string }
+  | {
+      ok: true;
+      agencyId: string;
+      profileId: string;
+      item: LoopProperty;
+      buyerIdOk: string;
+      // Mission 145 — les mandats proposables aujourd'hui (le catalogue de la boucle).
+      proposableKeys: Set<string>;
+    }
   | { ok: false; error: string }
 > {
   const profile = await getProfile();
@@ -57,6 +65,7 @@ async function resolve(
     profileId: profile.id,
     item,
     buyerIdOk: buyerId as string,
+    proposableKeys: new Set(catalog.items.map((entry) => entry.key)),
   };
 }
 
@@ -64,16 +73,17 @@ async function resolve(
 // nouvelle sélection — ce bien, puis les deux premiers biens encore retenus de la sélection
 // actuelle, sa phrase « Vous m'avez dit » reprise — et un lien qui la porte, le précédent cessant
 // de marcher (M122 B), ce que l'écran dit avant « Préparer son lien ». Rien n'est noté ici : seul
-// « Envoyé, suivant » note l'envoi. Le prix d'un vendeur à relancer n'est pas posé (M119 : « Prix à
-// confirmer avec le propriétaire »). Une sélection illisible n'est jamais lue comme vide (M98) ; si
-// le lien échoue, la nouvelle sélection est retirée.
+// « Envoyé, suivant » note l'envoi. Mission 145 — seul un mandat signé sans offre acceptée se
+// propose : un bien de l'agence de la sélection actuelle qui ne l'est plus (vendeur à relancer,
+// mandat sous offre) n'est pas recopié dans le lien. Une sélection illisible n'est jamais lue comme
+// vide (M98) ; si le lien échoue, la nouvelle sélection est retirée.
 export async function prepareProposalLink(
   buyerId: unknown,
   propertyKey: unknown,
 ): Promise<PrepareProposalResult> {
   const resolved = await resolve(buyerId, propertyKey);
   if (!resolved.ok) return resolved;
-  const { agencyId, profileId, item, buyerIdOk } = resolved;
+  const { agencyId, profileId, item, buyerIdOk, proposableKeys } = resolved;
   const client = createServiceRoleClient();
 
   const { data: buyerRow } = await client
@@ -105,6 +115,7 @@ export async function prepareProposalLink(
   if (itemsReadError) return { ok: false, error: PROPOSAL_FAILED };
   const kept = (previousItems ?? [])
     .filter((row) => !item.selectionRefs.includes(`${row.source}:${row.reference}`))
+    .filter((row) => row.source !== 'project' || proposableKeys.has(`project:${row.reference}`))
     .slice(0, MAX_IDEAL_SELECTION - 1);
 
   const { data: selection, error } = await client
@@ -119,9 +130,8 @@ export async function prepareProposalLink(
     .single();
   if (error || !selection) return { ok: false, error: PROPOSAL_FAILED };
 
-  const showsPrice = item.origin !== 'follow_up';
   const note =
-    showsPrice && item.price != null
+    item.price != null
       ? negotiationNote(
           {
             propertyType: null,
@@ -143,7 +153,7 @@ export async function prepareProposalLink(
     source: item.source,
     reference: item.reference,
     label: item.label,
-    listed_price: showsPrice ? item.price : null,
+    listed_price: item.price,
     // Une annonce : « affiché le » du jour (M118) et ses faits publiés, relus par la liste
     // d'autorisation (M120), pour que son dossier montre ses photos et ses caractéristiques.
     price_seen_on: item.source === 'listing' ? parisDay(new Date()) : null,

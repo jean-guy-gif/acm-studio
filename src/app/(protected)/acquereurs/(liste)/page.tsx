@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import {
+  alertError,
   alertOk,
   btnPrimary,
   inputBase,
@@ -112,6 +113,12 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         ) : null}
       </form>
 
+      {/* Mission 145 — les mandats à proposer n'ont pas pu être lus : la liste le dit (M98). */}
+      {loopProposals?.failed ? (
+        <p role="alert" className={alertError}>
+          Les mandats à proposer à vos acquéreurs n’ont pas pu être lus : rechargez la page.
+        </p>
+      ) : null}
       <BuyerList
         buyers={buyers}
         advisorId={profile?.id ?? null}

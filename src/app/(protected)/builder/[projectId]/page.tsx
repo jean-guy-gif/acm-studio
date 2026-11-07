@@ -33,8 +33,11 @@ import { readPhotoPaths } from '@/features/subject-property-photos/services/get-
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
-import { getProjectOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
-import { proposableMandate } from '@/features/buyers/services/proposable';
+import {
+  getAgencyOfferAnswers,
+  getProjectOfferAnswers,
+} from '@/features/purchase-offer/queries/get-offer-answers';
+import { projectsUnderOffer, proposableMandate } from '@/features/buyers/services/proposable';
 import { createClient } from '@/lib/supabase/server';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { CompetitorLocatorWatcher } from '@/features/competitor-locator/components/competitor-locator-watcher';
@@ -74,6 +77,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     hasCompetitorsToLocate,
     buyers,
     offerAnswers,
+    agencyOffers,
     readiness,
     property,
     comparables,
@@ -96,6 +100,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       ? createClient().then((supabase) =>
           getProjectOfferAnswers(supabase, profile.agency_id, [projectId]),
         )
+      : [],
+    // Mission 145 — les offres de l'agence : la plus récente offre acceptée de chaque acquéreur
+    // tient son mandat, qui ne se propose plus.
+    profile && project.status === 'meeting_completed'
+      ? createClient().then((supabase) => getAgencyOfferAnswers(supabase, profile.agency_id))
       : [],
     // Mission 143 (B4) — les cinq étapes et la prochaine, lues sur les mêmes faits que l'en-tête.
     profile
@@ -268,7 +277,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           proposeKey={
             // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
             // lecture des offres en échec ne propose rien (M98).
-            offerAnswers != null && proposableMandate(conclusion?.outcome, offerAnswers)
+            agencyOffers != null &&
+            proposableMandate(conclusion?.outcome, projectId, projectsUnderOffer(agencyOffers))
               ? `project:${projectId}`
               : null
           }

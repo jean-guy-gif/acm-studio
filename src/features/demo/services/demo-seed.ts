@@ -47,7 +47,7 @@ export const DEMO_STAGE_LABELS: Record<DemoStage, string> = {
 // de Vence de M. et Mme Lopez, signée il y a 3 jours, que la boucle propose à ses acquéreurs prêts.
 // Un dossier se retrouve donc par sa clé, ou par sa marque ET son scénario, jamais par sa marque
 // seule.
-export const DEMO_DOSSIERS = [
+export const DEMO_SEEDS = [
   'to_prepare',
   'ready',
   'direct',
@@ -55,9 +55,9 @@ export const DEMO_DOSSIERS = [
   'signed_vence',
   'follow_up',
 ] as const;
-export type DemoDossierKey = (typeof DEMO_DOSSIERS)[number];
+export type DemoSeedKey = (typeof DEMO_SEEDS)[number];
 
-export const DEMO_DOSSIER_STAGE: Record<DemoDossierKey, DemoStage> = {
+export const DEMO_SEED_STAGE: Record<DemoSeedKey, DemoStage> = {
   to_prepare: 'to_prepare',
   ready: 'ready',
   direct: 'direct',
@@ -67,7 +67,7 @@ export const DEMO_DOSSIER_STAGE: Record<DemoDossierKey, DemoStage> = {
 };
 
 // Chaque dossier a son scénario (M114 B.9) ; « À relancer » reprend celui d'Antibes, conclu.
-export const DEMO_DOSSIER_SCENARIO: Record<DemoDossierKey, DemoScenarioId> = {
+export const DEMO_SEED_SCENARIO: Record<DemoSeedKey, DemoScenarioId> = {
   to_prepare: 'antibes',
   ready: 'vence',
   direct: 'vence',
@@ -84,11 +84,11 @@ export const DEMO_SIGNED_VENCE_DAYS_AGO = 3;
 // Le mandat de Mougins, où vivent la sélection, le bon de visite et l'offre acceptée des Keller :
 // trouvé par sa marque ET son scénario, quel que soit l'ordre de création des dossiers.
 export function mouginsMandateId(
-  created: readonly { key: DemoDossierKey; id: string }[],
+  created: readonly { key: DemoSeedKey; id: string }[],
 ): string | null {
   return (
     created.find(
-      ({ key }) => DEMO_DOSSIER_STAGE[key] === 'signed' && DEMO_DOSSIER_SCENARIO[key] === 'mougins',
+      ({ key }) => DEMO_SEED_STAGE[key] === 'signed' && DEMO_SEED_SCENARIO[key] === 'mougins',
     )?.id ?? null
   );
 }
@@ -157,7 +157,7 @@ export type DemoSeedLive = {
 };
 
 export type DemoSeedPlan = {
-  key: DemoDossierKey;
+  key: DemoSeedKey;
   stage: DemoStage;
   scenario: DemoScenario;
   sellerName: string;
@@ -214,9 +214,9 @@ export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
   return chosen;
 }
 
-export function demoSeedPlan(key: DemoDossierKey, now: Date): DemoSeedPlan {
-  const stage = DEMO_DOSSIER_STAGE[key];
-  const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_DOSSIER_SCENARIO[key])!;
+export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
+  const stage = DEMO_SEED_STAGE[key];
+  const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_SEED_SCENARIO[key])!;
   const { subject } = scenario;
   if (stage === 'to_prepare') {
     return {
