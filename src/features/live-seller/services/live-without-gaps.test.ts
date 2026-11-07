@@ -210,6 +210,8 @@ describe('la reprise en présentation directe', () => {
     const state = { sellerSummary: null, comparables: [{ id: 'c1', response: null }] };
     expect(answeredResumeBound(pages, state, 'direct')).toBe(4);
     expect(answeredResumeBound(pages, state)).toBe(1);
+    // L'adresse rouvre le premier concurrent, sans repasser par « Votre bien ».
+    expect(clampInitialLiveIndex(2, pages, state, 'direct')).toBe(2);
   });
 });
 
