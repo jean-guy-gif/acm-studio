@@ -3,7 +3,7 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
-import { buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
+import { advisorDeck, buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
 import { deckForReading } from '@/features/buyer-deck/services/frozen-deck';
 import { toItemResponse } from '@/features/buyer-deck/services/response-row';
 import type { AvailabilitySlot, BuyerDeck, ItemResponse } from '@/features/buyer-deck/types';
@@ -16,7 +16,7 @@ import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import type { BuyerInput } from '@/features/buyers/types';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
-import { textLanguage } from '@/lib/client-texts';
+import { textLanguage, type TextLanguage } from '@/lib/client-texts';
 import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import type { Database } from '@/lib/supabase/database.types';
@@ -24,6 +24,9 @@ import { createClient } from '@/lib/supabase/server';
 
 export type LoadedDeck = {
   deck: BuyerDeck;
+  // Le même déroulé, pour les écrans du conseiller (la fiche, « Avant de présenter ») : en français,
+  // critères compris ; ses mots et les phrases « Pourquoi » restent ceux que l'acquéreur lira.
+  advisorDeck: BuyerDeck;
   // Ses réponses données pendant la présentation de cette sélection.
   responses: ItemResponse[];
   // Ses créneaux déjà portés par les demandes vivantes (relecture) : rien d'autre des demandes de
@@ -47,20 +50,35 @@ export async function computeDeck(
   agencyId: string,
   now: Date = new Date(),
 ): Promise<BuyerDeck> {
+  return (await computeDecks(supabase, buyer, selection, agencyId, now)).deck;
+}
+
+// Mission 140 B (décision de Jean-Guy, 07/11) — les mêmes faits, deux fois : le déroulé dans la
+// langue de l'acquéreur, et en français pour les écrans du conseiller (une seule lecture en base).
+async function computeDecks(
+  supabase: SupabaseClient<Database>,
+  buyer: BuyerInput & { id: string },
+  selection: IdealSelection,
+  agencyId: string,
+  now: Date = new Date(),
+): Promise<{ deck: BuyerDeck; french: BuyerDeck }> {
   const items = await presentedItems(supabase, selection.items, agencyId);
   const pitchById = new Map(selection.items.map((item) => [item.id, item.pitch]));
-  return buildBuyerDeck({
-    buyerId: buyer.id,
-    buyer,
-    selectionId: selection.id,
-    selectedAt: selection.createdAt,
-    presentedAt: selection.presentedAt,
-    buyerWords: selection.buyerWords,
-    items: items.map((item) => ({ ...item, pitch: pitchById.get(item.itemId) ?? null })),
-    now,
-    // Mission 140 — dans la langue de l'acquéreur.
-    language: textLanguage(buyer.language),
-  });
+  const build = (language: TextLanguage) =>
+    buildBuyerDeck({
+      buyerId: buyer.id,
+      buyer,
+      selectionId: selection.id,
+      selectedAt: selection.createdAt,
+      presentedAt: selection.presentedAt,
+      buyerWords: selection.buyerWords,
+      items: items.map((item) => ({ ...item, pitch: pitchById.get(item.itemId) ?? null })),
+      now,
+      language,
+    });
+  const language = textLanguage(buyer.language);
+  const deck = build(language);
+  return { deck, french: language === 'fr' ? deck : build('fr') };
 }
 
 // La présentation d'un acquéreur de l'agence, sur sa dernière sélection. Terminée, elle se relit
@@ -77,7 +95,7 @@ export async function loadDeck(buyerId: string): Promise<LoadedDeck | null> {
   const itemIds = selection.items.map((item) => item.id);
   const [computed, { data: responseRows }, { data: requestRows }, branding, agency] =
     await Promise.all([
-      computeDeck(supabase, buyer, selection, profile.agency_id),
+      computeDecks(supabase, buyer, selection, profile.agency_id),
       supabase
         .from('buyer_item_responses')
         .select('*')
@@ -90,11 +108,12 @@ export async function loadDeck(buyerId: string): Promise<LoadedDeck | null> {
   const deck = deckForReading({
     presentedAt: selection.presentedAt,
     presentedDeck: selection.presentedDeck,
-    computed,
+    computed: computed.deck,
   });
   const advisorName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
   return {
     deck,
+    advisorDeck: advisorDeck(deck, computed.french),
     responses: (responseRows ?? []).map(toItemResponse),
     // Ses créneaux du rendez-vous, et eux seuls (décision de Jean-Guy, 25/10) : relue, la
     // présentation redit ceux du déroulé figé ; avant « Terminer », ceux des demandes vivantes

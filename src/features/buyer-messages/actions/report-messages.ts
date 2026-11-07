@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
-import { buyerLanguage } from '@/features/buyer-messages/languages';
+import { spokenLanguage } from '@/lib/client-language';
 import {
   TEMPLATES,
   meetingProposalMessage,
@@ -167,14 +167,14 @@ export async function prepareWeeklyReport(buyerId: unknown): Promise<PreparedRep
   return {
     ok: true,
     message: weeklyReportMessage({
-      language: buyerLanguage(buyer.language),
+      language: spokenLanguage(buyer.language),
       buyerName: buyer.name,
       figures,
       advisorFirstName: profile.first_name,
     }),
     phone: buyer.phone,
     email: buyer.email,
-    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.weekly,
+    subject: TEMPLATES[spokenLanguage(buyer.language)].subjects.weekly,
     figures,
   };
 }
@@ -188,13 +188,13 @@ export async function prepareMeetingProposal(buyerId: unknown): Promise<Prepared
   return {
     ok: true,
     message: meetingProposalMessage({
-      language: buyerLanguage(buyer.language),
+      language: spokenLanguage(buyer.language),
       buyerName: buyer.name,
       advisorFirstName: profile.first_name,
     }),
     phone: buyer.phone,
     email: buyer.email,
-    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.meeting,
+    subject: TEMPLATES[spokenLanguage(buyer.language)].subjects.meeting,
   };
 }
 

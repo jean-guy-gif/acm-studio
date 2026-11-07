@@ -18,6 +18,7 @@ import {
   weeklyReportMessage,
   type VisitReport,
 } from '@/features/buyer-messages/messages';
+import { spokenLanguage } from '@/lib/client-language';
 import { visitOutcomeOf, visitReportLine } from '@/features/buyer-messages/report';
 import { visitReportSchema } from '@/features/buyer-messages/report-schema';
 import { meetingTasks, weeklyReportTasks } from '@/features/buyer-messages/report-tasks';
@@ -379,5 +380,38 @@ describe('les tâches de la recherche', () => {
       '2026-11-24',
     );
     expect(meetingTasks([{ ...base, ready: false }])).toEqual([]);
+  });
+});
+
+// Mission 140 B (décisions de Jean-Guy, 07/11) — aucune langue non relue n'atteint un client ; le
+// compte rendu au vendeur suit la langue de son dossier.
+describe('la langue des messages, côté client', () => {
+  it('une langue cachée retombe en français ; l’anglais reste l’anglais', () => {
+    expect(spokenLanguage('it')).toBe('fr');
+    expect(spokenLanguage('de')).toBe('fr');
+    expect(spokenLanguage('ru')).toBe('fr');
+    expect(spokenLanguage('en')).toBe('en');
+    expect(spokenLanguage(null)).toBe('fr');
+  });
+
+  it('le compte rendu au vendeur, en anglais pour un dossier en anglais', () => {
+    const message = visitSellerMessage({
+      sellerName: 'Mr and Mrs Bernard',
+      visitedAt: VISITED_AT,
+      report: KELLER,
+      advisorFirstName: 'Natacha',
+      language: 'en',
+    });
+    expect(message).toBe(
+      [
+        'Hello Mr and Mrs Bernard,',
+        'The viewing of your property on 6 November: the buyer was interested.',
+        'What they liked: the outdoor space and the pool.',
+        'What put them off: the price.',
+        'I will get back to you very soon.',
+        'Natacha',
+      ].join('\n'),
+    );
+    expect(message).not.toMatch(/Keller|offer|budget|Bonjour|visite/i);
   });
 });

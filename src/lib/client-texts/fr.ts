@@ -934,4 +934,18 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
     },
   },
+  sellerVisit: {
+    hello: (name) => `Bonjour ${name},`,
+    line: (day, opinion) => `La visite de votre bien du ${day} : ${opinion}.`,
+    opinions: {
+      love: 'l’acquéreur a eu un coup de cœur',
+      interested: 'l’acquéreur a été intéressé',
+      mixed: 'l’acquéreur est resté mitigé',
+      not_for_me: 'le bien n’a pas convaincu l’acquéreur',
+    },
+    liked: (list) => `Ce qui lui a plu : ${list}.`,
+    disliked: (list) => `Ce qui l’a gêné : ${list}.`,
+    closing: 'Je reviens vers vous très vite.',
+    subject: 'La visite de votre bien',
+  },
 };

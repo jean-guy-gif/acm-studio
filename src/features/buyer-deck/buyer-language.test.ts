@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { GridScreen, ItemScreen } from '@/features/buyer-deck/components/deck-presentation';
-import { buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
+import { advisorDeck, buildBuyerDeck } from '@/features/buyer-deck/services/buyer-deck';
 import { allowedDeck } from '@/features/buyer-deck/services/frozen-deck';
 import { publicDeck } from '@/features/buyer-dossier/services/build-buyer-dossier';
 import {
@@ -183,6 +183,26 @@ describe('l’acquéreur dans sa langue', () => {
     expect(publicDeck(allowedDeck(before), new Map()).language).toBe('fr');
     // Une valeur inattendue relue de la base vaut le français.
     expect(allowedDeck({ ...before, language: 'xx' as never }).language).toBe('fr');
+  });
+
+  it('les écrans du conseiller en français, critères compris ; ses mots restent les siens', () => {
+    const english = deck('en');
+    const advisor = advisorDeck(english, deck('fr'));
+    expect(advisor.items[0]!.item.label).toBe('Maison · 5 pièces · 140 m² · Vence');
+    expect(advisor.criteria.map((row) => row.label)).toEqual(
+      deck('fr').criteria.map((row) => row.label),
+    );
+    // Le bien sans piscine bloque sur un indispensable : la raison se lit en français.
+    expect(advisor.items[1]!.blockedBy).toEqual(deck('fr').items[1]!.blockedBy);
+    expect(advisor.items[1]!.blockedBy.length).toBeGreaterThan(0);
+    expect(advisor.items[1]!.blockedBy).not.toEqual(english.items[1]!.blockedBy);
+    // Ce que l'acquéreur lira ne change pas de langue.
+    expect(advisor.words).toBe(english.words);
+    expect(advisor.items[0]!.pitch).toBe(english.items[0]!.pitch);
+    expect(advisor.language).toBe('en');
+    // En français, le déroulé tel quel.
+    const french = deck('fr');
+    expect(advisorDeck(french, french)).toBe(french);
   });
 
   it('les confirmations, en anglais', () => {
