@@ -52,10 +52,13 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
     await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
     const hits = page.getByTestId('ideal-market-hit');
     await expect(hits.first()).toBeVisible();
-    await hits.first().getByRole('checkbox').click();
+    // Mission 142 — « Préparer ma démo » leur a déjà retenu l'appartement d'Antibes qu'ils vont
+    // visiter : un bien du marché s'y ajoute.
     await expect(page.getByTestId('ideal-current-item')).toHaveCount(1);
+    await hits.first().getByRole('checkbox').click();
+    await expect(page.getByTestId('ideal-current-item')).toHaveCount(2);
     await page.getByTestId('ideal-retain').click();
-    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 1 bien.');
+    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 2 biens.');
   });
 
   let dossierLink = '';
@@ -110,7 +113,7 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
     await expect(header).not.toContainText(/Apartment|House|rooms?\b/);
     await page.getByRole('button', { name: 'Commencer la présentation' }).click();
     await expect(page.getByRole('heading', { name: 'You told me:' })).toBeVisible();
-    await expect(page.getByTestId('deck-kicker')).toContainText('Your selection · 1 property');
+    await expect(page.getByTestId('deck-kicker')).toContainText('Your selection · 2 properties');
     await page.getByTestId('presentation-next').click();
     await expect(page.getByTestId('deck-kicker')).toHaveText('Your criteria');
   });
