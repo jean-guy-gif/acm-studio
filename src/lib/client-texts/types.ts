@@ -553,6 +553,8 @@ export type LiveTexts = {
     noteSaved: string;
     failedSave: string;
     connectionLost: string;
+    connectionLostTouch: (button: string) => string;
+    saveFailedTouch: (button: string) => string;
     sessionExpired: string;
     saveFailed: string;
     analysisFailed: string;
