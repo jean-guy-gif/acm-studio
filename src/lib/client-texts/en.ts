@@ -274,6 +274,9 @@ export const ENGLISH_TEXTS: ClientTexts = {
       failedSave: 'An answer could not be saved — tap Try again',
       connectionLost: 'Connection lost — tap Confirm to try again',
       // Mission 144 — même clé que le français ; le Live en anglais garde ses messages (M144).
+      // Mission 144 — le message nomme le bouton présent à l'écran.
+      connectionLostTouch: (button) => `Connection lost — tap ${button} to try again`,
+      saveFailedTouch: (button) => `Could not save — tap ${button} to try again`,
       sessionExpired: 'Session expired — sign in again to resume the Live',
       saveFailed: 'Could not save. Please try again.',
       analysisFailed: 'Analysis unavailable. Please try again.',

@@ -152,10 +152,12 @@ export function LiveComparativeShell({
   const t = texts.live.shell;
   // Un message d'erreur du serveur est écrit en français : devant un vendeur d'une autre langue,
   // la scène dit le sien ; la perte de connexion garde son sens.
-  // Mission 144 — trois messages d'échec, qui disent quoi faire ; jamais le détail du serveur.
+  // Mission 144 — trois messages d'échec, qui disent quoi faire ; jamais le détail du serveur. Le
+  // message nomme le bouton présent à l'écran : celui de la barre, ou celui qu'on a touché.
+  const barLabelRef = useRef<string>(t.validate);
   const errorFor = useCallback(
-    (error: string | undefined, fallback: string): string =>
-      liveErrorMessage(error, language, t, fallback),
+    (error: string | undefined, fallback: string, buttonLabel?: string): string =>
+      liveErrorMessage(error, language, t, fallback, buttonLabel ?? barLabelRef.current),
     [language, t],
   );
   // Mission 133 — l'écran des acquéreurs prêts, ouvert par « Montrer au vendeur ».
@@ -323,7 +325,7 @@ export function LiveComparativeShell({
       { setBusy: setFinishing },
     );
     if (!result.ok) {
-      setFinishError(errorFor(result.error, t.noteFailed));
+      setFinishError(errorFor(result.error, t.noteFailed, t.finish));
       return;
     }
     void document.exitFullscreen?.().catch(() => {});
@@ -950,7 +952,7 @@ export function LiveComparativeShell({
         { setBusy },
       );
       if (!r.ok) {
-        setAwaitError(errorFor(r.error, t.analysisFailed));
+        setAwaitError(errorFor(r.error, t.analysisFailed, t.skip));
         return;
       }
       if (r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
@@ -968,7 +970,8 @@ export function LiveComparativeShell({
       { setBusy },
     );
     if (r.ok && r.fragment.kind === 'advisor-range') setRange(r.fragment.advisorRange);
-    else if (!r.ok) setAwaitError(errorFor(r.error, t.analysisFailed));
+    else if (!r.ok)
+      setAwaitError(errorFor(r.error, t.analysisFailed, texts.live.analysis.showAnalysis));
   };
 
   // Mission 89 — l'appareil du conseiller garde le numéro de l'écran courant (rien du dossier) :
@@ -1091,6 +1094,26 @@ export function LiveComparativeShell({
   const blockedByFailedSave =
     failedSaves.length > 0 && pages[currentIndex + 1]?.type === 'conclusion';
   const retryFailedSaves = () => failedSaves.forEach(([, record]) => record.retry());
+  // Le bouton de la barre, tel que l'écran le montre : c'est lui que nomme un message d'échec.
+  const interactiveLabel =
+    (page.type === 'comparable_duration' && !durationRevealed) || quickDurationPending
+      ? t.revealDuration
+      : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
+          (revisedToConfirm != null && page.type === 'seller_revised_price')
+        ? t.confirm
+        : t.validate;
+  const barLabel =
+    page.type === 'closing_question' ||
+    (page.type === 'conclusion' && currentIndex >= pages.length - 1)
+      ? t.finish
+      : page.type === 'conclusion'
+        ? t.validate
+        : blockedByFailedSave
+          ? t.retry
+          : interactiveLabel;
+  useEffect(() => {
+    barLabelRef.current = barLabel;
+  }, [barLabel]);
 
   const isIntro = page.type === 'intro';
   // Mission 133 — le compteur caché : une pastille neutre dans la barre du bas, à côté de
@@ -1494,13 +1517,7 @@ export function LiveComparativeShell({
                   className={ctaPrimary}
                   data-testid="live-validate"
                 >
-                  {(page.type === 'comparable_duration' && !durationRevealed) ||
-                  quickDurationPending
-                    ? t.revealDuration
-                    : (perceivedToConfirm != null && page.type === 'seller_perceived_price') ||
-                        (revisedToConfirm != null && page.type === 'seller_revised_price')
-                      ? t.confirm
-                      : t.validate}
+                  {interactiveLabel}
                 </button>
               )}
             </div>

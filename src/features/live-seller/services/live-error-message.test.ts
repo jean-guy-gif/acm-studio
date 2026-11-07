@@ -44,6 +44,38 @@ describe('les messages d’échec du Live, devant le vendeur', () => {
     }
   });
 
+  it('le message nomme le bouton présent à l’écran', () => {
+    // La note sur 10, ou la Conclusion quand elle est le dernier écran (présentation directe).
+    expect(liveErrorMessage('L’enregistrement a échoué.', 'fr', fr, fr.noteFailed, fr.finish)).toBe(
+      'Enregistrement impossible — touchez Terminer le rendez-vous pour réessayer',
+    );
+    expect(liveErrorMessage(CONNECTION_LOST_MESSAGE, 'fr', fr, fr.saveFailed, fr.finish)).toBe(
+      'Connexion perdue — touchez Terminer le rendez-vous pour réessayer',
+    );
+    // Le prix de commercialisation, son bouton à lui.
+    const save = clientTexts('fr').live.conclusion.save;
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, save)).toBe(
+      'Enregistrement impossible — touchez Enregistrer le prix pour réessayer',
+    );
+    // « Confirmer et continuer → », « Révéler la durée → », « Réessayer », « Passer ».
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.confirm)).toContain(
+      'touchez Confirmer pour',
+    );
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.revealDuration)).toContain(
+      'touchez Révéler la durée pour',
+    );
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.retry)).toContain(
+      'touchez Réessayer pour',
+    );
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.skip)).toContain(
+      'touchez Passer pour',
+    );
+    // La session expirée ne nomme pas de bouton : il faut se reconnecter.
+    expect(liveErrorMessage(SESSION_REQUIRED_ERROR, 'fr', fr, fr.saveFailed, fr.finish)).toBe(
+      'Session expirée — reconnectez-vous pour reprendre le Live',
+    );
+  });
+
   it('le Live en anglais ne change pas', () => {
     expect(liveErrorMessage(CONNECTION_LOST_MESSAGE, 'en', en, en.saveFailed)).toBe(
       en.connectionLost,
@@ -52,5 +84,6 @@ describe('les messages d’échec du Live, devant le vendeur', () => {
     expect(liveErrorMessage('Corrigez les champs indiqués.', 'en', en, en.analysisFailed)).toBe(
       en.analysisFailed,
     );
+    expect(liveErrorMessage(undefined, 'en', en, en.noteFailed, en.finish)).toBe(en.noteFailed);
   });
 });

@@ -5,6 +5,7 @@ import {
   answeredResumeBound,
   clampInitialLiveIndex,
 } from '@/features/live-seller/services/max-reachable-live-index';
+import { initialLiveIndex } from '@/features/live-seller/services/live-resume';
 import { livePhotoPreloadUrls } from '@/features/live-seller/services/photo-preload';
 import { SAVE_TIMEOUT_MS } from '@/features/live-seller/services/guarded-save';
 import {
@@ -195,6 +196,34 @@ describe('la reprise après un rechargement, jamais plus loin que la base', () =
     const pages = PAGES.filter((candidate) => candidate.key !== 'price:c2');
     expect(answeredResumeBound(pages, state)).toBe(10);
     expect(clampInitialLiveIndex(9, pages, state)).toBe(9);
+  });
+});
+
+describe('une adresse sans numéro d’écran', () => {
+  const started = {
+    sellerSummary: summary({
+      seller_property_confirmed: 'yes',
+      seller_perceived_property_price: 350_000,
+    }),
+    comparables: [
+      { id: 'c1', response: null },
+      { id: 'c2', response: null },
+    ],
+  };
+
+  it('un Live commencé reprend à la borne de la base, jamais à l’introduction', () => {
+    expect(initialLiveIndex(null, PAGES, started)).toBe(3);
+  });
+
+  it('un Live jamais commencé s’ouvre sur l’introduction', () => {
+    const fresh = { sellerSummary: null, comparables: [{ id: 'c1', response: null }] };
+    expect(initialLiveIndex(null, PAGES, fresh)).toBe(0);
+  });
+
+  it('un numéro d’écran donné reste borné comme avant', () => {
+    expect(initialLiveIndex(2, PAGES, started)).toBe(2);
+    expect(initialLiveIndex(9, PAGES, started)).toBe(3);
+    expect(initialLiveIndex(0, PAGES, started)).toBe(0);
   });
 });
 
