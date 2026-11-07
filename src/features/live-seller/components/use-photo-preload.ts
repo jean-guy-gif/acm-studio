@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { displayPhotoUrl } from '@/lib/photo-url';
 
@@ -13,6 +13,9 @@ const CONCURRENT_LOADS = 4;
 export function usePhotoPreload(urls: readonly string[]): boolean {
   const key = urls.join('\n');
   const [doneKey, setDoneKey] = useState<string | null>(null);
+  // Les images gardées en mémoire tant que le Live est ouvert : le navigateur les ressert aux
+  // écrans sans redemander au serveur, quels que soient les en-têtes de cache du portail.
+  const keptRef = useRef<HTMLImageElement[]>([]);
 
   useEffect(() => {
     const queue = key === '' ? [] : key.split('\n');
@@ -24,6 +27,7 @@ export function usePhotoPreload(urls: readonly string[]): boolean {
       if (cancelled || next >= queue.length) return;
       const url = queue[next++]!;
       const image = new Image();
+      keptRef.current.push(image);
       image.referrerPolicy = 'no-referrer';
       image.decoding = 'async';
       const settle = () => {
