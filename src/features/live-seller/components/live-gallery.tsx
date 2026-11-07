@@ -96,6 +96,8 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
                   className="h-16 w-full object-cover sm:h-20"
                   fallbackClassName="h-16 w-full sm:h-20"
                   fallbackLabel={t.short}
+                  // Mission 144 — préchargée dès l'introduction : affichée tout de suite.
+                  eager
                 />
                 {isLast ? (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-medium text-white">

@@ -74,9 +74,10 @@ export const fieldLabel = 'text-sm font-medium text-zinc-600 stage:text-white/70
 
 // Bouton principal (valider / révéler) — large et évident. Mission 143 (B3) — la variante foncée
 // de la marque sur fond clair ; sur la scène sombre, dont la barre du bas est déjà de cette couleur,
-// le bouton est blanc, écrit dans la variante foncée (contraste > 8 : 1).
+// le bouton est blanc, écrit dans la variante foncée (contraste > 8 : 1). Mission 144 — pendant une
+// révélation, il reste plein et se voit enfoncé (`aria-busy`), jamais grisé comme indisponible.
 export const ctaPrimary =
-  'inline-flex min-h-13 items-center justify-center rounded-xl bg-brand-deep px-8 py-3 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:bg-white stage:text-brand-deep stage:shadow-black/20 stage:hover:bg-brand-soft';
+  'inline-flex min-h-13 items-center justify-center rounded-xl bg-brand-deep px-8 py-3 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 aria-busy:scale-[0.97] aria-busy:cursor-wait aria-busy:bg-brand-darker aria-busy:shadow-none stage:bg-white stage:text-brand-deep stage:shadow-black/20 stage:hover:bg-brand-soft stage:aria-busy:bg-brand-soft';
 
 // Bouton de navigation (Précédent / Suivant / chrome).
 export const navBtn =

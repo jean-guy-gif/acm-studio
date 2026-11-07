@@ -62,6 +62,8 @@ export function LivePhoto({
               className="h-16 w-24 shrink-0 rounded object-cover sm:h-20 sm:w-28"
               fallbackClassName="h-16 w-24 shrink-0 rounded sm:h-20 sm:w-28"
               fallbackLabel={t.short}
+              // Mission 144 — préchargée dès l'introduction : affichée tout de suite.
+              eager
             />
           ))}
         </div>
