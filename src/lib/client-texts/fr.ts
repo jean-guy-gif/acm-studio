@@ -38,6 +38,9 @@ import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/pr
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
 import type { ClientTexts } from '@/lib/client-texts/types';
+
+// « de Mougins », « d’Antibes » : l'élision devant une voyelle ou un h.
+const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d’${name}` : `de ${name}`);
 import { formatNumber } from '@/lib/format';
 
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
@@ -947,7 +950,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     from: {
       address: 'Distances depuis le bien.',
       district: 'Distances depuis le quartier, pas depuis le bien lui-même.',
-      commune: (commune) => `Distances depuis le centre de ${commune}.`,
+      commune: (commune) => `Distances depuis le centre ${ofPlace(commune)}.`,
     },
     sections: {
       priorities: 'Ce qui compte pour vous',
@@ -971,9 +974,9 @@ export const FRENCH_TEXTS: ClientTexts = {
     walk: (minutes) => `${minutes} min à pied`,
     drive: (minutes) => `${minutes} min en voiture`,
     driveTo: {
-      tgv_station: (name) => `Gare TGV de ${name}`,
+      tgv_station: (name) => (/TGV/.test(name) ? `Gare ${name}` : `Gare TGV ${ofPlace(name)}`),
       airport: (name) => `Aéroport ${name}`,
-      town_centre: (name) => `Centre de ${name}`,
+      town_centre: (name) => `Centre-ville ${ofPlace(name)}`,
     },
     livingPlace: (place, minutes) => `Jusqu’à ${place} : ${minutes} min en voiture`,
     noise: 'Carte de bruit non publiée ici.',

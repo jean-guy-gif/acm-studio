@@ -29,16 +29,30 @@ const FAILURE = 'Le lien n’a pas pu être créé. Réessayez.';
 // Le jeton n'est montré qu'ici, une fois ; la base n'en garde que le condensat. Essai de Jean-Guy
 // (26/10) : « Créer un nouveau lien » (`replace`) retire les liens précédents de la fiche, qui
 // cessent de marcher ; les réponses déjà reçues restent (elles ne dépendent pas du lien).
+// Mission 142 — `selectionId` : un lien vers une sélection précise de la fiche (celle d'un bien
+// qu'il va visiter), relue dans l'agence ; sans lui, la plus récente, comme avant.
 export async function createDossierLink(
   buyerId: string,
   replace: unknown = false,
+  selectionId: unknown = null,
 ): Promise<CreateDossierLinkResult> {
   const profile = await getProfile();
-  if (!profile || profile.removed_at || !z.uuid().safeParse(buyerId).success) {
+  if (
+    !profile ||
+    profile.removed_at ||
+    !z.uuid().safeParse(buyerId).success ||
+    (selectionId != null && !z.uuid().safeParse(selectionId).success)
+  ) {
     return { ok: false, error: FAILURE };
   }
   const supabase = await createClient();
-  const dossier = await loadBuyerDossier(supabase, buyerId, profile.agency_id, null, profile.id);
+  const dossier = await loadBuyerDossier(
+    supabase,
+    buyerId,
+    profile.agency_id,
+    (selectionId as string | null) ?? null,
+    profile.id,
+  );
   if (!dossier) {
     if (await buyerIsGone(supabase, buyerId, profile.agency_id)) return GONE;
     return { ok: false, error: 'Pas de dossier sans sélection retenue.' };

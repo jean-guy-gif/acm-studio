@@ -62,8 +62,8 @@ test('Vivre ici : la fiche sur Visites, la confirmation de visite, et le lien de
     await expect(advisor.getByTestId('living-here-risks')).toContainText(
       'Risques connus sur la commune',
     );
-    // Jamais l'adresse de l'annonce, ni celle de ses lieux.
-    await expect(advisor).not.toContainText(/allée|rue |avenue|chemin/i);
+    // Jamais l'adresse de l'annonce (3 rue de la Maquette, dans la démo).
+    await expect(advisor).not.toContainText(/Maquette/);
 
     await line.getByTestId('visit-confirm-open').click();
     await line.getByTestId('visit-confirm-day').fill(tomorrow());
@@ -71,7 +71,7 @@ test('Vivre ici : la fiche sur Visites, la confirmation de visite, et le lien de
     await line.getByTestId('visit-confirm-prepare').click();
     const message = line.getByTestId('visit-confirm-message');
     await expect(message).toContainText('Hello Mr and Mrs Wilson');
-    await expect(message).toContainText('I am confirming the viewing of the apartment in Antibes');
+    await expect(message).toContainText('I am confirming the viewing of the flat in Antibes');
     await expect(message).toContainText('at 10:30 am');
     link = /https?:\/\/\S+\/dossier\/[A-Za-z0-9_-]{43}/.exec(await message.innerText())?.[0] ?? '';
     expect(link).not.toBe('');

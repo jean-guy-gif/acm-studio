@@ -28,7 +28,7 @@ async function liveVisit(visitId: unknown) {
   const { data } = await createServiceRoleClient()
     .from('buyer_visit_requests')
     .select(
-      'id, buyer_id, buyer_selection_item_id, cancelled_at, buyers!inner(name, phone, email, language, archived_at)',
+      'id, buyer_id, buyer_selection_item_id, cancelled_at, visited_at, buyers!inner(name, phone, email, language, archived_at)',
     )
     .eq('id', visitId as string)
     .eq('agency_id', profile.agency_id)
@@ -75,15 +75,10 @@ export async function confirmVisit(
 ): Promise<ConfirmVisitResult> {
   const context = await liveVisit(visitId);
   if (!context) return { ok: false, error: FAILED };
+  if (context.visit.visited_at) return { ok: false, error: 'Cette visite est déjà faite.' };
   const moment = visitMoment(rawDay, rawTime, new Date());
   if (!moment.ok) return { ok: false, error: moment.error };
   const admin = createServiceRoleClient();
-  const { error } = await admin
-    .from('buyer_visit_requests')
-    .update({ scheduled_at: moment.at })
-    .eq('id', context.visit.id)
-    .eq('agency_id', context.profile.agency_id);
-  if (error) return { ok: false, error: FAILED };
 
   const language = textLanguage(spokenLanguage(context.buyer.language));
   const { data: item } = await admin
@@ -92,11 +87,20 @@ export async function confirmVisit(
     .eq('id', context.visit.buyer_selection_item_id)
     .eq('agency_id', context.profile.agency_id)
     .maybeSingle();
-  const presented = item
-    ? ((await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null)
-    : null;
-  const link = await createDossierLink(context.visit.buyer_id, false);
+  if (!item || item.removed_at)
+    return { ok: false, error: 'Ce bien n’est plus dans sa sélection.' };
+  const presented =
+    (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
+  // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un
+  // lien en échec ne laisse rien d'écrit.
+  const link = await createDossierLink(context.visit.buyer_id, false, item.selection_id);
   if (!link.ok) return { ok: false, error: link.error };
+  const { error } = await admin
+    .from('buyer_visit_requests')
+    .update({ scheduled_at: moment.at })
+    .eq('id', context.visit.id)
+    .eq('agency_id', context.profile.agency_id);
+  if (error) return { ok: false, error: FAILED };
   const t = clientTexts(language).buyer.messages;
   const property = propertyPhrase(
     { propertyType: presented?.propertyType ?? null, city: presented?.city ?? null },

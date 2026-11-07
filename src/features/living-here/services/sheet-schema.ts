@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 import type { SourceBlock } from '@/features/address-dossier/types';
-import type { LivingHereBlocks } from '@/features/living-here/types';
+import type {
+  LivingHereBlocks,
+  LivingHereSheet,
+  PublicLivingHereSheet,
+  StartOrigin,
+} from '@/features/living-here/types';
 
 // Mission 142 — la fiche « Vivre ici », relue par liste d'autorisation à l'écriture comme à la
 // lecture (M101) : un champ inconnu ne passe pas (jamais une adresse), une source illisible se lit
@@ -83,5 +88,17 @@ export function readLivingHereBlocks(value: unknown, builtAt: string): LivingHer
     moves: one('moves'),
     surroundings: one('surroundings'),
     risks: one('risks'),
+  };
+}
+
+const ORIGINS: readonly StartOrigin[] = ['address', 'district', 'commune'];
+
+// La fiche pour l'acquéreur, champ par champ : l'origine, la commune, les blocs relus ; jamais la
+// clé du bien ni rien d'autre (M101, M119).
+export function publicSheet(sheet: LivingHereSheet): PublicLivingHereSheet {
+  return {
+    origin: ORIGINS.includes(sheet.origin) ? sheet.origin : 'commune',
+    commune: sheet.commune.slice(0, 120),
+    blocks: readLivingHereBlocks(sheet.blocks, sheet.builtAt),
   };
 }

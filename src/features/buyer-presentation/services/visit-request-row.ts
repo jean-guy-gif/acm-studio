@@ -1,5 +1,4 @@
 import { AVAILABILITY_SLOTS } from '@/features/buyer-deck/types';
-import { readTrip } from '@/features/living-here/services/living-here-rules';
 import {
   VISIT_NEXT_STEPS,
   VISIT_OPINIONS,
@@ -22,7 +21,6 @@ const oneOf = <T extends string>(list: readonly T[], value: string, fallback: T)
 export function toVisitRequest(row: VisitRequestRow): VisitRequest {
   return {
     scheduledAt: row.scheduled_at ?? null,
-    livingPlaceMinutes: readTrip(row.living_place_trip)?.minutes ?? null,
     id: row.id,
     buyerId: row.buyer_id,
     itemId: row.buyer_selection_item_id,

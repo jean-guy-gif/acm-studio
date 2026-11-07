@@ -79,8 +79,11 @@ const within = (places: NearbyPlace[], categories: PlaceCategory[], limit: numbe
 export function priorityVerdict(
   priority: SectorPriority,
   blocks: LivingHereBlocks,
+  origin: StartOrigin = 'address',
 ): PriorityVerdict {
   if (priority === 'quiet') return 'to_check';
+  // Depuis le centre de la commune, rien ne dit si CE bien remplit le critère (relecture du 07/11).
+  if (origin === 'commune') return 'to_check';
   if (priority === 'shops_on_foot') {
     if (blocks.daily.state !== 'ok') return 'to_check';
     const count = within(
@@ -99,13 +102,38 @@ export function priorityVerdict(
   return count === 2 ? 'yes' : count > 0 ? 'partly' : 'no';
 }
 
+// L'empreinte du lieu de l'acquéreur (FNV-1a, 32 bits) : gardée sur le trajet à la place du texte,
+// elle dit seulement si le lieu a changé depuis (relecture du 07/11 : les minutes d'un ancien lieu
+// ne se montrent jamais sous le nouveau, M47). Rien n'en redonne le texte.
+export function placeFingerprint(place: string): string {
+  const text = place.trim().toLowerCase().replace(/\s+/g, ' ');
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
 // Le trajet jusqu'au lieu de l'acquéreur, relu : la durée et le mode, jamais le texte du lieu ni ses
-// coordonnées (relecture du gardien-sql, 07/11) — le lieu se relit sur la fiche de l'acquéreur.
-// Sans zod : la page Visites le lit aussi dans le navigateur.
-export function readTrip(value: unknown): { minutes: number } | null {
-  if (value == null || typeof value !== 'object') return null;
-  const { mode, minutes } = value as { mode?: unknown; minutes?: unknown };
+// coordonnées (relecture du gardien-sql, 07/11) ; seulement s'il a été calculé pour le lieu du
+// moment. Sans zod : la page Visites le lit aussi dans le navigateur.
+export function readTrip(
+  value: unknown,
+  place: string | null | undefined,
+): { minutes: number } | null {
+  if (value == null || typeof value !== 'object' || !place?.trim()) return null;
+  const {
+    mode,
+    minutes,
+    place: fingerprint,
+  } = value as {
+    mode?: unknown;
+    minutes?: unknown;
+    place?: unknown;
+  };
   return mode === 'car' &&
+    fingerprint === placeFingerprint(place) &&
     typeof minutes === 'number' &&
     Number.isInteger(minutes) &&
     minutes >= 1 &&

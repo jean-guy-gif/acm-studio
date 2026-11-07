@@ -57,6 +57,10 @@ export type LivingHereSheet = {
   blocks: LivingHereBlocks;
 };
 
+// Ce qui part vers le navigateur de l'acquéreur, par liste d'autorisation (relecture du 07/11) : ni
+// la clé du bien (elle peut porter l'adresse de l'annonce), ni sa date de construction.
+export type PublicLivingHereSheet = Pick<LivingHereSheet, 'origin' | 'commune' | 'blocks'>;
+
 // Le trajet jusqu'au lieu de l'acquéreur, pour une visite : le lieu se relit sur sa fiche.
 export type LivingPlaceTrip = { label: string; minutes: number };
 

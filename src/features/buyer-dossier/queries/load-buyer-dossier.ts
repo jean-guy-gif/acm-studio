@@ -23,6 +23,7 @@ import {
   readLivingHereSheets,
 } from '@/features/living-here/queries/read-sheets';
 import { readTrip, sectorPrioritiesOf } from '@/features/living-here/services/living-here-rules';
+import { publicSheet } from '@/features/living-here/services/sheet-schema';
 
 type Client = SupabaseClient<Database>;
 
@@ -219,7 +220,7 @@ async function dossierLivingHere(
     (visits ?? []).some((visit) => visit.buyer_selection_item_id === item.id),
   );
   if (visited.length === 0) return [];
-  const keys = await propertyKeysForItems(supabase, agencyId, visited);
+  const { keys } = await propertyKeysForItems(supabase, agencyId, visited);
   const { sheets } = await readLivingHereSheets(supabase, agencyId, [...keys.values()]);
   const priorities = sectorPrioritiesOf(buyerRow.sector_priorities);
   return visited.flatMap((item): DossierLivingHere[] => {
@@ -229,10 +230,11 @@ async function dossierLivingHere(
     return [
       {
         itemId: item.id,
-        sheet,
+        sheet: publicSheet(sheet),
         priorities,
         livingPlace: buyerRow.living_place ?? null,
-        livingPlaceMinutes: readTrip(trip?.living_place_trip)?.minutes ?? null,
+        livingPlaceMinutes:
+          readTrip(trip?.living_place_trip, buyerRow.living_place)?.minutes ?? null,
       },
     ];
   });
