@@ -38,10 +38,10 @@ import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/pr
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
 import type { ClientTexts } from '@/lib/client-texts/types';
-
-// « de Mougins », « d’Antibes » : l'élision devant une voyelle ou un h.
-const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d’${name}` : `de ${name}`);
 import { formatNumber } from '@/lib/format';
+
+// Mission 142 — « de Mougins », « d’Antibes » : l'élision devant une voyelle ou un h.
+const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d’${name}` : `de ${name}`);
 
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
 // seule source), les phrases sont celles qui étaient écrites dans les écrans, mot pour mot.
