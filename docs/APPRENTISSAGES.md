@@ -227,6 +227,18 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   français) ne se traduit pas en relisant ses libellés : ils se recomposent depuis les champs, hors
   français seulement, pour laisser le français identique. La suite e2e : 15 sur 15 au premier
   passage (13,8 min) ; la spec de la langue, 48 à 60 s.
+- 07/11 · M140 B · Un même déroulé sert deux lecteurs : l'acquéreur dans sa langue, le conseiller
+  en français. Le traduire pour l'un faisait passer l'anglais sur les écrans de l'autre (« Avant de
+  présenter », la fiche). Le remède : calculer les deux sur les mêmes faits, en une seule lecture,
+  et prendre au déroulé français ses libellés et ses critères ; ses mots et ses phrases « Pourquoi »
+  restent ceux que l'acquéreur lira. Une langue « choisie mais cachée » (M139) se garde sur la
+  fiche et retombe en français au seul moment d'écrire au client (`spokenLanguage`).
+- 07/11 · M140 B · Un refus du serveur traduit par l'écran se reconnaît à son texte français exact :
+  c'est une égalité de chaînes, pas un code. Un texte de refus qu'on change d'un côté sans l'autre
+  retombe sur le message générique. Les constantes du serveur se lisent donc dans `FRENCH_TEXTS`,
+  là où l'écran les compare. Une offre signée qui ne garde pas tous ses champs ne se traduit pas
+  après coup : la traduction jointe attend une migration (`docs/IDEES.md`). Suite e2e : 16 sur 16
+  (14,6 min) au premier passage ; les deux specs de langue en 1,4 min.
 
 ## La base
 

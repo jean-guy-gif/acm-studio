@@ -9,6 +9,64 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      address_dossiers: {
+        Row: {
+          address_fingerprint: string
+          agency_id: string
+          blocks: Json
+          built_at: string
+          built_by: string | null
+          created_at: string
+          id: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          address_fingerprint: string
+          agency_id: string
+          blocks?: Json
+          built_at?: string
+          built_by?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          address_fingerprint?: string
+          agency_id?: string
+          blocks?: Json
+          built_at?: string
+          built_by?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "address_dossiers_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "address_dossiers_built_by_fkey"
+            columns: ["built_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "address_dossiers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agencies: {
         Row: {
           buyer_watch_cap_cents: number

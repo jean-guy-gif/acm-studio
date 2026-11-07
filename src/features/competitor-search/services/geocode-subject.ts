@@ -37,12 +37,22 @@ const featureSchema = z.object({
     score: z.number(),
     type: z.string(),
     city: z.string().optional(),
+    // Mission 141 — l'identifiant de l'adresse dans la Base Adresse Nationale (le DPE s'y rattache).
+    id: z.string().optional(),
   }),
 });
 const responseSchema = z.object({ features: z.array(z.unknown()) });
 
 export type SubjectGeocode =
-  { ok: true; point: GeoPoint; sector: SectorStatus } | { ok: false; sector: SectorStatus };
+  | {
+      ok: true;
+      point: GeoPoint;
+      sector: SectorStatus;
+      // Mission 141 — au numéro ou à la rue, et l'identifiant de l'adresse (au numéro seulement).
+      precision?: 'housenumber' | 'street';
+      banId?: string;
+    }
+  | { ok: false; sector: SectorStatus };
 
 const neutral = (
   reason: Extract<SectorStatus, { status: 'neutral' }>['reason'],
@@ -67,6 +77,8 @@ export function judgeGeocode(json: unknown, city: string): SubjectGeocode {
     ok: true,
     point: { lat, lon },
     sector: { status: 'located', label: properties.label ?? city },
+    precision: properties.type === 'housenumber' ? 'housenumber' : 'street',
+    ...(properties.type === 'housenumber' && properties.id ? { banId: properties.id } : {}),
   };
 }
 
