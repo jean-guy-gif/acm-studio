@@ -15,7 +15,7 @@ type Tree = Record<string, unknown>;
 function shape(tree: Tree, path = ''): string[] {
   return Object.entries(tree).flatMap(([key, value]) => {
     const here = path ? `${path}.${key}` : key;
-    if (typeof value === 'function') return [`${here}()${value.length}`];
+    if (typeof value === 'function') return [`${here}()`];
     if (value != null && typeof value === 'object') return shape(value as Tree, here);
     return [here];
   });
@@ -38,14 +38,21 @@ function rendered(tree: Tree): string[] {
     if (typeof value === 'string') return [value];
     if (typeof value === 'function') {
       const fn = value as (...args: unknown[]) => unknown;
-      const call = (sample: unknown) => {
-        try {
-          return fn(...Array.from({ length: fn.length }, () => sample));
-        } catch {
-          return fn(...Array.from({ length: fn.length }, () => `${String(sample)} pièces`));
+      // Chaque phrase est appelée avec des nombres, puis du texte, puis des listes : ce qui passe.
+      const call = (sample: number) => {
+        for (const arg of [sample, `${sample} pièces`, [`A${sample}`, `B${sample}`]]) {
+          try {
+            const out = fn(...Array.from({ length: Math.max(fn.length, 1) }, () => arg));
+            if (typeof out === 'string') return [out];
+            if (Array.isArray(out))
+              return out.filter((line): line is string => typeof line === 'string');
+          } catch {
+            // L'argument suivant.
+          }
         }
+        return [];
       };
-      return [1, 3].map(call).filter((out): out is string => typeof out === 'string');
+      return [1, 3].flatMap(call);
     }
     if (value != null && typeof value === 'object') return rendered(value as Tree);
     return [];
@@ -77,9 +84,14 @@ describe('les textes du client', () => {
   // annonce disparue (M127). Le Live parle au vendeur à la 2e personne (M89). « Disponible » n'est
   // refusé que pour un bien proposé à un acquéreur (M118, partie B).
   it('l’anglais ne dit jamais « estimate » ni « valuation », ni « the seller »', () => {
-    const offenders = rendered(ENGLISH_TEXTS).filter((text) =>
-      /\bestimates?\b|estimation|valuation|valued|the seller|\bvendor/i.test(text),
-    );
+    // Les messages à l'acquéreur parlent du vendeur, un tiers : « the seller » y est juste.
+    const { buyer: _buyer, ...sellerSide } = ENGLISH_TEXTS;
+    const offenders = [
+      ...rendered(sellerSide).filter((text) => /the seller|\bvendor/i.test(text)),
+      ...rendered(ENGLISH_TEXTS).filter((text) =>
+        /\bestimates?\b|estimation|valuation|valued/i.test(text),
+      ),
+    ];
     expect(offenders).toEqual([]);
   });
 

@@ -22,12 +22,8 @@ import {
   type DeckScreen,
 } from '@/features/buyer-deck/services/deck-navigation';
 import {
-  AVAILABILITY_LABELS,
   AVAILABILITY_SLOTS,
-  GRID_ANSWER_LABELS,
-  ITEM_ANSWER_LABELS,
   ITEM_ANSWERS,
-  NO_REASON_LABELS,
   NO_REASONS,
   type AvailabilitySlot,
   type BuyerDeck,
@@ -50,6 +46,8 @@ import {
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import type { LiveStageTheme } from '@/features/live-seller/components/live-comparative-shell';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
 // Mission 122 — la présentation du dossier qui fait agir, plein cadre (M72), tablette d'abord : ses
 // mots → la grille → un bien par écran → sa réponse. Il ne lit pas, il répond : le conseiller
@@ -57,9 +55,11 @@ import type { LiveStageTheme } from '@/features/live-seller/components/live-comp
 // ses raisons et ses disponibilités ; « Terminer » fige (M111). Une présentation terminée se relit
 // en lecture seule (M119).
 
-export const WORDS_TITLE = 'Vous m’avez dit :';
-export const PITCH_TITLE = 'Pourquoi je vous le propose';
-export const NEXT_TITLE = 'Ce que je fais ensuite';
+// Mission 140 — les mots vivent dans les textes du client ; ces noms gardent le français.
+export const WORDS_TITLE = FRENCH_TEXTS.buyer.screens.wordsTitle;
+export const PITCH_TITLE = FRENCH_TEXTS.buyer.screens.pitchTitle;
+export const NEXT_TITLE = FRENCH_TEXTS.buyer.screens.nextTitle;
+const screensOf = (language: TextLanguage) => clientTexts(language).buyer.screens;
 
 const chromeBtn =
   'inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
@@ -84,13 +84,8 @@ const chip = (on: boolean): string =>
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/25 stage:bg-white/5 stage:text-white/80'
   }`;
 
-const lettersOf = (items: DeckItem[]): string =>
-  items.length <= 1
-    ? (items[0]?.letter ?? '')
-    : `${items
-        .slice(0, -1)
-        .map((item) => item.letter)
-        .join(', ')} et ${items.at(-1)!.letter}`;
+const lettersOf = (items: DeckItem[], language: TextLanguage = 'fr'): string =>
+  screensOf(language).letters(items.map((item) => item.letter));
 
 export function DeckPresentation({
   deck,
@@ -121,6 +116,9 @@ export function DeckPresentation({
   const [quitOpen, setQuitOpen] = useState(false);
   const [responses, setResponses] = useState<ItemResponse[]>(initialResponses);
   const readOnly = deck.presentedAt != null;
+  const language: TextLanguage = deck.language ?? 'fr';
+  const t = screensOf(language);
+  const shell = clientTexts(language).live.shell;
   const [availability, setAvailability] = useState<AvailabilitySlot[]>(initialAvailability);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -177,7 +175,7 @@ export function DeckPresentation({
     startTransition(async () => {
       const result = await answerItem(itemId, answer, reasons).catch(() => ({
         ok: false as const,
-        error: 'Connexion perdue — réessayez.',
+        error: t.connectionLost,
       }));
       if (!result.ok) {
         setError(result.error);
@@ -211,6 +209,7 @@ export function DeckPresentation({
         deck.items.map((item) => ({ letter: item.letter, itemId: item.item.itemId })),
         responses,
       ),
+      language,
     );
     if (question) setConfirmFinish(question);
     else finish();
@@ -225,7 +224,7 @@ export function DeckPresentation({
         ? { ok: true as const }
         : await finishPresentation(deck.buyerId, deck.selectionId, availability).catch(() => ({
             ok: false as const,
-            error: 'Connexion perdue — réessayez.',
+            error: t.connectionLost,
           }));
       if (!result.ok) {
         setError(result.error);
@@ -252,12 +251,12 @@ export function DeckPresentation({
 
   const kickerText =
     screen.type === 'words'
-      ? `Votre sélection · ${deck.items.length} bien${deck.items.length > 1 ? 's' : ''}`
+      ? t.kickerSelection(deck.items.length)
       : screen.type === 'grid'
-        ? 'Vos critères'
+        ? t.kickerCriteria
         : current
-          ? `Bien ${current.letter} · ${criteriaCountLabel(current)}`
-          : 'Votre réponse';
+          ? t.kickerItem(current.letter, criteriaCountLabel(current, language))
+          : t.kickerAnswer;
 
   return (
     <div
@@ -281,7 +280,7 @@ export function DeckPresentation({
             fallbackName={agencyName}
           />
           <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-400 sm:inline stage:text-white/50">
-            {readOnly ? `Terminé le ${buyerDateLabel(deck.presentedAt!)}` : 'Rendez-vous acquéreur'}
+            {readOnly ? t.finishedOn(buyerDateLabel(deck.presentedAt!)) : t.meetingLabel}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -290,13 +289,13 @@ export function DeckPresentation({
             onClick={() => setStage((s) => (s === 'dark' ? 'light' : 'dark'))}
             className={chromeBtn}
           >
-            {stage === 'dark' ? 'Clair' : 'Sombre'}
+            {stage === 'dark' ? shell.light : shell.dark}
           </button>
           <button type="button" onClick={toggleFullscreen} className={chromeBtn}>
-            {isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+            {isFullscreen ? shell.exitFullscreen : shell.fullscreen}
           </button>
           <button type="button" onClick={() => setQuitOpen(true)} className={chromeBtn}>
-            Quitter
+            {shell.quit}
           </button>
         </div>
       </header>
@@ -340,7 +339,7 @@ export function DeckPresentation({
       >
         {screen.type === 'words' ? (
           <div className="flex flex-col gap-5" data-testid="deck-words">
-            <h1 className={question}>{WORDS_TITLE}</h1>
+            <h1 className={question}>{t.wordsTitle}</h1>
             <p className="font-title text-2xl leading-snug font-semibold text-zinc-900 sm:text-3xl stage:text-white">
               « {deck.words} »
             </p>
@@ -353,6 +352,7 @@ export function DeckPresentation({
             onLead={leadItem ? () => go(openItem(leadItem)) : null}
             leadLetter={leadItem?.letter ?? null}
             compact
+            language={language}
           />
         ) : current ? (
           <ItemScreen
@@ -360,6 +360,7 @@ export function DeckPresentation({
             answer={responseFor(current.item.itemId)?.answer ?? null}
             readOnly={readOnly}
             busy={pending}
+            language={language}
             onAnswer={(answer) =>
               send(
                 current.item.itemId,
@@ -371,15 +372,12 @@ export function DeckPresentation({
         ) : (
           <div className="flex flex-col gap-6" data-testid="deck-response">
             {visits.length === 0 && maybes.length === 0 && noes.length === 0 ? (
-              <p className={questionHint}>Aucune réponse pour l’instant.</p>
+              <p className={questionHint}>{t.noAnswer}</p>
             ) : null}
             {visits.length > 0 ? (
               <section className="flex flex-col gap-3">
-                <h1 className={question}>
-                  Vous voulez visiter {visits.length > 1 ? 'les biens' : 'le bien'}{' '}
-                  {lettersOf(visits)}.
-                </h1>
-                <p className={questionHint}>Quand pouvez-vous visiter ?</p>
+                <h1 className={question}>{t.visit(visits.length, lettersOf(visits, language))}</h1>
+                <p className={questionHint}>{t.when}</p>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABILITY_SLOTS.map((slot) => {
                     const on = availability.includes(slot);
@@ -399,7 +397,7 @@ export function DeckPresentation({
                           )
                         }
                       >
-                        {AVAILABILITY_LABELS[slot]}
+                        {t.slots[slot]}
                       </button>
                     );
                   })}
@@ -408,14 +406,14 @@ export function DeckPresentation({
             ) : null}
             {maybes.length > 0 ? (
               <p className={questionHint}>
-                Vous hésitez pour {maybes.length > 1 ? 'les biens' : 'le bien'} {lettersOf(maybes)}.
+                {t.hesitate(maybes.length, lettersOf(maybes, language))}
               </p>
             ) : null}
             {noes.map((item) => {
               const reasons = responseFor(item.item.itemId)?.reasons ?? [];
               return (
                 <section key={item.item.itemId} className="flex flex-col gap-3">
-                  <p className={statValue}>Le bien {item.letter} : pas pour vous. Pourquoi ?</p>
+                  <p className={statValue}>{t.notForYou(item.letter)}</p>
                   <div className="flex flex-wrap gap-2">
                     {NO_REASONS.map((reason) => {
                       const on = reasons.includes(reason);
@@ -429,7 +427,7 @@ export function DeckPresentation({
                           data-testid="deck-reason"
                           onClick={() => toggleReason(item.item.itemId, reason)}
                         >
-                          {NO_REASON_LABELS[reason]}
+                          {t.reasons[reason]}
                         </button>
                       );
                     })}
@@ -439,10 +437,9 @@ export function DeckPresentation({
             })}
             {visits.length > 0 ? (
               <section className={`${panelSoft} flex flex-col gap-2`} data-testid="deck-next">
-                <h2 className={statLabel}>{NEXT_TITLE}</h2>
+                <h2 className={statLabel}>{t.nextTitle}</h2>
                 <p className="text-base text-zinc-800 stage:text-white/90">
-                  Je contacte {visits.length > 1 ? 'les propriétaires' : 'le propriétaire'} de{' '}
-                  {lettersOf(visits)} et je vous confirme les visites sous 24 h.
+                  {t.nextStep(visits.length, lettersOf(visits, language))}
                 </p>
                 {advisorName ? (
                   <p className="text-sm font-semibold text-zinc-700 stage:text-white/80">
@@ -467,7 +464,7 @@ export function DeckPresentation({
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" className={navBtn} onClick={() => setConfirmFinish(null)}>
-                      Annuler
+                      {t.cancel}
                     </button>
                     <button
                       type="button"
@@ -476,7 +473,7 @@ export function DeckPresentation({
                       onClick={finish}
                       data-testid="deck-finish-anyway"
                     >
-                      Terminer quand même
+                      {t.finishAnyway}
                     </button>
                   </div>
                 </div>
@@ -488,7 +485,7 @@ export function DeckPresentation({
                 onClick={askFinish}
                 data-testid="presentation-finish"
               >
-                {readOnly ? 'Fermer' : finishing ? 'Enregistrement…' : 'Terminer la présentation'}
+                {readOnly ? t.close : finishing ? shell.saving : t.finish}
               </button>
             </div>
           </div>
@@ -515,18 +512,18 @@ export function DeckPresentation({
               onClick={() => go(previous)}
               data-testid="presentation-previous"
             >
-              Précédent
+              {t.previous}
             </button>
             {screen.type === 'item' || screen.type === 'answer' ? (
               <button
                 type="button"
                 className={quietNavBtn}
                 onClick={() => go(GRID)}
-                aria-label="Revenir à la grille"
+                aria-label={t.backToGrid}
                 data-testid="deck-back-to-grid"
               >
-                <span className="lg:hidden">Grille</span>
-                <span className="hidden lg:inline">Revenir à la grille</span>
+                <span className="lg:hidden">{t.gridShort}</span>
+                <span className="hidden lg:inline">{t.backToGrid}</span>
               </button>
             ) : null}
           </div>
@@ -536,11 +533,11 @@ export function DeckPresentation({
                 type="button"
                 className={quietNavBtn}
                 onClick={() => go(ANSWER)}
-                aria-label="Passer à ses disponibilités"
+                aria-label={t.toAvailability}
                 data-testid="deck-go-answer"
               >
-                <span className="lg:hidden">Ses disponibilités</span>
-                <span className="hidden lg:inline">Passer à ses disponibilités</span>
+                <span className="lg:hidden">{t.availabilityShort}</span>
+                <span className="hidden lg:inline">{t.toAvailability}</span>
               </button>
             ) : null}
             {screen.type !== 'answer' ? (
@@ -551,7 +548,7 @@ export function DeckPresentation({
                 onClick={() => go(next)}
                 data-testid="presentation-next"
               >
-                Suivant
+                {t.next}
               </button>
             ) : null}
           </div>
@@ -565,14 +562,14 @@ export function DeckPresentation({
           aria-modal="true"
         >
           <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-6 text-zinc-900 shadow-xl">
-            <p className="font-title text-xl font-bold">Quitter la présentation&nbsp;?</p>
-            <p className="text-sm text-zinc-600">Ses réponses sont enregistrées.</p>
+            <p className="font-title text-xl font-bold">{t.quitTitle}</p>
+            <p className="text-sm text-zinc-600">{t.quitSaved}</p>
             <div className="flex flex-wrap justify-end gap-2">
               <button type="button" className={navBtn} onClick={() => setQuitOpen(false)}>
-                Rester
+                {shell.stay}
               </button>
               <Link href={`/acquereurs/${deck.buyerId}`} className={primaryBtn}>
-                Quitter
+                {shell.quit}
               </Link>
             </div>
           </div>
@@ -590,7 +587,9 @@ export function GridScreen({
   onLead,
   leadLetter,
   compact = false,
+  language = 'fr',
 }: {
+  language?: TextLanguage;
   deck: BuyerDeck;
   responses: ItemResponse[];
   onOpen: (item: DeckItem) => void;
@@ -604,6 +603,7 @@ export function GridScreen({
     ? 'rounded-2xl border border-zinc-200 bg-white px-4 py-2 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm'
     : panel;
   const rowPad = compact ? 'py-1' : 'py-2';
+  const t = screensOf(language);
   return (
     <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-5'}`} data-testid="deck-grid">
       {/* La phrase de tête au-dessus de la grille, avec « Voir le bien A » (essai, 26/10). */}
@@ -622,7 +622,7 @@ export function GridScreen({
               onClick={onLead}
               data-testid="deck-lead-open"
             >
-              Voir le bien {leadLetter} →
+              {t.seeItem(leadLetter)} →
             </button>
           ) : null}
         </div>
@@ -633,7 +633,7 @@ export function GridScreen({
         >
           <thead>
             <tr>
-              <th className={`${statLabel} pb-1.5`}>Vos critères</th>
+              <th className={`${statLabel} pb-1.5`}>{t.kickerCriteria}</th>
               {deck.items.map((item) => (
                 <th key={item.item.itemId} className="px-1 pb-1.5 text-center align-bottom">
                   {/* Essai de Jean-Guy (25/10) : en tête de chaque colonne, la miniature du bien
@@ -641,7 +641,7 @@ export function GridScreen({
                   <button
                     type="button"
                     onClick={() => onOpen(item)}
-                    aria-label={`Voir le bien ${item.letter}`}
+                    aria-label={t.seeItem(item.letter)}
                     data-testid="deck-open-item"
                     data-letter={item.letter}
                     className={`mx-auto flex w-full flex-col items-center gap-0.5 rounded-xl border border-zinc-300 p-1 font-title text-base font-bold text-brand-deep hover:border-brand stage:border-white/25 stage:text-brand ${compact ? 'max-w-20' : 'max-w-28'}`}
@@ -662,7 +662,7 @@ export function GridScreen({
             </tr>
             {/* Les réponses déjà données, sur chaque colonne. */}
             <tr>
-              <th className="sr-only">Votre réponse</th>
+              <th className="sr-only">{t.kickerAnswer}</th>
               {deck.items.map((item) => {
                 const answer = answerOf(item.item.itemId, responses);
                 return (
@@ -673,7 +673,7 @@ export function GridScreen({
                     data-letter={item.letter}
                     data-answer={answer ?? ''}
                   >
-                    {answer ? GRID_ANSWER_LABELS[answer] : ''}
+                    {answer ? t.gridAnswers[answer] : ''}
                   </td>
                 );
               })}
@@ -690,7 +690,7 @@ export function GridScreen({
                   {row.mustHave ? (
                     <>
                       {' '}
-                      <MustHaveStar />
+                      <MustHaveStar language={language} />
                     </>
                   ) : null}
                 </th>
@@ -714,7 +714,7 @@ export function GridScreen({
           </tbody>
         </table>
       </div>
-      <GridLegend className="text-xs text-zinc-500 stage:text-white/50" />
+      <GridLegend className="text-xs text-zinc-500 stage:text-white/50" language={language} />
     </div>
   );
 }
@@ -728,7 +728,9 @@ export function ItemScreen({
   onAnswer,
   reasons,
   onReason,
+  language = 'fr',
 }: {
+  language?: TextLanguage;
   item: DeckItem;
   answer: ItemAnswer | null;
   readOnly: boolean;
@@ -743,6 +745,7 @@ export function ItemScreen({
     .filter((part): part is string => part != null && part !== '')
     .join(' · ');
   const hasBudget = item.marks.some((mark) => mark.criterion === 'budget');
+  const t = screensOf(language);
   return (
     <div className="flex flex-col gap-6" data-testid="presentation-item">
       <div className="flex flex-col gap-2">
@@ -765,7 +768,7 @@ export function ItemScreen({
       ) : null}
       <section className={panel}>
         <p className={`${statLabel} mb-3`} data-testid="deck-item-count">
-          {criteriaCountLabel(item)}
+          {criteriaCountLabel(item, language)}
         </p>
         <ul className="flex flex-col gap-2">
           {item.marks.map((mark) => (
@@ -800,7 +803,7 @@ export function ItemScreen({
       </section>
       {item.pitch ? (
         <section className={panelSoft} data-testid="deck-pitch">
-          <h2 className={`${statLabel} mb-2`}>{PITCH_TITLE}</h2>
+          <h2 className={`${statLabel} mb-2`}>{t.pitchTitle}</h2>
           <p className="text-lg text-zinc-800 stage:text-white/90">« {item.pitch} »</p>
         </section>
       ) : null}
@@ -823,14 +826,14 @@ export function ItemScreen({
               data-answer={value}
               onClick={() => onAnswer(value)}
             >
-              {on ? `✓ ${ITEM_ANSWER_LABELS[value]}` : ITEM_ANSWER_LABELS[value]}
+              {on ? `✓ ${t.answers[value]}` : t.answers[value]}
             </button>
           );
         })}
       </div>
       {answer === 'no' && onReason ? (
         <div className="flex flex-col gap-2" data-testid="item-reasons">
-          <p className="text-base font-semibold text-zinc-900 stage:text-white">Pourquoi ?</p>
+          <p className="text-base font-semibold text-zinc-900 stage:text-white">{t.why}</p>
           <div className="flex flex-wrap gap-2">
             {NO_REASONS.map((reason) => {
               const on = (reasons ?? []).includes(reason);
@@ -844,7 +847,7 @@ export function ItemScreen({
                   data-testid="item-reason"
                   onClick={() => onReason(reason)}
                 >
-                  {NO_REASON_LABELS[reason]}
+                  {t.reasons[reason]}
                 </button>
               );
             })}

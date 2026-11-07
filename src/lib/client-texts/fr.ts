@@ -14,6 +14,26 @@ import {
   PARKING_TYPE_LABELS,
   PROPERTY_TYPE_LABELS,
 } from '@/features/subject-property/constants/property-options';
+import {
+  AVAILABILITY_LABELS,
+  GRID_ANSWER_LABELS,
+  GRID_LEGEND_MARKS,
+  ITEM_ANSWER_LABELS,
+  NO_REASON_LABELS,
+} from '@/features/buyer-deck/types';
+import {
+  DOSSIER_ALREADY_ANSWERED,
+  DOSSIER_CHOICES_TITLE,
+  DOSSIER_DISCLAIMER,
+  DOSSIER_DOWNLOAD,
+  DOSSIER_NO_ANSWER,
+  DOSSIER_PRESENTED,
+  DOSSIER_SEEN_TOGETHER,
+  DOSSIER_SEND,
+  DOSSIER_THANKS,
+} from '@/features/buyer-dossier/types';
+import { PRICE_TO_CONFIRM } from '@/features/buyer-presentation/services/agency-price';
+import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/price-alignment';
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
@@ -38,6 +58,19 @@ export const FRENCH_TEXTS: ClientTexts = {
     commentOptional: 'Commentaire (facultatif)',
     questionMark: '\u00a0?',
     unknownLocation: 'Localisation inconnue',
+    linkGone: {
+      title: 'Ce lien n’est plus valable',
+      body: (what, feminine) =>
+        `${what} a été ${feminine ? 'retirée' : 'retiré'}, ou son lien a expiré : il est valable 30 jours. Pour le recevoir de nouveau, demandez-le à votre conseiller.`,
+      what: {
+        synthesis: 'Le dossier de rendez-vous',
+        marketUpdate: 'Le Point marché',
+        marketStudy: 'L’Étude de marché',
+        dossier: 'Le dossier',
+        offer: 'L’offre d’achat',
+        voucher: 'Le bon de visite',
+      },
+    },
     photos: {
       noneForListing: 'Photos indisponibles pour cette annonce',
       unavailable: 'Photo indisponible pour cette annonce',
@@ -389,6 +422,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     neutral: {
       pause: 'Rendez-vous en pause',
       thanks: 'Merci pour cet échange',
+      thanksTab: 'Merci',
       resume: 'Reprendre →',
     },
     answers: {
@@ -636,6 +670,264 @@ export const FRENCH_TEXTS: ClientTexts = {
             'Elle montre les biens en vente autour du vôtre aujourd’hui, et où se situe votre prix.',
           ].join('\n'),
         subject: (day) => (day ? `Étude de marché du ${day}` : 'Étude de marché'),
+      },
+    },
+  },
+  buyer: {
+    screens: {
+      answers: ITEM_ANSWER_LABELS,
+      gridAnswers: GRID_ANSWER_LABELS,
+      reasons: NO_REASON_LABELS,
+      slots: AVAILABILITY_LABELS,
+      mustHave: 'indispensable',
+      legendMarks: GRID_LEGEND_MARKS,
+      wordsTitle: 'Vous m’avez dit :',
+      pitchTitle: 'Pourquoi je vous le propose',
+      nextTitle: 'Ce que je fais ensuite',
+      connectionLost: 'Connexion perdue — réessayez.',
+      kickerSelection: (count) => `Votre sélection · ${count} bien${count > 1 ? 's' : ''}`,
+      kickerCriteria: 'Vos critères',
+      kickerItem: (letter, count) => `Bien ${letter} · ${count}`,
+      kickerAnswer: 'Votre réponse',
+      finishedOn: (day) => `Terminé le ${day}`,
+      meetingLabel: 'Rendez-vous acquéreur',
+      noAnswer: 'Aucune réponse pour l’instant.',
+      visit: (count, letters) =>
+        `Vous voulez visiter ${count > 1 ? 'les biens' : 'le bien'} ${letters}.`,
+      when: 'Quand pouvez-vous visiter ?',
+      hesitate: (count, letters) =>
+        `Vous hésitez pour ${count > 1 ? 'les biens' : 'le bien'} ${letters}.`,
+      notForYou: (letter) => `Le bien ${letter} : pas pour vous. Pourquoi ?`,
+      nextStep: (count, letters) =>
+        `Je contacte ${count > 1 ? 'les propriétaires' : 'le propriétaire'} de ${letters} et je vous confirme les visites sous 24 h.`,
+      letters: (letters) =>
+        letters.length <= 1
+          ? (letters[0] ?? '')
+          : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`,
+      unanswered: (letters, verb) =>
+        `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse : ${
+          letters.length <= 1
+            ? (letters[0] ?? '')
+            : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`
+        }. ${verb === 'finish' ? 'Terminer' : 'Envoyer'} quand même ?`,
+      cancel: 'Annuler',
+      finishAnyway: 'Terminer quand même',
+      sendAnyway: 'Envoyer quand même',
+      close: 'Fermer',
+      finish: 'Terminer la présentation',
+      previous: 'Précédent',
+      next: 'Suivant',
+      backToGrid: 'Revenir à la grille',
+      gridShort: 'Grille',
+      toAvailability: 'Passer à ses disponibilités',
+      availabilityShort: 'Ses disponibilités',
+      quitTitle: 'Quitter la présentation ?',
+      quitSaved: 'Ses réponses sont enregistrées.',
+      seeItem: (letter) => `Voir le bien ${letter}`,
+      why: 'Pourquoi ?',
+      yourSlots: (slots) => `Vos créneaux : ${slots}`,
+      reasonsSuffix: (reasons) => ` : ${reasons}`,
+      propertiesForYou: (count) => `${count} bien${count > 1 ? 's' : ''} pour vous`,
+      advisorLabel: 'Votre conseiller : ',
+      propertiesCount: (count) => `${count} bien${count > 1 ? 's' : ''}`,
+      answeredTitle: 'Ce que vous m’avez répondu :',
+      seenTogether: (count, letters) =>
+        `${count > 1 ? 'Les biens' : 'Le bien'} ${letters}, que nous avons regardés ensemble.`,
+      hereIsWhat: 'Voici ce que vous m’avez répondu :',
+      selectionOf: (day) => `Votre sélection du ${day}`,
+      forYou: 'pour vous',
+      seeSelection: 'Voir ma sélection →',
+      notYetAnswered: 'Vous n’avez pas encore répondu : ouvrez un bien depuis la grille.',
+      sending: 'Envoi…',
+      send: DOSSIER_SEND,
+      noAnswerYet: DOSSIER_NO_ANSWER,
+      thanks: DOSSIER_THANKS,
+      seenTogetherTitle: DOSSIER_SEEN_TOGETHER,
+      download: DOSSIER_DOWNLOAD,
+      presented: DOSSIER_PRESENTED,
+      alreadyAnswered: DOSSIER_ALREADY_ANSWERED,
+      confidential: 'Sélection confidentielle',
+      criterion: 'Critère',
+      choicesTitle: DOSSIER_CHOICES_TITLE,
+      disclaimer: DOSSIER_DISCLAIMER,
+      tabTitle: 'Votre sélection',
+    },
+    deck: {
+      count: {
+        rooms: (n) => `${n} ${n > 1 ? 'pièces' : 'pièce'}`,
+        bedrooms: (n) => `${n} ${n > 1 ? 'chambres' : 'chambre'}`,
+        days: (n) => `${n} ${n > 1 ? 'jours' : 'jour'}`,
+      },
+      ordinal: (n) => (n === 1 ? '1er' : `${n}e`),
+      criteria: BUYER_CRITERION_LABELS,
+      nouns: {
+        property_types: 'le type de bien',
+        cities: 'la commune',
+        budget: 'le prix',
+        rooms: 'le nombre de pièces',
+        bedrooms: 'le nombre de chambres',
+        surface: 'la surface',
+        outdoor: 'l’extérieur',
+        parking: 'le parking',
+        pool: 'la piscine',
+        floor: 'l’étage',
+        elevator: 'l’ascenseur',
+        energy_rating: 'le DPE',
+        works: 'l’état du bien',
+      },
+      and: (items) =>
+        items.length <= 1
+          ? (items[0] ?? '')
+          : `${items.slice(0, -1).join(', ')} et ${items.at(-1)}`,
+      row: {
+        house: 'Maison',
+        apartment: 'Appartement',
+        or: ' ou ',
+        budget: (amount) => `Budget ≤ ${amount}`,
+        andMore: (text) => `${text} et plus`,
+        groundFloorAccepted: 'Rez-de-chaussée accepté',
+        floor: (n) => `${n === 1 ? '1er' : `${n}e`} étage et plus`,
+        energy: (letter) => `DPE ${letter} ou mieux`,
+        noWorks: 'Sans travaux',
+      },
+      judge: {
+        check: (label) => `${label} : à vérifier à la visite`,
+        aHouse: 'Une maison',
+        anApartment: 'Un appartement',
+        houseNotFlat: 'Une maison, pas un appartement',
+        flatNotHouse: 'Un appartement, pas une maison',
+        inCity: (city) => `À ${city}`,
+        outsideCities: (city) => `Hors de vos communes (${city})`,
+        priceToConfirm: PRICE_TO_CONFIRM,
+        priceToCheck: 'Prix : à vérifier ensemble',
+        inBudgetMargin: (amount) => `Dans votre budget : ${amount} de marge`,
+        inBudget: 'Dans votre budget',
+        overNegotiable: (amount) => `${amount} au-dessus de votre budget, à négocier`,
+        overBudget: (amount) => `Budget dépassé de ${amount}`,
+        asAsked: (said) => `${said}, comme demandé`,
+        insteadOf: (said, wanted) => `${said} au lieu de ${wanted}`,
+        floorInsteadOf: (said, min) => `${said} au lieu du ${min === 1 ? '1er' : `${min}e`}`,
+        noOutdoor: 'Pas d’extérieur',
+        noParking: 'Pas de parking',
+        aPool: 'Une piscine',
+        noPool: 'Pas de piscine',
+        groundFloor: 'Rez-de-chaussée',
+        floor: (n) => `${n === 1 ? '1er' : `${n}e`} étage`,
+        anElevator: 'Un ascenseur',
+        noElevator: 'Sans ascenseur',
+        dpe: (letter) => `DPE ${letter}`,
+        dpeBeyond: (letter, max) => `DPE ${letter}, au-delà de ${max}`,
+        worksNeeded: 'Travaux à prévoir',
+        noWorksAnnounced: 'Pas de travaux annoncés',
+      },
+      words: {
+        house: (rooms) =>
+          `Une maison${rooms != null ? ` de ${rooms} ${rooms > 1 ? 'pièces' : 'pièce'}` : ''}`,
+        rooms: (rooms) => `Un ${rooms} ${rooms > 1 ? 'pièces' : 'pièce'}`,
+        apartment: 'Un appartement',
+        property: 'Un bien',
+        where: (cities) =>
+          cities.length === 0
+            ? ''
+            : cities.length === 1
+              ? ` à ${cities[0]}`
+              : ` à ${cities.slice(0, -1).join(', ')} ou ${cities[cities.length - 1]}`,
+        bedrooms: (n) => `avec ${n} ${n > 1 ? 'chambres' : 'chambre'} au moins`,
+        surface: (area) => `de ${area} au moins`,
+        outdoor: 'avec un extérieur',
+        parking: 'avec un parking',
+        pool: 'avec une piscine',
+        floor: (n) => `au ${n === 1 ? '1er' : `${n}e`} étage au moins`,
+        elevator: 'avec un ascenseur',
+        energy: (letter) => `DPE ${letter} ou mieux`,
+        noWorks: 'sans travaux',
+        budget: (amount) => `jusqu’à ${amount}`,
+      },
+      pitch: {
+        pool: 'piscine',
+        garden: 'jardin',
+        terrace: 'terrasse',
+        garage: 'garage',
+        at: (city) => `à ${city}`,
+        margin: (amount) => `${amount} sous votre budget`,
+        fallback: (ok, total, nouns, many) =>
+          `Il coche ${ok} ${ok > 1 ? 'critères' : 'critère'} sur ${total} : ${nouns} ${many ? 'sont' : 'est'} à voir ensemble.`,
+      },
+      dated: {
+        listedToday: 'Mis en vente aujourd’hui',
+        listedFor: (days) => `En vente depuis ${days} ${days > 1 ? 'jours' : 'jour'}`,
+        drop: (amount, days) =>
+          `Baisse de prix de ${amount}${
+            days == null
+              ? ''
+              : days === 0
+                ? ' aujourd’hui'
+                : ` il y a ${days} ${days > 1 ? 'jours' : 'jour'}`
+          }`,
+      },
+      lead: {
+        several: (letters) =>
+          `Les biens ${letters.slice(0, -1).join(', ')} et ${letters.at(-1)} cochent tous vos critères.`,
+        full: (letter) =>
+          `Le bien ${letter} coche tous vos critères : c’est par lui que je vous propose de commencer.`,
+        most: (letter, ok, total) => `Le bien ${letter} en coche le plus : ${ok} sur ${total}.`,
+      },
+      priceLine: (amount) => `Prix affiché : ${amount}`,
+      seenOn: (day) => `affiché le ${day}`,
+      criteriaCount: (ok, total) => `${ok} ${ok > 1 ? 'critères' : 'critère'} sur ${total}`,
+    },
+    messages: {
+      hello: (name) => `Bonjour ${name},`,
+      phrase: (kind, city) => {
+        const noun =
+          kind === 'house' ? 'la maison' : kind === 'apartment' ? 'l’appartement' : 'le bien';
+        if (!city) return noun;
+        return /^[aeiouyàâéèêîôûh]/i.test(city) ? `${noun} d’${city}` : `${noun} de ${city}`;
+      },
+      propertyAt: (address) => `le bien situé ${address}`,
+      has: {
+        pool: 'la piscine que vous vouliez',
+        outdoor: 'un extérieur',
+        parking: 'un stationnement',
+        elevator: 'un ascenseur',
+      },
+      withList: (items) => `avec ${items.join(', ')}`,
+      at: (city) => `à ${city}`,
+      selection: (url) => `Votre sélection : ${url}`,
+      proposal: {
+        noun: { house: 'maison', apartment: 'appartement' },
+        margin: (amount) => `${amount} sous votre budget`,
+        line: (what, margin) => `J’ai un bien pour vous : ${what}${margin ? `, ${margin}` : ''}.`,
+        ask: 'Dites-moi si vous voulez le visiter.',
+        subject: 'Un bien pour vous',
+      },
+      relaunch: {
+        ask: (day) => `Avez-vous pu regarder la sélection envoyée le ${day} ?`,
+        subjectNoun: { house: 'La maison', apartment: 'L’appartement', other: 'Le bien' },
+        fits: (ask, what, feminine) =>
+          `${ask} ${what} coche ce que vous cherchez : voulez-vous ${feminine ? 'la' : 'le'} visiter samedi ?`,
+        noFit: (ask) => `${ask} Dites-moi quels biens vous voulez visiter.`,
+        subject: 'Votre sélection',
+      },
+      share: {
+        message: (url) =>
+          [
+            `Bonjour, voici les biens que j’ai sélectionnés pour vous : ${url}`,
+            'Dites-moi lesquels vous voulez visiter.',
+          ].join('\n'),
+        subject: 'Votre sélection de biens',
+      },
+      offer: {
+        accepted: (property, day, url) => [
+          `Bonne nouvelle : le vendeur a accepté votre offre d’achat pour ${property}, le ${day}.`,
+          url ? `Votre offre, signée par vous et par le vendeur : ${url}` : '',
+          'Je vous appelle pour la suite chez le notaire.',
+        ],
+        refused: (property) => [
+          `Le vendeur n’a pas retenu votre offre d’achat pour ${property}.`,
+          'Je vous appelle pour en parler et voir ensemble la suite.',
+        ],
+        subject: 'Votre offre d’achat',
       },
     },
   },

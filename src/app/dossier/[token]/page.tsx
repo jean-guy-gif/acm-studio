@@ -7,16 +7,36 @@ import {
   DOSSIER_TOKEN_PATTERN,
   hashDossierToken,
 } from '@/features/buyer-dossier/services/dossier-token';
+import { clientTexts } from '@/lib/client-texts';
+import { buyerLanguage } from '@/lib/client-texts/link-language';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export const dynamic = 'force-dynamic';
 
 // Jamais indexée (l'en-tête X-Robots-Tag le redit, next.config.ts).
-export const metadata: Metadata = {
-  title: 'Votre sélection',
+const ROBOTS: Metadata = {
   robots: { index: false, follow: false, nocache: true },
   referrer: 'no-referrer',
 };
+
+// Mission 140 — le titre d'onglet dans la langue du client que le lien désigne.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const admin = createServiceRoleClient();
+  const { data } = DOSSIER_TOKEN_PATTERN.test(token)
+    ? await admin
+        .from('buyer_dossier_links')
+        .select('buyer_id')
+        .eq('token_hash', hashDossierToken(token))
+        .maybeSingle()
+    : { data: null };
+  const language = await buyerLanguage(admin, data?.buyer_id ?? null);
+  return { ...ROBOTS, title: clientTexts(language).buyer.screens.tabTitle };
+}
 
 // Mission 119 (partie B) — le dossier acquéreur ouvert par son lien, SANS compte : le jeton est relu
 // (forme, condensat, 30 jours), puis le dossier est construit par la clé de service, cadré sur la

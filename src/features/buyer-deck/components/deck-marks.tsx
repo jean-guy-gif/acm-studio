@@ -1,4 +1,5 @@
-import { GRID_LEGEND_MARKS, type DeckMark, type GridMark } from '@/features/buyer-deck/types';
+import type { DeckMark, GridMark } from '@/features/buyer-deck/types';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { PRICE_ALIGNMENT_TEXT } from '@/features/price-positioning/services/price-alignment';
 
 // Mission 122 (partie B, essai de Jean-Guy, 25/10) — ce que la grille, l'écran d'un bien, le lien
@@ -21,12 +22,18 @@ export function markClass(mark: DeckMark): string {
 
 // L'étoile des indispensables, DESSINÉE : le caractère « ★ » manque aux polices embarquées et ne
 // s'affichait pas partout. Son nom se lit pour les lecteurs d'écran.
-export function MustHaveStar({ className = '' }: { className?: string }) {
+export function MustHaveStar({
+  className = '',
+  language = 'fr',
+}: {
+  className?: string;
+  language?: TextLanguage;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       role="img"
-      aria-label="indispensable"
+      aria-label={clientTexts(language).buyer.screens.mustHave}
       data-testid="must-star"
       className={`inline-block h-[0.9em] w-[0.9em] shrink-0 align-[-0.1em] text-amber-500 ${className}`}
     >
@@ -39,10 +46,17 @@ export function MustHaveStar({ className = '' }: { className?: string }) {
 }
 
 // « ★ indispensable · ✓ oui · ≈ proche · ✗ non · ? à vérifier ensemble », l'étoile dessinée.
-export function GridLegend({ className = '' }: { className?: string }) {
+export function GridLegend({
+  className = '',
+  language = 'fr',
+}: {
+  className?: string;
+  language?: TextLanguage;
+}) {
+  const t = clientTexts(language).buyer.screens;
   return (
     <p className={className} data-testid="grid-legend">
-      <MustHaveStar /> indispensable · {GRID_LEGEND_MARKS}
+      <MustHaveStar language={language} /> {t.mustHave} · {t.legendMarks}
     </p>
   );
 }

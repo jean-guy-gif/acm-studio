@@ -6,16 +6,29 @@ import { MarketStudyDocument } from '@/features/market-study/components/market-s
 import { findMarketStudyLink } from '@/features/market-study/queries/find-market-study-link';
 import { loadMarketStudy } from '@/features/market-study/queries/load-market-study';
 import { clientTexts } from '@/lib/client-texts';
+import { projectLanguage } from '@/lib/client-texts/link-language';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export const dynamic = 'force-dynamic';
 
 // Jamais indexée (l'en-tête X-Robots-Tag le redit, next.config.ts).
-export const metadata: Metadata = {
-  title: 'Étude de marché',
+const ROBOTS: Metadata = {
   robots: { index: false, follow: false, nocache: true },
   referrer: 'no-referrer',
 };
+
+// Mission 140 — le titre d'onglet dans la langue du client que le lien désigne.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const admin = createServiceRoleClient();
+  const link = await findMarketStudyLink(admin, token);
+  const language = await projectLanguage(admin, link?.projectId ?? null);
+  return { ...ROBOTS, title: clientTexts(language).documents.marketStudy.coverTitle };
+}
 
 // Mission 131 — l'Étude de marché ouverte par son lien, SANS compte : le jeton est relu ici (forme,
 // condensat, 30 jours), puis le document est construit par la clé de service, cadré sur le dossier

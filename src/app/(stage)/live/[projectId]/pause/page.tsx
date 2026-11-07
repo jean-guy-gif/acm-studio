@@ -10,7 +10,16 @@ import { LiveResumeLink } from '@/features/live-seller/components/live-resume-li
 import { getNeutralScreenContext } from '@/features/live-seller/queries/get-neutral-screen-context';
 import { clientTexts } from '@/lib/client-texts';
 
-export const metadata: Metadata = { title: 'Rendez-vous en pause' };
+// Mission 140 — le titre d'onglet dans la langue du dossier.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}): Promise<Metadata> {
+  const { projectId } = await params;
+  const context = await getNeutralScreenContext(projectId);
+  return { title: clientTexts(context?.language ?? 'fr').live.neutral.pause };
+}
 
 // Mission 92 — « Quitter », après sa confirmation, ouvre cet écran neutre : jamais la liste du
 // Live, qui montre les noms des autres vendeurs de l'agence. « Reprendre » relance le Live au

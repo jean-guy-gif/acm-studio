@@ -152,7 +152,17 @@ export async function loadMarketUpdate(
             },
             language,
           )
-        : item.label,
+        : // Supprimé depuis : un libellé neutre recomposé de ce que le point garde (sa surface).
+          neutralComparableLabel(
+            {
+              propertyType: null,
+              roomsCount: null,
+              surfaceArea: item.surfaceArea,
+              city: null,
+              district: null,
+            },
+            language,
+          ),
       conclusion: item.conclusion
         ? { ...item.conclusion, label: goneConclusionLabel(item.conclusion, language) }
         : null,

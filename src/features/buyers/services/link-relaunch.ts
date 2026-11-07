@@ -1,6 +1,7 @@
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { addDays } from '@/features/meeting-conclusion/services/suivi-tasks';
-import { propertyPhrase } from '@/features/buyers/services/loop-properties';
+import { propertyHas, propertyKind } from '@/features/buyers/services/loop-properties';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import {
   anyStarContradicted,
   starsFilled,
@@ -100,34 +101,29 @@ export function relaunchMessage(input: {
   sentOn: string;
   url: string;
   advisorFirstName: string | null;
+  // Mission 140 — dans la langue de l'acquéreur (le français par défaut).
+  language?: TextLanguage;
 }): string {
-  const lines = [`Bonjour ${input.buyer.name},`];
-  const ask = `Avez-vous pu regarder la sélection envoyée le ${dayLabel(input.sentOn)} ?`;
+  const language = input.language ?? 'fr';
+  const t = clientTexts(language).buyer.messages;
+  const lines = [t.hello(input.buyer.name)];
+  const ask = t.relaunch.ask(dayLabel(input.sentOn));
   if (input.bien && input.fits) {
     const p = input.bien.property;
-    const noun = propertyPhrase({ propertyType: p.propertyType, city: null });
-    const has: string[] = [];
-    if (input.buyer.pool === true && p.hasPool === true) has.push('la piscine que vous vouliez');
-    if (input.buyer.outdoor === true && p.outdoorSpaces.length > 0) has.push('un extérieur');
-    if (input.buyer.parking === true && p.parkingTypes.length > 0) has.push('un stationnement');
-    if (input.buyer.elevator === true && p.hasElevator === true) has.push('un ascenseur');
+    const kind = propertyKind(p.propertyType);
+    const has = propertyHas(input.buyer, p, language);
     const what = [
-      noun === 'le bien' ? 'Le bien' : noun.charAt(0).toUpperCase() + noun.slice(1),
-      p.city?.trim() ? `à ${p.city.trim()}` : null,
-      has.length > 0 ? `avec ${has.join(', ')}` : null,
+      t.relaunch.subjectNoun[kind],
+      p.city?.trim() ? t.at(p.city.trim()) : null,
+      has.length > 0 ? t.withList(has) : null,
     ]
       .filter(Boolean)
       .join(' ');
-    lines.push(
-      `${ask} ${what} coche ce que vous cherchez : voulez-vous le visiter samedi ?`.replace(
-        /le visiter samedi/,
-        noun === 'la maison' ? 'la visiter samedi' : 'le visiter samedi',
-      ),
-    );
+    lines.push(t.relaunch.fits(ask, what, kind === 'house'));
   } else {
-    lines.push(`${ask} Dites-moi quels biens vous voulez visiter.`);
+    lines.push(t.relaunch.noFit(ask));
   }
-  lines.push(`Votre sélection : ${input.url}`);
+  lines.push(t.selection(input.url));
   if (input.advisorFirstName?.trim()) lines.push(input.advisorFirstName.trim());
   return lines.join('\n');
 }
