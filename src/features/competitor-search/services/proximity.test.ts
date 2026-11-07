@@ -310,6 +310,7 @@ describe('secteur : géocodage de l’adresse du bien vendeur', () => {
       ok: true,
       point: JEAN_MEDECIN,
       sector: { status: 'located', label: '12 Avenue Jean Médecin 06000 Nice' },
+      precision: 'housenumber',
     });
     expect(judgeGeocode(feature('street', 0.8), 'Nice').ok).toBe(true);
   });
