@@ -1,4 +1,5 @@
 import type { BuyerLanguage } from '@/features/buyer-messages/languages';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { GERMAN } from '@/features/buyer-messages/templates/de';
 import { ENGLISH } from '@/features/buyer-messages/templates/en';
 import { FRENCH } from '@/features/buyer-messages/templates/fr';
@@ -97,32 +98,29 @@ export function visitBuyerMessage(input: {
   );
 }
 
-// La proposition entière, pour chaque avis : « pas convaincu » ne s'accorde pas avec « a été ».
-const SELLER_OPINION: Record<VisitOpinion, string> = {
-  love: 'l’acquéreur a eu un coup de cœur',
-  interested: 'l’acquéreur a été intéressé',
-  mixed: 'l’acquéreur est resté mitigé',
-  not_for_me: 'le bien n’a pas convaincu l’acquéreur',
-};
-
-// Au vendeur (un bien de l'agence), en français : le retour honnête, sans le nom de l'acquéreur, ni
-// son budget, ni la note libre, ni la suite qu'il envisage (décision du 06/11).
+// Au vendeur (un bien de l'agence) : le retour honnête, sans le nom de l'acquéreur, ni son budget,
+// ni la note libre, ni la suite qu'il envisage (décision du 06/11). Mission 140 (décision de
+// Jean-Guy, 07/11) — dans la langue du dossier vendeur (le français par défaut) ; la proposition
+// entière par avis : « pas convaincu » ne s'accorde pas avec « a été ».
 export function visitSellerMessage(input: {
   sellerName: string;
   visitedAt: string;
   report: Pick<VisitReport, 'opinion' | 'liked' | 'disliked'>;
   advisorFirstName: string | null;
+  language?: TextLanguage;
 }): string {
-  const t = FRENCH;
+  const language = input.language ?? 'fr';
+  const t = TEMPLATES[language];
+  const s = clientTexts(language).sellerVisit;
   const liked = spokenTags(input.report.liked).map((tag) => t.visit.tags[tag].liked);
   const disliked = spokenTags(input.report.disliked).map((tag) => t.visit.tags[tag].disliked);
   return signed(
     [
-      `Bonjour ${input.sellerName},`,
-      `La visite de votre bien du ${visitDay(input.visitedAt, t.locale)} : ${SELLER_OPINION[input.report.opinion]}.`,
-      liked.length > 0 ? `Ce qui lui a plu : ${listOf(liked, t.locale)}.` : '',
-      disliked.length > 0 ? `Ce qui l’a gêné : ${listOf(disliked, t.locale)}.` : '',
-      'Je reviens vers vous très vite.',
+      s.hello(input.sellerName),
+      s.line(visitDay(input.visitedAt, t.locale), s.opinions[input.report.opinion]),
+      liked.length > 0 ? s.liked(listOf(liked, t.locale)) : '',
+      disliked.length > 0 ? s.disliked(listOf(disliked, t.locale)) : '',
+      s.closing,
     ],
     input.advisorFirstName,
   );

@@ -103,6 +103,11 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
     const buyerId = buyerUrl.split('/').pop();
     await page.goto(`/presentation/${buyerId}`);
     await expect(page.getByTestId('deck-prelude')).toBeVisible();
+    // Les écrans du conseiller restent en français, critères compris (décision du 07/11).
+    const header = page.getByTestId('deck-prepare-item').first().locator('div').first();
+    await expect(header).toContainText(/^Bien A · .*pièces?/);
+    await expect(header).toContainText(/critères? sur/);
+    await expect(header).not.toContainText(/Apartment|House|rooms?\b/);
     await page.getByRole('button', { name: 'Commencer la présentation' }).click();
     await expect(page.getByRole('heading', { name: 'You told me:' })).toBeVisible();
     await expect(page.getByTestId('deck-kicker')).toContainText('Your selection · 1 property');

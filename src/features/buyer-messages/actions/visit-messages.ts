@@ -1,6 +1,7 @@
 'use server';
 
-import { buyerLanguage } from '@/features/buyer-messages/languages';
+import { spokenLanguage } from '@/lib/client-language';
+import { clientTexts, textLanguage } from '@/lib/client-texts';
 import {
   TEMPLATES,
   propertyKind,
@@ -81,7 +82,7 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
   const report = { ...visit.report, nextStep: visit.report.nextStep };
   const buyerMessage: VisitMessage = {
     message: visitBuyerMessage({
-      language: buyerLanguage(buyer.language),
+      language: spokenLanguage(buyer.language),
       buyerName: buyer.name,
       property: propertyOfLabel(item.label),
       visitedAt: visit.visitedAt,
@@ -90,14 +91,14 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
     }),
     phone: buyer.phone,
     email: buyer.email,
-    subject: TEMPLATES[buyerLanguage(buyer.language)].subjects.visit,
+    subject: TEMPLATES[spokenLanguage(buyer.language)].subjects.visit,
   };
   // Le vendeur : un bien de l'agence (son dossier), jamais un concurrent ni une annonce.
   let seller: VisitMessage | null = null;
   if (item.source === 'project' && UUID.test(item.reference)) {
     const { data: project } = await admin
       .from('projects')
-      .select('seller_name, seller_phone, seller_email')
+      .select('seller_name, seller_phone, seller_email, language')
       .eq('id', item.reference)
       .eq('agency_id', profile.agency_id)
       // Un dossier supprimé (archivé, M93) ne reçoit plus rien.
@@ -110,10 +111,11 @@ export async function prepareVisitMessages(requestId: unknown): Promise<Prepared
           visitedAt: visit.visitedAt,
           report,
           advisorFirstName: profile.first_name,
+          language: textLanguage(spokenLanguage(project.language)),
         }),
         phone: project.seller_phone,
         email: project.seller_email,
-        subject: 'La visite de votre bien',
+        subject: clientTexts(spokenLanguage(project.language)).sellerVisit.subject,
       };
     }
   }

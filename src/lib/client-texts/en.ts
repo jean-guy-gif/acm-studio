@@ -1022,4 +1022,18 @@ export const ENGLISH_TEXTS: ClientTexts = {
       },
     },
   },
+  sellerVisit: {
+    hello: (name) => `Hello ${name},`,
+    line: (day, opinion) => `The viewing of your property on ${day}: ${opinion}.`,
+    opinions: {
+      love: 'the buyer fell in love with it',
+      interested: 'the buyer was interested',
+      mixed: 'the buyer had mixed feelings',
+      not_for_me: 'the property did not win the buyer over',
+    },
+    liked: (list) => `What they liked: ${list}.`,
+    disliked: (list) => `What put them off: ${list}.`,
+    closing: 'I will get back to you very soon.',
+    subject: 'The viewing of your property',
+  },
 };

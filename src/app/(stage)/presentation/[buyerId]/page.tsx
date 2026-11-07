@@ -21,7 +21,7 @@ export default async function PresentationPage({
   if (!loaded) redirect(`/acquereurs/${buyerId}`);
   // Mission 130 B — « Avant de présenter » d'abord, pour le conseiller seul.
   return (
-    <DeckWithPrelude deck={loaded.deck}>
+    <DeckWithPrelude deck={loaded.advisorDeck}>
       <DeckPresentation
         deck={loaded.deck}
         initialResponses={loaded.responses}

@@ -544,3 +544,29 @@ function seenOn(priceSeenOn: string, t: DeckTexts, language: TextLanguage): stri
 }
 
 export const markSymbol = (mark: GridMark): string => GRID_SYMBOLS[mark];
+
+// Mission 140 B (décision de Jean-Guy, 07/11) — les écrans du conseiller restent en français,
+// critères compris : le déroulé de l'acquéreur (figé ou non) garde ses mots, ses phrases et ses
+// comptes ; ses libellés de biens, de critères et ce qui bloque un bien se lisent dans le déroulé
+// français, calculé sur les mêmes faits.
+export function advisorDeck(deck: BuyerDeck, french: BuyerDeck): BuyerDeck {
+  if ((deck.language ?? 'fr') === 'fr') return deck;
+  const items = new Map(french.items.map((entry) => [entry.item.itemId, entry]));
+  const criteria = new Map(french.criteria.map((row) => [row.criterion, row.label]));
+  return {
+    ...deck,
+    criteria: deck.criteria.map((row) => ({
+      ...row,
+      label: criteria.get(row.criterion) ?? row.label,
+    })),
+    items: deck.items.map((entry) => {
+      const twin = items.get(entry.item.itemId);
+      if (!twin) return entry;
+      return {
+        ...entry,
+        item: { ...entry.item, label: twin.item.label },
+        blockedBy: twin.blockedBy,
+      };
+    }),
+  };
+}

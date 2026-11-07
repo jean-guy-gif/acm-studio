@@ -103,6 +103,16 @@ export type ClientTexts = {
   live: LiveTexts;
   documents: DocumentTexts;
   buyer: BuyerTexts;
+  // Mission 140 (décision de Jean-Guy, 07/11) — ce que le vendeur reçoit après une visite de son bien.
+  sellerVisit: {
+    hello: (name: string) => string;
+    line: (day: string, opinion: string) => string;
+    opinions: Record<'love' | 'interested' | 'mixed' | 'not_for_me', string>;
+    liked: (list: string) => string;
+    disliked: (list: string) => string;
+    closing: string;
+    subject: string;
+  };
 };
 
 // Mission 140 B — ce que voit ou reçoit l'acquéreur, dans sa langue : ses messages (proposition,

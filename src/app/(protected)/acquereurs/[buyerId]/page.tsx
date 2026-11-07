@@ -152,7 +152,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           : [],
       )
       .sort((a, b) => b.decidedAt.localeCompare(a.decidedAt))[0] ?? null;
-  const deck = loadedDeck?.deck ?? null;
+  const deck = loadedDeck?.advisorDeck ?? null;
   const journey = buyerJourney(facts);
   const next = buyerNextAction(buyer, facts);
   const words = deck?.words ?? proposedBuyerWords(buyer);
