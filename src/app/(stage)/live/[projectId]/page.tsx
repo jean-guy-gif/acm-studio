@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { liveEntryGate } from '@/features/live-seller/services/live-launch';
-import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
+import { hasLiveStarted, initialLiveIndex } from '@/features/live-seller/services/live-resume';
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { getProject } from '@/features/projects/queries/get-project';
 
@@ -18,7 +18,6 @@ import { getLiveProjectStatus } from '@/features/live-seller/queries/get-live-pr
 import { isLiveClosed } from '@/features/live-seller/services/live-closed';
 import { buildLivePages } from '@/features/live-seller/services/build-live-pages';
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
-import { clampInitialLiveIndex } from '@/features/live-seller/services/max-reachable-live-index';
 import {
   authorizeAdvisorRange,
   projectLiveForSeller,
@@ -35,9 +34,10 @@ type LivePageProps = {
 // Index d'ouverture demandé par l'URL. Volontairement tolérant : jamais d'erreur
 // affichée au vendeur pour un paramètre douteux, on retombe sur l'introduction.
 // Le borne haute est appliquée par la présentation (nombre réel de fiches).
-function parseInitialIndex(raw: string | undefined): number {
+// Mission 144 — sans numéro d'écran (ou illisible) : null, la reprise se fait d'après la base.
+function parseInitialIndex(raw: string | undefined): number | null {
   const parsed = Number.parseInt(raw ?? '', 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 export default async function LiveProjectPage({ params, searchParams }: LivePageProps) {
@@ -51,7 +51,8 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   }
 
   // Chargement unique (accès contrôlé : getProject cadré sur l'agence → 404 sinon).
-  const presentation = await loadLivePresentation(projectId);
+  // Mission 144 — les photos du bien, préchargées dès l'introduction, valables tout le rendez-vous.
+  const presentation = await loadLivePresentation(projectId, 'scene');
   if (!presentation) {
     notFound();
   }
@@ -101,7 +102,12 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     rhythm,
     presentationMode,
   );
-  const initialIndex = clampInitialLiveIndex(parseInitialIndex(fiche), pages, projectedLive);
+  const initialIndex = initialLiveIndex(
+    parseInitialIndex(fiche),
+    pages,
+    projectedLive,
+    presentationMode === 'direct' ? 'direct' : 'interactive',
+  );
   // Mission 89 — un prix de commercialisation est-il déjà enregistré ? Seul le oui/non part
   // vers la scène, jamais le montant.
   const [branding, profile, conclusion] = await Promise.all([

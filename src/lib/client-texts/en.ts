@@ -273,6 +273,13 @@ export const ENGLISH_TEXTS: ClientTexts = {
       noteSaved: 'Score saved',
       failedSave: 'An answer could not be saved — tap Try again',
       connectionLost: 'Connection lost — tap Confirm to try again',
+      // Mission 144 — même clé que le français ; le Live en anglais garde ses messages (M144).
+      // Mission 144 — le message nomme le bouton présent à l'écran.
+      connectionLostTouch: (button, isRetry) =>
+        `Connection lost — tap ${button}${isRetry ? '' : ' to try again'}`,
+      saveFailedTouch: (button, isRetry) =>
+        `Could not save — tap ${button}${isRetry ? '' : ' to try again'}`,
+      sessionExpired: 'Session expired — sign in again to resume the Live',
       saveFailed: 'Could not save. Please try again.',
       analysisFailed: 'Analysis unavailable. Please try again.',
       noteFailed: 'The score could not be saved. Please try again.',

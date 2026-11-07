@@ -1,5 +1,8 @@
 import { livePageHasAnswer } from '@/features/live-seller/services/can-advance-live-page';
-import { maxReachableLiveIndex } from '@/features/live-seller/services/max-reachable-live-index';
+import {
+  clampInitialLiveIndex,
+  maxReachableLiveIndex,
+} from '@/features/live-seller/services/max-reachable-live-index';
 import type { LiveNavComparable, LivePage } from '@/features/live-seller/services/build-live-pages';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 
@@ -98,4 +101,21 @@ export function resumeIndexFor(resume: LiveResume, storedPosition: string | null
     return stored;
   }
   return resume.index;
+}
+
+// Mission 144 — l'écran d'ouverture du Live. L'adresse dit l'écran (« ?fiche=N »), borné par la base
+// (M51, M144). Sans numéro d'écran — un rechargement juste après un changement d'écran, avant que
+// l'adresse ne suive, ou une adresse rouverte sans lui — un Live déjà commencé reprend à la borne de
+// la base, jamais à l'introduction (décision de Jean-Guy, 07/11) ; un Live jamais commencé s'ouvre
+// sur l'introduction.
+export function initialLiveIndex(
+  requested: number | null,
+  pages: LivePage[],
+  live: ResumeSource | null,
+  mode: 'interactive' | 'direct' = 'interactive',
+): number {
+  if (requested == null) {
+    return hasLiveStarted(live) ? clampInitialLiveIndex(pages.length - 1, pages, live, mode) : 0;
+  }
+  return clampInitialLiveIndex(requested, pages, live, mode);
 }

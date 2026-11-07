@@ -1,5 +1,12 @@
-import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
-import type { LiveNavComparable, LivePage } from '@/features/live-seller/services/build-live-pages';
+import {
+  canAdvanceLivePage,
+  livePageHasAnswer,
+} from '@/features/live-seller/services/can-advance-live-page';
+import type {
+  LiveNavComparable,
+  LivePage,
+  LivePageType,
+} from '@/features/live-seller/services/build-live-pages';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
 
 // Minimum structurel lu par la borne : concurrents (id + réponse) et résumé vendeur.
@@ -36,14 +43,75 @@ export function maxReachableLiveIndex(pages: LivePage[], live: LiveReachSource |
   return reachable;
 }
 
-// L'index d'ouverture réellement sûr : la demande de l'URL, bornée à la page atteignable.
+// Mission 143-144 — les écrans qui posent une question au vendeur ; leur réponse peut partir en
+// fond (M51, M144) et se perdre dans un rechargement.
+const ASKING_SCREENS: ReadonlySet<LivePageType> = new Set<LivePageType>([
+  'subject_property',
+  'seller_perceived_price',
+  'comparable_competition',
+  'comparable_price',
+  'comparable_price_reveal',
+  'comparable_duration',
+  'comparable_quick_guess',
+  'comparable_quick_reveal',
+  'dangerous_competitor',
+  'seller_revised_price',
+  'closing_question',
+]);
+
+// Mission 144 — après un rechargement, le Live reprend au plus loin à la première question qui
+// suit la dernière réponse ENREGISTRÉE en base, jamais plus loin (décision de Jean-Guy, 07/11) :
+// une réponse partie en fond et perdue se redemande. Les écrans sans question (DPE, analyse,
+// conclusion) ne retiennent pas ; une question passée sans réponse AVANT la dernière réponse non
+// plus. Pur.
+export function answeredResumeBound(
+  pages: LivePage[],
+  live: LiveReachSource | null,
+  // Mission 131 — en présentation directe, « Votre bien » ne demande rien.
+  mode: 'interactive' | 'direct' = 'interactive',
+): number {
+  const summary = live?.sellerSummary ?? null;
+  const entryOf = (page: LivePage) =>
+    page.comparableId != null
+      ? (live?.comparables.find((comparable) => comparable.id === page.comparableId) ?? null)
+      : null;
+  let lastAnswered = -1;
+  pages.forEach((page, i) => {
+    if (livePageHasAnswer(page.type, entryOf(page), summary)) lastAnswered = i;
+  });
+  for (let i = lastAnswered + 1; i < pages.length; i += 1) {
+    const page = pages[i]!;
+    if (!ASKING_SCREENS.has(page.type)) continue;
+    if (mode === 'direct' && page.type === 'subject_property') continue;
+    const entry = entryOf(page);
+    // « Non » à « Un sérieux concurrent ? » saute la suite de ce concurrent (M41) : elle ne
+    // retient pas.
+    if (
+      entry?.response?.seller_serious_competitor === 'no' &&
+      page.type !== 'comparable_competition'
+    )
+      continue;
+    // L'écran 2 du rythme accéléré ne demande la durée que si elle est connue (M92, M95).
+    if (page.type === 'comparable_quick_reveal' && entry?.durationKnown === false) continue;
+    return i;
+  }
+  return Math.max(0, pages.length - 1);
+}
+
+// L'index d'ouverture réellement sûr : la demande de l'URL, bornée à la page atteignable et à la
+// dernière réponse enregistrée (M144).
 export function clampInitialLiveIndex(
   requested: number,
   pages: LivePage[],
   live: LiveReachSource | null,
+  mode: 'interactive' | 'direct' = 'interactive',
 ): number {
   if (requested <= 0) {
     return 0;
   }
-  return Math.min(requested, maxReachableLiveIndex(pages, live));
+  return Math.min(
+    requested,
+    maxReachableLiveIndex(pages, live),
+    answeredResumeBound(pages, live, mode),
+  );
 }

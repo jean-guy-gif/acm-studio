@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
   // Mission 110 — la synthèse laissée au vendeur n'est jamais indexée ni gardée en cache partagé.
   async headers() {
     return [
+      // Mission 144 — les photos de la démo, préchargées pendant l'introduction du Live, se relisent
+      // dans le cache sans aller-retour (elles étaient servies « max-age=0, must-revalidate » :
+      // chaque affichage redemandait au serveur, 0,2 à 0,6 s de cadre vide en 4G).
+      {
+        source: '/demo/photos/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
+      },
       {
         source: '/synthese/:token',
         headers: [

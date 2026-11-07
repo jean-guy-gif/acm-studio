@@ -553,6 +553,9 @@ export type LiveTexts = {
     noteSaved: string;
     failedSave: string;
     connectionLost: string;
+    connectionLostTouch: (button: string, isRetry: boolean) => string;
+    saveFailedTouch: (button: string, isRetry: boolean) => string;
+    sessionExpired: string;
     saveFailed: string;
     analysisFailed: string;
     noteFailed: string;

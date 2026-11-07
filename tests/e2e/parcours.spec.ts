@@ -1614,7 +1614,12 @@ async function walkLive(
     await page.getByTestId('launch-for-real').click();
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
   } else {
+    // Mission 144 — sans numéro d'écran, un Live commencé reprend à la borne de la base, jamais
+    // à l'introduction ; le rejeu repart de l'introduction en la demandant.
     await page.goto(`/live/${projectId}`);
+    await expect(page.locator('main[data-live-page]')).toHaveCount(1);
+    await expect(page.locator('main[data-live-page="intro"]')).toHaveCount(0);
+    await page.goto(`/live/${projectId}?fiche=0`);
   }
 
   // Introduction

@@ -7,6 +7,7 @@ import {
 } from '@/features/live-seller/queries/get-live-seller-data';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
+import { LIVE_SIGNED_URL_TTL_SECONDS } from '@/features/subject-property-photos/constants';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
 import type { SellerPresentation } from '@/features/seller-presentation/types/seller-presentation';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
@@ -20,7 +21,16 @@ import { getSubjectProperty } from '@/features/subject-property/queries/get-subj
 // vit qu'ICI, côté serveur ; ce qui atteint le navigateur passe d'abord par la projection
 // ou par une autorisation gardée. Accès contrôlé : getProject est cadré sur l'agence de
 // l'appelant et renvoie null pour un dossier étranger ou absent.
-export async function loadLivePresentation(projectId: string): Promise<SellerPresentation | null> {
+// Mission 144 — `scene` : la scène du Live, dont les photos du bien sont signées pour tout le
+// rendez-vous (3 h) ; `reveal` : une révélation, qui ne livre qu'un concurrent ou la fourchette —
+// ni les photos du bien (aucune signature demandée au stockage), ni les diagnostics, ni la
+// copropriété, qu'elle ne livre pas.
+export type LivePresentationUse = 'default' | 'scene' | 'reveal';
+
+export async function loadLivePresentation(
+  projectId: string,
+  use: LivePresentationUse = 'default',
+): Promise<SellerPresentation | null> {
   const project = await getProject(projectId);
   if (!project) {
     return null;
@@ -39,11 +49,13 @@ export async function loadLivePresentation(projectId: string): Promise<SellerPre
     getSubjectProperty(projectId),
     getComparables(projectId),
     getSavedPricePositioning(projectId),
-    getSubjectPropertyDiagnostics(projectId),
-    getSubjectPropertyCondominium(projectId),
+    use === 'reveal' ? null : getSubjectPropertyDiagnostics(projectId),
+    use === 'reveal' ? null : getSubjectPropertyCondominium(projectId),
     getLiveComparableResponses(projectId),
     getLiveSellerSummary(projectId),
-    getPropertyPhotos(projectId),
+    use === 'reveal'
+      ? []
+      : getPropertyPhotos(projectId, use === 'scene' ? LIVE_SIGNED_URL_TTL_SECONDS : undefined),
   ]);
 
   const propertyPhotoUrls = propertyPhotos

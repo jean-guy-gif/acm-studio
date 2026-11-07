@@ -51,7 +51,7 @@ export async function deliverLiveFragment(
             : undefined,
       };
     }
-    const presentation = await loadLivePresentation(projectId);
+    const presentation = await loadLivePresentation(projectId, 'reveal');
     if (!presentation?.live) {
       // Mission 104 — plus de concurrent retenu en pleine séance : l'écran neutre de pause.
       redirect(`/live/${projectId}/pause`);
@@ -68,7 +68,7 @@ export async function deliverLiveFragment(
   if (!written.ok) {
     return { ok: false, error: written.error, fieldErrors: written.fieldErrors };
   }
-  const presentation = await loadLivePresentation(projectId);
+  const presentation = await loadLivePresentation(projectId, 'reveal');
   if (!presentation?.live) {
     // Mission 104 — plus de concurrent retenu en pleine séance : l'écran neutre de pause.
     redirect(`/live/${projectId}/pause`);

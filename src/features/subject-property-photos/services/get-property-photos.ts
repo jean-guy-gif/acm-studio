@@ -10,7 +10,10 @@ import { createClient } from '@/lib/supabase/server';
 // Reads the stored photo PATHS of a project's subject property and returns them
 // signed for read. Signing happens at every render (short-lived URLs, private
 // bucket) — never a public URL persisted anywhere. Scoped by agency + project.
-export async function getPropertyPhotos(projectId: string): Promise<SignedPhoto[]> {
+export async function getPropertyPhotos(
+  projectId: string,
+  expiresIn?: number,
+): Promise<SignedPhoto[]> {
   const profile = await getProfile();
   if (!profile) {
     return [];
@@ -28,7 +31,7 @@ export async function getPropertyPhotos(projectId: string): Promise<SignedPhoto[
   if (paths.length === 0) {
     return [];
   }
-  return signPropertyPhotos(supabase, paths);
+  return signPropertyPhotos(supabase, paths, expiresIn);
 }
 
 // photo_urls is a jsonb column; keep only non-empty string entries.

@@ -98,11 +98,11 @@ export function LivePageClosing({
       </div>
 
       {score === MAX_LAUNCH_READINESS ? (
-        <div className={`${panel} live-fade-up flex flex-col gap-2`}>
+        <div className={`${panel} live-enter flex flex-col gap-2`}>
           <h3 className={question}>{t.launch}</h3>
         </div>
       ) : score != null ? (
-        <div className={`${panel} live-fade-up flex flex-col gap-4`}>
+        <div className={`${panel} live-enter flex flex-col gap-4`}>
           <h3 className={question}>{t.missing}</h3>
           <label className="flex flex-col gap-2">
             <span className={fieldLabel}>{t.answerOptional}</span>

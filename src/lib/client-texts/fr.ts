@@ -233,7 +233,15 @@ export const FRENCH_TEXTS: ClientTexts = {
       noteSaved: 'Note enregistrée',
       failedSave: 'Une réponse n’a pas pu être enregistrée — touchez Réessayer',
       connectionLost: CONNECTION_LOST_MESSAGE,
-      saveFailed: 'Enregistrement impossible. Réessayez.',
+      // Mission 144 — les trois seuls messages d'échec du Live disent quoi faire.
+      // Mission 144 — le message nomme le bouton présent à l'écran.
+      // « touchez Réessayer » se suffit : pas de « pour réessayer » après lui.
+      connectionLostTouch: (button, isRetry) =>
+        `Connexion perdue — touchez ${button}${isRetry ? '' : ' pour réessayer'}`,
+      saveFailedTouch: (button, isRetry) =>
+        `Enregistrement impossible — touchez ${button}${isRetry ? '' : ' pour réessayer'}`,
+      sessionExpired: 'Session expirée — reconnectez-vous pour reprendre le Live',
+      saveFailed: 'Enregistrement impossible — touchez Valider pour réessayer',
       analysisFailed: 'Analyse indisponible. Réessayez.',
       noteFailed: 'L’enregistrement de la note a échoué. Réessayez.',
       durationMissing: 'Indiquez la durée que vous imaginez.',
