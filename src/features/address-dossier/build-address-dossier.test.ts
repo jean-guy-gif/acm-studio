@@ -116,8 +116,8 @@ describe('construire le dossier d’adresse', () => {
     expect(row).toMatchObject({ agency_id: AGENCY, project_id: PROJECT, built_by: 'u-advisor' });
     expect(row).not.toHaveProperty('built_at');
     expect(row.blocks.sales?.state).toBe('ok');
-    expect(row.blocks.sales?.data?.count).toBe(13);
-    expect(row.blocks.sales?.data?.stats?.median).toBe(4879);
+    expect(row.blocks.sales?.data?.count).toBe(12);
+    expect(row.blocks.sales?.data?.stats?.median).toBe(4896);
     expect(row.blocks.risks?.state).toBe('ok');
     expect(row.blocks.urbanism?.state).toBe('ok');
     // Une adresse inventée : ni DPE, ni parcelle, ni copropriété.

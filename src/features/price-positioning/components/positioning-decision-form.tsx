@@ -168,12 +168,17 @@ export function PositioningDecisionForm({
           <span className="text-zinc-500 stage:text-white/60">€</span>
         </div>
         <span className={shownToSeller}>Affiché au vendeur à la fin du Live</span>
-        {realSales ? (
-          <span className="text-sm text-zinc-700 stage:text-white/80" data-testid="real-sales-line">
-            {priceLine(realSales, advisorAnalysis)}
-          </span>
-        ) : null}
       </label>
+
+      {/* Mission 141 — hors du libellé du champ : une information, pas son nom. */}
+      {realSales ? (
+        <p
+          className="-mt-2 text-sm text-zinc-700 stage:text-white/80"
+          data-testid="real-sales-line"
+        >
+          {priceLine(realSales, advisorAnalysis)}
+        </p>
+      ) : null}
 
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>Justification (facultatif)</span>

@@ -3,6 +3,7 @@ import {
   placement,
   PLACEMENT_LABELS,
 } from '@/features/address-dossier/services/sales-stats';
+import type { AddressDossierView } from '@/features/address-dossier/components/address-dossier-block';
 import type { SalesStats } from '@/features/address-dossier/types';
 import { formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
@@ -44,4 +45,60 @@ export function priceLine(
       : `${base} · saisissez votre analyse de valeur pour la situer.`;
   }
   return `${base} · votre analyse de valeur : ${formatEuroPerSquareMeter(perM2)}, ${PLACEMENT_LABELS[placement(perM2, summary.stats)]}.`;
+}
+
+// Ce que dit « Avant le rendez-vous » : la ligne des ventes, ou pourquoi elle manque — jamais
+// « aucune vente » pour une source en panne, une lecture en échec ou une adresse changée (M98).
+export type RealSalesStatus =
+  { kind: 'line'; summary: RealSalesSummary } | { kind: 'note'; text: string; link: string | null };
+
+export function realSalesStatus(view: AddressDossierView, surface: number | null): RealSalesStatus {
+  if (view.state === 'none') {
+    return {
+      kind: 'note',
+      text: 'Ventes réelles autour du bien :',
+      link: 'construisez le dossier d’adresse sur l’onglet Bien vendeur',
+    };
+  }
+  if (view.state === 'unreadable') {
+    return {
+      kind: 'note',
+      text: 'Le dossier d’adresse n’a pas pu être lu : rechargez la page.',
+      link: null,
+    };
+  }
+  if (view.stale) {
+    return {
+      kind: 'note',
+      text: 'L’adresse ou le type du bien a changé depuis le dossier d’adresse :',
+      link: 'actualisez-le sur l’onglet Bien vendeur',
+    };
+  }
+  const sales = view.blocks.sales;
+  if (sales.state === 'ok') {
+    return {
+      kind: 'line',
+      summary: {
+        radiusM: sales.data.radiusM,
+        count: sales.data.count,
+        stats: sales.data.stats,
+        surface,
+      },
+    };
+  }
+  if (sales.state === 'unavailable') {
+    return {
+      kind: 'note',
+      text: 'Ventes réelles : la source n’a pas répondu,',
+      link: 'actualisez le dossier d’adresse sur l’onglet Bien vendeur',
+    };
+  }
+  return {
+    kind: 'note',
+    text:
+      sales.note === 'not_a_house_or_apartment'
+        ? 'Ventes réelles : seulement pour une maison ou un appartement.'
+        : 'Ventes réelles : aucune vente du même type à 1 km sur les trois dernières années.',
+    link: null,
+  };
 }

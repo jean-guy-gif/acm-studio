@@ -119,8 +119,10 @@ export function judgeRisks(responses: RisksResponses, inseeCode?: string): Risks
   return {
     communeRisks,
     seismicZone:
-      (seismic.data.find((row) => row.code_insee === inseeCode) ?? seismic.data[0])
-        ?.zone_sismicite ?? null,
+      (inseeCode == null
+        ? seismic.data[0]
+        : seismic.data.find((row) => row.code_insee === inseeCode)
+      )?.zone_sismicite ?? null,
     radonClass: radonClass === '1' || radonClass === '2' || radonClass === '3' ? radonClass : null,
     clayExposure: clay.exposition?.trim() || null,
     pollutedSites,

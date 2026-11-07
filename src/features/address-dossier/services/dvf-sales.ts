@@ -10,7 +10,8 @@ import type { GeoPoint } from '@/features/competitor-search/types';
 //
 // Une vente de plusieurs logements, ou d'un logement avec un local commercial, n'a pas de prix par
 // logement : elle est écartée (un prix au m² faux est pire qu'une vente de moins, M47). Une
-// dépendance (cave, garage) reste avec son logement. Seules les « Vente » comptent : ni
+// dépendance (cave, garage) reste avec son logement. Une vente symbolique (sous 100 €/m²) est
+// écartée. Seules les « Vente » comptent : ni
 // adjudication, ni échange, ni vente en l'état futur d'achèvement (le neuf).
 
 const DVF_TYPES: Record<string, DossierPropertyType> = {
@@ -19,6 +20,9 @@ const DVF_TYPES: Record<string, DossierPropertyType> = {
 };
 const OTHER_LOCALS = new Set(['Local industriel. commercial ou assimilé']);
 export const SALES_YEARS = 3;
+// Sous 100 €/m², ce n'est pas un prix de marché : une vente symbolique (à 1 €), une cession entre
+// proches ou une erreur de saisie ; elle est écartée, sinon elle fausserait la médiane.
+export const MIN_PRICE_PER_M2 = 100;
 
 // Un CSV simple, guillemets compris (un nom de voie peut porter une virgule).
 export function parseCsv(text: string): string[][] {
@@ -148,6 +152,7 @@ export function salesFromCsv(
     if (local.surface == null || local.surface <= 0 || local.point == null) continue;
     const distanceM = Math.round(distanceMeters(input.point, local.point));
     if (distanceM > WIDE_RADIUS_M) continue;
+    if (mutation.price / local.surface < MIN_PRICE_PER_M2) continue;
     sales.push({
       date: mutation.date,
       price: Math.round(mutation.price),
@@ -165,4 +170,21 @@ export function salesFromCsv(
 export function salesYears(today: Date): number[] {
   const year = today.getUTCFullYear();
   return Array.from({ length: SALES_YEARS + 1 }, (_, index) => year - SALES_YEARS + index);
+}
+
+// Le point du bien et huit points posés sur le cercle de 1 km : les communes qu'ils touchent sont
+// celles où une vente à 1 km peut se trouver.
+export function probePoints(point: GeoPoint): GeoPoint[] {
+  const latStep = WIDE_RADIUS_M / 111_320;
+  const lonStep = WIDE_RADIUS_M / (111_320 * Math.cos((point.lat * Math.PI) / 180));
+  return [
+    point,
+    ...Array.from({ length: 8 }, (_, index) => {
+      const angle = (index * Math.PI) / 4;
+      return {
+        lat: point.lat + latStep * Math.sin(angle),
+        lon: point.lon + lonStep * Math.cos(angle),
+      };
+    }),
+  ];
 }

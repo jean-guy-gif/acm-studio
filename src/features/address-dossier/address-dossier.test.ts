@@ -10,8 +10,14 @@ import {
   type AddressContext,
   type SourceReaders,
 } from '@/features/address-dossier/services/build-blocks';
-import { priceLine } from '@/features/address-dossier/services/dossier-texts';
-import { parseCsv, salesFromCsv, salesYears } from '@/features/address-dossier/services/dvf-sales';
+import { priceLine, realSalesStatus } from '@/features/address-dossier/services/dossier-texts';
+import {
+  parseCsv,
+  probePoints,
+  salesFromCsv,
+  salesYears,
+} from '@/features/address-dossier/services/dvf-sales';
+import { distanceMeters } from '@/features/competitor-search/services/proximity';
 import {
   judgeCondo,
   judgeDpe,
@@ -190,6 +196,8 @@ describe('les ventes DVF', () => {
       row({ id: 'm7', type: 'Maison', lat: 43.7468 }),
       row({ id: 'm8', type: 'Maison', date: '2023-11-06' }),
       row({ id: 'm9', type: 'Maison', surface: '' }),
+      // Une vente symbolique (1 €) : pas un prix de marché.
+      row({ id: 'm10', type: 'Maison', price: 1, surface: 101 }),
     ].join('\n');
     const sales = salesFromCsv([csv], { point, propertyType: 'house', today });
     expect(sales).toEqual([
@@ -500,5 +508,46 @@ describe('jamais une estimation', () => {
         .join('\n');
       expect(strings, path).not.toMatch(/estimation|fourchette/i);
     }
+  });
+});
+
+describe('les communes lues', () => {
+  it('le point et huit points sur le cercle de 1 km', () => {
+    const point = { lat: 48.8445, lon: 2.2801 };
+    const probes = probePoints(point);
+    expect(probes).toHaveLength(9);
+    for (const probe of probes.slice(1)) {
+      expect(Math.round(distanceMeters(point, probe) / 10) * 10).toBe(1000);
+    }
+  });
+});
+
+describe('« Avant le rendez-vous » dit pourquoi la ligne manque', () => {
+  const built = async (over: Partial<SourceReaders> = {}) =>
+    (await buildBlocks({ context, readers: readers(over), previous: null, now: NOW })).blocks;
+  it('jamais « aucune vente » pour une source en panne, une lecture en échec ou une adresse changée', async () => {
+    expect(realSalesStatus({ state: 'none' }, 100)).toMatchObject({
+      kind: 'note',
+      link: expect.stringContaining('construisez'),
+    });
+    expect(realSalesStatus({ state: 'unreadable' }, 100)).toMatchObject({
+      kind: 'note',
+      text: expect.stringContaining('rechargez'),
+    });
+    const ok = await built();
+    expect(
+      realSalesStatus({ state: 'built', builtAt: 'x', stale: true, blocks: ok }, 100),
+    ).toMatchObject({ kind: 'note', text: expect.stringContaining('a changé') });
+    expect(
+      realSalesStatus({ state: 'built', builtAt: 'x', stale: false, blocks: ok }, 100),
+    ).toMatchObject({ kind: 'line', summary: { radiusM: 500, count: 5, surface: 100 } });
+    const down = await built({ sales: async () => Promise.reject(new Error('DVF')) });
+    expect(
+      realSalesStatus({ state: 'built', builtAt: 'x', stale: false, blocks: down }, 100),
+    ).toMatchObject({ kind: 'note', text: expect.stringContaining('n’a pas répondu') });
+    const none = await built({ sales: async () => [] });
+    expect(
+      realSalesStatus({ state: 'built', builtAt: 'x', stale: false, blocks: none }, 100),
+    ).toMatchObject({ kind: 'note', text: expect.stringContaining('aucune vente du même type') });
   });
 });

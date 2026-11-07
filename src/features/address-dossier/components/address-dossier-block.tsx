@@ -353,9 +353,7 @@ function Dpe({ data, energyRating }: { data: DpeData; energyRating: string | nul
       >
         {entered == null
           ? 'Aucune classe DPE saisie sur la fiche.'
-          : entered === data.energy
-            ? `Vous avez saisi ${entered}, l’ADEME indique la même classe.`
-            : `Vous avez saisi ${entered}, l’ADEME indique ${data.energy}.`}
+          : `Vous avez saisi ${entered}, ${data.buildingType === 'maison' ? 'l’ADEME indique' : 'le DPE le plus récent de l’adresse (peut-être un autre logement) indique'} ${entered === data.energy ? 'la même classe' : data.energy}.`}
       </p>
     </div>
   );

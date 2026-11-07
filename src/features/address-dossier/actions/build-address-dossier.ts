@@ -127,7 +127,8 @@ export async function buildAddressDossier(projectId: string): Promise<BuildAddre
           city,
           propertyType: property.property_type,
         }),
-        blocks,
+        // La liste d'autorisation à l'écriture aussi : ce qui ne la passe pas s'écrit « en panne ».
+        blocks: readBlocks(blocks, new Date().toISOString()),
       },
       { onConflict: 'project_id' },
     );

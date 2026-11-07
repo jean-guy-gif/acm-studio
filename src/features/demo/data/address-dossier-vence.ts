@@ -23,7 +23,6 @@ export const DEMO_VENCE_SALES: readonly RealSale[] = [
   { date: '2024-05-29', price: 625000, surface: 146, pricePerM2: 4281, rooms: 6, distanceM: 238 },
   { date: '2024-05-14', price: 340000, surface: 73, pricePerM2: 4658, rooms: 3, distanceM: 195 },
   { date: '2024-04-29', price: 375000, surface: 77, pricePerM2: 4870, rooms: 4, distanceM: 292 },
-  { date: '2023-11-23', price: 1, surface: 101, pricePerM2: 0, rooms: 4, distanceM: 278 },
 ];
 
 export const DEMO_VENCE_RISKS: RisksData = {

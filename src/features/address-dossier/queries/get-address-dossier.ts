@@ -35,16 +35,15 @@ export async function getAddressDossier(projectId: string): Promise<LoadedAddres
 }
 
 // Ce que l'écran reçoit : le dossier relu, et s'il date d'une autre adresse ou d'un autre type.
-export async function addressDossierView(
-  projectId: string,
+export function addressDossierView(
+  loaded: LoadedAddressDossier,
   property: {
     address: string | null;
     postal_code: string | null;
     city: string | null;
     property_type: string | null;
   } | null,
-): Promise<AddressDossierView> {
-  const loaded = await getAddressDossier(projectId);
+): AddressDossierView {
   if (loaded.state !== 'built') return loaded;
   const now = addressFingerprint({
     address: property?.address ?? null,

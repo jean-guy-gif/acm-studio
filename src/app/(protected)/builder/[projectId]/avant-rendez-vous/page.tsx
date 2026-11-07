@@ -96,8 +96,11 @@ import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagn
 import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { formatDateTime } from '@/lib/format';
-import { addressDossierView } from '@/features/address-dossier/queries/get-address-dossier';
-import type { RealSalesSummary } from '@/features/address-dossier/services/dossier-texts';
+import {
+  addressDossierView,
+  getAddressDossier,
+} from '@/features/address-dossier/queries/get-address-dossier';
+import { realSalesStatus } from '@/features/address-dossier/services/dossier-texts';
 
 type BeforeMeetingPageProps = {
   params: Promise<{ projectId: string }>;
@@ -140,6 +143,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     launch,
     profile,
     buyers,
+    addressDossier,
   ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
@@ -160,18 +164,14 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       : getProfile().then((viewer) =>
           viewer ? getPropertyBuyers(viewer.agency_id, projectId, new Date()) : undefined,
         ),
+    getAddressDossier(projectId),
   ]);
   // Mission 141 — les ventes réelles du dossier d'adresse, à côté de l'analyse de valeur.
-  const addressDossier = await addressDossierView(projectId, property);
-  const realSales: RealSalesSummary | null =
-    addressDossier.state === 'built' && addressDossier.blocks.sales.state === 'ok'
-      ? {
-          radiusM: addressDossier.blocks.sales.data.radiusM,
-          count: addressDossier.blocks.sales.data.count,
-          stats: addressDossier.blocks.sales.data.stats,
-          surface: property?.surface_area ?? null,
-        }
-      : null;
+  const salesStatus = realSalesStatus(
+    addressDossierView(addressDossier, property),
+    property?.surface_area ?? null,
+  );
+  const realSales = salesStatus.kind === 'line' ? salesStatus.summary : null;
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({
@@ -415,18 +415,19 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 <PositioningReasons reasons={positioning?.reasons ?? []} />
               </div>
             )}
-            {/* Mission 141 — sans ventes réelles, le chemin vers le dossier d'adresse. */}
-            {realSales == null ? (
+            {/* Mission 141 — sans ventes réelles, pourquoi, et le chemin vers le dossier d'adresse. */}
+            {salesStatus.kind === 'note' ? (
               <p className={hintText} data-testid="real-sales-missing">
-                {addressDossier.state === 'built'
-                  ? 'Aucune vente réelle trouvée autour de l’adresse du bien.'
-                  : 'Ventes réelles autour du bien : '}
-                {addressDossier.state === 'built' ? null : (
-                  <Link href={`/builder/${projectId}/property`} className={link}>
-                    construisez le dossier d’adresse sur l’onglet Bien vendeur
-                  </Link>
-                )}
-                {addressDossier.state === 'built' ? null : '.'}
+                {salesStatus.text}
+                {salesStatus.link ? (
+                  <>
+                    {' '}
+                    <Link href={`/builder/${projectId}/property`} className={link}>
+                      {salesStatus.link}
+                    </Link>
+                    .
+                  </>
+                ) : null}
               </p>
             ) : null}
             {/* Mission 104 — côté conseiller seulement : qui n'entre pas dans le calcul. */}
