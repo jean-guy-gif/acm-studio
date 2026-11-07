@@ -28,7 +28,7 @@ import { FEEDBACK_MAX } from '@/features/buyer-presentation/services/visit-reque
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
     on
-      ? 'border-brand bg-brand text-white'
+      ? 'border-brand bg-brand-deep text-white'
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/20 stage:bg-transparent stage:text-white/80'
   }`;
 

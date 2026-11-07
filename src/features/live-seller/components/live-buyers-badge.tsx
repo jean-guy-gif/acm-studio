@@ -40,7 +40,7 @@ export function LiveBuyersDot({ count, onShow }: { count: number; onShow: () => 
               setBubble(false);
               onShow();
             }}
-            className="rounded-md bg-brand px-2 py-1 text-xs font-semibold text-white hover:bg-brand-deep"
+            className="rounded-md bg-brand-deep px-2 py-1 text-xs font-semibold text-white hover:bg-brand-darker"
           >
             Montrer au vendeur
           </button>

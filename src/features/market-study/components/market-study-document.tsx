@@ -19,7 +19,7 @@ import {
   SectionTitle,
 } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
-import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
 // Mission 131 — l'« Étude de marché », à la forme de la synthèse (M113) et du Point marché (M127,
@@ -30,9 +30,7 @@ import { displayPhotoUrl } from '@/lib/photo-url';
 const shortDay = (value: string | null): string | null => {
   if (!value) return null;
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+  return Number.isNaN(date.getTime()) ? null : formatDay(date, 'fr', 'numeric');
 };
 
 // « Maison · 5 pièces · 113 m² · Biot » → « Maison · 5 p. · 113 m² · Biot » (maquette M129).

@@ -110,7 +110,8 @@ describe('l’étape suivante', () => {
   it('ne se répète pas sur l’écran de l’étape, ni sur la fiche du bien', () => {
     const decide = nextDossierAction('p1', { ...state, hasDecision: false });
     expect(showsNextAction('/builder/p1/avant-rendez-vous', 'p1', decide)).toBe(false);
-    expect(showsNextAction('/builder/p1', 'p1', decide)).toBe(true);
+    // Mission 143 (B4) — la Vue d'ensemble porte son propre bloc « Prochaine étape ».
+    expect(showsNextAction('/builder/p1', 'p1', decide)).toBe(false);
     expect(showsNextAction('/builder/p1/property', 'p1', decide)).toBe(false);
     const find = nextDossierAction('p1', { ...state, exploitableCount: 0 });
     expect(showsNextAction('/builder/p1/comparables/find', 'p1', find)).toBe(false);

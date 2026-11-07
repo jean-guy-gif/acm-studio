@@ -263,7 +263,7 @@ function Results({ result }: { result: BuyerReconciliation }) {
                   ))}
                 </ul>
               ) : (
-                <p className="py-2 text-xs text-zinc-400 stage:text-white/40">Aucun.</p>
+                <p className="py-2 text-xs text-zinc-500 stage:text-white/40">Aucun.</p>
               )}
             </section>
           ))}

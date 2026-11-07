@@ -66,7 +66,7 @@ export function AdvisorProfileForm({
           {photoUrl ? (
             <img src={photoUrl} alt="Votre photo" className="h-20 w-20 rounded-full object-cover" />
           ) : (
-            <span className="flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-zinc-300 text-xs text-zinc-400 stage:border-white/20 stage:text-white/40">
+            <span className="flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-zinc-300 text-xs text-zinc-500 stage:border-white/20 stage:text-white/40">
               Aucune
             </span>
           )}

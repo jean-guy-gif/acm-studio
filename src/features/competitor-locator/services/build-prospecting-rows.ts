@@ -25,7 +25,7 @@ import {
   prospectingStatus,
   type ProspectingStatus,
 } from '@/features/prospecting/services/prospecting-status';
-import { formatEuro, formatPercent } from '@/lib/format';
+import { formatDay, formatEuro, formatPercent } from '@/lib/format';
 
 // Mission 75 — « Concurrents à prospecter » : la liste de tournée d'un dossier conclu « mandat
 // signé ». Pure : chaque ligne est composée de ce qu'ACM sait déjà (annonce, observations,
@@ -101,9 +101,7 @@ export type ProspectingRow = {
 
 const frDate = (iso: string): string => {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? iso
-    : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return Number.isNaN(date.getTime()) ? iso : formatDay(date, 'fr', 'long');
 };
 
 const days = (count: number): string => `${count} ${count > 1 ? 'jours' : 'jour'}`;

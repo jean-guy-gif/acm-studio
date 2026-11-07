@@ -25,7 +25,7 @@ import {
   budgetUsageLabel,
   budgetWarningLabel,
 } from '@/features/search-budget/services/budget';
-import { formatDateTime } from '@/lib/format';
+import { formatRelativeMoment } from '@/lib/format';
 
 // Mission 100 — la page « Erreurs », réservée aux comptes de ACM_OPERATOR_EMAILS, écran ET
 // adresse : pour tout autre compte (conseiller, manager), elle n'existe pas (404). Le garde
@@ -77,7 +77,7 @@ export default async function ErrorsPage() {
               <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm text-zinc-600 sm:grid-cols-2 stage:text-white/65">
                 <div className="flex gap-1.5">
                   <dt className="font-medium">Dernière fois :</dt>
-                  <dd>{formatDateTime(group.lastAt)}</dd>
+                  <dd>{formatRelativeMoment(group.lastAt)}</dd>
                 </div>
                 <div className="flex gap-1.5">
                   <dt className="font-medium">Page :</dt>

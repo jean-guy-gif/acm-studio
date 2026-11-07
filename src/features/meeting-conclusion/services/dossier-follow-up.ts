@@ -13,6 +13,7 @@ import {
   type SellerSaid,
 } from '@/features/meeting-conclusion/services/seller-said';
 import type { MeetingConclusion } from '@/features/meeting-conclusion/types';
+import { formatDay } from '@/lib/format';
 
 // Mission 96 — tout ce qu'un dossier conclu montre de plus au conseiller, calculé une fois côté
 // serveur et remis tel quel à l'écran : le bloc « Ce que le vendeur a dit », l'historique des
@@ -43,9 +44,7 @@ const meetingDay = (iso: string | null | undefined): string | null => {
     return null;
   }
   const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? null
-    : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+  return Number.isNaN(date.getTime()) ? null : formatDay(date, 'fr', 'dayMonth');
 };
 
 export function buildDossierFollowUp(input: DossierFollowUpInput): DossierFollowUp {

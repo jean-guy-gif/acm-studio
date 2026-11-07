@@ -20,6 +20,7 @@ import { resendInvitation } from '@/features/team/actions/resend-invitation';
 import { setMemberRole } from '@/features/team/actions/set-member-role';
 import type { Team } from '@/features/team/queries/get-team';
 import { roleLabel } from '@/features/team/services/role';
+import { formatRelativeDay } from '@/lib/format';
 
 type Feedback = { ok: boolean; message: string } | null;
 
@@ -146,7 +147,7 @@ export function TeamManagement({ team }: { team: Team }) {
                   <span className="text-xs text-zinc-500">
                     {inv.sentAt == null
                       ? 'L’e-mail n’est pas parti — renvoyez-la.'
-                      : `Invitée le ${new Date(inv.createdAt).toLocaleDateString('fr-FR')}`}
+                      : `Invitée ${formatRelativeDay(inv.createdAt)}`}
                   </span>
                 </span>
                 <span className="flex items-center gap-4">
@@ -195,7 +196,7 @@ export function TeamManagement({ team }: { team: Team }) {
                     <span className={`${badge} bg-brand-soft text-brand-deep`}>
                       {roleLabel(member.role)}
                     </span>
-                    {member.isSelf ? <span className="text-xs text-zinc-400">(vous)</span> : null}
+                    {member.isSelf ? <span className="text-xs text-zinc-500">(vous)</span> : null}
                     {isRemoved ? (
                       <span className={`${badge} bg-zinc-200 text-zinc-600`}>Retiré</span>
                     ) : null}

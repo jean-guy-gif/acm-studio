@@ -9,7 +9,7 @@ import {
 } from '@/features/prospecting/actions/resolve-unknown-commune';
 import type { UnknownCommuneOpposition } from '@/features/prospecting/queries/get-unknown-commune-oppositions';
 import { UNKNOWN_COMMUNE_NOTICE } from '@/features/prospecting/services/opposition-recheck';
-import { formatDateTime } from '@/lib/format';
+import { formatRelativeMoment } from '@/lib/format';
 
 // Mission 107 — pour le manager : chaque opposition dont la commune est restée inconnue, avec
 // l'adresse (sa clé), qui l'a inscrite et quand ; corriger la commune, ou marquer l'alerte
@@ -54,7 +54,7 @@ function AlertRow({ alert }: { alert: UnknownCommuneOpposition }) {
     <li className="flex flex-col gap-1.5 border-t border-amber-200 pt-2 first:border-0 first:pt-0">
       <span>
         <span className="font-medium">{alert.addressKey}</span> — commune tapée «
-        {alert.communeTyped ?? '—'} », inscrite le {formatDateTime(alert.requestedAt)}
+        {alert.communeTyped ?? '—'} », inscrite {formatRelativeMoment(alert.requestedAt)}
         {alert.author ? ` par ${alert.author}` : ''}
       </span>
       <form

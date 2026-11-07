@@ -117,11 +117,12 @@ export function formatPercent(value: number, options: FormatNumberOptions = {}):
 // Mission 140 — un jour pour le client, à Paris : « 6 novembre 2026 » / « 6 November 2026 »
 // (`long`), « 6 novembre » / « 6 November » (`dayMonth`), « 06/11/2026 » / « 06/11/2026 »
 // (`numeric`, jour d'abord en anglais britannique comme en français).
-export type DayStyle = 'long' | 'dayMonth' | 'numeric';
+export type DayStyle = 'long' | 'dayMonth' | 'numeric' | 'short';
 const DAY_OPTIONS: Record<DayStyle, Intl.DateTimeFormatOptions> = {
   long: { day: 'numeric', month: 'long', year: 'numeric' },
   dayMonth: { day: 'numeric', month: 'long' },
   numeric: { day: '2-digit', month: '2-digit', year: 'numeric' },
+  short: { day: '2-digit', month: '2-digit' },
 };
 export function formatDay(
   value: string | number | Date,
@@ -140,4 +141,68 @@ export function formatDay(
 export function formatDateTime(value: string | number | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? MISSING : date.toLocaleString(LOCALE);
+}
+
+// Mission 143 (C1) — les dates des écrans du CONSEILLER, qui se lisent d'un coup d'œil : «
+// aujourd'hui », « hier », « il y a 3 jours » (jusqu'à 6), puis « le 07/11 » dans l'année, « le
+// 07/11/2025 » au-delà ; une date à venir, « le 14/11 ». Avec l'heure : « aujourd'hui à 12 h 32 »,
+// « le 07/11 à 12 h 32 », jamais de secondes. À l'heure de Paris. Jamais devant le client ni dans
+// les documents (décision de Jean-Guy, 07/11) : ils gardent des dates absolues, dans sa langue.
+const PARIS_DAY = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Paris',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const parisDayOf = (date: Date) => PARIS_DAY.format(date); // AAAA-MM-JJ
+
+function daysBetweenParis(from: Date, to: Date): number {
+  const day = (date: Date) => Date.parse(`${parisDayOf(date)}T00:00:00Z`);
+  return Math.round((day(to) - day(from)) / 86_400_000);
+}
+
+export function formatRelativeDay(value: string | number | Date, now: Date = new Date()): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return MISSING;
+  const days = daysBetweenParis(date, now);
+  if (days === 0) return 'aujourd’hui';
+  if (days === 1) return 'hier';
+  if (days >= 2 && days <= 6) return `il y a ${days} jours`;
+  const [year, month, day] = parisDayOf(date).split('-');
+  return year === parisDayOf(now).slice(0, 4) ? `le ${day}/${month}` : `le ${day}/${month}/${year}`;
+}
+
+// « depuis aujourd’hui », « depuis hier », « depuis 3 jours », « depuis le 31/10 » (M143, C1).
+export function formatRelativeSince(value: string | number | Date, now: Date = new Date()): string {
+  const day = formatRelativeDay(value, now);
+  if (day === MISSING) return MISSING;
+  return `depuis ${day.replace(/^il y a /, '')}`;
+}
+
+export function formatRelativeMoment(
+  value: string | number | Date,
+  now: Date = new Date(),
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return MISSING;
+  const time = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  })
+    .format(date)
+    .replace(':', ' h ')
+    .replace(/^0(\d) h/, '$1 h');
+  const day = formatRelativeDay(date, now);
+  // « il y a 3 jours à 9 h » se lit mal : au-delà d'hier, le jour daté.
+  const dated = day.startsWith('il y a')
+    ? (() => {
+        const [year, month, dayOfMonth] = parisDayOf(date).split('-');
+        return year === parisDayOf(now).slice(0, 4)
+          ? `le ${dayOfMonth}/${month}`
+          : `le ${dayOfMonth}/${month}/${year}`;
+      })()
+    : day;
+  return `${dated} à ${time}`;
 }

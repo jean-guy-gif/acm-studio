@@ -64,7 +64,7 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
       await page.getByRole('button', { name: 'Ouvrir le dossier d’exemple' }).click();
       await expect(page).toHaveURL(/\/builder\/[0-9a-f-]{36}$/);
       projectUrl = page.url();
-      await expect(page.getByRole('heading', { name: EXAMPLE_NAME })).toBeVisible();
+      await expect(page.getByRole('heading', { name: EXAMPLE_NAME, exact: true })).toBeVisible();
       await expect(page.getByTestId('example-badge').first()).toHaveText('Exemple');
 
       const steps = page.getByTestId('dossier-steps');

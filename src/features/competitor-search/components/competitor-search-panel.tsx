@@ -259,7 +259,7 @@ function CandidateCard({
             fallbackClassName="h-36 w-full"
           />
         ) : (
-          <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-400 stage:bg-white/5 stage:text-white/40">
+          <div className="flex h-36 w-full items-center justify-center bg-zinc-50 text-xs text-zinc-500 stage:bg-white/5 stage:text-white/40">
             Photo indisponible
           </div>
         )}

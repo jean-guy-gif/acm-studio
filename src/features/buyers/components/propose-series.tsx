@@ -227,7 +227,7 @@ export function ProposeSeries({
   return (
     <section className={`${card} flex flex-col gap-4 p-5`} data-testid="propose-step">
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold tracking-[0.18em] text-zinc-400 uppercase">
+        <span className="text-xs font-semibold tracking-[0.18em] text-zinc-500 uppercase">
           {index + 1} sur {series.length}
         </span>
         <h2 className={sectionTitle} data-testid="propose-step-name">

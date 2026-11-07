@@ -14,14 +14,14 @@ import { SynthesisPhotoChoices } from '@/features/seller-synthesis/components/sy
 import { SynthesisPrintButton } from '@/features/seller-synthesis/components/synthesis-print-button';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { formatDay } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Point marché',
   robots: { index: false, follow: false },
 };
 
-const day = (value: string): string =>
-  new Date(value).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+const day = (value: string): string => formatDay(value, 'fr', 'numeric');
 
 // Mission 127 — le Point marché, côté conseiller : le point choisi (le plus récent par défaut),
 // à imprimer, ou à envoyer par un lien de 30 jours ; « Sans photo » par concurrent (M113).

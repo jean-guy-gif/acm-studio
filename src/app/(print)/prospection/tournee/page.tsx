@@ -28,6 +28,7 @@ import { buyerProspectingCard } from '@/features/buyer-prospecting/services/buye
 import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
+import { formatDay } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Ma tournée — ACM Studio' };
 
@@ -141,7 +142,7 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
         <h1 className="text-xl font-bold text-black">Ma tournée de prospection</h1>
         <p className="text-sm text-zinc-700">
           {seller ? `Pour : ${seller.name}` : TOUR_SCOPE_LABELS[scope]} · liste éditée le{' '}
-          {new Date().toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}
+          {formatDay(new Date(), 'fr', 'numeric')}
         </p>
         <p className="text-xs text-zinc-500">
           Document interne à l’agence. Propriétaires à adresse confirmée, par commune et par rue.

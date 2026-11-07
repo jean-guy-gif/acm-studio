@@ -361,7 +361,7 @@ export function BrandingForm({
               {light.url ? (
                 <img src={light.url} alt="Logo agence" className="h-8 w-auto object-contain" />
               ) : (
-                <span className="text-sm text-zinc-400">Logo (fond clair)</span>
+                <span className="text-sm text-zinc-500">Logo (fond clair)</span>
               )}
             </div>
           </div>

@@ -119,7 +119,7 @@ export function AccountMenu({
           ) : null}
         </span>
         <span className="truncate text-xs text-zinc-500 stage:text-white/50">{profileEmail}</span>
-        <span className="truncate text-xs text-zinc-400 stage:text-white/40">{agencyName}</span>
+        <span className="truncate text-xs text-zinc-500 stage:text-white/40">{agencyName}</span>
       </button>
 
       {open ? (

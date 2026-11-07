@@ -72,7 +72,7 @@ export function DormancyThresholds({ initial }: { initial: DormancyThresholds })
           type="button"
           onClick={save}
           disabled={pending || !changed || !valid}
-          className="w-fit rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-on-brand transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
+          className="w-fit rounded-md bg-brand-deep px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-darker disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? 'Enregistrement…' : 'Enregistrer les seuils'}
         </button>

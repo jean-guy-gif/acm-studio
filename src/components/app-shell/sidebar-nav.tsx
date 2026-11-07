@@ -63,7 +63,7 @@ export function SidebarNav({ workspaceMode = 'seller' }: { workspaceMode?: Works
               className={
                 active
                   ? 'hidden text-xs text-brand-deep/60 md:block stage:text-white/50'
-                  : 'hidden text-xs text-zinc-400 md:block stage:text-white/35'
+                  : 'hidden text-xs text-zinc-500 md:block stage:text-white/35'
               }
             >
               {item.hint}

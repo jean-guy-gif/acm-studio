@@ -303,7 +303,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     // Puis l'étape suivante dit quoi faire : lancer le Live.
     await page.goto(`/builder/${projectId}`);
-    await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
+    // Mission 143 (B4) — sur la Vue d'ensemble, la prochaine étape vit dans son bloc, un seul
+    // bouton plein ; l'en-tête ne la répète pas.
+    const nextStep = page.getByTestId('overview-next-step');
+    await expect(nextStep).toContainText('Faire le Live avec');
+    await expect(nextStep.getByText(/^Lancer le Live/).first()).toBeVisible();
+    await expect(page.getByTestId('next-step')).toHaveCount(0);
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
   });
@@ -946,7 +951,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // un bien retenu, retrouvé sur la fiche.
     await page.goto(buyerUrl);
     // Mission 130 B — la fiche : ses quatre étapes, UNE prochaine étape, ce qui s'est passé.
-    await expect(page.getByTestId('buyer-step')).toHaveCount(4);
+    // Mission 143 (B1) — cinq étapes : Sélection → Présentée → Visite → Offre → Compromis.
+    await expect(page.getByTestId('buyer-step')).toHaveCount(5);
     await expect(page.getByTestId('buyer-next-step')).toContainText('Trouver ses biens idéaux');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
     await page.getByTestId('buyer-next-button').click();
@@ -1645,10 +1651,16 @@ async function walkLive(
       await expectPriceHidden(page, competitor, 'Votre valeur perçue');
     }
   }
-  const perceivedInput = page.locator('input[name="seller_perceived_property_price"]');
+  const perceivedInput = page.locator('input[data-price-for="seller_perceived_property_price"]');
   const lockedAnswer = page.locator('[data-locked-answer]');
   if (firstPass) {
+    // Mission 143 (I6) — « Valider » est grisé tant que le prix est vide ; le prix se lit groupé
+    // pendant la frappe (« 350 000 »), au clavier numérique.
+    await expect(page.getByTestId('live-validate')).toBeDisabled();
+    await expect(perceivedInput).toHaveAttribute('inputmode', 'numeric');
     await perceivedInput.fill(String(PERCEIVED_PRICE));
+    await expect(perceivedInput).toHaveValue('350\u202f000');
+    await expect(page.getByTestId('live-validate')).toBeEnabled();
     await validate();
     // Mission 92 — le montant est redit en grand avant d'être enregistré : une seule
     // confirmation, dans l'écran.
@@ -1703,7 +1715,7 @@ async function walkLive(
       if (firstPass) await expectPriceHidden(page, competitor, 'rythme accéléré, écran 1');
       await expectAlone(page, others, `${label} · accéléré, écran 1`);
       await choose('Oui, un concurrent sérieux');
-      const quickGuess = page.locator('input[name="seller_estimated_listing_price"]');
+      const quickGuess = page.locator('input[data-price-for="seller_estimated_listing_price"]');
       if (firstPass) {
         if (index === 3) {
           // Sur tablette, la devinette reste à l'écran à côté de la fiche, sans défilement.
@@ -1817,7 +1829,7 @@ async function walkLive(
     await onScreen(`${label} · À quel prix ?`);
     if (firstPass) await expectPriceHidden(page, competitor, 'À quel prix ?');
     await expectAlone(page, others, `${label} · À quel prix ?`);
-    const guessInput = page.locator('input[name="seller_estimated_listing_price"]');
+    const guessInput = page.locator('input[data-price-for="seller_estimated_listing_price"]');
     if (firstPass) {
       await guessInput.fill(String(competitor.guess));
     } else {
@@ -1924,7 +1936,7 @@ async function walkLive(
   await onScreen('Votre prix après le marché');
   await expect(page.locator('[data-price-band]')).toHaveCount(0);
   await expect(page.getByText('Prix des concurrents')).toHaveCount(0);
-  const revisedInput = page.locator('input[name="seller_revised_property_price"]');
+  const revisedInput = page.locator('input[data-price-for="seller_revised_property_price"]');
   if (firstPass) {
     await expect(page.getByRole('button', { name: 'Passer', exact: true })).toBeVisible();
     await revisedInput.fill(String(REVISED_PRICE));
@@ -1994,7 +2006,7 @@ async function walkLive(
     dangerousLine,
     'Après rechargement, le concurrent le plus dangereux n’apparaît plus sur « Conclusion »',
   ).toBeVisible();
-  const commercialization = page.locator('input[name="commercialization_price"]');
+  const commercialization = page.locator('input[data-price-for="commercialization_price"]');
   await expect(commercialization, 'Le prix de commercialisation est pré-rempli').toHaveValue('');
   await commercialization.fill(String(COMMERCIALIZATION_PRICE));
   // Mission 94 — le prix saisi est situé parmi les biens révélés : un repère, sans conseil.

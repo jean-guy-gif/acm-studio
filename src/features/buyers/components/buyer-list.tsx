@@ -5,7 +5,6 @@ import { badgeBrand, badgeNeutral, card, emptyState } from '@/components/ui/styl
 import {
   buyerBudgetLabel,
   buyerCitiesLabel,
-  buyerDateLabel,
   buyerRoomsLabel,
   buyerStatusLabel,
   buyerTypesLabel,
@@ -18,6 +17,7 @@ import {
 } from '@/features/buyers/services/buyer-readiness';
 import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 import type { Buyer } from '@/features/buyers/types';
+import { formatRelativeSince } from '@/lib/format';
 
 // Mission 117 — la liste des acquéreurs : une ligne par fiche, nom, type, communes, budget,
 // pièces, dernière modification ; les miennes en tête. Un champ absent est omis.
@@ -121,7 +121,7 @@ export function BuyerList({
                   <div className="flex flex-col items-end gap-1 text-right">
                     <span className="text-xs text-zinc-500 stage:text-white/60">
                       Prochaine étape · {next.title}
-                      {next.since ? ` · depuis le ${buyerDateLabel(next.since)}` : ''}
+                      {next.since ? ` · ${formatRelativeSince(next.since)}` : ''}
                     </span>
                     <Link
                       href={next.primary.href}

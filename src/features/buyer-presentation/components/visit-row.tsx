@@ -62,9 +62,13 @@ export function VisitRow({
           </span>
         ) : null}
         <span className={badgeNeutral}>{SELECTION_SOURCE_LABELS[line.itemSource]}</span>
-        <span className={done ? badgeBrand : badgeNeutral} data-testid="visit-outcome">
-          {!done && letter?.waiting ? letter.waiting : VISIT_OUTCOME_LABELS[line.outcome]}
-        </span>
+        {/* Mission 143 (B1) — un seul badge, le plus avancé : l'offre acceptée remplace
+            « Offre envisagée ». */}
+        {offerAnswer?.decision === 'accepted' ? null : (
+          <span className={done ? badgeBrand : badgeNeutral} data-testid="visit-outcome">
+            {!done && letter?.waiting ? letter.waiting : VISIT_OUTCOME_LABELS[line.outcome]}
+          </span>
+        )}
         {offerAnswer ? (
           <OfferAnswerBadge decision={offerAnswer.decision} decidedAt={offerAnswer.decidedAt} />
         ) : null}

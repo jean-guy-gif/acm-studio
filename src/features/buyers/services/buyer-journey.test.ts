@@ -6,6 +6,7 @@ import {
   buyerNextAction,
   buyerTimeline,
   lastExchangeLabel,
+  saleInProgress,
 } from '@/features/buyers/services/buyer-journey';
 import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
 
@@ -73,27 +74,144 @@ describe('la prochaine étape d’un acquéreur', () => {
   });
 });
 
-describe('ses quatre étapes', () => {
+// Mission 143 (B1) — cinq étapes, lues à leur état le plus avancé.
+const OFFER = {
+  documentId: 'o1',
+  signedAt: '2026-11-07T10:00:00Z',
+  validUntil: '2026-11-10',
+  price: 1_600_000,
+  projectId: 'p1',
+  visitId: 'v1',
+  decision: null,
+  decidedAt: null,
+  buyerNotified: false,
+  notaryLinked: false,
+} as const;
+const accepted = { ...OFFER, decision: 'accepted' as const, decidedAt: '2026-11-07T12:00:00Z' };
+
+describe('ses cinq étapes (mission 143)', () => {
   it('l’étape du jour est la première qui n’est pas faite', () => {
     const steps = buyerJourney(facts({ selectionCount: 3 }));
     expect(steps.map((step) => [step.key, step.status, step.state])).toEqual([
-      ['ideal', 'done', '3 biens sélectionnés'],
+      ['selection', 'done', '3 biens'],
       ['present', 'current', 'à faire'],
-      ['answer', 'later', 'lien à envoyer'],
-      ['visits', 'later', '0 demandée'],
+      ['visit', 'later', 'à faire'],
+      ['offer', 'later', 'à faire'],
+      ['compromise', 'later', 'après l’offre acceptée'],
     ]);
   });
 
-  it('présentée, visites demandées puis faites', () => {
+  it('présentée, visites demandées puis faites, avec le bon signé', () => {
     const asked = buyerJourney(
       facts({ selectionCount: 3, presentedAt: '2026-11-04T09:00:00Z', visitsToOrganize: 1 }),
     );
-    expect(asked[3]).toMatchObject({ status: 'current', state: '1 demandée, à organiser' });
+    expect(asked[1]).toMatchObject({ status: 'done', state: 'le 04/11' });
+    expect(asked[2]).toMatchObject({ status: 'current', state: '1 demandée, à organiser' });
     const visited = buyerJourney(
-      facts({ selectionCount: 3, presentedAt: '2026-11-04T09:00:00Z', visitsDone: 2 }),
+      facts({
+        selectionCount: 3,
+        presentedAt: '2026-11-04T09:00:00Z',
+        visitsDone: 1,
+        lastVisitDoneAt: '2026-11-07T09:00:00Z',
+        voucherSigned: true,
+      }),
     );
-    expect(visited.every((step) => step.status === 'done')).toBe(true);
-    expect(visited[3].state).toBe('2 faites');
+    expect(visited[2]).toMatchObject({ status: 'done', state: 'le 07/11 · bon signé' });
+    expect(visited[3].status).toBe('current');
+  });
+
+  it('une offre acceptée coche tout ce qui la précède, même sans présentation notée', () => {
+    const steps = buyerJourney(facts({ selectionCount: 3, offer: accepted }), 'under_offer');
+    expect(steps.map((step) => step.status)).toEqual(['done', 'done', 'done', 'done', 'current']);
+    expect(steps[3].state).toBe('acceptée le 07/11');
+    expect(steps[4].state).toBe('à lancer');
+  });
+
+  it('une offre signée attend ; refusée, elle le dit ; l’offre tombée défait la vente', () => {
+    expect(buyerJourney(facts({ offer: OFFER }), 'visiting')[3]).toMatchObject({
+      status: 'current',
+      state: 'signée le 07/11',
+    });
+    expect(
+      buyerJourney(
+        facts({ offer: { ...OFFER, decision: 'refused', decidedAt: '2026-11-08T09:00:00Z' } }),
+        'visiting',
+      )[3],
+    ).toMatchObject({ status: 'current', state: 'refusée le 08/11' });
+    // « L'offre est tombée : revenir en visite » : l'acceptation reste en base, la vente non.
+    expect(buyerJourney(facts({ offer: accepted }), 'visiting')[3].status).toBe('current');
+  });
+
+  it('« A acheté » coche le compromis', () => {
+    const steps = buyerJourney(facts({ offer: accepted }), 'purchased');
+    expect(steps.every((step) => step.status === 'done')).toBe(true);
+    expect(steps[4].state).toBe('signé');
+  });
+});
+
+describe('la prochaine étape suit l’offre (mission 143)', () => {
+  const keller = { ...buyer, name: 'Famille Keller', status: 'under_offer' };
+  const NOW = new Date('2026-11-07T15:00:00Z');
+
+  it('offre acceptée : lancer le compromis, prévenir la famille, puis le notaire', () => {
+    const next = buyerNextAction(keller, facts({ selectionCount: 3, offer: accepted }), NOW);
+    expect(next).toMatchObject({
+      title: 'Lancer le compromis',
+      phrase: 'Prévenez la famille Keller, puis envoyez le dossier au notaire.',
+      primary: { label: 'Prévenir la famille Keller' },
+      secondary: { label: 'Transmettre au notaire' },
+      compromiseOfferId: 'o1',
+      since: accepted.decidedAt,
+    });
+  });
+
+  it('offre signée sans réponse : attendre le vendeur jusqu’à la fin de validité', () => {
+    const next = buyerNextAction(
+      { ...keller, status: 'visiting' },
+      facts({ selectionCount: 3, offer: OFFER }),
+      NOW,
+    );
+    expect(next.title).toBe('Attendre la réponse du vendeur');
+    expect(next.phrase).toContain('jusqu’au 10/11/2026');
+    expect(next.primary.href).toBe('/acquereurs/b1/offre/o1');
+  });
+
+  it('l’offre tombée, une nouvelle offre signée attend sa réponse', () => {
+    const fresh = { ...OFFER, documentId: 'o2', signedAt: '2026-11-07T14:00:00Z' };
+    const after = facts({ selectionCount: 3, offer: accepted, latestOffer: fresh });
+    const next = buyerNextAction({ ...keller, status: 'visiting' }, after, NOW);
+    expect(next.title).toBe('Attendre la réponse du vendeur');
+    expect(next.primary.href).toBe('/acquereurs/b1/offre/o2');
+    expect(buyerJourney(after, 'visiting')[3]).toMatchObject({
+      status: 'current',
+      state: 'signée le 07/11',
+    });
+    // Sous offre, l'acceptée reste l'offre qui compte.
+    expect(buyerNextAction(keller, after, NOW).title).toBe('Lancer le compromis');
+  });
+
+  it('« A acheté » n’est plus une vente en cours', () => {
+    expect(saleInProgress(facts({ offer: accepted }), 'purchased')).toBe(false);
+    expect(saleInProgress(facts({ offer: accepted }), 'under_offer')).toBe(true);
+  });
+
+  it('refusée, expirée, ou l’offre tombée : la prochaine étape d’avant l’offre', () => {
+    const base = { selectionCount: 3, presentedAt: '2026-11-04T09:00:00Z' };
+    const visiting = { ...keller, status: 'visiting' };
+    const refused = { ...OFFER, decision: 'refused' as const, decidedAt: '2026-11-07T12:00:00Z' };
+    expect(buyerNextAction(visiting, facts({ ...base, offer: refused }), NOW).title).toBe(
+      'Lui proposer d’autres biens',
+    );
+    expect(
+      buyerNextAction(
+        visiting,
+        facts({ ...base, offer: { ...OFFER, validUntil: '2026-11-06' } }),
+        NOW,
+      ).title,
+    ).toBe('Lui proposer d’autres biens');
+    expect(buyerNextAction(visiting, facts({ ...base, offer: accepted }), NOW).title).toBe(
+      'Lui proposer d’autres biens',
+    );
   });
 });
 

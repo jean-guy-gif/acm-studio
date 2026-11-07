@@ -13,6 +13,9 @@ import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-r
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
+import { CompromiseActions } from '@/features/buyers/components/compromise-actions';
+import { getSaleSeller } from '@/features/buyers/queries/get-sale-seller';
+import { MANDATE_TYPE_LABELS } from '@/features/meeting-conclusion/types';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
 import { BuyerReadinessActions } from '@/features/buyers/components/buyer-readiness-actions';
@@ -33,6 +36,7 @@ import {
   budgetGap,
   buyerJourney,
   buyerNextAction,
+  saleInProgress,
   buyerTimeline,
   lastExchangeLabel,
   type JourneyStatus,
@@ -157,8 +161,22 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       )
       .sort((a, b) => b.decidedAt.localeCompare(a.decidedAt))[0] ?? null;
   const deck = loadedDeck?.advisorDeck ?? null;
-  const journey = buyerJourney(facts);
-  const next = buyerNextAction(buyer, facts);
+  const now = new Date();
+  const journey = buyerJourney(facts, buyer.status);
+  const next = buyerNextAction(buyer, facts, now);
+  // Mission 143 (B1) — pendant une offre acceptée, la fiche suit la vente : sa recherche est en
+  // pause (sélection, « Prêt à visiter ? », « Rapprocher », suggestions masqués), tout revient si
+  // l'offre tombe (M138).
+  const sale = saleInProgress(facts, buyer.status) ? (facts.offer ?? null) : null;
+  const saleVisit = sale ? ownVisits.find((line) => line.id === sale.visitId) : undefined;
+  const saleSeller =
+    sale?.projectId && profile
+      ? await getSaleSeller(supabase, profile.agency_id, sale.projectId)
+      : null;
+  const salePhoto = saleVisit
+    ? deck?.items.find((item) => item.item.itemId === saleVisit.itemId)?.photos[0]
+    : undefined;
+  const saleVoucher = sale?.visitId ? vouchers.get(sale.visitId) : undefined;
   const words = deck?.words ?? proposedBuyerWords(buyer);
   const criteria = deckCriteria(buyer);
   // Mission 86, 117 — « Rapprocher » : ce que l'agence a déjà qui correspond à sa recherche.
@@ -197,7 +215,6 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   });
   // Mission 132 — le dernier échange avec l'acquéreur : le même calcul que « Prêt à visiter », la
   // liste et le Suivi (un lien envoyé ou un courrier préparé ne sont pas des échanges avec lui).
-  const now = new Date();
   const lastExchange = lastExchangeLabel(exchangeDates(buyer, facts), now, buyer.createdAt);
   const readiness = buyerReadiness(buyer, facts, now);
   const telHref = buyer.phone ? `tel:${buyer.phone.replace(/[^\d+]/g, '')}` : null;
@@ -274,14 +291,22 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             >
               {buyer.name}
             </h1>
-            <a href="#statut" className={`${badgeBrand} whitespace-nowrap`}>
-              {BUYER_STATUS_LABELS[buyer.status]} ▾
-            </a>
+            {/* Mission 143 (B1) — un seul badge d'état, le plus avancé : « Offre acceptée le … »
+                remplace « Sous offre » et « Prêt à visiter ». */}
+            {sale?.decidedAt ? (
+              <a href="#statut" data-testid="buyer-sale-badge">
+                <OfferAnswerBadge decision="accepted" decidedAt={sale.decidedAt} />
+              </a>
+            ) : (
+              <a href="#statut" className={`${badgeBrand} whitespace-nowrap`}>
+                {BUYER_STATUS_LABELS[buyer.status]} ▾
+              </a>
+            )}
             {/* Mission 138 — la dernière réponse du vendeur à une de ses offres. */}
-            {lastAnswer ? (
+            {lastAnswer && !sale ? (
               <OfferAnswerBadge decision={lastAnswer.answer} decidedAt={lastAnswer.decidedAt} />
             ) : null}
-            {readiness.state === 'ready' ? (
+            {sale ? null : readiness.state === 'ready' ? (
               <span
                 className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white"
                 data-testid="buyer-ready"
@@ -300,6 +325,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           {words ? (
             <p className="text-lg text-zinc-800 stage:text-white/85" data-testid="buyer-words">
               «&nbsp;{words}&nbsp;»
+            </p>
+          ) : null}
+          {sale ? (
+            <p className="text-sm text-zinc-600 stage:text-white/70" data-testid="buyer-paused">
+              Recherche en pause pendant la vente ·{' '}
+              <a href="#statut" className={link}>
+                la rouvrir
+              </a>
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2" data-testid="buyer-criteria">
@@ -347,9 +380,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         </div>
       </section>
 
-      {/* Ses quatre étapes. */}
+      {/* Ses cinq étapes, lues à leur état le plus avancé (M143). */}
       <ol
-        className={`${card} grid grid-cols-2 overflow-hidden md:grid-cols-4`}
+        className={`${card} grid grid-cols-2 overflow-hidden md:grid-cols-5`}
         data-testid="buyer-steps"
         aria-label="Les étapes de cet acquéreur"
       >
@@ -373,8 +406,84 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-5">
-          {/* Sa sélection. */}
-          {deck ? (
+          {/* Mission 143 (B1) — « La vente » : le bien de l'offre, son vendeur, le montant offert. */}
+          {sale ? (
+            <section
+              id="la-vente"
+              className={`${card} flex scroll-mt-6 flex-col gap-3 p-5`}
+              data-testid="buyer-sale"
+            >
+              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+                La vente
+              </h2>
+              <div className="flex flex-wrap items-start gap-4">
+                {salePhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={displayPhotoUrl(salePhoto)}
+                    alt=""
+                    className="h-20 w-28 shrink-0 rounded-lg bg-zinc-100 object-cover"
+                  />
+                ) : (
+                  <span className="h-20 w-28 shrink-0 rounded-lg bg-zinc-200" aria-hidden />
+                )}
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                    {saleVisit?.itemLabel ?? 'Le bien de l’offre'}
+                  </span>
+                  <span className="text-sm text-zinc-600 stage:text-white/70">
+                    {[
+                      saleSeller
+                        ? `Vendeur : ${saleSeller.sellerName}${
+                            saleSeller.mandateType
+                              ? ` (mandat ${MANDATE_TYPE_LABELS[saleSeller.mandateType].toLowerCase()})`
+                              : ''
+                          }`
+                        : null,
+                      saleVisit?.itemPrice != null
+                        ? `prix affiché ${formatEuro(saleVisit.itemPrice)}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </span>
+                {sale.price != null ? (
+                  <span className="flex shrink-0 flex-col items-end text-right">
+                    <span
+                      className="font-title text-2xl font-bold text-zinc-900 stage:text-white"
+                      data-testid="buyer-sale-amount"
+                    >
+                      {formatEuro(sale.price)}
+                    </span>
+                    <span className="text-sm text-zinc-500 stage:text-white/60">
+                      offre acceptée
+                    </span>
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {saleVoucher ? (
+                  <Link
+                    href={`/acquereurs/${buyer.id}/bon-de-visite/${saleVoucher.documentId}`}
+                    className={`${link} text-sm`}
+                  >
+                    Bon de visite signé
+                  </Link>
+                ) : null}
+                <Link
+                  href={`/acquereurs/${buyer.id}/offre/${sale.documentId}`}
+                  className={`${link} text-sm`}
+                  data-testid="buyer-sale-offer"
+                >
+                  Offre d’achat signée
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
+          {/* Sa sélection — en pause pendant la vente. */}
+          {sale ? null : deck ? (
             <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-selection">
               <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
                 Sa sélection · {deck.items.length} bien{deck.items.length > 1 ? 's' : ''}
@@ -475,7 +584,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
 
           {answers.lines.length > 0 ? (
             <div id="reponses" className="scroll-mt-6">
-              <BuyerAnswers buyerId={buyer.id} answers={answers.lines} suggestions={suggestions} />
+              <BuyerAnswers
+                buyerId={buyer.id}
+                answers={answers.lines}
+                suggestions={sale ? [] : suggestions}
+              />
             </div>
           ) : null}
 
@@ -664,81 +777,131 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <>
                 <h2 className="font-title text-xl font-bold">{next.title}</h2>
                 <p className="text-sm text-white/85">{next.phrase}</p>
-                <Link
-                  href={next.primary.href}
-                  data-testid="buyer-next-button"
-                  className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
-                >
-                  {next.primary.label}
-                </Link>
-                {next.secondary ? (
-                  <Link
-                    href={next.secondary.href}
-                    data-testid="buyer-next-secondary"
-                    className="self-center text-sm text-white underline"
-                  >
-                    {next.secondary.label}
-                  </Link>
-                ) : null}
+                {next.compromiseOfferId ? (
+                  <CompromiseActions
+                    offerId={next.compromiseOfferId}
+                    notifyLabel={next.primary.label}
+                  />
+                ) : (
+                  <>
+                    <Link
+                      href={next.primary.href}
+                      data-testid="buyer-next-button"
+                      className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
+                    >
+                      {next.primary.label}
+                    </Link>
+                    {next.secondary ? (
+                      <Link
+                        href={next.secondary.href}
+                        data-testid="buyer-next-secondary"
+                        className="self-center text-sm text-white underline"
+                      >
+                        {next.secondary.label}
+                      </Link>
+                    ) : null}
+                  </>
+                )}
               </>
             )}
           </section>
 
-          {/* Mission 132 — « Prêt à visiter » : son financement, et le dernier contact. */}
-          <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-readiness">
-            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-              Prêt à visiter ?
-            </h2>
-            <p className="text-sm text-zinc-600 stage:text-white/70">
-              Financement validé, un échange il y a moins de 30 jours et un budget renseigné.
-            </p>
-            <BuyerReadinessActions
-              buyerId={buyer.id}
-              financing={buyer.financing}
-              financingChangedAt={buyer.financingChangedAt}
-              contactedToday={
-                buyer.contactedAt != null && parisDay(new Date(buyer.contactedAt)) === parisDay(now)
-              }
-            />
-            {/* Mission 136 — la veille : une recherche par semaine, pour un acquéreur prêt. */}
-            {lastWatch.ok ? (
-              <p
-                className="text-sm text-zinc-600 stage:text-white/70"
-                data-testid="buyer-watch-line"
-              >
-                {watchLine({
-                  ready: readiness.state === 'ready',
-                  lastRunAt: lastWatch.lastRunAt,
-                  off: lastWatch.off,
-                  now,
-                })}
-              </p>
-            ) : null}
-          </section>
+          {/* Mission 143 (B1) — « Avant le compromis » : coché = fait, lu dans ce qui existe. */}
+          {sale ? (
+            <section
+              className={`${card} flex flex-col gap-2 p-5`}
+              data-testid="buyer-before-compromise"
+            >
+              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+                Avant le compromis
+              </h2>
+              <ul className="flex flex-col">
+                {[
+                  { label: 'Offre signée', done: true },
+                  { label: 'Acceptée par le vendeur', done: true },
+                  { label: 'Acquéreur prévenu', done: sale.buyerNotified },
+                  { label: 'Dossier transmis au notaire', done: sale.notaryLinked },
+                ].map((check) => (
+                  <li
+                    key={check.label}
+                    data-testid="buyer-before-compromise-item"
+                    data-done={check.done ? 'true' : 'false'}
+                    className="flex items-center gap-2 border-t border-zinc-100 py-2 text-sm first:border-0 stage:border-white/10"
+                  >
+                    <span
+                      className={check.done ? 'font-bold text-emerald-700' : 'text-zinc-500'}
+                      aria-label={check.done ? 'fait' : 'à faire'}
+                    >
+                      {check.done ? '✓' : '○'}
+                    </span>
+                    <span className="text-zinc-800 stage:text-white/85">{check.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-          {/* Rapprocher, gratuit. */}
-          <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-matching">
-            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-              Rapprocher
-            </h2>
-            <p className="text-sm text-zinc-600 stage:text-white/70">
-              Vos mandats, vendeurs à relancer et concurrents qui correspondent à sa recherche.
-              Gratuit.
-            </p>
-            {matches == null ? (
-              <p role="alert" className="text-sm font-semibold text-zinc-600 stage:text-white/70">
-                Correspondances illisibles pour l’instant : rechargez la page.
+          {/* Mission 132 — « Prêt à visiter » : son financement, et le dernier contact ; en pause
+              pendant la vente (M143). */}
+          {sale ? null : (
+            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-readiness">
+              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+                Prêt à visiter ?
+              </h2>
+              <p className="text-sm text-zinc-600 stage:text-white/70">
+                Financement validé, un échange il y a moins de 30 jours et un budget renseigné.
               </p>
-            ) : (
-              <Link
-                href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
-                className={`${btnSecondary} w-full`}
-                data-testid="buyer-matches-link"
-              >
-                Voir les correspondances · {matches}
-              </Link>
-            )}
-          </section>
+              <BuyerReadinessActions
+                buyerId={buyer.id}
+                financing={buyer.financing}
+                financingChangedAt={buyer.financingChangedAt}
+                contactedToday={
+                  buyer.contactedAt != null &&
+                  parisDay(new Date(buyer.contactedAt)) === parisDay(now)
+                }
+              />
+              {/* Mission 136 — la veille : une recherche par semaine, pour un acquéreur prêt. */}
+              {lastWatch.ok ? (
+                <p
+                  className="text-sm text-zinc-600 stage:text-white/70"
+                  data-testid="buyer-watch-line"
+                >
+                  {watchLine({
+                    ready: readiness.state === 'ready',
+                    lastRunAt: lastWatch.lastRunAt,
+                    off: lastWatch.off,
+                    now,
+                  })}
+                </p>
+              ) : null}
+            </section>
+          )}
+
+          {/* Rapprocher, gratuit ; en pause pendant la vente (M143). */}
+          {sale ? null : (
+            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-matching">
+              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+                Rapprocher
+              </h2>
+              <p className="text-sm text-zinc-600 stage:text-white/70">
+                Vos mandats, vendeurs à relancer et concurrents qui correspondent à sa recherche.
+                Gratuit.
+              </p>
+              {matches == null ? (
+                <p role="alert" className="text-sm font-semibold text-zinc-600 stage:text-white/70">
+                  Correspondances illisibles pour l’instant : rechargez la page.
+                </p>
+              ) : (
+                <Link
+                  href={`/acquereurs/rapprochement?acquereur=${buyer.id}#rapprochement`}
+                  className={`${btnSecondary} w-full`}
+                  data-testid="buyer-matches-link"
+                >
+                  Voir les correspondances · {matches}
+                </Link>
+              )}
+            </section>
+          )}
 
           <section id="statut" className="flex scroll-mt-6 flex-col gap-3 text-sm">
             <BuyerStatusActions buyer={buyer} />

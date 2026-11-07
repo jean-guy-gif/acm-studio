@@ -42,7 +42,7 @@ export function ComparableSelectionSummaryView({
     <section className="flex flex-col gap-3">
       <h2 className={sectionTitle}>
         Synthèse{' '}
-        <span className="text-base font-medium text-zinc-400 stage:text-white/50">
+        <span className="text-base font-medium text-zinc-500 stage:text-white/50">
           · {summary.selectedCount} retenu{summary.selectedCount > 1 ? 's' : ''}
         </span>
       </h2>

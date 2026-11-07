@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseBuyerInput } from '@/features/buyers/schemas/buyer-input';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
+import { DEMO_KELLER_REFUSALS_DAYS_AGO } from '@/features/demo/services/demo-seed';
 import {
   reconcileBuyer,
   type BuyerCandidate,
@@ -112,5 +113,12 @@ describe('les acquéreurs prêts à visiter de la démo', () => {
       expect(buyer.budgetMax).toBeLessThanOrEqual(800_000);
     }
     expect(vence.find((buyer) => buyer.financing !== 'validated')?.name).toBe('M. Fontaine');
+  });
+});
+
+describe('la fiche des Keller (mission 143)', () => {
+  it('est créée avant leur première sélection, présentée il y a 21 jours', () => {
+    const keller = DEMO_BUYERS.find((buyer) => buyer.name === 'Famille Keller');
+    expect(keller?.createdDaysAgo).toBeGreaterThan(DEMO_KELLER_REFUSALS_DAYS_AGO);
   });
 });

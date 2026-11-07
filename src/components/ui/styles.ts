@@ -10,7 +10,7 @@
  * ------------------------------------------------------------------------- */
 
 export const btnPrimary =
-  'inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-all hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+  'inline-flex items-center justify-center gap-2 rounded-xl bg-brand-deep px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
 
 export const btnSecondary =
   'inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/5 stage:text-white/85 stage:hover:border-brand stage:hover:text-white';
@@ -51,14 +51,14 @@ export const pageSubtitle = 'text-sm text-zinc-500 stage:text-white/60';
 
 // Sur-titre discret au-dessus du titre (« DOSSIER VENDEUR », « ÉTAPE 2 »…).
 export const kickerLabel =
-  'text-xs font-semibold tracking-[0.2em] uppercase text-zinc-400 stage:text-white/45';
+  'text-xs font-semibold tracking-[0.2em] uppercase text-zinc-500 stage:text-white/45';
 
 export const sectionTitle =
   'font-title text-xl leading-snug font-semibold text-zinc-900 stage:text-white';
 
 // Étiquette au-dessus d'une valeur (fiches, résumés).
 export const metaLabel =
-  'text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-zinc-400 stage:text-white/50';
+  'text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-zinc-500 stage:text-white/50';
 
 export const metaValue = 'font-title text-lg font-semibold text-zinc-900 stage:text-white';
 
@@ -69,7 +69,7 @@ export const hintText = 'text-sm text-zinc-500 stage:text-white/60';
  * ------------------------------------------------------------------------- */
 
 export const inputBase =
-  'rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-brand focus:ring-2 focus:ring-brand/30 stage:border-white/15 stage:bg-white/10 stage:text-white stage:placeholder:text-white/35';
+  'rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand focus:ring-2 focus:ring-brand/30 stage:border-white/15 stage:bg-white/10 stage:text-white stage:placeholder:text-white/35';
 
 export const fieldLabel = 'text-sm font-medium text-zinc-600 stage:text-white/70';
 

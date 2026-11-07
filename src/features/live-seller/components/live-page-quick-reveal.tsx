@@ -108,7 +108,7 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
                     />
                     <span className={bigInputUnit}>{texts.live.duration.unit}</span>
                   </div>
-                  <span className="text-sm text-zinc-400 stage:text-white/50">
+                  <span className="text-sm text-zinc-500 stage:text-white/50">
                     {t.durationNote}
                   </span>
                 </label>

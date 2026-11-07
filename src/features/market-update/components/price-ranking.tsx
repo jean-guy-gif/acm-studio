@@ -200,7 +200,7 @@ export function RankingSteps({
   const t = rankingTexts(language);
   const { steps } = ranking;
   const arrow = (
-    <span className="hidden self-center text-zinc-400 sm:block" aria-hidden>
+    <span className="hidden self-center text-zinc-500 sm:block" aria-hidden>
       →
     </span>
   );

@@ -18,11 +18,15 @@ describe('§7.5 — le champ prix de commercialisation est vide à l’ouverture
   it('rend un champ vide, jamais pré-rempli, quel que soit le dossier', () => {
     for (const projectId of ['p1', 'un-autre-dossier']) {
       const html = renderToStaticMarkup(createElement(LiveCommercializationPrice, { projectId }));
-      const input = html.match(/<input[^>]*commercialization_price[^>]*>/)?.[0] ?? '';
-      expect(input).toContain('name="commercialization_price"');
-      // Vide : value="" présent, et jamais une valeur non vide.
-      expect(input).toMatch(/value=""/);
-      expect(input).not.toMatch(/value="[^"]+"/);
+      // Mission 143 (I6) — le champ visible (chiffres groupés) et la valeur envoyée, cachée.
+      const inputs = html.match(/<input[^>]*commercialization_price[^>]*>/g) ?? [];
+      expect(inputs).toHaveLength(2);
+      expect(inputs.some((input) => input.includes('name="commercialization_price"'))).toBe(true);
+      for (const input of inputs) {
+        // Vide : value="" présent, et jamais une valeur non vide.
+        expect(input).toMatch(/value=""/);
+        expect(input).not.toMatch(/value="[^"]+"/);
+      }
     }
   });
 });

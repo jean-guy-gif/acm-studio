@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
@@ -19,6 +21,7 @@ import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro } from '@/lib/format';
+import { PriceInput } from '@/features/live-seller/components/price-input';
 
 // MISSION 95 — rythme accéléré, écran 1 sur 2 (à partir du 4e concurrent) : la fiche du
 // concurrent, la question du sérieux et la devinette du prix, sur le MÊME écran. Le vendeur a
@@ -31,6 +34,10 @@ import { formatEuro } from '@/lib/format';
 export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
   const response = entry.response;
   const currentAnswer = response?.seller_serious_competitor ?? '';
+  // Mission 143 (I6) — tant que le vendeur n'a pas dit « Non », la devinette est demandée :
+  // « Valider » reste grisé sans prix ; « Non » efface le prix tapé (M104), à l'écran aussi.
+  const [serious, setSerious] = useState<string>(currentAnswer);
+  const [cleared, setCleared] = useState(0);
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const { language, texts } = useLiveTexts();
   const t = texts.live.quick;
@@ -68,13 +75,11 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
                     value={value}
                     defaultChecked={currentAnswer === value}
                     className="sr-only"
-                    onChange={(event) => {
-                      // Mission 104 — « Non » dispense de deviner : un prix déjà tapé s'efface.
-                      if (value !== 'no') return;
-                      const price = event.currentTarget.form?.elements.namedItem(
-                        'seller_estimated_listing_price',
-                      );
-                      if (price instanceof HTMLInputElement) price.value = '';
+                    onChange={() => {
+                      setSerious(value);
+                      // Mission 104 — « Non » dispense de deviner : un prix déjà tapé s'efface
+                      // (le champ visible et la valeur envoyée, remis à neuf).
+                      if (value === 'no') setCleared((count) => count + 1);
                     }}
                   />
                   {texts.live.competition.serious[value]}
@@ -89,18 +94,16 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
             <label className="flex flex-col gap-2">
               <span className={statLabel}>{texts.live.price.label}</span>
               <div className="flex items-center gap-3">
-                <input
-                  type="number"
+                <PriceInput
+                  key={cleared}
                   name="seller_estimated_listing_price"
-                  min={0}
-                  step="any"
-                  placeholder="0"
-                  defaultValue=""
+                  language={language}
                   className={bigInput}
+                  required={serious !== 'no'}
                 />
                 <span className={bigInputUnit}>€</span>
               </div>
-              <span className="text-sm text-zinc-400 stage:text-white/50">{t.nextScreen}</span>
+              <span className="text-sm text-zinc-500 stage:text-white/50">{t.nextScreen}</span>
             </label>
           )}
         </form>
