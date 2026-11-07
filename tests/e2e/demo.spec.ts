@@ -859,7 +859,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       const before = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-      expect(before).toHaveLength(5);
+      expect(before).toHaveLength(6);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       const confirm = page.getByTestId('demo-reset-confirm');
       await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
@@ -884,7 +884,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.locator('p[role="alert"]')).toHaveCount(0);
       await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
       const after = await hrefs();
-      for (const href of after.slice(0, 4)) expect(before).not.toContain(href);
+      for (const href of after.slice(0, 5)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       await expectDemoBuyers(page);
