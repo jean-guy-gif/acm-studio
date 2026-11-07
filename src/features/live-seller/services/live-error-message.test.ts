@@ -64,8 +64,12 @@ describe('les messages d’échec du Live, devant le vendeur', () => {
     expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.revealDuration)).toContain(
       'touchez Révéler la durée pour',
     );
-    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.retry)).toContain(
-      'touchez Réessayer pour',
+    // Le bouton s'appelle déjà « Réessayer » : le message s'arrête là.
+    expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.retry)).toBe(
+      'Enregistrement impossible — touchez Réessayer',
+    );
+    expect(liveErrorMessage(CONNECTION_LOST_MESSAGE, 'fr', fr, fr.saveFailed, fr.retry)).toBe(
+      'Connexion perdue — touchez Réessayer',
     );
     expect(liveErrorMessage(undefined, 'fr', fr, fr.saveFailed, fr.skip)).toContain(
       'touchez Passer pour',

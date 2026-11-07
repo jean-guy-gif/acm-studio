@@ -26,8 +26,9 @@ export type LiveErrorTexts = {
   connectionLost: string;
   sessionExpired: string;
   validate: string;
-  connectionLostTouch: (button: string) => string;
-  saveFailedTouch: (button: string) => string;
+  retry: string;
+  connectionLostTouch: (button: string, isRetry: boolean) => string;
+  saveFailedTouch: (button: string, isRetry: boolean) => string;
 };
 
 // « Valider et continuer → » se dit « Valider » ; « Terminer le rendez-vous → », tel quel.
@@ -51,5 +52,9 @@ export function liveErrorMessage(
   const kind = liveErrorKind(error);
   if (kind === 'session') return texts.sessionExpired;
   const button = buttonName(buttonLabel);
-  return kind === 'connection' ? texts.connectionLostTouch(button) : texts.saveFailedTouch(button);
+  // Le bouton s'appelle déjà « Réessayer » : « touchez Réessayer », sans « pour réessayer ».
+  const isRetry = button === buttonName(texts.retry);
+  return kind === 'connection'
+    ? texts.connectionLostTouch(button, isRetry)
+    : texts.saveFailedTouch(button, isRetry);
 }
