@@ -240,6 +240,21 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   après coup : la traduction jointe attend une migration (`docs/IDEES.md`). Suite e2e : 16 sur 16
   (14,6 min) au premier passage ; les deux specs de langue en 1,4 min.
 
+- 07/11 · M141 · Les sources publiques se mesurent avant de coder, puis se rejouent en vrai sur
+  deux ou trois adresses (Vence, Paris 15e, Boulogne) par un test jetable qui appelle les vraies
+  lectures hors de la base. Quatre écarts ne se voyaient qu'ainsi :
+  - les argiles répondent par un corps vide hors zone (ce n'est pas une panne) ;
+  - la sismicité rend aussi les communes voisines ;
+  - le registre des copropriétés écrit « 32 r de la convention » ;
+  - geo.api rend « Paris » quand les fichiers de ventes sont par arrondissement.
+
+  Une vente symbolique à 1 € cassait la relecture du bloc : la liste d'autorisation passe aussi à
+  l'écriture. Les durées de construction : 3 s à Paris 15e, 6 s à Vence, 13 s à Boulogne.
+- 07/11 · M141 · Le client factice des tests (`fake-supabase`) note tous les appels d'un client
+  dans une seule liste : trois lectures lancées ensemble par `Promise.all` y répondent toutes comme
+  la dernière. L'action lit donc à la suite, le dossier d'abord. Suite e2e : 17 sur 17 au premier
+  passage (16,5 min, en quatre groupes de moins de 10 minutes pour rester au premier plan).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
