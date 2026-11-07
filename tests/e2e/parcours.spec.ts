@@ -303,7 +303,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
     // Puis l'étape suivante dit quoi faire : lancer le Live.
     await page.goto(`/builder/${projectId}`);
-    await expect(page.getByTestId('next-step')).toHaveText('Lancer le Live →');
+    // Mission 143 (B4) — sur la Vue d'ensemble, la prochaine étape vit dans son bloc, un seul
+    // bouton plein ; l'en-tête ne la répète pas.
+    const nextStep = page.getByTestId('overview-next-step');
+    await expect(nextStep).toContainText('Faire le Live avec');
+    await expect(nextStep.getByText(/^Lancer le Live/).first()).toBeVisible();
+    await expect(page.getByTestId('next-step')).toHaveCount(0);
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
   });
