@@ -953,9 +953,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Mission 130 B — la fiche : ses quatre étapes, UNE prochaine étape, ce qui s'est passé.
     // Mission 143 (B1) — cinq étapes : Sélection → Présentée → Visite → Offre → Compromis.
     await expect(page.getByTestId('buyer-step')).toHaveCount(5);
-    await expect(page.getByTestId('buyer-next-step')).toContainText('Trouver ses biens idéaux');
+    // Mission 145 (partie A, I2) — prêt à visiter, il correspond au mandat signé de ce passage :
+    // sa prochaine étape est de le lui proposer ; « Trouver d'autres biens » mène aux biens idéaux.
+    await expect(page.getByTestId('buyer-next-step')).toContainText(
+      `Lui proposer l’appartement de ${dossierName}`,
+    );
+    await expect(page.getByTestId('buyer-next-button')).toHaveAttribute(
+      'href',
+      /\/acquereurs\/proposer\?bien=project%3A/,
+    );
     await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
-    await page.getByTestId('buyer-next-button').click();
+    await page.getByTestId('buyer-next-secondary').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
     await expect(page.getByTestId('ideal-title')).toContainText(buyerName);
     const agencyHits = page.getByTestId('ideal-agency-hit');
