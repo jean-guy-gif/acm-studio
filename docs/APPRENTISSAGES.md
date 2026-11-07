@@ -250,6 +250,7 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 
   Une vente symbolique à 1 € cassait la relecture du bloc : la liste d'autorisation passe aussi à
   l'écriture. Les durées de construction : 3 s à Paris 15e, 6 s à Vence, 13 s à Boulogne.
+
 - 07/11 · M141 · Le client factice des tests (`fake-supabase`) note tous les appels d'un client
   dans une seule liste : trois lectures lancées ensemble par `Promise.all` y répondent toutes comme
   la dernière. L'action lit donc à la suite, le dossier d'abord. Suite e2e : 17 sur 17 au premier
