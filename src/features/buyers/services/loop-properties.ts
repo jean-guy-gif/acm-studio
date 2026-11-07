@@ -12,12 +12,11 @@ import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // Mission 134 — « Personne n'est oublié » : chaque nouveau bien appelle les acquéreurs de l'agence
-// qui lui correspondent (la règle de la 133, `propertyBuyers`). Pur.
-//   • un mandat signé, tant qu'il l'est ;
-//   • un vendeur à relancer qui a un prix (à proposer après son accord) ;
-//   • un concurrent retenu sur un dossier vendeur, un nouveau venu retenu (M127 B), un bien démarché
-//     depuis une recherche acquéreur (M120) : dans les 14 jours qui suivent son arrivée — sinon
-//     chaque concurrent retenu depuis des mois ferait une tâche (décision du 06/11).
+// qui lui correspondent (la règle de la 133, `propertyBuyers`). Pur. Mission 145 (partie A) — seul
+// un mandat signé, sans offre acceptée, se propose (décision de Jean-Guy, 07/11, `proposable.ts`) :
+// le catalogue ne produit plus que l'origine « mandate ». Les autres origines (vendeur à relancer,
+// concurrent, nouveau venu, bien démarché) restent dans le type : des envois notés avant la mission
+// les portent (`buyer_proposals.origin`).
 // Un bien est UN bien, quel que soit le nombre de dossiers où il est retenu (clé d'annonce, M47,
 // M98) ; un acquéreur à qui il a été proposé (« Envoyé », noté) n'y figure plus — une sélection seule
 // ne compte pas : « Passer » n'écrit rien (décision du 06/11) — ; la tâche se vide au fil des envois,
@@ -148,6 +147,37 @@ export function loopBuyers(
       .filter(({ buyer }) => alreadyContacted(item, buyer.id, contacts))
       .map((entry) => ({ entry, sentAt: sentOf?.get(entry.buyer.id) ?? null })),
   };
+}
+
+// Mission 145 (partie A, I2) — un mandat à proposer à un acquéreur, vu de sa fiche.
+export type BuyerLoopProposal = {
+  key: string;
+  sellerName: string | null;
+  property: BuyerLoopProperty;
+  price: number | null;
+  // La signature du mandat : le plus récent d'abord, et « Mandat signé le … ».
+  bornAt: string;
+};
+
+export function loopProposalOf(item: LoopProperty): BuyerLoopProposal {
+  return {
+    key: item.key,
+    sellerName: item.sellerName,
+    property: item.property,
+    price: item.price,
+    bornAt: item.bornAt,
+  };
+}
+
+// « la maison de M. et Mme Lopez », « l'appartement d'Anne Martin », « le bien de M. Lefebvre ».
+export function proposalTarget(
+  proposal: Pick<BuyerLoopProposal, 'sellerName' | 'property'>,
+): string {
+  const kind = propertyKind(proposal.property.propertyType);
+  const what = kind === 'house' ? 'la maison' : kind === 'apartment' ? 'l’appartement' : 'le bien';
+  const seller = proposal.sellerName?.trim();
+  if (!seller) return what;
+  return /^[aeiouyàâéèêëîïôûü]/i.test(seller) ? `${what} d’${seller}` : `${what} de ${seller}`;
 }
 
 // La tâche d'un nouveau bien : le nombre d'acquéreurs PRÊTS à qui il n'a pas été proposé.

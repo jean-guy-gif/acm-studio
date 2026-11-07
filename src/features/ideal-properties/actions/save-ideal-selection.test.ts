@@ -19,6 +19,7 @@ vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 
 const { saveIdealSelection } =
   await import('@/features/ideal-properties/actions/save-ideal-selection');
+const { NOT_PROPOSABLE } = await import('@/features/ideal-properties/services/ideal-agency');
 const { DEMO_LISTINGS } = await import('@/features/demo/data/scenarios');
 const { demoListingUrl } = await import('@/features/demo/services/demo-urls');
 
@@ -78,6 +79,10 @@ describe('saveIdealSelection', () => {
     const fake = fakeSupabase((calls) => {
       const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
       if (table === 'buyers') return { data: { id: BUYER } };
+      // Mission 145 — p-1 est un mandat signé, sans offre.
+      if (table === 'project_meeting_conclusions')
+        return { data: [{ project_id: 'p-1', outcome: 'signed' }] };
+      if (table === 'buyer_documents') return { data: [] };
       if (table === 'buyer_selections')
         return {
           data: {
@@ -262,5 +267,83 @@ describe('saveIdealSelection', () => {
     expect(rows[0]!.price_seen_on).toBe('2026-10-20');
     expect(rows[0]!.imported).toEqual(previousRow.imported);
     expect(result.toImport).toEqual([]);
+  });
+});
+
+// Mission 145 (partie A) — un bien de l'agence nouveau dans la sélection doit être un mandat signé
+// sans offre acceptée (décision de Jean-Guy, 07/11) : un vendeur à relancer, un dossier sans mandat
+// ou un mandat sous offre acceptée sont refusés, rien n'est écrit ; un bien déjà retenu reste.
+describe('saveIdealSelection : seul un mandat signé sans offre acceptée', () => {
+  beforeEach(() => {
+    state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
+    state.demo = false;
+  });
+
+  const clientWith = (
+    conclusions: { project_id: string; outcome: string }[],
+    offers: unknown[],
+    previousItems: { source: string; reference: string }[] = [],
+  ) =>
+    fakeSupabase((calls) => {
+      const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
+      if (table === 'buyers') return { data: { id: BUYER } };
+      if (table === 'project_meeting_conclusions') return { data: conclusions };
+      if (table === 'buyer_documents') return { data: offers };
+      if (table === 'buyer_selections' && !calls.some((call) => call.method === 'insert'))
+        return { data: previousItems.length > 0 ? { id: 'sel-0' } : null };
+      if (table === 'buyer_selection_items' && !calls.some((call) => call.method === 'insert'))
+        return {
+          data: previousItems.map((row) => ({
+            ...row,
+            listed_price: null,
+            price_seen_on: null,
+            imported: null,
+            snapshot: null,
+          })),
+        };
+      return { data: null, error: { message: 'non prévu' } };
+    });
+
+  it('un vendeur à relancer ou un dossier sans conclusion : refusé, rien n’est écrit', async () => {
+    for (const conclusions of [[{ project_id: 'p-1', outcome: 'follow_up' }], []]) {
+      const fake = clientWith(conclusions, []);
+      state.client = fake.client;
+      const result = await saveIdealSelection(BUYER, [item('p-1', 'project')], null);
+      expect(result).toEqual({ ok: false, error: NOT_PROPOSABLE });
+      expect(fake.writes()).toEqual([]);
+    }
+  });
+
+  it('un mandat signé sous offre acceptée : refusé ; l’offre tombée, il passe', async () => {
+    const offer = (status: string) => ({
+      id: 'o-1',
+      buyer_id: 'b-keller',
+      fields: { projectId: 'p-1' },
+      buyers: { name: 'Famille Keller', status },
+      buyer_document_acceptances: [{ decision: 'accepted', decided_at: '2026-11-06T10:00:00Z' }],
+    });
+    const held = clientWith([{ project_id: 'p-1', outcome: 'signed' }], [offer('under_offer')]);
+    state.client = held.client;
+    expect(await saveIdealSelection(BUYER, [item('p-1', 'project')], null)).toEqual({
+      ok: false,
+      error: NOT_PROPOSABLE,
+    });
+    expect(held.writes()).toEqual([]);
+    const fallen = clientWith([{ project_id: 'p-1', outcome: 'signed' }], [offer('visiting')]);
+    state.client = fallen.client;
+    await saveIdealSelection(BUYER, [item('p-1', 'project')], null);
+    expect(fallen.writes()).toContain('insert buyer_selections');
+  });
+
+  it('un bien de l’agence déjà dans la sélection précédente reste, sans être relu', async () => {
+    const fake = clientWith([], [], [{ source: 'project', reference: 'p-1' }]);
+    state.client = fake.client;
+    await saveIdealSelection(BUYER, [item('p-1', 'project')], null);
+    expect(fake.writes()).toContain('insert buyer_selections');
+    expect(
+      fake.calls.some(
+        (call) => call.method === 'from' && call.args[0] === 'project_meeting_conclusions',
+      ),
+    ).toBe(false);
   });
 });

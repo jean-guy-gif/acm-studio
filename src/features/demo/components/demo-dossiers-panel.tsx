@@ -6,14 +6,15 @@ import { prepareDemoDossiers, resetDemoDossiers } from '@/features/demo/actions/
 import { DemoResetButton } from '@/features/demo/components/demo-reset-button';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
-import { DEMO_STAGE_LABELS, DEMO_STAGES } from '@/features/demo/services/demo-seed';
+import { DEMO_SEEDS, DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
 import { numberInWords } from '@/features/purchase-offer/services/amount-in-words';
 
 // Le vrai nombre de dossiers et d'acquéreurs de la démo, lu sur ce qu'elle crée (finitions, 06/11).
 const capitalized = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
-// Mission 114 (partie B) — « Ma démo » : les dossiers du closer, un par étape (cinq depuis la M131),
-// « Préparer ma démo » tant qu'il n'en a pas, « Remettre ma démo à zéro » ensuite.
+// Mission 114 (partie B) — « Ma démo » : les dossiers du closer, un par étape (cinq depuis la M131,
+// six depuis la M145 : deux mandats signés), « Préparer ma démo » tant qu'il n'en a pas, « Remettre
+// ma démo à zéro » ensuite.
 const STAGE_HREF: Record<DemoDossier['stage'], (id: string) => string> = {
   to_prepare: (id) => `/builder/${id}`,
   ready: (id) => `/builder/${id}/avant-rendez-vous`,
@@ -27,9 +28,9 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
     <section className={`${card} flex flex-col gap-4 p-5 sm:p-6`} data-testid="demo-dossiers">
       <h2 className={sectionTitle}>Ma démo</h2>
       <p className={hintText}>
-        {capitalized(numberInWords(DEMO_STAGES.length))} dossiers, un par étape de l’outil : à
-        préparer, prêt pour le Live, prêt en présentation directe, conclu avec un mandat signé, à
-        relancer ; et {numberInWords(DEMO_BUYERS.length)}{' '}
+        {capitalized(numberInWords(DEMO_SEEDS.length))} dossiers aux étapes de l’outil : à préparer,
+        prêt pour le Live, prêt en présentation directe, deux mandats signés, à relancer ; et{' '}
+        {numberInWords(DEMO_BUYERS.length)}{' '}
         <Link href="/acquereurs" className={link}>
           acquéreurs
         </Link>{' '}
@@ -73,7 +74,7 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] }) {
           <DemoResetButton
             action={resetDemoDossiers}
             counts={{
-              dossiers: numberInWords(DEMO_STAGES.length),
+              dossiers: numberInWords(DEMO_SEEDS.length),
               buyers: numberInWords(DEMO_BUYERS.length),
             }}
           />

@@ -18,15 +18,15 @@ export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
 
 // Mission 133 — « Acquéreurs de l'agence pour ce bien », sur la Vue d'ensemble et « Avant le
 // rendez-vous » : la porte vendeur → acquéreurs de la boucle, pour le conseiller seul. Mission 134 —
-// sur un mandat signé ou un vendeur à relancer, « Proposer ce bien aux acquéreurs » ouvre l'envoi en
-// série (un seul chemin, un seul fait noté).
+// « Proposer ce bien aux acquéreurs » ouvre l'envoi en série (un seul chemin, un seul fait noté) ;
+// Mission 145 — sur un mandat signé sans offre acceptée seulement (jamais un vendeur à relancer).
 export function PropertyBuyersBlock({
   result,
   proposeKey,
 }: {
   // null : une lecture a échoué (jamais lu comme « aucun acquéreur », M98).
   result: PropertyBuyers | null;
-  // La clé du bien dans la boucle, quand il se propose (mandat signé, vendeur à relancer).
+  // La clé du bien dans la boucle, quand il se propose (mandat signé sans offre acceptée).
   proposeKey: string | null;
 }) {
   const headline = result

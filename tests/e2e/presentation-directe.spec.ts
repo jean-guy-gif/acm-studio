@@ -48,7 +48,7 @@ async function freshDemo(page: Page): Promise<{ direct: string; ready: string }>
       .click();
     await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
   }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(5, { timeout: 180_000 });
+  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
   const idOf = async (stage: string) => {
     const href = await page
       .locator(`[data-testid="demo-dossier"][data-stage="${stage}"] a`)
@@ -324,18 +324,21 @@ test('la boucle : un dossier à 4 acquéreurs prêts n’a pas de pastille', asy
   expect(await pagePayload(page)).not.toContain('familles cherchent un bien');
 });
 
-// Mission 134 — « Personne n'est oublié » : un concurrent retenu chez les Bernard (ven-02, Vence,
-// 140 m², piscine) fait naître « 4 acquéreurs pour la maison de Vence » ; l'envoi en série en note
-// trois, en passe un, la tâche dit « 1 acquéreur » ; le dernier envoyé, elle se vide ; les fiches
-// disent « proposé le … ». ACM n'envoie rien : il prépare le lien et note l'envoi.
-test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en série', async ({
+// Mission 134 — « Personne n'est oublié » ; Mission 145 (partie A) — seul un bien sous mandat signé,
+// sans offre acceptée, se propose (décision de Jean-Guy, 07/11). Un concurrent retenu chez les
+// Bernard (ven-02) ne fait plus naître de tâche ; le mandat signé de Vence (M. et Mme Lopez, semé
+// par « Préparer ma démo ») fait naître « 4 acquéreurs pour la maison de Vence » ; la fiche de la
+// famille Moreau dit « Lui proposer la maison de M. et Mme Lopez » ; l'envoi en série en note trois,
+// en passe un, la tâche dit « 1 acquéreur » ; le dernier envoyé, elle se vide ; les fiches disent
+// « proposé le … ». ACM n'envoie rien : il prépare le lien et note l'envoi.
+test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en série', async ({
   page,
 }) => {
   await login(page, demoCredentials());
   const { direct: projectId } = await freshDemo(page);
   const vence = /pour la maison de Vence/;
 
-  await test.step('Retenir ven-02 sur le dossier des Bernard', async () => {
+  await test.step('Retenir ven-02 chez les Bernard : aucune tâche, ce n’est pas un mandat', async () => {
     await page.goto(`/builder/${projectId}/comparables/find`);
     await page.getByRole('button', { name: 'Chercher les concurrents' }).click();
     const target = page
@@ -364,11 +367,25 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
       timeout: 120_000,
     });
     await expect(page.getByText(/en échec/)).toHaveCount(0);
+    await page.goto('/suivi');
+    await expect(page.getByTestId('suivi-today')).not.toContainText('bien du marché');
+  });
+
+  await test.step('La fiche et la liste de la famille Moreau : « Lui proposer la maison de M. et Mme Lopez »', async () => {
+    await page.goto('/acquereurs');
+    const row = page.getByTestId('buyer-row').filter({ hasText: 'Famille Moreau' });
+    await expect(row).toContainText('Prochaine étape · Lui proposer la maison de M. et Mme Lopez');
+    await row.getByRole('link', { name: 'Famille Moreau' }).click();
+    await expect(page.getByText('Lui proposer la maison de M. et Mme Lopez').first()).toBeVisible();
+    // M. et Mme Rossi : l'appartement des Lambert-Duval, sans mandat, ne leur est pas proposé.
+    await page.goto('/acquereurs');
+    await expect(
+      page.getByTestId('buyer-row').filter({ hasText: 'M. et Mme Rossi' }),
+    ).not.toContainText('Lui proposer');
   });
 
   const openTask = async (count: number) => {
     const task = page.getByTestId('suivi-task').filter({ hasText: vence });
-    // La retenue peut s'achever juste après l'import : le Suivi se relit jusqu'à la tâche.
     await expect
       .poll(
         async () => {
@@ -381,9 +398,9 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
     await expect(task).toContainText(
       `${count} ${count > 1 ? 'acquéreurs' : 'acquéreur'} pour la maison de Vence`,
     );
-    await expect(task).toContainText('bien du marché : à vérifier avant d’envoyer');
+    await expect(task).toContainText('mandat signé');
     await task.getByRole('link', { name: 'Proposer ce bien' }).click();
-    await expect(page).toHaveURL(/\/acquereurs\/proposer\?bien=/);
+    await expect(page).toHaveURL(/\/acquereurs\/proposer\?bien=project/);
   };
   const sendOne = async () => {
     await page.getByTestId('propose-prepare').click();
@@ -421,9 +438,11 @@ test('personne n’est oublié : un nouveau bien, ses acquéreurs, l’envoi en 
     await expect(page.getByTestId('suivi-today')).not.toContainText(vence);
   });
 
-  await test.step('Les fiches disent « proposé le … »', async () => {
+  await test.step('Les fiches disent « proposé le … » ; la prochaine étape revient', async () => {
     await page.goto('/acquereurs');
-    await page.getByRole('link', { name: 'M. et Mme Lambert' }).first().click();
+    const row = page.getByTestId('buyer-row').filter({ hasText: 'Famille Moreau' });
+    await expect(row).not.toContainText('Lui proposer la maison');
+    await row.getByRole('link', { name: 'Famille Moreau' }).click();
     await expect(page.getByTestId('buyer-proposals')).toContainText('proposé le');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Bien proposé');
   });
