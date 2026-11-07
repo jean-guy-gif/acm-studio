@@ -284,6 +284,26 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   Toute couleur de bouton changée se vérifie aussi sous `stage:`. E2e au premier plan : 18 sur 18,
   démo 4,7 min, présentation directe 5,7 min, parcours 2,8 min, les six autres 2,7 min ; trois
   échecs du premier passage étaient des specs à mettre à jour, aucun défaut du code.
+- 07/11 · M144 · Mesurer avant de corriger : l'écran vide de 3 à 4 s de l'audit ne s'est reproduit
+  ni en Chrome bridé (4G rapide et lente, processeur ×4), ni en WebKit (iPad émulé), essai comme
+  production ; il venait d'un navigateur qui simulait une tablette. La mesure qui a servi : un relevé
+  de chaque image (`requestAnimationFrame` : écran, opacité, texte, première photo) et des requêtes
+  datées, dans un script hors du dépôt, puis un e2e chronométré (`live-sans-trou.spec.ts`, 2,5 min
+  pour les deux réseaux).
+- 07/11 · M144 · Les fichiers de `public/` sont servis par Vercel en « max-age=0, must-revalidate » :
+  un préchargement ne sert à rien sans en-tête de cache, chaque affichage refait un aller-retour
+  (186 ms de cadre vide en 4G rapide, 581 ms en 4G lente). C'est l'e2e chronométré qui l'a montré,
+  pas la lecture du code ; l'en-tête se pose dans `next.config.ts`.
+- 07/11 · M144 · Rendre un bouton cliquable pendant une attente (pour le montrer pressé) fait perdre
+  en silence les touchers des AUTRES attentes (le plus proche choisi en directe) : trouvé par l'e2e,
+  l'état « pressé » est réservé à ce que le bouton attend lui-même. Un paramètre ajouté mais pas
+  transmis (le mode de présentation de la borne de reprise) n'a été vu que par l'avertissement de
+  lint « assigned but never used » : lire les avertissements nouveaux, pas seulement les erreurs.
+- 07/11 · M144 · Changer ce qu'ouvre une adresse sans numéro d'écran a cassé le « Live rejoué en
+  tablette » de la démo et du parcours, qui comptaient sur l'introduction : les specs demandent
+  désormais `?fiche=0`. Le nettoyage de fin de l'agence de test a échoué une fois (l'outil, pas la
+  base : le recomptage disait 0 ligne). Suite : démo 4,5 min, parcours 2,9 min, présentation
+  directe 6,0 min, Live sans trou 2,5 min ; un aléa (la langue du vendeur, vert au second passage).
 
 ## La base
 
