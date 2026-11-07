@@ -61,6 +61,8 @@ select
   (select count(*) from project_market_updates where project_id = ':dossier') as points_marche,
   (select count(*) from project_market_update_links where project_id = ':dossier') as liens_points_marche,
   (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
+  -- Mission 141 : le dossier d'adresse (données publiques de l'adresse) ; il part avec le dossier.
+  (select count(*) from address_dossiers where project_id = ':dossier') as dossier_adresse,
   -- Mission 134 : les envois de ce bien aux acquéreurs ; ils partent avec le dossier (cascade).
   (select count(*) from buyer_proposals where project_id = ':dossier') as biens_proposes,
   -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
@@ -93,6 +95,7 @@ delete from seller_synthesis_links where project_id = ':dossier' and agency_id =
 delete from project_market_update_links where project_id = ':dossier' and agency_id = ':agence';
 delete from market_study_links where project_id = ':dossier' and agency_id = ':agence';
 delete from project_market_updates where project_id = ':dossier' and agency_id = ':agence';
+delete from address_dossiers where project_id = ':dossier' and agency_id = ':agence';
 delete from comparables where project_id = ':dossier' and agency_id = ':agence';
 delete from subject_properties where project_id = ':dossier' and agency_id = ':agence';
 delete from projects where id = ':dossier' and agency_id = ':agence';

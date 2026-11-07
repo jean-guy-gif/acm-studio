@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
+import { AddressDossierBlock } from '@/features/address-dossier/components/address-dossier-block';
+import { addressDossierView } from '@/features/address-dossier/queries/get-address-dossier';
+import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
@@ -37,12 +40,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     notFound();
   }
 
-  const [property, diagnostics, condominium, photos] = await Promise.all([
+  const [property, diagnostics, condominium, photos, saved] = await Promise.all([
     getSubjectProperty(projectId),
     getSubjectPropertyDiagnostics(projectId),
     getSubjectPropertyCondominium(projectId),
     getPropertyPhotos(projectId),
+    getSavedPricePositioning(projectId),
   ]);
+  // Mission 141 — le dossier d'adresse, sur l'adresse ENREGISTRÉE du bien (jamais la saisie en
+  // cours) ; l'analyse de valeur enregistrée seulement (décision du 07/11).
+  const addressDossier = await addressDossierView(projectId, property);
   // Mission 114 — l'agence de démonstration : « Importer une annonce » lit le jeu de données (même
   // signature, action liée par la page), les annonces des scénarios sont proposées d'avance, et la
   // fiche PDF de démonstration est à un clic. Décidé sur le repère de l'agence, lu en base.
@@ -84,6 +91,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         projectId={projectId}
         demoListings={demo ? demoSubjectListingChoices() : null}
         demoBrochures={demo ? demoBrochureChoices() : null}
+      />
+
+      <AddressDossierBlock
+        projectId={projectId}
+        view={addressDossier}
+        advisorAnalysis={saved?.advisorComparativeMarketPrice ?? null}
+        surface={property?.surface_area ?? null}
+        energyRating={property?.energy_rating ?? null}
       />
     </div>
   );

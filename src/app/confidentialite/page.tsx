@@ -283,6 +283,19 @@ export default function ConfidentialitePage() {
               d’expiration.
             </li>
             <li>
+              Le dossier d’adresse, pour le conseiller seul : à sa demande, ACM Studio lit, à partir
+              de l’adresse du bien vendeur, des données publiques et gratuites — les ventes réelles
+              enregistrées autour (date, prix, surface, pièces, jamais le nom d’un vendeur ou d’un
+              acheteur, ni l’adresse d’une vente), le diagnostic de performance énergétique publié
+              par l’ADEME à cette adresse, les risques de la commune et du terrain (Géorisques), la
+              zone d’urbanisme, la parcelle cadastrale et la copropriété immatriculée à cette
+              adresse (sans le nom d’un syndic bénévole). Pour cela, la position de l’adresse, son
+              identifiant et le code de la commune partent vers ces services publics, jamais le nom
+              du vendeur. Le dossier est gardé avec le dossier du vendeur, daté, et part avec lui ;
+              il n’est jamais montré au vendeur ni à un acquéreur. Aucune intelligence artificielle
+              n’intervient, et l’outil n’en tire aucun prix pour le bien.
+            </li>
+            <li>
               Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et
               lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
               caractéristiques, son prix affiché, pourquoi il correspond et ce qu’il faut savoir,

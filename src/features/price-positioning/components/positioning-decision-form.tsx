@@ -17,6 +17,10 @@ import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
 import { MAX_JUSTIFICATION_LENGTH } from '@/features/price-positioning/types/saved-price-positioning';
+import {
+  priceLine,
+  type RealSalesSummary,
+} from '@/features/address-dossier/services/dossier-texts';
 
 type Props = {
   defaultAdvisorPrice: number;
@@ -32,6 +36,9 @@ type Props = {
   projectId: string;
   // Mission 111 — dossier conclu ou archivé : la décision se lit, ne se modifie plus.
   locked?: boolean;
+  // Mission 141 — les ventes réelles du dossier d'adresse, pour situer l'analyse de valeur dès la
+  // frappe ; une information, jamais une recommandation de prix.
+  realSales?: RealSalesSummary | null;
 };
 
 const shownToSeller = 'text-xs font-medium text-amber-700 stage:text-amber-300';
@@ -56,6 +63,7 @@ export function PositioningDecisionForm({
   deleteAction,
   projectId,
   locked = false,
+  realSales = null,
 }: Props) {
   const router = useRouter();
   const [becameReady, setBecameReady] = useState(false);
@@ -160,6 +168,11 @@ export function PositioningDecisionForm({
           <span className="text-zinc-500 stage:text-white/60">€</span>
         </div>
         <span className={shownToSeller}>Affiché au vendeur à la fin du Live</span>
+        {realSales ? (
+          <span className="text-sm text-zinc-700 stage:text-white/80" data-testid="real-sales-line">
+            {priceLine(realSales, advisorAnalysis)}
+          </span>
+        ) : null}
       </label>
 
       <label className="flex flex-col gap-1.5">
