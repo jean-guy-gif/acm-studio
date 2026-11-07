@@ -16,6 +16,7 @@ import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import { demoSeedPlan } from '@/features/demo/services/demo-seed';
 import {
   budgetBand,
+  budgetBandLabel,
   liveBuyersReveal,
   searchingSince,
 } from '@/features/live-seller/services/live-buyers';
@@ -238,12 +239,15 @@ describe('le compteur caché du Live', () => {
     ]) {
       expect(payload).not.toContain(forbidden);
     }
-    expect(Object.keys(reveal.cards[0]!).sort()).toEqual(['budget', 'sector', 'since']);
+    expect(Object.keys(reveal.cards[0]!).sort()).toEqual(['budget', 'sector', 'weeks']);
+    // Mission 140 — des nombres : la scène les dit dans la langue du vendeur.
     expect(reveal.cards[0]).toEqual({
       sector: 'Vence · Saint-Paul-de-Vence',
-      budget: '700 – 800 k€',
-      since: 'cherche depuis 3 semaines',
+      budget: { low: 700_000, high: 800_000 },
+      weeks: 3,
     });
+    expect(budgetBandLabel(reveal.cards[0]!.budget!)).toBe('700 – 800 k€');
+    expect(budgetBandLabel(reveal.cards[0]!.budget!, 'en')).toBe('€700k – €800k');
   });
 
   it('le budget en fourchette arrondie, jamais un seul montant', () => {
@@ -260,6 +264,7 @@ describe('le compteur caché du Live', () => {
     expect(searchingSince(daysAgo(3), NOW)).toBe('cherche depuis moins d’une semaine');
     expect(searchingSince(daysAgo(7), NOW)).toBe('cherche depuis 1 semaine');
     expect(searchingSince(daysAgo(22), NOW)).toBe('cherche depuis 3 semaines');
+    expect(searchingSince(daysAgo(22), NOW, 'en')).toBe('searching for 3 weeks');
   });
 });
 

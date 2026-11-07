@@ -2,12 +2,12 @@ import type {
   MarketUpdateCompetitor,
   MarketUpdateSummary,
 } from '@/features/market-update/services/market-update-summary';
-import {
-  tierOf,
-  TIER_WORDS,
-  type RankingTier,
-} from '@/features/market-update/services/ranking-tiers';
+import { tierOf, type RankingTier } from '@/features/market-update/services/ranking-tiers';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatEuro, formatPercent } from '@/lib/format';
+
+type RankingTexts = ClientTexts['documents']['marketUpdate']['ranking'];
 
 // Mission 129 — « Où en est votre prix » devient un classement (maquette v2 validée par Jean-Guy) :
 // le verdict, de la couleur de la place actuelle ; trois étapes (au rendez-vous → aujourd'hui →
@@ -140,8 +140,6 @@ export function dangerousInForce(
   };
 }
 
-const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
-
 // « 22/10 » : le jour et le mois, à Paris. Le document du vendeur n'importe rien de la Prospection.
 const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
@@ -154,20 +152,23 @@ const shortDate = (iso: string | null): string | null => {
   return Number.isNaN(date.getTime()) ? null : DAY_MONTH.format(date);
 };
 
-function detailOf(item: MarketUpdateCompetitor, meetingChoice: boolean): string | null {
+function detailOf(
+  item: MarketUpdateCompetitor,
+  meetingChoice: boolean,
+  t: RankingTexts,
+  language: TextLanguage,
+): string | null {
   const parts: string[] = [];
-  if (meetingChoice) parts.push('votre choix au rendez-vous');
+  if (meetingChoice) parts.push(t.meetingChoice);
   if (item.newcomer) {
     const day = shortDate(item.seenSince);
-    parts.push(day ? `arrivé le ${day}` : 'arrivé après le rendez-vous');
+    parts.push(day ? t.arrivedOn(day) : t.arrivedAfter);
   } else {
     if (item.state === 'dropped' && item.gapPercent != null) {
-      parts.push(`a baissé de ${formatPercent(Math.abs(item.gapPercent))}`);
+      parts.push(t.droppedBy(formatPercent(Math.abs(item.gapPercent), { language })));
     }
     if (item.daysOnMarket != null) {
-      parts.push(
-        `en vente depuis ${item.daysApproximate ? 'environ ' : ''}${item.daysOnMarket} ${plural(item.daysOnMarket, 'jour', 'jours')}`,
-      );
+      parts.push(t.onMarketFor(item.daysOnMarket, item.daysApproximate));
     }
   }
   return parts.length > 0 ? parts.join(' · ') : null;
@@ -179,29 +180,29 @@ function verdictSentence(
   cheaperNewcomers: number,
   newDangerous: { label: string; price: number; newcomer: boolean } | null,
   agreedPrice: number,
+  t: RankingTexts,
+  language: TextLanguage,
 ): { sentence: string; emphasis: string | null } {
-  let sentence =
-    drops === 0
-      ? 'Aucun concurrent n’a baissé depuis le rendez-vous'
-      : `${drops} ${plural(drops, 'concurrent a', 'concurrents ont')} baissé depuis le rendez-vous`;
+  const euro = (value: number) => formatEuro(value, { language });
+  let sentence = drops === 0 ? t.noDrop : t.drops(drops);
   if (gone > 0) {
-    sentence += `, ${gone} ${plural(gone, 'a', 'ont')} quitté le marché`;
+    sentence += t.gone(gone);
   }
   let emphasis: string | null = null;
   if (cheaperNewcomers > 0) {
-    emphasis = `${cheaperNewcomers} ${plural(cheaperNewcomers, 'bien est arrivé', 'biens sont arrivés')} sur le marché moins ${plural(cheaperNewcomers, 'cher', 'chers')} que le vôtre`;
-    sentence += `${drops === 0 && gone === 0 ? ', mais' : ', et'} ${emphasis}`;
+    emphasis = t.cheaperNewcomers(cheaperNewcomers);
+    sentence += `${drops === 0 && gone === 0 ? t.but : t.and} ${emphasis}`;
   }
   sentence += '.';
   if (newDangerous) {
     const gap = agreedPrice - newDangerous.price;
-    const where =
-      gap > 0
-        ? `${formatEuro(gap)} sous votre prix`
-        : gap < 0
-          ? `${formatEuro(-gap)} au-dessus de votre prix`
-          : 'à votre prix';
-    sentence += ` ${newDangerous.newcomer ? 'Un nouveau venu' : 'Un autre bien'} devient le plus dangereux : ${newDangerous.label}, à ${formatEuro(newDangerous.price)}, ${where}.`;
+    const where = gap > 0 ? t.below(euro(gap)) : gap < 0 ? t.above(euro(-gap)) : t.atYourPrice;
+    sentence += t.newDangerous(
+      newDangerous.newcomer,
+      newDangerous.label,
+      euro(newDangerous.price),
+      where,
+    );
   }
   return { sentence, emphasis };
 }
@@ -212,7 +213,10 @@ export function buildPriceRanking(
     'competitors' | 'agreedPrice' | 'meetingDate' | 'dangerousToday'
   >,
   subjectLabel: string,
+  // Mission 140 — dans la langue du vendeur (le français par défaut).
+  language: TextLanguage = 'fr',
 ): PriceRanking | null {
+  const t = clientTexts(language).documents.marketUpdate.ranking;
   const agreed = summary.agreedPrice;
   if (agreed == null || agreed <= 0) return null;
   const competitors = summary.competitors;
@@ -251,7 +255,7 @@ export function buildPriceRanking(
   let rank = 1;
   for (const item of ranked) {
     if (rank === subjectPosition) {
-      rows.push(subjectRow(rank, total, subjectLabel, agreed));
+      rows.push(subjectRow(rank, total, subjectLabel, agreed, t.agreedTogether));
       rank += 1;
     }
     const meetingChoice = item.id === danger.meetingId;
@@ -264,14 +268,16 @@ export function buildPriceRanking(
       newcomer: item.newcomer,
       dangerous: item.id === danger.currentId ? (danger.changed ? 'today' : 'meeting') : null,
       meetingChoice,
-      detail: detailOf(item, meetingChoice),
+      detail: detailOf(item, meetingChoice, t, language),
       meetingPrice:
         item.newcomer || item.meetingPriceSource === 'current' ? null : item.meetingPrice,
       currentPrice: priceOf(item),
     });
     rank += 1;
   }
-  if (rank === subjectPosition) rows.push(subjectRow(rank, total, subjectLabel, agreed));
+  if (rank === subjectPosition) {
+    rows.push(subjectRow(rank, total, subjectLabel, agreed, t.agreedTogether));
+  }
 
   const place = steps.newcomers ?? steps.today;
   const newDangerousItem =
@@ -291,13 +297,15 @@ export function buildPriceRanking(
         }
       : null,
     agreed,
+    t,
+    language,
   );
   return {
     verdict: {
       tier: place.tier,
       rank: place.rank,
       total: place.total,
-      word: TIER_WORDS[place.tier],
+      word: t.words[place.tier],
       sentence,
       emphasis,
     },
@@ -306,7 +314,13 @@ export function buildPriceRanking(
   };
 }
 
-function subjectRow(rank: number, total: number, label: string, price: number): RankingRow {
+function subjectRow(
+  rank: number,
+  total: number,
+  label: string,
+  price: number,
+  detail: string,
+): RankingRow {
   return {
     key: 'subject',
     subject: true,
@@ -316,7 +330,7 @@ function subjectRow(rank: number, total: number, label: string, price: number): 
     newcomer: false,
     dangerous: null,
     meetingChoice: false,
-    detail: 'prix retenu ensemble',
+    detail,
     meetingPrice: price,
     currentPrice: price,
   };

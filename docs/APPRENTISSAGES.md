@@ -214,6 +214,19 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   chaque suite sont joués par un test. En e2e, un élément qui change à l'ouverture (« Écarter pour
   lui » remplacé par ses raisons) se tient par son libellé, jamais par le filtre qu'il ne remplit
   plus. Suite e2e : 13 sur 14 (13,4 min), le test de la mission vert après correction du test.
+- 07/11 · M140 A · Déplacer les textes d'un écran vers un fichier de langue coupe les phrases
+  françaises de leurs espaces insécables (« «\u00a0Avec les nouveaux venus\u00a0» », « 64\u00a0jours ») :
+  une recherche-remplacement exacte échoue en silence ou les perd. Avant de copier, lister les
+  caractères U+00A0 et U+202F de la source d'origine (`git show main:<fichier>`), pas de la branche
+  déjà modifiée ; puis un test de rendu « sans langue, le français d'avant ».
+- 07/11 · M140 A · Un garde « jamais côté vendeur » qui refuse `.title` dans le code d'un document
+  refuse aussi une clé de texte nommée `title` (`t.title`) : les clés des documents s'appellent
+  `coverTitle`. Un détecteur de mots en `\b` sans drapeau `u` ne voit pas « étude » ni « à » : les
+  frontières se prennent en Unicode (`(?<!\p{L})…(?!\p{L})`, drapeau `u`).
+- 07/11 · M140 A · Un document relu tel qu'il a été écrit (le Point marché, son `summary` en
+  français) ne se traduit pas en relisant ses libellés : ils se recomposent depuis les champs, hors
+  français seulement, pour laisser le français identique. La suite e2e : 15 sur 15 au premier
+  passage (13,8 min) ; la spec de la langue, 48 à 60 s.
 
 ## La base
 

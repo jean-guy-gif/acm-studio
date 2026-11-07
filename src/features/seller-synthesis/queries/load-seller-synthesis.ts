@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { clientLanguage } from '@/lib/client-language';
+import { textLanguage } from '@/lib/client-texts';
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { buildSellerSynthesis } from '@/features/seller-synthesis/services/build-seller-synthesis';
@@ -36,7 +39,7 @@ export async function loadSellerSynthesis(
 ): Promise<SellerSynthesis | null> {
   const { data: project } = await supabase
     .from('projects')
-    .select('id, seller_name, advisor_id, status, live_started_at')
+    .select('id, seller_name, advisor_id, status, live_started_at, language')
     .eq('id', projectId)
     .eq('agency_id', agencyId)
     .neq('status', 'archived')
@@ -113,6 +116,7 @@ export async function loadSellerSynthesis(
   const concluded = project.status === 'meeting_completed' && conclusion.data?.outcome != null;
 
   return buildSellerSynthesis({
+    language: textLanguage(clientLanguage(project.language)),
     sellerName: project.seller_name,
     meetingDate: conclusion.data?.concluded_at ?? project.live_started_at ?? null,
     liveStartedAt: project.live_started_at,

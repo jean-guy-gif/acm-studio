@@ -1,6 +1,5 @@
 import {
   COMPARISON_CRITERIA,
-  COMPARISON_CRITERION_LABELS,
   CONDITION_ORDER,
   ENERGY_LETTER_ORDER,
   EXPOSURE_RANK,
@@ -9,15 +8,11 @@ import {
   type ComparisonStatus,
 } from '@/features/live-seller/constants';
 import type { FeatureBundle, FeatureComparison } from '@/features/live-seller/types';
-// Réutilise les dictionnaires de libellés français du Builder — aucune
-// traduction dupliquée. Seul l'AFFICHAGE est traduit ; les valeurs techniques
-// internes (enums) restent inchangées.
-import {
-  EXPOSURE_LABELS,
-  GENERAL_CONDITION_LABELS,
-  OUTDOOR_SPACE_LABELS,
-  PARKING_TYPE_LABELS,
-} from '@/features/subject-property/constants/property-options';
+// Les libellés viennent des textes du client (mission 140) : en français, ceux du Builder, aucune
+// traduction dupliquée. Seul l'AFFICHAGE est traduit ; les valeurs techniques internes (enums)
+// restent inchangées.
+import { CLIENT_TEXTS, clientTexts, type TextLanguage } from '@/lib/client-texts';
+import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatSquareMeters } from '@/lib/format';
 
 // Traduit une valeur d'enum via un dictionnaire, en conservant la valeur brute
@@ -92,12 +87,16 @@ function amenityStatus(subject: string[] | null, comparable: string[] | null): C
   return c > s ? 'competitor_advantage' : 'competitor_weakness';
 }
 
-function amenityLabel(list: string[] | null, labels: Record<string, string>): string | null {
+function amenityLabel(
+  list: string[] | null,
+  labels: Record<string, string>,
+  none: string,
+): string | null {
   if (list == null) {
     return null;
   }
   const kept = list.filter((item) => item && item !== 'none');
-  return kept.length > 0 ? kept.map((item) => labels[item] ?? item).join(', ') : 'Aucun';
+  return kept.length > 0 ? kept.map((item) => labels[item] ?? item).join(', ') : none;
 }
 
 function statusFor(
@@ -139,38 +138,52 @@ function statusFor(
   }
 }
 
-function rawValue(criterion: ComparisonCriterion, bundle: FeatureBundle): string | null {
+function rawValue(
+  criterion: ComparisonCriterion,
+  bundle: FeatureBundle,
+  language: TextLanguage,
+): string | null {
+  const texts: ClientTexts = clientTexts(language);
   switch (criterion) {
     case 'surface':
-      return bundle.surfaceArea == null ? null : formatSquareMeters(bundle.surfaceArea);
+      return bundle.surfaceArea == null
+        ? null
+        : formatSquareMeters(bundle.surfaceArea, { language });
     case 'rooms':
       return bundle.roomsCount == null ? null : String(bundle.roomsCount);
     case 'bedrooms':
       return bundle.bedroomsCount == null ? null : String(bundle.bedroomsCount);
     case 'condition':
-      return translate(GENERAL_CONDITION_LABELS, bundle.generalCondition);
+      return translate(texts.labels.condition, bundle.generalCondition);
     case 'energy_rating':
       return bundle.energyRating; // lettre DPE (A–G) : déjà correcte, non traduisible
     case 'ges_rating':
       return bundle.gesRating; // lettre GES (A–G) : déjà correcte, non traduisible
     case 'outdoor':
-      return amenityLabel(bundle.outdoorSpaces, OUTDOOR_SPACE_LABELS);
+      return amenityLabel(bundle.outdoorSpaces, texts.labels.outdoor, texts.common.grid.none);
     case 'parking':
-      return amenityLabel(bundle.parkingTypes, PARKING_TYPE_LABELS);
+      return amenityLabel(bundle.parkingTypes, texts.labels.parking, texts.common.grid.none);
     case 'exposure':
-      return translate(EXPOSURE_LABELS, bundle.exposure);
+      return translate(texts.labels.exposure, bundle.exposure);
   }
 }
 
+// Mission 140 — dans la langue demandée (le français par défaut) ; la valeur du concurrent est
+// aussi donnée dans chaque langue des textes, pour le Live qui change de langue en direct.
 export function buildComparableFeatureComparison(
   subject: FeatureBundle,
   comparable: FeatureBundle,
+  language: TextLanguage = 'fr',
 ): FeatureComparison[] {
+  const languages = Object.keys(CLIENT_TEXTS) as TextLanguage[];
   return COMPARISON_CRITERIA.map((criterion) => ({
     criterion,
-    subjectValue: rawValue(criterion, subject),
-    comparableValue: rawValue(criterion, comparable),
+    subjectValue: rawValue(criterion, subject, language),
+    comparableValue: rawValue(criterion, comparable, language),
     comparisonStatus: statusFor(criterion, subject, comparable),
-    displayLabel: COMPARISON_CRITERION_LABELS[criterion],
+    displayLabel: clientTexts(language).common.grid.criteria[criterion],
+    comparableValues: Object.fromEntries(
+      languages.map((each) => [each, rawValue(criterion, comparable, each)]),
+    ) as Record<TextLanguage, string | null>,
   }));
 }

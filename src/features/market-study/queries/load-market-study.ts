@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { clientLanguage } from '@/lib/client-language';
+import { textLanguage } from '@/lib/client-texts';
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { buildMarketStudy } from '@/features/market-study/services/build-market-study';
@@ -32,7 +35,7 @@ export async function loadMarketStudy(
 ): Promise<MarketStudyDocument | null> {
   const { data: project } = await supabase
     .from('projects')
-    .select('id, seller_name, advisor_id, status')
+    .select('id, seller_name, advisor_id, status, language')
     .eq('id', projectId)
     .eq('agency_id', agencyId)
     .neq('status', 'archived')
@@ -77,6 +80,7 @@ export async function loadMarketStudy(
     ? await signPropertyPhotos(supabase, [coverPath], DOCUMENT_PHOTO_URL_TTL_SECONDS)
     : [];
   return buildMarketStudy({
+    language: textLanguage(clientLanguage(project.language)),
     madeAt: now.toISOString(),
     sellerName: project.seller_name,
     property: property.data ?? null,

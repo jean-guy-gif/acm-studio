@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { TIER_CLASSES } from '@/features/market-update/components/price-ranking';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
-import { TIER_LEGEND } from '@/features/market-update/services/ranking-tiers';
 import type {
   MarketStudyCompetitor,
   MarketStudyDocument as MarketStudyDocumentData,
@@ -19,6 +18,7 @@ import {
   row,
   SectionTitle,
 } from '@/features/seller-synthesis/components/seller-synthesis-document';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
@@ -35,42 +35,47 @@ const shortDay = (value: string | null): string | null => {
     : date.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
 };
 
-const ordinal = (rank: number) => (rank === 1 ? 'er' : 'e');
-
 // « Maison · 5 pièces · 113 m² · Biot » → « Maison · 5 p. · 113 m² · Biot » (maquette M129).
-const shortLabel = (label: string) => label.replace(/(\d+) pièces?/, '$1 p.');
 
-function PriceCards({ item }: { item: MarketStudyCompetitor }) {
+function PriceCards({ item, language }: { item: MarketStudyCompetitor; language: TextLanguage }) {
+  const texts = clientTexts(language);
+  const t = texts.documents.marketStudy;
   const cards = [
     {
       key: 'price',
-      label: 'Prix affiché',
-      value: formatEuro(item.price),
-      hint: item.pricePerSquareMeter ? formatEuroPerSquareMeter(item.pricePerSquareMeter) : null,
+      label: texts.documents.synthesis.listed,
+      value: formatEuro(item.price, { language }),
+      hint: item.pricePerSquareMeter
+        ? formatEuroPerSquareMeter(item.pricePerSquareMeter, { language })
+        : null,
     },
     item.goneAt
       ? {
           key: 'gone',
-          label: 'Annonce',
-          value: `Retirée le ${shortDay(item.goneAt)}`,
-          hint: 'elle ne compte pas dans le classement',
+          label: t.listing,
+          value: t.removedOn(shortDay(item.goneAt) ?? ''),
+          hint: t.notRanked,
         }
       : item.daysOnMarket
         ? {
             key: 'days',
-            label: 'En vente depuis',
-            value: daysLabel(item.daysOnMarket),
+            label: texts.documents.common.since,
+            value: daysLabel(item.daysOnMarket, language),
             hint: null,
           }
         : null,
     item.priceDrop
       ? {
           key: 'drop',
-          label: 'Baisse de prix connue',
-          value: formatEuro(item.priceDrop.amount),
+          label: texts.live.analysis.dropped,
+          value: formatEuro(item.priceDrop.amount, { language }),
           hint:
             item.priceDrop.percent != null
-              ? formatPercent(-Math.abs(item.priceDrop.percent), { signed: true, maxDecimals: 1 })
+              ? formatPercent(-Math.abs(item.priceDrop.percent), {
+                  signed: true,
+                  maxDecimals: 1,
+                  language,
+                })
               : null,
         }
       : null,
@@ -78,7 +83,7 @@ function PriceCards({ item }: { item: MarketStudyCompetitor }) {
   return (
     <div className="flex flex-col gap-1.5" data-testid="market-study-prices">
       <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-        Son prix aujourd’hui
+        {t.priceToday}
       </div>
       <div className={`${row} text-[0.78rem]`}>
         {cards.map((entry) => (
@@ -93,7 +98,14 @@ function PriceCards({ item }: { item: MarketStudyCompetitor }) {
   );
 }
 
-function CompetitorPage({ item }: { item: MarketStudyCompetitor }) {
+function CompetitorPage({
+  item,
+  language,
+}: {
+  item: MarketStudyCompetitor;
+  language: TextLanguage;
+}) {
+  const texts = clientTexts(language);
   const photos = item.photoUrls;
   return (
     <article
@@ -101,7 +113,7 @@ function CompetitorPage({ item }: { item: MarketStudyCompetitor }) {
       data-testid="market-study-competitor"
     >
       <div>
-        <div className={kicker}>Concurrent {item.position}</div>
+        <div className={kicker}>{texts.live.competitorReview.competitor(item.position)}</div>
         <h3 className="font-title text-lg leading-snug font-bold text-brand-darker">
           {item.label}
         </h3>
@@ -134,7 +146,7 @@ function CompetitorPage({ item }: { item: MarketStudyCompetitor }) {
       {item.features.length > 0 ? (
         <div className="flex flex-col gap-1">
           <div className={`${kicker} border-t-2 border-zinc-200 pt-2`}>
-            Ses caractéristiques face à votre bien
+            {texts.documents.marketUpdate.features}
           </div>
           <Grid
             competitor={{
@@ -149,10 +161,11 @@ function CompetitorPage({ item }: { item: MarketStudyCompetitor }) {
               serious: null,
               revealed: null,
             }}
+            language={language}
           />
         </div>
       ) : null}
-      <PriceCards item={item} />
+      <PriceCards item={item} language={language} />
     </article>
   );
 }
@@ -160,10 +173,15 @@ function CompetitorPage({ item }: { item: MarketStudyCompetitor }) {
 function StudyVerdict({
   subject,
   testId,
+  language,
 }: {
   subject: NonNullable<MarketStudyRanking['subject']>;
   testId: string;
+  language: TextLanguage;
 }) {
+  const documents = clientTexts(language).documents;
+  const r = documents.marketUpdate.ranking;
+  const t = documents.marketStudy;
   const tier = TIER_CLASSES[subject.tier];
   return (
     <div
@@ -179,24 +197,34 @@ function StudyVerdict({
       </span>
       <div className="flex min-w-0 flex-col gap-1">
         <p className={`font-title text-2xl leading-tight font-bold sm:text-3xl ${tier.text}`}>
-          {subject.word} : vous êtes {subject.rank}
-          <sup className="text-[0.55em]">{ordinal(subject.rank)}</sup> sur {subject.total}
+          {r.youAre(subject.word)}
+          {subject.rank}
+          <sup className="text-[0.55em]">{r.ordinal(subject.rank)}</sup> {r.of(subject.total)}
         </p>
         <p className="text-[0.95rem] text-zinc-800">
-          {`À ${formatEuro(subject.price)}, ${
+          {t.atPrice(
+            formatEuro(subject.price, { language }),
             subject.rank === 1
-              ? 'votre bien serait le moins cher des biens en vente que nous avons étudiés.'
+              ? t.cheapest
               : subject.rank === subject.total
-                ? 'votre bien serait le plus cher des biens en vente que nous avons étudiés.'
-                : `${subject.rank - 1} ${subject.rank - 1 > 1 ? 'biens en vente sont' : 'bien en vente est'} moins ${subject.rank - 1 > 1 ? 'chers' : 'cher'} que le vôtre.`
-          }`}
+                ? t.priciest
+                : t.cheaperCount(subject.rank - 1),
+          )}
         </p>
       </div>
     </div>
   );
 }
 
-function RankingRow({ row: item }: { row: MarketStudyRankingRow }) {
+function RankingRow({
+  row: item,
+  language,
+}: {
+  row: MarketStudyRankingRow;
+  language: TextLanguage;
+}) {
+  const r = clientTexts(language).documents.marketUpdate.ranking;
+  const euro = (value: number) => formatEuro(value, { language });
   const tier = TIER_CLASSES[item.tier];
   if (item.subject) {
     return (
@@ -208,12 +236,12 @@ function RankingRow({ row: item }: { row: MarketStudyRankingRow }) {
             <span className="w-6 text-center font-title text-2xl font-bold">{item.rank}</span>
             <div className="flex min-w-0 flex-1 flex-col">
               <span>
-                <strong>VOTRE BIEN</strong> · {shortLabel(item.label)}
+                <strong>{r.yourProperty}</strong> · {r.shortRooms(item.label)}
               </span>
               {item.detail ? <span className="text-sm opacity-90">{item.detail}</span> : null}
             </div>
             <span className="font-title text-2xl font-bold sm:text-3xl print:text-2xl">
-              {formatEuro(item.price)}
+              {euro(item.price)}
             </span>
           </div>
         </td>
@@ -236,27 +264,37 @@ function RankingRow({ row: item }: { row: MarketStudyRankingRow }) {
             {item.rank}
           </span>
           <div className="flex min-w-0 flex-col">
-            <span>{shortLabel(item.label)}</span>
+            <span>{r.shortRooms(item.label)}</span>
             {item.detail ? <span className="text-sm text-zinc-500">{item.detail}</span> : null}
-            <span className="mt-1 font-title text-lg font-bold sm:hidden">
-              {formatEuro(item.price)}
-            </span>
+            <span className="mt-1 font-title text-lg font-bold sm:hidden">{euro(item.price)}</span>
           </div>
         </div>
       </td>
       <td className="py-2 pr-3 text-right font-title text-xl font-bold whitespace-nowrap text-zinc-900 max-sm:hidden sm:text-2xl print:py-1 print:text-xl">
-        {formatEuro(item.price)}
+        {euro(item.price)}
       </td>
     </tr>
   );
 }
 
-function StudyRankingView({ ranking }: { ranking: MarketStudyRanking }) {
+function StudyRankingView({
+  ranking,
+  language,
+}: {
+  ranking: MarketStudyRanking;
+  language: TextLanguage;
+}) {
+  const documents = clientTexts(language).documents;
+  const r = documents.marketUpdate.ranking;
   return (
     <div className="flex flex-col gap-4" data-testid="market-study-price-ranking">
       {ranking.subject ? (
         <div className="flex flex-col gap-3 break-inside-avoid">
-          <StudyVerdict subject={ranking.subject} testId="market-study-verdict" />
+          <StudyVerdict
+            subject={ranking.subject}
+            testId="market-study-verdict"
+            language={language}
+          />
           <div className="flex items-center gap-1" aria-hidden>
             {ranking.subject.cells.map((cell, index) => (
               <span
@@ -275,23 +313,22 @@ function StudyRankingView({ ranking }: { ranking: MarketStudyRanking }) {
           className="border border-dashed border-zinc-300 px-3 py-3 text-sm text-zinc-600"
           data-testid="market-study-no-reference"
         >
-          Les biens en vente aujourd’hui, du moins cher au plus cher. Votre bien s’y placera quand
-          votre conseiller vous aura proposé un prix.
+          {documents.marketStudy.noReference}
         </p>
       )}
       <table className="w-full border-collapse text-left text-zinc-800">
         <thead className="[display:table-header-group]">
           <tr className="text-[0.62rem] font-semibold tracking-[0.14em] text-zinc-500 uppercase">
             <th className="w-1" />
-            <th className="py-2 pl-9 font-semibold">Classement, du moins cher au plus cher</th>
+            <th className="py-2 pl-9 font-semibold">{r.tableTitle}</th>
             <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
-              Prix affiché
+              {documents.synthesis.listed}
             </th>
           </tr>
         </thead>
         <tbody>
           {ranking.rows.map((item) => (
-            <RankingRow key={item.key} row={item} />
+            <RankingRow key={item.key} row={item} language={language} />
           ))}
         </tbody>
       </table>
@@ -304,18 +341,10 @@ function StudyRankingView({ ranking }: { ranking: MarketStudyRanking }) {
             <span key={tier} className="flex items-center gap-1.5">
               <span className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar}`} />
               <span>
-                {index === 0 ? (
-                  <>
-                    1<sup>er</sup> tiers
-                  </>
-                ) : index === 1 ? (
-                  <>
-                    2<sup>e</sup> tiers
-                  </>
-                ) : (
-                  'dernier tiers'
-                )}{' '}
-                : {TIER_LEGEND[tier]}
+                {r.legendTiers[index].number}
+                {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
+                {r.legendTiers[index].rest}
+                {r.legend[tier]}
               </span>
             </span>
           ))}
@@ -326,9 +355,12 @@ function StudyRankingView({ ranking }: { ranking: MarketStudyRanking }) {
 }
 
 export function MarketStudyDocument({ document }: { document: MarketStudyDocumentData }) {
-  const { agency, ranking } = document;
-  const day = meetingDay(document.madeAt);
-  const footer = ['Étude confidentielle', document.commune, day].filter(Boolean).join(' · ');
+  const { agency, ranking, language } = document;
+  const texts = clientTexts(language);
+  const t = texts.documents.marketStudy;
+  const c = texts.documents.common;
+  const day = meetingDay(document.madeAt, language);
+  const footer = [c.confidential, document.commune, day].filter(Boolean).join(' · ');
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const hasCompetitors = document.competitors.length > 0;
   const sections = [hasCompetitors ? 'competitors' : null, 'ranking'].filter(
@@ -376,7 +408,7 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
         <div className="flex-1" />
         <div className="relative flex flex-col gap-3 px-8 pb-12 sm:px-12">
           <span className="self-start border border-white/80 px-3 py-1 text-[0.65rem] tracking-[0.2em] uppercase">
-            Étude de marché
+            {t.badge}
           </span>
           {document.propertyLabel ? (
             <span className="mt-3 text-xs tracking-[0.2em] uppercase opacity-85">
@@ -384,25 +416,29 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
             </span>
           ) : null}
           <h1 className="font-title text-4xl leading-tight font-bold sm:text-5xl">
-            Étude de marché
+            {t.coverTitle}
             {day ? (
               <>
                 <br />
-                du {day}
+                {texts.documents.synthesis.titleDay(day)}
               </>
             ) : null}
           </h1>
           <p className="text-sm opacity-90">
             {[
-              document.sellerName ? `Pour ${document.sellerName}` : null,
-              agency.advisorName ? `Par ${agency.advisorName}` : null,
+              document.sellerName ? texts.documents.synthesis.forSeller(document.sellerName) : null,
+              agency.advisorName ? t.byAdvisor(agency.advisorName) : null,
             ]
               .filter(Boolean)
               .join(' · ')}
           </p>
           {ranking.subject ? (
             <div className="mt-6 text-zinc-800">
-              <StudyVerdict subject={ranking.subject} testId="market-study-cover-verdict" />
+              <StudyVerdict
+                subject={ranking.subject}
+                testId="market-study-cover-verdict"
+                language={language}
+              />
             </div>
           ) : null}
           <div className="mt-8 flex flex-col gap-4 border-t border-white/35 pt-4 sm:flex-row [&>*]:flex-1">
@@ -423,11 +459,11 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
           <section className="flex flex-col gap-3" data-testid="market-study-competitors">
             <SectionTitle
               number={sectionNumber('competitors')}
-              title="Les biens en vente face au vôtre"
-              hint="Chaque concurrent retenu par votre conseiller : ses caractéristiques face à votre bien, son prix affiché et depuis quand il est en vente."
+              title={t.competitorsTitle}
+              hint={t.competitorsHint}
             />
             {document.competitors.map((item) => (
-              <CompetitorPage key={item.id} item={item} />
+              <CompetitorPage key={item.id} item={item} language={language} />
             ))}
           </section>
         ) : null}
@@ -437,24 +473,24 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
           className={`flex flex-col gap-3 ${hasCompetitors ? 'print:break-before-page' : ''}`}
           data-testid="market-study-ranking"
         >
-          <SectionTitle number={sectionNumber('ranking')} title="Où en est votre prix" />
+          <SectionTitle
+            number={sectionNumber('ranking')}
+            title={texts.documents.marketUpdate.rankingTitle}
+          />
           {ranking.rows.length > 0 ? (
-            <StudyRankingView ranking={ranking} />
+            <StudyRankingView ranking={ranking} language={language} />
           ) : (
             <p className="border border-dashed border-zinc-300 px-3 py-4 text-center text-sm text-zinc-500">
-              Aucun concurrent retenu pour l’instant : le classement ne se calcule pas.
+              {t.noCompetitors}
             </p>
           )}
         </section>
 
         <footer className="mt-2 flex flex-col gap-2 break-inside-avoid">
           <div className={`${kicker} border-t-2 border-brand-deep pt-2 text-brand-deep`}>
-            Pour lire ce document
+            {texts.documents.marketUpdate.readingTitle}
           </div>
-          <p className="text-xs leading-relaxed text-zinc-500">
-            Les prix cités sont ceux des annonces, pas des prix de vente. Surfaces et
-            caractéristiques telles qu’annoncées, à vérifier.
-          </p>
+          <p className="text-xs leading-relaxed text-zinc-500">{c.disclaimer}</p>
           {agency.advisorName ? (
             <div className="flex items-center gap-4 border border-zinc-200 bg-white px-4 py-3">
               {agency.advisorPhotoUrl ? (
@@ -465,7 +501,7 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
                 />
               ) : null}
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className={kicker}>Votre conseiller</span>
+                <span className={kicker}>{c.advisor}</span>
                 <span className="font-semibold">{agency.advisorName}</span>
                 <span className="text-sm text-zinc-500">
                   {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
@@ -476,7 +512,7 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
                   viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
                   className="h-16 w-16 shrink-0"
                   role="img"
-                  aria-label="Carte de contact du conseiller"
+                  aria-label={c.contactCard}
                   shapeRendering="crispEdges"
                 >
                   <path d={agency.advisorQr.path} fill="currentColor" />

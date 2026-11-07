@@ -1,3 +1,5 @@
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+
 // Mission 129 — la couleur d'une place dans le classement, par tiers (règle de Jean-Guy, 30/10) :
 // rang ≤ ⌈N/3⌉ vert (pas de problème), rang ≤ ⌈2N/3⌉ orange (attention), au-delà rouge (danger),
 // N étant le nombre de biens classés, vendeur compris. 9 biens : 1-3 / 4-6 / 7-9 ; 8 : 1-3 / 4-6 /
@@ -11,14 +13,9 @@ export function tierOf(rank: number, total: number): RankingTier {
   return 'red';
 }
 
-export const TIER_WORDS: Record<RankingTier, string> = {
-  green: 'Pas de problème',
-  orange: 'Attention',
-  red: 'Danger',
-};
+// Mission 140 — les mots vivent dans les textes du client ; ces noms gardent le français.
+export const TIER_WORDS: Record<RankingTier, string> =
+  FRENCH_TEXTS.documents.marketUpdate.ranking.words;
 
-export const TIER_LEGEND: Record<RankingTier, string> = {
-  green: 'pas de problème',
-  orange: 'attention',
-  red: 'danger',
-};
+export const TIER_LEGEND: Record<RankingTier, string> =
+  FRENCH_TEXTS.documents.marketUpdate.ranking.legend;

@@ -1,3 +1,4 @@
+import type { TextLanguage } from '@/lib/client-texts';
 import type { RankingTier } from '@/features/market-update/services/ranking-tiers';
 import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthesis/types';
 
@@ -55,6 +56,8 @@ export type MarketStudyRanking = {
 };
 
 export type MarketStudyDocument = {
+  // Mission 140 — la langue du vendeur, celle de tout le document (les mentions légales mises à part).
+  language: TextLanguage;
   // Le jour de l'étude (ISO) : celui où le document est ouvert.
   madeAt: string;
   sellerName: string;

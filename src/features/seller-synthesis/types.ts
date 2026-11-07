@@ -1,3 +1,4 @@
+import type { TextLanguage } from '@/lib/client-texts';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
 
@@ -48,6 +49,8 @@ export type SynthesisCompetitor = {
 };
 
 export type SellerSynthesis = {
+  // Mission 140 — la langue du vendeur, celle de tout le document (les mentions légales mises à part).
+  language: TextLanguage;
   sellerName: string;
   meetingDate: string | null;
   // « Maison · Biot » — le type et la commune du bien vendeur.

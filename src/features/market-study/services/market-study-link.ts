@@ -1,3 +1,4 @@
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import {
   hashSynthesisToken,
   newSynthesisToken,
@@ -17,11 +18,15 @@ export const marketStudyAdvisorPath = (projectId: string): string =>
 
 // Envoyer le lien : le message prérempli et les trois façons de l'envoyer depuis le téléphone ou
 // l'ordinateur du conseiller (l'outil n'envoie rien, M122 B). Aucun montant, aucune pression.
-export function marketStudyShareMessage(url: string, advisorFirstName: string | null): string {
+// Mission 140 — dans la langue du vendeur (le français par défaut).
+export function marketStudyShareMessage(
+  url: string,
+  advisorFirstName: string | null,
+  language: TextLanguage = 'fr',
+): string {
   const signature = advisorFirstName?.trim();
   return [
-    `Bonjour, voici l’Étude de marché de votre bien : ${url}`,
-    'Elle montre les biens en vente autour du vôtre aujourd’hui, et où se situe votre prix.',
+    clientTexts(language).documents.marketStudy.share.message(url),
     ...(signature ? [signature] : []),
   ].join('\n');
 }
@@ -29,10 +34,11 @@ export function marketStudyShareMessage(url: string, advisorFirstName: string | 
 export function marketStudyShareHrefs(
   message: string,
   studyDate: string | null,
+  language: TextLanguage = 'fr',
 ): { sms: string; whatsapp: string; email: string } {
   const body = encodeURIComponent(message);
   const subject = encodeURIComponent(
-    studyDate ? `Étude de marché du ${studyDate}` : 'Étude de marché',
+    clientTexts(language).documents.marketStudy.share.subject(studyDate),
   );
   return {
     sms: `sms:?&body=${body}`,

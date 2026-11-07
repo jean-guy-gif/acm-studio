@@ -5,6 +5,7 @@ import { MarketUpdateDownloadButton } from '@/features/market-update/components/
 import { MarketStudyDocument } from '@/features/market-study/components/market-study-document';
 import { findMarketStudyLink } from '@/features/market-study/queries/find-market-study-link';
 import { loadMarketStudy } from '@/features/market-study/queries/load-market-study';
+import { clientTexts } from '@/lib/client-texts';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,9 @@ export default async function PublicMarketStudyPage({
   return (
     <main className="min-h-screen bg-zinc-100 p-4 pb-20 print:bg-white print:p-0">
       <MarketStudyDocument document={document} />
-      <MarketUpdateDownloadButton />
+      <MarketUpdateDownloadButton
+        label={clientTexts(document.language).documents.marketUpdate.download}
+      />
     </main>
   );
 }

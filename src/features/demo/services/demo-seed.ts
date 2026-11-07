@@ -53,7 +53,10 @@ export const DEMO_STAGE_SCENARIO: Record<DemoStage, DemoScenarioId> = {
 export const DEMO_SEED_COMPETITORS = 5;
 // Le vendeur du dossier en présentation directe : un autre foyer que celui du Live interactif de
 // Vence, pour que les deux dossiers ne se confondent pas dans la liste du Live.
-export const DEMO_DIRECT_SELLER = 'M. et Mme Bernard';
+// Mission 140 — les Bernard préfèrent l'anglais : leur Live et leurs documents sont en anglais
+// (décision de Jean-Guy, 06/11).
+export const DEMO_DIRECT_SELLER = 'Mr and Mrs Bernard';
+export const DEMO_DIRECT_LANGUAGE = 'en' as const;
 // Mission 133 — la maison des Bernard a une piscine, celle de Mme Garcia non (décision de Jean-Guy,
 // 06/11) : M. et Mme Lambert veulent une piscine (★), le moteur les écarte du bien de Mme Garcia —
 // 4 acquéreurs prêts, pas de pastille au Live — et les garde pour les Bernard — 5, la pastille.
@@ -114,6 +117,8 @@ export type DemoSeedPlan = {
   stage: DemoStage;
   scenario: DemoScenario;
   sellerName: string;
+  // Mission 140 — la langue du vendeur ; le français pour tous, sauf les Bernard.
+  language: 'fr' | 'en';
   // Le bien vendeur, tel que l'import d'annonce le remplit (M38 : jamais le prix), plus la
   // fourchette du conseiller, les atouts et les montants de la fiche.
   property: Record<string, unknown> | null;
@@ -171,6 +176,7 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
       stage,
       scenario,
       sellerName: scenario.sellerName,
+      language: 'fr',
       property: null,
       photoFiles: [],
       competitors: [],
@@ -224,6 +230,7 @@ export function demoSeedPlan(stage: DemoStage, now: Date): DemoSeedPlan {
         : stage === 'follow_up'
           ? DEMO_FOLLOW_UP_SELLER
           : scenario.sellerName,
+    language: stage === 'direct' ? DEMO_DIRECT_LANGUAGE : 'fr',
     property,
     photoFiles: subject.photos.slice(0, 3),
     competitors,

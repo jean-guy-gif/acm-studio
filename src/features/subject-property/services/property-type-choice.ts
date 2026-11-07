@@ -5,7 +5,7 @@ import {
   type PropertyType,
 } from '@/features/subject-property/constants/property-options';
 
-const isPropertyType = (value: string): value is PropertyType =>
+export const isPropertyType = (value: string): value is PropertyType =>
   (PROPERTY_TYPES as readonly string[]).includes(value);
 
 // MISSION 77 — le libellé de liste d'un type saisi ou lu (« appartement T3 », « house »,

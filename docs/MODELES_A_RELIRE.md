@@ -32,3 +32,29 @@ Pour l'allumer, Jean-Guy passe sa constante à `true` dans
 
 Chaque phrase de chaque langue est prouvée par un test (`src/features/buyer-messages/messages.test.ts`) :
 une phrase relue et corrigée met le test à jour dans le même commit.
+
+## Mission 140 — ce que voit le vendeur, dans sa langue
+
+Le Live (interactif et présentation directe), la synthèse, le Point marché, l'Étude de marché, leurs
+liens et leurs messages d'envoi lisent leurs mots dans un seul fichier par langue, mêmes clés (un test
+échoue si une clé manque ou diffère d'arguments). Le relecteur relit **un seul fichier**. Les mentions
+légales de l'agence (carte professionnelle, garantie, « Ne peut recevoir aucun fonds ») restent en
+français jusqu'à la décision du juriste (Jean-Guy, 06/11) : elles ne sont pas dans ces fichiers.
+
+| Langue   | Fichier                      | État                                                     |
+| -------- | ---------------------------- | -------------------------------------------------------- |
+| Français | `src/lib/client-texts/fr.ts` | les phrases d'avant la mission, mot pour mot             |
+| Anglais  | `src/lib/client-texts/en.ts` | proposé (`LANGUE_ANGLAIS_PROPOSEE`) ; **à faire relire** |
+
+L'italien, l'allemand et le russe viendront un par un, chacun avec son relecteur natif (décision de
+Jean-Guy, 06/11) : d'ici là, un dossier dans une de ces langues se lit en français, jamais un mélange.
+
+Ce que le relecteur vérifie en plus : l'anglais est britannique (« 6 November 2026 », « €1,639,500 »,
+« flat ») ; jamais « estimate » ni « valuation » (l'outil n'estime pas le bien) — « estimated » ne dit
+que la négociation déduite d'une annonce disparue, comme « estimée » en français ; « EPC » pour le DPE ;
+le Live parle au vendeur à la 2e personne.
+
+Relu par le relecteur produit de Jean-Guy (07/11) : « Your listing price » pour le prix retenu
+ensemble, « Asking price » pour le prix affiché d'un concurrent, « competing property / competing
+properties » partout où le vendeur lit « concurrent » ; « estimated » accepté. La relecture d'un
+locuteur natif reste à faire.

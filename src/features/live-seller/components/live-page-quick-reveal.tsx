@@ -1,5 +1,7 @@
 'use client';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
+
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveDurationReveal } from '@/features/live-seller/components/live-duration-reveal';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
@@ -14,9 +16,8 @@ import {
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro, formatPercent } from '@/lib/format';
-
-const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
 // MISSION 95 — rythme accéléré, écran 2 sur 2 : le prix réel et l'écart avec votre estimation.
 // Quand une durée est connue, la devinette de durée vient dessous ; une fois validée, la durée
@@ -31,18 +32,18 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
   const savedEstimate = response?.seller_estimated_listing_price ?? null;
   const savedDays = response?.seller_estimated_days_on_market ?? null;
   const durationRevealed = savedDays != null && entry.marketDuration != null;
-  const title = entry.neutralLabel;
+  const { language, texts } = useLiveTexts();
+  const t = texts.live.quick;
+  const euro = (value: number | null): string =>
+    value != null ? formatEuro(value, { language }) : '—';
+  const title = neutralComparableLabel(entry, language);
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6">
       <div className="flex flex-col gap-2">
-        <h2 className={question}>Voici son prix.</h2>
+        <h2 className={question}>{t.revealQuestion}</h2>
         <p className={questionHint}>
-          {!entry.durationKnown
-            ? 'Le prix réellement affiché, face au prix que vous imaginiez.'
-            : durationRevealed
-              ? 'Et voici depuis combien de temps il est en vente.'
-              : 'Et selon vous, depuis combien de temps est-il en vente ?'}
+          {!entry.durationKnown ? t.priceOnly : durationRevealed ? t.durationShown : t.durationAsk}
         </p>
       </div>
 
@@ -55,22 +56,24 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
         <div className="flex h-fit min-w-0 flex-col gap-4">
           <div className={`${panel} live-reveal-pop flex flex-col gap-4`} data-quick-reveal>
             <div>
-              <div className={statLabel}>Prix affiché sur le marché</div>
+              <div className={statLabel}>{texts.live.priceReveal.listed}</div>
               <div className={revealValue}>{euro(reveal.currentPrice)}</div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className={statLabel}>Votre réponse</div>
+                <div className={statLabel}>{texts.common.yourAnswer}</div>
                 <div className={bigValue}>{euro(savedEstimate)}</div>
               </div>
               <div>
-                <div className={statLabel}>Écart</div>
+                <div className={statLabel}>{texts.live.priceReveal.gap}</div>
                 <div className={bigValue}>
-                  {reveal.gapAmount != null ? formatEuro(reveal.gapAmount, { signed: true }) : '—'}
+                  {reveal.gapAmount != null
+                    ? formatEuro(reveal.gapAmount, { signed: true, language })
+                    : '—'}
                 </div>
                 {reveal.gapPercentage != null ? (
                   <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {formatPercent(reveal.gapPercentage, { signed: true })}
+                    {formatPercent(reveal.gapPercentage, { signed: true, language })}
                   </div>
                 ) : null}
               </div>
@@ -93,7 +96,7 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
                 </div>
               ) : (
                 <label className="flex flex-col gap-2">
-                  <span className={statLabel}>La durée que vous imaginez</span>
+                  <span className={statLabel}>{texts.live.duration.label}</span>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
@@ -103,10 +106,10 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
                       placeholder="90"
                       className={bigInput}
                     />
-                    <span className={bigInputUnit}>jours</span>
+                    <span className={bigInputUnit}>{texts.live.duration.unit}</span>
                   </div>
                   <span className="text-sm text-zinc-400 stage:text-white/50">
-                    La durée réellement observée s’affichera à la place de ce champ.
+                    {t.durationNote}
                   </span>
                 </label>
               )}

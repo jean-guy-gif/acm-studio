@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatDay,
   formatEuro,
   formatEuroPerSquareMeter,
   formatNumber,
@@ -64,5 +65,30 @@ describe('unités', () => {
 
   it('ne laisse pas l’unité partir à la ligne', () => {
     expect(formatEuro(1)).toBe('1 €');
+  });
+});
+
+// Mission 140 — ce que voit le client suit sa langue ; sans langue, le français ne bouge pas.
+describe('les nombres dans la langue du client', () => {
+  it('en anglais : l’euro devant, la virgule des milliers, le point décimal', () => {
+    expect(formatEuro(1_639_500, { language: 'en' })).toBe('€1,639,500');
+    expect(formatEuro(-5_000, { language: 'en', signed: true })).toBe('−€5,000');
+    expect(formatEuro(5_000, { language: 'en', signed: true })).toBe('+€5,000');
+    expect(formatEuroPerSquareMeter(4_739, { language: 'en' })).toBe('€4,739/m²');
+    expect(formatPercent(5.8, { language: 'en' })).toBe('5.8%');
+    // Les surfaces restent en m² (la fiche de la mission).
+    expect(formatSquareMeters(140, { language: 'en' }).replace(/\s/g, ' ')).toBe('140 m²');
+  });
+
+  it('en français, à l’octet près, avec ou sans la langue', () => {
+    expect(formatEuro(1_639_500, { language: 'fr' })).toBe(formatEuro(1_639_500));
+    expect(formatPercent(5.8, { language: 'fr' })).toBe(formatPercent(5.8));
+  });
+
+  it('les jours, à Paris', () => {
+    expect(formatDay('2026-11-05T23:30:00Z', 'fr')).toBe('6 novembre 2026');
+    expect(formatDay('2026-11-05T23:30:00Z', 'en')).toBe('6 November 2026');
+    expect(formatDay('2026-11-06T10:00:00Z', 'en', 'dayMonth')).toBe('6 November');
+    expect(formatDay('2026-11-06T10:00:00Z', 'en', 'numeric')).toBe('06/11/2026');
   });
 });

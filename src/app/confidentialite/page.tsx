@@ -241,6 +241,13 @@ export default function ConfidentialitePage() {
               artificielle. Texte à faire relire par un juriste.
             </li>
             <li>
+              Le dossier d’un vendeur garde la langue dans laquelle il préfère lire (français par
+              défaut, ou anglais) : le rendez-vous qui lui est montré, la synthèse, le Point marché,
+              l’Étude de marché et leurs messages sont écrits dans cette langue, depuis des textes
+              écrits et relus, jamais par une intelligence artificielle ; les mentions légales de
+              l’agence restent en français. Texte à faire relire par un juriste.
+            </li>
+            <li>
               La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le

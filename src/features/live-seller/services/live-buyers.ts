@@ -1,10 +1,10 @@
-import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
 import { parisDaysSince } from '@/features/buyers/services/buyer-readiness';
 import {
   LIVE_BUYERS_THRESHOLD,
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
-import { formatNumber } from '@/lib/format';
+import { clientTexts, type TextLanguage } from '@/lib/client-texts';
+import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
 // Mission 133 — ce que le Live reçoit des acquéreurs prêts de l'agence : un compte, et jusqu'à
 // sept cartes ANONYMES. Une liste d'autorisation : le secteur cherché, le budget en fourchette
@@ -15,11 +15,15 @@ import { formatNumber } from '@/lib/format';
 export const LIVE_BUYERS_CARDS_MAX = 7;
 export const LIVE_BUYERS_CITIES_MAX = 3;
 
+// Mission 140 — des nombres, pas des phrases : la scène les dit dans la langue du vendeur, et
+// change de langue sans rien redemander au serveur.
 export type AnonymousBuyerCard = {
   sector: string;
-  budget: string | null;
-  since: string;
+  budget: BudgetBand | null;
+  weeks: number;
 };
+
+export type BudgetBand = { low: number; high: number };
 
 export type LiveBuyersReveal = {
   count: number;
@@ -29,7 +33,10 @@ export type LiveBuyersReveal = {
 // « 700 – 800 k€ » : pas de 50 k€ sous 1 M€, de 100 k€ au-delà ; le bas sur le budget idéal (sinon
 // le plafond), arrondi en dessous, le haut sur le plafond, arrondi au-dessus ; jamais un seul
 // montant (le bas descend d'un pas).
-export function budgetBand(budgetIdeal: number | null, budgetMax: number | null): string | null {
+export function budgetBandRange(
+  budgetIdeal: number | null,
+  budgetMax: number | null,
+): BudgetBand | null {
   if (budgetMax == null || budgetMax <= 0) return null;
   const step = (value: number) => (value >= 1_000_000 ? 100_000 : 50_000);
   const lowBase =
@@ -37,19 +44,30 @@ export function budgetBand(budgetIdeal: number | null, budgetMax: number | null)
   const high = Math.ceil(budgetMax / step(budgetMax)) * step(budgetMax);
   let low = Math.floor(lowBase / step(lowBase)) * step(lowBase);
   if (low >= high) low = high - step(high - 1);
-  if (high < 1_000_000) return `${formatNumber(low / 1_000)} – ${formatNumber(high / 1_000)} k€`;
-  if (low >= 1_000_000) {
-    return `${formatNumber(low / 1_000_000)} – ${formatNumber(high / 1_000_000)} M€`;
-  }
-  return `${budgetStepLabel(low)} – ${budgetStepLabel(high)}`;
+  return { low, high };
 }
 
-// « cherche depuis 3 semaines », depuis la création de sa fiche (jours de Paris).
-export function searchingSince(createdAt: string, now: Date): string {
-  const days = parisDaysSince(createdAt, now);
-  const weeks = Math.floor(days / 7);
-  if (weeks < 1) return 'cherche depuis moins d’une semaine';
-  return `cherche depuis ${weeks} semaine${weeks > 1 ? 's' : ''}`;
+export function budgetBandLabel(band: BudgetBand, language: TextLanguage = 'fr'): string {
+  return clientTexts(language).live.buyers.budget(band.low, band.high);
+}
+
+export function budgetBand(budgetIdeal: number | null, budgetMax: number | null): string | null {
+  const band = budgetBandRange(budgetIdeal, budgetMax);
+  return band ? budgetBandLabel(band) : null;
+}
+
+// Depuis combien de semaines il cherche, depuis la création de sa fiche (jours de Paris).
+export function searchingWeeks(createdAt: string, now: Date): number {
+  return Math.floor(parisDaysSince(createdAt, now) / 7);
+}
+
+// « cherche depuis 3 semaines ».
+export function searchingSince(
+  createdAt: string,
+  now: Date,
+  language: TextLanguage = 'fr',
+): string {
+  return clientTexts(language).live.buyers.since(searchingWeeks(createdAt, now));
 }
 
 export function liveBuyersReveal(
@@ -61,14 +79,14 @@ export function liveBuyersReveal(
     count: result.ready.length,
     cards: result.ready.slice(0, LIVE_BUYERS_CARDS_MAX).map(({ buyer }) => ({
       sector: buyer.cities.slice(0, LIVE_BUYERS_CITIES_MAX).join(' · '),
-      budget: budgetBand(buyer.budgetIdeal, buyer.budgetMax),
-      since: searchingSince(buyer.createdAt, now),
+      budget: budgetBandRange(buyer.budgetIdeal, buyer.budgetMax),
+      weeks: searchingWeeks(buyer.createdAt, now),
     })),
   };
 }
 
 // L'écran montré au vendeur : le chiffre en très grand, puis la phrase (décision de Jean-Guy, 06/11).
-export const LIVE_BUYERS_PHRASE =
-  'familles cherchent un bien comme le vôtre et sont prêtes à visiter';
-export const LIVE_BUYERS_PROMISE = 'Avec votre accord, je les contacte dès cette semaine.';
-export const LIVE_BUYERS_FINANCING = 'Financement validé';
+// Les mots vivent dans les textes du client (mission 140) ; ces noms restent pour les tests.
+export const LIVE_BUYERS_PHRASE = FRENCH_TEXTS.live.buyers.phrase;
+export const LIVE_BUYERS_PROMISE = FRENCH_TEXTS.live.buyers.promise;
+export const LIVE_BUYERS_FINANCING = FRENCH_TEXTS.live.buyers.financing;

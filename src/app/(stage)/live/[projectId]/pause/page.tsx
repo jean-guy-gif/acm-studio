@@ -8,6 +8,7 @@ import {
 } from '@/features/live-seller/components/live-neutral-screen';
 import { LiveResumeLink } from '@/features/live-seller/components/live-resume-link';
 import { getNeutralScreenContext } from '@/features/live-seller/queries/get-neutral-screen-context';
+import { clientTexts } from '@/lib/client-texts';
 
 export const metadata: Metadata = { title: 'Rendez-vous en pause' };
 
@@ -24,13 +25,14 @@ export default async function LivePausePage({
   if (!context) {
     notFound();
   }
+  const t = clientTexts(context.language).live.neutral;
   return (
     <LiveNeutralScreen
-      title="Rendez-vous en pause"
+      title={t.pause}
       logoLightUrl={context.logoLightUrl}
       logoDarkUrl={context.logoDarkUrl}
       agencyName={context.agencyName}
-      actions={<LiveResumeLink projectId={projectId} />}
+      actions={<LiveResumeLink projectId={projectId} label={t.resume} />}
       advisorAccess={
         <Link href="/live" className={advisorAccessLink}>
           Accès conseiller

@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
+import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { stageGlow, stageGlowLayer } from '@/features/live-seller/components/live-stage';
-import {
-  LIVE_BUYERS_FINANCING,
-  LIVE_BUYERS_PHRASE,
-  LIVE_BUYERS_PROMISE,
-  type LiveBuyersReveal,
-} from '@/features/live-seller/services/live-buyers';
+import type { LiveBuyersReveal } from '@/features/live-seller/services/live-buyers';
 
 // Mission 133 — le compteur caché du Live. Une pastille neutre — un point, sans chiffre ni texte —
 // dans la barre du bas, à côté de « Précédent » (essai de Jean-Guy, 06/11), sur tous les écrans
@@ -72,6 +68,7 @@ export function LiveBuyersScreen({
   reveal: LiveBuyersReveal;
   onClose: () => void;
 }) {
+  const t = useLiveTexts().texts.live.buyers;
   useEffect(() => {
     document.body.dataset.review = 'open';
     const onKey = (event: KeyboardEvent) => {
@@ -104,7 +101,7 @@ export function LiveBuyersScreen({
             {reveal.count}
           </span>
           <span className="font-title max-w-4xl text-4xl leading-[1.1] font-bold tracking-tight text-brand-deep sm:text-5xl stage:text-white">
-            {LIVE_BUYERS_PHRASE}
+            {t.phrase}
           </span>
         </h2>
         <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -119,14 +116,14 @@ export function LiveBuyersScreen({
               </span>
               {card.budget ? (
                 <span className="font-title text-3xl font-bold text-brand-deep sm:text-4xl stage:text-brand">
-                  {card.budget}
+                  {t.budget(card.budget.low, card.budget.high)}
                 </span>
               ) : null}
               <span className="text-xl font-semibold text-emerald-700 sm:text-2xl stage:text-emerald-300">
-                {LIVE_BUYERS_FINANCING}
+                {t.financing}
               </span>
               <span className="text-lg text-zinc-600 sm:text-xl stage:text-white/75">
-                {card.since}
+                {t.since(card.weeks)}
               </span>
             </li>
           ))}
@@ -135,7 +132,7 @@ export function LiveBuyersScreen({
           data-testid="live-buyers-promise"
           className="font-title text-2xl leading-snug font-semibold text-zinc-800 sm:text-3xl stage:text-white"
         >
-          {LIVE_BUYERS_PROMISE}
+          {t.promise}
         </p>
         <button
           type="button"
@@ -144,7 +141,7 @@ export function LiveBuyersScreen({
           data-testid="live-buyers-back"
           className="inline-flex min-h-12 items-center justify-center self-start rounded-xl border border-zinc-300 bg-white px-6 py-2.5 font-title text-base font-semibold text-zinc-700 hover:border-brand hover:text-brand-deep stage:border-white/25 stage:bg-white/5 stage:text-white/90 stage:hover:bg-white/15"
         >
-          Revenir au rendez-vous
+          {t.back}
         </button>
       </div>
     </div>
