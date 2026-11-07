@@ -94,7 +94,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     await expect(
       page.getByRole('heading', { name: 'A property for sale near yours' }),
     ).toBeVisible();
-    await expect(page.getByText('Competitor 1 of 5', { exact: true })).toBeVisible();
+    await expect(page.getByText('Competing property 1 of 5', { exact: true })).toBeVisible();
     // Les montants à l'anglaise : l'euro devant, la virgule des milliers.
     await expect(page.locator('[data-direct-price]')).toContainText(/€\d{1,3}(,\d{3})+/);
   });
@@ -115,17 +115,19 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     await expect(
       page.getByRole('heading', { name: 'A property for sale near yours' }),
     ).toBeVisible();
-    await expect(page.getByText('Competitor 1 of 5', { exact: true })).toBeVisible();
+    await expect(page.getByText('Competing property 1 of 5', { exact: true })).toBeVisible();
   });
 
   await test.step('Les concurrents, le plus proche, l’analyse, en anglais', async () => {
     for (const position of [2, 3, 4, 5]) {
       await next(page);
-      await expect(page.getByText(`Competitor ${position} of 5`, { exact: true })).toBeVisible();
+      await expect(
+        page.getByText(`Competing property ${position} of 5`, { exact: true }),
+      ).toBeVisible();
     }
     await next(page);
     const dpe = page.getByRole('heading', { name: 'Your EPC against the market' });
-    const closest = page.getByRole('heading', { name: 'The competitor closest to your property' });
+    const closest = page.getByRole('heading', { name: 'The competing property closest to yours' });
     await expect(dpe.or(closest).first()).toBeVisible();
     if (await dpe.isVisible()) await next(page);
     await expect(closest).toBeVisible();
@@ -150,7 +152,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
       /^At €952,500, your property would be/,
     );
     await page.getByRole('button', { name: 'Save the price' }).click();
-    await expect(page.getByText('Marketing price saved.')).toBeVisible();
+    await expect(page.getByText('Your listing price is saved.')).toBeVisible();
     await page.getByRole('button', { name: /End the meeting/ }).click();
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}/merci$`));
     await expect(page.getByRole('heading', { name: 'Thank you for your time' })).toBeVisible();

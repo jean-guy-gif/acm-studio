@@ -53,3 +53,8 @@ Ce que le relecteur vérifie en plus : l'anglais est britannique (« 6 November 
 « flat ») ; jamais « estimate » ni « valuation » (l'outil n'estime pas le bien) — « estimated » ne dit
 que la négociation déduite d'une annonce disparue, comme « estimée » en français ; « EPC » pour le DPE ;
 le Live parle au vendeur à la 2e personne.
+
+Relu par le relecteur produit de Jean-Guy (07/11) : « Your listing price » pour le prix retenu
+ensemble, « Asking price » pour le prix affiché d'un concurrent, « competing property / competing
+properties » partout où le vendeur lit « concurrent » ; « estimated » accepté. La relecture d'un
+locuteur natif reste à faire.
