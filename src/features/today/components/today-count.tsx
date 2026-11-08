@@ -2,25 +2,24 @@
 
 import { useEffect, useState } from 'react';
 
-// Mission 130 — la pastille du menu « Suivi » : le nombre de tâches dues aujourd'hui. Lue une fois
-// au chargement de la page (`/api/suivi/taches`), puis tenue à jour par le Suivi lui-même, qui
-// publie son compte à chaque rendu (une relance enregistrée la fait baisser sans rechargement).
-const EVENT = 'acm:suivi-tasks';
+// Mission 145 (partie B) — la pastille du menu « Aujourd'hui » : le nombre de LIGNES de la page
+// (« Mes tâches »), lu une fois au chargement (`/api/aujourdhui`, jamais dans la mise en page,
+// M128 B), puis tenu à jour par la page elle-même, qui publie son compte à chaque rendu.
+// Remplace la pastille du Suivi (M130 A), qui comptait des tâches.
+const EVENT = 'acm:today-lines';
 
 let firstRead: Promise<number | null> | null = null;
 const readCount = (): Promise<number | null> => {
-  firstRead ??= fetch('/api/suivi/taches', { cache: 'no-store' })
+  firstRead ??= fetch('/api/aujourdhui', { cache: 'no-store' })
     .then((response) => (response.ok ? response.json() : { count: null }))
     .then((body: { count?: unknown }) => (typeof body.count === 'number' ? body.count : null))
     .catch(() => null);
   return firstRead;
 };
 
-// `enabled` faux (menu Acquéreur, sans entrée « Suivi ») : aucune lecture.
-export function useSuiviTaskCount(enabled = true): number | null {
+export function useTodayCount(): number | null {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
-    if (!enabled) return;
     let alive = true;
     void readCount().then((value) => {
       if (alive) setCount((current) => current ?? value);
@@ -34,12 +33,12 @@ export function useSuiviTaskCount(enabled = true): number | null {
       alive = false;
       window.removeEventListener(EVENT, onCount);
     };
-  }, [enabled]);
+  }, []);
   return count;
 }
 
-// Rendu par la page du Suivi : elle publie le compte qu'elle vient de calculer.
-export function SuiviTaskCountSync({ count }: { count: number }) {
+// Rendu par la page « Aujourd'hui » (« Mes tâches ») : elle publie le compte qu'elle vient de faire.
+export function TodayCountSync({ count }: { count: number }) {
   useEffect(() => {
     firstRead = Promise.resolve(count);
     window.dispatchEvent(new CustomEvent(EVENT, { detail: count }));
@@ -47,6 +46,6 @@ export function SuiviTaskCountSync({ count }: { count: number }) {
   return null;
 }
 
-export function suiviTaskCountLabel(count: number): string {
-  return `Suivi, ${count} tâche${count > 1 ? 's' : ''} à faire aujourd’hui`;
+export function todayCountLabel(count: number): string {
+  return `Aujourd’hui, ${count} ligne${count > 1 ? 's' : ''} à faire`;
 }

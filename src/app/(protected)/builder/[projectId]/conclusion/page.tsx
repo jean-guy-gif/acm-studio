@@ -25,6 +25,8 @@ import { buildDossierFollowUp } from '@/features/meeting-conclusion/services/dos
 import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
 import { resolveConclusionAmounts } from '@/features/meeting-conclusion/services/resolve-conclusion-amounts';
 import { getProject } from '@/features/projects/queries/get-project';
+import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
+import { getProfile } from '@/lib/auth/get-profile';
 
 type ConclusionPageProps = {
   params: Promise<{ projectId: string }>;
@@ -45,10 +47,16 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
     notFound();
   }
 
-  const [presentation, conclusion, insightsByProject] = await Promise.all([
+  const profile = await getProfile();
+  const [presentation, conclusion, insightsByProject, buyers] = await Promise.all([
     loadLivePresentation(projectId),
     getConclusion(projectId),
     getSellerInsights([projectId]),
+    // Mission 145 (partie B) — les acquéreurs prêts que veut son bien : la phrase anonyme du
+    // message de relance, la même règle et la même fonction que le Suivi.
+    profile && !project.is_example && project.status === 'meeting_completed'
+      ? getPropertyBuyers(profile.agency_id, projectId, new Date())
+      : null,
   ]);
   const amounts = resolveConclusionAmounts(conclusion, presentation?.live ?? null);
   const alreadyConcluded = project.status === 'meeting_completed';
@@ -67,6 +75,7 @@ export default async function ConclusionPage({ params }: ConclusionPageProps) {
         contacts: insights.contacts,
         now: new Date(),
         signature: { advisorFirstName: null, agencyName: null },
+        readyBuyers: conclusion?.outcome === 'follow_up' ? (buyers?.ready.length ?? 0) : 0,
       })
     : null;
 

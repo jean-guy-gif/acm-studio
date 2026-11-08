@@ -104,6 +104,7 @@ export async function designateDangerousToday(
     return { ok: false, error: FAILURE };
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/builder/${projectId as string}/point-marche`);
   return { ok: true };
 }

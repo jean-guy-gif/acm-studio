@@ -148,6 +148,7 @@ export async function recordBuyerRelaunch(buyerId: unknown): Promise<PlainRelaun
   });
   if (error) return { ok: false, error: RELAUNCH_FAILED };
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   revalidatePath(`/acquereurs/${buyer.id}`);
   return { ok: true };
 }

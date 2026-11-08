@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { goViaAccountMenu, login, ensureSellerMode } from './support';
+import { goViaAccountMenu, login } from './support';
 
 // Mission 97 — le junior autonome : « Bienvenue », le dossier d'exemple, et le Live.
 // Le compte de test a déjà des dossiers : il arrive donc sur la Préparation, et revient à
@@ -30,7 +30,6 @@ async function archiveExamples(page: Page): Promise<void> {
 
 test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
   await login(page);
-  await ensureSellerMode(page);
   // Un passage précédent interrompu aurait pu laisser un exemple : on repart propre.
   await archiveExamples(page);
 

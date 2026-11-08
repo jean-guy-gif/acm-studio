@@ -12,6 +12,8 @@ import {
   uniqueDossierName,
   withoutSpaces,
   readDemoLinkAnswers,
+  openToday,
+  sideNav,
 } from './support';
 
 // Mission 114 (point 14) — la démonstration des closers, de bout en bout, sur l'URL d'essai, avec
@@ -154,32 +156,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(followUp.getByTestId('objections-line')).toHaveText(
         'Ce qui le freine : le prix, le délai',
       );
-      // Mission 130 — « À faire aujourd'hui » : la relance de M. et Mme Lambert-Duval, due aujourd'hui, et
-      // le premier Point marché de M. Lefebvre, signé il y a un mois ; le compteur du menu.
-      if (prepared) {
-        const today = page.getByTestId('suivi-today');
-        await expect(
-          today.getByTestId('suivi-task').filter({ hasText: 'Relancer M. et Mme Lambert-Duval' }),
-        ).toContainText(/dernier contact il y a 8 jours · relance prévue aujourd’hui/);
-        await expect(
-          today.getByTestId('suivi-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
-        ).toContainText(
-          // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
-          /premier Point marché dû \(tous les mois\)|en retard/,
-        );
-        await expect(page.getByTestId('suivi-task-count')).toHaveText(/^[1-9]\d*$/);
-        // Mission 145 (partie A) — la boucle passe par le mandat signé de Vence (M. et Mme Lopez) ;
-        // jamais par l'appartement des Lambert-Duval, vendeur à relancer, sans mandat.
-        await expect(
-          today.getByTestId('suivi-task').filter({ hasText: /pour la maison de Vence/ }),
-        ).toContainText(/4 acquéreurs pour la maison de Vence[\s\S]*mandat signé/);
-        await expect(
-          today.getByTestId('suivi-task').filter({ hasText: /pour l’appartement d’Antibes/ }),
-        ).toHaveCount(0);
-      }
+      // Mission 145 (partie B) — le Suivi n'a plus son bloc du jour : il mène à « Aujourd'hui ».
+      await expect(page.getByTestId('suivi-today-link')).toBeVisible();
+      await expect(page.getByTestId('suivi-task')).toHaveCount(0);
+      // « Aujourd'hui » : la relance des Lambert-Duval, due, sur sa propre ligne en tête des
+      // Vendeurs, avec l'argument ; le premier Point marché de M. Lefebvre ; la pastille du menu.
+      if (prepared) await expectTodayAlerts(page);
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
-      // réservé aux opérateurs ; le menu de gauche n'a que ses quatre espaces.
-      await expect(page.locator('nav[data-mode] a')).toHaveCount(4);
+      // réservé aux opérateurs ; le menu de gauche a ses sept espaces, en trois groupes (M145).
+      await expect(sideNav(page).getByRole('link')).toHaveCount(7);
       const menu = await openAccountMenu(page);
       await expect(menu.getByRole('menuitem', { name: /^Ma démo/ })).toBeVisible();
       await expect(menu.getByRole('menuitem', { name: /^Erreurs/ })).toHaveCount(0);
@@ -659,22 +644,21 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(row).toBeVisible();
-      // Mission 130 — « Faire le point » d'« À faire aujourd'hui » ramène à la carte et lance le
-      // point (le premier est dû : signé il y a un mois) ; à défaut, par la carte elle-même.
+      // Mission 145 (partie B) — « Faire le point » d'« Aujourd'hui » mène à la carte du Suivi et
+      // lance le point (le premier est dû : signé il y a un mois) ; à défaut, par la carte.
+      await openToday(page);
       const pointTask = page
-        .getByTestId('suivi-task')
+        .getByTestId('today-task')
         .filter({ hasText: 'Point marché de M. Lefebvre' });
-      if ((await pointTask.count()) > 0) {
-        // Mission 138 — la réponse du vendeur aux Keller prend une des cinq premières places : le
-        // point peut être derrière « Voir les N autres tâches ».
-        const more = page
-          .getByTestId('suivi-today')
-          .locator('summary')
-          .filter({ hasText: /^Voir/ });
-        if (!(await pointTask.first().isVisible()) && (await more.first().isVisible())) {
-          await more.first().click();
-        }
+      const fromToday = (await pointTask.count()) > 0;
+      if (fromToday) {
         await pointTask.getByRole('link', { name: 'Faire le point' }).click();
+        await expect(page).toHaveURL(/\/suivi\?point=/);
+      } else {
+        await page.goto('/suivi');
+      }
+      if (fromToday) {
+        // Lancé par l'adresse.
       } else if ((await row.getByTestId('suivi-link-point').count()) > 0) {
         await row.getByTestId('suivi-link-point').click();
         await row.getByTestId('refresh-prices').click();
@@ -887,7 +871,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       for (const href of after.slice(0, 5)) expect(before).not.toContain(href);
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
-      await expectDemoBuyers(page);
+      // Le dossier « TEST AUTOMATIQUE » du passage, signé, reste jusqu'à la fin.
+      await expectDemoBuyers(page, true);
+      await expectTodayAlerts(page);
     });
 
     await test.step('Aucune requête vers l’extérieur', async () => {
@@ -1215,15 +1201,99 @@ async function walkLive(
 // Mission 117 — les deux acquéreurs de la démo : M. et Mme Rossi (appartement, Antibes) et la
 // famille Keller (villa, Mougins), exactement deux ; « Rapprocher » sur les Keller ouvre le
 // rapprochement pré-rempli et y trouve le mandat signé de Mougins.
-async function expectDemoBuyers(page: Page): Promise<void> {
+
+// Mission 145 (partie B) — sur une démo fraîche : le Suivi sans son bloc du jour, l'offre acceptée
+// sur la carte de Mougins, les Rossi prêts pour l'appartement des Lambert-Duval ; « Aujourd'hui » :
+// la relance avec l'argument, en tête des Vendeurs ; le dossier vendeur dit de rentrer le mandat.
+async function expectTodayAlerts(page: Page): Promise<void> {
+  await page.goto('/suivi');
+  const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+  const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
+  // La carte du mandat sous offre acceptée dit l'offre, plus « Acquéreurs · N ».
+  await expect(signed.getByTestId('suivi-accepted-offer')).toContainText(
+    'Offre acceptée · famille Keller',
+  );
+  // Les Lambert-Duval, vendeurs à relancer : les Rossi, prêts, correspondent à leur bien.
+  await expect(followUp.getByTestId('suivi-follow-up-buyers')).toContainText(
+    /1 acquéreur prêt correspond/,
+  );
+  await openToday(page);
+  const sellers = page.locator('[data-testid="today-block"][data-block="sellers"]');
+  const relance = sellers
+    .getByTestId('today-task')
+    .filter({ hasText: 'Relancer M. et Mme Lambert-Duval' });
+  await expect(relance).toContainText(
+    /dernier contact il y a 8 jours · relance prévue aujourd’hui/,
+  );
+  await expect(relance.getByTestId('today-argument')).toContainText(
+    '1 acquéreur prêt correspond à votre bien',
+  );
+  await expect(sellers.getByTestId('today-line').first()).toContainText(
+    'Relancer M. et Mme Lambert-Duval',
+  );
+  await expect(
+    page.getByTestId('today-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
+  ).toContainText(
+    // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
+    /premier Point marché dû \(tous les mois\)|en retard/,
+  );
+  await expect(page.getByTestId('today-count')).toHaveText(/^[1-9]\d*$/);
+  // Un seul bouton plein sur la page.
+  await expect(page.getByTestId('today-summary')).toContainText(/à faire/);
+  // Mission 145 (partie A) — la boucle passe par le mandat signé de Vence (M. et Mme Lopez) ;
+  // jamais par l'appartement des Lambert-Duval, vendeur à relancer, sans mandat.
+  await expect(
+    page.getByTestId('today-task').filter({ hasText: /pour la maison de Vence/ }),
+  ).toContainText(/4 acquéreurs pour la maison de Vence[\s\S]*mandat signé/);
+  // (Le dossier « TEST AUTOMATIQUE » du passage, signé, peut proposer son propre appartement.)
+  await expect(
+    page
+      .locator('[data-testid="today-block"][data-block="buyers"]')
+      .getByTestId('today-task')
+      .filter({ hasText: /à relancer/ }),
+  ).toHaveCount(0);
+  // Rien ne propose d'appeler un propriétaire prospecté.
+  await expect(
+    page.locator('[data-testid="today-block"][data-block="prospecting"] a[href^="tel:"]'),
+  ).toHaveCount(0);
+  // Le dossier vendeur des Lambert-Duval : rentrer le mandat pour pouvoir le proposer, et le
+  // geste de relance à la place de « Proposer ce bien aux acquéreurs ».
+  await page.goto('/suivi');
+  const followUpId = (await followUp.getAttribute('id'))?.replace(/^suivi-/, '');
+  expect(followUpId, 'La carte des Lambert-Duval n’a pas d’identifiant').toBeTruthy();
+  await page.goto(`/builder/${followUpId}`);
+  const block = page.getByTestId('property-buyers');
+  await expect(block.getByTestId('property-buyers-headline')).toContainText(
+    '1 acquéreur prêt correspond à ce bien',
+  );
+  await expect(block.getByTestId('property-buyers-mandate')).toHaveText(
+    'Rentrez le mandat pour pouvoir le proposer.',
+  );
+  // La relance est la Prochaine étape, seul bouton plein de la page (M143).
+  const next = page.getByTestId('overview-next-step');
+  await expect(next.getByRole('heading')).toHaveText('Relancer M. et Mme Lambert-Duval');
+  await expect(next.getByTestId('overview-next-step-phrase')).toHaveText(
+    '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
+  );
+  await expect(next.getByRole('link', { name: 'Relancer', exact: true })).toHaveAttribute(
+    'href',
+    /\/suivi\?relancer=/,
+  );
+  await expect(block.getByRole('link', { name: /^Relancer/ })).toHaveCount(0);
+  await expect(block.getByTestId('propose-property')).toHaveCount(0);
+  await page.goto('/suivi');
+}
+
+async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await page.goto('/acquereurs');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
   // Mission 132 — neuf acquéreurs (les Wilson, M139) : Rossi, Keller, Wilson, six autour de Vence, cinq prêts à
   // visiter ; M. Fontaine, financement en cours, ne l'est pas. Mission 138 — les Keller, dont
-  // l'offre est acceptée, sont « Sous offre » : plus prêts à visiter.
+  // l'offre est acceptée, sont « Sous offre » : plus prêts à visiter. Mission 145 (partie B) — les
+  // Rossi, prêts à visiter : six.
   await expect(rows).toHaveCount(9);
-  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(5);
+  await expect(page.getByTestId('buyer-row-ready')).toHaveCount(6);
   await expect(rows.filter({ hasText: 'Famille Keller' })).toContainText('Sous offre');
   await expect(rows.filter({ hasText: 'M. Fontaine' }).getByTestId('buyer-row-ready')).toHaveCount(
     0,
@@ -1237,9 +1307,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // acceptée, la ligne dit « Lancer le compromis », jamais plus « Lui présenter sa sélection ».
   await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller →');
   await expect(keller).toContainText(/Prochaine étape · Lancer le compromis · depuis /);
+  // Mission 145 (partie B) — les Rossi, prêts : le mandat signé de l'appartement d'Antibes que ce
+  // passage a conclu leur est à proposer, tant qu'il existe ; sans lui, leurs biens idéaux.
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
-  ).toHaveText('Trouver les biens idéaux →');
+  ).toHaveText(runMandate ? 'Proposer ce bien →' : 'Trouver les biens idéaux →');
   await keller.getByRole('link', { name: 'Famille Keller', exact: true }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
   const kellerUrl = new URL(page.url()).pathname;

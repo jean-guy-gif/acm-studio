@@ -23,14 +23,24 @@ export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
 export function PropertyBuyersBlock({
   result,
   proposeKey,
+  followUp = false,
 }: {
   // null : une lecture a échoué (jamais lu comme « aucun acquéreur », M98).
   result: PropertyBuyers | null;
   // La clé du bien dans la boucle, quand il se propose (mandat signé sans offre acceptée).
   proposeKey: string | null;
+  // Mission 145 — un vendeur à relancer : pas de mandat, donc pas de proposition ; l'argument à la
+  // place de « Proposer ce bien aux acquéreurs ». Le geste de relance est la Prochaine étape de la
+  // page, seul bouton plein (M143).
+  followUp?: boolean;
 }) {
+  const ready = result?.ready.length ?? 0;
   const headline = result
-    ? propertyBuyersHeadline(result.ready.length, result.others.length)
+    ? followUp && ready > 0
+      ? ready > 1
+        ? `${ready} acquéreurs prêts correspondent à ce bien`
+        : '1 acquéreur prêt correspond à ce bien'
+      : propertyBuyersHeadline(ready, result.others.length)
     : null;
   return (
     <section
@@ -57,6 +67,16 @@ export function PropertyBuyersBlock({
             <BuyerLine key={entry.buyer.id} entry={entry} />
           ))}
         </ul>
+      ) : null}
+      {result && result.price != null && followUp && ready > 0 ? (
+        <>
+          <p
+            className="text-sm text-zinc-600 stage:text-white/70"
+            data-testid="property-buyers-mandate"
+          >
+            Rentrez le mandat pour pouvoir le proposer.
+          </p>
+        </>
       ) : null}
       {result && result.price != null && headline && proposeKey ? (
         <Link

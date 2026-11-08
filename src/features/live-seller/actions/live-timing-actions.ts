@@ -46,6 +46,7 @@ export async function markLiveEnded(projectId: string): Promise<Result> {
     return { ok: false, error: 'L’heure de fin n’a pas pu être notée.' };
   }
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true };
 }
 

@@ -115,8 +115,13 @@ export function suiviTaskInputs(input: {
   visits: TaskVisit[];
   // Les points n'ont pas pu être lus : aucune tâche Point marché.
   pointsUnknown?: boolean;
+  // Mission 145 — les cartes déjà dans « Démarcher : N acquéreurs prêts correspondent » : la ligne
+  // « Démarcher les concurrents » ne les compte plus.
+  alerted?: ReadonlySet<TaskCard['row']>;
 }): SuiviTaskInput[] {
-  const prospecting = prospectingCounts(input.cards);
+  const prospecting = prospectingCounts(
+    input.alerted ? input.cards.filter((card) => !input.alerted!.has(card.row)) : input.cards,
+  );
   const competitors = competitorCounts(input.cards);
   const visits = pendingVisitsByProject(input.visits);
   return input.dossiers.map(({ project, conclusion }) => ({

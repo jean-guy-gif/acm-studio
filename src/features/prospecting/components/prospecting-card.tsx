@@ -22,6 +22,7 @@ import { cardCopy } from '@/features/prospecting/services/group-prospecting';
 import { OPPOSED_MESSAGE, oppositionBadge } from '@/features/prospecting/services/opposition';
 import { followUpDate, shortDate } from '@/features/prospecting/services/prospecting-status';
 import type { ProspectingCard as Card } from '@/features/prospecting/types';
+import { cardAlertLabel, type CardAlert } from '@/features/today/services/mandate-alerts';
 
 // Mission 86 — à qui s'adresser (M83), en badge court sur la carte.
 export const STEP_BADGES: Record<ProspectingStep, { label: string; className: string }> = {
@@ -43,6 +44,7 @@ export function ProspectingCard({
   sellerId = null,
   buyerOrigins = [],
   buyerProspectId = null,
+  readyBuyers = null,
 }: {
   card: Card;
   sellerId?: string | null;
@@ -50,6 +52,8 @@ export function ProspectingCard({
   buyerOrigins?: BuyerOriginLabel[];
   // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent ni dossier vendeur.
   buyerProspectId?: string | null;
+  // Mission 145 (partie B) — des acquéreurs prêts veulent ce bien : de quoi rentrer le mandat.
+  readyBuyers?: CardAlert | null;
 }) {
   const { row: shared, sellers } = card;
   const { row, seller } = cardCopy(card, sellerId);
@@ -134,6 +138,15 @@ export function ProspectingCard({
               {fact}
             </span>
           ))}
+        </p>
+      ) : null}
+
+      {readyBuyers && !opposed ? (
+        <p
+          data-testid="prospecting-ready-buyers"
+          className="text-xs font-semibold text-emerald-800 stage:text-emerald-300"
+        >
+          {cardAlertLabel(readyBuyers)}
         </p>
       ) : null}
 

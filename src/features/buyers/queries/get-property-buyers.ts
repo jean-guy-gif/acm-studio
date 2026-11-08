@@ -12,6 +12,7 @@ import {
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
 import type { Buyer } from '@/features/buyers/types';
+import { toNumber } from '@/lib/format/to-number';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 133 — les acquéreurs de l'agence et leurs faits, lus UNE fois par page, quel que soit le
@@ -59,11 +60,8 @@ export type LoopPropertyRow = {
   advisor_price_max: number | null;
 };
 
-// Une colonne `numeric` revient en texte de l'API (« 140.00 ») : convertie avant toute règle.
-export const toNumber = (value: unknown): number | null => {
-  const parsed = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
-  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
-};
+// Une colonne `numeric` revient en texte de l'API : `toNumber` (M134, déplacé par la M145).
+export { toNumber };
 
 export function loopProperty(row: LoopPropertyRow): BuyerLoopProperty {
   return {

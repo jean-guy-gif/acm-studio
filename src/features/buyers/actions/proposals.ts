@@ -227,5 +227,6 @@ export async function recordProposal(
     .maybeSingle();
   revalidatePath(`/acquereurs/${buyerIdOk}`);
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   return { ok: true, sentAt: row?.sent_at ?? new Date().toISOString() };
 }

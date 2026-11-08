@@ -23,6 +23,7 @@ function revalidate(card: ProspectingCard) {
   revalidatePath('/prospection/tournee');
   revalidatePath('/prospection/courriers');
   revalidatePath('/suivi');
+  revalidatePath('/aujourdhui');
   for (const seller of card.sellers) {
     revalidatePath(`/builder/${seller.projectId}`);
   }

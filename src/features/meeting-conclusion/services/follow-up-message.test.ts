@@ -27,6 +27,17 @@ const BASE: FollowUpMessageInput = {
 };
 
 describe('le message de relance (mission 96)', () => {
+  // Mission 145 (partie B) — des acquéreurs prêts : une phrase anonyme, modifiable, jamais un nom.
+  it('dit les acquéreurs prêts par leur nombre, jamais par leur nom', () => {
+    expect(plain(buildFollowUpMessage({ ...BASE, readyBuyers: 1 }))).toContain(
+      'Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.',
+    );
+    expect(plain(buildFollowUpMessage({ ...BASE, readyBuyers: 3 }))).toContain(
+      '3 acquéreurs prêts à visiter cherchent un bien comme le vôtre.',
+    );
+    expect(buildFollowUpMessage(BASE)).not.toContain('acquéreur');
+  });
+
   it('reprend ce que le vendeur a dit lui-même', () => {
     const message = plain(buildFollowUpMessage(BASE));
     expect(message).toContain(
@@ -155,6 +166,26 @@ describe('le message ne contient aucune adresse ni aucun prix de concurrent', ()
 
   it('un message est proposé pour un dossier « à relancer »', () => {
     expect(view.message).toContain('Depuis notre rendez-vous, 2 des biens');
+  });
+
+  // Mission 145 (partie B) — le Suivi et l'écran de conclusion passent par cette seule fonction :
+  // avec des acquéreurs prêts, la même phrase anonyme dans les deux messages.
+  it('des acquéreurs prêts : la phrase anonyme, la même partout', () => {
+    const withBuyers = buildDossierFollowUp({
+      conclusion,
+      liveStartedAt: null,
+      liveEndedAt: null,
+      competitors,
+      dangerous: null,
+      contacts: [],
+      now: new Date('2026-10-20T12:00:00Z'),
+      signature: { advisorFirstName: null, agencyName: null },
+      readyBuyers: 1,
+    });
+    expect(plain(withBuyers.message!)).toContain(
+      'Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.',
+    );
+    expect(view.message).not.toContain('acquéreur prêt');
   });
 
   it('aucun prix de concurrent, ni révélé, ni actuel, ni deviné', () => {

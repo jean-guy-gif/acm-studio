@@ -33,13 +33,13 @@ const read = (...path: string[]): string => readFileSync(join(SRC, ...path), 'ut
 describe('« Bienvenue » (mission 97)', () => {
   it('accueille le conseiller tant qu’il n’a aucun dossier', () => {
     expect(homeHref(0)).toBe('/bienvenue');
-    expect(homeHref(1)).toBe('/builder');
-    expect(homeHref(12)).toBe('/builder');
+    expect(homeHref(1)).toBe('/aujourdhui');
+    expect(homeHref(12)).toBe('/aujourdhui');
   });
 
   it('jamais en mode expert : ses dossiers (mission 110)', () => {
-    expect(homeHref(0, true)).toBe('/builder');
-    expect(homeHref(3, true)).toBe('/builder');
+    expect(homeHref(0, true)).toBe('/aujourdhui');
+    expect(homeHref(3, true)).toBe('/aujourdhui');
   });
 
   it('donne les 4 étapes, une ligne chacune', () => {
@@ -204,8 +204,8 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
     expect(read('features', 'meeting-conclusion', 'services', 'suivi-tasks.ts')).toContain(
       'inputs.filter((input) => !input.isExample)',
     );
-    expect(read('features', 'meeting-conclusion', 'queries', 'get-suivi-task-count.ts')).toContain(
-      // Mission 132 — lus avec les acquéreurs à recontacter, puis l'exemple écarté.
+    // Mission 145 — « Aujourd'hui » et sa pastille partent d'une seule lecture, sans l'exemple.
+    expect(read('features', 'today', 'queries', 'get-today.ts')).toContain(
       'withoutExamples(allDossiers)',
     );
     expect(read('app', '(protected)', 'acquereurs', 'rapprochement', 'page.tsx')).toContain(

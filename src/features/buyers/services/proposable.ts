@@ -19,16 +19,22 @@ export type OfferHold = {
 
 // Les dossiers vendeurs qu'une offre acceptée tient encore, parmi les offres de l'agence.
 export function projectsUnderOffer(answers: readonly OfferHold[]): Set<string> {
-  const latestAccepted = new Map<string, OfferHold>();
+  return new Set(heldOffers(answers).keys());
+}
+
+// Mission 145 (partie B) — l'offre acceptée qui tient chaque mandat (la même règle) : la carte du
+// Suivi dit « Offre acceptée · famille Keller » et mène à leur fiche.
+export function heldOffers<T extends OfferHold>(answers: readonly T[]): Map<string, T> {
+  const latestAccepted = new Map<string, T>();
   for (const answer of answers) {
     if (answer.decision !== 'accepted' || answer.buyerId == null) continue;
     const known = latestAccepted.get(answer.buyerId);
     if (!known || answer.decidedAt > known.decidedAt) latestAccepted.set(answer.buyerId, answer);
   }
-  const held = new Set<string>();
+  const held = new Map<string, T>();
   for (const answer of latestAccepted.values()) {
     if (answer.buyerStatus != null && HOLDING_STATUSES.has(answer.buyerStatus)) {
-      held.add(answer.projectId);
+      held.set(answer.projectId, answer);
     }
   }
   return held;

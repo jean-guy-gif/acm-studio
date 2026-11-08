@@ -33,6 +33,11 @@ import {
   prospectionHref,
 } from '@/features/prospecting/services/filter-prospecting';
 import { prospectingCounters } from '@/features/prospecting/services/prospecting-status';
+import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
+import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
+import type { CardAlert } from '@/features/today/services/mandate-alerts';
+import { prospectingAlerts } from '@/features/today/services/prospecting-alerts';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -62,6 +67,25 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
       ? getBuyerProspecting(await createClient(), profile.agency_id)
       : Promise.resolve({ cards: [], byComparable: new Map(), bySelectionItem: new Map() }),
   ]);
+  // Mission 145 (partie B) — les acquéreurs prêts qui veulent un bien sans mandat : la même
+  // fonction qu'« Aujourd'hui », pour que la carte et la tâche disent le même nombre.
+  const [agencyBuyers, dismissals] = profile
+    ? await Promise.all([
+        loadAgencyBuyers(profile.agency_id),
+        readDismissals(await createClient(), profile.agency_id),
+      ])
+    : [null, null];
+  const readyBuyers = new Map<ProspectingRow, CardAlert>();
+  if (agencyBuyers) {
+    const { alerts } = prospectingAlerts(
+      cards,
+      buyerProspecting.cards,
+      agencyBuyers,
+      dismissals,
+      new Date(),
+    );
+    for (const [card, alert] of alerts) readyBuyers.set(card.row, alert);
+  }
   const sellerId = parseSellerFilter(bien, sellers);
   const target = parseProspectingTarget(cible);
   const origin = parseProspectingOrigin(origine);
@@ -211,6 +235,7 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
               sellerId={sellerId}
               buyerCards={buyerBoard}
               originsByComparable={byComparable}
+              readyBuyers={readyBuyers}
             />
           )}
 

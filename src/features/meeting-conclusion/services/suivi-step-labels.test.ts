@@ -47,11 +47,63 @@ describe('« À faire aujourd’hui »', () => {
   it('une relance du jour', () => {
     expect(taskLine(task({}), lineContext, TODAY)).toEqual({
       title: 'Relancer M. et Mme Martin',
+      argue: null,
       detail: 'Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui',
       late: null,
       button: 'Relancer',
       href: '/suivi?relancer=p1#suivi-p1',
     });
+  });
+
+  // Mission 145 (partie B) — l'argument pour rentrer le mandat : un nombre, jamais un nom.
+  it('une relance due porte l’argument des acquéreurs prêts', () => {
+    expect(taskLine(task({ readyBuyers: 1 }), lineContext, TODAY).argue).toBe(
+      '1 acquéreur prêt correspond à votre bien',
+    );
+    expect(taskLine(task({ readyBuyers: 3 }), lineContext, TODAY).argue).toBe(
+      '3 acquéreurs prêts correspondent à votre bien',
+    );
+  });
+
+  it('« Relancer plus tôt ? » : la date prévue, jamais en retard', () => {
+    const line = taskLine(
+      task({ kind: 'follow_up_early', readyBuyers: 1, plannedOn: '2026-11-20' }),
+      lineContext,
+      TODAY,
+    );
+    expect(line.title).toBe(
+      'Relancer plus tôt ? 1 acquéreur prêt correspond au bien de M. et Mme Martin',
+    );
+    expect(line.detail).toBe('relance prévue le 20/11 · Réfléchit au prix');
+    expect(line.late).toBeNull();
+    expect(line.button).toBe('Relancer');
+  });
+
+  it('« Démarcher » : courrier ou passage, jamais un téléphone ; l’adresse d’abord', () => {
+    const card = {
+      kind: 'competitor' as const,
+      id: 'c1',
+      label: 'Appartement · 3 pièces · 70 m² · Antibes · 395 000 €',
+      toConfirm: false,
+      originBuyerIds: [],
+      letterOriginId: null,
+    };
+    const ready = taskLine(
+      task({ kind: 'prospect_buyers', count: 2, prospectCard: card }),
+      lineContext,
+      TODAY,
+    );
+    expect(ready.title).toBe('Démarcher : 2 acquéreurs prêts correspondent');
+    expect(ready.button).toBe('Préparer le courrier');
+    expect(ready.href).toBe('/builder/p1/prospection/c1?version=owner');
+    expect(ready.late).toBeNull();
+    const toConfirm = taskLine(
+      task({ kind: 'prospect_buyers', count: 1, prospectCard: { ...card, toConfirm: true } }),
+      lineContext,
+      TODAY,
+    );
+    expect(toConfirm.button).toBe('Confirmer l’adresse');
+    expect(`${toConfirm.href} ${toConfirm.detail}`).not.toContain('tel:');
   });
 
   it('une relance en retard : la fin en orange ; sans date posée, la règle le dit', () => {

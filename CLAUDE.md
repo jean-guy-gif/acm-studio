@@ -31,6 +31,7 @@ est le chantier en cours ; la lecture de notes manuscrites par IA (121) attend l
 
 ## Les espaces et le MVP
 
+- **Aujourd'hui** (`/aujourdhui`) : la page d'arrivée, ce qu'il y a à faire : ses tâches, et toute l'agence pour un manager.
 - **Préparation** (`/builder`, `draft`) : bien vendeur, concurrents, analyse, positionnement.
 - **Live** (`/live`) : le rendez-vous face au vendeur ; seuls les dossiers prêts (`ready_for_meeting`).
 - **Suivi** (`/suivi`) : les dossiers conclus (`meeting_completed`), leur issue, la recherche acheteur.
