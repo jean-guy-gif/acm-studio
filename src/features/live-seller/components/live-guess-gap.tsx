@@ -35,7 +35,7 @@ export function LiveGuessGap({
   if (variant === 'inline') {
     return (
       <div
-        className={`flex items-start gap-1.5 text-xs leading-snug font-semibold ${tone || 'text-zinc-600 stage:text-white/70'}`}
+        className={`flex items-start gap-1.5 text-xs leading-tight font-semibold ${tone || 'text-zinc-600 stage:text-white/70'}`}
         data-guess-gap={gap?.tone ?? 'none'}
       >
         {gap ? (
