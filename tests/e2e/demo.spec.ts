@@ -3,6 +3,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import {
   demoCredentials,
   expectNoHorizontalScroll,
+  expectOneFilled,
   goViaAccountMenu,
   login,
   mainText,
@@ -644,6 +645,16 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/suivi');
       const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
       await expect(row).toBeVisible();
+      // Mission 146 — un seul bouton plein sur le Suivi : la première carte due ; le panneau du
+      // Point marché ouvert (et dû) devient le seul plein, la première carte due passe en contour.
+      await expectOneFilled(page, 'Suivi');
+      if ((await row.getByTestId('suivi-link-point').count()) > 0) {
+        await row.getByTestId('suivi-link-point').click();
+        await expect(row.getByTestId('refresh-prices')).toBeVisible();
+        await expect(row.getByTestId('refresh-prices')).toHaveClass(/btn-filled/);
+        await expectOneFilled(page, 'Suivi, Point marché ouvert');
+        await row.getByTestId('suivi-link-point').click();
+      }
       // Mission 145 (partie B) — « Faire le point » d'« Aujourd'hui » mène à la carte du Suivi et
       // lance le point (le premier est dû : signé il y a un mois) ; à défaut, par la carte.
       await openToday(page);

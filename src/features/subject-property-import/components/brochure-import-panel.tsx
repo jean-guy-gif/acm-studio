@@ -3,14 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 
-import {
-  alertError,
-  btnPrimary,
-  btnSecondary,
-  card,
-  formSectionTitle,
-  hintText,
-} from '@/components/ui/styles';
+import { alertError, btnSecondary, card, formSectionTitle, hintText } from '@/components/ui/styles';
 import type {
   DepositBrochureResult,
   ParseBrochureResult,
@@ -158,7 +151,8 @@ export function BrochureImportPanel({
           type="button"
           onClick={() => analyse()}
           disabled={pending || file == null}
-          className={btnPrimary}
+          // Mission 146 — en contour : le seul plein de la fiche est « Enregistrer » (M77).
+          className={btnSecondary}
         >
           {pending ? 'Analyse de la fiche…' : 'Analyser la fiche'}
         </button>

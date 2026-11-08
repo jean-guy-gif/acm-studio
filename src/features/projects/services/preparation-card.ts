@@ -30,3 +30,19 @@ export function advancementSteps(readiness: PreparationReadiness): AdvancementSt
     { label: 'Décision de prix', done: readiness.hasPositioning },
   ];
 }
+
+// Mission 146 — ce qui manque pour être prêt (la règle de M52, `isProjectReady`), dit à côté de
+// « Déclarer prêt », dans « … » : l'outil informe, il ne barre pas la route. Null : rien ne manque.
+export function missingForReady(readiness: PreparationReadiness): string | null {
+  const missing = [
+    readiness.hasProperty ? null : 'bien vendeur',
+    readiness.exploitableCount >= MIN_READY_COMPARABLES
+      ? null
+      : `${MIN_READY_COMPARABLES} concurrents (${readiness.exploitableCount} sur ${MIN_READY_COMPARABLES})`,
+    readiness.hasPositioning ? null : 'décision de prix',
+    readiness.pendingImportCount > 0
+      ? `${readiness.pendingImportCount} import${readiness.pendingImportCount > 1 ? 's' : ''} en attente`
+      : null,
+  ].filter((item): item is string => item != null);
+  return missing.length > 0 ? `il manque : ${missing.join(', ')}` : null;
+}

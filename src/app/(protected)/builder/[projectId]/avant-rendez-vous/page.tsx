@@ -5,13 +5,13 @@ import {
   priceOrSurfaceToVerifyLabel,
 } from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
+
 import { notFound } from 'next/navigation';
 
 import {
   backLink,
   badgeRejected,
   badgeSelected,
-  btnPrimary,
   btnSecondary,
   hintText,
   kickerLabel,
@@ -37,7 +37,6 @@ import {
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
-import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {
   EXPORT_COMPARISON_HINT,
   EXPORT_COMPARISON_LABEL,
@@ -48,6 +47,7 @@ import { LiveShortlistPicker } from '@/features/live-seller/components/live-shor
 import { getLiveShortlist } from '@/features/live-seller/queries/get-live-shortlist';
 import { LIVE_SHORTLIST_SIZE } from '@/features/live-seller/services/live-shortlist';
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
+import { launchLiveHref, nextDossierAction } from '@/features/projects/services/dossier-steps';
 import { getProfile } from '@/lib/auth/get-profile';
 import { REAL_DOSSIER_NOTE } from '@/features/live-seller/services/live-launch';
 import { hasLiveStarted } from '@/features/live-seller/services/live-resume';
@@ -206,6 +206,22 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     pendingImportCount: pendingImports.length,
   };
   const checks = buildReadinessChecks(readiness);
+  // Mission 146 — la prochaine étape du dossier (M110) : tant que c'est « Décider votre prix » ou
+  // « Chercher les concurrents », elle garde le bouton plein, et « Lancer le Live quand même »
+  // reste à portée, en lien discret, dans le bloc du déroulé (décision de Jean-Guy, 08/11 : au
+  // rendez-vous, le conseiller ne cherche pas le lancement ailleurs). Il passe par « Lancer le
+  // Live » et ses rappels, dont « Aucune décision de prix » (M107, M109).
+  const nextKey = nextDossierAction(projectId, {
+    status: project.status,
+    hasProperty: readiness.hasProperty,
+    exploitableCount: readiness.exploitableCount,
+    hasDecision: readiness.hasDecision,
+    liveStarted: project.live_started_at != null,
+    liveEnded: project.live_ended_at != null,
+    documentOnly: presentation.project.presentationMode === 'document',
+  }).key;
+  const launchAnyway =
+    (nextKey === 'decision' || nextKey === 'competitors') && (launch?.competitorCount ?? 0) > 0;
   const ready = isReadyBadge(readiness, project.status);
 
   // Le Live ne montre des concurrents que s'il a un bien vendeur à leur comparer.
@@ -536,33 +552,29 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         sequence={sequence}
         notes={notes}
         launch={
+          // Mission 146 (C4) — « Lancer le Live » une seule fois par écran : celui de l'en-tête (le
+          // bouton d'étape suivante, M110), qui passe par « Lancer le Live » et ses rappels (M107).
+          // En « Document seul », l'en-tête porte « Ouvrir l'Étude de marché » ; reste ici la
+          // conclusion du rendez-vous depuis le dossier (M131).
           presentationMode === 'document' ? (
-            // Mission 131 — « Document seul » : pas de Live à lancer ; l'Étude de marché, puis la
-            // conclusion du rendez-vous depuis le dossier.
             <div className="flex flex-wrap items-center justify-end gap-2" data-document-only>
-              <Link href={`/builder/${projectId}/etude-de-marche`} className={btnPrimary}>
-                Ouvrir l’Étude de marché
-              </Link>
               <Link href={`/builder/${projectId}/conclusion`} className={btnSecondary}>
                 Conclure le rendez-vous
               </Link>
             </div>
-          ) : launch ? (
+          ) : launchAnyway || (launch && !launch.isExample && !launch.resume.started && !expert) ? (
             <div className="flex flex-col items-end gap-1.5">
-              <LiveLaunchActions
-                projectId={projectId}
-                competitorCount={launch.competitorCount}
-                resume={launch.resume}
-                isExample={launch.isExample}
-                toVerifyCount={launch.toVerifyCount}
-                decisionOutdated={launch.decisionOutdated}
-                decisionMissing={launch.decisionMissing}
-                shortlistPending={launch.shortlistPending}
-                pendingImportCount={launch.pendingImportCount}
-                secondary
-              />
-              {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
-              {!launch.isExample && !launch.resume.started && !expert ? (
+              {launchAnyway ? (
+                <Link
+                  href={launchLiveHref(projectId)}
+                  className={`${link} text-sm`}
+                  data-testid="launch-anyway"
+                >
+                  Lancer le Live quand même
+                </Link>
+              ) : null}
+              {/* Mission 104 — avant le lancement : devant le vendeur, ses réponses sont figées. */}
+              {launch && !launch.isExample && !launch.resume.started && !expert ? (
                 <p
                   data-testid="real-dossier-note"
                   className="max-w-xs text-right text-xs text-zinc-500 stage:text-white/55"

@@ -1116,6 +1116,7 @@ export function LiveComparativeShell({
   }, [barLabel]);
 
   const isIntro = page.type === 'intro';
+  const hasAgencyLogo = Boolean(logoLightUrl || logoDarkUrl);
   // Mission 133 — le compteur caché : une pastille neutre dans la barre du bas, à côté de
   // « Précédent », après l'introduction, en Live interactif comme en présentation directe ; le
   // moment montré est noté en fond, suivi comme les autres enregistrements de fond (journal,
@@ -1199,7 +1200,7 @@ export function LiveComparativeShell({
                   type="button"
                   autoFocus
                   onClick={() => setQuitOpen(false)}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-deep px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-darker"
+                  className="btn-filled inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-deep px-6 py-2.5 font-title text-base font-semibold text-white hover:bg-brand-darker"
                 >
                   {t.stay}
                 </button>
@@ -1224,14 +1225,21 @@ export function LiveComparativeShell({
           {/* MISSION 72 — c'est le nom d'agence qui cède la place (tronqué dans <Logo>),
             jamais les boutons : `min-w-0` ici, `shrink-0` sur les réglages. */}
           <div className="flex min-w-0 items-center gap-3">
-            <Logo
-              onDark={stage === 'dark'}
-              className="h-8 sm:h-9"
-              lightSrc={logoLightUrl}
-              darkSrc={logoDarkUrl}
-              fallbackName={agencyName}
-            />
-            <span className="hidden shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 sm:inline stage:text-white/50">
+            {/* Mission 146 (C8) — le bandeau dit le NOM de l'agence, en texte (le logo est dans la
+              carte d'accueil) ; sans logo, l'accueil porte le nom en grand dans sa carte, et le
+              bandeau ne le répète pas sur cet écran. */}
+            {isIntro && !hasAgencyLogo ? null : (
+              <Logo
+                onDark={stage === 'dark'}
+                className="h-8 sm:h-9"
+                lightSrc={agencyName ? null : logoLightUrl}
+                darkSrc={agencyName ? null : logoDarkUrl}
+                fallbackName={agencyName}
+              />
+            )}
+            <span
+              className={`${isIntro && !hasAgencyLogo ? 'inline' : 'hidden sm:inline'} shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 stage:text-white/50`}
+            >
               {t.kicker}
             </span>
           </div>
@@ -1355,7 +1363,7 @@ export function LiveComparativeShell({
           // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
           className={`relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
             isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
-          }`}
+          } ${isIntro ? 'flex flex-col' : ''}`}
         >
           {page.type === 'intro' ? (
             <LivePageIntro

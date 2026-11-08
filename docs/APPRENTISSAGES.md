@@ -341,6 +341,22 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   Durées : relecteur 5,5 min, démo 4,5 min, parcours 2,6 à 3,0 min, présentation directe 6,6 à
   6,9 min, Live sans trou 3,2 min, CI 4 min.
 
+- 08/11 · M146 A · L'émulation de la souris de Playwright lance un glisser-déposer HTML5 mais ne
+  dépose jamais (mesuré sur l'essai : `dragover` accepté, aucun `drop`, `dragend` en « none »), et
+  `dragTo` sur une poignée de 8 px ne lance même pas le glisser. L'e2e envoie donc les événements
+  eux-mêmes, avec un même `DataTransfer` (`dragCompetitor`) ; un glisser à la vraie souris n'est
+  prouvé par aucun test. Une spec jetable sur un dossier de la démo le modifie : remettre l'état.
+- 08/11 · M146 A · Le contrôle « au plus un bouton plein » (`expectOneFilled`, la classe repère
+  `btn-filled` posée sur `btnPrimary`) trouve ce qu'aucune maquette ne montre : « Construire le
+  dossier d'adresse » plein à côté d'« Enregistrer ». Un bouton plein écrit à la main (la scène du
+  Live) doit porter le repère, sinon le contrôle ne le voit pas.
+- 08/11 · M146 A · Un état d'affichage calculé sur une donnée serveur (`property != null`) change
+  sous les yeux du conseiller quand une action la crée et rafraîchit la page : le pli des imports se
+  fermait pendant la récupération des photos et effaçait son message. Le figer au premier rendu
+  (`useState`). Un test unitaire lancé seul tombe sur `NEXT_PUBLIC_SUPABASE_URL` : `npm test` se
+  joue avec `.env.local` chargé. Durées : relecteur 4,7 min, suite e2e 13,7 à 19,4 min (un aléa
+  réseau, `ECONNRESET` sur l'export), parcours 3,0 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

@@ -647,7 +647,6 @@ export type LiveTexts = {
     note: string;
   };
   intro: {
-    kicker: string;
     title: string;
     start: string;
     count: (count: number) => string;
