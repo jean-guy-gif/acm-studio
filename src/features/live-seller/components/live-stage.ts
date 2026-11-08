@@ -26,19 +26,38 @@ export const kicker =
   'text-xs font-semibold tracking-[0.25em] uppercase text-brand-deep/70 stage:text-brand';
 
 // La question posée au vendeur — l'élément le plus important de chaque fiche.
+// Mission 148 — compactée pour que l'écran tienne sur la tablette sans défiler.
 export const question =
-  'font-title max-w-4xl text-4xl leading-[1.05] font-bold tracking-tight text-brand-deep sm:text-5xl xl:text-6xl stage:text-white';
+  'font-title max-w-4xl text-3xl leading-[1.05] font-bold tracking-tight text-brand-deep sm:text-4xl xl:text-5xl stage:text-white';
 
 // Sous-texte d'accompagnement sous la question.
-export const questionHint = 'max-w-2xl text-base text-zinc-500 sm:text-lg stage:text-white/70';
+export const questionHint = 'max-w-3xl text-sm text-zinc-500 sm:text-base stage:text-white/70';
+
+// Mission 148 — la fiche d'un écran : sur tablette, elle occupe toute la hauteur que lui laisse le
+// cadre (en-tête, barre du bas), et la photo prend ce qui reste.
+export const screen = 'flex flex-col gap-3 md:min-h-0 md:flex-1 md:gap-4';
+
+// L'en-tête d'une fiche : la question et son sous-texte.
+export const screenHead = 'flex shrink-0 flex-col gap-1.5';
+
+// Deux colonnes dès la tablette en paysage (photo à gauche, réponses à droite) ; en portrait, une
+// seule colonne. La rangée prend la hauteur qui reste ; la colonne de la photo la remplit.
+export const screenBody =
+  'grid grid-cols-1 gap-4 md:min-h-0 md:flex-1 md:grid-rows-[minmax(0,1fr)] md:landscape:grid-cols-[1.1fr_1fr] md:landscape:gap-5';
+
+// La colonne de la photo : la photo s'étire, le libellé reste dessous.
+export const photoColumn = 'flex min-w-0 flex-col gap-2 md:min-h-0';
+
+// La colonne des réponses : son contenu, jamais étiré.
+export const answerColumn = 'flex min-w-0 flex-col gap-3 md:min-h-0';
 
 // Panneau de contenu (remplace les petites cartes bordées).
 export const panel =
-  'rounded-2xl border border-zinc-200 bg-white p-5 shadow-card sm:p-6 stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm';
+  'rounded-2xl border border-zinc-200 bg-white p-4 shadow-card sm:p-5 stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm';
 
 // Panneau discret (informations secondaires).
 export const panelSoft =
-  'rounded-2xl border border-zinc-100 bg-zinc-50 p-4 sm:p-5 stage:border-white/10 stage:bg-white/5';
+  'rounded-2xl border border-zinc-100 bg-zinc-50 p-3 sm:p-4 stage:border-white/10 stage:bg-white/5';
 
 // Étiquette au-dessus d'une valeur.
 export const statLabel =
@@ -49,7 +68,7 @@ export const statValue = 'font-title text-xl font-semibold text-zinc-900 stage:t
 
 // Très grande valeur révélée (prix, durée) — le moment fort de la fiche.
 export const revealValue =
-  'font-title text-5xl leading-none font-bold tracking-tight whitespace-nowrap text-brand-deep sm:text-6xl stage:text-white';
+  'font-title text-4xl leading-none font-bold tracking-tight whitespace-nowrap text-brand-deep sm:text-5xl stage:text-white';
 
 // Valeur intermédiaire (devinette du vendeur, prix au m²…).
 export const bigValue =
@@ -57,11 +76,15 @@ export const bigValue =
 
 // Grand choix tactile (radio stylisée) : OUI / NON / INCERTAIN, raisons…
 export const choice =
-  'flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-6 py-3 text-center font-title text-xl font-semibold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep has-checked:border-brand has-checked:bg-brand-deep has-checked:text-white has-checked:shadow-lg has-checked:shadow-brand/30 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:has-checked:border-white stage:has-checked:bg-white stage:has-checked:text-brand-deep';
+  'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-5 py-2 text-center font-title text-lg font-semibold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep has-checked:border-brand has-checked:bg-brand-deep has-checked:text-white has-checked:shadow-lg has-checked:shadow-brand/30 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:has-checked:border-white stage:has-checked:bg-white stage:has-checked:text-brand-deep';
+
+// Mission 148 — un choix compact (raisons, cohérence) : 40 px, une ligne, au doigt.
+export const choiceCompact =
+  'flex min-h-10 cursor-pointer items-center justify-center rounded-xl border-2 border-zinc-200 bg-white px-3 py-1.5 text-center font-title text-sm leading-tight font-semibold text-zinc-700 transition-all select-none hover:border-brand hover:text-brand-deep has-checked:border-brand has-checked:bg-brand-deep has-checked:text-white has-checked:shadow-lg has-checked:shadow-brand/30 sm:text-base stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white stage:has-checked:border-white stage:has-checked:bg-white stage:has-checked:text-brand-deep';
 
 // Grand champ numérique (devinette de prix, durée, valeur perçue).
 export const bigInput =
-  'live-number-input w-full rounded-xl border-2 border-zinc-200 bg-white px-5 py-4 text-center font-title text-4xl font-bold text-brand-deep outline-none transition-colors placeholder:text-zinc-300 focus:border-brand focus:ring-4 focus:ring-brand/20 sm:text-5xl stage:border-white/20 stage:bg-white/10 stage:text-white stage:placeholder:text-white/30 stage:focus:border-brand';
+  'live-number-input w-full rounded-xl border-2 border-zinc-200 bg-white px-5 py-3 text-center font-title text-4xl font-bold text-brand-deep outline-none transition-colors placeholder:text-zinc-300 focus:border-brand focus:ring-4 focus:ring-brand/20 sm:text-5xl stage:border-white/20 stage:bg-white/10 stage:text-white stage:placeholder:text-white/30 stage:focus:border-brand';
 
 // Suffixe d'unité accolé au grand champ (€, jours).
 export const bigInputUnit = 'font-title text-3xl font-semibold text-zinc-500 stage:text-white/60';
@@ -77,7 +100,7 @@ export const fieldLabel = 'text-sm font-medium text-zinc-600 stage:text-white/70
 // le bouton est blanc, écrit dans la variante foncée (contraste > 8 : 1). Mission 144 — pendant une
 // révélation, il reste plein et se voit enfoncé (`aria-busy`), jamais grisé comme indisponible.
 export const ctaPrimary =
-  'inline-flex min-h-13 items-center justify-center rounded-xl bg-brand-deep px-8 py-3 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 aria-busy:scale-[0.97] aria-busy:cursor-wait aria-busy:bg-brand-darker aria-busy:shadow-none stage:bg-white stage:text-brand-deep stage:shadow-black/20 stage:hover:bg-brand-soft stage:aria-busy:bg-brand-soft';
+  'inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-deep px-7 py-2.5 font-title text-lg font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 aria-busy:scale-[0.97] aria-busy:cursor-wait aria-busy:bg-brand-darker aria-busy:shadow-none stage:bg-white stage:text-brand-deep stage:shadow-black/20 stage:hover:bg-brand-soft stage:aria-busy:bg-brand-soft';
 
 // Bouton de navigation (Précédent / Suivant / chrome).
 export const navBtn =

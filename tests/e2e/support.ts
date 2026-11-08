@@ -632,3 +632,59 @@ export function readDemoBuyersShown(projectId: string): number | null {
   }
   return Number(count) < 0 ? null : Number(count);
 }
+
+// Mission 148 — le commentaire facultatif du Live s'ouvre par « + Ajouter un commentaire ».
+export async function fillLiveComment(page: Page, name: string, text: string): Promise<void> {
+  const area = page.locator(`textarea[name="${name}"]`);
+  if ((await area.count()) === 0) {
+    await page.locator('main [data-add-comment]').click();
+  }
+  await area.fill(text);
+}
+
+// Mission 148 — aucun écran du Live ne défile : ni la page, ni la fiche (qui défilerait elle-même
+// sur une fenêtre trop basse), et aucun contenu ne passe sous la barre du bas. Mesuré dans le
+// navigateur, à la taille de fenêtre courante.
+type VerticalMeasure = { pageScroll: number; mainScroll: number; underBar: number; what: string };
+async function measureVertical(page: Page): Promise<VerticalMeasure> {
+  return page.evaluate(() => {
+    const doc = document.documentElement;
+    const main = document.querySelector<HTMLElement>('main');
+    const bar = document.querySelector<HTMLElement>('[data-live-bar]');
+    const limit = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    let bottom = 0;
+    let what = '';
+    if (main) {
+      for (const element of main.querySelectorAll<HTMLElement>('*')) {
+        // Une visionneuse ou « Revoir », ouverts par-dessus, ne comptent pas.
+        if (element.closest('[role="dialog"]')) continue;
+        if (element.closest('[aria-hidden="true"]')) continue;
+        const rect = element.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        if (rect.bottom > bottom) {
+          bottom = rect.bottom;
+          what = `<${element.tagName.toLowerCase()}> « ${(element.textContent ?? '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .slice(0, 40)} »`;
+        }
+      }
+    }
+    const underBar = Math.max(0, Math.round(bottom - limit));
+    return {
+      pageScroll: Math.max(0, doc.scrollHeight - doc.clientHeight),
+      mainScroll: main ? Math.max(0, main.scrollHeight - main.clientHeight - 1) : 0,
+      underBar,
+      what: underBar > 0 ? what : '',
+    };
+  });
+}
+
+export async function expectNoVerticalScroll(page: Page, screen: string): Promise<void> {
+  await expect
+    .poll(() => measureVertical(page), {
+      message: `L'écran « ${screen} » défile ou passe sous la barre du bas`,
+      timeout: 10_000,
+    })
+    .toEqual({ pageScroll: 0, mainScroll: 0, underBar: 0, what: '' });
+}

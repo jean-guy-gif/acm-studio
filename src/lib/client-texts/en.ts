@@ -85,6 +85,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
     competitorFallback: 'Competing property',
     yourAnswer: 'Your answer',
     commentOptional: 'Comment (optional)',
+    addComment: '+ Add a comment',
     unknownLocation: 'Location unknown',
     linkGone: {
       title: 'This link is no longer valid',
@@ -148,6 +149,13 @@ export const ENGLISH_TEXTS: ClientTexts = {
         equivalent: 'equivalent',
         forThem: 'advantage to them',
       },
+      chipStatus: { competitor_weakness: 'to you', competitor_advantage: 'to them' },
+    },
+    guessGap: {
+      below: (percent) => `${percent} below the asking price`,
+      above: (percent) => `${percent} above the asking price`,
+      equal: 'the asking price',
+      answer: (amount) => `Your answer: ${amount}`,
     },
     alignment: {
       green: 'Price in line with the market',
@@ -177,6 +185,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       question: 'Is this a serious competing property for yours?',
       hint: 'Look at the property as a buyer would — its price comes next.',
       serious: { yes: 'Yes, a serious competing property', no: 'No', unsure: 'Not sure' },
+      seriousShort: { yes: 'Yes, serious', no: 'No', unsure: 'Not sure' },
     },
     priceReveal: {
       question: 'Does this price seem right to you?',
@@ -476,6 +485,22 @@ export const ENGLISH_TEXTS: ClientTexts = {
         too_high: 'No, it’s too high',
         too_low: 'No, it’s too low',
         unsure: 'Hard to say',
+      },
+      coherenceShort: {
+        coherent: 'Yes, consistent',
+        too_high: 'Too high',
+        too_low: 'Too low',
+        unsure: 'Not sure',
+      },
+      dangerousReasonShort: {
+        better_value: 'Value for money',
+        better_condition: 'Better condition',
+        better_location: 'Location',
+        better_surface: 'Larger size',
+        better_outdoor: 'Better outdoor space',
+        better_features: 'Features',
+        more_attractive_price: 'More attractive price',
+        other: 'Other',
       },
       durationReason: {
         price_too_high: 'Price too high',

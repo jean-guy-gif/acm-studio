@@ -343,7 +343,13 @@ describe('la synthèse au vendeur', () => {
     const { synthesis, html } = await load();
     const [c1, c2, c3] = synthesis.competitors;
     expect(c1.serious).toBe('yes');
-    expect(c1.revealed).toMatchObject({ guess: 280_000, price: 300_000, gapPercent: 7.1 });
+    // Mission 148 — l'écart se mesure sur le prix affiché : 280 000 pour 300 000, 6,7 % en dessous
+    // (orange, entre 5 et 10 %).
+    expect(c1.revealed).toMatchObject({
+      guess: 280_000,
+      price: 300_000,
+      guessGap: { amount: -20_000, direction: 'below', tone: 'orange' },
+    });
     expect(c1.revealed?.duration).toBeNull();
     expect(c2.serious).toBe('no');
     expect(c2.revealed).toBeNull();
@@ -355,9 +361,12 @@ describe('la synthèse au vendeur', () => {
       duration: { guessDays: 60, days: 90 },
       priceDrop: { amount: 10_000, percent: 2.9 },
     });
-    expect(html).toMatch(/\+7,1\s%\spar rapport à votre réponse/);
+    expect(html).toMatch(/6,7\s%\sen dessous du prix affiché/);
+    expect(html).toContain('data-guess-gap="orange"');
+    expect(html).toContain('text-amber-700');
+    expect(html).not.toContain('par rapport à votre réponse');
     expect(synthesis.guessLines).toEqual([
-      expect.stringMatching(/^Vous avez sous-estimé 2 concurrents sur 2, de 8,\d\s% en moyenne$/),
+      expect.stringMatching(/^Vous avez sous-estimé 2 concurrents sur 2, de 7,9\s% en moyenne$/),
     ]);
     expect(synthesis.dangerous).toEqual({ competitorId: 'c3', reason: 'Plus grande surface' });
     expect(html).toContain('Pourquoi, selon vous');

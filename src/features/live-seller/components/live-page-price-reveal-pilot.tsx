@@ -1,24 +1,29 @@
 'use client';
 
 import {
-  bigValue,
-  choice,
-  fieldInput,
+  answerColumn,
+  choiceCompact,
   fieldLabel,
   panel,
+  photoColumn,
   question,
   questionHint,
   revealValue,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
+import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { PRICE_COHERENCE_VALUES } from '@/features/live-seller/constants';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
-import { formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
+import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 
 // MISSION 51 — écran-pilote (étape 3) du contrat « Valider et continuer ».
 //
@@ -48,14 +53,14 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
   if (savedEstimate == null) {
     const neutralLabel = label;
     return (
-      <div className="flex flex-col gap-6 sm:gap-8">
-        <div className="flex flex-col gap-3">
+      <div className={screen}>
+        <div className={screenHead}>
           <h2 className={question}>{t.question}</h2>
           <p className={questionHint}>{t.guessFirst}</p>
         </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-          <div className="flex flex-col gap-4">
-            <LiveGallery photos={entry.photoUrls} alt={neutralLabel} />
+        <div className={screenBody}>
+          <div className={photoColumn}>
+            <LiveGallery photos={entry.photoUrls} alt={neutralLabel} fill />
             <LiveComparableHeader
               heading={neutralLabel}
               city={entry.city}
@@ -67,43 +72,29 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
     );
   }
 
+  // Mission 148 — la photo à gauche, le prix affiché et la réponse du vendeur en couleur à droite
+  // (l'écart écrit et son montant, planche 3), puis les quatre choix en 2 × 2, libellés courts.
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.question}</h2>
         <p className={questionHint}>{t.hint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-        <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={label} />
+      <div className={screenBody}>
+        <div className={photoColumn}>
+          <LiveGallery photos={entry.photoUrls} alt={label} fill />
           <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
         </div>
 
-        <div className="flex h-fit flex-col gap-4">
-          <div className={`${panel} live-reveal-pop flex flex-col gap-5`}>
+        <div className={answerColumn}>
+          <div className={`${panel} live-reveal-pop flex flex-col gap-3`}>
             <div>
               <div className={statLabel}>{t.listed}</div>
               <div className={revealValue}>{euro(reveal.currentPrice)}</div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className={statLabel}>{t.imagined}</div>
-                <div className={bigValue}>{euro(savedEstimate)}</div>
-              </div>
-              <div>
-                <div className={statLabel}>{t.gap}</div>
-                <div className={bigValue}>
-                  {reveal.gapAmount != null
-                    ? formatEuro(reveal.gapAmount, { signed: true, language })
-                    : '—'}
-                </div>
-                {reveal.gapPercentage != null ? (
-                  <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {formatPercent(reveal.gapPercentage, { signed: true, language })}
-                  </div>
-                ) : null}
-              </div>
+            <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className={statLabel}>{t.perSqm}</div>
                 <div className={statValue}>
@@ -123,15 +114,12 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
             </div>
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-4`}>
-            <fieldset className="flex flex-col gap-3">
-              <legend className={fieldLabel}>{t.legend}</legend>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-3`}>
+            <fieldset className="flex flex-col gap-2">
+              <legend className={`${fieldLabel} mb-2`}>{t.legend}</legend>
+              <div className="grid grid-cols-2 gap-2 md:portrait:grid-cols-4">
                 {PRICE_COHERENCE_VALUES.map((value) => (
-                  <label
-                    key={value}
-                    className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}
-                  >
+                  <label key={value} className={choiceCompact}>
                     <input
                       type="radio"
                       name="seller_price_coherence"
@@ -139,21 +127,15 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
                       defaultChecked={response?.seller_price_coherence === value}
                       className="sr-only"
                     />
-                    {texts.live.answers.coherence[value]}
+                    {texts.live.answers.coherenceShort[value]}
                   </label>
                 ))}
               </div>
             </fieldset>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={fieldLabel}>{texts.common.commentOptional}</span>
-              <textarea
-                name="seller_price_coherence_comment"
-                rows={2}
-                defaultValue={response?.seller_price_coherence_comment ?? ''}
-                className={fieldInput}
-              />
-            </label>
+            <LiveCommentField
+              name="seller_price_coherence_comment"
+              defaultValue={response?.seller_price_coherence_comment ?? ''}
+            />
           </form>
         </div>
       </div>

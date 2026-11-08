@@ -1,4 +1,4 @@
-import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
+import { guessGap } from '@/features/live-seller/services/guess-gap';
 import { launchReadinessLabel } from '@/features/meeting-conclusion/services/launch-readiness';
 import { formatEuro, formatPercent } from '@/lib/format';
 
@@ -21,8 +21,8 @@ export type GuessSummary = {
   // Concurrents dont on connaît la devinette ET un prix à lui opposer.
   compared: number;
   under: number;
-  // Écart moyen des sous-estimations (« de 6 % en moyenne »), mesuré comme dans le Live : en %
-  // de la devinette ; null si aucune.
+  // Écart moyen des sous-estimations (« de 6 % en moyenne »), mesuré comme dans le Live : en % du
+  // prix affiché (M148) ; null si aucune.
   underAveragePercent: number | null;
   over: number;
   overAveragePercent: number | null;
@@ -33,9 +33,10 @@ export type GuessSummary = {
 const average = (values: number[]): number | null =>
   values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
 
-// L'écart d'un concurrent est CELUI DU LIVE (buildPriceReveal) : prix réel moins devinette, en %
-// de la devinette, arrondi au dixième. Le conseiller ne lit jamais deux pourcentages différents
-// pour la même devinette ; la moyenne porte sur ces écarts-là.
+// L'écart d'un concurrent est CELUI DU LIVE (`guessGap`, M148) : devinette moins prix affiché, en %
+// du prix affiché (il se mesurait en % de la devinette, M96), au dixième. Le conseiller ne lit
+// jamais deux pourcentages différents pour la même devinette ; la moyenne porte sur ces écarts-là.
+// Une devinette à 0 € ne compte pas (M96).
 export function summarizeGuesses(competitors: GuessedCompetitor[]): GuessSummary | null {
   const underGaps: number[] = [];
   const overGaps: number[] = [];
@@ -46,25 +47,20 @@ export function summarizeGuesses(competitors: GuessedCompetitor[]): GuessSummary
     if (competitor.guess == null || real == null) {
       continue;
     }
-    const { gapAmount, gapPercentage } = buildPriceReveal({
-      price: real,
-      surfaceArea: null,
-      sellerEstimate: competitor.guess,
-      retainedPricesPerSquareMeter: [],
-      thisPricePerSquareMeter: null,
-    });
-    if (gapAmount == null || gapPercentage == null) {
+    const gap = guessGap(competitor.guess, real);
+    if (gap == null) {
       continue;
     }
+    const percent = Math.round(Math.abs(gap.percent) * 10) / 10;
     compared += 1;
     if (competitor.revealedPrice == null) {
       usesCurrentPrices = true;
     }
-    // Écart positif : le prix réel dépasse la devinette, le vendeur a sous-estimé.
-    if (gapAmount > 0) {
-      underGaps.push(gapPercentage);
-    } else if (gapAmount < 0) {
-      overGaps.push(-gapPercentage);
+    // Une réponse sous le prix affiché : le vendeur a sous-estimé.
+    if (gap.direction === 'below') {
+      underGaps.push(percent);
+    } else if (gap.direction === 'above') {
+      overGaps.push(percent);
     }
   }
   if (compared === 0) {

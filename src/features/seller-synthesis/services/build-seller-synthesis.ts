@@ -6,7 +6,7 @@ import { normalizePropertyType } from '@/features/competitor-search/utils/normal
 import { countDpe, dpeMarket } from '@/features/dpe/services/dpe';
 import { DANGEROUS_REASONS, type DangerousReason } from '@/features/live-seller/constants';
 import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
-import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
+import { guessGap } from '@/features/live-seller/services/guess-gap';
 import {
   buildMarketReading,
   competitorPriceBasisLabel,
@@ -320,13 +320,8 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       revealed = {
         guess,
         price,
-        gapPercent: buildPriceReveal({
-          price,
-          surfaceArea: null,
-          sellerEstimate: guess,
-          retainedPricesPerSquareMeter: [],
-          thisPricePerSquareMeter: null,
-        }).gapPercentage,
+        // Mission 148 — le même calcul qu'au Live, sur les montants figés (M111).
+        guessGap: guessGap(guess, price),
         pricePerSquareMeter: pricePerSquareMeter(price, row.surface_area),
         duration: durationShown
           ? { guessDays, days: marketDuration.available ? marketDuration.days : null }

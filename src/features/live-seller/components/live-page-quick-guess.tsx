@@ -7,13 +7,18 @@ import { LiveFeatureComparison } from '@/features/live-seller/components/live-fe
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
+  answerColumn,
   bigInput,
   bigInputUnit,
-  choice,
+  choiceCompact,
   fieldLabel,
   panel,
+  photoColumn,
   question,
   questionHint,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import { SERIOUS_COMPETITOR_VALUES } from '@/features/live-seller/constants';
@@ -44,69 +49,71 @@ export function LivePageQuickGuess({ entry }: { entry: SellerComparable }) {
   const label = neutralComparableLabel(entry, language);
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6">
-      <div className="flex flex-col gap-2">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.guessQuestion}</h2>
         <p className={questionHint}>
           {savedEstimate != null ? texts.live.price.savedHint : t.guessHint}
         </p>
       </div>
 
-      {/* Deux colonnes dès la tablette : la devinette reste à l'écran, à côté de la fiche. */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-        <div className="flex min-w-0 flex-col gap-3">
-          <LiveGallery photos={entry.photoUrls} alt={label} />
+      {/* Deux colonnes en paysage : la devinette reste à l'écran, à côté de la fiche. */}
+      <div className={screenBody}>
+        <div className={photoColumn}>
+          <LiveGallery photos={entry.photoUrls} alt={label} fill />
           <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
         </div>
 
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          className={`${panel} flex h-fit min-w-0 flex-col gap-5`}
-          data-quick-guess
-        >
-          <fieldset className="flex flex-col gap-2.5">
-            <legend className={fieldLabel}>{t.seriousLegend}</legend>
-            <div className="flex flex-col gap-2">
-              {SERIOUS_COMPETITOR_VALUES.map((value) => (
-                <label key={value} className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}>
-                  <input
-                    type="radio"
-                    name="seller_serious_competitor"
-                    value={value}
-                    defaultChecked={currentAnswer === value}
-                    className="sr-only"
-                    onChange={() => {
-                      setSerious(value);
-                      // Mission 104 — « Non » dispense de deviner : un prix déjà tapé s'efface
-                      // (le champ visible et la valeur envoyée, remis à neuf).
-                      if (value === 'no') setCleared((count) => count + 1);
-                    }}
-                  />
-                  {texts.live.competition.serious[value]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          {savedEstimate != null ? (
-            <LiveLockedAnswer value={formatEuro(savedEstimate, { language })} />
-          ) : (
-            <label className="flex flex-col gap-2">
-              <span className={statLabel}>{texts.live.price.label}</span>
-              <div className="flex items-center gap-3">
-                <PriceInput
-                  key={cleared}
-                  name="seller_estimated_listing_price"
-                  language={language}
-                  className={bigInput}
-                  required={serious !== 'no'}
-                />
-                <span className={bigInputUnit}>€</span>
+        <div className={answerColumn}>
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className={`${panel} flex min-w-0 flex-col gap-4`}
+            data-quick-guess
+          >
+            <fieldset className="flex flex-col gap-2">
+              <legend className={`${fieldLabel} mb-2`}>{t.seriousLegend}</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {SERIOUS_COMPETITOR_VALUES.map((value) => (
+                  <label key={value} className={choiceCompact}>
+                    <input
+                      type="radio"
+                      name="seller_serious_competitor"
+                      value={value}
+                      defaultChecked={currentAnswer === value}
+                      className="sr-only"
+                      onChange={() => {
+                        setSerious(value);
+                        // Mission 104 — « Non » dispense de deviner : un prix déjà tapé s'efface
+                        // (le champ visible et la valeur envoyée, remis à neuf).
+                        if (value === 'no') setCleared((count) => count + 1);
+                      }}
+                    />
+                    {texts.live.competition.seriousShort[value]}
+                  </label>
+                ))}
               </div>
-              <span className="text-sm text-zinc-500 stage:text-white/50">{t.nextScreen}</span>
-            </label>
-          )}
-        </form>
+            </fieldset>
+
+            {savedEstimate != null ? (
+              <LiveLockedAnswer value={formatEuro(savedEstimate, { language })} />
+            ) : (
+              <label className="flex flex-col gap-2">
+                <span className={statLabel}>{texts.live.price.label}</span>
+                <div className="flex items-center gap-3">
+                  <PriceInput
+                    key={cleared}
+                    name="seller_estimated_listing_price"
+                    language={language}
+                    className={bigInput}
+                    required={serious !== 'no'}
+                  />
+                  <span className={bigInputUnit}>€</span>
+                </div>
+                <span className="text-sm text-zinc-500 stage:text-white/50">{t.nextScreen}</span>
+              </label>
+            )}
+          </form>
+        </div>
       </div>
 
       <LiveFeatureComparison items={entry.featureComparison} />

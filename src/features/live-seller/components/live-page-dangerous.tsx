@@ -2,16 +2,19 @@
 
 import { useCallback, useState } from 'react';
 
+import { RemoteImage } from '@/components/ui/remote-image';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
+import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import { LiveCompetitorReview } from '@/features/live-seller/components/live-competitor-review';
-import { LivePhoto } from '@/features/live-seller/components/live-photo';
+import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
 import {
-  choice,
-  fieldInput,
+  choiceCompact,
   fieldLabel,
   panel,
   question,
   questionHint,
+  screen,
+  screenHead,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import { DANGEROUS_REASONS, type SeriousCompetitor } from '@/features/live-seller/constants';
@@ -21,13 +24,16 @@ import type {
   SellerComparable,
 } from '@/features/live-seller/services/project-live-for-seller';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import { formatEuro, formatSquareMeters } from '@/lib/format';
+import { formatEuro } from '@/lib/format';
 
 // Synthèse — the seller picks the most dangerous competitor among the ones he
 // judged serious (yes / unsure). The software records the choice but NEVER
 // concludes that this price is a maximum.
 // Mission 113 — chaque concurrent montré au Live porte « Revoir », « Non » compris : sa fiche
 // s'ouvre en plein écran, en lecture seule, et se referme sur cet écran inchangé.
+// Mission 148 — l'écran tient sur la tablette (planche 5) : une carte compacte par concurrent
+// sérieux (photo à gauche, libellé, prix révélé, la réponse du vendeur en couleur, « Revoir »),
+// jusqu'à trois par rangée, puis les raisons en libellés courts.
 export function LivePageDangerous({
   comparables,
   summary,
@@ -41,6 +47,7 @@ export function LivePageDangerous({
   const [reviewedId, setReviewedId] = useState<string | null>(null);
   const { language, texts } = useLiveTexts();
   const t = texts.live.dangerous;
+  const photoTexts = texts.common.photos;
   const euro = (value: number | null): string =>
     value != null ? formatEuro(value, { language }) : '—';
   const closeReview = useCallback(() => setReviewedId(null), []);
@@ -52,119 +59,113 @@ export function LivePageDangerous({
   const otherComparables = comparables.filter(
     (entry) => !eligibleComparables.some((eligible) => eligible.id === entry.id),
   );
-  const reviewButton = (entry: SellerComparable) => (
+  const reviewButton = (entry: SellerComparable, className = '') => (
     <button
       type="button"
       onClick={() => setReviewedId(entry.id)}
       data-testid="review-competitor"
-      className="min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-base font-medium text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep stage:border-white/25 stage:text-white/85 stage:hover:border-brand stage:hover:text-white"
+      className={`min-h-9 rounded-lg px-2.5 py-1 text-sm font-medium text-brand-deep underline underline-offset-4 transition-colors hover:text-brand-darker stage:text-white/85 stage:hover:text-white ${className}`}
     >
       {t.review}
     </button>
   );
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.question}</h2>
         <p className={questionHint}>{t.hint}</p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
+      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-3 md:min-h-0">
         {eligibleComparables.length === 0 ? (
           <p className="text-base text-zinc-500 stage:text-white/60">{t.none}</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {eligibleComparables.map((entry) => (
-              <div key={entry.id} className="flex flex-col gap-2">
-                <label className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-brand stage:has-checked:bg-brand/15">
-                  <input
-                    type="radio"
-                    name="seller_most_dangerous_comparable_id"
-                    value={entry.id}
-                    defaultChecked={selected === entry.id}
-                    className="sr-only"
-                  />
-                  <LivePhoto
-                    photoUrl={entry.photoUrl}
-                    photoUrls={[]}
-                    alt={neutralComparableLabel(entry, language)}
-                    compact
-                  />
-                  <div className="flex flex-col gap-2 p-4">
-                    <div className="font-title text-lg leading-snug font-semibold text-zinc-900 stage:text-white">
-                      {neutralComparableLabel(entry, language)}
-                    </div>
-                    <div className="text-sm text-zinc-500 stage:text-white/60">
-                      {[entry.district, entry.city].filter(Boolean).join(', ') ||
-                        texts.common.unknownLocation}
-                      {entry.surfaceArea != null
-                        ? ` · ${formatSquareMeters(entry.surfaceArea, { language })}`
-                        : ''}
-                      {entry.roomsCount != null ? ` · ${texts.common.rooms(entry.roomsCount)}` : ''}
-                    </div>
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="font-title text-2xl font-bold text-brand-deep stage:text-white">
-                        {euro(entry.price)}
-                      </span>
-                      {entry.marketDuration?.available && entry.marketDuration.days != null ? (
-                        <span className="text-xs text-zinc-500 stage:text-white/50">
-                          {texts.live.duration.observedSince(entry.marketDuration.days)}
-                        </span>
-                      ) : null}
-                    </div>
-                    {entry.response?.seller_estimated_listing_price != null ? (
-                      <div className="text-sm text-zinc-500 stage:text-white/60">
-                        {t.imagined(euro(entry.response.seller_estimated_listing_price))}
-                        {entry.priceReveal.gapAmount != null
-                          ? t.gap(
-                              formatEuro(entry.priceReveal.gapAmount, { signed: true, language }),
-                            )
-                          : ''}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:landscape:grid-cols-3">
+            {eligibleComparables.map((entry) => {
+              const label = neutralComparableLabel(entry, language);
+              return (
+                <div key={entry.id} className="relative">
+                  <label className="group grid h-full cursor-pointer grid-cols-[5.5rem_1fr] overflow-hidden rounded-xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-white stage:has-checked:bg-brand/20">
+                    <input
+                      type="radio"
+                      name="seller_most_dangerous_comparable_id"
+                      value={entry.id}
+                      defaultChecked={selected === entry.id}
+                      className="sr-only"
+                    />
+                    {entry.photoUrl ? (
+                      <RemoteImage
+                        src={entry.photoUrl}
+                        alt={label}
+                        className="h-full min-h-24 w-full object-cover"
+                        fallbackClassName="h-full min-h-24 w-full"
+                        fallbackLabel={photoTexts.short}
+                        eager
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-24 items-center justify-center bg-zinc-50 text-xs text-zinc-500 stage:bg-white/5 stage:text-white/40">
+                        {photoTexts.short}
                       </div>
-                    ) : null}
-                    <div className={statLabel}>
-                      {t.serious(
-                        entry.response?.seller_serious_competitor
-                          ? texts.live.competition.serious[
-                              entry.response.seller_serious_competitor as SeriousCompetitor
-                            ]
-                          : t.notGiven,
-                      )}
+                    )}
+                    <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2 pb-8">
+                      <div className="line-clamp-2 font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
+                        {label}
+                      </div>
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="font-title text-lg font-bold text-brand-deep stage:text-white">
+                          {euro(entry.price)}
+                        </span>
+                        {entry.marketDuration?.available && entry.marketDuration.days != null ? (
+                          <span className="text-xs text-zinc-500 stage:text-white/50">
+                            {texts.live.duration.observedSince(entry.marketDuration.days)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <LiveGuessGap
+                        guess={entry.response?.seller_estimated_listing_price ?? null}
+                        listedPrice={entry.price}
+                        variant="inline"
+                      />
+                      <span className="text-[0.65rem] font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/50">
+                        {t.serious(
+                          entry.response?.seller_serious_competitor
+                            ? texts.live.competition.serious[
+                                entry.response.seller_serious_competitor as SeriousCompetitor
+                              ]
+                            : t.notGiven,
+                        )}
+                      </span>
                     </div>
-                  </div>
-                </label>
-                {reviewButton(entry)}
-              </div>
-            ))}
+                  </label>
+                  {reviewButton(entry, 'absolute right-1 bottom-1')}
+                </div>
+              );
+            })}
           </div>
         )}
 
         {otherComparables.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className={statLabel}>{t.others}</span>
-            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {otherComparables.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-2 stage:border-white/15"
-                >
-                  <span className="min-w-0 text-base text-zinc-700 stage:text-white/80">
-                    {neutralComparableLabel(entry, language)}
-                  </span>
-                  {reviewButton(entry)}
-                </li>
-              ))}
-            </ul>
+            {otherComparables.map((entry) => (
+              <span
+                key={entry.id}
+                className="flex items-center gap-1 rounded-lg border border-zinc-200 py-0.5 pl-3 text-sm text-zinc-700 stage:border-white/15 stage:text-white/80"
+              >
+                {neutralComparableLabel(entry, language)}
+                {reviewButton(entry)}
+              </span>
+            ))}
           </div>
         ) : null}
 
-        <div className={`${panel} flex flex-col gap-4`}>
-          <fieldset className="flex flex-col gap-3">
-            <legend className={fieldLabel}>{t.why}</legend>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={`${panel} flex flex-col gap-3`}>
+          <fieldset className="flex flex-col gap-2">
+            <legend className={`${fieldLabel} mb-2`}>{t.why}</legend>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               {DANGEROUS_REASONS.map((value) => (
-                <label key={value} className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}>
+                <label key={value} className={choiceCompact}>
                   <input
                     type="radio"
                     name="seller_most_dangerous_reason"
@@ -172,20 +173,12 @@ export function LivePageDangerous({
                     defaultChecked={reason === value}
                     className="sr-only"
                   />
-                  {texts.live.answers.dangerousReason[value]}
+                  {texts.live.answers.dangerousReasonShort[value]}
                 </label>
               ))}
             </div>
           </fieldset>
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>{texts.common.commentOptional}</span>
-            <textarea
-              name="seller_most_dangerous_comment"
-              rows={2}
-              defaultValue={comment}
-              className={fieldInput}
-            />
-          </label>
+          <LiveCommentField name="seller_most_dangerous_comment" defaultValue={comment} />
         </div>
       </form>
       {reviewed ? <LiveCompetitorReview entry={reviewed} onClose={closeReview} /> : null}

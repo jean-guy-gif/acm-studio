@@ -1,6 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 import {
+  fillLiveComment,
   demoCredentials,
   expectNoHorizontalScroll,
   expectReadableBands,
@@ -991,7 +992,7 @@ async function walkLive(
   if (firstPass) {
     for (const competitor of competitors) await expectPriceHidden(competitor, 'Votre bien');
     await choose('Oui, c’est bien mon bien');
-    await page.locator('textarea[name="seller_property_comment"]').fill(COMMENT);
+    await fillLiveComment(page, 'seller_property_comment', COMMENT);
   }
   await validate();
 
@@ -1028,7 +1029,7 @@ async function walkLive(
       if (firstPass) await expectPriceHidden(competitor, `${label} · accéléré, écran 1`);
       const quickGuess = page.locator('input[data-price-for="seller_estimated_listing_price"]');
       if (firstPass) {
-        await choose('Oui, un concurrent sérieux');
+        await choose('Oui, sérieux');
         await quickGuess.fill(String(guess(competitor)));
       } else {
         await expect(quickGuess).toHaveCount(0);
@@ -1059,7 +1060,7 @@ async function walkLive(
     if (firstPass) {
       await expectPriceHidden(competitor, `${label} · Un sérieux concurrent ?`);
       await choose('Oui, un concurrent sérieux');
-      await page.locator('textarea[name="seller_serious_competitor_comment"]').fill(COMMENT);
+      await fillLiveComment(page, 'seller_serious_competitor_comment', COMMENT);
     }
     await validate();
 
@@ -1087,8 +1088,8 @@ async function walkLive(
       String(competitor.price),
     );
     if (firstPass) {
-      await choose('Oui, ce prix paraît cohérent');
-      await page.locator('textarea[name="seller_price_coherence_comment"]').fill(COMMENT);
+      await choose('Oui, cohérent');
+      await fillLiveComment(page, 'seller_price_coherence_comment', COMMENT);
     }
     await validate();
 
@@ -1113,7 +1114,7 @@ async function walkLive(
       await onScreen(`${label} · durée révélée`);
       if (firstPass) {
         await choose('Prix trop élevé');
-        await page.locator('textarea[name="seller_market_duration_comment"]').fill(COMMENT);
+        await fillLiveComment(page, 'seller_market_duration_comment', COMMENT);
       }
       await validate();
     }
@@ -1141,8 +1142,8 @@ async function walkLive(
       .filter({ has: page.locator('input[name="seller_most_dangerous_comparable_id"]') })
       .first()
       .click();
-    await choose('Meilleure localisation');
-    await page.locator('textarea[name="seller_most_dangerous_comment"]').fill(COMMENT);
+    await choose('Localisation');
+    await fillLiveComment(page, 'seller_most_dangerous_comment', COMMENT);
   }
   await validate();
 

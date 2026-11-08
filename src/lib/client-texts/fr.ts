@@ -59,6 +59,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     competitorFallback: 'Bien concurrent',
     yourAnswer: 'Votre réponse',
     commentOptional: 'Commentaire (facultatif)',
+    addComment: '+ Ajouter un commentaire',
     questionMark: '\u00a0?',
     unknownLocation: 'Localisation inconnue',
     linkGone: {
@@ -113,6 +114,13 @@ export const FRENCH_TEXTS: ClientTexts = {
         equivalent: 'équivalent',
         forThem: 'avantage pour lui',
       },
+      chipStatus: { competitor_weakness: 'pour vous', competitor_advantage: 'pour lui' },
+    },
+    guessGap: {
+      below: (percent) => `${percent} en dessous du prix affiché`,
+      above: (percent) => `${percent} au-dessus du prix affiché`,
+      equal: 'le prix affiché',
+      answer: (amount) => `Votre réponse\u00a0: ${amount}`,
     },
     alignment: PRICE_ALIGNMENT_LABELS,
     pricePosition: {
@@ -137,6 +145,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       question: 'Est-il un sérieux concurrent pour votre bien ?',
       hint: 'Observez le bien comme le ferait un acheteur — son prix viendra ensuite.',
       serious: SERIOUS_COMPETITOR_LABELS,
+      seriousShort: { yes: 'Oui, sérieux', no: 'Non', unsure: 'Incertain' },
     },
     priceReveal: {
       question: 'Ce prix vous paraît-il cohérent ?',
@@ -437,6 +446,22 @@ export const FRENCH_TEXTS: ClientTexts = {
     },
     answers: {
       coherence: PRICE_COHERENCE_LABELS,
+      coherenceShort: {
+        coherent: 'Oui, cohérent',
+        too_high: 'Trop élevé',
+        too_low: 'Trop bas',
+        unsure: 'Je ne sais pas',
+      },
+      dangerousReasonShort: {
+        better_value: 'Rapport qualité/prix',
+        better_condition: 'Meilleur état',
+        better_location: 'Localisation',
+        better_surface: 'Plus grande surface',
+        better_outdoor: 'Meilleur extérieur',
+        better_features: 'Prestations',
+        more_attractive_price: 'Prix plus attractif',
+        other: 'Autre',
+      },
       durationReason: MARKET_DURATION_REASON_LABELS,
       dangerousReason: DANGEROUS_REASON_LABELS,
     },

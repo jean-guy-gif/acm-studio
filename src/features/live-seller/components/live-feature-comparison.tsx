@@ -16,7 +16,14 @@ import type { FeatureComparison } from '@/features/live-seller/types';
 //   competitor_weakness  -> green         (avantage pour vous)
 //   unknown              -> NOT SHOWN     (filtered out below; the engine still
 //                                          produces it for the advisor report)
-export function LiveFeatureComparison({ items }: { items: FeatureComparison[] }) {
+export function LiveFeatureComparison({
+  items,
+  narrow = false,
+}: {
+  items: FeatureComparison[];
+  // Mission 148 — dans une colonne (sous la photo) : trois pastilles par rangée.
+  narrow?: boolean;
+}) {
   const { language, texts } = useLiveTexts();
   const t = texts.common.grid;
   // Product decision (Laurent) : the seller must not see the holes in our data.
@@ -34,10 +41,10 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <div className="flex shrink-0 flex-col gap-1.5" data-feature-chips>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className={statLabel}>{t.title}</span>
-        <span className="text-xs text-zinc-500 stage:text-white/40">
+        <span className="text-[0.7rem] text-zinc-500 stage:text-white/50">
           <span className="font-semibold text-emerald-600 stage:text-emerald-300">
             {t.legend.green}
           </span>{' '}
@@ -50,29 +57,39 @@ export function LiveFeatureComparison({ items }: { items: FeatureComparison[] })
           = {t.legend.forThem}
         </span>
       </div>
-      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+      {/* Mission 148 — une bande de pastilles compactes : la couleur porte le statut, et le libellé
+          le dit (« · pour vous », « · pour lui ») ; « équivalent » reste gris, sans mot (la
+          légende le dit). Jamais la couleur seule (M129). */}
+      <dl
+        className={`grid grid-cols-3 gap-1.5 ${narrow ? 'md:portrait:grid-cols-5' : 'sm:grid-cols-4 md:landscape:grid-cols-5'}`}
+      >
         {visibleItems.map((item) => {
           const value = item.comparableValues?.[language] ?? item.comparableValue;
+          const chip =
+            item.comparisonStatus === 'competitor_advantage' ||
+            item.comparisonStatus === 'competitor_weakness'
+              ? t.chipStatus[item.comparisonStatus]
+              : null;
           return (
             <div
               key={item.criterion}
-              className={`flex flex-col gap-1 rounded-xl border px-3.5 py-2.5 ${comparisonBadgeClass[item.comparisonStatus]}`}
+              data-chip-status={item.comparisonStatus}
+              className={`flex min-w-0 flex-col rounded-lg border px-2.5 py-1 ${comparisonBadgeClass[item.comparisonStatus]}`}
             >
-              <dt className="text-[0.68rem] font-semibold tracking-[0.12em] uppercase opacity-70">
+              <dt className="truncate text-[0.6rem] leading-tight font-semibold tracking-[0.1em] uppercase opacity-80">
                 {t.criteria[item.criterion]}
+                {chip ? ` · ${chip}` : ''}
               </dt>
-              <dd className="flex flex-col">
-                <span
-                  className={`font-title text-lg leading-tight ${comparisonValueClass[item.comparisonStatus]}`}
-                >
-                  {/* Mission 80 — le DPE s'affiche en lettre colorée (A vert → G rouge). */}
-                  {item.criterion === 'energy_rating' && dpeClass(value) ? (
-                    <DpeLetter letter={dpeClass(value)!} size="md" />
-                  ) : (
-                    (value ?? '—')
-                  )}
-                </span>
-                <span className="text-[0.68rem] opacity-70">{t.status[item.comparisonStatus]}</span>
+              <dd
+                className={`truncate font-title text-sm leading-tight ${comparisonValueClass[item.comparisonStatus]}`}
+                title={typeof value === 'string' ? value : undefined}
+              >
+                {/* Mission 80 — le DPE s'affiche en lettre colorée (A vert → G rouge). */}
+                {item.criterion === 'energy_rating' && dpeClass(value) ? (
+                  <DpeLetter letter={dpeClass(value)!} />
+                ) : (
+                  (value ?? '—')
+                )}
               </dd>
             </div>
           );

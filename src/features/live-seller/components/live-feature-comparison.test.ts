@@ -6,8 +6,10 @@ import { LiveFeatureComparison } from '@/features/live-seller/components/live-fe
 
 // Jean-Guy, 05/11 — la grille du Live se lit du côté du vendeur, comme le Point marché : vert
 // « Avantage pour vous », orange « Avantage pour lui » (attention), gris « Équivalent ».
+// Mission 148 — une bande de pastilles : le libellé dit « · pour vous » / « · pour lui », jamais la
+// couleur seule (M129).
 describe('la grille du Live, du côté du vendeur', () => {
-  it('« Avantage pour vous » en vert, « Avantage pour lui » en orange', () => {
+  it('« pour vous » en vert, « pour lui » en orange, « équivalent » en gris sans mot', () => {
     const html = renderToStaticMarkup(
       createElement(LiveFeatureComparison, {
         items: [
@@ -17,6 +19,13 @@ describe('la grille du Live, du côté du vendeur', () => {
             comparableValue: '200 m²',
             comparisonStatus: 'competitor_weakness',
             displayLabel: 'Surface',
+          },
+          {
+            criterion: 'rooms',
+            subjectValue: '5',
+            comparableValue: '5',
+            comparisonStatus: 'same',
+            displayLabel: 'Pièces',
           },
           {
             criterion: 'outdoor',
@@ -29,11 +38,13 @@ describe('la grille du Live, du côté du vendeur', () => {
       }),
     );
     const card = (label: string) =>
-      html.match(new RegExp(`<div class="([^"]*)"><dt[^>]*>${label}<`))?.[1] ?? '';
+      html.match(new RegExp(`class="([^"]*)"><dt[^>]*>${label}[ ·<]`))?.[1] ?? '';
     expect(card('Surface')).toContain('emerald');
     expect(card('Extérieur')).toContain('amber');
-    expect(html).toContain('Avantage pour vous');
-    expect(html).toContain('Avantage pour lui');
+    expect(card('Pièces')).toContain('zinc');
+    expect(html).toContain('Surface · pour vous');
+    expect(html).toContain('Extérieur · pour lui');
+    expect(html).toMatch(/Pièces<\/dt>/);
     expect(html).toContain('avantage pour vous');
     expect(html).not.toContain('Faiblesse');
   });

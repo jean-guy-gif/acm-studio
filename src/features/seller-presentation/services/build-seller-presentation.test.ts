@@ -629,12 +629,11 @@ describe('buildSellerPresentation — Mission 24 live comparative core', () => {
     expect(first.priceHistory).toBeDefined();
   });
 
-  it('attaches the seller response and computes the price gap from the estimate', () => {
+  it('attaches the seller response and its estimate (the gap is guessGap, M148)', () => {
     const result = buildSellerPresentation(input({ sellerResponses: [response()] }));
     const entry = result.live!.comparables.find((c) => c.id === 'a')!;
     expect(entry.response?.seller_serious_competitor).toBe('yes');
     expect(entry.priceReveal.sellerEstimate).toBe(240000);
-    expect(entry.priceReveal.gapAmount).toBe(10000); // 250000 - 240000
     expect(entry.response?.seller_estimated_days_on_market).toBe(30);
     // Mission 104 — le premier révélé : rien d'autre n'a encore été montré.
     expect(entry.priceReveal.relativePosition).toEqual({ rank: 1, total: 1 });

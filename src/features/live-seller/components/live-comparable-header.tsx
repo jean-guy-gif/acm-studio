@@ -20,11 +20,11 @@ export function LiveComparableHeader({
   const { texts } = useLiveTexts();
   const location = [district, city].filter(Boolean).join(', ') || texts.common.unknownLocation;
   return (
-    <div className="flex flex-col gap-0.5">
-      <h3 className="font-title text-2xl leading-snug font-semibold text-zinc-900 stage:text-white">
+    <div className="flex shrink-0 flex-col">
+      <h3 className="font-title text-lg leading-snug font-semibold text-zinc-900 sm:text-xl stage:text-white">
         {heading}
       </h3>
-      <p className="text-base text-zinc-500 stage:text-white/60">{location}</p>
+      <p className="text-sm text-zinc-500 stage:text-white/60">{location}</p>
     </div>
   );
 }
