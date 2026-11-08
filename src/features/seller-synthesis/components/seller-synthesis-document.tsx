@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { RemoteImage } from '@/components/ui/remote-image';
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
-import { bandPosition } from '@/features/live-seller/services/market-reading';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
+import { layoutBand, type BandLayout } from '@/features/seller-synthesis/services/band-labels';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
@@ -292,6 +292,34 @@ const ALIGNMENT_TONE = {
 } as const;
 
 // La bande des prix affichés (M94), avec ses repères.
+// Mission 148 A — son échelle couvre tout ce qu'elle montre, prix et repères, et ses étiquettes ne
+// se touchent jamais (`layoutBand`). La page est rendue au serveur, sans connaître la largeur de la
+// frise : la mise en page est calculée pour trois largeurs de frise — téléphone, tablette, écran
+// large et PDF A4 (≈ 658 px) — et chacune ne s'affiche que si la frise mesure AU MOINS sa largeur
+// de calcul : la requête porte sur la frise elle-même (`@container`), jamais sur l'écran, que les
+// marges ou une barre de défilement rétrécissent.
+const BAND_LAYOUTS = [
+  // Une frise de moins de 480 px (téléphone) : calculée pour 200 px, un écran de 302 px et plus.
+  { width: 200, className: '@min-[480px]:hidden' },
+  // De 480 à 619 px.
+  { width: 480, className: 'hidden @min-[480px]:block @min-[620px]:hidden' },
+  // 620 px et plus : l'écran large et l'impression A4.
+  { width: 620, className: 'hidden @min-[620px]:block' },
+] as const;
+
+const BAND_TONE = {
+  muted: { bar: 'bg-zinc-400', text: 'text-zinc-600' },
+  brand: { bar: 'bg-brand', text: 'text-brand-deep' },
+  // Mission 115 — « Le plus dangereux selon vous » : couleur de l'agence, lisible au premier regard.
+  deep: { bar: 'bg-brand-deep', text: 'text-brand-deep font-semibold' },
+  dark: { bar: 'bg-brand-darker', text: 'text-brand-darker' },
+} as const;
+
+// Hauteurs de la frise, en px : une étiquette tient sur deux lignes (≈ 28 px), un rond numéroté
+// fait 20 px et sa rangée 24.
+const LABEL_HEIGHT = 28;
+const ROW_HEIGHT = 24;
+
 function PriceBand({
   prices,
   markers,
@@ -302,54 +330,129 @@ function PriceBand({
   language: TextLanguage;
 }) {
   const euro = (value: number) => formatEuro(value, { language });
-  const all = [...prices, ...markers.map((marker) => marker.value)];
-  const at = (value: number) => `${Math.round(bandPosition(value, all) * 1000) / 10}%`;
-  const tone = {
-    muted: 'bg-zinc-400 text-zinc-600',
-    brand: 'bg-brand text-brand-deep',
-    // Mission 115 — « Le plus dangereux selon vous » : couleur de l'agence, lisible au premier regard.
-    deep: 'bg-brand-deep text-brand-deep font-semibold',
-    dark: 'bg-brand-darker text-brand-darker',
-  };
-  const low = Math.min(...prices);
-  const high = Math.max(...prices);
+  const legend = clientTexts(language).live.analysis.band.marker;
+  const bandMarkers = markers.map((marker) => ({ ...marker, amount: euro(marker.value) }));
+  const ends = layoutBand(prices, bandMarkers, BAND_LAYOUTS[0].width);
   return (
-    <div className="flex flex-col gap-1">
-      <div className="relative mx-[12%] h-24">
-        <div className="absolute inset-x-0 top-[3.25rem] h-[3px] bg-zinc-200" />
-        {prices.map((price, index) => (
+    <div className="@container flex flex-col gap-1">
+      {BAND_LAYOUTS.map(({ width, className }) => (
+        <BandAtWidth
+          key={width}
+          layout={layoutBand(prices, bandMarkers, width)}
+          className={className}
+          euro={euro}
+          legend={legend}
+        />
+      ))}
+      <div className="flex justify-between text-xs text-zinc-500">
+        <span>{euro(ends.low)}</span>
+        <span>{euro(ends.high)}</span>
+      </div>
+    </div>
+  );
+}
+
+function BandAtWidth({
+  layout,
+  className,
+  euro,
+  legend,
+}: {
+  layout: BandLayout<Marker['tone']>;
+  className: string;
+  euro: (value: number) => string;
+  legend: (label: string, price: string) => string;
+}) {
+  const pct = (position: number) => `${Math.round(position * 10_000) / 100}%`;
+  const at = (position: number, offset: number, width: number) =>
+    `clamp(0px, calc(${pct(position)} - ${offset}px), calc(100% - ${width}px))`;
+  const numbered = layout.mode === 'numbered';
+  const hasBelow = !numbered && layout.groups.some((group) => group.lane === 'below');
+  // La ligne de la frise : sous les étiquettes du dessus, ou sous les rangées de ronds.
+  const line = numbered ? layout.rows * ROW_HEIGHT + 6 : LABEL_HEIGHT + 12;
+  const height = numbered ? line + 10 : hasBelow ? line + 14 + LABEL_HEIGHT : line + 10;
+  return (
+    <div className={className} data-band data-band-mode={layout.mode}>
+      <div className="relative" style={{ height }} data-band-area>
+        <div className="absolute inset-x-0 h-[3px] bg-zinc-200" style={{ top: line }} />
+        {layout.dots.map((position, index) => (
           <span
-            key={`${price}-${index}`}
-            className="absolute top-[2.9rem] h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-zinc-400"
-            style={{ left: at(price) }}
+            key={`${position}-${index}`}
+            className="absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-400"
+            style={{ left: pct(position), top: line + 1.5 }}
           />
         ))}
-        {markers.map((marker, index) => {
-          const below = index % 2 === 1;
+        {layout.groups.map((group) => {
+          const tone = BAND_TONE[group.tone];
+          if (numbered) {
+            const top = (layout.rows - 1 - group.row) * ROW_HEIGHT;
+            return (
+              <div key={group.value}>
+                <span
+                  className={`absolute w-0.5 -translate-x-1/2 ${tone.bar}`}
+                  style={{ left: pct(group.position), top: top + 20, height: line - top - 20 }}
+                />
+                <span
+                  data-band-label
+                  className={`absolute flex h-5 w-5 items-center justify-center rounded-full text-[0.65rem] font-bold text-white ${tone.bar}`}
+                  style={{ left: at(group.position, 10, 20), top }}
+                >
+                  {group.number}
+                </span>
+              </div>
+            );
+          }
+          const above = group.lane === 'above';
+          const top = above ? 0 : line + 14;
+          const align =
+            group.offset < group.width / 3
+              ? 'text-left'
+              : group.offset > (group.width * 2) / 3
+                ? 'text-right'
+                : 'text-center';
           return (
-            <div
-              key={marker.label}
-              className={`absolute flex -translate-x-1/2 flex-col items-center text-center text-[0.68rem] leading-tight whitespace-nowrap ${tone[marker.tone].split(' ')[1]} ${
-                below ? 'top-[3.5rem]' : 'top-0'
-              }`}
-              style={{ left: at(marker.value) }}
-            >
-              {below ? (
-                <span className={`mb-0.5 h-4 w-0.5 ${tone[marker.tone].split(' ')[0]}`} />
-              ) : null}
-              <span>{marker.label}</span>
-              <b>{euro(marker.value)}</b>
-              {below ? null : (
-                <span className={`mt-0.5 h-4 w-0.5 ${tone[marker.tone].split(' ')[0]}`} />
-              )}
+            <div key={group.value}>
+              <span
+                className={`absolute w-0.5 -translate-x-1/2 ${tone.bar}`}
+                style={
+                  above
+                    ? { left: pct(group.position), top: LABEL_HEIGHT, height: line - LABEL_HEIGHT }
+                    : { left: pct(group.position), top: line + 3, height: 11 }
+                }
+              />
+              <div
+                data-band-label
+                className={`absolute flex flex-col text-[0.68rem] leading-tight whitespace-nowrap ${align} ${tone.text}`}
+                style={{
+                  left: at(group.position, group.offset, group.width),
+                  width: group.width,
+                  top,
+                }}
+              >
+                <span>{group.labels.join(' · ')}</span>
+                <b>{euro(group.value)}</b>
+              </div>
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between text-xs text-zinc-500">
-        <span>{euro(low)}</span>
-        <span>{euro(high)}</span>
-      </div>
+      {numbered ? (
+        <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[0.7rem] leading-tight">
+          {layout.groups.map((group) => {
+            const tone = BAND_TONE[group.tone];
+            return (
+              <li key={group.value} className={`flex items-center gap-1.5 ${tone.text}`}>
+                <span
+                  className={`flex h-4 w-4 flex-none items-center justify-center rounded-full text-[0.6rem] font-bold text-white ${tone.bar}`}
+                >
+                  {group.number}
+                </span>
+                <span>{legend(group.labels.join(' · '), euro(group.value))}</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
