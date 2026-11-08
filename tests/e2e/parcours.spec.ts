@@ -13,6 +13,7 @@ import {
   TEST_PRICE_DROP,
   ageTestFollowUp,
   chooseInMoreMenu,
+  dragCompetitor,
   expectOneFilled,
   readTestOppositions,
   removeTestOppositions,
@@ -302,12 +303,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const titles = () => cards.locator('span.font-title.text-lg').allInnerTexts();
     const before = await titles();
     // La poignée seule se glisse (le reste de la carte ne réordonne rien).
-    await cards.nth(0).getByTestId('competitor-drag-handle').dragTo(cards.nth(1));
+    await dragCompetitor(cards.nth(0), cards.nth(1));
     await expect(page.getByTestId('order-saved')).toBeVisible();
     await page.reload();
     expect(await titles()).toEqual([before[1], before[0], ...before.slice(2)]);
     // Remis dans l'ordre d'origine : le Live du parcours compte sur lui.
-    await cards.nth(1).getByTestId('competitor-drag-handle').dragTo(cards.nth(0));
+    await dragCompetitor(cards.nth(1), cards.nth(0));
     await expect(page.getByTestId('order-saved')).toBeVisible();
     await page.reload();
     expect(await titles()).toEqual(before);

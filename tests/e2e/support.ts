@@ -116,6 +116,19 @@ export async function chooseInMoreMenu(scope: Locator, entry: string): Promise<v
     .click();
 }
 
+// Mission 146 — glisser la poignée ⋮⋮ d'une carte de concurrent sur une autre. L'émulation de la
+// souris de Playwright lance le glisser mais ne dépose jamais (mesuré le 08/11 sur l'essai : survol
+// accepté, aucun « drop ») : on envoie donc les événements du glisser-déposer eux-mêmes, avec un
+// même `DataTransfer`, comme le navigateur.
+export async function dragCompetitor(from: Locator, to: Locator): Promise<void> {
+  const transfer = await from.page().evaluateHandle(() => new DataTransfer());
+  const handle = from.getByTestId('competitor-drag-handle');
+  await handle.dispatchEvent('dragstart', { dataTransfer: transfer });
+  await to.dispatchEvent('dragover', { dataTransfer: transfer });
+  await to.dispatchEvent('drop', { dataTransfer: transfer });
+  await handle.dispatchEvent('dragend', { dataTransfer: transfer });
+}
+
 // Mission 146 — la règle de la 143 : au plus un bouton plein visible par écran. Les boutons pleins
 // portent le repère `btn-filled` (le style `btnPrimary`).
 export async function expectOneFilled(page: Page, screen: string): Promise<void> {
