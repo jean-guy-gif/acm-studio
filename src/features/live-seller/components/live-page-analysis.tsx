@@ -22,7 +22,7 @@ import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
 function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
   const { language } = useLiveTexts();
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1 text-sm">
+    <div className="flex items-baseline justify-between gap-3 py-0.5 text-sm">
       <span className="text-zinc-500 stage:text-white/60">{label}</span>
       <span className="font-title font-semibold text-zinc-900 stage:text-white">
         {gap.amount != null ? formatEuro(gap.amount, { signed: true, language }) : '—'}
@@ -275,8 +275,8 @@ export function LivePageAnalysis({
         />
       ) : null}
 
-      <div className={`${panelSoft} shrink-0`}>
-        <div className={`${statLabel} mb-1`}>{t.gaps}</div>
+      <div className={`${figureCard} shrink-0`}>
+        <div className={statLabel}>{t.gaps}</div>
         <div className="grid grid-cols-1 gap-x-6 md:landscape:grid-cols-3">
           {gaps.competitiveMarketCentral != null ? (
             <GapRow label={t.gapSellerMarket} gap={gaps.sellerVsMarket} />
