@@ -324,6 +324,22 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   six endroits. Chercher l'ancien comportement dans `tests/e2e` avant de pousser. Durées : relecteur
   3,5 min, démo 4,6 min, présentation directe 6,0 min, parcours 2,6 min, les autres 2,9 + 5,2 min,
   CI 3,5 à 4,3 min.
+- 08/11 · M145 B · Remplacer des numéros de ligne dans une spec par un script (« le `reload` de la
+  ligne 540 devient `openToday` ») a frappé un `reload` qui n'était pas celui d'une tâche : la fiche
+  des Keller rechargée était devenue « Aujourd'hui », rouge deux fois, une erreur de la spec et
+  non du code. Remplacer par le texte qui entoure, jamais par le numéro de ligne.
+- 08/11 · M145 B · Une page qui regroupe des tâches en séries repliées cache leurs boutons : l'e2e
+  ouvre la page par un `openToday` qui déplie chaque série, et la relit (plutôt qu'un `reload`)
+  après un geste. Une règle qui dépend du jour (le point de la semaine, lundi à mercredi soir) se
+  joue conditionnellement dans l'e2e et à dates fixes en test unitaire.
+- 08/11 · M145 B · Un acquéreur de démo qui devient prêt change des comptes ailleurs : six prêts au
+  lieu de cinq, et le mandat signé que le passage de l'e2e conclut lui est proposé tant que ce
+  dossier existe (il part en fin de passage). Relire en base, en lecture seule
+  (`db query --remote --read-only`), ce qu'un écran propose avant de corriger la spec ou le code.
+- 08/11 · M145 B · L'aléa du 08/11 : juste après la remise à zéro, l'e2e démo a lu 5 dossiers sur 6,
+  vert au second passage ; « Votre démo est prête » devrait attendre les six (noté pour la 147).
+  Durées : relecteur 5,5 min, démo 4,5 min, parcours 2,6 à 3,0 min, présentation directe 6,6 à
+  6,9 min, Live sans trou 3,2 min, CI 4 min.
 
 ## La base
 
@@ -332,6 +348,15 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   l'accord donné ici.
 - 01/10 · Une migration verte en local sur base vide n'est pas vérifiée : compter sur la vraie base avant,
   prédire après, et la transaction doit pouvoir annuler.
+- 08/11 · M145 B · `migration up --local` refuse quand l'historique local est désaligné : la seule
+  migration de la mission se joue en local par `docker exec -i supabase_db_acm-studio psql … <
+fichier`, puis son test SQL. `npm run gen:types` sur une base locale incomplète produit un diff
+  faux : générer par `gen types typescript --schema public --linked`, puis retirer l'en-tête
+  `__InternalSupabase`. Appliquée par le chef sur l'ordre de Jean-Guy (`db push --linked --yes`),
+  après `migration list`, la sauvegarde et le comptage prédit, conforme.
+- 08/11 · M145 B · Le bloquant du relecteur venait d'une règle juste sur le papier (« une relance
+  fait revenir la ligne ») et fausse à l'usage : la ligne revenait le jour même de la relance.
+  Écrire, pour chaque règle « fait revenir », le scénario du lendemain du geste.
 - 29/10 · Réécrire une fonction dans une migration : le gardien-sql diffe contre la version posée
   par la migration précédente (`chiffres_justes.sql` pour `conclude_meeting`) et y a trouvé un
   changement non annoncé du prédicat de statut ; le faire soi-même avant de soumettre.
