@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import {
+  fillLiveComment,
   ageTestBuyer,
   expectNoHorizontalScroll,
   goViaAccountMenu,
@@ -1725,7 +1726,7 @@ async function walkLive(
   await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
   await onScreen('Votre bien');
   await choose('Oui, c’est bien mon bien');
-  await page.locator('textarea[name="seller_property_comment"]').fill(COMMENT);
+  await fillLiveComment(page, 'seller_property_comment', COMMENT);
   await validate();
 
   // Votre valeur perçue — mission 82 : en début de rendez-vous, avant tout concurrent, et
@@ -1807,7 +1808,7 @@ async function walkLive(
       await onScreen(`${label} · accéléré, écran 1`);
       if (firstPass) await expectPriceHidden(page, competitor, 'rythme accéléré, écran 1');
       await expectAlone(page, others, `${label} · accéléré, écran 1`);
-      await choose('Oui, un concurrent sérieux');
+      await choose('Oui, sérieux');
       const quickGuess = page.locator('input[data-price-for="seller_estimated_listing_price"]');
       if (firstPass) {
         if (index === 3) {
@@ -1912,7 +1913,7 @@ async function walkLive(
     if (firstPass) await expectPriceHidden(page, competitor, 'Un sérieux concurrent ?');
     await expectAlone(page, others, `${label} · Un sérieux concurrent ?`);
     await choose('Oui, un concurrent sérieux');
-    await page.locator('textarea[name="seller_serious_competitor_comment"]').fill(COMMENT);
+    await fillLiveComment(page, 'seller_serious_competitor_comment', COMMENT);
     await validate();
 
     // 2. À quel prix ? — le vendeur devine, toujours sans prix.
@@ -1958,8 +1959,8 @@ async function walkLive(
         page.getByRole('heading', { name: 'Ce prix vous paraît-il cohérent ?' }).first(),
       ).toBeVisible();
     }
-    await choose('Oui, ce prix paraît cohérent');
-    await page.locator('textarea[name="seller_price_coherence_comment"]').fill(COMMENT);
+    await choose('Oui, cohérent');
+    await fillLiveComment(page, 'seller_price_coherence_comment', COMMENT);
     await validate();
 
     // 4. Pourquoi toujours en vente ? — durée devinée, puis révélée.
@@ -1980,7 +1981,7 @@ async function walkLive(
     await expect(page.getByText('Durée observée sur le marché')).toBeVisible();
     await onScreen(`${label} · durée révélée`);
     await choose('Prix trop élevé');
-    await page.locator('textarea[name="seller_market_duration_comment"]').fill(COMMENT);
+    await fillLiveComment(page, 'seller_market_duration_comment', COMMENT);
     await validate();
   }
 
@@ -2015,8 +2016,8 @@ async function walkLive(
     .filter({ has: page.locator('input[name="seller_most_dangerous_comparable_id"]') })
     .filter({ hasText: neutralLabel(COMPETITORS[0]) })
     .click();
-  await choose('Meilleure localisation');
-  await page.locator('textarea[name="seller_most_dangerous_comment"]').fill(COMMENT);
+  await choose('Localisation');
+  await fillLiveComment(page, 'seller_most_dangerous_comment', COMMENT);
   await validate();
 
   // Mission 94 — Acte 5 : après avoir vu les biens, le vendeur reformule lui-même son prix,

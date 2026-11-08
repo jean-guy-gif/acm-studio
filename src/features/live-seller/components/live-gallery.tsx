@@ -12,7 +12,18 @@ import { buildMosaic, wrapIndex } from '@/features/live-seller/services/gallery-
 // While open it flags document.body[data-lightbox] so the Live shell suspends its
 // own arrow-key navigation. No upload, no scraping.
 
-export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) {
+// Mission 148 — `fill` : sur tablette, la photo prend la hauteur que lui laisse l'écran, et ses
+// vignettes passent DANS la photo, en bas à gauche (un toucher ouvre la visionneuse). Sur
+// téléphone, la photo garde une hauteur fixe et l'écran défile.
+export function LiveGallery({
+  photos,
+  alt,
+  fill = false,
+}: {
+  photos: string[];
+  alt: string;
+  fill?: boolean;
+}) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const t = useLiveTexts().texts.common.photos;
 
@@ -52,7 +63,11 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
 
   if (photos.length === 0) {
     return (
-      <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-dashed border-zinc-300 text-sm text-zinc-500 sm:h-72 stage:border-white/20 stage:text-white/40">
+      <div
+        className={`flex w-full items-center justify-center rounded-2xl border border-dashed border-zinc-300 text-sm text-zinc-500 stage:border-white/20 stage:text-white/40 ${
+          fill ? 'h-40 md:h-auto md:min-h-28 md:flex-1' : 'h-56 sm:h-72'
+        }`}
+      >
         {t.noneForListing}
       </div>
     );
@@ -60,6 +75,112 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
 
   const { thumbs, extraCount: extra } = buildMosaic(photos);
   const main = photos[0];
+
+  const viewer =
+    openIndex != null ? (
+      <div
+        className="fixed inset-0 z-50 flex flex-col bg-black/90 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.viewer}
+        onClick={close}
+      >
+        <div className="flex items-center justify-between text-sm text-white">
+          <span>{t.photoOf(openIndex + 1, photos.length)}</span>
+          <button
+            type="button"
+            onClick={close}
+            className="rounded border border-white/40 px-3 py-1 hover:bg-white/10"
+          >
+            {t.close}
+          </button>
+        </div>
+        <div
+          className="flex flex-1 items-center justify-center gap-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            className="shrink-0 rounded-full border border-white/40 px-3 py-2 text-white hover:bg-white/10"
+            aria-label={t.previous}
+          >
+            ‹
+          </button>
+          <RemoteImage
+            src={photos[openIndex]}
+            alt={alt}
+            className="max-h-[80vh] max-w-[85vw] rounded object-contain"
+            fallbackClassName="h-64 w-80 rounded"
+            fallbackLabel={t.unavailable}
+            eager
+          />
+          <button
+            type="button"
+            onClick={() => go(1)}
+            className="shrink-0 rounded-full border border-white/40 px-3 py-2 text-white hover:bg-white/10"
+            aria-label={t.next}
+          >
+            ›
+          </button>
+        </div>
+      </div>
+    ) : null;
+
+  if (fill) {
+    return (
+      <div className="relative h-56 w-full shrink-0 sm:h-72 md:h-auto md:min-h-28 md:flex-1">
+        <button
+          type="button"
+          onClick={() => setOpenIndex(0)}
+          className="group absolute inset-0 block overflow-hidden rounded-2xl shadow-card stage:shadow-none"
+          aria-label={t.enlarge(photos.length)}
+        >
+          <RemoteImage
+            src={main}
+            alt={alt}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            fallbackClassName="h-full w-full"
+            fallbackLabel={t.unavailable}
+            eager
+          />
+        </button>
+        {thumbs.length > 0 ? (
+          <div className="absolute bottom-2 left-2 flex gap-1.5">
+            {thumbs.slice(0, 4).map((url, i) => {
+              const hidden = Math.max(0, thumbs.length - 4) + extra;
+              const isLast = i === Math.min(thumbs.length, 4) - 1 && hidden > 0;
+              return (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setOpenIndex(i + 1)}
+                  className="relative overflow-hidden rounded-md border-2 border-white/90 shadow transition-opacity hover:opacity-85"
+                  aria-label={t.photoOf(i + 2, photos.length)}
+                >
+                  <RemoteImage
+                    src={url}
+                    alt={alt}
+                    className="h-9 w-12 object-cover sm:h-10 sm:w-14"
+                    fallbackClassName="h-9 w-12 sm:h-10 sm:w-14"
+                    fallbackLabel={t.short}
+                    // Mission 144 — préchargée dès l'introduction : affichée tout de suite.
+                    eager
+                  />
+                  {isLast ? (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-medium text-white">
+                      +{hidden}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+        {viewer}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,55 +231,7 @@ export function LiveGallery({ photos, alt }: { photos: string[]; alt: string }) 
         </div>
       ) : null}
 
-      {openIndex != null ? (
-        <div
-          className="fixed inset-0 z-50 flex flex-col bg-black/90 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t.viewer}
-          onClick={close}
-        >
-          <div className="flex items-center justify-between text-sm text-white">
-            <span>{t.photoOf(openIndex + 1, photos.length)}</span>
-            <button
-              type="button"
-              onClick={close}
-              className="rounded border border-white/40 px-3 py-1 hover:bg-white/10"
-            >
-              {t.close}
-            </button>
-          </div>
-          <div
-            className="flex flex-1 items-center justify-center gap-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              className="shrink-0 rounded-full border border-white/40 px-3 py-2 text-white hover:bg-white/10"
-              aria-label={t.previous}
-            >
-              ‹
-            </button>
-            <RemoteImage
-              src={photos[openIndex]}
-              alt={alt}
-              className="max-h-[80vh] max-w-[85vw] rounded object-contain"
-              fallbackClassName="h-64 w-80 rounded"
-              fallbackLabel={t.unavailable}
-              eager
-            />
-            <button
-              type="button"
-              onClick={() => go(1)}
-              className="shrink-0 rounded-full border border-white/40 px-3 py-2 text-white hover:bg-white/10"
-              aria-label={t.next}
-            >
-              ›
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {viewer}
     </div>
   );
 }

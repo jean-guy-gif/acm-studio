@@ -5,13 +5,12 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { liveErrorMessage } from '@/features/live-seller/services/live-error-message';
 import {
-  bigInput,
+  bigInputCompact,
   bigInputUnit,
   ctaPrimary,
   errorText,
   okText,
   panel,
-  question,
   questionHint,
 } from '@/features/live-seller/components/live-stage';
 import { pricePositionSentence } from '@/features/live-seller/services/price-position';
@@ -53,7 +52,7 @@ export function LiveCommercializationPrice({
 
   return (
     <form
-      className={`${panel} flex flex-col gap-4`}
+      className={`${panel} flex shrink-0 flex-col gap-2.5`}
       onSubmit={(event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
@@ -86,26 +85,35 @@ export function LiveCommercializationPrice({
         });
       }}
     >
-      <div className="flex flex-col gap-2">
-        <h3 className={question}>{t.priceQuestion}</h3>
+      {/* Mission 148 — compact (planche 5) : la question, le champ et « Enregistrer le prix » sur une
+          rangée ; la phrase de position dessous. */}
+      <div className="flex flex-col gap-1">
+        <h3 className="font-title text-2xl leading-tight font-bold text-brand-deep sm:text-3xl stage:text-white">
+          {t.priceQuestion}
+        </h3>
         <p className={questionHint}>{t.priceHint}</p>
       </div>
-      <div className="flex items-center gap-3">
-        {/* Mission 143 (I6) — « 790 000 » pendant la frappe, au clavier numérique ; le champ caché
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {/* Mission 143 (I6) — « 790 000 » pendant la frappe, au clavier numérique ; le champ caché
             (`inputRef`) porte le nombre, sans séparateur. */}
-        <PriceInput
-          inputRef={inputRef}
-          name="commercialization_price"
-          language={language}
-          placeholder="—"
-          onDigitsChange={(digits) => {
-            const value = Number(digits);
-            setTypedPrice(digits !== '' && Number.isFinite(value) ? value : null);
-            onPendingChange?.(pendingCommercializationPrice(digits, lastSavedRef.current));
-          }}
-          className={bigInput}
-        />
-        <span className={bigInputUnit}>€</span>
+          <PriceInput
+            inputRef={inputRef}
+            name="commercialization_price"
+            language={language}
+            placeholder="—"
+            onDigitsChange={(digits) => {
+              const value = Number(digits);
+              setTypedPrice(digits !== '' && Number.isFinite(value) ? value : null);
+              onPendingChange?.(pendingCommercializationPrice(digits, lastSavedRef.current));
+            }}
+            className={bigInputCompact}
+          />
+          <span className={bigInputUnit}>€</span>
+        </div>
+        <button type="submit" className={ctaPrimary} disabled={pending}>
+          {pending ? t.saving : t.save}
+        </button>
       </div>
       {/* Mission 94 — un repère factuel : ni conseil, ni alerte, ni pression (M85). */}
       {position ? (
@@ -113,12 +121,7 @@ export function LiveCommercializationPrice({
           {position}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className={ctaPrimary} disabled={pending}>
-          {pending ? t.saving : t.save}
-        </button>
-        {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
-      </div>
+      {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
     </form>
   );
 }

@@ -10,7 +10,7 @@ import {
   type GuessedCompetitor,
   type SellerSaidInput,
 } from '@/features/meeting-conclusion/services/seller-said';
-import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
+import { guessGap } from '@/features/live-seller/services/guess-gap';
 
 // Les espaces de `formatEuro` (fine insécable des milliers, insécable avant « € ») ramenées à
 // des espaces simples, pour lire les attentes.
@@ -37,11 +37,12 @@ const NOTHING: SellerSaidInput = {
 describe('les devinettes face aux prix réels', () => {
   it('« sous-estimé 4 concurrents sur 6, de 6 % en moyenne »', () => {
     const summary = summarizeGuesses([
-      guessed(300_000, 312_000), // +4 % au-dessus de sa devinette
-      guessed(300_000, 318_000), // +6 %
-      guessed(400_000, 424_000), // +6 %
-      guessed(200_000, 216_000), // +8 %
-      guessed(300_000, 291_000), // −3 % : surestimé
+      // Mission 148 — l'écart se mesure en % du prix affiché.
+      guessed(96_000, 100_000), // 4 % en dessous du prix affiché : sous-estimé
+      guessed(94_000, 100_000), // 6 %
+      guessed(376_000, 400_000), // 6 %
+      guessed(184_000, 200_000), // 8 %
+      guessed(309_000, 300_000), // 3 % au-dessus : surestimé
       guessed(250_000, 250_000), // juste
     ]);
     expect(summary).toMatchObject({ compared: 6, under: 4, over: 1, usesCurrentPrices: false });
@@ -54,19 +55,14 @@ describe('les devinettes face aux prix réels', () => {
   });
 
   it('l’écart est exactement celui du Live : même calcul, même arrondi', () => {
-    // 270 000 deviné pour 300 000 : le Live affiche +11,1 % (en % de la devinette).
-    const live = buildPriceReveal({
-      price: 300_000,
-      surfaceArea: null,
-      sellerEstimate: 270_000,
-      retainedPricesPerSquareMeter: [],
-      thisPricePerSquareMeter: null,
-    });
-    expect(live.gapPercentage).toBe(11.1);
-    const summary = summarizeGuesses([guessed(270_000, 300_000)]);
-    expect(summary?.underAveragePercent).toBe(live.gapPercentage);
+    // Mission 148 — 280 000 deviné pour 300 000 affiché : le Live dit « 6,7 % en dessous du prix
+    // affiché » (en % du prix affiché ; M96 disait 7,1 %, en % de la devinette).
+    const live = guessGap(280_000, 300_000)!;
+    expect(Math.round(Math.abs(live.percent) * 10) / 10).toBe(6.7);
+    const summary = summarizeGuesses([guessed(280_000, 300_000)]);
+    expect(summary?.underAveragePercent).toBe(6.7);
     expect(guessLines(summary!).map(plain)).toEqual([
-      'Il a sous-estimé 1 concurrent sur 1, de 11,1 % en moyenne',
+      'Il a sous-estimé 1 concurrent sur 1, de 6,7 % en moyenne',
     ]);
   });
 

@@ -5,19 +5,24 @@ import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
 import { LiveDurationReveal } from '@/features/live-seller/components/live-duration-reveal';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
 import {
+  answerColumn,
   bigInput,
   bigInputUnit,
-  bigValue,
   panel,
+  photoColumn,
   question,
   questionHint,
   revealValue,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import { formatEuro, formatPercent } from '@/lib/format';
+import { formatEuro } from '@/lib/format';
 
 // MISSION 95 — rythme accéléré, écran 2 sur 2 : le prix réel et l'écart avec votre estimation.
 // Quand une durée est connue, la devinette de durée vient dessous ; une fois validée, la durée
@@ -39,55 +44,37 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
   const title = neutralComparableLabel(entry, language);
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6">
-      <div className="flex flex-col gap-2">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.revealQuestion}</h2>
         <p className={questionHint}>
           {!entry.durationKnown ? t.priceOnly : durationRevealed ? t.durationShown : t.durationAsk}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-        <div className="flex min-w-0 flex-col gap-3">
-          <LiveGallery photos={entry.photoUrls} alt={title} />
+      <div className={screenBody}>
+        <div className={photoColumn}>
+          <LiveGallery photos={entry.photoUrls} alt={title} fill />
           <LiveComparableHeader heading={title} city={entry.city} district={entry.district} />
         </div>
 
-        <div className="flex h-fit min-w-0 flex-col gap-4">
-          <div className={`${panel} live-reveal-pop flex flex-col gap-4`} data-quick-reveal>
+        <div className={answerColumn}>
+          <div className={`${panel} live-reveal-pop flex flex-col gap-3`} data-quick-reveal>
             <div>
               <div className={statLabel}>{texts.live.priceReveal.listed}</div>
               <div className={revealValue}>{euro(reveal.currentPrice)}</div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className={statLabel}>{texts.common.yourAnswer}</div>
-                <div className={bigValue}>{euro(savedEstimate)}</div>
-              </div>
-              <div>
-                <div className={statLabel}>{texts.live.priceReveal.gap}</div>
-                <div className={bigValue}>
-                  {reveal.gapAmount != null
-                    ? formatEuro(reveal.gapAmount, { signed: true, language })
-                    : '—'}
-                </div>
-                {reveal.gapPercentage != null ? (
-                  <div className="text-sm text-zinc-500 stage:text-white/60">
-                    {formatPercent(reveal.gapPercentage, { signed: true, language })}
-                  </div>
-                ) : null}
-              </div>
-            </div>
+            <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
           </div>
 
           {entry.durationKnown ? (
             <form
               onSubmit={(e) => e.preventDefault()}
-              className={`${panel} flex flex-col gap-4`}
+              className={`${panel} flex flex-col gap-3`}
               data-quick-duration
             >
               {durationRevealed && entry.marketDuration ? (
-                <div className="live-reveal-pop flex flex-col gap-4">
+                <div className="live-reveal-pop flex flex-col gap-2">
                   <LiveDurationReveal
                     marketDuration={entry.marketDuration}
                     priceHistory={entry.priceHistory}

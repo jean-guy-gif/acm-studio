@@ -1,12 +1,7 @@
 'use client';
 
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
-import {
-  bigValue,
-  panelSoft,
-  revealValue,
-  statLabel,
-} from '@/features/live-seller/components/live-stage';
+import { bigValue, revealValue, statLabel } from '@/features/live-seller/components/live-stage';
 import type { MarketDuration, PriceHistory } from '@/features/live-seller/types';
 import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
 
@@ -28,46 +23,57 @@ export function LiveDurationReveal({
   const euro = (value: number | null): string =>
     value != null ? formatEuro(value, { language }) : '—';
   const n = (value: number) => formatNumber(value, { language });
+  // Mission 148 — les deux durées côte à côte, la révélée plus grande ; la phrase et l'historique
+  // des prix en une ligne dessous (planche 4).
   return (
     <>
-      <div>
-        <div className={statLabel}>{t.observed}</div>
-        <div className={revealValue}>
-          {observed != null ? t.observedDays(observed) : t.unavailable}
-        </div>
-        {marketDuration.available && marketDuration.days != null ? (
-          <div className="mt-1 text-sm text-zinc-500 stage:text-white/60">
-            {t.observedSince(marketDuration.days)}
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+        {estimatedDays != null ? (
+          <div>
+            <div className={statLabel}>{texts.common.yourAnswer}</div>
+            <div className={bigValue}>{t.days(estimatedDays)}</div>
           </div>
         ) : null}
+        <div>
+          <div className={statLabel}>{t.observed}</div>
+          <div className={revealValue}>
+            {observed != null ? t.observedDays(observed) : t.unavailable}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-0.5 text-sm text-zinc-500 stage:text-white/60">
+        {marketDuration.available && marketDuration.days != null ? (
+          <span>{t.observedSince(marketDuration.days)}</span>
+        ) : null}
         {observed != null && estimatedDays != null && observed !== estimatedDays ? (
-          <div className="mt-1 text-sm font-medium text-zinc-600 stage:text-white/75">
+          <span className="font-medium text-zinc-600 stage:text-white/75">
             {observed > estimatedDays
               ? t.more(n(observed - estimatedDays), n(estimatedDays))
               : t.less(n(estimatedDays - observed), n(estimatedDays))}
-          </div>
+          </span>
         ) : null}
+        {priceHistory?.available ? (
+          <span className="flex flex-wrap items-baseline gap-x-4">
+            <span>
+              <span className={statLabel}>{t.initialPrice}</span>{' '}
+              <b className="font-title text-zinc-900 stage:text-white">
+                {euro(priceHistory.initialPrice)}
+              </b>
+            </span>
+            <span>
+              <span className={statLabel}>{t.drop}</span>{' '}
+              <b className="font-title text-zinc-900 stage:text-white">
+                {euro(priceHistory.totalDropAmount)}
+                {priceHistory.totalDropPercentage != null
+                  ? ` (${formatPercent(priceHistory.totalDropPercentage, { language })})`
+                  : ''}
+              </b>
+            </span>
+          </span>
+        ) : (
+          <span>{t.noHistory}</span>
+        )}
       </div>
-
-      {priceHistory?.available ? (
-        <div className={`${panelSoft} flex flex-wrap items-baseline gap-x-6 gap-y-2`}>
-          <div>
-            <div className={statLabel}>{t.initialPrice}</div>
-            <div className={bigValue}>{euro(priceHistory.initialPrice)}</div>
-          </div>
-          <div>
-            <div className={statLabel}>{t.drop}</div>
-            <div className={bigValue}>
-              {euro(priceHistory.totalDropAmount)}
-              {priceHistory.totalDropPercentage != null
-                ? ` (${formatPercent(priceHistory.totalDropPercentage, { language })})`
-                : ''}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-500 stage:text-white/50">{t.noHistory}</p>
-      )}
     </>
   );
 }

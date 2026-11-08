@@ -4,6 +4,12 @@ import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import { layoutBand, type BandLayout } from '@/features/seller-synthesis/services/band-labels';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
+import {
+  GUESS_GAP_BORDER,
+  GUESS_GAP_DOT,
+  GUESS_GAP_TEXT,
+  guessGapPhrase,
+} from '@/features/live-seller/services/guess-gap';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import {
@@ -138,12 +144,27 @@ export function Grid({
   );
 }
 
-function Pair({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function Pair({
+  label,
+  value,
+  strong,
+  tone,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  // Mission 148 — la couleur de la réponse du vendeur face au prix affiché.
+  tone?: string;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-3 whitespace-nowrap">
       <span className="text-zinc-500">{label}</span>
       <span
-        className={strong ? 'font-title text-base font-bold text-brand-darker' : 'font-semibold'}
+        className={
+          strong
+            ? 'font-title text-base font-bold text-brand-darker'
+            : `font-semibold ${tone ?? ''}`
+        }
       >
         {value}
       </span>
@@ -200,29 +221,44 @@ function CompetitorCard({
         ) : null}
         {revealed && !dangerous ? (
           <div className={`${row} text-[0.78rem]`}>
-            <div className={`${card} flex flex-col gap-0.5`}>
+            {/* Mission 148 — « Vous imaginiez » à la couleur de l'écart, un filet de la même couleur
+                à gauche, et l'écart écrit avec les mots du Live : lisible en noir et blanc. */}
+            <div
+              className={`${card} flex flex-col gap-0.5 ${
+                revealed.guessGap ? `border-l-4 ${GUESS_GAP_BORDER[revealed.guessGap.tone]}` : ''
+              }`}
+              data-guess-gap={revealed.guessGap?.tone ?? 'none'}
+            >
               <div className={kicker}>{t.thePrice}</div>
               {revealed.guess != null ? (
-                <Pair label={t.youImagined} value={euro(revealed.guess)} />
+                <Pair
+                  label={t.youImagined}
+                  value={euro(revealed.guess)}
+                  tone={revealed.guessGap ? GUESS_GAP_TEXT[revealed.guessGap.tone] : undefined}
+                />
               ) : null}
               <Pair label={t.listedShort} value={euro(revealed.price)} strong />
-              <div className="font-semibold text-brand-deep">
-                {[
-                  revealed.gapPercent != null && revealed.gapPercent !== 0
-                    ? t.gapVsAnswer(
-                        formatPercent(revealed.gapPercent, {
-                          signed: true,
-                          maxDecimals: 1,
-                          language,
-                        }),
-                      )
-                    : null,
-                  revealed.pricePerSquareMeter != null
-                    ? perSqm(revealed.pricePerSquareMeter)
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+              <div
+                className={`flex items-start gap-1.5 font-semibold ${
+                  revealed.guessGap ? GUESS_GAP_TEXT[revealed.guessGap.tone] : 'text-brand-deep'
+                }`}
+              >
+                {revealed.guessGap ? (
+                  <span
+                    className={`mt-1 size-2 shrink-0 rounded-full ${GUESS_GAP_DOT[revealed.guessGap.tone]}`}
+                    aria-hidden
+                  />
+                ) : null}
+                <span>
+                  {[
+                    revealed.guessGap ? guessGapPhrase(revealed.guessGap, texts, language) : null,
+                    revealed.pricePerSquareMeter != null
+                      ? perSqm(revealed.pricePerSquareMeter)
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
               </div>
             </div>
             {revealed.duration ? (

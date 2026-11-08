@@ -53,8 +53,6 @@ export type PriceReveal = {
   currentPrice: number;
   pricePerSquareMeter: number | null;
   sellerEstimate: number | null;
-  gapAmount: number | null; // currentPrice - sellerEstimate
-  gapPercentage: number | null; // relative to the seller estimate
   // Rank of this comparable among the retained set by price/m² (1 = cheapest).
   relativePosition: { rank: number; total: number } | null;
 };
