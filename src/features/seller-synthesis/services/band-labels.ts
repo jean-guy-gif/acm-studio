@@ -51,7 +51,7 @@ export type BandLayout<Tone extends string = string> = {
   rows: number;
 };
 
-// Le texte des étiquettes : libellé à 0,68 rem (≈ 10,9 px), montant en gras à 0,7 rem. Mesuré le
+// Le texte des étiquettes : 0,68 rem (≈ 10,9 px), le montant en gras. Mesuré le
 // 08/11 dans les sept polices de charte embarquées : au plus 6,0 px par caractère d'un libellé
 // (Montserrat, Poppins), 6,3 px pour un montant ; on compte un peu plus, et la marge de la boîte
 // couvre les mots courts (« Au début »).
@@ -132,7 +132,8 @@ export function layoutBand<Tone extends string>(
       ...group,
       position,
       width,
-      offset: x - left,
+      // Au dixième de pixel : le décalage s'écrit tel quel dans la feuille de style.
+      offset: Math.round((x - left) * 10) / 10,
       lane: lane ?? 'above',
       number: index + 1,
       row: 0,

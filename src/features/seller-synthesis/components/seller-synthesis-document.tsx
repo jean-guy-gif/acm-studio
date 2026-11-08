@@ -294,15 +294,17 @@ const ALIGNMENT_TONE = {
 // La bande des prix affichés (M94), avec ses repères.
 // Mission 148 A — son échelle couvre tout ce qu'elle montre, prix et repères, et ses étiquettes ne
 // se touchent jamais (`layoutBand`). La page est rendue au serveur, sans connaître la largeur de la
-// frise : la mise en page est calculée pour trois largeurs — téléphone, tablette, écran large et
-// PDF (l'impression A4 prend la plus large) — et l'écran affiche celle de sa taille.
+// frise : la mise en page est calculée pour trois largeurs de frise — téléphone, tablette, écran
+// large et PDF A4 (≈ 658 px) — et chacune ne s'affiche que si la frise mesure AU MOINS sa largeur
+// de calcul : la requête porte sur la frise elle-même (`@container`), jamais sur l'écran, que les
+// marges ou une barre de défilement rétrécissent.
 const BAND_LAYOUTS = [
-  // Sous 640 px : une frise d'au moins 240 px (un téléphone de 340 px et plus).
-  { width: 240, className: 'sm:hidden' },
-  // De 640 à 767 px : au moins 500 px.
-  { width: 500, className: 'hidden sm:block md:hidden' },
-  // À partir de 768 px, et à l'impression (A4) : au moins 640 px.
-  { width: 640, className: 'hidden md:block' },
+  // Une frise de moins de 480 px (téléphone) : calculée pour 200 px, un écran de 302 px et plus.
+  { width: 200, className: '@min-[480px]:hidden' },
+  // De 480 à 619 px.
+  { width: 480, className: 'hidden @min-[480px]:block @min-[620px]:hidden' },
+  // 620 px et plus : l'écran large et l'impression A4.
+  { width: 620, className: 'hidden @min-[620px]:block' },
 ] as const;
 
 const BAND_TONE = {
@@ -332,7 +334,7 @@ function PriceBand({
   const bandMarkers = markers.map((marker) => ({ ...marker, amount: euro(marker.value) }));
   const ends = layoutBand(prices, bandMarkers, BAND_LAYOUTS[0].width);
   return (
-    <div className="flex flex-col gap-1">
+    <div className="@container flex flex-col gap-1">
       {BAND_LAYOUTS.map(({ width, className }) => (
         <BandAtWidth
           key={width}

@@ -606,6 +606,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         await page.setViewportSize({ width, height: 900 });
         await expectReadableBands(page, `Synthèse, ${width} px`);
       }
+      // L'impression A4 (210 mm ≈ 794 px de large) : la mise en page de l'écran large.
+      await page.setViewportSize({ width: 794, height: 1123 });
+      await page.emulateMedia({ media: 'print' });
+      await expectReadableBands(page, 'Synthèse, impression A4');
+      await page.emulateMedia({ media: 'screen' });
       await page.setViewportSize({ width: 1280, height: 720 });
       await expect(synthesis.getByTestId('agreed-price')).toHaveAttribute(
         'data-alignment',

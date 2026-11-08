@@ -638,7 +638,8 @@ describe('la frise de la synthèse (mission 148 A)', () => {
     // Deux frises (« L'analyse des prix » et « Le chemin de votre prix »), trois largeurs chacune.
     expect(bands.length % 3).toBe(0);
     expect(bands.length).toBeGreaterThanOrEqual(3);
-    expect(html).toContain('class="sm:hidden" data-band');
-    expect(html).toContain('class="hidden md:block" data-band');
+    // Chaque mise en page ne s'affiche que si la frise elle-même est assez large.
+    expect(html).toContain('class="@min-[480px]:hidden" data-band');
+    expect(html).toContain('class="hidden @min-[620px]:block" data-band');
   });
 });

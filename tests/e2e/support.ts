@@ -257,7 +257,8 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
 }
 
 // Mission 148 A — la frise des prix de la synthèse : à la largeur affichée, aucune étiquette (ou
-// aucun rond numéroté) n'en touche une autre, et toutes restent dans la frise. Mesuré dans le
+// aucun rond numéroté) n'en touche une autre, aucun texte ne déborde de la sienne, et toutes
+// restent dans la frise. Mesuré dans le
 // navigateur, sur les seules frises visibles (la synthèse en calcule une par taille d'écran).
 export async function expectReadableBands(page: Page, screen: string): Promise<void> {
   const problems = await page.evaluate(() => {
@@ -268,9 +269,14 @@ export async function expectReadableBands(page: Page, screen: string): Promise<v
     if (bands.length === 0) out.push('aucune frise visible');
     bands.forEach((band, index) => {
       const area = band.querySelector('[data-band-area]')!.getBoundingClientRect();
-      const boxes = [...band.querySelectorAll<HTMLElement>('[data-band-label]')].map((label) =>
-        label.getBoundingClientRect(),
-      );
+      const labels = [...band.querySelectorAll<HTMLElement>('[data-band-label]')];
+      // La boîte a une largeur fixe : un texte plus large qu'elle en déborderait sans la changer.
+      labels.forEach((label, i) => {
+        if (label.scrollWidth > label.clientWidth + 1) {
+          out.push(`frise ${index + 1} : le texte de l'étiquette ${i + 1} déborde de sa boîte`);
+        }
+      });
+      const boxes = labels.map((label) => label.getBoundingClientRect());
       boxes.forEach((box, i) => {
         if (box.left < area.left - 0.5 || box.right > area.right + 0.5) {
           out.push(`frise ${index + 1} : l'étiquette ${i + 1} sort de la frise`);

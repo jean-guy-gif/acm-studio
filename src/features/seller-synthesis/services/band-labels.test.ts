@@ -38,10 +38,15 @@ function expectReadable(layout: BandLayout, bandWidth: number) {
 
 // Les largeurs de calcul de la synthèse (téléphone et le reste), puis toutes les largeurs plus
 // grandes où la même mise en page s'affiche, jusqu'au PDF et au-delà.
-const NARROW = 240;
-const MEDIUM = 500;
-const WIDE = 640;
-const widthsFrom = (from: number) => Array.from({ length: 70 }, (_, i) => from + i * 10);
+const NARROW = 200;
+const MEDIUM = 480;
+const WIDE = 620;
+// Les largeurs de calcul de la synthèse, puis toutes les largeurs plus grandes par pas de 10 px,
+// et celles du téléphone (390) et du PDF A4 (794).
+const widthsFrom = (from: number) => [
+  ...Array.from({ length: 70 }, (_, i) => from + i * 10),
+  ...[390, 658, 794].filter((width) => width >= from),
+];
 
 // Le dossier 868af175 de l'essai (08/11) : les repères à 127 992 et 129 000 € sortaient de l'échelle
 // écrite (129 900 € … 149 000 €), et les étiquettes se recouvraient.
