@@ -201,6 +201,15 @@ describe('« Lancer le Live » une seule fois par écran', () => {
     expect(page).not.toContain('LiveLaunchActions');
     expect(page).not.toContain('btnPrimary');
   });
+
+  it('avant la décision ou les concurrents : « Lancer le Live quand même », en lien discret', () => {
+    const page = read('src/app/(protected)/builder/[projectId]/avant-rendez-vous/page.tsx');
+    expect(page).toContain('Lancer le Live quand même');
+    expect(page).toMatch(/nextKey === 'decision' \|\| nextKey === 'competitors'/);
+    expect(page).toMatch(
+      /href=\{launchLiveHref\(projectId\)\}\s*className=\{`\$\{link\} text-sm`\}/,
+    );
+  });
 });
 
 describe('La liste du Live', () => {

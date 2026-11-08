@@ -350,6 +350,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   await test.step('Fourchette validée : le dossier passe en « prêt »', async () => {
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
     await expectOneFilled(page, 'Avant le rendez-vous, avant la décision');
+    // Mission 146 — avant la décision, le lancement reste à portée, en lien discret : il passe par
+    // « Lancer le Live » et son rappel « Aucune décision de prix » (M109).
+    await expect(page.getByTestId('launch-anyway')).toHaveText('Lancer le Live quand même');
+    await expect(page.getByTestId('launch-anyway')).toHaveAttribute(
+      'href',
+      `/builder/${projectId}/lancer-le-live`,
+    );
     // Mission 95 — le rythme du Live : accéléré par défaut, les deux durées estimées côte à côte.
     const rhythmSetting = page.locator('[data-live-rhythm]');
     await expect(
@@ -376,6 +383,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByRole('button', { name: /^Lancer le Live/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /^Lancer le Live/ })).toHaveCount(1);
     await expectOneFilled(page, 'Avant le rendez-vous, décision prise');
+    await expect(page.getByTestId('launch-anyway')).toHaveCount(0);
     // Puis l'étape suivante dit quoi faire : lancer le Live.
     await page.goto(`/builder/${projectId}`);
     await expectOneFilled(page, 'Vue d’ensemble');
