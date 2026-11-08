@@ -30,7 +30,8 @@ export function LiveDurationReveal({
     <>
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
         {estimatedDays != null ? (
-          <div>
+          // Mission 92 — la durée devinée, relue sans champ (le même repère que LiveLockedAnswer).
+          <div data-locked-answer>
             <div className={statLabel}>{texts.common.yourAnswer}</div>
             <div className={bigValue}>{t.days(estimatedDays)}</div>
           </div>
