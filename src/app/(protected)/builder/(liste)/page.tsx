@@ -1,13 +1,10 @@
 import Link from 'next/link';
 
-import { SubmitButton } from '@/components/submit-button';
 import {
   alertError,
   badgeNeutral,
   badgeSelected,
-  btnDangerGhost,
   btnPrimary,
-  btnSecondary,
   card,
   emptyState,
   kickerLabel,
@@ -21,15 +18,16 @@ import {
   declareProjectReady,
   revertProjectToPreparation,
 } from '@/features/projects/actions/set-project-readiness';
-import { nextDossierStepHref } from '@/features/projects/services/dossier-steps';
+import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import { ExampleBadge } from '@/features/welcome/components/example-badge';
-import { ArchiveProjectButton } from '@/features/projects/components/archive-project-button';
+import { PreparationCardActions } from '@/features/projects/components/preparation-card-actions';
 import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
 import {
   advancementSteps,
   fourchetteLabel,
   FOURCHETTE_LABEL,
   FOURCHETTE_PENDING,
+  missingForReady,
   pendingImportLabel,
   propertyLabel,
 } from '@/features/projects/services/preparation-card';
@@ -40,7 +38,8 @@ type BuilderPageProps = {
 };
 
 const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors';
-const tabActive = `${tab} bg-brand-deep text-white`;
+// Mission 146 — l'onglet choisi en bleu clair : le seul plein de l'écran est « Nouveau dossier ».
+const tabActive = `${tab} bg-brand-soft font-semibold text-brand-deep stage:bg-white/10 stage:text-white`;
 const tabIdle = `${tab} text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/55 stage:hover:bg-white/10`;
 
 export default async function BuilderPage({ searchParams }: BuilderPageProps) {
@@ -116,9 +115,13 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
               >
                 <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="font-title text-xl font-semibold text-zinc-900 stage:text-white">
+                    {/* Mission 146 — le nom mène à la Vue d'ensemble ; le bouton, à l'étape à faire. */}
+                    <Link
+                      href={`/builder/${project.id}`}
+                      className="font-title text-xl font-semibold text-zinc-900 hover:text-brand-deep stage:text-white"
+                    >
                       {project.seller_name}
-                    </span>
+                    </Link>
                     <span className={ready ? badgeSelected : badgeNeutral}>
                       {ready ? 'Prêt pour le rendez-vous' : 'En préparation'}
                     </span>
@@ -172,6 +175,19 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                     ) : null}
                   </div>
 
+                  {/* Mission 112 — rappelé près de « Déclarer prêt », sans le bloquer (M52). */}
+                  {!ready && pendingImportsNotice(readiness.pendingImportCount) ? (
+                    <span
+                      className="text-xs font-medium text-amber-700 stage:text-amber-300"
+                      data-testid="ready-pending-imports"
+                    >
+                      {pendingImportsNotice(readiness.pendingImportCount)} —{' '}
+                      <Link href={`/builder/${project.id}/comparables`} className={link}>
+                        voir les concurrents
+                      </Link>
+                    </span>
+                  ) : null}
+
                   <span className="text-xs text-zinc-500 stage:text-white/40">
                     {project.seller_email || 'E-mail non renseigné'} ·{' '}
                     {project.seller_phone || 'Téléphone non renseigné'} · Créé{' '}
@@ -179,53 +195,24 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                   </span>
                 </div>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  {/* Mission 97 — un clic mène à l'étape à faire, pas à une page d'étapes. */}
-                  <Link
-                    href={nextDossierStepHref(project.id, {
-                      status: project.status,
-                      hasProperty: readiness.hasProperty,
-                      exploitableCount: readiness.exploitableCount,
-                    })}
-                    className={btnSecondary}
-                  >
-                    Ouvrir le dossier
-                  </Link>
-                  {ready ? (
-                    <form action={revertProjectToPreparation}>
-                      <input type="hidden" name="projectId" value={project.id} />
-                      <SubmitButton pendingLabel="…" className={btnDangerGhost}>
-                        Remettre en préparation
-                      </SubmitButton>
-                    </form>
-                  ) : (
-                    <>
-                      <form action={declareProjectReady}>
-                        <input type="hidden" name="projectId" value={project.id} />
-                        <SubmitButton pendingLabel="…" className={btnSecondary}>
-                          Déclarer prêt
-                        </SubmitButton>
-                      </form>
-                      {/* Mission 112 — rappelé près du bouton, sans le bloquer (M52). */}
-                      {pendingImportsNotice(readiness.pendingImportCount) ? (
-                        <span
-                          className="w-full text-xs font-medium text-amber-700 sm:text-right stage:text-amber-300"
-                          data-testid="ready-pending-imports"
-                        >
-                          {pendingImportsNotice(readiness.pendingImportCount)} —{' '}
-                          <Link href={`/builder/${project.id}/comparables`} className={link}>
-                            voir les concurrents
-                          </Link>
-                        </span>
-                      ) : null}
-                      <ArchiveProjectButton
-                        projectId={project.id}
-                        projectName={project.seller_name}
-                        action={archiveProjectAction}
-                      />
-                    </>
-                  )}
-                </div>
+                <PreparationCardActions
+                  projectId={project.id}
+                  projectName={project.seller_name}
+                  ready={ready}
+                  next={nextDossierAction(project.id, {
+                    status: project.status,
+                    hasProperty: readiness.hasProperty,
+                    exploitableCount: readiness.exploitableCount,
+                    hasDecision: readiness.hasPositioning,
+                    liveStarted: project.live_started_at != null,
+                    liveEnded: project.live_ended_at != null,
+                    documentOnly: project.live_presentation_mode === 'document',
+                  })}
+                  missing={missingForReady(readiness)}
+                  declareReady={declareProjectReady}
+                  revertToPreparation={revertProjectToPreparation}
+                  archive={archiveProjectAction}
+                />
               </li>
             );
           })}

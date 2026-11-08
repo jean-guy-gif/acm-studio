@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { expectNoHorizontalScroll, login, openAccountMenu, sideNav } from './support';
+import {
+  chooseInMoreMenu,
+  expectNoHorizontalScroll,
+  expectOneFilled,
+  login,
+  openAccountMenu,
+  sideNav,
+} from './support';
 
 // Mission 72 — le Live tient sur tablette, quoi qu'il arrive. Deux vérifications courtes,
 // à part du parcours complet : la scène ne peut être décalée dans aucune taille (fenêtre et
@@ -30,20 +37,15 @@ async function openLive(page: Page): Promise<void> {
     await page.getByLabel('Nom du vendeur').fill(DOSSIER);
     await page.getByRole('button', { name: 'Créer le dossier' }).click();
     await expect(page).toHaveURL(/\/builder\/[0-9a-f-]{36}$/);
-    const projectId = page.url().split('/').pop() ?? '';
     await page.goto('/builder');
-    const dossierForm = page
-      .locator('form')
-      .filter({ has: page.locator(`input[name="projectId"][value="${projectId}"]`) });
-    await dossierForm.getByRole('button', { name: 'Déclarer prêt' }).click();
+    const card = page.locator('li').filter({ hasText: DOSSIER });
+    // Mission 146 — « Déclarer prêt » est dans le menu « … » de la carte, suivi de ce qui manque.
+    await chooseInMoreMenu(card, 'Déclarer prêt');
     // Mission 101 — le dossier est recréé à chaque passage (M100) : on attend que la déclaration
-    // soit ENREGISTRÉE — l'onglet « Prêts » le montre avec « Remettre en préparation » — avant de
-    // partir. Pendant l'envoi le bouton dit « … » : sa disparition ne prouve rien, et partir trop
-    // tôt interrompait l'enregistrement.
-    await expect(
-      dossierForm.getByRole('button', { name: 'Remettre en préparation' }),
-      'Le dossier n’a pas été déclaré prêt',
-    ).toBeVisible();
+    // soit ENREGISTRÉE — l'onglet « Prêts » le montre — avant de partir : partir trop tôt
+    // interrompait l'enregistrement.
+    await expect(page, 'Le dossier n’a pas été déclaré prêt').toHaveURL(/\/builder\?prets=1$/);
+    await expect(page.locator('li').filter({ hasText: DOSSIER })).toBeVisible();
     await page.goto('/live');
   }
 
@@ -103,6 +105,7 @@ async function openLive(page: Page): Promise<void> {
     await page.goto('/live');
   }
 
+  await expectOneFilled(page, 'Liste du Live');
   // Mission 104 — un vrai dossier, un seul concurrent : « Lancer le Live » le dit, puis demande
   // si l'on est devant le vendeur, avant d'ouvrir la scène.
   await item()
@@ -115,6 +118,7 @@ async function openLive(page: Page): Promise<void> {
   await confirm.getByRole('button', { name: 'Lancer devant le vendeur' }).click();
   await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
   await expect(page.locator('[data-stage] > header')).toBeVisible();
+  await expectOneFilled(page, 'Accueil du Live');
 }
 
 test('la scène du Live ne se décale dans aucune taille, plein écran compris', async ({ page }) => {
@@ -124,6 +128,14 @@ test('la scène du Live ne se décale dans aucune taille, plein écran compris',
     const size = `${viewport.width} × ${viewport.height}`;
     await page.setViewportSize(viewport);
     await expectNoHorizontalScroll(page, `Live en ${size}`);
+    // Mission 146 (C8) — la carte d'accueil prend toute la hauteur sous le bandeau : plus de
+    // moitié basse vide.
+    const card = await page.getByTestId('live-intro-card').boundingBox();
+    expect(card, `Carte d’accueil introuvable en ${size}`).not.toBeNull();
+    expect(
+      (card?.y ?? 0) + (card?.height ?? 0),
+      `La carte d’accueil s’arrête trop haut en ${size}`,
+    ).toBeGreaterThanOrEqual(viewport.height - 64);
 
     await page.getByRole('button', { name: 'Plein écran', exact: true }).click();
     const leave = page.getByRole('button', { name: 'Quitter le plein écran' });
@@ -139,6 +151,12 @@ test('un nom d’agence de 60 caractères ne pousse pas les boutons (768 px)', a
   await openLive(page);
 
   const header = page.locator('[data-stage] > header');
+  // Mission 146 (C8) — l'agence de test n'a pas de logo : l'accueil met son nom en grand dans la
+  // carte, et le bandeau ne le répète pas sur cet écran ; les écrans suivants le portent.
+  await expect(page.getByTestId('live-intro-agency')).toBeVisible();
+  await expect(header.locator('[title]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
+  await expect(page.getByTestId('live-intro-card')).toHaveCount(0);
   // Le nom ne s'affiche en texte que si l'agence n'a pas déposé de logo.
   const name = header.locator('[title]').first();
   await expect(

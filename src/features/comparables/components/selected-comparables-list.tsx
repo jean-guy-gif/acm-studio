@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react';
 import {
   alertError,
   btnDangerGhost,
-  btnPrimary,
   btnSecondary,
   card,
   hintText,
@@ -15,6 +14,7 @@ import {
 import type { BulkComparableResult } from '@/features/comparables/actions/bulk-comparable-actions';
 import { ComparableCard } from '@/features/comparables/components/comparable-card';
 import type { Comparable } from '@/features/comparables/types';
+import { reorderLiveCompetitors } from '@/features/live-seller/actions/reorder-live-competitors';
 import { LIVE_ORDER_FROZEN } from '@/features/live-seller/services/live-timing';
 import { LocatorNotice } from '@/features/competitor-locator/components/locator-notice';
 import { useCompetitorLocator } from '@/features/competitor-locator/use-competitor-locator';
@@ -65,6 +65,43 @@ export function SelectedComparablesList({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Mission 146 (I5) — l'ordre du Live en glissant la poignée ⋮⋮ des cartes : le glisser-déposer du
+  // mode expert (M110, `reorder_retained_comparables`), pour tous. L'ordre affiché suit le dépôt
+  // tout de suite, et revient en arrière si l'enregistrement est refusé.
+  const [order, setOrder] = useState(comparables);
+  const [source, setSource] = useState(comparables);
+  if (source !== comparables) {
+    setSource(comparables);
+    setOrder(comparables);
+  }
+  const [dragged, setDragged] = useState<number | null>(null);
+  const [orderSaved, setOrderSaved] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [reordering, startReorder] = useTransition();
+  const canDrag = !orderFrozen && order.length > 1;
+  const drop = (target: number) => {
+    if (dragged == null || dragged === target) return;
+    const previous = order;
+    const next = [...order];
+    const [item] = next.splice(dragged, 1);
+    next.splice(target, 0, item);
+    setOrder(next);
+    setOrderSaved(false);
+    setOrderError(null);
+    startReorder(async () => {
+      const result = await reorderLiveCompetitors(
+        projectId,
+        next.map((comparable) => comparable.id),
+      );
+      if (result.ok) {
+        setOrderSaved(true);
+        router.refresh();
+      } else {
+        setOrder(previous);
+        setOrderError(result.error);
+      }
+    });
+  };
   // Mission 75 — à l'ouverture, ACM demande au Localisateur les adresses qui manquent.
   const { availability: locatorAvailability } = useCompetitorLocator(projectId);
 
@@ -107,10 +144,26 @@ export function SelectedComparablesList({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className={sectionTitle}>Concurrents retenus ({comparables.length})</h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 className={sectionTitle}>Concurrents retenus ({comparables.length})</h2>
+        {canDrag ? (
+          <p className={`${hintText} hidden sm:block`}>Glissez ⋮⋮ pour changer l’ordre du Live</p>
+        ) : null}
+      </div>
       {orderFrozen && comparables.length > 1 ? (
         <p className={hintText} data-testid="order-frozen">
           {LIVE_ORDER_FROZEN}
+        </p>
+      ) : null}
+      {reordering ? <p className={hintText}>Enregistrement de l’ordre…</p> : null}
+      {orderSaved && !reordering ? (
+        <p role="status" className={hintText} data-testid="order-saved">
+          Ordre enregistré.
+        </p>
+      ) : null}
+      {orderError ? (
+        <p role="alert" className={alertError}>
+          {orderError}
         </p>
       ) : null}
       {comparables.length > 0 ? <LocatorNotice availability={locatorAvailability} /> : null}
@@ -156,7 +209,8 @@ export function SelectedComparablesList({
                 type="button"
                 disabled={pending}
                 onClick={() => runBulk(rejectSelectedAction)}
-                className={`${btnPrimary} px-3 py-1.5 text-sm`}
+                // Mission 146 — en contour : jamais deux boutons pleins à l'écran (M143).
+                className={`${btnSecondary} px-3 py-1.5 text-sm`}
               >
                 Écarter les {noun(count)}
               </button>
@@ -179,7 +233,7 @@ export function SelectedComparablesList({
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {comparables.map((comparable, index) => (
+          {order.map((comparable, index) => (
             <ComparableCard
               key={comparable.id}
               comparable={comparable}
@@ -189,7 +243,7 @@ export function SelectedComparablesList({
               moveAction={moveAction}
               deleteAction={deleteAction}
               isFirst={index === 0}
-              isLast={index === comparables.length - 1}
+              isLast={index === order.length - 1}
               orderFrozen={orderFrozen}
               locatorAvailability={locatorAvailability}
               oppositionNote={oppositionNotes[comparable.id]}
@@ -198,6 +252,28 @@ export function SelectedComparablesList({
                 onToggle: () => toggle(comparable.id),
                 disabled: pending,
               }}
+              drag={
+                canDrag
+                  ? {
+                      dragging: dragged === index,
+                      handle: {
+                        draggable: !reordering,
+                        onDragStart: () => setDragged(index),
+                        onDragEnd: () => setDragged(null),
+                      },
+                      target: {
+                        onDragOver: (event) => {
+                          if (dragged != null) event.preventDefault();
+                        },
+                        onDrop: (event) => {
+                          event.preventDefault();
+                          drop(index);
+                          setDragged(null);
+                        },
+                      },
+                    }
+                  : null
+              }
             />
           ))}
         </ul>

@@ -12,6 +12,8 @@ import {
   pagePayload,
   TEST_PRICE_DROP,
   ageTestFollowUp,
+  chooseInMoreMenu,
+  expectOneFilled,
   readTestOppositions,
   removeTestOppositions,
   uniqueDossierName,
@@ -86,8 +88,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const doomedUrl = page.url();
 
     await page.goto('/builder');
+    await expectOneFilled(page, 'Préparation');
     const item = page.locator('li').filter({ hasText: doomed });
-    await item.getByRole('button', { name: 'Supprimer' }).click();
+    // Mission 146 — « Supprimer » est dans le menu « … » de la carte, jamais à côté de son étape.
+    await expect(item.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
+    await expect(item.getByTestId('preparation-next-step')).toHaveText('Saisir le bien vendeur →');
+    await chooseInMoreMenu(item, 'Supprimer le dossier…');
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByText(`Supprimer le dossier ${doomed}`)).toBeVisible();
     await expect(dialog.getByText('Il disparaîtra de vos listes.')).toBeVisible();
@@ -95,7 +101,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(dialog).toHaveCount(0);
     await expect(item, '« Annuler » a supprimé le dossier').toBeVisible();
 
-    await item.getByRole('button', { name: 'Supprimer' }).click();
+    await chooseInMoreMenu(item, 'Supprimer le dossier…');
     await dialog.getByRole('button', { name: 'Supprimer' }).click();
     await expect(page).toHaveURL(/\/builder$/);
     await expect(page.getByText(doomed), 'Le dossier supprimé reste dans la liste').toHaveCount(0);
@@ -163,6 +169,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(field('Terrain')).toBeHidden();
     // Fermés par défaut, résumés en une ligne.
     await expect(page.getByTestId('complements-summary')).toHaveText(/^Compléments : /);
+    // Mission 146 (C3) — la fiche enregistrée : ses imports se replient en « Importer à nouveau ».
+    await page.reload();
+    await expect(page.getByTestId('reimport')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Importer l’annonce' })).toBeHidden();
+    await expectOneFilled(page, 'Bien vendeur');
   });
 
   // Mission 99 — les réglages de la recherche : affichés, enregistrés sur le dossier, remis par
@@ -278,8 +289,66 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     }
   });
 
+  // Mission 146 (I5) — par carte, « Écarter » et « … » ; l'ordre du Live en glissant ; supprimer se
+  // confirme dans l'écran ; la synthèse en trois chiffres ; un seul bouton plein.
+  await test.step('Concurrents : moins de boutons, l’ordre en glissant', async () => {
+    await page.goto(`/builder/${projectId}/comparables`);
+    await expectOneFilled(page, 'Concurrents');
+    await expect(page.getByText('Plage des prix des concurrents')).toBeVisible();
+    await expect(page.getByText('Prix moyen', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Avant le rendez-vous →' })).toHaveCount(0);
+    const cards = page.locator('li').filter({ has: page.getByTestId('competitor-drag-handle') });
+    await expect(cards).toHaveCount(COMPETITORS.length);
+    const titles = () => cards.locator('span.font-title.text-lg').allInnerTexts();
+    const before = await titles();
+    // La poignée seule se glisse (le reste de la carte ne réordonne rien).
+    await cards.nth(0).getByTestId('competitor-drag-handle').dragTo(cards.nth(1));
+    await expect(page.getByTestId('order-saved')).toBeVisible();
+    await page.reload();
+    expect(await titles()).toEqual([before[1], before[0], ...before.slice(2)]);
+    // Remis dans l'ordre d'origine : le Live du parcours compte sur lui.
+    await cards.nth(1).getByTestId('competitor-drag-handle').dragTo(cards.nth(0));
+    await expect(page.getByTestId('order-saved')).toBeVisible();
+    await page.reload();
+    expect(await titles()).toEqual(before);
+
+    // « Supprimer… » demande confirmation dans l'écran ; « Annuler » ne supprime rien.
+    await chooseInMoreMenu(cards.first(), 'Supprimer…');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Supprimer ce concurrent ?')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Annuler' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(cards).toHaveCount(COMPETITORS.length);
+
+    // Un quatrième, saisi pour l'occasion : « Écarter » puis « Réintégrer » par la carte, puis
+    // supprimé pour de bon, après la confirmation dans l'écran.
+    const extra = 'TEST concurrent à supprimer';
+    await page.goto(`/builder/${projectId}/comparables/new`);
+    const form = page
+      .locator('form')
+      .filter({ has: page.getByRole('button', { name: 'Enregistrer le bien concurrent' }) });
+    await form.locator('input[name="title"]').fill(extra);
+    await form.locator('input[name="postal_code"]').fill('06000');
+    await form.locator('input[name="city"]').fill('Nice');
+    await form.locator('input[name="surface_area"]').fill('70');
+    await form.locator('input[name="rooms_count"]').fill('3');
+    await form.locator('input[name="price"]').fill('350000');
+    await form.getByRole('button', { name: 'Enregistrer le bien concurrent' }).click();
+    await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/comparables(\\?.*)?$`));
+    const extraCard = page.locator('li').filter({ hasText: extra });
+    await extraCard.getByRole('button', { name: 'Écarter', exact: true }).click();
+    await expect(extraCard.getByRole('button', { name: 'Réintégrer', exact: true })).toBeVisible();
+    await extraCard.getByRole('button', { name: 'Réintégrer', exact: true }).click();
+    await expect(extraCard.getByRole('button', { name: 'Écarter', exact: true })).toBeVisible();
+    await chooseInMoreMenu(extraCard, 'Supprimer…');
+    await dialog.getByRole('button', { name: 'Supprimer', exact: true }).click();
+    await expect(extraCard).toHaveCount(0);
+    await expect(cards).toHaveCount(COMPETITORS.length);
+  });
+
   await test.step('Fourchette validée : le dossier passe en « prêt »', async () => {
     await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+    await expectOneFilled(page, 'Avant le rendez-vous, avant la décision');
     // Mission 95 — le rythme du Live : accéléré par défaut, les deux durées estimées côte à côte.
     const rhythmSetting = page.locator('[data-live-rhythm]');
     await expect(
@@ -301,8 +370,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .fill(String(ADVISOR_ANALYSIS));
     await page.getByRole('button', { name: 'Enregistrer la décision' }).click();
     await expect(page.getByText('Ce dossier est prêt')).toBeVisible();
+    // Mission 146 (C4) — « Lancer le Live » une seule fois : celui de l'en-tête.
+    await page.reload();
+    await expect(page.getByRole('button', { name: /^Lancer le Live/ })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^Lancer le Live/ })).toHaveCount(1);
+    await expectOneFilled(page, 'Avant le rendez-vous, décision prise');
     // Puis l'étape suivante dit quoi faire : lancer le Live.
     await page.goto(`/builder/${projectId}`);
+    await expectOneFilled(page, 'Vue d’ensemble');
     // Mission 143 (B4) — sur la Vue d'ensemble, la prochaine étape vit dans son bloc, un seul
     // bouton plein ; l'en-tête ne la répète pas.
     const nextStep = page.getByTestId('overview-next-step');
@@ -311,6 +386,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('next-step')).toHaveCount(0);
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
+    await expectOneFilled(page, 'Préparation, onglet Prêts');
   });
 
   // Mission 110 — le mode expert, allumé dans « Mon profil » puis éteint, quoi qu'il arrive.
@@ -374,22 +450,22 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   });
 
   // Mission 110 — une fois le Live commencé, l'ordre des concurrents est figé.
-  await test.step('Après le Live : « Ordre figé », flèches désactivées', async () => {
+  await test.step('Après le Live : « Ordre figé », ni poignée ni Monter / Descendre', async () => {
     await page.goto(`/builder/${projectId}/comparables`);
     await expect(page.getByTestId('order-frozen')).toHaveText('Ordre figé : le Live a commencé');
-    for (const name of ['↑ Monter', '↓ Descendre']) {
-      const arrows = page.getByRole('button', { name, exact: true });
-      await expect(arrows.first()).toBeDisabled();
-      expect(
-        await arrows.evaluateAll((buttons) =>
-          buttons.every((b) => (b as HTMLButtonElement).disabled),
-        ),
-      ).toBe(true);
+    // Mission 146 — plus de poignée à glisser, et Monter / Descendre désactivés dans « … ».
+    await expect(page.getByTestId('competitor-drag-handle')).toHaveCount(0);
+    await page.getByTestId('competitor-more').first().click();
+    for (const name of ['Monter', 'Descendre']) {
+      await expect(page.getByRole('menuitem', { name, exact: true })).toBeDisabled();
     }
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toHaveCount(0);
   });
 
   await test.step('La liste du Live ne propose plus de recommencer', async () => {
     await page.goto('/live');
+    await expectOneFilled(page, 'Liste du Live');
     const item = page.locator('li').filter({ hasText: dossierName });
     await expect(item.getByRole('link', { name: /Reprendre \(écran \d+ sur \d+\)/ })).toBeVisible();
     await expect(page.getByText(/Recommencer/)).toHaveCount(0);
@@ -413,6 +489,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     expect(thanks, 'L’écran « Merci » montre un montant').not.toMatch(/\d{3}\s?€|€/);
     await page.getByRole('link', { name: 'Accès conseiller' }).click();
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/conclusion$`));
+    await expectOneFilled(page, 'Conclusion');
     await page
       .locator('label')
       .filter({ hasText: /^À relancer$/ })
@@ -448,6 +525,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // le retient ; à droite, sa prochaine étape et UN bouton.
     const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
     await expect(row, 'Le dossier conclu « à relancer » est absent du Suivi').toBeVisible();
+    await expectOneFilled(page, 'Suivi');
     await expect(row.getByTestId('outcome-badge')).toHaveText('À relancer');
     const path = row.getByTestId('suivi-price-path');
     for (const label of ['Il voulait', 'Après le marché', 'Prix proposé']) {
@@ -616,6 +694,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await expect(page.getByTestId('suivi-today-link')).toBeVisible();
       await expect(page.getByTestId('suivi-task')).toHaveCount(0);
       await openToday(page);
+      await expectOneFilled(page, 'Aujourd’hui');
       const task = page.getByTestId('today-task').filter({ hasText: `Relancer ${dossierName}` });
       await expect(task, 'La relance due manque dans « Aujourd’hui »').toBeVisible();
       await expect(task).toContainText(/dernier contact il y a 8 jours/);

@@ -11,7 +11,6 @@ import {
   backLink,
   badgeRejected,
   badgeSelected,
-  btnPrimary,
   btnSecondary,
   hintText,
   kickerLabel,
@@ -37,7 +36,6 @@ import {
 import { setLiveRhythm } from '@/features/live-seller/actions/live-timing-actions';
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
-import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import {
   EXPORT_COMPARISON_HINT,
   EXPORT_COMPARISON_LABEL,
@@ -536,41 +534,24 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         sequence={sequence}
         notes={notes}
         launch={
+          // Mission 146 (C4) — « Lancer le Live » une seule fois par écran : celui de l'en-tête (le
+          // bouton d'étape suivante, M110), qui passe par « Lancer le Live » et ses rappels (M107).
+          // En « Document seul », l'en-tête porte « Ouvrir l'Étude de marché » ; reste ici la
+          // conclusion du rendez-vous depuis le dossier (M131).
           presentationMode === 'document' ? (
-            // Mission 131 — « Document seul » : pas de Live à lancer ; l'Étude de marché, puis la
-            // conclusion du rendez-vous depuis le dossier.
             <div className="flex flex-wrap items-center justify-end gap-2" data-document-only>
-              <Link href={`/builder/${projectId}/etude-de-marche`} className={btnPrimary}>
-                Ouvrir l’Étude de marché
-              </Link>
               <Link href={`/builder/${projectId}/conclusion`} className={btnSecondary}>
                 Conclure le rendez-vous
               </Link>
             </div>
-          ) : launch ? (
-            <div className="flex flex-col items-end gap-1.5">
-              <LiveLaunchActions
-                projectId={projectId}
-                competitorCount={launch.competitorCount}
-                resume={launch.resume}
-                isExample={launch.isExample}
-                toVerifyCount={launch.toVerifyCount}
-                decisionOutdated={launch.decisionOutdated}
-                decisionMissing={launch.decisionMissing}
-                shortlistPending={launch.shortlistPending}
-                pendingImportCount={launch.pendingImportCount}
-                secondary
-              />
-              {/* Mission 104 — avant le clic : devant le vendeur, ses réponses sont figées. */}
-              {!launch.isExample && !launch.resume.started && !expert ? (
-                <p
-                  data-testid="real-dossier-note"
-                  className="max-w-xs text-right text-xs text-zinc-500 stage:text-white/55"
-                >
-                  {REAL_DOSSIER_NOTE}
-                </p>
-              ) : null}
-            </div>
+          ) : launch && !launch.isExample && !launch.resume.started && !expert ? (
+            // Mission 104 — avant le lancement : devant le vendeur, ses réponses sont figées.
+            <p
+              data-testid="real-dossier-note"
+              className="max-w-xs text-right text-xs text-zinc-500 stage:text-white/55"
+            >
+              {REAL_DOSSIER_NOTE}
+            </p>
           ) : null
         }
         rhythmSetting={

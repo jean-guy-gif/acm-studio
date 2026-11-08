@@ -9,8 +9,10 @@
  * Boutons
  * ------------------------------------------------------------------------- */
 
+// Mission 146 — `btn-filled`, une classe repère sans effet : le contrôle e2e « au plus un bouton
+// plein par écran » (M143) la compte.
 export const btnPrimary =
-  'inline-flex items-center justify-center gap-2 rounded-xl bg-brand-deep px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+  'btn-filled inline-flex items-center justify-center gap-2 rounded-xl bg-brand-deep px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition-all hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
 
 export const btnSecondary =
   'inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/5 stage:text-white/85 stage:hover:border-brand stage:hover:text-white';

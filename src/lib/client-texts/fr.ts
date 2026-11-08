@@ -264,7 +264,6 @@ export const FRENCH_TEXTS: ClientTexts = {
       exitFullscreen: 'Quitter le plein écran',
     },
     intro: {
-      kicker: 'Rendez-vous vendeur',
       title: 'Découvrons ensemble les biens en concurrence avec votre logement.',
       start: 'Démarrer la présentation',
       count: (count) =>

@@ -92,3 +92,26 @@ export function liveEntryGate(input: {
   if (!input.isExample && input.confirmedAt == null) return 'confirm';
   return 'open';
 }
+
+// Mission 146 — la liste du Live : d'abord les dossiers prêts pour le Live, ceux dont « Lancer le
+// Live » s'ouvre (au moins un concurrent retenu, pas en « Document seul », M104, M131 ; un Live
+// commencé compris, « Reprendre »), puis les autres ; dans chaque groupe, du plus récemment modifié
+// au plus ancien. Seul le premier dossier prêt garde le bouton plein (M143). Pur.
+export function liveListOrder<
+  T extends { updatedAt: string; competitorCount: number; documentOnly: boolean },
+>(rows: T[]): { row: T; launchable: boolean; primary: boolean }[] {
+  const launchable = (row: T) => row.competitorCount > 0 && !row.documentOnly;
+  const sorted = rows
+    .map((row, index) => ({ row, index, launchable: launchable(row) }))
+    .sort(
+      (a, b) =>
+        Number(b.launchable) - Number(a.launchable) ||
+        b.row.updatedAt.localeCompare(a.row.updatedAt) ||
+        a.index - b.index,
+    );
+  return sorted.map(({ row, launchable: canLaunch }, position) => ({
+    row,
+    launchable: canLaunch,
+    primary: position === 0 && canLaunch,
+  }));
+}

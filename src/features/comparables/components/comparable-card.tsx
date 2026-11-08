@@ -11,14 +11,17 @@ import {
   sanitizeFieldsToVerify,
 } from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type HTMLAttributes, type LiHTMLAttributes } from 'react';
 
+import { SubmitButton } from '@/components/submit-button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { MoreMenu, type MoreMenuItem } from '@/components/ui/more-menu';
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
   badgeNeutral,
   badgeRejected,
   badgeSelected,
-  btnDangerGhost,
+  btnDanger,
   btnSecondary,
   card,
 } from '@/components/ui/styles';
@@ -30,6 +33,7 @@ import {
   surfaceComparison,
 } from '@/features/comparables/services/calculate-comparable-summary';
 import type { Comparable } from '@/features/comparables/types';
+import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { getComparablePhotoUrls } from '@/features/comparables/utils/comparable-photos';
 import {
   formatEuro,
@@ -60,7 +64,61 @@ type ComparableCardProps = {
   locatorAvailability?: LocatorAvailability | null;
   // Mission 98 — l'adresse de ce concurrent est sur la liste « Ne plus solliciter » de l'agence.
   oppositionNote?: string;
+  // Mission 146 (I5) — réordonner en glissant la poignée ⋮⋮ (ordinateur et tablette) : les gestes du
+  // glisser-déposer, posés sur la carte par la liste des retenus.
+  // `handle` se pose sur la poignée seule (rien ne se glisse ailleurs sur la carte) ; `target`
+  // sur la carte, qui reçoit le dépôt.
+  drag?: {
+    handle: HTMLAttributes<HTMLSpanElement>;
+    target: LiHTMLAttributes<HTMLLIElement>;
+    dragging: boolean;
+  } | null;
 };
+
+function submitForm(id: string): void {
+  const form = document.getElementById(id);
+  if (form instanceof HTMLFormElement) form.requestSubmit();
+}
+
+// Mission 146 (I5) — le menu « … » d'une carte : Modifier la fiche, Monter et Descendre (le
+// clavier, le téléphone ; figés une fois le Live commencé, M110), Supprimer… en bas, en rouge.
+export function competitorMenuItems(input: {
+  editHref: string;
+  movable: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  orderFrozen: boolean;
+  onUp: () => void;
+  onDown: () => void;
+  onDelete: () => void;
+}): MoreMenuItem[] {
+  return [
+    { key: 'edit', label: 'Modifier la fiche', href: input.editHref },
+    ...(input.movable
+      ? [
+          {
+            key: 'up',
+            label: 'Monter',
+            disabled: input.isFirst || input.orderFrozen,
+            onSelect: input.onUp,
+          },
+          {
+            key: 'down',
+            label: 'Descendre',
+            disabled: input.isLast || input.orderFrozen,
+            onSelect: input.onDown,
+          },
+        ]
+      : []),
+    { key: 'delete', label: 'Supprimer…', danger: true, onSelect: input.onDelete },
+  ];
+}
+
+// Mission 146 (I5) — la confirmation de « Supprimer… », dans l'écran (plus `window.confirm`).
+export const DELETE_COMPETITOR_TITLE = 'Supprimer ce concurrent ?';
+export function deleteCompetitorText(label: string): string {
+  return `${label} disparaîtra du dossier, avec ses réponses du Live s’il en a. Pour le garder sans le montrer, écartez-le.`;
+}
 
 const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
 
@@ -120,6 +178,7 @@ export function ComparableCard({
   selection,
   locatorAvailability,
   oppositionNote,
+  drag = null,
 }: ComparableCardProps) {
   const photos = getComparablePhotoUrls(comparable);
   const toVerify = sanitizeFieldsToVerify(
@@ -128,6 +187,31 @@ export function ComparableCard({
   ).length;
   const [photoIndex, setPhotoIndex] = useState(0);
   const [confirmingWithdrawn, setConfirmingWithdrawn] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  // Les deux formulaires de l'ordre, cachés, soumis depuis le menu (par leur identifiant).
+  const upFormId = `move-up-${comparable.id}`;
+  const downFormId = `move-down-${comparable.id}`;
+  // Le libellé neutre (M107), comme partout où l'outil nomme un concurrent.
+  const label = neutralComparableLabel({
+    propertyType: comparable.property_type,
+    roomsCount: comparable.rooms_count,
+    surfaceArea: comparable.surface_area,
+    city: comparable.city,
+    district: comparable.district,
+  });
+  // Mission 146 (I5) — « Écarter » reste visible ; le reste dans « … » : Modifier la fiche, Monter
+  // et Descendre (le clavier, le téléphone ; figés une fois le Live commencé, M110),
+  // Supprimer… en bas, en rouge, avec sa confirmation dans l'écran.
+  const menuItems = competitorMenuItems({
+    editHref,
+    movable: moveAction != null,
+    isFirst: isFirst === true,
+    isLast: isLast === true,
+    orderFrozen,
+    onUp: () => submitForm(upFormId),
+    onDown: () => submitForm(downFormId),
+    onDelete: () => setDeleting(true),
+  });
   const warnBeforeReintegrate = comparable.listing_withdrawn && !comparable.is_selected;
   const acmPricePerSquareMeter = pricePerSquareMeter(comparable.price, comparable.surface_area);
   const gap = surfaceComparison(comparable.surface_area, subjectSurfaceArea);
@@ -138,8 +222,22 @@ export function ComparableCard({
 
   return (
     <li
-      className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand/60 sm:flex-row sm:items-start stage:hover:border-brand/60`}
+      {...drag?.target}
+      className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand/60 sm:flex-row sm:items-start stage:hover:border-brand/60 ${
+        drag?.dragging ? 'border-brand bg-brand-soft' : ''
+      }`}
     >
+      {drag ? (
+        <span
+          {...drag.handle}
+          aria-hidden="true"
+          title="Glisser pour changer l’ordre du Live"
+          data-testid="competitor-drag-handle"
+          className="hidden shrink-0 cursor-grab pt-2 text-lg leading-none tracking-[-0.2em] text-zinc-500 select-none sm:block stage:text-white/40"
+        >
+          ⋮⋮
+        </span>
+      ) : null}
       {selection ? (
         <label className="flex shrink-0 cursor-pointer items-center pt-1 sm:pt-2">
           <input
@@ -272,7 +370,7 @@ export function ComparableCard({
           toVerify={comparable.fields_to_verify ?? []}
         />
 
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+        <div className="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1">
           {warnBeforeReintegrate && !confirmingWithdrawn ? (
             <button type="button" className={smallBtn} onClick={() => setConfirmingWithdrawn(true)}>
               Réintégrer
@@ -292,43 +390,34 @@ export function ComparableCard({
             </form>
           )}
 
+          <MoreMenu items={menuItems} testId="competitor-more" />
           {moveAction ? (
             <>
-              <form action={moveAction}>
+              <form id={upFormId} action={moveAction} hidden>
                 <input type="hidden" name="comparableId" value={comparable.id} />
                 <input type="hidden" name="direction" value="up" />
-                <button type="submit" className={smallBtn} disabled={isFirst || orderFrozen}>
-                  ↑ Monter
-                </button>
               </form>
-              <form action={moveAction}>
+              <form id={downFormId} action={moveAction} hidden>
                 <input type="hidden" name="comparableId" value={comparable.id} />
                 <input type="hidden" name="direction" value="down" />
-                <button type="submit" className={smallBtn} disabled={isLast || orderFrozen}>
-                  ↓ Descendre
-                </button>
               </form>
             </>
           ) : null}
-
-          <Link href={editHref} className={smallBtn}>
-            Modifier
-          </Link>
-
-          <form
-            action={deleteAction}
-            onSubmit={(event) => {
-              if (!window.confirm('Supprimer définitivement ce bien concurrent ?')) {
-                event.preventDefault();
-              }
-            }}
-          >
-            <input type="hidden" name="comparableId" value={comparable.id} />
-            <button type="submit" className={`${btnDangerGhost} px-3 py-1.5 text-xs`}>
-              Supprimer
-            </button>
-          </form>
         </div>
+        {deleting ? (
+          <ConfirmDialog
+            title={DELETE_COMPETITOR_TITLE}
+            text={deleteCompetitorText(label)}
+            onCancel={() => setDeleting(false)}
+          >
+            <form action={deleteAction}>
+              <input type="hidden" name="comparableId" value={comparable.id} />
+              <SubmitButton pendingLabel="Suppression…" className={btnDanger}>
+                Supprimer
+              </SubmitButton>
+            </form>
+          </ConfirmDialog>
+        ) : null}
       </div>
     </li>
   );

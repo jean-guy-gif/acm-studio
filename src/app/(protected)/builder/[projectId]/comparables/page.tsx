@@ -4,10 +4,10 @@ import { notFound } from 'next/navigation';
 import {
   alertError,
   backLink,
-  btnPrimary,
   btnSecondary,
   emptyState,
   kickerLabel,
+  link,
   pageTitle,
 } from '@/components/ui/styles';
 import {
@@ -29,6 +29,8 @@ import { PendingImportsBanner } from '@/features/competitor-search/components/pe
 import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { isLiveOrderFrozen } from '@/features/live-seller/queries/is-live-order-frozen';
 import { getProject } from '@/features/projects/queries/get-project';
+import { nextDossierAction } from '@/features/projects/services/dossier-steps';
+import { evaluateProjectReadiness } from '@/features/projects/services/project-readiness';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
 import { opposedOn, oppositionBadge } from '@/features/prospecting/services/opposition';
@@ -60,6 +62,23 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
   const selected = comparables.filter((comparable) => comparable.is_selected);
   const rejected = comparables.filter((comparable) => !comparable.is_selected);
   const subjectSurfaceArea = subjectProperty?.surface_area ?? null;
+  // Mission 146 (I5) — l'étape suivante du dossier, celle du bouton plein de l'en-tête (M110) :
+  // quand c'est déjà « Chercher les concurrents », « Trouver des concurrents » ne la répète pas.
+  const readiness = await evaluateProjectReadiness(
+    await createClient(),
+    projectId,
+    project.agency_id,
+  );
+  const searchIsNextStep =
+    nextDossierAction(projectId, {
+      status: project.status,
+      hasProperty: readiness.hasProperty,
+      exploitableCount: readiness.exploitableCount,
+      hasDecision: readiness.hasPositioning,
+      liveStarted: project.live_started_at != null,
+      liveEnded: project.live_ended_at != null,
+      documentOnly: project.live_presentation_mode === 'document',
+    }).key === 'competitors';
   // Mission 110 — une fois le Live commencé, l'ordre des concurrents est figé.
   const orderFrozen = await isLiveOrderFrozen(await createClient(), project);
 
@@ -100,19 +119,16 @@ export default async function ComparablesPage({ params, searchParams }: Comparab
           <span className={kickerLabel}>Dossier · {project.seller_name}</span>
           <h1 className={pageTitle}>Biens concurrents</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Mission 110 — principal tant que les concurrents sont l'étape à faire. */}
-          <Link
-            href={`/builder/${projectId}/comparables/find`}
-            className={selected.length < 3 ? btnPrimary : btnSecondary}
-          >
-            Trouver des concurrents
-          </Link>
-          <Link href={`/builder/${projectId}/comparables/new`} className={btnSecondary}>
+        {/* Mission 146 (I5) — le seul plein est le bouton d'étape suivante, au-dessus (M110) ;
+            « Avant le rendez-vous » est dans la barre des étapes. */}
+        <div className="flex flex-wrap items-center gap-3">
+          {searchIsNextStep ? null : (
+            <Link href={`/builder/${projectId}/comparables/find`} className={btnSecondary}>
+              Trouver des concurrents
+            </Link>
+          )}
+          <Link href={`/builder/${projectId}/comparables/new`} className={link}>
             Ajouter un bien
-          </Link>
-          <Link href={`/builder/${projectId}/avant-rendez-vous`} className={btnSecondary}>
-            Avant le rendez-vous →
           </Link>
         </div>
       </div>

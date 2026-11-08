@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/styles';
 import { LiveLaunchActions } from '@/features/live-seller/components/live-launch-actions';
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
+import { liveListOrder } from '@/features/live-seller/services/live-launch';
 import { getReadyProjects } from '@/features/projects/queries/get-ready-projects';
 import { statusLabel } from '@/features/projects/status-label';
 import { formatRelativeDay } from '@/lib/format';
@@ -22,6 +23,16 @@ export default async function LivePage() {
   const projects = await getReadyProjects();
   // Mission 89 — pour chaque dossier prêt : a-t-il des concurrents, et où en est son Live ?
   const launchInfos = await Promise.all(projects.map((project) => getLiveLaunchInfo(project.id)));
+  // Mission 146 — prêts pour le Live d'abord, puis le plus récemment modifié ; un seul plein.
+  const rows = liveListOrder(
+    projects.map((project, index) => ({
+      project,
+      info: launchInfos[index],
+      updatedAt: project.updated_at,
+      competitorCount: launchInfos[index]?.competitorCount ?? 0,
+      documentOnly: launchInfos[index]?.presentationMode === 'document',
+    })),
+  );
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -50,7 +61,7 @@ export default async function LivePage() {
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {projects.map((project, index) => (
+          {rows.map(({ row: { project, info }, primary }) => (
             <li
               key={project.id}
               className={`${card} flex flex-col gap-4 p-4 transition-colors hover:border-brand sm:flex-row sm:items-center sm:justify-between sm:p-5 stage:hover:border-brand`}
@@ -73,15 +84,16 @@ export default async function LivePage() {
                 </Link>
                 <LiveLaunchActions
                   projectId={project.id}
-                  competitorCount={launchInfos[index]?.competitorCount ?? 0}
-                  resume={launchInfos[index]?.resume ?? { started: false, index: 0, total: 0 }}
+                  competitorCount={info?.competitorCount ?? 0}
+                  resume={info?.resume ?? { started: false, index: 0, total: 0 }}
                   isExample={project.is_example === true}
-                  toVerifyCount={launchInfos[index]?.toVerifyCount ?? 0}
-                  decisionOutdated={launchInfos[index]?.decisionOutdated ?? false}
-                  decisionMissing={launchInfos[index]?.decisionMissing ?? false}
-                  shortlistPending={launchInfos[index]?.shortlistPending ?? false}
-                  pendingImportCount={launchInfos[index]?.pendingImportCount ?? 0}
-                  presentationMode={launchInfos[index]?.presentationMode}
+                  toVerifyCount={info?.toVerifyCount ?? 0}
+                  decisionOutdated={info?.decisionOutdated ?? false}
+                  decisionMissing={info?.decisionMissing ?? false}
+                  shortlistPending={info?.shortlistPending ?? false}
+                  pendingImportCount={info?.pendingImportCount ?? 0}
+                  presentationMode={info?.presentationMode}
+                  secondary={!primary}
                 />
               </div>
             </li>
