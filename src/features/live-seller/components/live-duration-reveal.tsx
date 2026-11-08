@@ -24,7 +24,8 @@ export function LiveDurationReveal({
     value != null ? formatEuro(value, { language }) : '—';
   const n = (value: number) => formatNumber(value, { language });
   // Mission 148 — les deux durées côte à côte, la révélée plus grande ; la phrase et l'historique
-  // des prix en une ligne dessous (planche 4).
+  // des prix en une ligne dessous (planche 4). « Observé sur le marché depuis N jours » ne se
+  // répète plus sous la grande valeur, qui dit déjà ces N jours.
   return (
     <>
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
@@ -42,9 +43,6 @@ export function LiveDurationReveal({
         </div>
       </div>
       <div className="flex flex-col gap-0.5 text-sm text-zinc-500 stage:text-white/60">
-        {marketDuration.available && marketDuration.days != null ? (
-          <span>{t.observedSince(marketDuration.days)}</span>
-        ) : null}
         {observed != null && estimatedDays != null && observed !== estimatedDays ? (
           <span className="font-medium text-zinc-600 stage:text-white/75">
             {observed > estimatedDays
