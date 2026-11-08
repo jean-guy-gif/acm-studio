@@ -55,6 +55,10 @@ export const answerColumn = 'flex min-w-0 flex-col gap-3 md:min-h-0';
 export const panel =
   'rounded-2xl border border-zinc-200 bg-white p-4 shadow-card sm:p-5 stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm';
 
+// Mission 148 — un panneau plus serré, pour un écran chargé (le plus dangereux).
+export const panelTight =
+  'rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-card stage:border-white/10 stage:bg-white/5 stage:shadow-none stage:backdrop-blur-sm';
+
 // Panneau discret (informations secondaires).
 export const panelSoft =
   'rounded-2xl border border-zinc-100 bg-zinc-50 p-3 sm:p-4 stage:border-white/10 stage:bg-white/5';

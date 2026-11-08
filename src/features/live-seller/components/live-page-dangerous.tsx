@@ -10,7 +10,7 @@ import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
 import {
   choiceCompact,
   fieldLabel,
-  panel,
+  panelTight,
   question,
   questionHint,
   screen,
@@ -170,9 +170,9 @@ export function LivePageDangerous({
           </div>
         ) : null}
 
-        <div className={`${panel} flex flex-col gap-3`}>
+        <div className={`${panelTight} flex flex-col gap-2`}>
           <fieldset className="flex flex-col gap-2">
-            <legend className={`${fieldLabel} mb-2`}>{t.why}</legend>
+            <legend className={`${fieldLabel} mb-1.5`}>{t.why}</legend>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               {DANGEROUS_REASONS.map((value) => (
                 <label key={value} className={choiceCompact}>
