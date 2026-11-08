@@ -502,6 +502,23 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
       seriousQuestion: 'Un sérieux concurrent ?',
       notConsidered: 'Pas un concurrent pour vous : son prix n’a pas été regardé.',
+      basisCalculated: (competitors) =>
+        `Calculé par votre conseiller avant notre rendez-vous, sur ${competitors}`,
+      basisAdvisor: (competitors) =>
+        `Prix retenu par votre conseiller avant notre rendez-vous, à partir de ${competitors}`,
+      positionAmongSeen: {
+        mostExpensive: 'Le plus cher',
+        cheapest: 'Le moins cher',
+        amongMostExpensive: 'Parmi les plus chers',
+        amongCheapest: 'Parmi les moins chers',
+        middle: 'Dans la moyenne',
+        rank: (rank) => `Le ${rank === 1 ? '1er' : `${rank}e`} moins cher`,
+        sentence: (where, seen) =>
+          `${where}\u00a0: votre bien face ${
+            seen > 1 ? `aux ${seen} concurrents` : 'au concurrent'
+          } dont vous avez vu le prix`,
+      },
+      notConsideredRow: (label) => `${label} · pas un concurrent pour vous`,
       thePrice: 'Le prix',
       youImagined: 'Vous imaginiez',
       listedShort: 'Affiché',

@@ -95,6 +95,8 @@ export type SellerSynthesis = {
     droppedCount: number | null;
     medianDaysOnMarket: number | null;
     perSquareMeter: { label: string; value: number }[];
+    // Mission 148 B — « Concurrent 1 · pas un concurrent pour vous » : une ligne sans barre.
+    notConsideredRows: string[];
     medianPerSquareMeter: number | null;
   } | null;
   // Les prix du Live (M89) ; après la conclusion, les montants figés (M111).

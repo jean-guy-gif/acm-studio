@@ -556,6 +556,36 @@ export const ENGLISH_TEXTS: ClientTexts = {
       seriousShort: { yes: 'Yes', unsure: 'Not sure', no: 'No' },
       seriousQuestion: 'A serious competing property?',
       notConsidered: 'Not competition for you: we did not look at its price.',
+      basisCalculated: (competitors) =>
+        `Calculated by your adviser before our meeting, on ${competitors}`,
+      basisAdvisor: (competitors) =>
+        `Price set by your adviser before our meeting, based on ${competitors}`,
+      positionAmongSeen: {
+        mostExpensive: 'The most expensive',
+        cheapest: 'The cheapest',
+        amongMostExpensive: 'Among the most expensive',
+        amongCheapest: 'Among the cheapest',
+        middle: 'In the middle',
+        rank: (rank) => {
+          const tens = rank % 100;
+          const suffix =
+            tens >= 11 && tens <= 13
+              ? 'th'
+              : rank % 10 === 1
+                ? 'st'
+                : rank % 10 === 2
+                  ? 'nd'
+                  : rank % 10 === 3
+                    ? 'rd'
+                    : 'th';
+          return `The ${rank}${suffix} cheapest`;
+        },
+        sentence: (where, seen) =>
+          `${where}: your property against the ${
+            seen > 1 ? `${seen} competing properties` : 'competing property'
+          } whose price you saw`,
+      },
+      notConsideredRow: (label) => `${label} · not competition for you`,
       thePrice: 'The price',
       youImagined: 'Your guess',
       listedShort: 'Asking',

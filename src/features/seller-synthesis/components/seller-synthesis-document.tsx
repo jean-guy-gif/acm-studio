@@ -933,6 +933,17 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                     </div>
                   ));
                 })()}
+                {/* Mission 148 B — un « Non » garde sa ligne, sans barre ni prix : les numéros du
+                    Live se suivent. */}
+                {analysis.notConsideredRows.map((row) => (
+                  <div
+                    key={row}
+                    className="border-b border-zinc-100 py-1 text-[0.78rem] text-zinc-500 last:border-b-0"
+                    data-not-considered
+                  >
+                    {row}
+                  </div>
+                ))}
               </div>
             ) : null}
           </section>
