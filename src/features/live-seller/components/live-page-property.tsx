@@ -6,14 +6,14 @@ import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import {
   answerColumn,
-  choice,
+  choiceCompact,
   fieldLabel,
-  panel,
+  panelTight,
   photoColumn,
   question,
   questionHint,
   screen,
-  screenBody,
+  screenBodyWideAnswers,
   screenHead,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
@@ -131,7 +131,9 @@ export function LivePageProperty({
         <p className={questionHint}>{asksSeller ? t.askHint : t.showHint}</p>
       </div>
 
-      <div className={screenBody}>
+      {/* Les caractéristiques ont la colonne la plus large : une valeur longue (le chauffage,
+          l'adresse) passe à la ligne sans pousser l'écran sous la barre. */}
+      <div className={screenBodyWideAnswers}>
         <div className={photoColumn}>
           <LiveGallery photos={property.photoUrls} alt={alt} fill />
           {property.features.length > 0 ? (
@@ -143,12 +145,15 @@ export function LivePageProperty({
 
         <div className={answerColumn}>
           {asksSeller ? (
-            <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex flex-col gap-3`}>
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className={`${panelTight} flex flex-col gap-2`}
+            >
               <fieldset className="flex flex-col gap-2">
-                <legend className={`${fieldLabel} mb-2`}>{t.question}</legend>
+                <legend className={`${fieldLabel} mb-1.5`}>{t.question}</legend>
                 <div className="grid grid-cols-1 gap-2 md:portrait:grid-cols-2">
                   {PROPERTY_CONFIRMED_VALUES.map((value) => (
-                    <label key={value} className={choice}>
+                    <label key={value} className={choiceCompact}>
                       <input
                         type="radio"
                         name="seller_property_confirmed"
