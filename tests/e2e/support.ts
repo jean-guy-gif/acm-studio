@@ -256,6 +256,41 @@ export async function expectNoHorizontalScroll(page: Page, screen: string): Prom
     });
 }
 
+// Mission 148 A — la frise des prix de la synthèse : à la largeur affichée, aucune étiquette (ou
+// aucun rond numéroté) n'en touche une autre, et toutes restent dans la frise. Mesuré dans le
+// navigateur, sur les seules frises visibles (la synthèse en calcule une par taille d'écran).
+export async function expectReadableBands(page: Page, screen: string): Promise<void> {
+  const problems = await page.evaluate(() => {
+    const out: string[] = [];
+    const bands = [...document.querySelectorAll<HTMLElement>('[data-band]')].filter(
+      (band) => band.getBoundingClientRect().height > 0,
+    );
+    if (bands.length === 0) out.push('aucune frise visible');
+    bands.forEach((band, index) => {
+      const area = band.querySelector('[data-band-area]')!.getBoundingClientRect();
+      const boxes = [...band.querySelectorAll<HTMLElement>('[data-band-label]')].map((label) =>
+        label.getBoundingClientRect(),
+      );
+      boxes.forEach((box, i) => {
+        if (box.left < area.left - 0.5 || box.right > area.right + 0.5) {
+          out.push(`frise ${index + 1} : l'étiquette ${i + 1} sort de la frise`);
+        }
+        boxes.slice(i + 1).forEach((other, j) => {
+          const touch =
+            box.left < other.right &&
+            other.left < box.right &&
+            box.top < other.bottom &&
+            other.top < box.bottom;
+          if (touch)
+            out.push(`frise ${index + 1} : les étiquettes ${i + 1} et ${i + j + 2} se touchent`);
+        });
+      });
+    });
+    return out;
+  });
+  expect(problems, `Frise illisible sur « ${screen} »`).toEqual([]);
+}
+
 // Mission 98 — la rue des adresses que le parcours inscrit sur la liste « Ne plus solliciter »,
 // telle que la clé d'adresse la range (`addressKey`). Aucune vraie adresse ne lui ressemble.
 // Mission 102 — la clé ne porte plus le code postal : le motif accepte les deux écritures.
