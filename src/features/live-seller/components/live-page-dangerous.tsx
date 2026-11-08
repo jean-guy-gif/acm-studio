@@ -81,16 +81,16 @@ export function LivePageDangerous({
         <p className={questionHint}>{t.hint}</p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-3 md:min-h-0">
+      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2.5 md:min-h-0">
         {eligibleComparables.length === 0 ? (
           <p className="text-base text-zinc-500 stage:text-white/60">{t.none}</p>
         ) : (
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:landscape:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:landscape:grid-cols-3">
             {eligibleComparables.map((entry) => {
               const label = neutralComparableLabel(entry, language);
               return (
                 <div key={entry.id} className="relative">
-                  <label className="group grid h-full cursor-pointer grid-cols-[5.5rem_1fr] overflow-hidden rounded-xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-white stage:has-checked:bg-brand/20">
+                  <label className="group grid h-full cursor-pointer grid-cols-[4.75rem_1fr] overflow-hidden rounded-xl border-2 border-zinc-200 bg-white shadow-card transition-all select-none hover:border-brand has-checked:border-brand has-checked:shadow-xl has-checked:shadow-brand/25 stage:border-white/15 stage:bg-white/5 stage:shadow-none stage:hover:border-brand stage:has-checked:border-white stage:has-checked:bg-brand/20">
                     <input
                       type="radio"
                       name="seller_most_dangerous_comparable_id"
@@ -112,8 +112,8 @@ export function LivePageDangerous({
                         {photoTexts.short}
                       </div>
                     )}
-                    <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2">
-                      <div className="font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
+                    <div className="flex min-w-0 flex-col gap-0.5 px-2.5 py-1.5">
+                      <div className="font-title text-sm leading-tight font-semibold text-zinc-900 stage:text-white">
                         {label}
                       </div>
                       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -171,9 +171,9 @@ export function LivePageDangerous({
         ) : null}
 
         <div className={`${panelTight} flex flex-col gap-2`}>
-          <fieldset className="flex flex-col gap-2">
-            <legend className={`${fieldLabel} mb-1.5`}>{t.why}</legend>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className={`${fieldLabel} mb-1`}>{t.why}</legend>
+            <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4">
               {DANGEROUS_REASONS.map((value) => (
                 <label key={value} className={choiceCompact}>
                   <input
