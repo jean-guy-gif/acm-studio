@@ -3,6 +3,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import {
   demoCredentials,
   expectNoHorizontalScroll,
+  expectReadableBands,
   expectOneFilled,
   goViaAccountMenu,
   login,
@@ -599,7 +600,21 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(synthesis).toBeVisible();
       await expectUnspoken(page, 'Synthèse');
       await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(RETAINED + 1);
-      await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
+      await expect(
+        synthesis.getByText('Le plus dangereux selon vous').filter({ visible: true }).first(),
+      ).toBeVisible();
+      // Mission 148 A — la frise est mise en page pour trois largeurs, une seule visible (d'où le
+      // filtre « visible » ci-dessus) ; ses étiquettes lisibles à l'écran large, sur tablette et téléphone.
+      for (const width of [1280, 700, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expectReadableBands(page, `Synthèse, ${width} px`);
+      }
+      // L'impression A4 (210 mm ≈ 794 px de large) : la mise en page de l'écran large.
+      await page.setViewportSize({ width: 794, height: 1123 });
+      await page.emulateMedia({ media: 'print' });
+      await expectReadableBands(page, 'Synthèse, impression A4');
+      await page.emulateMedia({ media: 'screen' });
+      await page.setViewportSize({ width: 1280, height: 720 });
       await expect(synthesis.getByTestId('agreed-price')).toHaveAttribute(
         'data-alignment',
         'green',
@@ -630,6 +645,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         expect(response?.headers()['x-robots-tag']).toContain('noindex');
         await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
         await expectUnspoken(visitor, 'Synthèse, lien public');
+        await visitor.setViewportSize({ width: 375, height: 800 });
+        await expectReadableBands(visitor, 'Synthèse, lien public sur téléphone');
         await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
         await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
         const after = await visitor.goto(link);

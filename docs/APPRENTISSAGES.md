@@ -357,6 +357,28 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   joue avec `.env.local` chargé. Durées : relecteur 4,7 min, suite e2e 13,7 à 19,4 min (un aléa
   réseau, `ECONNRESET` sur l'export), parcours 3,0 min.
 
+- 08/11 · M148 · Mesurer un écran du Live à plusieurs tailles ne demande pas un Live par taille :
+  un seul Live de démo, et à chaque écran `setViewportSize` aux trois tailles puis retour (l'état
+  du Live ne bouge pas) — 41 écrans mesurés en un passage. Le script vit le temps de la mesure dans
+  `tests/e2e/` (`./support` importable), jamais commité, la démo remise à zéro dans son `finally`.
+- 08/11 · M148 A · Une largeur de texte s'estime sur une mesure, pas au jugé : les sept polices de
+  charte embarquées, mesurées dans Chromium (une page `file://`, pas `setContent`, sinon les
+  polices ne se chargent pas), font au plus 6,0 px par caractère à 0,68 rem ; l'estimation au jugé
+  (6,9) faisait passer à tort le dossier 868af175 en repères numérotés.
+- 08/11 · M148 A · Une mise en page rendue au serveur pour plusieurs largeurs se choisit sur la
+  largeur du conteneur (`@container`, `@min-[620px]:block`), jamais sur celle de l'écran : marges
+  et barre de défilement la rétrécissent sous la largeur de calcul (trouvé par le relecteur). Et
+  un e2e qui lit `getByText(…).first()` tombe alors sur une variante masquée : `filter({ visible:
+  true })`.
+- 08/11 · M148 A · `npm test` dans un shell neuf : onze fichiers ne se chargent pas sans
+  `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` ; poser les valeurs factices de la
+  CI (`https://example.supabase.co`, `ci-fake-anon-key`). `npm run format:check` lit aussi
+  `.impeccable/hook.cache.json`, exclu de git mais pas de Prettier : rouge en local seulement ;
+  `npx prettier --check src tests` dit l'essentiel. Aléas : `langue-du-vendeur` (« Réglages » du
+  Live) et un nettoyage de fin de passage (CLI Supabase), verts au second passage. Durées :
+  relecteur 4,4 min, démo 4,8 min, parcours 2,9 min, suite complète ≈ 22 min en trois lots, CI
+  6 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

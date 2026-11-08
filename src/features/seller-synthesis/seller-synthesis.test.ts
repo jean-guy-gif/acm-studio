@@ -18,6 +18,7 @@ import {
   newSynthesisToken,
   SYNTHESIS_TOKEN_PATTERN,
 } from '@/features/seller-synthesis/services/synthesis-token';
+import { formatEuro } from '@/lib/format';
 import { isPublicPath } from '@/lib/supabase/public-paths';
 
 // Mission 110 — la synthèse laissée au vendeur ne contient JAMAIS d'adresse, de titre, de lien
@@ -604,5 +605,41 @@ describe('« Le plus dangereux selon vous » sur la bande de la synthèse', () =
     expect(synthesis.dangerous?.competitorId).toBe('c3');
     expect(html).toMatch(/Le plus dangereux selon vous<\/span><b>330\s000\s€/);
     expect(html).toMatch(/Au début<\/span><b>/);
+  });
+});
+
+// Mission 148 A — la frise de « L'analyse des prix » : ses bornes écrites couvrent tout ce qu'elle
+// montre (le dossier 868af175 de l'essai écrivait « 129 900 € … 149 000 € » sous deux repères à
+// 127 992 et 129 000 €), et elle est calculée pour les trois largeurs de l'écran.
+describe('la frise de la synthèse (mission 148 A)', () => {
+  it('ses bornes sont le plus petit et le plus grand des prix ET des repères', async () => {
+    const { html, synthesis } = await load();
+    const values = [
+      ...synthesis.analysis!.prices,
+      synthesis.perceivedPrice,
+      synthesis.revisedPrice,
+      synthesis.competitors.find((item) => item.id === synthesis.dangerous?.competitorId)?.revealed
+        ?.price ?? null,
+      synthesis.decision?.competitorPrice ?? null,
+    ].filter((value): value is number => value != null);
+    const euro = (value: number) => formatEuro(value);
+    const start = html.indexOf('data-band');
+    const ends =
+      /<div class="flex justify-between text-xs text-zinc-500"><span>([^<]+)<\/span><span>([^<]+)<\/span>/.exec(
+        html.slice(start),
+      );
+    expect(ends?.[1]).toBe(euro(Math.min(...values)));
+    expect(ends?.[2]).toBe(euro(Math.max(...values)));
+  });
+
+  it('chaque frise est mise en page pour le téléphone, la tablette et l’écran large ou le PDF', async () => {
+    const { html } = await load();
+    const bands = html.match(/data-band-mode="(labels|numbered)"/g) ?? [];
+    // Deux frises (« L'analyse des prix » et « Le chemin de votre prix »), trois largeurs chacune.
+    expect(bands.length % 3).toBe(0);
+    expect(bands.length).toBeGreaterThanOrEqual(3);
+    // Chaque mise en page ne s'affiche que si la frise elle-même est assez large.
+    expect(html).toContain('class="@min-[480px]:hidden" data-band');
+    expect(html).toContain('class="hidden @min-[620px]:block" data-band');
   });
 });

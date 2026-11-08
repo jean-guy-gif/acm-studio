@@ -1577,10 +1577,15 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Mission 111 — les prix du Live, sous leurs noms du Live.
     // Mission 113 — le libellé figure sur la bande des prix (M104) et sur sa carte.
     await expect(
-      synthesis.getByText('Prix des concurrents', { exact: true }).first(),
+      synthesis
+        .getByText('Prix des concurrents', { exact: true })
+        .filter({ visible: true })
+        .first(),
     ).toBeVisible();
     // Mission 115 — la bande nomme le plus dangereux désigné pendant le Live.
-    await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
+    await expect(
+      synthesis.getByText('Le plus dangereux selon vous').filter({ visible: true }).first(),
+    ).toBeVisible();
     // Mission 116 — le prix convenu en couleur, sur les montants figés, libellé compris.
     await expect(synthesis.getByTestId('agreed-price')).toHaveAttribute('data-alignment', 'orange');
     await expect(synthesis.getByTestId('price-alignment')).toHaveText(PRICE_ALIGNMENT_LABEL);
