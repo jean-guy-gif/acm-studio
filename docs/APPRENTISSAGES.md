@@ -368,8 +368,8 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 08/11 · M148 A · Une mise en page rendue au serveur pour plusieurs largeurs se choisit sur la
   largeur du conteneur (`@container`, `@min-[620px]:block`), jamais sur celle de l'écran : marges
   et barre de défilement la rétrécissent sous la largeur de calcul (trouvé par le relecteur). Et
-  un e2e qui lit `getByText(…).first()` tombe alors sur une variante masquée : `filter({ visible:
-  true })`.
+  un e2e qui lit `getByText(…).first()` tombe alors sur une variante masquée : il filtre sur
+  `{ visible: true }`.
 - 08/11 · M148 A · `npm test` dans un shell neuf : onze fichiers ne se chargent pas sans
   `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` ; poser les valeurs factices de la
   CI (`https://example.supabase.co`, `ci-fake-anon-key`). `npm run format:check` lit aussi
