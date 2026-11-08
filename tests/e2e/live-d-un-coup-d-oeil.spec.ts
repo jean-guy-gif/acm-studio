@@ -84,6 +84,9 @@ async function openLive(page: Page, projectId: string): Promise<void> {
     timeout: 120_000,
   });
   await start.click();
+  await expect(page.locator('main')).not.toHaveAttribute('data-live-page', 'intro', {
+    timeout: 30_000,
+  });
 }
 
 const screenLabel = async (page: Page): Promise<string> => {
