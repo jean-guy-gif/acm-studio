@@ -1269,7 +1269,17 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   await expect(block.getByTestId('property-buyers-mandate')).toHaveText(
     'Rentrez le mandat pour pouvoir le proposer.',
   );
-  await expect(block.getByTestId('property-buyers-relance')).toBeVisible();
+  // La relance est la Prochaine étape, seul bouton plein de la page (M143).
+  const next = page.getByTestId('overview-next-step');
+  await expect(next.getByRole('heading')).toHaveText('Relancer M. et Mme Lambert-Duval');
+  await expect(next.getByTestId('overview-next-step-phrase')).toHaveText(
+    '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
+  );
+  await expect(next.getByRole('link', { name: 'Relancer', exact: true })).toHaveAttribute(
+    'href',
+    /\/suivi\?relancer=/,
+  );
+  await expect(block.getByRole('link', { name: /^Relancer/ })).toHaveCount(0);
   await expect(block.getByTestId('propose-property')).toHaveCount(0);
   await page.goto('/suivi');
 }

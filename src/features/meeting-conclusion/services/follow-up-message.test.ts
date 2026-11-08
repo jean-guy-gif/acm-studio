@@ -168,6 +168,26 @@ describe('le message ne contient aucune adresse ni aucun prix de concurrent', ()
     expect(view.message).toContain('Depuis notre rendez-vous, 2 des biens');
   });
 
+  // Mission 145 (partie B) — le Suivi et l'écran de conclusion passent par cette seule fonction :
+  // avec des acquéreurs prêts, la même phrase anonyme dans les deux messages.
+  it('des acquéreurs prêts : la phrase anonyme, la même partout', () => {
+    const withBuyers = buildDossierFollowUp({
+      conclusion,
+      liveStartedAt: null,
+      liveEndedAt: null,
+      competitors,
+      dangerous: null,
+      contacts: [],
+      now: new Date('2026-10-20T12:00:00Z'),
+      signature: { advisorFirstName: null, agencyName: null },
+      readyBuyers: 1,
+    });
+    expect(plain(withBuyers.message!)).toContain(
+      'Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.',
+    );
+    expect(view.message).not.toContain('acquéreur prêt');
+  });
+
   it('aucun prix de concurrent, ni révélé, ni actuel, ni deviné', () => {
     const message = digits(view.message!);
     for (const competitor of competitors) {
