@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition, type ReactNode } from 'react';
 
 import {
-  btnPrimary,
   btnSecondary,
   card,
   errorText,
@@ -144,7 +143,8 @@ export function AddressDossierBlock({
         </div>
         <button
           type="button"
-          className={view.state === 'built' ? btnSecondary : btnPrimary}
+          // Mission 146 — en contour : le seul plein de la fiche est « Enregistrer » (M77, M143).
+          className={btnSecondary}
           disabled={pending}
           onClick={build}
           data-testid="address-dossier-build"

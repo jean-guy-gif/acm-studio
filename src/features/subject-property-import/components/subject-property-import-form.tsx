@@ -138,8 +138,10 @@ export function SubjectPropertyImportForm({
   const condominiumRef = useRef<SheetSectionHandle>(null);
   const [dirty, setDirty] = useState(NOTHING_DIRTY);
   const [saved, setSaved] = useState(property != null);
-  // Mission 146 (C3) — la fiche lue en base au chargement : ses imports se replient.
-  const importsFolded = property != null;
+  // Mission 146 (C3) — la fiche lue en base au chargement : ses imports se replient. Figé au
+  // premier rendu : un import en cours (les photos récupérées créent la fiche en base) ne replie
+  // pas le bloc sous les yeux du conseiller, ce qui effacerait ce qu'il vient de dire.
+  const [importsFolded] = useState(property != null);
   const [errors, setErrors] = useState<SheetFieldErrors>(NO_SHEET_ERRORS);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [missing, setMissing] = useState<SearchRequirement[]>([]);
