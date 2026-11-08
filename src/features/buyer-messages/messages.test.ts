@@ -362,11 +362,21 @@ describe('les tâches de la recherche', () => {
   };
 
   it('le point de la semaine : dû le lundi, une fois par semaine, pour un acquéreur actif', () => {
-    // Mission 145 — proposé du lundi au mercredi soir (Paris), retiré ensuite (NOW est un jeudi).
+    // Mission 145 — proposé du lundi au mercredi soir (Paris), retiré le jeudi (dates fixes, heure
+    // de Paris = UTC + 1 en novembre).
+    const SUNDAY_BEFORE = new Date('2026-11-08T20:00:00Z');
+    const MONDAY = new Date('2026-11-09T07:00:00Z');
     const WEDNESDAY = new Date('2026-11-11T21:00:00Z');
-    expect(weeklyReportTasks([base], NOW)).toEqual([]);
-    expect(weeklyReportTasks([base], new Date('2026-11-11T23:30:00Z'))).toEqual([]);
-    expect(weeklyReportTasks([base], new Date('2026-11-09T07:00:00Z'))).toHaveLength(1);
+    const WEDNESDAY_LAST_MINUTE = new Date('2026-11-11T22:59:00Z');
+    const THURSDAY_MIDNIGHT = new Date('2026-11-11T23:00:00Z');
+    const THURSDAY = NOW;
+    // La semaine du 2 au 8 n'est pas finie le dimanche ; celle d'avant est déjà retirée.
+    expect(weeklyReportTasks([base], SUNDAY_BEFORE)).toEqual([]);
+    expect(weeklyReportTasks([base], MONDAY)).toHaveLength(1);
+    expect(weeklyReportTasks([base], WEDNESDAY)).toHaveLength(1);
+    expect(weeklyReportTasks([base], WEDNESDAY_LAST_MINUTE)).toHaveLength(1);
+    expect(weeklyReportTasks([base], THURSDAY_MIDNIGHT)).toEqual([]);
+    expect(weeklyReportTasks([base], THURSDAY)).toEqual([]);
     const [task] = weeklyReportTasks([base], WEDNESDAY);
     expect(task).toMatchObject({
       kind: 'buyer_weekly_report',

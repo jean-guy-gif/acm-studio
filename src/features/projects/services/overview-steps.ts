@@ -137,3 +137,27 @@ export function nextStepPhrase(key: string, estimatedMinutes: number | null): st
 export function nextStepTitle(action: NextDossierAction, sellerName: string): string {
   return action.key === 'launch' ? `Faire le Live avec ${sellerName}` : action.label;
 }
+
+// Mission 145 (partie B) — un vendeur à relancer que veulent des acquéreurs prêts : la Prochaine
+// étape devient la relance, avec l'argument, et c'est le seul bouton plein de la page (M143). La
+// relance s'ouvre dans la carte du Suivi (M130 A).
+export function followUpNextStep(
+  projectId: string,
+  sellerName: string,
+  readyBuyers: number,
+): { action: NextDossierAction; title: string; phrase: string } | null {
+  if (readyBuyers < 1) return null;
+  const count =
+    readyBuyers > 1
+      ? `${readyBuyers} acquéreurs prêts correspondent à ce bien`
+      : '1 acquéreur prêt correspond à ce bien';
+  return {
+    action: {
+      key: 'follow_up',
+      label: 'Relancer',
+      href: `/suivi?relancer=${projectId}#suivi-${projectId}`,
+    },
+    title: `Relancer ${sellerName}`,
+    phrase: `${count} : rentrez le mandat pour pouvoir le proposer.`,
+  };
+}

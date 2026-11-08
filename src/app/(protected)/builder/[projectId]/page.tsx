@@ -23,6 +23,7 @@ import { ArchiveProjectButton } from '@/features/projects/components/archive-pro
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
 import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import {
+  followUpNextStep,
   nextStepPhrase,
   nextStepTitle,
   overviewSteps,
@@ -143,6 +144,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         liveEnded: project.live_ended_at != null,
       })
     : null;
+  // Mission 145 (partie B) — un vendeur à relancer que veulent des acquéreurs prêts : la relance,
+  // avec l'argument, devient la Prochaine étape, seul bouton plein (M143).
+  const relance =
+    conclusion?.outcome === 'follow_up' && buyers
+      ? followUpNextStep(projectId, project.seller_name, buyers.ready.length)
+      : null;
+  const nextAction = relance?.action ?? action;
   // Mission 97 — pas de prospection pour un dossier d'exemple : ses concurrents sont fictifs.
   const prospectingRows =
     !project.is_example && isProspectingOpen(project.status, conclusion?.outcome)
@@ -194,22 +202,27 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           {glance ? <MarketGlanceCard glance={glance} /> : null}
         </div>
         <div className="flex flex-col gap-3">
-          {action ? (
+          {nextAction ? (
             <section
               className={`${card} flex flex-col gap-3 border-l-4 border-l-brand-deep p-5`}
               data-testid="overview-next-step"
             >
               <span className={kickerLabel}>Prochaine étape</span>
               <h2 className="font-title text-xl font-bold text-zinc-900 stage:text-white">
-                {nextStepTitle(action, project.seller_name)}
+                {relance?.title ?? nextStepTitle(nextAction, project.seller_name)}
               </h2>
-              {nextStepPhrase(action.key, launch?.estimatedMinutes ?? null) ? (
-                <p className="text-sm text-zinc-600 stage:text-white/70">
-                  {nextStepPhrase(action.key, launch?.estimatedMinutes ?? null)}
+              {(relance?.phrase ??
+              nextStepPhrase(nextAction.key, launch?.estimatedMinutes ?? null)) ? (
+                <p
+                  className="text-sm text-zinc-600 stage:text-white/70"
+                  data-testid="overview-next-step-phrase"
+                >
+                  {relance?.phrase ??
+                    nextStepPhrase(nextAction.key, launch?.estimatedMinutes ?? null)}
                 </p>
               ) : null}
               {/* Le Live passe par ses contrôles (M104, M107) : le même bouton que partout. */}
-              {(action.key === 'launch' || action.key === 'resume') && launch ? (
+              {(nextAction.key === 'launch' || nextAction.key === 'resume') && launch ? (
                 <LiveLaunchActions
                   projectId={projectId}
                   competitorCount={launch.competitorCount}
@@ -223,12 +236,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   presentationMode={launch.presentationMode}
                 />
               ) : (
-                <Link href={action.href} className={`${btnPrimary} self-start`}>
-                  {action.label}
+                <Link href={nextAction.href} className={`${btnPrimary} self-start`}>
+                  {nextAction.label}
                 </Link>
               )}
               {/* Mission 110 — le mode expert masque les rappels d'entraînement. */}
-              {action.key === 'launch' && !project.is_example && profile?.expert_mode !== true ? (
+              {nextAction.key === 'launch' &&
+              !project.is_example &&
+              profile?.expert_mode !== true ? (
                 <form action={openExampleDossier}>
                   <button
                     type="submit"
@@ -274,14 +289,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {buyers !== undefined ? (
         <PropertyBuyersBlock
           result={buyers}
-          followUp={
-            conclusion?.outcome === 'follow_up'
-              ? {
-                  sellerName: project.seller_name ?? 'le vendeur',
-                  href: `/suivi?relancer=${projectId}#suivi-${projectId}`,
-                }
-              : null
-          }
+          followUp={conclusion?.outcome === 'follow_up'}
           proposeKey={
             // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
             // lecture des offres en échec ne propose rien (M98).

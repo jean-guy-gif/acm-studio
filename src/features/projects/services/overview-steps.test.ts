@@ -8,6 +8,7 @@ import {
   nextStepTitle,
   overviewSteps,
   type OverviewInput,
+  followUpNextStep,
 } from '@/features/projects/services/overview-steps';
 
 // Mission 143 (B4) — la Vue d'ensemble dit vrai : ce qui est fait est coché, la première étape
@@ -133,5 +134,24 @@ describe('la prochaine étape (mission 143)', () => {
     ]) {
       expect(NEXT_STEP_PHRASES[key]).toBeTruthy();
     }
+  });
+});
+
+// Mission 145 (partie B) — un vendeur à relancer que veulent des acquéreurs prêts : la Prochaine
+// étape est la relance, avec l'argument, seul bouton plein de la Vue d'ensemble (M143).
+describe('la relance, Prochaine étape d’un vendeur à relancer', () => {
+  it('« Relancer M. et Mme … », l’argument, la carte du Suivi ouverte sur la relance', () => {
+    expect(followUpNextStep('p1', 'M. et Mme Lambert-Duval', 1)).toEqual({
+      action: { key: 'follow_up', label: 'Relancer', href: '/suivi?relancer=p1#suivi-p1' },
+      title: 'Relancer M. et Mme Lambert-Duval',
+      phrase: '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
+    });
+    expect(followUpNextStep('p1', 'M. Roux', 3)?.phrase).toMatch(
+      /^3 acquéreurs prêts correspondent à ce bien/,
+    );
+  });
+
+  it('sans acquéreur prêt, la Prochaine étape reste celle du dossier', () => {
+    expect(followUpNextStep('p1', 'M. Roux', 0)).toBeNull();
   });
 });
