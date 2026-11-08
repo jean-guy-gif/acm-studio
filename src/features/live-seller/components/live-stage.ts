@@ -42,8 +42,11 @@ export const screenHead = 'flex shrink-0 flex-col gap-1.5';
 
 // Deux colonnes dès la tablette en paysage (photo à gauche, réponses à droite) ; en portrait, une
 // seule colonne. La rangée prend la hauteur qui reste ; la colonne de la photo la remplit.
-export const screenBody =
-  'grid grid-cols-1 gap-4 md:min-h-0 md:flex-1 md:grid-rows-[minmax(0,1fr)] md:landscape:grid-cols-[1.1fr_1fr] md:landscape:gap-5';
+const screenBodyBase =
+  'grid grid-cols-1 gap-4 md:min-h-0 md:flex-1 md:grid-rows-[minmax(0,1fr)] md:landscape:gap-5';
+export const screenBody = `${screenBodyBase} md:landscape:grid-cols-[1.1fr_1fr]`;
+// La colonne des réponses plus large (« Votre bien » : ses caractéristiques).
+export const screenBodyWideAnswers = `${screenBodyBase} md:landscape:grid-cols-[1fr_1.15fr]`;
 
 // La colonne de la photo : la photo s'étire, le libellé reste dessous.
 export const photoColumn = 'flex min-w-0 flex-col gap-2 md:min-h-0';
