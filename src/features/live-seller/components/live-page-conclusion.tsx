@@ -110,7 +110,7 @@ export function LivePageConclusion({
             )}
             <div className="flex min-w-0 flex-col gap-0.5 bg-white px-3 py-2 stage:bg-white/5">
               <span className={statLabel}>{closest ? t.closestCard : t.dangerousCard}</span>
-              <span className="line-clamp-2 font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
+              <span className="font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
                 {dangerousLabel}
                 {!closest && summary?.seller_most_dangerous_reason
                   ? ` — ${texts.live.answers.dangerousReason[summary.seller_most_dangerous_reason as DangerousReason]}`

@@ -372,7 +372,6 @@ export type DocumentTexts = {
     thePrice: string;
     youImagined: string;
     listedShort: string;
-    gapVsAnswer: (percent: string) => string;
     durationTitle: string;
     knownDrop: (amount: string) => string;
     listed: string;
@@ -608,8 +607,6 @@ export type LiveTexts = {
     guessFirst: string;
     hint: string;
     listed: string;
-    imagined: string;
-    gap: string;
     perSqm: string;
     position: string;
     legend: string;
@@ -691,7 +688,6 @@ export type LiveTexts = {
     highlights: string;
     question: string;
     confirmed: Record<PropertyConfirmed, string>;
-    comment: string;
   };
   dpe: {
     title: string;
@@ -724,8 +720,6 @@ export type LiveTexts = {
     none: string;
     review: string;
     others: string;
-    imagined: (price: string) => string;
-    gap: (amount: string) => string;
     serious: (answer: string) => string;
     notGiven: string;
     why: string;

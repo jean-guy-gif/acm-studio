@@ -122,7 +122,7 @@ export function LivePageProperty({
 
   // Mission 148 — « Votre bien » tient sur un écran (planche 1) : la photo prend la hauteur qui
   // reste, ses vignettes dedans ; à côté, la question, les caractéristiques en pastilles compactes
-  // (une valeur coupée par « … » se lit entière au survol) et les points forts sur une ligne. La
+  // (une valeur longue passe à la ligne, jamais coupée) et les points forts sous la photo. La
   // description quitte l'écran : c'est le texte de la fiche, que le vendeur connaît (réponse 4).
   return (
     <div className={screen}>
@@ -135,10 +135,7 @@ export function LivePageProperty({
         <div className={photoColumn}>
           <LiveGallery photos={property.photoUrls} alt={alt} fill />
           {property.features.length > 0 ? (
-            <p
-              className="line-clamp-3 shrink-0 text-sm text-zinc-700 stage:text-white/80"
-              title={property.features.join(' · ')}
-            >
+            <p className="shrink-0 text-sm text-zinc-700 stage:text-white/80">
               <span className={statLabel}>{t.highlights}</span> {property.features.join(' · ')}
             </p>
           ) : null}
@@ -178,13 +175,10 @@ export function LivePageProperty({
                   key={stat.label}
                   className="flex min-w-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 stage:border-white/15 stage:bg-white/5"
                 >
-                  <dt className="truncate text-[0.6rem] leading-tight font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/55">
+                  <dt className="text-[0.6rem] leading-tight font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/55">
                     {stat.label}
                   </dt>
-                  <dd
-                    className="truncate font-title text-sm leading-tight font-semibold text-zinc-900 stage:text-white"
-                    title={stat.value ?? undefined}
-                  >
+                  <dd className="font-title text-sm leading-tight font-semibold break-words text-zinc-900 stage:text-white">
                     {stat.value}
                   </dd>
                 </div>

@@ -60,9 +60,7 @@ export function LiveFeatureComparison({
       {/* Mission 148 — une bande de pastilles compactes : la couleur porte le statut, et le libellé
           le dit (« · pour vous », « · pour lui ») ; « équivalent » reste gris, sans mot (la
           légende le dit). Jamais la couleur seule (M129). */}
-      <dl
-        className={`grid grid-cols-3 gap-1.5 ${narrow ? 'md:portrait:grid-cols-5' : 'sm:grid-cols-4 md:landscape:grid-cols-5'}`}
-      >
+      <dl className={`grid grid-cols-3 gap-1.5 ${narrow ? '' : 'md:landscape:grid-cols-5'}`}>
         {visibleItems.map((item) => {
           const value = item.comparableValues?.[language] ?? item.comparableValue;
           const chip =
@@ -76,13 +74,14 @@ export function LiveFeatureComparison({
               data-chip-status={item.comparisonStatus}
               className={`flex min-w-0 flex-col rounded-lg border px-2.5 py-1 ${comparisonBadgeClass[item.comparisonStatus]}`}
             >
-              <dt className="truncate text-[0.6rem] leading-tight font-semibold tracking-[0.1em] uppercase opacity-80">
+              {/* Jamais coupé : le libellé passe à la ligne, et le statut (« · pour vous ») reste
+                  entier, sur la même ligne ou la suivante. */}
+              <dt className="text-[0.6rem] leading-tight font-semibold tracking-[0.1em] break-words uppercase opacity-80">
                 {t.criteria[item.criterion]}
-                {chip ? ` · ${chip}` : ''}
+                {chip ? <span className="whitespace-nowrap"> · {chip}</span> : null}
               </dt>
               <dd
-                className={`truncate font-title text-sm leading-tight ${comparisonValueClass[item.comparisonStatus]}`}
-                title={typeof value === 'string' ? value : undefined}
+                className={`font-title text-sm leading-tight break-words ${comparisonValueClass[item.comparisonStatus]}`}
               >
                 {/* Mission 80 — le DPE s'affiche en lettre colorée (A vert → G rouge). */}
                 {item.criterion === 'energy_rating' && dpeClass(value) ? (

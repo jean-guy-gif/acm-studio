@@ -76,7 +76,7 @@ export function LivePageClosest({
                     {t.badge}
                   </span>
                 ) : null}
-                <span className="line-clamp-2 font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
+                <span className="font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
                   {label}
                 </span>
                 <span className="font-title text-lg font-bold text-brand-deep stage:text-white">

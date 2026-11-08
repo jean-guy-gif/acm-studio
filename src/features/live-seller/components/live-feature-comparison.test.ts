@@ -42,8 +42,10 @@ describe('la grille du Live, du côté du vendeur', () => {
     expect(card('Surface')).toContain('emerald');
     expect(card('Extérieur')).toContain('amber');
     expect(card('Pièces')).toContain('zinc');
-    expect(html).toContain('Surface · pour vous');
-    expect(html).toContain('Extérieur · pour lui');
+    // Le statut n'est jamais coupé : il reste entier, d'un bloc.
+    expect(html).toMatch(/Surface<span class="whitespace-nowrap"> · pour vous<\/span>/);
+    expect(html).toMatch(/Extérieur<span class="whitespace-nowrap"> · pour lui<\/span>/);
+    expect(html).not.toContain('truncate');
     expect(html).toMatch(/Pièces<\/dt>/);
     expect(html).toContain('avantage pour vous');
     expect(html).not.toContain('Faiblesse');

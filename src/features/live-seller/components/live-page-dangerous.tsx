@@ -113,7 +113,7 @@ export function LivePageDangerous({
                       </div>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2">
-                      <div className="line-clamp-2 font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
+                      <div className="font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
                         {label}
                       </div>
                       <div className="flex flex-wrap items-baseline gap-x-2">

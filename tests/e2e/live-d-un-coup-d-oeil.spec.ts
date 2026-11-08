@@ -12,8 +12,8 @@ import {
 // Mission 148 B — « Le Live d'un coup d'œil ». Les deux Lives de la démo, menés de bout en bout :
 // le Live interactif de Mme Garcia (Vence, 5 concurrents, rythme accéléré : 4 écrans pour les
 // trois premiers, 2 ensuite), en français, puis la présentation directe des Bernard, en anglais.
-// À chaque écran traversé, aux trois fenêtres de Safari sur tablette (réponse 5 de Jean-Guy), rien
-// ne défile : ni la page, ni la fiche, et rien ne passe sous la barre du bas. Les devinettes sont
+// À chaque écran traversé, aux trois fenêtres de Safari sur tablette (réponse 5 de Jean-Guy) et
+// dans les deux langues (« Réglages » les échange sur place, M140), rien ne défile : ni la page, ni la fiche, et rien ne passe sous la barre du bas. Les devinettes sont
 // choisies pour faire paraître les trois couleurs de la réponse du vendeur (vert sous 5 %, orange
 // de 5 à 10 %, rouge au-delà), lues à la révélation et sur l'écran du plus dangereux.
 // La démo est remise à zéro avant et après : les Lives joués ici ne restent pas.
@@ -64,14 +64,26 @@ async function freshDemo(page: Page): Promise<Record<string, string>> {
   return ids;
 }
 
-// L'écran courant, aux trois fenêtres ; on revient ensuite à la première pour jouer.
+// « Réglages » → la langue des écrans : le Live change de langue sur place (M140), rien n'est
+// rechargé ; le menu se referme une fois la langue enregistrée.
+async function switchLanguage(page: Page): Promise<void> {
+  await page.getByTestId('live-options').click();
+  await page.getByTestId('live-language').click();
+  await expect(page.locator('[role="menu"]')).toHaveCount(0, { timeout: 30_000 });
+}
+
+// L'écran courant, aux trois fenêtres et dans les deux langues (le français, puis l'anglais, plus
+// long, ou l'inverse) ; on revient ensuite à la langue et à la fenêtre de départ pour jouer.
 async function checkScreen(page: Page, label: string): Promise<void> {
-  for (const size of TABLETS) {
-    await page.setViewportSize(size);
-    await expectNoVerticalScroll(page, `${label} (${size.width} × ${size.height})`);
-    await expectNoHorizontalScroll(page, `${label} (${size.width} × ${size.height})`);
+  for (const pass of ['', ' · autre langue']) {
+    for (const size of TABLETS) {
+      await page.setViewportSize(size);
+      await expectNoVerticalScroll(page, `${label}${pass} (${size.width} × ${size.height})`);
+      await expectNoHorizontalScroll(page, `${label}${pass} (${size.width} × ${size.height})`);
+    }
+    await page.setViewportSize(TABLETS[0]);
+    await switchLanguage(page);
   }
-  await page.setViewportSize(TABLETS[0]);
 }
 
 async function openLive(page: Page, projectId: string): Promise<void> {
