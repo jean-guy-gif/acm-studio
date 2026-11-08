@@ -1251,7 +1251,7 @@ export function LiveComparativeShell({
               </span>
             ) : (
               <span className="flex min-w-0 shrink items-baseline gap-2" data-live-step>
-                <span className="truncate text-xs font-semibold tracking-[0.2em] uppercase text-brand-deep/70 stage:text-brand">
+                <span className="text-xs leading-tight font-semibold tracking-[0.2em] uppercase text-brand-deep/70 stage:text-brand">
                   {stepLabel}
                 </span>
                 <span className="shrink-0 text-xs text-zinc-500 stage:text-white/40">

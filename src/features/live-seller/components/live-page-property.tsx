@@ -134,6 +134,14 @@ export function LivePageProperty({
       <div className={screenBody}>
         <div className={photoColumn}>
           <LiveGallery photos={property.photoUrls} alt={alt} fill />
+          {property.features.length > 0 ? (
+            <p
+              className="line-clamp-3 shrink-0 text-sm text-zinc-700 stage:text-white/80"
+              title={property.features.join(' · ')}
+            >
+              <span className={statLabel}>{t.highlights}</span> {property.features.join(' · ')}
+            </p>
+          ) : null}
         </div>
 
         <div className={answerColumn}>
@@ -182,15 +190,6 @@ export function LivePageProperty({
                 </div>
               ))}
             </dl>
-          ) : null}
-
-          {property.features.length > 0 ? (
-            <p
-              className="line-clamp-3 shrink-0 text-sm text-zinc-700 stage:text-white/80"
-              title={property.features.join(' · ')}
-            >
-              <span className={statLabel}>{t.highlights}</span> {property.features.join(' · ')}
-            </p>
           ) : null}
         </div>
       </div>
