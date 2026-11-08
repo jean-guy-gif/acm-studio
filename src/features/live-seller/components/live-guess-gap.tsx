@@ -1,6 +1,6 @@
 'use client';
 
-import { bigValue, statLabel } from '@/features/live-seller/components/live-stage';
+import { statLabel } from '@/features/live-seller/components/live-stage';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   GUESS_GAP_DOT,
@@ -55,7 +55,14 @@ export function LiveGuessGap({
   return (
     <div className="flex flex-col gap-1" data-guess-gap={gap?.tone ?? 'none'}>
       <div className={statLabel}>{texts.common.yourAnswer}</div>
-      <div className={`${bigValue} ${tone}`}>{euro}</div>
+      {/* La couleur porte sur la valeur : sans la couleur de base de `bigValue`, qui l'emporterait. */}
+      <div
+        className={`font-title text-2xl leading-none font-bold whitespace-nowrap sm:text-3xl ${
+          tone || 'text-zinc-900 stage:text-white'
+        }`}
+      >
+        {euro}
+      </div>
       {phrase ? (
         <div className={`flex items-start gap-1.5 text-sm leading-snug font-semibold ${tone}`}>
           <span

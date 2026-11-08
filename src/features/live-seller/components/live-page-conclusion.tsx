@@ -4,6 +4,7 @@ import { LiveCommercializationPrice } from '@/features/meeting-conclusion/compon
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { RemoteImage } from '@/components/ui/remote-image';
 import {
+  figureCard,
   panelSoft,
   question,
   questionHint,
@@ -23,7 +24,7 @@ import { formatEuro } from '@/lib/format';
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`${panelSoft} flex flex-col gap-0.5`}>
+    <div className={figureCard}>
       <div className={statLabel}>{label}</div>
       <div className="font-title text-lg leading-tight font-bold whitespace-nowrap text-zinc-900 stage:text-white">
         {value}

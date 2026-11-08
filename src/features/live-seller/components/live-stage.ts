@@ -59,6 +59,10 @@ export const panel =
 export const panelSoft =
   'rounded-2xl border border-zinc-100 bg-zinc-50 p-3 sm:p-4 stage:border-white/10 stage:bg-white/5';
 
+// Mission 148 — une petite case de chiffre (analyse des prix, conclusion) : compacte.
+export const figureCard =
+  'flex flex-col gap-0.5 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 stage:border-white/10 stage:bg-white/5';
+
 // Étiquette au-dessus d'une valeur.
 export const statLabel =
   'text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-zinc-500 stage:text-white/50';
@@ -85,6 +89,10 @@ export const choiceCompact =
 // Grand champ numérique (devinette de prix, durée, valeur perçue).
 export const bigInput =
   'live-number-input w-full rounded-xl border-2 border-zinc-200 bg-white px-5 py-3 text-center font-title text-4xl font-bold text-brand-deep outline-none transition-colors placeholder:text-zinc-300 focus:border-brand focus:ring-4 focus:ring-brand/20 sm:text-5xl stage:border-white/20 stage:bg-white/10 stage:text-white stage:placeholder:text-white/30 stage:focus:border-brand';
+
+// Mission 148 — le grand champ, plus bas, quand l'écran porte aussi d'autres repères (Conclusion).
+export const bigInputCompact =
+  'live-number-input w-full rounded-xl border-2 border-zinc-200 bg-white px-4 py-2 text-center font-title text-3xl font-bold text-brand-deep outline-none transition-colors placeholder:text-zinc-300 focus:border-brand focus:ring-4 focus:ring-brand/20 sm:text-4xl stage:border-white/20 stage:bg-white/10 stage:text-white stage:placeholder:text-white/30 stage:focus:border-brand';
 
 // Suffixe d'unité accolé au grand champ (€, jours).
 export const bigInputUnit = 'font-title text-3xl font-semibold text-zinc-500 stage:text-white/60';

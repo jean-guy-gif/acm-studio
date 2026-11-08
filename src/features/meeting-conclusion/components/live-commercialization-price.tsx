@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { liveErrorMessage } from '@/features/live-seller/services/live-error-message';
 import {
-  bigInput,
+  bigInputCompact,
   bigInputUnit,
   ctaPrimary,
   errorText,
@@ -107,7 +107,7 @@ export function LiveCommercializationPrice({
               setTypedPrice(digits !== '' && Number.isFinite(value) ? value : null);
               onPendingChange?.(pendingCommercializationPrice(digits, lastSavedRef.current));
             }}
-            className={bigInput}
+            className={bigInputCompact}
           />
           <span className={bigInputUnit}>€</span>
         </div>

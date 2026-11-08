@@ -2,6 +2,7 @@
 
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
+  figureCard,
   panelSoft,
   question,
   questionHint,
@@ -248,18 +249,17 @@ export function LivePageAnalysis({
         ) : null}
       </div>
 
-      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-2">
+      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
         {cards.map((card) => (
-          <div
-            key={card.key}
-            className={`${panelSoft} flex flex-col gap-0.5 ${card.reveal ? 'live-reveal-pop' : ''}`}
-          >
+          <div key={card.key} className={`${figureCard} ${card.reveal ? 'live-reveal-pop' : ''}`}>
             <div className={statLabel}>{card.label}</div>
-            <div className="font-title text-lg leading-tight font-bold whitespace-nowrap text-zinc-900 stage:text-white">
+            <div className="font-title text-base leading-tight font-bold text-zinc-900 sm:text-lg stage:text-white">
               {card.value}
             </div>
             {card.note ? (
-              <div className="text-xs text-zinc-500 stage:text-white/60">{card.note}</div>
+              <div className="text-[0.7rem] leading-snug text-zinc-500 stage:text-white/60">
+                {card.note}
+              </div>
             ) : null}
           </div>
         ))}

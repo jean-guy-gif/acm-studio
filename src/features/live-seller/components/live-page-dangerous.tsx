@@ -24,7 +24,7 @@ import type {
   SellerComparable,
 } from '@/features/live-seller/services/project-live-for-seller';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
-import { formatEuro } from '@/lib/format';
+import { formatEuro, formatNumber } from '@/lib/format';
 
 // Synthèse — the seller picks the most dangerous competitor among the ones he
 // judged serious (yes / unsure). The software records the choice but NEVER
@@ -64,7 +64,7 @@ export function LivePageDangerous({
       type="button"
       onClick={() => setReviewedId(entry.id)}
       data-testid="review-competitor"
-      className={`min-h-9 rounded-lg px-2.5 py-1 text-sm font-medium text-brand-deep underline underline-offset-4 transition-colors hover:text-brand-darker stage:text-white/85 stage:hover:text-white ${className}`}
+      className={`min-h-8 rounded-lg px-2.5 py-1 text-sm font-medium text-brand-deep underline underline-offset-4 transition-colors hover:text-brand-darker stage:text-white/85 stage:hover:text-white ${className}`}
     >
       {t.review}
     </button>
@@ -108,7 +108,7 @@ export function LivePageDangerous({
                         {photoTexts.short}
                       </div>
                     )}
-                    <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2 pb-8">
+                    <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2">
                       <div className="line-clamp-2 font-title text-sm leading-snug font-semibold text-zinc-900 stage:text-white">
                         {label}
                       </div>
@@ -118,7 +118,9 @@ export function LivePageDangerous({
                         </span>
                         {entry.marketDuration?.available && entry.marketDuration.days != null ? (
                           <span className="text-xs text-zinc-500 stage:text-white/50">
-                            {texts.live.duration.observedSince(entry.marketDuration.days)}
+                            {texts.live.competitorReview.days(
+                              formatNumber(entry.marketDuration.days, { language }),
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -127,10 +129,10 @@ export function LivePageDangerous({
                         listedPrice={entry.price}
                         variant="inline"
                       />
-                      <span className="text-[0.65rem] font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/50">
+                      <span className="pr-16 text-[0.65rem] font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/50">
                         {t.serious(
                           entry.response?.seller_serious_competitor
-                            ? texts.live.competition.serious[
+                            ? texts.live.competition.seriousShort[
                                 entry.response.seller_serious_competitor as SeriousCompetitor
                               ]
                             : t.notGiven,
