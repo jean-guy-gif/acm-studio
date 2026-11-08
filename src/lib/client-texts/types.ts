@@ -369,6 +369,21 @@ export type DocumentTexts = {
     seriousShort: Record<'yes' | 'unsure' | 'no', string>;
     seriousQuestion: string;
     notConsidered: string;
+    // Mission 148 B (Jean-Guy, 08/11) — le « Prix des concurrents » dit qu'il a été calculé avant le
+    // rendez-vous ; la position du prix convenu dit face à combien de concurrents vus.
+    basisCalculated: (competitors: string) => string;
+    basisAdvisor: (competitors: string) => string;
+    positionAmongSeen: {
+      mostExpensive: string;
+      cheapest: string;
+      amongMostExpensive: string;
+      amongCheapest: string;
+      middle: string;
+      rank: (rank: number) => string;
+      sentence: (where: string, seen: number) => string;
+    };
+    // « Concurrent 1 · pas un concurrent pour vous » : sa ligne, sans barre, dans les prix au m².
+    notConsideredRow: (label: string) => string;
     thePrice: string;
     youImagined: string;
     listedShort: string;

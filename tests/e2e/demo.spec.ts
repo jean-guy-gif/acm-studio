@@ -625,6 +625,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       );
       const text = await synthesis.innerText();
       expect(text).not.toMatch(/Vendu par|Exclusivité|[Ee]stimation|demonstration\.invalid/);
+      // Mission 148 B (Jean-Guy, 08/11) — la position du prix convenu dit face à quels biens.
+      expect(text).toMatch(/votre bien face aux? (\d+ )?concurrents? dont vous avez vu le prix/);
+      expect(text).not.toMatch(/\d+ biens comparés/);
       for (const bound of [FOURCHETTE.min, FOURCHETTE.max]) {
         expect(
           withoutSpaces(text),

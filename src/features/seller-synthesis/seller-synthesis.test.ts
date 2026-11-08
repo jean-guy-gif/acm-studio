@@ -393,12 +393,23 @@ describe('la synthèse au vendeur', () => {
     const { synthesis, html } = await load();
     expect(synthesis.decision).toEqual({
       competitorPrice: 320_000,
-      basisLabel: 'Calculé sur 4 concurrents, dont 3 vus ensemble',
+      // Mission 148 B (Jean-Guy, 08/11) — le calcul date d'avant le rendez-vous.
+      basisLabel:
+        'Calculé par votre conseiller avant notre rendez-vous, sur 4 concurrents, dont 3 vus ensemble',
       advisorAnalysis: 330_000,
       justification: 'Trois biens proches, le vôtre a un balcon.',
     });
     expect(synthesis.commercializationPrice).toBe(319_000);
-    expect(synthesis.positionSentence).toMatch(/^À 319\s000\s€, votre bien serait/);
+    // Mission 148 B — face aux concurrents dont il a vu le prix (c1 et c3 ; c2 a eu « Non »).
+    expect(synthesis.positionSentence).toBe(
+      'Dans la moyenne\u00a0: votre bien face aux 2 concurrents dont vous avez vu le prix',
+    );
+    expect(html).not.toMatch(/\d biens comparés/);
+    // Les numéros du Live : le « Non » (concurrent 2) garde sa ligne, sans barre ni prix.
+    expect(synthesis.analysis?.notConsideredRows).toEqual([
+      'Concurrent 2 · pas un concurrent pour vous',
+    ]);
+    expect(html).toMatch(/data-not-considered[^>]*>Concurrent 2 · pas un concurrent pour vous</);
     for (const label of [
       'Prix des concurrents',
       'Analyse du conseiller',
@@ -541,7 +552,8 @@ describe('les prix de la synthèse (mission 111)', () => {
     expect(synthesis.decision).toEqual({
       competitorPrice: 310_000,
       // Un autre montant que le calcul : les mots du Live (M94, M104).
-      basisLabel: 'Prix retenu par votre conseiller à partir de 5 concurrents',
+      basisLabel:
+        'Prix retenu par votre conseiller avant notre rendez-vous, à partir de 5 concurrents',
       advisorAnalysis: null,
       justification: null,
     });
