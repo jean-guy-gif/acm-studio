@@ -258,13 +258,17 @@ export function SelectedComparablesList({
                       dragging: dragged === index,
                       handle: {
                         draggable: !reordering,
-                        onDragStart: () => setDragged(index),
+                        onDragStart: (event) => {
+                          // Une donnée posée : sans elle, certains navigateurs ne lancent pas le
+                          // glisser-déposer.
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', comparable.id);
+                          setDragged(index);
+                        },
                         onDragEnd: () => setDragged(null),
                       },
                       target: {
-                        onDragOver: (event) => {
-                          if (dragged != null) event.preventDefault();
-                        },
+                        onDragOver: (event) => event.preventDefault(),
                         onDrop: (event) => {
                           event.preventDefault();
                           drop(index);

@@ -233,7 +233,7 @@ export function ComparableCard({
           aria-hidden="true"
           title="Glisser pour changer l’ordre du Live"
           data-testid="competitor-drag-handle"
-          className="hidden shrink-0 cursor-grab pt-2 text-lg leading-none tracking-[-0.2em] text-zinc-500 select-none sm:block stage:text-white/40"
+          className="hidden shrink-0 cursor-grab px-1.5 pt-2 text-lg leading-none tracking-[-0.2em] text-zinc-500 select-none sm:block stage:text-white/40"
         >
           ⋮⋮
         </span>
