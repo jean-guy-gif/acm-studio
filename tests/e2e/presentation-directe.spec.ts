@@ -553,7 +553,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await expect(page.getByTestId('buyer-watch-line')).toHaveCount(0);
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
-    await openToday(page);
+    await page.reload();
     await expect(page.getByTestId('buyer-ready')).toBeVisible();
   });
 
