@@ -59,12 +59,16 @@ export function LivePageDangerous({
   const otherComparables = comparables.filter(
     (entry) => !eligibleComparables.some((eligible) => eligible.id === entry.id),
   );
-  const reviewButton = (entry: SellerComparable, className = '') => (
+  const reviewButton = (entry: SellerComparable, onPhoto = false) => (
     <button
       type="button"
       onClick={() => setReviewedId(entry.id)}
       data-testid="review-competitor"
-      className={`min-h-8 rounded-lg px-2.5 py-1 text-sm font-medium text-brand-deep underline underline-offset-4 transition-colors hover:text-brand-darker stage:text-white/85 stage:hover:text-white ${className}`}
+      className={
+        onPhoto
+          ? 'absolute bottom-1.5 left-1.5 min-h-8 rounded-lg bg-white/90 px-2.5 py-1 text-sm font-semibold text-brand-deep shadow transition-colors hover:bg-white'
+          : 'min-h-8 rounded-lg px-2.5 py-1 text-sm font-medium text-brand-deep underline underline-offset-4 transition-colors hover:text-brand-darker stage:text-white/85 stage:hover:text-white'
+      }
     >
       {t.review}
     </button>
@@ -129,18 +133,22 @@ export function LivePageDangerous({
                         listedPrice={entry.price}
                         variant="inline"
                       />
-                      <span className="pr-16 text-[0.65rem] font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/50">
-                        {t.serious(
-                          entry.response?.seller_serious_competitor
-                            ? texts.live.competition.seriousShort[
-                                entry.response.seller_serious_competitor as SeriousCompetitor
-                              ]
-                            : t.notGiven,
-                        )}
-                      </span>
+                      {/* L'écran ne montre que les biens jugés sérieux ou incertains (sa consigne le
+                          dit) : seul « Incertain » s'écrit sur la carte. */}
+                      {entry.response?.seller_serious_competitor === 'unsure' ? (
+                        <span className="text-[0.65rem] font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/50">
+                          {t.serious(
+                            texts.live.competition.seriousShort[
+                              entry.response.seller_serious_competitor as SeriousCompetitor
+                            ],
+                          )}
+                        </span>
+                      ) : null}
                     </div>
                   </label>
-                  {reviewButton(entry, 'absolute right-1 bottom-1')}
+                  {/* « Revoir », en pastille sur la photo : hors du choix (jamais un clic qui
+                      désigne le bien). */}
+                  {reviewButton(entry, true)}
                 </div>
               );
             })}
