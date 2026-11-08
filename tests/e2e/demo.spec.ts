@@ -600,8 +600,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(synthesis).toBeVisible();
       await expectUnspoken(page, 'Synthèse');
       await expect(synthesis.getByTestId('synthesis-competitor')).toHaveCount(RETAINED + 1);
-      await expect(synthesis.getByText('Le plus dangereux selon vous').first()).toBeVisible();
-      // Mission 148 A — la frise : étiquettes lisibles à l'écran large, sur tablette et téléphone.
+      await expect(
+        synthesis.getByText('Le plus dangereux selon vous').filter({ visible: true }).first(),
+      ).toBeVisible();
+      // Mission 148 A — la frise est mise en page pour trois largeurs, une seule visible (d'où le
+      // filtre « visible » ci-dessus) ; ses étiquettes lisibles à l'écran large, sur tablette et téléphone.
       for (const width of [1280, 700, 390]) {
         await page.setViewportSize({ width, height: 900 });
         await expectReadableBands(page, `Synthèse, ${width} px`);
