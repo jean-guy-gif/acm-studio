@@ -5,7 +5,6 @@ import { useState, useTransition } from 'react';
 
 import {
   alertError,
-  btnPrimary,
   btnSecondary,
   card,
   formSectionTitle,
@@ -190,7 +189,8 @@ export function SubjectPropertyImportPanel({
           type="button"
           onClick={() => importFromUrl()}
           disabled={pending || url.trim() === ''}
-          className={btnPrimary}
+          // Mission 146 — en contour : le seul plein de la fiche est « Enregistrer » (M77).
+          className={btnSecondary}
         >
           {pending ? 'Analyse de l’annonce…' : 'Importer l’annonce'}
         </button>

@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { DEMO_BUYERS } from '../../src/features/demo/services/demo-buyers';
 import {
   demoCredentials,
+  expectOneFilled,
   goViaAccountMenu,
   login,
   mainText,
@@ -137,6 +138,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expect(page.locator('[data-client-language] input[value="fr"]')).toBeChecked();
     const modes = page.locator('[data-presentation-mode]');
     await expect(modes.locator('input[value="direct"]')).toBeChecked();
+    await expectOneFilled(page, 'Avant le rendez-vous, présentation directe');
     // Pas de note de 1 à 10 en directe : le déroulé ne la compte pas.
     await expect(page.getByText('Question de 1 à 10')).toHaveCount(0);
     await page.getByTestId('market-study-link').click();
@@ -153,6 +155,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     // La Vue d'ensemble propose aussi l'Étude. Mission 133 — et les acquéreurs de l'agence pour ce
     // bien : 5 prêts (la maison a une piscine), M. Fontaine correspond sans être prêt.
     await page.goto(`/builder/${projectId}`);
+    await expectOneFilled(page, 'Vue d’ensemble, présentation directe');
     await expect(page.getByTestId('property-buyers-headline')).toHaveText(
       '5 prêts à visiter · 1 autre correspond',
     );
@@ -164,8 +167,10 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
   await test.step('Le Live interactif, deux concurrents', async () => {
     await page.goto(`/live/${projectId}`);
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/lancer-le-live$`));
+    await expectOneFilled(page, 'Lancer le Live');
     await page.getByTestId('launch-for-real').click();
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
+    await expectOneFilled(page, 'Accueil du Live');
     await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
     await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
     // Mission 133 — le compteur caché : une pastille sans chiffre ni texte ; la bulle du conseiller,

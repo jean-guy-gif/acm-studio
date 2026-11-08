@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { goViaAccountMenu, login } from './support';
+import { chooseInMoreMenu, expectOneFilled, goViaAccountMenu, login } from './support';
 
 // Mission 97 — le junior autonome : « Bienvenue », le dossier d'exemple, et le Live.
 // Le compte de test a déjà des dossiers : il arrive donc sur la Préparation, et revient à
@@ -15,14 +15,15 @@ async function archiveExamples(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Préparation' })).toBeVisible();
   const ready = page.locator('li').filter({ hasText: EXAMPLE_NAME });
   for (let left = await ready.count(); left > 0; left -= 1) {
-    await ready.first().getByRole('button', { name: 'Remettre en préparation' }).click();
+    // Mission 146 — dans le menu « … » de la carte.
+    await chooseInMoreMenu(ready.first(), 'Remettre en préparation');
     await expect(ready).toHaveCount(left - 1);
   }
   await page.goto('/builder');
   await expect(page.getByRole('heading', { name: 'Préparation' })).toBeVisible();
   const drafts = page.locator('li').filter({ hasText: EXAMPLE_NAME });
   for (let left = await drafts.count(); left > 0; left -= 1) {
-    await drafts.first().getByRole('button', { name: 'Supprimer' }).click();
+    await chooseInMoreMenu(drafts.first(), 'Supprimer le dossier…');
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
     await expect(drafts).toHaveCount(left - 1);
   }
@@ -90,9 +91,17 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
       const item = page.locator('li').filter({ hasText: EXAMPLE_NAME });
       await expect(item).toHaveCount(1);
       await expect(item.getByTestId('example-badge')).toBeVisible();
-      // Complet : un clic mène à « Avant le rendez-vous », pas à une page d'étapes.
-      await item.getByRole('link', { name: 'Ouvrir le dossier' }).click();
+      // Mission 146 — la carte dit sa prochaine étape (un exemple complet : « Lancer le Live »), et
+      // son nom mène à la Vue d'ensemble.
+      await expect(item.getByTestId('preparation-next-step')).toHaveText('Lancer le Live →');
+      await expectOneFilled(page, 'Préparation, onglet Prêts');
+      await item.getByRole('link', { name: EXAMPLE_NAME }).click();
+      await page
+        .getByTestId('dossier-steps')
+        .getByRole('link', { name: 'Avant le rendez-vous' })
+        .click();
       await expect(page).toHaveURL(/\/avant-rendez-vous$/);
+      await expectOneFilled(page, 'Avant le rendez-vous');
       await expect(
         page.getByTestId('dossier-steps').getByRole('link', { name: 'Avant le rendez-vous' }),
       ).toHaveAttribute('aria-current', 'page');

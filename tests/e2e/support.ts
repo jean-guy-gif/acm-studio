@@ -104,6 +104,36 @@ export async function openAccountMenu(page: Page): Promise<Locator> {
   return menu;
 }
 
+// Mission 146 — les actions rangées dans « … » (Supprimer, Déclarer prêt, Modifier…) : on ouvre le
+// menu de la carte, puis on choisit l'entrée (son nom commence par le libellé, une précision peut
+// suivre : « Déclarer prêt · il manque : … »).
+export async function chooseInMoreMenu(scope: Locator, entry: string): Promise<void> {
+  await scope.getByRole('button', { name: 'Plus d’actions' }).first().click();
+  const escaped = entry.replace(/[.*+?^$()|[\]\\{}]/g, '\\$&');
+  await scope
+    .page()
+    .getByRole('menuitem', { name: new RegExp(`^${escaped}`) })
+    .click();
+}
+
+// Mission 146 — la règle de la 143 : au plus un bouton plein visible par écran. Les boutons pleins
+// portent le repère `btn-filled` (le style `btnPrimary`).
+export async function expectOneFilled(page: Page, screen: string): Promise<void> {
+  const shown = await page.locator('.btn-filled').evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        const box = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
+      })
+      .map((element) => (element.textContent ?? '').trim()),
+  );
+  expect(
+    shown.length,
+    `${screen} : ${shown.length} boutons pleins (${shown.join(' · ')})`,
+  ).toBeLessThanOrEqual(1);
+}
+
 export async function goViaAccountMenu(page: Page, label: string): Promise<void> {
   const menu = await openAccountMenu(page);
   await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();

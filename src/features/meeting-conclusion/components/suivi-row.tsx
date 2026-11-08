@@ -27,6 +27,7 @@ import {
   type SuiviOpenDetail,
 } from '@/features/meeting-conclusion/components/suivi-task-button';
 import { SuiviIssueForm } from '@/features/meeting-conclusion/components/suivi-issue-form';
+import { useSuiviLead } from '@/features/meeting-conclusion/components/suivi-lead';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { sellerJourneyGap } from '@/features/meeting-conclusion/services/conclusion-amounts';
 import type { DossierFollowUp } from '@/features/meeting-conclusion/services/dossier-follow-up';
@@ -295,6 +296,17 @@ export function SuiviRow({
   // « Faire le point » d'« À faire aujourd'hui » (`?point=`) arrive ici et le lance, si le point est
   // dû (un rechargement après le point ne le relance pas).
   const pointDue = frieze?.pointDue === true;
+  // Mission 146 — un panneau qui porte son bouton plein (le Point marché dû, la relance)
+  // devient le seul plein de l'écran ; refermé, la première carte due le reprend.
+  const lead = useSuiviLead();
+  const { claim, release } = lead;
+  const panelLeads = panel === 'relance' || (panel === 'point' && pointDue);
+  useEffect(() => {
+    const id = dossier.project.id;
+    if (panelLeads) claim(id);
+    else release(id);
+    return () => release(id);
+  }, [panelLeads, claim, release, dossier.project.id]);
   const [autoRun, setAutoRun] = useState(initialPanel === 'point' && pointDue);
   // Chaque demande de point est une nouvelle relecture : le bloc est remonté (clé), il repart.
   const [runKey, setRunKey] = useState(0);
@@ -403,7 +415,9 @@ export function SuiviRow({
   const button = step.button;
   // Le Point marché ouvert et dû : son bouton est le plein de la carte, l'étape passe en contour.
   const pointLeads = panel === 'point' && pointDue;
-  const buttonClass = `${button?.primary && !relancedOn && !pointLeads ? btnPrimary : btnSecondary} w-full`;
+  // Mission 146 — le plein ne va qu'à la carte qui mène l'écran (`SuiviLeadProvider`).
+  const isLead = lead.leadId === dossier.project.id;
+  const buttonClass = `${button?.primary && isLead && !relancedOn && !pointLeads ? btnPrimary : btnSecondary} w-full`;
 
   return (
     <li
@@ -663,7 +677,7 @@ export function SuiviRow({
                 latest={latestPoint}
                 autoRun={autoRun}
                 onStarted={() => setAutoRun(false)}
-                buttonClassName={`${pointDue ? btnPrimary : btnSecondary} self-start whitespace-nowrap`}
+                buttonClassName={`${pointDue && isLead ? btnPrimary : btnSecondary} self-start whitespace-nowrap`}
               />
             </div>
             <MarketUpdateList

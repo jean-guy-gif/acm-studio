@@ -303,7 +303,6 @@ export const ENGLISH_TEXTS: ClientTexts = {
       exitFullscreen: 'Exit full screen',
     },
     intro: {
-      kicker: 'Your property meeting',
       title: 'Let’s look together at the properties competing with yours.',
       start: 'Start the presentation',
       count: (count) => `${count} competing propert${count > 1 ? 'ies' : 'y'} to review`,

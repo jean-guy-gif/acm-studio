@@ -138,6 +138,8 @@ export function SubjectPropertyImportForm({
   const condominiumRef = useRef<SheetSectionHandle>(null);
   const [dirty, setDirty] = useState(NOTHING_DIRTY);
   const [saved, setSaved] = useState(property != null);
+  // Mission 146 (C3) — la fiche lue en base au chargement : ses imports se replient.
+  const importsFolded = property != null;
   const [errors, setErrors] = useState<SheetFieldErrors>(NO_SHEET_ERRORS);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [missing, setMissing] = useState<SearchRequirement[]>([]);
@@ -273,9 +275,8 @@ export function SubjectPropertyImportForm({
     }
   }
 
-  return (
-    // Le bas de la fiche reste lisible au-dessus de la barre fixée.
-    <div className="flex flex-col gap-6 pb-28 md:gap-8">
+  const importPanels = (
+    <>
       <SubjectPropertyImportPanel
         importAction={importAction}
         importHtmlAction={importHtmlAction}
@@ -301,6 +302,33 @@ export function SubjectPropertyImportForm({
           markDirty('property', 'diagnostics', 'condominium');
         }}
       />
+    </>
+  );
+
+  return (
+    // Le bas de la fiche reste lisible au-dessus de la barre fixée.
+    <div className="flex flex-col gap-6 pb-28 md:gap-8">
+      {/* Mission 146 (C3) — une fiche déjà enregistrée replie ses imports en une ligne, « Importer à
+          nouveau » ; une fiche jamais enregistrée les garde ouverts en tête, c'est son premier geste. */}
+      {importsFolded ? (
+        <details className="group flex flex-col gap-4" data-testid="reimport">
+          <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm text-zinc-600 marker:hidden hover:border-brand stage:border-white/10 stage:bg-white/5 stage:text-white/70 [&::-webkit-details-marker]:hidden">
+            <span className="font-semibold text-zinc-900 stage:text-white">
+              <span
+                aria-hidden
+                className="mr-1 inline-block transition-transform group-open:rotate-90"
+              >
+                ▸
+              </span>
+              Importer à nouveau
+            </span>
+            <span>· depuis une annonce en ligne, ou depuis votre fiche (PDF)</span>
+          </summary>
+          <div className="mt-4 flex flex-col gap-6 md:gap-8">{importPanels}</div>
+        </details>
+      ) : (
+        <>{importPanels}</>
+      )}
       <SubjectPropertyForm
         key={propertyKey}
         ref={propertyRef}

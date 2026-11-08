@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
-import { demoCredentials, goViaAccountMenu, login } from './support';
+import { demoCredentials, expectOneFilled, goViaAccountMenu, login } from './support';
 
 // Mission 140 — le client dans sa langue, côté vendeur, sur l'URL d'essai, avec le compte de
 // l'agence de démonstration (rien d'extérieur, rien de payant) : « Mr and Mrs Bernard » préfèrent
@@ -78,6 +78,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     await expect(page.locator('[data-client-language] input[value="en"]')).toBeChecked();
     // L'écran du conseiller reste en français.
     await expect(page.getByText('Langue du vendeur')).toBeVisible();
+    await expectOneFilled(page, 'Avant le rendez-vous, vendeur anglophone');
   });
 
   await test.step('Le Live s’ouvre en anglais', async () => {
@@ -88,6 +89,7 @@ test('la langue du vendeur : un Live en anglais, passé en français et revenu, 
     await expect(
       page.getByText('Let’s look together at the properties competing with yours.'),
     ).toBeVisible();
+    await expectOneFilled(page, 'Accueil du Live, en anglais');
     await page.getByRole('button', { name: 'Start the presentation' }).click();
     await expect(page.getByRole('heading', { name: 'Your property', exact: true })).toBeVisible();
     await next(page);

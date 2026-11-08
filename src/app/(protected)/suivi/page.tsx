@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getLoopTasks } from '@/features/buyers/queries/get-loop-properties';
+import { SuiviLeadProvider } from '@/features/meeting-conclusion/components/suivi-lead';
 import { SuiviRow, type SuiviFrieze } from '@/features/meeting-conclusion/components/suivi-row';
 import {
   readMarketUpdates,
@@ -80,7 +81,8 @@ type SuiviPageProps = {
 
 const chip =
   'rounded-full border px-3 py-1 text-sm font-semibold whitespace-nowrap transition-colors';
-const chipActive = `${chip} border-brand-deep bg-brand-deep text-white`;
+// Mission 146 — la pastille choisie en bleu clair : le seul plein de l'écran est une étape (M143).
+const chipActive = `${chip} border-brand bg-brand-soft text-brand-deep stage:bg-white/10 stage:text-white`;
 const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand-deep stage:border-white/15 stage:bg-white/5 stage:text-white/70`;
 
 const groupHref = (group: SuiviGroup | null): string =>
@@ -329,8 +331,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               </p>
             </div>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {dossiers.map((dossier) => {
+            (() => {
+              // Mission 146 — chaque carte, puis la première dont l'étape est due : c'est elle qui
+              // porte le seul bouton plein de l'écran (`SuiviLeadProvider`).
+              const cards = dossiers.map((dossier) => {
                 const id = dossier.project.id;
                 const input = inputById.get(id)!;
                 const tasks = dossierTasks(input);
@@ -398,24 +402,32 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                   },
                   today,
                 );
-                return (
-                  <SuiviRow
-                    key={id}
-                    dossier={dossier}
-                    followUp={followUp}
-                    marketUpdates={entries}
-                    step={step}
-                    frieze={frieze}
-                    initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
-                    readyBuyers={mandateRead.readyByProject.get(id) ?? null}
-                    followUpReadyBuyers={
-                      outcome === 'follow_up' ? (followUpReady.get(id) ?? null) : null
-                    }
-                    acceptedOfferBuyer={outcome === 'signed' ? (heldBy.get(id) ?? null) : null}
-                  />
-                );
-              })}
-            </ul>
+                return { id, outcome, entries, followUp, step, frieze, dossier };
+              });
+              const firstDue = cards.find((card) => card.step.button?.primary) ?? null;
+              return (
+                <SuiviLeadProvider firstDueId={firstDue?.id ?? null}>
+                  <ul className="flex flex-col gap-3">
+                    {cards.map(({ id, outcome, entries, followUp, step, frieze, dossier }) => (
+                      <SuiviRow
+                        key={id}
+                        dossier={dossier}
+                        followUp={followUp}
+                        marketUpdates={entries}
+                        step={step}
+                        frieze={frieze}
+                        initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
+                        readyBuyers={mandateRead.readyByProject.get(id) ?? null}
+                        followUpReadyBuyers={
+                          outcome === 'follow_up' ? (followUpReady.get(id) ?? null) : null
+                        }
+                        acceptedOfferBuyer={outcome === 'signed' ? (heldBy.get(id) ?? null) : null}
+                      />
+                    ))}
+                  </ul>
+                </SuiviLeadProvider>
+              );
+            })()
           )}
         </>
       )}
