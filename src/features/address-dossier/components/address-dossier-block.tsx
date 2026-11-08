@@ -3,13 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type ReactNode } from 'react';
 
-import {
-  btnSecondary,
-  card,
-  errorText,
-  hintText,
-  sectionTitle,
-} from '@/components/ui/styles';
+import { btnSecondary, card, errorText, hintText, sectionTitle } from '@/components/ui/styles';
 import { buildAddressDossier } from '@/features/address-dossier/actions/build-address-dossier';
 import {
   middleHalfLabel,
