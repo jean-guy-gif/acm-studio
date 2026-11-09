@@ -158,7 +158,7 @@ export function TodayTask({
               className="mt-0.5 self-start rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800"
               data-testid="today-argument"
             >
-              « {line.argue} »
+              {line.argue}
             </span>
           ) : null}
           <span className="text-sm text-zinc-500 stage:text-white/60">

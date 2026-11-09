@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 
-import { btnPrimary, btnSecondary, inputBase } from '@/components/ui/styles';
+import { btnSecondary, inputBase } from '@/components/ui/styles';
 import { confirmBuyerProspectAddress } from '@/features/buyer-prospecting/actions/buyer-prospect-actions';
 import { confirmCompetitorAddress } from '@/features/competitor-locator/actions/confirm-competitor-address';
 import { openLocatorProperty } from '@/features/competitor-locator/client';
@@ -24,6 +24,8 @@ export function ConfirmAddressActions({
   canAccept,
   confirmed,
   buyerProspectId = null,
+  startTyping = false,
+  onDone,
 }: {
   projectId: string;
   competitorId: string;
@@ -33,8 +35,12 @@ export function ConfirmAddressActions({
   confirmed: boolean;
   // Mission 120 — une carte née d'une recherche acquéreur, sans concurrent.
   buyerProspectId?: string | null;
+  // Mission 146 (partie B) — « Corriger l'adresse » de « … » ouvre directement la saisie, et la
+  // carte replie ses choix une fois l'adresse enregistrée.
+  startTyping?: boolean;
+  onDone?: () => void;
 }) {
-  const [typing, setTyping] = useState(false);
+  const [typing, setTyping] = useState(startTyping);
   const [address, setAddress] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [cooling, setCooling] = useState(false);
@@ -52,6 +58,7 @@ export function ConfirmAddressActions({
       }
       setTyping(false);
       setAddress('');
+      onDone?.();
     });
   };
 
@@ -115,7 +122,7 @@ export function ConfirmAddressActions({
             aria-label="Adresse du bien concurrent"
             className={`${inputBase} min-w-0 flex-1`}
           />
-          <button type="submit" className={`${btnPrimary} px-3 py-1.5 text-xs`} disabled={pending}>
+          <button type="submit" className={smallBtn} disabled={pending}>
             {pending ? 'Enregistrement…' : 'Confirmer l’adresse'}
           </button>
           <button type="button" className={smallBtn} onClick={() => setTyping(false)}>

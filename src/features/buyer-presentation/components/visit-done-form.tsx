@@ -32,9 +32,16 @@ const chip = (on: boolean) =>
       : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/20 stage:bg-transparent stage:text-white/80'
   }`;
 
-export function VisitDoneForm({ requestId }: { requestId: string }) {
+// Mission 146 (partie B) — le formulaire seul : « Visite faite », l'étape ou le lien de la carte
+// (`VisitActions`), l'ouvre ; « Annuler » le referme.
+export function VisitDoneForm({
+  requestId,
+  onCancel,
+}: {
+  requestId: string;
+  onCancel: () => void;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [opinion, setOpinion] = useState<VisitOpinion | null>(null);
   const [liked, setLiked] = useState<VisitTag[]>([]);
   const [disliked, setDisliked] = useState<VisitTag[]>([]);
@@ -43,18 +50,6 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className={`${btnSecondary} self-start px-3 py-1.5 text-xs`}
-        data-testid="visit-done-open"
-        onClick={() => setOpen(true)}
-      >
-        Visite faite
-      </button>
-    );
-  }
   const toggle = (list: VisitTag[], tag: VisitTag) =>
     list.includes(tag) ? list.filter((entry) => entry !== tag) : [...list, tag];
   const steps = VISIT_NEXT_STEPS.filter((step) => !(opinion === 'not_for_me' && step === 'offer'));
@@ -177,7 +172,7 @@ export function VisitDoneForm({ requestId }: { requestId: string }) {
         >
           {pending ? 'Enregistrement…' : 'Enregistrer le compte rendu'}
         </button>
-        <button type="button" className={btnSecondary} onClick={() => setOpen(false)}>
+        <button type="button" className={btnSecondary} onClick={onCancel}>
           Annuler
         </button>
       </div>

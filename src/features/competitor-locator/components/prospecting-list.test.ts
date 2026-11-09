@@ -51,9 +51,12 @@ describe('« Corriger l’adresse » disparaît d’un bien opposé', () => {
           card: groupProspecting([entry('martin', addressed('c1', ADDRESS, { opposedOn }))])[0],
         }),
       );
-    expect(card(null)).toContain('Corriger l’adresse');
+    // Mission 146 (partie B) — « Corriger l'adresse » vit dans « … » ; une carte opposée n'en a
+    // pas, ni aucun geste.
+    expect(card(null)).toContain('data-testid="prospecting-card-more"');
     const opposed = card(REQUESTED);
     expect(opposed).toContain('Ne plus solliciter (demandé le 11/10)');
     expect(opposed).not.toContain('Corriger l’adresse');
+    expect(opposed).not.toContain('prospecting-card-more');
   });
 });

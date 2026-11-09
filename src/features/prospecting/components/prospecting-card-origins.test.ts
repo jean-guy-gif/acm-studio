@@ -16,7 +16,7 @@ vi.mock('@/features/prospecting/actions/set-prospecting-status', () => ({
   markLettersHanded: async () => ({ ok: true }),
 }));
 
-import { btnPrimary } from '@/components/ui/styles';
+import { btnSecondary } from '@/components/ui/styles';
 import { ProspectingCard } from '@/features/prospecting/components/prospecting-card';
 import { groupProspecting } from '@/features/prospecting/services/group-prospecting';
 import { addressed, entry } from '@/features/prospecting/services/test-cards';
@@ -26,6 +26,7 @@ const ORIGIN = { originId: 'o1', buyerId: 'b1', buyerName: 'Famille Keller' };
 
 // Mission 120 B (reprise R4) — une carte à deux origines (concurrent d'un dossier vendeur ET
 // recherche acquéreur) : « Préparer le dossier » et « Préparer le courrier » au même rang.
+// Mission 146 (partie B) — en contour tous les deux : aucun bouton plein sur les cartes.
 describe('carte de Prospection à deux origines', () => {
   const render = (buyerOrigins: (typeof ORIGIN)[]) =>
     renderToStaticMarkup(
@@ -35,16 +36,17 @@ describe('carte de Prospection à deux origines', () => {
       }),
     );
 
-  it('les deux actions sont des boutons pleins, le dossier d’abord', () => {
+  it('les deux actions au même rang, en contour, le dossier d’abord', () => {
     const html = render([ORIGIN]);
     const fileAt = html.indexOf('Préparer le dossier');
     const letterAt = html.indexOf('Préparer le courrier');
     expect(fileAt).toBeGreaterThan(-1);
     expect(letterAt).toBeGreaterThan(fileAt);
-    const primary = btnPrimary.split(' ')[0];
+    const outline = btnSecondary.split(' ')[0];
     const tagOf = (at: number) => html.slice(html.lastIndexOf('<a ', at), at);
-    expect(tagOf(fileAt)).toContain(primary);
-    expect(tagOf(letterAt)).toContain(primary);
+    expect(tagOf(fileAt)).toContain(outline);
+    expect(tagOf(letterAt)).toContain(outline);
+    expect(html).not.toContain('btn-filled');
     expect(tagOf(letterAt)).toContain('/acquereurs/courrier/o1');
   });
 

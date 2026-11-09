@@ -797,7 +797,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                     <Link
                       href={next.primary.href}
                       data-testid="buyer-next-button"
-                      className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
+                      className="btn-filled inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
                     >
                       {next.primary.label}
                     </Link>

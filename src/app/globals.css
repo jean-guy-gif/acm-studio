@@ -57,17 +57,6 @@
 }
 
 /* Animations sobres du Live (respect de prefers-reduced-motion). */
-@keyframes live-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes live-reveal-pop {
   0% {
     opacity: 0;
@@ -80,10 +69,6 @@
     opacity: 1;
     transform: scale(1);
   }
-}
-
-.live-fade-up {
-  animation: live-fade-up 0.45s ease-out both;
 }
 
 .live-reveal-pop {
@@ -106,7 +91,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-fade-up,
   .live-enter,
   .live-reveal-pop {
     animation: none;

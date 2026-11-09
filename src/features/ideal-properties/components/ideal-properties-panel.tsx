@@ -168,6 +168,9 @@ export function IdealPropertiesPanel({
   // La sélection enregistrée : « Retenir » ne s'active que si la sélection cochée en diffère.
   const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
   const changed = selectionChanged([...selected.values()], baseline);
+  // Mission 146 (partie B) — un seul plein : « Retenir » quand la sélection cochée change, sinon
+  // « Présenter » une sélection retenue ; la recherche payante reste en contour.
+  const retainLeads = changed && selected.size > 0;
   const [saving, startSaving] = useTransition();
   // Mission 139 — écartés : cachés aussitôt ; ceux de cette visite de la page s'annulent encore.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(dismissed ?? []));
@@ -470,7 +473,10 @@ export function IdealPropertiesPanel({
             </h2>
             {baseline.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/presentation/${buyerId}`} className={btnPrimary}>
+                <Link
+                  href={`/presentation/${buyerId}`}
+                  className={retainLeads ? btnSecondary : btnPrimary}
+                >
                   {presented ? 'Revoir la présentation' : 'Présenter'}
                 </Link>
                 <Link href={`/acquereurs/${buyerId}/dossier`} className={btnSecondary}>
@@ -616,7 +622,7 @@ export function IdealPropertiesPanel({
               className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-200"
             >
               <span>{PAID_MARKET_WARNING}</span>
-              <button type="button" className={btnPrimary} onClick={() => void search(false)}>
+              <button type="button" className={btnSecondary} onClick={() => void search(false)}>
                 Lancer et payer
               </button>
               <button
@@ -631,7 +637,7 @@ export function IdealPropertiesPanel({
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                className={btnPrimary}
+                className={btnSecondary}
                 disabled={searching}
                 onClick={() => setConfirming(true)}
               >
@@ -713,7 +719,7 @@ export function IdealPropertiesPanel({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          className={btnPrimary}
+          className={retainLeads ? btnPrimary : btnSecondary}
           disabled={saving || selected.size === 0 || !changed}
           onClick={retain}
           data-testid="ideal-retain"

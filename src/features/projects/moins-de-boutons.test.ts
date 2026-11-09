@@ -246,9 +246,19 @@ describe('La liste du Live', () => {
 
 describe('Le Suivi : un seul plein', () => {
   it('la première carte due, sauf quand un panneau à bouton plein est ouvert', () => {
-    expect(suiviLeadId('a', null)).toBe('a');
-    expect(suiviLeadId('a', 'b')).toBe('b');
-    expect(suiviLeadId(null, null)).toBeNull();
+    expect(suiviLeadId(['a', 'c'], null)).toBe('a');
+    expect(suiviLeadId(['a', 'c'], 'b')).toBe('b');
+    expect(suiviLeadId([], null)).toBeNull();
+  });
+
+  // Mission 146 (partie B, 32 bis) — après « J'ai relancé », la carte due suivante reprend le
+  // plein, sans rechargement.
+  it('une carte relancée cède le plein à la carte due suivante', () => {
+    expect(suiviLeadId(['a', 'c'], null, new Set(['a']))).toBe('c');
+    expect(suiviLeadId(['a', 'c'], null, new Set(['a', 'c']))).toBeNull();
+    expect(suiviLeadId(['a', 'c'], 'b', new Set(['a']))).toBe('b');
+    const row = read('src/features/meeting-conclusion/components/suivi-row.tsx');
+    expect(row).toMatch(/settle\(/);
   });
 
   it('la pastille de filtre choisie n’est plus pleine', () => {

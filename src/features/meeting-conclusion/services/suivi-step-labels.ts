@@ -11,6 +11,7 @@ import {
   propertyPhrase,
 } from '@/features/buyers/services/loop-properties';
 import { offerAnswerTitle } from '@/features/purchase-offer/services/offer-answer';
+import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 
 // Mission 134 — la page « Proposer ce bien ».
 export const proposeHref = (propertyKey: string): string =>
@@ -50,7 +51,7 @@ export type TaskContext = {
 
 export type TaskLine = {
   title: string;
-  // Mission 145 — l'argument pour rentrer le mandat : « 1 acquéreur prêt correspond à votre bien ».
+  // Mission 145 — l'argument pour rentrer le mandat : « 1 acquéreur prêt correspond à la maison ».
   argue?: string | null;
   // Le sous-titre, et sa fin en orange quand la tâche est en retard.
   detail: string;
@@ -59,11 +60,23 @@ export type TaskLine = {
   href: string;
 };
 
-// Mission 145 — « 1 acquéreur prêt correspond à votre bien », ce que le conseiller dit au vendeur.
-export function readyBuyersArgument(count: number): string {
+// Mission 146 (partie B, B5) — l'argument se lit côté conseiller, sans guillemets, par le type du
+// bien : « 1 acquéreur prêt correspond à l'appartement », « … à la maison » ; « au bien » quand le
+// type manque ou ne se reconnaît pas (le type normalisé de M54). Ni « votre », ni « leur », ni
+// « son » (décision de Jean-Guy, 08/11) : « votre » reste au message envoyé au vendeur (M145 B).
+const TO_THE_PROPERTY: Record<string, string> = {
+  apartment: 'à l’appartement',
+  house: 'à la maison',
+  land: 'au terrain',
+  building: 'à l’immeuble',
+  commercial: 'au local commercial',
+  parking: 'au parking',
+};
+export function readyBuyersArgument(count: number, propertyType?: string | null): string {
+  const target = TO_THE_PROPERTY[normalizePropertyType(propertyType ?? null) ?? ''] ?? 'au bien';
   return count > 1
-    ? `${count} acquéreurs prêts correspondent à votre bien`
-    : '1 acquéreur prêt correspond à votre bien';
+    ? `${count} acquéreurs prêts correspondent ${target}`
+    : `1 acquéreur prêt correspond ${target}`;
 }
 
 // « 1 acquéreur prêt » / « 4 acquéreurs prêts ».
@@ -131,7 +144,9 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         : 'relance prévue aujourd’hui';
       return {
         title: `Relancer ${task.sellerName}`,
-        argue: task.readyBuyers ? readyBuyersArgument(task.readyBuyers) : null,
+        argue: task.readyBuyers
+          ? readyBuyersArgument(task.readyBuyers, task.property?.propertyType)
+          : null,
         detail: [context.motiveLabel, contact, planned].filter(Boolean).join(' · '),
         late,
         button: 'Relancer',

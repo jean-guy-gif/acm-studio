@@ -68,8 +68,9 @@ type LocalAnswer = { answer: ItemAnswer; reasons: NoReason[] };
 
 const navBtn =
   'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-300 bg-white px-3 py-3 font-title text-base font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-40';
+// Mission 146 (partie B) — le repère du bouton plein (`btn-filled`), un seul par écran.
 const primaryBtn =
-  'inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand-deep px-4 py-3 font-title text-base font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-50';
+  'btn-filled inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand-deep px-4 py-3 font-title text-base font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-50';
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold ${
     on ? 'border-brand bg-brand-deep text-white' : 'border-zinc-300 bg-white text-zinc-700'
@@ -579,6 +580,7 @@ export function DossierPhoneDeck({
             deck={deck}
             responses={asResponses}
             onOpen={(item) => go({ type: 'item', index: deck.items.indexOf(item) })}
+            leadFilled={!sendBar}
             onLead={
               deck.leadLetter
                 ? () =>

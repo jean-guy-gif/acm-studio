@@ -47,11 +47,6 @@ type ProspectionPageProps = {
   searchParams: Promise<{ bien?: string; cible?: string; origine?: string }>;
 };
 
-const tile =
-  'flex min-w-36 flex-col rounded-xl border border-zinc-200 bg-white px-4 py-3 stage:border-white/10 stage:bg-white/5';
-const tileNumber = 'font-title text-2xl font-bold whitespace-nowrap';
-const tileLabel = 'text-xs text-zinc-500 stage:text-white/60';
-
 // Mission 86 — la page Prospection : tous les concurrents à prospecter de tous les mandats
 // signés de l'agence, rangés par étape. Écran CONSEILLER, jamais montré au vendeur : les
 // adresses des concurrents y figurent (M75).
@@ -174,45 +169,35 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-3">
-            <div className={tile}>
-              <span className={`${tileNumber} text-zinc-900 stage:text-white`}>
-                {counters.toCanvass}
+          {/* Mission 146 (partie B, C9) — les compteurs sur une ligne, de même poids ; « déclarés
+              par vous » une fois, pour les mandats et les collaborations (M91, M115). */}
+          <p
+            className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm text-zinc-600 stage:text-white/70"
+            data-testid="prospecting-counters"
+          >
+            {[
+              { count: counters.toCanvass, label: 'à démarcher' },
+              { count: counters.handed, label: 'remis' },
+              { count: counters.meetings, label: 'rendez-vous' },
+              {
+                count: counters.mandates,
+                label: counters.mandates > 1 ? 'mandats rentrés' : 'mandat rentré',
+              },
+              {
+                count: counters.collaborations,
+                label: counters.collaborations > 1 ? 'collaborations' : 'collaboration',
+                testId: 'collaborations-counter',
+              },
+            ].map((entry) => (
+              <span key={entry.label} data-testid={entry.testId} className="whitespace-nowrap">
+                <span className="font-title text-lg font-bold text-zinc-900 stage:text-white">
+                  {entry.count}
+                </span>{' '}
+                {entry.label}
               </span>
-              <span className={tileLabel}>
-                Concurrent{counters.toCanvass > 1 ? 's' : ''} à démarcher
-              </span>
-            </div>
-            <div className={tile}>
-              <span className={`${tileNumber} text-zinc-900 stage:text-white`}>
-                {counters.handed}
-              </span>
-              <span className={tileLabel}>Dossier{counters.handed > 1 ? 's' : ''} remis</span>
-            </div>
-            <div className={tile}>
-              <span className={`${tileNumber} text-emerald-700 stage:text-emerald-300`}>
-                {counters.meetings}
-              </span>
-              <span className={tileLabel}>
-                Rendez-vous obtenu{counters.meetings > 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="flex min-w-56 flex-col rounded-xl bg-brand-deep px-4 py-3 text-white">
-              <span className={tileNumber}>{counters.mandates}</span>
-              <span className="text-xs text-white/70">Mandats rentrés (déclarés)</span>
-            </div>
-            {/* Mission 115 — les collaborations obtenues avec un confrère, comptées à part. */}
-            <div className={tile} data-testid="collaborations-counter">
-              <span className={`${tileNumber} text-zinc-900 stage:text-white`}>
-                {counters.collaborations}
-              </span>
-              <span className={tileLabel}>
-                Collaboration{counters.collaborations > 1 ? 's' : ''} obtenue
-                {counters.collaborations > 1 ? 's' : ''} (déclarée
-                {counters.collaborations > 1 ? 's' : ''})
-              </span>
-            </div>
-          </div>
+            ))}
+            <span className="text-xs text-zinc-500 stage:text-white/50">· déclarés par vous</span>
+          </p>
 
           {buyerProspecting.cards.length > 0 ? <BuyerProspectLocatorWatcher /> : null}
           {watched.map((seller, index) => (

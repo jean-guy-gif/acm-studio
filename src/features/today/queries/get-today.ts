@@ -286,8 +286,20 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
   ]);
   const dues = all.filter((task) => isTaskDue(task, today));
   const upcoming = all.filter((task) => !isTaskDue(task, today));
+  // Mission 146 (partie B, B5) — l'argument d'une relance dit le type du bien.
+  const propertyOf = new Map(dossiers.map((d) => [d.project.id, d.property]));
   const withAlerts = [
-    ...withFollowUpAlerts(dues, upcoming, followUpAlerts, today),
+    ...withFollowUpAlerts(dues, upcoming, followUpAlerts, today).map((task) =>
+      task.kind === 'follow_up' && task.readyBuyers
+        ? {
+            ...task,
+            property: {
+              propertyType: propertyOf.get(task.projectId)?.propertyType ?? null,
+              city: propertyOf.get(task.projectId)?.city ?? null,
+            },
+          }
+        : task,
+    ),
     ...prospectBuyersTasks([...cardAlerts.keys()], cardAlerts, today),
   ];
 

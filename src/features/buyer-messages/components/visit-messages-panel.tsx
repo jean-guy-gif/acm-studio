@@ -76,15 +76,9 @@ function MessageBox({
   );
 }
 
-export function VisitMessagesPanel({
-  requestId,
-  openAtOnce = false,
-}: {
-  requestId: string;
-  // Juste après « Visite faite » : les messages se préparent aussitôt.
-  openAtOnce?: boolean;
-}) {
-  const [open, setOpen] = useState(openAtOnce);
+// Mission 146 (partie B) — le panneau seul : « Messages prêts », l'étape ou le lien de la carte
+// (`VisitActions`), l'ouvre ; il prépare les messages dès qu'il paraît.
+export function VisitMessagesPanel({ requestId }: { requestId: string }) {
   const [messages, setMessages] = useState<{
     buyer: VisitMessage;
     seller: VisitMessage | null;
@@ -93,7 +87,7 @@ export function VisitMessagesPanel({
   const started = useRef(false);
 
   useEffect(() => {
-    if (!open || started.current) return;
+    if (started.current) return;
     started.current = true;
     void prepareVisitMessages(requestId)
       .then((result) => {
@@ -104,20 +98,8 @@ export function VisitMessagesPanel({
         setMessages({ buyer: result.buyer, seller: result.seller });
       })
       .catch(() => setError('Connexion perdue : réessayez.'));
-  }, [open, requestId]);
+  }, [requestId]);
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className={`${btnSecondary} self-start px-3 py-1.5 text-xs`}
-        data-testid="visit-messages-open"
-        onClick={() => setOpen(true)}
-      >
-        Messages prêts
-      </button>
-    );
-  }
   return (
     <div className="flex w-full flex-col gap-3" data-testid="visit-messages">
       {error ? (

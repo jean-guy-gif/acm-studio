@@ -108,32 +108,6 @@ export function buyerStatusLabel(buyer: Pick<Buyer, 'status'>): string {
   return BUYER_STATUS_LABELS[buyer.status];
 }
 
-// La liste : les miens d'abord, puis du plus récemment modifié au plus ancien.
-export function sortBuyers<T extends Pick<Buyer, 'advisorId' | 'updatedAt'>>(
-  buyers: T[],
-  advisorId: string | null,
-): T[] {
-  return [...buyers].sort((a, b) => {
-    const mineA = a.advisorId === advisorId ? 0 : 1;
-    const mineB = b.advisorId === advisorId ? 0 : 1;
-    if (mineA !== mineB) return mineA - mineB;
-    return b.updatedAt.localeCompare(a.updatedAt);
-  });
-}
-
-const fold = (text: string): string =>
-  text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-
-// Recherche par nom : sans accent ni casse.
-export function filterBuyersByName<T extends Pick<Buyer, 'name'>>(
-  buyers: T[],
-  query: string | null,
-): T[] {
-  const needle = fold(query ?? '');
-  if (!needle) return buyers;
-  return buyers.filter((buyer) => fold(buyer.name).includes(needle));
-}
-
 // « 24/10/2026 » — le jour vu de l'agence.
 export function buyerDateLabel(iso: string): string {
   const date = new Date(iso);
