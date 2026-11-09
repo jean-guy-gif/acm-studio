@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { matchesBuyerName } from '@/features/buyers/services/buyer-filters';
 import {
   buyerBudgetLabel,
   buyerRoomsLabel,
   buyerToCriteria,
   buyerTypesLabel,
   criteriaToBuyerDraft,
-  filterBuyersByName,
-  sortBuyers,
   splitCities,
 } from '@/features/buyers/services/buyer-criteria';
 import type { BuyerInput } from '@/features/buyers/types';
@@ -145,14 +144,11 @@ describe('les mots de la liste', () => {
     expect(buyerRoomsLabel({ roomsMin: null })).toBeNull();
   });
 
-  it('les miens d’abord, puis du plus récent ; recherche par nom sans accent', () => {
-    const buyers = [
-      { name: 'Émile', advisorId: 'b', updatedAt: '2026-10-24T10:00:00Z' },
-      { name: 'Zoé', advisorId: 'a', updatedAt: '2026-10-20T10:00:00Z' },
-      { name: 'Anna', advisorId: 'a', updatedAt: '2026-10-23T10:00:00Z' },
-    ];
-    expect(sortBuyers(buyers, 'a').map((buyer) => buyer.name)).toEqual(['Anna', 'Zoé', 'Émile']);
-    expect(filterBuyersByName(buyers, 'emi').map((buyer) => buyer.name)).toEqual(['Émile']);
-    expect(filterBuyersByName(buyers, '  ')).toHaveLength(3);
+  // Mission 146 (partie B) — le tri par urgence remplace « les miens d'abord » (buyer-urgency).
+  it('recherche par nom sans accent ni casse', () => {
+    expect(matchesBuyerName('Émile', 'emi')).toBe(true);
+    expect(matchesBuyerName('Famille Keller', 'KELL')).toBe(true);
+    expect(matchesBuyerName('Zoé', 'emi')).toBe(false);
+    expect(matchesBuyerName('Zoé', '  ')).toBe(true);
   });
 });

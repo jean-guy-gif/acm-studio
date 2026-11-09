@@ -5,36 +5,58 @@ import {
   alertError,
   alertOk,
   btnPrimary,
-  inputBase,
   kickerLabel,
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
-import { BuyerList } from '@/features/buyers/components/buyer-list';
+import { BuyerList, type BuyerListRow } from '@/features/buyers/components/buyer-list';
 import { getBuyers } from '@/features/buyers/queries/get-buyers';
 import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyersMonth } from '@/features/buyers/queries/get-buyers-month';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
-import { buyersMonthLine } from '@/features/buyers/services/buyers-month';
-import { filterBuyersByName, sortBuyers } from '@/features/buyers/services/buyer-criteria';
+import { getRelaunchFacts } from '@/features/buyers/queries/get-relaunch-facts';
+import { buyersMonthLine, lastAnswerLabel } from '@/features/buyers/services/buyers-month';
+import {
+  buyerBudgetLabel,
+  buyerCitiesLabel,
+  buyerRoomsLabel,
+  buyerStatusLabel,
+  buyerTypesLabel,
+} from '@/features/buyers/services/buyer-criteria';
+import { parseBuyerFilter } from '@/features/buyers/services/buyer-filters';
+import { buyerNextAction, saleInProgress } from '@/features/buyers/services/buyer-journey';
+import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
+import { buyerReadiness } from '@/features/buyers/services/buyer-readiness';
+import {
+  buyerUrgency,
+  compareBuyerUrgency,
+  urgencyLabel,
+} from '@/features/buyers/services/buyer-urgency';
+import { relaunchDue } from '@/features/buyers/services/link-relaunch';
+import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
+import { formatRelativeSince } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Acquéreurs — ACM Studio' };
 
-type BuyersPageProps = { searchParams: Promise<{ q?: string; archive?: string }> };
+type BuyersPageProps = {
+  searchParams: Promise<{ q?: string; archive?: string; vue?: string; etat?: string }>;
+};
 
-// Mission 117 — l'espace « Acquéreurs » : les fiches de l'agence, les miennes en tête, une
-// recherche par nom, « Nouvel acquéreur ». Les fiches archivées n'y sont pas (M93).
+// Mission 117 — l'espace « Acquéreurs » : les fiches de l'agence, une recherche par nom, « Nouvel
+// acquéreur ». Les fiches archivées n'y sont pas (M93). Mission 146 (partie B, I4) — « Mes fiches »
+// d'abord, « Toute l'agence » à un geste ; triées par urgence (`buyerUrgency`) ; la recherche et
+// les filtres d'état dans le navigateur.
 export default async function BuyersPage({ searchParams }: BuyersPageProps) {
-  const { q, archive } = await searchParams;
-  const query = q?.trim() || null;
+  const { q, archive, vue, etat } = await searchParams;
   const [profile, all] = await Promise.all([getProfile(), getBuyers()]);
-  const buyers = filterBuyersByName(sortBuyers(all, profile?.id ?? null), query);
+  const buyers = all;
   const supabase = await createClient();
+  const now = new Date();
   // Mission 135 — « Ce mois-ci » se compte sur toutes les fiches de l'agence, la recherche par nom
   // n'y change rien.
-  const [progress, month, loopProposals] = profile
+  const [progress, month, loopProposals, relaunch, followUps] = profile
     ? await Promise.all([
         getBuyersProgress(
           supabase,
@@ -49,8 +71,72 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         ),
         // Mission 145 (partie A, I2) — les mandats signés à proposer à chacun.
         getBuyerLoopProposals(profile.agency_id, new Date()),
+        // Mission 146 (partie B) — la relance d'une sélection sans réponse : une échéance du tri.
+        getRelaunchFacts(supabase, profile.agency_id, buyers),
+        // La réponse du vendeur à une offre, tant que le conseiller ne l'a pas traitée (M138).
+        supabase
+          .from('buyer_offer_follow_ups')
+          .select('document_id')
+          .eq('agency_id', profile.agency_id),
       ])
-    : [new Map(), null, null];
+    : [new Map(), null, null, null, null];
+  // Une lecture en échec ne fait remonter aucune fiche (M98).
+  const followedOffers = followUps?.error
+    ? null
+    : new Set((followUps?.data ?? []).map((row) => row.document_id));
+
+  const today = parisDay(now);
+  const lastAnswers = month?.lastAnswers ?? new Map();
+  const rows: BuyerListRow[] = buyers
+    .map((buyer) => {
+      const facts = progress.get(buyer.id) ?? NO_PROGRESS;
+      const next = buyerNextAction(buyer, facts, now, loopProposals?.byBuyer.get(buyer.id) ?? []);
+      const readiness = buyerReadiness(buyer, facts, now);
+      const relaunchFacts = relaunch?.failed ? undefined : relaunch?.facts.get(buyer.id);
+      const input = {
+        sale:
+          saleInProgress(facts, buyer.status) ||
+          (facts.latestOffer?.decision != null &&
+            followedOffers != null &&
+            !followedOffers.has(facts.latestOffer.documentId)),
+        relaunchDueOn: relaunchFacts ? (relaunchDue(relaunchFacts, now)?.dueOn ?? null) : null,
+        recontactOn: readiness.state === 'recontact' ? readiness.recontactOn : null,
+        since: facts.unread ? null : next.since,
+        updatedAt: buyer.updatedAt,
+      };
+      const urgency = buyerUrgency(input, today);
+      const answer = lastAnswers.get(buyer.id);
+      const row: BuyerListRow = {
+        id: buyer.id,
+        name: buyer.name,
+        status: buyer.status,
+        statusLabel: buyerStatusLabel(buyer),
+        facts: [
+          buyerTypesLabel(buyer),
+          buyerCitiesLabel(buyer),
+          buyerBudgetLabel(buyer),
+          buyerRoomsLabel(buyer),
+        ]
+          .filter((fact): fact is string => fact != null && fact !== '')
+          .join(' · '),
+        readiness: readiness.state,
+        lastAnswer: answer ? lastAnswerLabel(answer) : null,
+        mine: buyer.advisorId === profile?.id,
+        next: facts.unread
+          ? null
+          : {
+              title: next.title,
+              since: next.since ? formatRelativeSince(next.since) : null,
+              label: next.primary.label,
+              href: next.primary.href,
+            },
+        late: facts.unread ? null : urgencyLabel(urgency.due, next.title),
+        overdue: !facts.unread && (urgency.due?.lateDays ?? 0) > 0,
+      };
+      return { ...input, urgency, row };
+    })
+    .sort(compareBuyerUrgency)
+    .map((entry) => entry.row);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -88,44 +174,22 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         </p>
       ) : null}
 
-      <form method="get" action="/acquereurs" className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          name="q"
-          defaultValue={query ?? ''}
-          placeholder="Rechercher par nom"
-          aria-label="Rechercher un acquéreur par nom"
-          className={`${inputBase} w-full max-w-xs`}
-        />
-        <button
-          type="submit"
-          className="text-sm font-medium text-brand-deep hover:underline stage:text-brand"
-        >
-          Rechercher
-        </button>
-        {query ? (
-          <Link
-            href="/acquereurs"
-            className="text-sm text-zinc-500 hover:underline stage:text-white/60"
-          >
-            Tout afficher
-          </Link>
-        ) : null}
-      </form>
-
       {/* Mission 145 — les mandats à proposer n'ont pas pu être lus : la liste le dit (M98). */}
       {loopProposals?.failed ? (
         <p role="alert" className={alertError}>
           Les mandats à proposer à vos acquéreurs n’ont pas pu être lus : rechargez la page.
         </p>
       ) : null}
+      {relaunch?.failed ? (
+        <p role="alert" className={alertError}>
+          Les relances de vos acquéreurs n’ont pas pu être lues : rechargez la page.
+        </p>
+      ) : null}
       <BuyerList
-        buyers={buyers}
-        advisorId={profile?.id ?? null}
-        query={query}
-        progress={progress}
-        loopProposals={loopProposals?.byBuyer ?? new Map()}
-        lastAnswers={month?.lastAnswers ?? new Map()}
+        rows={rows}
+        initialView={vue === 'agence' ? 'agency' : 'mine'}
+        initialFilter={parseBuyerFilter(etat)}
+        initialQuery={q?.trim() ?? ''}
       />
     </div>
   );

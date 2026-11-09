@@ -5,6 +5,7 @@ import {
   demoCredentials,
   expectNoHorizontalScroll,
   expectReadableBands,
+  chooseInCardMenu,
   expectOneFilled,
   goViaAccountMenu,
   login,
@@ -443,6 +444,14 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       ).toHaveCount(0);
       const ready = page.getByTestId('prospecting-column-ready');
       await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED);
+      // Mission 146 (partie B, C9) — une colonne vide ne s'affiche pas ; les compteurs sur une
+      // ligne ; un seul plein, « Préparer tous les courriers » ; par carte, une étape et « … ».
+      await expect(page.getByTestId('prospecting-column-to_confirm')).toHaveCount(0);
+      await expect(page.getByTestId('prospecting-counters')).toContainText('déclarés par vous');
+      await expectOneFilled(page, 'Prospection');
+      await expect(
+        ready.getByTestId('prospecting-card').first().getByTestId('prospecting-card-more'),
+      ).toBeVisible();
 
       // Un courrier : la page imprimable porte le filigrane, quelle que soit sa version.
       const href = await ready
@@ -533,10 +542,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // Contacté, le confrère passe dans « Dossier remis » ; ses gestes sont la collaboration.
       const handed = page.getByTestId('prospecting-column-handed');
       const contacted = handed.getByTestId('prospecting-card').filter({ hasText: firstAddress });
-      await expect(contacted.getByRole('button', { name: 'Collaboration refusée' })).toBeVisible();
+      // Mission 146 (partie B) — « Collaboration obtenue » est l'étape, « Refusée » le lien.
+      await expect(contacted.getByRole('button', { name: 'Refusée', exact: true })).toBeVisible();
       await expect(contacted.getByRole('button', { name: 'Collaboration obtenue' })).toBeVisible();
       await expect(contacted.getByRole('button', { name: 'RDV obtenu' })).toHaveCount(0);
-      await contacted.getByRole('button', { name: 'Collaboration refusée' }).click();
+      await contacted.getByRole('button', { name: 'Refusée', exact: true }).click();
       // Refusée : le bien revient dans « Prêt à envoyer », en propriétaire.
       const back = ready.getByTestId('prospecting-card').filter({ hasText: firstAddress });
       await expect(back.getByTestId('collaboration-declined-badge')).toContainText(
@@ -575,7 +585,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto(`/prospection?bien=${projectId}`);
       const refused = ready.getByTestId('prospecting-card').last();
       const refusedText = await refused.innerText();
-      await refused.getByRole('button', { name: 'Ne plus solliciter', exact: true }).click();
+      await chooseInCardMenu(refused, 'Ne plus solliciter…');
       await refused.getByRole('button', { name: 'Confirmer : ne plus solliciter' }).click();
       await expect(page.getByTestId('opposition-notice')).toHaveText(
         'Inscrit : plus aucun courrier pour cette adresse',
@@ -1261,8 +1271,9 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   await expect(relance).toContainText(
     /dernier contact il y a 8 jours · relance prévue aujourd’hui/,
   );
-  await expect(relance.getByTestId('today-argument')).toContainText(
-    '1 acquéreur prêt correspond à votre bien',
+  // Mission 146 (partie B, B5) — côté conseiller, sans guillemets, par le type du bien.
+  await expect(relance.getByTestId('today-argument')).toHaveText(
+    '1 acquéreur prêt correspond à l’appartement',
   );
   await expect(sellers.getByTestId('today-line').first()).toContainText(
     'Relancer M. et Mme Lambert-Duval',
@@ -1341,15 +1352,36 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await expect(keller).toContainText('Maison · Mougins');
   // Mission 143 (B1) — la prochaine étape suit l'état le plus avancé : l'offre des Keller est
   // acceptée, la ligne dit « Lancer le compromis », jamais plus « Lui présenter sa sélection ».
-  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller →');
+  await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller');
   await expect(keller).toContainText(/Prochaine étape · Lancer le compromis · depuis /);
   // Mission 145 (partie B) — les Rossi, prêts : le mandat signé de l'appartement d'Antibes que ce
   // passage a conclu leur est à proposer, tant qu'il existe ; sans lui, leurs biens idéaux.
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
-  ).toHaveText(runMandate ? 'Proposer ce bien →' : 'Trouver les biens idéaux →');
+  ).toHaveText(runMandate ? 'Proposer ce bien' : 'Trouver les biens idéaux');
+  // Mission 146 (partie B, I4) — « Mes fiches » d'abord (toutes au closer dans la démo), triées
+  // par urgence : la vente en cours en tête ; l'action en contour ; un seul plein, « Nouvel
+  // acquéreur » ; les filtres d'état comptés, la recherche filtre en tapant.
+  await expect(page.getByTestId('buyer-view-mine')).toHaveAttribute('aria-pressed', 'true');
+  await expect(rows.first()).toContainText('Famille Keller');
+  await expect(page.getByTestId('buyer-filter-ready')).toHaveText('Prêts à visiter · 6');
+  await expect(page.getByTestId('buyer-filter-under_offer')).toHaveText('Sous offre · 1');
+  await expectOneFilled(page, 'Acquéreurs');
+  await page.getByTestId('buyer-filter-under_offer').click();
+  await expect(rows).toHaveCount(1);
+  await expect(page).toHaveURL(/etat=under_offer/);
+  await page.getByTestId('buyer-filter-all').click();
+  await page.getByTestId('buyer-search').fill('ross');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('M. et Mme Rossi');
+  await expect(page).toHaveURL(/q=ross/);
+  await page.getByTestId('buyer-search').fill('');
+  await page.getByTestId('buyer-view-agency').click();
+  await expect(rows).toHaveCount(9);
+  await expect(page).toHaveURL(/vue=agence/);
   await keller.getByRole('link', { name: 'Famille Keller', exact: true }).click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+  await expectOneFilled(page, 'Fiche acquéreur');
   const kellerUrl = new URL(page.url()).pathname;
   // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone.
   await expect(page.getByTestId('buyer-words')).toBeVisible();
@@ -1470,6 +1502,9 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await toCheck.check();
   await expect(page.getByTestId('ideal-retain')).toBeDisabled();
   await expectUnspoken(page, 'Biens idéaux, sélection retenue');
+  // Mission 146 (partie B) — un seul plein : « Présenter » une sélection retenue, « Retenir »
+  // quand la sélection cochée change ; la recherche payante en contour.
+  await expectOneFilled(page, 'Biens idéaux');
 
   // Mission 122 (partie B) — avant la présentation, le lien du dossier des Keller, répondu au doigt
   // depuis un téléphone (390 × 844) : A « Je veux le visiter », B « Peut-être », C d'abord sans
@@ -1536,6 +1571,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
     );
     await expect(visitor.getByTestId('dossier-nav')).toBeHidden();
     await expectNoHorizontalScroll(visitor, 'Le lien — couverture (390 × 844)');
+    await expectOneFilled(visitor, 'Le lien du dossier — couverture');
     await visitor.getByTestId('dossier-start').tap();
     await expect(phone).toHaveAttribute('data-screen', 'grid');
     const linkAnswer = (value: string) =>
@@ -1560,6 +1596,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
       // Dès la première réponse, « Envoyer ma réponse » est fixé en bas ; en fin de défilement,
       // aucune réponse n'est sous lui.
       await expect(sendBar).toBeVisible();
+      await expectOneFilled(visitor, `Le lien du dossier — bien ${letter}`);
       await visitor.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       const bar = await sendBar.boundingBox();
       const last = await linkAnswer('no').boundingBox();
@@ -1667,6 +1704,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await page.goto(`/presentation/${kellerUrl.split('/').pop()}`);
   await expect(page.getByTestId('deck-prelude')).toBeVisible();
   await expect(page.getByTestId('deck-prepare-item')).toHaveCount(3);
+  await expectOneFilled(page, 'Présentation — avant de présenter');
   await page.getByTestId('deck-start').click();
   const scene = page.getByTestId('buyer-presentation');
   await expect(scene).toHaveAttribute('data-screen', 'words');
@@ -1675,6 +1713,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await page.getByTestId('presentation-next').click();
   await expect(scene).toHaveAttribute('data-screen', 'grid');
   await expect(page.getByTestId('deck-grid-row').first()).toBeVisible();
+  await expectOneFilled(page, 'Présentation — la grille');
   const gridRows = await page.getByTestId('deck-grid-row').count();
   // Relecture des rendus par Jean-Guy (25/10) : une miniature et sa lettre en tête de chaque
   // colonne ; le budget du compromis en orange ; une seule phrase de tête, sur le bien qui coche tout.
@@ -1731,6 +1770,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   // C d'abord : « Je veux le visiter » ne fait pas avancer, la présentation n'est pas terminée.
   await openItem('C');
   await expectUnspoken(page, 'Présentation — le bien C');
+  await expectOneFilled(page, 'Présentation — le bien C');
   // La barre d'un écran de bien, en tablette dans les deux sens : une seule ligne, « Suivant » à
   // droite, et rien du contenu caché dessous (essai du 25/10).
   for (const viewport of [
@@ -1834,8 +1874,12 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await expectUnspoken(page, 'Visites');
   await expect(page.getByTestId('visits-pending')).toContainText('Famille Keller');
   await expect(page.getByTestId('visit-availability').first()).toContainText('Samedi matin');
-  await expect(page.getByTestId('visits-other-answers')).toContainText('Pas pour lui : La surface');
-  await expect(page.getByTestId('visits-other-answers')).toContainText('Peut-être');
+  // Mission 146 (partie B, I10) — « Ses autres réponses » sont sur la fiche (« Ce qu'il a
+  // répondu », lu plus haut), plus sur Visites ; aucun bouton plein ; le bon de visite quitte
+  // l'en-tête du groupe.
+  await expect(page.getByTestId('visits-other-answers')).toHaveCount(0);
+  await expect(page.getByTestId('visit-voucher-open')).toHaveCount(0);
+  await expectOneFilled(page, 'Visites');
 
   // Mission 120 — « J'ai un acquéreur pour votre bien » : C, une annonce du marché sans
   // exclusivité, que les Keller veulent visiter, reçoit le courrier au propriétaire ; A, le mandat
@@ -1846,12 +1890,16 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   const pendingVisits = page.getByTestId('visits-pending');
   const visitC = pendingVisits.getByTestId('visit-line').filter({ hasText: 'Mouans-Sartoux' });
   await expect(visitC).toHaveCount(1);
-  await expect(
-    pendingVisits
-      .getByTestId('visit-line')
-      .filter({ hasText: 'Mougins' })
-      .getByTestId('visit-seller-action'),
-  ).toHaveText('Proposer une visite');
+  // Mission 146 (partie B) — le mandat de l'agence : confirmer la visite, puis le bon, puis
+  // visite faite ; « Proposer une visite au vendeur » en lien. C : écrire au propriétaire.
+  const visitA = pendingVisits.getByTestId('visit-line').filter({ hasText: 'Mougins' }).first();
+  await expect(visitA.getByTestId('visit-seller-action')).toHaveText(
+    'Proposer une visite au vendeur',
+  );
+  await expect(visitA.getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
+  await expect(visitA.getByTestId('visit-track')).toContainText('Bon de visite');
+  await expect(visitC.getByTestId('visit-actions')).toHaveAttribute('data-step', 'write');
+  await expect(visitC.getByTestId('visit-track')).not.toContainText('Bon de visite');
   await visitC.getByTestId('visit-prepare-owner-letter').click();
   await expect(page).toHaveURL(/\/acquereurs\/courrier\/[0-9a-f-]{36}$/);
   const letterDocument = page.getByTestId('buyer-letter-document');
@@ -1897,6 +1945,7 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
     .filter({ hasText: 'Mouans-Sartoux' });
   await expect(visitCAfter.getByTestId('visit-letter-state')).toHaveText(/^Remis le \d{2}\/\d{2}$/);
   await expect(visitCAfter.getByTestId('visit-outcome')).toHaveText('En attente du propriétaire');
+  await expect(visitCAfter.getByTestId('visit-actions')).toHaveAttribute('data-step', 'wait');
 
   // Mission 120 B — B, en exclusivité : le dossier de collaboration au confrère, sans nom, budget
   // ni condition ; dans Prospection, « Marquer contacté » puis
@@ -1943,8 +1992,10 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
       .filter({ hasText: /220\sm²/ }),
   ).toHaveCount(1);
   await page.goto('/visites');
-  await expect(visitB().getByTestId('visit-letter-state')).toHaveText('Collaboration obtenue');
-  await expect(visitB().getByTestId('visit-outcome')).toHaveText('À planifier');
+  // Mission 146 (partie B) — la collaboration obtenue met le bien à l'agence : la visite se
+  // confirme, puis le bon de visite.
+  await expect(visitB().getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
+  await expect(visitB().getByTestId('visit-track')).toContainText('Bon de visite');
 
   await page
     .getByTestId('visits-pending')
@@ -1963,6 +2014,15 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
   await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(/Bonjour Famille Keller,/);
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
+  // Mission 146 (partie B) — la visite faite « Offre envisagée » : son étape est l'offre d'achat,
+  // ses messages en lien ; toujours aucun bouton plein en dehors du panneau ouvert.
+  const offerVisit = page
+    .getByTestId('visits-done')
+    .getByTestId('visit-line')
+    .filter({ has: page.getByTestId('visit-message-buyer') });
+  await expect(offerVisit.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
+  await expect(offerVisit.getByTestId('visit-offer-open')).toHaveText('Offre d’achat');
+  await expectOneFilled(page, 'Visites — visite faite');
 
   // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu
   // ensemble » : ses réponses du rendez-vous, le conseiller, « Télécharger en PDF », sans

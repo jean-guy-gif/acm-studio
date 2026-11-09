@@ -404,9 +404,11 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                 );
                 return { id, outcome, entries, followUp, step, frieze, dossier };
               });
-              const firstDue = cards.find((card) => card.step.button?.primary) ?? null;
+              const dueIds = cards
+                .filter((card) => card.step.button?.primary)
+                .map((card) => card.id);
               return (
-                <SuiviLeadProvider firstDueId={firstDue?.id ?? null}>
+                <SuiviLeadProvider dueIds={dueIds}>
                   <ul className="flex flex-col gap-3">
                     {cards.map(({ id, outcome, entries, followUp, step, frieze, dossier }) => (
                       <SuiviRow

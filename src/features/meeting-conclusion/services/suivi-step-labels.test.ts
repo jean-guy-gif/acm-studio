@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cardStep,
   nothingTodayLabel,
+  readyBuyersArgument,
   taskLine,
   type CardStepContext,
   type TaskContext,
@@ -56,13 +57,36 @@ describe('« À faire aujourd’hui »', () => {
   });
 
   // Mission 145 (partie B) — l'argument pour rentrer le mandat : un nombre, jamais un nom.
-  it('une relance due porte l’argument des acquéreurs prêts', () => {
+  // Mission 146 (partie B, B5) — côté conseiller, par le type du bien, jamais « votre ».
+  it('une relance due porte l’argument des acquéreurs prêts, par le type du bien', () => {
+    const appartement = { propertyType: 'Appartement', city: 'Antibes' };
+    expect(
+      taskLine(task({ readyBuyers: 1, property: appartement }), lineContext, TODAY).argue,
+    ).toBe('1 acquéreur prêt correspond à l’appartement');
+    expect(
+      taskLine(
+        task({ readyBuyers: 3, property: { propertyType: 'Maison', city: null } }),
+        lineContext,
+        TODAY,
+      ).argue,
+    ).toBe('3 acquéreurs prêts correspondent à la maison');
     expect(taskLine(task({ readyBuyers: 1 }), lineContext, TODAY).argue).toBe(
-      '1 acquéreur prêt correspond à votre bien',
+      '1 acquéreur prêt correspond au bien',
     );
-    expect(taskLine(task({ readyBuyers: 3 }), lineContext, TODAY).argue).toBe(
-      '3 acquéreurs prêts correspondent à votre bien',
+  });
+
+  it('l’argument dit chaque type, et « au bien » quand il manque', () => {
+    expect(readyBuyersArgument(1, 'apartment')).toBe('1 acquéreur prêt correspond à l’appartement');
+    expect(readyBuyersArgument(2, 'Villa')).toBe('2 acquéreurs prêts correspondent à la maison');
+    expect(readyBuyersArgument(1, 'Terrain')).toBe('1 acquéreur prêt correspond au terrain');
+    expect(readyBuyersArgument(1, 'Immeuble')).toBe('1 acquéreur prêt correspond à l’immeuble');
+    expect(readyBuyersArgument(1, 'Local commercial')).toBe(
+      '1 acquéreur prêt correspond au local commercial',
     );
+    expect(readyBuyersArgument(1, 'Parking')).toBe('1 acquéreur prêt correspond au parking');
+    expect(readyBuyersArgument(1, null)).toBe('1 acquéreur prêt correspond au bien');
+    expect(readyBuyersArgument(1, 'Péniche')).toBe('1 acquéreur prêt correspond au bien');
+    expect(readyBuyersArgument(4, 'Maison')).not.toMatch(/votre|leur|son /);
   });
 
   it('« Relancer plus tôt ? » : la date prévue, jamais en retard', () => {

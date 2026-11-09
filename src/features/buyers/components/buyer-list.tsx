@@ -1,146 +1,231 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 
-import { lastAnswerLabel } from '@/features/buyers/services/buyers-month';
-import { badgeBrand, badgeNeutral, card, emptyState } from '@/components/ui/styles';
+import { badgeBrand, btnSecondary, card, emptyState, inputBase } from '@/components/ui/styles';
 import {
-  buyerBudgetLabel,
-  buyerCitiesLabel,
-  buyerRoomsLabel,
-  buyerStatusLabel,
-  buyerTypesLabel,
-} from '@/features/buyers/services/buyer-criteria';
-import { buyerNextAction } from '@/features/buyers/services/buyer-journey';
-import type { BuyerLoopProposal } from '@/features/buyers/services/loop-properties';
-import {
-  buyerReadiness,
-  READY_LABEL,
-  RECONTACT_LABEL,
-} from '@/features/buyers/services/buyer-readiness';
-import { NO_PROGRESS, type BuyerProgressFacts } from '@/features/buyers/services/buyer-progress';
-import type { Buyer } from '@/features/buyers/types';
-import { formatRelativeSince } from '@/lib/format';
+  BUYER_FILTER_LABELS,
+  BUYER_FILTERS,
+  buyerFilterCounts,
+  matchesBuyerFilter,
+  matchesBuyerName,
+  type BuyerFilter,
+} from '@/features/buyers/services/buyer-filters';
 
-// Mission 117 — la liste des acquéreurs : une ligne par fiche, nom, type, communes, budget,
-// pièces, dernière modification ; les miennes en tête. Un champ absent est omis.
+// Une ligne de la liste, préparée au serveur (le tri par urgence, la prochaine étape, son retard).
+export type BuyerListRow = {
+  id: string;
+  name: string;
+  status: string;
+  statusLabel: string;
+  facts: string;
+  readiness: 'ready' | 'recontact' | null;
+  lastAnswer: string | null;
+  mine: boolean;
+  // null : l'avancement n'a pas pu être lu (M98).
+  next: { title: string; since: string | null; label: string; href: string } | null;
+  late: string | null;
+  // Vrai seulement quand l'échéance est passée : « aujourd'hui » n'est pas un retard.
+  overdue: boolean;
+};
+
+export type BuyerListView = 'mine' | 'agency';
+
+const tab = 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors';
+const tabActive = `${tab} bg-brand-soft font-semibold text-brand-deep stage:bg-white/10 stage:text-white`;
+const tabIdle = `${tab} text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 stage:text-white/55 stage:hover:bg-white/10`;
+const chip =
+  'rounded-full border px-3 py-1 text-sm font-semibold whitespace-nowrap transition-colors';
+const chipActive = `${chip} border-brand bg-brand-soft text-brand-deep stage:bg-white/10 stage:text-white`;
+const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand-deep stage:border-white/15 stage:bg-white/5 stage:text-white/70`;
+
+// L'adresse garde la vue, le filtre et la recherche, pour un lien envoyé (`?vue=agence`, `?q=`),
+// sans recharger la page.
+function keepInAddress(view: BuyerListView, filter: BuyerFilter, query: string) {
+  const params = new URLSearchParams(window.location.search);
+  const set = (key: string, value: string | null) =>
+    value ? params.set(key, value) : params.delete(key);
+  set('vue', view === 'agency' ? 'agence' : null);
+  set('etat', filter === 'all' ? null : filter);
+  set('q', query.trim() || null);
+  const search = params.toString();
+  window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
+}
+
+// Mission 117 — la liste des acquéreurs. Mission 146 (partie B, I4, planche B2) — elle s'ouvre
+// sur « Mes fiches » (celles dont le conseiller est le titulaire, M145 B), « Toute l'agence » à un
+// geste, pour tous (M117) ; triée par urgence au serveur, dans les deux vues ; la recherche filtre
+// en tapant ; les filtres d'état se comptent dans la vue ; l'action est un bouton en contour, à
+// droite, « en retard » en orange. Le seul plein de l'écran est « Nouvel acquéreur ».
 export function BuyerList({
-  buyers,
-  advisorId,
-  query,
-  progress = new Map(),
-  now = new Date(),
-  lastAnswers = new Map(),
-  loopProposals = new Map(),
+  rows,
+  initialView,
+  initialFilter,
+  initialQuery,
 }: {
-  buyers: Buyer[];
-  advisorId: string | null;
-  query: string | null;
-  // Essai de Jean-Guy (26/10) : les faits des étapes, pour le bouton de chaque carte.
-  progress?: ReadonlyMap<string, BuyerProgressFacts>;
-  now?: Date;
-  // Mission 135 — sa dernière réponse, toutes sélections confondues.
-  lastAnswers?: ReadonlyMap<string, { at: string; answer: string; reasons: string[] }>;
-  // Mission 145 (partie A, I2) — les mandats signés à proposer à chacun.
-  loopProposals?: ReadonlyMap<string, readonly BuyerLoopProposal[]>;
+  rows: BuyerListRow[];
+  initialView: BuyerListView;
+  initialFilter: BuyerFilter;
+  initialQuery: string;
 }) {
-  if (buyers.length === 0) {
-    return (
-      <div className={emptyState} data-testid="buyer-list-empty">
-        {query
-          ? `Aucun acquéreur ne porte « ${query} ».`
-          : 'Aucun acquéreur pour l’instant : « Nouvel acquéreur » crée la première fiche.'}
-      </div>
-    );
-  }
+  const [view, setView] = useState<BuyerListView>(initialView);
+  const [filter, setFilter] = useState<BuyerFilter>(initialFilter);
+  const [query, setQuery] = useState(initialQuery);
+
+  const inView = useMemo(
+    () => (view === 'mine' ? rows.filter((row) => row.mine) : rows),
+    [rows, view],
+  );
+  const counts = useMemo(() => buyerFilterCounts(inView), [inView]);
+  const shown = inView.filter(
+    (row) => matchesBuyerFilter(row, filter) && matchesBuyerName(row.name, query),
+  );
+
+  const choose = (next: { view?: BuyerListView; filter?: BuyerFilter; query?: string }) => {
+    const nextView = next.view ?? view;
+    const nextFilter = next.filter ?? filter;
+    const nextQuery = next.query ?? query;
+    setView(nextView);
+    setFilter(nextFilter);
+    setQuery(nextQuery);
+    keepInAddress(nextView, nextFilter, nextQuery);
+  };
+
   return (
-    <ul className="flex flex-col gap-2" data-testid="buyer-list">
-      {buyers.map((buyer) => {
-        const facts = [
-          buyerTypesLabel(buyer),
-          buyerCitiesLabel(buyer),
-          buyerBudgetLabel(buyer),
-          buyerRoomsLabel(buyer),
-        ].filter((fact): fact is string => fact != null && fact !== '');
-        return (
-          <li key={buyer.id} data-testid="buyer-row" className={`${card} px-4 py-3`}>
-            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-              <div className="flex min-w-0 flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/acquereurs/${buyer.id}`}
-                    className="font-title text-base font-bold text-zinc-900 hover:underline stage:text-white"
-                  >
-                    {buyer.name}
-                  </Link>
-                  <span className={badgeBrand}>{buyerStatusLabel(buyer)}</span>
-                  {/* Mission 132 — prêt à visiter, ou à recontacter : le même calcul que la fiche. */}
-                  {(() => {
-                    const readiness = buyerReadiness(
-                      buyer,
-                      progress.get(buyer.id) ?? NO_PROGRESS,
-                      now,
-                    );
-                    return readiness.state === 'ready' ? (
+    <div className="flex flex-col gap-4">
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => choose({ query: event.target.value })}
+        placeholder="Rechercher par nom"
+        aria-label="Rechercher un acquéreur par nom"
+        className={`${inputBase} w-full max-w-xs`}
+        data-testid="buyer-search"
+      />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-1.5" role="group" aria-label="Quelles fiches">
+          {(['mine', 'agency'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={view === value}
+              className={view === value ? tabActive : tabIdle}
+              onClick={() => choose({ view: value, filter: 'all' })}
+              data-testid={`buyer-view-${value}`}
+            >
+              {value === 'mine' ? 'Mes fiches' : 'Toute l’agence'}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer">
+          {BUYER_FILTERS.filter((value) => value === 'all' || counts[value] > 0).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={filter === value}
+              className={filter === value ? chipActive : chipIdle}
+              onClick={() => choose({ filter: value })}
+              data-testid={`buyer-filter-${value}`}
+            >
+              {BUYER_FILTER_LABELS[value]} · {counts[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
+        <div className={emptyState} data-testid="buyer-list-empty">
+          {query.trim()
+            ? `Aucun acquéreur ne porte « ${query.trim()} ».`
+            : view === 'mine' && rows.length > 0 && inView.length === 0
+              ? 'Aucune fiche à votre nom : « Toute l’agence » montre celles de vos collègues.'
+              : inView.length > 0
+                ? 'Aucune fiche pour ce filtre.'
+                : 'Aucun acquéreur pour l’instant : « Nouvel acquéreur » crée la première fiche.'}
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2" data-testid="buyer-list">
+          {shown.map((row) => (
+            <li key={row.id} data-testid="buyer-row" className={`${card} px-4 py-3`}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/acquereurs/${row.id}`}
+                      className="font-title text-base font-bold text-zinc-900 hover:underline stage:text-white"
+                    >
+                      {row.name}
+                    </Link>
+                    <span className={badgeBrand}>{row.statusLabel}</span>
+                    {/* Mission 132 — prêt à visiter, ou à recontacter : le même calcul que la fiche. */}
+                    {row.readiness === 'ready' ? (
                       <span
                         className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white"
                         data-testid="buyer-row-ready"
                       >
-                        {READY_LABEL}
+                        Prêt à visiter
                       </span>
-                    ) : readiness.state === 'recontact' ? (
+                    ) : row.readiness === 'recontact' ? (
                       <span
                         className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800"
                         data-testid="buyer-row-recontact"
                       >
-                        {RECONTACT_LABEL}
+                        À recontacter
                       </span>
-                    ) : null;
-                  })()}
-                  {buyer.advisorId === advisorId ? (
-                    <span className={badgeNeutral}>Ma fiche</span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-zinc-600 stage:text-white/70">{row.facts}</p>
+                  {row.lastAnswer ? (
+                    <p
+                      className="text-xs text-zinc-500 stage:text-white/60"
+                      data-testid="buyer-row-last-answer"
+                    >
+                      {row.lastAnswer}
+                    </p>
                   ) : null}
                 </div>
-                <p className="text-sm text-zinc-600 stage:text-white/70">{facts.join(' · ')}</p>
-                {lastAnswers.get(buyer.id) ? (
-                  <p
-                    className="text-xs text-zinc-500 stage:text-white/60"
-                    data-testid="buyer-row-last-answer"
-                  >
-                    {lastAnswerLabel(lastAnswers.get(buyer.id)!)}
-                  </p>
-                ) : null}
-              </div>
-              {/* Mission 130 B — chaque ligne dit sa prochaine étape et depuis quand ; le lien la
-                  fait, comme le bloc de la fiche. */}
-              {(() => {
-                const facts = progress.get(buyer.id) ?? NO_PROGRESS;
-                const next = buyerNextAction(buyer, facts, now, loopProposals.get(buyer.id) ?? []);
-                if (facts.unread) {
-                  return (
-                    <span className="text-xs font-semibold text-red-700">
-                      Avancement non lu : rechargez la page.
-                    </span>
-                  );
-                }
-                return (
-                  <div className="flex flex-col items-end gap-1 text-right">
+                {/* Mission 130 B — sa prochaine étape et depuis quand ; le bouton la fait. */}
+                {row.next == null ? (
+                  <span className="text-xs font-semibold text-red-700">
+                    Avancement non lu : rechargez la page.
+                  </span>
+                ) : (
+                  <div className="flex flex-col gap-1.5 sm:max-w-80 sm:items-end sm:text-right">
                     <span className="text-xs text-zinc-500 stage:text-white/60">
-                      Prochaine étape · {next.title}
-                      {next.since ? ` · ${formatRelativeSince(next.since)}` : ''}
+                      Prochaine étape · {row.next.title}
+                      {row.late ? (
+                        <>
+                          {' · '}
+                          <span
+                            className={
+                              row.overdue
+                                ? 'font-semibold text-orange-700 stage:text-orange-300'
+                                : 'font-semibold text-zinc-700 stage:text-white/80'
+                            }
+                            data-testid="buyer-row-late"
+                          >
+                            {row.late}
+                          </span>
+                        </>
+                      ) : row.next.since ? (
+                        ` · ${row.next.since}`
+                      ) : null}
                     </span>
                     <Link
-                      href={next.primary.href}
-                      className="text-sm font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
+                      href={row.next.href}
+                      className={`${btnSecondary} px-3 py-1.5 text-xs`}
                       data-testid="buyer-next-step"
                     >
-                      {next.primary.label} →
+                      {row.next.label}
                     </Link>
                   </div>
-                );
-              })()}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

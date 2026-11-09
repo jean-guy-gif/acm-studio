@@ -65,8 +65,12 @@ const chromeBtn =
   'inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:text-white/60 stage:hover:bg-white/10 stage:hover:text-white';
 const navBtn =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-5 py-3 font-title text-base font-semibold text-zinc-700 transition-colors hover:border-brand hover:text-brand-deep disabled:cursor-not-allowed disabled:opacity-40 stage:border-white/20 stage:bg-white/5 stage:text-white/80 stage:hover:border-brand stage:hover:text-white';
-const primaryBtn =
+const filledLook =
   'inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-brand-deep px-6 py-3 font-title text-base font-semibold text-white shadow-lg shadow-brand/30 transition-colors hover:bg-brand-darker disabled:cursor-not-allowed disabled:opacity-50 stage:bg-white stage:text-brand-deep stage:hover:bg-brand-soft';
+// Mission 146 (partie B) — un bouton plein écrit à la main porte le repère `btn-filled` (le
+// contrôle « au plus un bouton plein par écran ») ; la réponse choisie est un choix, pas une
+// action : elle n'en porte pas.
+const primaryBtn = `btn-filled ${filledLook}`;
 // Essai de Jean-Guy (25/10) : la navigation est discrète, jamais plus visible que la réponse.
 export const quietNavBtn =
   'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl px-4 py-2.5 font-title text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 stage:text-white/65 stage:hover:bg-white/10 stage:hover:text-white';
@@ -75,7 +79,7 @@ export const quietNavBtn =
 // n'est pas choisi.
 export function answerBtn(_value: ItemAnswer, on: boolean): string {
   // Relue, la réponse choisie reste pleine, jamais pâlie (un bouton désactivé l'était).
-  return on ? `${primaryBtn} disabled:opacity-100` : navBtn;
+  return on ? `${filledLook} disabled:opacity-100` : navBtn;
 }
 const chip = (on: boolean): string =>
   `inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
@@ -335,9 +339,11 @@ export function DeckPresentation({
         </p>
       ) : null}
 
+      {/* Mission 146 (partie B, B4) — le fondu court du Live (M144) à chaque écran : 150 ms depuis
+          60 %, jamais depuis un écran transparent ; aucun avec « mouvement réduit ». */}
       <main
         key={`${screen.type}-${screen.type === 'item' ? screen.index : ''}`}
-        className="live-fade-up relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-32 sm:px-8 sm:pt-8"
+        className="live-enter relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-32 sm:px-8 sm:pt-8"
       >
         {screen.type === 'words' ? (
           <div className="flex flex-col gap-5" data-testid="deck-words">
@@ -615,8 +621,12 @@ export function GridScreen({
   leadLetter,
   compact = false,
   language = 'fr',
+  leadFilled = true,
 }: {
   language?: TextLanguage;
+  // Mission 146 (partie B) — sur le téléphone, « Envoyer ma réponse » fixé en bas est le plein :
+  // « Voir le bien A » passe alors en contour.
+  leadFilled?: boolean;
   deck: BuyerDeck;
   responses: ItemResponse[];
   onOpen: (item: DeckItem) => void;
@@ -645,7 +655,7 @@ export function GridScreen({
           {onLead && leadLetter ? (
             <button
               type="button"
-              className={primaryBtn}
+              className={leadFilled ? primaryBtn : navBtn}
               onClick={onLead}
               data-testid="deck-lead-open"
             >

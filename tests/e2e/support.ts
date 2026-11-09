@@ -137,7 +137,14 @@ export async function expectOneFilled(page: Page, screen: string): Promise<void>
       .filter((element) => {
         const box = element.getBoundingClientRect();
         const style = getComputedStyle(element);
-        return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
+        // Mission 146 (partie B) — le contenu d'un <details> fermé garde une taille dans Chromium
+        // (content-visibility) : le navigateur dit lui-même s'il est visible.
+        return (
+          box.width > 0 &&
+          box.height > 0 &&
+          style.visibility !== 'hidden' &&
+          element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true })
+        );
       })
       .map((element) => (element.textContent ?? '').trim()),
   );
@@ -145,6 +152,13 @@ export async function expectOneFilled(page: Page, screen: string): Promise<void>
     shown.length,
     `${screen} : ${shown.length} boutons pleins (${shown.join(' · ')})`,
   ).toBeLessThanOrEqual(1);
+}
+
+// Mission 146 (partie B) — une carte (Prospection) range ses gestes secondaires dans « … » :
+// l'ouvrir, puis choisir l'entrée.
+export async function chooseInCardMenu(card: Locator, label: string): Promise<void> {
+  await card.getByRole('button', { name: 'Plus d’actions' }).click();
+  await card.getByRole('menuitem', { name: label, exact: true }).click();
 }
 
 export async function goViaAccountMenu(page: Page, label: string): Promise<void> {

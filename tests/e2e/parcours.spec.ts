@@ -15,6 +15,7 @@ import {
   ageTestFollowUp,
   chooseInMoreMenu,
   dragCompetitor,
+  chooseInCardMenu,
   expectOneFilled,
   readTestOppositions,
   removeTestOppositions,
@@ -974,16 +975,19 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.reload();
     await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
 
-    // La liste : la fiche, « Ma fiche », type, communes, budget, pièces ; la recherche par nom.
+    // La liste : la fiche, type, communes, budget, pièces ; la recherche par nom. Mission 146
+    // (partie B, I4) — elle s'ouvre sur « Mes fiches », la recherche filtre en tapant.
     await page.goto('/acquereurs');
+    await expect(page.getByTestId('buyer-view-mine')).toHaveAttribute('aria-pressed', 'true');
     const row = page.getByTestId('buyer-row').filter({ hasText: buyerName });
     await expect(row).toBeVisible();
-    await expect(row).toContainText('Ma fiche');
+    await expect(row).not.toContainText('Ma fiche');
     await expect(row).toContainText('Appartement · Nice · Cagnes-sur-Mer');
     await expect(row).not.toContainText('pièces ou plus');
+    await expectOneFilled(page, 'Acquéreurs');
     await page.getByLabel('Rechercher un acquéreur par nom').fill(dossierName.slice(-6));
-    await page.getByRole('button', { name: 'Rechercher' }).click();
     await expect(page.getByTestId('buyer-row').filter({ hasText: buyerName })).toBeVisible();
+    await expect(page).toHaveURL(/[?&]q=/);
 
     // « Rapprocher » : le rapprochement, pré-rempli, trouve le mandat signé d'Antibes…
     // ici celui de ce passage, à Nice (3 pièces, 65 m², 315 000 € convenus : sous le plafond + 5 %).
@@ -1200,10 +1204,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // concurrents et aux exclusivités).
     await expect(page.getByTestId('visits-pending')).not.toContainText('confrère à contacter');
     // Mission 120 — un mandat signé de l'agence : « Proposer une visite » (M86), aucun courrier.
+    // Mission 146 (partie B) — son chemin : confirmer la visite, le bon, visite faite ; la
+    // proposition au vendeur en lien ; aucun bouton plein sur Visites.
     await expect(
       page.getByTestId('visits-pending').getByTestId('visit-seller-action').first(),
-    ).toHaveText('Proposer une visite');
+    ).toHaveText('Proposer une visite au vendeur');
     await expect(page.getByTestId('visit-prepare-owner-letter')).toHaveCount(0);
+    await expect(visitLine.first().getByTestId('visit-actions')).toHaveAttribute(
+      'data-step',
+      'confirm',
+    );
+    await expectOneFilled(page, 'Visites');
     await visitLine.first().getByRole('button', { name: 'Visite faite' }).click();
     // Mission 139 — le compte rendu en boutons ; « Pas pour moi » n'offre pas « Offre envisagée ».
     const doneForm = page.getByTestId('visit-done-form');
@@ -1344,7 +1355,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const handed = page.getByTestId('prospecting-column-handed');
     await expect(toConfirm.getByTestId('prospecting-card')).toHaveCount(COMPETITORS.length);
 
+    // Mission 146 (partie B, C9) — une étape par carte : saisis à la main, ces concurrents sont
+    // « À vérifier », leurs pastilles « Vendu par » / « Exclusivité » sont l'étape ; l'adresse se
+    // confirme par « … » (ses choix de M84) ; aucun bouton plein sur les cartes.
+    await expectOneFilled(page, 'Prospection');
     const first = toConfirm.getByTestId('prospecting-card').first();
+    await expect(first.getByRole('group', { name: 'Exclusivité' })).toBeVisible();
+    await chooseInCardMenu(first, 'Confirmer l’adresse');
     await first.getByRole('button', { name: 'Saisir l’adresse' }).click();
     await first.getByLabel('Adresse du bien concurrent').fill(PROSPECTING_ADDRESS);
     await first.getByRole('button', { name: 'Confirmer l’adresse' }).click();
@@ -1380,6 +1397,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const ready = page.getByTestId('prospecting-column-ready');
     const confirmAddress = async (address: string) => {
       const card = toConfirm.getByTestId('prospecting-card').first();
+      await chooseInCardMenu(card, 'Confirmer l’adresse');
       await card.getByRole('button', { name: 'Saisir l’adresse' }).click();
       await card.getByLabel('Adresse du bien concurrent').fill(address);
       await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
@@ -1389,7 +1407,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     };
 
     const refused = await confirmAddress(OPPOSED_ADDRESS);
-    await refused.getByRole('button', { name: 'Ne plus solliciter', exact: true }).click();
+    await chooseInCardMenu(refused, 'Ne plus solliciter…');
     await refused.getByRole('button', { name: 'Confirmer : ne plus solliciter' }).click();
     // Mission 103 — la carte quitte le tableau, et la page le dit.
     await expect(
@@ -1471,15 +1489,17 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   await test.step('Opposition à la main, commune tapée : en base, et elle bloque', async () => {
     const ready = page.getByTestId('prospecting-column-ready');
     const card = ready.getByTestId('prospecting-card').filter({ hasText: TOUR_ADDRESS });
-    await card.getByRole('button', { name: 'Corriger l’adresse' }).click();
+    await chooseInCardMenu(card, 'Corriger l’adresse');
     await card.getByLabel('Adresse du bien concurrent').fill(CHOSEN_ADDRESS);
     await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
     const moved = ready.getByTestId('prospecting-card').filter({ hasText: CHOSEN_ADDRESS });
     await expect(moved).toBeVisible();
+    // Mission 146 (partie B) — « À vérifier » : la version du dossier se choisit dans « … » (M84).
+    await moved.getByRole('button', { name: 'Plus d’actions' }).click();
     const href = await moved
-      .getByRole('link', { name: /Préparer le dossier/ })
-      .first()
+      .getByRole('menuitem', { name: 'Préparer le dossier propriétaire' })
       .getAttribute('href');
+    await page.keyboard.press('Escape');
     const letter = `${(href ?? '').split('?')[0]}?version=owner`;
     expect(letter, 'Le lien du courrier est introuvable').toMatch(/\/prospection\/[0-9a-f-]{36}\?/);
     await page.goto(`/prospection/tournee?bien=${projectId}`);

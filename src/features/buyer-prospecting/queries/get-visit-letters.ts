@@ -3,10 +3,7 @@ import 'server-only';
 import { getBuyerProspecting } from '@/features/buyer-prospecting/queries/get-buyer-prospecting';
 import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
 import { visitAction } from '@/features/buyer-prospecting/services/visit-action';
-import {
-  visitLetterState,
-  visitWaitingLabel,
-} from '@/features/buyer-prospecting/services/visit-letter-state';
+import { visitLetterState } from '@/features/buyer-prospecting/services/visit-letter-state';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
@@ -19,8 +16,6 @@ export type VisitLetter = {
   // Le courrier déjà préparé pour ce bien retenu, et où il en est sur sa carte.
   letterHref: string | null;
   state: VisitLetterState;
-  // « En attente du propriétaire » tant que le courrier n'a pas abouti ; null : « À planifier ».
-  waiting: string | null;
   // Mission 120 B — à qui s'adresse le courrier préparé : le confrère (« Ouvrir le dossier ») ou
   // le propriétaire.
   colleague: boolean;
@@ -30,7 +25,6 @@ const NONE: VisitLetter = {
   action: { kind: 'none' },
   letterHref: null,
   state: { kind: 'none' },
-  waiting: null,
   colleague: false,
 };
 
@@ -129,7 +123,6 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
           action,
           letterHref: buyerLetterHref(origin.originId),
           state,
-          waiting: visitWaitingLabel(state, row?.step ?? null),
           colleague: row?.step === 'colleague',
         },
       ];
