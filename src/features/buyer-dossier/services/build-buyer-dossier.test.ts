@@ -399,3 +399,64 @@ describe('le code du dossier', () => {
     }
   });
 });
+
+// Mission 147 (partie A) — le lien client « Vivre ici » d'Academia, collé sur le mandat : par liste
+// d'autorisation, un bien du déroulé et un lien d'Academia relu, rien d'autre ; jamais dans le PDF.
+describe('le lien « Vivre ici » d’Academia', () => {
+  const withLinks = (links: { itemId: string; url: string }[]) =>
+    buildBuyerDossier({
+      buyerId: 'b',
+      selectionId: 's',
+      selectedAt: '2026-10-24T10:00:00Z',
+      sector: 'Mougins',
+      deck: deck([item({ itemId: 'i1', source: 'project' })]),
+      hidden: new Map(),
+      answered: false,
+      answers: [],
+      availability: [],
+      meetingAnswers: [],
+      meetingAvailability: [],
+      agency,
+      brandDeclarations: '',
+      academiaLinks: links,
+    });
+
+  it('un bien du déroulé, un lien d’Academia : il passe', () => {
+    expect(
+      withLinks([{ itemId: 'i1', url: 'https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d' }])
+        .academiaLinks,
+    ).toEqual([{ itemId: 'i1', url: 'https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d' }]);
+  });
+
+  it('un autre site, ou un bien hors du déroulé, ne passe pas', () => {
+    expect(
+      withLinks([
+        { itemId: 'i1', url: 'https://evil.test/l/x' },
+        { itemId: 'i1', url: 'https://app.myacademia.ai/l/x?adresse=12 rue des Lilas' },
+        { itemId: 'autre', url: 'https://app.myacademia.ai/l/abc' },
+      ]).academiaLinks,
+    ).toEqual([]);
+  });
+
+  it('le titre piège (M107) et une adresse glissés dans l’entrée n’en sortent pas', () => {
+    const spiked = {
+      itemId: 'i1',
+      url: 'https://app.myacademia.ai/l/abc',
+      title: 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas',
+      address: '12 rue des Lilas, 06250 Mougins',
+    } as { itemId: string; url: string };
+    const dossier = withLinks([spiked]);
+    expect(dossier.academiaLinks).toEqual([
+      { itemId: 'i1', url: 'https://app.myacademia.ai/l/abc' },
+    ]);
+    const payload = JSON.stringify(dossier);
+    expect(payload).not.toContain('Agence Dupont');
+    expect(payload).not.toContain('rue des Lilas');
+  });
+
+  it('le PDF du dossier ne le montre pas', () => {
+    const dossier = withLinks([{ itemId: 'i1', url: 'https://app.myacademia.ai/l/abc' }]);
+    const pdf = renderToStaticMarkup(createElement(BuyerDossierDocument, { dossier }));
+    expect(pdf).not.toContain('myacademia');
+  });
+});

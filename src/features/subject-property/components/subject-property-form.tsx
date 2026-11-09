@@ -291,6 +291,7 @@ export function SubjectPropertyForm({
             />
           </div>
           <TextField
+            id={propertyFieldId('address')}
             label="Adresse"
             value={scalars.address}
             onChange={(v) => setField('address', v)}

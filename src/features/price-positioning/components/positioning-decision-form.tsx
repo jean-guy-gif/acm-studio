@@ -17,10 +17,8 @@ import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import type { DeletePositioningResult } from '@/features/price-positioning/actions/delete-price-positioning';
 import type { SavePositioningResult } from '@/features/price-positioning/actions/save-price-positioning';
 import { MAX_JUSTIFICATION_LENGTH } from '@/features/price-positioning/types/saved-price-positioning';
-import {
-  priceLine,
-  type RealSalesSummary,
-} from '@/features/address-dossier/services/dossier-texts';
+import { AcademiaSalesLink } from '@/features/academia/components/academia-links';
+import type { AcademiaLink } from '@/lib/academia';
 
 type Props = {
   defaultAdvisorPrice: number;
@@ -36,9 +34,9 @@ type Props = {
   projectId: string;
   // Mission 111 — dossier conclu ou archivé : la décision se lit, ne se modifie plus.
   locked?: boolean;
-  // Mission 141 — les ventes réelles du dossier d'adresse, pour situer l'analyse de valeur dès la
-  // frappe ; une information, jamais une recommandation de prix.
-  realSales?: RealSalesSummary | null;
+  // Mission 147 (partie A) — « Ventes réelles dans Academia ↗ » : la médiane en un clic au moment
+  // de décider ; un lien, jamais un prix pour le bien. `null` : pas d'adresse sur la fiche.
+  salesLink?: AcademiaLink | null;
 };
 
 const shownToSeller = 'text-xs font-medium text-amber-700 stage:text-amber-300';
@@ -63,7 +61,7 @@ export function PositioningDecisionForm({
   deleteAction,
   projectId,
   locked = false,
-  realSales = null,
+  salesLink = null,
 }: Props) {
   const router = useRouter();
   const [becameReady, setBecameReady] = useState(false);
@@ -170,15 +168,13 @@ export function PositioningDecisionForm({
         <span className={shownToSeller}>Affiché au vendeur à la fin du Live</span>
       </label>
 
-      {/* Mission 141 — hors du libellé du champ : une information, pas son nom. */}
-      {realSales ? (
-        <p
-          className="-mt-2 text-sm text-zinc-700 stage:text-white/80"
-          data-testid="real-sales-line"
-        >
-          {priceLine(realSales, advisorAnalysis)}
-        </p>
-      ) : null}
+      {/* Mission 147 (partie A) — hors du libellé du champ : un lien discret, pas son nom. */}
+      <div className="-mt-2">
+        <AcademiaSalesLink
+          salesLink={salesLink}
+          missingHref={`/builder/${projectId}/property#champ-address`}
+        />
+      </div>
 
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>Justification (facultatif)</span>

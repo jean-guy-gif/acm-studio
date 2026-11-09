@@ -8,9 +8,10 @@ import { allowedDeck } from '@/features/buyer-deck/services/frozen-deck';
 import type {
   BuyerDossier,
   DossierAgency,
-  DossierLivingHere,
+  DossierAcademiaLink,
   DossierPhotoChoice,
 } from '@/features/buyer-dossier/types';
+import { academiaLivingHereUrl } from '@/lib/academia';
 
 // Mission 122 (partie B) — le déroulé que reçoit l'acquéreur, sur le lien comme sur le PDF : rien de
 // ce qui est réservé au conseiller — ni les phrases proposées par l'outil quand il les a modifiées,
@@ -50,7 +51,7 @@ export function buildBuyerDossier(input: {
   meetingAvailability: AvailabilitySlot[];
   agency: DossierAgency;
   brandDeclarations: string;
-  livingHere?: DossierLivingHere[];
+  academiaLinks?: DossierAcademiaLink[];
 }): BuyerDossier {
   const photoChoices: DossierPhotoChoice[] = input.deck.items.map((entry) => ({
     itemId: entry.item.itemId,
@@ -73,6 +74,19 @@ export function buildBuyerDossier(input: {
     meetingAvailability: input.meetingAvailability,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
-    livingHere: input.livingHere ?? [],
+    academiaLinks: allowedAcademiaLinks(input.deck, input.academiaLinks ?? []),
   };
+}
+
+// Mission 147 (partie A) — par liste d'autorisation : un bien du déroulé, un lien d'Academia relu,
+// rien d'autre (jamais une adresse, jamais un autre site).
+function allowedAcademiaLinks(
+  deck: BuyerDeck,
+  links: DossierAcademiaLink[],
+): DossierAcademiaLink[] {
+  const items = new Set(deck.items.map((entry) => entry.item.itemId));
+  return links.flatMap((entry) => {
+    const url = academiaLivingHereUrl(entry.url);
+    return items.has(entry.itemId) && url ? [{ itemId: entry.itemId, url }] : [];
+  });
 }

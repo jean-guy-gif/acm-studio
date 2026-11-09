@@ -420,9 +420,8 @@ function demoListingItem(
 }
 
 // Mission 142 — Mr and Mrs Wilson (anglophones) : une sélection d'un appartement d'Antibes, et une
-// visite demandée sur lui ; sa fiche « Vivre ici » part du quartier de l'annonce.
+// visite demandée sur lui.
 export const DEMO_WILSON_SELECTED_DAYS_AGO = 4;
-export const DEMO_WILSON_PRIORITIES = ['shops_on_foot', 'schools'] as const;
 export function demoWilsonSelectionPlan(now: Date): DemoSelectionItemPlan[] {
   return [demoListingItem('antibes', 'ant-01', now)];
 }

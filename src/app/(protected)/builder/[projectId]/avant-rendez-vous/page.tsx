@@ -96,11 +96,8 @@ import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagn
 import { getPropertyPhotos } from '@/features/subject-property-photos/services/get-property-photos';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { formatRelativeMoment } from '@/lib/format';
-import {
-  addressDossierView,
-  getAddressDossier,
-} from '@/features/address-dossier/queries/get-address-dossier';
-import { realSalesStatus } from '@/features/address-dossier/services/dossier-texts';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { academiaLinkView, propertyAddressLine } from '@/lib/academia';
 
 type BeforeMeetingPageProps = {
   params: Promise<{ projectId: string }>;
@@ -143,7 +140,6 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     launch,
     profile,
     buyers,
-    addressDossier,
   ] = await Promise.all([
     getSubjectProperty(projectId),
     getComparables(projectId),
@@ -164,14 +160,19 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       : getProfile().then((viewer) =>
           viewer ? getPropertyBuyers(viewer.agency_id, projectId, new Date()) : undefined,
         ),
-    getAddressDossier(projectId),
   ]);
-  // Mission 141 — les ventes réelles du dossier d'adresse, à côté de l'analyse de valeur.
-  const salesStatus = realSalesStatus(
-    addressDossierView(addressDossier, property),
-    property?.surface_area ?? null,
-  );
-  const realSales = salesStatus.kind === 'line' ? salesStatus.summary : null;
+  // Mission 147 (partie A) — « Ventes réelles dans Academia ↗ », sous l'analyse de valeur : la
+  // médiane en un clic au moment de décider (décision de Jean-Guy, 09/11) ; dans la démo, la
+  // présentation d'Academia.
+  const salesLink = academiaLinkView({
+    target: 'sales',
+    address: propertyAddressLine({
+      address: property?.address,
+      postalCode: property?.postal_code,
+      city: property?.city,
+    }),
+    demo: await isDemoAgency(profile?.agency_id),
+  });
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({
@@ -420,7 +421,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 deleteAction={deletePricePositioning.bind(null, projectId)}
                 projectId={projectId}
                 locked={isDecisionLocked(project.status)}
-                realSales={realSales}
+                salesLink={salesLink}
               />
             ) : (
               <div className="flex flex-col gap-2">
@@ -431,21 +432,6 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 <PositioningReasons reasons={positioning?.reasons ?? []} />
               </div>
             )}
-            {/* Mission 141 — sans ventes réelles, pourquoi, et le chemin vers le dossier d'adresse. */}
-            {salesStatus.kind === 'note' ? (
-              <p className={hintText} data-testid="real-sales-missing">
-                {salesStatus.text}
-                {salesStatus.link ? (
-                  <>
-                    {' '}
-                    <Link href={`/builder/${projectId}/property`} className={link}>
-                      {salesStatus.link}
-                    </Link>
-                    .
-                  </>
-                ) : null}
-              </p>
-            ) : null}
             {/* Mission 104 — côté conseiller seulement : qui n'entre pas dans le calcul. */}
             {excludedOutliers > 0 ? (
               <p

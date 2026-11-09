@@ -11,7 +11,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
-import { deleteLivingHereSheets } from '@/features/living-here/services/delete-sheets';
+import { deleteLivingHereSheets } from '@/features/comparables/services/delete-living-here-sheets';
 
 export type BulkComparableResult = { ok: true; count: number } | { ok: false; error: string };
 

@@ -29,7 +29,7 @@ export function DossierPublicView({ token, dossier }: { token: string; dossier: 
           advisorName={dossier.agency.advisorName}
           advisorPhone={dossier.agency.advisorPhone}
           advisorEmail={dossier.agency.advisorEmail}
-          livingHere={dossier.livingHere ?? []}
+          academiaLinks={dossier.academiaLinks ?? []}
         />
       </div>
       {/* Hors de l'écran mais rendu, pour que ses photos soient chargées avant d'imprimer ; seul
