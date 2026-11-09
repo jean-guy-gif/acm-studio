@@ -31,6 +31,15 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   0,3 s, /builder 0,9 s → 0,2 s. La région se lit sur l'essai dès son déploiement.
 - 05/11 · M128 B · Compter les requêtes d'une page dans les journaux de Supabase (`edge_logs`, une page à la fois, 4 s de silence entre deux) : les journaux perdent parfois une ligne (un `auth/v1/user` absent), et l'essai partage la base avec d'autres sessions (des lectures `buyer_*` d'un autre onglet sont tombées dans une fenêtre) ; lire le détail avant de conclure, faire deux passes, et donner les comptes à ±1.
 
+- 09/11 · M147 A · `.env.e2e.local` a des lignes indentées : une lecture par `grep '^E2E_…='`
+  ne trouve rien, et l'attente de `/api/version` a tourné dix minutes sur la page de protection de
+  Vercel. Lire les clés en retirant les espaces de tête (`sed -nE 's/^[[:space:]]*CLE=//p'`).
+- 09/11 · M147 A · Le parcours a échoué quatre fois de suite, à quatre endroits différents, tous
+  réseau (`ERR_NETWORK_IO_SUSPENDED`, une connexion à 20 s, deux pages Concurrents dont l'événement
+  `load` n'arrivait pas en 45 s) ; puis 60 requêtes sans lenteur, les pages mesurées entre 0,9 et
+  1,7 s, et le parcours vert en 2,9 min. Avant de nommer un aléa après plusieurs échecs, mesurer
+  le réseau du poste et la page en cause.
+
 ## La démo et les tests
 
 - 05/11 · M129 · Une recherche des nouveaux venus par point : des rendus faits À LA MAIN sur le
@@ -427,6 +436,18 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   git ne réinclut pas après un `':!docs'` : `valide.md` fait deux `git log` et garde le plus récent.
   Un test unitaire lisait la liste des tests SQL dans `ci.yml` : il lit `sql.yml`.
 
+- 09/11 · M147 A · `npm test` en local sans les variables de `.env.local` : sept fichiers échouent
+  au chargement (« Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL »), Vitest ne
+  lisant pas `.env.local`. Lancer `set -a; . ./.env.local; set +a` d'abord ; la CI les a.
+- 09/11 · M147 A · Un sélecteur e2e par le seul type (`input[type="url"]`) casse dès qu'un champ
+  du même type s'ajoute à la page (le lien « Vivre ici » d'Academia sur Bien vendeur) : viser le
+  champ par son nom ou son libellé.
+- 09/11 · M147 A · Le client factice (`fake-supabase.ts`) répond selon la DERNIÈRE table appelée :
+  deux lectures lancées ensemble (`Promise.all`) reçoivent la même réponse. Une requête qui en fait
+  deux se teste en les faisant l'une après l'autre.
+- 09/11 · M147 A · Un fichier `'use server'` n'exporte que des fonctions asynchrones : un texte
+  partagé avec l'écran (le message « lien illisible ») vit dans un module à part (`services/`).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -475,6 +496,15 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   `storage ls -r`, puis on relit le dossier vide. Le comptage suit les clés étrangères depuis
   `projects` (lues dans `pg_constraint`), plus ce qui se rattache par une clé texte (« Vivre ici »,
   biens écartés, sélections).
+
+- 09/11 · M147 A · Lire les droits du navigateur sur une table : `has_table_privilege('authenticated',
+  'public.x', 'UPDATE')`. `information_schema.role_table_grants` revient VIDE pour le rôle de la CLI
+  en lecture seule (`supabase_read_only_user`) : il ne montre que les droits dont ce rôle est
+  bénéficiaire ou accordant. Une lecture vide n'est pas « aucun droit » ; un témoin (une table aux
+  droits connus) le dit.
+- 09/11 · M147 A · Jean-Guy a resserré la contrainte d'un lien avant l'application : `[^\s]+`
+  laissait passer « ? », « # » et un « / » de plus ; le jeton seul (`[A-Za-z0-9._~-]+`). Une règle
+  sur une adresse web se juge sur ce qu'elle laisse passer, pas seulement sur ce qu'elle refuse.
 
 ## Les rendus
 
