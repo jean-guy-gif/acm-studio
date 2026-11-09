@@ -175,16 +175,35 @@ describe('« Confirmer la visite » : le lien Academia, sur preuve', () => {
     expect(result.ok && result.message).not.toContain('myacademia');
   });
 
-  it('une lecture en échec n’est jamais « pas de lien » : rien n’est écrit, l’écran le dit', async () => {
+  it('le lien illisible ne bloque pas la visite : l’écran le dit, rien n’est écrit, puis « sans le lien »', async () => {
     const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
     const { reportServerError } = await import('@/lib/app-errors/report-server-error');
+    state.projectLink = 'https://app.myacademia.ai/l/abc';
     state.readFails = true;
     expect(await confirmVisit(VISIT, tomorrow(), '10:30')).toEqual({
       ok: false,
-      error: 'L’action n’a pas abouti. Réessayez.',
+      error:
+        'Le lien « Vivre ici » du bien n’a pas pu être lu. Réessayez, ou préparez le message sans lui.',
+      livingHereUnread: true,
     });
     expect(service.writes()).toEqual([]);
     expect(reportServerError).toHaveBeenCalled();
+    // « Préparer le message sans le lien » : la lecture n'est pas refaite, le message part sans lui.
+    service.reset();
+    const without = await confirmVisit(VISIT, tomorrow(), '10:30', true);
+    expect(without.ok).toBe(true);
+    expect(without.ok && without.message).toContain('Votre sélection : https://x.test/dossier/abc');
+    expect(without.ok && without.message).not.toContain('Vivre ici');
+    expect(
+      service.calls.some((call) => call.method === 'from' && call.args[0] === 'projects'),
+    ).toBe(false);
+    expect(service.writes()).toEqual(['update buyer_visit_requests']);
+    // « Réessayer » : la lecture revenue, le lien est dans le message.
+    state.readFails = false;
+    const retried = await confirmVisit(VISIT, tomorrow(), '10:30');
+    expect(retried.ok && retried.message).toContain(
+      'Vivre ici, autour du bien : https://app.myacademia.ai/l/abc',
+    );
   });
 });
 

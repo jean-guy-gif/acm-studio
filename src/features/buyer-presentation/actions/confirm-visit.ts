@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
+import { LIVING_HERE_UNREAD } from '@/features/buyer-presentation/services/confirm-visit-texts';
 import { visitMoment } from '@/features/buyer-presentation/services/visit-moment';
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
 import { toSelectionItem } from '@/features/ideal-properties/services/ideal-selection';
@@ -41,16 +42,20 @@ async function liveVisit(visitId: unknown) {
 
 export type ConfirmVisitResult =
   | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
-  | { ok: false; error: string };
+  // `livingHereUnread` : le lien « Vivre ici » du mandat n'a pas pu être lu ; rien n'est écrit, le
+  // conseiller choisit « Réessayer » ou « Préparer le message sans le lien ».
+  | { ok: false; error: string; livingHereUnread?: true };
 
 // Mission 142 (décision de Jean-Guy, 07/11) — « Confirmer la visite » : le jour et l'heure gardés
 // sur la visite ; un message dans la langue de l'acquéreur, avec un lien neuf vers sa sélection.
 // Mission 147 (partie A) — et le lien client « Vivre ici » d'Academia du bien, s'il est collé sur
-// son mandat signé ; sinon, la sélection seule. L'outil n'envoie rien.
+// son mandat signé ; sinon, la sélection seule. Le lien illisible : le conseiller choisit de
+// réessayer ou de préparer le message sans lui (`withoutLivingHere`). L'outil n'envoie rien.
 export async function confirmVisit(
   visitId: unknown,
   rawDay: unknown,
   rawTime: unknown,
+  withoutLivingHere: unknown = false,
 ): Promise<ConfirmVisitResult> {
   const context = await liveVisit(visitId);
   if (!context) return { ok: false, error: FAILED };
@@ -71,10 +76,11 @@ export async function confirmVisit(
   const presented =
     (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
   let livingHereUrl: string | null = null;
-  if (item.source === 'project') {
+  if (item.source === 'project' && withoutLivingHere !== true) {
     const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
-    // Jamais un message sans le lien parce qu'il n'a pas pu être lu (M98).
-    if (!read.ok) return { ok: false, error: FAILED };
+    // Jamais un message sans le lien EN SILENCE parce qu'il n'a pas pu être lu (M98) : l'échec est
+    // au journal, le conseiller le lit et choisit ; la visite n'est pas bloquée (Jean-Guy, 09/11).
+    if (!read.ok) return { ok: false, error: LIVING_HERE_UNREAD, livingHereUnread: true };
     livingHereUrl = read.links.get(item.reference) ?? null;
   }
   // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un

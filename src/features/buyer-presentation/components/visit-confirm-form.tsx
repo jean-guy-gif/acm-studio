@@ -12,6 +12,10 @@ import {
   inputBase,
 } from '@/components/ui/styles';
 import { confirmVisit } from '@/features/buyer-presentation/actions/confirm-visit';
+import {
+  LIVING_HERE_RETRY,
+  LIVING_HERE_SKIP,
+} from '@/features/buyer-presentation/services/confirm-visit-texts';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 
 const LOST = 'Connexion perdue — réessayez.';
@@ -33,16 +37,23 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
     subject: string;
   } | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  // Mission 147 (partie A) — le lien « Vivre ici » du mandat n'a pas pu être lu : le conseiller
+  // choisit de réessayer ou de préparer le message sans lui.
+  const [livingHereUnread, setLivingHereUnread] = useState(false);
 
-  const confirm = () =>
+  const confirm = (withoutLivingHere = false) =>
     startTransition(async () => {
       setError(null);
-      const result = await confirmVisit(visitId, day, time).catch(() => ({
-        ok: false as const,
-        error: LOST,
-      }));
+      setLivingHereUnread(false);
+      const result: Awaited<ReturnType<typeof confirmVisit>> = await confirmVisit(
+        visitId,
+        day,
+        time,
+        withoutLivingHere,
+      ).catch(() => ({ ok: false as const, error: LOST }));
       if (!result.ok) {
         setError(result.error);
+        setLivingHereUnread(result.livingHereUnread === true);
         return;
       }
       setPrepared(result);
@@ -80,7 +91,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           type="button"
           className={btnPrimary}
           disabled={pending}
-          onClick={confirm}
+          onClick={() => confirm()}
           data-testid="visit-confirm-prepare"
         >
           Préparer le message
@@ -140,9 +151,31 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className={errorText}>
+        <p role="alert" className={errorText} data-testid="visit-confirm-error">
           {error}
         </p>
+      ) : null}
+      {livingHereUnread ? (
+        <div className="flex flex-wrap gap-2" data-testid="visit-confirm-living-here-unread">
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={pending}
+            onClick={() => confirm()}
+            data-testid="visit-confirm-retry"
+          >
+            {LIVING_HERE_RETRY}
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={pending}
+            onClick={() => confirm(true)}
+            data-testid="visit-confirm-without-link"
+          >
+            {LIVING_HERE_SKIP}
+          </button>
+        </div>
       ) : null}
     </div>
   );
