@@ -11,7 +11,9 @@ import type {
 //   • prêt → « Préparer le dossier », lien « Marquer remis » (confrère : « Marquer contacté ») ;
 //   • remis → « RDV obtenu » (confrère : « Collaboration obtenue », lien « Refusée ») ;
 //   • rendez-vous → « Mandat rentré » ;
-//   • « à vérifier » : ses pastilles « Vendu par » / « Exclusivité » sont son étape (M83).
+//   • « à vérifier » : ses pastilles « Vendu par » / « Exclusivité » sont son étape (M83) ; prête,
+//     « Marquer remis » en lien, et les deux versions du dossier dans « … » : quand ACM ne sait
+//     pas, le conseiller choisit (M84).
 
 export type CardMove = { move: ProspectingMove; label: string };
 
@@ -27,6 +29,8 @@ export type CardStep = {
   link: CardMove | null;
   menu: {
     address: 'confirm' | 'correct' | null;
+    // « à vérifier » et prête : préparer le dossier propriétaire ou confrère (M84).
+    prepareVersions: boolean;
     decline: boolean;
     undo: boolean;
     oppose: boolean;
@@ -55,7 +59,13 @@ export function prospectingCardStep(input: {
     return {
       main: null,
       link: null,
-      menu: { address: null, decline: false, undo: false, oppose: false },
+      menu: {
+        address: null,
+        prepareVersions: false,
+        decline: false,
+        undo: false,
+        oppose: false,
+      },
     };
   }
   const colleague = step === 'colleague';
@@ -64,6 +74,7 @@ export function prospectingCardStep(input: {
   if (status === 'to_confirm' || status === 'ready') {
     if (step === 'check') {
       main = { kind: 'check' };
+      if (status === 'ready') link = { move: 'handed', label: 'Marquer remis' };
     } else if (colleague) {
       // Le dossier au confrère n'attend pas l'adresse (M84, M98).
       main = { kind: 'prepare' };
@@ -95,6 +106,7 @@ export function prospectingCardStep(input: {
           : input.addressConfirmed
             ? 'correct'
             : 'confirm',
+      prepareVersions: step === 'check' && status === 'ready',
       decline: DECLINABLE.includes(status),
       undo:
         UNDOABLE.includes(status) ||
