@@ -56,7 +56,7 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   const now = new Date();
   // Mission 135 — « Ce mois-ci » se compte sur toutes les fiches de l'agence, la recherche par nom
   // n'y change rien.
-  const [progress, month, loopProposals, relaunch] = profile
+  const [progress, month, loopProposals, relaunch, followUps] = profile
     ? await Promise.all([
         getBuyersProgress(
           supabase,
@@ -73,8 +73,17 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
         getBuyerLoopProposals(profile.agency_id, new Date()),
         // Mission 146 (partie B) — la relance d'une sélection sans réponse : une échéance du tri.
         getRelaunchFacts(supabase, profile.agency_id, buyers),
+        // La réponse du vendeur à une offre, tant que le conseiller ne l'a pas traitée (M138).
+        supabase
+          .from('buyer_offer_follow_ups')
+          .select('document_id')
+          .eq('agency_id', profile.agency_id),
       ])
-    : [new Map(), null, null, null];
+    : [new Map(), null, null, null, null];
+  // Une lecture en échec ne fait remonter aucune fiche (M98).
+  const followedOffers = followUps?.error
+    ? null
+    : new Set((followUps?.data ?? []).map((row) => row.document_id));
 
   const today = parisDay(now);
   const lastAnswers = month?.lastAnswers ?? new Map();
@@ -85,7 +94,11 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
       const readiness = buyerReadiness(buyer, facts, now);
       const relaunchFacts = relaunch?.failed ? undefined : relaunch?.facts.get(buyer.id);
       const input = {
-        sale: saleInProgress(facts, buyer.status),
+        sale:
+          saleInProgress(facts, buyer.status) ||
+          (facts.latestOffer?.decision != null &&
+            followedOffers != null &&
+            !followedOffers.has(facts.latestOffer.documentId)),
         relaunchDueOn: relaunchFacts ? (relaunchDue(relaunchFacts, now)?.dueOn ?? null) : null,
         recontactOn: readiness.state === 'recontact' ? readiness.recontactOn : null,
         since: facts.unread ? null : next.since,
@@ -118,6 +131,7 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
               href: next.primary.href,
             },
         late: facts.unread ? null : urgencyLabel(urgency.due, next.title),
+        overdue: !facts.unread && (urgency.due?.lateDays ?? 0) > 0,
       };
       return { ...input, urgency, row };
     })

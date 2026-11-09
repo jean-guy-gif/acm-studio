@@ -9,7 +9,8 @@ import { lateLabel } from '@/features/meeting-conclusion/services/suivi-step-lab
 // tête »). Pur.
 
 export type BuyerUrgencyInput = {
-  // La vente tient : une offre acceptée, l'acquéreur « Sous offre » (`saleInProgress`).
+  // La vente tient (une offre acceptée, l'acquéreur « Sous offre », `saleInProgress`), ou la
+  // réponse du vendeur à son offre attend encore le conseiller (M138).
   sale: boolean;
   // Le jour (Paris) où la relance de sa sélection est due (`relaunchDue`), s'il y en a une.
   relaunchDueOn: string | null;
