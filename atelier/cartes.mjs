@@ -215,7 +215,18 @@ export async function lireEssai(dossier, branche) {
     branche
       ? commande(
           'gh',
-          ['run', 'list', '--branch', branche, '-L', '1', '--json', 'headSha,status,conclusion'],
+          [
+            'run',
+            'list',
+            '--branch',
+            branche,
+            '--workflow',
+            'ci.yml',
+            '-L',
+            '1',
+            '--json',
+            'headSha,status,conclusion',
+          ],
           { cwd: dossier, delai: 30_000 },
         )
           .then(({ stdout }) => lireCi(stdout))

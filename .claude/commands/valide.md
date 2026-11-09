@@ -9,17 +9,35 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
 
 1. Retrouve la branche `mission-$ARGUMENTS-*` et vérifie qu'elle est poussée. En cas de doute,
    relance `npm run typecheck`, `npm run lint` et `npm test` dessus.
-2. Vérifie la CI du dernier commit poussé de la branche :
-   `gh run list --branch <branche> -L 1 --json headSha,status,conclusion,databaseId`. Le `headSha`
-   doit être le dernier commit de la branche, la course terminée, et chaque tâche (`checks`, `sql`)
-   en succès (`gh run view <id> --json jobs`). Course en cours : attends-la (`gh run watch`).
-   CI rouge ou absente : **arrête-toi**, dis quelle tâche échoue et pourquoi — pas de fusion.
-   Exception (décision de Jean-Guy, 29/10) : une CI rouge pour une **cause extérieure** (registre
-   d'images, réseau — « toomanyrequests », image introuvable, délai dépassé) ne bloque pas une
-   mission **sans migration** : dis-la, et continue. Une mission avec migration attend la CI verte.
-   Si toutes les étapes de chaque tâche (`checks`, `sql`) sont vertes, la CI est verte, même si
-   GitHub n'a pas encore clos la course (décision de Jean-Guy, 04/11) : lis les étapes par
-   `gh api repos/:owner/:repo/actions/runs/<id>/jobs`.
+2. Vérifie la CI de la branche. Deux workflows (décision de Jean-Guy, 09/11) : `CI` (`ci.yml`,
+   la tâche `checks`) et `CI SQL` (`sql.yml`, la tâche `sql`). Aucun ne part quand un commit ne
+   touche que `docs/`, `missions/` ou des `.md` (sauf `docs/DEMO.md` et `docs/extension-store.md`,
+   que lisent les tests) ; `CI SQL` ne part que si `supabase/` ou `sql.yml` changent.
+   - **Le commit qui compte**, pour `CI` : le plus récent de
+     `git log -1 --format=%H main..<branche> -- . ':!docs' ':!missions' ':!*.md'` et de
+     `git log -1 --format=%H main..<branche> -- docs/DEMO.md docs/extension-store.md` ; pour
+     `CI SQL` : `git log -1 --format=%H main..<branche> -- supabase .github/workflows/sql.yml`.
+   - **La course** :
+     `gh run list --branch <branche> --workflow ci.yml -L 1 --json headSha,status,conclusion,databaseId`
+     (puis `--workflow sql.yml`) ; son `headSha` est ce commit ou un commit plus récent de la
+     branche (`git merge-base --is-ancestor <commit> <headSha>`), la course terminée, sa tâche en
+     succès (`gh run view <id> --json jobs`). Course en cours : attends-la (`gh run watch`).
+   - **Sans changement dans `supabase/` depuis `main`, l'absence de `CI SQL` ne bloque pas** :
+     dis-le en une ligne (« pas de changement de la base : CI SQL non requise ») ; la course
+     hebdomadaire de `main` en est le filet. Avec un changement dans `supabase/`, `CI SQL` est
+     exigée comme `CI`.
+   - CI rouge ou absente quand elle est exigée : **arrête-toi**, dis quelle tâche échoue et
+     pourquoi — pas de fusion. Exception (décision de Jean-Guy, 29/10) : une CI rouge pour une
+     **cause extérieure** (registre d'images, réseau — « toomanyrequests », image introuvable, délai
+     dépassé) ne bloque pas une mission **sans migration** : dis-la, et continue. Une mission avec
+     migration attend la CI verte.
+   - Si toutes les étapes d'une tâche sont vertes, la tâche est verte, même si GitHub n'a pas
+     encore clos la course (décision de Jean-Guy, 04/11) : lis les étapes par
+     `gh api repos/:owner/:repo/actions/runs/<id>/jobs`.
+   - **Le filet** : lis aussi les courses hebdomadaires de `main`
+     (`gh run list --branch main --event schedule -L 2 --json workflowName,conclusion,createdAt`).
+     Rouge : dis-le avant de fusionner (le défaut est déjà dans `main`, pas forcément dans la
+     mission) ; à elle seule, elle ne bloque pas la fusion.
 3. Si la mission contient une migration : lance `npx --yes supabase@3.0.0 migration list --remote` et dis-moi si
    elle est appliquée. Si elle ne l'est pas, **arrête-toi** : on l'applique ensemble (règle
    « Migrations » de CLAUDE.md).
