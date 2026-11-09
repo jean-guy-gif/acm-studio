@@ -44,8 +44,10 @@ describe('carte de Prospection à deux origines', () => {
     expect(letterAt).toBeGreaterThan(fileAt);
     const outline = btnSecondary.split(' ')[0];
     const tagOf = (at: number) => html.slice(html.lastIndexOf('<a ', at), at);
-    expect(tagOf(fileAt)).toContain(outline);
-    expect(tagOf(letterAt)).toContain(outline);
+    // La même classe, entière (relecteur) : contour et petite taille.
+    const classOf = (at: number) => /class="([^"]*)"/.exec(tagOf(at))?.[1];
+    expect(classOf(fileAt)).toContain(outline);
+    expect(classOf(fileAt)).toBe(classOf(letterAt));
     expect(html).not.toContain('btn-filled');
     expect(tagOf(letterAt)).toContain('/acquereurs/courrier/o1');
   });

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { demoCredentials, goViaAccountMenu, login } from './support';
+import { demoCredentials, expectOneFilled, goViaAccountMenu, login } from './support';
 
 // Mission 142 — « Vivre ici », sur l'URL d'essai, avec le compte de l'agence de démonstration
 // (aucun appel aux sources publiques : les fiches de la démo sont figées, M114). La visite demandée
@@ -50,6 +50,12 @@ test('Vivre ici : la fiche sur Visites, la confirmation de visite, et le lien de
       .filter({ hasText: 'Antibes' })
       .first();
     await expect(line).toBeVisible();
+    // Mission 146 (partie B, I10) — une annonce dont l'exclusivité est inconnue : sa prochaine
+    // étape est d'écrire, « À qui écrire ? » ; « Vivre ici » et « Confirmer la visite » en liens.
+    await expect(line.getByTestId('visit-actions')).toHaveAttribute('data-step', 'write');
+    await expect(line.getByTestId('visit-step')).toContainText('À qui écrire ?');
+    await expect(line.getByTestId('visit-track')).not.toContainText('Bon de visite');
+    await expectOneFilled(page, 'Visites');
     const advisor = line.getByTestId('living-here-advisor');
     await advisor.locator('summary').click();
     await expect(advisor.getByTestId('living-here-from')).toContainText(

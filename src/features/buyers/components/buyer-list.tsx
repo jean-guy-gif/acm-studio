@@ -26,6 +26,8 @@ export type BuyerListRow = {
   // null : l'avancement n'a pas pu être lu (M98).
   next: { title: string; since: string | null; label: string; href: string } | null;
   late: string | null;
+  // Vrai seulement quand l'échéance est passée : « aujourd'hui » n'est pas un retard.
+  overdue: boolean;
 };
 
 export type BuyerListView = 'mine' | 'agency';
@@ -196,7 +198,11 @@ export function BuyerList({
                         <>
                           {' · '}
                           <span
-                            className="font-semibold text-orange-700 stage:text-orange-300"
+                            className={
+                              row.overdue
+                                ? 'font-semibold text-orange-700 stage:text-orange-300'
+                                : 'font-semibold text-zinc-700 stage:text-white/80'
+                            }
                             data-testid="buyer-row-late"
                           >
                             {row.late}

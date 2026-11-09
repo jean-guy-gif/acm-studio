@@ -2014,6 +2014,15 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
   await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(/Bonjour Famille Keller,/);
   await expect(page.getByTestId('visits-done')).toContainText('Offre envisagée');
+  // Mission 146 (partie B) — la visite faite « Offre envisagée » : son étape est l'offre d'achat,
+  // ses messages en lien ; toujours aucun bouton plein en dehors du panneau ouvert.
+  const offerVisit = page
+    .getByTestId('visits-done')
+    .getByTestId('visit-line')
+    .filter({ has: page.getByTestId('visit-message-buyer') });
+  await expect(offerVisit.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
+  await expect(offerVisit.getByTestId('visit-offer-open')).toHaveText('Offre d’achat');
+  await expectOneFilled(page, 'Visites — visite faite');
 
   // Mission 122 (partie B) — la présentation terminée, le même lien devient « Ce que nous avons vu
   // ensemble » : ses réponses du rendez-vous, le conseiller, « Télécharger en PDF », sans

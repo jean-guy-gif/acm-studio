@@ -137,7 +137,14 @@ export async function expectOneFilled(page: Page, screen: string): Promise<void>
       .filter((element) => {
         const box = element.getBoundingClientRect();
         const style = getComputedStyle(element);
-        return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
+        // Mission 146 (partie B) — le contenu d'un <details> fermé garde une taille dans Chromium
+        // (content-visibility) : le navigateur dit lui-même s'il est visible.
+        return (
+          box.width > 0 &&
+          box.height > 0 &&
+          style.visibility !== 'hidden' &&
+          element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true })
+        );
       })
       .map((element) => (element.textContent ?? '').trim()),
   );

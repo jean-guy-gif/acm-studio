@@ -149,6 +149,7 @@ export function ProspectingCardActions({
               competitorId={competitorId}
               step={step}
               addressConfirmed={addressConfirmed}
+              compact
             />
           )}
           {buyerLetterHref ? (
@@ -214,6 +215,15 @@ export function ProspectingCardActions({
           startTyping={correcting}
           onDone={() => setAddressOpen(false)}
         />
+      ) : null}
+      {addressOpen ? (
+        <button
+          type="button"
+          className={`${link} self-start text-xs hover:underline`}
+          onClick={() => setAddressOpen(false)}
+        >
+          Fermer
+        </button>
       ) : null}
       {opposing ? (
         <ConfirmDialog
