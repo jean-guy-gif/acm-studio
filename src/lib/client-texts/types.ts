@@ -325,7 +325,7 @@ export type BuyerTexts = {
       refused: (property: string) => string[];
       subject: string;
     };
-    // Mission 142 — « Confirmer la visite » : le jour, l'heure, et le lien vers « Vivre ici ».
+    // Mission 142 — « Confirmer la visite » : le jour, l'heure, et le lien vers sa sélection.
     visitConfirm: {
       // Mission 147 — le lien client « Vivre ici » d'Academia du bien, s'il est collé sur le mandat.
       lines: (

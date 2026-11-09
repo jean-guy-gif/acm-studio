@@ -22,6 +22,7 @@ const files = (dir: string): string[] =>
 
 const SELLER_SIDE = [
   join('features', 'live-seller'),
+  join('features', 'meeting-conclusion'),
   join('features', 'seller-presentation'),
   join('features', 'seller-synthesis'),
   join('features', 'market-update'),

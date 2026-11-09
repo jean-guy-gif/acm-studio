@@ -467,42 +467,52 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   </span>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-1">
-                {saleVoucher ? (
-                  <Link
-                    href={`/acquereurs/${buyer.id}/bon-de-visite/${saleVoucher.documentId}`}
-                    className={`${link} text-sm`}
-                  >
-                    Bon de visite signé
-                  </Link>
-                ) : null}
-                <Link
-                  href={`/acquereurs/${buyer.id}/offre/${sale.documentId}`}
-                  className={`${link} text-sm`}
-                  data-testid="buyer-sale-offer"
-                >
-                  Offre d’achat signée
-                </Link>
-              </div>
-              {/* Mission 147 (partie A) — le dossier d'adresse et « Vivre ici » d'Academia, sur
-                  l'adresse du mandat de l'offre (planche M147-3). */}
-              {saleSeller && sale.projectId ? (
-                <AcademiaLinks
-                  variant="links"
-                  showAddress={false}
-                  addressLink={academiaLinkView({
-                    target: 'address',
-                    address: saleSeller.address,
-                    demo: saleDemo,
-                  })}
-                  livingLink={academiaLinkView({
-                    target: 'living',
-                    address: saleSeller.address,
-                    demo: saleDemo,
-                  })}
-                  missingHref={`/builder/${sale.projectId}/property#champ-address`}
-                />
-              ) : null}
+              {/* Mission 147 (partie A) — le dossier d'adresse et « Vivre ici » d'Academia, à la
+                  suite du bon et de l'offre, sur l'adresse du mandat de l'offre (planche M147-3). */}
+              <AcademiaLinks
+                variant="links"
+                unread={!saleSeller}
+                leading={
+                  <>
+                    {saleVoucher ? (
+                      <Link
+                        href={`/acquereurs/${buyer.id}/bon-de-visite/${saleVoucher.documentId}`}
+                        className={`${link} text-sm`}
+                      >
+                        Bon de visite signé
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/acquereurs/${buyer.id}/offre/${sale.documentId}`}
+                      className={`${link} text-sm`}
+                      data-testid="buyer-sale-offer"
+                    >
+                      Offre d’achat signée
+                    </Link>
+                  </>
+                }
+                addressLink={
+                  saleSeller
+                    ? academiaLinkView({
+                        target: 'address',
+                        address: saleSeller.address,
+                        demo: saleDemo,
+                      })
+                    : null
+                }
+                livingLink={
+                  saleSeller
+                    ? academiaLinkView({
+                        target: 'living',
+                        address: saleSeller.address,
+                        demo: saleDemo,
+                      })
+                    : null
+                }
+                missingHref={
+                  sale.projectId ? `/builder/${sale.projectId}/property#champ-address` : '#la-vente'
+                }
+              />
             </section>
           ) : null}
 

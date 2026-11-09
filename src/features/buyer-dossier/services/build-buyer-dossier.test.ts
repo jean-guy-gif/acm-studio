@@ -438,6 +438,22 @@ describe('le lien « Vivre ici » d’Academia', () => {
     ).toEqual([]);
   });
 
+  it('le titre piège (M107) et une adresse glissés dans l’entrée n’en sortent pas', () => {
+    const spiked = {
+      itemId: 'i1',
+      url: 'https://app.myacademia.ai/l/abc',
+      title: 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas',
+      address: '12 rue des Lilas, 06250 Mougins',
+    } as { itemId: string; url: string };
+    const dossier = withLinks([spiked]);
+    expect(dossier.academiaLinks).toEqual([
+      { itemId: 'i1', url: 'https://app.myacademia.ai/l/abc' },
+    ]);
+    const payload = JSON.stringify(dossier);
+    expect(payload).not.toContain('Agence Dupont');
+    expect(payload).not.toContain('rue des Lilas');
+  });
+
   it('le PDF du dossier ne le montre pas', () => {
     const dossier = withLinks([{ itemId: 'i1', url: 'https://app.myacademia.ai/l/abc' }]);
     const pdf = renderToStaticMarkup(createElement(BuyerDossierDocument, { dossier }));

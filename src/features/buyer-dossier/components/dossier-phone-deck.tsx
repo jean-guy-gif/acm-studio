@@ -365,7 +365,7 @@ export function DossierPhoneDeck({
   advisorName: string | null;
   advisorPhone: string | null;
   advisorEmail?: string | null;
-  // Mission 142 — « Vivre ici » des biens qu'il va visiter, dans sa langue.
+  // Mission 147 (partie A) — le lien « Vivre ici » d'Academia de chaque mandat signé de sa sélection.
   academiaLinks?: DossierAcademiaLink[];
 }) {
   const router = useRouter();

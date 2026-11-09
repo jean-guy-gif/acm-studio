@@ -77,9 +77,10 @@ export function academiaLinkView(input: {
   return { href: base, copy: input.address };
 }
 
-// Le lien client « Vivre ici » collé sur le mandat : seulement https://app.myacademia.ai/l/<jeton>, le
-// jeton seulement (aujourd'hui « identifiant.signature »), aucun autre site, 500 caractères au plus (décision de Jean-Guy, 09/11). La même règle que la contrainte
-// de la base (migration `vivre_ici_academia`, un test compare les deux).
+// Le lien client « Vivre ici » collé sur le mandat : seulement https://app.myacademia.ai/l/<jeton>,
+// le jeton seulement (aujourd'hui « identifiant.signature »), aucun autre site, 500 caractères au
+// plus (décision de Jean-Guy, 09/11). La même règle que la contrainte de la base (migration
+// `vivre_ici_academia`, un test compare les deux).
 export const ACADEMIA_LIVING_HERE_PATTERN = /^https:\/\/app\.myacademia\.ai\/l\/[A-Za-z0-9._~-]+$/;
 export const ACADEMIA_LIVING_HERE_MAX = 500;
 export const ACADEMIA_LIVING_HERE_ERROR =

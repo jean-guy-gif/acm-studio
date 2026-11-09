@@ -18,7 +18,7 @@ import { buildVCard } from '@/features/contact-card/services/vcard';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
 import type { Database } from '@/lib/supabase/database.types';
 import type { DossierAcademiaLink } from '@/features/buyer-dossier/types';
-import { academiaLivingHereUrl } from '@/lib/academia';
+import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
 
 type Client = SupabaseClient<Database>;
 
@@ -139,8 +139,8 @@ export async function loadBuyerDossier(
     [advisor.data?.first_name, advisor.data?.last_name].filter(Boolean).join(' ').trim() || null;
   const logoPath = brand?.logo_light_path ?? null;
 
-  // Mission 147 (partie A) — le lien client « Vivre ici » d'Academia de chaque bien de l'agence de
-  // sa sélection, dès la sélection (décision de Jean-Guy, 09/11) ; cadré sur l'agence.
+  // Mission 147 (partie A) — le lien client « Vivre ici » d'Academia de chaque mandat signé de sa
+  // sélection, dès la sélection (décision de Jean-Guy, 09/11) ; cadré sur l'agence.
   const academiaLinks = await dossierAcademiaLinks(supabase, agencyId, selection.items);
 
   return buildBuyerDossier({
@@ -201,19 +201,15 @@ async function dossierAcademiaLinks(
   items: { id: string; source: string; reference: string }[],
 ): Promise<DossierAcademiaLink[]> {
   const own = items.filter((item) => item.source === 'project');
-  if (own.length === 0) return [];
-  const { data } = await supabase
-    .from('projects')
-    .select('id, academia_living_here_url')
-    .eq('agency_id', agencyId)
-    .neq('status', 'archived')
-    .in(
-      'id',
-      own.map((item) => item.reference),
-    );
-  const urls = new Map((data ?? []).map((row) => [row.id, row.academia_living_here_url]));
+  const read = await readMandateAcademiaLinks(
+    supabase,
+    agencyId,
+    own.map((item) => item.reference),
+  );
+  // Une lecture en échec est au journal ; la page de l'acquéreur s'ouvre quand même, sans le lien.
+  if (!read.ok) return [];
   return own.flatMap((item) => {
-    const url = academiaLivingHereUrl(urls.get(item.reference));
+    const url = read.links.get(item.reference);
     return url ? [{ itemId: item.id, url }] : [];
   });
 }

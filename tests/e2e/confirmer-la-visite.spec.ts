@@ -87,6 +87,7 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
     await expect(sales).toHaveAttribute('href', ACADEMIA);
     await expect(page.getByTestId('real-sales-line')).toHaveCount(0);
     await expect(page.getByTestId('real-sales-missing')).toHaveCount(0);
+    await expectOneFilled(page, 'Avant le rendez-vous');
   });
 
   try {
@@ -120,11 +121,17 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
       await expect(sale.getByTestId('academia-address')).toHaveText('Dossier d’adresse ↗');
       await expect(sale.getByTestId('academia-living')).toHaveText('Vivre ici ↗');
       await expect(sale.getByTestId('academia-address')).toHaveAttribute('href', ACADEMIA);
+      await expect(sale).toContainText('S’ouvre sur la présentation d’Academia.');
+      await expectOneFilled(page, 'Fiche acquéreur (la vente)');
     });
 
     await test.step('Le lien des Keller, sur un téléphone : « Vivre ici » sous le mandat', async () => {
       await page.goto(`${kellerPath}/dossier`);
-      await page.getByRole('button', { name: /Créer un lien pour l’acquéreur/ }).click();
+      // « Créer un nouveau lien » si les Keller en ont déjà un (M122 B).
+      await page
+        .getByRole('button', { name: /Créer un (lien pour l’acquéreur|nouveau lien)/ })
+        .first()
+        .click();
       const link = (await page.getByTestId('dossier-link').innerText()).trim();
       const bypass = process.env.E2E_VERCEL_BYPASS;
       const phone = await page

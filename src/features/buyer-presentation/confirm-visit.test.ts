@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   visit: null as Record<string, unknown> | null,
   item: null as Record<string, unknown> | null,
   projectLink: null as string | null,
+  signed: true,
+  readFails: false,
 }));
 
 function lastTable(calls: FakeCall[]): string {
@@ -27,7 +29,11 @@ const service = fakeSupabase((calls): FakeResponse => {
     case 'buyer_selection_items':
       return { data: state.item };
     case 'projects':
-      return { data: { academia_living_here_url: state.projectLink } };
+      return state.readFails
+        ? { error: { message: 'lecture impossible' } }
+        : { data: [{ id: 'p1', academia_living_here_url: state.projectLink }] };
+    case 'project_meeting_conclusions':
+      return { data: state.signed ? [{ project_id: 'p1' }] : [] };
     default:
       return {};
   }
@@ -37,6 +43,9 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
+vi.mock('@/lib/app-errors/report-server-error', () => ({
+  reportServerError: vi.fn(async () => {}),
+}));
 vi.mock('@/features/ideal-properties/services/ideal-selection', () => ({
   toSelectionItem: (row: unknown) => row,
 }));
@@ -83,6 +92,8 @@ beforeEach(() => {
   state.visit = liveVisit;
   state.item = mandateItem;
   state.projectLink = null;
+  state.signed = true;
+  state.readFails = false;
 });
 
 describe('« Confirmer la visite »', () => {
@@ -152,6 +163,28 @@ describe('« Confirmer la visite »', () => {
     expect(
       service.calls.some((call) => call.method === 'from' && call.args[0] === 'projects'),
     ).toBe(false);
+  });
+});
+
+describe('« Confirmer la visite » : le lien Academia, sur preuve', () => {
+  it('un mandat qui n’est pas signé (un vendeur à relancer) : la sélection seule', async () => {
+    const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
+    state.projectLink = 'https://app.myacademia.ai/l/abc';
+    state.signed = false;
+    const result = await confirmVisit(VISIT, tomorrow(), '10:30');
+    expect(result.ok && result.message).not.toContain('myacademia');
+  });
+
+  it('une lecture en échec n’est jamais « pas de lien » : rien n’est écrit, l’écran le dit', async () => {
+    const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
+    const { reportServerError } = await import('@/lib/app-errors/report-server-error');
+    state.readFails = true;
+    expect(await confirmVisit(VISIT, tomorrow(), '10:30')).toEqual({
+      ok: false,
+      error: 'L’action n’a pas abouti. Réessayez.',
+    });
+    expect(service.writes()).toEqual([]);
+    expect(reportServerError).toHaveBeenCalled();
   });
 });
 

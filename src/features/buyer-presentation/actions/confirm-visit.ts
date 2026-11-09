@@ -3,12 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
 import { visitMoment } from '@/features/buyer-presentation/services/visit-moment';
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
 import { toSelectionItem } from '@/features/ideal-properties/services/ideal-selection';
-import { academiaLivingHereUrl } from '@/lib/academia';
 import { getProfile } from '@/lib/auth/get-profile';
 import { spokenLanguage } from '@/lib/client-language';
 import { clientTexts, textLanguage } from '@/lib/client-texts';
@@ -46,7 +46,7 @@ export type ConfirmVisitResult =
 // Mission 142 (décision de Jean-Guy, 07/11) — « Confirmer la visite » : le jour et l'heure gardés
 // sur la visite ; un message dans la langue de l'acquéreur, avec un lien neuf vers sa sélection.
 // Mission 147 (partie A) — et le lien client « Vivre ici » d'Academia du bien, s'il est collé sur
-// le mandat (un bien de l'agence seulement) ; sinon, la sélection seule. L'outil n'envoie rien.
+// son mandat signé ; sinon, la sélection seule. L'outil n'envoie rien.
 export async function confirmVisit(
   visitId: unknown,
   rawDay: unknown,
@@ -70,10 +70,13 @@ export async function confirmVisit(
     return { ok: false, error: 'Ce bien n’est plus dans sa sélection.' };
   const presented =
     (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
-  const livingHereUrl =
-    item.source === 'project'
-      ? await academiaLinkOf(admin, context.profile.agency_id, item.reference)
-      : null;
+  let livingHereUrl: string | null = null;
+  if (item.source === 'project') {
+    const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
+    // Jamais un message sans le lien parce qu'il n'a pas pu être lu (M98).
+    if (!read.ok) return { ok: false, error: FAILED };
+    livingHereUrl = read.links.get(item.reference) ?? null;
+  }
   // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un
   // lien en échec ne laisse rien d'écrit.
   const link = await createDossierLink(context.visit.buyer_id, false, item.selection_id);
@@ -109,20 +112,4 @@ export async function confirmVisit(
     email: context.buyer.email,
     subject: t.visitConfirm.subject,
   };
-}
-
-// Le lien client « Vivre ici » collé sur le mandat (dossier de l'agence, non archivé), relu.
-async function academiaLinkOf(
-  admin: ReturnType<typeof createServiceRoleClient>,
-  agencyId: string,
-  projectId: string,
-): Promise<string | null> {
-  const { data } = await admin
-    .from('projects')
-    .select('academia_living_here_url')
-    .eq('id', projectId)
-    .eq('agency_id', agencyId)
-    .neq('status', 'archived')
-    .maybeSingle();
-  return academiaLivingHereUrl(data?.academia_living_here_url);
 }

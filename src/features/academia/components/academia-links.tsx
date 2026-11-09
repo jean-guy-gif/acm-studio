@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { btnSecondary, hintText, link as linkStyle } from '@/components/ui/styles';
 import type { AcademiaLink } from '@/lib/academia';
@@ -14,6 +14,18 @@ import type { AcademiaLink } from '@/lib/academia';
 type CopyState = 'idle' | 'copied' | 'failed';
 
 const COPIED_FOR_MS = 6000;
+
+type Clipboard = { writeText: (text: string) => Promise<void> } | undefined;
+
+// La copie de l'adresse : « copiée », ou « échouée » (pas de presse-papiers, ou refusé), pour que
+// l'écran montre l'adresse à copier soi-même. Pure, testée sans navigateur.
+export function copyAddress(text: string, clipboard: Clipboard): Promise<'copied' | 'failed'> {
+  if (!clipboard?.writeText) return Promise.resolve('failed');
+  return clipboard.writeText(text).then(
+    () => 'copied' as const,
+    () => 'failed' as const,
+  );
+}
 
 function useCopyOnOpen() {
   const [state, setState] = useState<CopyState>('idle');
@@ -31,14 +43,7 @@ function useCopyOnOpen() {
       if (timer.current) clearTimeout(timer.current);
       if (next === 'copied') timer.current = setTimeout(() => setState('idle'), COPIED_FOR_MS);
     };
-    if (!navigator.clipboard?.writeText) {
-      done('failed');
-      return;
-    }
-    navigator.clipboard.writeText(text).then(
-      () => done('copied'),
-      () => done('failed'),
-    );
+    void copyAddress(text, navigator.clipboard).then(done);
   };
   return { state, copy };
 }
@@ -68,36 +73,46 @@ function CopyMessage({ state, address }: { state: CopyState; address: string | n
 
 export function MissingAddress({ href }: { href: string }) {
   return (
-    <p className={hintText} data-testid="academia-missing-address">
-      <Link href={href} className={linkStyle}>
-        Ajoutez l’adresse du bien
-      </Link>
-    </p>
+    <Link href={href} className={`${linkStyle} text-sm`} data-testid="academia-missing-address">
+      Ajoutez l’adresse du bien
+    </Link>
   );
 }
 
 // Les deux liens, « Dossier d'adresse ↗ » et « Vivre ici ↗ », en contour (planche M147-1) ou en
-// liens (« La vente », planche M147-3).
+// liens, à la suite d'autres liens sur la même ligne (`leading` : « La vente », planche M147-3).
 export function AcademiaLinks({
   addressLink,
   livingLink,
   missingHref,
   variant = 'buttons',
-  showAddress = true,
+  leading = null,
+  unread = false,
 }: {
   addressLink: AcademiaLink | null;
   livingLink: AcademiaLink | null;
   missingHref: string;
   variant?: 'buttons' | 'links';
-  showAddress?: boolean;
+  leading?: ReactNode;
+  // L'adresse n'a pas pu être lue : ni lien, ni « Ajoutez l'adresse du bien », qui serait faux (M98).
+  unread?: boolean;
 }) {
   const { state, copy } = useCopyOnOpen();
-  if (!addressLink || !livingLink) return <MissingAddress href={missingHref} />;
+  const row = 'flex flex-wrap items-center gap-x-5 gap-y-2';
+  if (unread || !addressLink || !livingLink) {
+    return (
+      <div className={row} data-testid="academia-links">
+        {leading}
+        {unread ? null : <MissingAddress href={missingHref} />}
+      </div>
+    );
+  }
   const copied = addressLink.copy ?? livingLink.copy;
   const className = variant === 'buttons' ? `${btnSecondary} text-sm` : `${linkStyle} text-sm`;
   return (
     <div className="flex flex-col gap-2" data-testid="academia-links">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className={row}>
+        {leading}
         <a
           href={addressLink.href}
           target="_blank"
@@ -120,10 +135,10 @@ export function AcademiaLinks({
         </a>
       </div>
       <CopyMessage state={state} address={copied} />
-      {showAddress && state === 'idle' ? (
+      {state === 'idle' ? (
         copied ? (
           <p className="text-xs text-zinc-500 stage:text-white/60">
-            Adresse copiée en un toucher :{' '}
+            {variant === 'buttons' ? 'Adresse copiée en un toucher :' : 'Adresse du bien :'}{' '}
             <span className="rounded-md bg-zinc-100 px-2 py-0.5 font-medium text-zinc-800 stage:bg-white/10 stage:text-white">
               {copied}
             </span>

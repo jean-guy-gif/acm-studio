@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { ACADEMIA_LIVING_HERE_ERROR, academiaLivingHereUrl } from '@/lib/academia';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -42,6 +43,7 @@ export async function setAcademiaLivingHereLink(
     .eq('agency_id', profile.agency_id)
     .select('id');
   if (error || !written || written.length !== 1) {
+    if (error) await reportServerError('academia:set-link', error);
     return { ok: false, error: 'Le lien n’a pas pu être enregistré. Réessayez.' };
   }
   revalidatePath(`/builder/${projectId}/property`);
