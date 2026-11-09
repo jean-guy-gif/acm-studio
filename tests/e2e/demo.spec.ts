@@ -629,8 +629,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       expect(text).toMatch(/votre bien face aux? (\d+ )?concurrents? dont vous avez vu le prix/);
       expect(text).not.toMatch(/\d+ biens comparés/);
       // Jean-Guy, 09/11 — le titre de la case, et le prix des concurrents sans dire quand.
-      expect(text).toContain('Votre prix face aux concurrents');
-      expect(text).not.toMatch(/avant notre rendez-vous|Parmi les biens comparés/);
+      // Le titre de la case est en capitales (CSS) : `innerText` le rend ainsi.
+      expect(text.toLowerCase()).toContain('votre prix face aux concurrents');
+      expect(text).not.toMatch(/avant notre rendez-vous|Parmi les biens comparés/i);
       for (const bound of [FOURCHETTE.min, FOURCHETTE.max]) {
         expect(
           withoutSpaces(text),
