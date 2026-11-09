@@ -421,6 +421,11 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   Un refus de facturation se lit dans l'annotation de la course, pas dans un job rouge. Durées :
   relecteur ≈ 6 min, démo 6,0 min, suite e2e 21 sur 21 ; une remise à zéro de la démo a ramené
   « Première connexion » avec les six dossiers bien en base (aléa, noté pour la 147).
+- 09/11 · CI allégée · Deux workflows (`ci.yml`, `sql.yml`) ; un filtre de chemins GitHub se lit
+  dans l'ordre, le dernier motif qui correspond l'emporte : `'**'`, puis `'!docs/**'`, `'!**/*.md'`,
+  puis `docs/DEMO.md` et `docs/extension-store.md` réinclus, que lisent deux tests. Le pathspec de
+  git ne réinclut pas après un `':!docs'` : `valide.md` fait deux `git log` et garde le plus récent.
+  Un test unitaire lisait la liste des tests SQL dans `ci.yml` : il lit `sql.yml`.
 
 ## La base
 
