@@ -13,7 +13,6 @@ import {
   type BuyerPropertyType,
   type BuyerRow,
 } from '@/features/buyers/types';
-import { sectorPrioritiesOf } from '@/features/living-here/services/living-here-rules';
 
 const oneOf = <T extends string>(list: readonly T[], value: string | null): T | null =>
   value != null && (list as readonly string[]).includes(value) ? (value as T) : null;
@@ -66,8 +65,6 @@ export function toBuyer(row: BuyerRow): Buyer {
     worksAccepted: row.works_accepted,
     mustHave: allOf<BuyerCriterion>(BUYER_CRITERIA, row.must_have),
     dealBreakers: row.deal_breakers,
-    sectorPriorities: sectorPrioritiesOf(row.sector_priorities),
-    livingPlace: row.living_place ?? null,
   };
 }
 
@@ -76,10 +73,6 @@ export function buyerColumns(input: BuyerInput) {
   return {
     // Mission 139 — la langue, seulement quand le formulaire la donne.
     ...(input.language ? { language: input.language } : {}),
-    // Mission 142 — seulement quand le formulaire complet les donne.
-    ...(input.sectorPriorities !== undefined
-      ? { sector_priorities: input.sectorPriorities, living_place: input.livingPlace ?? null }
-      : {}),
     name: input.name,
     phone: input.phone,
     email: input.email,

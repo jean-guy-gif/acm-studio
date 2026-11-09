@@ -2987,6 +2987,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          academia_living_here_url: string | null
           advisor_id: string
           agency_id: string
           created_at: string
@@ -3009,6 +3010,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academia_living_here_url?: string | null
           advisor_id: string
           agency_id: string
           created_at?: string
@@ -3031,6 +3033,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academia_living_here_url?: string | null
           advisor_id?: string
           agency_id?: string
           created_at?: string

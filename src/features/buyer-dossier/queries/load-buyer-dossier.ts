@@ -17,13 +17,8 @@ import { buildQrCode } from '@/features/contact-card/services/qr-code';
 import { buildVCard } from '@/features/contact-card/services/vcard';
 import { signPropertyPhotos } from '@/features/subject-property-photos/services/property-photo-storage';
 import type { Database } from '@/lib/supabase/database.types';
-import type { DossierLivingHere } from '@/features/buyer-dossier/types';
-import {
-  propertyKeysForItems,
-  readLivingHereSheets,
-} from '@/features/living-here/queries/read-sheets';
-import { readTrip, sectorPrioritiesOf } from '@/features/living-here/services/living-here-rules';
-import { publicSheet } from '@/features/living-here/services/sheet-schema';
+import type { DossierAcademiaLink } from '@/features/buyer-dossier/types';
+import { academiaLivingHereUrl } from '@/lib/academia';
 
 type Client = SupabaseClient<Database>;
 
@@ -144,12 +139,12 @@ export async function loadBuyerDossier(
     [advisor.data?.first_name, advisor.data?.last_name].filter(Boolean).join(' ').trim() || null;
   const logoPath = brand?.logo_light_path ?? null;
 
-  // Mission 142 — « Vivre ici » des biens qu'il va visiter : une demande vivante, une fiche de
-  // l'agence ; par la clé de service du lien, cadré sur l'agence et la fiche.
-  const livingHere = await dossierLivingHere(supabase, agencyId, buyerRow, selection.items);
+  // Mission 147 (partie A) — le lien client « Vivre ici » d'Academia de chaque bien de l'agence de
+  // sa sélection, dès la sélection (décision de Jean-Guy, 09/11) ; cadré sur l'agence.
+  const academiaLinks = await dossierAcademiaLinks(supabase, agencyId, selection.items);
 
   return buildBuyerDossier({
-    livingHere,
+    academiaLinks,
     buyerId: buyer.id,
     selectionId: selection.id,
     selectedAt: selection.createdAt,
@@ -200,42 +195,25 @@ export async function loadBuyerDossier(
   });
 }
 
-async function dossierLivingHere(
+async function dossierAcademiaLinks(
   supabase: Client,
   agencyId: string,
-  buyerRow: { id: string; sector_priorities?: string[] | null; living_place?: string | null },
   items: { id: string; source: string; reference: string }[],
-): Promise<DossierLivingHere[]> {
-  const { data: visits } = await supabase
-    .from('buyer_visit_requests')
-    .select('buyer_selection_item_id, living_place_trip, scheduled_at')
+): Promise<DossierAcademiaLink[]> {
+  const own = items.filter((item) => item.source === 'project');
+  if (own.length === 0) return [];
+  const { data } = await supabase
+    .from('projects')
+    .select('id, academia_living_here_url')
     .eq('agency_id', agencyId)
-    .eq('buyer_id', buyerRow.id)
-    .is('cancelled_at', null)
+    .neq('status', 'archived')
     .in(
-      'buyer_selection_item_id',
-      items.map((item) => item.id),
+      'id',
+      own.map((item) => item.reference),
     );
-  const visited = items.filter((item) =>
-    (visits ?? []).some((visit) => visit.buyer_selection_item_id === item.id),
-  );
-  if (visited.length === 0) return [];
-  const { keys } = await propertyKeysForItems(supabase, agencyId, visited);
-  const { sheets } = await readLivingHereSheets(supabase, agencyId, [...keys.values()]);
-  const priorities = sectorPrioritiesOf(buyerRow.sector_priorities);
-  return visited.flatMap((item): DossierLivingHere[] => {
-    const sheet = sheets.get(keys.get(item.id) ?? '');
-    if (!sheet) return [];
-    const trip = (visits ?? []).find((visit) => visit.buyer_selection_item_id === item.id);
-    return [
-      {
-        itemId: item.id,
-        sheet: publicSheet(sheet),
-        priorities,
-        livingPlace: buyerRow.living_place ?? null,
-        livingPlaceMinutes:
-          readTrip(trip?.living_place_trip, buyerRow.living_place)?.minutes ?? null,
-      },
-    ];
+  const urls = new Map((data ?? []).map((row) => [row.id, row.academia_living_here_url]));
+  return own.flatMap((item) => {
+    const url = academiaLivingHereUrl(urls.get(item.reference));
+    return url ? [{ itemId: item.id, url }] : [];
   });
 }

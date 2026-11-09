@@ -5,21 +5,16 @@ import { z } from 'zod';
 
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
+import { visitMoment } from '@/features/buyer-presentation/services/visit-moment';
 import { propertyPhrase } from '@/features/buyers/services/loop-properties';
 import { toSelectionItem } from '@/features/ideal-properties/services/ideal-selection';
-import { buildLivingHereForItem } from '@/features/living-here/services/build-for-item';
-import { visitMoment } from '@/features/living-here/services/visit-moment';
+import { academiaLivingHereUrl } from '@/lib/academia';
+import { getProfile } from '@/lib/auth/get-profile';
 import { spokenLanguage } from '@/lib/client-language';
 import { clientTexts, textLanguage } from '@/lib/client-texts';
-import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 const FAILED = 'L’action n’a pas abouti. Réessayez.';
-const BUILD_REASONS: Record<string, string> = {
-  city: 'La commune du bien manque : « Vivre ici » ne peut pas partir de lui.',
-  commune: 'Commune du bien non reconnue : « Vivre ici » ne peut pas partir de lui.',
-  start: 'Aucun point de départ sûr pour ce bien.',
-};
 
 // La visite d'un acquéreur non archivé de l'agence, encore vivante (ni annulée).
 async function liveVisit(visitId: unknown) {
@@ -44,30 +39,14 @@ async function liveVisit(visitId: unknown) {
   return { profile, visit: data, buyer };
 }
 
-export type BuildLivingHereResult = { ok: true } | { ok: false; error: string };
-
-// Mission 142 — « Construire Vivre ici » / « Actualiser », sur Visites, en secours de la tâche de
-// fond : le même geste, refait à neuf.
-export async function buildLivingHereForVisit(visitId: unknown): Promise<BuildLivingHereResult> {
-  const context = await liveVisit(visitId);
-  if (!context) return { ok: false, error: FAILED };
-  const result = await buildLivingHereForItem({
-    agencyId: context.profile.agency_id,
-    itemId: context.visit.buyer_selection_item_id,
-    builtBy: context.profile.id,
-  });
-  if (!result.ok) return { ok: false, error: BUILD_REASONS[result.reason] ?? FAILED };
-  revalidatePath('/visites');
-  return { ok: true };
-}
-
 export type ConfirmVisitResult =
   | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
   | { ok: false; error: string };
 
 // Mission 142 (décision de Jean-Guy, 07/11) — « Confirmer la visite » : le jour et l'heure gardés
-// sur la visite ; un message dans la langue de l'acquéreur, avec un lien neuf vers sa sélection,
-// où il lit « Vivre ici ». L'outil n'envoie rien.
+// sur la visite ; un message dans la langue de l'acquéreur, avec un lien neuf vers sa sélection.
+// Mission 147 (partie A) — et le lien client « Vivre ici » d'Academia du bien, s'il est collé sur
+// le mandat (un bien de l'agence seulement) ; sinon, la sélection seule. L'outil n'envoie rien.
 export async function confirmVisit(
   visitId: unknown,
   rawDay: unknown,
@@ -91,6 +70,10 @@ export async function confirmVisit(
     return { ok: false, error: 'Ce bien n’est plus dans sa sélection.' };
   const presented =
     (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
+  const livingHereUrl =
+    item.source === 'project'
+      ? await academiaLinkOf(admin, context.profile.agency_id, item.reference)
+      : null;
   // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un
   // lien en échec ne laisse rien d'écrit.
   const link = await createDossierLink(context.visit.buyer_id, false, item.selection_id);
@@ -109,7 +92,13 @@ export async function confirmVisit(
   const signature = context.profile.first_name?.trim();
   const message = [
     t.hello(context.buyer.name),
-    ...t.visitConfirm.lines(property, moment.day(language), moment.time(language), link.url),
+    ...t.visitConfirm.lines(
+      property,
+      moment.day(language),
+      moment.time(language),
+      link.url,
+      livingHereUrl,
+    ),
     ...(signature ? [signature] : []),
   ].join('\n');
   revalidatePath('/visites');
@@ -120,4 +109,20 @@ export async function confirmVisit(
     email: context.buyer.email,
     subject: t.visitConfirm.subject,
   };
+}
+
+// Le lien client « Vivre ici » collé sur le mandat (dossier de l'agence, non archivé), relu.
+async function academiaLinkOf(
+  admin: ReturnType<typeof createServiceRoleClient>,
+  agencyId: string,
+  projectId: string,
+): Promise<string | null> {
+  const { data } = await admin
+    .from('projects')
+    .select('academia_living_here_url')
+    .eq('id', projectId)
+    .eq('agency_id', agencyId)
+    .neq('status', 'archived')
+    .maybeSingle();
+  return academiaLivingHereUrl(data?.academia_living_here_url);
 }

@@ -37,8 +37,7 @@ import { linkScreen, type LinkClosed } from '@/features/buyer-dossier/services/l
 import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-dossier/types';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
-import type { DossierLivingHere } from '@/features/buyer-dossier/types';
-import { LivingHereView } from '@/features/living-here/components/living-here-view';
+import type { DossierAcademiaLink } from '@/features/buyer-dossier/types';
 
 // Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
 const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
@@ -215,32 +214,38 @@ function AdvisorLine({
   ) : null;
 }
 
-// Mission 142 — « Vivre ici » de chaque bien qu'il va visiter, sous sa lettre et son libellé
-// neutre : sur l'écran du bien, et après sa réponse (merci, « Ce que nous avons vu ensemble »).
-function LivingHereList({ deck, entries }: { deck: BuyerDeck; entries: DossierLivingHere[] }) {
-  const language = languageOf(deck);
+// Mission 147 (partie A) — le lien client « Vivre ici » d'Academia, collé sur le mandat : sous chaque
+// bien de l'agence de sa sélection qui en a un, sur l'écran du bien et après sa réponse (merci,
+// « Ce que nous avons vu ensemble ») ; il ouvre Academia dans un nouvel onglet.
+function AcademiaLinkList({ deck, entries }: { deck: BuyerDeck; entries: DossierAcademiaLink[] }) {
+  const t = screensOf(deck);
   return (
     <>
       {entries.map((entry) => {
         const item = deck.items.find((candidate) => candidate.item.itemId === entry.itemId);
         if (!item) return null;
         return (
-          <section
+          <a
             key={entry.itemId}
-            className="flex flex-col gap-2 rounded-2xl bg-zinc-50 p-4"
+            href={entry.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-brand-soft bg-brand-soft/40 p-4"
             data-testid="dossier-living-here"
           >
-            <p className="font-title text-base font-bold text-zinc-900">
-              {item.letter} · {item.item.label}
-            </p>
-            <LivingHereView
-              sheet={entry.sheet}
-              language={language}
-              priorities={entry.priorities}
-              livingPlace={entry.livingPlace}
-              livingPlaceMinutes={entry.livingPlaceMinutes}
-            />
-          </section>
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm text-zinc-600">
+                {item.letter} · {item.item.label}
+              </span>
+              <span className="font-title text-base font-bold text-brand-deep">
+                {t.livingHereLink}
+              </span>
+              <span className="text-sm text-zinc-600">{t.livingHereLinkHint}</span>
+            </span>
+            <span aria-hidden className="text-xl text-brand-deep">
+              ↗
+            </span>
+          </a>
         );
       })}
     </>
@@ -254,14 +259,14 @@ export function SeenTogetherView({
   answers,
   availability,
   note,
-  livingHere = [],
+  academiaLinks = [],
   ...frame
 }: FrameProps & {
   deck: BuyerDeck;
   answers: ItemResponse[];
   availability: AvailabilitySlot[];
   note: string | null;
-  livingHere?: DossierLivingHere[];
+  academiaLinks?: DossierAcademiaLink[];
 }) {
   const t = screensOf(deck);
   return (
@@ -280,7 +285,7 @@ export function SeenTogetherView({
             {t.seenTogether(deck.items.length, lettersOf(deck.items, deck))}
           </p>
         )}
-        <LivingHereList deck={deck} entries={livingHere} />
+        <AcademiaLinkList deck={deck} entries={academiaLinks} />
         <AdvisorLine
           advisorName={frame.advisorName}
           advisorPhone={frame.advisorPhone}
@@ -299,14 +304,14 @@ export function ThanksView({
   answers,
   availability,
   note,
-  livingHere = [],
+  academiaLinks = [],
   ...frame
 }: FrameProps & {
   deck: BuyerDeck;
   answers: Map<string, LocalAnswer>;
   availability: AvailabilitySlot[];
   note: string | null;
-  livingHere?: DossierLivingHere[];
+  academiaLinks?: DossierAcademiaLink[];
 }) {
   const t = screensOf(deck);
   return (
@@ -321,7 +326,7 @@ export function ThanksView({
             <Recap deck={deck} answers={answers} availability={availability} />
           </>
         ) : null}
-        <LivingHereList deck={deck} entries={livingHere} />
+        <AcademiaLinkList deck={deck} entries={academiaLinks} />
         <AdvisorLine
           advisorName={frame.advisorName}
           advisorPhone={frame.advisorPhone}
@@ -346,7 +351,7 @@ export function DossierPhoneDeck({
   advisorName,
   advisorPhone,
   advisorEmail = null,
-  livingHere = [],
+  academiaLinks = [],
 }: {
   token: string;
   deck: BuyerDeck;
@@ -361,7 +366,7 @@ export function DossierPhoneDeck({
   advisorPhone: string | null;
   advisorEmail?: string | null;
   // Mission 142 — « Vivre ici » des biens qu'il va visiter, dans sa langue.
-  livingHere?: DossierLivingHere[];
+  academiaLinks?: DossierAcademiaLink[];
 }) {
   const router = useRouter();
   const t = screensOf(deck);
@@ -496,7 +501,7 @@ export function DossierPhoneDeck({
         answers={meetingAnswers}
         availability={meetingAvailability}
         note={deck.presentedAt == null ? (closed?.message ?? null) : null}
-        livingHere={livingHere}
+        academiaLinks={academiaLinks}
       />
     );
   }
@@ -510,7 +515,7 @@ export function DossierPhoneDeck({
         answers={fromServer ? toLocal(initialAnswers) : answers}
         availability={fromServer ? initialAvailability : visits.length > 0 ? availability : []}
         note={closed && !answered ? closed.message : null}
-        livingHere={livingHere}
+        academiaLinks={academiaLinks}
       />
     );
   }
@@ -606,9 +611,9 @@ export function DossierPhoneDeck({
               language={language}
             />
             <div className="mt-6">
-              <LivingHereList
+              <AcademiaLinkList
                 deck={deck}
-                entries={livingHere.filter((entry) => entry.itemId === current.item.itemId)}
+                entries={academiaLinks.filter((entry) => entry.itemId === current.item.itemId)}
               />
             </div>
           </>

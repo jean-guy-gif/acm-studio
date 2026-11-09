@@ -9,11 +9,7 @@ import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-do
 import type { VisitNextStep } from '@/features/buyer-presentation/services/visit-next-step';
 import { VisitLetterAction } from '@/features/buyer-prospecting/components/visit-letter-action';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
-import {
-  LivingHereDetails,
-  VisitConfirmForm,
-} from '@/features/living-here/components/living-here-visit-panel';
-import type { VisitLivingHere } from '@/features/living-here/queries/visit-living-here';
+import { VisitConfirmForm } from '@/features/buyer-presentation/components/visit-confirm-form';
 
 const small = 'px-3 py-1.5 text-xs';
 const linkButton = `${link} text-sm hover:underline`;
@@ -28,8 +24,9 @@ type Opened = 'confirm' | 'done' | 'messages' | null;
 
 // Mission 146 (partie B, I10, planche B1) — sur une visite : son chemin en pastilles (vert fait,
 // bleu maintenant, gris à venir, M143), UNE prochaine étape en contour (Visites n'a aucun bouton
-// plein, M120 B), le reste en liens — « Vivre ici » replié, « Confirmer la visite » ou « Changer
-// la date », « Visite faite », « Proposer une visite au vendeur ».
+// plein, M120 B), le reste en liens — « Confirmer la visite » ou « Changer la date », « Visite
+// faite », « Proposer une visite au vendeur ». Mission 147 (partie A) — « Vivre ici » d'ACM n'y est
+// plus : c'est celui d'Academia, sur le mandat.
 export function VisitActions({
   visitId,
   buyerId,
@@ -38,7 +35,6 @@ export function VisitActions({
   letterHref,
   letterState,
   colleague,
-  livingHere,
   openMessages = false,
 }: {
   visitId: string;
@@ -48,7 +44,6 @@ export function VisitActions({
   letterHref: string | null;
   letterState: VisitLetterState;
   colleague: boolean;
-  livingHere: VisitLivingHere | null;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
 }) {
@@ -205,16 +200,6 @@ export function VisitActions({
       ) : null}
 
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5" data-testid="visit-links">
-        {livingHere ? (
-          <LivingHereDetails
-            visitId={visitId}
-            sheet={livingHere.sheet}
-            sheetsFailed={livingHere.failed}
-            priorities={livingHere.priorities}
-            livingPlace={livingHere.livingPlace}
-            livingPlaceMinutes={livingHere.livingPlaceMinutes}
-          />
-        ) : null}
         {next.links.confirm ? (
           <button
             type="button"

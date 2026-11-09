@@ -176,6 +176,30 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).toContain('Télécharger en PDF');
   });
 
+  // Mission 147 (partie A) — le lien client « Vivre ici » d'Academia, sous le bien de l'agence qui
+  // en a un : il ouvre Academia dans un nouvel onglet ; sans lien, rien.
+  it('le lien « Vivre ici » d’Academia sous le bien, dans un nouvel onglet ; sans lien, rien', () => {
+    const url = 'https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d';
+    const page = render({
+      answered: true,
+      initialAnswers: [response('i1', 'visit', 'dossier')],
+      academiaLinks: [{ itemId: 'i1', url }],
+    });
+    expect(page).toContain('data-testid="dossier-living-here"');
+    expect(page).toContain(`href="${url}"`);
+    expect(page).toMatch(
+      /target="_blank"[^>]*rel="noreferrer"|rel="noreferrer"[^>]*target="_blank"/,
+    );
+    expect(page).toContain('Vivre ici');
+    expect(page).toContain('Le quartier, les écoles, les commerces');
+    const without = render({
+      answered: true,
+      initialAnswers: [response('i1', 'visit', 'dossier')],
+    });
+    expect(without).not.toContain('data-testid="dossier-living-here"');
+    expect(without).not.toContain('myacademia');
+  });
+
   it('déjà répondu sur un bien retiré depuis : le merci quand même, jamais le formulaire', () => {
     const page = render({ answered: true, initialAnswers: [] });
     expect(page).toContain('Merci, j’ai bien reçu votre réponse');
