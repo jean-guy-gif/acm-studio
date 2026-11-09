@@ -16,9 +16,9 @@ const PREPARE_LABELS: Record<BuyerLetterVersion, string> = {
   colleague: 'Préparer le dossier de collaboration au confrère',
 };
 
-// Mission 120 — sur une visite demandée (Visites, fiche), l'action qui convient à l'origine du
-// bien, et l'état du courrier relu sur sa carte de Prospection. Un mandat signé se fait visiter,
-// un vendeur à relancer se rappelle (M86) ; un concurrent ou une annonce du marché sans
+// Mission 120 — sur une visite demandée (Visites, fiche), le courrier qui convient à l'origine du
+// bien, et son état relu sur sa carte de Prospection (Mission 146 B : le mandat signé et le vendeur
+// à relancer sont des étapes de `VisitActions`) ; un concurrent ou une annonce du marché sans
 // exclusivité reçoit le courrier au propriétaire. Mission 120 B — en exclusivité, le dossier de
 // collaboration au confrère ; l'exclusivité inconnue propose les deux au même rang, et le choix
 // l'écrit sur le bien. Une liste : aucune action en bouton plein (maquette M120B-2). « Contacté »
@@ -58,19 +58,6 @@ export function VisitLetterAction({
     });
   };
 
-  if (action.kind === 'propose_visit' || action.kind === 'call_seller') {
-    return (
-      <Link
-        href={`/builder/${action.projectId}`}
-        className={`${btnSecondary} ${small} self-start`}
-        data-testid="visit-seller-action"
-      >
-        {action.kind === 'propose_visit'
-          ? 'Proposer une visite'
-          : 'Rappeler : « j’ai un acquéreur »'}
-      </Link>
-    );
-  }
   if (letterHref) {
     return (
       <div className="flex flex-wrap items-center gap-2" data-testid="visit-letter">
@@ -111,7 +98,12 @@ export function VisitLetterAction({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        {action.kind === 'choose' ? <span className={badgeNeutral}>À qui écrire ?</span> : null}
+        {action.kind === 'choose' ? (
+          <span className="text-sm text-zinc-600 stage:text-white/70">
+            <b className="text-zinc-900 stage:text-white">À qui écrire ?</b> L’annonce ne dit pas si
+            le mandat est exclusif.
+          </span>
+        ) : null}
         {versions.map((version) => (
           <button
             key={version}

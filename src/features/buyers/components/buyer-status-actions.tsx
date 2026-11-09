@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { badgeBrand, btnPrimary, btnSecondary, errorText } from '@/components/ui/styles';
+import { badgeBrand, btnSecondary, errorText } from '@/components/ui/styles';
 import { moveBuyerStatus } from '@/features/buyers/actions/buyers';
 import { buyerStatusActions, type BuyerStatusMove } from '@/features/buyers/services/buyer-status';
 import { BUYER_STATUS_LABELS, type Buyer } from '@/features/buyers/types';
@@ -35,6 +35,7 @@ export function BuyerStatusActions({ buyer }: { buyer: Buyer }) {
     });
   };
 
+  // Mission 146 (partie B) — en contour : le seul plein de la fiche est sa prochaine étape.
   return (
     <div className="flex flex-col gap-2" data-testid="buyer-status">
       <div className="flex flex-wrap items-center gap-2">
@@ -52,7 +53,7 @@ export function BuyerStatusActions({ buyer }: { buyer: Buyer }) {
             type="button"
             disabled={pending}
             onClick={() => move(action.move)}
-            className={`${action.primary ? btnPrimary : btnSecondary} px-3 py-1.5 text-xs`}
+            className={`${btnSecondary} px-3 py-1.5 text-xs`}
           >
             {action.label}
           </button>

@@ -147,6 +147,13 @@ export async function expectOneFilled(page: Page, screen: string): Promise<void>
   ).toBeLessThanOrEqual(1);
 }
 
+// Mission 146 (partie B) — une carte (Prospection) range ses gestes secondaires dans « … » :
+// l'ouvrir, puis choisir l'entrée.
+export async function chooseInCardMenu(card: Locator, label: string): Promise<void> {
+  await card.getByRole('button', { name: 'Plus d’actions' }).click();
+  await card.getByRole('menuitem', { name: label, exact: true }).click();
+}
+
 export async function goViaAccountMenu(page: Page, label: string): Promise<void> {
   const menu = await openAccountMenu(page);
   await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();

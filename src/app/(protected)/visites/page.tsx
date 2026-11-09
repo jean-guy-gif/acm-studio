@@ -3,22 +3,18 @@ import Link from 'next/link';
 
 import {
   badgeBrand,
-  btnSecondary,
   card,
   emptyState,
   kickerLabel,
   pageSubtitle,
   pageTitle,
 } from '@/components/ui/styles';
-import { getOtherAnswers } from '@/features/buyer-deck/queries/get-other-answers';
-import { ITEM_ANSWER_REPORT, NO_REASON_LABELS } from '@/features/buyer-deck/types';
 import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
 import {
   getVisitLines,
   type VisitLine,
 } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
-import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { getVisitVouchers } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { getVisitOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { loadVisitLivingHere } from '@/features/living-here/queries/visit-living-here';
@@ -32,7 +28,10 @@ export const metadata: Metadata = { title: 'Visites — ACM Studio' };
 
 // Mission 119 — la page Visites du mode Acquéreur : les demandes à planifier, puis les visites
 // faites avec leur retour et leur issue, par acquéreur. Mission 120 — chaque visite demandée
-// porte l'action qui convient à l'origine du bien, et l'état de son courrier.
+// porte l'action qui convient à l'origine du bien, et l'état de son courrier. Mission 146 (partie B,
+// I10) — chaque visite dit son chemin et UNE prochaine étape ; le bon de visite est l'étape d'une
+// visite d'un bien de l'agence (plus en tête du groupe) ; « Ses autres réponses » sont sur la fiche
+// de chaque acquéreur (« Ce qu'il a répondu », M122).
 function groupByBuyer(
   lines: VisitLine[],
 ): { buyerId: string; buyerName: string; lines: VisitLine[] }[] {
@@ -57,10 +56,11 @@ export default async function VisitsPage({
   searchParams: Promise<{ messages?: string }>;
 }) {
   const { messages: openMessages } = await searchParams;
-  const [allLines, others] = await Promise.all([getVisitLines(), getOtherAnswers()]);
+  const allLines = await getVisitLines();
   const lines = allLines.filter((line) => !line.buyerArchived);
-  // Mission 120 — l'action de chaque visite et l'état de son courrier.
-  const letters = await getVisitLetters(lines.filter((line) => line.visitedAt == null));
+  // Mission 120 — l'action de chaque visite et l'état de son courrier. Mission 146 (partie B) —
+  // visites faites comprises : leur chemin dit si le bien est à l'agence (le bon de visite).
+  const letters = await getVisitLetters(lines);
   // Mission 137 — le bon de visite signé de chaque visite.
   const supabase = await createClient();
   // Mission 138 — et la réponse du vendeur à l'offre née de chaque visite.
@@ -113,22 +113,12 @@ export default async function VisitsPage({
             </h2>
             {groupByBuyer(section.items).map((group) => (
               <div key={group.buyerId} className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Link
-                    href={`/acquereurs/${group.buyerId}`}
-                    className="font-semibold text-zinc-800 hover:underline stage:text-white"
-                  >
-                    {group.buyerName}
-                  </Link>
-                  {/* Mission 137 — un bon pour les biens visités le même jour par cet acquéreur. */}
-                  <Link
-                    href={`/acquereurs/${group.buyerId}/bon-de-visite`}
-                    className={btnSecondary}
-                    data-testid="visit-voucher-open"
-                  >
-                    Bon de visite
-                  </Link>
-                </div>
+                <Link
+                  href={`/acquereurs/${group.buyerId}`}
+                  className="self-start font-semibold text-zinc-800 hover:underline stage:text-white"
+                >
+                  {group.buyerName}
+                </Link>
                 <ul className="flex flex-col gap-2">
                   {group.lines.map((line) => (
                     <VisitRow
@@ -147,38 +137,6 @@ export default async function VisitsPage({
           </section>
         ) : null,
       )}
-      {/* Mission 122 — « Peut-être » et « Pas pour moi » se lisent ici aussi. */}
-      {others.length > 0 ? (
-        <section className={`${card} flex flex-col gap-3 p-5`} data-testid="visits-other-answers">
-          <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-            Ses autres réponses <span className={badgeBrand}>{others.length}</span>
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {others.map((answer) => (
-              <li
-                key={answer.id}
-                data-testid="other-answer"
-                data-answer={answer.answer}
-                className="flex flex-col gap-0.5 rounded-xl border border-zinc-200 px-4 py-2.5 stage:border-white/10"
-              >
-                <span className="font-medium text-zinc-900 stage:text-white">
-                  <Link href={`/acquereurs/${answer.buyerId}`} className="hover:underline">
-                    {answer.buyerName}
-                  </Link>{' '}
-                  · {answer.itemLabel}
-                </span>
-                <span className="text-sm text-zinc-700 stage:text-white/80">
-                  {ITEM_ANSWER_REPORT[answer.answer]}
-                  {answer.reasons.length > 0
-                    ? ` : ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
-                    : ''}{' '}
-                  · le {buyerDateLabel(answer.answeredAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }

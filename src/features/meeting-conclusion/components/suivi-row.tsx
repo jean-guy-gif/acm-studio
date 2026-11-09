@@ -299,7 +299,7 @@ export function SuiviRow({
   // Mission 146 — un panneau qui porte son bouton plein (le Point marché dû, la relance)
   // devient le seul plein de l'écran ; refermé, la première carte due le reprend.
   const lead = useSuiviLead();
-  const { claim, release } = lead;
+  const { claim, release, settle } = lead;
   const panelLeads = panel === 'relance' || (panel === 'point' && pointDue);
   useEffect(() => {
     const id = dossier.project.id;
@@ -657,6 +657,8 @@ export function SuiviRow({
             onDone={(nextOn) => {
               setRelancedOn(nextOn);
               setPanel(null);
+              // Mission 146 (partie B) — la carte n'est plus due : la suivante reprend le plein.
+              settle(dossier.project.id);
             }}
           />
         ) : null}

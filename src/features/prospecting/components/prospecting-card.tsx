@@ -1,23 +1,14 @@
 import { competitorFacts } from '@/features/prospecting/services/competitor-facts';
 import Link from 'next/link';
 
-import {
-  badgeBrand,
-  badgeNeutral,
-  badgeRejected,
-  badgeSelected,
-  btnPrimary,
-  btnSecondary,
-} from '@/components/ui/styles';
+import { badgeBrand, badgeNeutral, badgeRejected, badgeSelected } from '@/components/ui/styles';
 import { buyerLetterHref } from '@/features/buyer-prospecting/services/buyer-letter-href';
 import type { BuyerOriginLabel } from '@/features/buyer-prospecting/types';
 import { GONE_SINCE_MEETING_LABEL } from '@/features/competitor-refresh/services/price-refresh';
-import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import { CompetitorMandateLine } from '@/features/competitor-mandate/components/competitor-mandate-line';
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
-import { PrepareFileLinks } from '@/features/prospecting-file/components/prepare-file-links';
-import { OppositionButton } from '@/features/prospecting/components/opposition-button';
-import { ProspectingStatusActions } from '@/features/prospecting/components/prospecting-status-actions';
+import { ProspectingCardActions } from '@/features/prospecting/components/prospecting-card-actions';
+import { prospectingCardStep } from '@/features/prospecting/services/card-step';
 import { cardCopy } from '@/features/prospecting/services/group-prospecting';
 import { OPPOSED_MESSAGE, oppositionBadge } from '@/features/prospecting/services/opposition';
 import { followUpDate, shortDate } from '@/features/prospecting/services/prospecting-status';
@@ -64,6 +55,13 @@ export function ProspectingCard({
   const facts = competitorFacts(row);
   const addressConfirmed = row.confirmed && row.address != null;
   const followUp = shared.handedAt ? shortDate(followUpDate(shared.handedAt)) : null;
+  const plan = prospectingCardStep({
+    status,
+    step,
+    opposed,
+    addressConfirmed,
+    refusedCollaboration: shared.collaborationDeclinedAt != null,
+  });
 
   return (
     <li
@@ -164,72 +162,25 @@ export function ProspectingCard({
       ) : (
         <>
           {/* ACM ne sait pas à qui s'adresser : le conseiller le dit ici (M83) — sur une carte
-              acquéreur aussi (décision du 28/10). */}
-          {step === 'check' && (status === 'to_confirm' || status === 'ready') ? (
+              acquéreur aussi (décision du 28/10). Mission 146 (partie B) — c'est son étape. */}
+          {plan.main?.kind === 'check' ? (
             <CompetitorMandateLine competitor={row.mandate} buyerProspectId={buyerProspectId} />
           ) : null}
 
-          {/* Tant que l'adresse n'est pas confirmée : la confirmer, la localiser ou la saisir
-              (M84). Mission 90 — et ensuite, « Corriger l'adresse » reste toujours disponible,
-              même quand elle vient du Localisateur : un courrier ne part pas à une adresse
-              fausse. */}
-          {status !== 'declined' && status !== 'collaboration' ? (
-            <ConfirmAddressActions
-              projectId={seller.projectId}
-              competitorId={row.id}
-              listingUrl={row.listingUrl}
-              canAccept={row.canAcceptAddress}
-              confirmed={addressConfirmed}
-              buyerProspectId={buyerProspectId}
-            />
-          ) : null}
-
-          {/* Prêt à envoyer — et, dès avant, la version confrère, qui n'attend pas l'adresse
-              (M84). */}
-          <div className="flex flex-wrap items-center gap-2">
-            {!buyerProspectId &&
-            (status === 'ready' || (status === 'to_confirm' && step === 'colleague')) ? (
-              <PrepareFileLinks
-                projectId={seller.projectId}
-                competitorId={row.id}
-                step={step}
-                addressConfirmed={addressConfirmed}
-                primary={status === 'ready'}
-              />
-            ) : null}
-            {/* Mission 120 B (reprise R4) — le courrier d'une recherche acquéreur est une action
-                au même rang que « Préparer le dossier », aussi sur une carte à deux origines ;
-                en exclusivité, le dossier au confrère, qui n'attend pas l'adresse (M98). */}
-            {buyerOrigins[0] &&
-            (status === 'ready' || (status === 'to_confirm' && step === 'colleague')) ? (
-              <Link
-                href={buyerLetterHref(buyerOrigins[0].originId)}
-                target="_blank"
-                className={status === 'ready' ? `${btnPrimary} px-3 py-1.5 text-xs` : btnSecondary}
-                data-testid="buyer-letter-link"
-              >
-                {step === 'colleague'
-                  ? 'Préparer le dossier de collaboration'
-                  : 'Préparer le courrier'}
-              </Link>
-            ) : null}
-            <ProspectingStatusActions
-              projectId={seller.projectId}
-              competitorId={row.id}
-              status={status}
-              step={step}
-              primary={status === 'handed' || status === 'meeting'}
-              refusedCollaboration={shared.collaborationDeclinedAt != null}
-              buyerProspectId={buyerProspectId}
-            />
-          </div>
-
-          {/* Mission 107 — « Ne plus solliciter » sur toute carte : sans adresse confirmée, il
-              porte sur ses annonces (M102). */}
-          <OppositionButton
-            projectId={card.seller.projectId}
-            competitorId={shared.id}
+          {/* Mission 146 (partie B, C9) — une étape en contour, au plus un lien, et « … » :
+              Corriger l'adresse (M90) · Pas intéressé · Annuler · Ne plus solliciter… (M107). */}
+          <ProspectingCardActions
+            plan={plan}
+            projectId={seller.projectId}
+            competitorId={row.id}
+            oppositionProjectId={card.seller.projectId}
+            oppositionCompetitorId={shared.id}
             buyerProspectId={buyerProspectId}
+            step={step}
+            listingUrl={row.listingUrl}
+            canAcceptAddress={row.canAcceptAddress}
+            addressConfirmed={addressConfirmed}
+            buyerLetterHref={buyerOrigins[0] ? buyerLetterHref(buyerOrigins[0].originId) : null}
           />
         </>
       )}
