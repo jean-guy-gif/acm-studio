@@ -1,12 +1,8 @@
 import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
-import { AddressDossierBlock } from '@/features/address-dossier/components/address-dossier-block';
-import {
-  addressDossierView,
-  getAddressDossier,
-} from '@/features/address-dossier/queries/get-address-dossier';
-import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
+import { AcademiaCard } from '@/features/academia/components/academia-card';
+import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
 import { getSubjectPropertyDiagnostics } from '@/features/subject-property-diagnostics/services/get-subject-property-diagnostics';
@@ -29,12 +25,8 @@ import {
   demoSubjectListingChoices,
 } from '@/features/demo/services/demo-choices';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { academiaLinkView, academiaLivingHereUrl, propertyAddressLine } from '@/lib/academia';
 import { getProfile } from '@/lib/auth/get-profile';
-
-// Mission 141 — « Construire le dossier d'adresse » lit six sources publiques, dont les fichiers
-// de ventes des communes voisines (mesuré le 07/11 : 3 s à Paris 15e, 6 s à Vence, 13 s à
-// Boulogne-Billancourt) ; la limite de Vercel, gardée large.
-export const maxDuration = 300;
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
@@ -48,17 +40,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     notFound();
   }
 
-  const [property, diagnostics, condominium, photos, saved, loadedDossier] = await Promise.all([
+  const [property, diagnostics, condominium, photos, conclusion] = await Promise.all([
     getSubjectProperty(projectId),
     getSubjectPropertyDiagnostics(projectId),
     getSubjectPropertyCondominium(projectId),
     getPropertyPhotos(projectId),
-    getSavedPricePositioning(projectId),
-    getAddressDossier(projectId),
+    getConclusion(projectId),
   ]);
-  // Mission 141 — le dossier d'adresse, sur l'adresse ENREGISTRÉE du bien (jamais la saisie en
-  // cours) ; l'analyse de valeur enregistrée seulement (décision du 07/11).
-  const addressDossier = addressDossierView(loadedDossier, property);
   // Mission 114 — l'agence de démonstration : « Importer une annonce » lit le jeu de données (même
   // signature, action liée par la page), les annonces des scénarios sont proposées d'avance, et la
   // fiche PDF de démonstration est à un clic. Décidé sur le repère de l'agence, lu en base.
@@ -72,6 +60,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const importFromHtml = importComparableHtml.bind(null, projectId);
   const recoverPhoto = recoverPropertyPhoto.bind(null, projectId);
   const depositBrochure = depositBrochurePhotos.bind(null, projectId);
+  // Mission 147 (partie A) — le dossier d'adresse et « Vivre ici » d'Academia, sur l'adresse
+  // ENREGISTRÉE du bien (jamais la saisie en cours) ; dans la démo, la présentation d'Academia.
+  const address = propertyAddressLine({
+    address: property?.address,
+    postalCode: property?.postal_code,
+    city: property?.city,
+  });
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -102,12 +97,12 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         demoBrochures={demo ? demoBrochureChoices() : null}
       />
 
-      <AddressDossierBlock
+      <AcademiaCard
         projectId={projectId}
-        view={addressDossier}
-        advisorAnalysis={saved?.advisorComparativeMarketPrice ?? null}
-        surface={property?.surface_area ?? null}
-        energyRating={property?.energy_rating ?? null}
+        addressLink={academiaLinkView({ target: 'address', address, demo })}
+        livingLink={academiaLinkView({ target: 'living', address, demo })}
+        savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
+        signed={conclusion?.outcome === 'signed'}
       />
     </div>
   );

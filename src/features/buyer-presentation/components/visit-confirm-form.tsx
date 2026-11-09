@@ -10,108 +10,20 @@ import {
   fieldLabel,
   hintText,
   inputBase,
-  link,
 } from '@/components/ui/styles';
+import { confirmVisit } from '@/features/buyer-presentation/actions/confirm-visit';
 import {
-  buildLivingHereForVisit,
-  confirmVisit,
-} from '@/features/living-here/actions/living-here-actions';
-import { LivingHereView } from '@/features/living-here/components/living-here-view';
-import type { LivingHereSheet, SectorPriority } from '@/features/living-here/types';
+  LIVING_HERE_RETRY,
+  LIVING_HERE_SKIP,
+} from '@/features/buyer-presentation/services/confirm-visit-texts';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 
 const LOST = 'Connexion perdue — réessayez.';
-const linkButton = `${link} text-sm hover:underline disabled:cursor-not-allowed disabled:opacity-50`;
-
-// Mission 142 — sur une visite, pour le conseiller : « Vivre ici » en français (construit en tâche
-// de fond, « Construire » ou « Actualiser » en secours). Mission 146 (partie B) — replié, dans les
-// liens de la carte ; il s'ouvre sur toute la largeur.
-export function LivingHereDetails({
-  visitId,
-  sheet,
-  sheetsFailed,
-  priorities,
-  livingPlace,
-  livingPlaceMinutes,
-}: {
-  visitId: string;
-  sheet: LivingHereSheet | null;
-  sheetsFailed: boolean;
-  priorities: readonly SectorPriority[];
-  livingPlace: string | null;
-  livingPlaceMinutes: number | null;
-}) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  const build = () =>
-    startTransition(async () => {
-      setError(null);
-      const result = await buildLivingHereForVisit(visitId).catch(() => ({
-        ok: false as const,
-        error: LOST,
-      }));
-      if (!result.ok) setError(result.error);
-      else router.refresh();
-    });
-
-  const buildButton = (
-    <button
-      type="button"
-      className={`${linkButton} self-start`}
-      disabled={pending}
-      onClick={build}
-      data-testid="living-here-build"
-    >
-      {pending ? 'Lecture des sources…' : sheet ? 'Actualiser Vivre ici' : 'Construire Vivre ici'}
-    </button>
-  );
-
-  return (
-    <div data-testid="living-here-panel" className="contents">
-      {sheetsFailed ? (
-        <p role="alert" className={`${errorText} basis-full`}>
-          « Vivre ici » n’a pas pu être lu : rechargez la page.
-        </p>
-      ) : sheet ? (
-        <details className="group open:basis-full" data-testid="living-here-advisor">
-          <summary className={`${linkButton} cursor-pointer list-none`}>
-            <span className="group-open:hidden">▸</span>
-            <span className="hidden group-open:inline">▾</span> Vivre ici
-          </summary>
-          <div className="mt-2 flex flex-col gap-3 rounded-xl bg-zinc-50 px-3 py-3 stage:bg-white/5">
-            <p className={hintText}>Ce que l’acquéreur lira, dans sa langue.</p>
-            <LivingHereView
-              sheet={sheet}
-              language="fr"
-              priorities={priorities}
-              livingPlace={livingPlace}
-              livingPlaceMinutes={livingPlaceMinutes}
-            />
-            {buildButton}
-          </div>
-        </details>
-      ) : (
-        <span className="flex flex-wrap items-baseline gap-2">
-          <span className={hintText} data-testid="living-here-pending">
-            « Vivre ici » se prépare après la demande de visite.
-          </span>
-          {buildButton}
-        </span>
-      )}
-      {error ? (
-        <p role="alert" className={`${errorText} basis-full`}>
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
 
 // Mission 142 — « Confirmer la visite » : le jour et l'heure, un message dans la langue de
-// l'acquéreur avec un lien vers sa sélection, où il lit « Vivre ici ». L'outil n'envoie rien.
-// Mission 146 (partie B) — l'étape ou le lien de la carte l'ouvre (`VisitActions`).
+// l'acquéreur avec un lien vers sa sélection. L'outil n'envoie rien. Mission 146 (partie B) —
+// l'étape ou le lien de la carte l'ouvre (`VisitActions`). Mission 147 (partie A) — et le lien
+// « Vivre ici » d'Academia du bien, s'il est collé sur le mandat.
 export function VisitConfirmForm({ visitId }: { visitId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -125,16 +37,23 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
     subject: string;
   } | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  // Mission 147 (partie A) — le lien « Vivre ici » du mandat n'a pas pu être lu : le conseiller
+  // choisit de réessayer ou de préparer le message sans lui.
+  const [livingHereUnread, setLivingHereUnread] = useState(false);
 
-  const confirm = () =>
+  const confirm = (withoutLivingHere = false) =>
     startTransition(async () => {
       setError(null);
-      const result = await confirmVisit(visitId, day, time).catch(() => ({
-        ok: false as const,
-        error: LOST,
-      }));
+      setLivingHereUnread(false);
+      const result: Awaited<ReturnType<typeof confirmVisit>> = await confirmVisit(
+        visitId,
+        day,
+        time,
+        withoutLivingHere,
+      ).catch(() => ({ ok: false as const, error: LOST }));
       if (!result.ok) {
         setError(result.error);
+        setLivingHereUnread(result.livingHereUnread === true);
         return;
       }
       setPrepared(result);
@@ -172,7 +91,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           type="button"
           className={btnPrimary}
           disabled={pending}
-          onClick={confirm}
+          onClick={() => confirm()}
           data-testid="visit-confirm-prepare"
         >
           Préparer le message
@@ -221,8 +140,8 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
             ) : null}
           </div>
           <p className={hintText}>
-            Un lien neuf vers sa sélection, valable 30 jours : il y lit « Vivre ici ». L’outil
-            n’envoie rien.
+            Un lien neuf vers sa sélection, valable 30 jours, et le lien « Vivre ici » du bien s’il
+            est collé sur le mandat. L’outil n’envoie rien.
           </p>
         </div>
       ) : null}
@@ -232,9 +151,31 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className={errorText}>
+        <p role="alert" className={errorText} data-testid="visit-confirm-error">
           {error}
         </p>
+      ) : null}
+      {livingHereUnread ? (
+        <div className="flex flex-wrap gap-2" data-testid="visit-confirm-living-here-unread">
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={pending}
+            onClick={() => confirm()}
+            data-testid="visit-confirm-retry"
+          >
+            {LIVING_HERE_RETRY}
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={pending}
+            onClick={() => confirm(true)}
+            data-testid="visit-confirm-without-link"
+          >
+            {LIVING_HERE_SKIP}
+          </button>
+        </div>
       ) : null}
     </div>
   );

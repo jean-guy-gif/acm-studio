@@ -16,7 +16,6 @@ import {
 import type { VisitLetter } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { SELECTION_SOURCE_LABELS } from '@/features/ideal-properties/types';
-import type { VisitLivingHere } from '@/features/living-here/queries/visit-living-here';
 import { formatEuro, formatRelativeMoment } from '@/lib/format';
 
 // Mission 119 — une visite demandée ou faite. Mission 120 — une visite demandée porte le courrier
@@ -29,7 +28,6 @@ export function VisitRow({
   voucher = null,
   offerAnswer = null,
   openMessages = false,
-  livingHere = null,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
@@ -39,8 +37,6 @@ export function VisitRow({
   offerAnswer?: OfferAnswer | null;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
-  // Mission 142 — « Vivre ici » du bien, et ce qui compte pour l'acquéreur.
-  livingHere?: VisitLivingHere | null;
 }) {
   const done = line.visitedAt != null;
   const next = visitNextStep({
@@ -137,7 +133,6 @@ export function VisitRow({
         letterHref={letter?.letterHref ?? null}
         letterState={letter?.state ?? { kind: 'none' }}
         colleague={letter?.colleague ?? false}
-        livingHere={livingHere}
         openMessages={openMessages && line.report?.nextStep != null}
       />
     </li>

@@ -31,7 +31,6 @@ import type { Json } from '@/lib/supabase/database.types';
 import { recordAppError } from '@/lib/app-errors/record';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
-import { scheduleLivingHere } from '@/features/living-here/services/schedule-living-here';
 
 export type PlainResult = { ok: true } | { ok: false; error: string };
 export type AnswerResult = { ok: true; response: ItemResponse } | { ok: false; error: string };
@@ -252,14 +251,6 @@ export async function answerItem(
   }
   const row = data as ItemResponseRow;
   revalidate(row.buyer_id);
-  // Mission 142 — « Je veux le visiter » : sa fiche « Vivre ici », en tâche de fond.
-  if (rawAnswer === 'visit') {
-    scheduleLivingHere({
-      agencyId: profile.agency_id,
-      itemIds: [itemId as string],
-      builtBy: profile.id,
-    });
-  }
   return { ok: true, response: toItemResponse(row) };
 }
 

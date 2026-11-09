@@ -16,6 +16,8 @@ import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
 import { CompromiseActions } from '@/features/buyers/components/compromise-actions';
 import { getSaleSeller } from '@/features/buyers/queries/get-sale-seller';
+import { AcademiaLinks } from '@/features/academia/components/academia-links';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { MANDATE_TYPE_LABELS } from '@/features/meeting-conclusion/types';
 import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerStatusActions } from '@/features/buyers/components/buyer-status-actions';
@@ -54,6 +56,7 @@ import {
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
+import { academiaLinkView } from '@/lib/academia';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
 import {
   getBuyerOffers,
@@ -67,10 +70,6 @@ import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { createClient } from '@/lib/supabase/server';
-
-// Mission 142 — une demande de visite lance « Vivre ici » en tâche de fond (`after()`), dans la
-// même fonction : OpenStreetMap peut prendre jusqu'à 45 s par bien. La limite, gardée large.
-export const maxDuration = 300;
 
 export const metadata: Metadata = { title: 'Fiche acquéreur — ACM Studio' };
 
@@ -177,6 +176,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     sale?.projectId && profile
       ? await getSaleSeller(supabase, profile.agency_id, sale.projectId)
       : null;
+  // Mission 147 (partie A) — dans l'agence de démonstration, Academia s'ouvre sur sa présentation.
+  const saleDemo = saleSeller ? await isDemoAgency(profile?.agency_id) : false;
   const salePhoto = saleVisit
     ? deck?.items.find((item) => item.item.itemId === saleVisit.itemId)?.photos[0]
     : undefined;
@@ -466,23 +467,52 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   </span>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-1">
-                {saleVoucher ? (
-                  <Link
-                    href={`/acquereurs/${buyer.id}/bon-de-visite/${saleVoucher.documentId}`}
-                    className={`${link} text-sm`}
-                  >
-                    Bon de visite signé
-                  </Link>
-                ) : null}
-                <Link
-                  href={`/acquereurs/${buyer.id}/offre/${sale.documentId}`}
-                  className={`${link} text-sm`}
-                  data-testid="buyer-sale-offer"
-                >
-                  Offre d’achat signée
-                </Link>
-              </div>
+              {/* Mission 147 (partie A) — le dossier d'adresse et « Vivre ici » d'Academia, à la
+                  suite du bon et de l'offre, sur l'adresse du mandat de l'offre (planche M147-3). */}
+              <AcademiaLinks
+                variant="links"
+                unread={!saleSeller}
+                leading={
+                  <>
+                    {saleVoucher ? (
+                      <Link
+                        href={`/acquereurs/${buyer.id}/bon-de-visite/${saleVoucher.documentId}`}
+                        className={`${link} text-sm`}
+                      >
+                        Bon de visite signé
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/acquereurs/${buyer.id}/offre/${sale.documentId}`}
+                      className={`${link} text-sm`}
+                      data-testid="buyer-sale-offer"
+                    >
+                      Offre d’achat signée
+                    </Link>
+                  </>
+                }
+                addressLink={
+                  saleSeller
+                    ? academiaLinkView({
+                        target: 'address',
+                        address: saleSeller.address,
+                        demo: saleDemo,
+                      })
+                    : null
+                }
+                livingLink={
+                  saleSeller
+                    ? academiaLinkView({
+                        target: 'living',
+                        address: saleSeller.address,
+                        demo: saleDemo,
+                      })
+                    : null
+                }
+                missingHref={
+                  sale.projectId ? `/builder/${sale.projectId}/property#champ-address` : '#la-vente'
+                }
+              />
             </section>
           ) : null}
 

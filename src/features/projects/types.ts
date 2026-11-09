@@ -6,8 +6,13 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 // Mission 110 — `live_shortlist_at` (le choix des concurrents montrés au Live) n'est lu que par
 // le lancement du Live.
 // Mission 112 — de même la trace de la confirmation « devant le vendeur ».
+// Mission 147 — de même le lien client « Vivre ici » d'Academia, lu par Bien vendeur seulement.
 type OptionalColumns =
-  'search_settings' | 'live_shortlist_at' | 'live_confirmed_at' | 'live_confirmed_by';
+  | 'search_settings'
+  | 'live_shortlist_at'
+  | 'live_confirmed_at'
+  | 'live_confirmed_by'
+  | 'academia_living_here_url';
 export type Project = Omit<ProjectRow, OptionalColumns> &
   Partial<Pick<ProjectRow, OptionalColumns>>;
 export type ProjectInsert = Database['public']['Tables']['projects']['Insert'];

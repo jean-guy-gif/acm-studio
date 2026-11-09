@@ -212,7 +212,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(
         choices.getByRole('button', { name: 'Appartement 3 pièces à Antibes' }),
       ).toBeVisible();
-      const url = page.locator('input[type="url"]');
+      // Mission 147 — le champ du lien « Vivre ici » d'Academia est aussi une adresse web.
+      const url = page.locator('input[type="url"]:not(#academia-living-url)');
       await expect(url).toHaveValue(
         new RegExp(`^https://${DEMO_LISTING_HOST}/bien-vendeur/antibes$`),
       );

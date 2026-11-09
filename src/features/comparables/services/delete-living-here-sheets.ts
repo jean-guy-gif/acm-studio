@@ -3,6 +3,9 @@ import 'server-only';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
+// Mission 147 (partie A) — « Vivre ici » d'ACM n'est plus construit (c'est celui d'Academia), mais
+// ses fiches restent en base jusqu'à leur suppression, deux semaines après la production : on
+// continue de les effacer avec ce qu'elles décrivent.
 // Mission 142 — une fiche « Vivre ici » n'a pas de lien en base vers son dossier ou son concurrent
 // (sa clé est un texte, relecture du gardien-sql du 07/11) : la suppression d'un concurrent, la
 // remise à zéro de la démo et l'effacement réel l'effacent par sa clé. Une fiche d'une annonce

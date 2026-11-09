@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
 import { splitCities } from '@/features/buyers/services/buyer-criteria';
-import { SECTOR_PRIORITIES } from '@/features/living-here/types';
 import {
   BUYER_CRITERIA,
   BUYER_PROPERTY_TYPES,
@@ -43,9 +42,6 @@ export const BUYER_FORM_FIELDS = [
   'works_accepted',
   'must_have',
   'deal_breakers',
-  'sector_fields',
-  'sector_priorities',
-  'living_place',
 ] as const;
 export type BuyerFormField = (typeof BUYER_FORM_FIELDS)[number];
 
@@ -142,10 +138,6 @@ const schema = z
     elevator: triState,
     energy_rating_max: oneOf(ENERGY_RATINGS),
     works_accepted: triState,
-    // Mission 142 — seulement depuis le formulaire complet (`sector_fields`).
-    sector_fields: z.union([z.string(), z.null(), z.undefined()]),
-    sector_priorities: listOf(SECTOR_PRIORITIES),
-    living_place: trimmed(200),
     must_have: listOf(BUYER_CRITERIA),
     deal_breakers: trimmed(BUYER_TEXT_MAX),
   })
@@ -225,9 +217,6 @@ export function parseBuyerInput(raw: unknown): ParsedBuyerInput {
       worksAccepted: v.works_accepted,
       mustHave: v.must_have,
       dealBreakers: v.deal_breakers,
-      ...(v.sector_fields === '1'
-        ? { sectorPriorities: v.sector_priorities, livingPlace: v.living_place }
-        : {}),
     },
   };
 }
@@ -247,9 +236,6 @@ export function readBuyerFormData(formData: FormData): Record<string, unknown> {
     email: text('email'),
     purpose: text('purpose'),
     language: text('language'),
-    sector_fields: text('sector_fields'),
-    sector_priorities: list('sector_priorities'),
-    living_place: text('living_place'),
     timeline: text('timeline'),
     notes: text('notes'),
     property_types: list('property_types'),

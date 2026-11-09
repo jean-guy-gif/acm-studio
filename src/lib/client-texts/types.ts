@@ -115,8 +115,6 @@ export type ClientTexts = {
   live: LiveTexts;
   documents: DocumentTexts;
   buyer: BuyerTexts;
-  // Mission 142 — « Vivre ici », dans la langue de l'acquéreur.
-  livingHere: LivingHereTexts;
   // Mission 140 (décision de Jean-Guy, 07/11) — ce que le vendeur reçoit après une visite de son bien.
   sellerVisit: {
     hello: (name: string) => string;
@@ -283,6 +281,9 @@ export type BuyerTexts = {
     noAnswerYet: string;
     thanks: string;
     seenTogetherTitle: string;
+    // Mission 147 — le lien client « Vivre ici » d'Academia, sous un bien de l'agence.
+    livingHereLink: string;
+    livingHereLinkHint: string;
     download: string;
     presented: string;
     alreadyAnswered: string;
@@ -324,9 +325,16 @@ export type BuyerTexts = {
       refused: (property: string) => string[];
       subject: string;
     };
-    // Mission 142 — « Confirmer la visite » : le jour, l'heure, et le lien vers « Vivre ici ».
+    // Mission 142 — « Confirmer la visite » : le jour, l'heure, et le lien vers sa sélection.
     visitConfirm: {
-      lines: (property: string, day: string, time: string, url: string) => string[];
+      // Mission 147 — le lien client « Vivre ici » d'Academia du bien, s'il est collé sur le mandat.
+      lines: (
+        property: string,
+        day: string,
+        time: string,
+        url: string,
+        livingHereUrl: string | null,
+      ) => string[];
       subject: string;
     };
   };
@@ -837,45 +845,4 @@ export type LiveTexts = {
     durationReason: Record<MarketDurationReason, string>;
     dangerousReason: Record<DangerousReason, string>;
   };
-};
-
-// Mission 142 — « Vivre ici » : ce qui entoure un bien qu'il va visiter. Jamais une adresse.
-export type LivingHereTexts = {
-  title: string;
-  from: { address: string; district: string; commune: (commune: string) => string };
-  sections: {
-    priorities: string;
-    daily: string;
-    schools: string;
-    moves: string;
-    surroundings: string;
-  };
-  categories: Record<
-    | 'bakery'
-    | 'supermarket'
-    | 'pharmacy'
-    | 'doctor'
-    | 'nursery_school'
-    | 'primary_school'
-    | 'middle_school'
-    | 'high_school'
-    | 'transit'
-    | 'green_space',
-    string
-  >;
-  walk: (minutes: number) => string;
-  drive: (minutes: number) => string;
-  driveTo: Record<'tgv_station' | 'airport' | 'town_centre', (name: string) => string>;
-  livingPlace: (place: string, minutes: number) => string;
-  noise: string;
-  risksLine: (list: string) => string;
-  risks: Record<string, string>;
-  seismic: (zone: string) => string;
-  clay: Record<'low' | 'medium' | 'high', string>;
-  priorities: Record<'quiet' | 'schools' | 'shops_on_foot', string>;
-  verdicts: Record<'yes' | 'partly' | 'no' | 'to_check', string>;
-  nothing: string;
-  unavailable: string;
-  approx: string;
-  sources: string;
 };

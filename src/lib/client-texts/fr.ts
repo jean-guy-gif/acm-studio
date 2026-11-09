@@ -40,9 +40,6 @@ import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatNumber } from '@/lib/format';
 
-// Mission 142 — « de Mougins », « d’Antibes » : l'élision devant une voyelle ou un h.
-const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d’${name}` : `de ${name}`);
-
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
 // seule source), les phrases sont celles qui étaient écrites dans les écrans, mot pour mot.
 // Mission 148 B — « dont N vus ensemble » (M112), quand des concurrents hors Live entrent au calcul.
@@ -798,6 +795,8 @@ export const FRENCH_TEXTS: ClientTexts = {
       noAnswerYet: DOSSIER_NO_ANSWER,
       thanks: DOSSIER_THANKS,
       seenTogetherTitle: DOSSIER_SEEN_TOGETHER,
+      livingHereLink: 'Vivre ici',
+      livingHereLinkHint: 'Le quartier, les écoles, les commerces',
       download: DOSSIER_DOWNLOAD,
       presented: DOSSIER_PRESENTED,
       alreadyAnswered: DOSSIER_ALREADY_ANSWERED,
@@ -988,82 +987,15 @@ export const FRENCH_TEXTS: ClientTexts = {
         subject: 'Votre offre d’achat',
       },
       visitConfirm: {
-        lines: (property, day, time, url) => [
+        lines: (property, day, time, url, livingHereUrl) => [
           `Je vous confirme la visite de ${property} le ${day} à ${time}.`,
-          `Pour la préparer, voici ce qui l’entoure — commerces, écoles, transports : ${url}`,
+          `Votre sélection : ${url}`,
+          ...(livingHereUrl ? [`Vivre ici, autour du bien : ${livingHereUrl}`] : []),
           'À bientôt,',
         ],
         subject: 'Votre visite',
       },
     },
-  },
-  livingHere: {
-    title: 'Vivre ici',
-    from: {
-      address: 'Distances depuis le bien.',
-      district: 'Distances depuis le quartier, pas depuis le bien lui-même.',
-      commune: (commune) => `Distances depuis le centre ${ofPlace(commune)}.`,
-    },
-    sections: {
-      priorities: 'Ce qui compte pour vous',
-      daily: 'Au quotidien, à pied',
-      schools: 'Les écoles',
-      moves: 'Se déplacer',
-      surroundings: 'Le calme et l’environnement',
-    },
-    categories: {
-      bakery: 'Boulangerie',
-      supermarket: 'Supermarché',
-      pharmacy: 'Pharmacie',
-      doctor: 'Médecin',
-      nursery_school: 'École maternelle',
-      primary_school: 'École élémentaire',
-      middle_school: 'Collège',
-      high_school: 'Lycée',
-      transit: 'Arrêt de bus ou gare',
-      green_space: 'Espace vert',
-    },
-    walk: (minutes) => `${minutes} min à pied`,
-    drive: (minutes) => `${minutes} min en voiture`,
-    driveTo: {
-      tgv_station: (name) => (/TGV/.test(name) ? `Gare ${name}` : `Gare TGV ${ofPlace(name)}`),
-      airport: (name) => `Aéroport ${name}`,
-      town_centre: (name) => `Centre-ville ${ofPlace(name)}`,
-    },
-    livingPlace: (place, minutes) => `Jusqu’à ${place} : ${minutes} min en voiture`,
-    noise: 'Carte de bruit non publiée ici.',
-    risksLine: (list) => `Risques connus sur la commune : ${list}`,
-    risks: {
-      '11': 'inondation',
-      '12': 'mouvement de terrain',
-      '13': 'séisme',
-      '14': 'avalanche',
-      '16': 'feu de forêt',
-      '17': 'phénomène météorologique',
-      '18': 'radon',
-      '21': 'risque industriel',
-      '22': 'risque nucléaire',
-      '23': 'rupture de barrage',
-      '24': 'transport de marchandises dangereuses',
-      '25': 'engins de guerre',
-      '31': 'affaissement minier',
-    },
-    seismic: (zone) => `sismicité ${zone} sur 5`,
-    clay: {
-      low: 'argiles : exposition faible',
-      medium: 'argiles : exposition moyenne',
-      high: 'argiles : exposition forte',
-    },
-    priorities: {
-      quiet: 'Le calme',
-      schools: 'Des écoles proches',
-      shops_on_foot: 'Des commerces à pied',
-    },
-    verdicts: { yes: 'oui', partly: 'en partie', no: 'non', to_check: 'à vérifier à la visite' },
-    nothing: 'Rien trouvé autour.',
-    unavailable: 'La source n’a pas répondu pour l’instant.',
-    approx: 'Temps approximatifs, à vérifier sur place.',
-    sources: 'Sources : OpenStreetMap, Éducation nationale, IGN, Géorisques.',
   },
   sellerVisit: {
     hello: (name) => `Bonjour ${name},`,

@@ -5,10 +5,6 @@ import { DeckPresentation } from '@/features/buyer-deck/components/deck-presenta
 import { DeckWithPrelude } from '@/features/buyer-deck/components/deck-with-prelude';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 
-// Mission 142 — une demande de visite lance « Vivre ici » en tâche de fond (`after()`), dans la
-// même fonction : OpenStreetMap peut prendre jusqu'à 45 s par bien. La limite, gardée large.
-export const maxDuration = 300;
-
 export const metadata: Metadata = { title: 'Présentation' };
 
 // Mission 119 — la présentation de la sélection à l'acquéreur, plein cadre (M72). Mission 122 —
