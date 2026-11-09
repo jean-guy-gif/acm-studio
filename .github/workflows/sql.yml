@@ -1,0 +1,421 @@
+name: CI SQL
+
+# 09/11 (décision de Jean-Guy) — les tests SQL, seulement quand une migration, un test SQL ou la
+# configuration de la base changent (`supabase/`), ou ce fichier ; jamais sur `essai` ; chaque lundi
+# une course complète sur `main`, comme filet, avec celle de `ci.yml`.
+on:
+  push:
+    branches-ignore: [essai]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/sql.yml'
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+jobs:
+  # Mission 88 — les règles d'accès de la base se prouvent dans la base : une base Supabase
+  # locale, jetable, reconstruite à partir des migrations du dépôt (aucune base partagée, aucune
+  # clé). Le test joue le navigateur d'un conseiller, d'un manager, d'un membre retiré et d'un
+  # invité, et échoue à la première porte restée ouverte.
+  sql:
+    runs-on: ubuntu-latest
+    # Mission 113 — lire les images du registre de GitHub sous l'identité de l'exécution.
+    permissions:
+      contents: read
+      packages: read
+    env:
+      # Mission 113 — la base de la CI sur l'image de la base en ligne (17.6.1.155) : l'image par
+      # défaut de la CLI 2.101.0 (17.6.1.106, x86) tombe quand le navigateur appelle une fonction
+      # qui lui est fermée. Une seule version, écrite ici.
+      POSTGRES_VERSION: 17.6.1.155
+      POSTGRES_IMAGE: ghcr.io/supabase/postgres:17.6.1.155
+    steps:
+      - uses: actions/checkout@v4
+
+      # 05/11 — la CLI 3.0.0, comme sur le poste (`[local_smtp]` remplace `[inbucket]` dans
+      # config.toml, que la 2.101.0 refuse) ; une seule version, épinglée aussi dans les scripts.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.0.0
+
+      # La CLI lit la version de la base liée dans supabase/.temp.
+      - name: Image de la base en ligne
+        run: mkdir -p supabase/.temp && echo "$POSTGRES_VERSION" > supabase/.temp/postgres-version
+
+      # 29/10 (décision de Jean-Guy) — plus de téléchargement d'image à chaque course : le registre
+      # ghcr.io jette « toomanyrequests » aux machines partagées de GitHub, identifiées ou non.
+      # `supabase db start` tire quatre images (postgres, gotrue, realtime, storage-api, versions
+      # fixées par la CLI sauf postgres) : elles sont gardées ensemble dans le cache des Actions,
+      # clé = version de la CLI + version de Postgres ; téléchargées au premier passage seulement,
+      # depuis le premier registre qui répond, et gardées aussitôt — même si un test SQL échoue.
+      - name: Images de la base, depuis le cache
+        id: cache-images
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/acm/images.tar.zst
+          key: images-cli3.0.0-pg${{ env.POSTGRES_VERSION }}-v2
+
+      - name: Images de la base, chargées depuis le cache
+        if: steps.cache-images.outputs.cache-hit == 'true'
+        run: zstd -d -c "$HOME/.cache/acm/images.tar.zst" | docker load
+
+      - name: Connexion au registre de GitHub (dernier recours)
+        if: steps.cache-images.outputs.cache-hit != 'true'
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+
+      # Les mêmes images sont publiées sur trois registres (vérifié le 29/10) : le registre public
+      # d'AWS (celui de la CLI), Docker Hub, puis ghcr.io en dernier recours ; deux essais chacun,
+      # et chaque image reçue prend le nom que la CLI attend (ghcr.io/supabase/…).
+      - name: Images de la base, téléchargées une fois (trois registres, deux essais chacun)
+        if: steps.cache-images.outputs.cache-hit != 'true'
+        run: |
+          images="supabase/postgres:$POSTGRES_VERSION supabase/gotrue:v2.197.0 supabase/realtime:v2.151.3 supabase/storage-api:v1.88.0"
+          for image in $images; do
+            recue=""
+            for registre in public.ecr.aws docker.io ghcr.io; do
+              for essai in 1 2; do
+                if docker pull "$registre/$image"; then recue="$registre/$image"; break 2; fi
+                echo "$registre/$image : essai $essai refusé, nouvel essai dans 30 s"
+                sleep 30
+              done
+            done
+            test -n "$recue"
+            echo "Image reçue depuis $recue"
+            docker tag "$recue" "ghcr.io/$image"
+          done
+          mkdir -p "$HOME/.cache/acm"
+          docker save $(for image in $images; do echo "ghcr.io/$image"; done) | zstd -T0 -3 > "$HOME/.cache/acm/images.tar.zst"
+          ls -la "$HOME/.cache/acm"
+
+      - name: Images de la base, gardées pour les prochaines courses
+        if: steps.cache-images.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/acm/images.tar.zst
+          key: images-cli3.0.0-pg${{ env.POSTGRES_VERSION }}-v2
+
+      - run: supabase db start
+
+      - name: Image réellement démarrée
+        run: docker inspect --format '{{.Config.Image}}' supabase_db_acm-studio
+
+      - name: Portes fermées (profils, agence, invitations)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/closed_doors.sql
+
+      # Mission 90 — la date du rendez-vous ne se réécrit plus, la signature se date une fois.
+      - name: Conclusion (dates, type de mandat, prix, motif)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/conclusion_that_measures.sql
+
+      - name: Note de closing figée à la conclusion
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/launch_readiness.sql
+
+      - name: Réponses du vendeur figées (devinettes, valeur perçue)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/frozen_seller_answers.sql
+
+      # Mission 98 — la liste « Ne plus solliciter » : une agence ne lit pas celle d'une autre.
+      - name: Liste d'opposition (cloisonnement par agence, ajout seul)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/prospecting_oppositions.sql
+
+      - name: Rythme du Live et durée (début jamais remis à zéro, rythme figé en cours de Live)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_rhythm_and_duration.sql
+
+      # Mission 96 — les relances : une agence ne lit pas celles d'une autre ; le prix révélé se fige.
+      - name: Relance (motif, historique cloisonné par agence, prix révélé figé)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/follow_up_that_pays.sql
+
+      # Mission 105 — membre retiré refusé partout, budget réservé sous le plafond, une annonce
+      # par dossier, résultat payé cloisonné, date de prochaine relance.
+      - name: Finitions (membre retiré, budget, unicité des annonces)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/finitions.sql
+
+      # Mission 104 — rouvrir un Live figé par erreur : le serveur seul, avec un motif, tracé.
+      - name: Réouverture d'un Live (opérateur seul, trace, réponses gardées)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_reopening.sql
+
+      # Mission 100 — toutes les tables publiques, lues dans le catalogue : un membre d'une agence
+      # ne lit ni n'écrit rien d'une autre. Une nouvelle table sans cloisonnement échoue ici.
+      - name: Cloisonnement entre agences (toutes les tables)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/agency_isolation_all_tables.sql
+
+      # Mission 102 — une adresse sans contact ni statut depuis 3 ans est effacée chaque nuit ;
+      # la liste « Ne plus solliciter » reste, et l'opposition tient.
+      - name: Durée de conservation des adresses de propriétaires
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/owner_address_retention.sql
+
+      - name: Gestes sensibles (conclusion, archivage, invitations, réglages, budget, journal)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/sensitive_gestures.sql
+
+      # Mission 108 — le dossier de la même agence, les réglages par défaut écrits par le serveur
+      # seul, la date de première relance.
+      - name: Finitions de l'audit n°5
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/finitions_audit_5.sql
+
+      # Mission 109 — un dossier conclu ou archivé ne change plus par le Live.
+      - name: Live fermé après la conclusion
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_closed_after_conclusion.sql
+
+      # Mission 127 — le prix du rendez-vous figé à la conclusion, les points marché et leurs liens.
+      - name: Le point marché
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/point_marche.sql
+
+      # Mission 110 — les objections et les liens de la synthèse au vendeur.
+      - name: Prise de mandat
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/prise_de_mandat.sql
+
+      # Mission 110 — un Live plus court.
+      - name: Live plus court
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_plus_court.sql
+
+      # Mission 110 — les experts : recherches nommées, mode expert, ordre du Live.
+      - name: Les experts
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/les_experts.sql
+
+      # Mission 111 — les chiffres justes : première issue, prix d'un dossier conclu, écritures.
+      - name: Les chiffres justes
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/chiffres_justes.sql
+
+      # Mission 112 — le Live ne s'ouvre jamais sans ses contrôles, ce qu'il montre ne bouge plus.
+      - name: Le Live sous contrôle
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/live_controle.sql
+
+      # Mission 113 — « Sans photo » sur la synthèse : par défaut la photo figure, l'agence seule la retire.
+      - name: Synthèse sans photo
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/synthese_sans_photo.sql
+
+      - name: Agence de démonstration
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/agence_demo.sql
+
+      - name: Collaboration avec le confrère
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/collaboration.sql
+
+      - name: Dossiers de démonstration
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/dossiers_demo.sql
+
+      # Mission 117 — la fiche acquéreur : lue par l'agence, écrite par le serveur seul.
+      - name: Fiche acquéreur
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/acquereurs.sql
+
+      # Mission 118 — le mode du menu, Vendeur ou Acquéreur, écrit par le serveur seul.
+      - name: Mode Vendeur ou Acquéreur
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/mode_acquereur.sql
+
+      # Mission 118 (partie B) — la sélection de biens idéaux : lue par l'agence, écrite par le serveur.
+      - name: Biens idéaux
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/biens_ideaux.sql
+
+      # Mission 119 — les demandes de visite : lues par l'agence, écrites par le serveur seul.
+      - name: Visites
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/visites.sql
+
+      # Mission 119 (partie B) — le lien du dossier acquéreur et « Sans photo ».
+      - name: Dossier acquéreur
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/dossier_acquereur.sql
+
+      - name: Le dossier qui fait agir
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/dossier_qui_fait_agir.sql
+
+      - name: La présentation figée
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/presentation_figee.sql
+
+      - name: La réponse du lien
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/reponse_du_lien.sql
+
+      - name: Les biens démarchés depuis une recherche acquéreur
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/acquereur_pour_votre_bien.sql
+
+      - name: La collaboration acquéreur et le détachement des origines
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/collaboration_acquereur.sql
+
+      - name: La présentation directe et l'Étude de marché (mission 131)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/presentation_directe.sql
+
+      # Mission 132 — le financement et le dernier contact d'un acquéreur : défauts, liste fermée,
+      # navigateur en lecture seule, cloisonnés par agence.
+      - name: La fiche en 30 secondes (mission 132)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/fiche_rapide.sql
+
+      # Mission 133 — les acquéreurs montrés au vendeur : ensemble, 5 au moins, la première fois
+      # gardée, refusé sur un dossier conclu, cloisonné par agence.
+      - name: La boucle vendeur → acquéreurs (mission 133)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/boucle_acquereurs.sql
+
+      # Mission 134 — les biens proposés aux acquéreurs : une fois, l'heure de la base, l'agence
+      # vérifiée, écrits par le serveur seul, cloisonnés.
+      - name: Personne n'est oublié (mission 134)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/biens_proposes.sql
+
+      # Mission 135 — les événements d'un acquéreur : ce que chacun exige, un partage par sélection,
+      # deux relances au plus, l'agence et la fiche vérifiées, écrits par le serveur seul.
+      - name: Des fiches qui font visiter (mission 135)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/relances_acquereur.sql
+
+      # Mission 136 — la veille des acquéreurs : un passage par semaine, son plafond pris dans le
+      # budget de l'agence sans priver les conseillers, écrit par le serveur seul.
+      - name: La veille des acquéreurs (mission 136)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/veille_acquereurs.sql
+
+      # Mission 137 — l'identité légale et le bon de visite : un document signé figé, l'heure de la
+      # base, la fiche et l'agence vérifiées, le bucket des signatures privé, écrits par le serveur seul.
+      - name: Le bon de visite (mission 137)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/bon_de_visite.sql
+
+      # Mission 137 B — l'offre d'achat : sa validité, la réponse du vendeur une fois, datée par la
+      # base, signée si elle accepte ; le n° de mandat et les honoraires sur la conclusion.
+      - name: L'offre d'achat (mission 137 B)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/offre_achat.sql
+
+      # Mission 138 — l'offre acceptée : le « Fait » de la réponse, une fois, daté par la base, et
+      # le lien du notaire, sur une offre acceptée seulement.
+      - name: L'offre acceptée (mission 138)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/offre_acceptee.sql
+
+      # Mission 139 — après la visite : la langue du client, le compte rendu de visite, les biens
+      # écartés pour un acquéreur, le point de la semaine et le point proposé.
+      - name: Après la visite (mission 139)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/apres_la_visite.sql
+
+      # Mission 140 — la langue du dossier vendeur : français par défaut, une liste fermée, changée
+      # par le conseiller de l'agence, Live commencé et dossier conclu compris.
+      - name: Le client dans sa langue (mission 140)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/langue_du_dossier.sql
+
+      # Mission 141 — le dossier d'adresse : lu par l'agence, écrit par le serveur seul, daté par la
+      # base, parti avec son dossier.
+      - name: Le dossier d'adresse (mission 141)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/dossier_adresse.sql
+
+      # Mission 142 — Vivre ici : la fiche d'un bien par agence, lue par l'agence, écrite par le
+      # serveur seul ; les ★ du secteur, le lieu de l'acquéreur, le jour de la visite.
+      - name: Vivre ici (mission 142)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici.sql
+
+      # Mission 145 (partie B) — « Garder la date » : deux colonnes nullables sur la conclusion,
+      # ensemble, 1 au moins, écrites par le serveur seul ; le navigateur n'y écrit rien.
+      - name: Garder la date (mission 145)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/garder_la_date.sql
+
+      # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
+      # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
+      - name: Tests SQL des missions précédentes
+        run: |
+          for test in capture_meeting_facts comparables_structured_characteristics \
+            listing_observations live_seller_price_coherence live_seller_property_confirmation \
+            live_seller_responses_and_summary meeting_conclusion meeting_outcomes \
+            move_selected_comparable project_photos_storage project_price_positioning \
+            project_readiness_bascule subject_property_diagnostics_and_condominium \
+            subject_property_structured_fields; do
+            echo "::group::$test"
+            docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+              -v ON_ERROR_STOP=1 < "supabase/tests/$test.sql"
+            echo "::endgroup::"
+          done
+
+      # Mission 113 — la base de la CI s'arrêtait net sur live_reopening.sql depuis la mission 104
+      # (« server closed the connection unexpectedly ») : en cas d'échec, son journal dit pourquoi.
+      - name: Journal de la base (en cas d'échec)
+        if: failure()
+        run: docker logs --tail 200 supabase_db_acm-studio

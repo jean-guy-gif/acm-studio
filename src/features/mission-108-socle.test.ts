@@ -14,7 +14,7 @@ describe('Mission 108 — le socle', () => {
   });
 
   it('chaque test SQL de `supabase/tests` tourne dans la CI', () => {
-    const ci = readFileSync(join(process.cwd(), '.github', 'workflows', 'ci.yml'), 'utf8');
+    const ci = readFileSync(join(process.cwd(), '.github', 'workflows', 'sql.yml'), 'utf8');
     const missing = readdirSync(join(process.cwd(), 'supabase', 'tests'))
       .filter((file) => file.endsWith('.sql'))
       .map((file) => file.replace(/\.sql$/, ''))

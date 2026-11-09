@@ -1494,10 +1494,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
     const moved = ready.getByTestId('prospecting-card').filter({ hasText: CHOSEN_ADDRESS });
     await expect(moved).toBeVisible();
+    // Mission 146 (partie B) — « À vérifier » : la version du dossier se choisit dans « … » (M84).
+    await moved.getByRole('button', { name: 'Plus d’actions' }).click();
     const href = await moved
-      .getByRole('link', { name: /Préparer le dossier/ })
-      .first()
+      .getByRole('menuitem', { name: 'Préparer le dossier propriétaire' })
       .getAttribute('href');
+    await page.keyboard.press('Escape');
     const letter = `${(href ?? '').split('?')[0]}?version=owner`;
     expect(letter, 'Le lien du courrier est introuvable').toMatch(/\/prospection\/[0-9a-f-]{36}\?/);
     await page.goto(`/prospection/tournee?bien=${projectId}`);

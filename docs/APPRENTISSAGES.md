@@ -404,6 +404,28 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 08/11 · M148 B · Durées : relecteur 10 min (première passe), 0,7 à 1,7 min sur les deltas ; spec
   `live-d-un-coup-d-oeil` 2,6 min ; démo 4,6 à 4,9 min ; parcours 2,9 à 3,1 min (un aléa côté
   présentation acquéreur, vert au second passage) ; suite complète ≈ 25 min en quatre lots.
+- 09/11 · M146 B · `expectOneFilled` comptait un bouton plein caché dans un `<details>` fermé
+  (« Enregistrer » de la fiche acquéreur) : Chromium garde une taille au contenu d'un `<details>`
+  fermé. Le contrôle lit `element.checkVisibility({ contentVisibilityAuto: true,
+visibilityProperty: true })`, jamais la seule boîte englobante.
+- 09/11 · M146 B · Ranger un geste dans « … » peut en perdre un : la carte « à vérifier » prête
+  avait perdu « Marquer remis » et le choix de la version du dossier (M84). Seul le parcours e2e
+  l'a vu ; avant de déplacer une action, relire chaque état de la carte qui la portait. Un lien de
+  menu se lit par son `href` (rôle `menuitem`), pas par un clic qui navigue.
+- 09/11 · M146 B · Un mot banni par le test de vocabulaire peut se glisser dans un libellé neuf
+  (« revenir d'un cran ») : `npm test` avant le push, pas seulement le typecheck. Une commande
+  Playwright `--last-failed` mal placée a vidé `test-results` : la démo a dû être rejouée.
+- 09/11 · M146 B · La CI de GitHub a refusé de démarrer toute la matinée (« recent account payments
+  have failed or your spending limit needs to be increased »), même après le passage du compte en
+  Pro ; relancée l'après-midi, elle est partie aussitôt et verte (checks 3 min 28, sql 2 min 14).
+  Un refus de facturation se lit dans l'annotation de la course, pas dans un job rouge. Durées :
+  relecteur ≈ 6 min, démo 6,0 min, suite e2e 21 sur 21 ; une remise à zéro de la démo a ramené
+  « Première connexion » avec les six dossiers bien en base (aléa, noté pour la 147).
+- 09/11 · CI allégée · Deux workflows (`ci.yml`, `sql.yml`) ; un filtre de chemins GitHub se lit
+  dans l'ordre, le dernier motif qui correspond l'emporte : `'**'`, puis `'!docs/**'`, `'!**/*.md'`,
+  puis `docs/DEMO.md` et `docs/extension-store.md` réinclus, que lisent deux tests. Le pathspec de
+  git ne réinclut pas après un `':!docs'` : `valide.md` fait deux `git log` et garde le plus récent.
+  Un test unitaire lisait la liste des tests SQL dans `ci.yml` : il lit `sql.yml`.
 
 ## La base
 
