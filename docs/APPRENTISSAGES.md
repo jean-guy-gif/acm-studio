@@ -498,7 +498,7 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   biens écartés, sélections).
 
 - 09/11 · M147 A · Lire les droits du navigateur sur une table : `has_table_privilege('authenticated',
-  'public.x', 'UPDATE')`. `information_schema.role_table_grants` revient VIDE pour le rôle de la CLI
+'public.x', 'UPDATE')`. `information_schema.role_table_grants` revient VIDE pour le rôle de la CLI
   en lecture seule (`supabase_read_only_user`) : il ne montre que les droits dont ce rôle est
   bénéficiaire ou accordant. Une lecture vide n'est pas « aucun droit » ; un témoin (une table aux
   droits connus) le dit.
