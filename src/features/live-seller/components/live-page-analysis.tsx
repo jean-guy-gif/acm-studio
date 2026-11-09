@@ -2,13 +2,13 @@
 
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
-  bigValue,
-  panel,
+  figureCard,
   panelSoft,
   question,
   questionHint,
+  screen,
+  screenHead,
   statLabel,
-  statValue,
 } from '@/features/live-seller/components/live-stage';
 import {
   bandPosition,
@@ -22,7 +22,7 @@ import { formatEuro, formatNumber, formatPercent } from '@/lib/format';
 function GapRow({ label, gap }: { label: string; gap: PriceGap }) {
   const { language } = useLiveTexts();
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-zinc-100 py-2.5 text-base last:border-0 stage:border-white/10">
+    <div className="flex items-baseline justify-between gap-3 py-0.5 text-sm">
       <span className="text-zinc-500 stage:text-white/60">{label}</span>
       <span className="font-title font-semibold text-zinc-900 stage:text-white">
         {gap.amount != null ? formatEuro(gap.amount, { signed: true, language }) : '—'}
@@ -94,10 +94,10 @@ export function PriceBand({
   };
 
   return (
-    <div className={`${panelSoft} flex flex-col gap-3`} data-price-band>
+    <div className={`${panelSoft} flex shrink-0 flex-col gap-2`} data-price-band>
       <div className={statLabel}>{t.title}</div>
       <div className="px-3">
-        <div className="relative mt-5 h-16">
+        <div className="relative mt-4 h-12">
           <div className="absolute inset-x-0 top-1/2 h-px bg-zinc-300 stage:bg-white/25" />
           {reading.prices.map((price, index) => (
             <span
@@ -131,7 +131,7 @@ export function PriceBand({
         <span>{euro(low)}</span>
         <span>{euro(high)}</span>
       </div>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
+      <ul className="flex flex-wrap gap-x-5 gap-y-0.5 text-xs text-zinc-600 sm:text-sm stage:text-white/70">
         <li className="flex items-center gap-2">
           <span className="size-3 rounded-full bg-zinc-500 stage:bg-white/70" aria-hidden />
           {t.dot}
@@ -201,18 +201,46 @@ export function LivePageAnalysis({
     });
   }
 
+  // Mission 148 — l'écran tient sur la tablette (planche 5) : le chemin du vendeur à côté du titre,
+  // les chiffres sur une rangée, la bande des prix, les écarts en une ligne chacun.
+  const cards: { key: string; label: string; value: string; note?: string; reveal?: boolean }[] =
+    [];
+  if (gaps.sellerPerceivedPrice != null) {
+    cards.push({ key: 'perceived', label: t.perceived, value: euro(gaps.sellerPerceivedPrice) });
+  }
+  // Mission 109 — sans prix des concurrents (aucune décision, ou calcul impossible), ni la case ni
+  // « Calculé sur N ». Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ».
+  if (gaps.competitiveMarketCentral != null) {
+    cards.push({
+      key: 'competitors',
+      label: t.competitorPrice,
+      value: euro(gaps.competitiveMarketCentral),
+      // Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ».
+      note: competitorPriceBasisLabel(reading, language),
+      reveal: true,
+    });
+  }
+  cards.push({ key: 'advisor', label: t.advisor, value: euro(gaps.advisorComparativePrice) });
+  if (reading.prices.length > 0) {
+    for (const figure of figures) {
+      cards.push({ key: figure.label, label: figure.label, value: figure.value });
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
-        <h2 className={question}>{t.title}</h2>
-        {/* Mission 131 — en présentation directe, aucun prix n'a été demandé au vendeur : rien ne
-            lui dit qu'il n'a pas répondu. */}
-        <p className={questionHint}>
-          {gaps.sellerPerceivedPrice != null ? t.hintWithPrice : t.hintDirect}
-        </p>
+    <div className={screen}>
+      <div className="flex shrink-0 flex-col gap-1.5 md:flex-row md:items-end md:justify-between md:gap-6">
+        <div className={screenHead}>
+          <h2 className={question}>{t.title}</h2>
+          {/* Mission 131 — en présentation directe, aucun prix n'a été demandé au vendeur : rien ne
+              lui dit qu'il n'a pas répondu. */}
+          <p className={questionHint}>
+            {gaps.sellerPerceivedPrice != null ? t.hintWithPrice : t.hintDirect}
+          </p>
+        </div>
         {gaps.sellerPerceivedPrice != null ? (
           <p
-            className="font-title text-xl font-semibold text-zinc-900 sm:text-2xl stage:text-white"
+            className="font-title text-lg font-semibold text-zinc-900 sm:text-xl md:text-right stage:text-white"
             data-seller-path
           >
             {t.pathStart(euro(gaps.sellerPerceivedPrice))}
@@ -221,63 +249,43 @@ export function LivePageAnalysis({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {gaps.sellerPerceivedPrice != null ? (
-          <div className={`${panel} flex flex-col gap-1.5`}>
-            <div className={statLabel}>{t.perceived}</div>
-            <div className={bigValue}>{euro(gaps.sellerPerceivedPrice)}</div>
-          </div>
-        ) : null}
-        {/* Mission 109 — sans prix des concurrents (aucune décision, ou calcul impossible),
-            ni le panneau ni « Calculé sur N ». */}
-        {gaps.competitiveMarketCentral != null ? (
-          <div className={`${panel} live-reveal-pop flex flex-col gap-1.5`}>
-            {/* Mission 89 — un seul nom devant le vendeur : « Prix des concurrents ». */}
-            <div className={statLabel}>{t.competitorPrice}</div>
-            <div className={bigValue}>{euro(gaps.competitiveMarketCentral)}</div>
-            {/* Mission 94 — ce sur quoi il porte ; un prix ajusté ne se dit pas « observé ». */}
-            <div className="text-sm text-zinc-500 stage:text-white/60">
-              {competitorPriceBasisLabel(reading, language)}
+      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
+        {cards.map((card) => (
+          <div key={card.key} className={`${figureCard} ${card.reveal ? 'live-reveal-pop' : ''}`}>
+            <div className={statLabel}>{card.label}</div>
+            <div className="font-title text-base leading-tight font-bold text-zinc-900 sm:text-lg stage:text-white">
+              {card.value}
             </div>
+            {card.note ? (
+              <div className="text-[0.7rem] leading-snug text-zinc-500 stage:text-white/60">
+                {card.note}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-        <div className={`${panel} flex flex-col gap-1.5`}>
-          <div className={statLabel}>{t.advisor}</div>
-          <div className={bigValue}>{euro(gaps.advisorComparativePrice)}</div>
-        </div>
+        ))}
       </div>
 
       {reading.prices.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {figures.length > 0 ? (
-            <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {figures.map((figure) => (
-                <div key={figure.label} className={`${panelSoft} flex flex-col gap-1`}>
-                  <dt className={statLabel}>{figure.label}</dt>
-                  <dd className={statValue}>{figure.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-          <PriceBand
-            reading={reading}
-            startPrice={gaps.sellerPerceivedPrice}
-            revisedPrice={revisedPrice}
-            competitorPrice={gaps.competitiveMarketCentral}
-            dangerousId={dangerousId}
-          />
-        </div>
+        <PriceBand
+          reading={reading}
+          startPrice={gaps.sellerPerceivedPrice}
+          revisedPrice={revisedPrice}
+          competitorPrice={gaps.competitiveMarketCentral}
+          dangerousId={dangerousId}
+        />
       ) : null}
 
-      <div className={`${panelSoft} h-fit`}>
-        <div className={`${statLabel} mb-2`}>{t.gaps}</div>
-        {gaps.competitiveMarketCentral != null ? (
-          <GapRow label={t.gapSellerMarket} gap={gaps.sellerVsMarket} />
-        ) : null}
-        <GapRow label={t.gapSellerAdvisor} gap={gaps.sellerVsAdvisor} />
-        {gaps.competitiveMarketCentral != null ? (
-          <GapRow label={t.gapMarketAdvisor} gap={gaps.marketVsAdvisor} />
-        ) : null}
+      <div className={`${figureCard} shrink-0`}>
+        <div className={statLabel}>{t.gaps}</div>
+        <div className="grid grid-cols-1 gap-x-6 md:landscape:grid-cols-3">
+          {gaps.competitiveMarketCentral != null ? (
+            <GapRow label={t.gapSellerMarket} gap={gaps.sellerVsMarket} />
+          ) : null}
+          <GapRow label={t.gapSellerAdvisor} gap={gaps.sellerVsAdvisor} />
+          {gaps.competitiveMarketCentral != null ? (
+            <GapRow label={t.gapMarketAdvisor} gap={gaps.marketVsAdvisor} />
+          ) : null}
+        </div>
       </div>
     </div>
   );

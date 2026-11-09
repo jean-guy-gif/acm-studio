@@ -4,21 +4,25 @@ import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 
 import { LiveDurationReveal } from '@/features/live-seller/components/live-duration-reveal';
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
+import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
+  answerColumn,
   bigInput,
   bigInputUnit,
-  choice,
-  fieldInput,
+  choiceCompact,
   fieldLabel,
   panel,
-  panelSoft,
+  photoColumn,
   question,
   questionHint,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
-  statValue,
 } from '@/features/live-seller/components/live-stage';
 import { MARKET_DURATION_REASONS, type SeriousCompetitor } from '@/features/live-seller/constants';
 import type { AuthorizedSellerComparable } from '@/features/live-seller/services/project-live-for-seller';
@@ -29,6 +33,9 @@ import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 // how long the property has been for sale; the observed duration and the price
 // drops are only revealed once that estimate is SAVED (M27 invariant), and only
 // then comes the "why" discussion.
+// Mission 148 — l'écran le plus long du Live tient sur la tablette (planche 4) : le rappel des
+// prix en une ligne sous le libellé (la réponse au prix en couleur), la grille en pastilles sous la
+// photo ; à droite les deux durées côte à côte, les raisons en boutons compacts.
 export function LivePageDuration({
   entry,
   durationRevealed,
@@ -45,91 +52,94 @@ export function LivePageDuration({
   const marketDuration = entry.marketDuration;
   const { language, texts } = useLiveTexts();
   const t = texts.live.duration;
-  const euro = (value: number | null): string =>
-    value != null ? formatEuro(value, { language }) : '—';
   const label = neutralComparableLabel(entry, language);
+  const serious = response?.seller_serious_competitor
+    ? texts.live.competition.serious[response.seller_serious_competitor as SeriousCompetitor]
+    : t.notGiven;
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.question}</h2>
         <p className={questionHint}>{durationRevealed ? t.revealedHint : t.hint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-        <div className="flex flex-col gap-4">
-          <LiveGallery photos={entry.photoUrls} alt={label} />
+      <div className={screenBody}>
+        <div className={photoColumn}>
+          <LiveGallery photos={entry.photoUrls} alt={label} fill />
           <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
-
-          <div className={`${panelSoft} grid grid-cols-2 gap-4 sm:grid-cols-3`}>
-            <div>
-              <div className={statLabel}>{t.listed}</div>
-              <div className={statValue}>{euro(entry.price)}</div>
-            </div>
-            <div>
-              <div className={statLabel}>{t.perSqm}</div>
-              <div className={statValue}>
-                {entry.pricePerSquareMeter != null
-                  ? formatEuroPerSquareMeter(entry.pricePerSquareMeter, { language })
-                  : '—'}
-              </div>
-            </div>
-            <div>
-              <div className={statLabel}>{texts.common.yourAnswer}</div>
-              <div className={statValue}>
-                {euro(response?.seller_estimated_listing_price ?? null)}
-              </div>
-            </div>
-            <div className="col-span-2 sm:col-span-3">
-              <div className={statLabel}>{t.serious}</div>
-              <div className={statValue}>
-                {response?.seller_serious_competitor
-                  ? texts.live.competition.serious[
-                      response.seller_serious_competitor as SeriousCompetitor
-                    ]
-                  : t.notGiven}
-              </div>
-            </div>
+          {/* Le rappel du prix : affiché, au m², la réponse du vendeur en couleur, son « sérieux ». */}
+          <div className="flex shrink-0 flex-col gap-0.5 text-sm text-zinc-600 stage:text-white/75">
+            <span className="flex flex-wrap gap-x-3">
+              <span>
+                <span className={statLabel}>{t.listed}</span>{' '}
+                <b className="font-title text-zinc-900 stage:text-white">
+                  {entry.price != null ? formatEuro(entry.price, { language }) : '—'}
+                </b>
+              </span>
+              {entry.pricePerSquareMeter != null ? (
+                <span>
+                  <span className={statLabel}>{t.perSqm}</span>{' '}
+                  <b className="font-title text-zinc-900 stage:text-white">
+                    {formatEuroPerSquareMeter(entry.pricePerSquareMeter, { language })}
+                  </b>
+                </span>
+              ) : null}
+              <span>
+                <span className={statLabel}>{t.serious}</span>{' '}
+                <b className="font-title text-zinc-900 stage:text-white">{serious}</b>
+              </span>
+            </span>
+            <LiveGuessGap
+              guess={response?.seller_estimated_listing_price ?? null}
+              listedPrice={entry.price}
+              variant="inline"
+            />
           </div>
+          <LiveFeatureComparison items={entry.featureComparison} narrow />
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()} className={`${panel} flex h-fit flex-col gap-4`}>
-          {/* Mission 92 — la durée devinée ne se donne qu'une fois : révélée, elle se relit. */}
-          {savedEstimatedDays != null ? (
-            <LiveLockedAnswer value={t.days(savedEstimatedDays)} />
-          ) : (
-            <label className="flex flex-col gap-2">
-              <span className={statLabel}>{t.label}</span>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  name="seller_estimated_days_on_market"
-                  min={0}
-                  step={1}
-                  placeholder="90"
-                  className={bigInput}
+        <form onSubmit={(e) => e.preventDefault()} className={answerColumn}>
+          <div className={`${panel} flex flex-col gap-3`}>
+            {durationRevealed && marketDuration ? (
+              <div className="live-reveal-pop flex flex-col gap-2">
+                <LiveDurationReveal
+                  marketDuration={marketDuration}
+                  priceHistory={entry.priceHistory}
+                  estimatedDays={savedEstimatedDays}
                 />
-                <span className={bigInputUnit}>{t.unit}</span>
               </div>
-            </label>
-          )}
+            ) : savedEstimatedDays != null ? (
+              // Mission 92 — la durée devinée ne se donne qu'une fois : révélée, elle se relit.
+              <LiveLockedAnswer value={t.days(savedEstimatedDays)} />
+            ) : (
+              <label className="flex flex-col gap-2">
+                <span className={statLabel}>{t.label}</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    name="seller_estimated_days_on_market"
+                    min={0}
+                    step={1}
+                    placeholder="90"
+                    className={bigInput}
+                  />
+                  <span className={bigInputUnit}>{t.unit}</span>
+                </div>
+              </label>
+            )}
+            {durationRevealed && marketDuration ? null : (
+              <p className="text-sm text-zinc-500 stage:text-white/50">{t.answerFirst}</p>
+            )}
+          </div>
 
           {durationRevealed && marketDuration ? (
-            <div className="live-reveal-pop flex flex-col gap-4">
-              <LiveDurationReveal
-                marketDuration={marketDuration}
-                priceHistory={entry.priceHistory}
-                estimatedDays={savedEstimatedDays}
-              />
-
-              <fieldset className="flex flex-col gap-3">
-                <legend className={fieldLabel}>{t.why}</legend>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className={`${panel} live-reveal-pop flex flex-col gap-3`}>
+              <fieldset className="flex flex-col gap-2">
+                <legend className={`${fieldLabel} mb-2`}>{t.why}</legend>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:portrait:grid-cols-4">
                   {MARKET_DURATION_REASONS.map((reason) => (
-                    <label
-                      key={reason}
-                      className={`${choice} min-h-11 px-3 py-2 text-base font-medium`}
-                    >
+                    <label key={reason} className={choiceCompact}>
                       <input
                         type="radio"
                         name="seller_market_duration_reason"
@@ -142,24 +152,14 @@ export function LivePageDuration({
                   ))}
                 </div>
               </fieldset>
-
-              <label className="flex flex-col gap-1.5">
-                <span className={fieldLabel}>{texts.common.commentOptional}</span>
-                <textarea
-                  name="seller_market_duration_comment"
-                  rows={2}
-                  defaultValue={currentComment}
-                  className={fieldInput}
-                />
-              </label>
+              <LiveCommentField
+                name="seller_market_duration_comment"
+                defaultValue={currentComment}
+              />
             </div>
-          ) : (
-            <p className="text-sm text-zinc-500 stage:text-white/50">{t.answerFirst}</p>
-          )}
+          ) : null}
         </form>
       </div>
-
-      <LiveFeatureComparison items={entry.featureComparison} />
     </div>
   );
 }

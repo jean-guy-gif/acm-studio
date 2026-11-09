@@ -18,6 +18,11 @@ function englishOrdinal(rank: number): string {
   return `${rank}${suffix}`;
 }
 
+// Mission 148 B — « dont N vus ensemble » (M112), quand des concurrents hors Live entrent au calcul.
+function seenTogetherEn(count: number, seen: number | null): string {
+  return seen != null && seen < count ? `, ${seen} of which we viewed together` : '';
+}
+
 export const ENGLISH_TEXTS: ClientTexts = {
   labels: {
     propertyType: {
@@ -85,6 +90,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
     competitorFallback: 'Competing property',
     yourAnswer: 'Your answer',
     commentOptional: 'Comment (optional)',
+    addComment: '+ Add a comment',
     unknownLocation: 'Location unknown',
     linkGone: {
       title: 'This link is no longer valid',
@@ -148,6 +154,13 @@ export const ENGLISH_TEXTS: ClientTexts = {
         equivalent: 'equivalent',
         forThem: 'advantage to them',
       },
+      chipStatus: { competitor_weakness: 'to you', competitor_advantage: 'to them' },
+    },
+    guessGap: {
+      below: (percent) => `${percent} below the asking price`,
+      above: (percent) => `${percent} above the asking price`,
+      equal: 'the asking price',
+      answer: (amount) => `Your answer: ${amount}`,
     },
     alignment: {
       green: 'Price in line with the market',
@@ -177,6 +190,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       question: 'Is this a serious competing property for yours?',
       hint: 'Look at the property as a buyer would — its price comes next.',
       serious: { yes: 'Yes, a serious competing property', no: 'No', unsure: 'Not sure' },
+      seriousShort: { yes: 'Yes, serious', no: 'No', unsure: 'Not sure' },
     },
     priceReveal: {
       question: 'Does this price seem right to you?',
@@ -184,8 +198,6 @@ export const ENGLISH_TEXTS: ClientTexts = {
         'First give the price you imagine, on the previous screen: the real price appears next.',
       hint: 'Here is the price actually listed. What do you think, compared with the price you imagined?',
       listed: 'Price listed on the market',
-      imagined: 'Price you imagined',
-      gap: 'Difference',
       perSqm: 'Price per m²',
       position: 'Position (price/m²)',
       legend: 'In your view, this price is…',
@@ -336,7 +348,6 @@ export const ENGLISH_TEXTS: ClientTexts = {
         yes: 'Yes, that’s my property',
         no: 'No, some things need correcting',
       },
-      comment: 'Comment (optional)',
     },
     dpe: {
       title: 'Your EPC against the market',
@@ -371,8 +382,6 @@ export const ENGLISH_TEXTS: ClientTexts = {
       none: 'No property was judged a serious or possible competing property.',
       review: 'View again',
       others: 'The other properties we looked at',
-      imagined: (price) => `Your guess: ${price}`,
-      gap: (amount) => ` · difference ${amount}`,
       serious: (answer) => `Serious competing property: ${answer}`,
       notGiven: 'Not given',
       why: 'Why that one?',
@@ -477,6 +486,22 @@ export const ENGLISH_TEXTS: ClientTexts = {
         too_low: 'No, it’s too low',
         unsure: 'Hard to say',
       },
+      coherenceShort: {
+        coherent: 'Yes, consistent',
+        too_high: 'Too high',
+        too_low: 'Too low',
+        unsure: 'Not sure',
+      },
+      dangerousReasonShort: {
+        better_value: 'Value for money',
+        better_condition: 'Better condition',
+        better_location: 'Location',
+        better_surface: 'Larger size',
+        better_outdoor: 'Better outdoor space',
+        better_features: 'Features',
+        more_attractive_price: 'More attractive price',
+        other: 'Other',
+      },
       durationReason: {
         price_too_high: 'Price too high',
         condition: 'Condition of the property',
@@ -536,10 +561,34 @@ export const ENGLISH_TEXTS: ClientTexts = {
       seriousShort: { yes: 'Yes', unsure: 'Not sure', no: 'No' },
       seriousQuestion: 'A serious competing property?',
       notConsidered: 'Not competition for you: we did not look at its price.',
+      basisCalculated: (count, seen) =>
+        `Calculated by your adviser on ${
+          count > 1
+            ? `the ${count} competing properties they selected`
+            : 'the competing property they selected'
+        }${seenTogetherEn(count, seen)}`,
+      basisAdvisor: (count, seen) =>
+        `Price chosen by your adviser, based on ${
+          count > 1
+            ? `the ${count} competing properties they selected`
+            : 'the competing property they selected'
+        }${seenTogetherEn(count, seen)}`,
+      positionAmongSeen: {
+        mostExpensive: 'The most expensive',
+        cheapest: 'The cheapest',
+        amongMostExpensive: 'Among the most expensive',
+        amongCheapest: 'Among the cheapest',
+        middle: 'In the middle',
+        rank: (rank) => `The ${englishOrdinal(rank)} cheapest`,
+        sentence: (where, seen) =>
+          `${where}: your property against the ${
+            seen > 1 ? `${seen} competing properties` : 'competing property'
+          } whose price you saw`,
+      },
+      notConsideredRow: (label) => `${label} · not competition for you`,
       thePrice: 'The price',
       youImagined: 'Your guess',
       listedShort: 'Asking',
-      gapVsAnswer: (percent) => `${percent} compared with your answer`,
       durationTitle: 'Time on the market',
       knownDrop: (amount) => `Known price reduction: ${amount}`,
       listed: 'Asking price',
@@ -574,7 +623,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
         'At the start of the meeting, after seeing the market, then the price agreed together.',
       answersTitle: 'Your answers against the asking prices',
       agreedPerSqm: 'Agreed price per m²',
-      amongCompared: 'Among the properties compared',
+      amongCompared: 'Your price against the competing properties',
       stepsBand: 'The steps against the asking prices of the properties we looked at',
     },
     marketUpdate: {

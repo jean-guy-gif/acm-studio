@@ -45,6 +45,11 @@ const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d
 
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
 // seule source), les phrases sont celles qui étaient écrites dans les écrans, mot pour mot.
+// Mission 148 B — « dont N vus ensemble » (M112), quand des concurrents hors Live entrent au calcul.
+function seenTogetherFr(count: number, seen: number | null): string {
+  return seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : '';
+}
+
 export const FRENCH_TEXTS: ClientTexts = {
   labels: {
     propertyType: PROPERTY_TYPE_LABELS,
@@ -59,6 +64,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     competitorFallback: 'Bien concurrent',
     yourAnswer: 'Votre réponse',
     commentOptional: 'Commentaire (facultatif)',
+    addComment: '+ Ajouter un commentaire',
     questionMark: '\u00a0?',
     unknownLocation: 'Localisation inconnue',
     linkGone: {
@@ -113,6 +119,13 @@ export const FRENCH_TEXTS: ClientTexts = {
         equivalent: 'équivalent',
         forThem: 'avantage pour lui',
       },
+      chipStatus: { competitor_weakness: 'pour vous', competitor_advantage: 'pour lui' },
+    },
+    guessGap: {
+      below: (percent) => `${percent} en dessous du prix affiché`,
+      above: (percent) => `${percent} au-dessus du prix affiché`,
+      equal: 'le prix affiché',
+      answer: (amount) => `Votre réponse\u00a0: ${amount}`,
     },
     alignment: PRICE_ALIGNMENT_LABELS,
     pricePosition: {
@@ -137,6 +150,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       question: 'Est-il un sérieux concurrent pour votre bien ?',
       hint: 'Observez le bien comme le ferait un acheteur — son prix viendra ensuite.',
       serious: SERIOUS_COMPETITOR_LABELS,
+      seriousShort: { yes: 'Oui, sérieux', no: 'Non', unsure: 'Incertain' },
     },
     priceReveal: {
       question: 'Ce prix vous paraît-il cohérent ?',
@@ -144,8 +158,6 @@ export const FRENCH_TEXTS: ClientTexts = {
         'Donnez d’abord le prix que vous imaginez, à l’écran précédent : le prix réel s’affichera ensuite.',
       hint: 'Voici le prix réellement affiché. Qu’en pensez-vous, face au prix que vous imaginiez ?',
       listed: 'Prix affiché sur le marché',
-      imagined: 'Prix imaginé',
-      gap: 'Écart',
       perSqm: 'Prix au m²',
       position: 'Position (prix/m²)',
       legend: 'Selon vous, ce prix est…',
@@ -295,7 +307,6 @@ export const FRENCH_TEXTS: ClientTexts = {
       highlights: 'Points forts',
       question: 'Est-ce que cette présentation correspond bien à votre bien ?',
       confirmed: PROPERTY_CONFIRMED_LABELS,
-      comment: 'Commentaire (facultatif)',
     },
     dpe: {
       title: 'Le DPE face au marché',
@@ -329,8 +340,6 @@ export const FRENCH_TEXTS: ClientTexts = {
       none: 'Aucun bien n’a été retenu comme concurrent sérieux ou incertain.',
       review: 'Revoir',
       others: 'Les autres biens regardés',
-      imagined: (price) => `Imaginé : ${price}`,
-      gap: (amount) => ` · écart ${amount}`,
       serious: (answer) => `Sérieux concurrent : ${answer}`,
       notGiven: 'Non renseigné',
       why: 'Pourquoi celui-là ?',
@@ -437,6 +446,22 @@ export const FRENCH_TEXTS: ClientTexts = {
     },
     answers: {
       coherence: PRICE_COHERENCE_LABELS,
+      coherenceShort: {
+        coherent: 'Oui, cohérent',
+        too_high: 'Trop élevé',
+        too_low: 'Trop bas',
+        unsure: 'Je ne sais pas',
+      },
+      dangerousReasonShort: {
+        better_value: 'Rapport qualité/prix',
+        better_condition: 'Meilleur état',
+        better_location: 'Localisation',
+        better_surface: 'Plus grande surface',
+        better_outdoor: 'Meilleur extérieur',
+        better_features: 'Prestations',
+        more_attractive_price: 'Prix plus attractif',
+        other: 'Autre',
+      },
       durationReason: MARKET_DURATION_REASON_LABELS,
       dangerousReason: DANGEROUS_REASON_LABELS,
     },
@@ -482,10 +507,30 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
       seriousQuestion: 'Un sérieux concurrent ?',
       notConsidered: 'Pas un concurrent pour vous : son prix n’a pas été regardé.',
+      basisCalculated: (count, seen) =>
+        `Calculé par votre conseiller sur ${
+          count > 1 ? `les ${count} concurrents qu’il a retenus` : 'le concurrent qu’il a retenu'
+        }${seenTogetherFr(count, seen)}`,
+      basisAdvisor: (count, seen) =>
+        `Prix choisi par votre conseiller, à partir ${
+          count > 1 ? `des ${count} concurrents qu’il a retenus` : 'du concurrent qu’il a retenu'
+        }${seenTogetherFr(count, seen)}`,
+      positionAmongSeen: {
+        mostExpensive: 'Le plus cher',
+        cheapest: 'Le moins cher',
+        amongMostExpensive: 'Parmi les plus chers',
+        amongCheapest: 'Parmi les moins chers',
+        middle: 'Dans la moyenne',
+        rank: (rank) => `Le ${rank === 1 ? '1er' : `${rank}e`} moins cher`,
+        sentence: (where, seen) =>
+          `${where}\u00a0: votre bien face ${
+            seen > 1 ? `aux ${seen} concurrents` : 'au concurrent'
+          } dont vous avez vu le prix`,
+      },
+      notConsideredRow: (label) => `${label} · pas un concurrent pour vous`,
       thePrice: 'Le prix',
       youImagined: 'Vous imaginiez',
       listedShort: 'Affiché',
-      gapVsAnswer: (percent) => `${percent} par rapport à votre réponse`,
       durationTitle: 'La durée en vente',
       knownDrop: (amount) => `Baisse de prix connue : ${amount}`,
       listed: 'Prix affiché',
@@ -520,7 +565,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       pathHint: 'Au début du rendez-vous, après avoir vu le marché, puis le prix retenu ensemble.',
       answersTitle: 'Vos réponses face aux prix affichés',
       agreedPerSqm: 'Prix convenu au m²',
-      amongCompared: 'Parmi les biens comparés',
+      amongCompared: 'Votre prix face aux concurrents',
       stepsBand: 'Les étapes face aux prix affichés des biens regardés',
     },
     marketUpdate: {

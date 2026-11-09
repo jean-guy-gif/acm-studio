@@ -1151,7 +1151,9 @@ export function LiveComparativeShell({
         data-stage={stage}
         // Mission 144 — les photos du Live sont dans le cache du navigateur (lu par l'e2e).
         data-photos-preloaded={photosPreloaded ? 'true' : 'false'}
-        className={`${stageRoot} ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
+        // Mission 148 — sur tablette et au-delà, la scène tient dans la fenêtre : chaque écran se
+        // dispose dans la hauteur qui reste, sans défiler (la photo prend ce qui reste).
+        className={`${stageRoot} md:h-[100dvh] ${isFullscreen ? 'overflow-x-hidden overflow-y-auto' : 'overflow-hidden'}`}
       >
         {/* MISSION 51 §3.2 — un enregistrement en échec ne doit pas passer inaperçu,
           MAIS il s'adresse au CONSEILLER, pas au vendeur : pastille discrète dans le
@@ -1221,7 +1223,9 @@ export function LiveComparativeShell({
         </div>
 
         {/* Chrome supérieur : identité + réglages, volontairement discret. */}
-        <header className="relative flex items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-5">
+        {/* Mission 148 — l'en-tête et la progression tiennent sur une bande : le nom de l'agence,
+          l'étape et le compte des écrans, les réglages ; la progression en filet dessous. */}
+        <header className="relative flex items-center justify-between gap-3 px-4 pt-3 sm:px-8">
           {/* MISSION 72 — c'est le nom d'agence qui cède la place (tronqué dans <Logo>),
             jamais les boutons : `min-w-0` ici, `shrink-0` sur les réglages. */}
           <div className="flex min-w-0 items-center gap-3">
@@ -1229,19 +1233,32 @@ export function LiveComparativeShell({
               carte d'accueil) ; sans logo, l'accueil porte le nom en grand dans sa carte, et le
               bandeau ne le répète pas sur cet écran. */}
             {isIntro && !hasAgencyLogo ? null : (
-              <Logo
-                onDark={stage === 'dark'}
-                className="h-8 sm:h-9"
-                lightSrc={agencyName ? null : logoLightUrl}
-                darkSrc={agencyName ? null : logoDarkUrl}
-                fallbackName={agencyName}
-              />
+              <span className={`${isIntro ? 'flex' : 'hidden sm:flex'} min-w-0 items-center`}>
+                <Logo
+                  onDark={stage === 'dark'}
+                  className="h-8"
+                  lightSrc={agencyName ? null : logoLightUrl}
+                  darkSrc={agencyName ? null : logoDarkUrl}
+                  fallbackName={agencyName}
+                />
+              </span>
             )}
-            <span
-              className={`${isIntro && !hasAgencyLogo ? 'inline' : 'hidden sm:inline'} shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 stage:text-white/50`}
-            >
-              {t.kicker}
-            </span>
+            {isIntro ? (
+              <span
+                className={`${!hasAgencyLogo ? 'inline' : 'hidden sm:inline'} shrink-0 text-sm font-medium whitespace-nowrap text-zinc-500 stage:text-white/50`}
+              >
+                {t.kicker}
+              </span>
+            ) : (
+              <span className="flex min-w-0 shrink items-baseline gap-2" data-live-step>
+                <span className="text-xs leading-tight font-semibold tracking-[0.2em] uppercase text-brand-deep/70 stage:text-brand">
+                  {stepLabel}
+                </span>
+                <span className="shrink-0 text-xs text-zinc-500 stage:text-white/40">
+                  {index + 1} / {pages.length}
+                </span>
+              </span>
+            )}
           </div>
           <div className="relative flex shrink-0 items-center gap-1.5">
             {/* Mission 131 — le menu du conseiller : changer de rythme sans rien dire au vendeur, et
@@ -1328,18 +1345,10 @@ export function LiveComparativeShell({
           <LiveBuyersScreen reveal={buyersReveal} onClose={closeBuyersScreen} />
         ) : null}
 
-        {/* Progression : fine, élégante, jamais envahissante. */}
+        {/* Progression : un filet sous l'en-tête, jamais envahissant. */}
         {!isIntro ? (
-          <div className="relative mx-auto mt-4 flex w-full max-w-5xl flex-col gap-1.5 px-4 sm:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold tracking-[0.25em] uppercase text-brand-deep/70 stage:text-brand">
-                {stepLabel}
-              </span>
-              <span className="text-xs text-zinc-500 stage:text-white/40">
-                {index + 1} / {pages.length}
-              </span>
-            </div>
-            <div className="h-1 overflow-hidden rounded-full bg-zinc-200 stage:bg-white/10">
+          <div className="relative mt-2 w-full px-4 sm:px-8">
+            <div className="h-0.5 overflow-hidden rounded-full bg-zinc-200 stage:bg-white/10">
               <div
                 className="h-full rounded-full bg-brand transition-all duration-500"
                 style={{ width: `${((index + 1) / pages.length) * 100}%` }}
@@ -1357,13 +1366,15 @@ export function LiveComparativeShell({
           data-live-page={page.type}
           // Après le rendu : un choix (« Non ») change ce qui est requis.
           onInput={() => requestAnimationFrame(checkPriceMissing)}
-          // MISSION 51 §3.3 — le padding-bas doit dégager la barre fixe (≈ 85 px) : on
-          // sépare haut et bas (pt-*/pb-*) car un `py-*` responsive écraserait le pb et
-          // coupait le bas du contenu (grille comparative illisible). `pb-32` = 128 px,
-          // au-dessus de la barre en fenêtre ET en plein écran (safe-area comprise).
-          className={`relative mx-auto w-full max-w-5xl flex-1 px-4 pt-6 sm:px-8 sm:pt-8 ${
-            isInteractive || isClosingAct ? 'pb-32' : 'pb-6 sm:pb-8'
-          } ${isIntro ? 'flex flex-col' : ''}`}
+          // MISSION 51 §3.3 — le padding-bas dégage la barre fixe. Mission 148 — la barre fait
+          // 72 px : le contenu s'arrête 16 px au-dessus (safe-area comprise). Sur tablette, l'écran
+          // occupe la hauteur qui reste (`md:min-h-0`) ; s'il ne tenait pas (une fenêtre plus
+          // basse que prévu), il défilerait dans la fiche, jamais hors d'atteinte.
+          className={`relative mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-4 sm:px-8 md:min-h-0 md:overflow-x-hidden md:overflow-y-auto ${
+            isInteractive || isClosingAct
+              ? 'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'
+              : 'pb-6 sm:pb-8'
+          }`}
         >
           {page.type === 'intro' ? (
             <LivePageIntro
@@ -1464,10 +1475,11 @@ export function LiveComparativeShell({
           optimiste ailleurs ; libellé « Révéler … » sur la 1re phase de l'écran de durée. */}
         {isInteractive ? (
           <div
+            data-live-bar
             className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
             style={{
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-              paddingTop: '1rem',
+              paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '0.75rem',
             }}
           >
             <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
@@ -1483,7 +1495,7 @@ export function LiveComparativeShell({
                 {buyersDot}
               </span>
               <span
-                className={`text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-500 stage:text-white/40'}`}
+                className={`min-w-0 text-xs ${awaitError || blockedByFailedSave ? 'text-red-600 stage:text-red-300' : 'text-zinc-500 stage:text-white/40'}`}
                 aria-live="polite"
               >
                 {busy
@@ -1537,10 +1549,11 @@ export function LiveComparativeShell({
           de 1 à 10. Un champ vide n'enregistre rien et n'empêche pas d'avancer. */}
         {page.type === 'conclusion' ? (
           <div
+            data-live-bar
             className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
             style={{
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-              paddingTop: '1rem',
+              paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '0.75rem',
             }}
           >
             <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
@@ -1583,10 +1596,11 @@ export function LiveComparativeShell({
           à un écran advisor-only que le vendeur ne doit pas voir. */}
         {page.type === 'closing_question' ? (
           <div
+            data-live-bar
             className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
             style={{
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-              paddingTop: '1rem',
+              paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '0.75rem',
             }}
           >
             <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">

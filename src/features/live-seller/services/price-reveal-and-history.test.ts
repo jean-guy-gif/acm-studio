@@ -4,7 +4,7 @@ import { buildPriceReveal } from '@/features/live-seller/services/build-price-re
 import { storedFieldsPriceHistoryProvider } from '@/features/live-seller/services/price-history-provider';
 
 describe('buildPriceReveal', () => {
-  it('computes price/m², gap and relative position', () => {
+  it('computes price/m² and relative position (the guess gap is guessGap, M148)', () => {
     const reveal = buildPriceReveal({
       price: 465000,
       surfaceArea: 80,
@@ -13,8 +13,6 @@ describe('buildPriceReveal', () => {
       thisPricePerSquareMeter: 5813,
     });
     expect(reveal.pricePerSquareMeter).toBe(5813);
-    expect(reveal.gapAmount).toBe(35000);
-    expect(reveal.gapPercentage).toBe(8.1);
     expect(reveal.relativePosition).toEqual({ rank: 2, total: 3 });
   });
 
@@ -27,21 +25,7 @@ describe('buildPriceReveal', () => {
       thisPricePerSquareMeter: null,
     });
     expect(reveal.pricePerSquareMeter).toBeNull();
-    expect(reveal.gapAmount).toBeNull();
-    expect(reveal.gapPercentage).toBeNull();
     expect(reveal.relativePosition).toBeNull();
-  });
-
-  it('guards a zero seller estimate (percentage null)', () => {
-    const reveal = buildPriceReveal({
-      price: 400000,
-      surfaceArea: 80,
-      sellerEstimate: 0,
-      retainedPricesPerSquareMeter: [5000],
-      thisPricePerSquareMeter: 5000,
-    });
-    expect(reveal.gapAmount).toBe(400000);
-    expect(reveal.gapPercentage).toBeNull();
   });
 });
 

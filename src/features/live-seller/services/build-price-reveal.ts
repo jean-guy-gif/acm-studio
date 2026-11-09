@@ -1,12 +1,8 @@
 import { pricePerSquareMeter } from '@/features/comparables/services/calculate-comparable-summary';
 import type { PriceReveal } from '@/features/live-seller/types';
 
-function round1(value: number): number {
-  return Math.round(value * 10) / 10;
-}
-
-// Pure. Builds the Page-2 reveal for a single comparable. The gap is relative to
-// the seller's own estimate (never NaN); the relative position ranks this
+// Pure. Builds the Page-2 reveal for a single comparable. Mission 148 — l'écart de la devinette
+// n'est plus calculé ici : `guessGap` le mesure sur le prix affiché, partout. The relative position ranks this
 // comparable by price/m² (1 = cheapest) among the comparables it is given —
 // mission 104 : only those already revealed at its screen, itself included.
 export function buildPriceReveal(input: {
@@ -17,13 +13,6 @@ export function buildPriceReveal(input: {
   thisPricePerSquareMeter: number | null;
 }): PriceReveal {
   const ppsm = pricePerSquareMeter(input.price, input.surfaceArea);
-  const gapAmount =
-    input.sellerEstimate == null ? null : Math.round(input.price - input.sellerEstimate);
-  const gapPercentage =
-    input.sellerEstimate == null || input.sellerEstimate === 0
-      ? null
-      : round1(((input.price - input.sellerEstimate) / input.sellerEstimate) * 100);
-
   let relativePosition: PriceReveal['relativePosition'] = null;
   const values = input.retainedPricesPerSquareMeter.filter((v) => Number.isFinite(v));
   if (input.thisPricePerSquareMeter != null && values.length > 0) {
@@ -36,8 +25,6 @@ export function buildPriceReveal(input: {
     currentPrice: input.price,
     pricePerSquareMeter: ppsm,
     sellerEstimate: input.sellerEstimate,
-    gapAmount,
-    gapPercentage,
     relativePosition,
   };
 }

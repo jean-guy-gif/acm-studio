@@ -5,12 +5,18 @@ import { LiveComparableHeader } from '@/features/live-seller/components/live-com
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
+import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import {
+  answerColumn,
   bigInput,
   bigInputUnit,
   panel,
+  photoColumn,
   question,
   questionHint,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
 } from '@/features/live-seller/components/live-stage';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
@@ -34,21 +40,21 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
   const label = neutralComparableLabel(entry, language);
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.question}</h2>
         <p className={questionHint}>{savedEstimate != null ? t.savedHint : t.hint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-        <div className="flex flex-col gap-4">
+      <div className={screenBody}>
+        <div className={photoColumn}>
           {/* Le vendeur ESTIME le prix ici : le vrai prix est à l'écran suivant. Aucun
               montant ne doit fuir — ni le titre du portail, ni via le texte alternatif. */}
-          <LiveGallery photos={entry.photoUrls} alt={label} />
+          <LiveGallery photos={entry.photoUrls} alt={label} fill />
           <LiveComparableHeader heading={label} city={entry.city} district={entry.district} />
         </div>
 
-        <div className="flex h-fit flex-col gap-4">
+        <div className={answerColumn}>
           {savedEstimate != null ? (
             <div className={`${panel} flex flex-col gap-4`}>
               <LiveLockedAnswer value={formatEuro(savedEstimate, { language })} />
@@ -73,6 +79,9 @@ export function LivePagePrice({ entry }: { entry: SellerComparable }) {
           )}
         </div>
       </div>
+
+      {/* Mission 148 — « À quel prix ? » suit la même disposition (planche 2) : la grille aussi. */}
+      <LiveFeatureComparison items={entry.featureComparison} />
     </div>
   );
 }

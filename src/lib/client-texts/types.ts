@@ -42,6 +42,8 @@ export type ClientTexts = {
     competitorFallback: string;
     yourAnswer: string;
     commentOptional: string;
+    // Mission 148 — le commentaire facultatif s'ouvre sur place, à la demande.
+    addComment: string;
     questionMark: string;
     unknownLocation: string;
     // Un lien remis qui ne s'ouvre plus (M127 B) : la personne n'est pas connue, la page dit les deux.
@@ -86,6 +88,16 @@ export type ClientTexts = {
         equivalent: string;
         forThem: string;
       };
+      // Mission 148 — la pastille compacte : « Surface · pour vous ».
+      chipStatus: Record<'competitor_advantage' | 'competitor_weakness', string>;
+    };
+    // Mission 148 — la réponse du vendeur face au prix affiché d'un concurrent : « Votre réponse :
+    // 5,4 % en dessous du prix affiché ». La couleur ne parle jamais seule.
+    guessGap: {
+      below: (percent: string) => string;
+      above: (percent: string) => string;
+      equal: string;
+      answer: (amount: string) => string;
     };
     // Le prix de commercialisation face à l'analyse du conseiller (M116) : le libellé de sa couleur.
     alignment: Record<'green' | 'orange' | 'red', string>;
@@ -357,10 +369,25 @@ export type DocumentTexts = {
     seriousShort: Record<'yes' | 'unsure' | 'no', string>;
     seriousQuestion: string;
     notConsidered: string;
+    // Mission 148 B (Jean-Guy, 09/11) — le « Prix des concurrents » dit sur quels concurrents il porte,
+    // sans dire quand il a été fixé (une décision reste modifiable jusqu'à la conclusion) ; la
+    // position du prix convenu dit face à combien de concurrents vus.
+    basisCalculated: (count: number, seen: number | null) => string;
+    basisAdvisor: (count: number, seen: number | null) => string;
+    positionAmongSeen: {
+      mostExpensive: string;
+      cheapest: string;
+      amongMostExpensive: string;
+      amongCheapest: string;
+      middle: string;
+      rank: (rank: number) => string;
+      sentence: (where: string, seen: number) => string;
+    };
+    // « Concurrent 1 · pas un concurrent pour vous » : sa ligne, sans barre, dans les prix au m².
+    notConsideredRow: (label: string) => string;
     thePrice: string;
     youImagined: string;
     listedShort: string;
-    gapVsAnswer: (percent: string) => string;
     durationTitle: string;
     knownDrop: (amount: string) => string;
     listed: string;
@@ -588,14 +615,14 @@ export type LiveTexts = {
     question: string;
     hint: string;
     serious: Record<SeriousCompetitor, string>;
+    // Mission 148 — en trois boutons côte à côte (rythme accéléré).
+    seriousShort: Record<SeriousCompetitor, string>;
   };
   priceReveal: {
     question: string;
     guessFirst: string;
     hint: string;
     listed: string;
-    imagined: string;
-    gap: string;
     perSqm: string;
     position: string;
     legend: string;
@@ -677,7 +704,6 @@ export type LiveTexts = {
     highlights: string;
     question: string;
     confirmed: Record<PropertyConfirmed, string>;
-    comment: string;
   };
   dpe: {
     title: string;
@@ -710,8 +736,6 @@ export type LiveTexts = {
     none: string;
     review: string;
     others: string;
-    imagined: (price: string) => string;
-    gap: (amount: string) => string;
     serious: (answer: string) => string;
     notGiven: string;
     why: string;
@@ -807,6 +831,9 @@ export type LiveTexts = {
   };
   answers: {
     coherence: Record<PriceCoherence, string>;
+    // Mission 148 — les libellés courts des choix, devant le vendeur.
+    coherenceShort: Record<PriceCoherence, string>;
+    dangerousReasonShort: Record<DangerousReason, string>;
     durationReason: Record<MarketDurationReason, string>;
     dangerousReason: Record<DangerousReason, string>;
   };

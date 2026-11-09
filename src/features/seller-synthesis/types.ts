@@ -1,6 +1,7 @@
 import type { TextLanguage } from '@/lib/client-texts';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
+import type { GuessGap } from '@/features/live-seller/services/guess-gap';
 
 // Mission 110 — la synthèse laissée au vendeur après le Live. LISTE D'AUTORISATION : ce type ne
 // porte que ce que le vendeur peut lire. Jamais l'adresse, le titre, le lien d'une annonce, ni
@@ -38,8 +39,9 @@ export type SynthesisCompetitor = {
   revealed: {
     guess: number | null;
     price: number;
-    // L'écart du Live (M96) : prix affiché moins devinette, en % de la devinette.
-    gapPercent: number | null;
+    // Mission 148 — l'écart du Live, sur le prix affiché, et sa couleur (`guessGap`) ; null sans
+    // devinette, pour une devinette à 0 € ou en présentation directe.
+    guessGap: GuessGap | null;
     pricePerSquareMeter: number | null;
     // Seulement si l'étape « Durée » a eu lieu : la durée devinée, puis la durée révélée.
     duration: { guessDays: number | null; days: number | null } | null;
@@ -93,6 +95,8 @@ export type SellerSynthesis = {
     droppedCount: number | null;
     medianDaysOnMarket: number | null;
     perSquareMeter: { label: string; value: number }[];
+    // Mission 148 B — « Concurrent 1 · pas un concurrent pour vous » : une ligne sans barre.
+    notConsideredRows: string[];
     medianPerSquareMeter: number | null;
   } | null;
   // Les prix du Live (M89) ; après la conclusion, les montants figés (M111).

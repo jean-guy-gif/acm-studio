@@ -7,10 +7,15 @@ import { LiveDurationReveal } from '@/features/live-seller/components/live-durat
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import {
+  answerColumn,
   panel,
+  photoColumn,
   question,
   questionHint,
   revealValue,
+  screen,
+  screenBody,
+  screenHead,
   statLabel,
   statValue,
 } from '@/features/live-seller/components/live-stage';
@@ -28,21 +33,21 @@ export function LivePageDirect({ entry }: { entry: SellerComparable }) {
   const t = texts.live.direct;
   const title = neutralComparableLabel(entry, language);
   return (
-    <div className="flex flex-col gap-5 sm:gap-6">
-      <div className="flex flex-col gap-2">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.question}</h2>
         <p className={questionHint}>{t.hint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-        <div className="flex min-w-0 flex-col gap-3">
-          <LiveGallery photos={entry.photoUrls} alt={title} />
+      <div className={screenBody}>
+        <div className={photoColumn}>
+          <LiveGallery photos={entry.photoUrls} alt={title} fill />
           <LiveComparableHeader heading={title} city={entry.city} district={entry.district} />
         </div>
 
-        <div className="flex h-fit min-w-0 flex-col gap-4">
+        <div className={answerColumn}>
           {entry.authorized ? (
-            <div className={`${panel} live-reveal-pop flex flex-col gap-4`} data-direct-price>
+            <div className={`${panel} live-reveal-pop flex flex-col gap-3`} data-direct-price>
               <div>
                 <div className={statLabel}>{texts.live.priceReveal.listed}</div>
                 <div className={revealValue}>

@@ -84,7 +84,7 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
     ).toEqual([]);
     expect(shownTexts()).not.toMatch(/Marché calculé|marché calculé/);
     expect(FR.analysis.competitorPrice).toBe('Prix des concurrents');
-    expect(shown('live-page-analysis.tsx')).toContain('{t.competitorPrice}');
+    expect(shown('live-page-analysis.tsx')).toContain('label: t.competitorPrice');
   });
 
   it('« Quitter » ne mène ni à la préparation ni à la liste des autres clients', () => {
@@ -274,7 +274,9 @@ describe('le rythme accéléré parle au vendeur comme le reste du Live (mission
     expect(SELLER_SCREENS).toContain('live-page-quick-guess.tsx');
     expect(SELLER_SCREENS).toContain('live-page-quick-reveal.tsx');
     expect(shown('live-page-quick-guess.tsx')).toContain('texts.live.price.label');
-    expect(shown('live-page-quick-reveal.tsx')).toContain('texts.common.yourAnswer');
+    // Mission 148 — « Votre réponse », en couleur, vient du composant partagé de l'écart.
+    expect(shown('live-page-quick-reveal.tsx')).toContain('<LiveGuessGap');
+    expect(shown('live-guess-gap.tsx')).toContain('texts.common.yourAnswer');
     expect(shown('live-page-quick-reveal.tsx')).toContain('texts.live.duration.label');
   });
 

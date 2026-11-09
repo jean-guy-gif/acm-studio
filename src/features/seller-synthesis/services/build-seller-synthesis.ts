@@ -6,13 +6,10 @@ import { normalizePropertyType } from '@/features/competitor-search/utils/normal
 import { countDpe, dpeMarket } from '@/features/dpe/services/dpe';
 import { DANGEROUS_REASONS, type DangerousReason } from '@/features/live-seller/constants';
 import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
-import { buildPriceReveal } from '@/features/live-seller/services/build-price-reveal';
-import {
-  buildMarketReading,
-  competitorPriceBasisLabel,
-} from '@/features/live-seller/services/market-reading';
+import { guessGap } from '@/features/live-seller/services/guess-gap';
+import { buildMarketReading } from '@/features/live-seller/services/market-reading';
 import { storedFieldsPriceHistoryProvider } from '@/features/live-seller/services/price-history-provider';
-import { pricePositionSentence } from '@/features/live-seller/services/price-position';
+import { pricePosition } from '@/features/live-seller/services/price-position';
 import type { FeatureBundle } from '@/features/live-seller/types';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import {
@@ -260,6 +257,28 @@ function snapshotCounts(value: unknown): { used: number; excludedOutliers: numbe
   return { used, excludedOutliers: Number.isFinite(excluded) ? excluded : 0 };
 }
 
+function positionAmongSeen(
+  price: number,
+  competitorPrices: readonly number[],
+  texts: ReturnType<typeof clientTexts>,
+): string | null {
+  const position = pricePosition(price, competitorPrices);
+  if (!position) return null;
+  const t = texts.documents.synthesis.positionAmongSeen;
+  const seen = competitorPrices.filter((value) => Number.isFinite(value) && value > 0).length;
+  const where =
+    position.kind === 'rank'
+      ? t.rank(position.rank)
+      : {
+          most_expensive: t.mostExpensive,
+          cheapest: t.cheapest,
+          among_most_expensive: t.amongMostExpensive,
+          among_cheapest: t.amongCheapest,
+          middle: t.middle,
+        }[position.kind];
+  return t.sentence(where, seen);
+}
+
 export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
   const language = input.language ?? 'fr';
   const texts = clientTexts(language);
@@ -320,13 +339,8 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       revealed = {
         guess,
         price,
-        gapPercent: buildPriceReveal({
-          price,
-          surfaceArea: null,
-          sellerEstimate: guess,
-          retainedPricesPerSquareMeter: [],
-          thisPricePerSquareMeter: null,
-        }).gapPercentage,
+        // Mission 148 — le même calcul qu'au Live, sur les montants figés (M111).
+        guessGap: guessGap(guess, price),
         pricePerSquareMeter: pricePerSquareMeter(price, row.surface_area),
         duration: durationShown
           ? { guessDays, days: marketDuration.available ? marketDuration.days : null }
@@ -400,20 +414,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       ? null
       : {
           competitorPrice,
+          // Mission 148 B (Jean-Guy, 09/11) — le calcul porte sur les concurrents retenus par le
+          // conseiller, ceux que le vendeur a écartés compris ; la phrase ne dit pas quand il a été
+          // fixé (une décision reste modifiable jusqu'à la conclusion, M111).
           basisLabel:
             competitorPrice != null && counts
-              ? competitorPriceBasisLabel(
-                  {
-                    calculationCount: counts.used,
-                    seenTogetherCount: seenTogether,
-                    competitorPriceBasis:
-                      marketComputed != null &&
-                      Math.round(marketComputed) !== Math.round(competitorPrice)
-                        ? 'advisor'
-                        : 'computed',
-                  },
-                  language,
-                )
+              ? (marketComputed != null &&
+                  Math.round(marketComputed) !== Math.round(competitorPrice)
+                  ? texts.documents.synthesis.basisAdvisor
+                  : texts.documents.synthesis.basisCalculated)(counts.used, seenTogether)
               : null,
           advisorAnalysis,
           justification,
@@ -433,6 +442,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       value: item.revealed!.pricePerSquareMeter as number,
     }))
     .sort((a, b) => a.value - b.value);
+  // Mission 148 B (Jean-Guy, 08/11) — les numéros sont ceux du Live : un concurrent écarté par
+  // « Non » garde sa ligne, sans barre ni prix (M41), pour qu'aucun numéro ne manque.
+  const notConsideredRows = competitors
+    .filter((item) => item.serious === 'no')
+    .map((item) =>
+      texts.documents.synthesis.notConsideredRow(
+        texts.live.competitorReview.competitor(item.position),
+      ),
+    );
   const medianPpsm = median(perSquareMeter.map((item) => item.value));
 
   const dpe = dpeMarket(
@@ -506,14 +524,16 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
             droppedCount: market.droppedCount,
             medianDaysOnMarket: market.medianDaysOnMarket,
             perSquareMeter,
+            notConsideredRows,
             medianPerSquareMeter: medianPpsm == null ? null : Math.round(medianPpsm),
           }
         : null,
     decision,
     commercializationPrice: agreed,
     agreedPricePerSquareMeter: agreed != null ? pricePerSquareMeter(agreed, surface) : null,
-    positionSentence:
-      agreed != null ? pricePositionSentence(agreed, market.prices, language) : null,
+    // Mission 148 B (Jean-Guy, 08/11) — « Le moins cher : votre bien face aux 4 concurrents dont
+    // vous avez vu le prix » : le vendeur sait de quels biens on parle.
+    positionSentence: agreed != null ? positionAmongSeen(agreed, market.prices, texts) : null,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
   };

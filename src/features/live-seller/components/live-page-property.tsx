@@ -3,16 +3,19 @@
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { propertyTypeIn } from '@/lib/client-texts';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
+import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import {
-  choice,
-  fieldInput,
+  answerColumn,
+  choiceCompact,
   fieldLabel,
-  panel,
-  panelSoft,
+  panelTight,
+  photoColumn,
   question,
   questionHint,
+  screen,
+  screenBodyWideAnswers,
+  screenHead,
   statLabel,
-  statValue,
 } from '@/features/live-seller/components/live-stage';
 import { PROPERTY_CONFIRMED_VALUES } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
@@ -117,76 +120,77 @@ export function LivePageProperty({
     [propertyTypeIn(property.propertyType, texts), property.city].filter(Boolean).join(' · ') ||
     t.fallbackAlt;
 
+  // Mission 148 — « Votre bien » tient sur un écran (planche 1) : la photo prend la hauteur qui
+  // reste, ses vignettes dedans ; à côté, la question, les caractéristiques en pastilles compactes
+  // (une valeur longue passe à la ligne, jamais coupée) et les points forts sous la photo. La
+  // description quitte l'écran : c'est le texte de la fiche, que le vendeur connaît (réponse 4).
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-3">
+    <div className={screen}>
+      <div className={screenHead}>
         <h2 className={question}>{t.title}</h2>
         <p className={questionHint}>{asksSeller ? t.askHint : t.showHint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
-        <div className="flex flex-col gap-4">
-          <LiveGallery photos={property.photoUrls} alt={alt} />
-
-          {stats.length > 0 ? (
-            <div className={`${panelSoft} grid grid-cols-2 gap-4 sm:grid-cols-3`}>
-              {stats.map((stat) => (
-                <div key={stat.label}>
-                  <div className={statLabel}>{stat.label}</div>
-                  <div className={statValue}>{stat.value}</div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {property.description ? (
-            <p className="text-sm whitespace-pre-wrap text-zinc-600 stage:text-white/70">
-              {property.description}
-            </p>
-          ) : null}
-
+      {/* Les caractéristiques ont la colonne la plus large : une valeur longue (le chauffage,
+          l'adresse) passe à la ligne sans pousser l'écran sous la barre. */}
+      <div className={screenBodyWideAnswers}>
+        <div className={photoColumn}>
+          <LiveGallery photos={property.photoUrls} alt={alt} fill />
           {property.features.length > 0 ? (
-            <div className={panelSoft}>
-              <div className={statLabel}>{t.highlights}</div>
-              <div className={statValue}>{property.features.join(', ')}</div>
-            </div>
+            <p className="shrink-0 text-sm text-zinc-700 stage:text-white/80">
+              <span className={statLabel}>{t.highlights}</span> {property.features.join(' · ')}
+            </p>
           ) : null}
         </div>
 
-        {asksSeller ? (
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className={`${panel} flex h-fit flex-col gap-4`}
-          >
-            <fieldset className="flex flex-col gap-3">
-              <legend className={fieldLabel}>{t.question}</legend>
-              <div className="flex flex-col gap-3">
-                {PROPERTY_CONFIRMED_VALUES.map((value) => (
-                  <label key={value} className={choice}>
-                    <input
-                      type="radio"
-                      name="seller_property_confirmed"
-                      value={value}
-                      defaultChecked={currentAnswer === value}
-                      className="sr-only"
-                    />
-                    {t.confirmed[value]}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+        <div className={answerColumn}>
+          {asksSeller ? (
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className={`${panelTight} flex flex-col gap-2`}
+            >
+              <fieldset className="flex flex-col gap-2">
+                <legend className={`${fieldLabel} mb-1.5`}>{t.question}</legend>
+                <div className="grid grid-cols-1 gap-2 md:portrait:grid-cols-2">
+                  {PROPERTY_CONFIRMED_VALUES.map((value) => (
+                    <label key={value} className={choiceCompact}>
+                      <input
+                        type="radio"
+                        name="seller_property_confirmed"
+                        value={value}
+                        defaultChecked={currentAnswer === value}
+                        className="sr-only"
+                      />
+                      {t.confirmed[value]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <LiveCommentField name="seller_property_comment" defaultValue={currentComment} />
+            </form>
+          ) : null}
 
-            <label className="flex flex-col gap-1.5">
-              <span className={fieldLabel}>{t.comment}</span>
-              <textarea
-                name="seller_property_comment"
-                rows={3}
-                defaultValue={currentComment}
-                className={fieldInput}
-              />
-            </label>
-          </form>
-        ) : null}
+          {stats.length > 0 ? (
+            <dl
+              className="grid shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-3 md:portrait:grid-cols-4"
+              data-property-stats
+            >
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex min-w-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 stage:border-white/15 stage:bg-white/5"
+                >
+                  <dt className="text-[0.6rem] leading-tight font-semibold tracking-[0.1em] text-zinc-500 uppercase stage:text-white/55">
+                    {stat.label}
+                  </dt>
+                  <dd className="font-title text-sm leading-tight font-semibold break-words text-zinc-900 stage:text-white">
+                    {stat.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -343,7 +343,13 @@ describe('la synthèse au vendeur', () => {
     const { synthesis, html } = await load();
     const [c1, c2, c3] = synthesis.competitors;
     expect(c1.serious).toBe('yes');
-    expect(c1.revealed).toMatchObject({ guess: 280_000, price: 300_000, gapPercent: 7.1 });
+    // Mission 148 — l'écart se mesure sur le prix affiché : 280 000 pour 300 000, 6,7 % en dessous
+    // (orange, entre 5 et 10 %).
+    expect(c1.revealed).toMatchObject({
+      guess: 280_000,
+      price: 300_000,
+      guessGap: { amount: -20_000, direction: 'below', tone: 'orange' },
+    });
     expect(c1.revealed?.duration).toBeNull();
     expect(c2.serious).toBe('no');
     expect(c2.revealed).toBeNull();
@@ -355,9 +361,12 @@ describe('la synthèse au vendeur', () => {
       duration: { guessDays: 60, days: 90 },
       priceDrop: { amount: 10_000, percent: 2.9 },
     });
-    expect(html).toMatch(/\+7,1\s%\spar rapport à votre réponse/);
+    expect(html).toMatch(/6,7\s%\sen dessous du prix affiché/);
+    expect(html).toContain('data-guess-gap="orange"');
+    expect(html).toContain('text-amber-700');
+    expect(html).not.toContain('par rapport à votre réponse');
     expect(synthesis.guessLines).toEqual([
-      expect.stringMatching(/^Vous avez sous-estimé 2 concurrents sur 2, de 8,\d\s% en moyenne$/),
+      expect.stringMatching(/^Vous avez sous-estimé 2 concurrents sur 2, de 7,9\s% en moyenne$/),
     ]);
     expect(synthesis.dangerous).toEqual({ competitorId: 'c3', reason: 'Plus grande surface' });
     expect(html).toContain('Pourquoi, selon vous');
@@ -384,12 +393,23 @@ describe('la synthèse au vendeur', () => {
     const { synthesis, html } = await load();
     expect(synthesis.decision).toEqual({
       competitorPrice: 320_000,
-      basisLabel: 'Calculé sur 4 concurrents, dont 3 vus ensemble',
+      // Mission 148 B (Jean-Guy, 09/11) — sur les concurrents retenus, sans dire quand.
+      basisLabel:
+        'Calculé par votre conseiller sur les 4 concurrents qu’il a retenus, dont 3 vus ensemble',
       advisorAnalysis: 330_000,
       justification: 'Trois biens proches, le vôtre a un balcon.',
     });
     expect(synthesis.commercializationPrice).toBe(319_000);
-    expect(synthesis.positionSentence).toMatch(/^À 319\s000\s€, votre bien serait/);
+    // Mission 148 B — face aux concurrents dont il a vu le prix (c1 et c3 ; c2 a eu « Non »).
+    expect(synthesis.positionSentence).toBe(
+      'Dans la moyenne\u00a0: votre bien face aux 2 concurrents dont vous avez vu le prix',
+    );
+    expect(html).not.toMatch(/\d biens comparés/);
+    // Les numéros du Live : le « Non » (concurrent 2) garde sa ligne, sans barre ni prix.
+    expect(synthesis.analysis?.notConsideredRows).toEqual([
+      'Concurrent 2 · pas un concurrent pour vous',
+    ]);
+    expect(html).toMatch(/data-not-considered[^>]*>Concurrent 2 · pas un concurrent pour vous</);
     for (const label of [
       'Prix des concurrents',
       'Analyse du conseiller',
@@ -531,14 +551,64 @@ describe('les prix de la synthèse (mission 111)', () => {
     });
     expect(synthesis.decision).toEqual({
       competitorPrice: 310_000,
-      // Un autre montant que le calcul : les mots du Live (M94, M104).
-      basisLabel: 'Prix retenu par votre conseiller à partir de 5 concurrents',
+      // Un autre montant que le calcul : le conseiller l'a choisi (Jean-Guy, 09/11).
+      basisLabel: 'Prix choisi par votre conseiller, à partir des 5 concurrents qu’il a retenus',
       advisorAnalysis: null,
       justification: null,
     });
     const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
     expect(html).toContain('Prix des concurrents');
     expect(html).not.toContain('Analyse du conseiller');
+  });
+
+  // Mission 148 B (Jean-Guy, 09/11) — « dont N vus ensemble » ne compte que les concurrents du
+  // calcul montrés pendant le Live : N est toujours strictement sous le total, sinon rien ne se dit.
+  describe('« dont N vus ensemble »', () => {
+    const decision = (usedCount: number, excludedOutlierCount = 0) => ({
+      advisor_price: 300_000,
+      advisor_comparative_market_price: null,
+      justification: null,
+      range_central: 300_000,
+      calculation_snapshot: { usedCount, excludedOutlierCount },
+    });
+    // 8 retenus : les `shown` premiers montrés au Live, les autres hors Live (M110).
+    const retained = (
+      shown: number,
+      over: (index: number) => Record<string, unknown> = () => ({}),
+    ) =>
+      Array.from({ length: 8 }, (_, index) =>
+        competitor(`c${index + 1}`, index, 300_000 + index * 1_000, {
+          excluded_from_live: index >= shown,
+          ...over(index),
+        }),
+      ) as unknown as SynthesisInput['competitors'];
+    const basis = (input: Partial<SynthesisInput>) =>
+      buildSellerSynthesis({ ...base, ...input }).decision?.basisLabel;
+
+    it('compte les concurrents du calcul vus ensemble, toujours moins que le total', () => {
+      expect(basis({ competitors: retained(6), decision: decision(8) })).toBe(
+        'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus, dont 6 vus ensemble',
+      );
+    });
+
+    it('un concurrent montré sans prix au m² n’entre pas au calcul : il n’est pas compté', () => {
+      const withoutSurface = retained(6, (index) => (index === 0 ? { surface_area: null } : {}));
+      expect(basis({ competitors: withoutSurface, decision: decision(7) })).toBe(
+        'Calculé par votre conseiller sur les 7 concurrents qu’il a retenus, dont 5 vus ensemble',
+      );
+    });
+
+    it('tous montrés au Live : aucune mention', () => {
+      expect(basis({ competitors: retained(8), decision: decision(8) })).toBe(
+        'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus',
+      );
+    });
+
+    it('un concurrent écarté du calcul comme atypique : on ne sait pas lesquels, aucune mention', () => {
+      expect(basis({ competitors: retained(6), decision: decision(7, 1) })).toBe(
+        'Calculé par votre conseiller sur les 7 concurrents qu’il a retenus',
+      );
+    });
   });
 
   it('après la conclusion : les montants figés, même sans décision en cours', () => {
