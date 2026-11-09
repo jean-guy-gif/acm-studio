@@ -369,10 +369,11 @@ export type DocumentTexts = {
     seriousShort: Record<'yes' | 'unsure' | 'no', string>;
     seriousQuestion: string;
     notConsidered: string;
-    // Mission 148 B (Jean-Guy, 08/11) — le « Prix des concurrents » dit qu'il a été calculé avant le
-    // rendez-vous ; la position du prix convenu dit face à combien de concurrents vus.
-    basisCalculated: (competitors: string) => string;
-    basisAdvisor: (competitors: string) => string;
+    // Mission 148 B (Jean-Guy, 09/11) — le « Prix des concurrents » dit sur quels concurrents il porte,
+    // sans dire quand il a été fixé (une décision reste modifiable jusqu'à la conclusion) ; la
+    // position du prix convenu dit face à combien de concurrents vus.
+    basisCalculated: (count: number, seen: number | null) => string;
+    basisAdvisor: (count: number, seen: number | null) => string;
     positionAmongSeen: {
       mostExpensive: string;
       cheapest: string;

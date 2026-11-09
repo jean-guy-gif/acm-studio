@@ -18,6 +18,11 @@ function englishOrdinal(rank: number): string {
   return `${rank}${suffix}`;
 }
 
+// Mission 148 B — « dont N vus ensemble » (M112), quand des concurrents hors Live entrent au calcul.
+function seenTogetherEn(count: number, seen: number | null): string {
+  return seen != null && seen < count ? `, ${seen} of which we viewed together` : '';
+}
+
 export const ENGLISH_TEXTS: ClientTexts = {
   labels: {
     propertyType: {
@@ -556,30 +561,25 @@ export const ENGLISH_TEXTS: ClientTexts = {
       seriousShort: { yes: 'Yes', unsure: 'Not sure', no: 'No' },
       seriousQuestion: 'A serious competing property?',
       notConsidered: 'Not competition for you: we did not look at its price.',
-      basisCalculated: (competitors) =>
-        `Calculated by your adviser before our meeting, on ${competitors}`,
-      basisAdvisor: (competitors) =>
-        `Price set by your adviser before our meeting, based on ${competitors}`,
+      basisCalculated: (count, seen) =>
+        `Calculated by your adviser on ${
+          count > 1
+            ? `the ${count} competing properties they selected`
+            : 'the competing property they selected'
+        }${seenTogetherEn(count, seen)}`,
+      basisAdvisor: (count, seen) =>
+        `Price chosen by your adviser, based on ${
+          count > 1
+            ? `the ${count} competing properties they selected`
+            : 'the competing property they selected'
+        }${seenTogetherEn(count, seen)}`,
       positionAmongSeen: {
         mostExpensive: 'The most expensive',
         cheapest: 'The cheapest',
         amongMostExpensive: 'Among the most expensive',
         amongCheapest: 'Among the cheapest',
         middle: 'In the middle',
-        rank: (rank) => {
-          const tens = rank % 100;
-          const suffix =
-            tens >= 11 && tens <= 13
-              ? 'th'
-              : rank % 10 === 1
-                ? 'st'
-                : rank % 10 === 2
-                  ? 'nd'
-                  : rank % 10 === 3
-                    ? 'rd'
-                    : 'th';
-          return `The ${rank}${suffix} cheapest`;
-        },
+        rank: (rank) => `The ${englishOrdinal(rank)} cheapest`,
         sentence: (where, seen) =>
           `${where}: your property against the ${
             seen > 1 ? `${seen} competing properties` : 'competing property'
@@ -623,7 +623,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
         'At the start of the meeting, after seeing the market, then the price agreed together.',
       answersTitle: 'Your answers against the asking prices',
       agreedPerSqm: 'Agreed price per m²',
-      amongCompared: 'Among the properties compared',
+      amongCompared: 'Your price against the competing properties',
       stepsBand: 'The steps against the asking prices of the properties we looked at',
     },
     marketUpdate: {

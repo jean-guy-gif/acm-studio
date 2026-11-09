@@ -414,16 +414,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       ? null
       : {
           competitorPrice,
-          // Mission 148 B (Jean-Guy, 08/11) — le calcul date d'avant le rendez-vous : il compte
-          // aussi les concurrents que le vendeur a écartés, et la phrase le dit.
+          // Mission 148 B (Jean-Guy, 09/11) — le calcul porte sur les concurrents retenus par le
+          // conseiller, ceux que le vendeur a écartés compris ; la phrase ne dit pas quand il a été
+          // fixé (une décision reste modifiable jusqu'à la conclusion, M111).
           basisLabel:
             competitorPrice != null && counts
               ? (marketComputed != null &&
                   Math.round(marketComputed) !== Math.round(competitorPrice)
                   ? texts.documents.synthesis.basisAdvisor
-                  : texts.documents.synthesis.basisCalculated)(
-                  texts.common.priceBasis.competitors(counts.used, seenTogether),
-                )
+                  : texts.documents.synthesis.basisCalculated)(counts.used, seenTogether)
               : null,
           advisorAnalysis,
           justification,
