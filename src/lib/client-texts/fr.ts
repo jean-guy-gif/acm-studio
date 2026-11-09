@@ -45,6 +45,11 @@ const ofPlace = (name: string) => (/^[aeiouyhàâéèêîôû]/i.test(name) ? `d
 
 // Mission 140 — le français, la langue par défaut : les listes reprennent celles de l'outil (une
 // seule source), les phrases sont celles qui étaient écrites dans les écrans, mot pour mot.
+// Mission 148 B — « dont N vus ensemble » (M112), quand des concurrents hors Live entrent au calcul.
+function seenTogetherFr(count: number, seen: number | null): string {
+  return seen != null && seen < count ? `, dont ${seen} vu${seen > 1 ? 's' : ''} ensemble` : '';
+}
+
 export const FRENCH_TEXTS: ClientTexts = {
   labels: {
     propertyType: PROPERTY_TYPE_LABELS,
@@ -502,10 +507,14 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
       seriousQuestion: 'Un sérieux concurrent ?',
       notConsidered: 'Pas un concurrent pour vous : son prix n’a pas été regardé.',
-      basisCalculated: (competitors) =>
-        `Calculé par votre conseiller avant notre rendez-vous, sur ${competitors}`,
-      basisAdvisor: (competitors) =>
-        `Prix retenu par votre conseiller avant notre rendez-vous, à partir de ${competitors}`,
+      basisCalculated: (count, seen) =>
+        `Calculé par votre conseiller sur ${
+          count > 1 ? `les ${count} concurrents qu’il a retenus` : 'le concurrent qu’il a retenu'
+        }${seenTogetherFr(count, seen)}`,
+      basisAdvisor: (count, seen) =>
+        `Prix choisi par votre conseiller, à partir ${
+          count > 1 ? `des ${count} concurrents qu’il a retenus` : 'du concurrent qu’il a retenu'
+        }${seenTogetherFr(count, seen)}`,
       positionAmongSeen: {
         mostExpensive: 'Le plus cher',
         cheapest: 'Le moins cher',
@@ -556,7 +565,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       pathHint: 'Au début du rendez-vous, après avoir vu le marché, puis le prix retenu ensemble.',
       answersTitle: 'Vos réponses face aux prix affichés',
       agreedPerSqm: 'Prix convenu au m²',
-      amongCompared: 'Parmi les biens comparés',
+      amongCompared: 'Votre prix face aux concurrents',
       stepsBand: 'Les étapes face aux prix affichés des biens regardés',
     },
     marketUpdate: {

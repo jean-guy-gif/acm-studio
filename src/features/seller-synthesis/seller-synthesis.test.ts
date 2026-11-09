@@ -393,9 +393,9 @@ describe('la synthèse au vendeur', () => {
     const { synthesis, html } = await load();
     expect(synthesis.decision).toEqual({
       competitorPrice: 320_000,
-      // Mission 148 B (Jean-Guy, 08/11) — le calcul date d'avant le rendez-vous.
+      // Mission 148 B (Jean-Guy, 09/11) — sur les concurrents retenus, sans dire quand.
       basisLabel:
-        'Calculé par votre conseiller avant notre rendez-vous, sur 4 concurrents, dont 3 vus ensemble',
+        'Calculé par votre conseiller sur les 4 concurrents qu’il a retenus, dont 3 vus ensemble',
       advisorAnalysis: 330_000,
       justification: 'Trois biens proches, le vôtre a un balcon.',
     });
@@ -551,9 +551,8 @@ describe('les prix de la synthèse (mission 111)', () => {
     });
     expect(synthesis.decision).toEqual({
       competitorPrice: 310_000,
-      // Un autre montant que le calcul : les mots du Live (M94, M104).
-      basisLabel:
-        'Prix retenu par votre conseiller avant notre rendez-vous, à partir de 5 concurrents',
+      // Un autre montant que le calcul : le conseiller l'a choisi (Jean-Guy, 09/11).
+      basisLabel: 'Prix choisi par votre conseiller, à partir des 5 concurrents qu’il a retenus',
       advisorAnalysis: null,
       justification: null,
     });

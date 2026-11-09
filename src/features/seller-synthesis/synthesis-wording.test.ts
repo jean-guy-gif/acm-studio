@@ -10,19 +10,44 @@ const EN = clientTexts('en').documents.synthesis;
 const plain = (text: string) => text.replace(/ /g, ' ');
 
 describe('les phrases de la synthèse (mission 148 B)', () => {
-  it('dit que le prix des concurrents a été calculé avant le rendez-vous', () => {
-    expect(FR.basisCalculated('5 concurrents')).toBe(
-      'Calculé par votre conseiller avant notre rendez-vous, sur 5 concurrents',
+  // Jean-Guy, 09/11 — aucune référence au moment : une décision reste modifiable jusqu'à la
+  // conclusion (M111), la phrase doit rester vraie.
+  it('dit sur quels concurrents porte le prix, sans dire quand il a été fixé', () => {
+    expect(FR.basisCalculated(5, null)).toBe(
+      'Calculé par votre conseiller sur les 5 concurrents qu’il a retenus',
     );
-    expect(FR.basisAdvisor('5 concurrents')).toBe(
-      'Prix retenu par votre conseiller avant notre rendez-vous, à partir de 5 concurrents',
+    expect(FR.basisAdvisor(5, null)).toBe(
+      'Prix choisi par votre conseiller, à partir des 5 concurrents qu’il a retenus',
     );
-    expect(EN.basisCalculated('5 competing properties')).toBe(
-      'Calculated by your adviser before our meeting, on 5 competing properties',
+    expect(FR.basisCalculated(1, null)).toBe(
+      'Calculé par votre conseiller sur le concurrent qu’il a retenu',
     );
-    expect(EN.basisAdvisor('5 competing properties')).toBe(
-      'Price set by your adviser before our meeting, based on 5 competing properties',
+    expect(FR.basisAdvisor(1, null)).toBe(
+      'Prix choisi par votre conseiller, à partir du concurrent qu’il a retenu',
     );
+    expect(FR.basisCalculated(8, 6)).toBe(
+      'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus, dont 6 vus ensemble',
+    );
+    expect(EN.basisCalculated(5, null)).toBe(
+      'Calculated by your adviser on the 5 competing properties they selected',
+    );
+    expect(EN.basisAdvisor(1, null)).toBe(
+      'Price chosen by your adviser, based on the competing property they selected',
+    );
+    expect(EN.basisAdvisor(8, 6)).toBe(
+      'Price chosen by your adviser, based on the 8 competing properties they selected, 6 of which we viewed together',
+    );
+    for (const text of [FR.basisCalculated(5, null), FR.basisAdvisor(5, null)]) {
+      expect(text).not.toMatch(/rendez-vous|avant|après/);
+    }
+    for (const text of [EN.basisCalculated(5, null), EN.basisAdvisor(5, null)]) {
+      expect(text).not.toMatch(/meeting|before|after/);
+    }
+  });
+
+  it('titre la case de la position « Votre prix face aux concurrents »', () => {
+    expect(FR.amongCompared).toBe('Votre prix face aux concurrents');
+    expect(EN.amongCompared).toBe('Your price against the competing properties');
   });
 
   it('situe le prix convenu face aux concurrents vus, au singulier comme au pluriel', () => {
