@@ -561,6 +561,56 @@ describe('les prix de la synthèse (mission 111)', () => {
     expect(html).not.toContain('Analyse du conseiller');
   });
 
+  // Mission 148 B (Jean-Guy, 09/11) — « dont N vus ensemble » ne compte que les concurrents du
+  // calcul montrés pendant le Live : N est toujours strictement sous le total, sinon rien ne se dit.
+  describe('« dont N vus ensemble »', () => {
+    const decision = (usedCount: number, excludedOutlierCount = 0) => ({
+      advisor_price: 300_000,
+      advisor_comparative_market_price: null,
+      justification: null,
+      range_central: 300_000,
+      calculation_snapshot: { usedCount, excludedOutlierCount },
+    });
+    // 8 retenus : les `shown` premiers montrés au Live, les autres hors Live (M110).
+    const retained = (
+      shown: number,
+      over: (index: number) => Record<string, unknown> = () => ({}),
+    ) =>
+      Array.from({ length: 8 }, (_, index) =>
+        competitor(`c${index + 1}`, index, 300_000 + index * 1_000, {
+          excluded_from_live: index >= shown,
+          ...over(index),
+        }),
+      ) as unknown as SynthesisInput['competitors'];
+    const basis = (input: Partial<SynthesisInput>) =>
+      buildSellerSynthesis({ ...base, ...input }).decision?.basisLabel;
+
+    it('compte les concurrents du calcul vus ensemble, toujours moins que le total', () => {
+      expect(basis({ competitors: retained(6), decision: decision(8) })).toBe(
+        'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus, dont 6 vus ensemble',
+      );
+    });
+
+    it('un concurrent montré sans prix au m² n’entre pas au calcul : il n’est pas compté', () => {
+      const withoutSurface = retained(6, (index) => (index === 0 ? { surface_area: null } : {}));
+      expect(basis({ competitors: withoutSurface, decision: decision(7) })).toBe(
+        'Calculé par votre conseiller sur les 7 concurrents qu’il a retenus, dont 5 vus ensemble',
+      );
+    });
+
+    it('tous montrés au Live : aucune mention', () => {
+      expect(basis({ competitors: retained(8), decision: decision(8) })).toBe(
+        'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus',
+      );
+    });
+
+    it('un concurrent écarté du calcul comme atypique : on ne sait pas lesquels, aucune mention', () => {
+      expect(basis({ competitors: retained(6), decision: decision(7, 1) })).toBe(
+        'Calculé par votre conseiller sur les 7 concurrents qu’il a retenus',
+      );
+    });
+  });
+
   it('après la conclusion : les montants figés, même sans décision en cours', () => {
     const synthesis = buildSellerSynthesis({
       ...base,
