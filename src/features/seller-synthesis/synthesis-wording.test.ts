@@ -37,6 +37,12 @@ describe('les phrases de la synthèse (mission 148 B)', () => {
     expect(EN.basisAdvisor(8, 6)).toBe(
       'Price chosen by your adviser, based on the 8 competing properties they selected, 6 of which we viewed together',
     );
+    // N n'est jamais égal ni supérieur au total : la phrase ne le dit pas.
+    expect(FR.basisCalculated(8, 8)).toBe(
+      'Calculé par votre conseiller sur les 8 concurrents qu’il a retenus',
+    );
+    expect(FR.basisAdvisor(8, 9)).not.toContain('ensemble');
+    expect(EN.basisCalculated(8, 8)).not.toContain('together');
     for (const text of [FR.basisCalculated(5, null), FR.basisAdvisor(5, null)]) {
       expect(text).not.toMatch(/rendez-vous|avant|après/);
     }
