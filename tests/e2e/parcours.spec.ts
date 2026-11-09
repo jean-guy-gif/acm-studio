@@ -1355,11 +1355,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const handed = page.getByTestId('prospecting-column-handed');
     await expect(toConfirm.getByTestId('prospecting-card')).toHaveCount(COMPETITORS.length);
 
-    // Mission 146 (partie B, C9) — une étape par carte, « Confirmer l'adresse », qui ouvre ses
-    // choix (M84) ; le reste dans « … » ; aucun bouton plein sur les cartes.
+    // Mission 146 (partie B, C9) — une étape par carte : saisis à la main, ces concurrents sont
+    // « À vérifier », leurs pastilles « Vendu par » / « Exclusivité » sont l'étape ; l'adresse se
+    // confirme par « … » (ses choix de M84) ; aucun bouton plein sur les cartes.
     await expectOneFilled(page, 'Prospection');
     const first = toConfirm.getByTestId('prospecting-card').first();
-    await first.getByRole('button', { name: 'Confirmer l’adresse' }).click();
+    await expect(first.getByRole('group', { name: 'Exclusivité' })).toBeVisible();
+    await chooseInCardMenu(first, 'Confirmer l’adresse');
     await first.getByRole('button', { name: 'Saisir l’adresse' }).click();
     await first.getByLabel('Adresse du bien concurrent').fill(PROSPECTING_ADDRESS);
     await first.getByRole('button', { name: 'Confirmer l’adresse' }).click();
@@ -1395,7 +1397,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const ready = page.getByTestId('prospecting-column-ready');
     const confirmAddress = async (address: string) => {
       const card = toConfirm.getByTestId('prospecting-card').first();
-      await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();
+      await chooseInCardMenu(card, 'Confirmer l’adresse');
       await card.getByRole('button', { name: 'Saisir l’adresse' }).click();
       await card.getByLabel('Adresse du bien concurrent').fill(address);
       await card.getByRole('button', { name: 'Confirmer l’adresse' }).click();

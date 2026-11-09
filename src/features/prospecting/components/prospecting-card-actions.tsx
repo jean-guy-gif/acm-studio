@@ -13,6 +13,7 @@ import {
 import { ConfirmAddressActions } from '@/features/competitor-locator/components/confirm-address-actions';
 import type { ProspectingStep } from '@/features/competitor-mandate/services/mandate-columns';
 import { PrepareFileLinks } from '@/features/prospecting-file/components/prepare-file-links';
+import { PROSPECTING_FILE_VERSION_LABELS } from '@/features/prospecting-file/types';
 import { addProspectingOpposition } from '@/features/prospecting/actions/add-prospecting-opposition';
 import { setProspectingStatus } from '@/features/prospecting/actions/set-prospecting-status';
 import { announceOppositionRecorded } from '@/features/prospecting/components/opposition-notice';
@@ -105,6 +106,14 @@ export function ProspectingCardActions({
             onSelect: () => openAddress(plan.menu.address === 'correct'),
           },
         ]
+      : []),
+    // Mission 84 — ACM ne sait pas à qui s'adresser : le conseiller choisit la version.
+    ...(plan.menu.prepareVersions && !buyerProspectId
+      ? (['owner', 'colleague'] as const).map((version) => ({
+          key: `prepare-${version}`,
+          label: `Préparer le dossier ${PROSPECTING_FILE_VERSION_LABELS[version].toLowerCase()}`,
+          href: `/builder/${projectId}/prospection/${competitorId}?version=${version}`,
+        }))
       : []),
     ...(plan.menu.decline
       ? [{ key: 'decline', label: 'Pas intéressé', onSelect: () => run('declined') }]

@@ -21,7 +21,13 @@ describe('prospectingCardStep', () => {
     const step = card({ status: 'to_confirm', addressConfirmed: false });
     expect(step.main).toEqual({ kind: 'confirm_address' });
     expect(step.link).toBeNull();
-    expect(step.menu).toEqual({ address: null, decline: true, undo: false, oppose: true });
+    expect(step.menu).toEqual({
+      address: null,
+      prepareVersions: false,
+      decline: true,
+      undo: false,
+      oppose: true,
+    });
   });
 
   it('prêt : « Préparer le dossier », lien « Marquer remis » ; « Corriger l’adresse » dans « … »', () => {
@@ -61,9 +67,14 @@ describe('prospectingCardStep', () => {
     });
   });
 
-  it('« à vérifier » : ses pastilles sont l’étape', () => {
-    expect(card({ step: 'check', status: 'to_confirm' }).main).toEqual({ kind: 'check' });
-    expect(card({ step: 'check' }).link).toBeNull();
+  it('« à vérifier » : ses pastilles sont l’étape ; prête, le conseiller choisit la version', () => {
+    const toConfirm = card({ step: 'check', status: 'to_confirm', addressConfirmed: false });
+    expect(toConfirm.main).toEqual({ kind: 'check' });
+    expect(toConfirm.link).toBeNull();
+    expect(toConfirm.menu).toMatchObject({ address: 'confirm', prepareVersions: false });
+    const ready = card({ step: 'check' });
+    expect(ready.link).toEqual({ move: 'handed', label: 'Marquer remis' });
+    expect(ready.menu.prepareVersions).toBe(true);
   });
 
   it('clos : rien que « Annuler » et « Ne plus solliciter… »', () => {
@@ -83,7 +94,13 @@ describe('prospectingCardStep', () => {
   it('« Ne plus solliciter » : plus aucun geste', () => {
     const step = card({ opposed: true, status: 'handed' });
     expect(step.main).toBeNull();
-    expect(step.menu).toEqual({ address: null, decline: false, undo: false, oppose: false });
+    expect(step.menu).toEqual({
+      address: null,
+      prepareVersions: false,
+      decline: false,
+      undo: false,
+      oppose: false,
+    });
   });
 
   it('les colonnes affichées prennent la place des vides', () => {
