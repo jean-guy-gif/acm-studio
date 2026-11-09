@@ -378,6 +378,32 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   Live) et un nettoyage de fin de passage (CLI Supabase), verts au second passage. Durées :
   relecteur 4,4 min, démo 4,8 min, parcours 2,9 min, suite complète ≈ 22 min en trois lots, CI
   6 min.
+- 08/11 · M148 B · Mesurer une mise en page sur l'aperçu Vercel de la branche
+  (`acm-studio-git-<branche>-jean-guy-s-projects.vercel.app`, même jeton de contournement que
+  l'essai) laisse l'essai à l'étape interne ; chaque itération coûte un déploiement (≈ 3 min). Une
+  variante de la spec hors du dépôt (config Playwright du scratchpad qui importe celle du dépôt,
+  `node_modules` en lien) relève tous les écrans d'un passage au lieu de s'arrêter au premier.
+- 08/11 · M148 B · Le réseau du poste a lâché plusieurs fois en cours de mesure
+  (`ERR_NETWORK_CHANGED`, « Failed to fetch » sur « Remettre ma démo à zéro », la page
+  « Un incident est survenu » sans erreur serveur au journal, mais les 6 dossiers bien recréés en
+  base) : lire `app_errors` et les `projects` de démo en lecture seule
+  (`supabase db query --remote --read-only`) avant de soupçonner le code.
+- 08/11 · M148 B · Une présentation directe commencée sans aucune réponse se rouvre sur
+  l'introduction (la borne de M144 est la dernière réponse) : un script qui reprend un Live passe
+  d'abord l'introduction. Et une boucle qui lit l'étape (`[data-live-step]`) attend que `main`
+  ait quitté `intro`, où l'étape ne s'affiche pas.
+- 08/11 · M148 B · Retirer les `truncate` (« rien ne disparaît ») allonge les écrans : chaque retrait
+  a fait réapparaître un dépassement de 4 à 29 px, en anglais surtout (raisons de la durée,
+  analyse des prix). Seul l'e2e aux trois tailles ET dans les deux langues l'a vu ; la bascule de
+  langue par « Réglages » sur chaque écran coûte ≈ 2 s et fait passer la spec à 2,6 min.
+- 08/11 · M148 B · Une classe de couleur ajoutée après un jeton qui porte déjà `stage:text-white`
+  ne l'emporte pas (l'ordre de la feuille décide, pas celui de la chaîne) : « Votre réponse » est
+  resté blanc sur la révélation, vu sur une capture. Une couleur conditionnelle se compose sur une
+  base SANS couleur ; un jeton à variantes (`screenBody`) se décline en constantes complètes plutôt
+  que surchargé.
+- 08/11 · M148 B · Durées : relecteur 10 min (première passe), 0,7 à 1,7 min sur les deltas ; spec
+  `live-d-un-coup-d-oeil` 2,6 min ; démo 4,6 à 4,9 min ; parcours 2,9 à 3,1 min (un aléa côté
+  présentation acquéreur, vert au second passage) ; suite complète ≈ 25 min en quatre lots.
 
 ## La base
 
