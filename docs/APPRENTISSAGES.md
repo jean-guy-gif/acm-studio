@@ -483,6 +483,23 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   seule) ce qui a été créé hors de la démo semée.
 - 10/11 · M149 · `supabase db query` refuse d'écrire sans `--yes` dans un passage d'agent, et une
   lecture passe par `--read-only` (sans demande) ; `--linked` est déprécié, `--remote` le remplace.
+- 10/11 · M150 · Mesurer un portail « dans le vrai Chrome » : la page ne peut rien envoyer au
+  poste — un `fetch` vers 127.0.0.1 et `navigator.clipboard.writeText` restent bloqués sur une
+  permission que Chrome demande (accès au réseau local, presse-papiers) et l'onglet ne répond plus
+  45 s. Ce qui marche : passer par l'application elle-même (un dossier « TEST » sur une agence
+  réelle, l'adresse collée, « Ouvrir / Lire mes recherches »), et lire les pages des portails dans
+  un onglet à part, par de petites évaluations (titre, compte, chemins sans paramètres).
+- 10/11 · M150 · L'outil du navigateur masque les paramètres d'une adresse (« [BLOCKED: … query
+  string] ») : lire `pathname`, les seuls NOMS des paramètres, une valeur épelée lettre à lettre,
+  ou l'adresse que la liste des onglets affiche en clair.
+- 10/11 · M150 · L'agence de démonstration simule toute lecture de portail (M114) : une mesure de
+  portail se fait sur une agence réelle, jamais sur la démo. Le conseiller se connecte lui-même ;
+  aucun mot de passe n'est saisi à sa place.
+- 10/11 · M150 · Les portails changent leurs adresses sans prévenir : SeLoger met désormais
+  l'identifiant de commune dans le chemin (`/recherche/…/vence-06140/ad08fr2109`), Maisons &
+  Appartements redirige sa page de commune vers l'accueil, Figaro ne donne plus prix ni surface au
+  lecteur. Les pages de test (`__fixtures__`) restent vertes : seul un passage dans le vrai
+  navigateur le voit.
 
 ## La base
 

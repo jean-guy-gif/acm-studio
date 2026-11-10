@@ -14,6 +14,10 @@ import { detectSearchPortal } from '@/features/competitor-search/services/extrac
 export type PlaceIdInUrl = { portal: PlacePortal; placeId: string };
 
 const SELOGER_LOCATION = /^[A-Z0-9]{4,20}$/;
+// Mission 150 (mesuré le 10/11) — la page de commune de SeLoger redirige vers sa nouvelle adresse,
+// l'identifiant dans le CHEMIN : `/recherche/achat/immobilier/<région>/vence-06140/ad08fr2109`.
+// Écrit en majuscules, c'est celui que lit `?locations=` (AD08FR2109 : la recherche filtrée marche).
+const SELOGER_PATH_LOCATION = /^\/recherche\/(?:[^/]+\/)+(ad\d{2}fr\d{1,10})\/?$/i;
 const MAISONS_VILLE = /^\d{1,10}$/;
 // city_id-gr_3668 (Nice), city_id-city_7123 (Antibes) : deux formes relevées, gardées telles quelles.
 const GREEN_ACRES_CITY = /(?:^|-)city_id-([a-z]{1,10}_\d{1,10})(?=-|$)/g;
@@ -28,6 +32,10 @@ export function placeIdFromSearchUrl(rawUrl: string): PlaceIdInUrl | null {
   const portal = detectSearchPortal(url.hostname);
   if (portal === 'seloger') {
     const locations = url.searchParams.getAll('locations');
+    if (locations.length === 0) {
+      const inPath = SELOGER_PATH_LOCATION.exec(url.pathname)?.[1]?.toUpperCase();
+      return inPath && SELOGER_LOCATION.test(inPath) ? { portal, placeId: inPath } : null;
+    }
     if (locations.length !== 1 || !SELOGER_LOCATION.test(locations[0])) return null;
     return { portal, placeId: locations[0] };
   }

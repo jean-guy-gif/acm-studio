@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildFilteredSearchUrls,
+  openableSearchLinks,
   placeCityKey,
   searchSurfaceBounds,
   type KnownPlaceIds,
@@ -141,6 +142,33 @@ describe('buildFilteredSearchUrls — identifiants inconnus et données absentes
       'maisons_appartements',
       'green_acres',
     ]);
+  });
+});
+
+// Mission 150 (mesures du 10/11) — « Ouvrir mes recherches » n'ouvre que les portails filtrés.
+describe('openableSearchLinks', () => {
+  it('aucun identifiant appris : Bien’ici filtré, SeLoger une première fois sans filtre, rien d’autre', () => {
+    const links = openableSearchLinks(buildFilteredSearchUrls(base, {}));
+    expect(links.map((link) => link.portal)).toEqual(['seloger', 'bienici']);
+    expect(links[0]).toMatchObject({
+      needsPlace: true,
+      url: 'https://www.seloger.com/immobilier/achat/immo-nice-06/',
+    });
+    expect(links[1]!.needsPlace).toBe(false);
+  });
+
+  it('identifiants appris : SeLoger et Green Acres s’ouvrent filtrés, M&A reste absent sans le sien', () => {
+    const links = openableSearchLinks(
+      buildFilteredSearchUrls(base, { seloger: 'AD08FR2038', green_acres: 'gr_3668' }),
+    );
+    expect(links.map((link) => link.portal)).toEqual(['seloger', 'bienici', 'green_acres']);
+    expect(links.every((link) => !link.needsPlace)).toBe(true);
+    expect(links[0]!.url).toContain('locations=AD08FR2038');
+  });
+
+  it('tous connus : les quatre, filtrés', () => {
+    const links = openableSearchLinks(buildFilteredSearchUrls(base, NICE));
+    expect(links).toHaveLength(4);
   });
 });
 
