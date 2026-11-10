@@ -2,6 +2,7 @@
 
 import {
   buildFilteredSearchUrls,
+  openableSearchLinks,
   placeCityKey,
   PLACE_PORTALS,
   type FilteredSearchLink,
@@ -15,9 +16,10 @@ import { reportServerError } from '@/lib/app-errors/report-server-error';
 export type PrepareOpenSearchesResult =
   { ok: true; city: string; links: FilteredSearchLink[] } | { ok: false; error: string };
 
-// MISSION 69 — « Ouvrir mes recherches » : les quatre adresses déjà filtrées, depuis le bien
-// vendeur et les identifiants de commune déjà appris (portal_place_ids, lecture pour tout
-// conseiller connecté). Rien n'est ouvert ici : c'est l'extension qui ouvre les onglets.
+// MISSION 69 — « Ouvrir mes recherches » : les adresses déjà filtrées, depuis le bien vendeur et
+// les identifiants de commune déjà appris (portal_place_ids, lecture pour tout conseiller
+// connecté). Rien n'est ouvert ici : c'est l'extension qui ouvre les onglets. Mission 150 —
+// seulement les portails qui s'ouvrent vraiment filtrés (`openableSearchLinks`).
 export async function prepareOpenSearches(projectId: string): Promise<PrepareOpenSearchesResult> {
   const loaded = await loadSearchCriteria(projectId);
   if (!loaded.ok) {
@@ -49,5 +51,9 @@ export async function prepareOpenSearches(projectId: string): Promise<PrepareOpe
     }
   }
 
-  return { ok: true, city: criteria.city, links: buildFilteredSearchUrls(criteria, placeIds) };
+  return {
+    ok: true,
+    city: criteria.city,
+    links: openableSearchLinks(buildFilteredSearchUrls(criteria, placeIds)),
+  };
 }

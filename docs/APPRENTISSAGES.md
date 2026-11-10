@@ -476,6 +476,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 10/11 · M147 B · Une page qui lit un fichier de `public/` au serveur (les photos et le logo de la
   démo) l'embarque par `outputFileTracingIncludes` : « Ma démo » et « Bienvenue » portent les
   actions de la démo et s'ajoutent à la fiche du bien vendeur ; le `.nft.json` du build le prouve.
+- 10/11 · M149 · L'agence de démo est partagée par des personnes, pas seulement par l'e2e : une
+  fiche acquéreur saisie à la main avec le compte de démo (« Natacha ») a fait compter 10 fiches à
+  la spec `demo` au lieu de 9, et la remise à zéro ne la retire pas (elle n'a pas la marque de la
+  démo). Avant de chercher un défaut sur un compte qui ne tombe pas juste, lire en base (lecture
+  seule) ce qui a été créé hors de la démo semée.
+- 10/11 · M149 · `supabase db query` refuse d'écrire sans `--yes` dans un passage d'agent, et une
+  lecture passe par `--read-only` (sans demande) ; `--linked` est déprécié, `--remote` le remplace.
 
 ## La base
 

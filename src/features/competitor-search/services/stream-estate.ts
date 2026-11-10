@@ -59,11 +59,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // d'éditeur (« SL »), ni le domaine, ni le nom du portail ne sont reconnus (sondé le 05/10 : 0
 // résultat en inclusion, aucun effet en exclusion). Conséquence : les biens hors liste sont encore
 // renvoyés, donc facturés, puis écartés et comptés.
+// Mission 150 (mesures du 10/11) — Figaro Immobilier en sort : l'extension lit encore sa page,
+// mais ACM n'y trouve plus ni le prix ni la surface (`unread-portals.ts`). Un bien publié aussi
+// sur un autre site de la liste reste proposé, par cette autre annonce.
 export const IMPORTABLE_HOST_SUFFIXES = [
   'seloger.com',
   'bienici.com',
   'green-acres.fr',
-  'immobilier.lefigaro.fr',
   'maisonsetappartements.fr',
 ];
 
@@ -214,8 +216,8 @@ export function isImportableUrl(rawUrl: string): boolean {
   // Mission 114 — l'hôte RÉSERVÉ des annonces de démonstration (`.invalid`, jamais résolu) est
   // importable aussi : une réponse de l'API réelle ne le porte jamais ; seule la recherche simulée
   // de l'agence de démo le renvoie, et ses annonces s'importent sans extension (actions de
-  // démonstration). Il n'entre pas dans IMPORTABLE_HOST_SUFFIXES, qui reste la liste des sites
-  // que l'extension sait relire.
+  // démonstration). Il n'entre pas dans IMPORTABLE_HOST_SUFFIXES, la liste des sites que
+  // l'extension relit et qu'ACM lit correctement (M150).
   if (host === DEMO_LISTING_HOST) return true;
   return IMPORTABLE_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
 }

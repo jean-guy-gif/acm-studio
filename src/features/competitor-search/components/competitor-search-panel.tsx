@@ -1413,16 +1413,8 @@ export function CompetitorSearchPanel({
                     rel="noreferrer noopener"
                     className={`${linkCls} hover:underline`}
                   >
-                    {link.label}
-                    {link.needsPlace ? '' : ' — déjà filtré'}
+                    {link.label} — déjà filtré
                   </a>
-                  {link.needsPlace ? (
-                    <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
-                      Première recherche à {openedSearches.city} sur {link.label} : réglez la
-                      commune une fois, ACM s’en souviendra. Réglez aussi les filtres sur cet
-                      onglet.
-                    </span>
-                  ) : null}
                 </div>
               ))}
             </div>
