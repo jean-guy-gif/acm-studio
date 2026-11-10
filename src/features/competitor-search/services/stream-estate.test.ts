@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { isUnreadPortalHost } from '@/features/comparable-import/utils/unread-portals';
 import fixture from '@/features/competitor-search/__fixtures__/stream-estate-nice-4p.json';
 import proximityFixture from '@/features/competitor-search/__fixtures__/stream-estate-nice-4p-proximite.json';
 import { learnFromDecisions } from '@/features/competitor-search/services/learn-from-decisions';
@@ -129,9 +130,9 @@ describe('parseStreamEstateResponse', () => {
   });
 
   it('prend pour origine une annonce encore en ligne, sur un site relisible', () => {
-    // 6 annonces : leboncoin et SeLoger expirées, Bien'ici et Figaro en ligne.
-    const origin = new URL(parsed.candidates[0].url).hostname;
-    expect(['www.bienici.com', 'immobilier.lefigaro.fr']).toContain(origin);
+    // 6 annonces : leboncoin et SeLoger expirées, Bien'ici et Figaro en ligne. Mission 150 —
+    // Figaro ne se lit plus : Bien'ici seul.
+    expect(new URL(parsed.candidates[0].url).hostname).toBe('www.bienici.com');
   });
 
   it('liste blanche : aucun bien sans annonce sur un site que l’extension relit', () => {
@@ -243,9 +244,14 @@ describe('annonce d’origine utilisable : pas expirée, revue il y a 7 jours au
     const property = member('e46243c9');
     const daysAgo = (at: string) => (NOW.getTime() - Date.parse(at)) / 86_400_000;
     expect(daysAgo(property.lastCrawledAt)).toBeLessThan(7);
-    const alive = property.adverts.filter((a) => isImportableUrl(a.url) && !a.expired);
-    expect(alive.map((a) => new URL(a.url).hostname)).toEqual(['immobilier.lefigaro.fr']);
-    expect(daysAgo(alive[0].lastCrawledAt)).toBeGreaterThan(7);
+    const figaro = property.adverts.filter(
+      (a) => !a.expired && new URL(a.url).hostname === 'immobilier.lefigaro.fr',
+    );
+    expect(figaro).toHaveLength(1);
+    expect(daysAgo(figaro[0].lastCrawledAt)).toBeGreaterThan(7);
+    // Mission 150 — Figaro n'est plus un site relisible : ce bien n'a plus aucune annonce vivante
+    // sur un site de la liste, et reste non proposé.
+    expect(property.adverts.filter((a) => isImportableUrl(a.url) && !a.expired)).toEqual([]);
     expect(shown('e46243c9')).toBe(false);
   });
 
@@ -437,10 +443,14 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
 });
 
 describe('IMPORTABLE_HOST_SUFFIXES', () => {
-  it('reste la liste des sites que l’extension sait relire', () => {
+  // Mission 150 — les sites que l'extension sait relire, moins ceux qu'ACM ne lit plus (Figaro).
+  it('les sites que l’extension relit, moins ceux qu’ACM ne lit plus', () => {
     const source = readFileSync(path.resolve('extension/page-readiness.js'), 'utf8');
     const block = source.match(/export const ALLOWED_HOST_SUFFIXES = \[([^\]]*)\]/)![1];
     const extensionHosts = [...block.matchAll(/'([^']+)'/g)].map((match) => match[1]);
-    expect(IMPORTABLE_HOST_SUFFIXES).toEqual(extensionHosts);
+    expect(IMPORTABLE_HOST_SUFFIXES).toEqual(
+      extensionHosts.filter((host) => !isUnreadPortalHost(host)),
+    );
+    expect(IMPORTABLE_HOST_SUFFIXES).not.toContain('immobilier.lefigaro.fr');
   });
 });

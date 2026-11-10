@@ -5,6 +5,10 @@ import {
 import { decideRobotsAllowed } from '@/features/comparable-import/services/robots-decision';
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import { normalizeListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
+import {
+  isUnreadPortalUrl,
+  UNREAD_PORTAL_MESSAGE,
+} from '@/features/comparable-import/utils/unread-portals';
 
 // Shared client-side import path for a listing URL (Mission 46 §3). Used by BOTH the
 // seller-property panel AND the competitors panel — a future fix happens here, once.
@@ -41,6 +45,11 @@ export async function importListingFromUrl(opts: {
   const normalized = normalizeListingUrl(url);
   console.info(`[ACM import] adresse normalisée : ${normalized}  (origine : ${url})`);
   const parsed = safeUrl(normalized);
+  // Mission 150 — un site qu'ACM ne lit plus : refusé avant toute lecture (le serveur le refuse
+  // aussi).
+  if (isUnreadPortalUrl(normalized)) {
+    return { ok: false, error: UNREAD_PORTAL_MESSAGE };
+  }
 
   if (extensionAvailable && parsed) {
     const robots = await fetchRobotsViaExtension(new URL('/robots.txt', parsed.origin).toString());

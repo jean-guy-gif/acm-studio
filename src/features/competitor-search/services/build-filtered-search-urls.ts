@@ -186,6 +186,15 @@ function unfilteredEntry(portal: PlacePortal, criteria: CompetitorSearchCriteria
   }
 }
 
+// Mission 150 (mesures du 10/11) — « Ouvrir mes recherches » n'ouvre que les portails dont
+// l'adresse est vraiment filtrée : Bien'ici toujours, les trois autres quand l'identifiant de leur
+// commune est connu. Leur page de commune non filtrée n'est plus proposée : SeLoger la redirige
+// vers une adresse dont ACM n'apprend pas l'identifiant, Maisons & Appartements vers son accueil,
+// Green Acres l'ouvre sans filtre et sans identifiant dans l'adresse.
+export function openableSearchLinks(links: FilteredSearchLink[]): FilteredSearchLink[] {
+  return links.filter((link) => !link.needsPlace);
+}
+
 export function buildFilteredSearchUrls(
   criteria: CompetitorSearchCriteria,
   placeIds: KnownPlaceIds,

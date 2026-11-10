@@ -8,6 +8,10 @@ import { normalizeListingData } from '@/features/comparable-import/services/norm
 import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import {
+  isUnreadPortalHost,
+  UNREAD_PORTAL_MESSAGE,
+} from '@/features/comparable-import/utils/unread-portals';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -49,6 +53,10 @@ export async function importComparableHtml(
   const url = normalizeUrl(rawUrl);
   if (!url || !isAllowedProtocol(url)) {
     return { ok: false, error: FETCH_MESSAGES.invalid };
+  }
+  // Mission 150 — un site qu'ACM ne lit plus n'est pas importé (la page ne donne plus le prix).
+  if (isUnreadPortalHost(url.hostname)) {
+    return { ok: false, error: UNREAD_PORTAL_MESSAGE };
   }
 
   const html = String(formData.get('html') ?? '');

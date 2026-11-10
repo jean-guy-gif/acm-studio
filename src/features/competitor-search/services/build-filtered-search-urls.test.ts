@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildFilteredSearchUrls,
+  openableSearchLinks,
   placeCityKey,
   searchSurfaceBounds,
   type KnownPlaceIds,
@@ -141,6 +142,26 @@ describe('buildFilteredSearchUrls — identifiants inconnus et données absentes
       'maisons_appartements',
       'green_acres',
     ]);
+  });
+});
+
+// Mission 150 (mesures du 10/11) — « Ouvrir mes recherches » n'ouvre que les portails filtrés.
+describe('openableSearchLinks', () => {
+  it('aucun identifiant appris : Bien’ici seul, jamais une page de commune non filtrée', () => {
+    const links = openableSearchLinks(buildFilteredSearchUrls(base, {}));
+    expect(links.map((link) => link.portal)).toEqual(['bienici']);
+    expect(links.every((link) => !link.needsPlace)).toBe(true);
+  });
+
+  it('un identifiant appris : le portail s’ouvre filtré, les autres restent absents', () => {
+    const links = openableSearchLinks(buildFilteredSearchUrls(base, { seloger: 'AD08FR2038' }));
+    expect(links.map((link) => link.portal)).toEqual(['seloger', 'bienici']);
+    expect(links[0]!.url).toContain('locations=AD08FR2038');
+  });
+
+  it('tous connus : les quatre, filtrés', () => {
+    const links = openableSearchLinks(buildFilteredSearchUrls(base, NICE));
+    expect(links).toHaveLength(4);
   });
 });
 
