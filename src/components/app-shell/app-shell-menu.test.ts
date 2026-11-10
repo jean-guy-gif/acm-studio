@@ -61,6 +61,29 @@ describe('le menu de gauche', () => {
     expect(html).not.toContain('workspace-switch');
   });
 
+  // Mission 149 (variante A) — les titres de groupe se voient : la couleur foncée de l'agence,
+  // plus le gris des sous-titres ; un filet au-dessus de chaque groupe titré, pas d'« Aujourd'hui ».
+  it('les titres de groupe : couleur foncée de l’agence, 13 px, un filet au-dessus de chaque groupe', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNav));
+    const titles = [
+      ...html.matchAll(/<span data-testid="nav-group-title" class="([^"]*)">([^<]*)</g),
+    ];
+    expect(titles.map((match) => match[2])).toEqual(['Vendeurs', 'Acquéreurs', 'Les deux']);
+    for (const [, classes] of titles) {
+      expect(classes).toContain('text-brand-deep');
+      expect(classes).toContain('text-[13px]');
+      expect(classes).toContain('font-extrabold');
+      expect(classes).toContain('stage:text-brand');
+      expect(classes).not.toContain('zinc-500');
+    }
+    const groups = [...html.matchAll(/<div data-testid="nav-group" class="([^"]*)"/g)].map(
+      (match) => match[1]!,
+    );
+    expect(groups).toHaveLength(4);
+    expect(groups[0]).not.toContain('border-t');
+    for (const classes of groups.slice(1)) expect(classes).toContain('border-t');
+  });
+
   it('la pastille d’Aujourd’hui ne s’affiche pas tant que le nombre n’est pas lu', () => {
     nav.pathname = '/aujourdhui';
     const html = renderToStaticMarkup(createElement(SidebarNav));
