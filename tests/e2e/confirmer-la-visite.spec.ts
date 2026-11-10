@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { demoCredentials, expectOneFilled, goViaAccountMenu, login } from './support';
+import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
 
 // Mission 147 (partie A) — Academia à la place du dossier d'adresse et du « Vivre ici » d'ACM, sur
 // l'URL d'essai, avec le compte de l'agence de démonstration (remise à zéro d'abord) :
@@ -19,24 +19,7 @@ const ACADEMIA = 'https://app.myacademia.ai';
 const E2E_LINK = 'https://app.myacademia.ai/l/e2e-acm.0147';
 
 async function resetDemo(page: Page): Promise<void> {
-  await goViaAccountMenu(page, 'Ma démo');
-  await expect(page).toHaveURL(/\/ma-demo$/);
-  const hrefs = () =>
-    page
-      .getByTestId('demo-dossier')
-      .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-  const before = await hrefs();
-  if (before.length === 0) {
-    await page.getByRole('button', { name: 'Préparer ma démo' }).click();
-  } else {
-    await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
-    await page
-      .getByTestId('demo-reset-confirm')
-      .getByRole('button', { name: 'Remettre à zéro' })
-      .click();
-    await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
-  }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
+  await resetDemoByScreen(page);
 }
 
 async function dossierId(page: Page, stage: string, seller?: string): Promise<string> {
@@ -155,7 +138,7 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
         await expect(living.first()).toContainText('Vivre ici');
         await expect(living.first()).toContainText('Le quartier, les écoles, les commerces');
         // Ni l'adresse du bien, ni l'ancienne fiche d'ACM.
-        await expect(visitor.locator('body')).not.toContainText('traverse des Exemples');
+        await expect(visitor.locator('body')).not.toContainText('traverse des Terrasses Fleuries');
         await expect(visitor.locator('body')).not.toContainText('Distances depuis');
       } finally {
         await phone.close();

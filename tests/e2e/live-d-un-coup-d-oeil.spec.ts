@@ -5,8 +5,8 @@ import {
   demoCredentials,
   expectNoHorizontalScroll,
   expectNoVerticalScroll,
-  goViaAccountMenu,
   login,
+  resetDemoByScreen,
 } from './support';
 
 // Mission 148 B — « Le Live d'un coup d'œil ». Les deux Lives de la démo, menés de bout en bout :
@@ -33,24 +33,7 @@ const priceBySurface = new Map(
 const GAPS = [0.02, -0.07, 0.15, -0.03, -0.12];
 
 async function freshDemo(page: Page): Promise<Record<string, string>> {
-  await goViaAccountMenu(page, 'Ma démo');
-  await expect(page).toHaveURL(/\/ma-demo$/);
-  const hrefs = () =>
-    page
-      .getByTestId('demo-dossier')
-      .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-  const before = await hrefs();
-  if (before.length === 0) {
-    await page.getByRole('button', { name: 'Préparer ma démo' }).click();
-  } else {
-    await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
-    await page
-      .getByTestId('demo-reset-confirm')
-      .getByRole('button', { name: 'Remettre à zéro' })
-      .click();
-    await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
-  }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
+  await resetDemoByScreen(page);
   const ids: Record<string, string> = {};
   for (const stage of ['ready', 'direct']) {
     const href = await page

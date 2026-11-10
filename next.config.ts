@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // photos du bien vendeur (page de la fiche) : elles voyagent avec cette route.
   outputFileTracingIncludes: {
     '/builder/[projectId]/property': ['./public/demo/photos/**/*'],
+    // Mission 147 (partie B) — « Préparer ma démo » et sa remise à zéro déposent les photos du bien
+    // vendeur et le logo de l'agence de démonstration, lus sur le disque : les pages qui portent
+    // ces actions les embarquent.
+    '/ma-demo': ['./public/demo/photos/**/*', './public/demo/logo-*.svg'],
+    '/bienvenue': ['./public/demo/photos/**/*', './public/demo/logo-*.svg'],
   },
   experimental: {
     serverActions: {

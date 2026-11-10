@@ -29,11 +29,40 @@ sur le code, et l'e2e `demo` sur les pages.
 ## Le jeu de données (`src/features/demo/data/scenarios.ts`)
 
 Trois scénarios : un appartement 3 pièces à Antibes, une maison 5 pièces à Vence, une villa avec
-piscine à Mougins. Vraies communes, **rues fictives** (`DEMO_STREETS` : « allée des
-Démonstrations », « chemin du Simulateur »…), agences fictives (`DEMO_AGENCIES`), annonces sur
+piscine à Mougins. Vraies communes, **rues inventées** (`DEMO_STREETS` : « allée des Cistes
+Blancs », « chemin des Restanques Hautes »…), agences fictives (`DEMO_AGENCIES`), annonces sur
 l'hôte réservé `annonces.demonstration.invalid` (RFC 2606 : il ne se résout jamais). Un test
 (`src/features/demo/demo-dataset.test.ts`) vérifie qu'aucune rue réelle, aucune agence réelle,
-aucun portail réel n'y figure.
+aucun portail réel n'y figure, ni les anciens noms en jeux de mots (« allée du Décor »…).
+
+Mission 147 (partie B) : les rues ont des noms crédibles de la Côte d'Azur, tous inventés. Chacun a
+été cherché le 09/11/2026 dans la Base Adresse Nationale (`api-adresse.data.gouv.fr`, voies de
+type `street`) dans les treize communes du jeu (Antibes, Vallauris, Biot, Villeneuve-Loubet, Vence,
+Saint-Paul-de-Vence, La Colle-sur-Loup, Tourrettes-sur-Loup, Saint-Jeannet, Mougins,
+Mouans-Sartoux, Valbonne, Le Cannet), et, pour les adresses de l'identité légale inventée, à Nice,
+Cannes et Lyon 6e (10/11) : aucun n'y existe, même sous un autre type de voie. Écartés parce qu'ils
+existent déjà dans l'une des communes : Arbousiers, Caroubiers, Lentisques, Agaves, Bigaradiers.
+
+| Rue de la démo                  | Remplace (jeu de mots)   |
+| ------------------------------- | ------------------------ |
+| allée des Cistes Blancs         | allée des Trois Cadrans  |
+| chemin des Restanques Hautes    | (gardée)                 |
+| impasse du Moulin à Huile       | impasse de l’Essai       |
+| rue du Vieux Pressoir           | rue de la Maquette       |
+| avenue des Collines Douces      | avenue du Prototype      |
+| traverse des Terrasses Fleuries | traverse des Exemples    |
+| montée des Oliviers Bas         | montée de la Répétition  |
+| boulevard des Palmiers Nains    | boulevard du Scénario    |
+| chemin de la Source Haute       | chemin des Figurants     |
+| allée des Orangers Amers        | allée du Décor           |
+| rue des Jarres                  | rue du Brouillon         |
+| placette du Lavoir Neuf         | place de la Fiction      |
+| sentier des Genêts d’Or         | sentier de l’Exercice    |
+| avenue des Tilleuls Hauts       | avenue de l’Entraînement |
+
+L'agence concurrente « Azur Horizon Immobilier », trop proche d'« Agence Horizon Côte d'Azur »,
+s'appelle « Brague Immobilier » (aucune entreprise ni agence à ce nom, vérifié le 09/11). Les
+téléphones de la démo sont tous dans la plage 06 39 98, que l'ARCEP réserve à la fiction.
 
 ## Les photos (`public/demo/photos`)
 
@@ -44,32 +73,37 @@ téléchargements automatisés étant fermés depuis le poste de travail, les ph
 banques en CC0, plus permissive encore. À remplacer par des photos Unsplash ou Pexels si Laurent le
 préfère : mêmes noms de fichiers, et ce tableau à mettre à jour.
 
-| Fichier              | Titre d'origine                      | Source       | Licence                  | Page d'origine                                                                          |
-| -------------------- | ------------------------------------ | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
-| `appartement-01.jpg` | Free modern living room interior     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
-| `appartement-02.jpg` | Free minimalist living room interior | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
-| `appartement-03.jpg` | Free modern kitchen interior image   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
-| `appartement-04.jpg` | Bedroom White                        | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-white-8RWPJ5Q6OZ                                     |
-| `appartement-05.jpg` | Free living room interior design     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
-| `appartement-06.jpg` | Building Balcony                     | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/building-balcony-KQJG1TKMNJ                                  |
-| `appartement-07.jpg` | Modern bathroom, house interior      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
-| `appartement-08.jpg` | Free apartment building image        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5926811/photo-image-public-domain-windows-white          |
-| `maison-01.jpg`      | white house garden                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5921823/photo-image-flowers-public-domain-house          |
-| `maison-02.jpg`      | Stone house lawn                     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5903486/photo-image-flowers-public-domain-tree           |
-| `maison-03.jpg`      | Free house image                     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5922266/photo-image-public-domain-tree-house             |
-| `maison-04.jpg`      | Free beautiful real estate image     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5914396/image-public-domain-trees-plants                 |
-| `maison-05.jpg`      | Living Room Interior of House        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
-| `maison-06.jpg`      | Modern white kitchen interior        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
-| `maison-07.jpg`      | Bedroom Clean                        | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
-| `maison-08.jpg`      | Free dining room image               | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
-| `villa-01.jpg`       | Free modern house, villa, swimming   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
-| `villa-02.jpg`       | House pool, real estate              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
-| `villa-03.jpg`       | Swimming Pool House                  | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
-| `villa-04.jpg`       | Modern house, real estate image      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6018409/photo-image-aesthetic-public-domain-house        |
-| `villa-05.jpg`       | Minimal square modern house          | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6042800/photo-image-public-domain-minimal-house          |
-| `villa-06.jpg`       | Free Mediterranean house             | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
-| `villa-07.jpg`       | Luxury bathroom interior             | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
-| `villa-08.jpg`       | Free minimalist living room interior | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
+Mission 147 (partie B, 10/11) : huit photos remplacées par des maisons, villas et rues de type
+méditerranéen (les maisons américaines, bardage, brique, pelouse, sont parties) : `maison-01` à
+`maison-04`, `villa-04`, `villa-05`, `appartement-06`, `appartement-08`. Mêmes banques, même
+licence ; aucune façade reconnaissable d'un lieu nommé.
+
+| Fichier              | Titre d'origine                            | Source       | Licence                  | Page d'origine                                                                          |
+| -------------------- | ------------------------------------------ | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
+| `appartement-01.jpg` | Free modern living room interior           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
+| `appartement-02.jpg` | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
+| `appartement-03.jpg` | Free modern kitchen interior image         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
+| `appartement-04.jpg` | Bedroom White                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-white-8RWPJ5Q6OZ                                     |
+| `appartement-05.jpg` | Free living room interior design           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
+| `appartement-06.jpg` | City Town (Lou Levit)                      | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/city-town-52DC8952A2                                         |
+| `appartement-07.jpg` | Modern bathroom, house interior            | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
+| `appartement-08.jpg` | Building Balconies (The Building Envelope) | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/building-balconies-H8SXFODO3W                                |
+| `maison-01.jpg`      | white house greenish blue shutters         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/3291661/free-photo-image-building-cc0-countryside        |
+| `maison-02.jpg`      | Sans titre (mas dans la lavande)           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5942139/free-public-domain-cc0-photo                     |
+| `maison-03.jpg`      | Free Italian house Tuscany photo           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5920499/photo-image-public-domain-white-free             |
+| `maison-04.jpg`      | Sans titre (villa ocre et palmiers)        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6070200/free-public-domain-cc0-photo                     |
+| `maison-05.jpg`      | Living Room Interior of House              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
+| `maison-06.jpg`      | Modern white kitchen interior              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
+| `maison-07.jpg`      | Bedroom Clean                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
+| `maison-08.jpg`      | Free dining room image                     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
+| `villa-01.jpg`       | Free modern house, villa, swimming         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
+| `villa-02.jpg`       | House pool, real estate                    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
+| `villa-03.jpg`       | Swimming Pool House                        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
+| `villa-04.jpg`       | Pool Backyard (Vita Vilcina)               | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/pool-backyard-8512A55AD8                                     |
+| `villa-05.jpg`       | Sans titre (maison de pierre, cyprès)      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5934664/free-public-domain-cc0-photo                     |
+| `villa-06.jpg`       | Free Mediterranean house                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
+| `villa-07.jpg`       | Luxury bathroom interior                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
+| `villa-08.jpg`       | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
 
 ## Les fiches PDF (`public/demo/fiche-*.pdf`)
 
@@ -93,7 +127,17 @@ baissé depuis). « Remettre ma démo à zéro », avec confirmation, supprime l
 stockage comprises) et en recrée quatre ; les dossiers des autres closers ne bougent pas, la liste
 « Ne plus solliciter » de l'agence reste. Tout passe par la clé service après le garde « agence
 de démo », dans les mêmes tables et par les mêmes services que l'outil (`demo-seed.ts`,
-`actions/demo-dossiers.ts`).
+`services/demo-dossiers.ts`).
+
+Mission 147 (partie B) : la préparation et la remise à zéro se font en étapes courtes, appelées
+l'une après l'autre par l'écran (`actions/demo-setup.ts`) : supprimer puis recompter à zéro, chacun
+des six dossiers, les neuf acquéreurs, vérifier. La barre dit « Dossier 4 sur 6 » ; « Votre démo est
+prête » ne s'affiche que si la base relue compte six dossiers (un par étape attendue, deux mandats
+signés) et neuf acquéreurs, sinon le message dit ce qui manque, avec « Recommencer ». Une lecture
+en échec n'est jamais une absence. Toutes les dates partent du jour de la remise à zéro (prouvé par
+`demo-relative-dates.test.ts`). L'agence reçoit un logo inventé (`public/demo/logo-horizon-*.svg`,
+tracé en chemins depuis Montserrat, licence OFL) si elle n'en a aucun, et le closer le téléphone
+06 39 98 00 01 s'il n'en a pas (ou l'ancien 06 00 00 00 01).
 
 ## Ce que Laurent fait (mission 114)
 
