@@ -1,10 +1,10 @@
-'use server';
+import 'server-only';
 
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 import {
   buyerLetterOriginsOf,
@@ -82,7 +82,6 @@ import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls
 import { deleteLivingHereSheets } from '@/features/comparables/services/delete-living-here-sheets';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import { coveredWeek } from '@/features/buyer-messages/week';
-import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
 import { addressKey } from '@/features/prospecting/services/address-key';
 import { PROPERTY_PHOTO_BUCKET } from '@/features/subject-property-photos/constants';
@@ -90,61 +89,47 @@ import { depositPropertyPhoto } from '@/features/subject-property-photos/service
 import { validatePhotoBytes } from '@/features/subject-property-photos/services/validate-photo-upload';
 import { hashDossierToken, newDossierToken } from '@/features/buyer-dossier/services/dossier-token';
 import { exampleDecisionRow } from '@/features/welcome/services/example-decision';
-import { getProfile } from '@/lib/auth/get-profile';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database, Json } from '@/lib/supabase/database.types';
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 type Client = SupabaseClient<Database>;
 
-const DEMO_PAGE = '/ma-demo';
 // Mission 134 — l'ancienneté des concurrents semés, au-delà de la fenêtre des nouveaux biens.
 const DEMO_COMPETITORS_AGE_DAYS = 30;
-const FAILED = `${DEMO_PAGE}?error=${encodeURIComponent('La démo n’a pas pu être préparée. Réessayez.')}`;
 
-// Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro ». Réservé à un
-// closer de l'AGENCE DE DÉMONSTRATION (repère `is_demo`, lu en base) ; l'écriture passe par la
+// Mission 114 (partie B) — ce qu'écrivent « Préparer ma démo » et « Remettre ma démo à zéro »
+// (les actions, `actions/demo-setup.ts`, en étapes depuis la M147). Réservé à un closer de
+// l'AGENCE DE DÉMONSTRATION (repère `is_demo`, lu en base par l'action) ; l'écriture passe par la
 // clé service après ce garde, dans cette seule agence, pour le seul closer connecté : chaque
 // dossier porte sa marque (`projects.demo_stage`) et son conseiller. Les dossiers de démo
 // entrent dans les mêmes tables, par les mêmes services, que ceux de l'outil : l'insertion d'un
 // concurrent, la décision de prix (M110), la fonction `conclude_meeting`, les adresses, la
-// relance, l'opposition.
+// relance, l'opposition. Mission 147 (partie B) — chaque lecture et chaque suppression lit son
+// erreur : une lecture en échec n'est jamais une absence (M98).
 
-type Closer = { id: string; agencyId: string };
+export type Closer = { id: string; agencyId: string };
 
-async function requireDemoCloser(): Promise<Closer> {
-  const profile = await getProfile();
-  if (!profile || profile.removed_at) {
-    redirect('/onboarding');
-  }
-  if (!(await isDemoAgency(profile.agency_id))) {
-    redirect('/builder');
-  }
-  return { id: profile.id, agencyId: profile.agency_id };
-}
-
-function revalidateDemo(): void {
-  for (const path of [
-    DEMO_PAGE,
-    '/builder',
-    '/live',
-    '/suivi',
-    '/prospection',
-    '/acquereurs',
-    '/bienvenue',
-  ]) {
-    revalidatePath(path);
-  }
-}
-
-// Les dossiers de démo du closer : marqués, à lui, dans son agence.
-export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promise<string[]> {
-  const { data } = await supabase
+// Les dossiers de démo du closer : marqués, à lui, dans son agence ; null si la lecture échoue.
+export async function ownDemoDossierIds(
+  supabase: Client,
+  closer: Closer,
+): Promise<string[] | null> {
+  const { data, error } = await supabase
     .from('projects')
     .select('id')
     .eq('agency_id', closer.agencyId)
     .eq('advisor_id', closer.id)
     .not('demo_stage', 'is', null);
+  if (error) return null;
   return (data ?? []).map((row) => row.id);
+}
+
+// Un fichier du stockage qui ne part pas ne retient pas la démo (il n'est plus montré nulle part) :
+// l'échec entre au journal.
+async function removeStored(supabase: Client, bucket: string, paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const { error } = await supabase.storage.from(bucket).remove(paths);
+  if (error) await reportServerError('demoReset.storage', error);
 }
 
 // Supprime les dossiers de démo du closer et ce qui en dépend — jamais ceux d'un collègue, jamais
@@ -152,58 +137,149 @@ export async function ownDemoDossierIds(supabase: Client, closer: Closer): Promi
 // de l'agence restent : la liste « Ne plus solliciter » est commune (M98), et « Préparer » la
 // retrouve.
 // Mission 117 — les deux acquéreurs de la démo du closer : marqués, à lui, dans son agence.
-export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<number> {
+// Rend vrai si tout est parti ; faux à la première lecture ou suppression en échec.
+export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
   // Mission 120 — les courriers nés de leurs recherches partent en cascade : leurs photos aussi.
-  const { data: own } = await supabase
+  const { data: own, error: ownError } = await supabase
     .from('buyers')
     .select('id')
     .eq('agency_id', closer.agencyId)
     .eq('advisor_id', closer.id)
     .eq('demo', true);
-  const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, {
-    buyerIds: (own ?? []).map((buyer) => buyer.id),
-  });
+  if (ownError) return false;
+  const buyerIds = (own ?? []).map((buyer) => buyer.id);
+  const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, { buyerIds });
   // Mission 137 — un bon signé ne part plus avec sa fiche (il reste, sans fiche) : ceux des
   // acquéreurs de démo sont des données de démonstration, retirés ici avec leurs signatures.
-  await deleteDemoVouchers(
-    supabase,
-    closer,
-    (own ?? []).map((buyer) => buyer.id),
-  );
-  const { data } = await supabase
+  if (!(await deleteDemoVouchers(supabase, closer, buyerIds))) return false;
+  const { error } = await supabase
     .from('buyers')
     .delete()
     .eq('agency_id', closer.agencyId)
     .eq('advisor_id', closer.id)
-    .eq('demo', true)
-    .select('id');
+    .eq('demo', true);
+  if (error) return false;
   await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
-  await deleteOrphanDemoProspects(supabase, closer);
-  return data?.length ?? 0;
+  return deleteOrphanDemoProspects(supabase, closer);
 }
 
-async function nameDemoAgency(supabase: Client, closer: Closer): Promise<void> {
-  await supabase.from('agencies').update({ name: DEMO_AGENCY_NAME }).eq('id', closer.agencyId);
-  await supabase
+async function nameDemoAgency(supabase: Client, closer: Closer): Promise<boolean> {
+  const { error } = await supabase
+    .from('agencies')
+    .update({ name: DEMO_AGENCY_NAME })
+    .eq('id', closer.agencyId);
+  if (error) return false;
+  const { error: addressError } = await supabase
     .from('agency_branding')
     .update({ postal_address: DEMO_AGENCY_ADDRESS })
     .eq('agency_id', closer.agencyId);
+  return !addressError;
+}
+
+// Mission 147 (partie B) — le logo de l'agence de démonstration (planche M147-6), clair et sombre,
+// tracé en chemins (sans police) et rangé dans `public/demo/`. Déposé seulement si l'agence n'a
+// AUCUN logo : celui qu'un manager a déposé n'est jamais remplacé. Les chemins de stockage sont
+// ceux de l'Administration (`<agence>/logo-light.svg`, M55).
+export const DEMO_LOGO_FILES = {
+  light: 'logo-horizon-clair.svg',
+  dark: 'logo-horizon-sombre.svg',
+} as const;
+const BRANDING_BUCKET = 'agency-branding';
+
+async function depositDemoLogo(supabase: Client, closer: Closer): Promise<boolean> {
+  const { data: branding, error } = await supabase
+    .from('agency_branding')
+    .select('logo_light_path, logo_dark_path')
+    .eq('agency_id', closer.agencyId)
+    .maybeSingle();
+  if (error) return false;
+  if (branding?.logo_light_path || branding?.logo_dark_path) return true;
+  const paths: { light?: string; dark?: string } = {};
+  for (const variant of ['light', 'dark'] as const) {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(
+        await readFile(join(process.cwd(), 'public', 'demo', DEMO_LOGO_FILES[variant])),
+      );
+    } catch (readError) {
+      await reportServerError('demoReset.logo', readError);
+      return false;
+    }
+    const path = `${closer.agencyId}/logo-${variant}.svg`;
+    const { error: uploadError } = await supabase.storage
+      .from(BRANDING_BUCKET)
+      .upload(path, bytes, { upsert: true, contentType: 'image/svg+xml' });
+    if (uploadError) return false;
+    paths[variant] = path;
+  }
+  const { error: saveError } = branding
+    ? await supabase
+        .from('agency_branding')
+        .update({ logo_light_path: paths.light, logo_dark_path: paths.dark })
+        .eq('agency_id', closer.agencyId)
+    : await supabase.from('agency_branding').insert({
+        agency_id: closer.agencyId,
+        postal_address: DEMO_AGENCY_ADDRESS,
+        logo_light_path: paths.light,
+        logo_dark_path: paths.dark,
+      });
+  return !saveError;
+}
+
+// Mission 147 (partie B) — le téléphone du closer, dans la plage 06 39 98 réservée à la fiction :
+// posé seulement s'il n'en a pas, ou s'il porte l'ancien numéro de l'e2e (« 06 00 00 00 01 ») ;
+// le vrai numéro d'un closer n'est jamais touché.
+export const DEMO_CLOSER_PHONE = '06 39 98 00 01';
+const OLD_DEMO_PHONE = '0600000001';
+
+export function replacesCloserPhone(phone: string | null): boolean {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  return digits === '' || digits === OLD_DEMO_PHONE;
+}
+
+async function setDemoCloserPhone(supabase: Client, closer: Closer): Promise<boolean> {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('phone')
+    .eq('id', closer.id)
+    .eq('agency_id', closer.agencyId)
+    .maybeSingle();
+  if (error || !profile) return false;
+  if (!replacesCloserPhone(profile.phone)) return true;
+  const { error: saveError } = await supabase
+    .from('profiles')
+    .update({ phone: DEMO_CLOSER_PHONE })
+    .eq('id', closer.id)
+    .eq('agency_id', closer.agencyId);
+  return !saveError;
+}
+
+// Décision de Jean-Guy (06/11) : le nom et l'adresse de l'agence de démonstration, que les
+// documents impriment (« Agence Horizon Côte d'Azur », jamais « Démo ») ; son logo (M147) et le
+// téléphone du closer, sans lequel aucun courrier propriétaire ne se prépare (M90).
+export async function prepareDemoAgency(supabase: Client, closer: Closer): Promise<boolean> {
+  return (
+    (await nameDemoAgency(supabase, closer)) &&
+    (await depositDemoLogo(supabase, closer)) &&
+    (await setDemoCloserPhone(supabase, closer))
+  );
 }
 
 async function deleteDemoVouchers(
   supabase: Client,
   closer: Closer,
   buyerIds: string[],
-): Promise<void> {
-  if (buyerIds.length === 0) return;
-  const { data: documents } = await supabase
+): Promise<boolean> {
+  if (buyerIds.length === 0) return true;
+  const { data: documents, error: documentsError } = await supabase
     .from('buyer_documents')
     .select('id, signature_paths')
     .eq('agency_id', closer.agencyId)
     .in('buyer_id', buyerIds);
-  if (!documents || documents.length === 0) return;
+  if (documentsError) return false;
+  if (!documents || documents.length === 0) return true;
   // Mission 137 B — les signatures du vendeur d'une offre partent aussi (sa réponse suit l'offre).
-  const { data: answers } = await supabase
+  const { data: answers, error: answersError } = await supabase
     .from('buyer_document_acceptances')
     .select('signature_paths')
     .eq('agency_id', closer.agencyId)
@@ -211,7 +287,8 @@ async function deleteDemoVouchers(
       'document_id',
       documents.map((document) => document.id),
     );
-  await supabase
+  if (answersError) return false;
+  const { error } = await supabase
     .from('buyer_documents')
     .delete()
     .eq('agency_id', closer.agencyId)
@@ -219,11 +296,51 @@ async function deleteDemoVouchers(
       'id',
       documents.map((document) => document.id),
     );
+  if (error) return false;
   const paths = [
     ...documents.flatMap((document) => document.signature_paths),
     ...(answers ?? []).flatMap((answer) => answer.signature_paths ?? []),
   ].filter((path) => path.startsWith(`${closer.agencyId}/`));
-  if (paths.length > 0) await supabase.storage.from(SIGNATURE_BUCKET).remove(paths);
+  await removeStored(supabase, SIGNATURE_BUCKET, paths);
+  return true;
+}
+
+// Mission 137 — l'identité légale inventée de l'agence de démonstration, posée si elle n'en a pas ;
+// un manager qui la corrige n'est jamais écrasé. Mission 147 (partie B) — une identité encore
+// INVENTÉE (même raison sociale) qui porte une ancienne rue en jeu de mots (« avenue du
+// Prototype »…) reprend les adresses inventées d'aujourd'hui ; rien d'autre n'est touché.
+const OLD_PUN_STREETS = ['avenue du Prototype', 'rue de la Maquette', 'traverse des Exemples'];
+
+async function seedDemoLegalIdentity(supabase: Client, closer: Closer): Promise<boolean> {
+  const { data: current, error } = await supabase
+    .from('agency_legal_identities')
+    .select('company_name, company_seat, rcp_address, guarantee_address')
+    .eq('agency_id', closer.agencyId)
+    .maybeSingle();
+  if (error) return false;
+  if (!current) {
+    const { error: insertError } = await supabase
+      .from('agency_legal_identities')
+      .upsert(
+        { agency_id: closer.agencyId, ...DEMO_LEGAL_IDENTITY },
+        { onConflict: 'agency_id', ignoreDuplicates: true },
+      );
+    return !insertError;
+  }
+  const addresses = [current.company_seat, current.rcp_address, current.guarantee_address];
+  const stale =
+    current.company_name === DEMO_LEGAL_IDENTITY.company_name &&
+    addresses.some((address) => OLD_PUN_STREETS.some((street) => address?.includes(street)));
+  if (!stale) return true;
+  const { error: updateError } = await supabase
+    .from('agency_legal_identities')
+    .update({
+      company_seat: DEMO_LEGAL_IDENTITY.company_seat,
+      rcp_address: DEMO_LEGAL_IDENTITY.rcp_address,
+      guarantee_address: DEMO_LEGAL_IDENTITY.guarantee_address,
+    })
+    .eq('agency_id', closer.agencyId);
+  return !updateError;
 }
 
 // Mission 137 — l'identité légale de l'agence de démonstration (inventée), si elle n'en a pas ; et
@@ -237,12 +354,7 @@ async function seedKellerVoucher(
   mouginsProjectId: string,
   now: Date,
 ): Promise<boolean> {
-  await supabase
-    .from('agency_legal_identities')
-    .upsert(
-      { agency_id: closer.agencyId, ...DEMO_LEGAL_IDENTITY },
-      { onConflict: 'agency_id', ignoreDuplicates: true },
-    );
+  if (!(await seedDemoLegalIdentity(supabase, closer))) return false;
   const [{ data: item }, legal, branding, agency, profile, conclusion, subject] = await Promise.all(
     [
       supabase
@@ -510,7 +622,7 @@ async function seedKellerOffer(
     await supabase.storage.from(SIGNATURE_BUCKET).remove([sellerPath]);
     return false;
   }
-  await supabase
+  const { error: feesError } = await supabase
     .from('project_meeting_conclusions')
     .update({
       mandate_number: plan.text.mandateNumber,
@@ -519,6 +631,7 @@ async function seedKellerOffer(
     })
     .eq('project_id', input.mouginsProjectId)
     .eq('agency_id', closer.agencyId);
+  if (feesError) return false;
   return true;
 }
 
@@ -526,37 +639,44 @@ async function seedKellerOffer(
 // sont parties avec les fiches (cascade) ; les biens que plus aucune recherche ne vise, et que le
 // closer a fait naître, partent aussi — une démo neuve ne retrouve pas un courrier déjà « remis ».
 // Un bien visé par la recherche d'un collègue reste.
-async function deleteOrphanDemoProspects(supabase: Client, closer: Closer): Promise<void> {
-  const { data: prospects } = await supabase
+async function deleteOrphanDemoProspects(supabase: Client, closer: Closer): Promise<boolean> {
+  const { data: prospects, error: prospectsError } = await supabase
     .from('buyer_prospects')
     .select('id')
     .eq('agency_id', closer.agencyId)
     .eq('created_by', closer.id);
+  if (prospectsError) return false;
   const ids = (prospects ?? []).map((prospect) => prospect.id);
-  if (ids.length === 0) return;
-  const { data: origins } = await supabase
+  if (ids.length === 0) return true;
+  const { data: origins, error: originsError } = await supabase
     .from('buyer_prospect_origins')
     .select('prospect_id')
     .eq('agency_id', closer.agencyId)
     .in('prospect_id', ids);
+  if (originsError) return false;
   const kept = new Set((origins ?? []).map((origin) => origin.prospect_id));
   const orphans = ids.filter((id) => !kept.has(id));
-  if (orphans.length > 0) {
-    await supabase
-      .from('buyer_prospects')
-      .delete()
-      .in('id', orphans)
-      .eq('agency_id', closer.agencyId);
-  }
+  if (orphans.length === 0) return true;
+  const { error } = await supabase
+    .from('buyer_prospects')
+    .delete()
+    .in('id', orphans)
+    .eq('agency_id', closer.agencyId);
+  return !error;
 }
 
-export async function seedDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
-  return (await insertDemoBuyers(supabase, closer)) != null;
+export async function seedDemoBuyers(
+  supabase: Client,
+  closer: Closer,
+  now: Date,
+): Promise<boolean> {
+  return (await insertDemoBuyers(supabase, closer, now)) != null;
 }
 
 async function insertDemoBuyers(
   supabase: Client,
   closer: Closer,
+  now: Date,
 ): Promise<{ id: string; name: string }[] | null> {
   const { data, error } = await supabase
     .from('buyers')
@@ -565,13 +685,13 @@ async function insertDemoBuyers(
         // Mission 132 — le financement et le dernier contact, comme les gestes de la fiche.
         const contactedAt =
           buyer.contactedDaysAgo != null
-            ? new Date(Date.now() - buyer.contactedDaysAgo * 86_400_000).toISOString()
+            ? new Date(now.getTime() - buyer.contactedDaysAgo * 86_400_000).toISOString()
             : null;
         // Mission 133 — la fiche existe depuis quelques semaines, son statut posé à sa création.
         // Chaque ligne porte les deux dates : dans une insertion groupée, une colonne absente d'une
         // ligne mais présente sur une autre vaut NULL, pas sa valeur par défaut.
         const createdAt = new Date(
-          Date.now() - (buyer.createdDaysAgo ?? 0) * 86_400_000,
+          now.getTime() - (buyer.createdDaysAgo ?? 0) * 86_400_000,
         ).toISOString();
         return {
           ...buyerColumns(buyer),
@@ -756,32 +876,34 @@ async function seedKellerRefusals(
   return !presentedError;
 }
 
-export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<number> {
+// Rend vrai si tout est parti ; faux à la première lecture ou suppression en échec.
+export async function deleteDemoDossiers(supabase: Client, closer: Closer): Promise<boolean> {
   const ids = await ownDemoDossierIds(supabase, closer);
-  if (ids.length === 0) return 0;
+  if (!ids) return false;
+  if (ids.length === 0) return true;
   // Mission 142 — les fiches « Vivre ici » de ses dossiers et de leurs concurrents, par leur clé.
-  const { data: ownComparables } = await supabase
+  const { data: ownComparables, error: comparablesError } = await supabase
     .from('comparables')
     .select('id')
     .in('project_id', ids)
     .eq('agency_id', closer.agencyId);
+  if (comparablesError) return false;
   await deleteLivingHereSheets(closer.agencyId, [
     ...ids.map((id) => `project:${id}`),
     ...(ownComparables ?? []).map((row) => `competitor:${row.id}`),
   ]);
-  const { data: properties } = await supabase
+  const { data: properties, error: propertiesError } = await supabase
     .from('subject_properties')
     .select('id, photo_urls')
     .in('project_id', ids)
     .eq('agency_id', closer.agencyId);
+  if (propertiesError) return false;
   const photoPaths = (properties ?? []).flatMap((row) =>
     Array.isArray(row.photo_urls)
       ? row.photo_urls.filter((path): path is string => typeof path === 'string')
       : [],
   );
-  if (photoPaths.length > 0) {
-    await supabase.storage.from(PROPERTY_PHOTO_BUCKET).remove(photoPaths);
-  }
+  await removeStored(supabase, PROPERTY_PHOTO_BUCKET, photoPaths);
   const propertyIds = (properties ?? []).map((row) => row.id);
   const byProject = [
     'live_reopenings',
@@ -798,32 +920,36 @@ export async function deleteDemoDossiers(supabase: Client, closer: Closer): Prom
     'comparables',
   ] as const;
   for (const table of byProject) {
-    await supabase.from(table).delete().in('project_id', ids).eq('agency_id', closer.agencyId);
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .in('project_id', ids)
+      .eq('agency_id', closer.agencyId);
+    if (error) return false;
   }
   if (propertyIds.length > 0) {
-    await supabase
-      .from('subject_property_condominiums')
-      .delete()
-      .in('subject_property_id', propertyIds);
-    await supabase
-      .from('subject_property_diagnostics')
-      .delete()
-      .in('subject_property_id', propertyIds);
+    for (const table of [
+      'subject_property_condominiums',
+      'subject_property_diagnostics',
+    ] as const) {
+      const { error } = await supabase.from(table).delete().in('subject_property_id', propertyIds);
+      if (error) return false;
+    }
   }
-  await supabase
+  const { error: propertyError } = await supabase
     .from('subject_properties')
     .delete()
     .in('project_id', ids)
     .eq('agency_id', closer.agencyId);
-  const { data: removed } = await supabase
+  if (propertyError) return false;
+  const { error } = await supabase
     .from('projects')
     .delete()
     .in('id', ids)
     .eq('agency_id', closer.agencyId)
     .eq('advisor_id', closer.id)
-    .not('demo_stage', 'is', null)
-    .select('id');
-  return removed?.length ?? 0;
+    .not('demo_stage', 'is', null);
+  return !error;
 }
 
 const minutesAgo = (now: Date, minutes: number): string =>
@@ -858,7 +984,7 @@ async function depositDemoPhotos(
 
 // Un dossier de démo, à son étape. Rend l'identifiant du dossier, ou null si une écriture a
 // échoué (le dossier à moitié créé est alors retiré).
-async function seedDemoDossier(
+export async function seedDemoDossier(
   supabase: Client,
   closer: Closer,
   plan: DemoSeedPlan,
@@ -1054,17 +1180,19 @@ async function seedDemoDossier(
     // Vence (M. et Mme Lopez) est signé il y a 3 jours : la boucle le propose à ses acquéreurs.
     const signedAt =
       plan.signedDaysAgo != null ? daysAgo(now, plan.signedDaysAgo) : oneMonthAgo(now);
-    await supabase
+    const { error: signedError } = await supabase
       .from('project_meeting_conclusions')
       .update({ concluded_at: signedAt, signed_at: signedAt })
       .eq('project_id', projectId);
+    if (signedError) return failed();
   }
   if (plan.conclusion.outcome === 'follow_up') {
     // Un rendez-vous d'il y a neuf jours, une relance passée, un concurrent qui a baissé depuis.
-    await supabase
+    const { error: meetingError } = await supabase
       .from('project_meeting_conclusions')
       .update({ concluded_at: daysAgo(now, DEMO_FOLLOW_UP_DAYS.meetingAgo) })
       .eq('project_id', projectId);
+    if (meetingError) return failed();
     const { error: contactError } = await supabase.from('follow_up_contacts').insert({
       project_id: projectId,
       agency_id: closer.agencyId,
@@ -1076,29 +1204,32 @@ async function seedDemoDossier(
     if (contactError) return failed();
     const dropped = plan.priceDrop ? rowOf(plan.priceDrop.index) : null;
     if (plan.priceDrop && dropped) {
-      await supabase
+      const { error: dropError } = await supabase
         .from('comparables')
         .update({ price: plan.priceDrop.price })
         .eq('id', dropped.id);
+      if (dropError) return failed();
     }
   }
   if (plan.opposedAddress) {
     // Une adresse « Ne plus solliciter » (M98, M102) : celle d'un concurrent, pour l'agence.
     const key = addressKey(plan.opposedAddress);
     if (key) {
-      await supabase
+      const { error: oppositionError } = await supabase
         .from('prospecting_oppositions')
         .upsert(
           { agency_id: closer.agencyId, address_key: key, created_by: closer.id },
           { onConflict: 'agency_id,address_key', ignoreDuplicates: true },
         );
+      if (oppositionError) return failed();
     }
   }
   return projectId;
 }
 
+// Le dossier à moitié créé est retiré ; si ce retrait échoue, il reste, et la vérification finale
+// le comptera (« 7 dossiers au lieu de 6 ») : l'échec entre au journal.
 async function deleteOne(supabase: Client, closer: Closer, projectId: string): Promise<void> {
-  const scoped = { id: projectId, agencyId: closer.agencyId };
   for (const table of [
     'live_seller_responses',
     'live_seller_summary',
@@ -1107,23 +1238,32 @@ async function deleteOne(supabase: Client, closer: Closer, projectId: string): P
     'comparables',
     'subject_properties',
   ] as const) {
-    await supabase
+    const { error } = await supabase
       .from(table)
       .delete()
-      .eq('project_id', scoped.id)
-      .eq('agency_id', scoped.agencyId);
+      .eq('project_id', projectId)
+      .eq('agency_id', closer.agencyId);
+    if (error) {
+      await reportServerError('demoReset.cleanup', error);
+      return;
+    }
   }
-  await supabase.from('projects').delete().eq('id', projectId).eq('agency_id', closer.agencyId);
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+    .eq('agency_id', closer.agencyId);
+  if (error) await reportServerError('demoReset.cleanup', error);
 }
 
+// Toute la démo d'un coup, comme les étapes de « Ma démo » l'écrivent l'une après l'autre (le
+// test des dates relatives la sème ainsi, à deux « maintenant »).
 export async function seedDemoDossiers(
   supabase: Client,
   closer: Closer,
   now: Date,
 ): Promise<boolean> {
-  // Décision de Jean-Guy (06/11) : le nom et l'adresse de l'agence de démonstration, que les
-  // documents impriment (« Agence Horizon Côte d'Azur », jamais « Démo »).
-  await nameDemoAgency(supabase, closer);
+  if (!(await prepareDemoAgency(supabase, closer))) return false;
   // Mission 145 — deux dossiers portent la marque « signed » (Mougins, et Vence chez M. et Mme
   // Lopez) : le mandat des Keller se retrouve par sa clé et son scénario, jamais par la marque seule.
   const created: { key: DemoSeedKey; id: string }[] = [];
@@ -1132,13 +1272,24 @@ export async function seedDemoDossiers(
     if (!id) return false;
     created.push({ key, id });
   }
-  const mouginsProjectId = mouginsMandateId(created);
-  // Mission 117 — et ses deux acquéreurs, qui vont avec les scénarios ; les Keller avec leur
+  return seedDemoBuyersStory(supabase, closer, mouginsMandateId(created), now);
+}
+
+// Les acquéreurs de la démo et leur histoire (sélections, refus, veille, bon de visite, offre,
+// biens écartés, visite des Wilson), après les dossiers : la sélection et l'offre des Keller vivent
+// sur le mandat de Mougins.
+export async function seedDemoBuyersStory(
+  supabase: Client,
+  closer: Closer,
+  mouginsProjectId: string | null,
+  now: Date,
+): Promise<boolean> {
+  // Mission 117 — et ses acquéreurs, qui vont avec les scénarios ; les Keller avec leur
   // sélection (essai de Jean-Guy, 25/10).
-  const buyers = await insertDemoBuyers(supabase, closer);
+  const buyers = await insertDemoBuyers(supabase, closer, now);
   if (!buyers) return false;
   const keller = buyers.find((buyer) => buyer.name === 'Famille Keller');
-  if (!keller || !mouginsProjectId) return true;
+  if (!keller || !mouginsProjectId) return false;
   if (!(await seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now))) {
     return false;
   }
@@ -1250,28 +1401,4 @@ async function seedWatchRuns(
   if (rows.length === 0) return true;
   const { error } = await supabase.from('buyer_watch_runs').insert(rows);
   return !error;
-}
-
-// « Préparer ma démo » : six dossiers, s'il n'en a pas encore.
-export async function prepareDemoDossiers(): Promise<void> {
-  const closer = await requireDemoCloser();
-  const supabase = createServiceRoleClient();
-  if ((await ownDemoDossierIds(supabase, closer)).length === 0) {
-    await deleteDemoBuyers(supabase, closer);
-    const ok = await seedDemoDossiers(supabase, closer, new Date());
-    if (!ok) redirect(FAILED);
-  }
-  revalidateDemo();
-  redirect(DEMO_PAGE);
-}
-
-// « Remettre ma démo à zéro » : les siens disparaissent, quatre neufs les remplacent.
-export async function resetDemoDossiers(): Promise<void> {
-  const closer = await requireDemoCloser();
-  const supabase = createServiceRoleClient();
-  await deleteDemoDossiers(supabase, closer);
-  await deleteDemoBuyers(supabase, closer);
-  const ok = await seedDemoDossiers(supabase, closer, new Date());
-  revalidateDemo();
-  redirect(ok ? DEMO_PAGE : FAILED);
 }

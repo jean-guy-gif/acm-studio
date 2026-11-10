@@ -18,6 +18,8 @@ import {
   readDemoLinkAnswers,
   openToday,
   sideNav,
+  expectPhotosLoaded,
+  resetDemoByScreen,
 } from './support';
 
 // Mission 114 (point 14) — la démonstration des closers, de bout en bout, sur l'URL d'essai, avec
@@ -119,20 +121,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    // Mission 114 (partie B) — « Préparer ma démo » : quatre dossiers à quatre étapes, à soi. Un
-    // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
-    // les remet à zéro.
+    // Mission 114 (partie B) — « Préparer ma démo » : six dossiers à cinq étapes, à soi. Mission
+    // 147 (partie B) — la démo est remise à neuf par l'écran au début du passage (« Préparer » ou
+    // « Remettre à zéro », la barre des étapes, « Votre démo est prête » sur preuve).
     await test.step('Ma démo : six dossiers, deux mandats signés', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
-      await goViaAccountMenu(page, 'Ma démo');
-      await expect(page).toHaveURL(/\/ma-demo$/);
-      await expect(page.getByTestId('demo-dossiers')).toBeVisible();
+      await resetDemoByScreen(page);
       await expectUnspoken(page, 'Ma démo');
-      const prepared = (await page.getByTestId('demo-dossier').count()) === 0;
-      if (prepared) {
-        await page.getByRole('button', { name: 'Préparer ma démo' }).click();
-        await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
-      }
       const stages = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
@@ -147,7 +142,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
       // Des dossiers préparés avant la mission n'en ont pas : la remise à zéro, en fin de passage,
       // les prouve alors.
-      if (prepared) await expectDemoBuyers(page);
+      await expectDemoBuyers(page);
       // Chacun à sa place : le prêt dans la liste du Live, les deux conclus dans le Suivi.
       await page.goto('/live');
       await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
@@ -165,7 +160,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('suivi-task')).toHaveCount(0);
       // « Aujourd'hui » : la relance des Lambert-Duval, due, sur sa propre ligne en tête des
       // Vendeurs, avec l'argument ; le premier Point marché de M. Lefebvre ; la pastille du menu.
-      if (prepared) await expectTodayAlerts(page);
+      await expectTodayAlerts(page);
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
       // réservé aux opérateurs ; le menu de gauche a ses sept espaces, en trois groupes (M145).
       await expect(sideNav(page).getByRole('link')).toHaveCount(7);
@@ -174,6 +169,49 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(menu.getByRole('menuitem', { name: /^Erreurs/ })).toHaveCount(0);
       await page.keyboard.press('Escape');
       await expect(menu).toHaveCount(0);
+    });
+
+    // Mission 147 (partie B) — chaque concurrent semé a une photo qui se charge : sur la page
+    // Concurrents de chaque dossier, dans le courrier de Prospection (les photos de l'annonce), et
+    // dans le Dossier acquéreur des Keller (le document que reçoit l'acquéreur).
+    await test.step('Une photo chargée pour chaque concurrent montré', async () => {
+      await goViaAccountMenu(page, 'Ma démo');
+      const ids = (
+        await page
+          .locator('[data-testid="demo-dossier"]:not([data-stage="to_prepare"]) a')
+          .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))
+      )
+        .map((href) => /\/builder\/([^/]+)/.exec(href)?.[1])
+        .filter((id): id is string => Boolean(id));
+      // Le dossier à relancer s'ouvre depuis le Suivi (« Ma démo » y mène).
+      await page.goto('/suivi');
+      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
+      await followUp.getByTestId('suivi-link-details').click();
+      const followUpHref = await followUp
+        .getByRole('link', { name: 'Ouvrir le dossier' })
+        .getAttribute('href');
+      ids.push(/\/builder\/([^/]+)/.exec(followUpHref ?? '')?.[1] ?? '');
+      expect(ids.filter(Boolean)).toHaveLength(5);
+      for (const id of ids) {
+        await page.goto(`/builder/${id}/comparables`);
+        await expect(page.locator('main li img').first()).toBeVisible();
+        await expectPhotosLoaded(page.locator('main'), `Concurrents ${id}`, 5);
+      }
+      // Prospection : chaque courrier propose les photos de l'annonce de son concurrent.
+      await page.goto('/prospection');
+      const letters = await page
+        .getByRole('link', { name: 'Préparer le dossier', exact: true })
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+      expect(letters.length).toBeGreaterThan(0);
+      for (const href of letters) {
+        await page.goto(href);
+        await expectPhotosLoaded(page.locator('main'), `Courrier ${href}`, 2);
+      }
+      await page.goto('/acquereurs?vue=agence');
+      await page.getByRole('link', { name: 'Famille Keller' }).first().click();
+      await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]+$/);
+      await page.goto(`${new URL(page.url()).pathname}/dossier`);
+      await expectPhotosLoaded(page.locator('body'), 'Dossier acquéreur des Keller', 3);
     });
 
     await test.step('Nouveau dossier', async () => {
@@ -887,35 +925,19 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Remettre ma démo à zéro', async () => {
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
-      const before = await page
-        .getByTestId('demo-dossier')
-        .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-      expect(before).toHaveLength(6);
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       const confirm = page.getByTestId('demo-reset-confirm');
       await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
       await confirm.getByRole('button', { name: 'Annuler' }).click();
       await expect(confirm).toHaveCount(0);
-      await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
-      await confirm.getByRole('button', { name: 'Remettre à zéro' }).click();
-      // La remise à zéro dure (photos déposées, Live, conclusion) : on attend que la liste change
-      // — les anciens dossiers s'affichent jusqu'au retour de l'action.
-      const hrefs = () =>
-        page
-          .getByTestId('demo-dossier')
-          .evaluateAll((items) =>
-            items.map((item) => item.querySelector('a')?.getAttribute('href')),
-          );
-      await expect
-        .poll(async () => (await hrefs())[0], {
-          message: 'La remise à zéro n’a pas remplacé les dossiers',
-          timeout: 180_000,
-        })
-        .not.toBe(before[0]);
-      await expect(page.locator('p[role="alert"]')).toHaveCount(0);
-      await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
-      const after = await hrefs();
-      for (const href of after.slice(0, 5)) expect(before).not.toContain(href);
+      // Mission 147 (partie B) — la barre des étapes, puis « Votre démo est prête », six dossiers
+      // neufs (d'autres identifiants).
+      await resetDemoByScreen(page);
+      await expect(page.getByTestId('demo-ready')).toContainText(
+        'Votre démo est prête : six dossiers et neuf acquéreurs',
+      );
+      await expectOneFilled(page, 'Ma démo, prête');
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       // Le dossier « TEST AUTOMATIQUE » du passage, signé, reste jusqu'à la fin.
@@ -1002,6 +1024,10 @@ async function walkLive(
   }
 
   await expect(page.getByRole('button', { name: 'Démarrer la présentation' })).toBeVisible();
+  // Mission 147 (partie B) — l'agence de démonstration a son logo : l'accueil le montre, chargé,
+  // à la place du nom en grand.
+  await expect(page.getByTestId('live-intro-agency')).toHaveCount(0);
+  await expectPhotosLoaded(page.getByTestId('live-intro-card'), 'Accueil du Live', 1);
   await onScreen('Introduction');
   await page.getByRole('button', { name: 'Démarrer la présentation' }).click();
 

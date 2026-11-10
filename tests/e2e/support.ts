@@ -702,3 +702,79 @@ export async function expectNoVerticalScroll(page: Page, screen: string): Promis
     })
     .toEqual({ pageScroll: 0, mainScroll: 0, underBar: 0, what: '' });
 }
+
+// Mission 147 (partie B) — la démo remise à neuf par l'écran : « Préparer ma démo » s'il n'y a rien,
+// sinon « Remettre ma démo à zéro » et sa confirmation ; la barre des étapes, puis « Votre démo est
+// prête » (la base relue : six dossiers, neuf acquéreurs), jamais un message d'échec.
+export async function resetDemoByScreen(page: Page): Promise<void> {
+  await goViaAccountMenu(page, 'Ma démo');
+  await expect(page).toHaveURL(/\/ma-demo$/);
+  await expect(page.getByTestId('demo-dossiers')).toBeVisible();
+  const hrefs = () =>
+    page
+      .getByTestId('demo-dossier')
+      .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
+  const before = await hrefs();
+  if (before.length === 0) {
+    await page.getByRole('button', { name: 'Préparer ma démo' }).click();
+  } else {
+    await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
+    await page
+      .getByTestId('demo-reset-confirm')
+      .getByRole('button', { name: 'Remettre à zéro' })
+      .click();
+  }
+  // Pendant ce temps, la barre des étapes et aucun bouton.
+  await expect(page.getByTestId('demo-setup-progress')).toBeVisible();
+  await expect(
+    page.getByTestId('demo-ready').or(page.getByTestId('demo-setup-failed')),
+  ).toBeVisible({ timeout: 180_000 });
+  await expect(page.getByTestId('demo-setup-failed')).toHaveCount(0);
+  // La liste est relue après « prête » : les nouveaux dossiers, jamais les anciens.
+  await expect
+    .poll(
+      async () => {
+        const after = await hrefs();
+        return after.length === 6 && after.every((href) => !before.includes(href));
+      },
+      { timeout: 30_000, message: 'La liste n’a pas montré les six nouveaux dossiers' },
+    )
+    .toBe(true);
+}
+
+// Mission 147 (partie B) — chaque photo d'un écran se charge : aucune image cassée, aucun cadre
+// « Pas de photo » ou « Photo indisponible », et au moins `atLeast` photos chargées. Les images
+// paresseuses sont demandées tout de suite (`loading = eager`), sans faire défiler l'écran.
+export async function expectPhotosLoaded(
+  scope: Locator,
+  screen: string,
+  atLeast: number,
+): Promise<void> {
+  await expect(scope.getByText(/^Pas de photo$/), `${screen} : un cadre sans photo`).toHaveCount(0);
+  await expect(
+    scope.locator('[role="img"][aria-label*="Photo indisponible"]'),
+    `${screen} : une photo indisponible`,
+  ).toHaveCount(0);
+  const states = () =>
+    scope.locator('img').evaluateAll((images) =>
+      (images as HTMLImageElement[]).map((image) => {
+        if (image.loading === 'lazy') image.loading = 'eager';
+        return image.complete ? (image.naturalWidth > 0 ? 'ok' : 'broken') : 'pending';
+      }),
+    );
+  await expect
+    .poll(async () => (await states()).includes('pending'), {
+      timeout: 30_000,
+      message: `${screen} : des photos ne finissent pas de charger`,
+    })
+    .toBe(false);
+  const final = await states();
+  expect(
+    final.filter((state) => state === 'broken'),
+    `${screen} : une photo cassée`,
+  ).toEqual([]);
+  expect(
+    final.filter((state) => state === 'ok').length,
+    `${screen} : trop peu de photos chargées`,
+  ).toBeGreaterThanOrEqual(atLeast);
+}

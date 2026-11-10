@@ -1,20 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { oneMonthAgo } from '@/features/demo/services/demo-seed';
-import { fakeSupabase } from '@/test-fixtures/fake-supabase';
+import { fakeSupabase, type FakeCall, type FakeResponse } from '@/test-fixtures/fake-supabase';
 
 // Mission 114 (partie B) — « Préparer ma démo » et « Remettre ma démo à zéro » : réservés à un
 // closer de l'agence de démonstration, et la remise à zéro ne touche qu'à SES dossiers marqués.
+// Mission 147 (partie B) — en étapes : une lecture en échec n'est jamais une absence, chaque
+// suppression lit son erreur, la suppression recompte à zéro, et « prête » se dit sur preuve.
 // Les actions sont appelées pour de vrai ; la session, le repère et les clients sont remplacés.
 
 const state = vi.hoisted(() => ({
   demo: true,
   profile: null as Record<string, unknown> | null,
-  respond: (() => ({})) as (table: string) => { data?: unknown; error?: unknown },
+  respond: (() => ({})) as (table: string, calls: FakeCall[]) => FakeResponse,
+  reported: [] as string[],
 }));
 const service = fakeSupabase((calls) => {
-  const from = [...calls].reverse().find((call) => call.method === 'from');
-  return state.respond(from ? String(from.args[0]) : '');
+  const fromIndex = calls.map((call) => call.method).lastIndexOf('from');
+  const table = fromIndex >= 0 ? String(calls[fromIndex]!.args[0]) : '';
+  return state.respond(table, calls.slice(Math.max(fromIndex, 0)));
 });
 
 vi.mock('@/features/demo/services/is-demo-agency', () => ({
@@ -23,6 +27,11 @@ vi.mock('@/features/demo/services/is-demo-agency', () => ({
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({}) }));
+vi.mock('@/lib/app-errors/report-server-error', () => ({
+  reportServerError: async (scope: string) => {
+    state.reported.push(scope);
+  },
+}));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 vi.mock('next/navigation', () => ({
   redirect: (path: string) => {
@@ -32,48 +41,297 @@ vi.mock('next/navigation', () => ({
 
 const AGENCY = '11111111-1111-4111-8111-111111111111';
 const closer = { id: 'u-closer', agency_id: AGENCY, role: 'advisor', removed_at: null };
+const CLOSER = { id: 'u-closer', agencyId: AGENCY };
+const methods = (calls: FakeCall[]) => calls.map((call) => call.method);
+const isDelete = (calls: FakeCall[]) => methods(calls).includes('delete');
+const isCount = (calls: FakeCall[]) =>
+  calls.some(
+    (call) => call.method === 'select' && JSON.stringify(call.args[1] ?? {}).includes('head'),
+  );
+const SIX = ['to_prepare', 'ready', 'direct', 'signed', 'signed', 'follow_up'];
 
 beforeEach(() => {
   service.reset();
   state.demo = true;
   state.profile = closer;
+  state.reported = [];
   state.respond = () => ({ data: [] });
 });
 
 describe('qui peut préparer ou remettre à zéro', () => {
   it('hors de l’agence de démonstration : renvoyé vers ses dossiers, sans rien écrire', async () => {
-    const { prepareDemoDossiers, resetDemoDossiers } =
-      await import('@/features/demo/actions/demo-dossiers');
+    const actions = await import('@/features/demo/actions/demo-setup');
     state.demo = false;
-    await expect(prepareDemoDossiers()).rejects.toThrow('REDIRECT /builder');
-    await expect(resetDemoDossiers()).rejects.toThrow('REDIRECT /builder');
+    await expect(actions.startDemoSetup('prepare')).rejects.toThrow('REDIRECT /builder');
+    await expect(actions.startDemoSetup('reset')).rejects.toThrow('REDIRECT /builder');
+    await expect(actions.seedDemoProjectStep('ready', new Date().toISOString())).rejects.toThrow(
+      'REDIRECT /builder',
+    );
+    await expect(actions.seedDemoBuyersStep(new Date().toISOString())).rejects.toThrow(
+      'REDIRECT /builder',
+    );
+    await expect(actions.verifyDemoSetup()).rejects.toThrow('REDIRECT /builder');
     expect(service.writes()).toEqual([]);
   });
 
   it('sans session, ou membre retiré : vers l’ouverture d’agence, sans rien écrire', async () => {
-    const { resetDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
+    const { startDemoSetup } = await import('@/features/demo/actions/demo-setup');
     for (const profile of [null, { ...closer, removed_at: '2026-10-01T00:00:00Z' }]) {
       state.profile = profile;
-      await expect(resetDemoDossiers()).rejects.toThrow('REDIRECT /onboarding');
+      await expect(startDemoSetup('reset')).rejects.toThrow('REDIRECT /onboarding');
     }
     expect(service.writes()).toEqual([]);
+  });
+
+  it('une demande inconnue, un dossier inconnu ou un « maintenant » périmé : refusés, rien d’écrit', async () => {
+    const actions = await import('@/features/demo/actions/demo-setup');
+    expect(await actions.startDemoSetup('tout')).toMatchObject({ ok: false });
+    expect(await actions.seedDemoProjectStep('villa', new Date().toISOString())).toMatchObject({
+      ok: false,
+    });
+    const stale = new Date(Date.now() - 20 * 60_000).toISOString();
+    expect(await actions.seedDemoProjectStep('ready', stale)).toMatchObject({ ok: false });
+    expect(await actions.seedDemoBuyersStep('hier')).toMatchObject({ ok: false });
+    expect(service.writes()).toEqual([]);
+  });
+});
+
+describe('la première étape : supprimer, recompter à zéro, préparer l’agence', () => {
+  it('une lecture en échec n’est jamais « aucun dossier » : rien n’est supprimé ni semé', async () => {
+    const { startDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table) =>
+      table === 'projects' ? { data: null, error: { message: 'timeout' } } : { data: [] };
+    for (const mode of ['prepare', 'reset']) {
+      expect(await startDemoSetup(mode)).toEqual({
+        ok: false,
+        error: 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.',
+      });
+    }
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('une suppression en échec arrête tout et le dit : rien n’est semé', async () => {
+    const { startDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table, calls) =>
+      table === 'projects' && !isDelete(calls)
+        ? { data: [{ id: 'p1' }] }
+        : table === 'comparables' && isDelete(calls)
+          ? { error: { message: 'refusé' } }
+          : { data: [] };
+    const result = await startDemoSetup('reset');
+    expect(result).toMatchObject({ ok: false });
+    expect(!result.ok && result.error).toContain('n’ont pas pu être supprimés');
+    expect(service.writes()).not.toContain('delete projects');
+    expect(service.writes().some((write) => write.startsWith('insert'))).toBe(false);
+    expect(state.reported).toContain('demoReset.delete');
+  });
+
+  it('des dossiers restés après la suppression (une autre remise à zéro) : rien n’est semé', async () => {
+    const { startDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    let deleted = false;
+    state.respond = (table, calls) => {
+      if (isDelete(calls)) {
+        if (table === 'projects') deleted = true;
+        return { data: [] };
+      }
+      if (table === 'projects') {
+        return deleted ? { data: [{ demo_stage: 'ready' }] } : { data: [{ id: 'p1' }] };
+      }
+      if (table === 'buyers' && isCount(calls)) return { count: 0 };
+      return { data: [] };
+    };
+    const result = await startDemoSetup('reset');
+    expect(!result.ok && result.error).toContain('1 dossier(s) et 0 acquéreur(s)');
+    expect(service.writes().some((write) => write.startsWith('insert'))).toBe(false);
+    expect(service.writes()).not.toContain('update agencies');
+  });
+
+  it('tout supprimé et recompté à zéro : l’agence est préparée et le « maintenant » rendu', async () => {
+    const { startDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table, calls) =>
+      table === 'buyers' && isCount(calls)
+        ? { count: 0 }
+        : table === 'profiles'
+          ? { data: { phone: '06 12 34 56 78' } }
+          : table === 'agency_branding' && !methods(calls).includes('update')
+            ? { data: { logo_light_path: 'x/logo-light.png', logo_dark_path: null } }
+            : { data: [] };
+    const result = await startDemoSetup('reset');
+    expect(result).toMatchObject({ ok: true, now: expect.any(String) });
+    expect(service.writes()).toEqual([
+      'delete buyers',
+      'update agencies',
+      'update agency_branding',
+    ]);
+  });
+});
+
+describe('une étape en échec arrête tout et le dit', () => {
+  it('un dossier qui ne s’écrit pas : son nom dans le message, jamais « prête »', async () => {
+    const { seedDemoProjectStep } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table, calls) =>
+      table === 'projects' && methods(calls).includes('insert')
+        ? { error: { message: 'refusé' } }
+        : { data: [] };
+    expect(await seedDemoProjectStep('ready', new Date().toISOString())).toEqual({
+      ok: false,
+      error:
+        'La remise à zéro n’a pas abouti : le dossier de Mme Garcia, prêt pour le Live n’a pas pu être créé. Rien n’est prêt.',
+    });
+    expect(state.reported).toContain('demoReset.dossier');
+  });
+
+  it('les acquéreurs : le mandat de Mougins absent, en double ou illisible, rien n’est semé', async () => {
+    const { seedDemoBuyersStep } = await import('@/features/demo/actions/demo-setup');
+    const now = new Date().toISOString();
+    for (const answer of [{ data: [] }, { data: [{ id: 'm1' }, { id: 'm2' }] }]) {
+      state.respond = (table) => (table === 'projects' ? answer : { data: [] });
+      const result = await seedDemoBuyersStep(now);
+      expect(!result.ok && result.error).toContain('mandat signé de Mougins');
+    }
+    state.respond = (table) =>
+      table === 'projects' ? { error: { message: 'timeout' } } : { data: [] };
+    expect(await seedDemoBuyersStep(now)).toEqual({
+      ok: false,
+      error: 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.',
+    });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('les acquéreurs qui ne s’écrivent pas : le message le dit', async () => {
+    const { seedDemoBuyersStep } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table, calls) =>
+      table === 'projects'
+        ? { data: [{ id: 'm1' }] }
+        : table === 'buyers' && methods(calls).includes('insert')
+          ? { error: { message: 'refusé' } }
+          : { data: [] };
+    const result = await seedDemoBuyersStep(new Date().toISOString());
+    expect(!result.ok && result.error).toContain('les acquéreurs n’ont pas pu être créés');
+    expect(state.reported).toContain('demoReset.buyers');
+  });
+});
+
+describe('le logo et le téléphone de la démo (mission 147)', () => {
+  it('sans logo, les deux versions sont déposées et enregistrées', async () => {
+    const { prepareDemoAgency } = await import('@/features/demo/services/demo-dossiers');
+    state.respond = (table, calls) =>
+      table === 'profiles'
+        ? { data: { phone: '06 12 34 56 78' } }
+        : table === 'agency_branding' && methods(calls).includes('maybeSingle')
+          ? { data: { logo_light_path: null, logo_dark_path: null } }
+          : { data: [] };
+    expect(await prepareDemoAgency(service.client as never, CLOSER)).toBe(true);
+    const uploads = service.calls.filter((call) => call.method === 'upload');
+    expect(uploads.map((call) => call.args[0])).toEqual([
+      `${AGENCY}/logo-light.svg`,
+      `${AGENCY}/logo-dark.svg`,
+    ]);
+    for (const upload of uploads) {
+      const svg = new TextDecoder().decode(upload.args[1] as Uint8Array);
+      expect(svg).toContain('<svg');
+      // Tracé en chemins : aucune police, aucun texte à rendre.
+      expect(svg).not.toContain('<text');
+      expect(svg).not.toMatch(/d[ée]mo/i);
+    }
+    const saved = service.calls.find(
+      (call, index) =>
+        call.method === 'update' &&
+        service.calls
+          .slice(0, index)
+          .reverse()
+          .find((c) => c.method === 'from')?.args[0] === 'agency_branding' &&
+        'logo_light_path' in (call.args[0] as object),
+    );
+    expect(saved?.args[0]).toEqual({
+      logo_light_path: `${AGENCY}/logo-light.svg`,
+      logo_dark_path: `${AGENCY}/logo-dark.svg`,
+    });
+  });
+
+  it('le logo d’un manager n’est jamais remplacé, même une seule version', async () => {
+    const { prepareDemoAgency } = await import('@/features/demo/services/demo-dossiers');
+    state.respond = (table, calls) =>
+      table === 'profiles'
+        ? { data: { phone: '06 12 34 56 78' } }
+        : table === 'agency_branding' && methods(calls).includes('maybeSingle')
+          ? { data: { logo_light_path: null, logo_dark_path: `${AGENCY}/logo-dark.png` } }
+          : { data: [] };
+    expect(await prepareDemoAgency(service.client as never, CLOSER)).toBe(true);
+    expect(service.calls.some((call) => call.method === 'upload')).toBe(false);
+  });
+
+  it('le téléphone du closer : posé s’il est vide ou vaut l’ancien numéro, jamais sinon', async () => {
+    const { replacesCloserPhone, DEMO_CLOSER_PHONE } =
+      await import('@/features/demo/services/demo-dossiers');
+    expect(DEMO_CLOSER_PHONE).toBe('06 39 98 00 01');
+    expect(replacesCloserPhone(null)).toBe(true);
+    expect(replacesCloserPhone('  ')).toBe(true);
+    expect(replacesCloserPhone('06 00 00 00 01')).toBe(true);
+    expect(replacesCloserPhone('0600000001')).toBe(true);
+    expect(replacesCloserPhone('06 12 34 56 78')).toBe(false);
+    expect(replacesCloserPhone('06 39 98 00 01')).toBe(false);
+  });
+});
+
+describe('la vérification : « prête » seulement sur preuve', () => {
+  const answer = (stages: string[], buyers: number) => (table: string, calls: FakeCall[]) =>
+    table === 'projects'
+      ? { data: stages.map((demo_stage) => ({ demo_stage })) }
+      : table === 'buyers' && isCount(calls)
+        ? { count: buyers }
+        : { data: [] };
+
+  it('six dossiers, un par étape attendue, et neuf acquéreurs : prête', async () => {
+    const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = answer(SIX, 9);
+    expect(await verifyDemoSetup()).toEqual({ ok: true });
+    expect(service.writes()).toEqual([]);
+  });
+
+  it('cinq dossiers : « 5 dossiers sur 6 », ce qui manque, jamais « prête »', async () => {
+    const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = answer(
+      SIX.filter((stage) => stage !== 'direct'),
+      9,
+    );
+    expect(await verifyDemoSetup()).toEqual({
+      ok: false,
+      error:
+        'La remise à zéro n’a pas abouti : 5 dossiers sur 6 (il manque « Prêt, en présentation directe »). Rien n’est prêt.',
+    });
+    expect(state.reported).toContain('demoReset.verify');
+  });
+
+  it('douze dossiers : deux remises à zéro en même temps, et le message le dit', async () => {
+    const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = answer([...SIX, ...SIX], 18);
+    const result = await verifyDemoSetup();
+    expect(!result.ok && result.error).toContain('12 dossiers au lieu de 6');
+    expect(!result.ok && result.error).toContain('18 acquéreurs au lieu de 9');
+    expect(!result.ok && result.error).toContain('lancée en même temps');
+  });
+
+  it('une lecture en échec : jamais « prête »', async () => {
+    const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table) =>
+      table === 'buyers'
+        ? { error: { message: 'timeout' } }
+        : { data: SIX.map((s) => ({ demo_stage: s })) };
+    expect(await verifyDemoSetup()).toMatchObject({ ok: false });
   });
 });
 
 describe('la remise à zéro ne touche qu’aux dossiers de démo du closer connecté', () => {
   it('lit ses dossiers marqués, dans son agence, et supprime ce qui en dépend', async () => {
-    const { deleteDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
+    const { deleteDemoDossiers } = await import('@/features/demo/services/demo-dossiers');
     state.respond = (table) =>
       table === 'projects'
         ? { data: [{ id: 'p1' }, { id: 'p2' }] }
         : table === 'subject_properties'
           ? { data: [{ id: 'sp1', photo_urls: [`${AGENCY}/p1/property/a.jpg`] }] }
           : { data: [] };
-    const removed = await deleteDemoDossiers(service.client as never, {
-      id: 'u-closer',
-      agencyId: AGENCY,
-    });
-    expect(removed).toBe(2);
+    expect(await deleteDemoDossiers(service.client as never, CLOSER)).toBe(true);
     // Le périmètre : SON identifiant, SON agence, la marque.
     const scoped = service.calls.filter(
       (call) =>
@@ -104,26 +362,32 @@ describe('la remise à zéro ne touche qu’aux dossiers de démo du closer conn
   });
 
   it('sans dossier marqué, rien n’est supprimé', async () => {
-    const { deleteDemoDossiers } = await import('@/features/demo/actions/demo-dossiers');
-    expect(
-      await deleteDemoDossiers(service.client as never, { id: 'u-closer', agencyId: AGENCY }),
-    ).toBe(0);
+    const { deleteDemoDossiers } = await import('@/features/demo/services/demo-dossiers');
+    expect(await deleteDemoDossiers(service.client as never, CLOSER)).toBe(true);
     expect(service.writes()).toEqual([]);
+  });
+
+  it('une suppression en échec s’arrête là : faux, et les dossiers ne sont pas supprimés', async () => {
+    const { deleteDemoDossiers } = await import('@/features/demo/services/demo-dossiers');
+    state.respond = (table, calls) =>
+      table === 'projects'
+        ? { data: [{ id: 'p1' }] }
+        : table === 'live_seller_responses' && isDelete(calls)
+          ? { error: { message: 'refusé' } }
+          : { data: [] };
+    expect(await deleteDemoDossiers(service.client as never, CLOSER)).toBe(false);
+    expect(service.writes()).not.toContain('delete projects');
   });
 });
 
-// Mission 117 — les deux acquéreurs de la démo vont et viennent avec les dossiers : semés par
+// Mission 117 — les acquéreurs de la démo vont et viennent avec les dossiers : semés par
 // « Préparer ma démo », retirés par la remise à zéro, dans le seul périmètre du closer.
 describe('les acquéreurs de la démo', () => {
   it('la remise à zéro ne retire que SES acquéreurs marqués, dans SON agence', async () => {
-    const { deleteDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
+    const { deleteDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
     state.respond = (table) =>
       table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
-    const removed = await deleteDemoBuyers(service.client as never, {
-      id: 'u-closer',
-      agencyId: AGENCY,
-    });
-    expect(removed).toBe(2);
+    expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(true);
     expect(service.writes()).toEqual(['delete buyers']);
     // Les filtres de la suppression des fiches, avant celle des biens démarchés (M120).
     const secondFrom = service.calls.findIndex(
@@ -136,15 +400,23 @@ describe('les acquéreurs de la démo', () => {
     expect(filters).toEqual([`agency_id=${AGENCY}`, 'advisor_id=u-closer', 'demo=true']);
   });
 
+  it('une lecture des acquéreurs en échec : faux, rien n’est supprimé', async () => {
+    const { deleteDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
+    state.respond = (table) =>
+      table === 'buyers' ? { error: { message: 'timeout' } } : { data: [] };
+    expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(false);
+    expect(service.writes()).toEqual([]);
+  });
+
   it('la remise à zéro retire les biens démarchés du closer que plus aucune recherche ne vise (M120)', async () => {
-    const { deleteDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
+    const { deleteDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
     state.respond = (table) =>
       table === 'buyer_prospects'
         ? { data: [{ id: 'p-orphelin' }, { id: 'p-vise' }] }
         : table === 'buyer_prospect_origins'
           ? { data: [{ prospect_id: 'p-vise' }] }
           : { data: [] };
-    await deleteDemoBuyers(service.client as never, { id: 'u-closer', agencyId: AGENCY });
+    expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(true);
     expect(service.writes()).toEqual(['delete buyers', 'delete buyer_prospects']);
     const deletion = service.calls.slice(
       service.calls.map((call) => call.method).lastIndexOf('delete'),
@@ -154,10 +426,9 @@ describe('les acquéreurs de la démo', () => {
   });
 
   it('« Préparer ma démo » sème neuf acquéreurs marqués, au closer, dans son agence', async () => {
-    const { seedDemoBuyers } = await import('@/features/demo/actions/demo-dossiers');
-    expect(
-      await seedDemoBuyers(service.client as never, { id: 'u-closer', agencyId: AGENCY }),
-    ).toBe(true);
+    const { seedDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
+    const now = new Date();
+    expect(await seedDemoBuyers(service.client as never, CLOSER, now)).toBe(true);
     expect(service.writes()).toEqual(['insert buyers']);
     const rows = service.calls.find((call) => call.method === 'insert')?.args[0] as Record<
       string,
@@ -185,7 +456,7 @@ describe('les acquéreurs de la démo', () => {
       rows
         .slice(2)
         .map((row) =>
-          Math.floor((Date.now() - Date.parse(row.created_at as string)) / 604_800_000),
+          Math.floor((now.getTime() - Date.parse(row.created_at as string)) / 604_800_000),
         ),
     );
     expect(weeks.size).toBeGreaterThan(3);
