@@ -13,18 +13,21 @@ export type DemoDossier = {
 
 // Mission 114 (partie B) — les dossiers de démo du closer connecté : les siens, marqués, dans son
 // agence (la RLS y veille) ; dans l'ordre des étapes. Mission 145 — deux mandats signés (Mougins,
-// puis Vence) : à étape égale, l'ordre de création, celui de « Préparer ma démo ».
-export async function getDemoDossiers(): Promise<DemoDossier[]> {
+// puis Vence) : à étape égale, l'ordre de création, celui de « Préparer ma démo ». Mission 147
+// (partie B) — une lecture en échec rend null, jamais une liste vide (M98) : « Ma démo » le dit et
+// ne propose pas « Préparer ma démo », qui recréerait six dossiers à côté des siens.
+export async function getDemoDossiers(): Promise<DemoDossier[] | null> {
   const profile = await getProfile();
   if (!profile) return [];
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('projects')
     .select('id, seller_name, demo_stage, status, created_at')
     .eq('agency_id', profile.agency_id)
     .eq('advisor_id', profile.id)
     .not('demo_stage', 'is', null)
     .neq('status', 'archived');
+  if (error) return null;
   const order = (stage: string | null) => DEMO_STAGES.indexOf(stage as DemoStage);
   return (data ?? [])
     .filter((row): row is typeof row & { demo_stage: DemoStage } =>

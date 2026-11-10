@@ -483,7 +483,7 @@ export function demoKellerWatchFinds(now: Date): WatchFind[] {
 // d'un registre des mandats.
 export const DEMO_VOUCHER_DAYS_AGO = 2;
 export const DEMO_VOUCHER_VISITOR = 'Paul Keller';
-export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin des Figurants, 69006 Lyon';
+export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin de la Source Haute, 69006 Lyon';
 export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
 export const DEMO_VOUCHER_FEEDBACK = 'Une offre se prépare ; le prix reste leur question.';
 

@@ -22,8 +22,26 @@ import { demoListingUrl, demoSubjectListingUrl } from '@/features/demo/services/
 
 // Les rues fictives autorisées : la seule liste que le jeu de données a le droit d'utiliser.
 const FICTIONAL_STREETS = [
-  'allée des Trois Cadrans',
+  'allée des Cistes Blancs',
   'chemin des Restanques Hautes',
+  'impasse du Moulin à Huile',
+  'rue du Vieux Pressoir',
+  'avenue des Collines Douces',
+  'traverse des Terrasses Fleuries',
+  'montée des Oliviers Bas',
+  'boulevard des Palmiers Nains',
+  'chemin de la Source Haute',
+  'allée des Orangers Amers',
+  'rue des Jarres',
+  'placette du Lavoir Neuf',
+  'sentier des Genêts d’Or',
+  'avenue des Tilleuls Hauts',
+];
+
+// Mission 147 (partie B) — les anciennes rues en jeux de mots (« allée du Décor »…) disaient le
+// décor : aucune ne doit revenir, ni dans le jeu ni dans l'identité légale inventée.
+const OLD_PUN_STREETS = [
+  'allée des Trois Cadrans',
   'impasse de l’Essai',
   'rue de la Maquette',
   'avenue du Prototype',
@@ -104,6 +122,14 @@ const PRICE_PER_M2: Record<string, { min: number; max: number }> = {
 
 const normalize = (text: string): string => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
+// Les autres fichiers de données de la démo (identité légale, acquéreurs, plan des dossiers).
+const DEMO_DATA_FILES = [
+  'src/features/demo/data/demo-legal-identity.ts',
+  'src/features/demo/services/demo-buyers.ts',
+  'src/features/demo/services/demo-seed.ts',
+];
+const readDemoFile = (file: string): string => readFileSync(join(process.cwd(), file), 'utf8');
+
 const SOURCE = readFileSync(
   join(process.cwd(), 'src', 'features', 'demo', 'data', 'scenarios.ts'),
   'utf8',
@@ -134,6 +160,21 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     const source = normalize(SOURCE);
     for (const real of REAL_STREETS) {
       expect(source).not.toContain(normalize(real));
+    }
+    for (const data of [SOURCE, ...DEMO_DATA_FILES.map(readDemoFile)]) {
+      for (const pun of OLD_PUN_STREETS) {
+        expect(normalize(data)).not.toContain(normalize(pun));
+      }
+      expect(data).not.toContain('Azur Horizon');
+    }
+  });
+
+  it('téléphones : tous dans la plage 06 39 98, réservée à la fiction (mission 147)', () => {
+    for (const file of ['src/features/demo/data/scenarios.ts', ...DEMO_DATA_FILES]) {
+      const numbers = readDemoFile(file).match(/(?:\+33\s?|\b0)[1-9](?:[ .]?\d{2}){4}\b/g) ?? [];
+      for (const number of numbers) {
+        expect(number.replace(/[ .]/g, ''), file).toMatch(/^063998\d{4}$/);
+      }
     }
   });
 
