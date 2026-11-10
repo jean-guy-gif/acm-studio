@@ -17,7 +17,11 @@ import {
   checkDemoSetup,
   demoSeedLabel,
   isDemoSeedKey,
+  readSetupMode,
   readSetupMoment,
+  setupFailure,
+  setupName,
+  type DemoSetupMode,
 } from '@/features/demo/services/demo-setup';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -35,10 +39,13 @@ export type DemoSetupResult = { ok: true } | { ok: false; error: string };
 export type DemoSetupStart = { ok: true; now: string } | { ok: false; error: string };
 
 const READ_FAILED = 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.';
-const STALE = 'La remise à zéro a été interrompue trop longtemps. Recommencez : rien n’est prêt.';
-const failed = (reason: string): { ok: false; error: string } => ({
+const stale = (mode: DemoSetupMode): { ok: false; error: string } => ({
   ok: false,
-  error: `La remise à zéro n’a pas abouti : ${reason}. Rien n’est prêt.`,
+  error: `${setupName(mode)} a été interrompue trop longtemps. Recommencez : rien n’est prêt.`,
+});
+const failed = (reason: string, mode: DemoSetupMode): { ok: false; error: string } => ({
+  ok: false,
+  error: setupFailure(mode, reason),
 });
 
 async function requireDemoCloser(): Promise<Closer> {
@@ -97,8 +104,9 @@ async function readOwnDemo(
 // créés entre-temps dans un autre onglet (ou archivés, que « Ma démo » ne montre pas) partent aussi ;
 // une lecture en échec n'est jamais « aucun dossier ».
 // Rend le « maintenant » de toute la démo.
-export async function startDemoSetup(mode: unknown): Promise<DemoSetupStart> {
-  if (mode !== 'prepare' && mode !== 'reset') return failed('demande inconnue');
+export async function startDemoSetup(requested: unknown): Promise<DemoSetupStart> {
+  if (requested !== 'prepare' && requested !== 'reset') return failed('demande inconnue', 'reset');
+  const mode = requested;
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();
   const ids = await ownDemoDossierIds(supabase, closer);
@@ -108,44 +116,54 @@ export async function startDemoSetup(mode: unknown): Promise<DemoSetupStart> {
     !(await deleteDemoBuyers(supabase, closer))
   ) {
     await reportServerError('demoReset.delete', new Error('suppression de la démo en échec'));
-    return failed('vos anciens dossiers n’ont pas pu être supprimés');
+    return failed('vos anciens dossiers n’ont pas pu être supprimés', mode);
   }
   const left = await readOwnDemo(supabase, closer);
   if (!left) return { ok: false, error: READ_FAILED };
   if (left.stages.length > 0 || left.buyers > 0) {
     return failed(
       `${left.stages.length} dossier(s) et ${left.buyers} acquéreur(s) de démo sont restés après la suppression`,
+      mode,
     );
   }
   if (!(await prepareDemoAgency(supabase, closer))) {
     await reportServerError('demoReset.agency', new Error('préparation de l’agence en échec'));
-    return failed('votre agence n’a pas pu être préparée');
+    return failed('votre agence n’a pas pu être préparée', mode);
   }
   revalidateDemo();
   return { ok: true, now: new Date().toISOString() };
 }
 
 // Une étape par dossier, à son étape et dans son scénario.
-export async function seedDemoProjectStep(key: unknown, now: unknown): Promise<DemoSetupResult> {
-  if (!isDemoSeedKey(key)) return failed('dossier inconnu');
+export async function seedDemoProjectStep(
+  key: unknown,
+  now: unknown,
+  requested?: unknown,
+): Promise<DemoSetupResult> {
+  const mode = readSetupMode(requested);
+  if (!isDemoSeedKey(key)) return failed('dossier inconnu', mode);
   const closer = await requireDemoCloser();
   const moment = readSetupMoment(now, new Date());
-  if (!moment) return { ok: false, error: STALE };
+  if (!moment) return stale(mode);
   const supabase = createServiceRoleClient();
   const id = await seedDemoDossier(supabase, closer, demoSeedPlan(key, moment), moment);
   if (!id) {
     await reportServerError('demoReset.dossier', new Error(`dossier ${key} non créé`));
-    return failed(`le dossier de ${demoSeedLabel(key)} n’a pas pu être créé`);
+    return failed(`le dossier de ${demoSeedLabel(key)} n’a pas pu être créé`, mode);
   }
   return { ok: true };
 }
 
 // Les acquéreurs et leur histoire. Le mandat de Mougins (la sélection et l'offre des Keller) se
 // retrouve en base par sa marque ET son vendeur, jamais par la marque seule (M145).
-export async function seedDemoBuyersStep(now: unknown): Promise<DemoSetupResult> {
+export async function seedDemoBuyersStep(
+  now: unknown,
+  requested?: unknown,
+): Promise<DemoSetupResult> {
+  const mode = readSetupMode(requested);
   const closer = await requireDemoCloser();
   const moment = readSetupMoment(now, new Date());
-  if (!moment) return { ok: false, error: STALE };
+  if (!moment) return stale(mode);
   const supabase = createServiceRoleClient();
   const mougins = demoSeedPlan('signed', moment);
   const { data: mandates, error } = await supabase
@@ -157,23 +175,24 @@ export async function seedDemoBuyersStep(now: unknown): Promise<DemoSetupResult>
     .eq('seller_name', mougins.sellerName);
   if (error) return { ok: false, error: READ_FAILED };
   if ((mandates ?? []).length !== 1) {
-    return failed('le mandat signé de Mougins est introuvable, ou en double');
+    return failed('le mandat signé de Mougins est introuvable, ou en double', mode);
   }
   if (!(await seedDemoBuyersStory(supabase, closer, mandates![0]!.id, moment))) {
     await reportServerError('demoReset.buyers', new Error('acquéreurs de démo non créés'));
-    return failed('les acquéreurs n’ont pas pu être créés');
+    return failed('les acquéreurs n’ont pas pu être créés', mode);
   }
   return { ok: true };
 }
 
 // La preuve : la base relue, six dossiers (un par étape attendue) et neuf acquéreurs.
-export async function verifyDemoSetup(): Promise<DemoSetupResult> {
+export async function verifyDemoSetup(requested?: unknown): Promise<DemoSetupResult> {
+  const mode = readSetupMode(requested);
   const closer = await requireDemoCloser();
   const supabase = createServiceRoleClient();
   const own = await readOwnDemo(supabase, closer);
   revalidateDemo();
   if (!own) return { ok: false, error: READ_FAILED };
-  const check = checkDemoSetup(own.stages, own.buyers);
+  const check = checkDemoSetup(own.stages, own.buyers, mode);
   if (!check.ok) {
     await reportServerError('demoReset.verify', new Error(check.message));
     return { ok: false, error: check.message };
