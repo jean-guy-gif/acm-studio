@@ -137,6 +137,19 @@ describe('learnablePlaceId — sur les pages réelles du conseiller', () => {
     });
   });
 
+  // Mission 150 — la page de commune de SeLoger redirige vers sa nouvelle adresse (mesuré le 10/11 :
+  // ses cartes y gardent le titre « Maison À Vendre - Vence - 645 000 € - … », la commune en second
+  // segment). La page réelle de Nice, lue sous cette adresse, fait apprendre son identifiant.
+  it('SeLoger, la nouvelle adresse de commune : la page réelle confirme Nice → AD08FR2038 appris', () => {
+    const url =
+      'https://www.seloger.com/recherche/achat/immobilier/provence-alpes-cote-d-azur/nice-06000/ad08fr2038';
+    expect(learn('seloger.html', url, 'Nice')).toEqual({
+      portal: 'seloger',
+      placeId: 'AD08FR2038',
+    });
+    expect(learn('seloger.html', url, 'Antibes')).toBeNull();
+  });
+
   it('M&A et SeLoger Nice → appris ; la même page pour un bien à Antibes → rien', () => {
     const ma =
       'https://www.maisonsetappartements.fr/views/Search.php?lang=fr&TypeAnnonce=VEN&TypeBien=APP&villes=2123&nb_piece=4';

@@ -1,7 +1,8 @@
-// Mission 150 (mesures du 10/11) — un site qu'ACM ne lit plus correctement n'est plus proposé :
-// Figaro Immobilier donne sa page, mais plus ni le prix ni la surface (format de page changé
-// depuis la M76). Une adresse collée de ce site est refusée, à l'écran comme au serveur, et le
-// conseiller saisit le bien à la main. L'extension garde son accès au site (elle ne change pas).
+// Mission 150 (mesures du 10/11) — Figaro Immobilier donne sa page, mais plus ni le prix ni la
+// surface (format de page changé depuis la M76). Une adresse de ce site COLLÉE par le conseiller
+// est refusée, à l'écran comme au serveur, et il saisit le bien à la main. Figaro reste dans la
+// recherche payante (décision de Jean-Guy, 10/11) : là, une page illisible crée le concurrent
+// depuis les données de la recherche (M101). L'extension garde son accès au site.
 export const UNREAD_PORTAL_SUFFIXES = ['immobilier.lefigaro.fr'] as const;
 
 export const UNREAD_PORTAL_MESSAGE =
