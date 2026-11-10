@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 
-import { demoCredentials, expectOneFilled, goViaAccountMenu, login } from './support';
+import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
 
 // Mission 140 — le client dans sa langue, côté vendeur, sur l'URL d'essai, avec le compte de
 // l'agence de démonstration (rien d'extérieur, rien de payant) : « Mr and Mrs Bernard » préfèrent
@@ -14,24 +14,7 @@ const COMMERCIALIZATION_PRICE = 952_500;
 const next = (page: Page) => page.getByRole('button', { name: /Confirm and continue/ }).click();
 
 async function freshDirectDemo(page: Page): Promise<string> {
-  await goViaAccountMenu(page, 'Ma démo');
-  await expect(page).toHaveURL(/\/ma-demo$/);
-  const hrefs = () =>
-    page
-      .getByTestId('demo-dossier')
-      .evaluateAll((items) => items.map((item) => item.querySelector('a')?.getAttribute('href')));
-  const before = await hrefs();
-  if (before.length === 0) {
-    await page.getByRole('button', { name: 'Préparer ma démo' }).click();
-  } else {
-    await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
-    await page
-      .getByTestId('demo-reset-confirm')
-      .getByRole('button', { name: 'Remettre à zéro' })
-      .click();
-    await expect.poll(async () => (await hrefs())[0], { timeout: 180_000 }).not.toBe(before[0]);
-  }
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(6, { timeout: 180_000 });
+  await resetDemoByScreen(page);
   const href = await page
     .locator('[data-testid="demo-dossier"][data-stage="direct"] a')
     .first()
