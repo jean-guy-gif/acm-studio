@@ -4,8 +4,9 @@
 bêta. C'est l'ancienne mission 121 (« lecture de notes manuscrites par IA », qui attendait la fin
 des missions 117 à 120). Mesure : `missions/M151-mesure.md`.
 
-**Statut** : réponses de Jean-Guy du 10/11 reçues et reportées ici (fin du fichier). **Maquettes à
-valider** ; aucun code avant cet accord, ni avant l'étape 0.
+**Statut** : réponses de Jean-Guy du 10/11 reçues et reportées ici (fin du fichier). **Maquettes
+M151-1 à M151-4 validées par Jean-Guy le 10/11.** Aucun code avant l'étape 0 : Jean-Guy revient avec
+les identifiants des profils UE et le dossier des essais.
 
 **Deux parties** (Jean-Guy, 10/11), une branche et un `/valide` chacune : **A, la fiche depuis mes
 notes** (lecture, proposition, validation, « Ce qui compte pour eux », le critère « Copropriété ») ;
@@ -65,7 +66,7 @@ sert à ranger les biens trouvés, en disant pourquoi.
 
 `missions/maquettes/M151-1` à `M151-4` (`.png`, source `M151-generateur.mjs --png`), chacune sur
 ordinateur (1280), tablette (820) et téléphone (390), notes avant / après à droite. Les notes et
-l'acquéreur (M. et Mme Arnaud) sont inventés.
+l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/11.**
 
 | Planche | Écran | Partie |
 |---|---|---|
