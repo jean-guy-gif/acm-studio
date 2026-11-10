@@ -13,6 +13,43 @@ import { readSearchPage } from '@/features/competitor-search/services/read-searc
 const FIXTURES = path.resolve(__dirname, '../__fixtures__/filtre');
 const fixture = (name: string) => readFileSync(path.join(FIXTURES, name), 'utf8');
 
+// Mission 150 (mesuré le 10/11) — la page de commune de SeLoger redirige vers sa nouvelle adresse,
+// l'identifiant dans le chemin ; écrit en majuscules, c'est celui de `?locations=`.
+describe('SeLoger, la nouvelle adresse de commune', () => {
+  it('l’identifiant du chemin, en majuscules', () => {
+    expect(
+      placeIdFromSearchUrl(
+        'https://www.seloger.com/recherche/achat/immobilier/provence-alpes-cote-d-azur/vence-06140/ad08fr2109',
+      ),
+    ).toEqual({ portal: 'seloger', placeId: 'AD08FR2109' });
+    expect(
+      placeIdFromSearchUrl(
+        'https://www.seloger.com/recherche/achat/immobilier/provence-alpes-cote-d-azur/vence-06140/ad08fr2109/',
+      ),
+    ).toEqual({ portal: 'seloger', placeId: 'AD08FR2109' });
+  });
+
+  it('rien d’autre n’est lu comme un identifiant', () => {
+    for (const url of [
+      'https://www.seloger.com/immobilier/achat/immo-vence-06/',
+      'https://www.seloger.com/recherche/achat/immobilier/provence-alpes-cote-d-azur/vence-06140',
+      'https://www.seloger.com/annonces/achat/maison/vence-06/ad08fr2109.htm',
+    ]) {
+      expect(placeIdFromSearchUrl(url), url).toBeNull();
+    }
+  });
+
+  it('appris seulement si les cartes confirment la commune du bien', () => {
+    const url =
+      'https://www.seloger.com/recherche/achat/immobilier/provence-alpes-cote-d-azur/vence-06140/ad08fr2109';
+    expect(learnablePlaceId(url, ['Vence', 'Vence', 'Saint-Paul'], 'Vence')).toEqual({
+      portal: 'seloger',
+      placeId: 'AD08FR2109',
+    });
+    expect(learnablePlaceId(url, ['Nice', 'Nice', 'Vence'], 'Vence')).toBeNull();
+  });
+});
+
 describe('placeIdFromSearchUrl — l’identifiant relevé dans l’adresse de l’onglet', () => {
   it('relève les identifiants des trois portails (adresses réelles du 01/10)', () => {
     expect(

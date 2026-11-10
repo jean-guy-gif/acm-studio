@@ -187,12 +187,14 @@ function unfilteredEntry(portal: PlacePortal, criteria: CompetitorSearchCriteria
 }
 
 // Mission 150 (mesures du 10/11) — « Ouvrir mes recherches » n'ouvre que les portails dont
-// l'adresse est vraiment filtrée : Bien'ici toujours, les trois autres quand l'identifiant de leur
-// commune est connu. Leur page de commune non filtrée n'est plus proposée : SeLoger la redirige
-// vers une adresse dont ACM n'apprend pas l'identifiant, Maisons & Appartements vers son accueil,
-// Green Acres l'ouvre sans filtre et sans identifiant dans l'adresse.
+// l'adresse est vraiment filtrée : Bien'ici toujours, les autres quand l'identifiant de leur
+// commune est connu. Une exception, décidée par Jean-Guy (10/11) : SeLoger s'ouvre UNE fois sans
+// filtre sur la page de sa commune (« première fois à Vence, sans filtre ») — elle redirige vers
+// une adresse qui porte l'identifiant, que « Lire mes recherches » apprend ; la fois suivante, il
+// s'ouvre filtré. Maisons & Appartements (sa page de commune redirige vers l'accueil) et Green
+// Acres (aucun identifiant dans l'adresse) ne s'ouvrent pas tant que le leur n'est pas connu.
 export function openableSearchLinks(links: FilteredSearchLink[]): FilteredSearchLink[] {
-  return links.filter((link) => !link.needsPlace);
+  return links.filter((link) => !link.needsPlace || link.portal === 'seloger');
 }
 
 export function buildFilteredSearchUrls(

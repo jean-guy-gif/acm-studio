@@ -1413,7 +1413,10 @@ export function CompetitorSearchPanel({
                     rel="noreferrer noopener"
                     className={`${linkCls} hover:underline`}
                   >
-                    {link.label} — déjà filtré
+                    {link.label}
+                    {link.needsPlace
+                      ? ` — première fois à ${openedSearches.city}, sans filtre`
+                      : ' — déjà filtré'}
                   </a>
                 </div>
               ))}
