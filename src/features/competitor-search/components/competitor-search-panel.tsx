@@ -1395,8 +1395,9 @@ export function CompetitorSearchPanel({
             {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
           </div>
           <p className={hintText}>
-            « Ouvrir mes recherches » ouvre les portails déjà filtrés ; corrigez un filtre si
-            besoin, puis « Lire mes recherches ».
+            « Ouvrir mes recherches » ouvre les portails déjà filtrés (SeLoger, la première fois
+            dans une commune, sans filtre) ; corrigez un filtre si besoin, puis « Lire mes
+            recherches ».
           </p>
           {openedSearches ? (
             <div className={`${card} flex flex-col gap-2 p-4`}>
@@ -1413,7 +1414,10 @@ export function CompetitorSearchPanel({
                     rel="noreferrer noopener"
                     className={`${linkCls} hover:underline`}
                   >
-                    {link.label} — déjà filtré
+                    {link.label}
+                    {link.needsPlace
+                      ? ` — première fois à ${openedSearches.city}, sans filtre`
+                      : ' — déjà filtré'}
                   </a>
                 </div>
               ))}

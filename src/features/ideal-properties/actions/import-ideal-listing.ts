@@ -1,9 +1,5 @@
 'use server';
 
-import {
-  isUnreadPortalHost,
-  UNREAD_PORTAL_MESSAGE,
-} from '@/features/comparable-import/utils/unread-portals';
 import { revalidatePath } from 'next/cache';
 
 import { extractListingData } from '@/features/comparable-import/services/extract-listing-data';
@@ -38,8 +34,6 @@ export async function importIdealListing(
   if (!url || !isAllowedProtocol(url) || isDemoListingHost(url.hostname)) {
     return { ok: false, error: 'Adresse d’annonce invalide.' };
   }
-  // Mission 150 — un site qu'ACM ne lit plus : la fiche garde les données de la recherche (M118).
-  if (isUnreadPortalHost(url.hostname)) return { ok: false, error: UNREAD_PORTAL_MESSAGE };
   const { html } = listing;
   if (html.trim() === '' || Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
     return { ok: false, error: GENERIC_ERROR };
