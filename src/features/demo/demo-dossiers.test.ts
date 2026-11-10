@@ -179,6 +179,9 @@ describe('une étape en échec arrête tout et le dit', () => {
         'La remise à zéro n’a pas abouti : le dossier de Mme Garcia, prêt pour le Live n’a pas pu être créé. Rien n’est prêt.',
     });
     expect(state.reported).toContain('demoReset.dossier');
+    // En « Préparer », le même échec dit « La préparation de la démo ».
+    const prepared = await seedDemoProjectStep('ready', new Date().toISOString(), 'prepare');
+    expect(!prepared.ok && prepared.error).toMatch(/^La préparation de la démo n’a pas abouti : /);
   });
 
   it('les acquéreurs : le mandat de Mougins absent, en double ou illisible, rien n’est semé', async () => {

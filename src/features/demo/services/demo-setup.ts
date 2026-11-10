@@ -15,6 +15,24 @@ import {
 
 export type DemoSetupStepKey = 'delete' | DemoSeedKey | 'buyers' | 'verify';
 
+// « Préparer ma démo » ou « Remettre ma démo à zéro » : les mêmes étapes, et un échec dit laquelle
+// n'a pas abouti (Jean-Guy, 10/11). Le mode ne change que les mots ; une valeur inconnue vaut
+// « remise à zéro ».
+export type DemoSetupMode = 'prepare' | 'reset';
+
+export function readSetupMode(value: unknown): DemoSetupMode {
+  return value === 'prepare' ? 'prepare' : 'reset';
+}
+
+export function setupName(mode: DemoSetupMode): string {
+  return mode === 'prepare' ? 'La préparation de la démo' : 'La remise à zéro';
+}
+
+// « La remise à zéro n'a pas abouti : … Rien n'est prêt. »
+export function setupFailure(mode: DemoSetupMode, reason: string): string {
+  return `${setupName(mode)} n’a pas abouti : ${reason}. Rien n’est prêt.`;
+}
+
 export type DemoSetupStepView = { key: DemoSetupStepKey; label: string };
 
 const lowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
@@ -70,7 +88,11 @@ const quoted = (labels: string[]): string => labels.map((label) => `« ${label} 
 // signés), et ses neuf acquéreurs. Tout autre résultat dit ce qui manque ou ce qui est en trop,
 // jamais « prête ». Plus de dossiers ou d'acquéreurs que prévu : une autre remise à zéro a
 // peut-être tourné en même temps (pas de verrou, Jean-Guy, 09/11).
-export function checkDemoSetup(stages: readonly string[], buyers: number): DemoSetupCheck {
+export function checkDemoSetup(
+  stages: readonly string[],
+  buyers: number,
+  mode: DemoSetupMode = 'reset',
+): DemoSetupCheck {
   const expectedDossiers = DEMO_SEEDS.length;
   const expectedBuyers = DEMO_BUYERS.length;
   const missing: string[] = [];
@@ -110,6 +132,6 @@ export function checkDemoSetup(stages: readonly string[], buyers: number): DemoS
       : '';
   return {
     ok: false,
-    message: `La remise à zéro n’a pas abouti : ${parts.join(', ')}.${concurrent} Rien n’est prêt.`,
+    message: `${setupName(mode)} n’a pas abouti : ${parts.join(', ')}.${concurrent} Rien n’est prêt.`,
   };
 }

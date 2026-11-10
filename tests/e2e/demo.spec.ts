@@ -107,6 +107,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('need-extension')).toHaveAttribute('data-state', 'done');
       await expect(page.getByTestId('need-locator')).toHaveAttribute('data-state', 'done');
       await expectUnspoken(page, 'Bienvenue');
+      // Retouche de Jean-Guy (10/11) : un seul bouton plein, « Préparer ma démo » ; le dossier
+      // d'exemple en contour.
+      await expectOneFilled(page, 'Bienvenue, agence de démo');
+      await expect(
+        page.getByRole('button', { name: 'Ouvrir le dossier d’exemple' }),
+      ).not.toHaveClass(/btn-filled/);
       // « Ce qu'il vous faut » (M97) : le téléphone du profil. Le compte de démo le renseigne une
       // fois, s'il manque — sans lui, aucun courrier propriétaire ne se prépare (M90).
       if ((await page.getByTestId('need-phone').getAttribute('data-state')) === 'todo') {

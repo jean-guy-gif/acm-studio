@@ -17,7 +17,11 @@ import {
   startDemoSetup,
   verifyDemoSetup,
 } from '@/features/demo/actions/demo-setup';
-import type { DemoSetupStepView } from '@/features/demo/services/demo-setup';
+import {
+  setupFailure,
+  type DemoSetupMode as Mode,
+  type DemoSetupStepView,
+} from '@/features/demo/services/demo-setup';
 
 // Mission 147 (partie B, planche M147-5) — « Préparer ma démo » et « Remettre ma démo à zéro » en
 // étapes : l'écran appelle chaque étape l'une après l'autre et la barre dit où l'on en est
@@ -25,15 +29,12 @@ import type { DemoSetupStepView } from '@/features/demo/services/demo-setup';
 // la vérification a relu la base ; sinon le message dit ce qui manque, avec « Recommencer », le
 // seul bouton plein. Pas de verrou : deux remises à zéro simultanées se voient à la vérification.
 
-type Mode = 'prepare' | 'reset';
 type State =
   | { kind: 'idle' }
   | { kind: 'confirming' }
   | { kind: 'running'; mode: Mode; index: number }
   | { kind: 'done' }
   | { kind: 'failed'; message: string };
-
-const LOST = 'La remise à zéro n’a pas abouti : la connexion a été perdue. Rien n’est prêt.';
 
 async function attempt<T>(call: () => Promise<T>): Promise<T | null> {
   try {
@@ -63,22 +64,23 @@ export function DemoSetup({
 
   const run = async (mode: Mode): Promise<void> => {
     const fail = (message: string) => setState({ kind: 'failed', message });
+    const lost = setupFailure(mode, 'la connexion a été perdue');
     const at = (index: number) => setState({ kind: 'running', mode, index });
     at(0);
     const start = await attempt(() => startDemoSetup(mode));
-    if (!start) return fail(LOST);
+    if (!start) return fail(lost);
     if (!start.ok) return fail(start.error);
     for (const [index, step] of steps.entries()) {
       if (step.key === 'delete') continue;
       at(index);
       const result = await attempt(() =>
         step.key === 'buyers'
-          ? seedDemoBuyersStep(start.now)
+          ? seedDemoBuyersStep(start.now, mode)
           : step.key === 'verify'
-            ? verifyDemoSetup()
-            : seedDemoProjectStep(step.key, start.now),
+            ? verifyDemoSetup(mode)
+            : seedDemoProjectStep(step.key, start.now, mode),
       );
-      if (!result) return fail(LOST);
+      if (!result) return fail(lost);
       if (!result.ok) {
         router.refresh();
         return fail(result.error);

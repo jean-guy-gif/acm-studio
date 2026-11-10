@@ -74,6 +74,13 @@ describe('la vérification', () => {
     );
   });
 
+  it('en « Préparer », l’échec dit « La préparation de la démo » (Jean-Guy, 10/11)', () => {
+    const check = checkDemoSetup(SIX, 8, 'prepare');
+    expect(!check.ok && check.message).toBe(
+      'La préparation de la démo n’a pas abouti : 8 acquéreurs sur 9. Rien n’est prêt.',
+    );
+  });
+
   it('aucun dossier : jamais « prête »', () => {
     expect(checkDemoSetup([], 0).ok).toBe(false);
   });

@@ -82,7 +82,9 @@ export default async function WelcomePage({ searchParams }: WelcomePageProps) {
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <form action={openExampleDossier}>
-            <SubmitButton pendingLabel="Ouverture…" className={btnPrimary}>
+            {/* Retouche de Jean-Guy (10/11) : dans l'agence de démonstration, le seul plein est
+                « Préparer ma démo » ; le dossier d'exemple passe en contour (M146). */}
+            <SubmitButton pendingLabel="Ouverture…" className={demo ? btnSecondary : btnPrimary}>
               Ouvrir le dossier d’exemple
             </SubmitButton>
           </form>
