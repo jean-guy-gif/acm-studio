@@ -39,6 +39,13 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   `load` n'arrivait pas en 45 s) ; puis 60 requêtes sans lenteur, les pages mesurées entre 0,9 et
   1,7 s, et le parcours vert en 2,9 min. Avant de nommer un aléa après plusieurs échecs, mesurer
   le réseau du poste et la page en cause.
+- 10/11 · M147 B · Le Mac s'est mis en veille en plein e2e (`pmset -g log` : réveil à 11:55) :
+  six tests de `presentation-directe` rouges d'un coup (`ERR_NETWORK_IO_SUSPENDED`, connexion du
+  compte en `chrome-error://`, la remise à zéro de la démo « connexion perdue »). Lancer un long
+  passage sous `caffeinate -dimsu`, et lire `pmset -g log` avant de chercher un défaut.
+- 10/11 · M147 B · Un passage e2e lancé par la Bash tool au-delà de 10 minutes part en tâche de
+  fond sans le dire tout de suite : lancer chaque lot (moins de 10 minutes) avec la sortie dans un
+  fichier, puis lire ce fichier à la notification.
 
 ## La démo et les tests
 
@@ -447,6 +454,28 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   deux se teste en les faisant l'une après l'autre.
 - 09/11 · M147 A · Un fichier `'use server'` n'exporte que des fonctions asynchrones : un texte
   partagé avec l'écran (le message « lien illisible ») vit dans un module à part (`services/`).
+- 10/11 · M147 B · La spec `demo` a 8 minutes de budget et en prend 5,9 : y ajouter une remise à
+  zéro au début et une tournée des photos l'a fait déborder (tuée au Live en tablette). Une garde
+  nouvelle va dans sa propre spec (`demo-photos`, 55 s) plutôt que dans la spec de la démo.
+- 10/11 · M147 B · Un passage e2e dont le nettoyage échoue (`supabase db query --remote`) laisse
+  son dossier « TEST AUTOMATIQUE » dans l'agence de démo, et le passage suivant ne retient plus les
+  mêmes concurrents : « Aucune baisse simulée ». Après un nettoyage en échec, le rouge suivant est
+  à lire comme une suite, pas comme un défaut.
+- 10/11 · M147 B · Six specs avaient chacune leur copie de la remise à zéro de la démo, qui
+  attendait que la PREMIÈRE adresse de la liste change ; avec la barre des étapes, la liste
+  disparaît (liste vide = condition remplie) puis l'ancienne revient avant le rafraîchissement :
+  le test lisait un dossier déjà joué. Une seule aide partagée (`resetDemoByScreen`) attend
+  « Votre démo est prête » puis cinq adresses de dossier neuves (« À relancer » mène au Suivi,
+  la même adresse d'une démo à l'autre).
+- 10/11 · M147 B · Le client factice partagé ne sait pas répondre à un `Promise.all` (chaque
+  requête reçoit la réponse de la dernière table). Le test des dates relatives a son propre client,
+  une chaîne par requête et une petite base en mémoire : la démo s'y sème en entier (175 dates).
+- 10/11 · M147 B · Un logo SVG « sans police » : `fontTools` (dans un environnement Python jetable
+  du bloc-notes) trace le texte en chemins depuis la Montserrat embarquée, à la graisse voulue
+  (`instantiateVariableFont`) ; l'aperçu se fait par Chromium (`playwright`).
+- 10/11 · M147 B · Une page qui lit un fichier de `public/` au serveur (les photos et le logo de la
+  démo) l'embarque par `outputFileTracingIncludes` : « Ma démo » et « Bienvenue » portent les
+  actions de la démo et s'ajoutent à la fiche du bien vendeur ; le `.nft.json` du build le prouve.
 
 ## La base
 

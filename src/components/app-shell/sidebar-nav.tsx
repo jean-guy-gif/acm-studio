@@ -13,6 +13,9 @@ import { NAV_GROUPS } from '@/features/workspace-mode/services/workspace-mode';
 // sont derrière la carte du conseiller (AccountMenu) ; une de leurs pages ne surligne aucun espace.
 // Mission 145 (partie B) — un seul menu en trois groupes, « Aujourd'hui » en tête avec sa pastille
 // (le nombre de lignes de la page, muette à zéro) ; plus d'interrupteur Vendeur | Acquéreur.
+// Mission 149 (variante A, maquettes M149-1 et 2) — les titres de groupe se voient au premier coup
+// d'œil : 13 px, extra-gras, dans la couleur foncée de l'agence (≥ 4,5:1, M143), un filet fin
+// au-dessus de chaque groupe titré ; « Aujourd'hui », en tête et sans titre, n'en a pas.
 export function SidebarNav() {
   const pathname = usePathname();
   const todayCount = useTodayCount();
@@ -20,9 +23,20 @@ export function SidebarNav() {
   return (
     <nav className="flex flex-col gap-1 md:gap-1.5" aria-label="Menu principal">
       {NAV_GROUPS.map((group) => (
-        <div key={group.label ?? 'today'} className="flex flex-col gap-1 md:gap-1.5">
+        <div
+          key={group.label ?? 'today'}
+          data-testid="nav-group"
+          className={
+            group.label
+              ? 'mt-3 flex flex-col gap-1 border-t border-zinc-200 pt-3.5 md:gap-1.5 stage:border-white/10'
+              : 'flex flex-col gap-1 md:gap-1.5'
+          }
+        >
           {group.label ? (
-            <span className="px-3.5 pt-3 text-[11px] font-bold tracking-[0.12em] text-zinc-500 uppercase stage:text-white/45">
+            <span
+              data-testid="nav-group-title"
+              className="px-3.5 pb-0.5 text-[13px] font-extrabold tracking-[0.1em] text-brand-deep uppercase stage:text-brand"
+            >
               {group.label}
             </span>
           ) : null}
