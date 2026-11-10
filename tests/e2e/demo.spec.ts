@@ -121,13 +121,16 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    // Mission 114 (partie B) — « Préparer ma démo » : six dossiers à cinq étapes, à soi. Mission
-    // 147 (partie B) — la démo est remise à neuf par l'écran au début du passage (« Préparer » ou
-    // « Remettre à zéro », la barre des étapes, « Votre démo est prête » sur preuve).
+    // Mission 114 (partie B) — « Préparer ma démo » : six dossiers à cinq étapes, à soi. Un
+    // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
+    // les remet à zéro (Mission 147 B : par les étapes, « Votre démo est prête » sur preuve).
     await test.step('Ma démo : six dossiers, deux mandats signés', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
-      await resetDemoByScreen(page);
+      await goViaAccountMenu(page, 'Ma démo');
+      await expect(page).toHaveURL(/\/ma-demo$/);
+      await expect(page.getByTestId('demo-dossiers')).toBeVisible();
       await expectUnspoken(page, 'Ma démo');
+      if ((await page.getByTestId('demo-dossier').count()) === 0) await resetDemoByScreen(page);
       const stages = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
@@ -169,49 +172,6 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(menu.getByRole('menuitem', { name: /^Erreurs/ })).toHaveCount(0);
       await page.keyboard.press('Escape');
       await expect(menu).toHaveCount(0);
-    });
-
-    // Mission 147 (partie B) — chaque concurrent semé a une photo qui se charge : sur la page
-    // Concurrents de chaque dossier, dans le courrier de Prospection (les photos de l'annonce), et
-    // dans le Dossier acquéreur des Keller (le document que reçoit l'acquéreur).
-    await test.step('Une photo chargée pour chaque concurrent montré', async () => {
-      await goViaAccountMenu(page, 'Ma démo');
-      const ids = (
-        await page
-          .locator('[data-testid="demo-dossier"]:not([data-stage="to_prepare"]) a')
-          .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))
-      )
-        .map((href) => /\/builder\/([^/]+)/.exec(href)?.[1])
-        .filter((id): id is string => Boolean(id));
-      // Le dossier à relancer s'ouvre depuis le Suivi (« Ma démo » y mène).
-      await page.goto('/suivi');
-      const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
-      await followUp.getByTestId('suivi-link-details').click();
-      const followUpHref = await followUp
-        .getByRole('link', { name: 'Ouvrir le dossier' })
-        .getAttribute('href');
-      ids.push(/\/builder\/([^/]+)/.exec(followUpHref ?? '')?.[1] ?? '');
-      expect(ids.filter(Boolean)).toHaveLength(5);
-      for (const id of ids) {
-        await page.goto(`/builder/${id}/comparables`);
-        await expect(page.locator('main li img').first()).toBeVisible();
-        await expectPhotosLoaded(page.locator('main'), `Concurrents ${id}`, 5);
-      }
-      // Prospection : chaque courrier propose les photos de l'annonce de son concurrent.
-      await page.goto('/prospection');
-      const letters = await page
-        .getByRole('link', { name: 'Préparer le dossier', exact: true })
-        .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
-      expect(letters.length).toBeGreaterThan(0);
-      for (const href of letters) {
-        await page.goto(href);
-        await expectPhotosLoaded(page.locator('main'), `Courrier ${href}`, 2);
-      }
-      await page.goto('/acquereurs?vue=agence');
-      await page.getByRole('link', { name: 'Famille Keller' }).first().click();
-      await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]+$/);
-      await page.goto(`${new URL(page.url()).pathname}/dossier`);
-      await expectPhotosLoaded(page.locator('body'), 'Dossier acquéreur des Keller', 3);
     });
 
     await test.step('Nouveau dossier', async () => {

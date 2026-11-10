@@ -734,8 +734,15 @@ export async function resetDemoByScreen(page: Page): Promise<void> {
   await expect
     .poll(
       async () => {
+        // « À relancer » mène au Suivi (la même adresse d'une démo à l'autre) : seules les
+        // adresses de dossiers se comparent.
         const after = await hrefs();
-        return after.length === 6 && after.every((href) => !before.includes(href));
+        const dossiers = after.filter((href) => href?.startsWith('/builder/'));
+        return (
+          after.length === 6 &&
+          dossiers.length === 5 &&
+          dossiers.every((href) => !before.includes(href))
+        );
       },
       { timeout: 30_000, message: 'La liste n’a pas montré les six nouveaux dossiers' },
     )
