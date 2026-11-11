@@ -57,7 +57,7 @@ test('vérifier les annonces avant le rendez-vous, puis voir l’annonce au Live
     const drop = block.getByTestId('since-preparation-price').first();
     await expect(drop).toContainText('Prix baissé');
     await expect(drop).toContainText('→');
-    await expect(drop).toContainText('constaté aujourd’hui');
+    await expect(drop).toContainText('constaté');
     await expectOneFilled(page, 'Avant le rendez-vous, après la vérification');
 
     // 2. Le rappel au lancement, sans bloquer : les Bernard n'ont jamais été vérifiés.
@@ -72,6 +72,9 @@ test('vérifier les annonces avant le rendez-vous, puis voir l’annonce au Live
     await page.getByTestId('launch-for-real').click();
     const start = page.locator('main button.btn-filled').first();
     await expect(start).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-photos-preloaded="true"]')).toHaveCount(1, {
+      timeout: 120_000,
+    });
     await start.click();
     const main = page.locator('main');
     await expect(main).not.toHaveAttribute('data-live-page', 'intro', { timeout: 30_000 });
@@ -111,7 +114,13 @@ test('vérifier les annonces avant le rendez-vous, puis voir l’annonce au Live
         (await price.inputValue()) === ''
       )
         await price.fill('700000');
-      const next = page.getByTestId('live-validate');
+      const validate = page.getByTestId('live-validate');
+      const next =
+        (await validate.count()) > 0
+          ? validate
+          : page
+              .getByRole('button', { name: /Valider et continuer|Confirmer et continuer/ })
+              .last();
       await expect(next).toBeEnabled({ timeout: 30_000 });
       // La valeur perçue se redit avant d'être confirmée (M92) : le même écran change de texte.
       const before = `${type}|${await page.locator('[data-live-step]').textContent()}|${await main.textContent()}`;

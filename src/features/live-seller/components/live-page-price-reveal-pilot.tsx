@@ -90,12 +90,15 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
 
         <div className={answerColumn}>
           <div className={`${panel} live-reveal-pop flex flex-col gap-3`}>
-            <div>
-              <div className={statLabel}>{t.listed}</div>
-              <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+            {/* Mission 152 — « Voir l'annonce » sur la ligne du prix : aucune hauteur de plus (M148). */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={statLabel}>{t.listed}</div>
+                <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+              </div>
+              <LiveListingButton entry={entry} />
             </div>
             <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
-            <LiveListingButton entry={entry} />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className={statLabel}>{t.perSqm}</div>

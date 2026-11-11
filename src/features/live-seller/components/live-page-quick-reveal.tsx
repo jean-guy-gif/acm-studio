@@ -61,12 +61,14 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
 
         <div className={answerColumn}>
           <div className={`${panel} live-reveal-pop flex flex-col gap-3`} data-quick-reveal>
-            <div>
-              <div className={statLabel}>{texts.live.priceReveal.listed}</div>
-              <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={statLabel}>{texts.live.priceReveal.listed}</div>
+                <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+              </div>
+              <LiveListingButton entry={entry} />
             </div>
             <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
-            <LiveListingButton entry={entry} />
           </div>
 
           {entry.durationKnown ? (
