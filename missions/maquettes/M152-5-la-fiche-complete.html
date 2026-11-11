@@ -1,0 +1,157 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M152 · 5 — La fiche complète d’un bien, avec « Retenir »</title><style>
+@font-face{font-family:Inter;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}.sheet-sub{font-size:13px;color:#3f3f46;max-width:1720px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:26px}.row{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column}.ftitle{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff;background:#12875a}
+.notes{width:400px;display:flex;flex-direction:column;gap:12px}.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#3d3200}.note b.t{color:#5b4a00}
+code{font-size:12px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+/* Live */
+.stage{color:#fff;background:linear-gradient(160deg,#0d2a4d,#1c4f86);border:1px solid #a1a1aa;display:flex;flex-direction:column;font-family:Montserrat,Inter,sans-serif;container-type:inline-size;position:relative;overflow:hidden}
+.stage.desk{width:1280px;height:800px}.stage.tab{width:820px;height:1110px}.stage.phone{width:390px;min-height:844px}
+.lh{display:flex;align-items:center;gap:14px;padding:12px 22px;font-size:12px}.lh b{letter-spacing:.06em}.lstep{color:#8cc6ff;font-weight:700;letter-spacing:.08em}.lcount{color:rgba(255,255,255,.72)}.lmenu{margin-left:auto;color:rgba(255,255,255,.72)}
+.lprog{height:3px;background:rgba(255,255,255,.12)}.lprog i{display:block;height:100%;background:#8cc6ff}
+.lbody{flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.lt{font-family:Rajdhani,Montserrat;font-size:36px;font-weight:700;line-height:1.05}.lt.sm{font-size:24px}.ls{color:rgba(255,255,255,.72);font-size:14px}
+.lgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;margin-top:8px;flex:1;min-height:0}
+.lphoto{display:flex;flex-direction:column;gap:8px}.pic{position:relative}.pic>img{width:100%;height:440px;object-fit:cover;border-radius:12px;display:block}
+.thumbs{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}.thumbs img{width:46px;height:34px;object-fit:cover;border-radius:5px;border:2px solid #fff}
+.lphoto b{font-size:14px}
+.lpanel{display:flex;flex-direction:column;gap:12px}
+.pcard{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.72)}.k2{font-size:12.5px;color:rgba(255,255,255,.72)}
+.big{font-family:Rajdhani,Montserrat;font-size:44px;font-weight:700;line-height:1}
+.guess{border-left:3px solid #f5c84c;padding-left:10px;display:flex;flex-direction:column;gap:2px}.guess b{font-size:22px;color:#f5c84c}.guess small{font-size:12px;color:#f5c84c}
+.dot{display:inline-block;width:8px;height:8px;border-radius:9px;background:#f5c84c;margin-right:6px}
+.pmeta{display:flex;gap:24px;font-size:13px}.pmeta span{display:flex;flex-direction:column;gap:2px}
+.proof{align-self:flex-start;font-family:inherit;font-size:14px;font-weight:700;color:#fff;background:transparent;border:1.5px solid rgba(255,255,255,.75);border-radius:10px;padding:9px 14px}
+.proof::before{content:'⧉ ';opacity:.85}
+.pnote{font-size:11.5px;color:rgba(255,255,255,.72)}
+.choices{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ch b{font-size:13px;text-align:center;border:1px solid rgba(255,255,255,.4);border-radius:9px;padding:8px}.ch b.on{background:#fff;color:#00527a}
+.choices a{font-size:12px;color:rgba(255,255,255,.72)}
+.lbar{height:72px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;border-top:1px solid rgba(255,255,255,.12)}
+.lprev{font-family:inherit;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:10px 16px;font-weight:600}
+.lnext{font-family:inherit;background:#fff;color:#00527a;border:0;border-radius:10px;padding:12px 20px;font-weight:800}
+@container (max-width:900px){.lgrid{grid-template-columns:1fr}.pic>img{height:330px}.lt{font-size:30px}}
+@container (max-width:500px){.lmenu,.lcount{display:none}.lh{padding:10px 14px}.lt{font-size:24px}.lbody{padding:12px 14px}.pic>img{height:190px}.big{font-size:34px}.ch b{font-size:12px}.lbar{padding:0 14px}}
+/* la copie enregistrée */
+.pvbody{flex:1;padding:16px 24px 20px;display:flex;flex-direction:column;gap:12px;min-height:0;background:rgba(5,15,30,.35)}
+.pvh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.close{font-family:inherit;background:#fff;color:#00527a;border:0;border-radius:10px;padding:10px 16px;font-weight:800;white-space:nowrap}
+.pvgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;flex:1;min-height:0}
+.pvphotos{display:flex;flex-direction:column;gap:8px}.pvphotos .hero{width:100%;height:470px;object-fit:cover;border-radius:12px;display:block}
+.strip{display:flex;gap:6px;align-items:center}.strip img{width:70px;height:50px;object-fit:cover;border-radius:6px}.strip span{font-size:13px;color:rgba(255,255,255,.72);padding-left:4px}
+.pvside{display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.dates{list-style:none;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.72);display:flex;flex-direction:column;gap:3px}.dates b{color:#fff}
+.facts{display:flex;flex-wrap:wrap;gap:6px}.facts span{font-size:12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 10px}
+.ptext p{font-size:13px;line-height:1.55;color:#e6eef8;margin-top:6px}
+.online{align-self:flex-start;font-family:inherit;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.75);border-radius:10px;padding:9px 14px;font-weight:700}.dimn{font-size:11.5px;color:rgba(255,255,255,.72)}
+.gone{font-size:13px;background:rgba(255,255,255,.1);border-left:3px solid #ffb4a8;border-radius:8px;padding:10px 12px}
+@container (max-width:900px){.pvgrid{grid-template-columns:1fr}.pvphotos .hero{height:380px}}
+@container (max-width:500px){.pvbody{padding:12px 14px}.pvphotos .hero{max-height:220px}.strip img{width:52px;height:38px}.pvphotos .hero{height:210px}.close{padding:8px 12px}}
+/* application */
+.frame{background:#f7f8fb;border:1px solid #a1a1aa;overflow:hidden;position:relative;display:flex}
+.frame.desk{width:1280px;min-height:800px}.frame.tab{width:820px;min-height:1110px}.frame.phone{width:390px;min-height:844px;flex-direction:column}
+.side{width:248px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:22px 16px;display:flex;flex-direction:column;gap:24px}.tab .side{width:212px}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-family:Montserrat;font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-family:Montserrat;font-size:7px;font-weight:600;letter-spacing:.2em;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px}.grp{display:flex;flex-direction:column;gap:2px}.grp.sep{border-top:1px solid #e4e4e7;margin-top:10px;padding-top:12px}
+.gt{font-family:Montserrat;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;padding:0 12px 4px}
+.it{display:flex;flex-direction:column;border-radius:12px;padding:7px 12px}.il{display:flex;justify-content:space-between;font-family:Rajdhani,Montserrat;font-size:16px;font-weight:600;color:#52525b}.ih{font-size:11.5px;color:#71717a}
+.it.on{background:#eaf5ff}.it.on .il{color:#00527a}
+.pb{border-radius:999px;background:#ea580c;color:#fff;font-family:Inter;font-size:11px;font-weight:700;padding:1px 7px;align-self:center}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e4e4e7;background:#fff}.topbar .logo{flex:1}
+.burger{width:38px;height:38px;border:1px solid #e4e4e7;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.main{flex:1;min-width:0;padding:28px 34px 40px;display:flex;flex-direction:column;gap:14px;container-type:inline-size;overflow:hidden;position:relative}
+.tab .main{padding:22px 22px 40px}.phone .main{padding:14px 14px 40px;gap:12px}
+.back{font-size:13px;color:#71717a}.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.h1{font-family:Rajdhani,Montserrat;font-weight:700;font-size:32px;line-height:1.05;color:#00527a}.phone .h1{font-size:25px}.h1.s{font-size:26px}
+.h2{font-family:Rajdhani,Montserrat;font-weight:700;font-size:22px;color:#00527a}.h3{font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#52525b;margin-top:6px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}.phone .card{padding:14px}
+.muted{color:#71717a}.sm{font-size:12.5px;line-height:1.45}
+.btn{font-family:inherit;font-size:14px;font-weight:700;border-radius:12px;padding:10px 16px;border:1.5px solid #00527a;background:#fff;color:#00527a;white-space:nowrap}.btn.fill{background:#00527a;color:#fff}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:4px}.tabs span{font-size:13px;padding:7px 11px;border-radius:9px;color:#52525b}.tabs span.on{background:#eaf5ff;color:#00527a;font-weight:700}
+.alert{border-left:5px solid #c2410c}.alert.soft{border-left-color:#00527a}
+.ah{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.ah2{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.changes{list-style:none;display:flex;flex-direction:column}.changes li{display:grid;grid-template-columns:120px 1fr auto;gap:4px 12px;align-items:baseline;padding:10px 0;border-top:1px solid #f4f4f5;font-size:13.5px}
+.acts{grid-column:3;grid-row:1;display:flex;gap:10px;align-items:center}
+.changes li b{grid-column:2}.changes li>span:not(.tag){grid-column:2;color:#52525b;font-size:13px}.changes li a{font-weight:700;color:#00527a;font-size:13px;white-space:nowrap}
+.changes .btnl{border:1.5px solid #00527a;border-radius:9px;padding:5px 10px}
+.tag{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;grid-row:1 / span 2;align-self:start}.tag.o{background:#fff1e6;color:#c2410c}.tag.r{background:#fdecec;color:#b91c1c}
+@container (max-width:560px){.changes li{grid-template-columns:1fr}.changes li .tag{grid-row:auto;justify-self:start}.changes li b,.changes li>span:not(.tag){grid-column:1}.acts{grid-column:1;grid-row:auto}}
+.decision{font-size:13.5px;background:#fff1e6;border-radius:10px;padding:10px 12px;color:#7a2e0b}.decision a{font-weight:700;color:#00527a}
+.stub{height:10px;border-radius:5px;background:#e4e4e7}.w60{width:60%}.w80{width:80%}
+/* fiche complète */
+.overlay{position:absolute;inset:0;background:rgba(15,23,42,.45);display:flex;justify-content:flex-end}
+.sheet{background:#fff;display:flex;flex-direction:column;overflow:hidden;box-shadow:-10px 0 30px rgba(0,0,0,.2)}
+.sheet.desk{width:640px;height:100%}.sheet.tab{width:100%;height:100%}.sheet.phone{width:100%;min-height:844px}
+.sh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e4e4e7}.close2{font-family:inherit;border:0;background:none;color:#00527a;font-weight:700;font-size:14px}
+.tagm{font-size:12px;font-weight:700;background:#eaf5ff;color:#00527a;border-radius:999px;padding:3px 10px}
+.carousel{position:relative}.carousel img{width:100%;height:330px;object-fit:cover;display:block}.phone .carousel img{height:240px}
+.cnt{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;border-radius:999px;padding:3px 9px}
+.arr{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:99px;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:22px;color:#00527a}.arr.l{left:10px}.arr.r{right:10px}
+.cstrip{display:flex;gap:6px;padding:8px 16px;overflow:hidden}.cstrip img{width:72px;height:52px;object-fit:cover;border-radius:7px;flex:none}
+.sbody{padding:4px 18px 90px;display:flex;flex-direction:column;gap:10px;overflow:hidden;flex:1}
+.stitle{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sprice{display:flex;flex-direction:column;align-items:flex-end}.sprice b{font-size:20px}.sprice small{font-size:12px}.g{color:#12875a}
+.why1{font-size:13px;background:#f8fafc;border:1px solid #e4e4e7;border-radius:10px;padding:8px 10px;color:#3f3f46}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.cgrid span{display:flex;flex-direction:column;font-size:13.5px;font-weight:600;background:#f4f4f5;border-radius:10px;padding:8px 10px}.cgrid i{font-style:normal;font-size:11px;font-weight:600;color:#71717a}
+.ftext{font-size:14px;line-height:1.6;color:#3f3f46}.ext{font-weight:700;color:#00527a;font-size:14px}
+.sbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e4e4e7;display:flex;align-items:center;gap:12px;padding:12px 16px}
+.sbar .btn{margin-left:auto}.cbx{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}.cbx i{width:20px;height:20px;border:2px solid #00527a;border-radius:5px}
+.sheet{position:relative;container-type:inline-size}
+@container (max-width:560px){.cgrid{grid-template-columns:1fr 1fr}.stitle{flex-direction:column}.sprice{align-items:flex-start;flex-direction:row;gap:10px;align-items:baseline}}
+.cardlist{display:flex;flex-direction:column;gap:10px}.mini{display:flex;gap:12px;background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:10px}.mini img{width:110px;height:72px;object-fit:cover;border-radius:9px}.mini span{display:flex;flex-direction:column;gap:4px;font-size:14px}.mini small{color:#71717a}
+</style></head><body>
+<h1 class="sheet">M152 · 5 — La fiche complète d’un bien, avec « Retenir »</h1><p class="sheet-sub">Pour le conseiller seul, pour qu’il soit sûr des biens qu’il propose (Jean-Guy, 11/11). Un toucher sur une carte des biens idéaux (ou de la sélection d’un acquéreur, de « Proposer ce bien », d’un mandat de l’agence) ouvre la fiche entière : toutes les photos en défilement, toutes les caractéristiques, le texte complet, le lien vers l’annonce, et « Retenir » sur la même fiche. Panneau à droite sur ordinateur, plein écran sur tablette et téléphone.</p>
+<div class="layout"><div class="rows"><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Ordinateur · 1280 · panneau à droite</div><div class="frame desk"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav></aside><div class="main"><a class="back">← M. et Mme Arnaud</a><h1 class="h1">Leurs biens idéaux</h1><div class="cardlist"><div class="mini"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-05.jpg"><span><b>Maison · 5 pièces · 150 m²</b><small>735 000 €</small></span></div><div class="mini"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-01.jpg"><span><b>Maison · 4 pièces · 128 m²</b><small>710 000 €</small></span></div><div class="mini"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-06.jpg"><span><b>Maison · 4 pièces · 135 m²</b><small>745 000 €</small></span></div></div><div class="overlay">
+  <div class="sheet desk">
+    <div class="sh"><button class="close2">← Leurs biens idéaux</button><span class="tagm">Marché · SeLoger</span></div>
+    <div class="carousel"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-05.jpg"><span class="cnt">1 / 20</span><span class="arr l">‹</span><span class="arr r">›</span></div>
+    <div class="cstrip"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-07.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-08.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-01.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-04.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-02.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-05.jpg"></div>
+    <div class="sbody">
+      <div class="stitle"><div><h1 class="h1 s">Maison · 5 pièces · 150 m² · Vence</h1><span class="muted sm">Affichée 735 000 € le 10/11 · sur le marché depuis le 14/09 · 1 baisse connue</span></div><div class="sprice"><b>735 000 €</b><small class="g">15 000 € sous le budget</small></div></div>
+      <div class="why1"><b>1<sup>er</sup> de Correspondance forte</b> · 8 critères sur 8 · Au calme : « calme absolu, aucun passage »</div>
+      <h2 class="h3">Caractéristiques</h2>
+      <div class="cgrid"><span><i>Surface</i>150 m²</span><span><i>Terrain</i>1 300 m²</span><span><i>Pièces</i>5</span><span><i>Chambres</i>4</span><span><i>Salles d’eau</i>2</span><span><i>DPE · GES</i>C · B</span><span><i>Extérieur</i>Terrasse, jardin</span><span><i>Stationnement</i>Garage</span><span><i>Piscine</i>Oui</span><span><i>Étage</i>Plain-pied</span><span><i>Chauffage</i>Pompe à chaleur</span><span><i>Construction</i>1978</span></div>
+      <h2 class="h3">Le texte de l’annonce</h2>
+      <p class="ftext">Au calme, à quelques minutes à pied du village, maison provençale de 135 m² sur un terrain plat de 1 100 m². Séjour lumineux avec cheminée ouvrant sur une terrasse exposée sud, cuisine équipée, quatre chambres dont une suite de plain-pied. Garage, piscine 10 × 5, arrosage automatique. Double vitrage, climatisation réversible. Taxe foncière 2 150 €. Honoraires à la charge du vendeur. Le bien est vendu meublé en partie ; visites le samedi sur rendez-vous.</p>
+      <a class="ext">Voir l’annonce en ligne ↗</a>
+    </div>
+    <div class="sbar"><span class="sm"><b>Pour M. et Mme Arnaud</b> · 2 biens retenus sur 3</span><button class="btn fill">Retenir ce bien</button></div>
+  </div></div></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820 · plein écran</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav></aside><div class="main"><div class="overlay" style="background:none">
+  <div class="sheet tab">
+    <div class="sh"><button class="close2">← Leurs biens idéaux</button><span class="tagm">Marché · SeLoger</span></div>
+    <div class="carousel"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-05.jpg"><span class="cnt">1 / 20</span><span class="arr l">‹</span><span class="arr r">›</span></div>
+    <div class="cstrip"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-07.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-08.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-01.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-04.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-02.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-05.jpg"></div>
+    <div class="sbody">
+      <div class="stitle"><div><h1 class="h1 s">Maison · 5 pièces · 150 m² · Vence</h1><span class="muted sm">Affichée 735 000 € le 10/11 · sur le marché depuis le 14/09 · 1 baisse connue</span></div><div class="sprice"><b>735 000 €</b><small class="g">15 000 € sous le budget</small></div></div>
+      <div class="why1"><b>1<sup>er</sup> de Correspondance forte</b> · 8 critères sur 8 · Au calme : « calme absolu, aucun passage »</div>
+      <h2 class="h3">Caractéristiques</h2>
+      <div class="cgrid"><span><i>Surface</i>150 m²</span><span><i>Terrain</i>1 300 m²</span><span><i>Pièces</i>5</span><span><i>Chambres</i>4</span><span><i>Salles d’eau</i>2</span><span><i>DPE · GES</i>C · B</span><span><i>Extérieur</i>Terrasse, jardin</span><span><i>Stationnement</i>Garage</span><span><i>Piscine</i>Oui</span><span><i>Étage</i>Plain-pied</span><span><i>Chauffage</i>Pompe à chaleur</span><span><i>Construction</i>1978</span></div>
+      <h2 class="h3">Le texte de l’annonce</h2>
+      <p class="ftext">Au calme, à quelques minutes à pied du village, maison provençale de 135 m² sur un terrain plat de 1 100 m². Séjour lumineux avec cheminée ouvrant sur une terrasse exposée sud, cuisine équipée, quatre chambres dont une suite de plain-pied. Garage, piscine 10 × 5, arrosage automatique. Double vitrage, climatisation réversible. Taxe foncière 2 150 €. Honoraires à la charge du vendeur. Le bien est vendu meublé en partie ; visites le samedi sur rendez-vous.</p>
+      <a class="ext">Voir l’annonce en ligne ↗</a>
+    </div>
+    <div class="sbar"><span class="sm"><b>Pour M. et Mme Arnaud</b> · 2 biens retenus sur 3</span><button class="btn fill">Retenir ce bien</button></div>
+  </div></div></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · plein écran</div><div class="frame phone" style="display:block">
+  <div class="sheet phone">
+    <div class="sh"><button class="close2">← Leurs biens idéaux</button><span class="tagm">Marché · SeLoger</span></div>
+    <div class="carousel"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-05.jpg"><span class="cnt">1 / 20</span><span class="arr l">‹</span><span class="arr r">›</span></div>
+    <div class="cstrip"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-07.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-08.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-01.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/maison-04.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-02.jpg"><img src="file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-05.jpg"></div>
+    <div class="sbody">
+      <div class="stitle"><div><h1 class="h1 s">Maison · 5 pièces · 150 m² · Vence</h1><span class="muted sm">Affichée 735 000 € le 10/11 · sur le marché depuis le 14/09 · 1 baisse connue</span></div><div class="sprice"><b>735 000 €</b><small class="g">15 000 € sous le budget</small></div></div>
+      <div class="why1"><b>1<sup>er</sup> de Correspondance forte</b> · 8 critères sur 8 · Au calme : « calme absolu, aucun passage »</div>
+      <h2 class="h3">Caractéristiques</h2>
+      <div class="cgrid"><span><i>Surface</i>150 m²</span><span><i>Terrain</i>1 300 m²</span><span><i>Pièces</i>5</span><span><i>Chambres</i>4</span><span><i>Salles d’eau</i>2</span><span><i>DPE · GES</i>C · B</span><span><i>Extérieur</i>Terrasse, jardin</span><span><i>Stationnement</i>Garage</span><span><i>Piscine</i>Oui</span><span><i>Étage</i>Plain-pied</span><span><i>Chauffage</i>Pompe à chaleur</span><span><i>Construction</i>1978</span></div>
+      <h2 class="h3">Le texte de l’annonce</h2>
+      <p class="ftext">Au calme, à quelques minutes à pied du village, maison provençale de 135 m² sur un terrain plat de 1 100 m². Séjour lumineux avec cheminée ouvrant sur une terrasse exposée sud, cuisine équipée, quatre chambres dont une suite de plain-pied. Garage, piscine 10 × 5, arrosage automatique. Double vitrage, climatisation réversible. Taxe foncière 2 150 €. Honoraires à la charge du vendeur. Le bien est vendu meublé en partie ; visites le samedi sur rendez-vous.</p>
+      <a class="ext">Voir l’annonce en ligne ↗</a>
+    </div>
+    <div class="sbar"><span class="sm"><b>Pour M. et Mme Arnaud</b> · 2 biens retenus sur 3</span><button class="btn fill">Retenir ce bien</button></div>
+  </div></div></div></div></div>
+<div class="notes"><div class="note"><b class="t">Avant :</b> La carte d’un bien idéal dit le libellé, le prix, les critères et une photo ; pour en voir plus, le conseiller ouvre le portail dans un autre onglet et perd sa sélection de vue.</div><div class="note"><b class="t">Après :</b> Le carrousel (glisser au doigt, flèches au clavier, « 1 / 20 »), les vignettes, puis le prix et ses dates, la raison du rang (M151, si elle existe), toutes les caractéristiques connues (une absente n’a pas de case, jamais « — »), le texte complet, « Voir l’annonce en ligne ↗ » ; en bas, fixée, la barre « Retenir ce bien » (le seul plein), qui l’ajoute à la sélection de la fiche acquéreur et compte « 2 biens retenus sur 3 » ; retenu, il devient « Retenu ✓ · Retirer » en contour.</div><div class="note"><b class="t">Ce que chaque source apporte (mesuré) :</b> Concurrent importé : 10 à 11 photos en médiane (jusqu’à 20), le texte complet, la date de publication. Annonce Stream Estate : 5 photos copiées chez Stream Estate (86 biens sur 105), jusqu’à 20 photos d’origine (`picturesRemote`) et le texte complet dans la même réponse, aujourd’hui jetés (question 8). Mandat de l’agence : 13 photos en médiane dans notre stockage, sa description. Bien démarché : ses faits et ses photos, jamais son texte (M120 A).</div><div class="note"><b class="t">390 px :</b> Plein écran, le carrousel à 240 px de haut, les caractéristiques sur deux colonnes, la barre « Retenir ce bien » fixée sous le pouce ; la croix est « ← Leurs biens idéaux ».</div></div></div></body></html>
