@@ -47,6 +47,8 @@ const CLEANED = [
   'buyers',
   'comparables',
   'competitor_decisions',
+  // Mission 152 — la copie de l'annonce de chaque concurrent part avec lui.
+  'competitor_listing_copies',
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
@@ -230,6 +232,8 @@ begin
   delete from public.live_reopenings where agency_id = v_agency;
   -- Mission 105 — le dernier résultat payé d'une recherche part avec ses dossiers.
   delete from public.stream_estate_results where agency_id = v_agency;
+  -- Mission 152 — la copie de l'annonce part avec son concurrent (cascade), supprimée ici aussi.
+  delete from public.competitor_listing_copies where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;
