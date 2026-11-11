@@ -138,7 +138,10 @@ ni rendez-vous, ni mandat, ni « pas intéressé » — est effacée avec sa pos
 reste retenu, l'annonce reste, et le Localisateur n'est plus interrogé pour lui
 (`locator_purged_at`). Mission 120 — même règle, deux minutes plus tard, pour l'adresse d'un bien
 démarché depuis une recherche acquéreur (`purge_stale_buyer_prospect_addresses`, tâche
-`purge-stale-buyer-prospect-addresses`). La liste « Ne plus solliciter » n'est jamais purgée.
+`purge-stale-buyer-prospect-addresses`). Mission 152 — à 3 h 28, la copie de l'annonce d'un
+concurrent (prix, dates, photos, caractéristiques, jamais le texte) part quand rien ne s'est passé
+depuis 3 ans, la copie comprise (`purge_stale_listing_copies`, tâche `purge-stale-listing-copies`).
+La liste « Ne plus solliciter » n'est jamais purgée.
 Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 
 ### 1. Retrouver son bien, dans tous les dossiers
@@ -167,7 +170,7 @@ select
      and (address is not null or locator_address is not null
           or locator_latitude is not null)) as avec_adresse,
   (select count(*) from competitor_prospecting_files where comparable_id in (:liste)) as dossiers_prospection,
-  -- Mission 152 : la copie de son annonce (texte, photos, faits), gardée pour le conseiller.
+  -- Mission 152 : la copie de son annonce (prix, dates, photos, caractéristiques ; jamais le texte).
   (select count(*) from competitor_listing_copies where comparable_id in (:liste)) as copies_annonces,
   (select count(*) from comparables where id in (:liste) and is_selected) as retenus,
   -- Mission 120 — les courriers d'une recherche acquéreur qui visent ce bien : par son concurrent,

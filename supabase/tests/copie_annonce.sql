@@ -7,6 +7,8 @@
 --      source, photos et faits de la bonne forme ; une date passée est permise (la démo date ses
 --      faits) ;
 --   §3 elle part avec son concurrent (cascade), et rien ne reste d'un dossier effacé ;
+--   §5 la purge à 3 ans (M102) : une copie sans aucun fait depuis 3 ans part, une copie récente
+--      ou dont le concurrent a un fait récent reste ; planifiée chaque nuit, fermée au navigateur.
 --   §4 `projects.listings_checked_at` : nulle par défaut, posée par le conseiller de l'agence à
 --      l'heure de la base (jamais une date de l'avenir), ni par une autre agence ni par un membre
 --      retiré.
@@ -81,9 +83,9 @@ grant execute on function pg_temp.expect(text, text, text) to authenticated, ano
 select pg_temp.act_as_service();
 select pg_temp.expect('§2 la copie d''une page lue s''écrit',
   pg_temp.attempt($$insert into public.competitor_listing_copies
-    (agency_id, project_id, comparable_id, source, portal, listing_key, price, listing_text, photo_urls, facts) values
+    (agency_id, project_id, comparable_id, source, portal, listing_key, price, photo_urls, facts) values
     ('152aaaaa-0000-0000-0000-000000000000', '152aaaaa-1111-0000-0000-000000000000', '152aaaaa-2222-0000-0000-000000000001',
-     'page', 'seloger', 'seloger:123', 700000, 'Belle maison', '["https://exemple.invalid/1.jpg"]', '{"rooms":5}')$$), '1');
+     'page', 'seloger', 'seloger:123', 700000, '["https://exemple.invalid/1.jpg"]', '{"rooms":5}')$$), '1');
 select pg_temp.expect('§2 une date passée est permise (la démo date ses faits)',
   pg_temp.attempt($$insert into public.competitor_listing_copies
     (agency_id, project_id, comparable_id, source, captured_at, price) values
@@ -141,10 +143,14 @@ select pg_temp.expect('§2 des faits qui ne sont pas un objet : refusés',
   pg_temp.attempt($$insert into public.competitor_listing_copies
     (agency_id, project_id, comparable_id, source, price, facts) values
     ('152aaaaa-0000-0000-0000-000000000000', '152aaaaa-1111-0000-0000-000000000002', '152aaaaa-2222-0000-0000-000000000003', 'page', 690000, '[1]')$$), 'contrainte');
-select pg_temp.expect('§2 un texte de plus de 20 000 caractères : refusé',
-  pg_temp.attempt($$insert into public.competitor_listing_copies
-    (agency_id, project_id, comparable_id, source, price, listing_text) values
-    ('152aaaaa-0000-0000-0000-000000000000', '152aaaaa-1111-0000-0000-000000000002', '152aaaaa-2222-0000-0000-000000000003', 'page', 690000, repeat('a', 20001))$$), 'contrainte');
+select pg_temp.expect('§2 la copie ne garde jamais le texte de l''annonce (aucune colonne)',
+  (select count(*)::text from pg_attribute
+    where attrelid = 'public.competitor_listing_copies'::regclass and not attisdropped and attnum > 0
+      and attname in ('listing_text', 'listing_description', 'title', 'address', 'listing_url')), '0');
+select pg_temp.expect('§2 … et ses colonnes sont lues (contrôle positif)',
+  (select count(*)::text from pg_attribute
+    where attrelid = 'public.competitor_listing_copies'::regclass and not attisdropped and attnum > 0
+      and attname in ('price', 'photo_urls', 'facts')), '3');
 select pg_temp.expect('§2 la fonction du déclencheur est fermée au navigateur',
   has_function_privilege('authenticated', 'public.check_competitor_listing_copy()', 'execute')::text, 'false');
 select pg_temp.expect('§2 la clé de service supprime une copie (effacement B)',
@@ -164,7 +170,7 @@ select pg_temp.expect('§1 le navigateur n''écrit pas de copie',
     (agency_id, project_id, comparable_id, source, price) values
     ('152aaaaa-0000-0000-0000-000000000000', '152aaaaa-1111-0000-0000-000000000002', '152aaaaa-2222-0000-0000-000000000003', 'page', 690000)$$), 'refus');
 select pg_temp.expect('§1 ni n''en modifie',
-  pg_temp.attempt($$update public.competitor_listing_copies set listing_text = 'autre'$$), 'refus');
+  pg_temp.attempt($$update public.competitor_listing_copies set price = 1$$), 'refus');
 select pg_temp.expect('§1 ni n''en supprime',
   pg_temp.attempt($$delete from public.competitor_listing_copies$$), 'refus');
 select pg_temp.act_as('15211111-0000-0000-0000-0000000000b1');
@@ -213,5 +219,35 @@ select pg_temp.expect('§3 le dossier effacé ne laisse aucune copie',
   (select count(*)::text from public.competitor_listing_copies where project_id = '152aaaaa-1111-0000-0000-000000000000'), '0');
 select pg_temp.expect('§3 la copie de B ne bouge pas',
   (select count(*)::text from public.competitor_listing_copies where agency_id = '152bbbbb-0000-0000-0000-000000000000'), '1');
+
+-- §5 — la purge à 3 ans, jouée comme la tâche de nuit (rôle de la base). Concurrents frais : un ancien sans fait, un ancien démarché il y a un an,
+-- un récent.
+reset role;
+insert into public.comparables (id, agency_id, project_id, title, price, surface_area, is_selected, display_order, prospecting_handed_at) values
+  ('152ccccc-2222-0000-0000-000000000001', '152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', 'Ancien', 600000, 120, true, 2, null),
+  ('152ccccc-2222-0000-0000-000000000002', '152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', 'Ancien démarché', 610000, 121, true, 3, now() - interval '1 year'),
+  ('152ccccc-2222-0000-0000-000000000003', '152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', 'Récent', 620000, 122, true, 4, null);
+insert into public.competitor_listing_copies (agency_id, project_id, comparable_id, source, captured_at, price) values
+  ('152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', '152ccccc-2222-0000-0000-000000000001', 'page', now() - interval '3 years 1 day', 600000),
+  ('152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', '152ccccc-2222-0000-0000-000000000002', 'page', now() - interval '4 years', 610000),
+  ('152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', '152ccccc-2222-0000-0000-000000000003', 'page', now() - interval '2 years', 620000);
+select pg_temp.expect('§5 la purge efface une seule copie',
+  (select public.purge_stale_listing_copies()::text), '1');
+select pg_temp.expect('§5 … celle sans aucun fait depuis 3 ans',
+  (select string_agg(c.title, ',' order by c.title) from public.competitor_listing_copies k
+    join public.comparables c on c.id = k.comparable_id
+    where k.comparable_id::text like '152ccccc%'), 'Ancien démarché,Récent');
+select pg_temp.expect('§5 le concurrent purgé reste',
+  (select count(*)::text from public.comparables where id = '152ccccc-2222-0000-0000-000000000001'), '1');
+select pg_temp.expect('§5 une seconde passe n''efface rien',
+  (select public.purge_stale_listing_copies()::text), '0');
+select pg_temp.expect('§5 la purge est planifiée chaque nuit, une seule fois',
+  (select string_agg(schedule || ' ' || command, ' ; ') from cron.job
+    where jobname = 'purge-stale-listing-copies' and active),
+  '28 3 * * * select public.purge_stale_listing_copies()');
+select pg_temp.expect('§5 le navigateur ne déclenche pas la purge',
+  (has_function_privilege('authenticated', 'public.purge_stale_listing_copies()', 'execute')
+   or has_function_privilege('anon', 'public.purge_stale_listing_copies()', 'execute'))::text,
+  'false');
 
 rollback;
