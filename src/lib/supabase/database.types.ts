@@ -9,64 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      address_dossiers: {
-        Row: {
-          address_fingerprint: string
-          agency_id: string
-          blocks: Json
-          built_at: string
-          built_by: string | null
-          created_at: string
-          id: string
-          project_id: string
-          updated_at: string
-        }
-        Insert: {
-          address_fingerprint: string
-          agency_id: string
-          blocks?: Json
-          built_at?: string
-          built_by?: string | null
-          created_at?: string
-          id?: string
-          project_id: string
-          updated_at?: string
-        }
-        Update: {
-          address_fingerprint?: string
-          agency_id?: string
-          blocks?: Json
-          built_at?: string
-          built_by?: string | null
-          created_at?: string
-          id?: string
-          project_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "address_dossiers_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "address_dossiers_built_by_fkey"
-            columns: ["built_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "address_dossiers_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: true
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       agencies: {
         Row: {
           buyer_watch_cap_cents: number
@@ -1376,7 +1318,6 @@ export type Database = {
           feedback: string | null
           id: string
           liked: string[]
-          living_place_trip: Json | null
           next_step: string | null
           opinion: string | null
           outcome: string
@@ -1396,7 +1337,6 @@ export type Database = {
           feedback?: string | null
           id?: string
           liked?: string[]
-          living_place_trip?: Json | null
           next_step?: string | null
           opinion?: string | null
           outcome?: string
@@ -1416,7 +1356,6 @@ export type Database = {
           feedback?: string | null
           id?: string
           liked?: string[]
-          living_place_trip?: Json | null
           next_step?: string | null
           opinion?: string | null
           outcome?: string
@@ -1525,7 +1464,6 @@ export type Database = {
           id: string
           ignored_suggestions: string[]
           language: string
-          living_place: string | null
           must_have: string[]
           name: string
           notes: string | null
@@ -1536,7 +1474,6 @@ export type Database = {
           property_types: string[]
           purpose: string | null
           rooms_min: number | null
-          sector_priorities: string[]
           status: string
           status_changed_at: string
           surface_min: number | null
@@ -1565,7 +1502,6 @@ export type Database = {
           id?: string
           ignored_suggestions?: string[]
           language?: string
-          living_place?: string | null
           must_have?: string[]
           name: string
           notes?: string | null
@@ -1576,7 +1512,6 @@ export type Database = {
           property_types?: string[]
           purpose?: string | null
           rooms_min?: number | null
-          sector_priorities?: string[]
           status?: string
           status_changed_at?: string
           surface_min?: number | null
@@ -1605,7 +1540,6 @@ export type Database = {
           id?: string
           ignored_suggestions?: string[]
           language?: string
-          living_place?: string | null
           must_have?: string[]
           name?: string
           notes?: string | null
@@ -1616,7 +1550,6 @@ export type Database = {
           property_types?: string[]
           purpose?: string | null
           rooms_min?: number | null
-          sector_priorities?: string[]
           status?: string
           status_changed_at?: string
           surface_min?: number | null
@@ -2386,57 +2319,6 @@ export type Database = {
             columns: ["seller_most_dangerous_comparable_id"]
             isOneToOne: false
             referencedRelation: "comparables"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      living_here_sheets: {
-        Row: {
-          agency_id: string
-          blocks: Json
-          built_at: string
-          built_by: string | null
-          created_at: string
-          id: string
-          origin: string
-          property_key: string
-          updated_at: string
-        }
-        Insert: {
-          agency_id: string
-          blocks?: Json
-          built_at?: string
-          built_by?: string | null
-          created_at?: string
-          id?: string
-          origin: string
-          property_key: string
-          updated_at?: string
-        }
-        Update: {
-          agency_id?: string
-          blocks?: Json
-          built_at?: string
-          built_by?: string | null
-          created_at?: string
-          id?: string
-          origin?: string
-          property_key?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "living_here_sheets_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "living_here_sheets_built_by_fkey"
-            columns: ["built_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -2,6 +2,8 @@
 --   §1 l'agence lit ; une autre agence et un membre retiré, rien ; le navigateur n'écrit rien ;
 --   §2 contraintes : pendant quoi, issue, visite datée, annulée jamais visitée ;
 --   §3 une demande part avec son bien retenu (cascade) ; `presented_at` se pose par la clé service.
+--   §4 (Mission 152, partie 0) le jour de la visite (`scheduled_at`, M142) : nul par défaut, jamais
+--      écrit par le navigateur ; ce que la M147 a laissé n'existe plus (tables, fonctions, colonnes).
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/visites.sql
@@ -97,5 +99,32 @@ select pg_temp.expect('§3 la clé service termine la présentation',
 -- §3
 delete from public.buyer_selection_items where id = '119aaaaa-3333-0000-0000-000000000000';
 select pg_temp.expect('§3 la demande part avec son bien retenu', (select count(*)::text from public.buyer_visit_requests), '0');
+
+-- §4
+select pg_temp.expect('§4 le jour de la visite existe, nul par défaut',
+  (select is_nullable || coalesce(column_default, '') from information_schema.columns
+    where table_schema = 'public' and table_name = 'buyer_visit_requests' and column_name = 'scheduled_at'), 'YES');
+select pg_temp.expect('§4 le dossier d''adresse d''ACM n''existe plus',
+  (to_regclass('public.address_dossiers') is null)::text, 'true');
+select pg_temp.expect('§4 les fiches « Vivre ici » d''ACM n''existent plus',
+  (to_regclass('public.living_here_sheets') is null)::text, 'true');
+select pg_temp.expect('§4 ni les fonctions de leurs déclencheurs',
+  (to_regprocedure('public.check_address_dossier()') is null
+   and to_regprocedure('public.date_living_here_sheet()') is null)::text, 'true');
+-- Lu dans `pg_attribute`, que les droits du rôle ne filtrent pas (gardien-sql, 11/11) ; une colonne
+-- gardée de chaque table sert de contrôle positif.
+select pg_temp.expect('§4 ni les colonnes de l''acquéreur et de la visite',
+  (select count(*)::text from pg_attribute
+    where not attisdropped and attnum > 0
+      and ((attrelid = 'public.buyers'::regclass and attname in ('sector_priorities', 'living_place'))
+        or (attrelid = 'public.buyer_visit_requests'::regclass and attname = 'living_place_trip'))), '0');
+select pg_temp.expect('§4 les colonnes gardées sont lues (contrôle positif)',
+  (select count(*)::text from pg_attribute
+    where not attisdropped and attnum > 0
+      and ((attrelid = 'public.buyers'::regclass and attname in ('name', 'cities'))
+        or (attrelid = 'public.buyer_visit_requests'::regclass and attname = 'scheduled_at'))), '3');
+select pg_temp.act_as('11911111-0000-0000-0000-0000000000a1');
+select pg_temp.expect('§4 le navigateur n''écrit pas le jour de la visite',
+  pg_temp.attempt($$update public.buyer_visit_requests set scheduled_at = now()$$), 'refus');
 
 rollback;
