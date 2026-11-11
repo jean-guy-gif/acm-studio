@@ -25,6 +25,15 @@
 -- aucune ligne écrite, aucune copie reconstituée pour les concurrents déjà importés (M56). Seul
 -- `scripts/nettoyer-test.mjs` de `main` s'arrête devant une table à `agency_id` qu'il ne classe pas :
 -- entre l'application et le `/valide`, l'e2e ne se joue que depuis la branche.
+--
+-- Prédiction du catalogue (base partagée, 11/11) : tables publiques 48 → 49, politiques 53 → 54,
+-- fonctions 57 → 59, déclencheurs 31 → 33, index 157 → 160, `projects` 21 → 22 colonnes ; 25
+-- dossiers, 127 concurrents et 321 observations inchangés ; la table vide.
+
+-- `alter table projects` et les clés étrangères prennent des verrous forts : si une requête les
+-- tient, la migration s'annule au bout de 5 s plutôt que de mettre l'application en file derrière
+-- elle (gardien-sql, 11/11, comme la partie 0).
+set local lock_timeout = '5s';
 
 create table public.competitor_listing_copies (
   id uuid primary key default gen_random_uuid(),
@@ -44,8 +53,8 @@ create table public.competitor_listing_copies (
     check (jsonb_typeof(facts) = 'object' and pg_column_size(facts) <= 20000)
 );
 
-create index competitor_listing_copies_listing
-  on public.competitor_listing_copies (agency_id, portal, listing_key);
+-- La copie se lit par son concurrent (l'unicité l'indexe) ; la recherche par annonce viendra avec
+-- la partie B si elle en a besoin.
 create index competitor_listing_copies_project on public.competitor_listing_copies (project_id);
 
 comment on table public.competitor_listing_copies is
@@ -90,4 +99,26 @@ grant select on public.competitor_listing_copies to authenticated;
 
 alter table public.projects add column listings_checked_at timestamptz;
 comment on column public.projects.listings_checked_at is
-  'Mission 152 — la dernière vérification des annonces des concurrents avant le rendez-vous (« Depuis la préparation »).';
+  'Mission 152 — la dernière vérification des annonces des concurrents avant le rendez-vous (« Depuis la préparation ») ; l''heure est posée par la base.';
+
+-- La date de la vérification est l'heure de la base, jamais celle qu'envoie le navigateur : une date
+-- dans l'avenir cacherait le rappel « plus de 24 h » pour toujours (gardien-sql, 11/11 ; comme M102
+-- et M145 B). La vider reste permis.
+create function public.date_listings_check()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.listings_checked_at is not null
+     and new.listings_checked_at is distinct from old.listings_checked_at then
+    new.listings_checked_at := now();
+  end if;
+  return new;
+end $$;
+
+revoke all on function public.date_listings_check() from public, anon, authenticated;
+
+create trigger projects_date_listings_check
+  before update of listings_checked_at on public.projects
+  for each row execute function public.date_listings_check();

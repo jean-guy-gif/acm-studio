@@ -7,8 +7,9 @@
 --      source, photos et faits de la bonne forme ; une date passée est permise (la démo date ses
 --      faits) ;
 --   §3 elle part avec son concurrent (cascade), et rien ne reste d'un dossier effacé ;
---   §4 `projects.listings_checked_at` : nulle par défaut, écrite par le conseiller de l'agence, pas
---      par une autre agence.
+--   §4 `projects.listings_checked_at` : nulle par défaut, posée par le conseiller de l'agence à
+--      l'heure de la base (jamais une date de l'avenir), ni par une autre agence ni par un membre
+--      retiré.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/copie_annonce.sql
@@ -146,6 +147,13 @@ select pg_temp.expect('§2 un texte de plus de 20 000 caractères : refusé',
     ('152aaaaa-0000-0000-0000-000000000000', '152aaaaa-1111-0000-0000-000000000002', '152aaaaa-2222-0000-0000-000000000003', 'page', 690000, repeat('a', 20001))$$), 'contrainte');
 select pg_temp.expect('§2 la fonction du déclencheur est fermée au navigateur',
   has_function_privilege('authenticated', 'public.check_competitor_listing_copy()', 'execute')::text, 'false');
+select pg_temp.expect('§2 la clé de service supprime une copie (effacement B)',
+  pg_temp.attempt($$delete from public.competitor_listing_copies
+    where comparable_id = '152bbbbb-2222-0000-0000-000000000001'$$), '1');
+select pg_temp.expect('§2 puis la réécrit (le concurrent de B garde sa copie pour §3)',
+  pg_temp.attempt($$insert into public.competitor_listing_copies
+    (agency_id, project_id, comparable_id, source, price) values
+    ('152bbbbb-0000-0000-0000-000000000000', '152bbbbb-1111-0000-0000-000000000000', '152bbbbb-2222-0000-0000-000000000001', 'page', 650000)$$), '1');
 
 -- §1 — lectures et écritures du navigateur.
 select pg_temp.act_as('15211111-0000-0000-0000-0000000000a1');
@@ -175,9 +183,23 @@ select pg_temp.expect('§4 nulle par défaut',
 select pg_temp.expect('§4 le conseiller de l''agence la pose',
   pg_temp.attempt($$update public.projects set listings_checked_at = now()
     where id = '152aaaaa-1111-0000-0000-000000000000'$$), '1');
+select pg_temp.expect('§4 une date dans l''avenir devient l''heure de la base',
+  pg_temp.attempt($$update public.projects set listings_checked_at = now() + interval '30 days'
+    where id = '152aaaaa-1111-0000-0000-000000000002'$$), '1');
+select pg_temp.expect('§4 … relue : pas dans l''avenir',
+  (select (listings_checked_at <= now())::text from public.projects where id = '152aaaaa-1111-0000-0000-000000000002'), 'true');
+select pg_temp.expect('§4 la vider reste permis',
+  pg_temp.attempt($$update public.projects set listings_checked_at = null
+    where id = '152aaaaa-1111-0000-0000-000000000002'$$), '1');
+select pg_temp.expect('§4 la fonction du déclencheur est fermée au navigateur',
+  has_function_privilege('authenticated', 'public.date_listings_check()', 'execute')::text, 'false');
 select pg_temp.expect('§4 une autre agence ne la pose pas',
   pg_temp.attempt($$update public.projects set listings_checked_at = now()
     where id = '152bbbbb-1111-0000-0000-000000000000'$$), '0');
+select pg_temp.act_as('15211111-0000-0000-0000-0000000000a2');
+select pg_temp.expect('§4 un membre retiré ne la pose pas',
+  pg_temp.attempt($$update public.projects set listings_checked_at = now()
+    where id = '152aaaaa-1111-0000-0000-000000000000'$$), '0');
 
 -- §3 — les cascades.
 select pg_temp.act_as_service();
