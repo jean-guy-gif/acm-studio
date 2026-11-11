@@ -241,7 +241,7 @@ export async function prepareBuyerLetter(
           created_by: profile.id,
           listing_url: listingUrl,
           listing_key: listingKey,
-          facts: facts as unknown as Json,
+          facts: facts as unknown as NonNullable<Json>,
           sold_by: soldBy === 'agency' || soldBy === 'private' ? soldBy : null,
           exclusivity:
             chosen ?? (exclusivity === 'yes' || exclusivity === 'no' ? exclusivity : null),

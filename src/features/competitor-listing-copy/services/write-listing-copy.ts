@@ -40,7 +40,7 @@ export async function writeListingCopy(options: {
           listing_key: identity?.listingKey ?? null,
           price: copy.price,
           photo_urls: copy.photo_urls,
-          facts: copy.facts as Json,
+          facts: copy.facts as NonNullable<Json>,
         },
         { onConflict: 'comparable_id', ignoreDuplicates: true },
       );

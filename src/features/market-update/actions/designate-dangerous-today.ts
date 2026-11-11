@@ -95,7 +95,7 @@ export async function designateDangerousToday(
   });
   const { data, error } = await createServiceRoleClient()
     .from('project_market_updates')
-    .update({ summary: JSON.parse(JSON.stringify(next)) as Json })
+    .update({ summary: JSON.parse(JSON.stringify(next)) as NonNullable<Json> })
     .eq('id', latest.id)
     .eq('project_id', projectId as string)
     .eq('agency_id', agencyId)

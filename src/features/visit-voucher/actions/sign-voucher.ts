@@ -149,7 +149,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     buyer_id: input.buyerId,
     kind: 'visit_voucher',
     template_version: VOUCHER_TEMPLATE_VERSION,
-    fields: fields as unknown as Json,
+    fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     // Recalculée par la base sur le texte figé.
     content_sha256: '0'.repeat(64),

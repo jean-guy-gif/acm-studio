@@ -153,7 +153,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     buyer_id: input.buyerId,
     kind: 'purchase_offer',
     template_version: OFFER_TEMPLATE_VERSION,
-    fields: fields as unknown as Json,
+    fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     content_sha256: '0'.repeat(64),
     signature_paths: paths,
