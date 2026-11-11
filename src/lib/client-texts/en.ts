@@ -462,6 +462,27 @@ export const ENGLISH_TEXTS: ClientTexts = {
       since: 'On the market for',
       days: (days) => `${days} days`,
     },
+    listing: {
+      open: 'View the listing',
+      opening: 'Opening…',
+      failed: (button) => `The listing did not open — tap ${button} to try again`,
+      title: 'The listing as it was recorded',
+      close: 'Close',
+      listed: 'Asking price',
+      recorded: (portal, day, atImport, price) =>
+        `Recorded${portal ? ` on ${portal}` : ''} on ${day}${atImport ? ' when imported' : ''}${price ? `: ${price}` : ''}`,
+      recordedAsIs: 'As recorded',
+      lastCheck: (day, price, unchanged) =>
+        `Checked again on ${day}: ${price}${unchanged ? ', unchanged' : ''}`,
+      drop: (from, to, day) => `A known price reduction: ${from} → ${to} on ${day}`,
+      gone: (day) =>
+        day
+          ? `The listing has been offline since ${day}: the recorded copy above remains.`
+          : 'The listing is no longer online: the recorded copy above remains.',
+      bedrooms: (count) => `${count} bedroom${count > 1 ? 's' : ''}`,
+      land: (area) => `Land ${area}`,
+      dpe: (rating) => `EPC ${rating}`,
+    },
     buyers: {
       phrase: 'families are looking for a property like yours and are ready to view',
       promise: 'With your agreement, I will contact them this week.',

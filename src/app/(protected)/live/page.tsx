@@ -92,6 +92,7 @@ export default async function LivePage() {
                   decisionMissing={info?.decisionMissing ?? false}
                   shortlistPending={info?.shortlistPending ?? false}
                   pendingImportCount={info?.pendingImportCount ?? 0}
+                  listingsCheckStale={info?.listingsCheckStale ?? false}
                   presentationMode={info?.presentationMode}
                   secondary={!primary}
                 />

@@ -233,6 +233,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   decisionMissing={launch.decisionMissing}
                   shortlistPending={launch.shortlistPending}
                   pendingImportCount={launch.pendingImportCount}
+                  listingsCheckStale={launch.listingsCheckStale}
                   presentationMode={launch.presentationMode}
                 />
               ) : (

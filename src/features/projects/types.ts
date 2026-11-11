@@ -7,12 +7,14 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 // le lancement du Live.
 // Mission 112 — de même la trace de la confirmation « devant le vendeur ».
 // Mission 147 — de même le lien client « Vivre ici » d'Academia, lu par Bien vendeur seulement.
+// Mission 152 — de même la date de la vérification des annonces, lue par « Avant le rendez-vous ».
 type OptionalColumns =
   | 'search_settings'
   | 'live_shortlist_at'
   | 'live_confirmed_at'
   | 'live_confirmed_by'
-  | 'academia_living_here_url';
+  | 'academia_living_here_url'
+  | 'listings_checked_at';
 export type Project = Omit<ProjectRow, OptionalColumns> &
   Partial<Pick<ProjectRow, OptionalColumns>>;
 export type ProjectInsert = Database['public']['Tables']['projects']['Insert'];

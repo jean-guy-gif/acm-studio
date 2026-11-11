@@ -42,6 +42,8 @@ export type LiveComparableEntry = {
   photoUrls: string[];
   source: 'manual' | 'url';
   listingUrl: string | null;
+  // Mission 152 — l'annonce n'est plus en ligne (preuve M103 : retirée à l'import ou depuis).
+  listingGone: boolean;
   isOutlier: boolean;
   featureComparison: FeatureComparison[];
   priceReveal: PriceReveal;

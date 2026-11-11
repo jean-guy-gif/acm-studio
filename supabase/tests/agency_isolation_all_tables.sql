@@ -106,6 +106,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_document_acceptances.decision' then $v$'refused'$v$
     -- Mission 139 — un bien écarté pour un acquéreur : une raison de la liste.
     when 'buyer_dismissals.reason' then $v$'other'$v$
+    -- Mission 152 — la copie d'une annonce : sa source, de la liste.
+    when 'competitor_listing_copies.source' then $v$'page'$v$
     else null
   end
 $$;

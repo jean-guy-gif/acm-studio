@@ -24,6 +24,10 @@ export const OUTDATED_DECISION_NOTICE =
 // lancement, avec un lien vers « Avant le rendez-vous » ; le lancement reste possible.
 export const NO_DECISION_NOTICE =
   'Aucune décision de prix : le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous';
+// Mission 152 — les annonces des concurrents n'ont pas été vérifiées depuis plus de 24 h : rappelé
+// au lancement, sans bloquer (M52), avec « Avant le rendez-vous » où se fait la vérification.
+export const LISTINGS_CHECK_NOTICE =
+  'Annonces des concurrents non vérifiées depuis plus de 24 h : un prix a pu changer, une annonce a pu disparaître';
 export const LAUNCH_FOR_REAL_LABEL = 'Lancer devant le vendeur';
 export const OPEN_EXAMPLE_LABEL = 'Ouvrir le dossier d’exemple';
 
@@ -47,6 +51,8 @@ export function liveLaunchCheck(input: {
   decisionMissing?: boolean;
   // Mission 112 — concurrents retenus qui attendent encore leur import (M101).
   pendingImportCount?: number;
+  // Mission 152 — aucune vérification des annonces depuis plus de 24 h.
+  listingsCheckStale?: boolean;
 }): LiveLaunchCheck {
   if (input.competitorCount <= 0) {
     return { status: 'blocked', reason: NO_COMPETITOR_REASON };
@@ -57,6 +63,7 @@ export function liveLaunchCheck(input: {
     input.decisionMissing ? NO_DECISION_NOTICE : null,
     input.decisionOutdated ? OUTDATED_DECISION_NOTICE : null,
     pendingImportsNotice(input.pendingImportCount ?? 0),
+    input.listingsCheckStale ? LISTINGS_CHECK_NOTICE : null,
   ].filter((notice): notice is string => notice != null);
   const confirm = !input.isExample;
   return confirm || notices.length > 0 ? { status: 'ask', confirm, notices } : { status: 'go' };

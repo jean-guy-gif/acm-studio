@@ -5,6 +5,15 @@
 //   • une annonce disparue est marquée « Retirée depuis le rendez-vous », sur preuve (M103) ;
 //   • une page illisible ne change rien.
 
+// Mission 152 — la relecture sert le Suivi (un dossier conclu) et « Avant le rendez-vous » (un
+// dossier en préparation ou prêt, tant que son Live n'a pas commencé : au Live, le prix révélé se
+// fige à la devinette, M96, et ce que voit le vendeur ne bouge plus, M110). Jamais un dossier
+// archivé.
+export function canRefreshListings(status: string, liveStarted: boolean): boolean {
+  if (status === 'meeting_completed') return true;
+  return (status === 'draft' || status === 'ready_for_meeting') && !liveStarted;
+}
+
 export const GONE_SINCE_MEETING_LABEL = 'Retirée depuis le rendez-vous';
 
 export type PriceCheckOutcome =

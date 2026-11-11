@@ -19,7 +19,8 @@ export function isDuplicateListing(error: { code?: string; message?: string } | 
 // Mission 108 — un doublon n'est jamais avalé en silence : l'appelant apprend que la fiche
 // existait déjà, et si elle était écartée, pour demander « la retenir ? ».
 export type InsertCompetitorResult =
-  | { status: 'created' }
+  // Mission 152 — l'identifiant du concurrent créé, pour écrire la copie de son annonce.
+  | { status: 'created'; id: string | null }
   | { status: 'existing'; id: string; selected: boolean }
   | { status: 'failed' };
 
@@ -75,7 +76,7 @@ export async function insertCompetitor(
       if (created) {
         await absorbBuyerProspectsForProject(supabase, agencyId, projectId, created.id);
       }
-      return { status: 'created' };
+      return { status: 'created', id: created?.id ?? null };
     }
     if (isDuplicateListing(error)) {
       const existing = await existingListing(supabase, projectId, agencyId, listingUrl);

@@ -1886,6 +1886,73 @@ export type Database = {
           },
         ]
       }
+      competitor_listing_copies: {
+        Row: {
+          agency_id: string
+          captured_at: string
+          comparable_id: string
+          created_at: string
+          facts: Json
+          id: string
+          listing_key: string | null
+          photo_urls: Json
+          portal: string | null
+          price: number
+          project_id: string
+          source: string
+        }
+        Insert: {
+          agency_id: string
+          captured_at?: string
+          comparable_id: string
+          created_at?: string
+          facts?: Json
+          id?: string
+          listing_key?: string | null
+          photo_urls?: Json
+          portal?: string | null
+          price: number
+          project_id: string
+          source: string
+        }
+        Update: {
+          agency_id?: string
+          captured_at?: string
+          comparable_id?: string
+          created_at?: string
+          facts?: Json
+          id?: string
+          listing_key?: string | null
+          photo_urls?: Json
+          portal?: string | null
+          price?: number
+          project_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_listing_copies_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_listing_copies_comparable_id_fkey"
+            columns: ["comparable_id"]
+            isOneToOne: true
+            referencedRelation: "comparables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_listing_copies_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_prospecting_files: {
         Row: {
           agency_id: string
@@ -2877,6 +2944,7 @@ export type Database = {
           id: string
           is_example: boolean
           language: string
+          listings_checked_at: string | null
           live_confirmed_at: string | null
           live_confirmed_by: string | null
           live_ended_at: string | null
@@ -2900,6 +2968,7 @@ export type Database = {
           id?: string
           is_example?: boolean
           language?: string
+          listings_checked_at?: string | null
           live_confirmed_at?: string | null
           live_confirmed_by?: string | null
           live_ended_at?: string | null
@@ -2923,6 +2992,7 @@ export type Database = {
           id?: string
           is_example?: boolean
           language?: string
+          listings_checked_at?: string | null
           live_confirmed_at?: string | null
           live_confirmed_by?: string | null
           live_ended_at?: string | null

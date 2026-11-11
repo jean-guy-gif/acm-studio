@@ -6,6 +6,7 @@ import { LiveComparableHeader } from '@/features/live-seller/components/live-com
 import { LiveDurationReveal } from '@/features/live-seller/components/live-duration-reveal';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import {
   answerColumn,
   bigInput,
@@ -60,9 +61,12 @@ export function LivePageQuickReveal({ entry }: { entry: AuthorizedSellerComparab
 
         <div className={answerColumn}>
           <div className={`${panel} live-reveal-pop flex flex-col gap-3`} data-quick-reveal>
-            <div>
-              <div className={statLabel}>{texts.live.priceReveal.listed}</div>
-              <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={statLabel}>{texts.live.priceReveal.listed}</div>
+                <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+              </div>
+              <LiveListingButton entry={entry} />
             </div>
             <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
           </div>
