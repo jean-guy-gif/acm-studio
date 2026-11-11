@@ -47,6 +47,7 @@ import {
 import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
 import { BUYER_STATUS_LABELS } from '@/features/buyers/types';
 import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
+import { PropertySheetButton } from '@/features/property-sheet/components/property-sheet-button';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import {
@@ -93,6 +94,9 @@ const STEP_TITLE: Record<JourneyStatus, string> = {
   current: 'text-brand-deep stage:text-brand',
   later: 'text-zinc-800 stage:text-white/80',
 };
+// Mission 152 (partie B) — un toucher sur le libellé d'un bien ouvre sa fiche complète.
+const SHEET_LINK =
+  'text-left font-title text-base font-bold text-zinc-900 underline-offset-2 hover:text-brand-deep hover:underline stage:text-white';
 const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
   project: { label: 'Dans l’agence', className: 'bg-emerald-50 text-emerald-700' },
   competitor: { label: 'Concurrent', className: 'bg-zinc-100 text-zinc-600' },
@@ -544,9 +548,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                       )}
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                          <PropertySheetButton
+                            target={{ kind: 'selection-item', id: item.item.itemId }}
+                            backLabel="Sa sélection"
+                            budgetMax={buyer.budgetMax}
+                            className={SHEET_LINK}
+                          >
                             {item.item.label}
-                          </span>
+                          </PropertySheetButton>
                           {badge ? (
                             <span
                               className={`rounded-md px-2 py-0.5 text-xs font-semibold ${badge.className}`}

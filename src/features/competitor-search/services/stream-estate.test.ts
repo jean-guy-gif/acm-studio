@@ -14,6 +14,7 @@ import {
   isImportableUrl,
   parisDateTime,
   parseStreamEstateResponse,
+  withoutSheetExtras,
 } from '@/features/competitor-search/services/stream-estate';
 import {
   STREAM_ESTATE_LABEL,
@@ -174,6 +175,60 @@ describe('parseStreamEstateResponse', () => {
     expect(result.candidates).toHaveLength(1);
     expect(result.candidates[0].url).toBe(seloger);
     expect(result.candidates[0].streamEstate?.originSite).toBe('SeLoger');
+  });
+
+  it('M152 B — garde le texte et les photos d’origine (https, sans doublon, 20 au plus)', () => {
+    const seloger = 'https://www.seloger.com/annonces/achat/appartement/nice-06/250123456.htm';
+    const remote = Array.from({ length: 25 }, (_, index) => `https://mms.seloger.com/${index}.jpg`);
+    const property = {
+      ...fixture['hydra:member'][1],
+      uuid: 'avec-texte',
+      description: 'Le texte du bien.',
+      picturesRemote: ['http://insecure.example.com/x.jpg', remote[0], ...remote],
+      adverts: [
+        {
+          url: seloger,
+          expired: false,
+          lastCrawledAt: '2026-10-05T10:00:00+02:00',
+          description: '  Le texte de l’annonce d’origine.  ',
+        },
+      ],
+    };
+    const [candidate] = parseStreamEstateResponse({ 'hydra:member': [property] }, NOW)!.candidates;
+    expect(candidate.streamEstate?.description).toBe('Le texte de l’annonce d’origine.');
+    expect(candidate.streamEstate?.originalPhotos).toEqual(remote.slice(0, 20));
+  });
+
+  it('M152 B — la préparation vendeur ne reçoit ni le texte ni les photos d’origine', () => {
+    const [candidate] = parseStreamEstateResponse(
+      {
+        'hydra:member': [
+          {
+            ...fixture['hydra:member'][1],
+            uuid: 'prep',
+            description: 'Texte.',
+            picturesRemote: ['https://mms.seloger.com/1.jpg'],
+          },
+        ],
+      },
+      NOW,
+    )!.candidates;
+    const stripped = withoutSheetExtras(candidate);
+    expect(stripped.streamEstate).not.toHaveProperty('description');
+    expect(stripped.streamEstate).not.toHaveProperty('originalPhotos');
+    expect(stripped.streamEstate?.propertyId).toBe(candidate.streamEstate?.propertyId);
+  });
+
+  it('M152 B — sans texte ni photos d’origine, rien n’est inventé ; une forme inattendue ne casse rien', () => {
+    const property = {
+      ...fixture['hydra:member'][1],
+      uuid: 'sans-texte',
+      description: 42,
+      picturesRemote: 'pas une liste',
+    };
+    const [candidate] = parseStreamEstateResponse({ 'hydra:member': [property] }, NOW)!.candidates;
+    expect(candidate.streamEstate).not.toHaveProperty('description');
+    expect(candidate.streamEstate).not.toHaveProperty('originalPhotos');
   });
 
   it('un bien seulement sur Leboncoin est écarté et compté, pas « illisible »', () => {

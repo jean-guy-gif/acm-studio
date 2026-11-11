@@ -173,6 +173,12 @@ export type StreamEstateFacts = {
   // Mission 110 — les critères réglés dont la donnée manque sur ce bien : il est gardé, après les
   // autres, et la carte dit « Étage non indiqué ». Absent quand tout est connu.
   criteriaUnknown?: FilterName[];
+  // Mission 152 (partie B) — pour la fiche complète, celle du conseiller seul (Jean-Guy, 11/11) :
+  // le texte de l'annonce et ses photos d'origine (chez le portail, 20 au plus). Ils ne classent
+  // rien, ne passent jamais dans un import en attente ni devant un client. Absents d'une recherche
+  // d'avant.
+  description?: string;
+  originalPhotos?: string[];
 };
 
 // Mission 71 — les crans de la recherche Stream Estate, dans l'ordre (décision de Laurent, 06/10) :
