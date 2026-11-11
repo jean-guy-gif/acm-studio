@@ -254,7 +254,7 @@ async function watchOneBuyer(
       status: 'done',
       adverts: billed,
       found_count: finds.length,
-      finds: finds as unknown as Json,
+      finds: finds as unknown as NonNullable<Json>,
     })
     .eq('id', row.run_id);
   if (updateError) await reportServerError('buyerWatch', updateError);

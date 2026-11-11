@@ -479,7 +479,7 @@ async function seedKellerVoucher(
     buyer_id: kellerId,
     kind: 'visit_voucher',
     template_version: VOUCHER_TEMPLATE_VERSION,
-    fields: fields as unknown as Json,
+    fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     content_sha256: '0'.repeat(64),
     signature_paths: [path],
@@ -583,7 +583,7 @@ async function seedKellerOffer(
     buyer_id: input.kellerId,
     kind: 'purchase_offer',
     template_version: OFFER_TEMPLATE_VERSION,
-    fields: fields as unknown as Json,
+    fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     content_sha256: '0'.repeat(64),
     signature_paths: paths,
@@ -1403,7 +1403,7 @@ async function seedWatchRuns(
         seen_since: seenSince,
         adverts: 0,
         found_count: finds.length,
-        finds: finds as unknown as Json,
+        finds: finds as unknown as NonNullable<Json>,
       };
     });
   if (rows.length === 0) return true;
