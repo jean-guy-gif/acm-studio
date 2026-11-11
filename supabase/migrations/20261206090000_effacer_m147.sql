@@ -13,6 +13,11 @@
 -- `buyers` deux colonnes de moins, `buyer_visit_requests` une de moins. `scheduled_at` reste
 -- (« Confirmer la visite », M147 A). La CLI joue la migration dans une seule transaction.
 
+-- Les suppressions prennent des verrous forts (`buyers`, `buyer_visit_requests`, et les tables que
+-- visent leurs clés étrangères) : si une requête les tient, la migration s'annule au bout de 5 s
+-- plutôt que de mettre la production en file derrière elle ; on la relance (gardien-sql, 11/11).
+set local lock_timeout = '5s';
+
 do $$
 declare
   v_dossiers bigint := (select count(*) from public.address_dossiers);

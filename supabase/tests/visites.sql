@@ -111,11 +111,18 @@ select pg_temp.expect('§4 les fiches « Vivre ici » d''ACM n''existent plus',
 select pg_temp.expect('§4 ni les fonctions de leurs déclencheurs',
   (to_regprocedure('public.check_address_dossier()') is null
    and to_regprocedure('public.date_living_here_sheet()') is null)::text, 'true');
+-- Lu dans `pg_attribute`, que les droits du rôle ne filtrent pas (gardien-sql, 11/11) ; une colonne
+-- gardée de chaque table sert de contrôle positif.
 select pg_temp.expect('§4 ni les colonnes de l''acquéreur et de la visite',
-  (select count(*)::text from information_schema.columns
-    where table_schema = 'public'
-      and ((table_name = 'buyers' and column_name in ('sector_priorities', 'living_place'))
-        or (table_name = 'buyer_visit_requests' and column_name = 'living_place_trip'))), '0');
+  (select count(*)::text from pg_attribute
+    where not attisdropped and attnum > 0
+      and ((attrelid = 'public.buyers'::regclass and attname in ('sector_priorities', 'living_place'))
+        or (attrelid = 'public.buyer_visit_requests'::regclass and attname = 'living_place_trip'))), '0');
+select pg_temp.expect('§4 les colonnes gardées sont lues (contrôle positif)',
+  (select count(*)::text from pg_attribute
+    where not attisdropped and attnum > 0
+      and ((attrelid = 'public.buyers'::regclass and attname in ('name', 'cities'))
+        or (attrelid = 'public.buyer_visit_requests'::regclass and attname = 'scheduled_at'))), '3');
 select pg_temp.act_as('11911111-0000-0000-0000-0000000000a1');
 select pg_temp.expect('§4 le navigateur n''écrit pas le jour de la visite',
   pg_temp.attempt($$update public.buyer_visit_requests set scheduled_at = now()$$), 'refus');
