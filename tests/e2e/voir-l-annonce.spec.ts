@@ -87,7 +87,7 @@ test('vérifier les annonces avant le rendez-vous, puis voir l’annonce au Live
         const copy = page.getByTestId('live-listing-copy');
         await expect(copy).toBeVisible({ timeout: 30_000 });
         await expect(copy.getByTestId('live-listing-price')).toContainText('€');
-        await expect(copy).toContainText('Relevé sur');
+        await expect(copy).toContainText('Relevé le');
         const text = (await copy.textContent()) ?? '';
         for (const title of TITLES) expect(text).not.toContain(title);
         expect(text).not.toContain('demonstration.invalid');

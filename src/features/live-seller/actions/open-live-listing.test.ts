@@ -7,6 +7,7 @@ const TRAP_TITLE = 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas';
 
 const state = vi.hoisted(() => ({
   revealed: true,
+  serious: 'yes',
   demo: false,
   competitor: null as Record<string, unknown> | null,
 }));
@@ -44,9 +45,10 @@ vi.mock('@/features/live-seller/services/load-live-presentation', () => ({
           id: 'c-1',
           title: TRAP_TITLE,
           listingUrl: URL,
+          priceReveal: { currentPrice: 740_000 },
           photoUrls: ['https://photos.example.com/now.jpg'],
           response: state.revealed
-            ? { seller_estimated_listing_price: 700_000, seller_serious_competitor: 'yes' }
+            ? { seller_estimated_listing_price: 700_000, seller_serious_competitor: state.serious }
             : null,
         },
       ],
@@ -59,12 +61,12 @@ import { openLiveListing } from '@/features/live-seller/actions/open-live-listin
 beforeEach(() => {
   server.reset();
   state.revealed = true;
+  state.serious = 'yes';
   state.demo = false;
   state.competitor = {
     listing_url: URL,
     listing_gone_at: null,
     listing_withdrawn: false,
-    updated_at: '2026-11-01T00:00:00Z',
     price: 740_000,
     photo_urls: [],
     surface_area: 135,
@@ -84,6 +86,21 @@ describe('« Voir l’annonce » au Live', () => {
     state.revealed = false;
     expect(await openLiveListing('p-1', 'c-1')).toEqual({ ok: false, error: 'not_revealed' });
     expect(server.calls.some((call) => call.method === 'from')).toBe(false);
+  });
+
+  it('un « Non », même dit après la révélation : refusé au serveur, rien lu', async () => {
+    state.serious = 'no';
+    expect(await openLiveListing('p-1', 'c-1')).toEqual({ ok: false, error: 'not_revealed' });
+    expect(server.calls.some((call) => call.method === 'from')).toBe(false);
+  });
+
+  it('retirée dès l’import : la copie, sans date de retrait', async () => {
+    state.competitor = { ...state.competitor, listing_withdrawn: true };
+    expect(await openLiveListing('p-1', 'c-1')).toMatchObject({
+      ok: true,
+      kind: 'copy',
+      copy: { gone: true, goneSince: null },
+    });
   });
 
   it('un concurrent qui n’est pas au Live : refusé', async () => {
@@ -119,7 +136,7 @@ describe('« Voir l’annonce » au Live', () => {
     expect(await openLiveListing('p-1', 'c-1')).toMatchObject({
       ok: true,
       kind: 'copy',
-      copy: { goneSince: null },
+      copy: { gone: false, goneSince: null },
     });
   });
 

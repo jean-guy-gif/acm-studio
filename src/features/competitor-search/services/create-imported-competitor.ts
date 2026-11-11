@@ -60,8 +60,8 @@ export async function createImportedCompetitor(options: {
   if (created.status === 'failed') {
     return { ok: false, error: GENERIC_ERROR };
   }
-  // Mission 152 — la copie de l'annonce telle qu'elle vient d'être lue, une fois (texte compris,
-  // pour le conseiller seul) ; un concurrent déjà là garde la sienne.
+  // Mission 152 — la copie de l'annonce telle qu'elle vient d'être lue, une fois, pour prouver le
+  // prix (jamais le texte de l'annonce) ; un concurrent déjà là garde la sienne.
   if (created.status === 'created' && created.id) {
     await writeListingCopy({
       agencyId,

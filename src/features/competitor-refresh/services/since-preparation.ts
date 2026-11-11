@@ -17,6 +17,8 @@ export type SincePreparationCompetitor = {
   observations: { observed_on: string; price: number }[];
   // L'annonce a-t-elle été relue le jour de la dernière vérification ?
   readOnCheck: boolean | null;
+  // Montré au vendeur pendant le Live (M110) : sinon, « le vendeur verra » ne se dit pas.
+  shownAtLive: boolean;
 };
 
 export type SincePreparationChange =
@@ -29,6 +31,7 @@ export type SincePreparationChange =
       // L'écart en % du prix d'avant, au dixième.
       percent: number;
       on: string | null;
+      shownAtLive: boolean;
     }
   | { kind: 'gone'; id: string; label: string; on: string | null };
 
@@ -103,6 +106,7 @@ export function sincePreparation(
         to: competitor.price,
         percent: Math.round(((competitor.price - from) / from) * 1000) / 10,
         on: changedOn(observations, competitor.price),
+        shownAtLive: competitor.shownAtLive,
       });
     } else {
       unchanged += 1;

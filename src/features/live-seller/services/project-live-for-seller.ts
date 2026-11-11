@@ -145,7 +145,13 @@ export function projectComparableForSeller(
     priceReveal: entry.priceReveal,
     priceHistory: durationRevealed ? entry.priceHistory : null,
     marketDuration: durationRevealed ? entry.marketDuration : null,
-    listing: entry.listingUrl ? (entry.listingGone ? 'gone' : 'online') : null,
+    // Jamais pour un « Non », même dit après la révélation (fiche 1.2) : rien à montrer.
+    listing:
+      entry.listingUrl && entry.response?.seller_serious_competitor !== 'no'
+        ? entry.listingGone
+          ? 'gone'
+          : 'online'
+        : null,
   };
 }
 

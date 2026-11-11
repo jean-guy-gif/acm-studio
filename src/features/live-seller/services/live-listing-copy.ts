@@ -16,7 +16,9 @@ import {
 // ni l'exclusivité (M83, M107). Pur.
 
 export type LiveListingCopy = {
-  // L'annonce n'est plus en ligne depuis ce jour (preuve M103), sinon null.
+  // L'annonce n'est plus en ligne (preuve M103) ; depuis ce jour, quand la relecture l'a daté.
+  // Retirée dès l'import, aucune date : jamais une date qui n'est pas celle du retrait.
+  gone: boolean;
   goneSince: string | null;
   // Le portail de l'annonce, nommé (« SeLoger »), sinon null.
   portal: string | null;
@@ -24,6 +26,9 @@ export type LiveListingCopy = {
   recordedOn: string | null;
   // Vrai seulement quand la copie de l'import existe : « à l'import » se dit alors.
   atImport: boolean;
+  // Le prix relevé ce jour-là (la copie, sinon le premier relevé).
+  recordedPrice: number | null;
+  // Le prix que le vendeur vient de voir révélé.
   price: number;
   // La dernière relecture, si elle est plus récente que le relevé.
   lastCheck: { on: string; price: number } | null;
@@ -76,6 +81,7 @@ export function buildLiveListingCopy(input: {
   observations: ListingObservation[];
   entry: LiveListingEntryFacts;
   portal: string | null;
+  gone: boolean;
   goneAt: string | null;
   durationRevealed: boolean;
 }): LiveListingCopy {
@@ -86,6 +92,11 @@ export function buildLiveListingCopy(input: {
   const facts = copy ? readListingCopyFacts(copy.facts) : null;
   const copyPhotos = copy ? readListingCopyPhotos(copy.photo_urls) : [];
   const recordedOn = copy ? day(copy.captured_at) : (observations[0]?.observed_on ?? null);
+  const recordedPrice = copy
+    ? Number(copy.price)
+    : observations[0]
+      ? Number(observations[0].price)
+      : null;
   const last = observations.at(-1) ?? null;
   const lastCheck =
     last && recordedOn && last.observed_on > recordedOn
@@ -106,11 +117,13 @@ export function buildLiveListingCopy(input: {
   }
 
   return {
-    goneSince: input.goneAt ? day(input.goneAt) : null,
+    gone: input.gone,
+    goneSince: input.gone && input.goneAt ? day(input.goneAt) : null,
     portal: input.portal,
     recordedOn,
     atImport: copy != null,
-    price: lastCheck?.price ?? entry.price,
+    recordedPrice,
+    price: entry.price,
     lastCheck,
     drop,
     photoUrls: copyPhotos.length > 0 ? copyPhotos : entry.photoUrls,

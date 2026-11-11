@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { getComparables } from '@/features/comparables/queries/get-comparables';
@@ -41,6 +42,10 @@ function parseInitialIndex(raw: string | undefined): number | null {
   const parsed = Number.parseInt(raw ?? '', 10);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
+
+// Mission 152 — « Voir l'annonce » ouvre le portail d'un concurrent : il ne reçoit pas l'adresse
+// du Live (le dossier) comme page d'origine.
+export const metadata: Metadata = { referrer: 'no-referrer' };
 
 export default async function LiveProjectPage({ params, searchParams }: LivePageProps) {
   const { projectId } = await params;

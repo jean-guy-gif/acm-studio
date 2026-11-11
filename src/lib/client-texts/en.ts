@@ -469,13 +469,16 @@ export const ENGLISH_TEXTS: ClientTexts = {
       title: 'The listing as it was recorded',
       close: 'Close',
       listed: 'Asking price',
-      recorded: (portal, day, atImport) =>
-        `Recorded${portal ? ` on ${portal}` : ''} on ${day}${atImport ? ' when imported' : ''}`,
+      recorded: (portal, day, atImport, price) =>
+        `Recorded${portal ? ` on ${portal}` : ''} on ${day}${atImport ? ' when imported' : ''}${price ? `: ${price}` : ''}`,
       recordedAsIs: 'As recorded',
       lastCheck: (day, price, unchanged) =>
         `Checked again on ${day}: ${price}${unchanged ? ', unchanged' : ''}`,
       drop: (from, to, day) => `A known price reduction: ${from} → ${to} on ${day}`,
-      gone: (day) => `The listing has been offline since ${day}: the recorded copy above remains.`,
+      gone: (day) =>
+        day
+          ? `The listing has been offline since ${day}: the recorded copy above remains.`
+          : 'The listing is no longer online: the recorded copy above remains.',
       bedrooms: (count) => `${count} bedroom${count > 1 ? 's' : ''}`,
       land: (area) => `Land ${area}`,
       dpe: (rating) => `EPC ${rating}`,

@@ -831,11 +831,16 @@ export type LiveTexts = {
     title: string;
     close: string;
     listed: string;
-    recorded: (portal: string | null, day: string, atImport: boolean) => string;
+    recorded: (
+      portal: string | null,
+      day: string,
+      atImport: boolean,
+      price: string | null,
+    ) => string;
     recordedAsIs: string;
     lastCheck: (day: string, price: string, unchanged: boolean) => string;
     drop: (from: string, to: string, day: string) => string;
-    gone: (day: string) => string;
+    gone: (day: string | null) => string;
     bedrooms: (count: number) => string;
     land: (area: string) => string;
     dpe: (rating: string) => string;

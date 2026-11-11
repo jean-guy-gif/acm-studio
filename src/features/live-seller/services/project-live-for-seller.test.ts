@@ -101,6 +101,33 @@ describe('projectComparableForSeller — liste d’autorisation (§2.2)', () => 
     }
   });
 
+  // Mission 152 — « Voir l'annonce » : un état seulement (en ligne, retirée, aucune), jamais le
+  // lien ; jamais avant la révélation (le manifeste neutre ci-dessus ne le porte pas), jamais pour
+  // un « Non ».
+  it('après la révélation, l’état de l’annonce seul, jamais son adresse ; rien pour un « Non »', () => {
+    const answered = buildLive(true);
+    const authorized = answered.comparables.find(isComparableAuthorized)!;
+    const withListing = {
+      ...authorized,
+      listingUrl: 'https://www.seloger.com/annonces/achat/maison/vence-06/123456.htm',
+      listingGone: false,
+    };
+    const online = projectComparableForSeller(withListing);
+    expect(online).toMatchObject({ authorized: true, listing: 'online' });
+    expect(JSON.stringify(online)).not.toContain('seloger.com');
+    expect(projectComparableForSeller({ ...withListing, listingGone: true })).toMatchObject({
+      listing: 'gone',
+    });
+    expect(projectComparableForSeller({ ...withListing, listingUrl: null })).toMatchObject({
+      listing: null,
+    });
+    const rejected = {
+      ...withListing,
+      response: { ...withListing.response!, seller_serious_competitor: 'no' as const },
+    };
+    expect(projectComparableForSeller(rejected)).toMatchObject({ listing: null });
+  });
+
   it('AUTORISATION PAR CONCURRENT, pas par séance : le prix du 1 voyage, celui du 2 non', () => {
     // Concurrent autorisé (estimation persistée) et concurrent neutre (aucune) dans la
     // même séance : la projection distingue les deux — c'est ce qui sépare la règle

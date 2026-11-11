@@ -4,6 +4,7 @@ import {
   LISTING_PORTAL_LABELS,
   extractListingKey,
 } from '@/features/comparable-import/utils/extract-listing-key';
+import { DEMO_PORTAL } from '@/features/demo/constants';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import {
   buildLiveListingCopy,
@@ -39,13 +40,16 @@ export async function openLiveListing(
   const presentation = await loadLivePresentation(projectId, 'reveal');
   const entry = presentation?.live?.comparables.find((item) => item.id === comparableId);
   if (!presentation?.live || !entry) return { ok: false, error: 'unavailable' };
-  if (!isComparableAuthorized(entry)) return { ok: false, error: 'not_revealed' };
+  // Le prix dévoilé, et jamais pour un « Non », même dit après la révélation (fiche 1.2).
+  if (!isComparableAuthorized(entry) || entry.response?.seller_serious_competitor === 'no') {
+    return { ok: false, error: 'not_revealed' };
+  }
 
   const supabase = await createClient();
   const { data: competitor } = await supabase
     .from('comparables')
     .select(
-      'listing_url, listing_gone_at, listing_withdrawn, updated_at, price, photo_urls, surface_area, land_area, rooms_count, bedrooms_count, energy_rating, outdoor_spaces, parking_types',
+      'listing_url, listing_gone_at, listing_withdrawn, price, photo_urls, surface_area, land_area, rooms_count, bedrooms_count, energy_rating, outdoor_spaces, parking_types',
     )
     .eq('id', comparableId)
     .eq('project_id', projectId)
@@ -85,7 +89,7 @@ export async function openLiveListing(
       copy: copy ?? null,
       observations: observations ?? [],
       entry: {
-        price: Number(competitor.price),
+        price: Number(entry.priceReveal.currentPrice ?? competitor.price),
         photoUrls: entry.photoUrls,
         surfaceArea: competitor.surface_area,
         landArea: competitor.land_area,
@@ -95,10 +99,15 @@ export async function openLiveListing(
         outdoorSpaces: competitor.outdoor_spaces ?? [],
         parkingTypes: competitor.parking_types ?? [],
       },
-      portal: identity ? (LISTING_PORTAL_LABELS[identity.portal] ?? null) : null,
-      // Retirée à l'import (M103) : sans date propre, le jour de la dernière écriture de la fiche.
-      goneAt:
-        competitor.listing_gone_at ?? (competitor.listing_withdrawn ? competitor.updated_at : null),
+      // Le portail nommé ; celui de la démonstration ne se nomme pas (« Petites annonces » ne se
+      // traduit pas, M140).
+      portal:
+        identity && identity.portal !== DEMO_PORTAL
+          ? (LISTING_PORTAL_LABELS[identity.portal] ?? null)
+          : null,
+      gone,
+      // Seule une relecture date le retrait ; retirée dès l'import (M103), aucune date.
+      goneAt: competitor.listing_gone_at,
       durationRevealed: isDurationAuthorized(entry, presentation.live.direct === true),
     }),
   };

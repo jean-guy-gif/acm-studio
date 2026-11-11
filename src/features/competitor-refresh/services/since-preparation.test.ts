@@ -19,6 +19,7 @@ const base: SincePreparationCompetitor = {
     { observed_on: '2026-11-11', price: 715_000 },
   ],
   readOnCheck: true,
+  shownAtLive: true,
 };
 
 describe('« Depuis la préparation » (mission 152)', () => {
@@ -33,6 +34,7 @@ describe('« Depuis la préparation » (mission 152)', () => {
         to: 715_000,
         percent: -4,
         on: '2026-11-11',
+        shownAtLive: true,
       },
     ]);
     expect(since).toMatchObject({ stale: false, unchanged: 0, read: 1, unread: 0, withListing: 1 });

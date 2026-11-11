@@ -76,9 +76,10 @@ export async function getSincePreparation(
         }),
         price: Number(comparable.price),
         hasListing: identities.has(comparable.id),
-        goneAt:
-          comparable.listing_gone_at ??
-          (comparable.listing_withdrawn ? comparable.updated_at : null),
+        // Retirée DEPUIS la préparation, constaté par une relecture (M103) ; une annonce retirée dès
+        // l'import a déjà eu son avertissement à la réintégration, ce n'est pas un changement.
+        goneAt: comparable.listing_gone_at,
+        shownAtLive: comparable.excluded_from_live !== true,
         recordedPrice: copyPrice.get(comparable.id) ?? null,
         observations: identity
           ? (observations.data ?? [])

@@ -76,7 +76,7 @@ export function LiveListingButton({ entry }: { entry: AuthorizedSellerComparable
         className={`${navBtn} self-start`}
         data-testid="live-listing-open"
       >
-        {busy ? t.opening : opensTab ? `${t.open} ↗` : t.open}
+        {busy ? t.opening : t.open}
       </button>
       {failed ? (
         <p role="alert" className={errorText}>
@@ -165,7 +165,12 @@ function LiveListingCopyView({
               <ul className="flex flex-col gap-1 text-sm text-zinc-600 stage:text-white/75">
                 <li>
                   {copy.recordedOn
-                    ? t.recorded(copy.portal, day(copy.recordedOn), copy.atImport)
+                    ? t.recorded(
+                        copy.portal,
+                        day(copy.recordedOn),
+                        copy.atImport,
+                        copy.recordedPrice != null ? euro(copy.recordedPrice) : null,
+                      )
                     : t.recordedAsIs}
                 </li>
                 {copy.lastCheck ? (
@@ -194,9 +199,9 @@ function LiveListingCopyView({
                 ))}
               </ul>
             ) : null}
-            {copy.goneSince ? (
+            {copy.gone ? (
               <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 stage:border-amber-300/30 stage:bg-amber-400/10 stage:text-amber-200">
-                {t.gone(day(copy.goneSince))}
+                {t.gone(copy.goneSince ? day(copy.goneSince) : null)}
               </p>
             ) : null}
           </div>

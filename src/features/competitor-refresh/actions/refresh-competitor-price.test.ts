@@ -47,7 +47,10 @@ vi.mock('@/features/comparable-import/services/record-listing-observation', () =
   },
 }));
 
-import { refreshCompetitorPrice } from '@/features/competitor-refresh/actions/refresh-competitor-price';
+import {
+  finishListingsCheck,
+  refreshCompetitorPrice,
+} from '@/features/competitor-refresh/actions/refresh-competitor-price';
 import { listingPayload } from '@/features/competitor-search/services/listing-payload';
 
 const PROJECT = '33333333-3333-4333-8333-333333333333';
@@ -155,6 +158,21 @@ describe('relire le prix d’un concurrent retenu (mission 105)', () => {
     expect(
       await refreshCompetitorPrice(PROJECT, COMPETITOR, listingPayload(URL, listingPage(1), null)),
     ).toEqual({ status: 'unreadable' });
+    expect(server.writes()).toEqual([]);
+  });
+
+  it('« Vérifier les annonces » se date sur un dossier prêt, jamais après le début du Live ni archivé', async () => {
+    state.status = 'ready_for_meeting';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: true });
+    expect(updates()).toHaveLength(1);
+    // Jamais `updated_at` : « ce qui dort » et l'ordre des listes ne bougent pas.
+    expect(Object.keys(updates()[0] as object)).toEqual(['listings_checked_at']);
+    server.reset();
+    state.liveStartedAt = '2026-11-11T10:00:00Z';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: false });
+    state.liveStartedAt = null;
+    state.status = 'archived';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: false });
     expect(server.writes()).toEqual([]);
   });
 });

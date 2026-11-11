@@ -35,14 +35,17 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
       observations,
       entry,
       portal: 'SeLoger',
+      gone: true,
       goneAt: '2026-11-08T09:00:00Z',
       durationRevealed: true,
     });
     expect(copy).toMatchObject({
+      gone: true,
       goneSince: '2026-11-08',
       portal: 'SeLoger',
       recordedOn: '2026-10-21',
       atImport: true,
+      recordedPrice: 740_000,
       price: 740_000,
       lastCheck: { on: '2026-11-10', price: 740_000 },
       drop: { from: 760_000, to: 740_000, on: '2026-10-02' },
@@ -59,6 +62,7 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
       observations,
       entry,
       portal: null,
+      gone: false,
       goneAt: null,
       durationRevealed: false,
     });
@@ -71,6 +75,7 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
       observations,
       entry,
       portal: 'SeLoger',
+      gone: false,
       goneAt: null,
       durationRevealed: false,
     });
@@ -97,6 +102,7 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
       observations: [],
       entry,
       portal: 'SeLoger',
+      gone: false,
       goneAt: null,
       durationRevealed: true,
     });
@@ -105,6 +111,32 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
     expect(shown).not.toContain('Lilas');
     expect(shown).not.toContain('http://');
     expect(Object.keys(copy)).not.toContain('listingUrl');
+  });
+
+  it('retirée dès l’import : aucune date, jamais une date qui ne serait pas celle du retrait', () => {
+    const copy = buildLiveListingCopy({
+      copy: null,
+      observations,
+      entry,
+      portal: null,
+      gone: true,
+      goneAt: null,
+      durationRevealed: false,
+    });
+    expect(copy).toMatchObject({ gone: true, goneSince: null });
+  });
+
+  it('le gros prix est celui que le vendeur vient de voir, le prix relevé reste sur sa ligne', () => {
+    const copy = buildLiveListingCopy({
+      copy: { captured_at: '2026-10-21T08:00:00Z', price: 760_000, photo_urls: [], facts: {} },
+      observations: [],
+      entry,
+      portal: null,
+      gone: true,
+      goneAt: null,
+      durationRevealed: false,
+    });
+    expect(copy).toMatchObject({ price: 740_000, recordedPrice: 760_000, lastCheck: null });
   });
 
   it('n’ouvre qu’une adresse http(s)', () => {

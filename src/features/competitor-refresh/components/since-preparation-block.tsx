@@ -62,6 +62,12 @@ export function SincePreparationBlock({
         setMissingExtension(true);
         return;
       }
+      // Rien de lu (extension sans accès, portails muets) : la vérification n'est pas datée, le
+      // rappel reste.
+      if (outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'unreadable')) {
+        setMessage('Aucune annonce n’a pu être relue : réessayez dans un instant.');
+        return;
+      }
       const done = await finishListingsCheck(projectId);
       if (!done.ok) setMessage('La vérification n’a pas pu être enregistrée : réessayez.');
       router.refresh();
@@ -179,8 +185,8 @@ function ChangeLine({ projectId, change }: { projectId: string; change: SincePre
           {formatEuro(change.from)} → <b>{formatEuro(change.to)}</b> (
           {change.percent > 0 ? '+' : ''}
           {formatPercent(change.percent)})
-          {change.on ? `, constaté ${formatRelativeDay(change.on)}` : ''} · au rendez-vous, le
-          vendeur verra {formatEuro(change.to)}
+          {change.on ? `, constaté ${formatRelativeDay(change.on)}` : ''}
+          {change.shownAtLive ? ` · au rendez-vous, le vendeur verra ${formatEuro(change.to)}` : ''}
         </span>
         <Link
           href={`/builder/${projectId}/comparables/${change.id}/edit`}
