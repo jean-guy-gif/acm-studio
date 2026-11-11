@@ -49,11 +49,14 @@ export function LivePageDirect({ entry }: { entry: SellerComparable }) {
         <div className={answerColumn}>
           {entry.authorized ? (
             <div className={`${panel} live-reveal-pop flex flex-col gap-3`} data-direct-price>
-              <div>
-                <div className={statLabel}>{texts.live.priceReveal.listed}</div>
-                <div className={revealValue}>
-                  {formatEuro(entry.priceReveal.currentPrice, { language })}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className={statLabel}>{texts.live.priceReveal.listed}</div>
+                  <div className={revealValue}>
+                    {formatEuro(entry.priceReveal.currentPrice, { language })}
+                  </div>
                 </div>
+                <LiveListingButton entry={entry} />
               </div>
               {entry.priceReveal.pricePerSquareMeter != null ? (
                 <div>
@@ -70,7 +73,6 @@ export function LivePageDirect({ entry }: { entry: SellerComparable }) {
                   estimatedDays={null}
                 />
               ) : null}
-              <LiveListingButton entry={entry} />
             </div>
           ) : (
             <div className={`${panel} flex flex-col gap-2`} aria-busy="true">

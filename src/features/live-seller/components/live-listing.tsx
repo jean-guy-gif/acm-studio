@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { openLiveListing } from '@/features/live-seller/actions/open-live-listing';
@@ -26,7 +27,14 @@ import { formatSquareMeters, formatDay, formatEuro } from '@/lib/format';
 // aucun portail réel (M114) —, la copie enregistrée s'ouvre en couche, comme « Revoir » (M113) :
 // rien n'est écrit, l'adresse du Live ne change pas, les flèches sont suspendues. En contour : le
 // seul plein reste « Valider et continuer » (M146).
-export function LiveListingButton({ entry }: { entry: AuthorizedSellerComparable }) {
+export function LiveListingButton({
+  entry,
+  compact = false,
+}: {
+  entry: AuthorizedSellerComparable;
+  // Dans une ligne de texte (le rappel du prix de l'écran de la durée) : un lien, sans cadre.
+  compact?: boolean;
+}) {
   const params = useParams<{ projectId: string }>();
   const isDemo = useDemoMode();
   const { texts } = useLiveTexts();
@@ -68,23 +76,35 @@ export function LiveListingButton({ entry }: { entry: AuthorizedSellerComparable
   };
 
   return (
-    <div className="flex flex-col gap-1">
+    <span className="inline-flex shrink-0 flex-col items-end gap-1">
       <button
         type="button"
         onClick={onClick}
         aria-busy={busy || undefined}
-        className={`${navBtn} self-start`}
+        className={
+          compact
+            ? 'font-medium whitespace-nowrap text-brand-deep underline underline-offset-4 stage:text-white/85'
+            : `${navBtn} px-3 py-1.5 whitespace-nowrap`
+        }
         data-testid="live-listing-open"
       >
         {busy ? t.opening : t.open}
       </button>
       {failed ? (
-        <p role="alert" className={errorText}>
+        <span role="alert" className={`${errorText} max-w-56 text-right`}>
           {t.failed(t.open)}
-        </p>
+        </span>
       ) : null}
-      {copy ? <LiveListingCopyView entry={entry} copy={copy} onClose={close} /> : null}
-    </div>
+      {/* La couche plein écran sort du panneau du prix (son animation le transforme, ce qui
+          enfermerait un élément « fixed ») : elle vit à la racine de la scène, qui porte le thème
+          et la charte de l'agence. */}
+      {copy
+        ? createPortal(
+            <LiveListingCopyView entry={entry} copy={copy} onClose={close} />,
+            document.querySelector('[data-stage]') ?? document.body,
+          )
+        : null}
+    </span>
   );
 }
 

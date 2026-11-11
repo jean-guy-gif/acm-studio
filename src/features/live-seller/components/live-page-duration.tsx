@@ -90,13 +90,13 @@ export function LivePageDuration({
                 <span className={statLabel}>{t.serious}</span>{' '}
                 <b className="font-title text-zinc-900 stage:text-white">{serious}</b>
               </span>
+              <LiveListingButton entry={entry} compact />
             </span>
             <LiveGuessGap
               guess={response?.seller_estimated_listing_price ?? null}
               listedPrice={entry.price}
               variant="inline"
             />
-            <LiveListingButton entry={entry} />
           </div>
           <LiveFeatureComparison items={entry.featureComparison} narrow />
         </div>
