@@ -516,6 +516,16 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   joue par groupes de moins de 8 minutes (démo 5,9 min ; parcours 3,1 ; bienvenue, Live tablette,
   présentation directe, confirmer la visite et photos de la démo ensemble 10,4, trop long ; langues
   2,4 ; Live d'un coup d'œil et Live sans trou 6,4). Relecteur : 2,5 min.
+- 11/11 · M152 A · Un bouton ajouté sur un écran du Live se mesure en 1280 × 720 aussi : le test
+  `demo` l'a trouvé (« + Ajouter un commentaire » passé sous la barre du bas), pas le test de la
+  mission, joué en 1280 × 800 ; une place sur une ligne existante plutôt qu'une ligne de plus. Le
+  panneau du prix s'anime avec `transform` (`both`) : un élément `fixed` qu'il contient reste
+  enfermé dedans, la couche passe par un portail vers la racine `[data-stage]`. Un test qui ne
+  remet la démo à zéro que si elle est vide rejoue sur l'état laissé par son échec : remettre à
+  zéro par l'écran avant le second passage, sinon l'aléa et le défaut se confondent. Les relevés
+  d'annonce sont communs à l'agence : une date de constat peut venir d'un autre dossier (« constaté
+  il y a 5 jours ») ; un test n'attend pas « aujourd'hui ». Durées : e2e complet ≈ 25 min par
+  groupes, relecteur 4 min puis 0,5 min sur le delta.
 
 ## La base
 
@@ -588,6 +598,14 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   d'une table supprimée y reste dans les messages (16 lignes du 07/11), sans son contenu, jusqu'à la
   purge des 90 jours. Durées : architecte 1,7 min, gardien-sql 3,6 min, relecteur 1,6 min, e2e
   complet 27 min par groupes.
+- 11/11 · M152 A · Le fake Supabase des tests (`fakeSupabase`) ne distingue pas deux requêtes
+  lancées ensemble (`Promise.all`) : la réponse suit le dernier `from` ; deux lectures qui se
+  suivent dans une action testée se font l'une après l'autre. Une date posée par le navigateur et
+  lue pour un rappel (`listings_checked_at`) se fait poser par la base (déclencheur), sinon une date
+  dans l'avenir cache le rappel (gardien-sql). Un `cron.job` se lit en `reset role` dans un test SQL
+  joué sous `service_role`. Un retrait sans date propre (`listing_withdrawn`) n'a pas de date :
+  `updated_at` n'est jamais une date de retrait (bloquant du relecteur). Gardien-sql 3 min puis
+  0,7 min sur la correction ; sauvegarde 2,5 min.
 
 ## Les rendus
 
