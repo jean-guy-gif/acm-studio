@@ -47,7 +47,7 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
       atImport: true,
       recordedPrice: 740_000,
       price: 740_000,
-      lastCheck: { on: '2026-11-10', price: 740_000 },
+      lastCheck: { on: '2026-11-10', price: 740_000, unchanged: true },
       drop: { from: 760_000, to: 740_000, on: '2026-10-02' },
       photoUrls: ['https://photos.example.com/1.jpg'],
       surfaceArea: 135,
@@ -126,17 +126,43 @@ describe('« Voir l’annonce » : la copie montrée quand l’annonce n’est p
     expect(copy).toMatchObject({ gone: true, goneSince: null });
   });
 
-  it('le gros prix est celui que le vendeur vient de voir, le prix relevé reste sur sa ligne', () => {
+  it('le gros prix est celui que le vendeur vient de voir ; le prix relevé, une fois la durée révélée', () => {
+    const input = {
+      copy: { captured_at: '2026-10-21T08:00:00Z', price: 760_000, photo_urls: [], facts: {} },
+      observations: [{ observed_on: '2026-11-10', price: 740_000 }],
+      entry,
+      portal: null,
+      gone: true,
+      goneAt: null,
+    };
+    expect(buildLiveListingCopy({ ...input, durationRevealed: true })).toMatchObject({
+      price: 740_000,
+      recordedPrice: 760_000,
+      lastCheck: { on: '2026-11-10', price: 740_000, unchanged: false },
+    });
+  });
+
+  it('M95 — avant la devinette de durée, aucun prix d’avant : ni relevé, ni relecture qui diffère', () => {
     const copy = buildLiveListingCopy({
       copy: { captured_at: '2026-10-21T08:00:00Z', price: 760_000, photo_urls: [], facts: {} },
-      observations: [],
+      observations: [
+        { observed_on: '2026-10-25', price: 750_000 },
+        { observed_on: '2026-11-10', price: 760_000 },
+      ],
       entry,
       portal: null,
       gone: true,
       goneAt: null,
       durationRevealed: false,
     });
-    expect(copy).toMatchObject({ price: 740_000, recordedPrice: 760_000, lastCheck: null });
+    expect(copy).toMatchObject({
+      price: 740_000,
+      recordedPrice: null,
+      lastCheck: null,
+      drop: null,
+    });
+    expect(JSON.stringify(copy)).not.toContain('760000');
+    expect(JSON.stringify(copy)).not.toContain('750000');
   });
 
   it('n’ouvre qu’une adresse http(s)', () => {

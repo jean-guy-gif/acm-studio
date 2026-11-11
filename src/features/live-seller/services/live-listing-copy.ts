@@ -30,8 +30,8 @@ export type LiveListingCopy = {
   recordedPrice: number | null;
   // Le prix que le vendeur vient de voir révélé.
   price: number;
-  // La dernière relecture, si elle est plus récente que le relevé.
-  lastCheck: { on: string; price: number } | null;
+  // La dernière relecture, si elle est plus récente que le relevé ; `unchanged` : au prix relevé.
+  lastCheck: { on: string; price: number; unchanged: boolean } | null;
   // La dernière baisse connue — seulement quand la durée a été révélée (M95).
   drop: { from: number; to: number; on: string } | null;
   photoUrls: string[];
@@ -98,9 +98,22 @@ export function buildLiveListingCopy(input: {
       ? Number(observations[0].price)
       : null;
   const last = observations.at(-1) ?? null;
-  const lastCheck =
+  const checked =
     last && recordedOn && last.observed_on > recordedOn
       ? { on: last.observed_on, price: Number(last.price) }
+      : null;
+  // M95 — tant que la durée n'est pas révélée, aucun prix d'avant ne se montre : un prix relevé
+  // ou relu qui diffère du prix révélé dirait la baisse avant la devinette de durée.
+  const same = (value: number | null) =>
+    value != null && Math.round(value) === Math.round(entry.price);
+  const shownRecorded = input.durationRevealed || same(recordedPrice) ? recordedPrice : null;
+  const lastCheck =
+    checked && (input.durationRevealed || same(checked.price))
+      ? {
+          ...checked,
+          unchanged:
+            recordedPrice != null && Math.round(checked.price) === Math.round(recordedPrice),
+        }
       : null;
 
   let drop: LiveListingCopy['drop'] = null;
@@ -122,7 +135,7 @@ export function buildLiveListingCopy(input: {
     portal: input.portal,
     recordedOn,
     atImport: copy != null,
-    recordedPrice,
+    recordedPrice: shownRecorded,
     price: entry.price,
     lastCheck,
     drop,

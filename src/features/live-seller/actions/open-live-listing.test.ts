@@ -119,12 +119,16 @@ describe('« Voir l’annonce » au Live', () => {
       ok: true,
       kind: 'copy',
       copy: {
+        gone: true,
         goneSince: '2026-11-08',
         portal: 'SeLoger',
         recordedOn: '2026-10-21',
         price: 740_000,
+        // M95 — la durée n'est pas devinée : le prix relevé (760 000 €) ne part pas.
+        recordedPrice: null,
       },
     });
+    expect(JSON.stringify(result)).not.toContain('760000');
     const shown = JSON.stringify(result);
     expect(shown).not.toContain('seloger.com');
     expect(shown).not.toContain('Dupont');

@@ -178,7 +178,7 @@ function LiveListingCopyView({
                     {t.lastCheck(
                       day(copy.lastCheck.on),
                       euro(copy.lastCheck.price),
-                      copy.drop == null || copy.drop.on < copy.lastCheck.on,
+                      copy.lastCheck.unchanged,
                     )}
                   </li>
                 ) : null}
