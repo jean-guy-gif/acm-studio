@@ -11,6 +11,8 @@ import { getAgency } from '@/lib/auth/get-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { LiveComparativeShell } from '@/features/live-seller/components/live-comparative-shell';
+import { DemoModeProvider } from '@/features/demo/components/demo-mode-provider';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { clientLanguage } from '@/lib/client-language';
 import { getPropertyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { liveBuyersReveal } from '@/features/live-seller/services/live-buyers';
@@ -115,31 +117,36 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     getProfile(),
     getConclusion(projectId),
   ]);
-  const [agency, buyers] = profile
+  const [agency, buyers, isDemo] = profile
     ? await Promise.all([
         getAgency(profile.agency_id),
         // Mission 133 — les acquéreurs prêts de l'agence pour ce bien : sous 5, rien ne part vers
         // la scène ; jamais pour un dossier d'exemple.
         project.is_example ? null : getPropertyBuyers(profile.agency_id, projectId, new Date()),
+        // Mission 152 — l'agence de démonstration : « Voir l'annonce » n'ouvre pas d'onglet, ses
+        // annonces ne mènent à aucun portail réel (la donnée, elle, est décidée par l'action).
+        isDemoAgency(profile.agency_id),
       ])
-    : [null, null];
+    : [null, null, false];
 
   return (
-    <LiveComparativeShell
-      projectId={projectId}
-      live={projectedLive}
-      property={presentation.property}
-      projectName={presentation.project.name}
-      advisorRange={advisorRange}
-      initialIndex={initialIndex}
-      rhythm={rhythm}
-      logoLightUrl={branding?.logoLightUrl ?? null}
-      logoDarkUrl={branding?.logoDarkUrl ?? null}
-      agencyName={agency?.name ?? null}
-      hasAgreedPrice={conclusion?.commercializationPrice != null}
-      presentationMode={presentationMode}
-      buyersReveal={liveBuyersReveal(buyers, new Date())}
-      language={clientLanguage(project.language)}
-    />
+    <DemoModeProvider isDemo={isDemo}>
+      <LiveComparativeShell
+        projectId={projectId}
+        live={projectedLive}
+        property={presentation.property}
+        projectName={presentation.project.name}
+        advisorRange={advisorRange}
+        initialIndex={initialIndex}
+        rhythm={rhythm}
+        logoLightUrl={branding?.logoLightUrl ?? null}
+        logoDarkUrl={branding?.logoDarkUrl ?? null}
+        agencyName={agency?.name ?? null}
+        hasAgreedPrice={conclusion?.commercializationPrice != null}
+        presentationMode={presentationMode}
+        buyersReveal={liveBuyersReveal(buyers, new Date())}
+        language={clientLanguage(project.language)}
+      />
+    </DemoModeProvider>
   );
 }

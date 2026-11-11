@@ -399,6 +399,7 @@ export function buildSellerPresentation(input: BuildSellerPresentationInput): Se
       photoUrls,
       source: listingUrl ? 'url' : 'manual',
       listingUrl,
+      listingGone: comparable.listing_gone_at != null || comparable.listing_withdrawn === true,
       isOutlier: outlierIds.has(comparable.id),
       featureComparison: buildComparableFeatureComparison(
         subjectFeatures ?? emptyBundle,

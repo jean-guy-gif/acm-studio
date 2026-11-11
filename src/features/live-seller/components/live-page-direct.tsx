@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 
 import { LiveComparableHeader } from '@/features/live-seller/components/live-comparable-header';
@@ -69,6 +70,7 @@ export function LivePageDirect({ entry }: { entry: SellerComparable }) {
                   estimatedDays={null}
                 />
               ) : null}
+              <LiveListingButton entry={entry} />
             </div>
           ) : (
             <div className={`${panel} flex flex-col gap-2`} aria-busy="true">

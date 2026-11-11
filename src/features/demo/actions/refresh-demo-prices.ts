@@ -4,7 +4,10 @@ import { z } from 'zod';
 
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { finishPriceRefresh } from '@/features/competitor-refresh/actions/refresh-competitor-price';
-import type { PriceCheckOutcome } from '@/features/competitor-refresh/services/price-refresh';
+import {
+  canRefreshListings,
+  type PriceCheckOutcome,
+} from '@/features/competitor-refresh/services/price-refresh';
 import { recordPriceReading } from '@/features/competitor-refresh/services/record-price-reading';
 import { demoDelay } from '@/features/demo/services/demo-delay';
 import { demoImportedData } from '@/features/demo/services/demo-listing-data';
@@ -17,7 +20,8 @@ import { createClient } from '@/lib/supabase/server';
 // relue par l'extension ; le prix « affiché après le rendez-vous » vient du jeu de données, après
 // le délai fixe, et passe par le même service qu'une page lue (`recordPriceReading` : constat
 // daté, prix mis à jour). Une baisse simulée apparaît. Réservé à l'agence de démonstration, sur
-// un dossier conclu (le Suivi) ; sinon rien n'est lu ni écrit.
+// un dossier conclu (le Suivi) ou, depuis la mission 152, en préparation ou prêt avant son Live ;
+// sinon rien n'est lu ni écrit.
 export async function refreshDemoPrices(projectId: string): Promise<PriceCheckOutcome[]> {
   const profile = await getProfile();
   if (!profile || profile.removed_at || !z.uuid().safeParse(projectId).success) return [];
@@ -25,11 +29,22 @@ export async function refreshDemoPrices(projectId: string): Promise<PriceCheckOu
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id, status')
+    .select('id, status, live_started_at')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
-  if (!project || project.status !== 'meeting_completed') return [];
+  // Mission 152 — aussi « Avant le rendez-vous », comme la relecture par l'extension.
+  if (!project) return [];
+  const { count: answers } =
+    project.status === 'meeting_completed' || project.live_started_at != null
+      ? { count: 0 }
+      : await supabase
+          .from('live_seller_responses')
+          .select('id', { count: 'exact', head: true })
+          .eq('project_id', projectId);
+  if (!canRefreshListings(project.status, project.live_started_at != null || (answers ?? 0) > 0)) {
+    return [];
+  }
 
   const { data: competitors } = await supabase
     .from('comparables')

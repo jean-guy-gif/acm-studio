@@ -253,10 +253,19 @@ describe('rien de l’import en attente ne passe côté vendeur', () => {
       join('features', 'live-seller', 'components', 'live-launch-actions.tsx'),
       join('features', 'live-seller', 'queries', 'get-live-launch-info.ts'),
     ];
+    // Mission 152 (Jean-Guy, 11/11) — « Voir l'annonce » : quand l'annonce n'est plus en ligne, la
+    // copie enregistrée le dit au vendeur (« L'annonce n'est plus en ligne depuis le … »), une fois
+    // le prix dévoilé. Ces deux fichiers lisent donc le retrait (M103), et eux seuls ; l'import en
+    // attente et « Importé depuis la recherche » ne passent toujours pas.
+    const listingGone = [
+      join('features', 'live-seller', 'actions', 'open-live-listing.ts'),
+      join('features', 'seller-presentation', 'services', 'build-seller-presentation.ts'),
+    ];
     for (const path of seller.filter((file) => !advisorSide.some((side) => file.endsWith(side)))) {
-      expect(readFileSync(path, 'utf8'), path).not.toMatch(
-        /pending_competitor_imports|pending-imports|imported_from_search|listing_withdrawn|PendingImportsBanner/,
-      );
+      const forbidden = listingGone.some((side) => path.endsWith(side))
+        ? /pending_competitor_imports|pending-imports|imported_from_search|PendingImportsBanner/
+        : /pending_competitor_imports|pending-imports|imported_from_search|listing_withdrawn|PendingImportsBanner/;
+      expect(readFileSync(path, 'utf8'), path).not.toMatch(forbidden);
     }
   });
 });

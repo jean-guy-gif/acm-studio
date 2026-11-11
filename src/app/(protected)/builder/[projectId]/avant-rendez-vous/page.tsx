@@ -88,6 +88,8 @@ import { PositioningStatus } from '@/features/price-positioning/components/posit
 import { RecommendedRangeView } from '@/features/price-positioning/components/recommended-range';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { PendingImportsBanner } from '@/features/competitor-search/components/pending-imports-banner';
+import { SincePreparationBlock } from '@/features/competitor-refresh/components/since-preparation-block';
+import { getSincePreparation } from '@/features/competitor-refresh/queries/get-since-preparation';
 import { getPendingImports } from '@/features/competitor-search/queries/get-pending-imports';
 import { getProject } from '@/features/projects/queries/get-project';
 import { buildSellerPresentation } from '@/features/seller-presentation/services/build-seller-presentation';
@@ -307,6 +309,14 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     launch && !launch.resume.started && retained.length > LIVE_SHORTLIST_SIZE
       ? await getLiveShortlist(projectId)
       : null;
+  // Mission 152 — « Depuis la préparation » : un dossier en préparation ou prêt, Live pas commencé.
+  const sinceShown =
+    (project.status === 'draft' || project.status === 'ready_for_meeting') &&
+    launch != null &&
+    !launch.resume.started;
+  const since = sinceShown
+    ? await getSincePreparation(retained, project.listings_checked_at ?? null)
+    : null;
   const priceOrSurfaceToVerify = competitorsWithPriceOrSurfaceToVerify(retained);
   const priceOrSurfaceLabel = priceOrSurfaceToVerifyLabel(priceOrSurfaceToVerify.length);
   const excludedOutliers = positioning?.dataset.excludedOutlierCount ?? 0;
@@ -387,6 +397,9 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
           {ready ? 'Prêt' : 'Presque prêt'}
         </span>
       </div>
+
+      {/* Mission 152 — ce qui a bougé chez les concurrents depuis la préparation, avant le Live. */}
+      {sinceShown ? <SincePreparationBlock projectId={projectId} since={since} /> : null}
 
       <MarketAndDecision
         market={<MarketGlanceCard glance={glance} />}

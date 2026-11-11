@@ -11,6 +11,7 @@ import type { LivePresentationMode } from '@/features/live-seller/services/prese
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
 import { getProject } from '@/features/projects/queries/get-project';
+import { listingsCheckStale } from '@/features/competitor-refresh/services/since-preparation';
 
 // Mission 89 — ce que la liste du Live dit d'un dossier avant de le lancer : combien de
 // concurrents retenus (aucun = on ne lance pas), et où en est le rendez-vous s'il a commencé.
@@ -34,6 +35,8 @@ export type LiveLaunchInfo = {
   presentationMode: LivePresentationMode;
   // Mission 143 (B4) — la durée estimée, sur le moteur du Live lui-même (M95).
   estimatedMinutes: number;
+  // Mission 152 — les annonces des concurrents retenus n'ont pas été vérifiées depuis 24 h.
+  listingsCheckStale: boolean;
 };
 
 export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchInfo | null> {
@@ -54,9 +57,10 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     getComparables(projectId),
     getPendingImports(projectId),
   ]);
+  const resume = liveResume(pages, projected);
   return {
     competitorCount: projected?.comparables.length ?? 0,
-    resume: liveResume(pages, projected),
+    resume,
     isExample: project?.is_example === true,
     toVerifyCount: competitorsWithPriceOrSurfaceToVerify(comparables).length,
     decisionOutdated: presentation.positioningStatus === 'outdated',
@@ -68,5 +72,14 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     pendingImportCount: pending.length,
     presentationMode: presentation.project.presentationMode,
     estimatedMinutes: estimateLiveMinutes(pages.length),
+    listingsCheckStale: listingsCheckStale({
+      isExample: project?.is_example === true,
+      started: resume.started,
+      withListing: comparables.some(
+        (comparable) => comparable.is_selected && (comparable.listing_url ?? '').trim() !== '',
+      ),
+      checkedAt: project?.listings_checked_at ?? null,
+      now: new Date(),
+    }),
   };
 }

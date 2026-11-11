@@ -14,6 +14,7 @@ import { buyerColumns } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
+import { writeListingCopy } from '@/features/competitor-listing-copy/services/write-listing-copy';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
@@ -1027,6 +1028,25 @@ export async function seedDemoDossier(
       is_selected: true,
     });
     if (inserted.status === 'failed') return failed();
+    // Mission 152 — la copie de l'annonce, comme un import l'écrit, datée de l'import simulé.
+    if (inserted.status === 'created' && inserted.id) {
+      await writeListingCopy({
+        agencyId: closer.agencyId,
+        projectId,
+        comparableId: inserted.id,
+        listingUrl: competitor.data.listingUrl,
+        origin: 'page',
+        capturedAt: new Date(now.getTime() - DEMO_COMPETITORS_AGE_DAYS * 86_400_000),
+        row: {
+          ...input,
+          property_type: competitor.listing.propertyType,
+          floor: competitor.data.floor,
+          floors_count: competitor.data.floorsCount,
+          publication_lower_bound_label: competitor.data.publicationLowerBoundLabel,
+          modified_at: competitor.data.modifiedAt,
+        },
+      });
+    }
   }
   // Mission 134 — les concurrents de la démo sont retenus depuis plus de 14 jours : ils n'appellent
   // plus leurs acquéreurs (seul un bien retenu pendant la démo fait naître sa tâche).
