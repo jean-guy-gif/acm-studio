@@ -82,6 +82,11 @@ export default function ConfidentialitePage() {
               sont extraites.
             </li>
             <li>
+              Les biens retenus pour un acquéreur : ACM Studio garde aussi le texte des annonces
+              trouvées par la recherche, pour le conseiller seul ; il n’est jamais montré à
+              l’acquéreur, et il est effacé au bout de 3 ans.
+            </li>
+            <li>
               Les adresses des biens concurrents : si le conseiller a installé le Localisateur
               Academia (une extension distincte) et y a activé « Partager avec ACM Studio », ACM
               Studio lui transmet l’adresse des annonces des concurrents retenus et conserve ce

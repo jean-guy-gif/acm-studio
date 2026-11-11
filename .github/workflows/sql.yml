@@ -398,6 +398,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/copie_annonce.sql
 
+      # Mission 152 (partie B) — la purge à 3 ans du texte des annonces : sélections d'acquéreur,
+      # résultats payés gardés, texte des concurrents ; fermée au navigateur.
+      - name: Purge du texte des annonces (mission 152 B)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/purge_texte_annonces.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes
