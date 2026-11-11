@@ -580,6 +580,14 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   fonctions qui la citent par `pg_get_functiondef`, filtrées sur `prokind = 'f'` : la fonction
   échoue sur un agrégat). Les 4 fiches « Vivre ici » restantes étaient des clés `listing:` : aucun
   concurrent ne les touchait.
+- 11/11 · M152 · 0 · La migration de suppression : `db push --remote --yes` est passé sans refus de
+  la garde de permissions, cette fois. La base locale était en retard (37 tables contre 50) : la
+  migration n'y a pas été jouée et les types ont été corrigés à la main ; la CI SQL, qui rejoue tout
+  sur une base neuve, a fait la preuve. Le comptage du gardien-sql (une requête valable avant et
+  après) s'est vérifié point par point. Une sauvegarde garde aussi le journal d'erreurs : le nom
+  d'une table supprimée y reste dans les messages (16 lignes du 07/11), sans son contenu, jusqu'à la
+  purge des 90 jours. Durées : architecte 1,7 min, gardien-sql 3,6 min, relecteur 1,6 min, e2e
+  complet 27 min par groupes.
 
 ## Les rendus
 
