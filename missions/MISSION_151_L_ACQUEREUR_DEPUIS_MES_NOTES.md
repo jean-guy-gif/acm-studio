@@ -62,6 +62,15 @@ sert à ranger les biens trouvés, en disant pourquoi.
 4. **Le chef mesure aussi** où Stream Estate dit la copropriété (charges, nombre de lots, étiquette),
    pour le nouveau critère, sur les réponses déjà gardées d'abord, sans appel s'il le peut.
 
+**État de l'étape 0 (11/11)** : le dossier d'essais est écrit par Claude Code (Jean-Guy n'avait ni
+notes ni fiches), inventé, avec ses corrigés commités avant toute mesure (`missions/M151-essais/`) ;
+le script de mesure est prêt et son barème vérifié à blanc. **La mesure n'a pas pu tourner** : AWS
+refuse l'appel (403) — l'utilisateur IAM n'a pas le droit `bedrock-mantle:CreateInference`, seul
+valable pour Claude 5.5 (l'autorisation `bedrock:InvokeModel` de la première version des étapes
+était fausse) ; Paris n'a pas de point d'accès pour ces modèles (l'Irlande, Francfort, Stockholm et
+Milan en ont) ; `ACM_AWS_REGION` porte un point final. Et le profil « EU » inclut Zurich et Londres :
+choix à faire entre ce profil et l'Irlande seule. Étapes corrigées : `M151-etapes-aws.md`.
+
 ## Maquettes
 
 `missions/maquettes/M151-1` à `M151-4` (`.png`, source `M151-generateur.mjs --png`), chacune sur

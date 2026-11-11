@@ -1,5 +1,12 @@
 # M151 — Pour le juriste : les notes d'un conseiller lues par un service d'intelligence artificielle
 
+> **Ne pas envoyer en l'état (11/11).** Le profil « EU » de Claude sur Amazon Bedrock répartit les
+> lectures entre les régions européennes d'AWS, **Zurich (Suisse) et Londres (Royaume-Uni)
+> comprises** : la phrase « les données restent dans l'Union européenne » serait fausse avec ce
+> profil. Le texte sera corrigé d'après le choix de Jean-Guy : le profil EU (« en Europe : Union
+> européenne, Suisse ou Royaume-Uni ») ou l'Irlande seule (« en Irlande, dans l'Union européenne »).
+> Source : https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock (Regions).
+
 Préparé le 10/11/2026, avant le code. La page `/confidentialite`, validée le 07/11, ne change pas
 avant votre accord. La fonction n'est pas mise en production avant cet accord (décision de
 Jean-Guy, 10/11).
