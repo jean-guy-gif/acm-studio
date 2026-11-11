@@ -145,8 +145,9 @@ Mission 152 (partie B) — à 3 h 30, le texte des annonces gardé pour le conse
 (`purge_stale_listing_texts`, tâche `purge-stale-listing-texts`) : un bien d'une sélection
 d'acquéreur perd, 3 ans après sa date dans la sélection, la description, le titre, l'adresse lue sur
 l'annonce et les adresses des photos d'origine ; le résultat payé gardé sur un dossier
-(`stream_estate_results`) part 3 ans après sa dernière mise à jour ; le texte de l'annonce d'un
-concurrent (`comparables.listing_description`) est vidé quand rien ne s'est passé depuis 3 ans.
+(`stream_estate_results`) part 3 ans après sa dernière mise à jour ; le texte et le titre de
+l'annonce d'un concurrent (`comparables.listing_description`, `comparables.title`) sont vidés,
+avec leurs pastilles « À vérifier », quand rien ne s'est passé depuis 3 ans.
 La liste « Ne plus solliciter » n'est jamais purgée.
 Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 

@@ -8,8 +8,10 @@
 --      nouvelle sélection, qui recopie le bien dans une ligne neuve, fait repartir le délai ;
 --   2. le résultat payé d'une recherche gardé sur un dossier (`stream_estate_results`, M105) part
 --      3 ans après sa dernière mise à jour ;
---   3. le texte de l'annonce d'un concurrent (`comparables.listing_description`, M49) est vidé quand
---      rien ne s'est passé depuis 3 ans — la même règle que la copie de l'annonce (M152 A).
+--   3. le texte et le titre de l'annonce d'un concurrent (`comparables.listing_description`, M49 ;
+--      `comparables.title`, « Titre (pour vous seul) », M107, qui cite souvent l'agence ou la rue)
+--      sont vidés quand rien ne s'est passé depuis 3 ans — la même règle que la copie de l'annonce
+--      (M152 A) ; le concurrent se nomme toujours par son libellé neutre.
 -- Ni table ni colonne : compatible avec le code de `main`. Lancée chaque nuit par pg_cron, en
 -- propriétaire ; fermée au navigateur.
 
@@ -51,9 +53,11 @@ as $$
   texts as (
     update public.comparables c
     set listing_description = null,
+        title = null,
         -- Un champ vide ne garde pas sa pastille « À vérifier » (M97).
-        fields_to_verify = array_remove(c.fields_to_verify, 'listing_description')
-    where c.listing_description is not null
+        fields_to_verify = array_remove(
+          array_remove(c.fields_to_verify, 'listing_description'), 'title')
+    where (c.listing_description is not null or c.title is not null)
       and greatest(
             c.created_at,
             c.locator_address_at,

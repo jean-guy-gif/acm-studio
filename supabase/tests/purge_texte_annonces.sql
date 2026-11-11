@@ -4,7 +4,8 @@
 --      une sélection présentée est purgée sans que son déroulé figé change ; un bien récent reste
 --      intact ; un bien ancien sans texte (un mandat) n'est ni touché ni compté ;
 --   §2 un résultat payé gardé depuis plus de 3 ans part, un récent reste ;
---   §3 le texte d'un concurrent sans aucun fait depuis 3 ans est vidé (et sa pastille « À vérifier »),
+--   §3 le texte et le titre d'un concurrent sans aucun fait depuis 3 ans sont vidés (et leurs
+--      pastilles « À vérifier »), un titre seul compris,
 --      dossier dont le Live a commencé, conclu ou archivé, compris ; celui d'un concurrent récent ou
 --      démarché il y a un an reste ; le concurrent lui-même reste ;
 --   §4 une seconde passe ne fait rien ; planifiée chaque nuit, une seule fois ; fermée au navigateur.
@@ -82,11 +83,12 @@ insert into public.stream_estate_results (agency_id, project_id, saved_by, finge
    'récente', '{"portal": {}, "note": {}}', now() - interval '2 years');
 
 insert into public.comparables (id, agency_id, project_id, title, price, surface_area, is_selected, display_order, listing_description, created_at, prospecting_handed_at, fields_to_verify) values
-  ('15baaaaa-2222-0000-0000-000000000001', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000001', 'Ancien', 600000, 120, true, 1, 'Texte ancien', now() - interval '4 years', null, array['price', 'listing_description']),
+  ('15baaaaa-2222-0000-0000-000000000001', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000001', 'Ancien', 600000, 120, true, 1, 'Texte ancien', now() - interval '4 years', null, array['price', 'listing_description', 'title']),
   ('15baaaaa-2222-0000-0000-000000000002', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000001', 'Ancien démarché', 610000, 121, true, 2, 'Texte démarché', now() - interval '4 years', now() - interval '1 year', '{}'),
   ('15baaaaa-2222-0000-0000-000000000003', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000002', 'Récent', 620000, 122, true, 1, 'Texte récent', now() - interval '2 years', null, '{}'),
   ('15baaaaa-2222-0000-0000-000000000004', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000003', 'Live conclu', 630000, 123, true, 1, 'Texte conclu', now() - interval '4 years', null, '{}'),
-  ('15baaaaa-2222-0000-0000-000000000005', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000004', 'Live archivé', 640000, 124, true, 1, 'Texte archivé', now() - interval '4 years', null, '{}');
+  ('15baaaaa-2222-0000-0000-000000000005', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000004', 'Live archivé', 640000, 124, true, 1, 'Texte archivé', now() - interval '4 years', null, '{}'),
+  ('15baaaaa-2222-0000-0000-000000000006', '15baaaaa-0000-0000-0000-000000000000', '15baaaaa-1111-0000-0000-000000000001', 'EXCLUSIVITÉ Agence Dupont', 650000, 125, true, 3, null, now() - interval '4 years', null, '{}');
 -- Deux dossiers dont le Live a commencé (l'ordre et le choix des concurrents figés, M110, M112),
 -- l'un conclu, l'autre archivé : la purge passe quand même (leçon de la migration 20261028).
 update public.projects set live_started_at = now() - interval '4 years', live_ended_at = now() - interval '4 years',
@@ -95,9 +97,9 @@ update public.projects set live_started_at = now() - interval '4 years', status 
   where id = '15baaaaa-1111-0000-0000-000000000004';
 
 -- La purge, jouée comme la tâche de nuit (rôle de la base) : 1 bien de sélection, 1 résultat,
--- 3 concurrents (dont ceux d'un Live conclu et d'un Live archivé).
-select pg_temp.expect('§1-3 la purge touche cinq lignes',
-  (select public.purge_stale_listing_texts()::text), '5');
+-- 4 concurrents (dont ceux d'un Live conclu et d'un Live archivé, et un titre sans texte).
+select pg_temp.expect('§1-3 la purge touche six lignes',
+  (select public.purge_stale_listing_texts()::text), '6');
 
 -- §1
 select pg_temp.expect('§1 le bien ancien n''a plus ni texte, ni titre, ni adresse, ni photos d''origine',
@@ -129,15 +131,19 @@ select pg_temp.expect('§2 seul le résultat récent reste',
     where agency_id = '15baaaaa-0000-0000-0000-000000000000'), 'récente');
 
 -- §3
-select pg_temp.expect('§3 seul le texte du concurrent sans fait depuis 3 ans est vidé',
-  (select string_agg(title || '=' || coalesce(listing_description, 'vide'), ',' order by title)
+select pg_temp.expect('§3 seuls le texte et le titre des concurrents sans fait depuis 3 ans sont vidés',
+  (select string_agg(right(id::text, 1) || '=' || coalesce(title, 'sans titre') || '/'
+                     || coalesce(listing_description, 'sans texte'), ',' order by id)
      from public.comparables where agency_id = '15baaaaa-0000-0000-0000-000000000000'),
-  'Ancien=vide,Ancien démarché=Texte démarché,Live archivé=vide,Live conclu=vide,Récent=Texte récent');
-select pg_temp.expect('§3 le texte vidé perd sa pastille « À vérifier », le reste la garde',
+  '1=sans titre/sans texte,2=Ancien démarché/Texte démarché,3=Récent/Texte récent,4=sans titre/sans texte,5=sans titre/sans texte,6=sans titre/sans texte');
+select pg_temp.expect('§3 un titre seul, sans texte, est vidé aussi',
+  (select coalesce(title, 'sans titre') from public.comparables
+    where id = '15baaaaa-2222-0000-0000-000000000006'), 'sans titre');
+select pg_temp.expect('§3 le texte et le titre vidés perdent leur pastille « À vérifier », le reste la garde',
   (select array_to_string(fields_to_verify, ',') from public.comparables
     where id = '15baaaaa-2222-0000-0000-000000000001'), 'price');
 select pg_temp.expect('§3 les concurrents purgés restent, Live commencé compris',
-  (select count(*)::text from public.comparables where agency_id = '15baaaaa-0000-0000-0000-000000000000'), '5');
+  (select count(*)::text from public.comparables where agency_id = '15baaaaa-0000-0000-0000-000000000000'), '6');
 
 -- §4
 select pg_temp.expect('§4 une seconde passe ne fait rien',
