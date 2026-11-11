@@ -77,7 +77,7 @@ describe('importer deux fois la même annonce', () => {
     });
     expect(
       await insertCompetitor(retried.client as never, 'p1', 'a1', { title: 'x', price: 1 }),
-    ).toEqual({ status: 'created' });
+    ).toEqual({ status: 'created', id: null });
     expect(retried.writes()).toEqual(['insert comparables', 'insert comparables']);
   });
 });
@@ -97,7 +97,7 @@ describe('un concurrent reprend la carte d’une recherche acquéreur', () => {
       price: 300_000,
       listing_url: 'https://www.seloger.com/annonces/achat/maison/mougins-06/26ZEJMLWB13Y.htm',
     });
-    expect(result).toEqual({ status: 'created' });
+    expect(result).toEqual({ status: 'created', id: 'created-1' });
     expect(absorb.calls).toEqual([['a1', 'p1', 'created-1']]);
   });
 

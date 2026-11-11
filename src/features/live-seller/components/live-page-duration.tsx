@@ -8,6 +8,7 @@ import { LiveCommentField } from '@/features/live-seller/components/live-comment
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
   answerColumn,
@@ -95,6 +96,7 @@ export function LivePageDuration({
               listedPrice={entry.price}
               variant="inline"
             />
+            <LiveListingButton entry={entry} />
           </div>
           <LiveFeatureComparison items={entry.featureComparison} narrow />
         </div>

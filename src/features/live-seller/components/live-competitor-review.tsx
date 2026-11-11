@@ -6,6 +6,7 @@ import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveFeatureComparison } from '@/features/live-seller/components/live-feature-comparison';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import { ctaPrimary, statLabel, statValue } from '@/features/live-seller/components/live-stage';
 import { competitorReviewFacts } from '@/features/live-seller/services/competitor-review';
 import type { SellerComparable } from '@/features/live-seller/services/project-live-for-seller';
@@ -104,6 +105,7 @@ export function LiveCompetitorReview({
               guess={entry.response?.seller_estimated_listing_price ?? null}
               listedPrice={facts.price}
             />
+            {entry.authorized ? <LiveListingButton entry={entry} /> : null}
           </div>
         ) : null}
       </div>

@@ -417,6 +417,27 @@ export const FRENCH_TEXTS: ClientTexts = {
       since: 'En vente depuis',
       days: (days) => `${days} jours`,
     },
+    listing: {
+      open: 'Voir l’annonce',
+      opening: 'Ouverture…',
+      failed: (button) => `L’annonce ne s’est pas ouverte — touchez ${button} pour réessayer`,
+      title: 'L’annonce telle qu’elle a été enregistrée',
+      close: 'Fermer',
+      listed: 'Prix affiché',
+      recorded: (portal, day, atImport, price) =>
+        `Relevé${portal ? ` sur ${portal}` : ''} le ${day}${atImport ? ' à l’import' : ''}${price ? `\u00a0: ${price}` : ''}`,
+      recordedAsIs: 'Telle qu’enregistrée',
+      lastCheck: (day, price, unchanged) =>
+        `Revérifié le ${day}\u00a0: ${price}${unchanged ? ', inchangé' : ''}`,
+      drop: (from, to, day) => `Une baisse connue\u00a0: ${from} → ${to} le ${day}`,
+      gone: (day) =>
+        day
+          ? `L’annonce n’est plus en ligne depuis le ${day}\u00a0: il reste la copie enregistrée ci-dessus.`
+          : 'L’annonce n’est plus en ligne\u00a0: il reste la copie enregistrée ci-dessus.',
+      bedrooms: (count) => `${count} chambre${count > 1 ? 's' : ''}`,
+      land: (area) => `Terrain ${area}`,
+      dpe: (rating) => `DPE ${rating}`,
+    },
     buyers: {
       phrase: 'familles cherchent un bien comme le vôtre et sont prêtes à visiter',
       promise: 'Avec votre accord, je les contacte dès cette semaine.',

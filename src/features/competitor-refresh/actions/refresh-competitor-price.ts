@@ -9,7 +9,10 @@ import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { parseListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
 import { isAllowedProtocol } from '@/features/comparable-import/utils/normalize-url';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
-import type { PriceCheckOutcome } from '@/features/competitor-refresh/services/price-refresh';
+import {
+  canRefreshListings,
+  type PriceCheckOutcome,
+} from '@/features/competitor-refresh/services/price-refresh';
 import { recordPriceReading } from '@/features/competitor-refresh/services/record-price-reading';
 import { readListingPayload } from '@/features/competitor-search/services/listing-payload';
 import { emptyPageCode } from '@/features/competitor-search/services/withdrawn-proof';
@@ -28,12 +31,22 @@ async function scope(projectId: string) {
   const supabase = await createClient();
   const { data: project } = await supabase
     .from('projects')
-    .select('id, status')
+    .select('id, status, live_started_at')
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
-  // Le Suivi : un dossier conclu.
-  if (!project || project.status !== 'meeting_completed') return null;
+  if (!project) return null;
+  // Le Suivi : un dossier conclu. Mission 152 — et « Avant le rendez-vous » : un dossier en
+  // préparation ou prêt, tant que son Live n'a pas commencé (heure de début ou réponse du vendeur).
+  let liveStarted = project.live_started_at != null;
+  if (!liveStarted && project.status !== 'meeting_completed') {
+    const { count } = await supabase
+      .from('live_seller_responses')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', projectId);
+    liveStarted = (count ?? 0) > 0;
+  }
+  if (!canRefreshListings(project.status, liveStarted)) return null;
   return { supabase, agencyId: profile.agency_id };
 }
 
@@ -115,6 +128,27 @@ export async function refreshCompetitorPrice(
 
   // Le constat daté (M47), puis le prix du concurrent s'il a changé (service partagé, M114).
   return recordPriceReading(supabase, agencyId, competitor, url.href, data, input.price);
+}
+
+// Mission 152 — « Vérifier les annonces », sur « Avant le rendez-vous » : la relecture faite, la
+// date de la vérification est posée — l'heure de la base (son déclencheur), jamais `updated_at`,
+// pour que « ce qui dort » (M59) et l'ordre des listes (M146 A) ne bougent pas.
+export async function finishListingsCheck(projectId: string): Promise<{ ok: boolean }> {
+  const s = await scope(projectId);
+  if (!s) return { ok: false };
+  const { error } = await s.supabase
+    .from('projects')
+    .update({ listings_checked_at: new Date().toISOString() })
+    .eq('id', projectId)
+    .eq('agency_id', s.agencyId);
+  if (error) {
+    await reportServerError(REFRESH_SCOPE, error);
+    return { ok: false };
+  }
+  revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
+  revalidatePath(`/builder/${projectId}/comparables`);
+  revalidatePath(`/builder/${projectId}`);
+  return { ok: true };
 }
 
 export async function finishPriceRefresh(projectId: string): Promise<void> {

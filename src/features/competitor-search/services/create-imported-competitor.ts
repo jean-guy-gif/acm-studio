@@ -9,6 +9,7 @@ import type { ComparableInput } from '@/features/comparables/utils/comparable-in
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { writeListingCopy } from '@/features/competitor-listing-copy/services/write-listing-copy';
 import {
   COMPETITOR_VERIFIABLE_FIELDS,
   importedFields,
@@ -36,6 +37,8 @@ export async function createImportedCompetitor(options: {
   input: ComparableInput;
   // Le type lu sur la carte de recherche (canonique ou texte libre) ; absent = inconnu.
   propertyType: string | null;
+  // Mission 152 — la démo date la copie comme ses autres faits ; sinon, l'heure de la base.
+  capturedAt?: Date;
 }): Promise<CreateImportedCompetitorResult> {
   const { supabase, projectId, agencyId, url, data, input } = options;
 
@@ -56,6 +59,26 @@ export async function createImportedCompetitor(options: {
   });
   if (created.status === 'failed') {
     return { ok: false, error: GENERIC_ERROR };
+  }
+  // Mission 152 — la copie de l'annonce telle qu'elle vient d'être lue, une fois, pour prouver le
+  // prix (jamais le texte de l'annonce) ; un concurrent déjà là garde la sienne.
+  if (created.status === 'created' && created.id) {
+    await writeListingCopy({
+      agencyId,
+      projectId,
+      comparableId: created.id,
+      listingUrl: url.href,
+      origin: 'page',
+      capturedAt: options.capturedAt,
+      row: {
+        ...input,
+        property_type: canonicalType,
+        floor: data.floor,
+        floors_count: data.floorsCount,
+        publication_lower_bound_label: data.publicationLowerBoundLabel,
+        modified_at: data.modifiedAt,
+      },
+    });
   }
   // Mission 101 — le bien n'est plus « en attente d'import » : sa ligne part avec sa création.
   await supabase

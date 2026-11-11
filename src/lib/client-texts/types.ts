@@ -821,6 +821,30 @@ export type LiveTexts = {
     since: string;
     days: (days: string) => string;
   };
+  // Mission 152 — « Voir l'annonce », une fois le prix dévoilé : le portail dans un nouvel onglet,
+  // ou, quand l'annonce n'est plus en ligne, la copie enregistrée (le prix et ses dates, les
+  // photos, les caractéristiques ; jamais le texte de l'annonce).
+  listing: {
+    open: string;
+    opening: string;
+    failed: (button: string) => string;
+    title: string;
+    close: string;
+    listed: string;
+    recorded: (
+      portal: string | null,
+      day: string,
+      atImport: boolean,
+      price: string | null,
+    ) => string;
+    recordedAsIs: string;
+    lastCheck: (day: string, price: string, unchanged: boolean) => string;
+    drop: (from: string, to: string, day: string) => string;
+    gone: (day: string | null) => string;
+    bedrooms: (count: number) => string;
+    land: (area: string) => string;
+    dpe: (rating: string) => string;
+  };
   // Mission 133 — « Montrer au vendeur » : les acquéreurs prêts de l'agence, anonymes.
   buyers: {
     phrase: string;

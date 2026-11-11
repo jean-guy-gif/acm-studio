@@ -391,6 +391,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici_academia.sql
 
+      # Mission 152 (partie A) — la copie de l'annonce : lue par l'agence, écrite une fois par le
+      # serveur, jamais modifiée ; la date de la vérification des annonces.
+      - name: Copie de l'annonce (mission 152)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/copie_annonce.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

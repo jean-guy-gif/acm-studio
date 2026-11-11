@@ -73,6 +73,9 @@ export type AuthorizedSellerComparable = Omit<NeutralSellerComparable, 'authoriz
   // DEVINÉE et enregistrée : null avant. Une garde de donnée, plus seulement de rendu (M51).
   priceHistory: PriceHistory | null;
   marketDuration: MarketDuration | null;
+  // Mission 152 — « Voir l'annonce » : y a-t-il une annonce, et est-elle encore en ligne ? Un état,
+  // jamais le lien (livré au seul toucher, par une action qui revérifie la révélation).
+  listing: 'online' | 'gone' | null;
 };
 
 export type SellerComparable = NeutralSellerComparable | AuthorizedSellerComparable;
@@ -142,6 +145,13 @@ export function projectComparableForSeller(
     priceReveal: entry.priceReveal,
     priceHistory: durationRevealed ? entry.priceHistory : null,
     marketDuration: durationRevealed ? entry.marketDuration : null,
+    // Jamais pour un « Non », même dit après la révélation (fiche 1.2) : rien à montrer.
+    listing:
+      entry.listingUrl && entry.response?.seller_serious_competitor !== 'no'
+        ? entry.listingGone
+          ? 'gone'
+          : 'online'
+        : null,
   };
 }
 

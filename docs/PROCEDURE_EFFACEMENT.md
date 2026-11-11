@@ -49,6 +49,8 @@ select
   (select count(*) from comparables where project_id = ':dossier') as concurrents,
   (select count(*) from competitor_decisions where project_id = ':dossier') as decisions,
   (select count(*) from competitor_prospecting_files where project_id = ':dossier') as dossiers_prospection,
+  -- Mission 152 : la copie de l'annonce de chaque concurrent ; elle part avec lui (cascade).
+  (select count(*) from competitor_listing_copies where project_id = ':dossier') as copies_annonces,
   (select count(*) from live_seller_responses where project_id = ':dossier') as reponses_live,
   (select count(*) from live_seller_summary where project_id = ':dossier') as resume_live,
   -- Mission 104 : la trace des réouvertures garde les réponses effacées ; elle part avec le dossier.
@@ -136,7 +138,10 @@ ni rendez-vous, ni mandat, ni « pas intéressé » — est effacée avec sa pos
 reste retenu, l'annonce reste, et le Localisateur n'est plus interrogé pour lui
 (`locator_purged_at`). Mission 120 — même règle, deux minutes plus tard, pour l'adresse d'un bien
 démarché depuis une recherche acquéreur (`purge_stale_buyer_prospect_addresses`, tâche
-`purge-stale-buyer-prospect-addresses`). La liste « Ne plus solliciter » n'est jamais purgée.
+`purge-stale-buyer-prospect-addresses`). Mission 152 — à 3 h 28, la copie de l'annonce d'un
+concurrent (prix, dates, photos, caractéristiques, jamais le texte) part quand rien ne s'est passé
+depuis 3 ans, la copie comprise (`purge_stale_listing_copies`, tâche `purge-stale-listing-copies`).
+La liste « Ne plus solliciter » n'est jamais purgée.
 Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 
 ### 1. Retrouver son bien, dans tous les dossiers
@@ -165,6 +170,8 @@ select
      and (address is not null or locator_address is not null
           or locator_latitude is not null)) as avec_adresse,
   (select count(*) from competitor_prospecting_files where comparable_id in (:liste)) as dossiers_prospection,
+  -- Mission 152 : la copie de son annonce (prix, dates, photos, caractéristiques ; jamais le texte).
+  (select count(*) from competitor_listing_copies where comparable_id in (:liste)) as copies_annonces,
   (select count(*) from comparables where id in (:liste) and is_selected) as retenus,
   -- Mission 120 — les courriers d'une recherche acquéreur qui visent ce bien : par son concurrent,
   -- ou par son annonce (un bien démarché sans concurrent, `buyer_prospects`).
@@ -240,6 +247,8 @@ prévient l'agence.
 ```sql
 begin;
 delete from competitor_prospecting_files where comparable_id in (:liste);
+-- Mission 152 : la copie de l'annonce part aussi ; la base n'en modifie jamais une, elle se supprime.
+delete from competitor_listing_copies where comparable_id in (:liste);
 update comparables set
   address = null,
   locator_address = null, locator_latitude = null, locator_longitude = null,

@@ -19,6 +19,7 @@ import { LiveComparableHeader } from '@/features/live-seller/components/live-com
 import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { PRICE_COHERENCE_VALUES } from '@/features/live-seller/constants';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
@@ -94,6 +95,7 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
               <div className={revealValue}>{euro(reveal.currentPrice)}</div>
             </div>
             <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
+            <LiveListingButton entry={entry} />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className={statLabel}>{t.perSqm}</div>

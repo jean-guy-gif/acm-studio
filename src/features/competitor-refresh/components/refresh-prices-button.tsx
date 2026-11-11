@@ -5,24 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
-import { pingExtension } from '@/features/browser-extension/client';
 import { EXTENSION_RETRY_LABEL } from '@/features/browser-extension/install-url';
-import {
-  finishPriceRefresh,
-  listCompetitorsToRefresh,
-  refreshCompetitorPrice,
-} from '@/features/competitor-refresh/actions/refresh-competitor-price';
-import {
-  priceRefreshSummary,
-  type PriceCheckOutcome,
-} from '@/features/competitor-refresh/services/price-refresh';
-import { listingPayload } from '@/features/competitor-search/services/listing-payload';
-import {
-  readPageViaExtension,
-  type PortalRobotsCache,
-} from '@/features/competitor-search/services/read-page-via-extension';
-import { redirectedAwayFromListing } from '@/features/competitor-search/services/stream-estate-import';
-import { refreshDemoPrices } from '@/features/demo/actions/refresh-demo-prices';
+import { priceRefreshSummary } from '@/features/competitor-refresh/services/price-refresh';
+import { readCompetitorListings } from '@/features/competitor-refresh/services/read-competitor-listings';
 import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import {
   recordMarketUpdate,
@@ -99,41 +84,16 @@ export function RefreshPricesButton({
     setPointError(null);
     setMissingExtension(false);
     try {
-      if (demo) {
-        setProgress('Relecture des annonces…');
-        const outcomes = await refreshDemoPrices(projectId);
-        setMessage(priceRefreshSummary(outcomes));
-        await conclude();
-        router.refresh();
-        return;
-      }
-      const ping = await pingExtension({ force });
-      if (!ping.available) {
+      const outcomes = await readCompetitorListings(projectId, {
+        demo,
+        force,
+        onProgress: setProgress,
+      });
+      if (outcomes === 'no_extension') {
         setMessage(NO_EXTENSION_FOR_REFRESH);
         setMissingExtension(true);
         return;
       }
-      const competitors = await listCompetitorsToRefresh(projectId);
-      const robotsCache: PortalRobotsCache = new Map();
-      const outcomes: PriceCheckOutcome[] = [];
-      for (const [index, competitor] of competitors.entries()) {
-        setProgress(`Relecture ${index + 1} sur ${competitors.length}…`);
-        const read = await readPageViaExtension(competitor.listingUrl, { robotsCache });
-        if (!read.ok) {
-          outcomes.push({ status: 'unreadable' });
-          continue;
-        }
-        const payload = listingPayload(competitor.listingUrl, read.html, null);
-        if (redirectedAwayFromListing(competitor.listingUrl, read.finalUrl)) {
-          payload.set('gone', 'redirect');
-        }
-        outcomes.push(
-          await refreshCompetitorPrice(projectId, competitor.id, payload).catch(
-            (): PriceCheckOutcome => ({ status: 'unreadable' }),
-          ),
-        );
-      }
-      await finishPriceRefresh(projectId);
       setMessage(priceRefreshSummary(outcomes));
       await conclude();
       router.refresh();
