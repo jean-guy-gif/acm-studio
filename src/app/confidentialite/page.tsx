@@ -79,7 +79,13 @@ export default function ConfidentialitePage() {
               Les concurrents retenus : les informations publiées dans l’annonce (prix, surface,
               pièces, description, photos, adresse de l’annonce) et la date à laquelle elles ont été
               relevées. La page lue par l’extension n’est pas conservée : seules ces informations en
-              sont extraites.
+              sont extraites. La description et le titre de l’annonce sont effacés quand rien ne
+              s’est passé pour ce concurrent depuis 3 ans.
+            </li>
+            <li>
+              Les biens retenus pour un acquéreur : ACM Studio garde aussi le texte des annonces
+              trouvées par la recherche, pour le conseiller seul ; il n’est jamais montré à
+              l’acquéreur, et il est effacé au bout de 3 ans.
             </li>
             <li>
               Les adresses des biens concurrents : si le conseiller a installé le Localisateur

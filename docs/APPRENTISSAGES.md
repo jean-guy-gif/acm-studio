@@ -526,6 +526,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   d'annonce sont communs à l'agence : une date de constat peut venir d'un autre dossier (« constaté
   il y a 5 jours ») ; un test n'attend pas « aujourd'hui ». Durées : e2e complet ≈ 25 min par
   groupes, relecteur 4 min puis 0,5 min sur le delta.
+- 11/11 · M152 B · Un fichier `'use server'` n'exporte que des fonctions asynchrones : une
+  constante exportée passe le typage et Vitest, et ne casse qu'au `npm run build` (Turbopack) ; les
+  messages vont dans un module à part. Un texte validé par la juriste prime sur le test de
+  vocabulaire : l'exception s'écrit dans le test, pour cette seule phrase et cette seule page. La
+  suite e2e complète (23 specs) a pris 29,8 min, la spec `demo` 6 min ; un échec de la remise à zéro
+  de la démo (« la connexion a été perdue ») était un aléa, vert au second passage. Relecteur
+  4 min.
 
 ## La base
 
@@ -606,6 +613,15 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   joué sous `service_role`. Un retrait sans date propre (`listing_withdrawn`) n'a pas de date :
   `updated_at` n'est jamais une date de retrait (bloquant du relecteur). Gardien-sql 3 min puis
   0,7 min sur la correction ; sauvegarde 2,5 min.
+
+- 11/11 · M152 B · En SQL, `-` se lie avant `#-` : `snapshot #- '{a,b}' - 'title'` se lit
+  `snapshot #- ('{a,b}' - 'title')` (« operator is not unique: unknown - unknown ») ; parenthéser et
+  typer (`::text[]`, `::text`). La base locale était en retard de vingt migrations : la compter, puis
+  `db reset --local` avant de jouer un test SQL neuf. Une lecture sur la vraie base passe par
+  `db query --remote --read-only` (sans lui, la CLI refuse en mode agent) ; `db push --remote` exige
+  `--yes`, à ne passer qu'après l'accord de Jean-Guy. `npm run gen:types` a rendu un fichier de 1 590
+  lignes au lieu de 3 825 : remis tel quel, cause à trouver avant la prochaine migration. Gardien-sql
+  2,6 min puis 1,3 min sur le delta ; architecte 3,5 min ; sauvegarde 2 min.
 
 ## Les rendus
 

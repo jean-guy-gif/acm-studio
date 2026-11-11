@@ -84,7 +84,18 @@ describe('un seul mot par notion (mission 97)', () => {
   });
 
   it('ceux qui passeront au Live sont des « concurrents retenus », pas des « biens retenus »', () => {
-    expect(offenders(/\bbiens? (retenus?|écartés?)\b/i)).toEqual([]);
+    // Mission 152 (partie B) — seule exception : la phrase de /confidentialite validée par la
+    // juriste (11/11), telle quelle, qui nomme les biens d'une sélection d'acquéreur, pas des
+    // concurrents. Le reste de la page reste vérifié.
+    const legal = (path: string, text: string) =>
+      path === join('app', 'confidentialite', 'page.tsx')
+        ? text.replace('Les biens retenus pour un acquéreur :', '')
+        : text;
+    expect(
+      SCREENS.filter((path) =>
+        /\bbiens? (retenus?|écartés?)\b/i.test(legal(path, shown(join(SRC, path)))),
+      ),
+    ).toEqual([]);
   });
 
   it('« Fourchette » ne nomme plus la décision de prix', () => {

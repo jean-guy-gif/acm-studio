@@ -64,6 +64,14 @@ import {
   type BuyerHit,
   type BuyerReconciliation,
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
+import { PropertySheetView } from '@/features/property-sheet/components/property-sheet-view';
+import { usePropertySheet } from '@/features/property-sheet/components/use-property-sheet';
+import {
+  buildPropertySheet,
+  sheetFromCandidate,
+} from '@/features/property-sheet/services/property-sheet';
+import { sheetFactsFromSelectionListing } from '@/features/property-sheet/services/sheet-sources';
+import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
@@ -81,6 +89,10 @@ export const RETAIN_BUTTON = 'Retenir la sélection';
 type Market = IdealSearchResult & { ok: true };
 
 const keyOf = selectionKey;
+
+// Mission 152 (partie B) — un toucher sur le libellé ou la photo ouvre la fiche complète.
+const openSheetLink =
+  'text-left font-title text-base font-bold text-zinc-900 underline-offset-2 hover:text-brand-deep hover:underline focus-visible:underline stage:text-white';
 
 const dayLabel = (day: string): string => {
   const [, month, date] = day.split('-');
@@ -135,8 +147,18 @@ export function IdealPropertiesPanel({
   watch = null,
   dismissed = [],
   mandatesUnread = false,
+  buyerName = null,
+  budgetMax = null,
+  savedItemIds = {},
 }: {
   buyerId: string;
+  // Mission 152 (partie B) — pour la barre de la fiche complète (« Pour M. et Mme Arnaud ») et
+  // l'écart au budget.
+  buyerName?: string | null;
+  budgetMax?: number | null;
+  // Les biens de la sélection enregistrée (`source:reference` → leur ligne), pour lire leur fiche
+  // au serveur.
+  savedItemIds?: Record<string, string>;
   agency: BuyerReconciliation;
   // Essai de Jean-Guy (26/10) : la sélection actuelle, cochée en arrivant.
   current?: SelectionItemInput[];
@@ -178,6 +200,63 @@ export function IdealPropertiesPanel({
   const [undoError, setUndoError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
+  // Mission 152 (partie B) — la fiche complète ouverte, et le bien qu'elle retient.
+  const sheet = usePropertySheet();
+  const [sheetItem, setSheetItem] = useState<{
+    item: SelectionItemInput;
+    rankLine: string | null;
+  } | null>(null);
+  const closeSheet = () => {
+    sheet.close();
+    setSheetItem(null);
+  };
+  // Fiche ouverte : son « Retenir ce bien » est le seul plein de l'écran (M146).
+  const pageLeads = sheetItem == null;
+  // Une annonce que l'écran a déjà (la recherche, la veille, la sélection) s'ouvre sur place ;
+  // un bien de l'agence se lit au serveur.
+  const openMarketSheet = (
+    item: SelectionItemInput,
+    candidate: CompetitorCandidate,
+    seenOn: string | null,
+    rankLine: string | null,
+  ) => {
+    setSheetItem({ item, rankLine });
+    sheet.openSheet(sheetFromCandidate(candidate, item.label, seenOn));
+  };
+  const openAgencySheet = (item: SelectionItemInput, rankLine: string | null) => {
+    setSheetItem({ item, rankLine });
+    sheet.openTarget({
+      kind: item.source === 'competitor' ? 'competitor' : 'project',
+      id: item.reference,
+    });
+  };
+  // Un bien de la sélection enregistrée se lit au serveur, la même fiche que sur la fiche
+  // acquéreur (ce que l'import a lu compris) ; un bien seulement coché, d'après ce que la recherche
+  // en a dit, relu champ par champ (jamais une forme supposée).
+  const openItemSheet = (item: SelectionItemInput) => {
+    const itemId = savedItemIds[keyOf(item)];
+    setSheetItem({ item, rankLine: null });
+    if (itemId) {
+      sheet.openTarget({ kind: 'selection-item', id: itemId });
+      return;
+    }
+    if (item.source !== 'listing') {
+      openAgencySheet(item, null);
+      return;
+    }
+    sheet.openSheet(
+      buildPropertySheet(
+        sheetFactsFromSelectionListing({
+          label: item.label,
+          reference: item.reference,
+          listedPrice: item.listedPrice,
+          priceSeenOn: item.seenOn ?? null,
+          imported: null,
+          snapshot: item.snapshot,
+        }),
+      ),
+    );
+  };
 
   const detect = demo ? async () => ({ available: true }) : () => pingExtension();
 
@@ -373,6 +452,17 @@ export function IdealPropertiesPanel({
   const hitRow = (entry: CategorizedCandidate, seenOn: string, testId = 'ideal-market-hit') => {
     const item = marketItem(entry, seenOn);
     const photo = entry.candidate.photoUrls[0];
+    const rankLine = [
+      IDEAL_CATEGORY_LABELS[entry.category],
+      entry.criteriaTotal > 0
+        ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
+        : null,
+      ...entry.gaps,
+      entry.toCheck.length > 0 ? `À vérifier : ${entry.toCheck.join(', ')}` : null,
+    ]
+      .filter((part): part is string => part != null)
+      .join(' · ');
+    const open = () => openMarketSheet(item, entry.candidate, seenOn, rankLine);
     return (
       <li
         key={entry.candidate.url}
@@ -381,17 +471,24 @@ export function IdealPropertiesPanel({
         className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 ${CATEGORY_TONE[entry.category]}`}
       >
         {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={displayPhotoUrl(photo)}
-            alt=""
-            className="h-16 w-24 shrink-0 rounded-lg bg-zinc-100 object-cover"
-          />
+          <button type="button" className="shrink-0" tabIndex={-1} aria-hidden onClick={open}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayPhotoUrl(photo)}
+              alt=""
+              className="h-16 w-24 rounded-lg bg-zinc-100 object-cover"
+            />
+          </button>
         ) : null}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+          <button
+            type="button"
+            className={openSheetLink}
+            data-testid="open-property-sheet"
+            onClick={open}
+          >
             {item.label}
-          </span>
+          </button>
           <span className="text-sm">
             {[
               entry.candidate.price != null ? formatEuro(entry.candidate.price) : null,
@@ -410,6 +507,44 @@ export function IdealPropertiesPanel({
         </div>
         {actions(item)}
       </li>
+    );
+  };
+
+  // Mission 152 (partie B) — la barre de la fiche, sous le pouce : « Retenir ce bien », le seul
+  // plein, coche le bien dans la sélection (trois au plus, M118), que « Retenir la sélection »
+  // enregistre ensuite ; retenu, « Retenu ✓ · Retirer » en contour.
+  const sheetFooter = (item: SelectionItemInput) => {
+    const checked = selected.has(keyOf(item));
+    const count = selected.size;
+    return (
+      <>
+        <span className="text-sm text-zinc-700" data-testid="sheet-selection-count">
+          {buyerName ? <strong className="font-semibold">Pour {buyerName}</strong> : null}
+          {buyerName ? ' · ' : ''}
+          {count} bien{count > 1 ? 's' : ''} sélectionné{count > 1 ? 's' : ''} sur{' '}
+          {MAX_IDEAL_SELECTION}
+        </span>
+        {checked ? (
+          <button
+            type="button"
+            className={btnSecondary}
+            data-testid="sheet-unretain"
+            onClick={() => toggle(item)}
+          >
+            Retenu ✓ · Retirer
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={btnPrimary}
+            data-testid="sheet-retain"
+            disabled={full}
+            onClick={() => toggle(item)}
+          >
+            {full ? 'Sélection complète' : 'Retenir ce bien'}
+          </button>
+        )}
+      </>
     );
   };
 
@@ -475,7 +610,7 @@ export function IdealPropertiesPanel({
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/presentation/${buyerId}`}
-                  className={retainLeads ? btnSecondary : btnPrimary}
+                  className={retainLeads || !pageLeads ? btnSecondary : btnPrimary}
                 >
                   {presented ? 'Revoir la présentation' : 'Présenter'}
                 </Link>
@@ -494,10 +629,15 @@ export function IdealPropertiesPanel({
                 data-letter={index < baseline.length ? String.fromCharCode(65 + index) : undefined}
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                  <button
+                    type="button"
+                    className={openSheetLink}
+                    data-testid="open-property-sheet"
+                    onClick={() => openItemSheet(item)}
+                  >
                     {index < baseline.length ? `${String.fromCharCode(65 + index)} · ` : ''}
                     {item.label}
-                  </span>
+                  </button>
                   <span className="text-sm text-zinc-600 stage:text-white/70">
                     {[
                       item.listedPrice != null ? formatEuro(item.listedPrice) : null,
@@ -562,6 +702,9 @@ export function IdealPropertiesPanel({
           <ul className="flex flex-col gap-2">
             {agencyHits.map(({ group, hit }) => {
               const item = agencyItem(hit);
+              const rankLine = [BUYER_GROUP_LABELS[group], hit.note]
+                .filter((part): part is string => part != null)
+                .join(' · ');
               return (
                 <li
                   key={hit.candidate.key}
@@ -570,9 +713,14 @@ export function IdealPropertiesPanel({
                 >
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                      <button
+                        type="button"
+                        className={openSheetLink}
+                        data-testid="open-property-sheet"
+                        onClick={() => openAgencySheet(item, rankLine)}
+                      >
                         {item.label}
-                      </span>
+                      </button>
                       <span className={badgeNeutral}>{BUYER_GROUP_LABELS[group]}</span>
                     </div>
                     <span className="text-sm text-zinc-600 stage:text-white/70">
@@ -719,7 +867,7 @@ export function IdealPropertiesPanel({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          className={retainLeads ? btnPrimary : btnSecondary}
+          className={retainLeads && pageLeads ? btnPrimary : btnSecondary}
           disabled={saving || selected.size === 0 || !changed}
           onClick={retain}
           data-testid="ideal-retain"
@@ -730,6 +878,16 @@ export function IdealPropertiesPanel({
         </button>
         {full ? <span className={hintText}>{SELECTION_TOO_MANY}</span> : null}
       </div>
+      {sheet.state && sheetItem ? (
+        <PropertySheetView
+          state={sheet.state}
+          onClose={closeSheet}
+          backLabel="Ses biens idéaux"
+          budgetMax={budgetMax}
+          rankLine={sheetItem.rankLine}
+          footer={sheetFooter(sheetItem.item)}
+        />
+      ) : null}
     </div>
   );
 }
