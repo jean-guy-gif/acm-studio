@@ -79,7 +79,6 @@ import {
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoPhotoUrl } from '@/features/demo/services/demo-urls';
-import { deleteLivingHereSheets } from '@/features/comparables/services/delete-living-here-sheets';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import { coveredWeek } from '@/features/buyer-messages/week';
 import { readDemoPhoto } from '@/features/demo/services/read-demo-photo';
@@ -881,17 +880,6 @@ export async function deleteDemoDossiers(supabase: Client, closer: Closer): Prom
   const ids = await ownDemoDossierIds(supabase, closer);
   if (!ids) return false;
   if (ids.length === 0) return true;
-  // Mission 142 — les fiches « Vivre ici » de ses dossiers et de leurs concurrents, par leur clé.
-  const { data: ownComparables, error: comparablesError } = await supabase
-    .from('comparables')
-    .select('id')
-    .in('project_id', ids)
-    .eq('agency_id', closer.agencyId);
-  if (comparablesError) return false;
-  await deleteLivingHereSheets(closer.agencyId, [
-    ...ids.map((id) => `project:${id}`),
-    ...(ownComparables ?? []).map((row) => `competitor:${row.id}`),
-  ]);
   const { data: properties, error: propertiesError } = await supabase
     .from('subject_properties')
     .select('id, photo_urls')
