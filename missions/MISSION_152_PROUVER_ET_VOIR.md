@@ -4,9 +4,9 @@
 l'ouverture des modèles par AWS (cas 179439470000287 ; sa branche n'est pas touchée). Mesure :
 `missions/M152-mesure.md`.
 
-**Statut** : réponses de Jean-Guy du 11/11 reçues et reportées ici (fin du fichier). Maquettes
-mises à jour (planche 3 sans le texte), **à valider** ; aucun code avant cet accord. Branche
-`mission-152-prouver-et-voir`, partie de `main` (3b45ea9).
+**Statut** : réponses de Jean-Guy du 11/11 reçues et reportées ici (fin du fichier). **Maquettes
+M152-1 à M152-5 validées par Jean-Guy le 11/11.** Partie 0 faite et en production le 11/11 (main
+9f66062). Partie A lancée le 11/11. Fiche et maquettes sur la branche `mission-152-prouver-et-voir`.
 
 **Trois parties**, une branche et un `/valide` chacune, dans cet ordre (Jean-Guy, 11/11) :
 **0, l'effacement des anciennes tables de la M147 et la page de confidentialité** — en production
@@ -24,7 +24,8 @@ juge un bien sur sa fiche entière avant de le proposer.
 
 `missions/maquettes/M152-1` à `M152-5` (`.png`, source `M152-generateur.mjs --png`), chacune sur
 ordinateur, tablette et téléphone, notes avant / après à droite. Biens, prix, textes et dates
-inventés ; photos de la démo. La partie 0 ne change aucun écran : dispensée.
+inventés ; photos de la démo. La partie 0 ne change aucun écran : dispensée. **Validées par
+Jean-Guy le 11/11.**
 
 | Planche | Écran | Partie |
 |---|---|---|
@@ -132,6 +133,19 @@ ligne : sa fonction n'existe pas encore.
    payé garde désormais la description et les photos d'origine, `picturesRemote`, jusqu'à 20, sans
    appel ni coût de plus) ; mandat de l'agence (ses photos, sa description, ses points forts) ; bien
    démarché (ses faits et ses photos, jamais son texte, M120 A).
+6. **L'annonce en ligne, pour le conseiller** (Jean-Guy, 11/11) : sur un bien qui n'est pas de
+   l'agence (concurrent, annonce du marché, bien démarché), la fiche complète porte « Voir l'annonce
+   en ligne ↗ », nouvel onglet ; un mandat de l'agence n'en a pas besoin.
+7. **La page de l'acquéreur ne change pas** (Jean-Guy, 11/11) : jamais de lien vers l'annonce d'une
+   autre agence. C'est déjà le cas, vérifié dans le code le 11/11 : le lien du dossier acquéreur
+   (`/dossier/<jeton>`) montre, pour chaque bien, ses photos (la copie gardée à la sélection),
+   son libellé neutre, ses critères face à sa recherche, son prix ou « Prix à confirmer », « Pourquoi
+   je vous le propose » et un fait daté, puis « Je veux le visiter », « Peut-être », « Pas pour moi »,
+   ses créneaux et « Envoyer ma réponse », qui crée la demande de visite que le conseiller lit sur
+   Visites (M119, M122 B) ; ses seuls liens sont le téléphone et l'e-mail du conseiller, et « Vivre
+   ici » d'Academia sous un mandat signé de l'agence (M147 A) ; jamais le titre, l'adresse, le lien,
+   « Vendu par » ni l'exclusivité (liste d'autorisation, M119). La partie B n'y ajoute rien de la
+   fiche complète ; le test « jamais côté acquéreur » le garde.
 
 ## Critères d'acceptation (testables)
 
