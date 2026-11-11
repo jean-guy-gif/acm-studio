@@ -44,5 +44,7 @@ describe('les données retirées de la M147', () => {
     expect(page).toContain('seront effacés au plus tard le 23 novembre 2026');
     expect(page).not.toContain('OpenStreetMap');
     expect(page).not.toContain('Le dossier d’adresse, pour le conseiller seul');
+    // La phrase prévue pour le jour du lien direct vers Academia attend ce jour-là (M147 A).
+    expect(page).not.toContain('adresse de la page ouverte');
   });
 });
