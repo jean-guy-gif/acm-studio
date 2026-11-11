@@ -141,6 +141,13 @@ démarché depuis une recherche acquéreur (`purge_stale_buyer_prospect_addresse
 `purge-stale-buyer-prospect-addresses`). Mission 152 — à 3 h 28, la copie de l'annonce d'un
 concurrent (prix, dates, photos, caractéristiques, jamais le texte) part quand rien ne s'est passé
 depuis 3 ans, la copie comprise (`purge_stale_listing_copies`, tâche `purge-stale-listing-copies`).
+Mission 152 (partie B) — à 3 h 30, le texte des annonces gardé pour le conseiller seul
+(`purge_stale_listing_texts`, tâche `purge-stale-listing-texts`) : un bien d'une sélection
+d'acquéreur perd, 3 ans après sa date dans la sélection, la description, le titre, l'adresse lue sur
+l'annonce et les adresses des photos d'origine ; le résultat payé gardé sur un dossier
+(`stream_estate_results`) part 3 ans après sa dernière mise à jour ; le texte et le titre de
+l'annonce d'un concurrent (`comparables.listing_description`, `comparables.title`) sont vidés,
+avec leurs pastilles « À vérifier », quand rien ne s'est passé depuis 3 ans.
 La liste « Ne plus solliciter » n'est jamais purgée.
 Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 
