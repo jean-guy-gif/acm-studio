@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { btnSecondary, card, hintText, sectionTitle } from '@/components/ui/styles';
 import { EXTENSION_RETRY_LABEL } from '@/features/browser-extension/install-url';
 import { bulkRejectComparables } from '@/features/comparables/actions/bulk-comparable-actions';
-import { WITHDRAWN_REINTEGRATE_WARNING } from '@/features/comparables/components/comparable-card';
 import { finishListingsCheck } from '@/features/competitor-refresh/actions/refresh-competitor-price';
 import { NO_EXTENSION_FOR_REFRESH } from '@/features/competitor-refresh/components/refresh-prices-button';
 import { readCompetitorListings } from '@/features/competitor-refresh/services/read-competitor-listings';
@@ -32,7 +31,8 @@ export const STALE_CHECK_HINT =
 // les annonces des concurrents retenus relues par l'extension, gratuitement (la relecture de la
 // M105), et ce qui a changé. Un prix changé met à jour le concurrent ; l'ancien reste dans ses
 // relevés datés (M47) et dans la copie de l'import. Une annonce retirée, sur preuve (M103), propose
-// « Écarter » ou « La garder ». En contour : « Lancer le Live » reste le seul plein (M146 A).
+// « Écarter » ; la ligne reste une information tant qu'elle est retenue (« La garder » attend une
+// colonne, après la bêta : Jean-Guy, 11/11, `docs/IDEES.md`). En contour : « Lancer le Live » reste le seul plein (M146 A).
 export function SincePreparationBlock({
   projectId,
   since,
@@ -165,8 +165,6 @@ export function SincePreparationBlock({
 
 function ChangeLine({ projectId, change }: { projectId: string; change: SincePreparationChange }) {
   const router = useRouter();
-  const [confirmingKeep, setConfirmingKeep] = useState(false);
-  const [kept, setKept] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -221,52 +219,16 @@ function ChangeLine({ projectId, change }: { projectId: string; change: SincePre
       <b className="text-sm text-zinc-900">{change.label}</b>
       <span className="text-sm text-zinc-700">
         {change.on ? `plus en ligne ${formatRelativeSince(change.on)}` : 'plus en ligne'}
-        {kept
-          ? ' · gardée : elle sera montrée comme un bien en vente'
-          : ' · elle serait montrée comme un bien en vente'}
+        {' · elle serait montrée comme un bien en vente'}
       </span>
-      {kept ? null : confirmingKeep ? (
-        <div className="flex flex-col gap-2" role="group">
-          <p className="text-sm text-zinc-800">{WITHDRAWN_REINTEGRATE_WARNING}</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-              onClick={() => setConfirmingKeep(false)}
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              className={`${btnSecondary} px-3 py-1.5 text-xs`}
-              onClick={() => {
-                setKept(true);
-                setConfirmingKeep(false);
-              }}
-            >
-              Continuer
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className={`${btnSecondary} px-3 py-1.5 text-xs`}
-            disabled={busy}
-            onClick={() => void reject()}
-          >
-            Écarter
-          </button>
-          <button
-            type="button"
-            className="text-sm font-medium text-brand-deep underline-offset-2 hover:underline"
-            onClick={() => setConfirmingKeep(true)}
-          >
-            La garder
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        className={`${btnSecondary} self-start px-3 py-1.5 text-xs`}
+        disabled={busy}
+        onClick={() => void reject()}
+      >
+        Écarter
+      </button>
       {error ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
           {error}
