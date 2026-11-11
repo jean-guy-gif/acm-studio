@@ -1,4 +1,5 @@
 import { badgeBrand, badgeNeutral, card } from '@/components/ui/styles';
+import { PropertySheetButton } from '@/features/property-sheet/components/property-sheet-button';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { seenOnLabel } from '@/features/ideal-properties/services/ideal-selection';
 import {
@@ -43,9 +44,13 @@ export function IdealSelectionList({ selection }: { selection: IdealSelection })
               ) : null}
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+                  <PropertySheetButton
+                    target={{ kind: 'selection-item', id: item.id }}
+                    backLabel="Sa sélection"
+                    className="text-left font-title text-base font-bold text-zinc-900 underline-offset-2 hover:text-brand-deep hover:underline stage:text-white"
+                  >
                     {item.position}. {item.label}
-                  </span>
+                  </PropertySheetButton>
                   {item.category ? (
                     <span className={badgeBrand}>{SELECTION_CATEGORY_LABELS[item.category]}</span>
                   ) : null}

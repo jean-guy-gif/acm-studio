@@ -10,6 +10,7 @@ import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
 import { selectionAsInputs } from '@/features/ideal-properties/services/ideal-selection';
+import { selectionKey } from '@/features/ideal-properties/services/ideal-page';
 import {
   IDEAL_CRITERIA_MESSAGES,
   idealSearchCriteria,
@@ -135,6 +136,11 @@ export default async function IdealPropertiesPage({ params }: Props) {
         watch={watch}
         dismissed={dismissals.error ? null : (dismissals.data ?? []).map((row) => row.property_key)}
         mandatesUnread={offers == null}
+        buyerName={buyer.name}
+        budgetMax={buyer.budgetMax}
+        savedItemIds={Object.fromEntries(
+          (selection?.items ?? []).map((item) => [selectionKey(item), item.id]),
+        )}
       />
     </div>
   );

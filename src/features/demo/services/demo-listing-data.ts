@@ -228,6 +228,9 @@ export function demoStreamEstateProperty(listing: DemoListing, now: Date, crawle
     createdAt: daysAgo(now, listing.publishedDaysAgo),
     lastCrawledAt: crawledAt,
     pictures: listing.photos.map(demoPhotoUrl),
+    // Mission 152 (partie B) — la démo donne, comme l'API, le texte et les photos d'origine.
+    picturesRemote: listing.photos.map(demoPhotoUrl),
+    description: listing.description,
     city: { name: commune?.nom ?? null, insee: listing.inseeCode },
     location: { lat: listing.location.lat, lon: listing.location.lon },
     floor: listing.floor,
