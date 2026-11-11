@@ -1,11 +1,5 @@
 # M151 — Pour le juriste : les notes d'un conseiller lues par un service d'intelligence artificielle
 
-> **Ne pas envoyer en l'état (11/11).** Le profil « EU » de Claude sur Amazon Bedrock répartit les
-> lectures entre les régions européennes d'AWS, **Zurich (Suisse) et Londres (Royaume-Uni)
-> comprises** : la phrase « les données restent dans l'Union européenne » serait fausse avec ce
-> profil. Le texte sera corrigé d'après le choix de Jean-Guy : le profil EU (« en Europe : Union
-> européenne, Suisse ou Royaume-Uni ») ou l'Irlande seule (« en Irlande, dans l'Union européenne »).
-> Source : https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock (Regions).
 
 Préparé le 10/11/2026, avant le code. La page `/confidentialite`, validée le 07/11, ne change pas
 avant votre accord. La fonction n'est pas mise en production avant cet accord (décision de
@@ -49,12 +43,13 @@ consigne donnée au service, une réponse limitée à une liste fermée de champ
 refusés vérifiée par ACM Studio. L'écran dit seulement « 2 mentions personnelles n'ont pas été
 relevées », sans les répéter.
 
-## Le service d'IA (choisi par Jean-Guy le 10/11)
+## Le service d'IA (choisi par Jean-Guy le 10/11, région précisée le 11/11)
 
-Claude, modèle d'Anthropic, utilisé par **Amazon Web Services (Amazon Bedrock), avec le profil
-d'inférence « UE »**. **Les données restent dans l'Union européenne, mais peuvent être traitées
-dans plusieurs pays de l'Union, pas seulement en France** : Amazon choisit, pour chaque lecture, une
-région de l'Union disponible. Selon les conditions d'AWS (à vérifier sur le contrat signé), les
+Claude, modèle d'Anthropic, utilisé par **Amazon Web Services (Amazon Bedrock), dans la seule région
+d'Irlande (eu-west-1)**. **Les notes sont lues uniquement en Irlande, dans l'Union européenne.**
+Le profil « EU » de Bedrock, qui répartit les lectures entre plusieurs régions d'Europe, Zurich
+(Suisse) et Londres (Royaume-Uni) comprises, a été écarté pour cette raison (décision de Jean-Guy,
+11/11). Selon les conditions d'AWS (à vérifier sur le contrat signé), les
 contenus envoyés ne sont ni gardés par le service, ni utilisés pour entraîner un modèle, ni transmis
 à Anthropic. Le contrat d'AWS comprend son avenant RGPD (DPA).
 
@@ -76,7 +71,7 @@ Sources AWS :
   https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html
 - La journalisation des appels, réglage du client, désactivée par défaut :
   https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html
-- Le profil d'inférence UE (traitement dans plusieurs pays de l'Union) :
+- Ce que fait le profil réparti entre plusieurs régions, écarté au profit de la seule Irlande :
   https://docs.aws.amazon.com/bedrock/latest/userguide/geographic-cross-region-inference.html
 - Le contrat de traitement des données d'AWS (DPA, article 28 du RGPD) :
   https://d1.awsstatic.com/legal/aws-dpa/aws-dpa.pdf ; le centre RGPD d'AWS :
@@ -93,8 +88,8 @@ Sources AWS :
    dans leurs documents ?
 3. **Le sous-traitant ultérieur** : Amazon Web Services devient sous-traitant ultérieur d'ACM
    Studio (Anthropic ne reçoit rien, selon les conditions d'AWS). Faut-il mettre à jour le contrat avec les agences ?
-4. **Plusieurs pays de l'Union** : les notes peuvent être lues dans un autre pays de l'Union que la
-   France. Faut-il le dire autrement que dans les textes ci-dessous ?
+4. **L'Irlande** : les notes sont lues uniquement en Irlande, pas en France. Faut-il le dire
+   autrement que dans les textes ci-dessous ?
 5. **Le règlement européen sur l'IA** : le service propose et le conseiller valide ; rien n'est
    décidé sur une personne. Faut-il dire autre chose que la phrase proposée ?
 
@@ -111,8 +106,8 @@ Sources AWS :
 
 > Pour créer ou compléter une fiche, le conseiller peut photographier ses notes, déposer la fiche
 > exportée de son logiciel ou coller un texte : ce contenu est envoyé une fois à un service
-> d'intelligence artificielle, Claude, d'Anthropic, utilisé par Amazon Web Services dans l'Union
-> européenne (la lecture peut être faite dans plusieurs pays de l'Union), qui propose une fiche ; le
+> d'intelligence artificielle, Claude, d'Anthropic, utilisé par Amazon Web Services, qui le lit
+> uniquement en Irlande, dans l'Union européenne, et propose une fiche ; le
 > conseiller la vérifie, et seul ce qu'il valide est enregistré. La photo, le fichier ou le texte
 > ne sont pas gardés par ACM Studio. Le service ne relève aucune donnée sur la santé, la religion,
 > les origines, les opinions ou la vie privée, ni aucun jugement sur la personne ; dans les notes
@@ -127,8 +122,8 @@ Sources AWS :
 ### `/confidentialite`, « Où sont les données », une ligne de plus
 
 > Amazon Web Services (Amazon Bedrock), avec le modèle Claude d'Anthropic : la lecture des notes
-> d'un conseiller et des descriptions d'annonces, dans l'Union européenne (dans plusieurs pays de
-> l'Union) ; le service ne garde pas ce qu'il lit.
+> d'un conseiller et des descriptions d'annonces, uniquement en Irlande, dans l'Union européenne ;
+> le service ne garde pas ce qu'il lit.
 
 ### `/confidentialite`, « Qui est responsable », une phrase de plus
 

@@ -6,7 +6,7 @@ des missions 117 à 120). Mesure : `missions/M151-mesure.md`.
 
 **Statut** : réponses de Jean-Guy du 10/11 reçues et reportées ici (fin du fichier). **Maquettes
 M151-1 à M151-4 validées par Jean-Guy le 10/11.** Aucun code avant l'étape 0 : Jean-Guy revient avec
-les identifiants des profils UE et le dossier des essais.
+l'accès aux modèles ouvert par AWS ; le dossier des essais est écrit (11/11).
 
 **Deux parties** (Jean-Guy, 10/11), une branche et un `/valide` chacune : **A, la fiche depuis mes
 notes** (lecture, proposition, validation, « Ce qui compte pour eux », le critère « Copropriété ») ;
@@ -46,7 +46,7 @@ sert à ranger les biens trouvés, en disant pourquoi.
 
 ## Étape 0 — avant le code
 
-1. **Jean-Guy** ouvre le compte AWS et l'accès aux modèles par le profil d'inférence UE, en suivant
+1. **Jean-Guy** ouvre le compte AWS et l'accès aux modèles, en Irlande seulement (eu-west-1), en suivant
    `missions/M151-etapes-aws.md` (SIRET et TVA dans « Tax settings », « Model invocation logging »
    désactivé, une clé limitée à Bedrock), et pose la clé dans `.env.local` et dans Vercel
    (production et essai) ; Claude Code ne touche ni à AWS ni à Vercel.
@@ -54,7 +54,7 @@ sert à ranger les biens trouvés, en disant pourquoi.
    inventés (noms de fiction, téléphones en 06 39 98, e-mails en example.com), et exporte de son CRM
    les fiches de 5 acquéreurs inventés. Elles sont rangées hors du dépôt, sauf celles choisies pour
    la démo et les tests.
-3. **Le chef mesure** : Sonnet 5.5 et Haiku 5.5, par le profil UE, sur ces notes et ces fiches —
+3. **Le chef mesure** : Sonnet 5.5 et Haiku 5.5, en Irlande, sur ces notes et ces fiches —
    champs justes, champs faux, champs inventés, mentions personnelles relevées par erreur, coût réel
    par fiche — et sur les 73 descriptions de la mesure pour le classement. Le modèle de chaque
    lecture se choisit sur ce résultat (moins de 1 €). Un champ inventé ou une mention personnelle
@@ -68,8 +68,15 @@ le script de mesure est prêt et son barème vérifié à blanc. **La mesure n'a
 refuse l'appel (403) — l'utilisateur IAM n'a pas le droit `bedrock-mantle:CreateInference`, seul
 valable pour Claude 5.5 (l'autorisation `bedrock:InvokeModel` de la première version des étapes
 était fausse) ; Paris n'a pas de point d'accès pour ces modèles (l'Irlande, Francfort, Stockholm et
-Milan en ont) ; `ACM_AWS_REGION` porte un point final. Et le profil « EU » inclut Zurich et Londres :
-choix à faire entre ce profil et l'Irlande seule. Étapes corrigées : `M151-etapes-aws.md`.
+Milan en ont) ; `ACM_AWS_REGION` porte un point final. Et le profil « EU » inclut Zurich et Londres.
+Étapes corrigées : `M151-etapes-aws.md`. **Le 11/11, Jean-Guy choisit l'Irlande seule**, corrige le
+droit (`bedrock-mantle:CreateInference`) et la région (`eu-west-1`) ; les trois variables sont
+dans le projet Vercel `acm-studio`, Production et Preview (l'essai en est le déploiement Preview).
+Appels d'essai du 11/11 en Irlande : le droit est accordé (plus de 403 sur le droit), mais **le
+compte n'a pas encore accès aux modèles** — même Claude Sonnet 5, ouvert à tous les comptes,
+répond « not available for this account » (vérification du compte ou formulaire d'Anthropic en
+cours) ; Sonnet 5.5 et Haiku 5.5 répondent « does not exist » en Irlande, à revérifier une fois
+l'accès ouvert. La mesure attend ; rien n'a été lu ni facturé.
 
 ## Maquettes
 
@@ -89,8 +96,9 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
 1. **Entrée.** « Nouvel acquéreur » (M132) gagne en tête « Depuis mes notes » : **Prendre une
    photo**, **Déposer un fichier** (PDF, image, capture d'écran), **Coller un texte**. La saisie
    rapide reste dessous, inchangée. Sur une fiche existante, « Compléter depuis mes notes ».
-2. **La lecture** : « Lecture de vos notes… », un seul appel, par Claude sur Amazon Bedrock, profil
-   d'inférence UE ; le coût est réservé avant, réglé après (point 10).
+2. **La lecture** : « Lecture de vos notes… », un seul appel, par Claude sur Amazon Bedrock, **lu
+   uniquement en Irlande, dans l'Union européenne** (eu-west-1, sans profil réparti) ; le coût est
+   réservé avant, réglé après (point 10).
 3. **La proposition** (planche 2) : chaque champ de la fiche (M117) avec « À vérifier » et la ligne
    des notes d'où il vient ; un champ que les notes ne disent pas reste vide, jamais deviné (M38) ;
    une valeur hors liste vaut « non renseigné » (M78) ; le nom et une commune restent obligatoires ;
@@ -194,9 +202,9 @@ test court de Jean-Guy en production, avec ses propres notes inventées.
 
 ## Réponses de Jean-Guy (10/11)
 
-1. **Fournisseur** : Claude par Amazon Bedrock, **profil d'inférence UE** — les données restent dans
-   l'Union européenne, mais peuvent être traitées dans plusieurs pays de l'UE, pas seulement à
-   Paris. D'accord pour le SDK. Jean-Guy crée lui-même le compte AWS et ouvre l'accès au modèle.
+1. **Fournisseur** : Claude par Amazon Bedrock, **lu uniquement en Irlande, dans l'Union
+   européenne** (eu-west-1 ; le 11/11, le profil « EU », qui inclut Zurich et Londres, est écarté ;
+   remplace « profil d'inférence UE » du 10/11). D'accord pour le SDK. Jean-Guy crée lui-même le compte AWS et ouvre l'accès au modèle.
 2. **Critères doux** : la liste du point A.5. « Pas de copropriété » devient un vrai critère (A.4).
 3. **La description** est lue seulement pour juger et citer une courte phrase.
 4. **Plafond** : 10 € par mois et par agence, réglé par l'opérateur.

@@ -22,10 +22,10 @@ conversation.
    formulaire de cas d'usage, une fois par compte (« Lecture de notes d'agents immobiliers pour
    pré-remplir une fiche client, vérifiée par l'agent »). Si une page « Model access » s'affiche, y
    demander l'accès aux deux modèles.
-7. **Où la lecture se fait** (décision à prendre, 11/11) : le profil « EU » de Claude sur Bedrock
+7. **Où la lecture se fait** — **décidé le 11/11 : l'Irlande seule.** Le profil « EU » de Claude sur Bedrock
    répartit les lectures entre les régions européennes d'AWS, **Zurich (Suisse) et Londres
    (Royaume-Uni) comprises**, hors de l'Union (doc « Claude in Amazon Bedrock », Regions). L'autre
-   choix est l'Irlande seule (« In-region only ») : le modèle s'appelle alors
+   choix, retenu, est l'Irlande seule (« In-region only ») : le modèle s'appelle alors
    `anthropic.claude-sonnet-5-5` / `anthropic.claude-haiku-5-5`, sans `eu.`, depuis eu-west-1.
 8. **Vérifier que « Model invocation logging » est désactivé** : Bedrock → Settings → « Model
    invocation logging » doit être éteint (c'est le réglage par défaut). Allumé, AWS garderait dans
@@ -54,8 +54,8 @@ conversation.
     `ACM_AWS_SECRET_ACCESS_KEY`, `ACM_AWS_REGION=eu-west-1` — sans point final (le 11/11,
     `.env.local` portait « eu-west-3. »). Pas les noms `AWS_…`, que Vercel réserve ; jamais de
     `NEXT_PUBLIC_`.
-13. **Donner au chef** le choix de l'étape 7 (profil EU ou Irlande seule) ; les identifiants des
-    modèles ne sont pas des secrets.
+13. **Prévenir le chef** quand c'est fait (fait le 11/11 : droit, région, variables dans le projet
+    Vercel `acm-studio`, Production et Preview).
 
 Plus tard, avant de faire payer les agences : remplacer cette clé par un lien OIDC Vercel → AWS
 (`docs/IDEES.md`, 10/11).
