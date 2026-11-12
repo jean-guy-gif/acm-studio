@@ -252,10 +252,9 @@ describe('saveBuyerFromNotes', () => {
     );
   });
 
-  it('« Compléter » n’écrit que les champs validés : la modification d’un collègue reste', async () => {
-    // La fiche telle qu'elle est EN BASE au moment d'enregistrer : un collègue vient d'y changer
-    // l'e-mail et les notes pendant que le conseiller vérifiait la proposition.
-    const row = {
+  // La fiche telle qu'elle est EN BASE au moment d'enregistrer « Compléter ».
+  function existingRow() {
+    return {
       id: 'b-1',
       agency_id: 'agency-a',
       advisor_id: 'u2',
@@ -297,6 +296,12 @@ describe('saveBuyerFromNotes', () => {
       soft_criteria: [{ key: 'vue', words: 'une vue' }],
       fields_to_verify: ['email'],
     };
+  }
+
+  it('« Compléter » n’écrit que les champs validés : la modification d’un collègue reste', async () => {
+    // La fiche telle qu'elle est EN BASE au moment d'enregistrer : un collègue vient d'y changer
+    // l'e-mail et les notes pendant que le conseiller vérifiait la proposition.
+    const row = existingRow();
     state.respond = (calls) => (calls.at(-1)?.method === 'maybeSingle' ? { data: row } : {});
     // L'écran n'envoie que ce que le conseiller a coché : le téléphone, une ★ et un critère doux.
     const form = new FormData();
@@ -334,6 +339,26 @@ describe('saveBuyerFromNotes', () => {
     // Ni l'e-mail ni les notes du collègue ne sont réécrits.
     expect(update).not.toHaveProperty('email');
     expect(update).not.toHaveProperty('notes');
+    // La lecture est tracée : la fiche d'abord, puis l'issue « complétée » sur sa ligne.
+    expect(fake.writes()).toEqual(['update buyers', 'update ai_usage']);
+    const close = fake.calls.filter((call) => call.method === 'update')[1]?.args[0];
+    expect(close).toMatchObject({ outcome: 'completed', buyer_id: 'b-1' });
+  });
+
+  it('« Compléter » : une commune tapée s’ajoute à celles de la fiche, sans les remplacer', async () => {
+    const row = existingRow();
+    state.respond = (calls) => (calls.at(-1)?.method === 'maybeSingle' ? { data: row } : {});
+    const form = new FormData();
+    form.set('buyer_id', 'b-1');
+    form.set('usage_id', 'usage-1');
+    form.append('cities_add', 'Tourrettes-sur-Loup');
+    expect(await saveBuyerFromNotes(form)).toEqual({ ok: true, buyerId: 'b-1' });
+    const update = fake.calls.find((call) => call.method === 'update')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(update.cities).toEqual(['Vence', 'Tourrettes-sur-Loup']);
+    expect(update).not.toHaveProperty('email');
   });
 
   it('refuse une fiche invalide sans rien écrire', async () => {

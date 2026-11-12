@@ -1025,6 +1025,9 @@ export async function seedDemoDossier(
       subject_property_id: subjectRow.id,
       agency_id: closer.agencyId,
       is_condominium: plan.isCondominium,
+      // Une copropriété complète, comme un conseiller la renseigne : sans lots ni charges,
+      // « Avant le rendez-vous » dirait « copropriété incomplète ».
+      ...(plan.isCondominium ? demoCondominiumFacts(plan.property) : {}),
     });
     if (error) return failed();
   }
@@ -1250,6 +1253,21 @@ export async function seedDemoDossier(
 
 // Le dossier à moitié créé est retiré ; si ce retrait échoue, il reste, et la vérification finale
 // le comptera (« 7 dossiers au lieu de 6 ») : l'échec entre au journal.
+// L'immeuble inventé de l'appartement d'Antibes : 24 lots dont 18 d'habitation, les charges de
+// la fiche sur l'année.
+function demoCondominiumFacts(property: Record<string, unknown> | null): {
+  total_lots: number;
+  residential_lots: number;
+  annual_charges: number | null;
+} {
+  const monthly = property?.monthly_charges;
+  return {
+    total_lots: 24,
+    residential_lots: 18,
+    annual_charges: typeof monthly === 'number' ? monthly * 12 : null,
+  };
+}
+
 async function deleteOne(supabase: Client, closer: Closer, projectId: string): Promise<void> {
   for (const table of [
     'live_seller_responses',

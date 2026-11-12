@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { knownCondominium } from '@/features/buyers/services/condominium';
+import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 151 — la copropriété connue des biens vendeurs de ces dossiers, par dossier. Une lecture
@@ -18,7 +19,11 @@ export async function getMandateCondominiums(
     .select('project_id, subject_property_condominiums(is_condominium)')
     .eq('agency_id', agencyId)
     .in('project_id', projectIds);
-  if (error) return known;
+  if (error) {
+    // L'échec entre au journal (M100) ; la copropriété reste inconnue : rien n'est écarté.
+    await reportServerError('get-mandate-condominiums', error);
+    return known;
+  }
   for (const row of data ?? []) {
     const value = knownCondominium(row.subject_property_condominiums);
     if (value != null) known.set(row.project_id, value);

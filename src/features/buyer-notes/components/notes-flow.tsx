@@ -30,6 +30,7 @@ import {
   PROPOSAL_CARDS,
   cardSource,
   cardText,
+  citiesCardUnchecked,
   type ProposalCard,
 } from '@/features/buyer-notes/services/proposal-display';
 import { proposalForm, type ExistingBuyer } from '@/features/buyer-notes/services/proposal-form';
@@ -498,6 +499,12 @@ function NotesProposal({
     proposal.softCriteria.length +
     (proposal.financing || proposal.cashSuggestion ? 1 : 0);
 
+  const citiesUnchecked = citiesCardUnchecked(
+    proposal.values,
+    existing ? beforeValues : null,
+    kept,
+  );
+
   function submit() {
     const keptFields = new Set<NoteField>(
       PROPOSAL_CARDS.filter((card) => kept.has(card.id)).flatMap((card) => card.fields),
@@ -509,7 +516,9 @@ function NotesProposal({
       cashValidated,
       financingKept,
       typedName,
-      typedCities,
+      // Sur une fiche existante, une carte « Communes » qui porte une case décochée n'écrit rien,
+      // pas même la commune tapée dans la carte (A.8, rien sans coche).
+      typedCities: citiesUnchecked ? '' : typedCities,
     });
     const form = new FormData();
     for (const [name, value] of Object.entries(fields)) {
