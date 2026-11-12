@@ -78,6 +78,11 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     await expect(form.getByTestId('voucher-outside-preview')).toContainText(
       /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : [\d\s ]+ €/,
     );
+    // Mission 154 — le nom de la fiche, suggéré d'un geste, jamais rempli d'office.
+    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('');
+    await form.getByTestId('voucher-take-buyer-name').click();
+    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('Mr and Mrs Wilson');
+    await expect(form.getByTestId('voucher-take-buyer-name')).toHaveCount(0);
     await form.getByTestId('voucher-visitor-1').fill('John Wilson');
     await form
       .getByTestId('voucher-visitor-address')
@@ -132,12 +137,17 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     if ((await address.count()) > 0) {
       await address.fill('3 rue du Vieux Pressoir, 06600 Antibes');
     }
-    await form.getByTestId('offer-lastname-1').fill('Wilson');
-    await form.getByTestId('offer-firstnames-1').fill('John');
+    // Mission 154 — le visiteur du bon, repris d'un geste ; son adresse, d'office.
+    await expect(form.getByTestId('offer-address')).toHaveValue(
+      '12 chemin des Figurants, 06600 Antibes',
+    );
+    await expect(form.getByTestId('offer-lastname-1')).toHaveValue('');
+    await form.getByTestId('offer-take-visitor-1').click();
+    await expect(form.getByTestId('offer-lastname-1')).toHaveValue('Wilson');
+    await expect(form.getByTestId('offer-firstnames-1')).toHaveValue('John');
     await form.getByTestId('offer-birthdate-1').fill('1975-03-02');
     await form.getByTestId('offer-birthplace-1').fill('Londres');
     await form.getByTestId('offer-profession-1').fill('architecte');
-    await form.getByTestId('offer-address').fill('12 chemin des Figurants, 06600 Antibes');
     await form.getByTestId('offer-parcel-section-1').fill('AB');
     await form.getByTestId('offer-parcel-number-1').fill('214');
     await form.getByTestId('offer-parcel-area-1').fill('18 a 40 ca');
