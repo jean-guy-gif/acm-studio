@@ -564,6 +564,10 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   par la seule spec e2e. Relecteur 5 min : un bloquant (la clé d'un titre de collaboration sans le
   n° du mandat imprimait un n° faux). Suite e2e complète 35 min, quatre specs touchées 16 min.
 
+- 12/11 · M154 · Un interrupteur qui ouvre une fonction ailleurs qu'en production se teste avec sa
+  valeur en paramètre (`tourVoucherOpen(env, lit)`) : l'allumer ne casse pas les tests qui prouvent
+  qu'éteint, la production reste fermée.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
