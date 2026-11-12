@@ -113,7 +113,12 @@ export function OfferDocument({ offer }: { offer: SignedOffer }) {
           <h1 className="font-title text-4xl font-bold tracking-wide">OFFRE D&apos;ACHAT FERME</h1>
           {fields ? (
             <p className="font-title text-lg font-semibold" data-testid="offer-cover-mandate">
-              Mandat n° {fields.mandateNumber}
+              {/* Mission 153 — hors mandat, le titre auquel l'Agence intervient. */}
+              {fields.title?.kind === 'search'
+                ? `Mandat de recherche n° ${fields.title.number}`
+                : fields.title?.kind === 'colleague'
+                  ? `En collaboration avec ${fields.title.agency} · mandat n° ${fields.title.number}`
+                  : `Mandat n° ${fields.mandateNumber}`}
             </p>
           ) : null}
           {cover ? (

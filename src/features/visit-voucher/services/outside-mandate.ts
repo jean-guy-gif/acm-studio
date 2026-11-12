@@ -19,12 +19,21 @@ export type OutsideTitle =
 
 const trimmed = (min: number, max: number) => z.string().trim().min(min).max(max);
 
+// « 2026-02-31 » n'existe pas : relue par le calendrier, la date doit revenir identique.
+function realDay(day: string): boolean {
+  const date = new Date(`${day}T12:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === day;
+}
+
 export const outsideTitleSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('search'),
     number: trimmed(1, 40),
-    // AAAA-MM-JJ, jamais dans le futur (relu au serveur).
-    signedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    // AAAA-MM-JJ, une date qui existe (jamais le 31/02), jamais dans le futur (relu au serveur).
+    signedOn: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .refine(realDay),
   }),
   z.object({
     kind: z.literal('colleague'),
@@ -42,19 +51,6 @@ export function readOutsideTitle(raw: unknown): OutsideTitle | null {
 export function titleDay(day: string): string {
   const [year, month, date] = day.split('-');
   return `${date}/${month}/${year}`;
-}
-
-// Deux titres disent-ils la même chose ? Un bon ne réunit que des biens au même titre : la phrase
-// de l'engagement est une seule (le mandat de recherche, ou l'agence du confrère).
-export function sameTitle(a: OutsideTitle, b: OutsideTitle): boolean {
-  const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
-  if (a.kind === 'search' && b.kind === 'search') {
-    return norm(a.number) === norm(b.number) && a.signedOn === b.signedOn;
-  }
-  if (a.kind === 'colleague' && b.kind === 'colleague') {
-    return norm(a.agency) === norm(b.agency);
-  }
-  return false;
 }
 
 // --- Le bon de visite -------------------------------------------------------------------------
@@ -92,8 +88,9 @@ export function offerOutsideNegotiated(title: OutsideTitle): string {
 export const OUTSIDE_TITLE_MISSING =
   'Choisissez à quel titre vous intervenez : sans lui, le document ne se crée pas.';
 export const OUTSIDE_TITLE_MIXED = 'Un bien hors mandat se signe sur un bon à part.';
-export const OUTSIDE_TITLE_DIFFERENT =
-  'Un bon ne réunit que des biens au même titre : signez les autres sur un bon à part.';
+// La phrase de l'engagement nomme UN confrère : en collaboration, un bien par bon (relecteur).
+export const OUTSIDE_COLLEAGUE_ONE =
+  'En collaboration, un bien par bon : signez les autres sur un bon à part.';
 // Jean-Guy, 12/11 : un rappel sous les honoraires, quand le titre est le mandat de recherche et que
 // l'annonce dit le bien vendu par une agence.
 export const OUTSIDE_FEES_REMINDER =

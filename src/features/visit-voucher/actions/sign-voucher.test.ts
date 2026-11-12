@@ -71,6 +71,7 @@ const BUYER = '11111111-1111-4111-8111-111111111111';
 const VISIT = '22222222-2222-4222-8222-222222222222';
 const OTHER = '33333333-3333-4333-8333-333333333333';
 const OUTSIDE = '44444444-4444-4444-8444-444444444444';
+const SECOND = '55555555-5555-4555-8555-555555555555';
 const PNG = `data:image/png;base64,${Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   Buffer.alloc(100),
@@ -336,6 +337,26 @@ describe('signer le bon de visite', () => {
       expect(document.rendered_text).toContain(
         'En collaboration avec Agence Littoral & Pins, mandat de vente n° V-4471 · Prix affiché',
       );
+    });
+
+    it('en collaboration, un bien par bon : le confrère est nommé une fois', async () => {
+      state.context = context({
+        visits: [
+          ...context().visits,
+          { ...context().visits[2]!, visitId: SECOND, label: 'Maison · Valbonne' },
+        ],
+      });
+      const result = await signVisitVoucher(
+        input({
+          biens: [outsideBien, { ...outsideBien, visitId: SECOND }],
+          title: { kind: 'colleague', agency: 'Agence Littoral & Pins', number: 'V-4471' },
+        }),
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'En collaboration, un bien par bon : signez les autres sur un bon à part.',
+      });
+      expect(state.writes).toEqual([]);
     });
   });
 });

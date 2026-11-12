@@ -24,6 +24,7 @@ import { SignaturePad } from '@/features/visit-voucher/components/signature-pad'
 import { VoucherShare } from '@/features/visit-voucher/components/voucher-share';
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
+  OUTSIDE_COLLEAGUE_ONE,
   OUTSIDE_TITLE_MIXED,
   voucherOutsideLine,
   withBuyer,
@@ -136,6 +137,7 @@ export function VoucherForm({
   const outside = chosen[0]?.outside ?? null;
   const firstOutside = chosen.find((visit) => visit.outside) ?? null;
   const validTitle = outside ? draftTitle(title) : null;
+  const colleagueTooMany = validTitle?.kind === 'colleague' && chosen.length > 1;
   const searchHint =
     context.lastSearchTitle &&
     title.searchNumber === context.lastSearchTitle.number &&
@@ -281,6 +283,11 @@ export function VoucherForm({
             );
           })}
         </ul>
+        {colleagueTooMany ? (
+          <p className="text-sm font-semibold text-amber-800" data-testid="voucher-colleague-one">
+            {OUTSIDE_COLLEAGUE_ONE}
+          </p>
+        ) : null}
         {validTitle ? (
           <div
             className="flex flex-col gap-1 rounded-lg border border-l-4 border-zinc-200 border-l-brand-deep bg-white px-3 py-2 stage:border-white/10 stage:bg-white/5"
@@ -436,6 +443,7 @@ export function VoucherForm({
             !approved ||
             chosen.length === 0 ||
             (outside === true && validTitle == null) ||
+            colleagueTooMany ||
             signatures.slice(0, visitors.length).some((value) => value == null)
           }
         >

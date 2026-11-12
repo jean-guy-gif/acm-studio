@@ -51,6 +51,8 @@ export const offerInputSchema = z
     title: outsideTitleSchema.nullable().default(null),
     // Hors mandat, l'adresse du bien se saisit (sous mandat, celle du dossier vendeur l'emporte).
     propertyAddress: z.string().trim().max(300).nullable().default(null),
+    // Hors mandat, la copropriété se déclare (sous mandat, la fiche du bien vendeur l'emporte).
+    condominium: z.boolean().default(false),
     agent: z.object({ name: trimmed(2, 160), rsac: trimmed(2, 60) }).nullable(),
     parcels: z.array(parcelSchema).min(1).max(10),
     totalArea: trimmed(1, 40),

@@ -94,7 +94,9 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
         : 'Adresse du bien vendeur manquante : complétez la fiche du bien.',
     };
   }
-  if (visit.condominium && input.lots.length === 0) {
+  // Mission 153 (relecteur) — hors mandat, la copropriété est celle que déclare le conseiller.
+  const condominium = visit.outside ? input.condominium : visit.condominium;
+  if (condominium && input.lots.length === 0) {
     return { ok: false, error: 'Le bien est en copropriété : indiquez au moins un lot.' };
   }
   const signatures = input.signatures.map(decodeSignature);
@@ -117,11 +119,11 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       fiscalResidenceFrance: input.fiscalResidenceFrance,
       mandateNumber,
       agent: input.agent,
-      condominium: visit.condominium,
+      condominium,
       propertyAddress,
       parcels: input.parcels,
       totalArea: input.totalArea,
-      lots: visit.condominium ? input.lots : [],
+      lots: condominium ? input.lots : [],
       price: input.price,
       feesPaidBy: input.feesPaidBy,
       fees: input.fees,
