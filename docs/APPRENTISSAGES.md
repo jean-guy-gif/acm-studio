@@ -546,6 +546,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   jouent hors des tests, par `missions/M151-essais/mesure.mjs`, et ne se renotent qu'avec
   `M151_MODELES` posé, sinon le bilan est écrasé.
 
+- 12/11 · M153 · La démo fraîche n'a qu'une visite sur une annonce du marché, celle de Mr and Mrs
+  Wilson à Antibes ; les visites des Keller sur les annonces naissent pendant la spec `demo`. Une
+  spec qui finit sur une page sans menu (l'offre signée, `(print)`) ne peut pas remettre la démo à
+  zéro par l'écran : revenir d'abord sur une page de l'application. Relecteur 4 min : trois bloquants
+  que ni les tests ni l'e2e n'avaient vus (une opposition non lue sans courrier, la couverture de
+  l'offre, la copropriété perdue). Suite e2e complète 32 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
