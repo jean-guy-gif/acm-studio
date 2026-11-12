@@ -309,6 +309,9 @@ async function call(model, system, content, schema, maxTokens = 4000) {
     model,
     max_tokens: maxTokens,
     system,
+    // Température au plus bas sur Claude 4, comme le code (décision de Jean-Guy, 12/11) ; les 5.5
+    // la refusent. Demande le SDK 0.36 (`M151_SDK_DIR`), qui envoie l'ancienne version d'API.
+    ...(generation4(model) ? { temperature: 0 } : {}),
     output_config: { ...effortOf(model), format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content }],
   });
@@ -468,8 +471,15 @@ if (doClassement) {
   if (!corpusPath) throw new Error('M151_CORPUS manquant : les 73 annonces (hors du dépôt)');
   const corpus = JSON.parse(readFileSync(corpusPath, 'utf8'));
   const labels = JSON.parse(readFileSync(join(here, 'corriges/classement.json'), 'utf8')).annonces;
-  say(`\n# Mesure du classement — ${stamp} — ${corpus.length} annonces, 8 par appel`);
+  // M151_PASSES_CLASSEMENT (défaut 1) : plusieurs passes identiques mesurent la stabilité — combien
+  // d'annonces changent de jugement d'une passe à l'autre (demande de Jean-Guy, 12/11).
+  const classPasses = Number(process.env.M151_PASSES_CLASSEMENT ?? 1);
+  say(`\n# Mesure du classement — ${stamp} — ${corpus.length} annonces, 8 par appel, ${classPasses} passe(s)`);
   for (const model of models) {
+   const verdictsByPass = [];
+   for (let pass = 1; pass <= classPasses; pass += 1) {
+    const verdicts = new Map();
+    verdictsByPass.push(verdicts);
     let checked = 0;
     let agree = 0;
     let quotes = 0;
@@ -487,7 +497,10 @@ if (doClassement) {
       try {
         const r = await call(model, CONSIGNE_CLASSEMENT, [{ type: 'text', text }], CLASS_SCHEMA, 8000);
         usd += cost(model, r.usage);
-        writeFileSync(join(outDir, `${stamp}-${model}-classement-lot${i / 8 + 1}.json`), JSON.stringify(r.json, null, 1));
+        writeFileSync(join(outDir, `${stamp}-${model}-classement-p${pass}-lot${i / 8 + 1}.json`), JSON.stringify(r.json, null, 1));
+        for (const a of r.json.annonces ?? []) {
+          verdicts.set(a.id, (a.jugements ?? []).map((j) => `${j.critere}:${j.verdict}`).sort().join('|'));
+        }
         const answered = new Set((r.json.annonces ?? []).map((a) => a.id));
         for (const b of batch)
           if (!answered.has(b.id)) {
@@ -527,8 +540,16 @@ if (doClassement) {
         say(`- lot ${i / 8 + 1} : ERREUR ${e.status ?? ''} ${scrub(e.message).slice(0, 300)}`);
       }
     }
-    say(`\n**${model}** : calme ${agree}/${checked} conformes · cachet ${cachetAgree}/${cachetChecked} conformes · calme par l'étiquette seule marqué « à vérifier » ${tagOk}/${tagChecked} · citations mot pour mot ${quotesOk}/${quotes} · annonces absentes de la réponse ${absent} · coût ${usd.toFixed(3)} $ pour ${corpus.length} annonces`);
+    say(`\n**${model}${classPasses > 1 ? ` · passe ${pass}` : ''}** : calme ${agree}/${checked} conformes · cachet ${cachetAgree}/${cachetChecked} conformes · calme par l'étiquette seule marqué « à vérifier » ${tagOk}/${tagChecked} · citations mot pour mot ${quotesOk}/${quotes} · annonces absentes de la réponse ${absent} · coût ${usd.toFixed(3)} $ pour ${corpus.length} annonces`);
     for (const m of misses) say(`- ${m}`);
+   }
+    if (verdictsByPass.length > 1) {
+      const [first, ...others] = verdictsByPass;
+      const ids = [...first.keys()].filter((id) => others.every((other) => other.has(id)));
+      const changed = ids.filter((id) => others.some((other) => other.get(id) !== first.get(id)));
+      say(`\n**Stabilité ${model}** : ${changed.length} annonce(s) sur ${ids.length} lues à chaque passe changent de jugement d'une passe à l'autre`);
+      for (const id of changed) say(`- rang ${labels[id]?.rang ?? '?'} : ${verdictsByPass.map((v) => v.get(id)).join('  →  ')}`);
+    }
   }
 }
 

@@ -261,6 +261,17 @@ Les photos des annonces lues par l'IA ; un critère doux qui écarte ; une remar
 dans « Notes » ; la dictée vocale ; la lecture d'un e-mail transféré ; une recherche Stream Estate
 par mots (tant que l'API l'ignore) ; la raison du rang dite à l'acquéreur (après la bêta).
 
+## Points à observer pendant la bêta
+
+- **Photo d'iPhone envoyée depuis Chrome sur Mac** (Jean-Guy, 12/11) : Chrome ne lit pas le format
+  HEIC ; la photo est refusée avec sa consigne (« prenez la photo depuis l'iPhone ou l'iPad, ou
+  enregistrez-la en JPEG »), rien ne part au modèle. Sur iPhone, iPad et Safari sur Mac, la photo
+  est convertie en JPEG avant l'envoi. Compter les refus HEIC ; s'ils reviennent, une conversion
+  dans le navigateur demanderait une dépendance de plus (à décider).
+- **Le coût réel d'une lecture au-delà de sa réservation** (Jean-Guy, 12/11) : la trace garde le
+  coût réel ; la réservation prend une marge de 25 % pour que le dépassement reste rare. À relever
+  sur les premières lectures (`ai_usage`, coût face à la réservation).
+
 ## Essai (interne, l'e2e)
 
 Démo : « Nouvel acquéreur » → « Depuis mes notes » → la photo proposée → la fiche des Arnaud, les

@@ -41,15 +41,19 @@ export function costMillicents(model: string, usage: TokenUsage): number | null 
   return Math.ceil(dollars * MILLICENTS_PER_EURO - 1e-6);
 }
 
-// Le pire cas, réservé avant l'appel (M105) : l'entrée estimée large et toute la sortie permise.
+// Le pire cas, réservé avant l'appel (M105) : l'entrée estimée large et toute la sortie permise,
+// plus une marge. La trace garde le coût RÉEL, même s'il dépasse la réservation (décision de
+// Jean-Guy, 12/11) : la marge rend ce dépassement rare.
+export const RESERVATION_MARGIN = 1.25;
 export function worstCaseMillicents(
   model: string,
   input: { estimatedInputTokens: number; maxOutputTokens: number },
 ): number | null {
-  return costMillicents(model, {
+  const cost = costMillicents(model, {
     input_tokens: Math.ceil(input.estimatedInputTokens * 1.5),
     output_tokens: input.maxOutputTokens,
   });
+  return cost == null ? null : Math.ceil(cost * RESERVATION_MARGIN);
 }
 
 // La température au plus bas, là où le modèle l'accepte (décision de Jean-Guy, 12/11) : Claude 4

@@ -41,8 +41,8 @@ describe('les modèles de lecture (Mission 151)', () => {
     });
     const real = costMillicents(AI_DEFAULT_MODEL, { input_tokens: 4000, output_tokens: 1500 });
     expect(worst).toBeGreaterThan(real ?? 0);
-    // Une lecture de notes au pire : moins de 10 centimes (≈ 8,6).
-    expect(worst).toBeLessThan(10_000);
+    // Une lecture de notes au pire, marge comprise : moins de 11 centimes (≈ 10,7).
+    expect(worst).toBeLessThan(11_000);
   });
 
   it('température au plus bas sur Claude 4 ; rien sur les 5.5, qui la refusent', () => {

@@ -73,7 +73,8 @@ create index ai_usage_agency_month_idx on public.ai_usage (agency_id, created_at
 create index ai_usage_buyer_idx on public.ai_usage (buyer_id) where buyer_id is not null;
 
 -- La base vérifie l'agence de la fiche et de l'auteur (modèle M134, M135), et FIGE la trace une
--- fois l'issue posée : seule la suppression de la fiche peut encore vider `buyer_id`.
+-- fois l'issue posée. Le verrou ne bloque aucune suppression (leçon de la M110) : la suppression
+-- de la fiche ou du compte de l'auteur vide encore `buyer_id` ou `user_id` (`on delete set null`).
 create function public.check_ai_usage()
 returns trigger
 language plpgsql
@@ -82,8 +83,10 @@ set search_path = public
 as $$
 begin
   if tg_op = 'UPDATE' and old.outcome <> 'pending' and not old.reserved then
-    if new.buyer_id is null and old.buyer_id is not null
-       and (to_jsonb(new) - 'buyer_id' - 'updated_at') = (to_jsonb(old) - 'buyer_id' - 'updated_at') then
+    if (new.buyer_id is not distinct from old.buyer_id or new.buyer_id is null)
+       and (new.user_id is not distinct from old.user_id or new.user_id is null)
+       and (to_jsonb(new) - 'buyer_id' - 'user_id' - 'updated_at')
+           = (to_jsonb(old) - 'buyer_id' - 'user_id' - 'updated_at') then
       return new;
     end if;
     raise exception 'ai_usage : une lecture close ne se modifie plus' using errcode = '42501';

@@ -266,7 +266,8 @@ begin
 end $$;
 reset role;
 
--- §6 — la fiche supprimée : l'usage reste à l'agence, sans fiche.
+-- §6 — la fiche supprimée, puis le compte de l'auteur supprimé : l'usage reste à l'agence, sans
+-- fiche ni auteur ; le verrou de la trace ne bloque aucune suppression (M110).
 do $$
 begin
   delete from public.buyers where id = '151ccccc-0000-0000-0000-000000000001';
@@ -276,6 +277,15 @@ begin
   if exists (select 1 from public.ai_usage where buyer_id is not null
                and agency_id = '151aaaaa-0000-0000-0000-000000000000') then
     raise exception 'FAIL 6: l''usage pointe encore vers la fiche supprimée';
+  end if;
+  delete from public.profiles where id = '15111111-1111-1111-1111-111111111111';
+  delete from auth.users where id = '15111111-1111-1111-1111-111111111111';
+  if exists (select 1 from public.ai_usage where user_id is not null
+               and agency_id = '151aaaaa-0000-0000-0000-000000000000') then
+    raise exception 'FAIL 6: l''usage pointe encore vers le compte supprimé';
+  end if;
+  if (select count(*) from public.ai_usage where agency_id = '151aaaaa-0000-0000-0000-000000000000') <> 3 then
+    raise exception 'FAIL 6: la suppression du compte emporte la consommation';
   end if;
 end $$;
 
