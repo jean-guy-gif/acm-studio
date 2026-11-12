@@ -128,14 +128,6 @@ export function VisitRow({
           Bon de visite signé le {buyerDateLabel(voucher.signedAt)}
         </Link>
       ) : null}
-      {outsideMandateNote(line.itemSource, next) ? (
-        <p
-          className="text-xs text-zinc-500 stage:text-white/60"
-          data-testid="visit-outside-mandate"
-        >
-          {outsideMandateNote(line.itemSource, next)}
-        </p>
-      ) : null}
       <VisitActions
         visitId={line.id}
         buyerId={line.buyerId}
@@ -146,6 +138,14 @@ export function VisitRow({
         colleague={letter?.colleague ?? false}
         openMessages={openMessages && line.report?.nextStep != null}
       />
+      {outsideMandateNote(line.itemSource, next) ? (
+        <p
+          className="text-xs text-zinc-500 stage:text-white/60"
+          data-testid="visit-outside-mandate"
+        >
+          {outsideMandateNote(line.itemSource, next)}
+        </p>
+      ) : null}
     </li>
   );
 }
