@@ -31,7 +31,13 @@ sert à ranger les biens trouvés, en disant pourquoi.
    jamais par un fichier. Seul part le texte d'un PDF qui en a un (lu dans le navigateur, M43) ; une
    photo, une capture ou un PDF scanné partent comme image, une seule fois. Chez AWS, la
    journalisation des appels (« Model invocation logging ») reste désactivée, vérifiée à l'étape 0 :
-   Bedrock ne garde alors ni ce qu'il lit ni ce qu'il répond.
+   Bedrock ne garde alors ni ce qu'il lit ni ce qu'il répond. **Les sources** (la ligne des notes
+   d'où vient chaque champ, montrée à la validation) **ne sont jamais gardées non plus**, comme la
+   photo et le fichier (Jean-Guy, 12/11) : elles vivent dans l'écran jusqu'à « Créer la fiche »,
+   l'action de création n'a pas de champ pour elles (liste d'autorisation), la trace (A.11) ne garde
+   que les noms des champs proposés et gardés, jamais une valeur ni une ligne des notes, et le
+   journal d'erreurs ne reçoit jamais la réponse du modèle. Prouvé par un test : après « Créer la
+   fiche », aucune source n'existe en base, trace comprise.
 3. **Jamais de donnée sensible ni de jugement sur la personne** : ni santé, ni religion, ni
    origine, ni opinions, ni situation familiale, ni « pressé », « difficile », « indécis ». Le
    besoin peut être gardé (« De plain-pied »), jamais sa raison. Trois gardes : la consigne, une
@@ -113,7 +119,30 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
 3. **La proposition** (planche 2) : chaque champ de la fiche (M117) avec « À vérifier » et la ligne
    des notes d'où il vient ; un champ que les notes ne disent pas reste vide, jamais deviné (M38) ;
    une valeur hors liste vaut « non renseigné » (M78) ; le nom et une commune restent obligatoires ;
-   les ★ proposés sont à vérifier comme le reste.
+   les ★ proposés sont à vérifier comme le reste. Règles de lecture de Jean-Guy (12/11, mesurées
+   sur le plan B) :
+   - **aucune valeur par défaut** : le motif et le délai ne se proposent que s'ils sont écrits,
+     « résidence principale » ne se suppose jamais ;
+   - **une case non cochée ou un champ vide d'un export** vaut « inconnu », jamais « non » ;
+   - **les ★** : deux au plus, seulement parmi ceux de l'écran (M132 : Communes, Budget, Extérieur,
+     Parking, Piscine, Ascenseur) ; jamais le type de bien ; le budget seulement s'il est dit ferme,
+     jamais tiré d'une colonne d'export. **Un ★ sans sa source** (la ligne des notes qui le dit
+     indispensable) **est refusé au serveur** : il n'est pas proposé, le critère reste une
+     préférence ;
+   - **une contrainte pratique** (pas de voiture le week-end) peut aller en Notes, « à vérifier » ;
+     aucune autre mention sur la personne, sources comprises ; au serveur, la liste de mots refusés
+     (principe 3) passe aussi sur les sources, qui tombent sans faire tomber leur champ ;
+   - **les communes se vérifient au serveur** contre la liste officielle : celle des départements de
+     l'agence (son adresse, ses dossiers, ses acquéreurs), par la porte qui existe
+     (`geoProvider(isDemo).fetchDepartmentCommunes`, M114 ; la table locale pour l'agence de démo) ;
+     comparaison par `normalizeCommuneName` (M71 : accents, tirets, St / Ste), puis sans les petits
+     mots (de, du, la, le, les, sur) — « Châteauneuf-de-Grasse » → Châteauneuf-Grasse ; le nom
+     d'usage (Juan-les-Pins, M86) est gardé tel que lu, reconnu par la liste des alias ; un
+     arrondissement par M99. Une seule commune trouvée : proposée sous son nom officiel, « À
+     vérifier », avec « lu : … » ; aucune ou plusieurs : le champ reste au conseiller, jamais deviné
+     (M38, M103) ; le service en panne : la commune telle que lue, « commune non vérifiée » (M104),
+     jamais lue comme « aucune » (M98). La recherche par nom de geo.api.gouv.fr ne suffit pas :
+     elle ne trouve ni « Châteauneuf-de-Grasse » ni « St-Laurent-du-Var » (mesuré le 12/11).
 4. **« Copropriété acceptée »**, un vrai critère (Jean-Guy, 10/11) : oui / non / non renseigné,
    ★ possible, dans le formulaire complet, la proposition et le rapprochement. Un bien **en
    copropriété connue** écarte un ★ « non » (M118, M133) ; sans ★, « En copropriété » est un écart
@@ -135,7 +164,10 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
    **décochée** par défaut ; un champ vide proposé est coché (Jean-Guy, 10/11).
 9. **Le financement** n'est proposé que si les notes le disent clairement (« accord banque OK »),
    toujours « À vérifier », et ne s'écrit que par son action (M132), appelée par « Créer la fiche »
-   (Jean-Guy, 10/11).
+   (Jean-Guy, 10/11). **Un achat comptant** (« cash », « sans prêt ») est une suggestion à l'écran,
+   « Comptant, à vérifier », sans jamais l'origine des fonds : le conseiller la transforme ou non en
+   « Validé » ; aucune colonne nouvelle, `buyers.financing` garde ses trois valeurs (Jean-Guy,
+   12/11).
 10. **Le budget d'IA** de l'agence, comme Stream Estate (M100, M105) : réservation avant l'appel,
     règlement après, **10 € par mois et par agence**, réglé par un opérateur en bas de `/erreurs`,
     lu par le manager (Jean-Guy, 10/11) ; atteint : « Budget de lecture du mois atteint : saisissez

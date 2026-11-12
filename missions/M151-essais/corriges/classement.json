@@ -1,5 +1,5 @@
 {
- "_lire": "Corrigé du classement (partie B), écrit le 11/11/2026 AVANT tout appel aux modèles, sur les 73 annonces réelles de la mesure du 10/11 (concurrents de la sauvegarde du 09/11, repérés par leur identifiant ; leur texte ne va pas dans le dépôt). Pour chaque annonce, les jugements acceptés : « calme » toujours ; « cachet » seulement pour les 12 annonces relues à la main le 10/11 (6 de caractère, 3 récentes ou contemporaines, 3 pièges de mots : un collège Pierre…, le centre ancien, « charmant T3 »). Les autres jugements ne sont pas notés ; toute citation doit se trouver mot pour mot dans la description. — Règle de Jean-Guy du 12/11 : une étiquette « Calme » du portail compte pour le calme, marquée « à vérifier » ; « calme_a_verifier » marque les 6 annonces où seule l'étiquette le dit (aucun « calme », « paisible » ni « tranquill… » dans la description).",
+ "_lire": "Corrigé du classement (partie B), écrit le 11/11/2026 AVANT tout appel aux modèles, sur les 73 annonces réelles de la mesure du 10/11 (concurrents de la sauvegarde du 09/11, repérés par leur identifiant ; leur texte ne va pas dans le dépôt). Pour chaque annonce, les jugements acceptés : « calme » toujours ; « cachet » seulement pour les 12 annonces relues à la main le 10/11 (6 de caractère, 3 récentes ou contemporaines, 3 pièges de mots : un collège Pierre…, le centre ancien, « charmant T3 »). Les autres jugements ne sont pas notés ; toute citation doit se trouver mot pour mot dans la description. — Règle de Jean-Guy du 12/11 : une étiquette « Calme » du portail compte pour le calme, marquée « à vérifier » ; « calme_a_verifier » marque les 6 annonces où seule l'étiquette le dit (aucun « calme », « paisible » ni « tranquill… » dans la description). — Règles de Jean-Guy du 12/11 (troisième mesure) : tout mot qui dit le calme compte ; la proximité d'une gare, du centre ou des commerces sans un mot sur le calme vaut « rien » ; un grand axe ne nuance le calme que si le bien est dessus ou à côté. Rang 5 : « clairement » (« à quelques minutes des principaux axes » n'est pas une nuance) ; rang 70 : « rien » accepté (la tranquillité de la région n'est pas celle du bien).",
  "annonces": {
   "9bab9493-2dc9-425b-8899-cccf5f41df17": {
    "rang": 0,
@@ -35,7 +35,7 @@
   "c8532e59-ef12-43e5-9b70-d6c55f6116ab": {
    "rang": 5,
    "calme": [
-    "reserve"
+    "clairement"
    ]
   },
   "c1e59bc6-6786-4ab8-905c-1680a5a54c62": {
@@ -498,7 +498,8 @@
    "rang": 70,
    "calme": [
     "clairement",
-    "reserve"
+    "reserve",
+    "rien"
    ]
   },
   "716abc2c-e57a-4d9b-b15e-a600a47de80b": {

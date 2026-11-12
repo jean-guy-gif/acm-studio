@@ -5,11 +5,11 @@
 sur une génération plus ancienne, pour valider le dossier d'essais, le barème et la méthode
 (décision de Jean-Guy, 12/11). La fiche et le texte pour le juriste restent écrits pour Claude 5.5.
 
-Deux mesures sur Sonnet 4.6 : la première (06 h 24), puis, après les règles de Jean-Guy du 12/11,
-la seconde (08 h 15). Bilans bruts dans `M151-essais/resultats/` : `bilan-2026-11-12-06-24.md`,
-`bilan-2026-11-12-08-15.md` (fiches et classement), et les deux mêmes renotées sans appel sur les
-corrigés du 12/11 (`…-renote.md`, celles qui font foi pour les fiches). Réponses brutes et 73
-annonces hors du dépôt.
+Trois mesures sur Sonnet 4.6 : la première (06 h 24), la deuxième après les règles de Jean-Guy du
+12/11 (08 h 15), la troisième après ses décisions suivantes du 12/11 (08 h 46). Bilans bruts dans
+`M151-essais/resultats/` : `bilan-2026-11-12-06-24.md`, `bilan-2026-11-12-08-15.md`,
+`bilan-2026-11-12-08-46.md`, et les deux premières renotées sans appel sur les corrigés du 12/11
+(`…-renote.md`, celles qui font foi pour les fiches). Réponses brutes et 73 annonces hors du dépôt.
 
 ## Les conditions
 
@@ -231,19 +231,117 @@ Mesuré le 12/11 : la recherche par nom de geo.api.gouv.fr ne la trouve pas (auc
 5. **Les tests** : les cas N1 à C5 (Juan, St-Laurent, Châteauneuf), un nom absent, deux homonymes,
    le service en panne, l'agence de démo sans appel réseau.
 
+## Les décisions du 12/11 (suite), appliquées
+
+- **Calme**, dans la consigne : tout mot qui dit le calme compte (serein, quiétude, paisible,
+  tranquille et leurs proches) ; la proximité d'une gare, du centre ou des commerces, sans un mot
+  sur le calme, vaut « rien », jamais « contraire » ; un grand axe ne nuance le calme que si le bien
+  est dessus ou à côté. **Corrigés** : rang 5 « clairement » (« à quelques minutes des principaux
+  axes » est un atout d'accès) ; rang 70, « rien » accepté. Les autres « réserve » du corrigé
+  tiennent : le bien y est à côté (« à proximité immédiate de l'hôpital », « à deux pas du
+  boulevard Carnot », « futur tramway à proximité »).
+- **Fiches**, dans la consigne : une case non cochée d'un export vaut « inconnu » ; chaque ★ porte
+  sa source (`must_have:<clé>`), et le barème compte à part ceux qui n'en ont pas, que le serveur
+  refusera (ils ne sont plus « inventés » : ils ne seraient pas proposés).
+- **Dans la fiche du code** : le ★ sans source refusé au serveur, la suggestion « Comptant, à
+  vérifier », la vérification des communes, les sources jamais gardées.
+
+## Les trois mesures (Sonnet 4.6)
+
+| | 1re (06 h 24) | 2e (08 h 15) | **3e (08 h 46)** |
+|---|---|---|---|
+| **Fiches** — champs justes en tout (sur 484) | 465 | 482 | **482** |
+| Champs attendus remplis justes | 208 / 212 | 211 / 212 | 211 / 212 |
+| Champs faux | 9 | 2 | 2 |
+| Inventés (champs et ★) | 25 | 2 | **0** |
+| ★ sans source, refusés au serveur | — | — | 2 |
+| Mentions personnelles | 4 | 1 | **3** |
+| Coût de la fiche | 0,020 $ | 0,020 $ | 0,021 $ |
+| **Classement** — calme conformes | 63 / 73 | 69 / 73 (71 / 73 sur les corrigés du jour) | **71 / 72** (1 annonce omise) |
+| Étiquette seule, marquée « à vérifier » | — | 6 / 6 | 6 / 6 |
+| Cachet conformes | 12 / 12 | 12 / 12 | 12 / 12 |
+| Citations mot pour mot | 65 / 66 | 67 / 68 | **69 / 69** |
+| Coût pour 73 annonces | 0,271 $ | 0,290 $ | 0,295 $ |
+
+Les fiches des deux premières mesures sont renotées sur les corrigés du 12/11 ; la règle de la
+source des ★ ne vaut que pour la troisième (les deux autres consignes ne la demandaient pas).
+
+**Ce que dit la troisième mesure :**
+
+- **Plus aucun inventé.** La commune ★ de N6 n'a pas de source, aux deux passes : le serveur la
+  refusera. C'est exactement ce que la règle du 12/11 attrape.
+- **Les mentions montent de 1 à 3, toutes dans les sources de N4** : « cash (vente Stockholm), pas
+  de prêt » recopié aux deux passes comme source du financement (le financement lui-même est juste,
+  « comptant, à vérifier »), et « suédois, parlent angl. » comme source de la langue. La consigne ne
+  tient pas sur les sources : **la liste de mots refusés au serveur doit passer sur les sources**
+  (reporté dans la fiche : la source tombe, le champ reste). Avec les sources jamais gardées
+  (ci-dessous), ce qui reste est un affichage d'une ligne des notes du conseiller lui-même, à la
+  validation ; la garde l'évite quand même.
+- **La case non cochée** : C4, parking « non » encore une fois sur deux, malgré la règle. Le serveur
+  ne peut pas la corriger seul (il ne voit pas la case) : à suivre sur Claude 5.5 ; à défaut, un
+  « non » tiré d'un export pourrait être proposé décoché.
+- **Châteauneuf-de-Grasse**, une fois sur deux : la vérification des communes la rattrapera.
+- **Le calme** : les rangs 5 et 64 sont réglés (l'accès aux axes n'est plus une nuance,
+  « quiétude » est lu). Deux écarts restent :
+  - **le rang 70 manque à la réponse** : le modèle a sauté une annonce d'un lot de 8. Dans le code,
+    une annonce absente de la réponse ne vaut jamais « n'en dit rien » sans le dire : elle se
+    relance une fois, puis reste « non lue » (M98) ;
+  - **le rang 58** (« un cadre récent et serein ») passe de « rien » à « contraire », en citant « dans un lotissement récent et agréable » : le modèle
+    applique au calme la règle du cachet (« récent » est le contraire du cachet). Proposition pour
+    la consigne : « récent » ou « contemporain » ne dit rien du calme.
+
+## Les sources : gardées ou seulement montrées ? (question du 12/11)
+
+**Dans la conception actuelle, elles ne sont que montrées**, mais rien ne l'interdisait. La planche 2
+affiche « d'après : « … » » sous chaque champ, à la validation ; la fiche créée (planche 3) n'en
+montre aucune, seulement « leurs mots » des critères doux, qui sont un champ validé, et « 15 champs
+proposés, 15 gardés ». Principe 2 : « seuls les champs validés sont enregistrés ». Deux points
+pouvaient les garder quand même : la trace (A.11, « les champs proposés et ceux gardés »), si on y
+écrivait les valeurs proposées avec leur ligne ; et un brouillon de la proposition gardé côté
+serveur entre la lecture et « Créer la fiche ».
+
+**Pour que ce soit impossible** (reporté dans la fiche, principe 2) :
+1. La lecture renvoie la proposition, sources comprises, à l'écran et n'écrit rien ; aucun
+   brouillon en base. Une page rechargée perd la proposition : « Recommencer la lecture » refait un
+   appel (≈ 0,02 €).
+2. « Créer la fiche » n'envoie que les champs validés ; son schéma, en liste d'autorisation, n'a
+   pas de champ pour les sources : même envoyées, elles ne s'écrivent pas.
+3. La trace ne garde que les noms des champs proposés et gardés, jamais une valeur ni une ligne.
+4. Le journal d'erreurs (M100) ne reçoit jamais la réponse du modèle, seulement la cause.
+5. Un test : après « Créer la fiche », chaque ligne de source est cherchée dans toute la base,
+   trace comprise : absente (comme le critère d'acceptation 3).
+
+## Combien coûterait le classement de la veille (Sonnet 4.6)
+
+Mesuré : **0,295 $ pour 73 annonces, 0,0040 $ l'annonce** (deux critères, calme et cachet ; profil
+« EU », +10 % compris). La veille (M136) passe une fois par semaine par acquéreur prêt et facture
+20 annonces au plus par passage. Pour **10 acquéreurs prêts**, 52 semaines sur 12 mois, et toutes
+les annonces classées :
+
+10 × 4,33 passages × 20 annonces = **866 annonces par mois, ≈ 3,5 $ (≈ 3 €)**, au plus.
+
+- C'est un plafond : seuls les biens que la veille garde (nouveaux, sans indispensable contredit)
+  ont besoin d'être classés, et un passage n'en garde souvent que quelques-uns.
+- Le coût suit le nombre de critères doux de l'acquéreur : la réponse grandit avec eux (ici deux).
+- Sur Claude 5.5, au tarif public : Sonnet 5.5 (2 / 10 $) ≈ 2,3 $ ; Haiku 5.5 (0,10 / 0,50 $)
+  ≈ 0,12 $, à mesurer.
+- Pour comparaison, la même veille chez Stream Estate : 866 annonces à 0,01 € ≈ 8,7 €, dans son
+  plafond de 10 € (M136). Le classement tient dans le budget d'IA de 10 € par mois et par agence,
+  avec la lecture des notes (≈ 0,02 € la fiche).
+
 ## Ce que la mesure valide
 
-- **Le dossier d'essais et le barème tiennent**, avec le score « en tout », qui ne cache plus les
-  champs attendus vides. Restent à relire : le corrigé du rang 70.
-- **Les règles du 12/11 marchent sur Sonnet 4.6** : 482 / 484, inventés de 25 à 2, mentions de 4 à
-  1, calme de 63 à 69 sur 73, l'étiquette « à vérifier » 6 fois sur 6, au même coût.
-- **Deux gardes au serveur restent nécessaires**, quoi que dise la consigne : les mentions
-  personnelles dans les sources et les mots, et les citations mot pour mot.
+- **Le dossier d'essais et le barème tiennent** : trois mesures se comparent, renotées sans appel.
+- **Les règles du 12/11 marchent sur Sonnet 4.6** : 482 / 484, aucun inventé, calme 71 / 72,
+  l'étiquette « à vérifier » 6 fois sur 6, citations 69 / 69, au même coût.
+- **Trois gardes au serveur sont nécessaires**, quoi que dise la consigne : les mots refusés sur
+  les sources, le ★ sans source, les citations mot pour mot ; et une quatrième, l'annonce absente
+  de la réponse.
 - **Rien ne choisit encore entre Sonnet et Haiku** : Haiku n'a pas été relancé (pas encore ouvert).
 
 ## La suite
 
-1. Jean-Guy tranche les trois propositions du calme et le corrigé du rang 70.
+1. Jean-Guy dit s'il veut, dans la consigne, « récent ou contemporain ne dit rien du calme ».
 2. Jean-Guy ouvre Haiku 4.5 une fois dans le Playground (compte administrateur), puis je relance
    Haiku seul.
 3. Dès que le compte a accès à Claude 5.5 : lire par l'API les régions des profils
