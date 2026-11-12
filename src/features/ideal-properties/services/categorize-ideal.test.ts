@@ -258,7 +258,14 @@ describe('la copropriété', () => {
     );
     const unknown = judgeCandidate(noCondo, candidate({}));
     expect(unknown).toMatchObject({ category: 'strong', toCheck: [], toVerify: ['Copropriété'] });
-    expect(unknown.kind === 'kept' && toVerifyLabels(unknown)).toEqual(['Copropriété']);
+    expect(unknown.kind === 'kept' && toVerifyLabels(unknown)).toEqual([
+      'Copropriété : à vérifier',
+    ]);
+    // Une seule écriture, pour une annonce comme pour un bien de l'agence (Jean-Guy, 12/11).
+    expect(toVerifyLabels({ toCheck: ['Extérieur', 'Copropriété'], toVerify: [] })).toEqual([
+      'À vérifier : Extérieur',
+      'Copropriété : à vérifier',
+    ]);
   });
 
   it('hors copropriété connue : le critère est rempli et compté', () => {

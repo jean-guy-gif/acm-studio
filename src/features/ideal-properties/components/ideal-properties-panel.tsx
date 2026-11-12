@@ -132,7 +132,7 @@ function marketItem(entry: CategorizedCandidate, seenOn: string | null = null): 
     label: idealLabel(candidate),
     listedPrice: candidate.price,
     category: entry.category,
-    gaps: [...entry.gaps, ...toVerifyLabels(entry).map((label) => `À vérifier : ${label}`)],
+    gaps: [...entry.gaps, ...toVerifyLabels(entry)],
     snapshot: candidate as unknown as Record<string, unknown>,
   };
 }
@@ -459,7 +459,7 @@ export function IdealPropertiesPanel({
         ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
         : null,
       ...entry.gaps,
-      toVerifyLabels(entry).length > 0 ? `À vérifier : ${toVerifyLabels(entry).join(', ')}` : null,
+      ...toVerifyLabels(entry),
     ]
       .filter((part): part is string => part != null)
       .join(' · ');
@@ -503,7 +503,7 @@ export function IdealPropertiesPanel({
           </span>
           {entry.gaps.length > 0 ? <span className="text-xs">{entry.gaps.join(' · ')}</span> : null}
           {toVerifyLabels(entry).length > 0 ? (
-            <span className="text-xs">À vérifier : {toVerifyLabels(entry).join(', ')}</span>
+            <span className="text-xs">{toVerifyLabels(entry).join(' · ')}</span>
           ) : null}
         </div>
         {actions(item)}
