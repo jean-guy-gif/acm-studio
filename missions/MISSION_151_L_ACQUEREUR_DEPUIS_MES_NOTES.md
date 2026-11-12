@@ -77,6 +77,12 @@ sert à ranger les biens trouvés, en disant pourquoi.
    relevée arrête la mission.
 4. **Le chef mesure aussi** où Stream Estate dit la copropriété (charges, nombre de lots, étiquette),
    pour le nouveau critère, sur les réponses déjà gardées d'abord, sans appel s'il le peut.
+   **Mesuré le 12/11, en lecture seule, sans appel** : aucune annonce ne publie la copropriété en
+   étiquette — 0 sur 136 concurrents lus sur les portails, 0 sur 13 biens Stream Estate gardés dans
+   les sélections ; les trois réponses brutes du dépôt n'ont aucun champ qui la dise ; seuls 25
+   textes d'annonce sur 104 la citent. Une copropriété **connue** ne vient donc que de la fiche
+   d'un mandat de l'agence (le bloc « Copropriété » du bien vendeur, M77) ; partout ailleurs elle
+   est inconnue : « Copropriété : à vérifier ».
 
 **État de l'étape 0 (11/11)** : le dossier d'essais est écrit par Claude Code (Jean-Guy n'avait ni
 notes ni fiches), inventé, avec ses corrigés commités avant toute mesure (`missions/M151-essais/`) ;
@@ -166,7 +172,11 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
    copropriété connue** écarte un ★ « non » (M118, M133) ; sans ★, « En copropriété » est un écart
    nommé du « Bon compromis ». **Une copropriété inconnue n'écarte jamais un bien** : la carte dit
    « Copropriété : à vérifier » (Jean-Guy, 10/11) — avec un ★, le bien est « À explorer », comme tout
-   indispensable que l'annonce ne dit pas (M61, M118).
+   indispensable que l'annonce ne dit pas (M61, M118). Appliqué aux biens idéaux (marché et « Ce que
+   l'agence a déjà »), au rapprochement — la copropriété de la fiche le suit ; le formulaire tapé
+   à la main n'a pas de champ pour elle — et à la boucle (M133 : la ★ contredite écarte, « ★ Hors
+   copropriété » remplie) (12/11). Démo : l'appartement d'Antibes en copropriété, les maisons hors
+   copropriété, les Lambert sans copropriété, sans ★ (aucun compte ne change).
 5. **« Ce qui compte pour eux »**, la liste fermée de Jean-Guy (10/11) : **au calme · sans
    vis-à-vis · du cachet · lumineux · une vue · de plain-pied · traversant · commerces et écoles à
    pied · un jardin sans gros entretien · prêt à vivre (sans travaux)**. Chacun avec **leurs mots**

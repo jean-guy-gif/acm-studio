@@ -6,6 +6,7 @@ import {
   categorizeIdeal,
   excludedLine,
   judgeCandidate,
+  toVerifyLabels,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealSearchCriteria } from '@/features/ideal-properties/services/ideal-criteria';
 
@@ -226,5 +227,56 @@ describe('les trois catégories des biens idéaux', () => {
     );
     expect(excludedLine({ count: 0, reasons: [] })).toBeNull();
     for (const entry of result.byCategory.strong) expect(entry.percent).not.toBeNull();
+  });
+});
+
+// Mission 151 — « Copropriété acceptée : non », un vrai critère (Jean-Guy, 10/11) : une copropriété
+// connue écarte avec la ★ et se nomme sans elle ; une copropriété inconnue n'écarte jamais.
+describe('la copropriété', () => {
+  const noCondo = { ...buyer, condominiumAccepted: false, condominiumMustHave: false };
+  const starred = { ...noCondo, condominiumMustHave: true };
+
+  it('★ et copropriété connue : le bien est écarté, compté « en copropriété »', () => {
+    const verdict = judgeCandidate(starred, candidate({ features: { isCondominium: true } }));
+    expect(verdict).toEqual({ kind: 'excluded', reasons: ['En copropriété'] });
+    const all = categorizeIdeal(starred, [candidate({ features: { isCondominium: true } })]);
+    expect(excludedLine(all.excluded)).toBe('1 écarté : en copropriété (1)');
+  });
+
+  it('★ et copropriété inconnue : À explorer, la carte dit « Copropriété »', () => {
+    expect(judgeCandidate(starred, candidate({}))).toMatchObject({
+      kind: 'kept',
+      category: 'explore',
+      toCheck: ['Copropriété'],
+      toVerify: [],
+    });
+  });
+
+  it('sans ★ : connue, un écart du Bon compromis ; inconnue, dite sans changer la catégorie', () => {
+    expect(judgeCandidate(noCondo, candidate({ features: { isCondominium: true } }))).toMatchObject(
+      { category: 'compromise', gaps: ['En copropriété'] },
+    );
+    const unknown = judgeCandidate(noCondo, candidate({}));
+    expect(unknown).toMatchObject({ category: 'strong', toCheck: [], toVerify: ['Copropriété'] });
+    expect(unknown.kind === 'kept' && toVerifyLabels(unknown)).toEqual(['Copropriété']);
+  });
+
+  it('hors copropriété connue : le critère est rempli et compté', () => {
+    const verdict = judgeCandidate(starred, candidate({ features: { isCondominium: false } }));
+    const base = judgeCandidate(buyer, candidate({}));
+    expect(verdict).toMatchObject({ category: 'strong', toVerify: [] });
+    expect(verdict.kind === 'kept' && base.kind === 'kept' && verdict.criteriaTotal).toBe(
+      base.kind === 'kept' ? base.criteriaTotal + 1 : null,
+    );
+  });
+
+  it('acceptée ou non renseignée : la copropriété ne juge rien', () => {
+    for (const accepted of [true, null]) {
+      const verdict = judgeCandidate(
+        { ...buyer, condominiumAccepted: accepted, condominiumMustHave: true },
+        candidate({ features: { isCondominium: true } }),
+      );
+      expect(verdict).toMatchObject({ category: 'strong', toVerify: [] });
+    }
   });
 });

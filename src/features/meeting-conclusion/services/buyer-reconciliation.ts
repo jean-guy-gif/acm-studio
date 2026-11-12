@@ -15,6 +15,10 @@ import {
   requestedCommuneKeys,
 } from '@/features/meeting-conclusion/services/commune-alias';
 import type { ProspectingEntry } from '@/features/prospecting/types';
+import {
+  CONDOMINIUM_TO_VERIFY,
+  judgeCondominium,
+} from '@/features/ideal-properties/services/categorize-ideal';
 
 // Mission 86 — le rapprochement acheteur cherche dans TROIS listes et range ce qui correspond
 // en trois groupes, chacun avec son action : mes mandats, mes vendeurs à relancer, les
@@ -50,6 +54,9 @@ export type BuyerCandidate = {
   // Concurrent seulement : à qui s'adresser (M83) et l'annonce où figure le contact du confrère.
   step: ProspectingStep | null;
   listingUrl: string | null;
+  // Mission 151 — la copropriété connue d'un mandat (sa fiche, M77) ; absente ou null : inconnue.
+  // Un concurrent ne la dit jamais (mesuré le 12/11).
+  isCondominium?: boolean | null;
 };
 
 // Les dossiers « vendu ailleurs » ou « retiré » ne sont plus à vendre par l'agence : ils
@@ -57,6 +64,8 @@ export type BuyerCandidate = {
 export function buyerCandidates(
   dossiers: SuiviDossier[],
   entries: ProspectingEntry[],
+  // Mission 151 — la copropriété des mandats, par dossier (sa fiche) ; absente : inconnue.
+  condominiums: ReadonlyMap<string, boolean> = new Map(),
 ): BuyerCandidate[] {
   const candidates: BuyerCandidate[] = [];
   for (const dossier of dossiers) {
@@ -78,6 +87,7 @@ export function buyerCandidates(
       sellerPhone: dossier.project.seller_phone?.trim() || null,
       step: null,
       listingUrl: null,
+      isCondominium: condominiums.get(dossier.project.id) ?? null,
     });
   }
   for (const { row, seller } of entries) {
@@ -108,6 +118,8 @@ export type BuyerHit = {
   gaps: string[];
   // Correspond grâce à la marge de négociation.
   note: string | null;
+  // Mission 151 — « En copropriété » (sans ★) ou « Copropriété : à vérifier » : dit, n'écarte pas.
+  condominiumNote: string | null;
 };
 
 export type BuyerReconciliation = {
@@ -174,11 +186,23 @@ export function reconcileBuyer(
       },
       { ...facts, district: null, propertyType: candidateType },
     );
+    // Mission 151 — la copropriété : connue, elle écarte avec la ★ (le bien passe dans
+    // « proches ») et se dit sans elle ; inconnue, elle n'écarte jamais, la carte le dit.
+    const gaps = buyerRuleGaps(criteria, facts).map((gap) => gap.detail);
+    const condominium = judgeCondominium(criteria, candidate.isCondominium);
+    let condominiumNote: string | null = null;
+    if (condominium?.kind === 'gap') {
+      if (criteria.condominiumMustHave === true) gaps.push(condominium.label);
+      else condominiumNote = condominium.label;
+    } else if (condominium?.kind === 'unknown') {
+      condominiumNote = CONDOMINIUM_TO_VERIFY;
+    }
     return {
       candidate,
       score: scored.score,
-      gaps: buyerRuleGaps(criteria, facts).map((gap) => gap.detail),
+      gaps,
       note: negotiationNote(criteria, facts),
+      condominiumNote,
     };
   };
 

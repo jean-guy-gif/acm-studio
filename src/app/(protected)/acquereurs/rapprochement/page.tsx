@@ -3,11 +3,13 @@ import Link from 'next/link';
 
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { getMandateCondominiums } from '@/features/buyers/queries/get-mandate-condominiums';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { BuyerSearchPanel } from '@/features/meeting-conclusion/components/buyer-search-panel';
 import { getSuiviDossiers } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
+import { getProfile } from '@/lib/auth/get-profile';
 
 export const metadata: Metadata = { title: 'Rapprochement acquéreur — ACM Studio' };
 
@@ -25,7 +27,15 @@ export default async function BuyerMatchingPage({ searchParams }: MatchingPagePr
   ]);
   // Mission 97 — le dossier d'exemple n'entre pas dans le rapprochement.
   const counted = withoutExamples(allDossiers);
-  const { cards } = await getAgencyProspecting(counted);
+  const [{ cards }, profile] = await Promise.all([getAgencyProspecting(counted), getProfile()]);
+  // Mission 151 — la copropriété connue des mandats, seulement si la fiche n'en veut pas.
+  const condominiums =
+    buyer?.condominiumAccepted === false && profile
+      ? await getMandateCondominiums(
+          profile.agency_id,
+          counted.map((dossier) => dossier.project.id),
+        )
+      : new Map<string, boolean>();
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -50,6 +60,7 @@ export default async function BuyerMatchingPage({ searchParams }: MatchingPagePr
         entries={cards
           .filter((card) => card.row.opposedOn == null)
           .map(({ row, seller }) => ({ row, seller }))}
+        condominiums={Object.fromEntries(condominiums)}
         initialCriteria={buyer ? buyerToCriteria(buyer) : null}
         buyerName={buyer?.name ?? null}
       />

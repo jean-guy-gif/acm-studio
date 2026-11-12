@@ -7,6 +7,7 @@ import {
   PROPOSAL_CARDS,
   cardSource,
   cardText,
+  citiesCardUnchecked,
 } from '@/features/buyer-notes/services/proposal-display';
 import {
   proposalForm,
@@ -157,6 +158,18 @@ describe('la fiche proposée (planche 2)', () => {
     });
     expect(fields.cities).toBe('Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup');
     expect(fields.cities_add).toEqual(['Cagnes-sur-Mer', 'Vence']);
+  });
+
+  it('fiche existante : une carte « Communes » décochée n’écrit pas la commune tapée dedans', () => {
+    const before = { cities: ['Vence'] };
+    // La lecture propose d'autres communes : la carte porte une case.
+    expect(citiesCardUnchecked(proposal.values, before, new Set())).toBe(true);
+    expect(citiesCardUnchecked(proposal.values, before, new Set(['cities']))).toBe(false);
+    // Rien de lu, ou les mêmes communes : pas de case, la commune tapée part.
+    expect(citiesCardUnchecked({}, before, new Set())).toBe(false);
+    expect(citiesCardUnchecked({ cities: ['Vence'] }, before, new Set())).toBe(false);
+    // Une fiche neuve n'a pas de case.
+    expect(citiesCardUnchecked(proposal.values, null, new Set())).toBe(false);
   });
 
   it('« Comptant, à vérifier » ne devient « Validé » que par le geste du conseiller', () => {

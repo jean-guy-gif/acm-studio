@@ -118,6 +118,9 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     // Mme Garcia (décision de Jean-Guy, 06/11).
     pool: true,
     mustHave: ['cities', 'pool'],
+    // Mission 151 — pas de copropriété, sans ★ : rien n'est écarté, la carte d'une annonce le
+    // dit « Copropriété : à vérifier » ; les maisons sous mandat sont déclarées hors copropriété.
+    condominiumAccepted: false,
     // Mission 135 — le contact précède la sélection partagée il y a 3 jours.
     contactedDaysAgo: 4,
   }),

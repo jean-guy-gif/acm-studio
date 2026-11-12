@@ -252,3 +252,22 @@ describe('le mandat signé de Vence (M. et Mme Lopez)', () => {
     expect(mouginsMandateId([{ key: 'signed_vence', id: 'p-lopez' }])).toBeNull();
   });
 });
+
+// Mission 151 — la copropriété dans la démo : posée sur la fiche des biens vendeurs comme le
+// conseiller le ferait, et un acquéreur qui n'en veut pas, sans ★ (aucun compte ne change).
+describe('la copropriété de la démo', () => {
+  it('l’appartement d’Antibes en copropriété, les maisons hors copropriété, rien à préparer', () => {
+    for (const key of DEMO_SEEDS) {
+      const plan = demoSeedPlan(key, NOW);
+      expect(plan.isCondominium, key).toBe(
+        plan.property == null ? null : plan.scenario.subject.propertyType === 'apartment',
+      );
+    }
+  });
+
+  it('les Lambert ne veulent pas de copropriété, sans en faire un indispensable', () => {
+    const lambert = DEMO_BUYERS.find((buyer) => buyer.name === 'M. et Mme Lambert');
+    expect(lambert?.condominiumAccepted).toBe(false);
+    expect(lambert?.condominiumMustHave ?? false).toBe(false);
+  });
+});

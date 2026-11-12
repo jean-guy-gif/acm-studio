@@ -145,3 +145,17 @@ export function cardSource(
 export function beforeText(card: ProposalCard, before: Partial<NoteValues>): string | null {
   return cardText(card, before);
 }
+
+// Sur une fiche existante, la carte « Communes » porte une case quand la lecture propose autre
+// chose que la fiche ; décochée, rien de la carte ne s'écrit, pas même une commune tapée dedans
+// (A.8, rien sans coche). Pur.
+export function citiesCardUnchecked(
+  values: Partial<NoteValues>,
+  before: Partial<NoteValues> | null,
+  keptCards: ReadonlySet<string>,
+): boolean {
+  const card = PROPOSAL_CARDS.find((item) => item.id === 'cities');
+  if (before == null || card == null) return false;
+  const value = cardText(card, values);
+  return value != null && cardText(card, before) !== value && !keptCards.has('cities');
+}

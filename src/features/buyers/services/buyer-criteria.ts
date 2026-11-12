@@ -22,6 +22,9 @@ export function buyerToCriteria(buyer: BuyerInput): BuyerCriteria {
     budgetMin: null,
     budgetMax: buyer.budgetMax,
     city: buyer.cities.length > 0 ? buyer.cities.join(', ') : null,
+    // Mission 151 — la copropriété suit la fiche jusqu'au rapprochement.
+    condominiumAccepted: buyer.condominiumAccepted ?? null,
+    condominiumMustHave: buyer.condominiumMustHave === true,
   };
 }
 
@@ -41,6 +44,8 @@ export function criteriaToBuyerDraft(criteria: BuyerCriteria): Partial<BuyerInpu
     roomsMin: criteria.roomsCount,
     surfaceMin: criteria.surfaceArea,
     budgetMax: criteria.budgetMax,
+    condominiumAccepted: criteria.condominiumAccepted ?? null,
+    condominiumMustHave: criteria.condominiumMustHave === true,
   };
 }
 

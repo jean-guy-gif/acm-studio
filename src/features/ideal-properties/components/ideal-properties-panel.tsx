@@ -41,6 +41,7 @@ import {
 } from '@/features/ideal-properties/actions/search-ideal-properties';
 import {
   excludedLine,
+  toVerifyLabels,
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
@@ -117,7 +118,7 @@ function agencyItem(hit: BuyerHit): SelectionItemInput {
     label: idealLabel(candidate),
     listedPrice: candidate.price,
     category: 'agency',
-    gaps: hit.note ? [hit.note] : [],
+    gaps: [hit.note, hit.condominiumNote].filter((part): part is string => part != null),
     snapshot: null,
   };
 }
@@ -131,7 +132,7 @@ function marketItem(entry: CategorizedCandidate, seenOn: string | null = null): 
     label: idealLabel(candidate),
     listedPrice: candidate.price,
     category: entry.category,
-    gaps: [...entry.gaps, ...entry.toCheck.map((label) => `À vérifier : ${label}`)],
+    gaps: [...entry.gaps, ...toVerifyLabels(entry).map((label) => `À vérifier : ${label}`)],
     snapshot: candidate as unknown as Record<string, unknown>,
   };
 }
@@ -458,7 +459,7 @@ export function IdealPropertiesPanel({
         ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
         : null,
       ...entry.gaps,
-      entry.toCheck.length > 0 ? `À vérifier : ${entry.toCheck.join(', ')}` : null,
+      toVerifyLabels(entry).length > 0 ? `À vérifier : ${toVerifyLabels(entry).join(', ')}` : null,
     ]
       .filter((part): part is string => part != null)
       .join(' · ');
@@ -501,8 +502,8 @@ export function IdealPropertiesPanel({
               .join(' · ')}
           </span>
           {entry.gaps.length > 0 ? <span className="text-xs">{entry.gaps.join(' · ')}</span> : null}
-          {entry.toCheck.length > 0 ? (
-            <span className="text-xs">À vérifier : {entry.toCheck.join(', ')}</span>
+          {toVerifyLabels(entry).length > 0 ? (
+            <span className="text-xs">À vérifier : {toVerifyLabels(entry).join(', ')}</span>
           ) : null}
         </div>
         {actions(item)}
@@ -702,7 +703,7 @@ export function IdealPropertiesPanel({
           <ul className="flex flex-col gap-2">
             {agencyHits.map(({ group, hit }) => {
               const item = agencyItem(hit);
-              const rankLine = [BUYER_GROUP_LABELS[group], hit.note]
+              const rankLine = [BUYER_GROUP_LABELS[group], hit.note, hit.condominiumNote]
                 .filter((part): part is string => part != null)
                 .join(' · ');
               return (
@@ -728,6 +729,7 @@ export function IdealPropertiesPanel({
                         hit.candidate.price != null ? formatEuro(hit.candidate.price) : null,
                         `Pour : ${hit.candidate.sellerName}`,
                         hit.note,
+                        hit.condominiumNote,
                       ]
                         .filter((part): part is string => part != null)
                         .join(' · ')}
