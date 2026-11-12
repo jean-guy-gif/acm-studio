@@ -45,6 +45,17 @@ function verified(listing: RankingListing, quote: unknown): string | null {
   return haystack.includes(squash(trimmed)) ? trimmed : null;
 }
 
+// Une citation qui contient une adresse (un numéro et un nom de voie) n'est jamais gardée : le
+// jugement reste, sans elle (décision de Jean-Guy, 12/11) — le texte d'une annonce cite parfois
+// l'adresse du propriétaire.
+const STREET =
+  /\b\d{1,4}\s*(?:bis|ter)?\s*,?\s+(?:rue|avenue|av\.?|boulevard|bd|chemin|ch\.?|route|rte|all[ée]e|impasse|imp\.?|place|pl\.?|quai|cours|passage|traverse|mont[ée]e|lotissement|r[ée]sidence|square|sentier|voie|corniche|promenade|esplanade|hameau|lieu-dit)\b/i;
+export function citesAnAddress(quote: string): boolean {
+  return STREET.test(quote.normalize('NFC'));
+}
+const withoutAddress = (quote: string | null): string | null =>
+  quote != null && citesAnAddress(quote) ? null : quote;
+
 // La réponse du modèle, relue : seulement les annonces demandées (par leur numéro d'appel), les
 // critères de la fiche, des verdicts connus et des citations vérifiées. `ids` : numéro → bien.
 export function guardJudgments(
@@ -75,8 +86,8 @@ export function guardJudgments(
       said.set(key, {
         key,
         verdict,
-        quote: verdict === 'nothing' ? null : quote,
-        counterQuote: verdict === 'reserve' ? counterQuote : null,
+        quote: verdict === 'nothing' ? null : withoutAddress(quote),
+        counterQuote: verdict === 'reserve' ? withoutAddress(counterQuote) : null,
         toVerify: verdict === 'clearly' && j.a_verifier === true,
       });
     }
@@ -183,6 +194,9 @@ export function softMentions(
 
 // --- ce que la carte dit (planche 4) ---------------------------------------------------------
 
+// Une citation non gardée : elle citait une adresse, ou elle a été effacée au bout de 3 ans.
+const WITHHELD = '(citation non gardée)';
+
 export type WhyRow = { mark: '✓' | '≈' | '?' | '✗'; label: string; text: string };
 
 export function whyRows(judgments: readonly SoftJudgment[]): WhyRow[] {
@@ -193,18 +207,31 @@ export function whyRows(judgments: readonly SoftJudgment[]): WhyRow[] {
         return {
           mark: '✓',
           label,
-          text: judgment.toVerify
-            ? `l’étiquette du portail dit « ${judgment.quote} » · à vérifier`
-            : `« ${judgment.quote} »`,
+          text:
+            judgment.quote == null
+              ? `l’annonce le dit ${WITHHELD}`
+              : judgment.toVerify
+                ? `l’étiquette du portail dit « ${judgment.quote} » · à vérifier`
+                : `« ${judgment.quote} »`,
         };
       case 'reserve':
         return {
           mark: '≈',
           label,
-          text: `avec réserve : « ${judgment.quote} » mais « ${judgment.counterQuote} »`,
+          text:
+            judgment.quote == null || judgment.counterQuote == null
+              ? `avec réserve ${WITHHELD}`
+              : `avec réserve : « ${judgment.quote} » mais « ${judgment.counterQuote} »`,
         };
       case 'contrary':
-        return { mark: '✗', label, text: `le contraire : « ${judgment.quote} »` };
+        return {
+          mark: '✗',
+          label,
+          text:
+            judgment.quote == null
+              ? `le contraire ${WITHHELD}`
+              : `le contraire : « ${judgment.quote} »`,
+        };
       case 'unread':
         return { mark: '?', label, text: 'l’annonce n’a pas pu être lue' };
       default:

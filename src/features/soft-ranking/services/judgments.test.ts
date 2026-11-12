@@ -4,6 +4,7 @@ import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { demoRankingAnswer } from '@/features/demo/services/demo-soft-ranking';
 import { rankingInstructions, rankingSchema } from '@/features/soft-ranking/ranking-request';
 import {
+  citesAnAddress,
   guardJudgments,
   mentionsLine,
   orderBySoftScore,
@@ -269,5 +270,63 @@ describe('le bandeau (planches 4 et 4 b)', () => {
       strong: 'Classement simplifié',
       text: '',
     });
+  });
+});
+
+// Jean-Guy, 12/11 : une citation qui contient une adresse n'est pas enregistrée ; le jugement reste.
+describe('une citation qui cite une adresse', () => {
+  const withAddress: RankingListing = {
+    key: 'https://x.fr/adresse',
+    text: 'Au calme, 12 rue des Lilas, sans aucun vis-à-vis. Le bien est au 8 bis avenue de la Gare.',
+    tags: [],
+  };
+
+  it('n’est pas gardée : le jugement reste, sans sa citation', () => {
+    const judged = guardJudgments(
+      {
+        annonces: [
+          {
+            id: 'a1',
+            jugements: [
+              {
+                critere: 'calme',
+                verdict: 'clairement',
+                citation: 'Au calme, 12 rue des Lilas',
+                contre_citation: null,
+                a_verifier: false,
+              },
+              {
+                critere: 'sans_vis_a_vis',
+                verdict: 'reserve',
+                citation: 'sans aucun vis-à-vis',
+                contre_citation: 'au 8 bis avenue de la Gare',
+                a_verifier: false,
+              },
+            ],
+          },
+        ],
+      },
+      new Map([['a1', withAddress]]),
+      ['calme', 'sans_vis_a_vis'],
+    );
+    const [calme, vis] = judged.get(withAddress.key)!;
+    expect(calme).toMatchObject({ verdict: 'clearly', quote: null });
+    expect(vis).toMatchObject({
+      verdict: 'reserve',
+      quote: 'sans aucun vis-à-vis',
+      counterQuote: null,
+    });
+    expect(JSON.stringify(judged.get(withAddress.key))).not.toMatch(/Lilas|avenue de la Gare/);
+    expect(whyRows([calme!])[0]!.text).toBe('l’annonce le dit (citation non gardée)');
+  });
+
+  it('reconnaît une adresse, pas une surface ni une route sans numéro', () => {
+    expect(citesAnAddress('12 rue des Lilas')).toBe(true);
+    expect(citesAnAddress('au 8 bis, avenue de la Gare')).toBe(true);
+    expect(citesAnAddress('4 chemin des Restanques Hautes')).toBe(true);
+    expect(citesAnAddress('Maison de 130 m² sur 800 m²')).toBe(false);
+    expect(citesAnAddress('à deux pas de la route départementale')).toBe(false);
+    expect(citesAnAddress('à 5 min de la route')).toBe(false);
+    expect(citesAnAddress('3 chambres, garage')).toBe(false);
   });
 });

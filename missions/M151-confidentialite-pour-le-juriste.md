@@ -39,7 +39,7 @@ n'en écarte aucun et ne décide rien.
 | Fiche proposée | (réponse du service) | Seulement ce que le conseiller valide | Non |
 | Ligne de chaque lecture (consommation et trace) | — | Qui (le conseiller), quand, le modèle, le coût, l'issue (fiche créée, fiche complétée, lecture annulée, lecture échouée), la sorte de source (photo, fichier, texte), le nombre de mentions personnelles écartées et les **noms** des champs proposés et gardés ; jamais une valeur lue, jamais une ligne des notes. Elle reste à l'agence si la fiche est supprimée, sans lien vers elle (c'est sa consommation du mois, comme celle des recherches) | — |
 | Ligne des notes d'où vient chaque champ | (réponse du service) | **Non** : montrée au conseiller à la validation, jamais enregistrée | Non |
-| Description d'une annonce publique | Oui, avec les critères de l'acquéreur | Une citation courte de l'annonce, par critère, montrée au conseiller seul | Non |
+| Description d'une annonce publique | Oui, avec les critères de l'acquéreur | Une citation courte de l'annonce, par critère, montrée au conseiller seul ; jamais une citation qui contient une adresse. Pour la veille de la nuit, le jugement et sa citation sont gardés avec le passage et la citation est effacée au bout de 3 ans | Non |
 
 **Ce que l'outil refuse de relever** : toute donnée sensible (santé, grossesse, handicap, religion,
 origine, opinions, vie sexuelle, situation familiale) et tout jugement sur la personne (« pressé »,
@@ -141,7 +141,9 @@ Sources AWS :
 > consommation des recherches. Quand l'outil cherche des biens pour l'acquéreur, ce qui compte pour lui (le calme,
 > l'absence de vis-à-vis, le caractère du bien…) est comparé aux descriptions publiques des annonces
 > par le même service, sans son nom ni ses coordonnées ; l'outil range les biens et cite l'annonce
-> au conseiller, il n'en écarte aucun. Texte à faire relire par un juriste.
+> au conseiller, il n'en écarte aucun. Pour la veille de la nuit, ce jugement et sa citation courte
+> sont gardés avec le passage, et la citation est effacée au bout de 3 ans ; une citation qui
+> contient une adresse n'est jamais gardée. Texte à faire relire par un juriste.
 
 ### `/confidentialite`, « Où sont les données », une ligne de plus
 
