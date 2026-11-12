@@ -56,3 +56,25 @@ fait sans elles et le dit.
 `missions/M151-essais/mesure.mjs` (voir son en-tête) : le SDK d'Amazon Bedrock est installé hors du
 dépôt, la clé est lue dans `.env.local`, les résultats sont écrits dans `resultats/` (hors du dépôt
 pour les réponses brutes, seul le bilan est gardé).
+
+Le SDK : `npm install @anthropic-ai/bedrock-sdk` dans un dossier hors du dépôt, donné par
+`M151_SDK_DIR`. Les 73 annonces : `node missions/M151-essais/extraire-corpus.mjs
+~/acm-studio-sauvegardes/<date>/data-public.sql <hors du dépôt>/corpus.json`, donné par `M151_CORPUS`.
+
+**Plan B (12/11)**, en attendant que le compte AWS ait accès aux modèles 5.5 (cas de support
+179439470000287) : Sonnet 4.6 et Haiku 4.5 par leurs profils « EU », depuis l'Irlande. Ils valident
+le dossier d'essais et la méthode, pas le choix du modèle.
+
+```sh
+M151_SDK_DIR=… M151_CORPUS=… M151_TITRE="Mesure provisoire, plan B" \
+M151_MODELES=eu.anthropic.claude-sonnet-4-6,eu.anthropic.claude-haiku-4-5-20251001-v1:0 \
+node missions/M151-essais/mesure.mjs --fiches --classement
+```
+
+**La même mesure sur Claude 5.5**, dès le compte débloqué (Irlande seule, sans « eu. », décision du
+11/11 ; ce sont les modèles par défaut) :
+
+```sh
+M151_SDK_DIR=… M151_CORPUS=… M151_TITRE="Mesure de l'étape 0" \
+node missions/M151-essais/mesure.mjs --fiches --classement
+```

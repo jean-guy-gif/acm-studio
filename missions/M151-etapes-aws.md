@@ -33,20 +33,54 @@ conversation.
 9. **L'essai** : dans le « Playground » de Bedrock, choisir Sonnet 5.5 (selon l'étape 7) et coller
    un texte inventé ; une réponse prouve l'accès.
 10. **L'accès de l'application** : IAM → Utilisateurs → `acm-studio-bedrock`, sans accès à la
-    console, avec cette seule autorisation (remplacer `TON_NUMERO_DE_COMPTE`). **Corrigé le 11/11** :
-    la première version donnait `bedrock:InvokeModel`, qui ne vaut que pour l'ancienne intégration ;
-    AWS a refusé l'appel (403 : « not authorized to perform: bedrock-mantle:CreateInference on
-    resource: …:project/default »). Remplacer l'ancienne autorisation par :
+    console. **La politique en place** (relevée dans la console par Jean-Guy le 12/11 ; le dépôt
+    décrivait à tort une version au seul `bedrock-mantle`), `TON_NUMERO_DE_COMPTE` à la place du
+    numéro :
 
     ```json
-    { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow",
-      "Action": "bedrock-mantle:CreateInference",
-      "Resource": "arn:aws:bedrock-mantle:eu-west-1:TON_NUMERO_DE_COMPTE:project/default" }] }
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "ClaudeProfilUE",
+          "Effect": "Allow",
+          "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+          "Resource": [
+            "arn:aws:bedrock:eu-west-1:TON_NUMERO_DE_COMPTE:inference-profile/eu.anthropic.*",
+            "arn:aws:bedrock:eu-west-3:TON_NUMERO_DE_COMPTE:inference-profile/eu.anthropic.*",
+            "arn:aws:bedrock:eu-*::foundation-model/anthropic.*"
+          ]
+        },
+        {
+          "Sid": "ClaudeIrlandeSeulement",
+          "Effect": "Allow",
+          "Action": "bedrock-mantle:CreateInference",
+          "Resource": "arn:aws:bedrock-mantle:eu-west-1:TON_NUMERO_DE_COMPTE:project/*"
+        },
+        {
+          "Sid": "LireLesProfils",
+          "Effect": "Allow",
+          "Action": ["bedrock:GetInferenceProfile", "bedrock:ListInferenceProfiles"],
+          "Resource": "*"
+        }
+      ]
+    }
     ```
 
-    Restreindre ensuite aux deux seuls modèles demande une condition sur le modèle, dont le nom
-    exact reste à lire dans la documentation IAM de `bedrock-mantle` ; d'ici là, l'alerte de
-    dépense (étape 4) et le plafond d'ACM bornent le coût.
+    - `ClaudeProfilUE` : l'API Bedrock classique (`bedrock:InvokeModel`), qui sert les modèles
+      d'avant la génération 5.5 par leurs profils « EU » (`eu.anthropic.…`), appelés depuis l'Irlande
+      ou Paris, et les modèles eux-mêmes dans les régions `eu-*` où le profil les envoie. C'est elle
+      qui sert la mesure provisoire du plan B (Sonnet 4.6 et Haiku 4.5, 12/11). Attention :
+      `eu-*` couvre aussi Zurich (`eu-central-2`) et Londres (`eu-west-2`), hors de l'Union ; c'est
+      le profil qui décide où va la lecture, et ses régions de destination se lisent par l'API
+      (`GetInferenceProfile`) avant tout appel.
+    - `ClaudeIrlandeSeulement` : le service `bedrock-mantle`, seul valable pour Claude 5.5, en
+      Irlande seulement (décision du 11/11). Sans lui, AWS refusait l'appel (403 : « not authorized
+      to perform: bedrock-mantle:CreateInference on resource: …:project/default »).
+    - `LireLesProfils` : lire les profils et leurs régions de destination.
+
+    Restreindre aux seuls modèles retenus demande une condition sur le modèle, à écrire une fois le
+    choix fait ; d'ici là, l'alerte de dépense (étape 4) et le plafond d'ACM bornent le coût.
 
 11. **La clé** : sur cet utilisateur, « Security credentials » → « Create access key » →
     « Application running outside AWS ». Copier l'identifiant et le secret (affiché une seule fois).

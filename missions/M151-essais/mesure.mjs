@@ -4,9 +4,16 @@
 //   M151_SDK_DIR=<dossier où @anthropic-ai/bedrock-sdk est installé, hors du dépôt> \
 //   node missions/M151-essais/mesure.mjs [--fiches] [--classement]
 //
-// Variables : M151_REGION (défaut : ACM_AWS_REGION de .env.local), M151_MODELES (défaut : les deux
-// profils UE), M151_PASSES (défaut 2), M151_CORPUS (les 73 annonces, hors du dépôt, pour
-// --classement), M151_SORTIE (réponses brutes, défaut : dossier temporaire, hors du dépôt).
+// Variables : M151_REGION (défaut : ACM_AWS_REGION de .env.local), M151_MODELES (défaut : Sonnet 5.5
+// et Haiku 5.5, sans « eu. », en Irlande seule, décision du 11/11), M151_PASSES (défaut 2),
+// M151_CORPUS (les 73 annonces, hors du dépôt, pour --classement), M151_SORTIE (réponses brutes,
+// défaut : dossier temporaire, hors du dépôt), M151_TITRE (en tête du bilan, ex. « mesure
+// provisoire, plan B »).
+//
+// Le client suit le modèle : un Claude de génération 4 (« claude-sonnet-4-6 », profil « eu. »
+// compris) passe par l'API Bedrock classique (bedrock:InvokeModel) ; les autres, Claude 5.5, par
+// bedrock-mantle (bedrock-mantle:CreateInference). Plan B du 12/11 :
+//   M151_MODELES=eu.anthropic.claude-sonnet-4-6,eu.anthropic.claude-haiku-4-5-20251001-v1:0
 // La clé (ACM_AWS_ACCESS_KEY_ID, ACM_AWS_SECRET_ACCESS_KEY) est lue dans .env.local, jamais affichée.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -26,7 +33,8 @@ const doClassement = args.includes('--classement');
 const envFile = readFileSync(join(root, '.env.local'), 'utf8');
 const env = (k) => envFile.match(new RegExp(`^${k}=(.*)$`, 'm'))?.[1]?.trim().replace(/^["']|["']$/g, '');
 const region = (process.env.M151_REGION ?? env('ACM_AWS_REGION') ?? '').replace(/\.$/, '');
-const models = (process.env.M151_MODELES ?? 'eu.anthropic.claude-sonnet-5-5,eu.anthropic.claude-haiku-5-5').split(',');
+const models = (process.env.M151_MODELES ?? 'anthropic.claude-sonnet-5-5,anthropic.claude-haiku-5-5').split(',');
+const titre = process.env.M151_TITRE;
 const passes = Number(process.env.M151_PASSES ?? 2);
 const outDir = process.env.M151_SORTIE ?? join(tmpdir(), 'm151-resultats');
 mkdirSync(outDir, { recursive: true });
@@ -34,30 +42,47 @@ mkdirSync(outDir, { recursive: true });
 const selfTest = args.includes('--essai-notation');
 const sdkDir = process.env.M151_SDK_DIR;
 if (!sdkDir && !selfTest) throw new Error('M151_SDK_DIR manquant : dossier où @anthropic-ai/bedrock-sdk est installé');
-const { AnthropicBedrockMantle } = selfTest ? { AnthropicBedrockMantle: class {} } : createRequire(join(sdkDir, 'package.json'))('@anthropic-ai/bedrock-sdk');
-const client = new AnthropicBedrockMantle({
-  awsRegion: region,
-  awsAccessKey: env('ACM_AWS_ACCESS_KEY_ID'),
-  awsSecretAccessKey: env('ACM_AWS_SECRET_ACCESS_KEY'),
-  apiKey: null,
-  maxRetries: 1,
-  timeout: 120_000,
-});
+const { AnthropicBedrock, AnthropicBedrockMantle } = selfTest
+  ? { AnthropicBedrock: class {}, AnthropicBedrockMantle: class {} }
+  : createRequire(join(sdkDir, 'package.json'))('@anthropic-ai/bedrock-sdk');
+const common = { awsRegion: region, awsAccessKey: env('ACM_AWS_ACCESS_KEY_ID'), maxRetries: 1, timeout: 120_000 };
+const secret = env('ACM_AWS_SECRET_ACCESS_KEY');
+const generation4 = (model) => /claude-[a-z]+-4[-.]/.test(model);
+// Les deux clients ne nomment pas le secret de la même façon.
+const classic = new AnthropicBedrock({ ...common, awsSecretKey: secret });
+const mantle = new AnthropicBedrockMantle({ ...common, awsSecretAccessKey: secret, apiKey: null });
+const clientFor = (model) => (generation4(model) ? classic : mantle);
 const scrub = (s) => String(s).replace(/\b\d{12}\b/g, '<compte>').replace(/AKIA[0-9A-Z]{12,}/g, '<clé>');
 
 // Tarifs publics d'Anthropic (dollars par million de jetons), +10 % pour un point d'accès régional
 // ou un profil géographique de Bedrock (doc « Claude in Amazon Bedrock », Regions).
-const PRICE = { sonnet: [2, 10], haiku: [0.1, 0.5] };
+const PRICE = [
+  [/claude-sonnet-4-6/, [3, 15]],
+  [/claude-haiku-4-5/, [1, 5]],
+  [/claude-sonnet-5-5/, [2, 10]],
+  [/claude-haiku-5-5/, [0.1, 0.5]],
+];
+const priceOf = (model) => {
+  const hit = PRICE.find(([re]) => re.test(model));
+  if (!hit) throw new Error(`tarif inconnu pour ${model} : à ajouter dans PRICE`);
+  return hit[1];
+};
 const cost = (model, usage) => {
-  const [i, o] = PRICE[model.includes('haiku') ? 'haiku' : 'sonnet'];
+  const [i, o] = priceOf(model);
   return ((usage.input_tokens * i + usage.output_tokens * o) / 1e6) * 1.1;
 };
+// Haiku 4.5 ne prend pas le réglage d'effort ; les autres modèles mesurés, si.
+const effortOf = (model) => (/claude-haiku-4-5/.test(model) ? {} : { effort: 'medium' });
 
 // --- la consigne et la forme de la réponse (fiche) ---------------------------------------------
 
 const SOFT = ['calme', 'sans_vis_a_vis', 'cachet', 'lumineux', 'vue', 'plain_pied', 'traversant', 'commerces_ecoles_a_pied', 'jardin_sans_entretien', 'pret_a_vivre'];
 const MUST = ['property_types', 'cities', 'budget', 'rooms', 'bedrooms', 'surface', 'outdoor', 'parking', 'pool', 'floor', 'elevator', 'energy_rating', 'works', 'condominium'];
 const nul = (schema) => ({ anyOf: [schema, { type: 'null' }] });
+// Une liste fermée « ou rien » s'écrit avec null dans la liste, pas en anyOf : les sorties JSON
+// refusent un schéma de plus de 16 champs en anyOf (refus du 12/11, sur 20).
+const choice = (values) => ({ enum: [...values, null] });
+const yesNo = choice([true, false]);
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -65,9 +90,9 @@ const SCHEMA = {
     name: nul({ type: 'string' }),
     phone: nul({ type: 'string' }),
     email: nul({ type: 'string' }),
-    purpose: nul({ type: 'string', enum: ['primary', 'secondary', 'investment', 'other'] }),
-    timeline: nul({ type: 'string', enum: ['now', 'three_months', 'six_months', 'later'] }),
-    language: nul({ type: 'string', enum: ['fr', 'en', 'it', 'de', 'ru'] }),
+    purpose: choice(['primary', 'secondary', 'investment', 'other']),
+    timeline: choice(['now', 'three_months', 'six_months', 'later']),
+    language: choice(['fr', 'en', 'it', 'de', 'ru']),
     property_types: { type: 'array', items: { type: 'string', enum: ['apartment', 'house'] } },
     cities: { type: 'array', items: { type: 'string' } },
     budget_ideal: nul({ type: 'integer' }),
@@ -75,14 +100,14 @@ const SCHEMA = {
     rooms_min: nul({ type: 'integer' }),
     bedrooms_min: nul({ type: 'integer' }),
     surface_min: nul({ type: 'integer' }),
-    outdoor: nul({ type: 'boolean' }),
-    parking: nul({ type: 'boolean' }),
-    pool: nul({ type: 'boolean' }),
+    outdoor: yesNo,
+    parking: yesNo,
+    pool: yesNo,
     floor_min: nul({ type: 'integer' }),
-    elevator: nul({ type: 'boolean' }),
-    energy_rating_max: nul({ type: 'string', enum: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] }),
-    works_accepted: nul({ type: 'boolean' }),
-    condominium_accepted: nul({ type: 'boolean' }),
+    elevator: yesNo,
+    energy_rating_max: choice(['A', 'B', 'C', 'D', 'E', 'F', 'G']),
+    works_accepted: yesNo,
+    condominium_accepted: yesNo,
     must_have: { type: 'array', items: { type: 'string', enum: MUST } },
     financing: { type: 'string', enum: ['validated', 'in_progress', 'unknown'] },
     soft_criteria: {
@@ -237,11 +262,11 @@ function grade(out, c) {
 
 async function call(model, system, content, schema, maxTokens = 4000) {
   const started = Date.now();
-  const r = await client.messages.create({
+  const r = await clientFor(model).messages.create({
     model,
     max_tokens: maxTokens,
     system,
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema } },
+    output_config: { ...effortOf(model), format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content }],
   });
   if (r.stop_reason === 'refusal') throw new Error(`refus (${r.stop_details?.category ?? '?'})`);
@@ -279,6 +304,8 @@ const say = (s = '') => {
   console.log(s);
 };
 const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+for (const model of models) priceOf(model);
+if (titre) say(`# ${titre}\n\nModèles : ${models.join(', ')} · appelés depuis ${region}.\n`);
 
 if (doFiches) {
   const { cases, photos } = await loadCases();
