@@ -261,9 +261,9 @@ describe('la copropriété', () => {
     expect(unknown.kind === 'kept' && toVerifyLabels(unknown)).toEqual([
       'Copropriété : à vérifier',
     ]);
-    // Une seule écriture, pour une annonce comme pour un bien de l'agence (Jean-Guy, 12/11).
+    // Une seule forme, pour une annonce comme pour un bien de l'agence (Jean-Guy, 12/11).
     expect(toVerifyLabels({ toCheck: ['Extérieur', 'Copropriété'], toVerify: [] })).toEqual([
-      'À vérifier : Extérieur',
+      'Extérieur : à vérifier',
       'Copropriété : à vérifier',
     ]);
   });

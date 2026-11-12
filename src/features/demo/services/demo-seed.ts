@@ -390,7 +390,7 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
     fromListing('mou-02', 'compromise', [
       `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
     ]),
-    fromListing('mou-07', 'explore', [`À vérifier : ${BUYER_CRITERION_LABELS.pool}`]),
+    fromListing('mou-07', 'explore', [`${BUYER_CRITERION_LABELS.pool} : à vérifier`]),
   ];
 }
 

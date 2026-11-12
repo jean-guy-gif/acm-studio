@@ -86,7 +86,9 @@ export function toSelectionItem(item: SelectionItemRow): IdealSelectionItem {
       item.category != null && [...IDEAL_CATEGORIES, 'agency'].includes(item.category)
         ? (item.category as IdealSelectionItem['category'])
         : null,
-    gaps: item.gaps,
+    // Mission 151 — une seule forme dans le dossier remis : une sélection retenue avant le 12/11
+    // disait « À vérifier : Piscine » ; elle se lit « Piscine : à vérifier », rien n'est réécrit.
+    gaps: item.gaps.map(oneToVerifyForm),
     photoUrl: photoOf(item.imported) ?? photoOf(item.snapshot),
     imported: item.imported != null,
     pitch: item.pitch ?? null,
@@ -109,6 +111,12 @@ export function selectionAsInputs(selection: IdealSelection): SelectionItemInput
     gaps: [...item.gaps],
     snapshot: item.snapshot,
   }));
+}
+
+const OLD_TO_VERIFY = /^À vérifier : (.+)$/;
+export function oneToVerifyForm(gap: string): string {
+  const match = OLD_TO_VERIFY.exec(gap);
+  return match ? `${match[1]} : à vérifier` : gap;
 }
 
 export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {

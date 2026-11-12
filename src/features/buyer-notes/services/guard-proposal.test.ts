@@ -6,7 +6,7 @@ import {
   NOTE_OUTPUT_SCHEMA,
   NOTE_READING_INSTRUCTIONS,
 } from '@/features/buyer-notes/model-request';
-import { QUICK_STAR_CRITERIA } from '@/features/buyers/schemas/buyer-input';
+import { NOTE_STAR_CRITERIA, NOTE_STAR_LABELS } from '@/features/buyer-notes/note-stars';
 
 // Mission 151 — les gardes du serveur, sur les défauts mesurés le 12/11 (plan B, Sonnet 4.6).
 
@@ -180,34 +180,60 @@ describe('guardProposal', () => {
   });
 
   // Mission 151 — une seule liste d'indispensables pour la lecture : la consigne, le schéma de la
-  // réponse, la garde et l'écran (dont le type vient de la même constante) disent les six mêmes.
-  // La copropriété n'en est pas : son ★ se pose dans le formulaire complet (A.4).
-  it('la consigne, le schéma et la garde ont la même liste de ★, sans la copropriété', () => {
-    expect([...QUICK_STAR_CRITERIA]).toEqual([
+  // réponse, la garde et l'écran disent les sept mêmes, copropriété comprise (Jean-Guy, 12/11).
+  it('la consigne, le schéma et la garde ont la même liste de ★, copropriété comprise', () => {
+    expect([...NOTE_STAR_CRITERIA]).toEqual([
       'cities',
       'budget',
       'outdoor',
       'parking',
       'pool',
       'elevator',
+      'condominium',
     ]);
     const properties = NOTE_OUTPUT_SCHEMA.properties as Record<
       string,
       { items?: { enum?: unknown } }
     >;
-    expect(properties.must_have?.items?.enum).toEqual([...QUICK_STAR_CRITERIA]);
-    expect(NOTE_READING_INSTRUCTIONS).toContain(`parmi : ${QUICK_STAR_CRITERIA.join(', ')}`);
-    const proposal = guardProposal({
-      ...empty,
-      condominium_accepted: false,
-      must_have: ['condominium', 'pool'],
+    expect(properties.must_have?.items?.enum).toEqual([...NOTE_STAR_CRITERIA]);
+    expect(NOTE_READING_INSTRUCTIONS).toContain(`parmi : ${NOTE_STAR_CRITERIA.join(', ')}`);
+    expect(Object.keys(NOTE_STAR_LABELS)).toEqual([...NOTE_STAR_CRITERIA]);
+  });
+
+  it('la ★ copropriété : sa ligne d’origine et un « non » gardé, deux ★ au plus', () => {
+    const read = (over: Record<string, unknown>) =>
+      guardProposal({
+        ...empty,
+        condominium_accepted: false,
+        must_have: ['condominium'],
+        sources: [
+          { field: 'condominium_accepted', quote: 'PAS de copropriété' },
+          { field: 'must_have:condominium', quote: 'PAS de copropriété' },
+        ],
+        ...over,
+      });
+    expect(read({}).mustHave).toEqual([{ key: 'condominium', source: 'PAS de copropriété' }]);
+    // Sans sa ligne d'origine, elle tombe.
+    expect(
+      read({ sources: [{ field: 'condominium_accepted', quote: 'PAS de copropriété' }] }).mustHave,
+    ).toEqual([]);
+    // Un « non » qui tombe (aucune ligne qui le dise) emporte sa ★.
+    expect(
+      read({ sources: [{ field: 'must_have:condominium', quote: 'copro' }] }).mustHave,
+    ).toEqual([]);
+    expect(read({ condominium_accepted: null }).mustHave).toEqual([]);
+    // Deux au plus, dans l'ordre lu.
+    const three = read({
+      pool: true,
+      must_have: ['pool', 'outdoor', 'condominium'],
+      outdoor: true,
       sources: [
         { field: 'condominium_accepted', quote: 'PAS de copropriété' },
         { field: 'must_have:condominium', quote: 'PAS de copropriété' },
         { field: 'must_have:pool', quote: 'piscine OBLIGATOIRE' },
+        { field: 'must_have:outdoor', quote: 'jardin OBLIGATOIRE' },
       ],
     });
-    expect(proposal.mustHave.map((star) => star.key)).toEqual(['pool']);
-    expect(proposal.values.condominiumAccepted).toBe(false);
+    expect(three.mustHave.map((star) => star.key)).toEqual(['pool', 'outdoor']);
   });
 });

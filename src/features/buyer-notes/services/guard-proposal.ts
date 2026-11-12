@@ -1,6 +1,6 @@
 import { BUYER_LANGUAGES, type BuyerLanguage } from '@/features/buyer-messages/languages';
 import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
-import { QUICK_STAR_CRITERIA, QUICK_STARS_MAX } from '@/features/buyers/schemas/buyer-input';
+import { NOTE_STAR_CRITERIA, NOTE_STARS_MAX } from '@/features/buyer-notes/note-stars';
 import {
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
@@ -189,12 +189,14 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
   // 1. Les ★ : sa ligne d'origine, deux au plus, parmi ceux de l'écran ; le budget ★ veut un plafond.
   const mustHave: NoteProposal['mustHave'] = [];
   for (const key of Array.isArray(out.must_have) ? out.must_have : []) {
-    const star = oneOf<NoteStar>(QUICK_STAR_CRITERIA, key);
+    const star = oneOf<NoteStar>(NOTE_STAR_CRITERIA, key);
     if (!star || mustHave.some((kept) => kept.key === star)) continue;
     const line = sourceOf.get(`must_have:${star}`);
     if (!line) continue;
     if (star === 'budget' && values.budgetMax == null) continue;
-    if (mustHave.length >= QUICK_STARS_MAX) break;
+    // La copropriété ★ veut un « non » gardé (dit en toutes lettres, sa source comprise).
+    if (star === 'condominium' && values.condominiumAccepted !== false) continue;
+    if (mustHave.length >= NOTE_STARS_MAX) break;
     mustHave.push({ key: star, source: line });
   }
 

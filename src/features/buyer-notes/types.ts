@@ -1,4 +1,5 @@
 import type { BuyerLanguage } from '@/features/buyer-messages/languages';
+import type { NoteStar } from '@/features/buyer-notes/note-stars';
 import type {
   BuyerPropertyType,
   BuyerPurpose,
@@ -6,7 +7,6 @@ import type {
   BuyerTimeline,
   EnergyRating,
 } from '@/features/buyers/types';
-import type { QUICK_STAR_CRITERIA } from '@/features/buyers/schemas/buyer-input';
 
 // Mission 151 — la fiche proposée depuis les notes du conseiller. Elle vit dans l'écran jusqu'à
 // « Créer la fiche » : rien n'en est gardé, sources comprises (principe 2 de la fiche).
@@ -15,7 +15,7 @@ import type { QUICK_STAR_CRITERIA } from '@/features/buyers/schemas/buyer-input'
 export const NOTE_SOURCE_KINDS = ['photo', 'file', 'text'] as const;
 export type NoteSourceKind = (typeof NOTE_SOURCE_KINDS)[number];
 
-export type NoteStar = (typeof QUICK_STAR_CRITERIA)[number];
+export type { NoteStar };
 
 // Les valeurs qu'une lecture peut proposer, avec les noms de la fiche (M117).
 export type NoteValues = {

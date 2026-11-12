@@ -170,7 +170,7 @@ describe('la sélection des Keller', async () => {
 
   it('le bien à vérifier : sa piscine n’est pas indiquée', () => {
     expect(poolFromLabels(plan[2]!.imported!.listingFeatures)).toBeNull();
-    expect(plan[2]!.gaps).toEqual(['À vérifier : Piscine']);
+    expect(plan[2]!.gaps).toEqual(['Piscine : à vérifier']);
     // Le compromis, lui, a sa piscine.
     expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
   });

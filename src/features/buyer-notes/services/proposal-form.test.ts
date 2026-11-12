@@ -172,6 +172,39 @@ describe('la fiche proposée (planche 2)', () => {
     expect(citiesCardUnchecked(proposal.values, null, new Set())).toBe(false);
   });
 
+  it('la ★ copropriété écrit « non » et sa ★, à part des autres indispensables', () => {
+    const condo = guardProposal({
+      ...DEMO_NOTES_OUTPUT,
+      condominium_accepted: false,
+      must_have: ['condominium'],
+      sources: [
+        ...DEMO_NOTES_OUTPUT.sources,
+        { field: 'condominium_accepted', quote: 'PAS de copropriété' },
+        { field: 'must_have:condominium', quote: 'PAS de copropriété' },
+      ],
+    });
+    const choices = { starsKept: true, softKept: true, cashValidated: false };
+    const created = proposalForm(condo, null, {
+      ...choices,
+      kept: new Set(Object.keys(condo.values) as NoteField[]),
+    });
+    expect(created.fields).toMatchObject({
+      condominium_accepted: 'no',
+      condominium_must_have: 'yes',
+    });
+    expect(created.fields.must_have).toBeUndefined();
+    expect(created.toVerify).toContain('condominium_must_have');
+    // Une fiche qui accepte la copropriété, sa carte non cochée : la ★ ne s'ajoute pas.
+    const accepting = { ...existing, condominiumAccepted: true };
+    expect(
+      proposalForm(condo, accepting, { ...choices, kept: new Set() }).fields.condominium_must_have,
+    ).toBeUndefined();
+    expect(
+      proposalForm(condo, accepting, { ...choices, kept: new Set(['condominiumAccepted']) }).fields
+        .condominium_must_have,
+    ).toBe('yes');
+  });
+
   it('« Comptant, à vérifier » ne devient « Validé » que par le geste du conseiller', () => {
     const cash = guardProposal({
       ...DEMO_NOTES_OUTPUT,

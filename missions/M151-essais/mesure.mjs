@@ -82,7 +82,8 @@ const effortOf = (model) => (/claude-haiku-4-5/.test(model) ? {} : { effort: 'me
 
 const SOFT = ['calme', 'sans_vis_a_vis', 'cachet', 'lumineux', 'vue', 'plain_pied', 'traversant', 'commerces_ecoles_a_pied', 'jardin_sans_entretien', 'pret_a_vivre'];
 // Les indispensables de l'écran (M132), deux au plus (règle de Jean-Guy, 12/11) ; le type de bien n'en est jamais un.
-const MUST = ['cities', 'budget', 'outdoor', 'parking', 'pool', 'elevator'];
+// La liste de la lecture, copropriété comprise (décision de Jean-Guy, 12/11) : `note-stars.ts`.
+const MUST = ['cities', 'budget', 'outdoor', 'parking', 'pool', 'elevator', 'condominium'];
 const MUST_MAX = 2;
 const nul = (schema) => ({ anyOf: [schema, { type: 'null' }] });
 // Une liste fermée « ou rien » s'écrit avec null dans la liste, pas en anyOf : les sorties JSON
@@ -164,14 +165,14 @@ const CONSIGNE = `Tu lis ce qu'un conseiller immobilier a noté sur un acquéreu
 - floor_min : un nombre seulement s'il est clair ; « pas de RDC » = 1.
 - works_accepted : false seulement si les notes refusent tous travaux sans nuance, en toutes lettres, avec sa source ; si elles acceptent un rafraîchissement ou une petite remise en état, laisse null.
 - condominium_accepted : false si la copropriété est refusée en toutes lettres, avec sa source ; true si elle est acceptée explicitement ; sinon null.
-- must_have : ${MUST_MAX} au plus, et seulement parmi : ${MUST.join(', ')} (cities = les communes). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${MUST_MAX}, garde les ${MUST_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
+- must_have : ${MUST_MAX} au plus, et seulement parmi : ${MUST.join(', ')} (cities = les communes ; condominium = pas de copropriété, seulement si condominium_accepted vaut false). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${MUST_MAX}, garde les ${MUST_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
 - financing : "validated" seulement si un accord de la banque est dit clairement ; "cash_to_verify" (comptant, à vérifier) si l'achat est dit comptant ou sans prêt, sans jamais l'origine des fonds ; "in_progress" si un prêt est à l'étude ou si l'achat dépend d'une vente ; sinon "unknown". Jamais de montant d'apport ni de patrimoine.
 - purpose : "primary" (résidence principale), "secondary", "investment" (investissement locatif), "other". timeline : "now", "three_months", "six_months", "later".
 - language : la langue que le client parle, si les notes la disent (« parlent anglais », « parlent angl. » = "en" ; "it", "de", "ru" de même) ; jamais sa nationalité, qui ne s'écrit nulle part.
 
 4. Ce qui compte pour eux (soft_criteria) : uniquement ces clés — calme (au calme), sans_vis_a_vis, cachet (du cachet, de caractère), lumineux, vue, plain_pied, traversant, commerces_ecoles_a_pied, jardin_sans_entretien, pret_a_vivre (sans travaux, y compris quand un rafraîchissement est accepté). words : leurs mots recopiés tels qu'écrits, 80 caractères au plus, sans mention personnelle. Un souhait hors de cette liste va dans unclassified_wishes. La piscine, le parking, l'extérieur, l'ascenseur, l'étage et la copropriété sont des champs, pas des critères doux. Un critère qu'ils disent indifférent ou refusé n'est pas un critère.
 
-5. notes : seulement des faits pratiques — disponibilités pour visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
+5. notes : seulement des faits pratiques — jours et heures où ils peuvent visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
 
 6. sources : pour chaque champ rempli, la courte ligne des notes d'où il vient (field = le nom du champ) ; pour chaque indispensable, la ligne qui le dit indispensable, avec field = "must_have:" suivi de sa clé (par exemple "must_have:pool"). Un indispensable sans cette source sera refusé.`;
 

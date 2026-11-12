@@ -159,6 +159,22 @@ export function proposalForm(
     // autre chose et dont la carte n'est pas cochée : ce ★ ne s'ajoute pas (A.8, rien sans coche).
     const stars: string[] = [];
     for (const star of proposal.mustHave) {
+      // La copropriété ★ a sa colonne, à part de `must_have` : « non » et sa ★, ensemble — sauf
+      // sur une fiche existante qui dit autre chose et dont la carte n'est pas cochée.
+      if (star.key === 'condominium') {
+        if (
+          existing &&
+          existing.condominiumAccepted != null &&
+          existing.condominiumAccepted !== false &&
+          !choices.kept.has('condominiumAccepted')
+        ) {
+          continue;
+        }
+        fields.condominium_accepted = 'no';
+        fields.condominium_must_have = 'yes';
+        toVerify.push('condominium_must_have');
+        continue;
+      }
       if (['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) {
         const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
         if (

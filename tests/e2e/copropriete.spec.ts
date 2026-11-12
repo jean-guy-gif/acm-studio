@@ -58,7 +58,7 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     for (let index = 0; index < hitCount; index += 1) {
       await expect(hits.nth(index)).toContainText('Copropriété : à vérifier');
     }
-    await expect(page.getByText('À vérifier : Copropriété')).toHaveCount(0);
+    await expect(page.getByText(/À vérifier :/)).toHaveCount(0);
     await expect(page.getByText(/écartés? :.*copropriété/i)).toHaveCount(0);
   });
 
@@ -71,6 +71,6 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     await expect(mandate).toHaveCount(1);
     await expect(mandate).not.toContainText('Copropriété');
     await expect(hits.filter({ hasText: 'Copropriété : à vérifier' }).first()).toBeVisible();
-    await expect(panel.getByText('À vérifier : Copropriété')).toHaveCount(0);
+    await expect(panel.getByText(/À vérifier :/)).toHaveCount(0);
   });
 });
