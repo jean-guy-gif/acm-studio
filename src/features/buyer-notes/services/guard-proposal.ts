@@ -66,6 +66,18 @@ const SOURCE_MAX = 200;
 const NEGATION =
   /(^|[^a-z])(pas|sans|non|aucun|aucune|ni|jamais|refus|refuse|refusent|exclu|exclus)([^a-z]|$)/;
 
+const WORKS_NUANCE =
+  /(^|[^a-z])(gros|ok|ca va|accept\w*|sauf|mais|refaire|rafraich\w*|peinture|petits?|legers?|coup de)([^a-z]|$)/;
+
+// Mission 151 — une ★ veut une ligne qui la dit ferme (Jean-Guy, 12/11) : un mot qui l'exige,
+// « +++ », « !! », ou un mot écrit en MAJUSCULES (hors sigles : RDC, DPE, T3, FAI, ASL…).
+const FIRM =
+  /indispensable|obligatoire|imperati|absolument|exige|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
+const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
+export function saysFirm(line: string): boolean {
+  return FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(line.replace(ACRONYMS, ''));
+}
+
 const fold = (value: string): string => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const text = (value: unknown, max: number): string | null => {
@@ -157,7 +169,10 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     if (value === true) values[field] = true;
     if (value === false) {
       const line = sourceOf.get(modelName[field]);
-      if (line && NEGATION.test(fold(line))) values[field] = false;
+      // Les travaux : un « non » nuancé dans la même ligne (« gros travaux non, cuisine à refaire
+      // OK ») n'en est pas un ; il reste inconnu (N6, 12/11).
+      const nuanced = field === 'worksAccepted' && line != null && WORKS_NUANCE.test(fold(line));
+      if (line && NEGATION.test(fold(line)) && !nuanced) values[field] = false;
     }
   }
 
@@ -192,7 +207,7 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     const star = oneOf<NoteStar>(NOTE_STAR_CRITERIA, key);
     if (!star || mustHave.some((kept) => kept.key === star)) continue;
     const line = sourceOf.get(`must_have:${star}`);
-    if (!line) continue;
+    if (!line || !saysFirm(line)) continue;
     if (star === 'budget' && values.budgetMax == null) continue;
     // La copropriété ★ veut un « non » gardé (dit en toutes lettres, sa source comprise).
     if (star === 'condominium' && values.condominiumAccepted !== false) continue;

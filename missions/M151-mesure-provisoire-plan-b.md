@@ -445,3 +445,36 @@ Bilan brut : `M151-essais/resultats/bilan-2026-11-12-14-14.md`.
 - N4 : « Châteauneuf-de-Grasse » au lieu de Châteauneuf-Grasse ; la vérification des communes
   (A.3) le corrige à l'écran. C5 : un parking que la fiche CRM dit, lu vide (un oubli, pas une
   invention).
+
+## Les fiches, conditions et cases cochées (12/11, fin d'après-midi)
+
+Décisions de Jean-Guy (12/11) appliquées à la consigne avant la relance : une condition (« RDC ok si
+jardinet ») n'est ni un oui ni un indispensable, elle va dans Notes, « (à vérifier) » ; une case
+cochée ou une valeur écrite vaut oui ; une ★ sur un équipement le met à oui. Corrigé de N5 écrit
+avant (la condition dans Notes, l'ascenseur conditionnel vide). Relance des seules fiches (11 cas ×
+2 passes, Sonnet 4.6, température 0) : 0,467 $. Bilans : `bilan-2026-11-12-14-21.md` (brut) et
+`-renote.md` (avec les gardes du serveur, sans nouvel appel).
+
+| | 14 h 14 | 14 h 21, brut | 14 h 21, gardes du serveur |
+|---|---|---|---|
+| Champs justes en tout | 478 / 484 | 480 / 484 | **482 / 484** |
+| Faux | 4 | 2 | 2 (N4 aux deux passes) |
+| **Inventés** | 2 | 3 | **0** |
+| Mentions personnelles enregistrées | 0 | 0 | 0 |
+| ★ refusées au serveur | 0 | 0 | 1 |
+| « Non » ramenés à inconnu | 0 | 0 | 2 |
+
+- **N5** : juste aux deux passes ; Notes : « RDC possible si jardinet, sinon étage avec ascenseur
+  (à vérifier) » ; ni extérieur ni ascenseur.
+- **C5** : le parking n'était pas un effet de la règle des cases : la ★ « Garage indispensable »
+  était lue, le champ laissé vide. Juste maintenant ; et la garde du serveur met désormais le champ à
+  « oui » avec la ligne de la ★ (à la création, la ★ écrivait « oui » sans carte à vérifier).
+- **N6, ce que la relance a fait apparaître**, et les deux gardes ajoutées après elle (la consigne
+  n'a pas changé depuis, la réponse à température 0 est la même) : « gros travaux non, cuisine à
+  refaire OK » lu « Travaux acceptés : non » aux deux passes — un « non » nuancé dans sa ligne reste
+  inconnu ; une ★ communes à la première passe avec pour seule ligne « Mougins, Mouans-Sartoux,
+  Pégomas » — une ★ veut une ligne qui la dise ferme (« indispensable », « obligatoire », « +++ »,
+  « !! », un mot en MAJUSCULES hors sigles). Sur les deux mesures du jour, toutes les ★ attendues ont
+  une telle ligne ; seule celle-là n'en avait pas.
+- **N4** : « Châteauneuf-de-Grasse » au lieu de Châteauneuf-Grasse, corrigé à l'écran par la
+  vérification des communes (A.3).

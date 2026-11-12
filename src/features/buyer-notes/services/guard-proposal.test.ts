@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
-import { guardProposal, proposedFieldNames } from '@/features/buyer-notes/services/guard-proposal';
+import {
+  guardProposal,
+  proposedFieldNames,
+  saysFirm,
+} from '@/features/buyer-notes/services/guard-proposal';
 import {
   NOTE_OUTPUT_SCHEMA,
   NOTE_READING_INSTRUCTIONS,
@@ -259,5 +263,32 @@ describe('guardProposal', () => {
     });
     expect(contradicted.values.parking).toBe(false);
     expect(contradicted.mustHave).toEqual([]);
+  });
+
+  // N6 du 12/11 : « Mougins, Mouans-Sartoux, Pégomas » ne dit rien de ferme ; « gros travaux non,
+  // cuisine à refaire OK » n'est pas un « non » aux travaux.
+  it('une ★ sans ligne qui la dise ferme tombe ; un « non » nuancé aux travaux reste inconnu', () => {
+    const cities = guardProposal({
+      ...empty,
+      cities: ['Mougins'],
+      must_have: ['cities'],
+      sources: [{ field: 'must_have:cities', quote: 'Mougins, Mouans-Sartoux, Pégomas' }],
+    });
+    expect(cities.mustHave).toEqual([]);
+    expect(saysFirm('Garage indispensable.')).toBe(true);
+    expect(saysFirm('Jardin +++')).toBe(true);
+    expect(saysFirm('PAS de copropriété ni lotissement avec ASL')).toBe(true);
+    expect(saysFirm('budget ferme, pas un euro de plus')).toBe(true);
+    expect(saysFirm('RDC ok si jardinet')).toBe(false);
+    expect(saysFirm('T3 à Antibes, DPE C max')).toBe(false);
+    const works = (quote: string) =>
+      guardProposal({
+        ...empty,
+        works_accepted: false,
+        sources: [{ field: 'works_accepted', quote }],
+      }).values.worksAccepted;
+    expect(works('gros travaux non, cuisine à refaire OK')).toBeUndefined();
+    expect(works('Pas de travaux — un coup de peinture ne le gêne pas')).toBeUndefined();
+    expect(works('aucun travaux')).toBe(false);
   });
 });

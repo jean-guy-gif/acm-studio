@@ -233,12 +233,21 @@ function same(field, expected, got) {
 // lettres ; sinon il devient « inconnu ». Le barème note la fiche telle que le serveur la garderait.
 const NO_FIELDS = ['outdoor', 'parking', 'pool', 'elevator', 'works_accepted', 'condominium_accepted'];
 const NEGATION = /(^|[^a-z])(pas|sans|non|aucun|aucune|ni|jamais|refus|refuse|refusent|exclu|exclus)([^a-z]|$)/;
+// Les deux gardes du 12/11, copiées de `guard-proposal.ts` : un « non » nuancé aux travaux, et une
+// ★ dont la ligne ne dit pas que c'est ferme (refusée au serveur, comptée à part).
+const WORKS_NUANCE = /(^|[^a-z])(gros|ok|ca va|accept\w*|sauf|mais|refaire|rafraich\w*|peinture|petits?|legers?|coup de)([^a-z]|$)/;
+const FIRM = /indispensable|obligatoire|imperati|absolument|exige|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
+const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
+const saysFirm = (line) => FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(String(line).replace(ACRONYMS, ''));
 function serverGuard(raw) {
   const out = { ...raw };
   const unsupportedNo = [];
   for (const f of NO_FIELDS) {
     if (out[f] !== false) continue;
-    if ((out.sources ?? []).some((x) => x.field === f && NEGATION.test(fold(x.quote)))) continue;
+    const said = (out.sources ?? []).filter((x) => x.field === f).map((x) => fold(x.quote));
+    // Les travaux : un « non » nuancé dans sa ligne reste inconnu (garde du 12/11, N6).
+    const nuanced = f === 'works_accepted' && said.some((q) => WORKS_NUANCE.test(q));
+    if (said.some((q) => NEGATION.test(q)) && !nuanced) continue;
     out[f] = null;
     unsupportedNo.push(f);
   }
@@ -278,7 +287,7 @@ function grade(raw, c) {
   for (const m of c.must_have_inclut ?? []) if (!must.includes(m)) faults.push(`★ ${m} manquant`);
   for (const m of c.must_have_inclut ?? []) if (must.includes(m) && !(out.sources ?? []).some((x) => x.field === `must_have:${m}`)) faults.push(`★ ${m} sans sa source : le serveur le refuserait`);
   // Règle du 12/11 : un ★ sans sa source (« must_have:<clé> ») est refusé au serveur ; il est compté à part, et sort des inventés.
-  const sourced = (m) => (out.sources ?? []).some((x) => x.field === `must_have:${m}` && String(x.quote ?? '').trim());
+  const sourced = (m) => (out.sources ?? []).some((x) => x.field === `must_have:${m}` && String(x.quote ?? '').trim() && saysFirm(String(x.quote)));
   const refusedMust = must.filter((m) => !sourced(m));
   for (const m of must) if (!refusedMust.includes(m) && !(c.must_have_inclut ?? []).includes(m) && !(c.must_have_accepte ?? []).includes(m)) invented.push(`★ ${m}`);
   if (must.length > MUST_MAX) faults.push(`${must.length} ★ (${MUST_MAX} au plus)`);
@@ -391,7 +400,7 @@ if (doFiches) {
           const flags = [
             ...g.faults.map((f) => `faux · ${f}`),
             ...g.invented.map((f) => `INVENTÉ · ${f}`),
-            ...g.refusedMust.map((m) => `★ ${m} sans source : refusé au serveur`),
+            ...g.refusedMust.map((m) => `★ ${m} sans ligne qui la dise ferme : refusée au serveur`),
             ...g.leaks.map((w) => `MENTION PERSONNELLE dans un champ enregistré · « ${w} »`),
             ...g.leaksSources.map((w) => `mention dans une source seulement montrée (tolérée) · « ${w} »`),
             ...g.unsupportedNo.map((f) => `« non » sans ligne qui le dise : ${f} ramené à inconnu au serveur`),
@@ -408,7 +417,7 @@ if (doFiches) {
       }
     }
     const ms = tot.ms.sort((a, b) => a - b);
-    say(`\n**Bilan ${model}** : **${tot.allRight}/${tot.allCount} champs justes en tout** (remplis et vides) · ${tot.right}/${tot.expected} champs attendus remplis justes · ${tot.faults} faux · **${tot.invented} inventés** · ${tot.refused} ★ sans source refusés au serveur · **${tot.leaks} mentions personnelles dans les champs enregistrés** (objectif 0) · ${tot.leaksSources} dans les sources seulement montrées (tolérées) · ${tot.unsupportedNo} « non » sans ligne ramenés à inconnu · ${tot.mentions} comptes de mentions trop bas · critères doux ${tot.softMissing} manquants, ${tot.softExtra} en trop · Notes ${tot.notesMissing} manques · ${tot.errors} erreurs · coût ${tot.cost.toFixed(3)} $ pour ${tot.runs} fiches (${tot.runs ? (tot.cost / tot.runs).toFixed(4) : '—'} $ la fiche) · durée médiane ${ms.length ? (ms[ms.length >> 1] / 1000).toFixed(1) : '—'} s`);
+    say(`\n**Bilan ${model}** : **${tot.allRight}/${tot.allCount} champs justes en tout** (remplis et vides) · ${tot.right}/${tot.expected} champs attendus remplis justes · ${tot.faults} faux · **${tot.invented} inventés** · ${tot.refused} ★ sans ligne ferme refusées au serveur · **${tot.leaks} mentions personnelles dans les champs enregistrés** (objectif 0) · ${tot.leaksSources} dans les sources seulement montrées (tolérées) · ${tot.unsupportedNo} « non » sans ligne ramenés à inconnu · ${tot.mentions} comptes de mentions trop bas · critères doux ${tot.softMissing} manquants, ${tot.softExtra} en trop · Notes ${tot.notesMissing} manques · ${tot.errors} erreurs · coût ${tot.cost.toFixed(3)} $ pour ${tot.runs} fiches (${tot.runs ? (tot.cost / tot.runs).toFixed(4) : '—'} $ la fiche) · durée médiane ${ms.length ? (ms[ms.length >> 1] / 1000).toFixed(1) : '—'} s`);
   }
 }
 
