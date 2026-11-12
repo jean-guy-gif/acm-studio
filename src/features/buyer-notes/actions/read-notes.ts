@@ -112,7 +112,9 @@ export async function readBuyerNotes(formData: FormData): Promise<ReadNotesResul
     maxTokens: NOTE_MAX_OUTPUT_TOKENS,
     model,
   });
-  const cost = answer.usage ? (costMillicents(model, answer.usage) ?? wanted) : 0;
+  // Sans comptage (l'appel est tombé en route), le fournisseur a pu facturer : la réservation
+  // reste comptée au pire, par prudence (M105).
+  const cost = answer.usage ? (costMillicents(model, answer.usage) ?? wanted) : wanted;
 
   if (!answer.ok) {
     await settleAiBudget({ usageId: reservation.usageId, costMillicents: cost, outcome: 'failed' });

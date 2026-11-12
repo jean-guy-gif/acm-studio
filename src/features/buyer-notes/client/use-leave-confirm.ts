@@ -21,6 +21,8 @@ export function useLeaveConfirm(active: boolean): {
     if (!active) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+      // Safari et les anciens navigateurs attendent aussi une valeur de retour.
+      event.returnValue = '';
     };
     // En phase de capture, avant le routeur : retenir ici empêche la navigation.
     const onClick = (event: MouseEvent) => {

@@ -4,7 +4,7 @@ import type { NoteReadingCause } from '@/features/buyer-notes/types';
 // Ce que l'écran dit, cause par cause : jamais un terme technique (M105), jamais le contenu.
 export const NOTE_READING_MESSAGES: Record<NoteReadingCause, string> = {
   closed: 'La lecture des notes n’est pas encore ouverte : saisissez la fiche à la main.',
-  unconfigured: 'La lecture des notes n’est pas disponible : saisissez la fiche à la main.',
+  unconfigured: 'La lecture des notes ne répond pas pour l’instant : saisissez la fiche à la main.',
   budget_reached: 'Budget de lecture du mois atteint : saisissez la fiche à la main.',
   budget_unavailable:
     'Le budget de lecture n’a pas pu être vérifié : réessayez, ou saisissez la fiche à la main.',

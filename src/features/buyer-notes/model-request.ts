@@ -128,7 +128,7 @@ export const NOTE_READING_INSTRUCTIONS = `Tu lis ce qu'un conseiller immobilier 
 
 4. Ce qui compte pour eux (soft_criteria) : uniquement ces clés — calme (au calme), sans_vis_a_vis, cachet (du cachet, de caractère), lumineux, vue, plain_pied, traversant, commerces_ecoles_a_pied, jardin_sans_entretien, pret_a_vivre (sans travaux, y compris quand un rafraîchissement est accepté). words : leurs mots recopiés tels qu'écrits, 80 caractères au plus, sans mention personnelle. Un souhait hors de cette liste va dans unclassified_wishes. La piscine, le parking, l'extérieur, l'ascenseur, l'étage et la copropriété sont des champs, pas des critères doux. Un critère qu'ils disent indifférent ou refusé n'est pas un critère.
 
-5. notes : seulement des faits pratiques — disponibilités pour visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
+5. notes : seulement des faits pratiques — jours et heures où ils peuvent visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
 
 6. sources : pour chaque champ rempli, la courte ligne des notes d'où il vient (field = le nom du champ) ; pour chaque indispensable, la ligne qui le dit indispensable, avec field = "must_have:" suivi de sa clé (par exemple "must_have:pool"). Un indispensable sans cette source sera refusé.`;
 

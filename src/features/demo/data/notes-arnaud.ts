@@ -51,7 +51,7 @@ export const DEMO_NOTES_OUTPUT = {
     { key: 'pret_a_vivre', words: 'pas de gros travaux' },
   ],
   unclassified_wishes: [],
-  notes: 'Disponibles pour visiter le samedi.',
+  notes: 'Visites possibles le samedi.',
   sources: [
     { field: 'name', quote: 'ARNAUD (M. et Mme)' },
     { field: 'phone', quote: '06 39 98 27 14' },

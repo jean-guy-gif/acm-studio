@@ -65,6 +65,7 @@ export type ExistingBuyer = Pick<
   | 'dealBreakers'
   | 'condominiumMustHave'
   | 'softCriteria'
+  | 'financing'
 >;
 
 const isEmpty = (value: unknown): boolean =>
@@ -120,6 +121,8 @@ export type ProposalChoices = {
   softKept: boolean;
   // « Comptant, à vérifier » transformé en « Validé » par le conseiller.
   cashValidated: boolean;
+  // Le financement lu, retenu (en création : toujours ; sur une fiche existante : sa coche, A.8).
+  financingKept?: boolean;
   // Saisis par le conseiller quand la lecture ne les a pas trouvés (obligatoires, M117).
   typedName?: string;
   typedCities?: string;
@@ -149,8 +152,18 @@ export function proposalForm(
     toVerify.push(NOTE_FORM_FIELDS[field]);
   }
   if (!fields.name && choices.typedName?.trim()) fields.name = choices.typedName.trim();
-  if ((!fields.cities || fields.cities.length === 0) && choices.typedCities?.trim()) {
-    fields.cities = choices.typedCities.trim();
+  // Les communes tapées par le conseiller (non lues, ou lues mais non reconnues) s'ajoutent.
+  const typed = (choices.typedCities ?? '')
+    .split(',')
+    .map((city) => city.trim())
+    .filter(Boolean);
+  if (typed.length > 0) {
+    const known = Array.isArray(fields.cities)
+      ? fields.cities
+      : fields.cities
+        ? [fields.cities]
+        : [];
+    fields.cities = [...new Set([...known, ...typed])];
   }
   if (choices.starsKept && proposal.mustHave.length > 0) {
     const stars = new Set([
@@ -158,10 +171,24 @@ export function proposalForm(
       ...proposal.mustHave.map((star) => star.key),
     ]);
     fields.must_have = [...stars];
-    // Un ★ sur un équipement le met à « oui » (M132).
+    // Un ★ sur un équipement le met à « oui » (M132) — sauf sur une fiche existante qui dit
+    // autre chose et dont la carte n'est pas cochée : ce ★ ne s'ajoute pas (A.8, rien sans coche).
+    const blocked = new Set<string>();
     for (const star of proposal.mustHave) {
-      if (['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) fields[star.key] = 'yes';
+      if (!['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) continue;
+      const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
+      if (
+        existing &&
+        existing[field] != null &&
+        existing[field] !== true &&
+        !choices.kept.has(field)
+      ) {
+        blocked.add(star.key);
+        continue;
+      }
+      fields[star.key] = 'yes';
     }
+    fields.must_have = [...stars].filter((star) => !blocked.has(star));
     toVerify.push('must_have');
   }
   if (choices.softKept && proposal.softCriteria.length > 0) {
@@ -174,7 +201,7 @@ export function proposalForm(
   }
   const financing =
     proposal.financing ?? (proposal.cashSuggestion && choices.cashValidated ? 'validated' : null);
-  if (financing) {
+  if (financing && (!existing || choices.financingKept === true)) {
     fields.financing = financing;
     toVerify.push('financing');
   }

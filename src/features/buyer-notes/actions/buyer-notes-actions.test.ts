@@ -234,6 +234,44 @@ describe('saveBuyerFromNotes', () => {
     expect(close).toMatchObject({ outcome: 'created', buyer_id: 'b-1' });
   });
 
+  it('« Compléter » : une fiche d’une autre agence ou archivée n’est pas touchée', async () => {
+    const form = proposalForm();
+    form.set('buyer_id', 'b-autre');
+    state.respond = () => ({ data: null });
+    expect(await saveBuyerFromNotes(form)).toEqual({
+      ok: false,
+      error: 'Cette fiche acquéreur n’existe plus.',
+    });
+    expect(fake.writes()).toEqual([]);
+    const filters = fake.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+    expect(filters).toEqual(expect.arrayContaining([['agency_id', 'agency-a']]));
+    expect(fake.calls.some((call) => call.method === 'is' && call.args[0] === 'archived_at')).toBe(
+      true,
+    );
+  });
+
+  it('« Compléter » : la fiche de l’agence est mise à jour, ses pastilles s’ajoutent', async () => {
+    const form = proposalForm();
+    form.set('buyer_id', 'b-1');
+    state.respond = (calls) =>
+      calls.at(-1)?.method === 'maybeSingle'
+        ? { data: { id: 'b-1', fields_to_verify: ['email'] } }
+        : {};
+    expect(await saveBuyerFromNotes(form)).toEqual({ ok: true, buyerId: 'b-1' });
+    expect(fake.writes()).toEqual(['update buyers', 'update ai_usage']);
+    const update = fake.calls.find((call) => call.method === 'update')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(update.fields_to_verify).toEqual(['email', 'name', 'cities', 'budget_max']);
+    expect(
+      fake.calls.find(
+        (call) =>
+          call.method === 'update' && call !== fake.calls.find((c) => c.method === 'update'),
+      )?.args[0],
+    ).toMatchObject({ outcome: 'completed' });
+  });
+
   it('refuse une fiche invalide sans rien écrire', async () => {
     const form = proposalForm();
     form.set('cities', '');

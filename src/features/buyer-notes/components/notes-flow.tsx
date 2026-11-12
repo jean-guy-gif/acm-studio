@@ -34,7 +34,11 @@ import {
 } from '@/features/buyer-notes/services/proposal-display';
 import { proposalForm, type ExistingBuyer } from '@/features/buyer-notes/services/proposal-form';
 import type { NoteField, NoteProposal, NoteValues } from '@/features/buyer-notes/types';
-import { BUYER_SOFT_CRITERION_LABELS } from '@/features/buyers/types';
+import {
+  BUYER_CRITERION_LABELS,
+  BUYER_FINANCING_LABELS,
+  BUYER_SOFT_CRITERION_LABELS,
+} from '@/features/buyers/types';
 
 // Mission 151 — « Depuis mes notes » (planches 1 et 2, validées par Jean-Guy le 10/11 et le 12/11) :
 // apporter ses notes, la lecture, puis la fiche proposée à vérifier. La proposition vit dans cet
@@ -94,7 +98,8 @@ export function NotesFlow({
   const photoInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const guard = useLeaveConfirm(step === 'proposal');
+  // Pendant la lecture aussi : partir laisserait une lecture payée sans suite.
+  const guard = useLeaveConfirm(step === 'proposal' || step === 'reading');
 
   // Les images montrées à côté de la proposition vivent dans l'onglet seulement.
   useEffect(() => () => preview.urls.forEach((url) => URL.revokeObjectURL(url)), [preview.urls]);
@@ -162,6 +167,8 @@ export function NotesFlow({
   }
 
   function leave(href: string) {
+    // Une lecture en cours, quittée : sa réponse, si elle arrive, sera dite « annulée » (read()).
+    readingToken.current += 1;
     if (reading?.usageId) void cancelNotesReading(reading.usageId);
     setStep('intake');
     router.push(href);
@@ -173,6 +180,23 @@ export function NotesFlow({
     setReading(null);
     await read(prepared);
   }
+
+  const quitDialog = guard.pendingHref ? (
+    <ConfirmDialog title={QUIT_TITLE} text={QUIT_TEXT} onCancel={guard.stay} cancelLabel="Rester">
+      <button
+        type="button"
+        className={btnDanger}
+        data-testid="notes-quit"
+        onClick={() => {
+          const href = guard.pendingHref ?? '/acquereurs';
+          guard.stay();
+          leave(href);
+        }}
+      >
+        Quitter
+      </button>
+    </ConfirmDialog>
+  ) : null;
 
   // --- planche 1 -----------------------------------------------------------------------------
   if (step === 'intake' || step === 'text') {
@@ -276,19 +300,22 @@ export function NotesFlow({
 
   if (step === 'reading') {
     return (
-      <section
-        className={`${card} flex flex-col items-center gap-3 p-8 text-center`}
-        data-testid="notes-reading"
-      >
-        <NotesPreview preview={preview} small />
-        <h2 className="font-title text-xl font-bold text-brand-darker" role="status">
-          Lecture de vos notes…
-        </h2>
-        <p className={hintText}>Quelques secondes. Rien n’est enregistré avant votre accord.</p>
-        <button type="button" className={link} onClick={cancelReading}>
-          Annuler
-        </button>
-      </section>
+      <>
+        <section
+          className={`${card} flex flex-col items-center gap-3 p-8 text-center`}
+          data-testid="notes-reading"
+        >
+          <NotesPreview preview={preview} small />
+          <h2 className="font-title text-xl font-bold text-brand-darker" role="status">
+            Lecture de vos notes…
+          </h2>
+          <p className={hintText}>Quelques secondes. Rien n’est enregistré avant votre accord.</p>
+          <button type="button" className={link} onClick={cancelReading}>
+            Annuler
+          </button>
+        </section>
+        {quitDialog}
+      </>
     );
   }
 
@@ -321,27 +348,7 @@ export function NotesFlow({
         }
         error={error}
       />
-      {guard.pendingHref ? (
-        <ConfirmDialog
-          title={QUIT_TITLE}
-          text={QUIT_TEXT}
-          onCancel={guard.stay}
-          cancelLabel="Rester"
-        >
-          <button
-            type="button"
-            className={btnDanger}
-            data-testid="notes-quit"
-            onClick={() => {
-              const href = guard.pendingHref ?? '/acquereurs';
-              guard.stay();
-              leave(href);
-            }}
-          >
-            Quitter
-          </button>
-        </ConfirmDialog>
-      ) : null}
+      {quitDialog}
     </>
   );
 }
@@ -434,14 +441,18 @@ function NotesProposal({
   }, [existing, proposal.values, beforeValues]);
   const [kept, setKept] = useState<Set<string>>(initialKept);
   const [starsKept, setStarsKept] = useState(!existing || existing.mustHave.length === 0);
-  const [softKept, setSoftKept] = useState(true);
+  // Sur une fiche existante, ce qui changerait ce qu'elle sait déjà est décoché (A.8).
+  const [softKept, setSoftKept] = useState(!existing || existing.softCriteria.length === 0);
   const [cashValidated, setCashValidated] = useState(false);
+  const [financingKept, setFinancingKept] = useState(!existing || existing.financing === 'unknown');
   const [typedName, setTypedName] = useState('');
   const [typedCities, setTypedCities] = useState('');
 
   const starOf = new Set(proposal.mustHave.map((star) => star.key));
   const needsName = !proposal.values.name && !existing?.name;
-  const needsCities = !proposal.values.cities && !(existing && existing.cities.length > 0);
+  const needsCities =
+    (!proposal.values.cities && !(existing && existing.cities.length > 0)) ||
+    proposal.communes.some((check) => check.status === 'unknown' || check.status === 'ambiguous');
   const proposedCount =
     PROPOSAL_CARDS.flatMap((card) => card.fields).filter(
       (field) => proposal.values[field] !== undefined,
@@ -458,6 +469,7 @@ function NotesProposal({
       starsKept,
       softKept,
       cashValidated,
+      financingKept,
       typedName,
       typedCities,
     });
@@ -485,6 +497,10 @@ function NotesProposal({
     const corrected =
       cardDef.id === 'cities'
         ? proposal.communes.filter((check) => check.status === 'corrected')
+        : [];
+    const unverified =
+      cardDef.id === 'cities'
+        ? proposal.communes.filter((check) => check.status === 'unverified')
         : [];
     const unknown =
       cardDef.id === 'cities'
@@ -536,6 +552,11 @@ function NotesProposal({
             «&nbsp;{check.read}&nbsp;» n’est pas reconnue : saisissez la commune.
           </span>
         ))}
+        {unverified.map((check) => (
+          <span key={check.read} className="text-xs text-zinc-500">
+            «&nbsp;{check.read}&nbsp;» : commune non vérifiée
+          </span>
+        ))}
         {cardDef.id === 'name' && needsName ? (
           <input
             aria-label="Nom de l’acquéreur"
@@ -575,13 +596,29 @@ function NotesProposal({
               ? 'Comptant, à vérifier'
               : '—'}
       </span>
+      {existing && proposal.financing ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-brand"
+            checked={financingKept}
+            onChange={(event) => setFinancingKept(event.target.checked)}
+          />
+          {existing.financing === 'unknown'
+            ? 'Le noter sur la fiche'
+            : `Remplacer « ${BUYER_FINANCING_LABELS[existing.financing]} »`}
+        </label>
+      ) : null}
       {proposal.cashSuggestion ? (
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             className="accent-brand"
             checked={cashValidated}
-            onChange={(event) => setCashValidated(event.target.checked)}
+            onChange={(event) => {
+              setCashValidated(event.target.checked);
+              setFinancingKept(event.target.checked);
+            }}
           />
           Le noter « Validé »
         </label>
@@ -648,7 +685,7 @@ function NotesProposal({
             <div className="grid gap-3 sm:grid-cols-2">
               {PROPOSAL_CARDS.filter((cardDef) => cardDef.section === 'cherche').map(renderCard)}
             </div>
-            {existing && proposal.mustHave.length > 0 && existing.mustHave.length > 0 ? (
+            {existing && proposal.mustHave.length > 0 ? (
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -657,7 +694,7 @@ function NotesProposal({
                   onChange={(event) => setStarsKept(event.target.checked)}
                 />
                 Ajouter les indispensables lus :{' '}
-                {proposal.mustHave.map((star) => star.key).join(', ')}
+                {proposal.mustHave.map((star) => BUYER_CRITERION_LABELS[star.key]).join(', ')}
               </label>
             ) : null}
           </section>
@@ -672,7 +709,10 @@ function NotesProposal({
             {proposal.softCriteria.length > 0 ? (
               <>
                 {existing ? (
-                  <label className="flex items-center gap-2 text-sm">
+                  <label
+                    className="flex items-center gap-2 text-sm"
+                    data-testid="proposal-soft-keep"
+                  >
                     <input
                       type="checkbox"
                       className="accent-brand"

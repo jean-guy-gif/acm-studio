@@ -46,6 +46,7 @@ const existing: ExistingBuyer = {
   dealBreakers: 'pas de lotissement',
   condominiumMustHave: false,
   softCriteria: [{ key: 'vue', words: 'une vue' }],
+  financing: 'in_progress',
 };
 
 describe('la fiche proposée (planche 2)', () => {
@@ -66,7 +67,7 @@ describe('la fiche proposée (planche 2)', () => {
       outdoor: 'yes',
       must_have: ['outdoor'],
       financing: 'validated',
-      notes: 'Disponibles pour visiter le samedi.',
+      notes: 'Visites possibles le samedi.',
     });
     expect(
       JSON.parse(String(fields.soft_criteria)).map((soft: { key: string }) => soft.key),
@@ -107,7 +108,67 @@ describe('la fiche proposée (planche 2)', () => {
       deal_breakers: 'pas de lotissement',
       soft_criteria: JSON.stringify([{ key: 'vue', words: 'une vue' }]),
     });
-    expect(toVerify).toEqual(['phone', 'financing']);
+    expect(toVerify).toEqual(['phone']);
+    expect(fields.financing).toBeUndefined();
+  });
+
+  it('sur une fiche existante, le financement lu ne remplace rien sans coche (A.8)', () => {
+    const base = {
+      kept: new Set<NoteField>(),
+      starsKept: false,
+      softKept: false,
+      cashValidated: false,
+    };
+    expect(proposalForm(proposal, existing, base).fields.financing).toBeUndefined();
+    expect(
+      proposalForm(proposal, existing, { ...base, financingKept: true }).fields.financing,
+    ).toBe('validated');
+  });
+
+  it('un ★ lu ne met pas « oui » un équipement que la fiche dit « non » sans coche de la carte', () => {
+    const refusing = { ...existing, outdoor: false, mustHave: [] };
+    const without = proposalForm(proposal, refusing, {
+      kept: new Set<NoteField>(),
+      starsKept: true,
+      softKept: false,
+      cashValidated: false,
+    });
+    expect(without.fields.outdoor).toBe('no');
+    expect(without.fields.must_have).toEqual([]);
+    const withCard = proposalForm(proposal, refusing, {
+      kept: new Set<NoteField>(['outdoor']),
+      starsKept: true,
+      softKept: false,
+      cashValidated: false,
+    });
+    expect(withCard.fields.outdoor).toBe('yes');
+    expect(withCard.fields.must_have).toEqual(['outdoor']);
+  });
+
+  it('sur une fiche existante, les mots déjà notés restent tant que la case n’est pas cochée', () => {
+    const { fields } = proposalForm(proposal, existing, {
+      kept: new Set<NoteField>(),
+      starsKept: false,
+      softKept: false,
+      cashValidated: false,
+    });
+    expect(fields.soft_criteria).toBe(JSON.stringify([{ key: 'vue', words: 'une vue' }]));
+  });
+
+  it('une commune non reconnue, tapée par le conseiller, s’ajoute aux communes lues', () => {
+    const { fields } = proposalForm(proposal, null, {
+      kept: allKept,
+      starsKept: true,
+      softKept: true,
+      cashValidated: false,
+      typedCities: 'Cagnes-sur-Mer, Vence',
+    });
+    expect(fields.cities).toEqual([
+      'Vence',
+      'Saint-Paul-de-Vence',
+      'Tourrettes-sur-Loup',
+      'Cagnes-sur-Mer',
+    ]);
   });
 
   it('« Comptant, à vérifier » ne devient « Validé » que par le geste du conseiller', () => {
@@ -136,7 +197,7 @@ describe('la fiche proposée (planche 2)', () => {
       typedCities: 'Vence',
     });
     expect(fields.name).toBe('Famille Test');
-    expect(fields.cities).toBe('Vence');
+    expect(fields.cities).toEqual(['Vence']);
   });
 
   it('les cartes suivent la planche : budget et pièces regroupés, la ligne des notes dessous', () => {

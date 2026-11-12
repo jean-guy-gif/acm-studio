@@ -186,6 +186,8 @@ export async function setBuyerFinancing(
     .update({
       financing: financing as BuyerFinancing,
       financing_changed_at: now,
+      // Mission 151 — posé par le conseiller : le financement n'est plus « À vérifier » (M97).
+      fields_to_verify: (existing.fields_to_verify ?? []).filter((name) => name !== 'financing'),
       updated_at: now,
     })
     .eq('id', buyerId)

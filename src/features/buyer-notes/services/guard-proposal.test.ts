@@ -48,7 +48,7 @@ describe('guardProposal', () => {
       roomsMin: 4,
       bedroomsMin: 3,
       outdoor: true,
-      notes: 'Disponibles pour visiter le samedi.',
+      notes: 'Visites possibles le samedi.',
     });
     expect(proposal.values.purpose).toBeUndefined();
     expect(proposal.mustHave).toEqual([{ key: 'outdoor', source: 'Jardin +++' }]);
