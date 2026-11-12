@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 import { fieldLabel, hintText, inputBase } from '@/components/ui/styles';
 import {
   OUTSIDE_TITLE_MISSING,
@@ -71,6 +73,8 @@ export function OutsideTitleFields({
   // « Collaboration obtenue, sur sa carte de Prospection. »
   colleagueHint?: string | null;
 }) {
+  // Mission 154 — un groupe de boutons par bloc : le bon de la tournée en a un par bien.
+  const group = useId();
   const complete = draftTitle(draft) != null;
   const set = (patch: Partial<TitleDraft>) => onChange({ ...draft, ...patch });
   return (
@@ -100,7 +104,7 @@ export function OutsideTitleFields({
           >
             <input
               type="radio"
-              name="outside-title"
+              name={`outside-title-${group}`}
               className="mt-1 h-4 w-4 accent-brand"
               checked={draft.kind === choice.kind}
               onChange={() => set({ kind: choice.kind })}
