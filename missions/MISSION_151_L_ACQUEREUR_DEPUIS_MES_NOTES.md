@@ -37,12 +37,22 @@ sert à ranger les biens trouvés, en disant pourquoi.
    l'action de création n'a pas de champ pour elles (liste d'autorisation), la trace (A.11) ne garde
    que les noms des champs proposés et gardés, jamais une valeur ni une ligne des notes, et le
    journal d'erreurs ne reçoit jamais la réponse du modèle. Prouvé par un test : après « Créer la
-   fiche », aucune source n'existe en base, trace comprise.
+   fiche », aucune source n'existe en base, trace comprise (les cinq garanties validées par
+   Jean-Guy, 12/11). Puisque rien ne se garde, **l'écran prévient** sous la proposition : « Cette
+   proposition n'est pas gardée : si vous quittez ou rechargez la page, elle sera perdue. » ; et
+   **quitter demande confirmation** : un lien de l'application ouvre la confirmation dans l'écran
+   (`confirm-dialog`, M146 A) — « Quitter sans créer la fiche ? La proposition sera perdue. »,
+   « Rester » / « Quitter » —, l'actualisation et la fermeture de l'onglet la confirmation du
+   navigateur (M93) ; « Créer la fiche » et « Annuler » ne la demandent pas (Jean-Guy, 12/11 ; la
+   phrase s'ajoute à la planche 2 avant le code).
 3. **Jamais de donnée sensible ni de jugement sur la personne** : ni santé, ni religion, ni
    origine, ni opinions, ni situation familiale, ni « pressé », « difficile », « indécis ». Le
    besoin peut être gardé (« De plain-pied »), jamais sa raison. Trois gardes : la consigne, une
    sortie en liste d'autorisation de champs, et au serveur une liste de mots refusés sur tout texte
-   proposé (leurs mots, les Notes), comme les mots interdits des courriers (M120).
+   proposé (leurs mots, les Notes), comme les mots interdits des courriers (M120). **Deux comptes**
+   (Jean-Guy, 12/11) : dans ce qui s'enregistre — les champs, leurs mots, les Notes —, l'objectif
+   est zéro, et la garde du serveur s'y applique ; dans les sources, seulement montrées à la
+   validation et jamais gardées (principe 2), une mention est tolérée.
 4. **Les critères doux classent et expliquent, ils n'écartent jamais un bien** : un bien qui « n'en
    dit rien » reste à sa place ; seule la catégorie de la M118 (indispensables) décide.
 5. **Essais avec des notes inventées seulement**, jamais celles de vrais clients.
@@ -91,8 +101,10 @@ Les régions de destination de ces deux profils se lisent par l'API (`GetInferen
 compte débloqué ; le texte de confidentialité ne change qu'après cette vérification.
 
 **Plan B (12/11)** : en attendant le support AWS (cas 179439470000287), l'étape 0 tourne sur Sonnet
-4.6 et Haiku 4.5 par leurs profils « EU », pour valider le dossier d'essais et la méthode, pas pour
-choisir le modèle : `missions/M151-mesure-provisoire-plan-b.md`.
+4.6 par son profil « EU », pour valider le dossier d'essais et la méthode, pas pour choisir le
+modèle : `missions/M151-mesure-provisoire-plan-b.md`. Trois mesures ; la troisième est concluante
+(Jean-Guy, 12/11). Haiku 4.5 est laissé de côté : le coût du classement ne le justifie pas pour
+l'instant (Jean-Guy, 12/11).
 
 ## Maquettes
 
@@ -124,14 +136,20 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
    - **aucune valeur par défaut** : le motif et le délai ne se proposent que s'ils sont écrits,
      « résidence principale » ne se suppose jamais ;
    - **une case non cochée ou un champ vide d'un export** vaut « inconnu », jamais « non » ;
+   - **un « non »** (extérieur, parking, piscine, ascenseur, travaux, copropriété) **n'est accepté
+     au serveur que si sa ligne d'origine le dit en toutes lettres** (« sans parking », « pas de »,
+     « non ») ; sinon il devient « inconnu » (Jean-Guy, 12/11) ;
+   - **la langue** : « parlent anglais » (« parlent angl. ») remplit le champ Langue ; **la
+     nationalité ne s'enregistre nulle part** (Jean-Guy, 12/11) ;
    - **les ★** : deux au plus, seulement parmi ceux de l'écran (M132 : Communes, Budget, Extérieur,
      Parking, Piscine, Ascenseur) ; jamais le type de bien ; le budget seulement s'il est dit ferme,
      jamais tiré d'une colonne d'export. **Un ★ sans sa source** (la ligne des notes qui le dit
      indispensable) **est refusé au serveur** : il n'est pas proposé, le critère reste une
      préférence ;
    - **une contrainte pratique** (pas de voiture le week-end) peut aller en Notes, « à vérifier » ;
-     aucune autre mention sur la personne, sources comprises ; au serveur, la liste de mots refusés
-     (principe 3) passe aussi sur les sources, qui tombent sans faire tomber leur champ ;
+     aucune autre mention sur la personne ; la liste de mots refusés du serveur (principe 3) passe
+     sur tout ce qui s'enregistre ; une mention dans une source, seulement montrée, est tolérée
+     (Jean-Guy, 12/11, remplace la garde des sources proposée le matin) ;
    - **les communes se vérifient au serveur** contre la liste officielle : celle des départements de
      l'agence (son adresse, ses dossiers, ses acquéreurs), par la porte qui existe
      (`geoProvider(isDemo).fetchDepartmentCommunes`, M114 ; la table locale pour l'agence de démo) ;
@@ -189,7 +207,14 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
    rien**, **dit le contraire**, chaque fois avec **les mots exacts de l'annonce** ; la citation doit
    se trouver mot pour mot dans la description (accents et espaces près), sinon le jugement tombe à
    « n'en dit rien ». La description n'est jamais gardée, seule la citation courte l'est
-   (Jean-Guy, 10/11).
+   (Jean-Guy, 10/11). **Chaque critère se juge sur ses propres mots** : un mot qui relève d'un
+   autre critère ne dit rien de celui-ci (« récent », « contemporain » pour le cachet ne disent rien
+   du calme) ; tout mot qui dit le calme compte (serein, quiétude, paisible, tranquille…) ; une
+   étiquette « Calme » du portail compte, « à vérifier » ; la proximité d'une gare, du centre ou des
+   commerces, sans un mot sur le calme, vaut « n'en dit rien » ; un grand axe ne nuance le calme
+   que si le bien est dessus ou à côté (Jean-Guy, 12/11). **Une annonce absente de la réponse** du
+   modèle est relancée une fois, puis reste « non lue », jamais « n'en dit rien » (Jean-Guy, 12/11 ;
+   M98).
 3. **Le rang** : la catégorie de la M118 d'abord, inchangée ; dans chaque catégorie, ce qui compte
    pour eux, puis le pourcentage (M71), puis le prix. « Dit le contraire » descend un bien dans sa
    catégorie, jamais hors d'elle.

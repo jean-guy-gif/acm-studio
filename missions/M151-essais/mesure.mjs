@@ -160,14 +160,14 @@ const CONSIGNE = `Tu lis ce qu'un conseiller immobilier a noté sur un acquéreu
 - cities : les communes, en nom officiel (« St-Laurent-du-Var » → « Saint-Laurent-du-Var », « Juan » → « Juan-les-Pins ») ; jamais un quartier à la place de la commune.
 - budget_ideal, budget_max : en euros entiers (« 420 k » = 420000, « 1,2 M€ » = 1200000) ; « max » ou « maximum » va dans budget_max ; une seule somme approximative va dans budget_ideal ou budget_max, pas dans les deux ; si l'unité ou le montant est incertain (« autour de 3 », « à préciser », « à confirmer »), laisse vide.
 - rooms_min : T3 ou F3 = 3 ; studio ou T1 = 1. bedrooms_min : les chambres. surface_min en m².
-- outdoor (balcon, terrasse, jardin), parking (garage, place, box), pool, elevator : true si c'est demandé ; false seulement si c'est refusé ; sinon null. Une case non cochée ou un champ vide dans un export vaut null (inconnu), jamais false.
+- outdoor (balcon, terrasse, jardin), parking (garage, place, box), pool, elevator : true si c'est demandé ; false seulement si la ligne des notes le refuse en toutes lettres (« sans parking », « pas de », « non »), et cette ligne va dans sources ; sinon null. Une case non cochée ou un champ vide dans un export vaut null (inconnu), jamais false.
 - floor_min : un nombre seulement s'il est clair ; « pas de RDC » = 1.
-- works_accepted : false seulement si les notes refusent tous travaux sans nuance ; si elles acceptent un rafraîchissement ou une petite remise en état, laisse null.
-- condominium_accepted : false si la copropriété est refusée ; true si elle est acceptée explicitement ; sinon null.
+- works_accepted : false seulement si les notes refusent tous travaux sans nuance, en toutes lettres, avec sa source ; si elles acceptent un rafraîchissement ou une petite remise en état, laisse null.
+- condominium_accepted : false si la copropriété est refusée en toutes lettres, avec sa source ; true si elle est acceptée explicitement ; sinon null.
 - must_have : ${MUST_MAX} au plus, et seulement parmi : ${MUST.join(', ')} (cities = les communes). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${MUST_MAX}, garde les ${MUST_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
 - financing : "validated" seulement si un accord de la banque est dit clairement ; "cash_to_verify" (comptant, à vérifier) si l'achat est dit comptant ou sans prêt, sans jamais l'origine des fonds ; "in_progress" si un prêt est à l'étude ou si l'achat dépend d'une vente ; sinon "unknown". Jamais de montant d'apport ni de patrimoine.
 - purpose : "primary" (résidence principale), "secondary", "investment" (investissement locatif), "other". timeline : "now", "three_months", "six_months", "later".
-- language : seulement si les notes disent que le client parle une autre langue que le français ("en", "it", "de", "ru"), sans jamais dire sa nationalité.
+- language : la langue que le client parle, si les notes la disent (« parlent anglais », « parlent angl. » = "en" ; "it", "de", "ru" de même) ; jamais sa nationalité, qui ne s'écrit nulle part.
 
 4. Ce qui compte pour eux (soft_criteria) : uniquement ces clés — calme (au calme), sans_vis_a_vis, cachet (du cachet, de caractère), lumineux, vue, plain_pied, traversant, commerces_ecoles_a_pied, jardin_sans_entretien, pret_a_vivre (sans travaux, y compris quand un rafraîchissement est accepté). words : leurs mots recopiés tels qu'écrits, 80 caractères au plus, sans mention personnelle. Un souhait hors de cette liste va dans unclassified_wishes. La piscine, le parking, l'extérieur, l'ascenseur, l'étage et la copropriété sont des champs, pas des critères doux. Un critère qu'ils disent indifférent ou refusé n'est pas un critère.
 
@@ -228,7 +228,24 @@ function same(field, expected, got) {
   return got === expected;
 }
 
-function grade(out, c) {
+// Règle du 12/11 : un « non » n'est accepté au serveur que si sa ligne d'origine le dit en toutes
+// lettres ; sinon il devient « inconnu ». Le barème note la fiche telle que le serveur la garderait.
+const NO_FIELDS = ['outdoor', 'parking', 'pool', 'elevator', 'works_accepted', 'condominium_accepted'];
+const NEGATION = /(^|[^a-z])(pas|sans|non|aucun|aucune|ni|jamais|refus|refuse|refusent|exclu|exclus)([^a-z]|$)/;
+function serverGuard(raw) {
+  const out = { ...raw };
+  const unsupportedNo = [];
+  for (const f of NO_FIELDS) {
+    if (out[f] !== false) continue;
+    if ((out.sources ?? []).some((x) => x.field === f && NEGATION.test(fold(x.quote)))) continue;
+    out[f] = null;
+    unsupportedNo.push(f);
+  }
+  return { out, unsupportedNo };
+}
+
+function grade(raw, c) {
+  const { out, unsupportedNo } = serverGuard(raw);
   const faults = [];
   const invented = [];
   let right = 0;
@@ -273,11 +290,16 @@ function grade(out, c) {
   // notes_permis : un mot permis dans les Notes seules, et seulement suivi de sa marque (« à vérifier ») ; ailleurs, c'est une mention.
   const permis = c.notes_permis ?? [];
   // La source des Notes (field « notes ») est la même ligne : elle suit la même règle.
-  const outsideNotes = fold(JSON.stringify({ ...out, notes: null, sources: (out.sources ?? []).filter((x) => x.field !== 'notes') }));
-  const leaks = [...(c.jamais ?? []).filter((w) => wordAt(w).test(whole)), ...permis.filter((p) => wordAt(p.mot).test(outsideNotes)).map((p) => `${p.mot} (hors des Notes)`)];
+  // Deux compteurs (règle du 12/11) : dans les champs enregistrés, l'objectif est zéro ; dans les
+  // sources, seulement montrées à la validation et jamais gardées, une mention est tolérée.
+  const recorded = fold(JSON.stringify({ ...out, sources: [] }));
+  const shownOnly = fold(JSON.stringify(out.sources ?? []));
+  const outsideNotes = fold(JSON.stringify({ ...out, notes: null, sources: [] }));
+  const leaks = [...(c.jamais ?? []).filter((w) => wordAt(w).test(recorded)), ...permis.filter((p) => wordAt(p.mot).test(outsideNotes)).map((p) => `${p.mot} (hors des Notes)`)];
+  const leaksSources = (c.jamais ?? []).filter((w) => !wordAt(w).test(recorded) && wordAt(w).test(shownOnly));
   for (const p of permis) if (wordAt(p.mot).test(fold(out.notes)) && !fold(out.notes).includes(fold(p.marque))) faults.push(`Notes : « ${p.mot} » sans « ${p.marque} »`);
   const mentionsOk = (out.personal_mentions_skipped ?? 0) >= (c.mentions_min ?? 0);
-  return { right, expectedCount, allRight, allCount, refusedMust, faults, invented, softMissing, softExtra, notesMissing, leaks, mentionsOk, skipped: out.personal_mentions_skipped };
+  return { right, expectedCount, allRight, allCount, refusedMust, unsupportedNo, leaksSources, faults, invented, softMissing, softExtra, notesMissing, leaks, mentionsOk, skipped: out.personal_mentions_skipped };
 }
 
 // --- appel ------------------------------------------------------------------------------------
@@ -307,7 +329,7 @@ if (selfTest) {
     if (c.cities_parmi) ideal.cities = c.cities_parmi.map((alts) => alts[0]);
     if (c.budget_un_au_moins) ideal.budget_ideal = c.budget_un_au_moins;
     ideal.must_have = [...(c.must_have_inclut ?? [])];
-    ideal.sources = ideal.must_have.map((m) => ({ field: `must_have:${m}`, quote: 'indispensable' }));
+    ideal.sources = [...ideal.must_have.map((m) => ({ field: `must_have:${m}`, quote: 'indispensable' })), ...NO_FIELDS.filter((f) => ideal[f] === false).map((f) => ({ field: f, quote: 'pas de' }))];
     ideal.soft_criteria = (c.souples_attendus ?? []).map((key) => ({ key, words: key }));
     const g = grade(ideal, c);
     const clean = g.faults.length + g.invented.length + g.leaks.length + g.softMissing.length + g.softExtra.length + g.notesMissing.length === 0 && g.mentionsOk;
@@ -335,7 +357,7 @@ if (doFiches) {
   say(renoter ? `# Fiches du ${renoter}, renotées sur les corrigés du jour, sans appel` : `# Mesure des fiches — ${stamp} — région ${region}`);
   say(`${cases.length} cas (${photos.length ? `${photos.length} photo(s)` : 'aucune photo dans photos/ : mesure sans photo'}), ${passes} passe(s) par modèle.`);
   for (const model of models) {
-    const tot = { right: 0, expected: 0, allRight: 0, allCount: 0, refused: 0, faults: 0, invented: 0, leaks: 0, mentions: 0, softMissing: 0, softExtra: 0, notesMissing: 0, cost: 0, ms: [], errors: 0, runs: 0 };
+    const tot = { right: 0, expected: 0, allRight: 0, allCount: 0, refused: 0, leaksSources: 0, unsupportedNo: 0, faults: 0, invented: 0, leaks: 0, mentions: 0, softMissing: 0, softExtra: 0, notesMissing: 0, cost: 0, ms: [], errors: 0, runs: 0 };
     say(`\n## ${model}`);
     for (let pass = 1; pass <= passes; pass += 1) {
       for (const c of cases) {
@@ -355,6 +377,8 @@ if (doFiches) {
           tot.faults += g.faults.length;
           tot.invented += g.invented.length;
           tot.leaks += g.leaks.length;
+          tot.leaksSources += g.leaksSources.length;
+          tot.unsupportedNo += g.unsupportedNo.length;
           tot.mentions += g.mentionsOk ? 0 : 1;
           tot.softMissing += g.softMissing.length;
           tot.softExtra += g.softExtra.length;
@@ -365,7 +389,9 @@ if (doFiches) {
             ...g.faults.map((f) => `faux · ${f}`),
             ...g.invented.map((f) => `INVENTÉ · ${f}`),
             ...g.refusedMust.map((m) => `★ ${m} sans source : refusé au serveur`),
-            ...g.leaks.map((w) => `MENTION PERSONNELLE · « ${w} »`),
+            ...g.leaks.map((w) => `MENTION PERSONNELLE dans un champ enregistré · « ${w} »`),
+            ...g.leaksSources.map((w) => `mention dans une source seulement montrée (tolérée) · « ${w} »`),
+            ...g.unsupportedNo.map((f) => `« non » sans ligne qui le dise : ${f} ramené à inconnu au serveur`),
             ...(g.mentionsOk ? [] : [`mentions non relevées déclarées : ${g.skipped}`]),
             ...g.softMissing.map((k) => `critère doux manquant · ${k}`),
             ...g.softExtra.map((k) => `critère doux en trop · ${k}`),
@@ -379,7 +405,7 @@ if (doFiches) {
       }
     }
     const ms = tot.ms.sort((a, b) => a - b);
-    say(`\n**Bilan ${model}** : **${tot.allRight}/${tot.allCount} champs justes en tout** (remplis et vides) · ${tot.right}/${tot.expected} champs attendus remplis justes · ${tot.faults} faux · **${tot.invented} inventés** · ${tot.refused} ★ sans source refusés au serveur · **${tot.leaks} mentions personnelles** · ${tot.mentions} comptes de mentions trop bas · critères doux ${tot.softMissing} manquants, ${tot.softExtra} en trop · Notes ${tot.notesMissing} manques · ${tot.errors} erreurs · coût ${tot.cost.toFixed(3)} $ pour ${tot.runs} fiches (${tot.runs ? (tot.cost / tot.runs).toFixed(4) : '—'} $ la fiche) · durée médiane ${ms.length ? (ms[ms.length >> 1] / 1000).toFixed(1) : '—'} s`);
+    say(`\n**Bilan ${model}** : **${tot.allRight}/${tot.allCount} champs justes en tout** (remplis et vides) · ${tot.right}/${tot.expected} champs attendus remplis justes · ${tot.faults} faux · **${tot.invented} inventés** · ${tot.refused} ★ sans source refusés au serveur · **${tot.leaks} mentions personnelles dans les champs enregistrés** (objectif 0) · ${tot.leaksSources} dans les sources seulement montrées (tolérées) · ${tot.unsupportedNo} « non » sans ligne ramenés à inconnu · ${tot.mentions} comptes de mentions trop bas · critères doux ${tot.softMissing} manquants, ${tot.softExtra} en trop · Notes ${tot.notesMissing} manques · ${tot.errors} erreurs · coût ${tot.cost.toFixed(3)} $ pour ${tot.runs} fiches (${tot.runs ? (tot.cost / tot.runs).toFixed(4) : '—'} $ la fiche) · durée médiane ${ms.length ? (ms[ms.length >> 1] / 1000).toFixed(1) : '—'} s`);
   }
 }
 
@@ -389,6 +415,8 @@ const CONSIGNE_CLASSEMENT = `Tu lis des annonces immobilières publiques et, pou
 
 - calme : le bien et son environnement sont au calme (« calme absolu », « aucun passage », « impasse », « sans nuisance »). Tout mot ou toute tournure qui dit le calme compte, pas seulement ces exemples : serein, quiétude, paisible, tranquille et leurs proches.
 - cachet : le bien lui-même a du caractère, de l'ancien ou de l'authentique (pierres, poutres apparentes, moulures, hauteur sous plafond, bâtisse ou immeuble ancien). Le charme du village ou du quartier n'est pas le cachet du bien ; « charmant » seul ne suffit pas.
+
+Chaque critère se juge sur ses propres mots : un mot qui relève d'un autre critère ne dit rien de celui-ci (« récent », « contemporain » disent le contraire du cachet, rien du calme). Réponds pour chaque annonce reçue, sans en sauter aucune.
 
 Pour chaque critère, un verdict :
 - "clairement" : l'annonce le dit sans réserve ;
@@ -451,6 +479,7 @@ if (doClassement) {
     let cachetAgree = 0;
     let usd = 0;
     let tagChecked = 0;
+    let absent = 0;
     let tagOk = 0;
     const misses = [];
     for (let i = 0; i < corpus.length; i += 8) {
@@ -460,6 +489,12 @@ if (doClassement) {
         const r = await call(model, CONSIGNE_CLASSEMENT, [{ type: 'text', text }], CLASS_SCHEMA, 8000);
         usd += cost(model, r.usage);
         writeFileSync(join(outDir, `${stamp}-${model}-classement-lot${i / 8 + 1}.json`), JSON.stringify(r.json, null, 1));
+        const answered = new Set((r.json.annonces ?? []).map((a) => a.id));
+        for (const b of batch)
+          if (!answered.has(b.id)) {
+            absent += 1;
+            misses.push(`${model} · rang ${labels[b.id]?.rang ?? '?'} · annonce absente de la réponse (dans le code : relancée une fois, puis « non lue »)`);
+          }
         for (const a of r.json.annonces ?? []) {
           const src = batch.find((b) => b.id === a.id);
           const lab = labels[a.id];
@@ -493,7 +528,7 @@ if (doClassement) {
         say(`- lot ${i / 8 + 1} : ERREUR ${e.status ?? ''} ${scrub(e.message).slice(0, 300)}`);
       }
     }
-    say(`\n**${model}** : calme ${agree}/${checked} conformes · cachet ${cachetAgree}/${cachetChecked} conformes · calme par l'étiquette seule marqué « à vérifier » ${tagOk}/${tagChecked} · citations mot pour mot ${quotesOk}/${quotes} · coût ${usd.toFixed(3)} $ pour ${corpus.length} annonces`);
+    say(`\n**${model}** : calme ${agree}/${checked} conformes · cachet ${cachetAgree}/${cachetChecked} conformes · calme par l'étiquette seule marqué « à vérifier » ${tagOk}/${tagChecked} · citations mot pour mot ${quotesOk}/${quotes} · annonces absentes de la réponse ${absent} · coût ${usd.toFixed(3)} $ pour ${corpus.length} annonces`);
     for (const m of misses) say(`- ${m}`);
   }
 }

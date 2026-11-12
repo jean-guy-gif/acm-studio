@@ -1,5 +1,5 @@
 {
-  "_lire": "INVENTÉ — corrigés de l'étape 0 de la mission 151, écrits le 11/11/2026 AVANT tout appel aux modèles. Règle de lecture : un champ absent de « attendu » et de « accepte » doit rester vide (null, [] ou « unknown » pour le financement) ; « accepte » liste les seules valeurs tolérées, null compris s'il y figure ; « jamais » : aucune de ces chaînes en début de mot, accents et casse ignorés, nulle part dans la réponse ; « mentions_min » : nombre minimal de mentions personnelles déclarées « non relevées ». Les critères doux hors de « souples_attendus » et « souples_acceptes » sont des fautes ; un « must_have » hors de « must_have_inclut » et « must_have_accepte » aussi. — Règles de Jean-Guy du 12/11, appliquées après la mesure provisoire du plan B : aucune valeur par défaut (motif et délai compris) ; un achat comptant vaut « cash_to_verify », sans l'origine des fonds ; « notes_permis » : un mot permis dans les seules Notes, suivi de sa marque ; deux ★ au plus, parmi les communes, le budget, l'extérieur, le parking, la piscine et l'ascenseur (le type de bien jamais, le budget seulement s'il est dit ferme).",
+  "_lire": "INVENTÉ — corrigés de l'étape 0 de la mission 151, écrits le 11/11/2026 AVANT tout appel aux modèles. Règle de lecture : un champ absent de « attendu » et de « accepte » doit rester vide (null, [] ou « unknown » pour le financement) ; « accepte » liste les seules valeurs tolérées, null compris s'il y figure ; « jamais » : aucune de ces chaînes en début de mot, accents et casse ignorés, nulle part dans la réponse ; « mentions_min » : nombre minimal de mentions personnelles déclarées « non relevées ». Les critères doux hors de « souples_attendus » et « souples_acceptes » sont des fautes ; un « must_have » hors de « must_have_inclut » et « must_have_accepte » aussi. — Règles de Jean-Guy du 12/11, appliquées après la mesure provisoire du plan B : aucune valeur par défaut (motif et délai compris) ; un achat comptant vaut « cash_to_verify », sans l'origine des fonds ; « notes_permis » : un mot permis dans les seules Notes, suivi de sa marque ; deux ★ au plus, parmi les communes, le budget, l'extérieur, le parking, la piscine et l'ascenseur (le type de bien jamais, le budget seulement s'il est dit ferme). Puis (12/11) : « parlent angl. » remplit la langue (N4 attend « en ») ; un « non » sans ligne qui le dise est ramené à inconnu avant la notation ; une mention dans une source, seulement montrée, est comptée à part et tolérée.",
   "cas": {
     "N1": {
       "source": "notes/N1-ferrandi.txt",
@@ -86,10 +86,11 @@
         "parking": true,
         "budget_ideal": 1200000,
         "budget_max": 1400000,
-        "financing": "cash_to_verify"
+        "financing": "cash_to_verify",
+        "language": "en"
       },
       "cities_parmi": [["Valbonne"], ["Opio"], ["Châteauneuf-Grasse", "Châteauneuf"]],
-      "accepte": { "language": [null, "fr", "en"] },
+      "accepte": {},
       "must_have_inclut": ["pool"],
       "must_have_accepte": [],
       "souples_attendus": ["cachet"],

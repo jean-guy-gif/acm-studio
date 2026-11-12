@@ -9,7 +9,10 @@ Trois mesures sur Sonnet 4.6 : la première (06 h 24), la deuxième après les r
 12/11 (08 h 15), la troisième après ses décisions suivantes du 12/11 (08 h 46). Bilans bruts dans
 `M151-essais/resultats/` : `bilan-2026-11-12-06-24.md`, `bilan-2026-11-12-08-15.md`,
 `bilan-2026-11-12-08-46.md`, et les deux premières renotées sans appel sur les corrigés du 12/11
-(`…-renote.md`, celles qui font foi pour les fiches). Réponses brutes et 73 annonces hors du dépôt.
+(`…-renote.md`, celles qui font foi pour les fiches) ; la troisième est aussi renotée sans appel
+sur les dernières règles du 12/11 (`bilan-2026-11-12-08-46-renote.md`). **La troisième mesure est
+concluante (Jean-Guy, 12/11) : il n'y en aura pas d'autre sur Sonnet 4.6.** Réponses brutes et 73
+annonces hors du dépôt.
 
 ## Les conditions
 
@@ -39,7 +42,9 @@ Trois mesures sur Sonnet 4.6 : la première (06 h 24), la deuxième après les r
   « EU » appelé depuis l'Irlande (décision du 11/11 au soir). La commande des 5.5 est dans
   `M151-essais/README.md`.
 
-## Haiku 4.5 : refusé
+## Haiku 4.5 : refusé, puis laissé de côté
+
+**Laissé de côté (Jean-Guy, 12/11)** : le coût du classement ne le justifie pas pour l'instant.
 
 L'appel d'essai a répondu, puis chaque appel de la mesure a été refusé, et un nouvel essai aussi :
 
@@ -329,21 +334,64 @@ les annonces classées :
   plafond de 10 € (M136). Le classement tient dans le budget d'IA de 10 € par mois et par agence,
   avec la lecture des notes (≈ 0,02 € la fiche).
 
+## Les dernières décisions du 12/11, sans nouvelle mesure
+
+Reportées dans la consigne (`mesure.mjs`) et dans la fiche du code ; la troisième mesure est
+renotée dessus, sans aucun appel.
+
+1. **Chaque critère doux se juge sur ses propres mots** : un mot qui relève d'un autre critère
+   (« récent », « contemporain » pour le cachet) ne dit rien du calme. C'est l'écart du rang 58.
+   Dans la consigne du classement, avec « réponds pour chaque annonce, sans en sauter aucune ».
+2. **Un « non » n'est accepté au serveur que si sa ligne d'origine le dit en toutes lettres**
+   (« sans parking », « pas de », « non ») ; sinon il devient « inconnu ». Le barème note la fiche
+   telle que le serveur la garderait. Sur la troisième mesure : le parking de C4 (« ☐ Garage »)
+   redevient inconnu ; « stationnement;non » (C2) et « PAS de copropriété » (N6) restent.
+3. **La langue** : « parlent angl. » remplit le champ Langue (N4 attend désormais « en », lu aux
+   deux passes) ; la nationalité ne s'enregistre nulle part.
+4. **Deux comptes de mentions personnelles** : dans les champs enregistrés, l'objectif est zéro ;
+   dans les sources, seulement montrées et jamais gardées, elles sont tolérées. Cela remplace la
+   garde des sources proposée plus haut (troisième mesure, « Les mentions montent ») : la garde du
+   serveur porte sur ce qui s'enregistre.
+5. **Les sources** : les cinq garanties sont validées ; l'écran prévient « Cette proposition n'est
+   pas gardée : si vous quittez ou rechargez la page, elle sera perdue. », et quitter demande
+   confirmation (dans l'écran pour un lien, celle du navigateur pour l'actualisation ou la
+   fermeture). La phrase s'ajoute à la planche 2 avant le code.
+6. **Une annonce absente de la réponse** : relancée une fois, puis « non lue », jamais « n'en dit
+   rien ». Le barème la compte désormais (« annonces absentes de la réponse ») ; la troisième
+   mesure en a une, le rang 70.
+7. **Haiku 4.5 est laissé de côté.**
+
+**La troisième mesure, renotée sur ces règles :**
+
+| | 3e mesure | **3e, renotée** |
+|---|---|---|
+| Champs justes en tout (sur 484) | 482 | **483** |
+| Champs attendus remplis justes | 211 / 212 | 213 / 214 (la langue attendue) |
+| Champs faux | 2 | **1** : « Châteauneuf-de-Grasse », que la vérification des communes rattrapera |
+| Inventés | 0 | 0 |
+| ★ sans source, refusés au serveur | 2 | 2 |
+| « Non » sans ligne qui le dise, ramenés à inconnu | — | 1 (C4, parking) |
+| Mentions dans les champs enregistrés (objectif 0) | 3 en tout | **0** |
+| Mentions dans les sources seulement montrées (tolérées) | | 3 (« vente Stockholm » × 2, « suédois ») |
+
+Le classement n'est pas renoté (pas de nouvel appel) : 71 / 72, une annonce absente, et le rang 58
+que la règle 1 vise.
+
 ## Ce que la mesure valide
 
-- **Le dossier d'essais et le barème tiennent** : trois mesures se comparent, renotées sans appel.
-- **Les règles du 12/11 marchent sur Sonnet 4.6** : 482 / 484, aucun inventé, calme 71 / 72,
-  l'étiquette « à vérifier » 6 fois sur 6, citations 69 / 69, au même coût.
-- **Trois gardes au serveur sont nécessaires**, quoi que dise la consigne : les mots refusés sur
-  les sources, le ★ sans source, les citations mot pour mot ; et une quatrième, l'annonce absente
-  de la réponse.
-- **Rien ne choisit encore entre Sonnet et Haiku** : Haiku n'a pas été relancé (pas encore ouvert).
+- **Le dossier d'essais et le barème tiennent** : trois mesures se comparent, renotées sans appel ;
+  la troisième est concluante (Jean-Guy, 12/11).
+- **Sur Sonnet 4.6, avec les règles du 12/11** : 483 / 484 champs justes en tout, aucun inventé,
+  aucune mention dans ce qui s'enregistre, calme 71 / 72, l'étiquette « à vérifier » 6 fois sur 6,
+  citations 69 / 69, environ 0,02 $ la fiche et 0,004 $ l'annonce.
+- **Les gardes au serveur, quoi que dise la consigne** (dans la fiche du code) : le ★ sans source,
+  le « non » sans ligne qui le dise, les mots refusés sur ce qui s'enregistre, les citations mot
+  pour mot, la commune vérifiée contre la liste officielle, l'annonce absente de la réponse.
+- **Haiku 4.5 est laissé de côté** ; le choix du modèle se fera sur Claude 5.5.
 
 ## La suite
 
-1. Jean-Guy dit s'il veut, dans la consigne, « récent ou contemporain ne dit rien du calme ».
-2. Jean-Guy ouvre Haiku 4.5 une fois dans le Playground (compte administrateur), puis je relance
-   Haiku seul.
-3. Dès que le compte a accès à Claude 5.5 : lire par l'API les régions des profils
+1. Ajouter à la planche 2 la phrase « Cette proposition n'est pas gardée… » avant le code.
+2. Dès que le compte a accès à Claude 5.5 : lire par l'API les régions des profils
    `eu.anthropic.claude-sonnet-5-5` et `eu.anthropic.claude-haiku-5-5`, puis la même mesure, d'une
    commande (`M151-essais/README.md`), qui choisit le modèle.
