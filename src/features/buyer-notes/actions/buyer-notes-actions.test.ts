@@ -44,6 +44,7 @@ vi.mock('@/lib/app-errors/report-server-error', () => ({
 }));
 vi.mock('@/lib/ai/bedrock', () => ({
   aiModel: () => 'eu.anthropic.claude-sonnet-4-6',
+  aiConfigured: () => true,
   callStructured: async () => {
     state.aiCalls += 1;
     return state.answer;
