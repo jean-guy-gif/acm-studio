@@ -8,6 +8,7 @@ import {
   readBuyerFormData,
 } from '@/features/buyers/schemas/buyer-input';
 import { buyerColumns, toBuyer } from '@/features/buyers/services/buyer-row';
+import { fieldsStillToVerify } from '@/features/buyer-notes/services/fields-to-verify';
 import { isBuyerStatusMove, nextBuyerStatus } from '@/features/buyers/services/buyer-status';
 import { BUYER_FINANCINGS, type Buyer, type BuyerFinancing } from '@/features/buyers/types';
 import type { BuyerFormErrors } from '@/features/buyers/schemas/buyer-input';
@@ -64,9 +65,18 @@ export async function saveBuyer(
   if (buyerId) {
     const existing = await ownBuyer(client, buyerId, profile.agency_id);
     if (!existing) return { ok: false, error: NOT_FOUND };
+    const columns = buyerColumns(parsed.input);
+    // Mission 151 — un champ modifié perd sa pastille « À vérifier » (M97).
+    const toVerify = existing.fields_to_verify ?? [];
     const { error } = await client
       .from('buyers')
-      .update({ ...buyerColumns(parsed.input), updated_at: now })
+      .update({
+        ...columns,
+        ...(toVerify.length > 0
+          ? { fields_to_verify: fieldsStillToVerify(toVerify, existing, columns) }
+          : {}),
+        updated_at: now,
+      })
       .eq('id', buyerId)
       .eq('agency_id', profile.agency_id);
     if (error) return { ok: false, error: NOT_SAVED };
@@ -176,6 +186,8 @@ export async function setBuyerFinancing(
     .update({
       financing: financing as BuyerFinancing,
       financing_changed_at: now,
+      // Mission 151 — posé par le conseiller : le financement n'est plus « À vérifier » (M97).
+      fields_to_verify: (existing.fields_to_verify ?? []).filter((name) => name !== 'financing'),
       updated_at: now,
     })
     .eq('id', buyerId)

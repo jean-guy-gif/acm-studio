@@ -108,6 +108,8 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'buyer_dismissals.reason' then $v$'other'$v$
     -- Mission 152 — la copie d'une annonce : sa source, de la liste.
     when 'competitor_listing_copies.source' then $v$'page'$v$
+    -- Mission 151 — la lecture par l'IA : son usage, de la liste.
+    when 'ai_usage.purpose' then $v$'notes'$v$
     else null
   end
 $$;

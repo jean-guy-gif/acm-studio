@@ -1,0 +1,520 @@
+{
+ "_lire": "Corrigé du classement (partie B), écrit le 11/11/2026 AVANT tout appel aux modèles, sur les 73 annonces réelles de la mesure du 10/11 (concurrents de la sauvegarde du 09/11, repérés par leur identifiant ; leur texte ne va pas dans le dépôt). Pour chaque annonce, les jugements acceptés : « calme » toujours ; « cachet » seulement pour les 12 annonces relues à la main le 10/11 (6 de caractère, 3 récentes ou contemporaines, 3 pièges de mots : un collège Pierre…, le centre ancien, « charmant T3 »). Les autres jugements ne sont pas notés ; toute citation doit se trouver mot pour mot dans la description. — Règle de Jean-Guy du 12/11 : une étiquette « Calme » du portail compte pour le calme, marquée « à vérifier » ; « calme_a_verifier » marque les 6 annonces où seule l'étiquette le dit (aucun « calme », « paisible » ni « tranquill… » dans la description). — Règles de Jean-Guy du 12/11 (troisième mesure) : tout mot qui dit le calme compte ; la proximité d'une gare, du centre ou des commerces sans un mot sur le calme vaut « rien » ; un grand axe ne nuance le calme que si le bien est dessus ou à côté. Rang 5 : « clairement » (« à quelques minutes des principaux axes » n'est pas une nuance) ; rang 70 : « rien » accepté (la tranquillité de la région n'est pas celle du bien).",
+ "annonces": {
+  "9bab9493-2dc9-425b-8899-cccf5f41df17": {
+   "rang": 0,
+   "calme": [
+    "reserve"
+   ]
+  },
+  "ce190b07-a498-4ff7-bff8-2b1c539774e6": {
+   "rang": 1,
+   "calme": [
+    "rien"
+   ]
+  },
+  "f6fc1b80-94b6-47e1-bd3c-9920e12bc631": {
+   "rang": 2,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "77a5bd1f-4af3-4396-9fd3-a494648ea2a9": {
+   "rang": 3,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "615879e3-f04b-4a80-83f4-1f6eb2a841e7": {
+   "rang": 4,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "c8532e59-ef12-43e5-9b70-d6c55f6116ab": {
+   "rang": 5,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "c1e59bc6-6786-4ab8-905c-1680a5a54c62": {
+   "rang": 6,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "e916e9ca-70b5-4ef1-bda4-7ab07655ad71": {
+   "rang": 7,
+   "calme": [
+    "rien"
+   ]
+  },
+  "81e5d164-05ff-493a-ab74-56a47891757f": {
+   "rang": 8,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "f0af6d29-57ee-47dd-a1ec-704524c0ea01": {
+   "rang": 9,
+   "calme": [
+    "rien"
+   ],
+   "cachet": [
+    "rien",
+    "reserve",
+    "contraire"
+   ]
+  },
+  "45901528-d95a-4df6-a1d4-0869072b50aa": {
+   "rang": 10,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "ed7becd0-ab54-42c8-b04b-94b205583351": {
+   "rang": 11,
+   "calme": [
+    "rien"
+   ]
+  },
+  "1a25c978-db12-4cbb-b30e-39cb3688090b": {
+   "rang": 12,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "788b1923-9ae0-4adb-873b-879b23e8c507": {
+   "rang": 13,
+   "calme": [
+    "reserve"
+   ]
+  },
+  "8a52d4be-5b51-4bf2-8a0d-e8c34918acaf": {
+   "rang": 14,
+   "calme": [
+    "rien"
+   ]
+  },
+  "7335a419-d990-455a-8328-36734c66cbd5": {
+   "rang": 15,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "1f3b5bd2-a876-49c2-a615-847e1aa2c38b": {
+   "rang": 16,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "calme_a_verifier": true
+  },
+  "a1a1d229-bc27-499a-9d78-5299e799def7": {
+   "rang": 17,
+   "calme": [
+    "rien"
+   ]
+  },
+  "7161798f-0b7f-452f-9922-e3608cac794d": {
+   "rang": 18,
+   "calme": [
+    "reserve"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "a293ac96-b580-44dd-a223-611d8ce5110f": {
+   "rang": 19,
+   "calme": [
+    "rien"
+   ]
+  },
+  "4f8c2af3-fff9-4894-8ba7-eea0cf0e5606": {
+   "rang": 20,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "883c3c1d-413e-4a2b-98b3-4f902a658f8f": {
+   "rang": 21,
+   "calme": [
+    "rien"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "a6853d5f-85d0-439d-9bf8-bf0fc056d9b4": {
+   "rang": 22,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "rien",
+    "reserve",
+    "contraire"
+   ],
+   "calme_a_verifier": true
+  },
+  "636a6719-9223-439d-af89-b87365f04b0c": {
+   "rang": 23,
+   "calme": [
+    "rien"
+   ]
+  },
+  "92d902c2-83e0-40f8-87f9-c4ca21473625": {
+   "rang": 24,
+   "calme": [
+    "rien"
+   ]
+  },
+  "7bb8ff06-55f2-4b86-b4d6-3b1c2839e5f0": {
+   "rang": 25,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "contraire",
+    "rien"
+   ]
+  },
+  "4cdadd35-0045-487f-bf80-f54a080f864b": {
+   "rang": 26,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "1d8388c5-7e52-41fb-8161-1ed76dd31488": {
+   "rang": 27,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "calme_a_verifier": true
+  },
+  "a5da1131-2818-4e4f-b397-9d58bffcd213": {
+   "rang": 28,
+   "calme": [
+    "reserve"
+   ]
+  },
+  "aa031a3d-a8f8-4ae7-8148-22baaa2ae309": {
+   "rang": 29,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "6cf7546f-e909-41d1-bd0e-a7c4e3c2c1e9": {
+   "rang": 30,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "16ce7d03-b212-42fc-b471-d7224fd73974": {
+   "rang": 31,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "41ace4cb-ee0e-4599-991b-35add1db887e": {
+   "rang": 32,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "921df9e1-ede3-45ee-a913-ce2ead934677": {
+   "rang": 33,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "8d3a746c-a56c-4651-a1c0-0082b246c10f": {
+   "rang": 34,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "4506ca44-33f6-4c11-a2fa-e3ee8505b243": {
+   "rang": 35,
+   "calme": [
+    "rien"
+   ]
+  },
+  "1d96187a-2c90-4e00-8f36-645ddfcbd414": {
+   "rang": 36,
+   "calme": [
+    "rien"
+   ]
+  },
+  "1ac92c79-a57e-4616-9b2e-e7300894d123": {
+   "rang": 37,
+   "calme": [
+    "rien"
+   ]
+  },
+  "91d36750-ce3b-4982-a949-41bb16d5bd7e": {
+   "rang": 38,
+   "calme": [
+    "rien"
+   ]
+  },
+  "fb2df1d5-123a-4d30-8b42-5216075dd19c": {
+   "rang": 39,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "3a88bf19-d253-40f2-9a78-0d492ee8d566": {
+   "rang": 40,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "144ccd93-cf8f-4fe5-9ee4-12ac36a3d555": {
+   "rang": 41,
+   "calme": [
+    "rien"
+   ]
+  },
+  "90174138-3d1d-4517-b30b-10ee71f29b02": {
+   "rang": 42,
+   "calme": [
+    "rien"
+   ]
+  },
+  "4b7afef5-8535-45ac-86dc-3a04e61568c0": {
+   "rang": 43,
+   "calme": [
+    "rien"
+   ]
+  },
+  "84211763-59ff-4cbe-948b-bec7ffec12e4": {
+   "rang": 44,
+   "calme": [
+    "rien"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "f157bf39-bab3-4f8c-b73a-f7a2203e3302": {
+   "rang": 45,
+   "calme": [
+    "rien"
+   ]
+  },
+  "06b40d5a-921f-4583-b08a-123e7f2cc7e4": {
+   "rang": 46,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "a3c3938d-eae3-4823-b096-0270dec15d09": {
+   "rang": 47,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "4ee67d06-dda4-4965-9d60-c6866ed81465": {
+   "rang": 48,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "5d054467-ce51-4ded-b5b4-b0ceef5b91c0": {
+   "rang": 49,
+   "calme": [
+    "rien"
+   ]
+  },
+  "ef0aadcd-d5af-49d2-8794-e1e9868b7fea": {
+   "rang": 50,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "4b4ebda0-cc01-4e09-936c-f9b6339c2962": {
+   "rang": 51,
+   "calme": [
+    "rien"
+   ]
+  },
+  "340d6409-4d50-499e-a407-b6c9f02670da": {
+   "rang": 52,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "ddb57261-3e2a-4b8e-bdb4-5701d7f77991": {
+   "rang": 53,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "96f571ae-cd56-4120-b234-02ca4d0d847e": {
+   "rang": 54,
+   "calme": [
+    "rien"
+   ]
+  },
+  "e7e15d35-f544-42f7-bea4-000dbda34858": {
+   "rang": 55,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "rien",
+    "reserve",
+    "contraire"
+   ],
+   "calme_a_verifier": true
+  },
+  "fc706c49-e952-4153-b788-cfb5dbae876f": {
+   "rang": 56,
+   "calme": [
+    "clairement"
+   ],
+   "calme_a_verifier": true
+  },
+  "1c0934ab-bfeb-4382-857c-7627039de382": {
+   "rang": 57,
+   "calme": [
+    "rien"
+   ]
+  },
+  "df7eef8b-7f9b-4c6d-8fd8-28c67c4a2275": {
+   "rang": 58,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "880a0b59-616e-4a87-970d-e3cfa41b85a0": {
+   "rang": 59,
+   "calme": [
+    "rien"
+   ]
+  },
+  "eee39f6c-3788-4376-8c2e-72f2323ab6e1": {
+   "rang": 60,
+   "calme": [
+    "rien"
+   ]
+  },
+  "5634a587-c9e7-4014-8008-f4332702897b": {
+   "rang": 61,
+   "calme": [
+    "clairement"
+   ],
+   "cachet": [
+    "clairement"
+   ]
+  },
+  "039bca6e-280d-4728-9d9b-1d6c612f4b46": {
+   "rang": 62,
+   "calme": [
+    "rien"
+   ]
+  },
+  "a0016bbb-5d92-4afd-a9f1-bc585f9535a0": {
+   "rang": 63,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "1b414f9c-3838-4dc5-ba7b-359b6135c5a0": {
+   "rang": 64,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "contraire",
+    "rien"
+   ]
+  },
+  "b4007f27-2e97-4033-8066-25b1dfe9377c": {
+   "rang": 65,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "cachet": [
+    "contraire",
+    "rien"
+   ]
+  },
+  "cba0a4d2-86d3-4cfd-8734-a6fde6767aa2": {
+   "rang": 66,
+   "calme": [
+    "rien"
+   ]
+  },
+  "93e10940-f030-4da2-8dfc-9b72d8ab6966": {
+   "rang": 67,
+   "calme": [
+    "rien"
+   ]
+  },
+  "18c75175-8a65-4266-9f35-e825b76c0691": {
+   "rang": 68,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "af86d7e4-9f49-4c2b-a976-faacf0268475": {
+   "rang": 69,
+   "calme": [
+    "clairement",
+    "reserve"
+   ]
+  },
+  "3b51b16e-20e5-4041-be5a-0db7762988b0": {
+   "rang": 70,
+   "calme": [
+    "clairement",
+    "reserve",
+    "rien"
+   ]
+  },
+  "716abc2c-e57a-4d9b-b15e-a600a47de80b": {
+   "rang": 71,
+   "calme": [
+    "clairement"
+   ]
+  },
+  "0d2295ae-839b-4a59-81be-c409395c58e8": {
+   "rang": 72,
+   "calme": [
+    "clairement",
+    "reserve"
+   ],
+   "calme_a_verifier": true
+  }
+ }
+}

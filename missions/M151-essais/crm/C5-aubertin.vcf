@@ -1,0 +1,9 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Aubertin;Marc;;;
+FN:Marc Aubertin
+TEL;TYPE=CELL:06 39 98 92 64
+EMAIL:marc.aubertin.test@example.com
+CATEGORIES:Acquéreur
+NOTE:INVENTÉ — export de test de la mission 151, aucun client réel.\nRecherche T3 traversant ou T4 Juan-les-Pins / Golfe-Juan, budget « max 5 » (500k ? à confirmer). Pas de travaux — un coup de peinture ne le gêne pas. Garage indispensable. Veut du cachet (immeuble ancien, moulures). Rentier, très fortuné, se méfie des banques.
+END:VCARD

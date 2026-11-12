@@ -1,0 +1,71 @@
+// Mission 151 — la lecture simulée de l'agence de démonstration (M114) : aucune lecture réelle, la
+// réponse que le modèle donnerait sur la photo inventée des notes de M. et Mme Arnaud (planches 1 et
+// 2, validées par Jean-Guy le 10/11). Elle passe par les MÊMES gardes que la vraie (« Mme enceinte »
+// et « M. très pressé » ne sont pas relevés). Tout est inventé : 06 39 98 (plage que l'ARCEP
+// réserve à la fiction), aucune adresse.
+
+export const DEMO_NOTES_TEXT = [
+  'ARNAUD (M. et Mme)  06 39 98 27 14',
+  'Maison 4-5 p — 3 ch mini',
+  'Vence / St-Paul / Tourrettes',
+  '750 max (idéal 700)',
+  'Jardin +++ piscine pas obligatoire',
+  'AU CALME — pas de route, pas de vis-à-vis',
+  'maison de caractère, du cachet (pierres, poutres…)',
+  'Mme enceinte → plain-pied',
+  'pas de gros travaux',
+  'accord banque OK',
+  'M. très pressé, un peu difficile',
+  'visites le samedi',
+].join('\n');
+
+export const DEMO_NOTES_OUTPUT = {
+  name: 'M. et Mme Arnaud',
+  phone: '06 39 98 27 14',
+  email: null,
+  purpose: null,
+  timeline: null,
+  language: null,
+  property_types: ['house'],
+  cities: ['Vence', 'Saint-Paul-de-Vence', 'Tourrettes-sur-Loup'],
+  budget_ideal: 700000,
+  budget_max: 750000,
+  rooms_min: 4,
+  bedrooms_min: 3,
+  surface_min: null,
+  outdoor: true,
+  parking: null,
+  pool: null,
+  floor_min: null,
+  elevator: null,
+  energy_rating_max: null,
+  works_accepted: null,
+  condominium_accepted: null,
+  must_have: ['outdoor'],
+  financing: 'validated',
+  soft_criteria: [
+    { key: 'calme', words: 'AU CALME — pas de route' },
+    { key: 'sans_vis_a_vis', words: 'pas de vis-à-vis' },
+    { key: 'cachet', words: 'maison de caractère, du cachet (pierres, poutres…)' },
+    { key: 'plain_pied', words: 'plain-pied' },
+    { key: 'pret_a_vivre', words: 'pas de gros travaux' },
+  ],
+  unclassified_wishes: [],
+  notes: 'Visites possibles le samedi.',
+  sources: [
+    { field: 'name', quote: 'ARNAUD (M. et Mme)' },
+    { field: 'phone', quote: '06 39 98 27 14' },
+    { field: 'property_types', quote: 'Maison 4-5 p' },
+    { field: 'cities', quote: 'Vence / St-Paul / Tourrettes' },
+    { field: 'budget_max', quote: '750 max (idéal 700)' },
+    { field: 'budget_ideal', quote: '750 max (idéal 700)' },
+    { field: 'rooms_min', quote: '4-5 p — 3 ch mini' },
+    { field: 'bedrooms_min', quote: '4-5 p — 3 ch mini' },
+    { field: 'outdoor', quote: 'Jardin +++' },
+    { field: 'must_have:outdoor', quote: 'Jardin +++' },
+    { field: 'financing', quote: 'accord banque OK' },
+    { field: 'soft_criteria', quote: 'AU CALME — pas de route, pas de vis-à-vis' },
+    { field: 'notes', quote: 'visites le samedi' },
+  ],
+  personal_mentions_skipped: 2,
+} as const;

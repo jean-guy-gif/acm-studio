@@ -334,6 +334,10 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
   photos, lien), jamais une adresse ; comme l'annonce publique, ils restent, et partent avec la
   fiche de l'acquéreur (cascade). À compter, s'il faut les citer :
   `select count(*) from buyer_watch_runs where finds::text ilike '%IDENTIFIANT_ANNONCE%';`
+- Mission 151 — les lectures par l'IA (`ai_usage`) ne gardent rien d'une annonce ni des notes du
+  conseiller : qui, quand, le modèle, le coût, l'issue et des noms de champs. Une fiche acquéreur
+  effacée laisse ses lignes à l'agence, sans fiche (`buyer_id` devient vide) : c'est la
+  consommation du mois (M100), rien à effacer.
 
 ## C. Les documents signés (bon de visite ; offre d'achat, mission 137 B)
 

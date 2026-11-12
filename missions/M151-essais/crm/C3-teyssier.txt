@@ -1,0 +1,26 @@
+==================== EXPORT FICHE CONTACT ====================
+INVENTÉ — export de test de la mission 151, aucun client réel
+Fiche n° : 2026-INV-0418          Créée le : 21/10/2026
+Origine du contact : Salon immobilier
+--------------------------------------------------------------
+Nom : TEYSSIER                    Prénom : Ronan
+Téléphone mobile : 06 39 98 58 12
+E-mail : r.teyssier@example.com
+Situation familiale : Marié, 2 enfants
+--------------------------------------------------------------
+RECHERCHE
+Transaction : Achat
+Typologie : T4
+Secteurs : Antibes, Biot
+Surface habitable min : 85
+Budget : 550 / 600
+Extérieur : indispensable
+Piscine : Oui (résidence)
+Travaux : Non
+Financement : À l'étude
+Disponibilités : samedi toute la journée
+--------------------------------------------------------------
+Commentaire libre :
+Ils acceptent un rafraîchissement (peintures, sols).
+Statut : Actif
+==============================================================

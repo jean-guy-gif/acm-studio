@@ -226,6 +226,8 @@ describe('la fiche en 30 secondes, et « prêt à visiter »', () => {
     expect(done.ok && done.buyer.financing).toBe('validated');
     const update = fake.calls.find((call) => call.method === 'update')?.args[0];
     expect(Object.keys(update as object).sort()).toEqual([
+      // Mission 151 — le financement posé n'est plus « À vérifier ».
+      'fields_to_verify',
       'financing',
       'financing_changed_at',
       'updated_at',

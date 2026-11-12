@@ -13,6 +13,15 @@ export type BuyerHistoryFacts = {
   proposals: { at: string; label: string; answer: 'visit' | 'maybe' | 'no' | null }[];
   // Mission 135 — ses relances et les ajustements de sa recherche.
   events: { at: string; kind: 'relaunch' | 'search_adjusted'; summary: string | null }[];
+  // Mission 151 — les lectures de notes qui ont créé ou complété la fiche : la sorte de source et
+  // le NOMBRE de champs proposés et gardés, jamais leur contenu.
+  readings: {
+    at: string;
+    outcome: 'created' | 'completed';
+    source: 'photo' | 'file' | 'text' | null;
+    proposed: number;
+    kept: number;
+  }[];
   failed: boolean;
 };
 
@@ -23,7 +32,7 @@ export async function getBuyerHistory(
   agencyId: string,
   buyerId: string,
 ): Promise<BuyerHistoryFacts> {
-  const [selectionsRes, originsRes, proposalsRes, eventsRes] = await Promise.all([
+  const [selectionsRes, originsRes, proposalsRes, eventsRes, readingsRes] = await Promise.all([
     supabase
       .from('buyer_selections')
       .select('id, created_at')
@@ -47,6 +56,13 @@ export async function getBuyerHistory(
       .eq('agency_id', agencyId)
       .eq('buyer_id', buyerId)
       .in('kind', ['relaunch', 'search_adjusted']),
+    supabase
+      .from('ai_usage')
+      .select('created_at, outcome, source, fields_proposed, fields_kept')
+      .eq('agency_id', agencyId)
+      .eq('buyer_id', buyerId)
+      .eq('purpose', 'notes')
+      .in('outcome', ['created', 'completed']),
   ]);
   const proposalRows = proposalsRes.data ?? [];
   // Sa réponse par le lien, sur ce bien : dans n'importe laquelle de ses sélections (un bien proposé
@@ -134,7 +150,18 @@ export async function getBuyerHistory(
       kind: row.kind === 'relaunch' ? ('relaunch' as const) : ('search_adjusted' as const),
       summary: row.summary,
     })),
+    readings: (readingsRes.data ?? []).map((row) => ({
+      at: row.created_at,
+      outcome: row.outcome === 'completed' ? ('completed' as const) : ('created' as const),
+      source:
+        row.source === 'photo' || row.source === 'file' || row.source === 'text'
+          ? row.source
+          : null,
+      proposed: (row.fields_proposed ?? []).length,
+      kept: (row.fields_kept ?? []).length,
+    })),
     failed:
+      readingsRes.error != null ||
       eventsRes.error != null ||
       selectionsRes.error != null ||
       originsRes.error != null ||

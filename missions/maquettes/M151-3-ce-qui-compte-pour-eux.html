@@ -1,0 +1,224 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M151 · 3 — « Ce qui compte pour eux » sur la fiche acquéreur</title><style>
+@font-face{font-family:Inter;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+@font-face{font-family:Nunito;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/nunito-sans/nunito-sans-latin.woff2') format('woff2');font-weight:200 1000;font-style:normal}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}.sheet-sub{font-size:13px;color:#3f3f46;max-width:1720px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:26px}.row{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.ftitle{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff;background:#12875a}
+.notes{width:400px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#3d3200}.note b.t{color:#5b4a00}
+code{font-size:12px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+.frame{background:#f7f8fb;border:1px solid #a1a1aa;overflow:hidden;position:relative;display:flex}
+.frame.desk{width:1280px;min-height:800px}.frame.tab{width:820px;min-height:1100px}.frame.phone{width:390px;min-height:844px;flex-direction:column}
+.side{width:256px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:22px 18px;display:flex;flex-direction:column;gap:26px}
+.tab .side{width:220px}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-family:Montserrat;font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-family:Montserrat;font-size:7px;font-weight:600;letter-spacing:.2em;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-direction:column;gap:2px}.grp.sep{border-top:1px solid #e4e4e7;margin-top:10px;padding-top:12px}
+.gt{font-family:Montserrat;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;padding:0 12px 4px}
+.it{display:flex;flex-direction:column;border-radius:12px;padding:7px 12px}.il{display:flex;justify-content:space-between;font-family:Rajdhani,Montserrat;font-size:16px;font-weight:600;color:#52525b}.ih{font-size:11.5px;color:#71717a}
+.it.on{background:#eaf5ff}.it.on .il{color:#00527a}
+.pb{border-radius:999px;background:#ea580c;color:#fff;font-family:Inter;font-size:11px;font-weight:700;padding:1px 7px;align-self:center}
+.acc{display:flex;gap:9px;align-items:center;border:1px solid #e4e4e7;border-radius:12px;padding:9px;font-size:11px;color:#71717a}.acc b{color:#18181b;font-size:12px}
+.av{width:30px;height:30px;border-radius:99px;background:#eaf5ff;color:#00527a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e4e4e7;background:#fff}.topbar .logo{flex:1}
+.burger{width:38px;height:38px;border:1px solid #e4e4e7;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.main{flex:1;min-width:0;padding:30px 36px 110px;display:flex;flex-direction:column;gap:16px;container-type:inline-size;overflow:hidden}
+.tab .main{padding:24px 24px 110px}.phone .main{padding:16px 14px 96px;gap:12px}
+.back{font-size:13px;color:#71717a}
+.h1{font-family:Rajdhani,Montserrat;font-weight:700;font-size:36px;line-height:1.05;color:#00527a}.phone .h1{font-size:28px}
+.h2{font-family:Rajdhani,Montserrat;font-weight:700;font-size:23px;color:#00527a}.h3{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#52525b}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:12px}.phone .card{padding:14px;border-radius:14px}
+.lead{font-size:14.5px;color:#3f3f46;line-height:1.45}.muted{color:#71717a;font-size:13.5px}.sm{font-size:12.5px;line-height:1.45}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@container (max-width:520px){.tiles{grid-template-columns:1fr}}
+.tile{display:flex;align-items:center;gap:12px;border:1.5px solid #00527a;color:#00527a;background:#fff;border-radius:14px;padding:16px;text-align:left;font-family:inherit;min-height:64px}
+.tile span{display:flex;flex-direction:column}.tile b{font-size:15.5px}.tile small{font-size:12.5px;color:#71717a;margin-top:2px}
+.warn{font-size:12.5px;line-height:1.5;color:#52525b;background:#f4f4f5;border-radius:10px;padding:10px 12px}
+.or{display:flex;align-items:center;gap:12px;color:#71717a;font-size:13px}.or::before,.or::after{content:'';flex:1;height:1px;background:#e4e4e7}
+.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:#52525b}.in{font-style:normal;font-weight:400;border:1px solid #e4e4e7;border-radius:10px;padding:10px 12px;color:#71717a;font-size:14px}
+.seg,.chips{display:flex;gap:8px;flex-wrap:wrap}.seg b,.chips b{font-size:13px;font-weight:600;background:#f4f4f5;border-radius:9px;padding:7px 11px;color:#3f3f46}
+.chips b.s{background:#fdf0c4;color:#6b4b00}.chips b.lnk{background:#eaf5ff;color:#00527a}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:14px}@container (max-width:520px){.quick{grid-template-columns:1fr}}
+.actions{grid-column:1/-1;display:flex;justify-content:flex-end}
+.btn{font-family:inherit;font-size:14.5px;font-weight:700;border-radius:12px;padding:11px 18px;border:1.5px solid #00527a;background:#fff;color:#00527a}
+.btn.fill{background:#00527a;color:#fff}.btn.link{border:none;background:none;text-decoration:underline;font-weight:600;padding:11px 8px}.btn.ghost{background:#fff}.btn.wide{width:100%}.btn.white{background:#fff;color:#00527a;border-color:#fff;width:100%}
+.center{align-items:center;text-align:center;padding:28px}
+.progress{width:70%;height:6px;border-radius:9px;background:#e4e4e7;overflow:hidden}.progress span{display:block;width:55%;height:100%;background:#00527a}
+.big{font-size:18px;font-weight:700;color:#00527a}
+.photo{background:#5b5348;border-radius:12px;padding:14px;display:flex;justify-content:center;overflow:hidden;container-type:inline-size}
+.photo.l{width:100%}.photo.m{width:250px;height:250px}.photo.s{width:100%}
+.paper{font-size:min(13.5px,calc((100cqw - 44px) / 21.5));background:repeating-linear-gradient(#fbfaf3 0 1.6em,#c7d6ee 1.6em calc(1.6em + 1px));transform:rotate(-2.2deg);padding:12px 14px 14px 26px;border-left:2px solid #e9a3a3;box-shadow:0 6px 16px rgba(0,0,0,.35);width:100%}
+.hl{font-family:Nunito;font-style:italic;font-weight:600;color:#1d3d8f;font-size:1em;line-height:calc(1.6em + 1px);white-space:nowrap;letter-spacing:.01em;transform:skewX(-6deg)}
+.hl.sens{background:rgba(220,38,38,.12);outline:1.5px dashed #dc2626}
+.ph{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}.count{font-size:13px;color:#71717a}
+.two{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:start}.two.r{grid-template-columns:1fr 330px}
+@container (max-width:760px){.two{grid-template-columns:200px 1fr}.two.r{grid-template-columns:1fr}.two.r .nextc{order:-1}.softs{grid-template-columns:1fr}}
+@container (max-width:520px){.two{grid-template-columns:1fr}}
+.src{display:flex;flex-direction:column;gap:8px;position:sticky;top:0}
+.form{display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@container (max-width:760px){.grid{grid-template-columns:1fr}}
+.pf{border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;background:#fff}
+.pf:not(.empty){border-color:#efd58f;background:#fffdf6}
+.pfh{display:flex;justify-content:space-between;align-items:center}.pl{font-size:12px;font-weight:700;color:#52525b}
+.pv{font-size:15px;font-weight:600}.pf.empty .pv{color:#71717a;font-weight:400}.st2{color:#b8892b;margin-right:4px}
+.from{font-size:12px;color:#71717a;font-style:italic}
+.pill{font-size:11px;font-weight:700;color:#8a5a00;background:#fff4d6;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.softs{display:grid;grid-template-columns:1fr 1fr;gap:10px}@container (max-width:520px){.softs{grid-template-columns:1fr}}
+.soft{border:1px solid #efd58f;background:#fffdf6;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px}.sh b{font-size:14.5px}
+.words{font-family:Nunito;font-style:italic;font-size:13.5px;color:#1d3d8f}
+.skipped{font-size:12.5px;color:#71717a;border-top:1px dashed #e4e4e7;padding-top:10px}
+.bar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e4e4e7;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 24px;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
+.desk .bar{left:256px}.tab .bar{left:220px}.phone .bar{padding:10px 14px}.phone .bar .btn.fill{flex:1}
+.bstate{margin-right:auto;font-size:13px;color:#71717a}
+.keep{display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.4;color:#3f3f46;background:#f4f4f5;border-radius:10px;padding:9px 12px;margin:-4px 0 2px}
+.ki{flex:none;width:20px;height:20px;border-radius:99px;border:1.5px solid #71717a;color:#52525b;font:italic 700 12px/17px Georgia,serif;text-align:center}
+.ovl{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.dlg{background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.dt{font-family:Rajdhani,Montserrat;font-size:22px;font-weight:700;color:#00527a;line-height:1.15}.dx{font-size:14px;line-height:1.45;color:#52525b}
+.da{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.btn.focus{box-shadow:0 0 0 3px #fff,0 0 0 5px #00527a}.btn.danger{border-color:#b91c1c;color:#b91c1c}
+.head{gap:10px}.hl1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px}.badge.g{background:#e7f6ee;color:#12875a}.badge.y{background:#fff4d6;color:#8a5a00}.badge u{margin-left:6px}
+.said{font-size:16px;line-height:1.45;color:#3f3f46}.said b{color:#00527a}
+.contact{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid #e4e4e7;border-radius:14px;overflow:hidden}
+.step{padding:12px 14px;border-top:4px solid #e4e4e7;display:flex;flex-direction:column;font-size:13.5px}.step small{color:#71717a}.step.now{border-top-color:#00527a;background:#eaf5ff;color:#00527a}
+@container (max-width:520px){.steps{grid-template-columns:1fr 1fr 1fr}.step:nth-child(n+4){display:none}}
+.ch{display:flex;justify-content:space-between;align-items:baseline}.lnk{color:#00527a;font-weight:700;font-size:13.5px}
+.softlist{list-style:none;display:flex;flex-direction:column}.softlist li{display:flex;flex-direction:column;gap:3px;padding:10px 0;border-top:1px solid #f4f4f5}
+.sl{display:flex;gap:10px;align-items:center}.sl b{font-size:15px}
+.log{list-style:none;font-size:13.5px}.log li{display:flex;gap:14px}.log span{color:#71717a;width:84px;flex:none}
+.nextc{background:#1f4b8a;color:#fff;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px}.nextc h2{font-family:Rajdhani,Montserrat;font-size:24px}.nextc p{font-size:14px;line-height:1.45;opacity:.92}
+.kick{text-transform:uppercase;font-size:11.5px;font-weight:800;letter-spacing:.14em;opacity:.85}
+.order{font-size:13.5px;line-height:1.5;color:#3f3f46;background:#fff;border:1px solid #e4e4e7;border-left:4px solid #00527a;border-radius:10px;padding:10px 14px}
+.cat{font-family:Rajdhani,Montserrat;font-size:20px;font-weight:700;color:#12875a;margin-top:4px}
+.ic{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.ich{display:grid;grid-template-columns:34px 120px 1fr auto auto;gap:14px;align-items:center}
+.rank{width:34px;height:34px;border-radius:99px;background:#00527a;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ich img{width:120px;height:80px;object-fit:cover;border-radius:10px}
+.it2{display:flex;flex-direction:column;gap:3px}.it2 b{font-size:15.5px}.it2 small{font-size:12.5px;color:#71717a}
+.pr{display:flex;flex-direction:column;align-items:flex-end}.pr b{font-size:17px}.pr small{font-size:12.5px}.pr .g{color:#12875a}
+.cb{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#00527a}.cb i{width:20px;height:20px;border:2px solid #00527a;border-radius:5px}
+@container (max-width:760px){.ich{grid-template-columns:30px 96px 1fr}.ich img{width:96px;height:68px}.pr{grid-column:3;align-items:flex-start}.cb{grid-column:1/-1;justify-self:end;margin-top:-30px}}
+@container (max-width:520px){.ich{grid-template-columns:28px 1fr}.ich img{grid-column:1/-1;width:100%;height:150px;order:-1}.it2,.pr{grid-column:2}.cb{grid-column:1/-1;margin-top:0}.rank{width:28px;height:28px;font-size:13px}}
+.whyb{background:#f8fafc;border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}.whyb.short{flex-direction:row;gap:10px;align-items:baseline;flex-wrap:wrap}
+.wt sup{text-transform:none}.wt{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#00527a}
+.why{list-style:none;display:flex;flex-direction:column;gap:5px}.why li{display:grid;grid-template-columns:20px 150px 1fr;gap:8px;font-size:13.5px;line-height:1.4;align-items:baseline}
+@container (max-width:520px){.why li{grid-template-columns:20px 1fr}.why li span:last-child{grid-column:2}}
+.why .mk{font-weight:800;text-align:center;border-radius:6px}.why b{font-weight:700}
+.why .y .mk{color:#12875a}.why .r .mk{color:#c2410c}.why .n .mk{color:#71717a}.why .x .mk{color:#b91c1c}
+.why .n span:last-child{color:#71717a}
+.stubc{height:60px;border-radius:16px;background:#fff;border:1px dashed #e4e4e7}
+</style></head><body>
+<h1 class="sheet">M151 · 3 — « Ce qui compte pour eux » sur la fiche acquéreur</h1><p class="sheet-sub">La fiche des Arnaud juste après « Créer la fiche ». Un bloc de plus, sous l’en-tête de la M130 B / M143 ; le reste de la fiche ne change pas.</p>
+<div class="layout"><div class="rows"><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Ordinateur · 1280</div><div class="frame desk"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <a class="back">← Acquéreurs</a>
+  <section class="card head">
+    <div class="hl1"><h1 class="h1">M. et Mme Arnaud</h1><span class="badge g">Prêt à visiter</span><span class="badge y">À vérifier · 15 <u>Tout est juste</u></span></div>
+    <p class="said">« Une maison de <b>4 pièces</b> à <b>Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup</b>, avec un <b>extérieur</b>, jusqu’à <b>750 000 €</b>. »</p>
+    <div class="chips"><b class="s">★ Extérieur</b><b>Maison</b><b>3 chambres+</b><b>Piscine souhaitée</b><b class="lnk">Modifier</b></div>
+    <div class="contact"><button class="btn ghost">☎ 06 39 98 27 14</button><span class="muted sm">Fiche du 10/11 · depuis vos notes</span></div>
+    <p class="sm"><b>Notes :</b> Disponibles pour visiter le samedi <span class="pill">À vérifier</span></p>
+  </section>
+  <div class="steps"><div class="step now"><b>1 · Sélection</b><small>à faire</small></div><div class="step"><b>2 · Présentée</b><small>—</small></div><div class="step"><b>3 · Visite</b><small>—</small></div><div class="step"><b>4 · Offre</b><small>—</small></div><div class="step"><b>5 · Compromis</b><small>—</small></div></div>
+  <div class="two r">
+    <div class="form">
+      <section class="card">
+        <div class="ch"><h2 class="h2">Ce qui compte pour eux</h2><a class="lnk">Modifier</a></div>
+        <p class="muted sm">Leurs mots. Les biens trouvés sont rangés d’après eux, avec la raison ; aucun bien n’est écarté pour eux.</p>
+        <ul class="softlist">
+          <li><span class="sl"><b>Au calme</b><span class="pill">À vérifier</span></span><span class="words">« AU CALME — pas de route »</span></li>
+          <li><span class="sl"><b>Sans vis-à-vis</b><span class="pill">À vérifier</span></span><span class="words">« pas de vis-à-vis »</span></li>
+          <li><span class="sl"><b>Du cachet, de caractère</b><span class="pill">À vérifier</span></span><span class="words">« maison de caractère, du cachet (pierres, poutres…) »</span></li>
+          <li><span class="sl"><b>De plain-pied</b><span class="pill">À vérifier</span></span><span class="words">« plain-pied »</span></li>
+          <li><span class="sl"><b>Prêt à vivre, sans travaux</b><span class="pill">À vérifier</span></span><span class="words">« pas de gros travaux »</span></li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2 class="h2">Ce qui s’est passé</h2>
+        <ul class="log"><li><span>aujourd’hui</span>Fiche créée depuis vos notes (photo) · 15 champs proposés, 15 gardés</li></ul>
+      </section>
+    </div>
+    <aside class="nextc">
+      <span class="kick">Prochaine étape</span>
+      <h2>Trouver leurs biens idéaux</h2>
+      <p>Ce que l’agence a déjà, puis le marché, rangés par ce qui compte pour eux.</p>
+      <button class="btn white">Trouver leurs biens idéaux</button>
+    </aside>
+  </div></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <a class="back">← Acquéreurs</a>
+  <section class="card head">
+    <div class="hl1"><h1 class="h1">M. et Mme Arnaud</h1><span class="badge g">Prêt à visiter</span><span class="badge y">À vérifier · 15 <u>Tout est juste</u></span></div>
+    <p class="said">« Une maison de <b>4 pièces</b> à <b>Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup</b>, avec un <b>extérieur</b>, jusqu’à <b>750 000 €</b>. »</p>
+    <div class="chips"><b class="s">★ Extérieur</b><b>Maison</b><b>3 chambres+</b><b>Piscine souhaitée</b><b class="lnk">Modifier</b></div>
+    <div class="contact"><button class="btn ghost">☎ 06 39 98 27 14</button><span class="muted sm">Fiche du 10/11 · depuis vos notes</span></div>
+    <p class="sm"><b>Notes :</b> Disponibles pour visiter le samedi <span class="pill">À vérifier</span></p>
+  </section>
+  <div class="steps"><div class="step now"><b>1 · Sélection</b><small>à faire</small></div><div class="step"><b>2 · Présentée</b><small>—</small></div><div class="step"><b>3 · Visite</b><small>—</small></div><div class="step"><b>4 · Offre</b><small>—</small></div><div class="step"><b>5 · Compromis</b><small>—</small></div></div>
+  <div class="two r">
+    <div class="form">
+      <section class="card">
+        <div class="ch"><h2 class="h2">Ce qui compte pour eux</h2><a class="lnk">Modifier</a></div>
+        <p class="muted sm">Leurs mots. Les biens trouvés sont rangés d’après eux, avec la raison ; aucun bien n’est écarté pour eux.</p>
+        <ul class="softlist">
+          <li><span class="sl"><b>Au calme</b><span class="pill">À vérifier</span></span><span class="words">« AU CALME — pas de route »</span></li>
+          <li><span class="sl"><b>Sans vis-à-vis</b><span class="pill">À vérifier</span></span><span class="words">« pas de vis-à-vis »</span></li>
+          <li><span class="sl"><b>Du cachet, de caractère</b><span class="pill">À vérifier</span></span><span class="words">« maison de caractère, du cachet (pierres, poutres…) »</span></li>
+          <li><span class="sl"><b>De plain-pied</b><span class="pill">À vérifier</span></span><span class="words">« plain-pied »</span></li>
+          <li><span class="sl"><b>Prêt à vivre, sans travaux</b><span class="pill">À vérifier</span></span><span class="words">« pas de gros travaux »</span></li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2 class="h2">Ce qui s’est passé</h2>
+        <ul class="log"><li><span>aujourd’hui</span>Fiche créée depuis vos notes (photo) · 15 champs proposés, 15 gardés</li></ul>
+      </section>
+    </div>
+    <aside class="nextc">
+      <span class="kick">Prochaine étape</span>
+      <h2>Trouver leurs biens idéaux</h2>
+      <p>Ce que l’agence a déjà, puis le marché, rangés par ce qui compte pour eux.</p>
+      <button class="btn white">Trouver leurs biens idéaux</button>
+    </aside>
+  </div></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <a class="back">← Acquéreurs</a>
+  <section class="card head">
+    <div class="hl1"><h1 class="h1">M. et Mme Arnaud</h1><span class="badge g">Prêt à visiter</span><span class="badge y">À vérifier · 15 <u>Tout est juste</u></span></div>
+    <p class="said">« Une maison de <b>4 pièces</b> à <b>Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup</b>, avec un <b>extérieur</b>, jusqu’à <b>750 000 €</b>. »</p>
+    <div class="chips"><b class="s">★ Extérieur</b><b>Maison</b><b>3 chambres+</b><b>Piscine souhaitée</b><b class="lnk">Modifier</b></div>
+    <div class="contact"><button class="btn ghost">☎ 06 39 98 27 14</button><span class="muted sm">Fiche du 10/11 · depuis vos notes</span></div>
+    <p class="sm"><b>Notes :</b> Disponibles pour visiter le samedi <span class="pill">À vérifier</span></p>
+  </section>
+  <div class="steps"><div class="step now"><b>1 · Sélection</b><small>à faire</small></div><div class="step"><b>2 · Présentée</b><small>—</small></div><div class="step"><b>3 · Visite</b><small>—</small></div><div class="step"><b>4 · Offre</b><small>—</small></div><div class="step"><b>5 · Compromis</b><small>—</small></div></div>
+  <div class="two r">
+    <div class="form">
+      <section class="card">
+        <div class="ch"><h2 class="h2">Ce qui compte pour eux</h2><a class="lnk">Modifier</a></div>
+        <p class="muted sm">Leurs mots. Les biens trouvés sont rangés d’après eux, avec la raison ; aucun bien n’est écarté pour eux.</p>
+        <ul class="softlist">
+          <li><span class="sl"><b>Au calme</b><span class="pill">À vérifier</span></span><span class="words">« AU CALME — pas de route »</span></li>
+          <li><span class="sl"><b>Sans vis-à-vis</b><span class="pill">À vérifier</span></span><span class="words">« pas de vis-à-vis »</span></li>
+          <li><span class="sl"><b>Du cachet, de caractère</b><span class="pill">À vérifier</span></span><span class="words">« maison de caractère, du cachet (pierres, poutres…) »</span></li>
+          <li><span class="sl"><b>De plain-pied</b><span class="pill">À vérifier</span></span><span class="words">« plain-pied »</span></li>
+          <li><span class="sl"><b>Prêt à vivre, sans travaux</b><span class="pill">À vérifier</span></span><span class="words">« pas de gros travaux »</span></li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2 class="h2">Ce qui s’est passé</h2>
+        <ul class="log"><li><span>aujourd’hui</span>Fiche créée depuis vos notes (photo) · 15 champs proposés, 15 gardés</li></ul>
+      </section>
+    </div>
+    <aside class="nextc">
+      <span class="kick">Prochaine étape</span>
+      <h2>Trouver leurs biens idéaux</h2>
+      <p>Ce que l’agence a déjà, puis le marché, rangés par ce qui compte pour eux.</p>
+      <button class="btn white">Trouver leurs biens idéaux</button>
+    </aside>
+  </div></div></div></div></div></div>
+<div class="notes"><div class="note"><b class="t">Avant :</b> La fiche n’a que ses champs et ses ★ (M117) ; « au calme », « du cachet » finissent dans « Notes », que rien ne lit. (« Ce qui compte pour lui » de la M142, ★ du secteur, a été retiré par la M147 A ; ses colonnes partent avec leur migration : on ne les reprend pas.)</div><div class="note"><b class="t">Après :</b> « Ce qui compte pour eux » : chaque critère doux, son libellé de la liste fermée (dix, Jean-Guy, 10/11) et leurs mots. « Modifier » ouvre la liste : cocher, décocher, corriger leurs mots (80 caractères). Un critère saisi à la main n’a pas de pastille. Les « Notes » proposées (faits pratiques seulement) gardent leur pastille sous l’en-tête.</div><div class="note"><b class="t">À vérifier :</b> Le compteur « À vérifier · 15 » et « Tout est juste », comme les fiches importées (M97) ; la pastille d’un champ part quand le conseiller le modifie.</div><div class="note"><b class="t">Ce qui s’est passé :</b> « Fiche créée depuis vos notes (photo) · 15 champs proposés, 15 gardés » : la trace de la lecture, sans le contenu des notes.</div><div class="note"><b class="t">Un seul plein :</b> La prochaine étape (M130 B), inchangée. Les critères doux ne changent ni le statut ni « Prêt à visiter » (M132).</div></div></div></body></html>

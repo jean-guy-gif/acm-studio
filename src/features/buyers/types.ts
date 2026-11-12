@@ -93,6 +93,36 @@ export const BUYER_CRITERION_LABELS: Record<BuyerCriterion, string> = {
   works: 'Travaux',
 };
 
+// Mission 151 — « Ce qui compte pour eux », la liste fermée de Jean-Guy (10/11). Chacun garde leurs
+// mots, tels qu'écrits ; ils rangent les biens trouvés et disent pourquoi, ils n'en écartent aucun.
+export const BUYER_SOFT_CRITERIA = [
+  'calme',
+  'sans_vis_a_vis',
+  'cachet',
+  'lumineux',
+  'vue',
+  'plain_pied',
+  'traversant',
+  'commerces_ecoles_a_pied',
+  'jardin_sans_entretien',
+  'pret_a_vivre',
+] as const;
+export type BuyerSoftCriterionKey = (typeof BUYER_SOFT_CRITERIA)[number];
+export const BUYER_SOFT_CRITERION_LABELS: Record<BuyerSoftCriterionKey, string> = {
+  calme: 'Au calme',
+  sans_vis_a_vis: 'Sans vis-à-vis',
+  cachet: 'Du cachet, de caractère',
+  lumineux: 'Lumineux',
+  vue: 'Une vue',
+  plain_pied: 'De plain-pied',
+  traversant: 'Traversant',
+  commerces_ecoles_a_pied: 'Commerces et écoles à pied',
+  jardin_sans_entretien: 'Un jardin sans gros entretien',
+  pret_a_vivre: 'Prêt à vivre, sans travaux',
+};
+export const BUYER_SOFT_WORDS_MAX = 80;
+export type BuyerSoftCriterion = { key: BuyerSoftCriterionKey; words: string };
+
 export const ENERGY_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 export type EnergyRating = (typeof ENERGY_RATINGS)[number];
 
@@ -124,6 +154,12 @@ export type BuyerInput = {
   worksAccepted: boolean | null;
   mustHave: BuyerCriterion[];
   dealBreakers: string | null;
+  // Mission 151 — la copropriété acceptée et son ★ (à part de `mustHave`, que la migration en
+  // ajouts seulement ne touche pas) ; absents : la fiche ne change pas.
+  condominiumAccepted?: boolean | null;
+  condominiumMustHave?: boolean;
+  // Mission 151 — « Ce qui compte pour eux » ; absent : la fiche ne change pas.
+  softCriteria?: BuyerSoftCriterion[];
 };
 
 export type Buyer = BuyerInput & {
@@ -145,4 +181,10 @@ export type Buyer = BuyerInput & {
   financing: BuyerFinancing;
   financingChangedAt: string | null;
   contactedAt: string | null;
+  // Mission 151 — lus en base : toujours une valeur.
+  condominiumAccepted: boolean | null;
+  condominiumMustHave: boolean;
+  softCriteria: BuyerSoftCriterion[];
+  // Les champs proposés par une lecture de notes, « À vérifier » jusqu'au geste du conseiller (M97).
+  fieldsToVerify: string[];
 };

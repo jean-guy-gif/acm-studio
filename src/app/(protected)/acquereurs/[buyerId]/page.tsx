@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 
 import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/components/ui/styles';
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
+import { BuyerSoftCriteria } from '@/features/buyer-notes/components/buyer-soft-criteria';
+import { VerifyAllBadge } from '@/features/buyer-notes/components/verify-all-badge';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
@@ -136,7 +139,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       getAgencyProspecting(counted).catch(() => null),
       profile
         ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-        : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
+        : Promise.resolve({
+            selections: [],
+            letters: [],
+            proposals: [],
+            events: [],
+            readings: [],
+            failed: true,
+          }),
       // Mission 136 — son dernier passage de veille.
       profile
         ? getBuyerLastWatch(profile.agency_id, buyer.id)
@@ -182,6 +192,10 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       : null;
   // Mission 147 (partie A) — dans l'agence de démonstration, Academia s'ouvre sur sa présentation.
   const saleDemo = saleSeller ? await isDemoAgency(profile?.agency_id) : false;
+  const readingOpen = notesReadingOpen({
+    isDemo: saleSeller ? saleDemo : await isDemoAgency(profile?.agency_id),
+    email: profile?.email,
+  });
   const salePhoto = saleVisit
     ? deck?.items.find((item) => item.item.itemId === saleVisit.itemId)?.photos[0]
     : undefined;
@@ -206,6 +220,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     letters: history.letters,
     proposals: history.proposals,
     events: history.events,
+    readings: history.readings,
     presentedAt: facts.presentedAt,
     linkAt: facts.linkAt ?? null,
     answeredAt: facts.answeredAt ?? null,
@@ -330,6 +345,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 {RECONTACT_LABEL}
               </span>
             ) : null}
+            {/* Mission 151 — une fiche née d'une lecture : ses champs « À vérifier » (M97). */}
+            <VerifyAllBadge buyerId={buyer.id} count={buyer.fieldsToVerify.length} />
           </div>
           {words ? (
             <p className="text-lg text-zinc-800 stage:text-white/85" data-testid="buyer-words">
@@ -364,6 +381,16 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             >
               Modifier
             </Link>
+            {/* Mission 151 — « Compléter depuis mes notes », là où la lecture est ouverte. */}
+            {readingOpen ? (
+              <Link
+                href={`/acquereurs/${buyer.id}/depuis-mes-notes`}
+                className="rounded-md px-2.5 py-1 text-sm font-semibold text-brand-deep underline underline-offset-2"
+                data-testid="buyer-complete-from-notes"
+              >
+                Compléter depuis mes notes
+              </Link>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
@@ -777,6 +804,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             </section>
           ) : null}
 
+          {/* Mission 151 — « Ce qui compte pour eux », leurs mots (planche 3). */}
+          <BuyerSoftCriteria
+            buyerId={buyer.id}
+            criteria={buyer.softCriteria}
+            toVerify={buyer.fieldsToVerify.includes('soft_criteria')}
+          />
           {/* Ce qui s'est passé : lu dans les tables, rien de plus. */}
           <section className={`${card} flex flex-col gap-2 p-5`} data-testid="buyer-timeline">
             <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">

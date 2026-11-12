@@ -785,3 +785,32 @@ export async function expectPhotosLoaded(
     `${screen} : trop peu de photos chargées`,
   ).toBeGreaterThanOrEqual(atLeast);
 }
+
+// Mission 151 — EXCEPTION à « tout passe par l'écran », en LECTURE SEULE (modèle de la M103) : un
+// message à l'écran ne prouve pas qu'une ligne des notes n'est PAS écrite. Rend, en un texte, la
+// fiche créée depuis les notes, les lectures de l'agence de démonstration et les erreurs du
+// journal de la dernière heure : le parcours y cherche chaque source montrée à la validation.
+export function readNotesTraces(buyerId: string): string {
+  if (!/^[0-9a-f-]{36}$/i.test(buyerId)) throw new Error('Identifiant de fiche inattendu.');
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  const sql = `with demo_agency as (
+    select a.id from public.profiles p join public.agencies a on a.id = p.agency_id
+    where lower(p.email) = lower('${email}') and a.is_demo
+  )
+  select concat_ws(' ',
+    (select row_to_json(b)::text from public.buyers b
+       where b.id = '${buyerId}' and b.agency_id in (select id from demo_agency)),
+    (select coalesce(json_agg(u)::text, '') from public.ai_usage u
+       where u.agency_id in (select id from demo_agency) and u.created_at > now() - interval '1 hour'),
+    (select coalesce(json_agg(e.message)::text, '') from public.app_errors e
+       where e.created_at > now() - interval '1 hour')
+  ) as traces`;
+  try {
+    return execFileSync('npx', supabaseQueryArgs(sql, { write: false }), {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error('Les traces n’ont pas pu être lues : `supabase db query --remote` a échoué.');
+  }
+}
