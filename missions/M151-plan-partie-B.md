@@ -46,7 +46,34 @@ Le classement des biens idéaux par ce qui compte pour eux (fiche, partie B ; pl
    description gardée), garde « jamais côté acquéreur » ; e2e sur la démo (critère 5 : « calme
    absolu » devant « n'en dit rien », chaque citation dans le texte).
 
-## Les questions pour Jean-Guy
+## Les décisions de Jean-Guy (12/11)
+
+1. Le marché se classe pendant la recherche, avant d'afficher, avec un message d'attente ; échec ou
+   délai (30 s au plus pour la lecture) : les biens s'affichent en classement simplifié, sans bloquer.
+2. « Ce que l'agence a déjà » se classe au lancement de la recherche du marché ; avant, l'écran dit
+   que le classement est simplifié (planche 4 b).
+3. Le score (clairement 2, avec réserve 1, rien ou non lu 0, le contraire −2) ne range qu'à
+   l'intérieur d'une catégorie : il ne change jamais un bien de catégorie et n'en écarte aucun.
+4. Le classement suit la même porte que la lecture des notes, ouvrable agence par agence sans
+   redéploiement (proposition ci-dessous).
+5. Budget d'IA commun avec la lecture des notes ; la veille de nuit en prend la moitié au plus.
+6. Les Arnaud ne sont pas semés (ils naissent de la photo) ; les Lambert reçoivent des critères
+   doux, sans changer aucun compte de la démo.
+
+## L'ouverture agence par agence, sans migration (proposition)
+
+- La porte devient le plafond d'IA de l'agence, réglé par un opérateur en bas de `/erreurs`
+  (`agency_ai_budgets`, déjà en base) : **sans ligne, ou à 0 €, fermé ; au-dessus, ouvert**. Le
+  défaut du code (10 € sans ligne) disparaît : ouvrir, c'est poser un plafond.
+- La constante `NOTES_READING_OPEN` disparaît. Restent ouverts sans plafond : l'agence de
+  démonstration (simulée, aucun appel) et les opérateurs, pour l'essai manuel.
+- Fermer : remettre 0 €. Les deux (lecture des notes, classement) s'ouvrent et se ferment ensemble.
+- La moitié pour la veille : le classement de la nuit vérifie, avant de réserver, que ce qu'il a
+  déjà dépensé ce mois (`ai_usage`, `purpose` 'ranking', sans auteur) reste sous la moitié du
+  plafond. La veille tourne une agence après l'autre, un passage à la fois (M136) : la vérification
+  suffit sans verrou ; une garantie en base, comme `start_buyer_watch`, demanderait une migration.
+
+## Les questions posées le 12/11 (tranchées ci-dessus)
 
 1. **Quand classer le marché ?** Dans la recherche payante elle-même, avant d'afficher les
    biens (le serveur a les textes, +5 à 8 s d'attente, environ 0,04 € pour 10 biens) — ma
