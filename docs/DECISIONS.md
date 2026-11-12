@@ -861,7 +861,7 @@ chaque mission validée.
 - 12/11 · M154 · Le bon de la tournée part ÉTEINT en production (`BON_TOURNEE_OUVERT = false`, `tour-voucher.ts`) jusqu'à ce que Jean-Guy l'allume ; ouvert sur l'essai (prévisualisation Vercel), en local et dans les tests, par une liste d'autorisation : un environnement qui ne se dit pas reste éteint ; éteint, les règles de la M153 tiennent (décision de Jean-Guy, 12/11).
 - 12/11 · M154 · Démo : la tournée des Keller, deux visites demandées par le conseiller sur la maison de Mougins en exclusivité (mou-02) et celle de Mouans-Sartoux (mou-07), sans courrier ni titre posé ; avec le mandat de Mougins déjà visité, un bon peut réunir trois titres.
 
-- 12/11 · M154 · Le bon de la tournée est allumé en production sur l'ordre de Jean-Guy (`BON_TOURNEE_OUVERT = true`) : un bon réunit les biens d'une tournée sous leurs titres, et les règles de la M153 « un bien hors mandat sur un bon à part » et « en collaboration, un bien par bon » cessent (remplace M153 pour ces deux règles) ; les phrases de la tournée, validées par Jean-Guy, n'ont pas encore été relues par la juriste (`missions/M154-tournee-pour-le-juriste.md`) ; la constante, repassée à `false`, l'éteint partout d'un geste.
+- 12/11 · M154 · Le bon de la tournée, allumé en production sur l'ordre de Jean-Guy puis éteint de nouveau sur son ordre le même jour (`BON_TOURNEE_OUVERT = false`) : en production, les règles de la M153 tiennent (un bien hors mandat sur un bon à part, un bien par bon en collaboration) ; il reste ouvert sur l'essai, en local et dans les tests ; les bons de tournée signés pendant qu'il était allumé restent lisibles (remplace la ligne du 12/11 « allumé en production »).
 
 ## Agence & équipe
 
