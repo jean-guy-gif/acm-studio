@@ -19,7 +19,7 @@ import { geoProvider } from '@/features/competitor-search/services/geo-provider'
 import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
 import { demoDelay } from '@/features/demo/services/demo-delay';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
-import { aiModel, callStructured, type AiContentBlock } from '@/lib/ai/bedrock';
+import { aiConfigured, aiModel, callStructured, type AiContentBlock } from '@/lib/ai/bedrock';
 import { costMillicents, modelPrice, worstCaseMillicents } from '@/lib/ai/models';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -72,7 +72,8 @@ export async function readBuyerNotes(formData: FormData): Promise<ReadNotesResul
   }
 
   const model = aiModel();
-  if (!modelPrice(model)) return { ok: false, cause: 'unconfigured' };
+  // Sans clé AWS ou sans tarif, rien n'est réservé : aucun appel ne partirait.
+  if (!aiConfigured() || !modelPrice(model)) return { ok: false, cause: 'unconfigured' };
   const estimatedInputTokens =
     NOTE_FIXED_INPUT_TOKENS +
     input.images.length * NOTE_IMAGE_TOKENS +

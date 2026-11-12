@@ -694,7 +694,15 @@ function NotesProposal({
                   onChange={(event) => setStarsKept(event.target.checked)}
                 />
                 Ajouter les indispensables lus :{' '}
-                {proposal.mustHave.map((star) => BUYER_CRITERION_LABELS[star.key]).join(', ')}
+                {proposal.mustHave
+                  .filter((star) => {
+                    // Un ★ sur un équipement que la fiche dit autrement ne s'ajoute qu'avec sa carte.
+                    const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
+                    if (!['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) return true;
+                    return existing[field] == null || existing[field] === true || kept.has(field);
+                  })
+                  .map((star) => BUYER_CRITERION_LABELS[star.key])
+                  .join(', ')}
               </label>
             ) : null}
           </section>
