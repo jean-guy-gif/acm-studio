@@ -158,7 +158,7 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
 
 const input = (over: Record<string, unknown> = {}) => ({
   buyerId: BUYER,
-  visitors: [{ civility: 'M.', name: 'Paul Test' }],
+  visitors: [{ civility: 'M.', firstName: 'Paul', lastName: 'Test' }],
   visitorAddress: '5 chemin des Figurants, 69006 Lyon',
   piece: 'cni',
   city: 'Mougins',
@@ -241,8 +241,8 @@ describe('signer le bon de visite', () => {
         await signVisitVoucher(
           input({
             visitors: [
-              { civility: 'M.', name: 'Paul Test' },
-              { civility: 'Mme', name: 'Anna Test' },
+              { civility: 'M.', firstName: 'Paul', lastName: 'Test' },
+              { civility: 'Mme', firstName: 'Anna', lastName: 'Test' },
             ],
           }),
         )
@@ -548,6 +548,25 @@ describe('le bon de la tournée', () => {
       error:
         'Un seul mandat de recherche par bon : le même numéro et la même date pour tous ses biens.',
     });
+    expect(state.writes).toEqual([]);
+  });
+
+  it('un visiteur sans prénom ou sans civilité : le bon ne se signe pas (Jean-Guy, 12/11)', async () => {
+    state.context = context();
+    expect(
+      (
+        await signVisitVoucher(
+          input({ visitors: [{ civility: 'M.', firstName: '', lastName: 'Keller' }] }),
+        )
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await signVisitVoucher(
+          input({ visitors: [{ civility: '', firstName: 'Paul', lastName: 'Keller' }] }),
+        )
+      ).ok,
+    ).toBe(false);
     expect(state.writes).toEqual([]);
   });
 });

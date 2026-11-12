@@ -62,7 +62,8 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   if (!parsed.success) {
     return {
       ok: false,
-      error: 'Le bon est incomplet : vérifiez le visiteur, les biens et la signature.',
+      error:
+        'Le bon est incomplet : vérifiez la civilité, le prénom et le nom du visiteur, les biens et la signature.',
     };
   }
   const input = parsed.data;
@@ -147,7 +148,12 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   const now = new Date();
   const fields: StoredVoucherFields = {
     agency: context.agency,
-    visitors: input.visitors,
+    visitors: input.visitors.map((entry) => ({
+      civility: entry.civility,
+      name: `${entry.firstName} ${entry.lastName}`,
+      firstName: entry.firstName,
+      lastName: entry.lastName,
+    })),
     visitorAddress: input.visitorAddress,
     piece: input.piece,
     // Ce qu'ACM sait se remplit seul (§ 7) : le prix et l'adresse connus du serveur l'emportent sur

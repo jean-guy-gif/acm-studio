@@ -79,11 +79,23 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
       /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : [\d\s ]+ €/,
     );
     // Mission 154 — le nom de la fiche, suggéré d'un geste, jamais rempli d'office.
-    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('');
+    await expect(form.getByTestId('voucher-visitor-last-1')).toHaveValue('');
+    // « Mr and Mrs » n'est pas un nom : le bouton annonce et ne remplit que « Wilson » ; la civilité
+    // et le prénom restent à compléter, et le bon ne se signe pas sans eux (Jean-Guy, 12/11).
+    await expect(form.getByTestId('voucher-take-buyer-name')).toHaveText(
+      'Reprendre « Mr and Mrs Wilson » : nom « Wilson », civilité et prénom à compléter',
+    );
     await form.getByTestId('voucher-take-buyer-name').click();
-    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('Mr and Mrs Wilson');
+    await expect(form.getByTestId('voucher-visitor-last-1')).toHaveValue('Wilson');
+    await expect(form.getByTestId('voucher-visitor-first-1')).toHaveValue('');
+    await expect(form.getByTestId('voucher-visitor-civility-1')).toHaveValue('');
+    await expect(form.getByTestId('voucher-visitor-missing-1')).toHaveText(
+      'La civilité et le prénom à compléter.',
+    );
     await expect(form.getByTestId('voucher-take-buyer-name')).toHaveCount(0);
-    await form.getByTestId('voucher-visitor-1').fill('John Wilson');
+    await form.getByTestId('voucher-visitor-civility-1').selectOption('M.');
+    await form.getByTestId('voucher-visitor-first-1').fill('John');
+    await expect(form.getByTestId('voucher-visitor-missing-1')).toHaveCount(0);
     await form
       .getByTestId('voucher-visitor-address')
       .fill('12 chemin des Figurants, 06600 Antibes');

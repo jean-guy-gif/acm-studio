@@ -80,6 +80,17 @@ const splitName = (name: string): { firstNames: string; lastName: string } => {
     : { firstNames: '', lastName: words[0] ?? '' };
 };
 
+// Mission 154 — un bon récent garde prénom et nom séparés : repris tels quels ; un bon plus ancien
+// n'a que le nom entier, découpé comme le bouton l'annonce.
+const voucherVisitorName = (entry: {
+  name: string;
+  firstName?: string;
+  lastName?: string;
+}): { firstNames: string; lastName: string } =>
+  entry.firstName && entry.lastName
+    ? { firstNames: entry.firstName, lastName: entry.lastName }
+    : splitName(entry.name);
+
 const visitor = (entry: { civility: string; name: string }): string =>
   `${entry.civility} ${entry.name.trim()}`;
 
@@ -424,13 +435,13 @@ export function OfferForm({
                 onClick={() =>
                   setOffrant(index, {
                     civility: context.lastVoucher!.visitors[index]!.civility,
-                    ...splitName(context.lastVoucher!.visitors[index]!.name),
+                    ...voucherVisitorName(context.lastVoucher!.visitors[index]!),
                   })
                 }
               >
                 Reprendre « {visitor(context.lastVoucher.visitors[index]!)} » du bon de visite :
-                prénoms « {splitName(context.lastVoucher.visitors[index]!.name).firstNames} », nom «{' '}
-                {splitName(context.lastVoucher.visitors[index]!.name).lastName} »
+                prénoms « {voucherVisitorName(context.lastVoucher.visitors[index]!).firstNames} »,
+                nom « {voucherVisitorName(context.lastVoucher.visitors[index]!).lastName} »
               </button>
             ) : null}
             <label className="flex flex-col gap-1">

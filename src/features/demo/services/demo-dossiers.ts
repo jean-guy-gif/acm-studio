@@ -429,7 +429,14 @@ async function seedKellerVoucher(
   if (!address || !(price > 0)) return true;
   const fields: StoredVoucherFields = {
     agency: voucherAgencyFields,
-    visitors: [{ civility: 'M.', name: DEMO_VOUCHER_VISITOR }],
+    visitors: [
+      {
+        civility: 'M.',
+        name: DEMO_VOUCHER_VISITOR,
+        firstName: DEMO_VOUCHER_VISITOR.split(' ')[0]!,
+        lastName: DEMO_VOUCHER_VISITOR.split(' ').slice(1).join(' '),
+      },
+    ],
     visitorAddress: DEMO_VOUCHER_VISITOR_ADDRESS,
     piece: 'cni',
     biens: [
