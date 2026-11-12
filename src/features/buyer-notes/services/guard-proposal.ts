@@ -1,6 +1,6 @@
 import { BUYER_LANGUAGES, type BuyerLanguage } from '@/features/buyer-messages/languages';
 import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
-import { QUICK_STAR_CRITERIA, QUICK_STARS_MAX } from '@/features/buyers/schemas/buyer-input';
+import { NOTE_STAR_CRITERIA, NOTE_STARS_MAX } from '@/features/buyer-notes/note-stars';
 import {
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
@@ -65,6 +65,18 @@ const SOURCE_FIELDS: Record<string, NoteField> = {
 const SOURCE_MAX = 200;
 const NEGATION =
   /(^|[^a-z])(pas|sans|non|aucun|aucune|ni|jamais|refus|refuse|refusent|exclu|exclus)([^a-z]|$)/;
+
+const WORKS_NUANCE =
+  /(^|[^a-z])(gros|ok|ca va|accept\w*|sauf|mais|refaire|rafraich\w*|peinture|petits?|legers?|coup de)([^a-z]|$)/;
+
+// Mission 151 — une ★ veut une ligne qui la dit ferme (Jean-Guy, 12/11) : un mot qui l'exige,
+// « +++ », « !! », ou un mot écrit en MAJUSCULES (hors sigles : RDC, DPE, T3, FAI, ASL…).
+const FIRM =
+  /indispensable|obligatoire|imperati|absolument|exige|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
+const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
+export function saysFirm(line: string): boolean {
+  return FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(line.replace(ACRONYMS, ''));
+}
 
 const fold = (value: string): string => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -157,7 +169,10 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     if (value === true) values[field] = true;
     if (value === false) {
       const line = sourceOf.get(modelName[field]);
-      if (line && NEGATION.test(fold(line))) values[field] = false;
+      // Les travaux : un « non » nuancé dans la même ligne (« gros travaux non, cuisine à refaire
+      // OK ») n'en est pas un ; il reste inconnu (N6, 12/11).
+      const nuanced = field === 'worksAccepted' && line != null && WORKS_NUANCE.test(fold(line));
+      if (line && NEGATION.test(fold(line)) && !nuanced) values[field] = false;
     }
   }
 
@@ -189,12 +204,14 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
   // 1. Les ★ : sa ligne d'origine, deux au plus, parmi ceux de l'écran ; le budget ★ veut un plafond.
   const mustHave: NoteProposal['mustHave'] = [];
   for (const key of Array.isArray(out.must_have) ? out.must_have : []) {
-    const star = oneOf<NoteStar>(QUICK_STAR_CRITERIA, key);
+    const star = oneOf<NoteStar>(NOTE_STAR_CRITERIA, key);
     if (!star || mustHave.some((kept) => kept.key === star)) continue;
     const line = sourceOf.get(`must_have:${star}`);
-    if (!line) continue;
+    if (!line || !saysFirm(line)) continue;
     if (star === 'budget' && values.budgetMax == null) continue;
-    if (mustHave.length >= QUICK_STARS_MAX) break;
+    // La copropriété ★ veut un « non » gardé (dit en toutes lettres, sa source comprise).
+    if (star === 'condominium' && values.condominiumAccepted !== false) continue;
+    if (mustHave.length >= NOTE_STARS_MAX) break;
     mustHave.push({ key: star, source: line });
   }
 
@@ -210,6 +227,21 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     const line = sourceOf.get(modelField);
     if (line && values[field] !== undefined) sources[field] = line;
   }
+  // Une ★ sur un équipement le dit voulu : le champ est « oui », avec la ligne de la ★ pour
+  // source, et sa carte le montre (sinon la ★ écrivait « oui » sans carte à vérifier, C5 du 12/11) ;
+  // un « non » gardé contredit la ★, qui tombe.
+  for (const star of [...mustHave]) {
+    if (!(STAR_EQUIPMENTS as readonly string[]).includes(star.key)) continue;
+    const field = star.key as (typeof STAR_EQUIPMENTS)[number];
+    if (values[field] === false) {
+      mustHave.splice(mustHave.indexOf(star), 1);
+      continue;
+    }
+    if (values[field] === undefined) {
+      values[field] = true;
+      sources[field] = star.source;
+    }
+  }
   const financingLine = sourceOf.get('financing');
   const financingSource = (financing || cashSuggestion) && financingLine ? financingLine : null;
 
@@ -224,6 +256,8 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     personalMentionsSkipped: skipped,
   };
 }
+
+const STAR_EQUIPMENTS = ['outdoor', 'parking', 'pool', 'elevator'] as const;
 
 // Les noms des champs proposés, pour la trace : jamais une valeur.
 export function proposedFieldNames(proposal: Omit<NoteProposal, 'communes'>): string[] {

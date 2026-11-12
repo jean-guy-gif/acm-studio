@@ -35,11 +35,8 @@ import {
 } from '@/features/buyer-notes/services/proposal-display';
 import { proposalForm, type ExistingBuyer } from '@/features/buyer-notes/services/proposal-form';
 import type { NoteField, NoteProposal, NoteValues } from '@/features/buyer-notes/types';
-import {
-  BUYER_CRITERION_LABELS,
-  BUYER_FINANCING_LABELS,
-  BUYER_SOFT_CRITERION_LABELS,
-} from '@/features/buyers/types';
+import { NOTE_STAR_LABELS } from '@/features/buyer-notes/note-stars';
+import { BUYER_FINANCING_LABELS, BUYER_SOFT_CRITERION_LABELS } from '@/features/buyers/types';
 
 // Mission 151 — « Depuis mes notes » (planches 1 et 2, validées par Jean-Guy le 10/11 et le 12/11) :
 // apporter ses notes, la lecture, puis la fiche proposée à vérifier. La proposition vit dans cet
@@ -56,6 +53,7 @@ const STAR_OF_FIELD: Partial<Record<NoteField, NoteProposal['mustHave'][number][
   parking: 'parking',
   pool: 'pool',
   elevator: 'elevator',
+  condominiumAccepted: 'condominium',
 };
 
 const QUIT_TITLE = 'Quitter sans créer la fiche ?';
@@ -743,12 +741,20 @@ function NotesProposal({
                 Ajouter les indispensables lus :{' '}
                 {proposal.mustHave
                   .filter((star) => {
-                    // Un ★ sur un équipement que la fiche dit autrement ne s'ajoute qu'avec sa carte.
+                    // Un ★ sur un équipement (ou la copropriété) que la fiche dit autrement ne
+                    // s'ajoute qu'avec sa carte.
+                    if (star.key === 'condominium') {
+                      return (
+                        existing.condominiumAccepted == null ||
+                        existing.condominiumAccepted === false ||
+                        kept.has('condominium')
+                      );
+                    }
                     const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
                     if (!['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) return true;
                     return existing[field] == null || existing[field] === true || kept.has(field);
                   })
-                  .map((star) => BUYER_CRITERION_LABELS[star.key])
+                  .map((star) => NOTE_STAR_LABELS[star.key])
                   .join(', ')}
               </label>
             ) : null}

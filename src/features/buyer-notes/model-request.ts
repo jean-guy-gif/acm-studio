@@ -1,5 +1,5 @@
 import { BUYER_LANGUAGES } from '@/features/buyer-messages/languages';
-import { QUICK_STAR_CRITERIA, QUICK_STARS_MAX } from '@/features/buyers/schemas/buyer-input';
+import { NOTE_STAR_CRITERIA, NOTE_STARS_MAX } from '@/features/buyer-notes/note-stars';
 import {
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
@@ -45,7 +45,7 @@ export const NOTE_OUTPUT_SCHEMA: Record<string, unknown> = {
     energy_rating_max: choice(ENERGY_RATINGS),
     works_accepted: yesNo,
     condominium_accepted: yesNo,
-    must_have: { type: 'array', items: { type: 'string', enum: [...QUICK_STAR_CRITERIA] } },
+    must_have: { type: 'array', items: { type: 'string', enum: [...NOTE_STAR_CRITERIA] } },
     financing: { type: 'string', enum: [...NOTE_FINANCINGS] },
     soft_criteria: {
       type: 'array',
@@ -117,18 +117,18 @@ export const NOTE_READING_INSTRUCTIONS = `Tu lis ce qu'un conseiller immobilier 
 - cities : les communes, en nom officiel (« St-Laurent-du-Var » → « Saint-Laurent-du-Var », « Juan » → « Juan-les-Pins ») ; jamais un quartier à la place de la commune.
 - budget_ideal, budget_max : en euros entiers (« 420 k » = 420000, « 1,2 M€ » = 1200000) ; « max » ou « maximum » va dans budget_max ; une seule somme approximative va dans budget_ideal ou budget_max, pas dans les deux ; si l'unité ou le montant est incertain (« autour de 3 », « à préciser », « à confirmer »), laisse vide.
 - rooms_min : T3 ou F3 = 3 ; studio ou T1 = 1. bedrooms_min : les chambres. surface_min en m².
-- outdoor (balcon, terrasse, jardin), parking (garage, place, box), pool, elevator : true si c'est demandé ; false seulement si la ligne des notes le refuse en toutes lettres (« sans parking », « pas de », « non »), et cette ligne va dans sources ; sinon null. Une case non cochée ou un champ vide dans un export vaut null (inconnu), jamais false.
+- outdoor (balcon, terrasse, jardin), parking (garage, place, box), pool, elevator : true si c'est demandé ; false seulement si la ligne des notes le refuse en toutes lettres (« sans parking », « pas de », « non »), et cette ligne va dans sources ; sinon null. Une case cochée ou une valeur écrite dans un export vaut true ; une case non cochée ou un champ vide vaut null (inconnu), jamais false. Un indispensable sur l'un d'eux (« Garage indispensable ») le met aussi à true. Une condition (« RDC ok si jardinet », « sinon étage avec ascenseur ») n'est ni un true ni un indispensable : elle va dans notes.
 - floor_min : un nombre seulement s'il est clair ; « pas de RDC » = 1.
 - works_accepted : false seulement si les notes refusent tous travaux sans nuance, en toutes lettres, avec sa source ; si elles acceptent un rafraîchissement ou une petite remise en état, laisse null.
 - condominium_accepted : false si la copropriété est refusée en toutes lettres, avec sa source ; true si elle est acceptée explicitement ; sinon null.
-- must_have : ${QUICK_STARS_MAX} au plus, et seulement parmi : ${QUICK_STAR_CRITERIA.join(', ')} (cities = les communes). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${QUICK_STARS_MAX}, garde les ${QUICK_STARS_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
+- must_have : ${NOTE_STARS_MAX} au plus, et seulement parmi : ${NOTE_STAR_CRITERIA.join(', ')} (cities = les communes ; condominium = pas de copropriété, seulement si condominium_accepted vaut false). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${NOTE_STARS_MAX}, garde les ${NOTE_STARS_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
 - financing : "validated" seulement si un accord de la banque est dit clairement ; "cash_to_verify" (comptant, à vérifier) si l'achat est dit comptant ou sans prêt, sans jamais l'origine des fonds ; "in_progress" si un prêt est à l'étude ou si l'achat dépend d'une vente ; sinon "unknown". Jamais de montant d'apport ni de patrimoine.
 - purpose : "primary" (résidence principale), "secondary", "investment" (investissement locatif), "other". timeline : "now", "three_months", "six_months", "later".
 - language : la langue que le client parle, si les notes la disent (« parlent anglais », « parlent angl. » = "en" ; "it", "de", "ru" de même) ; jamais sa nationalité, qui ne s'écrit nulle part.
 
 4. Ce qui compte pour eux (soft_criteria) : uniquement ces clés — calme (au calme), sans_vis_a_vis, cachet (du cachet, de caractère), lumineux, vue, plain_pied, traversant, commerces_ecoles_a_pied, jardin_sans_entretien, pret_a_vivre (sans travaux, y compris quand un rafraîchissement est accepté). words : leurs mots recopiés tels qu'écrits, 80 caractères au plus, sans mention personnelle. Un souhait hors de cette liste va dans unclassified_wishes. La piscine, le parking, l'extérieur, l'ascenseur, l'étage et la copropriété sont des champs, pas des critères doux. Un critère qu'ils disent indifférent ou refusé n'est pas un critère.
 
-5. notes : seulement des faits pratiques — jours et heures où ils peuvent visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
+5. notes : seulement des faits pratiques — jours et heures où ils peuvent visiter, contraintes de calendrier ou de vente préalable — en une ou deux phrases. Une contrainte pratique de visite ou de déplacement (par exemple : pas de voiture le week-end) peut y figurer, suivie de « (à vérifier) ». Une condition sur le bien (« rez-de-chaussée possible si jardinet ») y figure aussi, suivie de « (à vérifier) ». Aucune autre mention sur la personne. Sinon null.
 
 6. sources : pour chaque champ rempli, la courte ligne des notes d'où il vient (field = le nom du champ) ; pour chaque indispensable, la ligne qui le dit indispensable, avec field = "must_have:" suivi de sa clé (par exemple "must_have:pool"). Un indispensable sans cette source sera refusé.`;
 

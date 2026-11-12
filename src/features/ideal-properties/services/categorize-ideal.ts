@@ -208,7 +208,7 @@ export function judgeCriterion(
 // Une copropriété connue le contredit ; une copropriété inconnue n'écarte jamais un bien.
 export const CONDOMINIUM_LABEL = 'Copropriété';
 export const IN_CONDOMINIUM = 'En copropriété';
-export const CONDOMINIUM_TO_VERIFY = 'Copropriété : à vérifier';
+export const CONDOMINIUM_TO_VERIFY = `${CONDOMINIUM_LABEL} : à vérifier`;
 export const OUT_OF_CONDOMINIUM = 'Hors copropriété';
 
 export function judgeCondominium(
@@ -375,13 +375,12 @@ export function categorizeIdeal(
 
 // Ce que la carte et le dossier remis disent « à vérifier » : les indispensables que l'annonce ne
 // dit pas, puis les préférences à vérifier sans changer la catégorie. Une seule écriture pour la
-// copropriété, comme pour un bien de l'agence : « Copropriété : à vérifier » (Jean-Guy, 12/11).
+// forme pour tous, celle d'un bien de l'agence : « Extérieur : à vérifier », « Copropriété : à
+// vérifier » (Jean-Guy, 12/11).
 export function toVerifyLabels(
   entry: Pick<CategorizedCandidate, 'toCheck' | 'toVerify'>,
 ): string[] {
-  return [...entry.toCheck, ...entry.toVerify].map((label) =>
-    label === CONDOMINIUM_LABEL ? CONDOMINIUM_TO_VERIFY : `À vérifier : ${label}`,
-  );
+  return [...entry.toCheck, ...entry.toVerify].map((label) => `${label} : à vérifier`);
 }
 
 // « 7 écartés : budget dépassé (4), pas d'extérieur (3) »

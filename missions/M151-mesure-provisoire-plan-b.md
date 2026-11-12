@@ -419,3 +419,62 @@ refuse et le jugement tombe à « rien », comme prévu.
 2. Dès que le compte a accès à Claude 5.5 : lire par l'API les régions des profils
    `eu.anthropic.claude-sonnet-5-5` et `eu.anthropic.claude-haiku-5-5`, puis la même mesure, d'une
    commande (`M151-essais/README.md`), qui choisit le modèle.
+
+## Les fiches, avec la ★ copropriété (12/11, après-midi)
+
+Relance des seules fiches (11 cas × 2 passes, Sonnet 4.6, profil « EU », **température 0 comme le
+code**), consigne alignée sur `model-request.ts` (sept ★, copropriété comprise ; « jours et heures où
+ils peuvent visiter »), corrigé de N6 écrit avant (★ copropriété tolérée). Coût réel 0,456 $.
+Bilan brut : `M151-essais/resultats/bilan-2026-11-12-14-14.md`.
+
+| | Mesure du matin (sans température) | Cette mesure (température 0) |
+|---|---|---|
+| Champs justes en tout | 482 / 484 | 478 / 484 |
+| Champs attendus remplis justes | 211 / 212 | 210 / 214 |
+| Faux | 2 | 4 (N4 communes, C5 parking, aux deux passes) |
+| **Inventés** | **0** | **2 (N5 : extérieur « oui », aux deux passes)** |
+| Mentions personnelles dans les champs enregistrés | 0 | 0 |
+| ★ sans source refusés au serveur | 2 | 0 |
+
+- **N6** : aux deux passes, « Copropriété acceptée : non » et sa ★, chacun avec sa ligne d'origine
+  « PAS de copropriété ni lotissement avec ASL » ; la garde la garde.
+- **N5, l'inventé** : « RDC ok si jardinet » devient « Extérieur : oui », aux deux passes. C'est une
+  condition, pas un souhait. À température 0 la réponse est la même à chaque passe : le défaut est
+  stable, et c'est celui que le produit rencontrerait. Selon la fiche (étape 0), un champ inventé
+  arrête la mission : la suite attend la décision de Jean-Guy.
+- N4 : « Châteauneuf-de-Grasse » au lieu de Châteauneuf-Grasse ; la vérification des communes
+  (A.3) le corrige à l'écran. C5 : un parking que la fiche CRM dit, lu vide (un oubli, pas une
+  invention).
+
+## Les fiches, conditions et cases cochées (12/11, fin d'après-midi)
+
+Décisions de Jean-Guy (12/11) appliquées à la consigne avant la relance : une condition (« RDC ok si
+jardinet ») n'est ni un oui ni un indispensable, elle va dans Notes, « (à vérifier) » ; une case
+cochée ou une valeur écrite vaut oui ; une ★ sur un équipement le met à oui. Corrigé de N5 écrit
+avant (la condition dans Notes, l'ascenseur conditionnel vide). Relance des seules fiches (11 cas ×
+2 passes, Sonnet 4.6, température 0) : 0,467 $. Bilans : `bilan-2026-11-12-14-21.md` (brut) et
+`-renote.md` (avec les gardes du serveur, sans nouvel appel).
+
+| | 14 h 14 | 14 h 21, brut | 14 h 21, gardes du serveur |
+|---|---|---|---|
+| Champs justes en tout | 478 / 484 | 480 / 484 | **482 / 484** |
+| Faux | 4 | 2 | 2 (N4 aux deux passes) |
+| **Inventés** | 2 | 3 | **0** |
+| Mentions personnelles enregistrées | 0 | 0 | 0 |
+| ★ refusées au serveur | 0 | 0 | 1 |
+| « Non » ramenés à inconnu | 0 | 0 | 2 |
+
+- **N5** : juste aux deux passes ; Notes : « RDC possible si jardinet, sinon étage avec ascenseur
+  (à vérifier) » ; ni extérieur ni ascenseur.
+- **C5** : le parking n'était pas un effet de la règle des cases : la ★ « Garage indispensable »
+  était lue, le champ laissé vide. Juste maintenant ; et la garde du serveur met désormais le champ à
+  « oui » avec la ligne de la ★ (à la création, la ★ écrivait « oui » sans carte à vérifier).
+- **N6, ce que la relance a fait apparaître**, et les deux gardes ajoutées après elle (la consigne
+  n'a pas changé depuis, la réponse à température 0 est la même) : « gros travaux non, cuisine à
+  refaire OK » lu « Travaux acceptés : non » aux deux passes — un « non » nuancé dans sa ligne reste
+  inconnu ; une ★ communes à la première passe avec pour seule ligne « Mougins, Mouans-Sartoux,
+  Pégomas » — une ★ veut une ligne qui la dise ferme (« indispensable », « obligatoire », « +++ »,
+  « !! », un mot en MAJUSCULES hors sigles). Sur les deux mesures du jour, toutes les ★ attendues ont
+  une telle ligne ; seule celle-là n'en avait pas.
+- **N4** : « Châteauneuf-de-Grasse » au lieu de Châteauneuf-Grasse, corrigé à l'écran par la
+  vérification des communes (A.3).

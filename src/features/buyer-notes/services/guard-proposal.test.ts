@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
-import { guardProposal, proposedFieldNames } from '@/features/buyer-notes/services/guard-proposal';
+import {
+  guardProposal,
+  proposedFieldNames,
+  saysFirm,
+} from '@/features/buyer-notes/services/guard-proposal';
 import {
   NOTE_OUTPUT_SCHEMA,
   NOTE_READING_INSTRUCTIONS,
 } from '@/features/buyer-notes/model-request';
-import { QUICK_STAR_CRITERIA } from '@/features/buyers/schemas/buyer-input';
+import { NOTE_STAR_CRITERIA, NOTE_STAR_LABELS } from '@/features/buyer-notes/note-stars';
 
 // Mission 151 — les gardes du serveur, sur les défauts mesurés le 12/11 (plan B, Sonnet 4.6).
 
@@ -180,34 +184,111 @@ describe('guardProposal', () => {
   });
 
   // Mission 151 — une seule liste d'indispensables pour la lecture : la consigne, le schéma de la
-  // réponse, la garde et l'écran (dont le type vient de la même constante) disent les six mêmes.
-  // La copropriété n'en est pas : son ★ se pose dans le formulaire complet (A.4).
-  it('la consigne, le schéma et la garde ont la même liste de ★, sans la copropriété', () => {
-    expect([...QUICK_STAR_CRITERIA]).toEqual([
+  // réponse, la garde et l'écran disent les sept mêmes, copropriété comprise (Jean-Guy, 12/11).
+  it('la consigne, le schéma et la garde ont la même liste de ★, copropriété comprise', () => {
+    expect([...NOTE_STAR_CRITERIA]).toEqual([
       'cities',
       'budget',
       'outdoor',
       'parking',
       'pool',
       'elevator',
+      'condominium',
     ]);
     const properties = NOTE_OUTPUT_SCHEMA.properties as Record<
       string,
       { items?: { enum?: unknown } }
     >;
-    expect(properties.must_have?.items?.enum).toEqual([...QUICK_STAR_CRITERIA]);
-    expect(NOTE_READING_INSTRUCTIONS).toContain(`parmi : ${QUICK_STAR_CRITERIA.join(', ')}`);
-    const proposal = guardProposal({
-      ...empty,
-      condominium_accepted: false,
-      must_have: ['condominium', 'pool'],
+    expect(properties.must_have?.items?.enum).toEqual([...NOTE_STAR_CRITERIA]);
+    expect(NOTE_READING_INSTRUCTIONS).toContain(`parmi : ${NOTE_STAR_CRITERIA.join(', ')}`);
+    expect(Object.keys(NOTE_STAR_LABELS)).toEqual([...NOTE_STAR_CRITERIA]);
+  });
+
+  it('la ★ copropriété : sa ligne d’origine et un « non » gardé, deux ★ au plus', () => {
+    const read = (over: Record<string, unknown>) =>
+      guardProposal({
+        ...empty,
+        condominium_accepted: false,
+        must_have: ['condominium'],
+        sources: [
+          { field: 'condominium_accepted', quote: 'PAS de copropriété' },
+          { field: 'must_have:condominium', quote: 'PAS de copropriété' },
+        ],
+        ...over,
+      });
+    expect(read({}).mustHave).toEqual([{ key: 'condominium', source: 'PAS de copropriété' }]);
+    // Sans sa ligne d'origine, elle tombe.
+    expect(
+      read({ sources: [{ field: 'condominium_accepted', quote: 'PAS de copropriété' }] }).mustHave,
+    ).toEqual([]);
+    // Un « non » qui tombe (aucune ligne qui le dise) emporte sa ★.
+    expect(
+      read({ sources: [{ field: 'must_have:condominium', quote: 'copro' }] }).mustHave,
+    ).toEqual([]);
+    expect(read({ condominium_accepted: null }).mustHave).toEqual([]);
+    // Deux au plus, dans l'ordre lu.
+    const three = read({
+      pool: true,
+      must_have: ['pool', 'outdoor', 'condominium'],
+      outdoor: true,
       sources: [
         { field: 'condominium_accepted', quote: 'PAS de copropriété' },
         { field: 'must_have:condominium', quote: 'PAS de copropriété' },
         { field: 'must_have:pool', quote: 'piscine OBLIGATOIRE' },
+        { field: 'must_have:outdoor', quote: 'jardin OBLIGATOIRE' },
       ],
     });
-    expect(proposal.mustHave.map((star) => star.key)).toEqual(['pool']);
-    expect(proposal.values.condominiumAccepted).toBe(false);
+    expect(three.mustHave.map((star) => star.key)).toEqual(['pool', 'outdoor']);
+  });
+
+  // C5 du 12/11 : « Garage indispensable », la ★ lue et le champ laissé vide ; à la création, la
+  // ★ écrivait « oui » sans carte à vérifier. La garde montre le champ, la ligne de la ★ pour source.
+  it('une ★ sur un équipement met le champ à « oui », montré ; un « non » gardé la fait tomber', () => {
+    const garage = guardProposal({
+      ...empty,
+      must_have: ['parking'],
+      sources: [{ field: 'must_have:parking', quote: 'Garage indispensable.' }],
+    });
+    expect(garage.values.parking).toBe(true);
+    expect(garage.sources.parking).toBe('Garage indispensable.');
+    expect(garage.mustHave.map((star) => star.key)).toEqual(['parking']);
+    const contradicted = guardProposal({
+      ...empty,
+      parking: false,
+      must_have: ['parking'],
+      sources: [
+        { field: 'parking', quote: 'sans parking' },
+        { field: 'must_have:parking', quote: 'parking OBLIGATOIRE' },
+      ],
+    });
+    expect(contradicted.values.parking).toBe(false);
+    expect(contradicted.mustHave).toEqual([]);
+  });
+
+  // N6 du 12/11 : « Mougins, Mouans-Sartoux, Pégomas » ne dit rien de ferme ; « gros travaux non,
+  // cuisine à refaire OK » n'est pas un « non » aux travaux.
+  it('une ★ sans ligne qui la dise ferme tombe ; un « non » nuancé aux travaux reste inconnu', () => {
+    const cities = guardProposal({
+      ...empty,
+      cities: ['Mougins'],
+      must_have: ['cities'],
+      sources: [{ field: 'must_have:cities', quote: 'Mougins, Mouans-Sartoux, Pégomas' }],
+    });
+    expect(cities.mustHave).toEqual([]);
+    expect(saysFirm('Garage indispensable.')).toBe(true);
+    expect(saysFirm('Jardin +++')).toBe(true);
+    expect(saysFirm('PAS de copropriété ni lotissement avec ASL')).toBe(true);
+    expect(saysFirm('budget ferme, pas un euro de plus')).toBe(true);
+    expect(saysFirm('RDC ok si jardinet')).toBe(false);
+    expect(saysFirm('T3 à Antibes, DPE C max')).toBe(false);
+    const works = (quote: string) =>
+      guardProposal({
+        ...empty,
+        works_accepted: false,
+        sources: [{ field: 'works_accepted', quote }],
+      }).values.worksAccepted;
+    expect(works('gros travaux non, cuisine à refaire OK')).toBeUndefined();
+    expect(works('Pas de travaux — un coup de peinture ne le gêne pas')).toBeUndefined();
+    expect(works('aucun travaux')).toBe(false);
   });
 });
