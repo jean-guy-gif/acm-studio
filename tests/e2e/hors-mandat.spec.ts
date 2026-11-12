@@ -167,5 +167,7 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     );
   });
 
+  // La page de l'offre signée n'a pas le menu : la remise à zéro part d'une page de l'application.
+  await page.goto('/aujourdhui');
   await resetDemoByScreen(page);
 });
