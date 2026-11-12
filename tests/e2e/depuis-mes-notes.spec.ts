@@ -60,7 +60,11 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('proposal-skipped')).toHaveText(
       '2 mentions personnelles n’ont pas été relevées.',
     );
-    await expect(proposal).not.toContainText(/enceinte|pressé|difficile/i);
+    // Les notes collées restent montrées à gauche (planche 2) ; aucune carte proposée ne les reprend.
+    const fieldSections = proposal.locator('section');
+    for (let index = 0; index < (await fieldSections.count()); index += 1) {
+      await expect(fieldSections.nth(index)).not.toContainText(/enceinte|pressé|difficile/i);
+    }
     await expectOneFilled(page, 'La fiche proposée');
     await expectNoHorizontalScroll(page, 'La fiche proposée');
   });
